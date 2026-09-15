@@ -34,6 +34,7 @@ import {
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     groundAPartyCanBeSentTo,
+    theGroundAHouseHolds,
     whereASendingGoes,
     groundTheseHousesHold,
     whichHousesAReasonIsAbout
@@ -179,6 +180,7 @@ import {
 import { shameTag } from '../social/shame.js';
 import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
+import { applyDoorsAndTheirPlaces } from './a-year-at-the-doors.js';
 import { applyGatherings, circleCandidatesFor } from './gatherings.js';
 import {
     fightTheWarsThisYear,
@@ -211,6 +213,9 @@ import {
     reasonsOpenTo,
     resolveSending,
     newsOfASending,
+    newsOfAPartyStillOut,
+    whatAFailedSendingTakes,
+    whenTheErrandHappened,
     isImpossibleTier,
     lostChance,
     notFinishedChance,
@@ -610,6 +615,31 @@ export function applyPressure(
                 deaths: []
             });
         }
+        // And then the doors. Who comes to stand at one, and who among a
+        // house's own is given a place at the ones that admit a count.
+        //
+        // AFTER the gatherings, so somebody who placed at a competition this
+        // year is on the board the conclave reads when it decides who goes;
+        // before the economy, so the levy a held door takes is in the purse
+        // the same year counts.
+        for (const door of applyDoorsAndTheirPlaces(
+            state, year, withinSpan(year * 365 + 165, fromDay, toDay)
+        )) {
+            if (door.shut === null || door.storedFact === null) continue;
+            events.push({
+                kind: 'zone_forbidden',
+                onDay: door.storedFact.day,
+                fact: door.storedFact,
+                touched: {
+                    factions: [door.shut.patch?.controllingFactionId ?? '', ...door.shut.angered]
+                        .filter(id => id.length > 0),
+                    locations: [door.doorId],
+                    npcs: door.shut.posted.map(p => p.id)
+                },
+                deaths: [],
+                opens: [...door.accounts]
+            });
+        }
         // And then the ties an ordinary life produces, on the same yearly line.
         applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
         applyFactionEconomy(state);
@@ -618,7 +648,8 @@ export function applyPressure(
         // out of the purse this year filled, and after recruitment, so
         // somebody admitted this year can be on the party.
         applySendings(
-            state, year, withinSpan(year * 365 + 175, fromDay, toDay), actOnAnEmptyPurse);
+            state, year, withinSpan(year * 365 + 175, fromDay, toDay),
+            fromDay, actOnAnEmptyPurse);
         // And the yard works on what the last party brought home. AFTER the
         // sendings, so material that came back this year is material this
         // year's work can go into - a hull is a schedule, and a house hunts
@@ -2278,6 +2309,13 @@ function applySendings(
     state: WorldState,
     year: number,
     day: number,
+    /**
+     * The first day of the span this pass reports on.
+     *
+     * An errand is dated inside the span rather than projected past the end of
+     * it. {@link whenTheErrandHappened} carries the whole argument.
+     */
+    spanStartsOn: number,
     actOnAnEmptyPurse: boolean
 ): number {
     const rng = forStream(state.seed, 'sendings', year);
@@ -2457,27 +2495,30 @@ function applySendings(
         // reason came up - the same rule the event draw at the top of this file
         // keeps, and the reason a control arm for the motive is comparable to
         // the world without it at all.
+        // THE HOUSES THE REASON IS ABOUT, which is what `seatsInPlay` has asked
+        // for since it was written and what no caller passed: every seat in the
+        // world went in, so the party sent to collect on a grant was received
+        // at a hall drawn at random and the subsidiary that owed it never saw
+        // anybody. Read once now rather than twice, because the stake wants the
+        // same list: an errand's standing and its terms are with whoever was at
+        // the far end of it.
+        const aboutHouses = whichHousesAReasonIsAbout(reason.needs, house)
+            .filter(id => id !== faction.id);
         const drawn = whereASendingGoes({
             needs: reason.needs,
             fromLocationId: faction.seatLocationId,
             theFind: find?.locationId ?? null,
-            // THE HOUSES THE REASON IS ABOUT, which is what this parameter has
-            // asked for since it was written and what no caller passed: every
-            // seat in the world went in, so the party sent to collect on a
-            // grant was received at a hall drawn at random and the subsidiary
-            // that owed it never saw anybody.
-            seatsInPlay: whichHousesAReasonIsAbout(reason.needs, house)
+            seatsInPlay: aboutHouses
                 .map(id => state.factions.find(
-                    f => f.id === id && f.id !== faction.id && f.dissolvedOnDay === null
+                    f => f.id === id && f.dissolvedOnDay === null
                 )?.seatLocationId ?? null)
                 .filter((id): id is string => id !== null),
             // AND WHERE THEY ARE WHEN THEY HAVE NO HALL. The line above drops a
             // seatless house, so without this the errand fell through to ground
             // drawn at random and stopped being the errand it was opened for.
-            groundNearThem: groundTheseHousesHold(
-                state.locations,
-                whichHousesAReasonIsAbout(reason.needs, house).filter(id => id !== faction.id)
-            ),
+            groundNearThem: groundTheseHousesHold(state.locations, aboutHouses),
+            // AND THE ERRAND ABOUT THIS HOUSE'S OWN GROUND ENDS ON IT.
+            ownGround: theGroundAHouseHolds(state.locations, faction.id),
             elsewhere: groundAPartyCanBeSentTo(state.locations),
             pick: count => rng.int(0, Math.max(0, count - 1))
         });
@@ -2551,10 +2592,57 @@ function applySendings(
             reachedPastItsWeight = true;
         }
 
+        // ── WHEN THE ERRAND HAPPENED ─────────────────────────────────────
+        //
+        // This pass reports on a year, and an errand whose term fits inside it
+        // is one that happened during it. Before this the party left on the day
+        // the pass ran - which `withinSpan` has always clamped to the last day
+        // of the span - and the news of its return was dated after the world's
+        // own clock. `whenTheErrandHappened` carries the measurement.
+        const when = whenTheErrandHappened({
+            notBefore: spanStartsOn,
+            reportedOn: day,
+            spanEndsOn: day,
+            term: posting.days
+        });
+        const partyIds = party.map(p => p.id);
+
+        // AND A PARTY THAT CANNOT BE BACK BY THE END OF THE SPAN IS STILL OUT.
+        // Nothing about the errand is resolved, because nothing about it has
+        // happened: no outcome, nobody lost, nothing taken off the house.
+        if (when.stillOut) {
+            sent++;
+            const due = day + posting.days;
+            if (goingTo !== null) {
+                for (const member of party) {
+                    const index = at.get(member.id);
+                    if (index === undefined) continue;
+                    const row = state.npcs[index];
+                    if (row === undefined || !isTheWorldsToMove(row)) continue;
+                    state.npcs[index] = {
+                        ...setLocation(row, goingTo, day),
+                        activity: {
+                            kind: 'out_with_a_party',
+                            note: `Out for the ${houseName(faction.name)} on `
+                                + `${reason.name.toLowerCase()}.`,
+                            withIds: partyIds.filter(id => id !== member.id),
+                            sinceDay: day,
+                            untilDay: due,
+                            returnTo: row.locationId
+                        }
+                    };
+                }
+            }
+            appendWorldFact(state, newsOfAPartyStillOut({
+                posting, party, departsOnDay: day, dueOnDay: due
+            }));
+            continue;
+        }
+
         const sending = resolveSending({
             posting,
             party,
-            departsOnDay: day,
+            departsOnDay: when.departsOnDay,
             rng,
             // The ground they reached, for the date it next stands open. Asking
             // the seat for that answered when the house's own front door opens.
@@ -2565,7 +2653,6 @@ function applySendings(
         sent++;
 
         if (goingTo !== null) {
-            const partyIds = party.map(p => p.id);
             // EVERYBODY WHO WENT, including the ones who will not come back.
             // The lost went out on the same errand to the same place; they are
             // marked missing a few lines below and `markMissing` leaves the
@@ -2579,7 +2666,7 @@ function applySendings(
                 const row = state.npcs[index];
                 if (row === undefined || !isTheWorldsToMove(row)) continue;
                 state.npcs[index] = {
-                    ...setLocation(row, goingTo, day),
+                    ...setLocation(row, goingTo, when.departsOnDay),
                     // `mustering` is the kind whose own doc names this
                     // machinery, and the one where `withIds` is the party
                     // rather than a companion. The term is what makes a party
@@ -2591,7 +2678,7 @@ function applySendings(
                         kind: 'out_with_a_party',
                         note: `Out for the ${houseName(faction.name)} on ${reason.name.toLowerCase()}.`,
                         withIds: partyIds.filter(id => id !== member.id),
-                        sinceDay: day,
+                        sinceDay: when.departsOnDay,
                         untilDay: sending.returnsOnDay,
                         // Where they came from, which is not their house's
                         // front door. A disciple who lives in a village comes
@@ -2627,13 +2714,142 @@ function applySendings(
             });
         }
 
+        // AND THE HOUSE LOSES WHAT IT SAID WAS AT STAKE.
+        //
+        // Skipped for the one errand that already has its own settlement: a
+        // house reaching for ground that pays is answered by
+        // `theGroundWasTakenOrItWasNot` above, which is the same stake applied
+        // by the path that knows which piece of ground and who was standing on
+        // it. Running both would charge it twice.
+        const took = named !== null || sending.outcome === 'finished'
+            ? null
+            : theHouseLostWhatItStaked(state, {
+                faction,
+                sending,
+                onDay: sending.returnsOnDay,
+                counterparties: whoTheErrandWasWith(state, aboutHouses, goingTo),
+                onTheRoll: onTheRoll.length
+            });
+
         const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+        if (took !== null) news.data = { ...news.data, ...took };
         if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING
             || reachedPastItsWeight || named !== null) {
             appendWorldFact(state, news);
         }
     }
     return sent;
+}
+
+/**
+ * Which houses this errand was actually with.
+ *
+ * `whichHousesAReasonIsAbout` answers who a reason is OPEN toward, which for an
+ * ally or a counterpart is everybody a house would sit down with. The errand
+ * went to one of them, and a failure is only with the house at the far end of
+ * it - charging every ally in the province for one botched visit would be a
+ * standing rule about a relationship nobody was in.
+ *
+ * The seat first, because a seat errand's destination was drawn from exactly
+ * these houses' seats; then whoever holds the ground, for the houses with no
+ * hall. Empty where the errand was about nobody, which is most of them.
+ */
+function whoTheErrandWasWith(
+    state: WorldState,
+    aboutHouses: readonly string[],
+    goingTo: string | null
+): readonly string[] {
+    if (goingTo === null || aboutHouses.length === 0) return [];
+    const bySeat = aboutHouses.filter(
+        id => state.factions.find(f => f.id === id)?.seatLocationId === goingTo);
+    if (bySeat.length > 0) return bySeat;
+    const holder = state.locations.find(l => l.id === goingTo)?.controllingFactionId ?? null;
+    return holder !== null && aboutHouses.includes(holder) ? [holder] : [];
+}
+
+/**
+ * What a failed sending took off the house, applied.
+ *
+ * The arithmetic is `whatAFailedSendingTakes`, which is pure and knows nothing
+ * about a world; this is the four writes it produces, and the row the ledger
+ * carries so the loss can be read back off the chronicle rather than believed.
+ *
+ * AND THE GROUND LEAVES BY THE DOOR GROUND ALREADY LEAVES BY -
+ * `applyLocationChange` plus the two holds - which is what `vein_lost` and
+ * `theGroundWasTakenOrItWasNot` both do, so a piece of ground given up on a
+ * failed errand reads like every other piece of ground that changed hands.
+ */
+function theHouseLostWhatItStaked(
+    state: WorldState,
+    input: {
+        faction: FactionRecord;
+        sending: ReturnType<typeof resolveSending>;
+        onDay: number;
+        counterparties: readonly string[];
+        onTheRoll: number;
+    }
+): Record<string, string | number | boolean | null> {
+    const { faction, sending, onDay } = input;
+    // WHOSE GROUND IT IS, off `theGroundAHouseHolds` and not off the house's
+    // own `controlledLocationIds`. The two are not the same set - measured on a
+    // seeded world, 64 places are on both and 1,019 carry the location column
+    // without being on anybody's list - and the destination for an errand about
+    // a house's own ground is drawn off the same reading, so a second one here
+    // had every such failure reporting there was nothing to take.
+    const took = whatAFailedSendingTakes({
+        sending,
+        holds: theGroundAHouseHolds(state.locations, faction.id),
+        purse: Number(faction.resources.spirit_stones ?? 0),
+        onTheRoll: input.onTheRoll,
+        counterparties: input.counterparties
+    });
+
+    if (took.stones > 0) {
+        faction.resources.spirit_stones =
+            Math.max(0, Number(faction.resources.spirit_stones ?? 0) - took.stones);
+    }
+
+    for (const id of took.regardFalls) {
+        const other = state.factions.find(f => f.id === id);
+        if (other) adjustStandingBetween(faction, other, -took.regardBy);
+    }
+
+    for (const id of took.groundGivenUp) {
+        const place = state.locations.find(l => l.id === id);
+        if (!place) continue;
+        const changed = applyLocationChange(place, {
+            onDay,
+            kind: 'abandoned',
+            summary: `${place.name} stopped answering to the ${houseName(faction.name)}.`,
+            causeKnown: true,
+            patch: { controllingFactionId: null, addTags: ['changed_hands'] }
+        });
+        replaceLocation(state, changed.location);
+        faction.controlledLocationIds =
+            faction.controlledLocationIds.filter(held => held !== id);
+        if (place.kind === 'vein') {
+            faction.resources.veins = Math.max(0, Number(faction.resources.veins ?? 0) - 1);
+        }
+    }
+
+    for (const id of took.instrumentsLapsed) {
+        const below = state.factions.find(f => f.id === id);
+        if (!below) continue;
+        const owed = Number(below.resources.tribute_owed_per_year ?? 0);
+        below.resources.tribute_owed_per_year =
+            Math.max(0, Math.round(owed * (1 - took.instrumentLapsedBy)));
+    }
+
+    return {
+        errand: sending.posting.reason.id,
+        atStake: sending.posting.atStake,
+        whatItTook: took.nothingToTake ? 'nothing the world holds' : took.landsOn,
+        howBadly: Number(took.howBadly.toFixed(3)),
+        stonesLost: took.stones,
+        regardFellWith: took.regardFalls.length,
+        groundGivenUp: took.groundGivenUp.join(' '),
+        instrumentsLapsed: took.instrumentsLapsed.length
+    };
 }
 
 /**
@@ -3836,6 +4052,8 @@ function theProvinceGoes(
     state: WorldState,
     door: LocationRecord,
     day: number,
+    /** The last day the world will have reached when this pass is over. */
+    spanEndsOn: number,
     peopleKnow: WhatSomebodyKnowsOfIt
 ): readonly AHouseOnTheRoad[] {
     const roster = new Map<string, Candidate[]>();
@@ -3872,32 +4090,58 @@ function theProvinceGoes(
 
     for (const house of going) {
         const rng = forStream(state.seed, 'a-door-opens', door.id, house.houseId, String(day));
+        // A RACE CANNOT BE BACKDATED. The party could not have set out before
+        // the door opened, so `notBefore` is the opening and not the span - and
+        // an errand whose term runs past the end of the span is a party still
+        // standing in a doorway rather than one that came back.
+        const when = whenTheErrandHappened({
+            notBefore: day,
+            reportedOn: day,
+            spanEndsOn,
+            term: house.posting.days
+        });
+        const partyIds = house.party.map(p => p.id);
+        const moveThem = (untilDay: number, note: string): void => {
+            for (const member of house.party) {
+                const index = at.get(member.id);
+                const row = index === undefined ? undefined : state.npcs[index];
+                if (index === undefined || row === undefined || !isTheWorldsToMove(row)) continue;
+                state.npcs[index] = {
+                    ...setLocation(row, door.id, day),
+                    activity: {
+                        kind: 'out_with_a_party',
+                        note,
+                        withIds: partyIds.filter(id => id !== member.id),
+                        sinceDay: day,
+                        untilDay,
+                        returnTo: row.locationId
+                    }
+                };
+            }
+        };
+        const atTheDoor = `At ${door.name} for the ${houseName(house.houseName)} `
+            + 'while it stands open.';
+
+        if (when.stillOut) {
+            moveThem(when.returnsOnDay, atTheDoor);
+            appendWorldFact(state, newsOfAPartyStillOut({
+                posting: house.posting,
+                party: house.party,
+                departsOnDay: day,
+                dueOnDay: when.returnsOnDay
+            }));
+            continue;
+        }
+
         const sending = resolveSending({
             posting: house.posting,
             party: house.party,
-            departsOnDay: day,
+            departsOnDay: when.departsOnDay,
             rng,
             location: door
         });
 
-        const partyIds = house.party.map(p => p.id);
-        for (const member of house.party) {
-            const index = at.get(member.id);
-            const row = index === undefined ? undefined : state.npcs[index];
-            if (index === undefined || row === undefined || !isTheWorldsToMove(row)) continue;
-            state.npcs[index] = {
-                ...setLocation(row, door.id, day),
-                activity: {
-                    kind: 'out_with_a_party',
-                    note: `At ${door.name} for the ${houseName(house.houseName)} `
-                        + 'while it stands open.',
-                    withIds: partyIds.filter(id => id !== member.id),
-                    sinceDay: day,
-                    untilDay: sending.returnsOnDay,
-                    returnTo: row.locationId
-                }
-            };
-        }
+        moveThem(sending.returnsOnDay, atTheDoor);
         for (const missing of sending.lost) {
             const index = at.get(missing.id);
             if (index === undefined) continue;
@@ -3909,7 +4153,23 @@ function theProvinceGoes(
             );
         }
 
+        // AND THE SAME STAKE, BY THE SAME DOOR. A race is an errand a house
+        // opened on a reason like any other, and the reason declares what it
+        // loses. The door is nobody's counterpart, so an errand that stakes a
+        // neighbour's regard has nothing to take - which is the declaration
+        // being read rather than substituted.
+        const faction = sending.outcome === 'finished'
+            ? null : state.factions.find(f => f.id === house.houseId) ?? null;
+        const took = faction === null ? null : theHouseLostWhatItStaked(state, {
+            faction,
+            sending,
+            onDay: sending.returnsOnDay,
+            counterparties: [],
+            onTheRoll: (roster.get(house.houseId) ?? []).length
+        });
+
         const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+        if (took !== null) news.data = { ...news.data, ...took };
         if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING) {
             appendWorldFact(state, news);
         }
@@ -3981,7 +4241,8 @@ function applyConvergences(
             // A week is whoever is standing there; a season is a race. The
             // scaling is the window's own, through the read that already prices
             // a road against it - see `a-door-that-opens-is-a-race.ts`.
-            const going = theProvinceGoes(state, state.locations[i], day, whatPeopleKnow());
+            const going = theProvinceGoes(
+                state, state.locations[i], day, toDay, whatPeopleKnow());
 
             out.push(emit(state, 'convergence_opened', day, {
                 day,

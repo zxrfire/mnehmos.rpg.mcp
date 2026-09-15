@@ -2350,6 +2350,49 @@ broke:
 Which ground is not a draw: the smallest thing in its own province that would cover the
 payroll, and where nothing would, the largest thing there is.
 
+**A sending that fails costs the house what the reason said it would.**
+Every row in `why-a-house-puts-a-party-on-the-road.ts` declares an `atStake`, and for a
+long time the only readers were two board modules using it to LABEL a posting. So a house
+sent people after a thing, they died, and the house was exactly as it had been: an upside
+with no downside, which is not a gamble. `whatAFailedSendingTakes` is the reader, and it
+is a COLUMN and not a case - `WHERE_A_STAKE_LANDS` maps each stake to one of the house's
+own columns, and nothing anywhere branches on which reason it was. How much is
+`howBadlyItWent`, which is the share of the party that stayed out there with a floor under
+it, because an errand that came back whole and unfinished still did not do the thing.
+
+Measured over three seeded centuries: of 116 failures, 64 took something, 7 are the one
+errand that has its own settlement (`theGroundWasTakenOrItWasNot`), and 45 are
+declarations the world holds nothing for. Which is which:
+
+- `nothing_but_the_party` is already applied by `markMissing`, and reports nothing taken
+  when nobody was lost.
+- `stones` comes off the purse, as the share of the house that went out, capped at
+  `A_SINGLE_ERRAND_CANNOT_TAKE_MORE_THAN` so one bad year is not the end of a house.
+- `standing_with_a_house` needs a house at the far end of the errand. **An escort has
+  none** - its `needs` is `nothing`, so `whichHousesAReasonIsAbout` is empty and the stake
+  is unappliable by construction. 11 of 11 escort failures took nothing.
+- `the_ground_itself` takes the ground the errand was about, where the house holds it.
+  That is standing to, now the errand goes to the house's OWN ground; a war is fought on
+  ground between two houses and a line is walked to ground nobody holds, so neither has
+  anything in the errand to take.
+- `the_grant` takes a quarter off the body below's stated `tribute_owed_per_year`. The
+  collecting house's rating does not move, because the world charges tribute to the payer
+  and credits it to nobody.
+
+**And nothing is dated after the world's own clock.** `applyPressure` takes its year index
+as `yearOfDay(fromDay) + 1`, so the sending line's nominal day is always past the end of a
+one-year span and `withinSpan` always clamps it to the last day - every party in the world
+left on the final day and came back after it. `whenTheErrandHappened` is the rule: a pass
+reports on a year, so an errand whose term fits inside the span HAPPENED inside it and the
+party left `term` days before the day being reported on. One whose term does not fit is
+still out, `newsOfAPartyStillOut` says so with `truth: 'unresolved'`, and nothing about it
+is resolved. Across nine horizons on one seed - 100, 200, 300 and 497 to 502 years - the
+count of facts dated past the clock went from one or two, worst +150 days, to zero.
+
+The gap this leaves, written down rather than licensed: **an errand longer than one span
+is never resolved at all.** On the yearly slices `advanceWorldForPlay` runs that is the
+720-day war errand alone, and its party comes home with nothing said about what happened.
+
 **A compound is safe, and that is not what a cultivator is for.**
 `why-somebody-walks-out-of-a-compound.ts` is the other half of everybody who is on a road:
 until it existed, every traveller in the world had been dispatched by an institution.

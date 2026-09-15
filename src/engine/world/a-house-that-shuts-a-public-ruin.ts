@@ -44,6 +44,7 @@
 
 import { SENDING_REASONS } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import type { ObligationInput, Severity } from '../social/grudges.js';
+import { convergenceOf } from './convergence.js';
 import { theProvinceAround } from './ground-holder.js';
 import { makeFact, type PendingFact } from './history.js';
 import { isBelowTheLid } from './layers.js';
@@ -193,7 +194,16 @@ export function shutAPublicRuin(input: {
         fact: null
     });
 
-    if (ruin.kind !== 'ruin' || ruin.sealed) {
+    // THE SCHEDULE IS THE FACT AND `sealed` IS A READING OF IT, which is the
+    // rule `locations.ts` states and this guard used to break. Every seeded
+    // cycled ruin carries `sealed: true` from the day it was written, so a door
+    // that opens itself every season - the one kind of ground a house most
+    // wants to be standing at, because the province knows the date - refused
+    // every asker as shut. Measured on a pinned world at two hundred years: all
+    // 79 asks against the seven counted doors came back `nothing_here_is_open`,
+    // and not one door in the world was ever held.
+    const openGround = convergenceOf(ruin, onDay).cyclical || !ruin.sealed;
+    if (ruin.kind !== 'ruin' || !openGround) {
         return refuse(
             'nothing_here_is_open',
             `${ruin.name} is not open ground anybody is walking into. `

@@ -214,6 +214,30 @@ describe('a house that shuts a public ruin', () => {
             .toBe('nothing_here_is_open');
     });
 
+    /**
+     * THE SCHEDULE IS THE FACT AND `sealed` IS A READING OF IT, which is the
+     * rule `locations.ts` states and this refusal used to break.
+     *
+     * Every seeded cycled ruin carries `sealed: true` from the day it is
+     * written, and a door on a season opens itself every sixty to six hundred
+     * years whatever that column says. So the one kind of ground a house most
+     * wants to stand at - the kind whose opening date the whole province knows,
+     * and the only kind that admits a COUNT of people - refused every asker as
+     * already shut. Measured on a pinned world at two hundred years: all 79
+     * asks against its seven counted doors came back `nothing_here_is_open`,
+     * and not one door in that world was ever held by anybody.
+     */
+    it('does not read a season as a door already shut', () => {
+        const b = board();
+        const onASeason = {
+            ...b.ruin,
+            sealed: true,
+            cycle: { periodDays: 60 * 365, openDays: 21, phaseDay: 0 }
+        };
+        expect(shut(b, { ruin: onASeason }).refusedBecause).not.toBe('nothing_here_is_open');
+        expect(shut(b, { ruin: onASeason }).shut).toBe(true);
+    });
+
     it('a province with somewhere else to go takes it as the lesser thing', () => {
         const alone = board();
         const spoiltForChoice = board({ elsewhereRuin: true });

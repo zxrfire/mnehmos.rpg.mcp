@@ -33,6 +33,7 @@ import {
     isOpenOn,
     nextOpeningDay,
     populationWeightOf,
+    whatATownPaysItsHolder,
     type LocationRecord
 } from './locations.js';
 import { isBelowTheLid } from './layers.js';
@@ -326,6 +327,15 @@ export function whatStandingOnItGives(
  */
 export const WENT_AND_CAME_BACK = 'sent';
 export const WENT_AND_DID_NOT = 'lost';
+/**
+ * And the third state, which is neither and is not an outcome at all.
+ *
+ * A party whose term runs past the end of the span being simulated has not come
+ * back and has not failed to. {@link whatAHousesOwnErrandsBringBack} reads
+ * `sent` and nothing else, so a house hears nothing off this row - which is
+ * correct, because nobody has reported to it.
+ */
+export const WENT_AND_IS_NOT_BACK = 'out';
 
 /**
  * Where a house's own parties have been, off the same ledger and the same two
@@ -706,6 +716,68 @@ export interface Sending {
     returnsOnDay: number;
 }
 
+/** When an errand happened, against the span the pass reports on. */
+export interface WhenTheErrandHappened {
+    departsOnDay: number;
+    returnsOnDay: number;
+    /** True when the term runs past the last day the world has reached. */
+    stillOut: boolean;
+}
+
+/**
+ * When the errand happened, which is not the instant the pass ran.
+ *
+ * ── THE DEFECT, MEASURED ─────────────────────────────────────────────────
+ *
+ * The yearly pass dated every sending's news at `departsOnDay + term` with
+ * `departsOnDay` set to the day the pass ran, so the news of a return was
+ * written before the return. `applyPressure` derives its year index as
+ * `yearOfDay(fromDay) + 1`, so the sending line's nominal day - `year*365+175`
+ * - is ALWAYS past the end of a one-year span and `withinSpan` always clamps it
+ * to the last day of it. Every party in the world therefore left on the final
+ * day of the span and came back after it. On one seed the tail of that shows up
+ * as one to two facts dated up to 150 days past the world's own clock at every
+ * horizon tried - 100, 200, 300 and 497 through 502 years - which is what
+ * `driver.test.ts > nothing is incoherent` refuses, correctly.
+ *
+ * ── AND THE RECORD THAT IS HONEST ────────────────────────────────────────
+ *
+ * A yearly pass reports on a year. Every other line in it is dated inside the
+ * span by construction; this one projected forward. So an errand whose term
+ * fits inside the span is an errand that HAPPENED inside it: the party left
+ * `term` days before the day being reported on and is back on it. Nothing is
+ * clamped - the return is the day it is reported, and the departure moves to
+ * where it must have been for that to be true.
+ *
+ * An errand whose term does NOT fit is a party that is still out, and that is a
+ * different fact rather than a worse date. {@link newsOfAPartyStillOut} is what
+ * the world says about one, and nothing about the errand is resolved: no
+ * outcome, nobody lost, nothing taken off the house, because none of it has
+ * happened yet. `bringHomeWhoeverIsDue` ends the term off the party's own
+ * activity when the day comes.
+ *
+ * WHAT THE WORLD STILL HAS NO ANSWER FOR: the outcome of an errand longer than
+ * one span is never written at all. On the yearly slices `advanceWorldForPlay`
+ * runs, that is the war errand alone - 720 days against a 365-day span, one row
+ * of fifteen at weight 4 - and its party comes home with nothing said. Carrying
+ * a resolved-but-unreported sending between passes needs a store this layer
+ * does not have, and inventing one was not worth what it buys.
+ */
+export function whenTheErrandHappened(input: {
+    /** The earliest day the party could have left. A span start, or a door. */
+    notBefore: number;
+    /** The day the pass is reporting on. */
+    reportedOn: number;
+    /** The last day the world will have reached when the pass is over. */
+    spanEndsOn: number;
+    /** The errand's term, in days. */
+    term: number;
+}): WhenTheErrandHappened {
+    const departsOnDay = Math.max(input.notBefore, input.reportedOn - input.term);
+    const returnsOnDay = departsOnDay + input.term;
+    return { departsOnDay, returnsOnDay, stillOut: returnsOnDay > input.spanEndsOn };
+}
+
 /**
  * Resolve one sending.
  */
@@ -827,6 +899,293 @@ export function newsOfASending(sending: Sending, opts: {
             ? `Reached it and did not take it. ${sending.sighted!.seenBy.length} saw it.`
             : ''
     });
+}
+
+/**
+ * The ledger row for a party that went out and is not back.
+ *
+ * Filed under the errand's own word, because a departure and its return are one
+ * errand and the digest and the rumour layer read that word and nothing else.
+ * `truth: 'unresolved'` is the whole of the difference: the world is saying
+ * where its people went and declining to say what became of them, which is the
+ * only honest thing it can say about a party still on the road.
+ *
+ * The actors carry {@link WENT_AND_IS_NOT_BACK}, so
+ * {@link whatAHousesOwnErrandsBringBack} reads nothing off this row. A house
+ * learns where ground is from a party that came back and reported; nobody has.
+ */
+export function newsOfAPartyStillOut(input: {
+    posting: Posting;
+    party: readonly Candidate[];
+    departsOnDay: number;
+    /** The day the term is up. Stated, because it is a term and not a guess. */
+    dueOnDay: number;
+}): PendingFact {
+    const { posting, party } = input;
+    // The board's own word for the tier, which is a property of the posting and
+    // the party rather than of an outcome, so it is as true of a party still on
+    // the road as of one that came back.
+    const called = tierNameFor(tierFor(posting, party).band).toLowerCase();
+    return makeFact({
+        day: input.departsOnDay,
+        kind: posting.reason.factKind,
+        scale: posting.reason.scale,
+        summary: `${posting.houseName} sent ${party.length} on `
+            + `${posting.reason.name.toLowerCase()}, `
+            + `${/^[aeiou]/.test(called) ? 'an' : 'a'} ${called} `
+            + `at ordinal ${posting.pitchOrdinal}. `
+            + `The term is ${posting.days} days and they are not back.`,
+        locationId: posting.locationId,
+        factionIds: [posting.houseId],
+        actors: party.map(member => ({
+            id: member.id,
+            name: member.name,
+            role: WENT_AND_IS_NOT_BACK
+        })),
+        visibility: 'regional',
+        truth: 'unresolved',
+        magnitude: 0.2,
+        data: { dueOnDay: input.dueOnDay, atStake: posting.atStake }
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHAT A FAILURE TAKES OFF THE HOUSE THAT SENT THEM
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Which of a house's own columns a stake is stated in.
+ *
+ * A COLUMN RATHER THAN A CASE, for the reason the reason table gives: a stake
+ * added to `AtStakeSchema` does not compile until it has said where a loss of
+ * it lands. What differs between stakes is where the loss goes, never whether a
+ * failure costs anything.
+ */
+export type WhereAStakeLands =
+    /** The people, and nothing else. Taken before anything here runs. */
+    | 'the_party'
+    /** What the house put on the road and does not get back. */
+    | 'the_purse'
+    /** What the house the errand was about thinks of it now. */
+    | 'a_neighbours_regard'
+    /** Ground the house holds, and was sent to hold. */
+    | 'the_ground'
+    /** The terms between this house and the body below it. */
+    | 'an_instrument';
+
+export const WHERE_A_STAKE_LANDS: Record<AtStake, WhereAStakeLands> = {
+    nothing_but_the_party: 'the_party',
+    stones: 'the_purse',
+    standing_with_a_house: 'a_neighbours_regard',
+    the_ground_itself: 'the_ground',
+    the_grant: 'an_instrument'
+};
+
+/**
+ * What a failure with everybody back still costs, as a share of a total loss.
+ *
+ * NOT ZERO, and that is the whole of what the three outcomes buy. A party that
+ * comes back short did not do the thing: the material was not fetched, the
+ * leak was not walked down, the hall was arrived at and embarrassed. A party
+ * that does not come back at all pays the full share. Between the two the cost
+ * is the share of the party that stayed out there, so `did_not_come_back` is
+ * exactly 1 and every degree of coming back short sits under it.
+ *
+ * A quarter because `lostChance` puts most short returns at one or two of five,
+ * and a failure that cost less than the people it cost would be saying the
+ * errand was worth less than the bodies.
+ */
+export const A_FAILURE_WITH_EVERYBODY_BACK = 0.25;
+
+/**
+ * How badly it went, 0..1. Zero on an errand that finished.
+ */
+export function howBadlyItWent(sending: Sending): number {
+    if (sending.outcome === 'finished') return 0;
+    if (sending.party.length === 0) return 1;
+    return Math.max(
+        A_FAILURE_WITH_EVERYBODY_BACK,
+        sending.lost.length / sending.party.length
+    );
+}
+
+/**
+ * The most of a purse one errand can take.
+ *
+ * THE ANTI-SPIRAL, and it is the only reason this constant exists. A house that
+ * fails once and can then do nothing ever again is a worse world than one where
+ * nothing was ever at risk: the failure has to be felt and survived. A quarter
+ * leaves a house that has just lost its best party able to pay its people and
+ * mount another errand, and four consecutive total failures still do not empty
+ * a vault.
+ */
+export const A_SINGLE_ERRAND_CANNOT_TAKE_MORE_THAN = 0.25;
+
+/**
+ * What a botched errand costs in the standing table's own units.
+ *
+ * Under the 0.3 the world already charges for walking onto somebody's ground
+ * and under `RIVAL_STANDING`, deliberately: arriving badly at a house that
+ * agreed to receive you is not the same as taking its vein, and one failure may
+ * not by itself make a rival of somebody who was sitting down with you.
+ */
+export const WHAT_A_FAILURE_COSTS_IN_REGARD = 0.2;
+
+/**
+ * What a grant not collected on loses off its own terms.
+ *
+ * A quarter of the yearly figure, for the reason the row states: it is
+ * renegotiated, not torn up. A body below that was not collected from this year
+ * pays less next year, and says so.
+ */
+export const WHAT_A_LAPSE_TAKES_OFF_THE_TERMS = 0.25;
+
+/**
+ * What one failed sending takes, in the columns the world already reads.
+ *
+ * Deltas out, no mutation, no world: the caller applies them. Every field is
+ * empty or zero except the one the stake lands in, and {@link nothingToTake}
+ * says the stake named something the world holds nothing of for this house.
+ */
+export interface WhatAFailureTakes {
+    landsOn: WhereAStakeLands;
+    /** 0 on an errand that finished. */
+    howBadly: number;
+    /** Stones off the house's own purse. */
+    stones: number;
+    /** Houses whose regard for this one falls. */
+    regardFalls: readonly string[];
+    /** How far, in the standing table's own units. */
+    regardBy: number;
+    /** Ground the house stops holding. */
+    groundGivenUp: readonly string[];
+    /** Bodies below whose terms toward this house are renegotiated. */
+    instrumentsLapsed: readonly string[];
+    /** The share of the stated yearly figure that lapses. */
+    instrumentLapsedBy: number;
+    /**
+     * True where the stake is stated in a form the world holds nothing of for
+     * this house.
+     *
+     * NOT TRANSLATED INTO A GENERIC LOSS. A reason that declares the ground
+     * itself and sends a party onto ground the house does not hold has
+     * declared something nothing can take, and the honest thing is to say so
+     * and count it rather than to charge the purse instead.
+     */
+    nothingToTake: boolean;
+}
+
+/**
+ * What a failed sending takes off the house that opened it.
+ *
+ * ── THE DECLARATIONS WERE THERE AND NOTHING READ THEM ────────────────────
+ *
+ * Every reason in `why-a-house-puts-a-party-on-the-road.ts` states what the
+ * house loses if the party does not come back, and until this existed the only
+ * readers were two board modules using it to LABEL a posting. A house sent
+ * people after a thing, they died, and the house was exactly as it had been -
+ * so a sending had an upside and no downside, which is not a gamble.
+ *
+ * ── AND THE STAKE IS READ, NEVER SUBSTITUTED ─────────────────────────────
+ *
+ * The stake decides which column the loss lands in;
+ * {@link howBadlyItWent} decides how much. Nothing branches on which REASON it
+ * was, which is the same ruling the reason table keeps: what a house is strong
+ * enough for, how long it is gone and whether anybody comes back never consult
+ * the reason either.
+ */
+export function whatAFailedSendingTakes(input: {
+    sending: Sending;
+    /** Ground this house holds today, by location id. */
+    holds: readonly string[];
+    /** What is in its purse today. */
+    purse: number;
+    /** Names on its roll. What went out is measured against it. */
+    onTheRoll: number;
+    /**
+     * The houses this errand was actually with.
+     *
+     * `whichHousesAReasonIsAbout` narrowed to whoever was at the far end of
+     * this particular errand. Empty for every errand that is about nobody, and
+     * that emptiness is a finding rather than a reason to charge something
+     * else.
+     */
+    counterparties: readonly string[];
+}): WhatAFailureTakes {
+    const { sending } = input;
+    const landsOn = WHERE_A_STAKE_LANDS[sending.posting.atStake];
+    const howBadly = howBadlyItWent(sending);
+    const nothing: WhatAFailureTakes = {
+        landsOn,
+        howBadly,
+        stones: 0,
+        regardFalls: [],
+        regardBy: 0,
+        groundGivenUp: [],
+        instrumentsLapsed: [],
+        instrumentLapsedBy: 0,
+        nothingToTake: false
+    };
+    if (howBadly <= 0) return nothing;
+
+    switch (landsOn) {
+        case 'the_party':
+            // Already taken, by `markMissing`: the party IS the loss and the
+            // roll is shorter by exactly the people who did not come back. So
+            // an errand that staked only the party and lost nobody genuinely
+            // cost the house nothing, and says so rather than claiming a loss.
+            return { ...nothing, nothingToTake: sending.lost.length === 0 };
+
+        case 'the_purse': {
+            // WHAT THE HOUSE PUT ON THE ROAD, which is the share of the house
+            // that went. A house outfits the party it can afford: eight hands
+            // out of a roll of sixteen is half the house on the road and half
+            // of what the house could put behind it. Nothing new is priced -
+            // `what-a-house-opens-its-treasury-for.ts` already states what
+            // leaves a treasury as a share of what is in it.
+            const share = input.onTheRoll > 0
+                ? Math.min(1, sending.party.length / input.onTheRoll)
+                : 1;
+            const purse = Math.max(0, Math.floor(input.purse));
+            const stones = Math.floor(Math.min(
+                purse * A_SINGLE_ERRAND_CANNOT_TAKE_MORE_THAN,
+                purse * share * howBadly
+            ));
+            return { ...nothing, stones, nothingToTake: stones <= 0 };
+        }
+
+        case 'a_neighbours_regard':
+            return {
+                ...nothing,
+                regardFalls: input.counterparties,
+                regardBy: WHAT_A_FAILURE_COSTS_IN_REGARD * howBadly,
+                nothingToTake: input.counterparties.length === 0
+            };
+
+        case 'the_ground': {
+            // THE GROUND THE ERRAND WAS ABOUT, and only where the house holds
+            // it. A house that fails to stand to over its own vein stops
+            // holding the vein. A house walked out to a line it never held, or
+            // onto ground between itself and a rival, has no ground in the
+            // errand for the world to take - and that is reported rather than
+            // converted into stones.
+            const where = sending.posting.locationId;
+            const ours = where !== null && input.holds.includes(where);
+            return {
+                ...nothing,
+                groundGivenUp: ours ? [where] : [],
+                nothingToTake: !ours
+            };
+        }
+
+        case 'an_instrument':
+            return {
+                ...nothing,
+                instrumentsLapsed: input.counterparties,
+                instrumentLapsedBy: WHAT_A_LAPSE_TAKES_OFF_THE_TERMS * howBadly,
+                nothingToTake: input.counterparties.length === 0
+            };
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -979,6 +1338,36 @@ export function groundTheseHousesHold(
         .map(l => l.id);
 }
 
+/**
+ * The ground a house actually holds, as against the rooms inside its walls.
+ *
+ * ONE READING, taken by the errand that is about a house's own ground and by
+ * the failure that costs it that ground, so the two cannot disagree about which
+ * places are in play.
+ *
+ * `controllingFactionId` is on a great deal more than ground. A compound's
+ * precincts, halls, chambers and vaults all carry it and all have somebody
+ * standing in them, so the first cut of this sent parties to stand to at their
+ * own infirmary and had a house forfeit its practice yard: of eight pieces of
+ * ground given up across three seeded centuries, seven were rooms inside the
+ * sending house's own walls and the eighth was a city.
+ *
+ * A vein or somewhere that pays, and nothing else. Both are what the errand's
+ * own row is about - something moving toward the settlements under the vein -
+ * and both are read by the yearly economy, so a house that loses one is poorer
+ * in the same column the rest of the world already reads it in.
+ */
+export function theGroundAHouseHolds(
+    locations: readonly LocationRecord[],
+    houseId: string
+): readonly string[] {
+    return locations
+        .filter(l => l.controllingFactionId === houseId
+            && isBelowTheLid(l)
+            && (l.kind === 'vein' || whatATownPaysItsHolder(l) > 0))
+        .map(l => l.id);
+}
+
 export function groundAPartyCanBeSentTo(
     locations: readonly LocationRecord[]
 ): readonly string[] {
@@ -1023,6 +1412,24 @@ export function whereASendingGoes(input: {
      * ground, and the caller already asked it to decide the reason was open.
      */
     theFind?: string | null;
+    /**
+     * Ground this house holds, for the errand that is about it.
+     *
+     * `needs: 'ground'` is open to a house BECAUSE it holds ground, and the one
+     * row on it says so outright: the house that holds the vein is the only
+     * body that can read the ground under the settlements. The party was
+     * nonetheless drawn from every populated place in the world, so a house
+     * standing to over its own vein was walked onto somebody else's district -
+     * which is the same defect `theFind` and `seatsInPlay` above were each
+     * fixed for, and it is what left `atStake: 'the_ground_itself'` with no
+     * ground of the house's in the errand for a failure to take.
+     *
+     * Filtered by the caller with `groundTheseHousesHold`, so a seat and a
+     * place nobody can stand on are out by the same rule that keeps them out of
+     * `elsewhere`. Falls through to `elsewhere` when the house holds none that
+     * qualifies, which is the honest answer and not a hall.
+     */
+    ownGround?: readonly string[];
     /** Picks one. The caller's stream, so no draw anywhere else moves. */
     pick: (count: number) => number;
 }): string | null {
@@ -1030,6 +1437,14 @@ export function whereASendingGoes(input: {
 
     const notHome = (ids: readonly string[]): string[] =>
         ids.filter(id => id !== input.fromLocationId);
+
+    const pickOne = (from: readonly string[]): string | null =>
+        from[Math.min(from.length - 1, Math.max(0, input.pick(from.length)))] ?? null;
+
+    if (input.needs === 'ground') {
+        const ours = notHome(input.ownGround ?? []);
+        if (ours.length > 0) return pickOne(ours);
+    }
 
     // Only the errands where a house RECEIVES you go to a hall.
     const pool = WHERE_A_NEED_SENDS_YOU[input.needs] === 'a_seat'
@@ -1055,5 +1470,5 @@ export function whereASendingGoes(input: {
         ? pool
         : notHome(seatErrand ? (input.groundNearThem ?? []) : input.elsewhere);
     if (chosen.length === 0) return null;
-    return chosen[Math.min(chosen.length - 1, Math.max(0, input.pick(chosen.length)))] ?? null;
+    return pickOne(chosen);
 }

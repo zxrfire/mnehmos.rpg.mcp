@@ -30,25 +30,41 @@ import {
 } from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import {
     ALLIED_STANDING,
+    A_FAILURE_WITH_EVERYBODY_BACK,
+    A_SINGLE_ERRAND_CANNOT_TAKE_MORE_THAN,
     IMPOSSIBLE_TIERS,
     NEED_PREDICATES,
     RIVAL_STANDING,
+    WENT_AND_CAME_BACK,
+    WENT_AND_IS_NOT_BACK,
+    WHAT_A_FAILURE_COSTS_IN_REGARD,
+    WHAT_A_LAPSE_TAKES_OFF_THE_TERMS,
+    WHERE_A_STAKE_LANDS,
+    howBadlyItWent,
     isImpossibleTier,
     lostChance,
     magnitudeOf,
+    newsOfAPartyStillOut,
     newsOfASending,
     notFinishedChance,
     partyOrdinal,
     postingFor,
     reasonsOpenTo,
     resolveSending,
+    theGroundAHouseHolds,
     tierFor,
     tierNameFor,
+    whatAFailedSendingTakes,
+    whenTheErrandHappened,
+    whereASendingGoes,
+    whichHousesAReasonIsAbout,
     whoTheHouseCanSend,
     type Candidate,
-    type HouseAsItStands
+    type HouseAsItStands,
+    type Sending
 } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import {
+    AtStakeSchema,
     SENDING_REASONS,
     TIER_NAMES,
     getSendingReason
@@ -496,4 +512,351 @@ describe('the world actually sends people', () => {
         const live = state.factions.filter(f => f.dissolvedOnDay === null);
         expect(live.some(f => countedHolding(f.resources, 'conv-carriage-earth') > 0)).toBe(true);
     }, 900_000);
+});
+
+// ═════════════════════════════════════════════════════════════════════════
+// WHEN THE ERRAND HAPPENED, AND WHAT A FAILURE TOOK
+// ═════════════════════════════════════════════════════════════════════════
+//
+// Two defects, both structural and both measured on seeded worlds, and they
+// are in one block because they are two halves of the same pass.
+//
+// ── A FACT DATED AFTER THE WORLD'S OWN CLOCK ─────────────────────────────
+//
+// `applyPressure` takes its year index as `yearOfDay(fromDay) + 1`, so the
+// sending line's nominal day - `year*365+175` - is always past the end of a
+// one-year span and `withinSpan` always clamps it to the last day of it. Every
+// party in the world therefore left on the final day of the span and the news
+// of its return was dated after it. Measured on seed `soak-500` at nine
+// horizons - 100, 200, 300 and 497 through 502 years - one to two facts of up
+// to 12,993 were dated past the clock at seven of the nine, worst +150 days,
+// and `driver.test.ts > nothing is incoherent` refuses exactly that. After:
+// zero at all nine.
+//
+// The fix is NOT a clamp. A pass reports on a year, so an errand whose term
+// fits inside the span happened inside it and the party left `term` days
+// before the day being reported on. One whose term does not fit is a party
+// still out, which is a different fact and not a worse date.
+//
+// ── AND `atStake` HAD NO CONSUMER ────────────────────────────────────────
+//
+// Every reason declares what the house loses if the party does not come back.
+// Two board modules read it to LABEL a posting and nothing anywhere made a
+// house lose anything, so a sending had an upside and no downside. Measured
+// over three seeded centuries: 116 failures, and every one of them cost the
+// house that opened it exactly nothing.
+
+describe('an errand is dated inside the span the pass reports on', () => {
+    it('a term that fits means the party left earlier and is back on the day', () => {
+        const when = whenTheErrandHappened({
+            notBefore: 1000, reportedOn: 1365, spanEndsOn: 1365, term: 40
+        });
+        expect(when.departsOnDay).toBe(1325);
+        expect(when.returnsOnDay).toBe(1365);
+        expect(when.stillOut).toBe(false);
+    });
+
+    it('a term longer than the span leaves the party out rather than back', () => {
+        const when = whenTheErrandHappened({
+            notBefore: 1000, reportedOn: 1365, spanEndsOn: 1365, term: 720
+        });
+        // It cannot have left before the span began, so it cannot be back.
+        expect(when.departsOnDay).toBe(1000);
+        expect(when.stillOut).toBe(true);
+    });
+
+    it('a race cannot be backdated to before the door opened', () => {
+        const when = whenTheErrandHappened({
+            notBefore: 1200, reportedOn: 1200, spanEndsOn: 1365, term: 60
+        });
+        expect(when.departsOnDay).toBe(1200);
+        expect(when.returnsOnDay).toBe(1260);
+        expect(when.stillOut).toBe(false);
+    });
+
+    it('and a race whose term outruns the span is still standing in the doorway', () => {
+        const when = whenTheErrandHappened({
+            notBefore: 1300, reportedOn: 1300, spanEndsOn: 1365, term: 120
+        });
+        expect(when.stillOut).toBe(true);
+    });
+
+    it('says a party is out and declines to say what became of them', () => {
+        const reason = getSendingReason('sending-to-a-war')!;
+        const posting = postingFor({
+            reason, house: house({ id: 'sect-a', name: 'Qu Hall' }), pitchOrdinal: 18
+        });
+        const party = roster(12, 12, 11);
+        const fact = newsOfAPartyStillOut({
+            posting, party, departsOnDay: 500, dueOnDay: 500 + reason.days
+        });
+        expect(fact.day).toBe(500);
+        expect(fact.truth).toBe('unresolved');
+        expect(fact.summary).toMatch(/are not back\.$/);
+        // The board's own word for the tier is on every sending row, so a
+        // chronicle read in two centuries says how hard it was.
+        expect(fact.summary).toMatch(/, an? [a-z ]+ at ordinal \d+/);
+        // Nobody reported, so a house learns nothing about the ground off it.
+        expect(fact.actors.every(a => a.role === WENT_AND_IS_NOT_BACK)).toBe(true);
+        expect(fact.actors.some(a => a.role === WENT_AND_CAME_BACK)).toBe(false);
+    });
+});
+
+describe('and the world writes nothing dated after its own clock', () => {
+    // THE RATCHET THAT `driver.test.ts > nothing is incoherent` IS NOT.
+    //
+    // That test asserts exactly this invariant and its claim is right, but it
+    // runs one fixture world at one horizon, and measured as a control arm -
+    // this change's own departure line reverted and nothing else - it comes out
+    // GREEN with the defect in place and GREEN without it. Its world simply
+    // lands no sending in the final slice at 500 years.
+    //
+    // The defect is horizon-dependent by construction, because what is left
+    // incoherent is whatever the LAST slice wrote, so a single horizon proves
+    // nothing. Three short ones on the real catalog go red on the reverted line
+    // and pass on this one.
+    it('at every horizon, not at one', async () => {
+        const catalog = await loadCultivationCatalog();
+        for (const years of [17, 23, 30]) {
+            const { state } = seedWorld({ seed: `dated-inside-${years}`, catalog });
+            const out = advanceWorldYears(state, years).state;
+            const ahead = out.history.facts.filter(f => f.day > out.currentDay);
+            expect({ years, ahead: ahead.map(f => f.summary) })
+                .toEqual({ years, ahead: [] });
+            // And the invariant is not holding because nothing happened.
+            expect(out.history.facts.some(f => / sent \d+ on /.test(f.summary))).toBe(true);
+        }
+    }, 300_000);
+});
+
+describe('what a failure takes off the house that opened the errand', () => {
+    function sending(opts: {
+        reasonId: string; party: number; lost: number; locationId?: string | null;
+        finished?: boolean;
+    }): Sending {
+        const reason = getSendingReason(opts.reasonId)!;
+        const posting = postingFor({
+            reason,
+            house: house({ id: 'sect-a', name: 'Somewhere' }),
+            pitchOrdinal: 30,
+            locationId: opts.locationId ?? null
+        });
+        const party = roster(...new Array(opts.party).fill(10));
+        return {
+            posting,
+            party,
+            tier: tierFor(posting, party),
+            outcome: opts.finished
+                ? 'finished'
+                : opts.lost >= party.length && party.length > 0
+                    ? 'did_not_come_back'
+                    : 'came_back_short',
+            sighted: null,
+            lost: opts.finished ? [] : party.slice(party.length - opts.lost),
+            returnsOnDay: 1000 + posting.days
+        };
+    }
+
+    it('an errand that finished went no way badly at all', () => {
+        expect(howBadlyItWent(sending({
+            reasonId: 'sending-for-materials', party: 5, lost: 0, finished: true
+        }))).toBe(0);
+    });
+
+    it('nobody coming back is the whole of it', () => {
+        expect(howBadlyItWent(sending({
+            reasonId: 'sending-for-materials', party: 5, lost: 5
+        }))).toBe(1);
+    });
+
+    it('coming back whole and unfinished still did not do the thing', () => {
+        expect(howBadlyItWent(sending({
+            reasonId: 'sending-for-materials', party: 5, lost: 0
+        }))).toBe(A_FAILURE_WITH_EVERYBODY_BACK);
+    });
+
+    it('and between the two it is the share that stayed out there', () => {
+        const half = howBadlyItWent(sending({
+            reasonId: 'sending-to-a-war', party: 8, lost: 4
+        }));
+        expect(half).toBeCloseTo(0.5, 5);
+        expect(half).toBeGreaterThan(A_FAILURE_WITH_EVERYBODY_BACK);
+        expect(half).toBeLessThan(1);
+    });
+
+    it('every stake says which of a house own columns a loss of it lands in', () => {
+        // A column and not a case: a stake added to the catalog does not
+        // compile until it has answered this.
+        for (const stake of AtStakeSchema.options) {
+            expect(WHERE_A_STAKE_LANDS[stake]).toBeTruthy();
+        }
+        expect(Object.keys(WHERE_A_STAKE_LANDS).sort())
+            .toEqual([...AtStakeSchema.options].sort());
+    });
+
+    it('a finished errand takes nothing, whatever it staked', () => {
+        for (const reason of SENDING_REASONS) {
+            const took = whatAFailedSendingTakes({
+                sending: sending({ reasonId: reason.id, party: 3, lost: 0, finished: true }),
+                holds: ['loc-a'], purse: 10_000, onTheRoll: 6, counterparties: ['sect-b']
+            });
+            expect(took.stones).toBe(0);
+            expect(took.regardFalls).toEqual([]);
+            expect(took.groundGivenUp).toEqual([]);
+            expect(took.instrumentsLapsed).toEqual([]);
+        }
+    });
+
+    it('stones come off the purse as the share of the house that went out', () => {
+        // An eighth of the house on the road, and none of it back.
+        const took = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-for-materials', party: 5, lost: 5 }),
+            holds: [], purse: 10_000, onTheRoll: 40, counterparties: []
+        });
+        expect(took.landsOn).toBe('the_purse');
+        expect(took.stones).toBe(1_250);
+        expect(took.nothingToTake).toBe(false);
+
+        // The same house, the same purse, and twice as much of it on the road.
+        const more = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-for-materials', party: 10, lost: 10 }),
+            holds: [], purse: 10_000, onTheRoll: 40, counterparties: []
+        });
+        expect(more.stones).toBe(2_500);
+    });
+
+    it('and one errand can never take more than a quarter of it', () => {
+        // The whole house went out and none of it came back, which is the
+        // worst any single errand can be. It is still survivable, which is the
+        // whole reason the cap exists.
+        const took = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-for-materials', party: 8, lost: 8 }),
+            holds: [], purse: 10_000, onTheRoll: 8, counterparties: []
+        });
+        expect(took.stones).toBe(10_000 * A_SINGLE_ERRAND_CANNOT_TAKE_MORE_THAN);
+    });
+
+    it('a regard falls only with the house the errand was actually with', () => {
+        const took = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-to-be-received', party: 5, lost: 5 }),
+            holds: [], purse: 10_000, onTheRoll: 10, counterparties: ['sect-b']
+        });
+        expect(took.regardFalls).toEqual(['sect-b']);
+        expect(took.regardBy).toBeCloseTo(WHAT_A_FAILURE_COSTS_IN_REGARD, 5);
+        // Under what the world already charges for taking somebody's ground,
+        // and under the rung at which somebody becomes a rival.
+        expect(took.regardBy).toBeLessThan(Math.abs(RIVAL_STANDING));
+    });
+
+    it('an escort stakes a house regard and has no house to lose it with', () => {
+        // THE FINDING, and it is reported rather than translated into stones.
+        // `sending-an-escort` needs nothing, so `whichHousesAReasonIsAbout` is
+        // empty for it by construction. Measured over three seeded centuries:
+        // 11 of 11 escort failures took nothing.
+        const escort = getSendingReason('sending-an-escort')!;
+        expect(escort.atStake).toBe('standing_with_a_house');
+        expect(whichHousesAReasonIsAbout(escort.needs, house())).toEqual([]);
+        const took = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-an-escort', party: 4, lost: 4 }),
+            holds: ['loc-a'], purse: 10_000, onTheRoll: 8, counterparties: []
+        });
+        expect(took.nothingToTake).toBe(true);
+        expect(took.stones).toBe(0);
+        expect(took.regardFalls).toEqual([]);
+    });
+
+    it('the ground goes only where the house holds the ground it was sent to', () => {
+        const ours = whatAFailedSendingTakes({
+            sending: sending({
+                reasonId: 'sending-to-stand-to', party: 6, lost: 2, locationId: 'loc-vein'
+            }),
+            holds: ['loc-vein'], purse: 10_000, onTheRoll: 12, counterparties: []
+        });
+        expect(ours.groundGivenUp).toEqual(['loc-vein']);
+        expect(ours.nothingToTake).toBe(false);
+
+        // A war is fought on ground between two houses, so there is nothing of
+        // this house's in the errand for a failure to take. Said, not swapped
+        // for a purse.
+        const between = whatAFailedSendingTakes({
+            sending: sending({
+                reasonId: 'sending-to-a-war', party: 6, lost: 2, locationId: 'loc-somewhere'
+            }),
+            holds: ['loc-vein'], purse: 10_000, onTheRoll: 12, counterparties: []
+        });
+        expect(between.groundGivenUp).toEqual([]);
+        expect(between.nothingToTake).toBe(true);
+        expect(between.stones).toBe(0);
+    });
+
+    it('a grant not collected on is renegotiated rather than torn up', () => {
+        const took = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-to-collect-tribute', party: 3, lost: 3 }),
+            holds: [], purse: 10_000, onTheRoll: 9, counterparties: ['sect-below']
+        });
+        expect(took.instrumentsLapsed).toEqual(['sect-below']);
+        expect(took.instrumentLapsedBy).toBeCloseTo(WHAT_A_LAPSE_TAKES_OFF_THE_TERMS, 5);
+        expect(took.instrumentLapsedBy).toBeLessThan(1);
+    });
+
+    it('an errand that staked only the party and lost nobody says so', () => {
+        const took = whatAFailedSendingTakes({
+            sending: sending({ reasonId: 'sending-to-recruit', party: 2, lost: 0 }),
+            holds: ['loc-a'], purse: 10_000, onTheRoll: 8, counterparties: ['sect-b']
+        });
+        expect(took.landsOn).toBe('the_party');
+        expect(took.nothingToTake).toBe(true);
+    });
+});
+
+describe('the ground a house holds is ground, not the rooms inside its walls', () => {
+    it('a compound halls, precincts and chambers are not ground', () => {
+        // Measured: of eight pieces of ground given up across three seeded
+        // centuries on the first cut, seven were rooms inside the sending
+        // house's own walls - a forecourt, an infirmary, a practice yard.
+        const held = [
+            makeLocation({ id: 'seat', name: 'Seat', kind: 'sect_seat' }),
+            makeLocation({ id: 'hall', name: 'Hall', kind: 'hall' }),
+            makeLocation({ id: 'yard', name: 'Yard', kind: 'precinct' }),
+            makeLocation({ id: 'cell', name: 'Cell', kind: 'chamber' }),
+            makeLocation({ id: 'vein', name: 'Vein', kind: 'vein' }),
+            makeLocation({
+                id: 'town', name: 'Town', kind: 'settlement',
+                data: { populationWeight: 20 }
+            })
+        ].map(l => ({ ...l, controllingFactionId: 'sect-a' }));
+        expect([...theGroundAHouseHolds(held, 'sect-a')].sort()).toEqual(['town', 'vein']);
+        expect(theGroundAHouseHolds(held, 'sect-b')).toEqual([]);
+    });
+});
+
+describe('an errand about a house own ground ends on it', () => {
+    it('goes to the house ground rather than to a place drawn off the map', () => {
+        // `needs: 'ground'` is open to a house BECAUSE it holds ground, and the
+        // row says so: something is moving toward the settlements under the
+        // vein. It was drawn from every populated place in the world instead,
+        // which left `the_ground_itself` with no ground of the house's in the
+        // errand for a failure to take.
+        const where = whereASendingGoes({
+            needs: 'ground',
+            fromLocationId: 'seat',
+            seatsInPlay: [],
+            ownGround: ['our-vein'],
+            elsewhere: ['somebody-elses-town', 'another-town'],
+            pick: () => 0
+        });
+        expect(where).toBe('our-vein');
+    });
+
+    it('and falls back to the map when the house holds none that qualifies', () => {
+        const where = whereASendingGoes({
+            needs: 'ground',
+            fromLocationId: 'seat',
+            seatsInPlay: [],
+            ownGround: [],
+            elsewhere: ['somebody-elses-town'],
+            pick: () => 0
+        });
+        expect(where).toBe('somebody-elses-town');
+    });
 });

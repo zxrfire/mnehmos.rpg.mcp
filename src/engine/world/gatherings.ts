@@ -55,6 +55,9 @@ import {
     type WhatTheyStoodUpFor
 } from './nobody-is-invincible.js';
 import { settleNpcDeath } from './time.js';
+import {
+    whatAContestIsWorthToThePeopleInIt
+} from './what-a-contest-is-worth-to-the-people-in-it.js';
 import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
 import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
 
@@ -1041,25 +1044,11 @@ function runCompetition(
     ties: GatheringTie[],
     placings: GatheringPlacing[]
 ): { summary: string; selectedUpwardId: string | null } {
-    // ONE BOARD PER REALM. Ranking a Qi Condensation disciple against a Core
-    // Formation one measures which of them is further along, which everybody
-    // in the room already knew. Bracketed, a first place is a statement about
-    // the people who could plausibly have beaten you - and a house comes away
-    // with a Qi Condensation winner AND a Foundation winner, which is what a
-    // sect competition in this genre produces.
-    const scored: { npc: NpcRecord; score: number }[] = [];
-    for (const [, board] of boardsFor(attendees)) {
-        const ranked = board.map(npc => {
-            const power = assessPower(combatantOf(npc, state), { ambient: 'normal' }).total;
-            const showing = 1 + (rng.next() - 0.5) * 2 * SHOWING_SPREAD;
-            return { npc, score: power * showing };
-        }).sort((a, b) => b.score - a.score || (a.npc.id < b.npc.id ? -1 : 1));
+    const scored = rankAField(state, attendees, rng, placings);
 
-        for (let i = 0; i < ranked.length; i++) {
-            placings.push(place(ranked[i]!.npc, i + 1, ranked[i]!.score));
-        }
-        scored.push(...ranked);
-    }
+    // AND EVERYBODY WHO STOOD UP IS BETTER FOR IT, which is what a house holds
+    // one of these for. See `what-a-contest-is-worth-to-the-people-in-it.ts`.
+    creditWhatTheyLearned(state, placings, day);
 
     // Prestige, which is what the placing was for. Positive at the top of the
     // board, negative at the bottom, and the size of it scales with the field -
@@ -1138,6 +1127,84 @@ function runCompetition(
                 : ''),
         selectedUpwardId
     };
+}
+
+/**
+ * Rank a field, one board per realm, and push the placings.
+ *
+ * ONE BOARD PER REALM. Ranking a Qi Condensation disciple against a Core
+ * Formation one measures which of them is further along, which everybody in the
+ * room already knew. Bracketed, a first place is a statement about the people
+ * who could plausibly have beaten you - and a house comes away with a Qi
+ * Condensation winner AND a Foundation winner, which is what a sect competition
+ * in this genre produces.
+ *
+ * EXPORTED BECAUSE A CONCLAVE IS THE SAME QUESTION. A house deciding which of
+ * its own goes to a door it holds three places at is deciding who among its own
+ * people is best, and a second "who gets to go" beside this one would be a
+ * second ranking that disagreed with it. See
+ * `who-goes-to-a-door-and-who-is-passed-over.ts`.
+ */
+export function rankAField(
+    state: WorldState,
+    entrants: readonly NpcRecord[],
+    rng: CultivationRNG,
+    placings: GatheringPlacing[]
+): { npc: NpcRecord; score: number }[] {
+    const scored: { npc: NpcRecord; score: number }[] = [];
+    for (const [, board] of boardsFor(entrants)) {
+        const ranked = board.map(npc => {
+            const power = assessPower(combatantOf(npc, state), { ambient: 'normal' }).total;
+            const showing = 1 + (rng.next() - 0.5) * 2 * SHOWING_SPREAD;
+            return { npc, score: power * showing };
+        }).sort((a, b) => b.score - a.score || (a.npc.id < b.npc.id ? -1 : 1));
+
+        for (let i = 0; i < ranked.length; i++) {
+            placings.push(place(ranked[i]!.npc, i + 1, ranked[i]!.score));
+        }
+        scored.push(...ranked);
+    }
+    return scored;
+}
+
+/**
+ * Move everybody who stood on a board forward by what the board taught them.
+ *
+ * The clock is `accumulatingSinceDay`, moved BACK, which is the one
+ * `readyToStrike` reads. NOT floored at their own last advance, and that is the
+ * decision rather than an oversight: `setRealm` sets the two clocks equal, so a
+ * floor there would pay nothing at all to anybody who had advanced recently.
+ * Being further along a rung than the days you have stood on it is what being
+ * trained means.
+ */
+export function creditWhatTheyLearned(
+    state: WorldState,
+    placings: readonly GatheringPlacing[],
+    day: number
+): void {
+    const fieldSize = new Map<RealmKey, number>();
+    for (const p of placings) fieldSize.set(p.bracket, (fieldSize.get(p.bracket) ?? 0) + 1);
+
+    const taken = whatAContestIsWorthToThePeopleInIt(placings.map(p => ({
+        npcId: p.npcId,
+        place: p.place,
+        fieldSize: fieldSize.get(p.bracket) ?? 1
+    })));
+
+    for (const row of taken) {
+        if (row.days <= 0) continue;
+        const at = indexById(state.npcs, row.npcId);
+        if (at < 0) continue;
+        const npc = state.npcs[at]!;
+        const since = npc.cultivation.accumulatingSinceDay || npc.cultivation.lastAdvancedOnDay;
+        const moved = Math.max(0, since - row.days);
+        if (moved >= since) continue;
+        state.npcs[at] = {
+            ...npc,
+            cultivation: { ...npc.cultivation, accumulatingSinceDay: moved },
+            updatedOnDay: day
+        };
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
