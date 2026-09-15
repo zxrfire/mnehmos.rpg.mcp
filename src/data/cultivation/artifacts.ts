@@ -180,7 +180,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerId: 'court-kiln',
         ownerName: 'The Kiln Court',
         possessorId: 'court-kiln',
-        knownOwnershipBy: ['court-kiln', 'apex-earth-vein-tower', 'sect-kiln-wardens'],
+        knownOwnershipBy: ['court-kiln', 'apex-earth-vein-tower', 'sect-deeproot-court'],
         description:
             'The lower half of a refining vessel, set into the datum at the world\'s root and not liftable by anybody. What it takes is cultivators, body and soul, and what it returns is a blade - the same blade, every time, which is why anybody holding one can be asked where they got it.',
         tags: ['immortal-made', 'containment', 'half-of:the-root-cauldron', 'makes-a-blade', 'never-carried', 'known-to-exist']
@@ -191,10 +191,10 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         kind: 'artifact',
         significance: 'legendary',
         power: 44,
-        ownerId: 'sect-kiln-wardens',
+        ownerId: 'sect-deeproot-court',
         ownerName: 'Deeproot Court',
-        possessorId: 'sect-kiln-wardens',
-        knownOwnershipBy: ['sect-kiln-wardens', 'apex-myriad-course-hall', 'court-kiln'],
+        possessorId: 'sect-deeproot-court',
+        knownOwnershipBy: ['sect-deeproot-court', 'apex-myriad-course-hall', 'court-kiln'],
         data: { lastFiredYearsAgo: 890 },
         description:
             'The upper half of the same vessel, fed the same way and returning a shield instead of a blade. A lid is the part of a cauldron that comes off, which is the whole of why this is the half that walked and the other one did not. It has fired once since it walked, eight hundred and ninety years ago, and its rest is over.',
@@ -358,9 +358,9 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         kind: 'artifact',
         significance: 'significant',
         power: 18,
-        ownerId: 'sect-kiln-wardens',
+        ownerId: 'sect-deeproot-court',
         ownerName: 'The Kiln Court',
-        possessorId: 'sect-kiln-wardens',
+        possessorId: 'sect-deeproot-court',
         description:
             'The instrument the Gate Warden carries, which closes a working and holds it closed against the pressure of the vein. It is a tool that happens to be dangerous rather than a weapon that happens to be useful, and the Court has never described it as either.',
         tags: ['forged', 'office-issued']
@@ -374,7 +374,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerId: 'apex-earth-vein-tower',
         ownerName: 'The Earth Vein Tower',
         possessorId: 'apex-earth-vein-tower',
-        knownOwnershipBy: ['apex-earth-vein-tower', 'court-kiln', 'sect-kiln-wardens'],
+        knownOwnershipBy: ['apex-earth-vein-tower', 'court-kiln', 'sect-deeproot-court'],
         description:
             'One blade, with no shield anywhere that matches it, which places it exactly: made after the split, by a half working alone. It is the only object of its kind in the world and it is the only figure in the Survey storehouse that has gone up in nine hundred years. It has never been issued to anybody.',
         tags: ['from:the-root-cauldron', 'derangement-bearing', 'one-exists', 'made-after-the-split', 'never-issued']
@@ -388,7 +388,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerId: 'apex-myriad-course-hall',
         ownerName: 'The Myriad Course Hall',
         possessorId: 'apex-myriad-course-hall',
-        knownOwnershipBy: ['apex-myriad-course-hall', 'sect-kiln-wardens', 'court-kiln'],
+        knownOwnershipBy: ['apex-myriad-course-hall', 'sect-deeproot-court', 'court-kiln'],
         description:
             'The other half\'s output, and the same story: one shield made over and over, identical enough that two of them side by side cannot be told apart by anybody who has handled either. Nine are in the seat chamber. The Hall publishes a decreasing count of its sealed cases and has never published this one.',
         tags: ['from:the-root-cauldron', 'derangement-bearing', 'nine-exist', 'never-issued']

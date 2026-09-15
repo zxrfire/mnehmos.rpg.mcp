@@ -156,11 +156,11 @@ describe('faction relationships - coverage', () => {
 });
 
 describe('faction relationships - the two bodies nobody joins', () => {
-    const ROOT_SILL = 'sect-kiln-wardens';
+    const DEEPROOT = 'sect-deeproot-court';
     const KILN = 'court-kiln';
 
     it('the Deeproot Court and the Kiln Court are related to each other at all', () => {
-        const tie = relationshipBetween(ROOT_SILL, KILN);
+        const tie = relationshipBetween(DEEPROOT, KILN);
         expect(tie, 'the pair the whole section was asked for is missing').toBeDefined();
         expect(tie?.stance).toBe('alongside');
         expect(tie?.kind).toBe('two_bodies_nobody_joins');
@@ -168,8 +168,8 @@ describe('faction relationships - the two bodies nobody joins', () => {
     });
 
     it('the two of them feel differently about the same tie', () => {
-        const ours = relationshipBetween(ROOT_SILL, KILN);
-        const theirs = relationshipBetween(KILN, ROOT_SILL);
+        const ours = relationshipBetween(DEEPROOT, KILN);
+        const theirs = relationshipBetween(KILN, DEEPROOT);
         expect(ours?.warmth).not.toBe(theirs?.warmth);
         // One carries a named grievance and the other does not, which is the
         // whole asymmetry: the half that walked has a complaint with a cause
@@ -183,11 +183,11 @@ describe('faction relationships - the two bodies nobody joins', () => {
             ...COURTS.filter(c => c.posting).map(c => c.id),
             ...Object.values(FACTION_PARENTAGE).filter(p => p.posting).map(p => p.factionId)
         ].sort();
-        expect(postings).toEqual([KILN, ROOT_SILL].sort());
+        expect(postings).toEqual([KILN, DEEPROOT].sort());
     });
 
     it('the Deeproot Court answers one apex and is severed from the other, and both agree', () => {
-        const long = relationshipBetween(ROOT_SILL, 'apex-myriad-course-hall');
+        const long = relationshipBetween(DEEPROOT, 'apex-myriad-course-hall');
         expect(long?.stance).toBe('above');
         expect(long?.kind).toBe('apex_and_posting');
         // Warm upward against a patron that is only civil back, which is the
@@ -195,17 +195,17 @@ describe('faction relationships - the two bodies nobody joins', () => {
         expect(long?.warmth).toBe('warm');
         expect(long?.theirWarmth).toBe('civil');
 
-        const survey = relationshipBetween(ROOT_SILL, 'apex-earth-vein-tower');
+        const survey = relationshipBetween(DEEPROOT, 'apex-earth-vein-tower');
         expect(survey?.kind).toBe('severed_patronage');
         expect(survey?.grievance).not.toBeNull();
     });
 
     it('the current patron in the tie is the one the parentage table names', () => {
-        expect(FACTION_PARENTAGE[ROOT_SILL]?.parentFactionId).toBe('apex-myriad-course-hall');
+        expect(FACTION_PARENTAGE[DEEPROOT]?.parentFactionId).toBe('apex-myriad-course-hall');
         // Reported under each body's canonical id, which for a body with an
         // apex row and a sect row is the sect one. Both of these acquired a
         // sect row when they stopped being powers with nobody on their rolls.
-        const above = relsFor(ROOT_SILL).filter(r => r.stance === 'above').map(r => r.otherId);
+        const above = relsFor(DEEPROOT).filter(r => r.stance === 'above').map(r => r.otherId);
         for (const id of ['apex-myriad-course-hall', 'apex-earth-vein-tower']) {
             const aliases = idsForFaction(id);
             expect(above.some(o => aliases.includes(o)), `${id} is not above the Third Sill`).toBe(true);

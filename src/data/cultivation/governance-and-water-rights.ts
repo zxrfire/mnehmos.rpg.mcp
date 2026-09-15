@@ -1580,7 +1580,7 @@ export const COURTS: readonly Court[] = [
         // one of the names, and the one that kept the ground kept the older.
         // They are two institutions now and have been since, with no
         // correspondence in either direction. What the other half kept is on
-        // its own entry in `FACTION_PARENTAGE['sect-kiln-wardens']`.
+        // its own entry in `FACTION_PARENTAGE['sect-deeproot-court']`.
         name: 'The Kiln Court',
         apexId: 'apex-earth-vein-tower',
         powerOrdinal: 37,
@@ -1593,7 +1593,7 @@ export const COURTS: readonly Court[] = [
         // Wardens is this array being empty.
         grantsInPrefectureIds: [],
         // Null on purpose, and this is the change. It used to point at
-        // `sect-kiln-wardens`, because they were the same people. They are two
+        // `sect-deeproot-court`, because they were the same people. They are two
         // bodies now and the join would be a lie.
         embodiedByFactionId: null,
         leaderTitle: 'Keeper of the Kiln',
@@ -2371,8 +2371,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
 
     // ── the courts themselves ─────────────────────────────────────────
-    'sect-kiln-wardens': {
-        factionId: 'sect-kiln-wardens',
+    'sect-deeproot-court': {
+        factionId: 'sect-deeproot-court',
         governance: 'federated',
         relation: 'court',
         // The half that walked, under the Survey's own name for the posting,

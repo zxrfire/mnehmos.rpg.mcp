@@ -220,7 +220,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // calling itself by its sibling's name in its own id and in its own
         // officesNote. That is the schism written down wrong, not the schism,
         // and it is exactly the mistake this assertion exists to catch.
-        const walked = getSect('sect-kiln-wardens')!;
+        const walked = getSect('sect-deeproot-court')!;
         expect(walked.name, 'the half that walked keeps the Survey\'s word for the posting')
             .toBe('Deeproot Court');
         expect(kiln.name).not.toBe(walked.name);
@@ -229,7 +229,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // other, the bodies have been swapped.
         expect(kiln.apexId, 'the half on the datum stayed with the Survey').toBe('apex-earth-vein-tower');
         expect(
-            getParentage('sect-kiln-wardens')?.parentFactionId,
+            getParentage('sect-deeproot-court')?.parentFactionId,
             'the half that walked went to the Myriad Course Hall'
         ).toBe('apex-myriad-course-hall');
         // AND NEITHER OF THEM ARGUES ABOUT IT ANY MORE. Each body used to carry
@@ -244,7 +244,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // facts the two accounts were carrying between them.
         expect((kiln as { lineageDispute?: unknown }).lineageDispute,
             'the naming dispute is back on the Kiln').toBeUndefined();
-        const walkedParentage = getParentage('sect-kiln-wardens')!;
+        const walkedParentage = getParentage('sect-deeproot-court')!;
         expect((walkedParentage as { lineageDispute?: unknown }).lineageDispute,
             'the naming dispute is back on the Deeproot Court').toBeUndefined();
         expect(kiln.officesNote, 'the standing half no longer says what it kept')
@@ -285,12 +285,13 @@ describe('a faction wants something, and somebody is in the way', () => {
         // them: a temple with no stated grievance, a grove that holds a
         // grievance to be a claim, staff with no interests of their own, and
         // four people with nothing left to be afraid of.
-        // Alphabetical, because the read above sorts. The grove moved to the
-        // front when it was renamed; the four are the same four.
+        // Alphabetical, because the read above sorts. Two of them have moved
+        // position under a rename - the grove, and then the Deeproot Court when
+        // its id stopped saying Kiln; the four are the same four.
         expect(silent).toEqual([
             'sect-ancient-bough-grove',
+            'sect-deeproot-court',
             'sect-hollow-court',
-            'sect-kiln-wardens',
             'sect-sweptground-temple'
         ]);
     });
@@ -453,7 +454,7 @@ describe('the dao houses take nobody at a gate', () => {
             expect(house.recruits, `${house.id} would vanish from every admission path`)
                 .toBe(true);
         }
-        expect(intakeRouteOf('sect-kiln-wardens')).toBe('closed');
+        expect(intakeRouteOf('sect-deeproot-court')).toBe('closed');
         expect(intakeRouteOf('sect-azure-cloud-pavilion')).toBe('open');
         expect(intakeRouteOf('nobody')).toBeUndefined();
     });
@@ -516,7 +517,7 @@ describe('a name in the pyramid says which tier it is', () => {
         // walked; the body still on the datum is the Kiln Court under the Deep
         // Survey. Nothing else about it changed - still closed, still teaching
         // nothing - which is why it is still filed here rather than as a sect.
-        const walked = getSect('sect-kiln-wardens')!;
+        const walked = getSect('sect-deeproot-court')!;
         expect(walked.name).toBe('Deeproot Court');
         expect(walked.recruits).toBe(false);
         expect(walked.teaches.length).toBe(0);

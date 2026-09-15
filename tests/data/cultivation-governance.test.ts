@@ -361,10 +361,10 @@ describe('above the map', () => {
         const onTheDatum = getCourt('court-kiln')!;
         expect(onTheDatum.name).toBe('The Kiln Court');
         expect(onTheDatum.embodiedByFactionId).toBeNull();
-        expect(getParentage('sect-kiln-wardens')!.relation).toBe('court');
-        expect(getParentage('sect-kiln-wardens')!.parentFactionId).toBe('apex-myriad-course-hall');
+        expect(getParentage('sect-deeproot-court')!.relation).toBe('court');
+        expect(getParentage('sect-deeproot-court')!.parentFactionId).toBe('apex-myriad-course-hall');
         // The Wardens' oddities in the sect catalog are what the reveal explains.
-        expect(getSect('sect-kiln-wardens')!.recruits).toBe(false);
+        expect(getSect('sect-deeproot-court')!.recruits).toBe(false);
     });
 });
 

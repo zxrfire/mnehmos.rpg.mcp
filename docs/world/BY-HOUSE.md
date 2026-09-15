@@ -173,7 +173,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Deeproot Court
 
-`sect-kiln-wardens` · its entry: [`sects.ts:1505`](../../src/data/cultivation/sects.ts)
+`sect-deeproot-court` · its entry: [`sects.ts:1505`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 14 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3
   …and 7 more files.

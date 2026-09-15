@@ -211,21 +211,21 @@ function main(): void {
     // ── 5. the schism, if it ever stopped being paperwork ────────────────
     rule('5. THE KILN SCHISM - the two halves of one house, if it came to it');
     header();
-    const kilnCourt = COURTS.find(c => c.id === 'court-root-sill')!;
-    const rootSill = SECTS.find(s => s.id === 'sect-kiln-wardens')!;
-    const rootThreat = sectThreat(rootSill.id)!;
+    const kilnCourt = COURTS.find(c => c.id === 'court-kiln')!;
+    const deeproot = SECTS.find(s => s.id === 'sect-deeproot-court')!;
+    const deeprootThreat = sectThreat(deeproot.id)!;
     report(
-        `${kilnCourt.name} (${kilnCourt.powerOrdinal}) v ${rootSill.name} acting (${rootThreat.acting})`,
-        fight([one('kiln', { ordinal: kilnCourt.powerOrdinal })], [one('root', { ordinal: rootThreat.acting })], 'schism-acting')
+        `${kilnCourt.name} (${kilnCourt.powerOrdinal}) v ${deeproot.name} acting (${deeprootThreat.acting})`,
+        fight([one('kiln', { ordinal: kilnCourt.powerOrdinal })], [one('deeproot', { ordinal: deeprootThreat.acting })], 'schism-acting')
     );
     report(
-        `${kilnCourt.name} (${kilnCourt.powerOrdinal}) v ${rootSill.name} with its ${rootThreat.ceiling} woken`,
-        fight([one('kiln', { ordinal: kilnCourt.powerOrdinal })], [one('root-sealed', { ordinal: rootThreat.ceiling })], 'schism-sealed')
+        `${kilnCourt.name} (${kilnCourt.powerOrdinal}) v ${deeproot.name} with its ${deeprootThreat.ceiling} woken`,
+        fight([one('kiln', { ordinal: kilnCourt.powerOrdinal })], [one('deeproot-sealed', { ordinal: deeprootThreat.ceiling })], 'schism-sealed')
     );
     const thirdSill = COURTS.find(c => c.id === 'court-third-sill')!;
     report(
-        `${thirdSill.name} (${thirdSill.powerOrdinal}) v ${rootSill.name} acting (${rootThreat.acting})`,
-        fight([one('third', { ordinal: thirdSill.powerOrdinal })], [one('root', { ordinal: rootThreat.acting })], 'schism-courts')
+        `${thirdSill.name} (${thirdSill.powerOrdinal}) v ${deeproot.name} acting (${deeprootThreat.acting})`,
+        fight([one('third', { ordinal: thirdSill.powerOrdinal })], [one('deeproot', { ordinal: deeprootThreat.acting })], 'schism-courts')
     );
 
     // ── 6. what a wide art is worth, at every height ─────────────────────

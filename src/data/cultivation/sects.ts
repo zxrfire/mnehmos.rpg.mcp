@@ -48,7 +48,7 @@
  *
  *   FOUR BODIES DO NOT HAVE ONE, AND THIS IS DELIBERATE. Do not "complete"
  *   them. `sect-six-li-patrol`, `sect-ancient-bough-grove` and
- *   `sect-kiln-wardens` are wardens' offices rather than sects with elders - a
+ *   `sect-deeproot-court` are wardens' offices rather than sects with elders - a
  *   Grand Road Warden is padding on a body whose whole ladder is four posts on
  *   a road. `sect-hollow-court` runs `Outer Disciple / Inner Disciple / Elder /
  *   Seat`, which is a deliberate peculiarity that has survived every other
@@ -959,7 +959,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // cannot walk to. The door is ordinary; finding it is not.
     //
     // The posting bodies are the opposite case and stay exactly as they are.
-    // `sect-kiln-wardens` teaches nothing and takes nobody because it is not a
+    // `sect-deeproot-court` teaches nothing and takes nobody because it is not a
     // school - it is a frontier posting other houses second people into.
     {
         id: 'sect-earth-vein-tower',
@@ -1502,7 +1502,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         }
     },
     {
-        id: 'sect-kiln-wardens',
+        id: 'sect-deeproot-court',
         // Renamed. This is the half that left the datum, and it took the
         // Earth Vein Tower's own administrative name for the posting with it - see
         // THE_KILN_SCHISM. The body still standing on the ground is the Kiln
@@ -3281,7 +3281,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: ['mutated_ice'],
         requirement: 'A mutated ice root, verified at the gate. No other applicant is admitted, ever.'
     },
-    'sect-kiln-wardens': {
+    'sect-deeproot-court': {
         minOrdinal: 21,
         preferredRoots: [],
         requirement: 'The Wardens do not take applicants. People who arrive at the gate are turned around, once, politely.'

@@ -140,7 +140,7 @@ describe('the mechanic sits correctly beside the two things it touches', () => {
         // Arrival at the two postings is by appointment, so there is nothing for
         // a word to skip. A favour aimed at one is aimed at the wrong
         // instrument, and the right one is a nomination.
-        for (const id of ['court-kiln', 'sect-kiln-wardens']) {
+        for (const id of ['court-kiln', 'sect-deeproot-court']) {
             const f = FAVOUR_STANCES.find(x => x.factionId === id);
             expect(f, `${id} has no stated position on a favour`).toBeTruthy();
             expect(f!.answer).toBe('no bar to skip, because there is no door');

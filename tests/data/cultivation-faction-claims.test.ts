@@ -143,12 +143,12 @@ describe('every cross-reference resolves', () => {
         // and anything about the ground means the Kiln while anything about the
         // third arterial and its grants means the Third Sill.
         const third = COURTS.find(c => c.id === 'court-third-sill')!;
-        const rootSill = getSect('sect-kiln-wardens')!;
+        const deeproot = getSect('sect-deeproot-court')!;
         const kiln = COURTS.find(c => c.id === 'court-kiln')!;
 
         expect(third.apexId, 'the Third Sill is an ordinary Myriad Course Hall court').toBe('apex-myriad-course-hall');
         expect(kiln.apexId, 'the Kiln stayed with the Survey').toBe('apex-earth-vein-tower');
-        expect(getParentage(rootSill.id)?.parentFactionId, 'the Deeproot Court walked to the Myriad Course Hall')
+        expect(getParentage(deeproot.id)?.parentFactionId, 'the Deeproot Court walked to the Myriad Course Hall')
             .toBe('apex-myriad-course-hall');
 
         // Only the two halves of the split posting are postings.
@@ -157,7 +157,7 @@ describe('every cross-reference resolves', () => {
             ...Object.entries(FACTION_PARENTAGE).filter(([, p]) => p.posting).map(([id]) => id)
         ].sort();
         expect(postings, 'a body that is not one of the two is being staffed by appointment')
-            .toEqual(['court-kiln', 'sect-kiln-wardens']);
+            .toEqual(['court-kiln', 'sect-deeproot-court']);
 
         // And the Third Sill carries no defection material, because it never
         // moved. The only administration that ever changed patrons is the

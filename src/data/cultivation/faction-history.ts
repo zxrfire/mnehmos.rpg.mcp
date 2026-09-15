@@ -167,11 +167,11 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         yearsAgo: 900,
         provinceId: 'province-low-fall',
         what: 'The Earth Vein Tower reposted the court on the datum. Most of the Wardens declined the reposting and left, and the two halves each kept one of the names the body had been carrying for nine hundred years.',
-        parties: ['court-kiln', 'sect-kiln-wardens', 'apex-earth-vein-tower', 'apex-myriad-course-hall'],
+        parties: ['court-kiln', 'sect-deeproot-court', 'apex-earth-vein-tower', 'apex-myriad-course-hall'],
         accounts: {
             'court-kiln':
                 'The ground did not move. Everything the Kiln is - the datum, the nodes, the rota, the perimeter - was here before the reposting and was here after it, and the only thing that walked out of the gate was a roll of names and an administrative word. The Court states this without heat and has never said anything else.',
-            'sect-kiln-wardens':
+            'sect-deeproot-court':
                 'Nobody was asked, about a thing every one of them had wanted. That is the fact the Deeproot Court puts first and the one the Kiln never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
             'apex-earth-vein-tower':
                 'A routine reposting of a court, executed correctly, on a schedule. The Survey has never characterised it otherwise in any document, has never referred to the departed body in correspondence, and lists the Kiln Court as its court on the datum. Whether that is composure or the absence of an answer is not something the Survey has been asked in a room where it would have to reply.',
@@ -695,8 +695,8 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         sharedEvents: ['event-the-two-raids']
     },
     // ── the datum, and the two bodies on it ───────────────────────────
-    'sect-kiln-wardens': {
-        factionId: 'sect-kiln-wardens',
+    'sect-deeproot-court': {
+        factionId: 'sect-deeproot-court',
         origin:
             'It was a posting rather than a house for nine hundred years, and the province mistook staff for an institution the entire time. What is standing four provinces away now is the roll, most of the Wardens, and the founding posting order naming the first four - and the Earth Vein Tower\'s own administrative word for a posting it no longer holds.',
         whyTheGapIs:

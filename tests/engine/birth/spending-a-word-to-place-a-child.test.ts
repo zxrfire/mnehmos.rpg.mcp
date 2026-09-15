@@ -80,16 +80,16 @@ describe('a child at ordinal zero, and the tally the catalog owns', () => {
     });
 
     it('names both postings, and only one of them is a sect', () => {
-        // The correction. There are two bodies with no door at all - the Root
-        // Sill Court and the Kiln Court - but they live in different catalogs,
-        // so a tally that reports two postings against the sect catalog is off
-        // by one. `sect-kiln-wardens` IS the Deeproot Court, despite the id.
-        expect(howAChildAtZeroGetsIn('sect-kiln-wardens')).toBe('no door to skip');
+        // The correction. There are two bodies with no door at all - the
+        // Deeproot Court and the Kiln Court - but they live in different
+        // catalogs, so a tally that reports two postings against the sect
+        // catalog is off by one.
+        expect(howAChildAtZeroGetsIn('sect-deeproot-court')).toBe('no door to skip');
         expect(howAChildAtZeroGetsIn('court-kiln')).toBe('no door to skip');
         expect(
             whoCanHoldAChildAtZero().noDoorToSkip,
             'the Kiln Court is in COURTS, not in SECTS, so it is not in this list'
-        ).toEqual(['sect-kiln-wardens']);
+        ).toEqual(['sect-deeproot-court']);
         expect(SECTS.some(s => s.id === 'court-kiln')).toBe(false);
     });
 });
@@ -158,7 +158,7 @@ describe('spending one on your own child', () => {
     });
 
     it('refuses where there is no door, because a word is the wrong instrument', () => {
-        expect(spendAWord({ ...ask, houseId: 'sect-kiln-wardens' })).toBe('no door to skip');
+        expect(spendAWord({ ...ask, houseId: 'sect-deeproot-court' })).toBe('no door to skip');
         expect(spendAWord({ ...ask, houseId: 'court-kiln' })).toBe('no door to skip');
     });
 

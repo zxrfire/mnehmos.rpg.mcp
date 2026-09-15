@@ -207,13 +207,13 @@ const cases: Case[] = [
     {
         label: 'both sealed keys (44 + 42)',
         attackers: [body('kiln', 'the Kiln ancestor', 44), body('frost', 'the Frostmirror ancestor', 42)],
-        suborned: ['sect-kiln-wardens', 'sect-frostmirror-court'],
+        suborned: ['sect-deeproot-court', 'sect-frostmirror-court'],
         note: 'every relevant seal in the region, spent at once'
     },
     {
         label: 'the keys, courts suborned',
         attackers: [body('kiln', 'the Kiln ancestor', 44), body('frost', 'the Frostmirror ancestor', 42)],
-        suborned: ['sect-kiln-wardens', 'sect-frostmirror-court', ...SURVEY_COURT_IDS],
+        suborned: ['sect-deeproot-court', 'sect-frostmirror-court', ...SURVEY_COURT_IDS],
         note: 'same force; the courts do not come'
     },
     {
@@ -223,7 +223,7 @@ const cases: Case[] = [
             body('frost', 'the Frostmirror ancestor', 42),
             ...surveyCourts.map(c => body(c.id, `${c.name}, turned`, c.powerOrdinal))
         ],
-        suborned: ['sect-kiln-wardens', 'sect-frostmirror-court', ...SURVEY_COURT_IDS],
+        suborned: ['sect-deeproot-court', 'sect-frostmirror-court', ...SURVEY_COURT_IDS],
         note: 'the whole point: they arrive on the wrong side'
     },
     {
@@ -235,7 +235,7 @@ const cases: Case[] = [
             ...surveyCourts.map(c => body(c.id, `${c.name}, turned`, c.powerOrdinal))
         ],
         suborned: [
-            'sect-kiln-wardens', 'sect-frostmirror-court', 'sect-storm-tyrant-court',
+            'sect-deeproot-court', 'sect-frostmirror-court', 'sect-storm-tyrant-court',
             ...SURVEY_COURT_IDS
         ],
         note: 'the mega conspiracy: everything, and nobody left to call'

@@ -90,7 +90,7 @@ describe('a house admits at three floors, not one', () => {
         // stop recruiting and start negotiating has nobody who would sweep its
         // yards. Both confirm it in their own rank-0 title.
         const withoutOne = SECTS.filter(s => !houseFloorsOf(s.id)!.hasMenialTier);
-        expect(withoutOne.map(s => s.id).sort()).toEqual(['sect-hollow-court', 'sect-kiln-wardens']);
+        expect(withoutOne.map(s => s.id).sort()).toEqual(['sect-deeproot-court', 'sect-hollow-court']);
         for (const sect of withoutOne) {
             expect(servantBarOf(sect.id), sect.id).toBe(sect.admissionOrdinal);
             expect(sect.ranks[0]).toMatch(/Disciple|Warden/);

@@ -105,7 +105,7 @@ export const THE_LOW_FALL: Region = {
         'sect-ancient-bough-grove',
         'sect-cinnabar-crucible-sect',
         'sect-ashen-forge-clan',
-        'sect-kiln-wardens',
+        'sect-deeproot-court',
         'sect-hollow-court',
         'sect-crimson-abyss-fortress',
         'sect-nine-abyss-flame-sect',

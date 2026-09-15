@@ -39,7 +39,7 @@ describe('what two houses both have a hand on', () => {
         // catalog states outright connects them. What connects them is the
         // event both are parties to, and the contention has to fall out of it
         // rather than being asserted beside it.
-        const over = contentionBetween('sect-kiln-wardens', 'court-kiln');
+        const over = contentionBetween('sect-deeproot-court', 'court-kiln');
 
         expect(over.length).toBeGreaterThan(0);
         expect(over.map(c => c.on)).toContain('event:event-the-reposting');
@@ -47,8 +47,8 @@ describe('what two houses both have a hand on', () => {
     });
 
     it('reads the same from either end', () => {
-        const forward = contentionBetween('sect-kiln-wardens', 'court-kiln').map(c => c.on).sort();
-        const back = contentionBetween('court-kiln', 'sect-kiln-wardens').map(c => c.on).sort();
+        const forward = contentionBetween('sect-deeproot-court', 'court-kiln').map(c => c.on).sort();
+        const back = contentionBetween('court-kiln', 'sect-deeproot-court').map(c => c.on).sort();
         expect(back).toEqual(forward);
     });
 

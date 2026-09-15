@@ -1252,7 +1252,7 @@ describe('cultivation MCP tool surface', () => {
 
         it('refuses the power that takes no applicants at all', async () => {
             await newRun();
-            const sectId = 'sect-kiln-wardens';
+            const sectId = 'sect-deeproot-court';
             expect(getSect(sectId)!.recruits).toBe(false);
             const result = await sect({ action: 'join', sectId });
             expect(result.error).toBe('sect_does_not_recruit');

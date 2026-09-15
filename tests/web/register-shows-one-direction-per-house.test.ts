@@ -43,14 +43,14 @@ describe('the register shows one direction per house', () => {
         // The data has to be able to say it before the page can show it. If
         // this ever goes symmetric, the display rule above is unenforceable and
         // the defect is in the catalog rather than in the renderer.
-        const outward = relationshipBetween('sect-kiln-wardens', 'court-kiln');
+        const outward = relationshipBetween('sect-deeproot-court', 'court-kiln');
         expect(outward).toBeDefined();
         expect(outward!.warmth).not.toEqual(outward!.theirWarmth);
     });
 
     it('prints the house\'s own warmth on its entry and not the reciprocal', () => {
-        const outward = relationshipBetween('sect-kiln-wardens', 'court-kiln')!;
-        const block = entry('faction-sect-kiln-wardens');
+        const outward = relationshipBetween('sect-deeproot-court', 'court-kiln')!;
+        const block = entry('faction-sect-deeproot-court');
 
         // The chip for the other body carries this house's word.
         expect(block).toContain(`warm-${outward.warmth}`);
@@ -65,15 +65,15 @@ describe('the register shows one direction per house', () => {
     it('answers who it is close to, at odds with and contesting, not only the ladder', () => {
         // The gap this pass opened with: the summary said "3 level with it, 4
         // under it" and nothing about enemies, competitors or friends.
-        const block = entry('faction-sect-kiln-wardens');
+        const block = entry('faction-sect-deeproot-court');
         expect(block).toMatch(/at odds with \d|close to \d|contesting with \d/);
     });
 
     it('marks the founding the Kiln pair contest, on both of their entries', () => {
         // Derived from the event both are parties to, so it must appear from
         // either end or the derivation is direction-dependent.
-        expect(contentionBetween('sect-kiln-wardens', 'court-kiln').length).toBeGreaterThan(0);
-        for (const anchor of ['faction-sect-kiln-wardens', 'ties-sect-kiln-wardens']) {
+        expect(contentionBetween('sect-deeproot-court', 'court-kiln').length).toBeGreaterThan(0);
+        for (const anchor of ['faction-sect-deeproot-court', 'ties-sect-deeproot-court']) {
             if (HTML.indexOf(`id="${anchor}"`) < 0) continue;
             expect(entry(anchor)).toMatch(/contesting/);
         }

@@ -117,7 +117,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     // THE TWO BODIES NOBODY JOINS
     {
         id: 'rel-the-root-sill-and-the-kiln',
-        aId: 'sect-kiln-wardens',
+        aId: 'sect-deeproot-court',
         bId: 'court-kiln',
         aStandsTo: 'alongside',
         kind: 'two_bodies_nobody_joins',
@@ -146,7 +146,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-root-sill-and-the-survey-that-reposted-it',
         aId: 'apex-earth-vein-tower',
-        bId: 'sect-kiln-wardens',
+        bId: 'sect-deeproot-court',
         aStandsTo: 'above',
         kind: 'severed_patronage',
         what:
@@ -174,7 +174,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-root-sill-and-the-schedule-that-took-it-in',
         aId: 'apex-myriad-course-hall',
-        bId: 'sect-kiln-wardens',
+        bId: 'sect-deeproot-court',
         aStandsTo: 'above',
         kind: 'apex_and_posting',
         what:

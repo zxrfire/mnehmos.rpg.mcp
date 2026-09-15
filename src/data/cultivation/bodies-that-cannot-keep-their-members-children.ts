@@ -119,7 +119,7 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
             'A decade or three of somebody else raising them, and the certainty that the child will not come back either. It is a smaller price than the Court pays and it is paid in public, which some find harder: everybody knows exactly what was given up and can watch the account being settled.'
     },
     {
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         reason: 'no intake at all',
         whyItCannotKeepThem:
             'The same absence of a door, moved four provinces and re-signed, and the same reason a favour cannot reach it: a word moves a bar, and there is no bar. Nobody joins the Deeproot Court either; appointment is by the Myriad Course Hall, or by a sect under it or friendly to it, and a child cannot be appointed. What is different is only who signs, and the admission figure on its own row is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one.',

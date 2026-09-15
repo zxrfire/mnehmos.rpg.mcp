@@ -135,10 +135,10 @@ describe('how strong a house actually is', () => {
         const sent = [{
             personId: 'somebody',
             realmOrdinal: 30,
-            postingFactionId: 'sect-kiln-wardens',
+            postingFactionId: 'sect-deeproot-court',
             sendingFactionId: 'sect-cold-sword-sect'
         }];
-        const atThePosting = whoCountsTowardThisHouse('sect-kiln-wardens', sent)
+        const atThePosting = whoCountsTowardThisHouse('sect-deeproot-court', sent)
             .find(b => b.id === 'somebody')!;
         const atHome = whoCountsTowardThisHouse('sect-cold-sword-sect', sent)
             .find(b => b.id === 'somebody')!;

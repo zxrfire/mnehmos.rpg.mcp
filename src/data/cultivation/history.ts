@@ -791,7 +791,7 @@ export const LID_NON_POSITIONS = [
             'It is a stance rather than a theory, and it is coherent, which is why it recruits. Nothing in the four theories contradicts it and none of the four houses has an answer to it that does not amount to preferring to know.'
     },
     {
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         position:
             'The Kiln Wardens do not answer. They have been asked, in writing, by the Immovable Mountain Temple, twice in nine hundred years, and both letters were received and neither was replied to. They keep a datum of their own, they date documents in a five-figure year in a reckoning nobody else uses, and they hold every node they have lit since before the province had a name.',
         whyItMatters:
@@ -906,7 +906,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         ageId: 'age-open-gate',
         legibility:
             'Not a script so much as a date format, and it is the only living example of anything of the sort. The Kiln Wardens mark documents with a five-figure year in a reckoning nobody else uses and have never explained the epoch. Two attempts have been made to convert it against known events and the two answers are about four thousand years apart.',
-        readBy: ['sect-kiln-wardens'],
+        readBy: ['sect-deeproot-court'],
         whyItIsLikeThat:
             'It is not dead and never was. It is in continuous use by a body that does not answer questions, which produces the same practical result as a dead script and is far more unsettling, because the only people who could explain it are alive and standing right there.',
         whatIsWrittenInIt: [
@@ -1119,7 +1119,7 @@ export const CALENDARS: readonly Calendar[] = [
         id: 'calendar-warden-year',
         name: 'The Warden year',
         regionId: null,
-        keptBy: ['sect-kiln-wardens'],
+        keptBy: ['sect-deeproot-court'],
         countsFrom:
             'Nothing anybody can identify. The Kiln Wardens mark their eleven known outside documents with a five-figure year and have never stated the epoch, been asked in a way they answered, or shown any sign of considering the question worth a reply.',
         presentYear: null,

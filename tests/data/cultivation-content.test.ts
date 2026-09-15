@@ -1133,7 +1133,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
             'sect-lantern-hall': 'righteous',
             'sect-the-severed': 'demonic',
             'sect-hollow-court': 'neutral',
-            'sect-kiln-wardens': 'neutral'
+            'sect-deeproot-court': 'neutral'
         };
         for (const [id, alignment] of Object.entries(powers)) {
             const sect = getSect(id);
@@ -1142,7 +1142,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
             expect(sect!.description.length).toBeGreaterThan(120);
         }
         // The one that famously takes no applicants at all.
-        expect(getSect('sect-kiln-wardens')!.recruits).toBe(false);
+        expect(getSect('sect-deeproot-court')!.recruits).toBe(false);
         // The Court does recruit, and the bar is the point: Void Tribulation,
         // with evidence the last realm is reachable. Nothing below that door
         // exists, which is why it reads to the province as not recruiting.
@@ -1151,7 +1151,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
         expect(court.admissionOrdinal).toBe(29);
         // And they are excluded from anything a player could join.
         const joinable = findAdmissibleSects(44);
-        expect(joinable.neutral).not.toContain('sect-kiln-wardens');
+        expect(joinable.neutral).not.toContain('sect-deeproot-court');
     });
 
     it('has the sects squatting in compounds they did not build', () => {
@@ -1215,7 +1215,7 @@ describe('qi, veins and the Late Age', () => {
             /vein/i.test(`${s.description} ${s.territory} ${s.compound.remnant}`));
         expect(veinAware.length, 'a sect is old because it holds a vein').toBeGreaterThanOrEqual(5);
         // The Kiln Wardens guard the deep vein at the world's root.
-        expect(getSect('sect-kiln-wardens')!.description).toMatch(/vein/i);
+        expect(getSect('sect-deeproot-court')!.description).toMatch(/vein/i);
     });
 
     it('puts contested qi in the encounter table', () => {

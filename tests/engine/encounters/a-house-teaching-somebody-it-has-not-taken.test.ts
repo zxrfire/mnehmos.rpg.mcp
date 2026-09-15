@@ -54,8 +54,8 @@ describe('which houses take guests at all', () => {
         //
         // What survives is the floor: a body that teaches NOTHING cannot be
         // holding anything back, and no reading of the catalog can change that.
-        expect(shelfTopOf('sect-kiln-wardens')).toBeNull();
-        expect(takesGuests('sect-kiln-wardens')).toBe(false);
+        expect(shelfTopOf('sect-deeproot-court')).toBeNull();
+        expect(takesGuests('sect-deeproot-court')).toBe(false);
 
         // And the rule is still derived from depth rather than declared: the
         // Hall opened its door because a number moved, and nobody edited it.

@@ -554,7 +554,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'Refuses every applicant in the world except the one root in a hundred that its curriculum will not kill, and leaves its own floors unswept as doctrine.'
     },
-    'sect-kiln-wardens': {
+    'sect-deeproot-court': {
         knownFor: {
             outside: 'The gate. Wardens who answer in numbers, turn you around politely, and are frightening in a way nobody can articulate afterwards.',
             actuallyGoodAt: 'Formation work. Every node they hold is lit, which no other institution in the world can say, and the network under that ground is the only complete one anybody has.',
@@ -987,7 +987,7 @@ export interface HighRealmProvenance {
  */
 export const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
     'sect-hollow-court',
-    'sect-kiln-wardens'
+    'sect-deeproot-court'
 ]);
 
 export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {

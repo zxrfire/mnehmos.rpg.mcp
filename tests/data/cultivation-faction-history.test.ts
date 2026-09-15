@@ -199,12 +199,12 @@ describe('the two disputed claimants to one lineage', () => {
         const e = sharedEvent('event-the-reposting');
         expect(e, 'the reposting is not in the catalog').toBeTruthy();
         expect(e!.parties).toContain('court-kiln');
-        expect(e!.parties).toContain('sect-kiln-wardens');
-        expect(otherPartiesTo(e!, 'court-kiln')).toContain('sect-kiln-wardens');
-        expect(otherPartiesTo(e!, 'sect-kiln-wardens')).toContain('court-kiln');
+        expect(e!.parties).toContain('sect-deeproot-court');
+        expect(otherPartiesTo(e!, 'court-kiln')).toContain('sect-deeproot-court');
+        expect(otherPartiesTo(e!, 'sect-deeproot-court')).toContain('court-kiln');
 
         // And the accounts differ, which is the whole value of holding two.
-        expect(e!.accounts['court-kiln']).not.toBe(e!.accounts['sect-kiln-wardens']);
+        expect(e!.accounts['court-kiln']).not.toBe(e!.accounts['sect-deeproot-court']);
     });
 
     it('reaches the walking half through the faction catalog and the standing half through the court catalog', () => {
@@ -212,8 +212,8 @@ describe('the two disputed claimants to one lineage', () => {
         // is exactly why the account belongs to the body rather than to the
         // table. A lookup that only worked for one of them would make the
         // dispute unreadable from one side.
-        expect(historyOf('sect-kiln-wardens')).toBeTruthy();
+        expect(historyOf('sect-deeproot-court')).toBeTruthy();
         expect(getCourt('court-kiln'), 'the standing half is not a court').toBeTruthy();
-        expect(getSect('sect-kiln-wardens'), 'the walking half is not a faction').toBeTruthy();
+        expect(getSect('sect-deeproot-court'), 'the walking half is not a faction').toBeTruthy();
     });
 });

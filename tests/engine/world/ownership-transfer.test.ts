@@ -33,9 +33,9 @@ function theirs(): ObjectRecord {
         kind: 'artifact',
         significance: 'significant',
         power: 18,
-        ownerId: 'sect-kiln-wardens',
+        ownerId: 'sect-deeproot-court',
         ownerName: 'The Kiln Court',
-        possessorId: 'sect-kiln-wardens'
+        possessorId: 'sect-deeproot-court'
     }) as ObjectRecord;
 }
 
@@ -88,7 +88,7 @@ describe('the three routes, and the fourth answer that is most of the world', ()
             by: { id: 'sect-storm-tyrant-court', name: 'Storm Tyrant Court' },
             onDay: 400,
             source: 'the Kiln war',
-            acknowledgedBy: ['sect-kiln-wardens']
+            acknowledgedBy: ['sect-deeproot-court']
         });
 
         expect(took.ownerId).toBe('sect-storm-tyrant-court');
@@ -99,7 +99,7 @@ describe('the three routes, and the fourth answer that is most of the world', ()
         expect(claim.strength).toBe(1);
         // *"Everyone else acknowledges"* is the load-bearing half, and this is
         // the field it lives in.
-        expect(claim.acknowledgedByIds).toContain('sect-kiln-wardens');
+        expect(claim.acknowledgedByIds).toContain('sect-deeproot-court');
     });
 
     it('leaves a thief a possessor, however long they keep it', () => {
@@ -116,7 +116,7 @@ describe('the three routes, and the fourth answer that is most of the world', ()
         expect(object.possessorId).toBe('npc-thief');
         // The whole thread. The Kiln Court still owns it, which is what makes
         // it findable and what makes carrying it dangerous.
-        expect(object.ownerId).toBe('sect-kiln-wardens');
+        expect(object.ownerId).toBe('sect-deeproot-court');
         expect(object.ownerName).toBe('The Kiln Court');
         expect(reading.nobody).toBe(false);
 

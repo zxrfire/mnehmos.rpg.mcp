@@ -109,7 +109,7 @@ describe('the narrow gate: a practice that says its own name', () => {
         // "Wardens carry paint and a brush at all times" opens the sentence and
         // identifies nobody. Three separate factions open a practice this way,
         // and gating them would cost the player the material for nothing.
-        for (const factionId of ['sect-six-li-patrol', 'sect-kiln-wardens', 'house-immovable-mountain']) {
+        for (const factionId of ['sect-six-li-patrol', 'sect-deeproot-court', 'house-immovable-mountain']) {
             expect(practiceOf(factionId)!.namesFaction, factionId).toBe(false);
         }
     });

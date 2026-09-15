@@ -1580,7 +1580,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-kiln-warden-water',
         name: 'The Warden who gave him the water',
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         rankIndex: 0,
         rank: 'Warden',
         realmOrdinal: 21,
@@ -1597,7 +1597,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-kiln-warden-against',
         name: 'The Warden who was against it',
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         rankIndex: 0,
         rank: 'Warden',
         realmOrdinal: 22,
@@ -1614,7 +1614,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-kiln-second-warden-instalments',
         name: 'The Second Warden who keeps the instalments',
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         rankIndex: 1,
         rank: 'Second Warden',
         realmOrdinal: 25,
@@ -1631,7 +1631,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-kiln-gate-warden',
         name: 'The Gate Warden who gives the distance',
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         rankIndex: 2,
         rank: 'Gate Warden',
         realmOrdinal: 26,
@@ -3380,7 +3380,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-kiln-keeper',
         name: 'The Keeper who holds the count',
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         rankIndex: 3,
         rank: 'Keeper of the Kiln',
         realmOrdinal: 36,

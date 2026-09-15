@@ -923,7 +923,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         discoverableTraces: [],
         standingNote: 'Two names on a board in the yard, both of them people the terraces sent away, and no tablets, no hall and no claim of any kind. The province reads this as a house with no history and the Sect does not correct it, on the grounds that it is true.'
     },
-    'sect-kiln-wardens': {
+    'sect-deeproot-court': {
         ancestors: [
             { name: 'The First Keeper of the Kiln', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, afterCrossing: null, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' },
             { name: 'The First Warden', fate: 'dormant', realmOrdinal: 37, yearsAgo: 3_100, afterCrossing: null, rememberedFor: 'Head of the house the Kiln and the Deeproot were before either was a posting. Took the position at the world-heart and has not left it, which is why the watches are shaped the way they are and why every node the Wardens hold is lit. The Wardens state this in numbers when asked and have never elaborated.' }

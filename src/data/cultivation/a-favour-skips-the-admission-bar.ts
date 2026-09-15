@@ -203,7 +203,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
             'The Keeper reports one figure a year upward and answers nothing downward, including requests. In nine hundred years the Kiln has asked nobody for anything, which the province reads as austerity and which is more simply a body with no interest in the world outside its perimeter.'
     },
     {
-        factionId: 'sect-kiln-wardens',
+        factionId: 'sect-deeproot-court',
         answer: 'no bar to skip, because there is no door',
         why: 'The same absence, four provinces away and signed by the other apex. Appointment is by the Myriad Course Hall, or by a sect under it or friendly to it, and its admission figure is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one. A Deeproot Court heir is a shape the arrangement cannot produce, and the reason is not that the bar is high: it is that the Court has no members in the sense the word usually carries.',
         andWhatItTakes: null,
