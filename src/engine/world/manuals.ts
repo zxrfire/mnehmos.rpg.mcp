@@ -894,18 +894,36 @@ export function masteryBarFor(techniqueId: string): number | null {
     return REALM_TIERS[Math.min(at + 1, REALM_TIERS.length - 1)].ordinalStart;
 }
 
+/**
+ * A COPY IS NOT A TRANSCRIPTION, AND THE GATE IS COMPREHENSION.
+ *
+ * Ruled by the design owner: *"someone who doesn't understand it, even when
+ * copying the words, there is no dao, so no manual."* Somebody who writes out
+ * every character of a road they have not walked has produced paper. There is
+ * no failed-copy object in this engine and there should not be one - what the
+ * rule implies, and all it implies, is that such a person cannot produce a
+ * copy at all.
+ *
+ * A clause in front of the bar returned true for anything a stall carries, on
+ * the reasoning that what makes a copy hard to come by is scarcity rather than
+ * penmanship. That is the transcription view, and it is the one the ruling
+ * refuses. MEASURED on the shipped catalog: 35 of 149 capped manuals could be
+ * written out by somebody standing at ordinal 0, the deepest of them capping at
+ * 33 and opening at 30 - a rung its writer could not have opened the book at,
+ * let alone finished it from.
+ *
+ * Market stock does not move with it, which was that clause's real concern.
+ * What a stall carries is `isSoldAtAStall` and the price is
+ * `stallPriceCash`; neither asks this. All that changes is WHO can produce the
+ * copy, and a primer's bar is 13 - the town's copyists are people who finished
+ * the primer, which is who they should have been.
+ */
 export function couldWriteOutACopy(holder: HolderOfAnArt, techniqueId: string): boolean {
-    const t = getTechnique(techniqueId);
-    if (!t) return false;
-    // A book on every stall is a book anybody can write out. What makes a copy
-    // hard to come by is scarcity, not the penmanship.
-    if (stopsSomewhere(t) && isCommonlyHeld(techniqueId)) return true;
+    // Null for an art no catalog carries, which answers the missing-row case too.
     const bar = masteryBarFor(techniqueId);
     if (bar === null) return false;
-    // The rule `HolderOfAnArt.masteryOfIt` already states: the figure where the
-    // caller holds a row that says, and the ordinal INSTEAD where it does not.
-    // A clause in front of this applied it only to arts that did not raise a
-    // rank, which contradicted that doc and has no meaning now.
+    // `HolderOfAnArt.masteryOfIt`: the figure where the caller holds a row that
+    // says, and the ordinal INSTEAD where it does not.
     if (holder.masteryOfIt != null) return holder.masteryOfIt >= FULLY_MASTERED;
     return holder.realmOrdinal >= bar;
 }
@@ -922,15 +940,68 @@ export function canReproduce(npc: NpcRecord, techniqueId: string): boolean {
 // A MASTER WRITES IT OUT FOR THEIR STUDENTS
 
 /**
- * Years of work, on average, before a master has written out an art the house does
- * not otherwise hold.
+ * What a copy costs the one person who can make it, in years of their life.
+ *
+ * Authored rather than invented. `HIGH_REALM_PROVENANCE` has the Earth Vein
+ * Tower's Assessor of the Deep costing a second copy of the house's only road -
+ * `arterial-sounding-canon`, which caps at the deepest rung any book in the
+ * catalog reaches - at *"somewhat over nine years of his own hours, during
+ * which the road would be unavailable"*. He costed it twice and declined twice,
+ * which is a house too thin to spare its teacher and NOT a claim about who may
+ * copy what.
+ *
+ * NOT `monthsToCopy`, and the two must not be merged. That one prices a
+ * copyist's LABOUR - what a stall charges for the paper, at a wage - and it is
+ * flat because the paper is flat. This one is the work of putting down what you
+ * understood, and it is the whole difference between a primer and a canon. They
+ * agree at the bottom of the ladder on purpose: a book a stall carries is two
+ * months either way.
  */
-export const YEARS_TO_WRITE_THE_FIRST_COPY = 60;
+export const YEARS_TO_COPY_THE_DEEPEST_ROAD = 9;
 
 /**
- * And for a spare, once the house already holds one.
+ * The floor: a book that asks nothing of its writer beyond having finished it.
+ * Two months, which is what `monthsToCopy` charges for the same book.
  */
-export const YEARS_TO_WRITE_A_SPARE = 250;
+export const YEARS_TO_COPY_A_PRIMER = 1 / 6;
+
+/** The deepest rung any book in the catalog reaches, so the anchor cannot drift. */
+const DEEPEST_ROAD_CAP = TECHNIQUES.reduce(
+    (top, t) => (t.cap == null ? top : Math.max(top, Number(t.cap))),
+    COMMON_MANUAL_CAP
+);
+
+/**
+ * How long this book takes the one person who can write it out.
+ *
+ * Linear in how far the road reaches past what a stall carries, anchored at the
+ * two ends the world already states: two months for a primer, nine years for
+ * the deepest road in the catalog. An inner-shelf road lands near four and a
+ * half years and an elders' road near seven, which is the shape the shelf bands
+ * already imply - `copiesOf` gives a house one apex copy and a dozen primers
+ * for the same reason.
+ */
+export function yearsToWriteOutACopy(techniqueId: string): number | null {
+    const bar = masteryBarFor(techniqueId);
+    if (bar === null) return null;
+    const t = getTechnique(techniqueId);
+    const cap = t?.cap == null ? bar : Number(t.cap);
+    const reach = (cap - COMMON_MANUAL_CAP) / Math.max(1, DEEPEST_ROAD_CAP - COMMON_MANUAL_CAP);
+    return Math.max(
+        YEARS_TO_COPY_A_PRIMER,
+        YEARS_TO_COPY_THE_DEEPEST_ROAD * Math.min(1, reach)
+    );
+}
+
+/**
+ * How much longer a house waits for a spare than for a book it has none of.
+ *
+ * The urgency is different and the work is not: it is the same book and the
+ * same hand. Was two absolute figures - 60 years for the first copy and 250 for
+ * a spare - which made a village primer and an apex canon cost the same decade
+ * and told nobody why either number was that number.
+ */
+export const A_SPARE_IS_PUT_OFF_THIS_MUCH = 4;
 
 /**
  * Past this many copies a house is not short of a book, it is hoarding paper.
@@ -1004,12 +1075,20 @@ export function applyManualCopying(
         };
 
         for (const master of people) {
+            // ONE MASTER, ONE DESK. The span below is years of this person's
+            // life, so a master holding six roads cannot be at six of them: the
+            // arts they could write out are gathered, the one the house is
+            // shortest of is the one they sit down to, and everything else
+            // waits. This loop used to roll once per art, which handed a
+            // six-art elder six independent chances a year and made the span a
+            // decoration - the years were charged to nobody and nothing was
+            // given up to spend them.
+            let sitting: { techniqueId: string; at: number | undefined; have: number } | null = null;
+            let worst = -1;
             for (const techniqueId of master.cultivation.techniqueIds) {
                 if (!canReproduce(master, techniqueId)) continue;
-                const key = `${faction.id}|${techniqueId}`;
-                const at = holdingAt.get(key);
-                const holding = at === undefined ? null : state.objects[at];
-                const have = holding === null ? 0 : copyCount(holding);
+                const at = holdingAt.get(`${faction.id}|${techniqueId}`);
+                const have = at === undefined ? 0 : copyCount(state.objects[at]);
 
                 // A shortage is a fact about the house, not a target: how many
                 // people could be taught this and are not holding it. No
@@ -1020,11 +1099,28 @@ export function applyManualCopying(
                 if (have > 0 && (waiting === 0 || have >= Math.min(waiting, MOST_COPIES_WORTH_KEEPING))) {
                     continue;
                 }
+                // A book the house has none of comes first however few are
+                // waiting: one copy is the difference between a road the house
+                // holds and a road it does not.
+                const need = (have === 0 ? MOST_COPIES_WORTH_KEEPING : 0) + waiting;
+                if (sitting === null || need > worst
+                    || (need === worst && techniqueId.localeCompare(sitting.techniqueId) < 0)) {
+                    worst = need;
+                    sitting = { techniqueId, at, have };
+                }
+            }
+            if (sitting === null) continue;
 
+            // The one book they are at this year.
+            {
+                const { techniqueId, at, have } = sitting;
+                const key = `${faction.id}|${techniqueId}`;
+                const holding = at === undefined ? null : state.objects[at];
+
+                const span = yearsToWriteOutACopy(techniqueId);
+                if (span === null) continue;
                 const rng = forStream(state.seed, 'write-out-a-copy', master.id, techniqueId, year);
-                const years = have === 0
-                    ? YEARS_TO_WRITE_THE_FIRST_COPY
-                    : YEARS_TO_WRITE_A_SPARE;
+                const years = have === 0 ? span : span * A_SPARE_IS_PUT_OFF_THIS_MUCH;
                 if (!rng.chance(1 / years)) continue;
 
                 if (holding === null || at === undefined) {

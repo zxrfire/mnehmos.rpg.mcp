@@ -158,9 +158,26 @@ describe('copying takes having mastered it, which is a fact about the holder', (
         )).toBe(true);
     });
 
-    it('leaves a gathering primer copyable by everybody holding one', () => {
+    /**
+     * WHAT THIS USED TO ASSERT, AND WHY IT MOVED. It read "leaves a gathering
+     * primer copyable by everybody holding one", on the reasoning that what
+     * makes a copy hard to come by is scarcity rather than penmanship.
+     *
+     * The design owner has since ruled on the copy rule directly: *"someone who
+     * doesn't understand it, even when copying the words, there is no dao, so
+     * no manual."* Scarcity is what makes a copy hard to GET HOLD OF, and that
+     * question is `isSoldAtAStall` and `stallPriceCash`, neither of which asks
+     * this. What a stall carries has not moved; who can produce the copy has.
+     *
+     * MEASURED before the change: 35 of 149 capped manuals could be written out
+     * by somebody standing at ordinal 0, the deepest capping at 33 and opening
+     * at 30 - a rung its writer could not have opened the book at.
+     */
+    it('leaves a gathering primer copyable by whoever took it to the end', () => {
         const primer = TECHNIQUES.find(t => stopsSomewhere(t) && Number(t.cap) <= 13)!;
-        expect(couldWriteOutACopy({ realmOrdinal: 0 }, primer.id)).toBe(true);
+        const bar = masteryBarFor(primer.id)!;
+        expect(couldWriteOutACopy({ realmOrdinal: 0 }, primer.id)).toBe(false);
+        expect(couldWriteOutACopy({ realmOrdinal: bar }, primer.id)).toBe(true);
     });
 
     /**

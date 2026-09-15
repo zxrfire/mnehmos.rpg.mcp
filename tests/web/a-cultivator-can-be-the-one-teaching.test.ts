@@ -160,30 +160,25 @@ describe('a cultivator carrying nothing', () => {
 });
 
 describe('a cultivator holding an art at part mastery', () => {
-    it('may still pass on a book off a stall, because scarcity is what is hard', async () => {
-        // WHAT THIS USED TO ASSERT, AND WHY IT MOVED. It read "is refused, and
-        // the refusal names the parts", and it held that a master at zero
-        // mastery of the Swallow-Skimming Step could not pass it on.
+    it('is refused, and the refusal names the parts', async () => {
+        // THIS MOVED TWICE, AND IT IS BACK WHERE IT STARTED. For a while it
+        // read "may still pass on a book off a stall, because scarcity is what
+        // is hard": `couldWriteOutACopy` opened with a clause returning true
+        // for anything a stall carries, and the Step - cap 13, taught by four
+        // houses, eight spirit stones at a counter - was caught by it.
         //
-        // `couldWriteOutACopy` opens with "a book on every stall is a book
-        // anybody can write out", gated on the art having a cap. Only
-        // cultivation manuals had one, so that opening line never fired for a
-        // movement art and the mastery bar answered instead. Every technique
-        // carries its practitioner up a few rungs since the two kinds
-        // collapsed into one, so the Step - cap 13, taught by four houses,
-        // eight spirit stones at a stall - is now caught by the line that was
-        // always written about exactly this case. What makes a copy hard to
-        // come by is scarcity, not penmanship, and nothing is scarce about it.
-        //
-        // The mastery bar is not gone. It is what answers for an art no stall
-        // carries, which is the sibling test below.
+        // The design owner has since ruled the other way, on copying and so on
+        // teaching: *"someone who doesn't understand it, even when copying the
+        // words, there is no dao, so no manual."* Scarcity is what makes a copy
+        // hard to GET HOLD OF; it is not what makes somebody able to produce
+        // one. A teacher at nothing parts in a hundred has nothing to put in.
+        // The clause is gone and the mastery bar answers for every art.
         const at = await holdingIt(0);
         expect(at.mastery, 'the played route no longer puts the art on the sheet').toBe(0);
 
         const turn = await at.game.act('I teach her what I know');
         expect(gotTheBlankLook(turn)).toBe(false);
-        expect(everythingSaid(turn)).toContain(AN_ART_A_BEGINNER_CAN_HOLD);
-        expect(everythingSaid(turn).toLowerCase()).not.toMatch(/parts in a hundred/);
+        expect(everythingSaid(turn).toLowerCase()).toMatch(/parts in a hundred/);
     });
 });
 
