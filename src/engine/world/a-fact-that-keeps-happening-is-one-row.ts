@@ -135,9 +135,18 @@ export function recurrenceKeyOf(fact: PendingFact): string {
 //
 // Held beside the ledger rather than on it. A ledger round-trips through the
 // repo and through `cloneWorld`, and a Map hung off the record would either be
-// serialised - which it must not be - or silently lost. A WeakMap keyed by the
-// ledger is invisible to both, and rebuilds itself from the rows on first use
-// after a load or a clone.
+// serialised - which it must not be - or silently lost. A WeakMap is invisible
+// to both, and rebuilds itself from the rows on first use after a load or a
+// clone.
+//
+// KEYED ON THE ROWS, NOT ON THE LEDGER THAT HOLDS THEM. Everything ordinary
+// appends into `ledger.facts` in place, but `theWorldForgetsTheMortalDead`
+// REPLACES the array with rebuilt rows under the same ledger object. Keyed on
+// the ledger, the index survived that with every entry pointing at a row that
+// is no longer in the ledger, and the length check only noticed while the array
+// was still shorter - a shrink and a year of appends cancel out, and then it
+// never noticed at all. Keyed on the array, a replacement is a new key and the
+// index is rebuilt by construction.
 // ─────────────────────────────────────────────────────────────────────────
 
 interface LedgerIndex {
@@ -146,7 +155,7 @@ interface LedgerIndex {
     indexedUpTo: number;
 }
 
-const INDEXES = new WeakMap<HistoryLedger, LedgerIndex>();
+const INDEXES = new WeakMap<readonly HistoricalFact[], LedgerIndex>();
 
 /**
  * The index for this ledger, caught up to whatever is currently in it.
@@ -158,10 +167,10 @@ const INDEXES = new WeakMap<HistoryLedger, LedgerIndex>();
  * must never be in.
  */
 function indexFor(ledger: HistoryLedger): LedgerIndex {
-    let index = INDEXES.get(ledger);
+    let index = INDEXES.get(ledger.facts);
     if (!index || index.indexedUpTo > ledger.facts.length) {
         index = { byKey: new Map(), indexedUpTo: 0 };
-        INDEXES.set(ledger, index);
+        INDEXES.set(ledger.facts, index);
     }
     for (let at = index.indexedUpTo; at < ledger.facts.length; at++) {
         const fact = ledger.facts[at];
@@ -191,7 +200,7 @@ export function rowThisRecurs(ledger: HistoryLedger, pending: PendingFact): Hist
  * to keep consistent and the first lookup will read the whole thing anyway.
  */
 export function noteRowInsertedAt(ledger: HistoryLedger, row: HistoricalFact, at: number): void {
-    const index = INDEXES.get(ledger);
+    const index = INDEXES.get(ledger.facts);
     // A row inserted BEYOND what has been read changes nothing: the prefix the
     // count describes is the same prefix it was.
     if (!index || at > index.indexedUpTo) return;

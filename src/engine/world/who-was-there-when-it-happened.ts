@@ -225,14 +225,26 @@ export function appendWorldFact(
  * the ledger index is - it must never be serialised - and brought up to date
  * incrementally, because the roster only ever grows at the end and is replaced
  * in place everywhere else.
+ *
+ * KEYED ON THE ROSTER, NOT ON THE WORLD THAT HOLDS IT.
+ * `theWorldForgetsTheMortalDead` replaces `state.npcs` with a shorter array
+ * under the same `WorldState`. Keyed on the state, every position in here was
+ * then off by however many rows went, and the `npc.id !== id` guard below - the
+ * right guard, since writing onto the wrong person is worse - turned that into
+ * SILENTLY DROPPED LINKS: measured at eighty years with the sweep running per
+ * year, 332 facts named somebody whose record did not carry them, which is the
+ * defect `what-a-world-must-never-contain` calls a fact that cannot be reached
+ * from the person it is about. The length check healed it only while the array
+ * was still shorter, and a year of births cancels a year of forgetting.
+ * Keyed on the array, a replacement is a new key and the index is rebuilt.
  */
-const NPC_INDEXES = new WeakMap<WorldState, { byId: Map<string, number>; upTo: number }>();
+const NPC_INDEXES = new WeakMap<readonly NpcRecord[], { byId: Map<string, number>; upTo: number }>();
 
 function npcIndexFor(state: WorldState): Map<string, number> {
-    let index = NPC_INDEXES.get(state);
+    let index = NPC_INDEXES.get(state.npcs);
     if (!index || index.upTo > state.npcs.length) {
         index = { byId: new Map(), upTo: 0 };
-        NPC_INDEXES.set(state, index);
+        NPC_INDEXES.set(state.npcs, index);
     }
     for (let at = index.upTo; at < state.npcs.length; at++) {
         index.byId.set(state.npcs[at].id, at);

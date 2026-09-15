@@ -330,6 +330,79 @@ describe('driver: the world moves with the cultivator', () => {
         expect(JSON.stringify(worldShape(split))).toBe(JSON.stringify(worldShape(single)));
     });
 
+    /**
+     * ONE DECOMPOSITION IS NOT THE CLAIM. The sibling above checked 10+30 only,
+     * and the defect that broke this layer was invisible at that span: the world
+     * forgets its mortal dead, that sweep ran once per CALL rather than once per
+     * world year, and forty years in one call against ten-then-thirty first
+     * differed at 285 facts against 291. Under twenty years there is nothing to
+     * forget yet and every split agreed, which is why a single decomposition
+     * passed for as long as it did.
+     *
+     * A played game advances in whatever slices a player's turns happen to make,
+     * so the claim is that EVERY decomposition of a span gives one world - not
+     * that one particular pair of chunks agrees.
+     *
+     * Red-checked: with the sweep moved back to once per advance, chunk counts
+     * 2, 3, 5 and 10 all diverge here.
+     */
+    it('is decomposable however the span is chopped up', () => {
+        const chunked = (chunks: number): WorldState => {
+            const state = world('drive-c');
+            for (let i = 0; i < chunks; i++) advanceWorldYears(state, 300 / chunks);
+            return state;
+        };
+
+        const one = chunked(1);
+        for (const chunks of [2, 3, 5, 10]) {
+            const many = chunked(chunks);
+            expect(many.currentDay, `${chunks} chunks landed on a different day`)
+                .toBe(one.currentDay);
+            expect(
+                many.history.facts.map(f => `${f.day}:${f.summary}`),
+                `300 years in ${chunks} calls is a different history from 300 in one`
+            ).toEqual(one.history.facts.map(f => `${f.day}:${f.summary}`));
+            expect(
+                JSON.stringify(worldShape(many)),
+                `300 years in ${chunks} calls is a different world from 300 in one`
+            ).toBe(JSON.stringify(worldShape(one)));
+        }
+    });
+
+    /**
+     * The sweep that deletes the mortal dead is what made this pass depend on
+     * its caller, and the reason it could not simply move into the year loop was
+     * a second defect underneath it: two indexes were keyed on the objects that
+     * HOLD the roster and the ledger rather than on those arrays, and the sweep
+     * replaces both arrays under the same objects. Every position in the npc
+     * index was then off by however many rows went, and the guard in
+     * `linkFactToWhoItNames` - which is right to refuse to write onto the wrong
+     * person - dropped the link instead.
+     *
+     * Measured at eighty years with the sweep running per year: 332 facts named
+     * somebody whose record did not carry them, across 20 kinds. Keyed on the
+     * arrays, 0.
+     *
+     * `what-a-world-must-never-contain` holds the same claim over one advance.
+     * This one holds it over many, which is the case that broke.
+     */
+    it('leaves no fact naming somebody who does not carry it, however many calls it took', () => {
+        const state = world('drive-forget');
+        for (let i = 0; i < 8; i++) advanceWorldYears(state, 10);
+
+        const byId = new Map(state.npcs.map(n => [n.id, n]));
+        const unreachable: string[] = [];
+        for (const fact of state.history.facts) {
+            for (const actor of fact.actors) {
+                const npc = byId.get(actor.id);
+                if (npc && !npc.historyFactIds.includes(fact.id)) {
+                    unreachable.push(`${fact.id} names ${npc.name}, who does not carry it`);
+                }
+            }
+        }
+        expect(unreachable.slice(0, 5)).toEqual([]);
+    });
+
     it('gives an interrupted seclusion only the consequences it lived through', () => {
         const state = world('drive-d');
         state.schedule.push({

@@ -258,12 +258,27 @@ export function advanceWorldForPlay(
         }
 
         // AND THE WORLD DOES NOT KEEP A FARMER WHO DIED. After the deaths, the
-        // politics and the absences of this slice, and between passes rather
-        // than inside one - the ledger index self-heals on a shrink, but only
-        // where a shrink and an append cannot cancel out within a single pass.
+        // politics and the absences of this slice.
+        //
+        // PER SLICE, BECAUSE ONCE PER CALL IS A FACT ABOUT THE CALLER. This
+        // sweep deletes people and the facts naming nobody else, so where it
+        // runs decides what the next year is simulated against. Run once at the
+        // end of an advance it was the whole of the decomposability defect:
+        // forty fixture years in one call against two diverged at 285 facts to
+        // 291, and with the sweep removed entirely three hundred years in 1, 3,
+        // 5 and 10 calls were identical to the character. A played game advances
+        // in whatever slices a player's turns make. A world year is a fact about
+        // the clock, so forgetting on one cannot be read back to the caller.
+        //
+        // It lived here before and was moved out for breaking fact linkage - 332
+        // facts at eighty years naming somebody who did not carry them. That was
+        // two caches keyed on the objects HOLDING the roster and the ledger
+        // rather than on those arrays, which this replaces; both are now keyed
+        // on the array, and the same measurement is 0.
         //
         // Anybody a priced deed names is kept: a man whose brother still
         // carries the account is not one of the corpses this is for.
+        theWorldForgetsTheMortalDead(state);
         remaining -= time.daysAdvanced;
         if (time.interrupted) {
             interrupted = true;
@@ -274,20 +289,6 @@ export function advanceWorldForPlay(
         if (time.daysAdvanced <= 0) break;
     }
 
-    // AND THE WORLD FORGETS ITS MORTAL DEAD - ONCE, AFTER THE SLICES.
-    //
-    // Not inside the loop. Run per slice it broke fact linkage: 370 promotion
-    // facts at sixty years whose living actors no longer carried them, caught
-    // by `what-a-world-must-never-contain`. The hazard was named when the
-    // sweep was written - `reserveFactSlot` stores an ARRAY POSITION and the
-    // ledger index maps id to position, and both are only safe across a shrink
-    // where nothing holds one over it. A slice does.
-    //
-    // Once per advance is where nothing is holding a position, and it is also
-    // the honest place: a run of years is what the caller asked about, and
-    // forgetting is not a thing that happens to somebody in a particular
-    // spring.
-    theWorldForgetsTheMortalDead(state);
     const last = timeSlices[timeSlices.length - 1];
     const time: TimeAdvanceResult = last ?? advanceTime(state, 0, { inPlace: true });
     const events = state.history.facts.filter(f => !factsBefore.has(f.id));

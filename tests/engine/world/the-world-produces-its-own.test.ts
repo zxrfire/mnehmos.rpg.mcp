@@ -359,6 +359,22 @@ describe('the upper ladder is arrived at rather than inherited', () => {
         expect(fromAWall, 'no wound in the world came from a realm boundary').toBe(true);
     }, 600_000);
 
+    /**
+     * `fingerprint(3) !== fingerprint(1)` for a long time, and it was a
+     * correctness defect rather than a tidy one: a played game advances in
+     * whatever slices a player's turns happen to make, so two players spending
+     * the same three hundred years met different worlds.
+     *
+     * The cause was `theWorldForgetsTheMortalDead`, which deletes the mortal
+     * dead and the facts naming nobody else, running once per CALL. Where that
+     * sweep runs decides what the following year is simulated against, so the
+     * caller's chunking was reaching the simulation. It now runs once per world
+     * year, which is a fact about the clock.
+     *
+     * Three chunks is not the claim and never was - 1, 2, 3, 5 and 10 are, and
+     * 10 is what catches a pass that fires a different NUMBER of times rather
+     * than merely on a different day.
+     */
     it('is still deterministic and still decomposable', async () => {
         const catalog = await loadCultivationCatalog();
         const fingerprint = (chunks: number) => {
@@ -368,9 +384,13 @@ describe('the upper ladder is arrived at rather than inherited', () => {
             }
             return summary(state);
         };
-        expect(fingerprint(1)).toBe(fingerprint(1));
-        expect(fingerprint(3)).toBe(fingerprint(1));
-    }, 600_000);
+        const one = fingerprint(1);
+        expect(fingerprint(1)).toBe(one);
+        for (const chunks of [2, 3, 5, 10]) {
+            expect(fingerprint(chunks), `300 years in ${chunks} calls is a different world`)
+                .toBe(one);
+        }
+    }, 900_000);
 
     function summary(state: WorldState): string {
         const alive = state.npcs.filter(n => n.status === 'alive');
