@@ -97,6 +97,17 @@ export interface AFaceFromBeforeTheRun {
     /** Null while they are alive. There is no address for somebody who is not. */
     readonly diedYearsAgo: number | null;
     /**
+     * Set where the world holds a killing this person was the victim of, with
+     * the killer's name already put through the holder's knowledge gate - null
+     * where this life has no way to say who it was.
+     *
+     * `byName` and not the world's own `killerName`, so that handing the raw
+     * read from `who-a-life-like-this-grew-up-knowing.ts` straight through does
+     * not typecheck. A name in this engine is earned; the caller has to have
+     * asked whether this one was.
+     */
+    readonly killedBy?: { readonly byName: string | null } | null;
+    /**
      * True where the life names them and claims nothing else - a mortal
      * household. Said with no whereabouts at all, which is not the same as
      * saying nobody knows where they are: nothing was ever claimed.
@@ -117,6 +128,28 @@ export interface AFaceFromBeforeTheRun {
  * "them" at all - the subject is the person being placed, not the holder.
  */
 function whereToFindThem(face: AFaceFromBeforeTheRun, home: string): string {
+    // SOMEBODY KILLED IS A DIFFERENT SENTENCE FROM SOMEBODY DEAD, and it is
+    // said before every other branch including the mention.
+    //
+    // A world opens holding a few killings, drawn with no player in it, and a
+    // life opens knowing a handful of people. Nothing asked whether those two
+    // sets overlapped, so a childhood with a victim in it printed `Dead these
+    // 12 years.` over a wrong the world is still carrying an open account for.
+    //
+    // Ahead of the mention rather than under it, because that rule is about
+    // WHEREABOUTS going stale - nothing tracks a mortal, so a place named here
+    // would be true only on the day it was printed. An ending does not go
+    // stale. It already happened and it is not going to happen differently.
+    if (face.diedYearsAgo !== null && face.killedBy) {
+        const when = face.diedYearsAgo < 1 ? 'not a year ago' : `${face.diedYearsAgo} years ago`;
+        // A stranger is the better sentence and it is also the commoner one.
+        // The wrongs pass draws a killer from a whole province and a childhood
+        // reaches one settlement, so the name is usually not one this life has
+        // ever been given - which is a motive rather than a hole in the record.
+        return face.killedBy.byName === null
+            ? `Killed ${when}, and nobody has put a name to who did it.`
+            : `Killed by ${face.killedBy.byName}, ${when}.`;
+    }
     // A MENTION SAYS NOTHING ABOUT WHERE, and says nothing rather than saying
     // that nobody knows. Mortals are not tracked, so a place named here would
     // be true on the day it was printed and unmaintained ever after.

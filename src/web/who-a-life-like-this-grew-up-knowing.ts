@@ -186,6 +186,20 @@ const WHAT_A_HOUSEHOLD_TIE_IS: Readonly<Record<string, string>> = Object.freeze(
     kin: 'Family. Grew up under the same roof.'
 });
 
+/**
+ * The killing behind a death, where the world wrote one.
+ *
+ * The killer's own id and name, UNGATED - this module reads the world and has
+ * no knowledge table to ask. Whether the holder may hear the name is a question
+ * about the holder, and the caller answers it: see `AFaceFromBeforeTheRun`,
+ * whose field is shaped differently on purpose so that handing this straight
+ * through does not typecheck.
+ */
+export interface AKillingBehindAFace {
+    killerId: string;
+    killerName: string;
+}
+
 /** One person a life like this starts already able to name. */
 export interface FaceFromHome {
     id: string;
@@ -223,6 +237,15 @@ export interface FaceFromHome {
      * still standing, which is how a life is told it lost one.
      */
     diedYearsAgo: number | null;
+    /**
+     * Null unless the world holds a killing this person was the victim of.
+     *
+     * Read off the world's own record rather than kept here. Somebody killed is
+     * a different sentence from somebody dead, and until this was asked the
+     * opening printed `Dead these 12 years.` over a wrong the world was still
+     * carrying an open account for.
+     */
+    killedBy: AKillingBehindAFace | null;
     /**
      * True where this face is a name and no claim - a mortal household. The
      * opening says who they are and stops, because nothing tracks a mortal and
@@ -331,9 +354,43 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     const day = world.currentDay;
     return [
         ...kin.map(one => toFace(
-            one.npc, WHAT_A_HOUSEHOLD_TIE_IS[one.kind], placeOf, one.kind, day, one.aMentionOnly)),
-        ...draw.map((npc, at) => toFace(npc, notes[at % notes.length], placeOf, null, day))
+            world, one.npc, WHAT_A_HOUSEHOLD_TIE_IS[one.kind], placeOf, one.kind, day,
+            one.aMentionOnly)),
+        ...draw.map((npc, at) => toFace(world, npc, notes[at % notes.length], placeOf, null, day))
     ];
+}
+
+/**
+ * The wrong behind a death, where the world is holding one.
+ *
+ * ASKED HERE RATHER THAN AIMED AT THE PLAYER. `seedTheWrongsStillOpen` runs at
+ * world creation, when nobody is playing, and it must stay that way - a seeder
+ * that reached for a player's household would be the dependency inverted, and
+ * the world arranging itself around somebody who does not exist yet. So the
+ * overlap is found from this end: the wrong is there on its own, and the
+ * opening merely notices that the victim is somebody this life knew. Nothing is
+ * written, nothing is reseeded, and the answer is a lookup.
+ *
+ * Read off the deed's own actors, and off the ROLES rather than off `kind` or
+ * `endNote`. `killer` and `victim` are what all three writers in
+ * `src/engine/world/` put on a killing - the world-opening wrong, a
+ * confrontation, and the yearly pass - and the yearly one files its row as
+ * `grudge_opened` rather than `death`, so a filter on the kind would have
+ * covered two of the three and looked like it covered all of them.
+ */
+function whoEndedThem(world: WorldState, npc: NpcRecord): AKillingBehindAFace | null {
+    if (npc.status === 'alive' || npc.historyFactIds.length === 0) return null;
+    const onTheirRecord = new Set(npc.historyFactIds);
+    // Newest first. A person dies once, and where more than one row names them
+    // as the victim the last one written is the one that stuck.
+    for (let i = world.history.facts.length - 1; i >= 0; i--) {
+        const fact = world.history.facts[i];
+        if (!onTheirRecord.has(fact.id)) continue;
+        if (!fact.actors.some(who => who.id === npc.id && who.role === 'victim')) continue;
+        const killer = fact.actors.find(who => who.role === 'killer');
+        if (killer) return { killerId: killer.id, killerName: killer.name };
+    }
+    return null;
 }
 
 /**
@@ -353,6 +410,7 @@ function theSamePartOfTheWorld(world: WorldState, here: LocationRecord): NpcReco
 }
 
 function toFace(
+    world: WorldState,
     npc: NpcRecord,
     sourceNote: string,
     placeOf: ReadonlyMap<string, LocationRecord>,
@@ -373,6 +431,7 @@ function toFace(
         diedYearsAgo: npc.status === 'alive'
             ? null
             : Math.max(0, Math.floor((onDay - (npc.diedOnDay ?? onDay)) / DAYS_PER_YEAR)),
+        killedBy: whoEndedThem(world, npc),
         whereTheyAre: standing ? { id: standing.id, name: standing.name } : null,
         // What the holder ends up carrying. For a neighbour: a face and a name,
         // and the explicit statement that it is nothing more than that, because

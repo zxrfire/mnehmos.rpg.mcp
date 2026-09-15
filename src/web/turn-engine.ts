@@ -184,7 +184,9 @@ import {
     whoTheyCouldPointYouAt
 } from '../engine/world/who-they-could-point-you-at.js';
 import { TECHNIQUES } from '../data/cultivation/index.js';
-import { theLifeBehindTheFirstTurn } from './the-life-behind-the-first-turn.js';
+import {
+    theLifeBehindTheFirstTurn, type AFaceFromBeforeTheRun
+} from './the-life-behind-the-first-turn.js';
 import { getConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { Price } from '../data/cultivation/mortal-world.js';
 import {
@@ -538,7 +540,7 @@ import {
     factsForTelling,
     whatATellingLandsOn
 } from './what-a-telling-lands-on.js';
-import { facesFromHome, type FaceFromHome } from './who-a-life-like-this-grew-up-knowing.js';
+import { facesFromHome } from './who-a-life-like-this-grew-up-knowing.js';
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
 // What a year of somebody's life earns, which is what bounds a purse-lift.
 // See `whatALiftTook`.
@@ -17659,7 +17661,7 @@ ${fit.line}`;
         cultivator: Cultivator,
         origin: OriginTierKey,
         seed: string
-    ): Promise<FaceFromHome[]> {
+    ): Promise<AFaceFromBeforeTheRun[]> {
         const world = await this.loadWorld();
         if (!world) return [];
         this.atHand = world;
@@ -17706,7 +17708,32 @@ ${fit.line}`;
                 });
             }
         }
-        return faces;
+
+        // ── AND WHETHER ANY OF THEM IS ALREADY SOMEBODY'S VICTIM ────────
+        //
+        // The world opened holding a few killings and this life opened knowing
+        // a handful of people, and nothing asked whether the two sets met. The
+        // question is asked from THIS end on purpose: the wrongs pass runs at
+        // world creation with no player in it and must never reach for one.
+        //
+        // AFTER the loop above, because the gate is the point. The killer is
+        // drawn from a whole province and a childhood reaches one settlement,
+        // so usually this life cannot say the name - but where the killer is
+        // one of the faces just written down, they can, and asking before the
+        // rows existed would have answered no every time.
+        const couldSayWhoDidIt = (id: string): boolean =>
+            this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)
+            && this.knowledge.canPointAt(cultivator.id, 'cultivator', id);
+        return faces.map(face => ({
+            ...face,
+            killedBy: face.killedBy === null
+                ? null
+                : {
+                    byName: couldSayWhoDidIt(face.killedBy.killerId)
+                        ? face.killedBy.killerName
+                        : null
+                }
+        }));
     }
 
     /**
