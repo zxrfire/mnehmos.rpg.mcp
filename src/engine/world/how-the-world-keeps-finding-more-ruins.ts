@@ -24,7 +24,13 @@ import {
     type LocationRecord,
     type OpeningCycle
 } from './locations.js';
+import type { ObjectRecord } from './possessions.js';
 import { clampQiDensity } from './qi-scale.js';
+import {
+    shelveWhatItWasHolding,
+    theBooksBehindTheirDoor,
+    theBooksLeftIn
+} from './what-a-ruin-has-on-its-shelves.js';
 import { getLocation, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -579,6 +585,12 @@ export interface ProspectingResult {
     provincesWorked: number;
     /** Provinces whose reachable ground is exhausted. Rare, and it is real. */
     provincesWorkedOut: number;
+    /**
+     * Books the world turned out to have been holding in the ground it
+     * described this year. Nobody has carried one out yet - a find is a find,
+     * and getting in is a separate errand.
+     */
+    booksLeftInTheGround: number;
 }
 
 /** The `data` key a minted find carries, so the world can tell one from a seeded ruin. */
@@ -638,12 +650,20 @@ export function applyRuinProspecting(
     year: number,
     day: number
 ): ProspectingResult {
-    const result: ProspectingResult = { found: [], provincesWorked: 0, provincesWorkedOut: 0 };
+    const result: ProspectingResult = {
+        found: [], provincesWorked: 0, provincesWorkedOut: 0, booksLeftInTheGround: 0
+    };
     // Worlds are persisted, so fixing the generator does not fix the rows it
     // already wrote. Idempotent and cheap, so an affected world heals on its
     // next tick rather than needing anybody to migrate it by hand.
     repairCompoundedNames(state);
     const rng = forStream(state.seed, 'ruins-found', year);
+    // AND WHAT THE GROUND TURNS OUT TO HAVE BEEN HOLDING. Described once,
+    // when the world first says what a place is, because that is when it first
+    // knows. See `what-a-ruin-has-on-its-shelves.ts`.
+    const shelve = (books: readonly ObjectRecord[]): void => {
+        result.booksLeftInTheGround += shelveWhatItWasHolding(state, books);
+    };
     // Bodies whose ground the world has already turned up. Read off the
     // locations rather than kept, so a reload cannot lose it and two finds can
     // never be the same person's cave.
@@ -678,6 +698,15 @@ export function applyRuinProspecting(
             claimedOccupants.add(one.occupantId);
             const minted = mintGroundLeftByTheDead(region, one, day, year, findRng);
             state.locations.push(minted.location);
+            // AND WHAT THEY WERE CARRYING IS BEHIND THE DOOR. The row already
+            // names the occupant and says their inventory is the contents; this
+            // is that sentence applied to the one thing whose loss ends a road.
+            const occupant = state.npcs.find(n => n.id === one.occupantId);
+            if (occupant) {
+                shelve(theBooksBehindTheirDoor({
+                    location: minted.location, occupant, onDay: day
+                }));
+            }
             state.locations[i] = {
                 ...region,
                 data: { ...region.data, [foundKeyForBand(band)]: prospect.foundInBand + 1 }
@@ -710,6 +739,16 @@ export function applyRuinProspecting(
                     whatAPartyFinds: ending.whatAPartyFinds
                 }
             };
+
+            // AND THE HOUSE'S OWN PAPER, WHERE THE ENDING LEFT ANY. `howTheHouseEnded`
+            // already answers whether the records survived - a hall that stopped being
+            // told anything has its shelves intact, and a hall whose leadership was
+            // killed does not - so nothing new decides this.
+            if (ending.theRecordsSurvive) {
+                shelve(theBooksLeftIn({
+                    location: state.locations[at]!, character: 'compound', onDay: day
+                }));
+            }
 
             // AND THE ONE DOOR NOBODY COULD OPEN. When the leadership was killed,
             // the vault is intact because the people who could reach it are the
@@ -780,6 +819,11 @@ export function applyRuinProspecting(
                     });
                     vault.origin.fromDay = seat.origin.fromDay;
                     state.locations.push(vault);
+                    // What a house seals is what it will not copy, which is the
+                    // one kind of book that is worth the six-century wait.
+                    shelve(theBooksLeftIn({
+                        location: vault, character: 'vault', onDay: day
+                    }));
                 }
             }
             state.locations[i] = {
@@ -819,6 +863,7 @@ export function applyRuinProspecting(
                 data: { ...region.data, [foundKeyForBand(band)]: prospect.foundInBand + 1 }
             };
             const character = characterOfSeededRuin(alreadyHere, findRng);
+            shelve(theBooksLeftIn({ location: alreadyHere, character, onDay: day }));
             result.found.push({
                 locationId: alreadyHere.id,
                 regionId: region.id,
@@ -917,6 +962,11 @@ export function applyRuinProspecting(
         });
         found.origin.fromDay = day;
         state.locations.push(found);
+        // AND WHAT IT TURNS OUT TO HAVE BEEN HOLDING. The character says
+        // whether anybody shelved anything here and the ground's own mastery
+        // rung says how high it reaches - so the deep books are in the deep
+        // bands, which is the same sentence `SCALE_BY_BAND` above is.
+        shelve(theBooksLeftIn({ location: found, character, onDay: day }));
 
         // The tally is on the province, because the province is what gets
         // worked out. One integer per band and nothing else: a second table

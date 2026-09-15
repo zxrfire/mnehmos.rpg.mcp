@@ -158,6 +158,7 @@ import {
     newlyEntitled, refreshChosen, reachableCeilingFor,
     mightFindARoad, roadTheyFound, librariesCarriedOutBy, BOOKLESS_CEILING
 } from './manuals.js';
+import { applyWhatThePartyCarriedOut } from './what-a-ruin-has-on-its-shelves.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import {
     applyOrdinaryLifeTies,
@@ -2704,6 +2705,36 @@ function applySendings(
             creditWhatCameBack(faction, partyOrdinal(party), party.length);
         }
 
+        // ── AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT ────
+        //
+        // RUINS YIELD MANUALS, which the setting has asserted in as many words
+        // since it was written and which no pass performed: `applyRoadsComprehended`
+        // yields dao ground and materials, the spoils pass moves what a house
+        // already held, and nothing anywhere put a book into anybody's hands out
+        // of the ground. So the road that opens at rung 37 and is taught nowhere
+        // was content the world could not reach, and the ladder stopped under it.
+        //
+        // Only the errand that is about a find, because that is the errand that
+        // gets somebody through a door. Nothing here decides how often - the
+        // frequency is how often a house has a find standing open in its own
+        // province and draws that reason, and what is behind the door is what
+        // `what-a-ruin-has-on-its-shelves.ts` says the ground was holding.
+        const carriedOut = sending.outcome === 'finished'
+            && reason.needs === 'a_find' && goingTo !== null
+            ? applyWhatThePartyCarriedOut(state, {
+                locationId: goingTo,
+                house: {
+                    id: faction.id, name: faction.name, seatLocationId: faction.seatLocationId
+                },
+                readers: party
+                    .map(member => at.get(member.id))
+                    .filter((index): index is number => index !== undefined)
+                    .map(index => state.npcs[index])
+                    .filter(row => row !== undefined && isTheWorldsToMove(row)),
+                onDay: sending.returnsOnDay
+            })
+            : [];
+
         // AND THE GROUND CHANGES HANDS, OR IT DOES NOT. The whole of what the
         // house went for, and the same three writes `vein_lost` makes - the
         // place, the two holds, and what the people who lost it now carry.
@@ -2733,8 +2764,14 @@ function applySendings(
 
         const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
         if (took !== null) news.data = { ...news.data, ...took };
+        if (carriedOut.length > 0) {
+            news.data = {
+                ...news.data,
+                roadsCarriedOut: carriedOut.map(b => b.techniqueId).join(' ')
+            };
+        }
         if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING
-            || reachedPastItsWeight || named !== null) {
+            || reachedPastItsWeight || named !== null || carriedOut.length > 0) {
             appendWorldFact(state, news);
         }
     }
@@ -4934,21 +4971,49 @@ const TEMPLATES: Template[] = [
             // catalog already holds for exactly this - `provenance: 'ruin'`,
             // the set no living institution transmits. A treasury hands over
             // what is standing in it instead, which is the ordinary object
-            // layer and not a second kind of prize. Ground that was sealed or
-            // on a season keeps the marker it has always carried.
+            // layer and not a second kind of prize.
             const artInTheGround = standingOpenAndAlwaysHas
                 ? theArtLeftInThisGround(ruin)
                 : null;
-            if (opener) {
+            if (opener && artInTheGround !== null) {
                 replaceNpc(state, {
                     ...opener,
                     cultivation: {
                         ...opener.cultivation,
-                        techniqueIds: opener.cultivation.techniqueIds
-                            .concat(artInTheGround ?? `recovered-${ruin.id}`)
+                        techniqueIds: opener.cultivation.techniqueIds.concat(artInTheGround)
                     }
                 });
             }
+
+            // ── AND RUINS YIELD MANUALS ──────────────────────────────────
+            //
+            // Every other branch used to hand the opener `recovered-${ruin.id}`
+            // - an id in no catalog, which `getTechnique` returns undefined for,
+            // which sets no ceiling and which nobody can be taught from. So the
+            // world opened a ruin, wrote down that somebody had been through it,
+            // and the person came out holding a string. That is gone: what comes
+            // out of a hole is what was in the hole, and what was in the hole is
+            // an object. See `what-a-ruin-has-on-its-shelves.ts` for why that
+            // matters more than the technique id - a book is a thing a house
+            // shelves, teaches off and copies, and a technique id is one person.
+            //
+            // BEFORE the sweep below, so a book is already possessed when the
+            // generic pass walks past it and the two do not both move it.
+            if (opener) {
+                const row = state.npcs.find(n => n.id === opener.id) ?? opener;
+                const house = row.factionId
+                    ? state.factions.find(f => f.id === row.factionId && f.dissolvedOnDay === null)
+                    : undefined;
+                applyWhatThePartyCarriedOut(state, {
+                    locationId: ruin.id,
+                    house: house
+                        ? { id: house.id, name: house.name, seatLocationId: house.seatLocationId }
+                        : null,
+                    readers: [row],
+                    onDay: day
+                });
+            }
+
             // And the stock comes off the ground with them. Only on this
             // branch, so the cost of the walk lands on the kind of ground that
             // was just declared empty: a place tagged `emptied` with its goods

@@ -1481,11 +1481,11 @@ Three passes fix it, all at creation, and none invents a mechanism:
 
 | | What it does | The rate, and the unit it is stated in |
 |---|---|---|
-| `the-marriages-a-world-opens-holding.ts` | Cultivating households, through `formHouseholds` - the pairing rule extracted out of `applyHouseholds` so both callers run it rather than agree with it | `NEVER_KEEPS_A_HOUSEHOLD` against the yearly rate accumulated over somebody's adult years. Realised: **38-47% of cultivators married**, in marriages a median 43-70 years old and a longest of 230-338 |
+| `the-marriages-a-world-opens-holding.ts` | The households the catalog STATES, plus cultivating ones drawn through `formHouseholds` - the pairing rule extracted out of `applyHouseholds` so both callers run it rather than agree with it | `AUTHORED_MARRIAGES` in `members.ts`, and `NEVER_KEEPS_A_HOUSEHOLD` against the yearly rate for everybody else. Realised: **34-35% of cultivators married**, in marriages a median 43-70 years old and a longest of 230-338 |
 | `the-families-a-world-opens-holding.ts` | Households out of people standing in the same settlement, through `couldParent` and `bindNewbornToHousehold` unchanged, so a seeded tie is byte-identical to one a birth writes | `BORN_TO_SOMEBODY_STANDING_HERE` is the chance for somebody who HAS an eligible parent beside them. Realised: **34-41% of the living hold a blood tie**, in households of two to four |
-| `the-wrongs-a-world-opens-holding.ts` | Open killings, priced by `whatADeedLeaves` and written by `aDeedEntersTheWorld` - the same pricer and the same writer a played killing uses | `OPEN_KILLINGS_PER_PROVINCE` = 1. Realised: **4-6 a world, under 2% of the living bereaved**, and about **one run in six** opens in a room with one of those families in it |
+| `the-wrongs-a-world-opens-holding.ts` | Open killings, priced by `whatADeedLeaves` and written by `aDeedEntersTheWorld` - the same pricer and the same writer a played killing uses | `OPEN_KILLINGS_PER_PROVINCE` = 1. Realised: **5-6 a world, under 2% of the living bereaved**, and about **one run in six** opens in a room with one of those families in it |
 
-**Marriages are cultivators only, at both ends.** The design owner: *"your parents can be
+**A DRAWN marriage is cultivators only, at both ends.** The design owner: *"your parents can be
 mortal and don't bother. but if they're cultivators, seed this relationship."* A village of
 farmers pairing off is below the resolution this engine works at; two cultivators married to
 each other is a cultivating household, and `FOUNDATION_ORDINAL` already carries the line -
@@ -1493,6 +1493,19 @@ each other is a cultivating household, and `FOUNDATION_ORDINAL` already carries 
 cultivator married to a mortal is not recorded from either side: a tie written from one end
 only would have `whoTheyCarryFor` answering that an elder carries for a farmer who has never
 heard of them, and a widow who cannot be widowed because nothing tracked the other half.
+
+**A STATED one is not drawn for, and the rung bar does not reach it.** The owner, on the
+catalog's own people: *"hardcode the authored figure marriages, but not the grudges."* Who
+somebody is married to is a fact about them and lives in `members.ts`; what two people did to
+each other is a fact about a world and is minted per seed. The bar is refused for a reason
+that does not reach a catalog figure - `theWorldForgetsTheMortalDead` deletes a mortal and
+keeps everybody a catalog names - so the Coal Hand who married into the forge clan is
+recorded at ordinal 6.
+
+Measured before the split: 26 and 28 marriages in two worlds, **every one of them between two
+catalog figures** and not one involving anybody else, because 126 of a world's 126-128 living
+cultivators are authored. The draw still runs and lands nothing in most worlds, which is a
+demographic fact rather than a broken pass.
 
 **Three defects marriages exposed in machinery that had never seen one**, all through the
 SECOND parent, which `bindNewbornToHousehold` takes off a spouse tie rather than drawing:
@@ -1915,6 +1928,31 @@ for every realm above Foundation. Luck alone, with nobody teaching anybody anyth
 is exactly the case the designer says should be almost impossible. The other half of that
 sentence had no implementation, because there was nothing for anybody to be shown.
 
+**And the copy has to cost the person who makes it.** The design owner's rule is three
+things - only somebody who has mastered a manual may copy it, it takes them *"enough time
+to matter"*, and somebody who does not understand it produces paper rather than a manual -
+and the pass held only the first. Copying rolled `1/60` a year for a first copy and `1/250`
+for a spare: two flat figures with no provenance, the same for a village primer and an apex
+canon, and charged against nobody, because a master holding six roads got six independent
+rolls a year and gave up nothing to take them.
+
+`yearsToWriteOutACopy` is the span, anchored at the one figure the world already states -
+`HIGH_REALM_PROVENANCE` has the Earth Vein Tower's Assessor of the Deep costing a second
+copy of the house's only road at *"somewhat over nine years of his own hours, during which
+the road would be unavailable"*, and declining twice. Read that line as what it is: a house
+too thin to spare its only teacher. It is not, and has never been, a claim that a man at 43
+can copy a canon that ends at 45.
+
+Measured across the shipped catalog: 2.0 months at cap 13, 4.5 years at cap 29, 9.0 years
+at cap 45. And the pass now sits a master at ONE desk - the arts they could write out are
+gathered, the one the house is shortest of is the one they sit down to, and the rest wait -
+so the span is years of a person's life rather than a number beside the roll.
+
+Not `monthsToCopy`, which prices a copyist's LABOUR at a wage and is what a stall charges
+for the paper. The two agree at the bottom of the ladder on purpose and must not be merged:
+a primer is two months either way, and the whole difference between a primer and a canon is
+the understanding rather than the penmanship.
+
 ### Transmission is the axis, and all three of its terms were already in the engine
 
 | Term | Where it lives | What it decides |
@@ -2227,10 +2265,12 @@ unaided" rarity the design asks for, on the harsh side of it.
 
 The gate is `heaven-conversing-primordial-canon`, the only manual in the catalog carrying
 from ordinal 37 to 41, which sits on no house's `teaches` list. A house acquires it only
-when somebody already at 38 or above writes it out, so the road to the top exists in the
-world exactly as long as somebody who walked it is alive to reproduce it. That is a
-legible, self-limiting reason for the Late Age rather than a defect - but it does mean the
-apex is one death away from closing, and it is worth a designer's eye.
+when somebody who has RIDDEN IT TO ITS END writes it out - ordinal 41, its `cap`, which is
+the last rung it carries anybody to - so the road to the top exists in the world exactly as
+long as somebody who walked the whole of it is alive to reproduce it. That is a legible,
+self-limiting reason for the Late Age rather than a defect - but it does mean the apex is
+one death away from closing, and it is worth a designer's eye. (An earlier reading of this
+paragraph said "38 or above", which was never the rule `masteryBarFor` states.)
 
 **What ends somebody at the top, and whether the world can name it.** The design's rule is
 that nothing ORDINARY may kill a Tribulation Transcender - a sect war, a conspiracy, a
@@ -2256,8 +2296,12 @@ to 13 is almost entirely arts. Cultivation roads hold at 13-17 across five thous
 both before and after this change. House arts go 58 to zero by year 5,000 in both columns,
 because `newlyEntitled` hands out roads only and `artsOf` reads a static catalog list keyed
 on a house somebody wrote by hand - so a founded house has none and never will, and a
-catalog house's arts die with the last person who was granted them. Copying does not reach
-them: `canReproduce` defines mastery as standing at the manual's `cap` and an art has none.
+catalog house's arts die with the last person who was granted them. Copying reached none of
+them when this was measured, because `canReproduce` defines mastery as standing at the
+manual's `cap` and an art had none. Every art carries its practitioner some way up the
+ladder now, so 149 of 157 rows have a cap and `masteryBarFor` answers for all of them; the
+half of this finding that has NOT been re-measured is whether `applyManualCopying` therefore
+reaches house arts in a long run.
 
 ## A compound has an outside, and the gate between them is a door with three roads
 
@@ -2966,6 +3010,85 @@ the `unrecovered` drain wants the `single-use` tag and the `emptied` sweep only 
 that never shut, so the stock a world opens with is the stock it has. And **nothing regrows**
 - `REGROWTH_YEARS_BY_GRADE` already says 3,000 years for an immortal band and 30,000 for a
 chaos one. Closing either costs a per-year pass, which is why neither is closed here.
+
+### And ruins yield manuals, which is how the ladder gets its top back
+
+**`what-a-ruin-has-on-its-shelves.ts`** - a piece of found ground has books on it, and
+whoever gets in carries one out onto a house's shelf.
+
+**The catalog had said where those books were since it was written.** `SOURCE_NOTES.ruin`
+in `techniques.ts` says of thirty-seven capped arts that copies of them survive only in
+sealed sites, and `docs/world/history/the-late-age.md` says ruins hold manuals in grades
+nobody teaches. Those thirty-seven plus the four `grave` rows are **exactly** the
+forty-one capped arts no house in the world teaches. **Not one was ever in a sealed site**:
+`applyRoadsComprehended` yields dao ground and materials, `war-spoils.ts` moves what a
+house already held, `mightFindARoad` is an abstract luck roll with no ground in it, and no
+pass anywhere put a manual into a ruin.
+
+**And what an opener got was a placeholder.** `ruin_opened` handed its opener
+`recovered-${ruin.id}` for every kind of ground except the never-shut minority - an id in
+no catalog, which `getTechnique` returns undefined for, which therefore sets no ceiling and
+which nobody can be taught from. The world opened ruins and the people who went in came out
+holding a string. The one branch that did better already reached for
+`theArtLeftInThisGround`, which is the right reading and was gated to a thirteen-place
+category.
+
+**What that cost, and what it buys**, over 5,000 simulated years on two seeds
+([`probe-why-the-frontier-stops.ts`](../../../scripts/probe-why-the-frontier-stops.ts)).
+Highest ordinal anybody the SIMULATION made ever reached:
+
+| seed | | 100 | 300 | 1000 | 3000 | 5000 | at Tribulation Transcendence, year 5000 |
+|---|---|---|---|---|---|---|---|
+| `pyramid` | before | 31 | 31 | 36 | 37 | **37** | 0 |
+| `pyramid` | after | 31 | 32 | 37 | 40 | **44** | **4** |
+| `frontier` | before | 31 | 32 | 36 | 41 | 44 | 2 |
+| `frontier` | after | 32 | 35 | 36 | 40 | 40 | 0 |
+
+`pyramid` is the seed the defect was named on: stuck at 37 from year 2000 to year 5000, and
+it now reaches the Lid's own band. `frontier` reached 44 in BOTH arms and the two arms are
+different worlds - the change moves the object table, so nothing downstream of it draws the
+same stream. **The claim that survives both seeds is the shut-reason column**: on `pyramid`
+at year 3000, `book` falls from 4 to **1** and the province becomes the gate. The `book`
+column is no longer what stops the world.
+
+**And the reserve does not run away.** Books carried out of the ground hold at **2.0 to 2.6
+a century** at every horizon on both seeds, with 50 to 69 still lying in ground nobody has
+got into, and the band table stays bottom-heavy: 291 at Qi Condensation against 2 at Grand
+Ascension and 4 at Tribulation Transcendence on `pyramid` at 5,000 years.
+
+**What a ruin holds follows from what the ruin is**, in three readings and no table:
+
+| | |
+|---|---|
+| the character | `WHAT_A_SHELF_HOLDS` - an archive kept what a house wrote down; a battlefield is ground two parties ended each other on and nobody shelved anything in it. A column rather than a predicate, on `HAZARDS_BY_CHARACTER`'s precedent: a new `RuinCharacter` does not compile until it has said which |
+| the rung | `theArtsWrittenDownIn` reads `thresholds.mastery`, the rung the ground was calibrated for and therefore the rung its builder stood at. Deep ground holds the high books because depth is what a big builder buys, which is `SCALE_BY_BAND`'s reasoning already |
+| who was in it | ground a dead cultivator left holds the roads THEY carried that nothing in the world teaches. Not a draw at all - the row already names the occupant and says the contents are their inventory |
+
+**One reading of what is written down in a piece of ground, not two.**
+`theArtLeftInThisGround` was already that reading; the legacy gate decides whether anybody
+left a BEQUEST and was never a statement about what is on the paper. It now delegates to
+`theArtsWrittenDownIn`, the same walk for more than one book. A second derivation was
+written beside it and deleted - it had already forgotten `survivingCopy`, which is exactly
+what a second copy of a rule forgets. `onlyWhatStopsSomewhere` is the one thing the shelf
+asks for and the legacy must not: a shelf is a list of books and a book stops somewhere,
+while the summit arts are what a bequest at that height hands over. Measured without it,
+ground calibrated at 46 came back with an empty shelf, because three uncapped arts stand
+above every book in the catalog.
+
+**A book is a THING, and that is the half that makes it propagate.** An art on the opener's
+sheet is a single copy in a single pair of hands - the defect rather than the repair,
+because it goes with them when they die. The object lands on the house's shelf, so
+`shelfOf` reads it, `newlyEntitled` hands it to whoever can open it, and
+`applyManualCopying` makes more of it once anybody has climbed past its cap. Somebody with
+no house carries their own, which is why a rogue who opens a hole does not seed a library.
+`possessorId: null` with the ruin as `locationId` is also the triple `whatIsStandingFreeAt`
+looks for, so a player standing in an open ruin picks one up through the ordinary taking
+verb with no new read anywhere.
+
+**No dial.** Nothing here says how many books a century produces. What produces them is how
+often ground is described (`applyRuinProspecting`) and how often somebody gets through a
+door (`ruin_opened`, and the `a_find` errand in `applySendings`), both of which the world
+already decides for its own reasons.
 
 ### The measurement, and what it is
 

@@ -44,7 +44,7 @@
 
 import type { LocationRecord } from './locations.js';
 import { forStream } from '../cultivation/rng.js';
-import { TECHNIQUES } from '../../data/cultivation/techniques.js';
+import { TECHNIQUES, type TechniqueProvenance } from '../../data/cultivation/techniques.js';
 
 /**
  * Which of the two this ground is.
@@ -111,16 +111,68 @@ export function theRungThisWasSetFor(location: LocationRecord): number {
  */
 export function theArtLeftInThisGround(location: LocationRecord): string | null {
     if (whatThisGroundWasLeftHolding(location) !== 'a_legacy') return null;
+    return theArtsWrittenDownIn(location, { provenance: 'ruin', howMany: 1 })[0] ?? null;
+}
+
+/**
+ * The same reading, without the legacy gate and for more than one book.
+ *
+ * ONE READING, and this is the one. A legacy hands over the deepest art the
+ * ground supports; so does a shelf in an archive, and so does the arrangement
+ * behind a sealed door - the question *what is written down in here* does not
+ * change because of how the place is closed. The gate above decides whether
+ * anybody left a BEQUEST; it was never a statement about what is on the paper.
+ *
+ * A second derivation of this was written beside it and deleted: two functions
+ * choosing which ruin-provenance art a piece of ground holds would have
+ * disagreed the first time either the bar or the exclusion moved, and
+ * `survivingCopy` is exactly the sort of exclusion the second copy forgot.
+ *
+ * Deepest first, then downward, so a shelf is the builder's own road with what
+ * they had finished with under it. One stream per piece of ground, drawn in
+ * order, so the first book a caller asks for is the book the single-art caller
+ * above has always got.
+ *
+ * `provenance` because an ossuary is a body rather than a shelf, and the catalog
+ * already has a separate word for what comes off one.
+ *
+ * `onlyWhatStopsSomewhere` because a SHELF is a list of books and a book stops
+ * somewhere - the line `manualsOf` already draws, and for its reason: eight arts
+ * in the catalog state no rung they stop at and those are not shelf stock. A
+ * LEGACY draws no such line, and must not: the summit arts are exactly what a
+ * bequest at that height hands over. Measured without it - ground calibrated at
+ * 46 had three uncapped arts standing above every book in the catalog, so its
+ * shelf came back empty and the deepest ground in the world held no manual at
+ * all.
+ */
+export function theArtsWrittenDownIn(
+    location: LocationRecord,
+    input: {
+        provenance: TechniqueProvenance;
+        howMany: number;
+        onlyWhatStopsSomewhere?: boolean;
+    }
+): string[] {
+    const { provenance, howMany } = input;
+    if (howMany <= 0) return [];
     const bar = theRungThisWasSetFor(location);
     const eligible = TECHNIQUES
-        .filter(t => t.provenance === 'ruin' && t.survivingCopy && t.requiredOrdinal <= bar);
-    if (eligible.length === 0) return null;
-    const deepest = eligible.reduce((top, t) => Math.max(top, t.requiredOrdinal), 0);
-    const atThatDepth = eligible
-        .filter(t => t.requiredOrdinal === deepest)
-        .map(t => t.id)
-        .sort();
-    return atThatDepth[
-        forStream('a-legacy-in-the-ground', location.id).int(0, atThatDepth.length - 1)
-    ];
+        .filter(t => t.provenance === provenance && t.survivingCopy && t.requiredOrdinal <= bar)
+        .filter(t => !input.onlyWhatStopsSomewhere || t.cap != null)
+        .map(t => ({ id: t.id, opens: Number(t.requiredOrdinal ?? 0) }))
+        .sort((a, b) => b.opens - a.opens || (a.id < b.id ? -1 : 1));
+    if (eligible.length === 0) return [];
+
+    const rng = forStream('a-legacy-in-the-ground', location.id);
+    const out: string[] = [];
+    let at = 0;
+    while (out.length < howMany && at < eligible.length) {
+        const opens = eligible[at].opens;
+        const tied: string[] = [];
+        while (at < eligible.length && eligible[at].opens === opens) tied.push(eligible[at++].id);
+        while (tied.length > 0 && out.length < howMany) {
+            out.push(tied.splice(rng.int(0, tied.length - 1), 1)[0]);
+        }
+    }
+    return out;
 }
