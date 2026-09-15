@@ -1092,6 +1092,26 @@ export interface RelationshipInput {
 
 /**
  * Create or update a tie.
+ *
+ * ── A NOTE DESCRIBES THE TIE IT WAS WRITTEN FOR ──────────────────────────
+ *
+ * `kind` was always overwritten and `note` always fell back to the previous
+ * one, so any caller that changed what a tie IS without supplying new words
+ * left the old words behind - and the row then said one thing in its kind and
+ * another in its prose. Measured across four pinned worlds: 13 rows whose kind
+ * and note disagreed, `ally` rows carrying `Their child.`, `Raised them.` and
+ * `Same household.`, every one of them unilateral because only one end had
+ * been rewritten.
+ *
+ * Seven call sites in `src/` pass no note at all, which is reasonable of them:
+ * a pass that moves somebody from `kin` to `enemy` has no business inventing a
+ * sentence about it. What it must not do is inherit one. So the note survives
+ * only while the kind does, and a caller that wants words on a changed tie
+ * passes them.
+ *
+ * The alternative - making every caller supply a note - was not taken. It
+ * would put a sentence on rows that are pure bookkeeping, and this repo's
+ * standing rule is that the engine states facts rather than narrating them.
  */
 export function upsertRelationship(
     npc: NpcRecord,
@@ -1106,7 +1126,7 @@ export function upsertRelationship(
             ...prev,
             kind: input.kind,
             standing: clampStanding(input.standing),
-            note: input.note ?? prev.note,
+            note: input.note ?? (input.kind === prev.kind ? prev.note : ''),
             lastChangedDay: onDay,
             factIds: mergeIds(prev.factIds, input.factIds ?? []),
             inheritedFromId: input.inheritedFromId ?? prev.inheritedFromId

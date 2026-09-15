@@ -457,4 +457,40 @@ describe('what a journey burns', () => {
         expect(chosen).not.toBeNull();
         expect(burnsStonesUnderWay(chosen!.conveyance)).toBe(false);
     });
+
+    /**
+     * THE FIGURE THE CATALOG PRODUCES, PINNED WHERE SOMEBODY WILL SEE IT.
+     *
+     * `whatTheChestBurns` was exported, reached through `priceJourney` and
+     * never called directly by a test, so the one number this whole mechanic
+     * exists to produce was asserted only as a side effect. It is worth
+     * stating outright, because it is what makes the design owner's rule - a
+     * house sends as often as it can afford to - a real constraint rather than
+     * a sentence.
+     *
+     * A sending to open an inheritance is 120 walking days with six hands. A
+     * spirit boat at heaven grade is under way 24 of those days, so six heads
+     * crossing once is 144 stones, against a seeded purse of 200 to 1,400 and
+     * a payroll of 45 a member a year. A poor house gets one crossing and then
+     * cannot make payroll.
+     *
+     * Nothing here is a chosen number: the rate is the sea crossing's own
+     * constant, the days come off the grade, and the heads come off the
+     * errand.
+     */
+    it('charges a hundred and forty-four stones for the crossing the catalog describes', () => {
+        const daysOneWay = daysByConveyance(120, BOAT);
+        expect(daysOneWay, 'the boat is no longer 24 days over 120 walking ones').toBe(24);
+        expect(whatTheChestBurns({
+            conveyance: BOAT, daysOneWay, heads: 6, trips: 1
+        })).toBe(144);
+
+        // And the same crossing on something standing on a vein costs nothing
+        // at all, however finely made - which is the half a reader is most
+        // likely to try to "fix" into a ladder of expense.
+        const carriage = CONVEYANCES.find(c => !c.crossesGroundThatCannotBeWalked)!;
+        expect(whatTheChestBurns({
+            conveyance: carriage, daysOneWay: 40, heads: 6, trips: 1
+        })).toBe(0);
+    });
 });
