@@ -204,6 +204,10 @@ export function techniqueEffectiveness(
 ): { multiplier: number; fromRoot: number; fromUnderstanding: number } {
     const root = getSpiritRoot(cultivator.spiritRoot);
     const element = technique.element ?? null;
+    // A null element is not a match. An art written in no element gives a
+    // root's purity nothing to be pure at, and admitting every root is not the
+    // same fact as suiting one. See the banner at the same predicate in
+    // `combat.ts` and `asksNothingOfTheRoad` in `dao.ts`.
     const fromRoot =
         element !== null && root.elements.includes(element) ? root.matchedTechniqueBonus : 1;
 

@@ -118,6 +118,31 @@ export const EDGE_VALUES: Readonly<Record<Edge, number>> = {
 export const MAX_BODY_FACTOR = 1.8;
 export const MAX_SOUL_FACTOR = 1.6;
 export const MAX_COMPREHENSION_FACTOR = 1.7;
+/**
+ * This one saturates, and the open question is the shape rather than the number.
+ *
+ * Four independent axes multiply into one line - mastery (x0.6 to x1.2), the
+ * root match (x1 to x2.5), how well the book is written (x0.85 to x1.22) and
+ * the road already walked (x1 to x1.35) - against a ceiling only 1.58x the
+ * x1.2 an ordinary mastered art starts from. The product clears it long before
+ * any single term does.
+ *
+ * Measured, single root on a matched art: the line reads 1.900 at 58% mastery
+ * and 1.900 at 100%; 1.900 on a crude copy and 1.900 on the author's own hand;
+ * 1.900 with no comprehension and 1.900 with a full Dao of the art's own road.
+ * 45.9% of cultivators draw a root paying x2.0 or better (mutated saturates at
+ * 27% mastery), so for the cultivator who did everything right three designed
+ * axes are worth exactly nothing, including the largest non-realm term in the
+ * game.
+ *
+ * Raising the number is not obviously the answer: 1.9 is already the highest of
+ * these ceilings, and x2.4 buys about 0.4 of a rung at ordinal 20 while adding
+ * 26% to what one cultivator's own lines can stack. The alternatives are making
+ * the terms not all multiply, or deciding that saturating is what a ceiling is
+ * for. That is a call about how the game should feel and it is open. What is
+ * closed is the silence: the breakdown says when the line is against the
+ * ceiling, so the axes that stopped counting are visible rather than implied.
+ */
 export const MAX_TECHNIQUE_FACTOR = 1.9;
 export const MAX_ARTIFACT_FACTOR = 1.8;
 export const MAX_EXPERIENCE_FACTOR = 1.4;
@@ -435,6 +460,20 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     // the difference the genre is actually about.
     const technique = combatant.technique ?? null;
     const mastery = Math.max(0, Math.min(1, combatant.techniqueMastery ?? technique?.mastery ?? 0));
+    // AN ART IN NO ELEMENT IS NOT A MATCH, and that is decided rather than
+    // missed. `matchedTechniqueBonus` prices how pure a root is AT an element;
+    // an art written in none gives that purity nothing to be pure at. Reading
+    // null as a match would pay 73 of 157 catalog rows - every cultivation
+    // canon, 8 of 9 forbidden arts, the primer everybody starts with - by the
+    // root the wielder was dealt rather than by anything about the art, and
+    // would hand a single root +58% on the same page a muddled root gets +0%.
+    //
+    // It is the distinction `asksNothingOfTheRoad` already settled on the road
+    // axis, and `assessFit` on this one: an art that demands no element admits
+    // every root, and admitting everybody is not the same fact as suiting
+    // anybody. What a general art IS sharpened by is the road, which is earned
+    // rather than dealt - `wieldingWeight` below pays it on the 56 elementless
+    // rows that name one.
     const matched =
         technique?.element != null && root.elements.includes(technique.element);
     // And how well the thing was written. A better-explained method makes a
@@ -459,6 +498,12 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         ? 0.85
         : (0.6 + 0.6 * mastery) * (matched ? root.matchedTechniqueBonus : 1)
             * reading.powerMultiplier * wielding;
+    // THE LINE SAYS WHEN IT IS AT THE CEILING. It itemises four contributions
+    // and the clamp can make the last three worth nothing at once - see
+    // `MAX_TECHNIQUE_FACTOR`. Listing them under a number none of them moved is
+    // the breakdown claiming an arithmetic it did not do, and it is what made
+    // the saturation invisible for as long as it was.
+    const atCeiling = techniqueRaw > MAX_TECHNIQUE_FACTOR;
     factors.push({
         source: 'technique',
         factor: clampFactor(techniqueRaw, MAX_TECHNIQUE_FACTOR),
@@ -468,6 +513,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
                 + `${matched ? ', element matched to the root' : ''}`
                 + `${reading.powerMultiplier === 1 ? '' : `; ${reading.label.toLowerCase()}`}`
                 + `${wielding === 1 ? '' : `; ${road.name ?? `a leaning toward ${road.subject}`} opens it`}`
+                + `${atCeiling ? '; at the ceiling a technique line is allowed, so not all of that reaches the number' : ''}`
     });
 
     // ARTIFACTS

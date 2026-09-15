@@ -241,6 +241,11 @@ export function daoGate(dao: DaoAssessment, technique: GatedTechnique): DaoGateR
  * The element axis has always read this way. `assessFit` answers a null element
  * with *it asks for no particular element* and a match, so an elementless art
  * admits every root. This is that sentence on the road axis.
+ *
+ * On both axes admission is where it stops. An elementless art takes no root
+ * bonus in `assessPower` or in `techniqueEffectiveness`, for the reason
+ * {@link wieldingWeight} gives below, and 73 of 157 catalog rows are elementless
+ * so the difference is most of the catalog rather than a corner of it.
  */
 export function asksNothingOfTheRoad(technique: GatedTechnique): boolean {
     return (technique.subjects ?? []).length === 0

@@ -31,6 +31,26 @@
  * in `server/consolidated/combat-manage.ts` already passes `cultivator.insights`
  * and the declared art with its `subjects`, so a player who comprehends the road
  * their art is on fights harder with it without anything else being wired.
+ *
+ * ── AND THERE IS A CORNER WHERE IT BUYS NOTHING ──────────────────────────
+ *
+ * The fixture below dodges the spirit-root match on purpose, and the reason it
+ * has to is a finding in its own right. Four axes multiply into one technique
+ * line against a ceiling of `MAX_TECHNIQUE_FACTOR`, and the product clears it
+ * long before any one of them does. Measured on a single root holding an art of
+ * its own element: 1.900 at 58% mastery and 1.900 at 100%, 1.900 on a crude
+ * copy and 1.900 on the author's own hand, 1.900 with no comprehension and
+ * 1.900 with a full Dao of the art's own road. 45.9% of cultivators draw a root
+ * paying x2.0 or better.
+ *
+ * Whether that saturation is right is a balance question and it is open. What
+ * is settled, and what the last block here pins, is that the breakdown must SAY
+ * the line is against the ceiling - a note itemising four contributions under a
+ * number the last three never moved is the engine describing an arithmetic it
+ * did not do, and it is what kept this invisible.
+ *
+ * RED-CHECKED both ways: dropping the ceiling clause from the note fails 1 of
+ * the 3 in that block, and appending it unconditionally fails a different 1.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -212,5 +232,51 @@ describe('the road decides how well the art lands', () => {
         const quiet = assessPower(combatant({ insights: [] }), NEUTRAL)
             .factors.find(f => f.source === 'technique');
         expect(quiet!.note).not.toContain('opens it');
+    });
+});
+
+describe('the ceiling is visible when the line is standing on it', () => {
+    /** A single fire root holding a mastered fire art: the saturating corner. */
+    function saturated(overrides: Partial<CombatantInput> = {}): CombatantInput {
+        return combatant({
+            spiritRoot: 'single_fire',
+            technique: swordArt({ element: 'fire' }),
+            techniqueMastery: 1,
+            ...overrides
+        });
+    }
+
+    it('reads the same however much of the last three axes is brought', () => {
+        // The measurement, as an assertion rather than as a comment. Pin the
+        // EQUALITY, not the 1.9: whether the ceiling moves is a balance
+        // decision, and this must go on saying the same thing if it does.
+        const plain = techniqueFactor(saturated({ insights: [] }));
+        const read = techniqueFactor(
+            saturated({ insights: [], technique: swordArt({ element: 'fire', quality: 'pristine' }) })
+        );
+        const walked = techniqueFactor(saturated({ insights: aDaoOf('weapon', 'sword') }));
+        const half = techniqueFactor(saturated({ techniqueMastery: 0.75, insights: [] }));
+        expect(read).toBe(plain);
+        expect(walked).toBe(plain);
+        expect(half).toBe(plain);
+        expect(plain).toBe(MAX_TECHNIQUE_FACTOR);
+    });
+
+    it('says so, rather than listing contributions that did not reach the number', () => {
+        const note = assessPower(saturated({ insights: aDaoOf('weapon', 'sword') }), NEUTRAL)
+            .factors.find(f => f.source === 'technique')!.note;
+        expect(note).toContain('ceiling');
+        // And it states the fact once and plainly, which is the whole of what
+        // an engine string is allowed to do about it.
+        expect(note).toContain('not all of that reaches the number');
+    });
+
+    it('stays quiet on every line that is not against it', () => {
+        // The case that must not move: nearly every cultivator in the world is
+        // under this ceiling, and none of them should be told about it.
+        const under = assessPower(combatant({ insights: aDaoOf('weapon', 'sword') }), NEUTRAL)
+            .factors.find(f => f.source === 'technique')!;
+        expect(under.factor).toBeLessThan(MAX_TECHNIQUE_FACTOR);
+        expect(under.note).not.toContain('ceiling');
     });
 });
