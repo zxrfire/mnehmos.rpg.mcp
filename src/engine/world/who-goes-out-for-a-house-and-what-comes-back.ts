@@ -731,14 +731,21 @@ export interface WhenTheErrandHappened {
  *
  * The yearly pass dated every sending's news at `departsOnDay + term` with
  * `departsOnDay` set to the day the pass ran, so the news of a return was
- * written before the return. `applyPressure` derives its year index as
- * `yearOfDay(fromDay) + 1`, so the sending line's nominal day - `year*365+175`
- * - is ALWAYS past the end of a one-year span and `withinSpan` always clamps it
- * to the last day of it. Every party in the world therefore left on the final
- * day of the span and came back after it. On one seed the tail of that shows up
- * as one to two facts dated up to 150 days past the world's own clock at every
- * horizon tried - 100, 200, 300 and 497 through 502 years - which is what
- * `driver.test.ts > nothing is incoherent` refuses, correctly.
+ * written before the return. `applyPressure` derived its year index as
+ * `yearOfDay(fromDay) + 1`, one year AHEAD of the span it was handed, so the
+ * sending line's nominal day - `year*365+175` - was ALWAYS past the end of a
+ * one-year span and `withinSpan` always clamped it to the last day of it. Every
+ * party in the world therefore left on the final day of the span and came back
+ * after it. On one seed the tail of that shows up as one to two facts dated up
+ * to 150 days past the world's own clock at every horizon tried - 100, 200, 300
+ * and 497 through 502 years - which is what `driver.test.ts > nothing is
+ * incoherent` refuses, correctly.
+ *
+ * That year index has since been corrected to the years the span actually
+ * covers, so the nominal day is inside the span and nothing is clamped. This
+ * function stays, because it is the honest record independently of the bug that
+ * exposed it, and because the clamp is still reachable on a span that does not
+ * run to a whole year.
  *
  * ── AND THE RECORD THAT IS HONEST ────────────────────────────────────────
  *
@@ -764,7 +771,13 @@ export interface WhenTheErrandHappened {
  * does not have, and inventing one was not worth what it buys.
  */
 export function whenTheErrandHappened(input: {
-    /** The earliest day the party could have left. A span start, or a door. */
+    /**
+     * The earliest day the party could have left. A year start, or a door.
+     *
+     * Never the calling span's start: the pass reports a year at a time, and a
+     * bound read off the caller's chunking makes the errand's dates depend on
+     * how many years somebody asked for in one call.
+     */
     notBefore: number;
     /** The day the pass is reporting on. */
     reportedOn: number;

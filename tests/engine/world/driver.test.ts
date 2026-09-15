@@ -36,17 +36,124 @@ describe('pressure: the world changes on its own', () => {
         expect(out.yearsStepped).toBe(50);
     });
 
-    it('is deterministic and decomposable across a split span', () => {
-        const a = world('drv-split');
-        const b = world('drv-split');
-        const start = a.currentDay;
+    /**
+     * ONE COARSE SPLIT WAS NOT THE CLAIM. This checked 60 years as 20+40 and
+     * nothing else, and twenty-year chunks are far too coarse to see what was
+     * wrong: the pass was not decomposable below about a decade, and the driver
+     * runs it in 365-day slices. Measured on the real catalog at 400 people,
+     * before the fix, sixty years against the same sixty in sixty calls: 322
+     * facts against 316 on the seed that found it, and on seeds alpha and beta
+     * here every chunk count from 2 to 60 differed.
+     *
+     * Three bounds were properties of the CALLER rather than of the year:
+     *
+     * - the year index itself, `yearOfDay(fromDay) + 1`, one year ahead of the
+     *   span, so every scheduled line clamped to the span's last day;
+     * - an errand's earliest departure, taken as the call's `fromDay`, so a
+     *   sixty-year call backdated nothing and sixty one-year calls backdated
+     *   every long term;
+     * - a door's closing, gated on its window having opened inside the same
+     *   CALL, so a window straddling a year boundary shut in one sixty-year
+     *   call and never shut at all in sixty one-year ones.
+     *
+     * A played game advances in whatever slices a player's turns make, so the
+     * claim is every whole-year chopping, not one pair of chunks.
+     *
+     * Red-checked: reverting any one of the three turns at least one row below
+     * red, and reverting the year index turns all of them red.
+     */
+    it('is deterministic and decomposable however a span is chopped up', () => {
+        const chopped = (chunks: number): WorldState => {
+            const state = world('drv-split');
+            const start = state.currentDay;
+            const step = (60 / chunks) * YEAR;
+            for (let i = 0; i < chunks; i++) {
+                applyPressure(state, start + i * step, start + (i + 1) * step);
+            }
+            return state;
+        };
 
-        applyPressure(a, start, start + 60 * YEAR);
-        applyPressure(b, start, start + 20 * YEAR);
-        applyPressure(b, start + 20 * YEAR, start + 60 * YEAR);
+        const one = chopped(1);
+        const dated = (s: WorldState): string[] =>
+            s.history.facts.map(f => `${f.day}:${f.kind}:${f.summary}`);
 
-        expect(b.history.facts.map(f => f.summary)).toEqual(a.history.facts.map(f => f.summary));
-        expect(JSON.stringify(b.factions)).toBe(JSON.stringify(a.factions));
+        for (const chunks of [2, 3, 6, 12, 20, 60]) {
+            const many = chopped(chunks);
+            expect(
+                dated(many),
+                `60 years in ${chunks} calls is a different history from 60 in one`
+            ).toEqual(dated(one));
+            expect(
+                JSON.stringify(many.factions),
+                `60 years in ${chunks} calls left different houses`
+            ).toBe(JSON.stringify(one.factions));
+        }
+    });
+
+    /**
+     * WHEN IN A YEAR ANYTHING HAPPENS, ON THE PATH THE GAME ACTUALLY RUNS.
+     *
+     * `applyPressure` dates each of its lines at `year * 365 + offset` - a fixed
+     * offset per line, a drawn one for the event budget - and clamps anything
+     * past the end of the span. With the year index taken a year AHEAD of the
+     * span it was handed, `year * 365` was the LAST day of a 365-day slice, so
+     * every offset clamped onto it: a century of a house's history - feuds
+     * opening, ground changing hands, people leaving - landed on a hundred
+     * identical calendar dates, one a year, and the world visibly ran on a
+     * metronome.
+     *
+     * Measured over 200 years on seeds alpha, beta and gamma, real catalog, 400
+     * people, through `advanceWorldForPlay` in the 365-day slices it uses:
+     *
+     *     before   1.05 distinct days per year, 2852 of 2862 facts on a boundary
+     *     after    6.50 distinct days per year,  182 of 3005 facts on a boundary
+     *
+     * The BULK path hid it, which is why it stood for so long: one 200-year span
+     * is off by one year out of two hundred, so it went from 13 of 2147 facts on
+     * a boundary to 0 of 2250 and read as healthy throughout.
+     *
+     * On the fixture world here, sixty played years: 26 to 35 dates of the
+     * calendar used against a broken 1, and the first day of the year went from
+     * holding everything to 13-17% of facts. Those residual ones are not this
+     * pass - `lifespanEndsOnDay` is `bornOnDay` plus whole years and a world's
+     * seeded cohort is born on a year boundary, so its deaths and the estates
+     * that follow them land there. Anybody the world bears afterwards is born on
+     * `year * 365 + 180` and dies off the boundary.
+     *
+     * The assertions are the shape of the defect rather than today's figures: a
+     * broken pass puts every fact of a year on ONE date and that date is the
+     * boundary, so the claims are that many dates are used and that the boundary
+     * is not the busiest of them. Both are far from 26 and from 1.
+     */
+    it('spreads a year of its own affairs across the year', () => {
+        const state = world('drv-spread');
+        const start = state.currentDay;
+        for (let i = 0; i < 60; i++) advanceWorldYears(state, 1);
+
+        const mine = state.history.facts.filter(f => f.day >= start);
+        expect(mine.length).toBeGreaterThan(200);
+
+        const perDate = new Map<number, number>();
+        for (const f of mine) {
+            const date = f.day % YEAR;
+            perDate.set(date, (perDate.get(date) ?? 0) + 1);
+        }
+        expect(
+            perDate.size,
+            `a year's facts landed on ${perDate.size} dates of the calendar`
+        ).toBeGreaterThan(15);
+
+        const busiest = [...perDate.entries()].sort((a, b) => b[1] - a[1])[0];
+        expect(
+            busiest[0],
+            `the first day of the year is still the busiest, holding ${busiest[1]} of ${mine.length}`
+        ).not.toBe(0);
+
+        const onTheBoundary = perDate.get(0) ?? 0;
+        expect(
+            onTheBoundary / mine.length,
+            `${onTheBoundary} of ${mine.length} facts fell on New Year's day`
+        ).toBeLessThan(0.25);
     });
 
     it('writes real state, not just a line of prose', () => {

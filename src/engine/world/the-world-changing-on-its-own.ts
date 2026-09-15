@@ -96,8 +96,9 @@ import {
     addGoal,
     createNpc,
     isTheWorldsToMove,
-    markDead,
-    markMissing,
+    theWorldEnds,
+    theWorldLoses,
+    theWorldMayEnd,
     relationshipWith,
     type NpcActivity,
     setLocation,
@@ -361,7 +362,7 @@ export interface PressureEvent {
 
 export interface PressureResult {
     events: PressureEvent[];
-    /** Years actually stepped. Zero when the span held no whole year. */
+    /** Years actually stepped. Zero when no year began inside the span. */
     yearsStepped: number;
     /** People born into the world across the span. */
     born: number;
@@ -425,8 +426,30 @@ export function applyPressure(
     const peopleWalkOut = opts.peopleWalkOutOnTheirOwnAccount ?? true;
     const maxEvents = opts.maxEvents ?? 4000;
 
-    const firstYear = yearOfDay(fromDay) + 1;
-    const lastYear = yearOfDay(toDay);
+    // ── WHICH YEARS THIS SPAN OWNS ───────────────────────────────────────
+    //
+    // A year belongs to the span holding its FIRST day: `fromDay <= year*365 <
+    // toDay`. Adjacent spans therefore partition the year starts between them,
+    // so every chopping of a span steps each year exactly once and in the same
+    // order - which is the whole of decomposability here.
+    //
+    // This was `yearOfDay(fromDay) + 1` to `yearOfDay(toDay)`, numbering the
+    // year ONE AHEAD of the span it was handed. Every line below dates itself
+    // at `year*365 + offset` with `offset` under 365 and `withinSpan` clamps
+    // the rest, so on the 365-day slices the driver runs, `year*365` WAS the
+    // last day of the slice and a whole year of the world landed on it. Seeds
+    // alpha, beta and gamma at 200 played years: 1.05 distinct days per year,
+    // 2852 of 2862 facts on a year boundary. A 200-year bulk span is off by
+    // one year in two hundred, which is why only the played path showed it.
+    //
+    // WHAT THIS STILL HAS NO ANSWER FOR: a year is simulated atomically, so a
+    // span shorter than one steps the whole year or none of it, and on a world
+    // whose day is off the year grid the rest of the year clamps to the span's
+    // end. Spreading one year's schedule over several calls needs a cursor
+    // this layer does not keep - the same gap `whenTheErrandHappened` writes
+    // down from its own end.
+    const firstYear = Math.ceil(fromDay / DAYS_PER_YEAR);
+    const lastYear = Math.ceil(toDay / DAYS_PER_YEAR) - 1;
     let yearsStepped = 0;
     let born = 0;
 
@@ -438,6 +461,8 @@ export function applyPressure(
     for (let year = firstYear; year <= lastYear && events.length < maxEvents; year++) {
         yearsStepped++;
         const rng = forStream(state.seed, 'pressure', year);
+        /** The last day of the year being reported on, which is not the span's. */
+        const yearEndsOn = year * 365 + 364;
 
         // People go out looking, and sometimes they find something the Late Age
         // left. BEFORE the event draw, so a ruin found this year is a ruin this
@@ -648,9 +673,15 @@ export function applyPressure(
         // people on the road. AFTER the economy, so a house buys the carriage
         // out of the purse this year filled, and after recruitment, so
         // somebody admitted this year can be on the party.
+        // An errand's two bounds are the YEAR reported on, never the call's
+        // span. `fromDay` was the first of them, and it made an errand's dates
+        // a property of how the caller chopped its span: one sixty-year call
+        // backdated nothing, sixty one-year calls backdated every long term.
+        // `year * 365` is inside the span by construction - see the windowing
+        // note above - so this cannot date anything before what was advanced.
         applySendings(
             state, year, withinSpan(year * 365 + 175, fromDay, toDay),
-            fromDay, actOnAnEmptyPurse);
+            year * 365, Math.min(yearEndsOn, toDay), actOnAnEmptyPurse);
         // And the yard works on what the last party brought home. AFTER the
         // sendings, so material that came back this year is material this
         // year's work can go into - a hull is a schedule, and a house hunts
@@ -1380,7 +1411,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         // population the failure table exists to produce. See
         // `recording-what-a-crossing-did.ts`.
         if (strike.died) {
-            state.npcs[at] = markDead(
+            const dead = theWorldEnds(
                 npc,
                 day,
                 // NAME WHAT KILLED THEM. A death at this height has to be an event
@@ -1397,6 +1428,15 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
                     : `The crossing out of ${rankName(npc.cultivation.realmOrdinal)} `
                       + 'did not open, and closed.'
             );
+            // NOTHING IS WRITTEN WHEN THE WORLD MAY NOT END THEM, and that
+            // includes the crossing. `recordCrossing` files a death outcome as
+            // a `death` fact naming them deceased, so recording this one would
+            // put exactly the artefact the seam exists to prevent into the
+            // ledger - a death in the record with nobody dead in it. The wall
+            // came down, it took nothing (`strikeAtTheWall` returns the
+            // untouched record on a death), and the year leaves no trace.
+            if (!dead) continue;
+            state.npcs[at] = dead;
             // AND WHAT THEY LEFT. `markDead` alone stops a heart; it passes
             // nothing on. The two deaths that skipped this were the deaths at a
             // WALL and at the LAST CROSSING - the two highest-ordinal ways to
@@ -1508,7 +1548,12 @@ function oneOfTheseFoughtOnItsOwnGround(
     const dead = state.npcs[deadAt]!;
     const cause = `Killed by ${winner.name} at ${placeName}.`;
 
-    state.npcs[deadAt] = markDead(dead, day, cause);
+    const ended = theWorldEnds(dead, day, cause);
+    // The challenge resolved no way at all rather than that way. Everything
+    // below - the meal, what came off the body, the fact - is downstream of
+    // somebody having died here.
+    if (!ended) return;
+    state.npcs[deadAt] = ended;
     settleNpcDeath(state, state.npcs[deadAt]!, day);
 
     // A KILL IS A MEAL. Whichever of the two won, if what won is one of these
@@ -2311,12 +2356,27 @@ function applySendings(
     year: number,
     day: number,
     /**
-     * The first day of the span this pass reports on.
+     * The first day of the YEAR this pass is reporting on.
      *
-     * An errand is dated inside the span rather than projected past the end of
-     * it. {@link whenTheErrandHappened} carries the whole argument.
+     * An errand is dated inside the year rather than projected past the end of
+     * it. {@link whenTheErrandHappened} carries the whole argument. The year
+     * rather than the caller's span because a bound that is a property of how a
+     * span was chopped up makes the errand's dates one too.
      */
-    spanStartsOn: number,
+    yearStartsOn: number,
+    /**
+     * The last day the world will have reached when this year is over.
+     *
+     * An errand whose term does not fit inside the year is a party still out
+     * rather than one that came back. This was the sending line's own day,
+     * which was that number ONLY because the clamped year index had already
+     * pushed that day to the end of the span. Un-clamping it would have
+     * shortened every errand's window from the year to the 175 days before the
+     * line runs, and taken the two longest rows of the fifteen in
+     * `SENDING_REASONS` - 180 days and 720 - out of the world's reach instead
+     * of the one the gap in `whenTheErrandHappened` is written for.
+     */
+    yearEndsOn: number,
     actOnAnEmptyPurse: boolean
 ): number {
     const rng = forStream(state.seed, 'sendings', year);
@@ -2597,13 +2657,14 @@ function applySendings(
         //
         // This pass reports on a year, and an errand whose term fits inside it
         // is one that happened during it. Before this the party left on the day
-        // the pass ran - which `withinSpan` has always clamped to the last day
-        // of the span - and the news of its return was dated after the world's
-        // own clock. `whenTheErrandHappened` carries the measurement.
+        // the pass ran - which `withinSpan` clamped to the last day of the span,
+        // because the year index was a year ahead of it - and the news of its
+        // return was dated after the world's own clock. `whenTheErrandHappened`
+        // carries the measurement.
         const when = whenTheErrandHappened({
-            notBefore: spanStartsOn,
+            notBefore: yearStartsOn,
             reportedOn: day,
-            spanEndsOn: day,
+            spanEndsOn: yearEndsOn,
             term: posting.days
         });
         const partyIds = party.map(p => p.id);
@@ -2693,11 +2754,17 @@ function applySendings(
         for (const missing of sending.lost) {
             const index = at.get(missing.id);
             if (index === undefined) continue;
-            state.npcs[index] = markMissing(
+            // They came back. The sending's own count still says how many
+            // were lost, which over-reports by one here - the alternative is
+            // re-deriving the party's losses from the rows, which is the
+            // second copy of a fact this repo is made of warnings about.
+            const gone = theWorldLoses(
                 state.npcs[index],
                 sending.returnsOnDay,
                 `Went out for ${faction.name} on ${reason.name.toLowerCase()} and did not come back.`
             );
+            if (!gone) continue;
+            state.npcs[index] = gone;
         }
 
         // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
@@ -3211,11 +3278,14 @@ function applyPeopleWalkingOut(
         const lost: NpcRecord[] = [];
         for (const member of party) {
             if (member.npc.cultivation.realmOrdinal >= who.to.survivalOrdinal) continue;
-            state.npcs[member.at] = markMissing(
+            const gone = theWorldLoses(
                 state.npcs[member.at], day,
                 `Walked out of ${houseRow ? houseRow.name : 'a compound'} for `
                 + `${who.to.name} and did not come out of it.`
             );
+            // They walked out and they came out of it.
+            if (!gone) continue;
+            state.npcs[member.at] = gone;
             lost.push(member.npc);
         }
 
@@ -4032,14 +4102,20 @@ function applyLastCrossing(
                 updatedOnDay: day
             };
         } else {
-            state.npcs[i] = markDead(
+            const dead = theWorldEnds(
                 npc,
                 day,
                 'Did not survive the last crossing.'
             );
-            // See the wall, above: a death that settles nothing passes nothing
-            // on, and this is the other end of the ladder doing it.
-            settleNpcDeath(state, state.npcs[i], day);
+            // Refused, and the row is left exactly as it stood: they did not
+            // cross and they did not die of it. The two branches above are the
+            // only ways this pass moves anybody.
+            if (dead) {
+                state.npcs[i] = dead;
+                // See the wall, above: a death that settles nothing passes
+                // nothing on, and this is the other end of the ladder doing it.
+                settleNpcDeath(state, state.npcs[i], day);
+            }
         }
         out.push(state.npcs[i]);
     }
@@ -4089,7 +4165,7 @@ function theProvinceGoes(
     state: WorldState,
     door: LocationRecord,
     day: number,
-    /** The last day the world will have reached when this pass is over. */
+    /** The last day of the year being reported on, or the day the world reaches. */
     spanEndsOn: number,
     peopleKnow: WhatSomebodyKnowsOfIt
 ): readonly AHouseOnTheRoad[] {
@@ -4182,12 +4258,14 @@ function theProvinceGoes(
         for (const missing of sending.lost) {
             const index = at.get(missing.id);
             if (index === undefined) continue;
-            state.npcs[index] = markMissing(
+            const gone = theWorldLoses(
                 state.npcs[index],
                 sending.returnsOnDay,
                 `Went into ${door.name} for ${house.houseName} while it stood open `
                 + 'and did not come back.'
             );
+            if (!gone) continue;
+            state.npcs[index] = gone;
         }
 
         // AND THE SAME STAKE, BY THE SAME DOOR. A race is an errand a house
@@ -4215,6 +4293,26 @@ function theProvinceGoes(
     return going;
 }
 
+/**
+ * Doors on a cycle, opening and shutting.
+ *
+ * THIS PASS HAD A CALLER AND STILL NEVER RAN. Every other unreachable system
+ * found in this tree was a capability with nothing routed to it, and every one
+ * of those was findable by grepping for callers. This one is called every year
+ * by the driver and could not fire: it clips the year to the caller's span with
+ * `from` and `until` below, and the year index was a year AHEAD of that span, so
+ * both collapsed onto one calendar date and the pass asked whether a door opened
+ * TODAY, once a year, instead of over the 365 days in it. Measured over 200
+ * years on four seeds through `advanceWorldForPlay`: no door opened or shut, on
+ * any of them. After: 14 to 21 openings and 9 to 12 closings a world.
+ *
+ * Everything downstream went with it - `theProvinceGoes`, the race a window
+ * opens, `whoSendsWhenADoorOpens`. All of it had tests, and every one of those
+ * tests drives `applyPressure` over a single multi-century span, which is the
+ * shape no caller in the game uses.
+ *
+ * Having a caller is not proof that anything runs.
+ */
 function applyConvergences(
     state: WorldState,
     year: number,
@@ -4278,8 +4376,16 @@ function applyConvergences(
             // A week is whoever is standing there; a season is a race. The
             // scaling is the window's own, through the read that already prices
             // a road against it - see `a-door-that-opens-is-a-race.ts`.
+            // THE YEAR'S LAST DAY, NOT THE CALL'S. Whether a party at a door is
+            // back or still standing in it decided the world differently
+            // depending on how many years the caller asked for in one go: in a
+            // sixty-year call every race resolved, and in sixty one-year calls
+            // the long terms did not. Clamped to `toDay` so nothing is ever
+            // reported back after the day the world has actually reached, which
+            // for a whole-year span is the year's own end.
             const going = theProvinceGoes(
-                state, state.locations[i], day, toDay, whatPeopleKnow());
+                state, state.locations[i], day,
+                Math.min(yearEnd, toDay), whatPeopleKnow());
 
             out.push(emit(state, 'convergence_opened', day, {
                 day,
@@ -4318,11 +4424,17 @@ function applyConvergences(
         // And it shuts, which is the half that makes the opening mean anything.
         // Read off the record as it now stands, so a window that opened and ran
         // out inside this same span shuts inside it too.
+        //
+        // WHETHER IT IS OPEN IS THE RECORD'S ANSWER, NOT AN ARITHMETIC ONE. The
+        // guard here was `windowOpenedOn >= fromDay` - pair a closing with an
+        // opening announced by THIS CALL - and a window straddling a year
+        // boundary therefore shut in a sixty-year call and never shut at all in
+        // sixty one-year ones, which is every span the driver actually runs.
+        // Measured on seed beta at sixty years: two doors stayed recorded open
+        // for good, and people went on migrating to ground that had closed.
         const standing = state.locations[i];
         const closesOn = nextClosingDay(standing, from);
-        const windowOpenedOn = closesOn === null ? null : closesOn - standing.cycle!.openDays;
-        if (closesOn !== null && closesOn <= until
-            && windowOpenedOn !== null && windowOpenedOn >= fromDay) {
+        if (closesOn !== null && closesOn <= until && !standing.sealed) {
             const day = withinSpan(closesOn, fromDay, toDay);
             const shuts = whatShutsThisDoor(standing);
             const changed = applyLocationChange(standing, {
@@ -4575,8 +4687,13 @@ const TEMPLATES: Template[] = [
             for (const npc of losses) {
                 const at = indexById(state.npcs, npc.id);
                 const fresh = at >= 0 ? state.npcs[at] : npc;
-                replaceNpc(state, markDead(
-                    fresh, day, `Killed when the ${houseName(aggressor.name)} came.`));
+                const dead = theWorldEnds(
+                    fresh, day, `Killed when the ${houseName(aggressor.name)} came.`);
+                // One of the people the house came for and did not get. The
+                // severity below is the share of the roll that fell, so it
+                // moves with this rather than having to be corrected.
+                if (!dead) continue;
+                replaceNpc(state, dead);
                 deaths.push(settleNpcDeath(
                     state, at >= 0 ? state.npcs[at] : fresh, day));
             }
@@ -4756,7 +4873,12 @@ const TEMPLATES: Template[] = [
             const cause = rng.chance(0.25)
                 ? 'a breakthrough that did not hold'
                 : rng.chance(0.4) ? 'an old wound' : 'age';
-            replaceNpc(state, markDead(npc, day, `Died of ${cause}.`));
+            const dead = theWorldEnds(npc, day, `Died of ${cause}.`);
+            // A draw that came up with somebody the world may not end is a draw
+            // that produced nothing, exactly like an empty candidate pool two
+            // lines above.
+            if (!dead) return null;
+            replaceNpc(state, dead);
             const handoff = settleNpcDeath(state, npc, day);
 
             return emit(state, 'elder_died', day, {
@@ -4823,6 +4945,11 @@ const TEMPLATES: Template[] = [
             // The dead keep their account open. It is what the heir inherits.
             const at = indexById(state.npcs, victim.id);
             if (at < 0) return null;
+            // ASKED BEFORE THE ACCOUNT IS OPENED, not at the grave. The line
+            // below writes the victim's enmity against the killer, and a
+            // refusal after it would leave a grudge over a killing that never
+            // happened.
+            if (!theWorldMayEnd(state.npcs[at])) return null;
             state.npcs[at] = upsertRelationship(state.npcs[at], {
                 targetId: killer.id,
                 targetName: killer.name,
@@ -4832,7 +4959,9 @@ const TEMPLATES: Template[] = [
             }, day);
             const dying = state.npcs[at];
 
-            state.npcs[at] = markDead(dying, day, `Killed by ${killer.name}.`);
+            const dead = theWorldEnds(dying, day, `Killed by ${killer.name}.`);
+            if (!dead) return null;
+            state.npcs[at] = dead;
             const handoff = settleNpcDeath(state, dying, day);
 
             return emit(state, 'killing', day, {
@@ -5465,7 +5594,9 @@ const TEMPLATES: Template[] = [
             );
             if (others.length > 0) return null;
 
-            replaceNpc(state, markMissing(npc, day, 'Went out and did not come back.'));
+            const gone = theWorldLoses(npc, day, 'Went out and did not come back.');
+            if (!gone) return null;
+            replaceNpc(state, gone);
 
             return emit(state, 'technique_lost', day, {
                 day,
@@ -5743,8 +5874,12 @@ const TEMPLATES: Template[] = [
                     if (who === undefined) continue;
                     const at = indexById(state.npcs, who.id);
                     if (at < 0) continue;
-                    state.npcs[at] = markDead(state.npcs[at]!, day,
+                    const dead = theWorldEnds(state.npcs[at]!, day,
                         `Taken when ${beast.name} came down on ${town.name}.`);
+                    // `taken` is what the fact below counts, so somebody it did
+                    // not get is simply not in it.
+                    if (!dead) continue;
+                    state.npcs[at] = dead;
                     settleNpcDeath(state, state.npcs[at]!, day);
                     taken.push(state.npcs[at]!);
                 }
@@ -5850,7 +5985,10 @@ const TEMPLATES: Template[] = [
             // everybody who ever climbed.
             const npc = pickByMortality(rng, candidates, day);
             if (!npc) return null;
-            replaceNpc(state, markMissing(npc, day, 'Went into the hills and was not seen again.'));
+            const gone = theWorldLoses(
+                npc, day, 'Went into the hills and was not seen again.');
+            if (!gone) return null;
+            replaceNpc(state, gone);
 
             return emit(state, 'disappearance', day, {
                 day,
