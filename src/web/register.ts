@@ -103,6 +103,16 @@ import {
 import type { TechniqueGrade } from '../schema/cultivation.js';
 import { isSettledOnUse, RECORD_CAVEAT } from '../engine/cultivation/grade-spread.js';
 import { glossaryGroups } from './register-glossary.js';
+import { renderDeepPastSections } from './register-the-deep-past.js';
+import { belowTheLadderRowCount, renderBelowTheLadderSections } from './register-below-the-ladder.js';
+import { renderWhatCanBeTaughtSections } from './register-what-can-be-taught.js';
+import { renderWhatHappensToABodySections } from './register-what-happens-to-a-body.js';
+import {
+    renderContingenciesSection,
+    renderCraftAndCustodySections,
+    renderHouseDoorsAndErrandsSections,
+    renderRumoursSection
+} from './register-what-a-house-is-doing.js';
 import { hoistConstantColumns, hoistedLine } from './register-constant-columns.js';
 import {
     REALM_TIERS,
@@ -5989,7 +5999,13 @@ function householdsSection(reg: WorldRegister): string {
 
     const across = rows.filter(h => h.acrossHouses).length;
     const houses = new Set(rows.flatMap(h => [h.one.houseId, h.other.houseId])).size;
-    const claimed = rows.flatMap(h => [h.one, h.other]).filter(s => s.marriedIn);
+    const spouses = rows.flatMap(h => [h.one, h.other]);
+    const claimed = spouses.filter(s => s.marriedIn);
+    // A spouse who married in AND sits at the top of the house they married
+    // into is the case where a stated tie visibly displaces a drawn one: their
+    // housemates hold one fewer rival-or-ally row toward them in every world,
+    // because the slot is already occupied by a fact the catalog wrote down.
+    const atTheTop = spouses.filter(s => s.marriedIn && s.highestRankInTheHouse);
     const none = reg.housesWithNoHouseholdStated;
 
     const origin = (s: RegisterSpouse): string => {
@@ -6007,8 +6023,10 @@ function householdsSection(reg: WorldRegister): string {
     return `<section class="startfolded">
   <div class="sh"><h2>The households the catalog states</h2><span class="r">${rows.length} households &middot; ${houses} of ${reg.counts.factions} houses &middot; ${across === 0 ? 'none across a house line' : `${across} across a house line`}</span></div>
   <p class="note"><strong>Every marriage the catalog states, and it states the same ones in every world.</strong> Who somebody is married to is a fact about them, so it is written beside their rank and their house rather than drawn when a world opens. The last column is what the two entries were read as saying: the reading is arguable, and it is printed so that it can be argued with rather than guessed at.</p>
+  <p class="note"><strong>This is the whole list and not a sample of one.</strong> Every household below joins two people the catalog names, and that is demography rather than a gap: measured on a fresh world, all but one of the living cultivators in it are people this catalog names, so the pass that draws a pairing has essentially nobody else to reach. A reader should not take the ${rows.length} as the top of a larger population.</p>
   <p class="note"><strong>${across === 0 ? 'Not one of them crosses a house line.' : `${across} of them cross a house line.`}</strong> Both halves of ${across === 0 ? 'every' : 'nearly every'} household stand in the same house, so ${across === 0 ? 'none of these is' : 'most of these are not'} a tie between two bodies and nothing on the Ties tab is built out of one. The only thing here that reaches a second house is where somebody came from, and that is a fact about a person.</p>
-  <p class="note"><strong>Two people, and no children.</strong> A household here is a marriage and stops at one. Whether a couple has children is drawn when a world opens rather than written down beside them, so that a life can begin as the child of somebody the catalog named - a fixed roster of children would take that seat away. Nothing on this page is a family tree.</p>
+  <p class="note"><strong>A stated tie takes a slot a drawn one would have filled.</strong> Ties between people inside a house are drawn when a world opens, and a marriage the catalog already states is not drawn again - so each row here is one fewer rival-or-ally row somewhere, in every world. ${atTheTop.length ? `It is visible on the ${count(atTheTop.length)} ${atTheTop.length === 1 ? 'person' : 'people'} below who married in and also sit at the top of the house they married into: what their own housemates hold toward them is short by exactly one, every time.` : ''}</p>
+  <p class="note"><strong>Marriage is the only tie the catalog states between two named people, and a household here stops at two.</strong> Whether a couple has children is drawn when a world opens rather than written down beside them, so that a life can begin as the child of somebody the catalog named - a fixed roster of children would take that seat away. Nothing on this page is a family tree. Another kind of stated tie would arrive as its own listing beside this one rather than as more columns on it.</p>
   <div class="scroll"><table class="itemtbl">
   <colgroup><col style="width:18%"><col style="width:19%"><col style="width:19%"><col style="width:44%"></colgroup>
   <caption>Every household the catalog states &middot; in the order it states them</caption>
@@ -7534,6 +7552,10 @@ export function renderRegisterHtml(
   <button class="tab" role="tab" data-tab="holdings" aria-selected="false" title="What is actually in each building">Holdings <span>${reg.whatEachHouseHolds.counts.houses}</span></button>
   <button class="tab" role="tab" data-tab="teaching" aria-selected="false" title="What each house will teach, art by art">Teaching <span>${reg.dossiers.filter(d => d.curriculum || d.deepRoad).length}</span></button>
   <button class="tab" role="tab" data-tab="arts" aria-selected="false" title="The almanac of arts: every art in the world, by grade">Arts <span>${c.techniques}</span></button>
+  <!-- The only tab on this sheet that is not organised by house, because
+       nothing on it belongs to one: what things cost, who has no house, and
+       what the road leaves behind. -->
+  <button class="tab" role="tab" data-tab="below" aria-selected="false" title="The world under the sects: prices, mortals, the unaffiliated, and what the road finished with">Below <span>${belowTheLadderRowCount()}</span></button>
   <button class="tab" role="tab" data-tab="key" aria-selected="false">Key</button>
 </nav>
 
@@ -7570,6 +7592,11 @@ export function renderRegisterHtml(
   </tbody></table></div>`;
   }).join('')}
 </section>
+
+<!-- WHAT A BODY IS ON THIS LADDER, under the list of the people at the top of
+     it. Everybody in the table above is past the rung where an unaimed thing
+     can reach them; what follows is the same world from underneath that line. -->
+${renderWhatHappensToABodySections()}
 </div>
 
 <div class="pane" data-pane="factions" hidden>
@@ -7640,6 +7667,11 @@ export function renderRegisterHtml(
      reader who meets the households first would take the silence for a gap. -->
 ${householdsSection(reg)}
 
+<!-- THE DOOR AND THE ERRANDS. What floor a person actually comes in at, and
+     what a house puts people on the road for. Both are facts about a body
+     rather than about a pair, which is why they are here and not on Ties. -->
+${renderHouseDoorsAndErrandsSections()}
+
 </div>
 
 <!-- ── TIES ───────────────────────────────────────────────────────────────
@@ -7672,6 +7704,12 @@ ${householdsSection(reg)}
   <p class="note"><strong>On these entries and nowhere else.</strong> <em>Demonic</em> is a field on a sect row and a field is not an identity - read with the alignment as the only answer, these are one house wearing several names. Every line below is the catalog's, and the ordering is the argument: what it does, who pays, whether they agreed, what it will not do, where it stands with its patron, and what happens to the ground if somebody ends it.</p>
   ${reg.dossiers.filter(d => d.demonic).map(d => demonicBlock(d.demonic!, d.name, d.id)).join('')}
 </section>
+
+<!-- A plan one body holds against another is a tie in every sense except the
+     one the pair table can hold: it has no second end. The target has not been
+     told, and on the one recorded entry is not even named in the holder's own
+     records. -->
+${renderContingenciesSection()}
 </div>
 
 <!-- ── HISTORY ────────────────────────────────────────────────────────────
@@ -7692,6 +7730,13 @@ ${householdsSection(reg)}
   <div class="sh"><h2>How each house came to be here</h2><span class="r">${reg.dossiers.filter(d => d.history).length} houses</span></div>
   ${structure(historyView)}
 </section>
+
+<!-- EVERYTHING OLDER THAN THE OLDEST HOUSE, which was in the catalogs and on
+     no page. The two sections above are nine hundred years deep and the world
+     is fifty thousand; what follows is the rest of it, and it is a separate
+     module because all ten of its sections answer one question in one shape -
+     what is claimed, who holds it, and how much record is left to argue from. -->
+${renderDeepPastSections()}
 </div>
 
 <!-- ── THE ALMANAC ────────────────────────────────────────────────────────
@@ -7781,6 +7826,12 @@ ${renderHoldingsSection(reg.dossiers)}
   <div class="sh"><h2>House by house</h2><span class="r">${c.factions} bodies</span></div>
   ${structure(holdingsView)}
 </section>
+
+<!-- WHAT LEAVES THE BUILDING AND WHAT IS LODGED IN IT. The sections above say
+     what a house has; these say what comes out of its workshops, what crosses
+     water rather than road to reach somebody else, and what it is holding on
+     behalf of people who are not coming back for it. -->
+${renderCraftAndCustodySections()}
 </div>
 
 <!-- ── WHAT EACH HOUSE TEACHES ────────────────────────────────────────────
@@ -7801,6 +7852,12 @@ ${renderHoldingsSection(reg.dossiers)}
   <p class="note">Every level printed here is the <strong>teachable end</strong>, which on a road covering the last realm is a rung below where the book stops: the last one is reached by surviving the crossing and by nothing else, so no house can walk anybody onto it.</p>
   ${structure(teachingView)}
 </section>
+
+<!-- WHAT IS NOT ONE HOUSE'S SHELF. The section above answers what a body will
+     hand you; these answer where a road besides your own is taught, which
+     houses are a principle rather than a shelf, who can carry somebody to the
+     end of the ladder, and which arts are a person. -->
+${renderWhatCanBeTaughtSections()}
 </div>
 
 <!-- The third column of force, and the one the sheet had nowhere. A person, an
@@ -7855,6 +7912,22 @@ ${techniqueEraSections(reg.techniques)}
       return `<p class="note"><strong>The ceiling in the arts table is what the world believes, not a bar anything applies.</strong> ${capped.length} ancient ${capped.length === 1 ? 'art has' : 'arts have'} a figure, expressed on the same 0-100% mastery scale the engine uses - and NOTHING CURRENTLY READS IT. No upkeep is consulted anywhere in the technique layer, so an elder saying <em>you will not get past the fifth level</em> is a person describing their own house's history with the material, and the catalog recording that they are right, rather than a rule reading itself out loud. When it is enforced it should be enforced the honest way: an upkeep nobody can meet, not a rule saying you may not.</p>`;
   })()}
 </section>
+</div>
+
+<!-- ── THE WORLD UNDER THE SECTS ──────────────────────────────────────────
+     NOT ORGANISED BY HOUSE, alone among the tabs, because nothing on it
+     belongs to a house. A price, a hamlet's fear, a word a province uses for
+     somebody it cannot place and a cultivator the road has finished with are
+     facts about people standing outside every institution on the other nine
+     tabs, which is most of the people in the world. -->
+<div class="pane" data-pane="below" hidden>
+${renderBelowTheLadderSections()}
+
+<!-- And what the people on this tab say about everybody on the other nine,
+     which is the only education the game offers a player: nothing may be named
+     to somebody who has no knowledge of it, so the whole burden of finding out
+     falls on other people's mouths. -->
+${renderRumoursSection()}
 </div>
 
 <!-- The column glossary and nothing else. The repair medicine section used to

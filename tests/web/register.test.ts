@@ -1005,10 +1005,10 @@ describe('two bodies that used to be one posting', () => {
     // ten partisan fields sit on the bodies that hold them.
     it('carries the split as a relationship rather than as a pair of claims', () => {
         const kiln = reg.courts.find(c => c.id === 'court-kiln')!;
-        const walked = reg.dossiers.find(d => d.id === 'sect-kiln-wardens')!;
+        const walked = reg.dossiers.find(d => d.id === 'sect-deeproot-court')!;
 
         const ours = walked.relationships.find(r => r.otherId === 'court-kiln');
-        const theirs = kiln.relationships.find(r => r.otherId === 'sect-kiln-wardens');
+        const theirs = kiln.relationships.find(r => r.otherId === 'sect-deeproot-court');
         expect(ours, 'the walking half does not record the other one').toBeDefined();
         expect(theirs, 'the standing half does not record the other one').toBeDefined();
 
@@ -1037,7 +1037,7 @@ describe('two bodies that used to be one posting', () => {
         // Both entries are real and a player who deals with either should be
         // able to deal with the other. Neither name may quietly disappear.
         const kiln = COURTS.find(c => c.id === 'court-kiln');
-        const rootSill = SECTS.find(s => s.id === 'sect-kiln-wardens');
+        const rootSill = SECTS.find(s => s.id === 'sect-deeproot-court');
         expect(kiln, 'the court half is gone from the catalog').toBeDefined();
         expect(rootSill, 'the sect half is gone from the catalog').toBeDefined();
         expect(flat).toContain(kiln!.name);
@@ -1286,7 +1286,7 @@ describe('a court panel', () => {
             ...reg.courts.filter(c => c.relationships.some(r => r.kind === 'two_bodies_nobody_joins')),
             ...reg.dossiers.filter(d => d.relationships.some(r => r.kind === 'two_bodies_nobody_joins'))
         ].map(x => x.id).sort();
-        expect(linked).toEqual(['court-kiln', 'sect-kiln-wardens']);
+        expect(linked).toEqual(['court-kiln', 'sect-deeproot-court']);
     });
 });
 
@@ -1655,9 +1655,22 @@ describe('what a faction is reaching for', () => {
  *   of them across a house line        0   every pair is inside one house
  *   entries that already said so       3   the catalog's own header says four
  *   at their house's highest rank      3   the header names one exception
+ *   married in AND top of that house   1   where the displacement is visible
  *
  * The section may say the second and third figures; it may not hardcode any of
  * them, and the assertions below are the ones that keep that true.
+ *
+ * TWO THINGS THE SECTION NOW HAS TO SAY, both measured elsewhere and neither
+ * derivable from this page on its own:
+ *
+ *   - THE LIST IS NOT A SAMPLE. Every household joins two catalog figures
+ *     because all but one of the living cultivators in a fresh world IS a
+ *     catalog figure, so the pass that draws a pairing has nobody else to
+ *     reach. Without that sentence the 27 reads as the visible top of a larger
+ *     population, which is the wrong picture of this world.
+ *   - A STATED TIE DISPLACES A DRAWN ONE. A marriage the catalog already holds
+ *     is not drawn again, so the Ties tab is short by one row per household in
+ *     every world, and a reader comparing the two pages needs to be told.
  */
 describe('the households the catalog states', () => {
     const marriedIds = new Set(AUTHORED_MARRIAGES.flatMap(m => [m.oneId, m.otherId]));
@@ -1713,6 +1726,37 @@ describe('the households the catalog states', () => {
         expect(marked.length, 'nothing is marked, so this test is guarding nothing')
             .toBeGreaterThan(0);
         expect(text(householdsHtml())).toContain('married in');
+    });
+
+    it('says that a stated marriage takes the place of a drawn tie', () => {
+        // WHY THE SHEET HAS TO SAY THIS RATHER THAN LEAVE IT TO BE NOTICED.
+        // Ties between people inside a house are drawn when a world opens, and
+        // a marriage the catalog already states is not drawn again - so every
+        // row in this section is one fewer rival-or-ally row somewhere, in
+        // every world. Measured: the rows a Ninefold Karma Palace member would
+        // otherwise hold toward the spouse who married in and tops that house
+        // come out 38 where an unmarried person of the same standing gets 39.
+        //
+        // The assertion is on the sheet SAYING it, not on either figure. The
+        // count is worldgen's and moves when worldgen moves; what must not
+        // change is that a reader comparing this section against the Ties tab
+        // is told why the two do not add up.
+        const section = text(householdsHtml());
+        expect(section, 'the sheet does not say a stated tie displaces a drawn one')
+            .toContain('takes a slot a drawn one would have filled');
+
+        // And the visible case is called out rather than left to be spotted: a
+        // spouse who married in AND sits at the top of the house they married
+        // into is where the displacement is legible from this page alone.
+        const atTheTop = reg.households
+            .flatMap(h => [h.one, h.other])
+            .filter(s => s.marriedIn && s.highestRankInTheHouse);
+        expect(atTheTop.length, 'nobody married in and tops their house, so the '
+            + 'sentence below guards nothing - if the catalog legitimately lost that '
+            + 'case, drop the clause from the section in the same change')
+            .toBeGreaterThan(0);
+        expect(section, 'the displacement is derivable from this page and is not stated')
+            .toContain('sit at the top of the house they married into');
     });
 
     it('names a second house only where somebody married in from one', () => {

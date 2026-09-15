@@ -238,8 +238,16 @@ export function findDataWithNoVerb() {
     // much a player act as anything in `web`. Measured against `web` alone
     // this reported the dao-ground catalog unreachable, and the standing read
     // has been calling into it from `server/consolidated` all along.
+    //
+    // AND THE STANDING REGISTER IS NOT AN ACT, THOUGH IT LIVES IN `web`. It is
+    // a view over the catalogs - it reads every table it can find and prints
+    // it, which is the whole of its job - so counting it as a verb means a
+    // catalog becomes reachable by being DESCRIBED. Measured the day five
+    // register modules landed: the count fell from 15 to 9 without one
+    // sentence reaching one new table, and six catalogs a player still cannot
+    // act on dropped off the list for having been written about.
     const verbs = [
-        ...sources(path.join(SRC, 'web')),
+        ...sources(path.join(SRC, 'web')).filter(f => !/[\\/]register[^\\/]*\.ts$/.test(f)),
         ...sources(path.join(SRC, 'server'))
     ]
         .map(f => fs.readFileSync(f, 'utf8'))

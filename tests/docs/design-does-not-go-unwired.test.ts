@@ -213,7 +213,25 @@ describe('design does not go unwired', () => {
  * consults is live for the world and unreachable for the player, and those are
  * two different findings.
  */
-const DATA_NO_ACT_READS = 15;
+// RAISED FROM 15 TO 23 BECAUSE THE INSTRUMENT WAS WRONG, AND THE WORLD WAS NOT.
+//
+// The act surface was every file in `src/web/`, and the Standing Register lives
+// there. The register is a VIEW: it reads every catalog it can reach and prints
+// it, which is the whole of its job - so a catalog was clearing this ratchet by
+// being DESCRIBED rather than by becoming something a sentence could reach.
+//
+// Measured while five new register modules were being written. Before them the
+// register was already masking EIGHT catalogs - `false-immortals.ts` at 43
+// exports, `lost-ages.ts` at 26, `cultivators-the-road-finished.ts` at 11 - and
+// the new sections would have masked six more, taking the reading from 15 down
+// to 9 without one sentence reaching one new table. `find-unwired-exports.mjs`
+// now leaves `register*.ts` out of the verb layer and the true figure is 23.
+//
+// So nothing regressed and nothing was wired: the number went up because it
+// started measuring what it always said it measured. It is meant to come down
+// the ordinary way, by a verb reaching one of the 23, and nobody may raise it
+// again without saying here what pushed it.
+const DATA_NO_ACT_READS = 23;
 
 describe('a catalog the player cannot act on', () => {
     it('does not add data no player-facing act reads', () => {

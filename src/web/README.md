@@ -1990,22 +1990,28 @@ catalog the sheet is current with no step in between.
 
 ### The tabs, and where each one is built
 
-Ten panes, one visible at a time, state in the DOM. A `data-tab` button and a
+Eleven panes, one visible at a time, state in the DOM. A `data-tab` button and a
 `data-pane` div share a name, and `tests/web/register.test.ts` asserts the two sets are
 equal - a section outside every pane renders under all of them at once, which has happened.
 
 | Tab | What it answers | Built in |
 |---|---|---|
-| People | everybody at or above Grand Ascension, from every catalog at once | `register.ts` |
-| Factions | what each body **is**: a resume, read in about thirty seconds | `register.ts` |
-| Ties | how each body stands with every other, under both parties | `register.ts` |
-| History | how each house got here, and the dated events several of them share | `register.ts` |
+| People | everybody at or above Grand Ascension, and what a body is on this ladder | `register.ts`, [`register-what-happens-to-a-body.ts`](register-what-happens-to-a-body.ts) |
+| Factions | what each body **is**: a resume, read in about thirty seconds | `register.ts`, [`register-what-a-house-is-doing.ts`](register-what-a-house-is-doing.ts) |
+| Ties | how each body stands with every other, under both parties | `register.ts`, [`register-what-a-house-is-doing.ts`](register-what-a-house-is-doing.ts) |
+| History | how each house got here, and everything older than the oldest house | `register.ts`, [`register-the-deep-past.ts`](register-the-deep-past.ts) |
 | Objects | the almanac: what kinds of thing exist, and what each one is | [`register-items.ts`](register-items.ts) |
 | Items | the ledger: which specific things exist right now, and who has them | `register.ts` |
-| Holdings | what each house actually **holds**, joined across seven catalogs | [`register-what-each-house-holds.ts`](register-what-each-house-holds.ts) |
-| Teaching | what each house will teach, art by art, and how far it can carry you | `register.ts` |
+| Holdings | what each house actually **holds**, makes, ships and is lodged with | [`register-what-each-house-holds.ts`](register-what-each-house-holds.ts), [`register-what-a-house-is-doing.ts`](register-what-a-house-is-doing.ts) |
+| Teaching | what each house will teach, and what is taught outside any one house | `register.ts`, [`register-what-can-be-taught.ts`](register-what-can-be-taught.ts) |
 | Arts | the technique catalog, the ground, and what the last age left | `register.ts` |
+| Below | the world under the sects: prices, mortals, rogues, and what the road left | [`register-below-the-ladder.ts`](register-below-the-ladder.ts), [`register-what-a-house-is-doing.ts`](register-what-a-house-is-doing.ts) |
 | Key | structural repair medicine, and the column glossary | [`register-structural-repair-medicine.ts`](register-structural-repair-medicine.ts), [`register-glossary.ts`](register-glossary.ts) |
+
+**Below is the only tab not organised by house**, and it is deliberate: a price, a
+hamlet's fear, a word a province uses for somebody it cannot place, and a cultivator the
+road has finished with are facts about people standing outside every institution on the
+other ten tabs - which is most of the people in the world.
 
 ### One structure, on every faction-scoped page
 

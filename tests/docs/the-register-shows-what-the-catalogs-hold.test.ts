@@ -38,32 +38,33 @@
  * function rather than by name is reported unnamed, which is why it ratchets
  * rather than forbidding.
  *
- * WHAT IS STILL NOT SHOWN, AND WHERE IT WOULD GO
- * ----------------------------------------------
- * The count below is not an anonymous number. These are the catalogs left, and
- * the judgement on each is that it belongs on the sheet and has not been written
- * yet - not that it should stay off:
+ * THE MODULE COUNT IS NOW NOUGHT, AND THE LIST THAT USED TO BE HERE IS GONE
+ * -------------------------------------------------------------------------
+ * This header carried a list of the catalogs still waiting for a section, each
+ * with a note saying where it would go. Every one of them now has one, across
+ * five new register modules: the deep past and the people in it on History, the
+ * mortal world and the unaffiliated on a new Below tab, the two traditions and
+ * the dao houses on Teaching, the wound table and what a catastrophe reaches on
+ * People, and what a house makes, ships, lodges and plans across Factions,
+ * Holdings and Ties.
  *
- *   wounds.ts                     every way a body can be hurt. Belongs with the
- *                                 ladder and the body, not with things somebody
- *                                 holds, which is why it is not in the items
- *                                 module this change extended.
- *   mortal-world.ts               occupations, prices, settlements. The price
- *                                 board is the one table a player checks most.
- *   rogues.ts                     bounties, dealers, auction venues, road
- *                                 customs - most of the player's own peers.
- *   traditions.ts                 two traditions on one ladder. A key-tab fact.
- *   encounters.ts                 the draw tables the time-skip rolls on.
- *   history.ts, named-figures.ts, sealed-ancestors.ts, false-immortals.ts,
- *   the-top-of-the-world.ts       the deep past and the people at the top of it.
- *                                 The History tab exists and carries none of it.
- *   the rest                      catastrophe, contingencies, indentures, what
- *                                 each house makes, why a party goes out, places
- *                                 that teach a dao, rumours, deposit-holders,
- *                                 the three floors, the changed-beast family,
- *                                 cultivators the road finished.
+ * So the first number is nought and carries no slack at all. A new catalog
+ * module reds this test on the day it is added, which is the rule the test was
+ * always written under said at its strongest: add the section, or say below why
+ * a reader should never see it.
  *
- * A catalog leaving that list leaves by having a section written for it.
+ * WHAT WAS DELIBERATELY NOT SHOWN, WHICH IS THE INTERESTING PART
+ * --------------------------------------------------------------
+ * Four of the 24, and only one of them is a judgement rather than bookkeeping:
+ * `encounters.ts`. The other three are two re-export shims and the name pool.
+ * The reasoning on the encounter table is in the allow-list below and it
+ * DISAGREES with what this header used to say about it - the old note listed it
+ * among the catalogs that belong on the sheet. Both readings are recorded
+ * because the decision is arguable and the next person should see that it was
+ * argued rather than forgotten.
+ *
+ * The honest split, for anybody counting: 20 shown, 4 withheld. A pass that
+ * showed all 24 would not have exercised any judgement at all.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -90,16 +91,35 @@ const NOT_THE_REGISTER_S_BUSINESS: Readonly<Record<string, string>> = {
         + 'rewritten into their unstaged work. It holds nothing of its own.',
     'standoff.ts':
         'the same shim, for `the-top-of-the-world.ts`. Showing it would show that '
-        + 'catalog twice under two names.'
+        + 'catalog twice under two names.',
+    'encounters.ts':
+        'the draw table, and not one row of it is a thing that exists. An entry is '
+        + 'a weight, an ordinal window and a summary with {token} slots the engine '
+        + 'fills at draw time, so there is no bandit at {place} for a reader to find '
+        + 'and no number in it that describes the world rather than the sampling. '
+        + 'The register prints what STANDS somewhere; this is the shape a moment is '
+        + 'poured into. Printing it would put the sampling weights on a sheet whose '
+        + 'every other column is a fact about somebody. The earlier judgement, in '
+        + 'this file\'s own header, was that it belongs on the sheet; it is recorded '
+        + 'there so the disagreement is visible rather than lost.'
 };
 
 /**
  * Measured, not chosen. Lower these when you add a section; never raise them.
  *
- * The quiet-tree reading when this landed was 21 modules and 68 exports, after
- * the beast materials, the beast table, the tides, the conveyance ladder, the
- * bills of materials, the named craft and the artifact recipes were added - which
- * took the modules from 28 to 24 and the exports from 74 to 68.
+ * THE READING THAT PRODUCED THESE. 24 modules unopened and 68 row-exports
+ * unnamed at the start of the pass, of which 3 modules were already allow-listed
+ * - so the first number stood at 21. Five register modules later the script
+ * reports 4 unopened, all four allow-listed, and 13 unnamed. The 55 exports that
+ * left did so by being named in a section that reads them.
+ *
+ * WHAT IS LEFT IN THE SECOND NUMBER IS A DIFFERENT KIND OF ROW. One of the 13 is
+ * `ENCOUNTERS`, which is withheld on purpose and has no module to hide behind.
+ * The other 12 are all in modules the register already opens and reaches through
+ * a reader function rather than by name - `DEMONIC_STANDINGS` through
+ * `demonicStandingOf`, `FAVOUR_STANCES` through the favour reader, and so on.
+ * Those rows are the proxy admitting what it is, and closing them means changing
+ * how the sheet reads a catalog rather than adding content nobody can see.
  *
  * THEY CARRY NO SLACK, AND THAT IS A DELIBERATE DEPARTURE from the sibling
  * ratchet, which carries a couple of rows because an exact reading off this
@@ -109,22 +129,21 @@ const NOT_THE_REGISTER_S_BUSINESS: Readonly<Record<string, string>> = {
  * export count caught it. A ratchet that cannot see a section being deleted is
  * not doing the job, so these are exact.
  *
- * WHICH MEANS A RED THAT NOBODY CAUSED IS POSSIBLE. If this fails and you have
- * not touched a register module, run the script: a register module that
- * legitimately stopped importing a catalog raises the first number by one
- * through nobody's fault. Lower it, and say here which import went and why.
+ * WHICH MEANS A RED THAT NOBODY CAUSED IS POSSIBLE, and at nought it is more
+ * likely rather than less: a new catalog module reds this the day it lands. That
+ * is the intended behaviour and not an accident of the number. The fix is a
+ * section or an allow-list entry, never a raised baseline.
  *
- * NEITHER NUMBER MOVED WHEN THE HOUSEHOLDS SECTION LANDED, AND THAT IS THE
- * INTERESTING PART. 27 authored marriages sat in `members.ts` with no section
- * on the sheet, and this ratchet was blind to them twice: the module was
- * already opened for the roster, and `AUTHORED_MARRIAGES` is written as
- * `Object.freeze([...])`, which the row-array pattern did not match. The
- * pattern now matches it. Measured at the time: the same 68 rows either way,
- * because the section names the export - so the widening cost nothing and the
- * next frozen catalog cannot hide the same way.
+ * NEITHER NUMBER MOVED WHEN THE HOUSEHOLDS SECTION LANDED, AND THAT IS WHY THE
+ * ROW PATTERN IS SHAPED AS IT IS. 27 authored marriages sat in `members.ts` with
+ * no section on the sheet, and this ratchet was blind to them twice: the module
+ * was already opened for the roster, and `AUTHORED_MARRIAGES` is written as
+ * `Object.freeze([...])`, which the row-array pattern did not match. The pattern
+ * now matches it, the section is on the Factions tab, and the widening cost
+ * nothing at the time.
  */
-const NEVER_OPENED = 21;
-const NOT_NAMED = 68;
+const NEVER_OPENED = 0;
+const NOT_NAMED = 13;
 
 describe('the standing register shows what the catalogs hold', () => {
     it('does not leave a whole catalog module off the sheet', () => {
