@@ -122,6 +122,7 @@ import {
 } from './what-this-ground-makes-and-what-leaves-it.js';
 import { noHouseStandsHighest, whoStandsBehindThem } from './who-stands-behind-them.js';
 import { whatAHouseHasToItsName } from './what-a-house-has-to-its-name.js';
+import { whatAHouseTeaches } from './what-a-house-teaches.js';
 import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { positionIn } from './standing.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
@@ -162,6 +163,19 @@ function ordinalOfWorldPerson(game: GameService, personId: string): number {
         if (npc.id === personId) return npc.cultivation.realmOrdinal;
     }
     return 0;
+}
+
+/**
+ * The technique ids a body's own catalog entry names, which is its shelf.
+ *
+ * ONLY SECTS CARRY ONE, and that is the finding rather than an oversight.
+ * Measured over all 45 bodies: the four courts and three apex institutions in
+ * `governance-and-water-rights.ts` state no shelf at all, and neither does the
+ * Kiln Wardens row, which is a guard posting written as a sect. So an empty
+ * answer here is the true one for eight bodies and the read says so in words.
+ */
+function theShelfOf(factionId: string): readonly string[] {
+    return getSect(factionId)?.teaches ?? [];
 }
 
 export const situatedReads = {
@@ -1697,6 +1711,63 @@ export const situatedReads = {
             today: Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
         });
         const facts = factsForToolResult(`${house.name}, and what it sits on.`, read.lines);
+        facts.structure.push(read.structure);
+        return this.freeAction(run, 'look', facts);
+    },
+
+    /**
+     * WHAT A HOUSE TEACHES, WHICH IS ASKED BEFORE ANYBODY JOINS ONE.
+     *
+     * The shelf is CATALOG and the roll is WORLD, and this is the one read
+     * that holds both at once on purpose: the roads come off the body's own
+     * entry and who is standing there comes off the simulation, so the answer
+     * says both what is offered and whether anybody left can offer it. See
+     * `what-a-house-teaches.ts`.
+     */
+    whatThatHouseTeaches(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        named: string | undefined
+    ): Execution {
+        // NAMING NOBODY MEANS YOUR OWN, the same rule as the holdings read -
+        // though a possessive rarely reaches here, because `leadershipIntent`
+        // claims "what does my sect teach" long before this table.
+        const mine = named === undefined || named.trim().length < 3
+            ? positionIn(this.repos, cultivator.id)
+            : null;
+        const house = mine === null
+            ? this.factionMeant(named, cultivator)
+            : { id: mine.sectId, name: mine.sectName, kind: 'sect' as const };
+
+        if (!house) {
+            return mine === null && named !== undefined
+                ? this.noPartyNamed(
+                    'look', named, cultivator,
+                    'You have no house of that name.',
+                    'You go to ask what they teach and cannot say who they are.'
+                )
+                : this.freeAction(run, 'look', factsForRefusal(
+                    'You are on nobody\'s roll.',
+                    'You go to ask what the house teaches and there is no house it would be. '
+                    + 'Somebody else\'s shelf is a question you can put by naming them.',
+                    'No membership and no faction named. Read only, nothing spent.'
+                ));
+        }
+
+        const read = whatAHouseTeaches({
+            world: this.atHand,
+            houseName: house.name,
+            factionId: house.id,
+            teaches: theShelfOf(house.id),
+            askersRoot: cultivator.spiritRoot
+        });
+        const facts = factsForToolResult(
+            read.roads.length === 0
+                ? `${house.name} is not a place that teaches.`
+                : `${house.name}, and what is on its shelf.`,
+            read.lines
+        );
         facts.structure.push(read.structure);
         return this.freeAction(run, 'look', facts);
     },

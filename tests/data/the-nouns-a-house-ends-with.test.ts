@@ -134,6 +134,41 @@ describe('every house in the catalog can be asked about by name', () => {
         ).toEqual([]);
     });
 
+    /**
+     * AND WHAT IT TEACHES, WHICH IS THE OTHER HALF OF THE SAME QUESTION.
+     *
+     * The holdings sweep above has been green for a while and its twin could
+     * not be asked at all: `what does the X have` reached a read and `what
+     * does the X teach` reached nothing, for all 38. That is the wrong half to
+     * have built - a purse is what you ask about a house you mean to rob, and
+     * a shelf is what you ask about one you mean to spend a century in.
+     *
+     * Same rule and the same reason it is a rule: `WHAT_A_HOUSE_TEACHES` reads
+     * `A_HOUSE_BEING_ASKED_ABOUT`, so a house added tomorrow is askable the
+     * day it is added.
+     */
+    it('what does the X teach reaches the shelf read, and carries which X', () => {
+        const wrong = sweep(name => `what does the ${name} teach`)
+            .filter(([name, plan]) =>
+                plan.intent !== 'what_they_teach' || plan.target !== name.replace(/^The\s+/, ''));
+
+        expect(
+            wrong.map(([name, plan]) => `${name} -> ${plan.action}/${plan.intent}`),
+            'A house that cannot be asked what it teaches.'
+        ).toEqual([]);
+    });
+
+    /**
+     * The possessive stays with the seat, which may REWRITE the shelf rather
+     * than merely read it. `leadershipIntent` claims it far above this table
+     * and the new pattern must not reach past it.
+     */
+    it('leaves what does my sect teach to the seat that can change it', () => {
+        const plan = parseIntent('what does my sect teach') as
+            { action?: string; intent?: string };
+        expect(plan.action, 'the decree read lost its own sentence').toBe('sect');
+    });
+
     it('who leads the X reaches the standing read, and carries which X', () => {
         const wrong = sweep(name => `who leads the ${name}`)
             .filter(([name, plan]) =>

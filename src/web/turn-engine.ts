@@ -4515,6 +4515,12 @@ ${noticedWaiting}`;
                     return this.whatThatHouseHolds(run, cultivator, action.target);
                 }
 
+                // WHAT A HOUSE TEACHES, WHICH IS ASKED BEFORE JOINING ONE.
+                if (action.intent === 'what_they_teach') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return this.whatThatHouseTeaches(run, cultivator, action.target);
+                }
+
                 // WHO IS ABOVE A HOUSE, WHICH IS ASKED BEFORE MOVING ON ONE.
                 if (action.intent === 'who_is_above_them') {
                     this.atHand = this.atHand ?? await this.loadWorld();

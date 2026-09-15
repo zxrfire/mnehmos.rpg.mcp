@@ -1675,7 +1675,10 @@ function theHouseBeingAskedAbout(input: string): string | undefined {
     const said = extractSubject(input, /(?:does|do|has|have)\s+(?:the\s+)?|of|for|is|are/i);
     if (said === undefined) return undefined;
     const trimmed = said
-        .replace(/\s+(?:have|has|hold|holds|own|owns|got|keep|keeps|worth)\s*$/i, '')
+        .replace(
+            /\s+(?:have|has|hold|holds|own|owns|got|keep|keeps|worth|teach|teaches|teaching)\s*$/i,
+            ''
+        )
         .replace(/^(?:in|at|on)\s+/i, '')
         .trim();
     if (trimmed.length < 3) return undefined;
@@ -1719,6 +1722,33 @@ export const WHAT_A_HOUSE_HAS = new RegExp(
         String.raw`\bwhat (?:is|are) (?:in )?(?:their|its|the) (?:vault|treasury|coffers|reserves|shelves|hold)\b`,
         String.raw`\bwhat (?:do(?:es)?|have|has) they (?:have|hold|holds|own|owns|got|keep|keeps) (?:to (?:their|its) name|in (?:the )?(?:vault|treasury|coffers))\b`,
         String.raw`\bwhat (?:a |the )?house (?:has|holds|owns) to (?:its|their) name\b`
+    ].join('|'),
+    'i'
+);
+
+/**
+ * Asking what a house TEACHES, which is the other half of asking what it has.
+ *
+ * The holdings question is what you ask about a house you mean to rob and this
+ * is what you ask about one you mean to spend a century in, and only the first
+ * of the two could be said. See `what-a-house-teaches.ts` for what the answer
+ * reads off and why the shelf is public where the vault is not.
+ *
+ * ── AND IT IS NOT THE DECREE, NOR THE GROUND ─────────────────────────────
+ *
+ * Two neighbours own sentences that look like this one and both keep them.
+ * `SECT_CURRICULUM_NOUNS` claims "what does my sect teach" - your own shelf,
+ * which you may also REWRITE - and it is read by `leadershipIntent` far above
+ * this table, so a possessive never reaches here. `WHAT_THIS_GROUND_TEACHES`
+ * claims "what can this place teach", where the subject is a patch of earth.
+ * This one requires a house to be NAMED, which is what neither of those has.
+ */
+export const WHAT_A_HOUSE_TEACHES = new RegExp(
+    [
+        String.raw`\bwhat (?:do(?:es)?|is|are|can|could)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:teach|teaches|teaching|taught)\b`,
+        String.raw`\bwhat (?:is|are) on (?:their|its|the) (?:shelf|shelves|teaching list|curriculum)\b`,
+        String.raw`\bwhat (?:roads?|arts?|methods?|techniques?)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:teach|teaches|teaching|offer|offers|hand|hands)\b`,
+        String.raw`\bhow (?:high|far) (?:does|do|would)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:carry|take|teach|get me)\b`
     ].join('|'),
     'i'
 );
@@ -5656,6 +5686,18 @@ function planIntent(input: string): PlannedAction {
     // off it as well - a sentence that says both is asking about the goods.
     if (WHAT_THIS_GROUND_MAKES.test(text)) {
         return { action: 'look', intent: 'what_is_made_here' };
+    }
+
+    // WHAT A HOUSE TEACHES. Beside the holdings read and before it, because a
+    // sentence naming both - "what does the Azure Dew Sect have on its shelf to
+    // teach" - is asking about the curriculum and not about the vault.
+    if (WHAT_A_HOUSE_TEACHES.test(text)) {
+        const house = theHouseBeingAskedAbout(input);
+        return {
+            action: 'look',
+            intent: 'what_they_teach',
+            ...(house ? { target: house } : {})
+        };
     }
 
     // WHAT A HOUSE HAS. Before the who-is-above read, so that "what does the
