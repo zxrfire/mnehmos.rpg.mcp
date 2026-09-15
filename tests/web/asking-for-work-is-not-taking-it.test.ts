@@ -30,13 +30,39 @@
  * So the two readings are separated by a label, and this file pins both edges
  * of that separation: what must reach the free board, what must still take a
  * job, and what must not move at all.
+ *
+ * ── WHERE THE LINE WAS DRAWN, AND WHERE IT IS DRAWN NOW ──────────────────
+ *
+ * This file originally split the two by MOOD: an interrogative read the board,
+ * a statement of intent took the job. On that split "I look for work" was a
+ * statement and bought ninety days, and it is now a listing instead. What
+ * changed is the test applied, not the argument above it:
+ *
+ *     the old line   is it phrased as a question?
+ *     the line now   does its verb SEARCH, or does it TAKE?
+ *
+ * The mood test put "I look for work" and "I take whatever work there is" on
+ * the same side, and they are not the same sentence. A search asks where the
+ * work is; the reply to it is the board, and the player spends a turn and then
+ * takes a line off it. `look for herbs` reaches `gather` and `look for a
+ * teacher` reaches `teacher`, both searches, and work was the one exception.
+ *
+ * The measurement that justified the original line is untouched and still
+ * governs everything it was about: naming no trade is read as *take any work*,
+ * so "I take whatever the village will give me", "I hire myself out for a
+ * season", "I need a job" and "I work for a year" all still spend the days.
+ * Only the four phrasings whose verb is a LOOKING verb moved.
+ *
+ * The cost of being wrong is what settles it. A search misread as a taking
+ * loses a season that cannot be got back; a taking misread as a search loses
+ * one turn, and the board it lands on names the job.
  */
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
 
-/** Questions. Every one of these must cost nothing. */
+/** Asked, or searched for. Every one of these must cost nothing. */
 const ASKING = [
     'any work going?',
     'any work going',
@@ -47,18 +73,20 @@ const ASKING = [
     'is there paying work here',
     'what work is there',
     'who needs a hand',
-    'can I earn something here'
-];
-
-/** Statements of intent. Every one of these is a request to be given work. */
-const TAKING = [
+    'can I earn something here',
+    // The four that moved. Their verb is a LOOKING verb, which is a search for
+    // where the work is rather than a request to be put on it.
     'looking for work',
     'I am looking for work',
+    'I ask around for work',
+    'I look for work'
+];
+
+/** Statements of need. Every one of these is a request to be given work. */
+const TAKING = [
     'I need a job',
     'I need work',
     'I want a job',
-    'I ask around for work',
-    'I look for work',
     'I take whatever work the village will give me'
 ];
 

@@ -5,6 +5,7 @@
 import { PlannedAction } from './planned-action.js';
 import { usedAsVerb, namedAfter, matchIntent, WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 import {
+    A_HOUSE_BEING_ASKED_ABOUT,
     A_HOUSE_IS_NAMED,
     A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
 } from './what-a-house-is-called.js';
@@ -102,7 +103,35 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // answered with the collection, so the ask never happened and the refusal that
     // is the whole point of a petition was never written. Bare "what am I owed" is
     // untouched and still reaches the read.
-    ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b/],
+    // ── AND ASKING WHAT A HOUSE PAYS IS NOT PAYING IT ────────────────────
+    //
+    // "What does the Azure Dew Sect pay" reached `sect/donate` for 33 of the 38
+    // houses - the confident opposite of what was said, a player asking what
+    // they would be paid answered with the machinery for handing money over. It
+    // reached the donation branch because `pay` is one of `HOUSE_GIVING_VERBS`
+    // and a house was named beside it. "What is the stipend at the X" already
+    // answered correctly, so the right read was here all along and only the
+    // commonest phrasing of the question could not find it.
+    //
+    // Four of the five that did NOT reach `donate` were worse again: the house
+    // NAME carried the figure, so "what does the Six Li Patrol pay" arrived as
+    // a donation of 6 stones and "the Thousand Treasure Pavilion" as one of
+    // 1000. That is recorded here because the number-out-of-a-name read is
+    // still live for any sentence this row does not now claim.
+    ['stipend', new RegExp(
+        String.raw`\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b`
+        // A HOUSE IS REQUIRED, and it is what keeps this off "what did I earn"
+        // and "how much did that pay" - both of which are the purse's question
+        // and are read far below this row.
+        // The ASKED-ABOUT form of the name, not the general one: "what does the
+        // X pay" says a body is the subject before X is read, which is the
+        // shape `what-a-house-is-called.ts` states may afford a one-word name.
+        // Without it The Severed - the catalog's only such house - was the one
+        // house this question could not be asked of.
+        + String.raw`|\bwhat\s+(?:do|does|would|will)\s+(?:the\s+|my\s+|our\s+|this\s+|that\s+)?`
+        + String.raw`(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?!]{0,30}\bpays?\b`,
+        'i'
+    )],
     // ── SAYING YES, WHICH HAD NO WORDS AT ALL ────────────────────────────
     //
     // Measured in play: a senior of the house came in person, named the work,
@@ -236,6 +265,27 @@ export const COUNTED_TIER_NOUNS =
 
 /** Said outright, which is how the sentence that found this defect was typed. */
 export const WITHOUT_ASKING = /\bwithout (?:asking|permission|leave|a word)\b/;
+
+/**
+ * Whether a sentence is somebody taking a thing off their own house's shelf.
+ *
+ * A function rather than a condition written out at its one call site, because
+ * it now has two: the general taking branch in `verb-pattern-table.ts` runs
+ * ABOVE this file's step and has to yield to it. Measured: "I help myself to
+ * the archives" reached `interact/take` - a taking from a person - while "I
+ * help myself to the SECT archives" reached `sect/take`, so whether the house's
+ * own shelf answered depended on a word the player had no reason to type.
+ *
+ * Written once so the two branches cannot drift into disagreeing about which
+ * sentences belong to which, which is the failure this repo's own rule about
+ * a fact living in one place exists to stop.
+ */
+export function aTakingOffTheHousesShelf(text: string): boolean {
+    return usedAsVerb(text, HOUSE_TAKING_VERBS)
+        && !COUNTED_TIER_NOUNS.test(text)
+        && (HOUSE_SHELF_NOUNS.test(text)
+            || (A_HOUSE_IS_NAMED.test(text) && WITHOUT_ASKING.test(text)));
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // ON WHAT AUTHORITY
@@ -602,7 +652,17 @@ export function leadershipIntent(text: string, input: string): PlannedAction | n
     // read here rather than written into `SPEAKING_FOR_SOMEBODY`, because the
     // pattern's job is to recognise the act and this is a question about who is
     // performing it.
-    if (SPEAKING_FOR_SOMEBODY.test(text) && !SOMEBODY_ELSE_WOULD_SPEAK.test(text)) {
+    // ── AND ASKING WHO WOULD IS NOT DOING IT EITHER ─────────────────────
+    //
+    // The same distinction one step further out. "Who would vouch for him" is a
+    // question about who stands behind that person, and
+    // `WHO_STANDS_BEHIND_THEM` has had a `vouches for` arm since it was
+    // written - but this branch runs first and took the sentence, so the asker
+    // was answered by SPEAKING FOR HIM. A question opening with `who` is asking
+    // who performs the act; no sentence that performs it opens that way.
+    if (SPEAKING_FOR_SOMEBODY.test(text)
+        && !/^\s*(?:so\s+|and\s+)?who\b/.test(text)
+        && !SOMEBODY_ELSE_WOULD_SPEAK.test(text)) {
         // `namedAfter` stops at the prepositions its other callers need and "in
         // front of" is not among them, so "I speak for Wen Shu in front of the
         // punishment elder" carried the room into the name. Trimmed here rather
@@ -659,10 +719,7 @@ export function leadershipIntent(text: string, input: string): PlannedAction | n
     }
 
     // TAKING A THING THE HOUSE OWNS
-    if (usedAsVerb(text, HOUSE_TAKING_VERBS)
-        && !COUNTED_TIER_NOUNS.test(text)
-        && (HOUSE_SHELF_NOUNS.test(text)
-            || (A_HOUSE_IS_NAMED.test(text) && WITHOUT_ASKING.test(text)))) {
+    if (aTakingOffTheHousesShelf(text)) {
         const what = whatIsBeingTaken(input);
         return { action: 'sect', intent: 'take', ...(what ? { target: what } : {}) };
     }

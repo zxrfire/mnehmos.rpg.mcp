@@ -173,6 +173,7 @@ import {
     A_HOUSE_IS_BEING_ASKED_ABOUT,
     A_HOUSE_IS_NAMED,
     A_HOUSE_NAME_IS_SAID,
+    A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT,
     A_HOUSE_TYPE_NOUN,
     A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL,
     theHouseNameSaid
@@ -277,7 +278,9 @@ import {
     SECT_SUBORDINATE_NOUNS,
     SENDING_A_MESSAGE,
     SECT_ERRAND_PATTERNS,
-    DEFAULT_ERRAND
+    DEFAULT_ERRAND,
+    CLAIMING_THE_HOUSES_AUTHORITY,
+    aTakingOffTheHousesShelf
 } from './sect-phrasings.js';
 import type { SectIntent } from './sect-phrasings.js';
 import { stonesNamedIn } from './tool-result-prose.js';
@@ -611,7 +614,40 @@ export function whoATheftIsAimedAt(input: string): string | undefined {
     const off = /\b(?:off|from|out of)\s+(?:the\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/.exec(input);
     if (off) return off[1];
 
+    // AND A FINGER IS DELIBERATELY NOT READ AS A NAME HERE, which is the one
+    // place this verb differs from `attack`. "I take his purse" was measured as
+    // reaching the right verb with no target and looks like the same defect the
+    // insult and the drawn sword had; it is not.
+    // `a-theft-is-a-sentence-the-engine-answers.test.ts` rules that the
+    // sentence genuinely names nobody, that `interact` with no target already
+    // means whoever is at hand, and that a guessed pronoun would be a wrong
+    // guess where a wrong guess is worse than a refusal. The two readings
+    // resolve to the same person; only one of them can be wrong about it.
     return undefined;
+}
+
+/**
+ * WHO WAS TOLD, AND WHAT THEY WERE TOLD ABOUT.
+ *
+ * The same defect as {@link whoIsBeingOfferedSomething}, one verb along and
+ * arriving from the other end: this reads what the subject extractor already
+ * produced rather than the raw sentence, because by the time the interact
+ * branch runs the tail has been taken whole.
+ *
+ * Only a pronoun or a capitalised name is accepted in the person slot, for the
+ * reason the offer read gives: "I tell the story about the road" puts a THING
+ * there, and a shape that cannot tell the two apart hands a resolver a story to
+ * look for a face in.
+ */
+function whoWasToldAndAboutWhat(
+    subject: string
+): { person: string; matter: string } | null {
+    const said =
+        /^(him|her|them|us|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:about|of|regarding|concerning)\s+(?:the\s+|a\s+|an\s+|my\s+|his\s+|her\s+|their\s+)?(.{2,60}?)\s*$/
+            .exec(subject.trim());
+    if (!said) return null;
+    const matter = said[2].trim();
+    return matter.length >= 2 ? { person: said[1], matter } : null;
 }
 
 /**
@@ -1195,7 +1231,18 @@ export const WRITING_THE_CONTINUATION = new RegExp([
     /\b(?:carry|carries|carrying|take|takes|taking)\b[^.?!]{0,30}\b(?:manual|method|art|book|canon|scripture)\b[^.?!]{0,24}\b(?:further myself|further on my own|past where it (?:stops|ends))\b/,
     // Saying it as a claim about the world rather than about a verb.
     /\bnobody has (?:ever )?written\b[^.?!]{0,40}\b(?:so i will|i will|myself)\b/,
-    /\bwork(?:s|ing)? out\b[^.?!]{0,40}\bwhat comes (?:next|after)\b/
+    /\bwork(?:s|ing)? out\b[^.?!]{0,40}\bwhat comes (?:next|after)\b/,
+    // AND WORKING ONE OUT FOR YOURSELF, WHICH IS THE SAME ACT WITHOUT THE
+    // BOOK IN THE SENTENCE. "I work out my own art" reached the employment
+    // branch and bought a season in the fields: `work out` is one of its
+    // words, and the arm above required the sentence to name a continuation.
+    // Somebody deriving a method is doing the most expensive intellectual
+    // thing in the game and was answered with hauling.
+    //
+    // A possessive is required - `my own`, `a new` - because "I work out the
+    // manual's next stage" is the arm above and "I work out what this costs"
+    // is arithmetic, not authorship.
+    /\bwork(?:s|ing)? out\b[^.?!]{0,20}\b(?:my own|our own|his own|her own|a new|an? fresh)\s+(?:art|arts|method|methods|technique|techniques|manual|manuals|form|forms|canon|scripture|road|dao|path|style)\b/
 ].map(r => r.source).join('|'));
 
 /** Where a sentence about writing one stops and names the book. */
@@ -2652,6 +2699,16 @@ export const RIDING = new RegExp([
 export const WHAT_IS_BEING_RIDDEN =
     /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|sword|blade))\b/i;
 
+/**
+ * The tail that says what you are ON rather than where you are going.
+ *
+ * The prepositional half of {@link WHAT_IS_BEING_RIDDEN}, with the preposition
+ * kept, so the ride branch can take it off a sentence before anything reads a
+ * destination out of what is left.
+ */
+export const A_MOUNT_UNDER_YOU =
+    /\s*\b(?:on|aboard|astride|by)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?(?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+|river\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|litter|sedan|sword|blade)\b/i;
+
 // THE YARD
 
 /** The verbs that put a thing on the stocks. */
@@ -2758,6 +2815,17 @@ export const A_COUNTER_NOT_A_MISSION_BOARD = new RegExp([
     '\\b(?:gate\\s+station|terminal)\\b'
 ].join('|'));
 
+/**
+ * BOOKING ONE, WHERE `book` IS THE VERB AND NOT THE NOUN.
+ *
+ * A book in this world is a manual, so the word may only reach the counter from
+ * verb position - which is what {@link usedAsVerb} decides and why this is a
+ * verb list rather than a pattern. Measured: "what can I book from here"
+ * reached `market` with the target `from here`, so somebody asking which spans
+ * run was sent to a shop and the shop was given a name it could not resolve.
+ */
+export const BOOKING_A_PLACE = 'book|books|booking|booked';
+
 const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // Buying, first, because a sentence about buying one contains every word a
     // sentence about reading the board contains.
@@ -2803,6 +2871,17 @@ export const WHAT_IS_WRITTEN_BETWEEN_US = new RegExp([
     // Who is carrying something about you. The hazard direction.
     String.raw`^\s*(?:what|who)\b[^.!?]{0,40}\b(?:held against|holds against|holding against|has against|grudges?)\b`,
     String.raw`^\s*who\s+(?:is\s+)?(?:owed|owes)\b`,
+    // ── AND WHAT THIS CULTIVATOR HAS TO ANSWER FOR ───────────────────────
+    //
+    // The hazard direction stated from the player's own side, and the read has
+    // answered it since it was written: the ledger is read both ways and the
+    // headline says so in as many words. What was missing was a sentence that
+    // reaches it. "What do I have to answer for" was claimed by the pouch -
+    // `asksWhatYouAreCarrying` owns "what do I have" - so the question the
+    // reverse read exists for was answered with a list of possessions.
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:do|does|did)\s+(?:i|we)\s+have\s+to\s+answer\s+for\b`,
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:am|are)\s+(?:i|we)\s+answerable\s+for\b`,
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:have|has)\s+(?:i|we)\s+(?:got\s+)?to\s+answer\s+for\b`,
     // ── AND WHAT THIS CULTIVATOR IS UNDER, ASKED THE OTHER WAYS ──────────
     //
     // Measured against the parser: `what oaths do i have` read the ledger, and
@@ -2858,6 +2937,17 @@ const LEDGER_SUBJECT_VERBS =
 
 /** The player, said in the way a question about themselves says it. */
 const THE_ASKER_THEMSELVES = /^\s*(?:me|myself|us|i|my|mine|ourselves)\s*$/i;
+
+/**
+ * A piece of the question, which is not a second party to anything.
+ *
+ * `extractSubject` falls back to whatever follows `to`, `with` or `at`, and
+ * "what do I have to answer for" has the infinitive marker in it - so the read
+ * narrowed to rows between this cultivator and a person called *answer for*,
+ * which is always none, and an open question came back empty.
+ */
+const NOT_A_PARTY_TO_ANYTHING =
+    /^\s*(?:answer(?:able)? for|answer|it|that|this|them|anything|something|nothing|all of it|any of it)\s*$/i;
 
 export const AN_OATH = new RegExp([
     '\\b(?:oath|oaths|oathwright|vow|vows|indenture|indentured)\\b',
@@ -3085,7 +3175,12 @@ const TAKEN_ON_AS_SOMETHING = /\b(?:as|into) (?:a |an |my |his |her |their |our 
  * would have reached `attack` with no target and refused as "nothing to swing
  * at", which reads worse than the `unclear` it replaced.
  */
-const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|exterminate|wipe out|slaughter|massacre|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip|push|shove|slap|grab|punch|kick|elbow|knee|headbutt|tackle|poke|prod|swat|cuff|backhand|jab|choke|wrestle|grapple|pin|manhandle|shoulder|seize|knock|bat|twist|club|cudgel|bludgeon|brain|whack|thrash|batter|run/;
+// `draw (my|the) sword on` is spelled out because the pronoun sits INSIDE the
+// phrase, which is the same reason the attack branch's own verb list carries
+// it. Without it `draw on` could not match "I draw my sword on him", the
+// sentence reached `attack` with no target at all, and the swing landed on
+// whoever the square listed first rather than on the person it was aimed at.
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|exterminate|wipe out|slaughter|massacre|kill|murder|assassinate|slay|cut down|draws? (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip|push|shove|slap|grab|punch|kick|elbow|knee|headbutt|tackle|poke|prod|swat|cuff|backhand|jab|choke|wrestle|grapple|pin|manhandle|shoulder|seize|knock|bat|twist|club|cudgel|bludgeon|brain|whack|thrash|batter|run/;
 
 /**
  * Settling a thing with your hands, which is a fight and reads as none of the
@@ -3395,6 +3490,26 @@ function theOneStruck(input: string): string | undefined {
     ).trim();
     return THE_PRONOUN_A_POSSESSIVE_STANDS_FOR[stripped.toLowerCase()] ?? (stripped || undefined);
 }
+
+/**
+ * Moving a thing in or out of the bag on your own belt, AND NOTHING ELSE.
+ *
+ * Both ends are anchored, and both anchors were paid for.
+ *
+ * The clause has to END at the container, which keeps it off "I take the manual
+ * out of my pouch and read it" - a sentence about reading.
+ *
+ * And it has to BEGIN at the moving verb. Without that anchor it claimed the
+ * exemplar "I dig up roots and put them in my pouch" off
+ * `how-a-player-says-each-verb.ts`, which is a gather with a pouch on the end
+ * of it, and `the-table-agrees-with-the-corpus-about-its-own-verbs.test.ts`
+ * caught it. A sentence whose FIRST verb is something else is about that
+ * something else.
+ *
+ * A possessive is required: somebody else's ring is a theft and stays one.
+ */
+const A_CONTAINER_OF_YOUR_OWN =
+    /^\s*(?:i\s+|then\s+i\s+)?(?:just\s+|quietly\s+|carefully\s+)?(?:put|puts|putting|place|places|placing|slip|slips|slipping|tuck|tucks|tucking|stash|stashes|stashing|take|takes|taking|draw|draws|drawing|pull|pulls|pulling|get|gets|getting|fetch|fetches|fetching)\b[^.!?]{0,40}?\b(?:in|into|inside|out of|from|back in|back into)\s+(?:my|our)\s+(?:(?:storage|spatial|interspatial)\s+)?(?:ring|rings|pouch|pouches|bag|bags|pack|packs|sleeve|sleeves|belongings|inventory)\s*[.!?]?\s*$/i;
 
 /** The verbs that have no innocent object once a person is on the end of them. */
 const VIOLENCE_WITH_NO_OTHER_READING = new RegExp([
@@ -3770,9 +3885,23 @@ const HOW_FAR_IS_SOMEWHERE = new RegExp([
 
 /**
  * Asking what work is going, which is a question and must stay one.
+ *
+ * ── AND LOOKING FOR WORK IS ASKING, NOT WORKING ──────────────────────────
+ *
+ * "I look for work" spent ninety days hauling. The searching verbs were in the
+ * employment branch's own list, so the sentence that asks WHERE the work is
+ * was read as taking whatever was going, and a player who wanted the board
+ * lost a season of game time to it - the most expensive kind of misroute this
+ * table can commit, because the days are gone before the answer is read.
+ *
+ * `look for herbs` reaches `gather` and `look for a teacher` reaches `teacher`,
+ * both of them searches; this is the same shape and was the one exception.
+ * The taking verbs are untouched: "I take whatever work there is", "I hire
+ * myself out for a season" and "I work for a year" all still spend the days,
+ * which is what they say.
  */
 const ASKING_AFTER_WORK =
-    /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b/;
+    /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b|\b(?:look|looking|looks|hunt|hunting|hunts|search|searching|searches|cast about|casting about|ask around|asking around)\s+(?:around\s+)?for\s+(?:any\s+|some\s+|paid\s+|paying\s+)?(?:work|a job|jobs|employment|hire)\b/;
 
 // 护法: STANDING OVER SOMEBODY ELSE'S CROSSING, AND REACHING INTO ONE
 
@@ -3993,6 +4122,12 @@ function whoIsBeingGuarded(input: string): string | undefined {
         .replace(/(?:'s|’s)$/i, '')
         .trim();
     if (name.length < 2) return whoWasPointedAtForTheWatch(input);
+    // A SPAN IS NOT A PERSON. `A_WATCHED_PARTY` eats `for ` as the preposition
+    // that introduces who is being watched, so "I stand guard for a month"
+    // handed back the target `month` and the engine went looking for somebody
+    // of that name. `WHEN_RATHER_THAN_WHO` cannot reach this one: it needs the
+    // preposition, and the preposition was already consumed.
+    if (isBareDuration(name)) return whoWasPointedAtForTheWatch(input);
     // A clause word at the front means the sentence named nobody BY NAME - it
     // said when, or it pointed. Sending the engine looking for a person called
     // "while she crosses" is the wrong answer; so is "you did not say who" to a
@@ -4010,7 +4145,12 @@ function whoIsBeingGuarded(input: string): string | undefined {
         : name;
 }
 
-const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
+// `insult` and its neighbours are here because the intent row exists and this
+// list did not know the words: "I insult him" reached `interact/insult` with NO
+// TARGET for every phrasing in it, so the one act that needs a face on the end
+// of it was aimed at whoever the square handed over. `sneer at` and `jeer at`
+// carry their preposition, the way `bow to` and `apologise to` already do.
+const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|insult|mock|deride|taunt|belittle|sneer at|jeer at|laugh at|make a fool of|steal from|steal|rob|mug|pickpocket/;
 
 /**
  * Turn free text into one action, with no model involved.
@@ -4221,6 +4361,29 @@ function planIntent(input: string): PlannedAction {
             return { action: 'stow', intent: 'leave', target: thing };
         }
         if (WHAT_IS_IN_THAT_ROOM.test(text)) return { action: 'stow', intent: 'look' };
+    }
+
+    // THE POUCH YOU ARE ALREADY CARRYING, WHICH IS NEITHER A SWING NOR A THEFT
+    //
+    // Beside the room branch above and for the same reason, one container over.
+    // The storage ring is this setting's own name for the pouch, so putting a
+    // thing into it and taking a thing back out are both movements inside what
+    // the player already holds and there is no state either way.
+    //
+    // Measured, and the second of the two is the worse:
+    //
+    //     I put the sword in my ring        -> attack, a swing at nobody
+    //     I take the sword out of my ring   -> interact/steal, leverage force
+    //
+    // `VIOLENCE_WITH_NO_OTHER_READING` carries `put (my|the|a) sword in`, which
+    // assumes a body on the end of it. And `interact` fills an ABSENT target in
+    // from whoever is standing here - so a player rummaging in their own bag
+    // robbed a bystander and opened an account against themselves for it.
+    //
+    // The pouch read is the honest answer: it says what is in the ring, which
+    // is the only fact either sentence is about, and it costs nothing.
+    if (A_CONTAINER_OF_YOUR_OWN.test(text)) {
+        return { action: 'inventory' };
     }
 
     // REACHING INTO A CROSSING, WHICH IS READ BEFORE STANDING OVER ONE
@@ -4497,8 +4660,15 @@ function planIntent(input: string): PlannedAction {
     }
 
     // A TAKING, ROUTED TO THE RESOLVER THAT ASKS WHOSE IT IS
+    //
+    // AND THE HOUSE'S OWN SHELF IS NOT A PERSON'S POCKET. This branch runs
+    // above `sectStep`, so "I help myself to the archives" was answered as a
+    // taking from somebody while "I help myself to the SECT archives" reached
+    // `sect/take` - one act, and which answer you got depended on a word the
+    // player had no reason to type. The yield reads the sect step's own
+    // predicate rather than restating its condition, so the two cannot drift.
     {
-        const taken = whatATakingNames(text, input);
+        const taken = aTakingOffTheHousesShelf(text) ? null : whatATakingNames(text, input);
         if (taken !== null) {
             const owner = whoATheftIsAimedAt(input);
             return {
@@ -4547,8 +4717,16 @@ function planIntent(input: string): PlannedAction {
     // Sending the rung below, before `work` and `gather` - both of which used to
     // catch these sentences and answer them by spending the PLAYER's days. An
     // order is the one action in the game whose whole point is that it does not.
+    // AND AN ORDER GIVEN IN THE HOUSE'S NAME IS A DECREE, WHICH IS A DIFFERENT
+    // ACT WITH A DIFFERENT PRICE. This branch is above `sectStep`, where the
+    // decree lives, so "in the name of the sect I order the outer disciples to
+    // gather" came out as an ordinary order: the claim of the house's authority
+    // was dropped on the floor and the check on whether the speaker actually
+    // holds it never ran. The yield is to the same constant the decree branch
+    // is gated on.
     if ((usedAsVerb(text, SECT_ORDER_VERBS) || GIVING_AN_ORDER.test(text))
         && SECT_SUBORDINATE_NOUNS.test(text)
+        && !CLAIMING_THE_HOUSES_AUTHORITY.test(text)
         && !SENDING_A_MESSAGE.test(text)) {
         const errand = matchIntent(text, SECT_ERRAND_PATTERNS) ?? DEFAULT_ERRAND;
         const days = parseDuration(text);
@@ -4991,9 +5169,27 @@ function planIntent(input: string): PlannedAction {
         ? parseAsk(input)
         : null;
     if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
+        // THE INTENT IS IN THE ASKING, NOT IN WHAT IS BEING ASKED ABOUT.
+        //
+        // "I ask him where the market is" reached `interact/trade` - a haggle -
+        // because `market` is one of that row's words and it sat inside the
+        // TOPIC. A question clause is the SUBJECT of the question; the verb
+        // doing the asking is what says whether this is a question, a haggle or
+        // a threat, and the topic must not vote on it.
+        //
+        // Only a wh-clause is cut, which is the shape where the topic is a fact
+        // being asked after. "I ask him about the price" keeps its topic in the
+        // reading, because asking a trader a price IS the trade.
+        const aFactAskedAfter = asked.topic
+            && /^(?:where|when|who|whose|what|which|how|why|whether|if)\b/i.test(asked.topic)
+            ? asked.topic
+            : null;
+        const theAsking = aFactAskedAfter
+            ? text.replace(aFactAskedAfter.toLowerCase(), ' ')
+            : text;
         return {
             action: 'interact',
-            intent: theInteractIntent(text) ?? 'talk',
+            intent: theInteractIntent(theAsking) ?? 'talk',
             ...(asked.person ? { target: asked.person } : {}),
             ...(asked.topic ? { topic: asked.topic } : {})
         };
@@ -5005,7 +5201,13 @@ function planIntent(input: string): PlannedAction {
     // the room. `alchemy_manage.inventory` answers it and nothing reached it.
     // The phrasings themselves are in `inventory-phrasings.ts`, which also owns
     // the money words `give` reads. This line keeps the ORDER and nothing else.
-    if (asksWhatYouAreCarrying(text)) {
+    // AND A LEDGER QUESTION IS NOT A POUCH QUESTION. "What do I have to answer
+    // for" satisfies `asksWhatYouAreCarrying` on its first four words and was
+    // answered with a list of possessions. The ledger read sits below this
+    // line and could never have been reached; the guard is on the sentences
+    // that read owns rather than on a veto list, so a phrasing added there
+    // keeps working here without anybody having to know this line exists.
+    if (asksWhatYouAreCarrying(text) && !WHAT_IS_WRITTEN_BETWEEN_US.test(text)) {
         return { action: 'inventory' };
     }
 
@@ -5358,8 +5560,19 @@ function planIntent(input: string): PlannedAction {
         // extractor finds them and the read would narrow to rows between this
         // cultivator and themselves, which is always none. Naming yourself is
         // naming nobody here.
-        const said = extractSubject(input, LEDGER_SUBJECT_VERBS);
-        const withWhom = said && !THE_ASKER_THEMSELVES.test(said) ? said : undefined;
+        // AND AN INDEFINITE IS PART OF THE QUESTION, NOT PART OF WHO. "Who owes
+        // me anything" came back with the target `me anything`, which is not the
+        // asker by the test below and not a person by any test at all, so the
+        // read narrowed to rows between this cultivator and nobody and answered
+        // an open question with an empty one.
+        const said = extractSubject(input, LEDGER_SUBJECT_VERBS)
+            ?.replace(/\s+(?:anything|something|any of it|at all|still|now)\s*$/i, '')
+            .trim();
+        const withWhom = said
+            && !THE_ASKER_THEMSELVES.test(said)
+            && !NOT_A_PARTY_TO_ANYTHING.test(said)
+            ? said
+            : undefined;
         return {
             action: 'oath',
             intent: 'read',
@@ -5385,7 +5598,7 @@ function planIntent(input: string): PlannedAction {
     }
 
     // A COUNTER, A BOARD, AND SOMEBODY ELSE'S SPAN
-    if (A_COUNTER_NOT_A_MISSION_BOARD.test(text)) {
+    if (A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)) {
         const step = (matchIntent(text, PASSAGE_INTENT_PATTERNS)
             ?? DEFAULT_PASSAGE_INTENT) as PassageIntent;
         const where = extractDestination(input);
@@ -5643,9 +5856,17 @@ function planIntent(input: string): PlannedAction {
     // flat day for.
     if (RIDING.test(text)) {
         const mount = WHAT_IS_BEING_RIDDEN.exec(input);
+        // WHAT IS UNDER YOU IS NOT PART OF WHERE YOU ARE GOING. Every extractor
+        // reads to the end of the clause, so "I fly to Iron Ridge on my sword"
+        // named the place `Iron Ridge on my sword` - a destination nothing
+        // resolves, on the one phrasing this branch exists to serve. The mount
+        // comes off before the destination is read, and it is the same tail the
+        // pattern above matched, so the two cannot disagree about where it is.
+        const withoutTheMount = input.replace(A_MOUNT_UNDER_YOU, '').trim();
         return {
             action: 'ride',
-            target: extractDestination(input) ?? extractSubject(input, MOVE_SUBJECT_VERBS),
+            target: extractDestination(withoutTheMount)
+                ?? extractSubject(withoutTheMount, MOVE_SUBJECT_VERBS),
             ...(mount ? { topic: mount[1].trim().toLowerCase() } : {})
         };
     }
@@ -5784,7 +6005,14 @@ function planIntent(input: string): PlannedAction {
     // sentence naming both - "what does the Azure Dew Sect have on its shelf to
     // teach" - is asking about the curriculum and not about the vault.
     if (WHAT_A_HOUSE_TEACHES.test(text)) {
-        const house = theHouseBeingAskedAbout(input);
+        // A NAME IS A NAME EVEN WHEN THE VERB IS NOT ONE THIS EXTRACTOR KNOWS.
+        // `theHouseBeingAskedAbout` reads the tail of `does|do|has|have|of|for|
+        // is|are`, and the `how high would the X take me` arm has none of them
+        // in it - so all 38 houses came back with NO TARGET, and
+        // `whatThatHouseTeaches` reads an absent name as the asker's own house.
+        // A player asking how far another house could carry them was told about
+        // their own shelf, with nothing in the answer to say so.
+        const house = theHouseBeingAskedAbout(input) ?? theHouseNameSaid(text);
         return {
             action: 'look',
             intent: 'what_they_teach',
@@ -6018,9 +6246,22 @@ function planIntent(input: string): PlannedAction {
     // for: how many people are pulling on this ground, and what that does to
     // the rate. Two different questions that happened to share four words.
     // who else is drawing on this ground
-    if (/\b(?:how crowded|how busy|how many (?:people|cultivators|others)|crowded here|too many people|who else is drawing|how contested|is it crowded|is this place crowded|how many are (?:here|drawing))\b/.test(text)
+    // AND A HOUSE IS NOT THE GROUND UNDERFOOT. "How many people are in the
+    // Azure Dew Sect" reached this for all 38 houses and was answered with the
+    // draw on the square the asker happens to be standing in - a confident
+    // answer to a question nobody asked. The engine holds no read for the size
+    // of a house's roll, so this now reaches nothing, which is the honest
+    // shape: a sentence that misses costs a moment, and this one was costing a
+    // fact about the wrong subject.
+    if ((/\b(?:how crowded|how busy|how many (?:people|cultivators|others)|crowded here|too many people|who else is drawing|how contested|is it crowded|is this place crowded|how many are (?:here|drawing))\b/.test(text)
         || (/\b(?:crowd\w*|contested|occupancy|carrying capacity)\b/.test(text)
-            && /\b(?:here|this place|this ground|the ground|is it|how)\b/.test(text))) {
+            && /\b(?:here|this place|this ground|the ground|is it|how)\b/.test(text)))
+        && !A_HOUSE_IS_NAMED.test(text)
+        // The one-word form as well, which the general veto deliberately drops.
+        // It is safe here because it requires the article - "the severed" - so
+        // a severed meridian in the same sentence cannot reach it, and without
+        // it The Severed was the one house this question stayed wrong for.
+        && !A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT.test(text)) {
         return { action: 'look', intent: 'crowding' };
     }
 
@@ -6220,15 +6461,23 @@ function planIntent(input: string): PlannedAction {
         const offeredTo = interactIntent === 'negotiate' || interactIntent === 'trade'
             ? whoIsBeingOfferedSomething(input)
             : undefined;
+        // AND A TELLING PUTS THE PERSON FIRST, exactly as an offer does.
+        // `extractSubject` takes the whole tail, so "I tell him about the Azure
+        // Dew Sect" came out as the target `him about the Azure Dew Sect` -
+        // measured on all 38 houses and on "the road" as well. A wrong name is
+        // worse than none: an absent target means whoever is standing here, and
+        // a wrong one is a refusal about somebody who is not.
+        const told = subject ? whoWasToldAndAboutWhat(subject) : null;
         const target = interactIntent === 'steal'
             ? whoATheftIsAimedAt(input) ?? (takingAThing ? undefined : subject)
-            : offeredTo ?? subject;
+            : offeredTo ?? told?.person ?? subject;
         return {
             action: 'interact',
             target,
             intent: interactIntent,
             // AND WHAT WAS NAMED, WHICH USED TO BE THROWN AWAY
             ...(takingAThing ? { topic: theThingWithoutItsOwner(subject!) } : {}),
+            ...(!takingAThing && !offeredTo && told ? { topic: told.matter } : {}),
             ...(leverage ? { leverage } : {})
         };
     }

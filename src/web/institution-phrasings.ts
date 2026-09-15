@@ -24,6 +24,23 @@ export const PETITION_VERBS_ALONE =
     'petition|petitions|petitioning|appeal|appeals|appealing';
 
 /**
+ * FILING ONE, WHERE THE VERB IS THE FILING AND THE PETITION IS THE OBJECT.
+ *
+ * `PETITION_VERBS_ALONE` wants `petition` in verb position and `PETITION_VERBS`
+ * wants a filing verb plus a thing being asked for, so the plainest sentence in
+ * the family - "I file a petition" - satisfied neither: the noun IS the
+ * petition, and nothing is named beyond it. Measured, it reached
+ * `interact/negotiate`, which `docs/verbs.md` names by hand as the one thing
+ * `interact` must not answer.
+ *
+ * The article is required, which keeps this off "what is a petition" - a
+ * question, and one the mood pass would have to undo afterwards - and off every
+ * sentence that merely uses the word.
+ */
+export const FILING_A_PETITION =
+    /\b(?:file|files|filing|filed|lodge|lodges|lodging|lodged|submit|submits|submitting|submitted|put in|puts in|putting in|make|makes|making|made|raise|raises|raising|raised)\s+(?:a|an|my|our|the)\s+(?:formal\s+|written\s+)?(?:petition|appeal)\b/;
+
+/**
  * The verbs that mean this only with the thing being asked for.
  */
 export const PETITION_VERBS =
@@ -488,6 +505,7 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
     // "I want to be admitted" are all sentences about membership, and every one
     // of them satisfies a petition rule completely.
     if ((usedAsVerb(text, PETITION_VERBS_ALONE)
+        || FILING_A_PETITION.test(text)
         || (usedAsVerb(text, PETITION_VERBS) && PETITION_NOUNS.test(text))
         // The asking verbs, which need the institution as well as the thing.
         // See {@link AN_INSTITUTION_IS_BEING_ASKED}: without it "I ask him for
@@ -497,10 +515,19 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
             && PETITION_NOUNS.test(text)
             && AN_INSTITUTION_IS_BEING_ASKED.test(text)))
         && !ASKING_TO_BE_TAKEN_IN.test(text)) {
-        const of = partyAfter(
+        const said = partyAfter(
             input,
             `(?:${PETITION_VERBS})|(?:${PETITION_ASKING_VERBS})|to|at`
         );
+        // THE FORM IS NOT THE BODY IT IS PUT TO. "I file a petition" named no
+        // house, and what follows the filing verb is the petition itself - so
+        // the party came back as `petition` and the engine went looking for a
+        // house of that name. Absent is the honest answer, and `petition` is in
+        // `TARGETED_ACTIONS`, so an absent one is filled in from whoever is
+        // standing here.
+        const of = said && !/^(?:a\s+|an\s+|the\s+|my\s+|our\s+)?(?:formal\s+|written\s+)?(?:petition|appeal)s?$/i.test(said)
+            ? said
+            : undefined;
         const matter = matterAsked(input);
         return {
             action: 'petition',
