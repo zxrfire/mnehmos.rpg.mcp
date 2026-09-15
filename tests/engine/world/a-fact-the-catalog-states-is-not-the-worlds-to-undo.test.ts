@@ -52,7 +52,7 @@
  * goes red. Route any world pass back to `markDead` and the ratchet goes red
  * naming the file.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -70,6 +70,8 @@ import {
 } from '../../../src/engine/world/npc-state.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
+import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { THE_LINE_AT_OLD_RIVER } from '../../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { MEMBERS } from '../../../src/data/cultivation/members.js';
 
@@ -153,6 +155,122 @@ describe('a catalog states it and a seeder carries it', () => {
     });
 });
 
+describe('the wall, which refuses differently from everything else', () => {
+    /**
+     * ── WHY THIS ONE NEEDED A FIXTURE AND THE OTHERS DID NOT ─────────────
+     *
+     * Every other site refuses and the pass moves on. The wall refuses and must
+     * write NOTHING AT ALL, including the crossing: `recordCrossing` files an
+     * outcome of `death` as a `death` fact naming the person `deceased`, so
+     * recording a refused one would put the exact artefact this whole guard
+     * exists to prevent into the ledger - a death in the record with nobody
+     * dead in it.
+     *
+     * Across 24 pinned worlds run 200 years the wall did not kill a
+     * stated-standing person once, so the branch is real, reachable and
+     * unfired: it DID kill one before an unrelated fix changed how events are
+     * spread across the year. A seed sweep hunting for it again would prove
+     * only that it can happen, which is already known. This arranges it
+     * instead, and the unguarded arm is what proves the branch was actually
+     * taken rather than the assertions passing vacuously.
+     *
+     * THE ARM IS THE TAG, NOT THE CODE. One seeded world is cloned, one copy
+     * has the claim put on it, and both are advanced in the same process
+     * against the same tree. No source toggle, no second run, nothing to edit
+     * mid-flight.
+     *
+     * It names nobody and rigs nobody. The people are whoever the world seeded,
+     * and the claim is put on all of them so that the pass has somebody to take
+     * - which is the general rule being exercised, not a person.
+     */
+    /**
+     * MEASURED, not chosen. 250 people through this catalog produce 0 crossing
+     * deaths at 60 years, 3 at 120 and 7 at 200. Sixty is the number this
+     * fixture was first written with and it made the whole block vacuous - the
+     * fire check below is the only reason that was noticed rather than shipped
+     * as three green assertions about a branch nothing had entered.
+     */
+    const YEARS = 120;
+
+    /**
+     * THE FIXTURE CATALOG CANNOT REACH A WALL. Measured: 0 crossing deaths at
+     * 120, 200 and 300 years, because its synthetic ceilings put nobody in
+     * front of one. So this block pays for the real catalog, which is the only
+     * one that arranges the branch at all - and is the second thing the fire
+     * check caught rather than a preference.
+     */
+    async function twoArms(): Promise<{
+        withClaim: WorldState; without: WorldState; watched: Set<string>;
+    }> {
+        const { state } = seedWorld({
+            seed: 'the-wall-refuses',
+            catalog: await loadCultivationCatalog(),
+            presentYear: 1000,
+            population: 250
+        });
+        const watched = new Set(
+            state.npcs.filter(n => n.status === 'alive' && isTheWorldsToMove(n)).map(n => n.id)
+        );
+        // Both arms are clones and the seeded world is advanced neither time, so
+        // the only difference between them is the tag. The unguarded arm has it
+        // STRIPPED rather than merely not added, because the real catalog seeds
+        // two rows already carrying it.
+        const claimed = structuredClone(state) as WorldState;
+        const bare = structuredClone(state) as WorldState;
+        for (const npc of claimed.npcs) {
+            if (watched.has(npc.id) && !npc.tags.includes(CATALOG_STATES_STANDING_TAG)) {
+                npc.tags = [...npc.tags, CATALOG_STATES_STANDING_TAG];
+            }
+        }
+        for (const npc of bare.npcs) {
+            npc.tags = npc.tags.filter(t => t !== CATALOG_STATES_STANDING_TAG);
+        }
+        return {
+            withClaim: advanceWorldYears(claimed, YEARS).state,
+            without: advanceWorldYears(bare, YEARS).state,
+            watched
+        };
+    }
+
+    /** A crossing that killed somebody, as the ledger records it. */
+    function crossingDeaths(state: WorldState, watched: Set<string>): string[] {
+        return state.history.facts
+            .filter(f => (f.data as { outcome?: string } | undefined)?.outcome === 'death')
+            .flatMap(f => f.actors.map(a => a.id))
+            .filter(id => watched.has(id));
+    }
+
+    let arms: { withClaim: WorldState; without: WorldState; watched: Set<string> };
+    beforeAll(async () => {
+        arms = await twoArms();
+    }, 120_000);
+
+    it('kills at the wall and records it when nothing states they are standing', () => {
+        // The fire check. If this is empty the two assertions below are vacuous
+        // and the fixture has stopped arranging what it says it arranges.
+        expect(crossingDeaths(arms.without, arms.watched).length).toBeGreaterThan(0);
+    });
+
+    it('leaves nobody the catalog states is standing dead at a wall', () => {
+        const ended = arms.withClaim.npcs
+            .filter(n => arms.watched.has(n.id) && n.status !== 'alive');
+        expect(ended.map(n => `${n.name}: ${n.endNote}`)).toEqual([]);
+    });
+
+    it('writes no crossing record either, because a death record is the artefact', () => {
+        expect(crossingDeaths(arms.withClaim, arms.watched)).toEqual([]);
+    });
+
+    it('still lets them climb, so the guard is not a cage', () => {
+        const climbed = arms.withClaim.npcs.filter(n => {
+            const before = arms.without.npcs.find(o => o.id === n.id);
+            return arms.watched.has(n.id) && before !== undefined
+                && n.cultivation.realmOrdinal > 0;
+        });
+        expect(climbed.length).toBeGreaterThan(0);
+    });
+});
+
 describe('the world ends people in one place', () => {
     /**
      * The files in `src/engine/world/` that may still call the primitives, and
@@ -187,6 +305,47 @@ describe('the world ends people in one place', () => {
                 if (new RegExp(`(?<![\\w.])${name}\\s*\\(`).test(src)) {
                     offenders.push(`${file} calls ${name}`);
                 }
+            }
+        }
+        expect(offenders).toEqual([]);
+    });
+
+    it('has no world pass reaching an ending through a shared applier either', () => {
+        /**
+         * THE HOLE THE FIRST RATCHET HAD, found by the wall fixture rather than
+         * by reading. `war-melee.ts` never calls `markDead` - it hands a fight
+         * to `whatTheConfrontationDidToThem`, which does. So a war between two
+         * houses, with no player anywhere near it, ended somebody the catalog
+         * states is standing, through a file exempted as "the player's door".
+         * It is BOTH doors, which is exactly why the guard cannot live inside
+         * it: putting it there would make a stated row invulnerable to a player.
+         *
+         * So the rule is one step wider than "do not call the primitives": a
+         * world pass that reaches an ending through somebody else's applier
+         * consults the seam itself. Checked by name rather than by call graph,
+         * which is coarse and is the reason it is a grep rather than a promise.
+         */
+        const dir = join(process.cwd(), 'src', 'engine', 'world');
+        const appliers: string[] = [];
+        for (const file of NOT_A_PASS_OF_THE_WORLDS_OWN.keys()) {
+            if (file === 'npc-state.ts') continue;
+            const src = readFileSync(join(dir, file), 'utf8');
+            for (const m of src.matchAll(/^export function (\w+)/gm)) {
+                const body = src.slice(src.indexOf(`export function ${m[1]}`));
+                // Only the ones that actually end somebody.
+                if (/markDead\s*\(|markMissing\s*\(/.test(body.slice(0, 6000))) appliers.push(m[1]);
+            }
+        }
+        expect(appliers.length).toBeGreaterThan(0);
+
+        const offenders: string[] = [];
+        for (const file of readdirSync(dir).filter(f => f.endsWith('.ts'))) {
+            if (NOT_A_PASS_OF_THE_WORLDS_OWN.has(file)) continue;
+            const src = readFileSync(join(dir, file), 'utf8');
+            for (const applier of appliers) {
+                if (!new RegExp(`(?<![\\w.])${applier}\\s*\\(`).test(src)) continue;
+                if (/theWorldMayEnd|theWorldEnds|theWorldLoses/.test(src)) continue;
+                offenders.push(`${file} reaches an ending through ${applier}`);
             }
         }
         expect(offenders).toEqual([]);

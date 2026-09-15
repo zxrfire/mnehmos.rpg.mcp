@@ -15,7 +15,7 @@ import { A_BLOW_MEANT_TO_END_IT } from '../cultivation/how-a-blow-was-thrown.js'
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { combatantOf } from './gatherings.js';
 import { makeFact, type HistoricalFact } from './history.js';
-import type { NpcRecord } from './npc-state.js';
+import { theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { isRuined } from './possessions.js';
 import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
 import type { ObligationInput } from '../social/grudges.js';
@@ -300,7 +300,24 @@ function fightOneYear(
             wounds: c.injuries,
             outcome: result.outcome,
             lost: c.felledBy !== null,
-            finished: c.finished,
+            // THE ONE PLACE THE SEAM IS A FLAG RATHER THAN A CALL.
+            //
+            // `whatTheConfrontationDidToThem` is reached from BOTH sides of the
+            // player line - `combat-verbs.ts` when somebody plays a fight, and
+            // this pass when two houses fight without anybody present - so the
+            // guard cannot go inside it without making a stated row invulnerable
+            // to a player. It goes on the world's own caller instead, and it
+            // rides in on `finished`, which is the field that decides the death:
+            // they were still felled, they still take the wounds, and the war
+            // still costs their house the person for the year. What the world
+            // may not do is finish them, which is the ordinary outcome for most
+            // of the beaten anyway - see `willWithdraw` above.
+            //
+            // Found by a fixture rather than by reading: 250 people over 60
+            // years put a stated-standing row in a war and it came out "Killed
+            // by Third Face Ren", through a file the ratchet had exempted as
+            // the player's door. It is both.
+            finished: c.finished && theWorldMayEnd(byId.get(c.id) ?? { tags: [] }),
             // A war is the absence of an arrangement, not a declaration of
             // hostility. Nobody promised anybody anything, so it is `open` and
             // priced by the same table a brawl in a square is.
