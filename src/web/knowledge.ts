@@ -3,6 +3,7 @@
  */
 
 import type Database from 'better-sqlite3';
+import { isTheWorldsToMove } from '../engine/world/npc-state.js';
 import {
     recordKnowledge,
     type KnowledgeRecord,
@@ -245,12 +246,27 @@ export class KnowledgeGate {
     /**
      * What the world itself says about a holder it holds a row for.
      *
-     * `unaware` with no world, with no world loaded, and for every holder the
-     * world does not have - which used to include the player and no longer
-     * does: `newRun` writes their roster row before the household is bound, so
-     * the player is a holder this read answers about like anybody else. Built
-     * once per world handle: the reading walks the ledger, and a long-lived
-     * world's ledger is long.
+     * `unaware` with no world, with no world loaded, for every holder the world
+     * does not have, AND FOR THE PLAYER - who is now a holder the world does
+     * have, and must not be one this read answers about.
+     *
+     * `newRun` writes the player's roster row before the household is bound,
+     * because the kin ties need somewhere to land. The row is correct and is
+     * wanted. What came with it was this read treating the player as one of
+     * the world's own people: `whatOneOfTheWorldsOwnPeopleKnows` says in its
+     * own name what it is for, and it hands somebody standing in a province
+     * the things a person of that province would obviously know.
+     *
+     * A PLAYER HAS TO LEARN. Measured the hour the row moved: a run opened
+     * knowing the house whose ground it was standing on at `placed`, where the
+     * gate expects `unaware` until they have looked - which is the whole of
+     * what `being-on-their-ground` is about, and it is the difference between
+     * a world that tells you things and a world you find things out in.
+     *
+     * The predicate is the one the simulation already uses to know whose
+     * decisions are whose: if a row is not the world's to MOVE, it is not the
+     * world's to KNOW for either. Built once per world handle otherwise: the
+     * reading walks the ledger, and a long-lived world's ledger is long.
      *
      * THAT IS WHY THE PLAYER'S KIN ARE NOT IN THE KNOWLEDGE TABLE, and anybody
      * who comes looking for the missing rows should stop here. `ofAPerson`
@@ -269,6 +285,8 @@ export class KnowledgeGate {
         if (!this.worldAtHand) return 'unaware';
         const world = this.worldAtHand();
         if (!world) return 'unaware';
+        const holder = world.npcs.find(npc => npc.id === holderId);
+        if (holder && !isTheWorldsToMove(holder)) return 'unaware';
         if (world !== this.theWorldItReads || this.readingTheWorld === null) {
             this.readingTheWorld = whatOneOfTheWorldsOwnPeopleKnows(world);
             this.theWorldItReads = world;
