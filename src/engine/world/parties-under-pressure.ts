@@ -764,8 +764,16 @@ function applyExpend(
     let strongestSurvivor = -1;
     for (const npc of present) {
         if (couldDieToADisaster(npc.cultivation.realmOrdinal)) {
-            replaceNpc(state, markDead(npc, day, `Was at ${target.name}.`));
-            deaths.push(settleNpcDeath(state, npc, day));
+            // Off the row as it stands, never off the snapshot `present` holds.
+            // `settleNpcDeath` writes onto the other people the dead name - the
+            // disciple of a master who died two iterations ago carries the fact
+            // that says so - and writing the pre-death copy back takes that
+            // with it. Everybody in this loop is standing in one place, which
+            // is where those ties are thickest.
+            const at = indexById(state.npcs, npc.id);
+            const fresh = at >= 0 ? state.npcs[at] : npc;
+            replaceNpc(state, markDead(fresh, day, `Was at ${target.name}.`));
+            deaths.push(settleNpcDeath(state, at >= 0 ? state.npcs[at] : fresh, day));
             killedIds.push(npc.id);
         } else {
             strongestSurvivor = Math.max(strongestSurvivor, npc.cultivation.realmOrdinal);

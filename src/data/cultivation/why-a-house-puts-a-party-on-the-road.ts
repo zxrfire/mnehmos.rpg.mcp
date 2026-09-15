@@ -191,7 +191,17 @@ export const ReasonNeedSchema = z.enum([
      * The world has closed ground in this house's own province.
      * `standsNearForbiddenGround`.
      */
-    'forbidden_ground'
+    'forbidden_ground',
+    /**
+     * The house cannot pay its own people, and there is ground in its province
+     * that would. `cannotPayItsPeople` and `knowsGroundThatWouldPayIt`, both.
+     *
+     * THE PREDICATE IS THE MOTIVE. A solvent house does not have this reason at
+     * all, which is why there is no branch anywhere on whether a house is
+     * desperate: `reasonsOpenTo` simply does not offer it one. See
+     * `engine/world/what-a-house-does-when-it-cannot-pay.ts`.
+     */
+    'ground_that_pays_somebody_else'
 ]);
 export type ReasonNeed = z.infer<typeof ReasonNeedSchema>;
 
@@ -464,6 +474,25 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         factKind: 'war',
         scale: 'regional',
         weight: 4
+    },
+    {
+        id: 'sending-to-take-the-ground-that-pays',
+        name: 'Taking what pays',
+        what: 'The house has not paid its own people this year, and the ground that '
+            + 'would pay them is a fortnight away with somebody else standing on it.',
+        needs: 'ground_that_pays_somebody_else',
+        // None. A house that cannot make payroll sends whoever it has, and the
+        // people it has are the ones it would ordinarily keep at home.
+        ceilingOrdinal: null,
+        days: 90,
+        hands: 8,
+        atStake: 'the_ground_itself',
+        factKind: 'resource_contested',
+        scale: 'regional',
+        // Heavy among the reasons a broke house has, and it is never weighed
+        // against the others for anybody else: `NEED_PREDICATES` is what keeps
+        // it off a solvent house's board, not this number.
+        weight: 25
     }
 ];
 

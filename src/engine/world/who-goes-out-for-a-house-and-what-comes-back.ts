@@ -86,6 +86,24 @@ export interface HouseAsItStands {
      * about the far side of the world is not a reason this house has.
      */
     standsNearForbiddenGround?: boolean;
+    /**
+     * Whether this house failed to pay its own people.
+     *
+     * `howThePurseIsRunning` is the one reading of it and the yearly economy
+     * holds both terms it takes. Absent where the caller has no world, which is
+     * the honest answer rather than a simplification - a catalog knows what a
+     * house earns and not what it is currently holding.
+     */
+    cannotPayItsPeople?: boolean;
+    /**
+     * Whether the world holds ground in this house's province that would pay
+     * them, and that somebody it owes nothing to is standing on.
+     *
+     * A SEPARATE FACT from the one above and deliberately not folded into it.
+     * A house that cannot pay and has nowhere to reach is a house that scatters
+     * or folds, and a single boolean would have said it was about to march.
+     */
+    knowsGroundThatWouldPayIt?: boolean;
 }
 
 /**
@@ -108,7 +126,9 @@ export const NEED_PREDICATES: Record<ReasonNeed, (house: HouseAsItStands) => boo
     a_find: house => house.hasAFind,
     a_containment: house => containmentHeldBy(house.id).length > 0,
     a_counterpart: house => (house.sitsDownWith?.length ?? 0) > 0,
-    forbidden_ground: house => house.standsNearForbiddenGround === true
+    forbidden_ground: house => house.standsNearForbiddenGround === true,
+    ground_that_pays_somebody_else: house =>
+        house.cannotPayItsPeople === true && house.knowsGroundThatWouldPayIt === true
 };
 
 /**
@@ -867,7 +887,10 @@ export const WHERE_A_NEED_SENDS_YOU: Record<ReasonNeed, 'a_seat' | 'ground'> = {
     a_rival: 'ground',
     a_find: 'ground',
     a_containment: 'ground',
-    forbidden_ground: 'ground'
+    forbidden_ground: 'ground',
+    // The ground itself, and never the hall of whoever is standing on it. A
+    // house walking onto a town it means to take is not being received.
+    ground_that_pays_somebody_else: 'ground'
 };
 
 /**
@@ -904,6 +927,9 @@ const WHO_A_NEED_IS_ABOUT:
     // A rival is a house and the errand still ends on ground between the two:
     // you do not camp in the courtyard of the house you are at war with.
     a_rival: () => [],
+    // The ground names itself, and whoever is standing on it is not receiving
+    // anybody. The caller knows which piece and says so.
+    ground_that_pays_somebody_else: () => [],
     an_ally: house => Object.entries(house.standing)
         .filter(([, regard]) => regard >= ALLIED_STANDING)
         .map(([id]) => id),

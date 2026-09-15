@@ -82,6 +82,12 @@ import {
     type WhatSomebodyKnowsOfIt
 } from './what-one-of-the-worlds-own-people-knows.js';
 import { runCascade } from './cascade.js';
+import {
+    howThePurseIsRunning,
+    whetherTheHouseReaches,
+    whichGroundWouldPayIt,
+    type GroundThatPays
+} from './what-a-house-does-when-it-cannot-pay.js';
 import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
 import {
@@ -128,9 +134,23 @@ import {
 } from './the-ground-somebody-is-actually-standing-on.js';
 import { manualQualityRank } from '../cultivation/manual-quality.js';
 import {
+    DAO_GROUND_TAG,
     applyRoadsComprehended,
-    roadsInReachOf
+    groundAtLocation,
+    howSomebodyStandsToAGround,
+    roadsInReachOf,
+    standingOfNpc,
+    type GroundAsTheRuleReadsIt
 } from './how-a-cultivator-comes-by-a-road.js';
+import { houseTeachingCeiling } from '../../data/cultivation/index.js';
+import {
+    whereTheyWouldGo,
+    whetherTheyGoThisYear,
+    whoWouldGoWithThem,
+    whyTheyWouldLeave,
+    type SomewhereWorthGoing,
+    type WhyTheyWentOut
+} from './why-somebody-walks-out-of-a-compound.js';
 import type { AmbientQi, ApproachLeverage } from '../../schema/cultivation.js';
 import {
     applyManualCopying,
@@ -179,6 +199,7 @@ import {
 } from './what-people-are-saying.js';
 import type { OnTheRoll } from '../social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import {
+    ALLIED_STANDING,
     aFindThisHouseCouldSendFor,
     forbiddenGroundInTheProvinceOf,
     whatAHousesOwnErrandsBringBack,
@@ -359,6 +380,24 @@ export interface PressureOptions {
     intensity?: number;
     /** Cap on events applied in one call, whatever the span. */
     maxEvents?: number;
+    /**
+     * Whether a house that could not pay its own people may act on it.
+     *
+     * Defaults to true and the game never turns it off. It exists because
+     * AGENTS.md is explicit that a stash-and-rerun is not a control arm and
+     * both arms have to run in one command: this is the only lever that removes
+     * the motive without removing anything else, so the world either side of it
+     * is the same world.
+     */
+    housesActOnAnEmptyPurse?: boolean;
+    /**
+     * Whether somebody on a roll may decide for themselves to leave it.
+     *
+     * The second arm, and separate from the one above on purpose: the two
+     * mechanisms share a reading of the purse and are otherwise unrelated, and
+     * one flag for both would have measured their sum.
+     */
+    peopleWalkOutOnTheirOwnAccount?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -376,6 +415,8 @@ export function applyPressure(
 ): PressureResult {
     const events: PressureEvent[] = [];
     const intensity = opts.intensity ?? 1;
+    const actOnAnEmptyPurse = opts.housesActOnAnEmptyPurse ?? true;
+    const peopleWalkOut = opts.peopleWalkOutOnTheirOwnAccount ?? true;
     const maxEvents = opts.maxEvents ?? 4000;
 
     const firstYear = yearOfDay(fromDay) + 1;
@@ -576,12 +617,19 @@ export function applyPressure(
         // people on the road. AFTER the economy, so a house buys the carriage
         // out of the purse this year filled, and after recruitment, so
         // somebody admitted this year can be on the party.
-        applySendings(state, year, withinSpan(year * 365 + 175, fromDay, toDay));
+        applySendings(
+            state, year, withinSpan(year * 365 + 175, fromDay, toDay), actOnAnEmptyPurse);
         // And the yard works on what the last party brought home. AFTER the
         // sendings, so material that came back this year is material this
         // year's work can go into - a hull is a schedule, and a house hunts
         // for it the whole time it is building it.
         applyConveyanceBuilding(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
+        // AND THE PEOPLE WHO DECIDED FOR THEMSELVES. After the economy, so the
+        // stipend they did or did not get is this year's, and after the house's
+        // own sendings, so somebody the house put on the road this year is out
+        // on the house's business rather than weighing whether to leave.
+        applyPeopleWalkingOut(
+            state, year, withinSpan(year * 365 + 179, fromDay, toDay), peopleWalkOut);
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
         // The longest project in the world, on its own clock. It will almost
         // never fire in five hundred years, and that is the point of it.
@@ -1006,7 +1054,13 @@ function placeAChildTheirHouseWillNotKeep(
 
     // Secret, because the people who hold it are the people on it. Nobody else
     // in the world has a record, which is what `unaware` means for the child.
-    appendWorldFact(state, makeFact({
+    //
+    // AND THE CHILD IS NOT ON THE ROSTER YET. `applyDemography` pushes them
+    // after this returns, so `linkFactToWhoItNames` cannot find them and the
+    // one fact about their own origin was left off the one person it is about.
+    // The id is put on by hand below, which is what that linker would have
+    // done: everybody else this names IS on the roster and is linked normally.
+    const placing = appendWorldFact(state, makeFact({
         day,
         kind: 'birth',
         scale: 'personal',
@@ -1035,7 +1089,12 @@ function placeAChildTheirHouseWillNotKeep(
         }
     }));
 
-    return updated;
+    return {
+        ...updated,
+        historyFactIds: updated.historyFactIds.includes(placing.id)
+            ? updated.historyFactIds
+            : [...updated.historyFactIds, placing.id]
+    };
 }
 
 /**
@@ -2105,10 +2164,122 @@ const CARRIAGES_BY_GRADE: readonly string[] = [
  */
 const WORTH_REPEATING = 0.35;
 
+/** The one reason a house has only because it could not make payroll. */
+const BECAUSE_IT_CANNOT_PAY = 'ground_that_pays_somebody_else';
+
+/**
+ * Every piece of ground in the world that pays whoever stands on it.
+ *
+ * Priced by the two functions the yearly economy itself reads, so a house
+ * cannot reach for a town believing it is worth something the economy would not
+ * then collect. Built once for the whole pass: it is asked by every house whose
+ * purse has run out, and there are about twenty-five such places in a world.
+ *
+ * A VEIN IS PRICED TO THE HOUSE THAT WOULD HOLD IT and a town is not, which is
+ * the economy's own asymmetry rather than one invented here - `share` scales
+ * what a house draws out of a rock and does not scale what the people of a town
+ * pay to be on somebody's books.
+ */
+function groundThatPaysSomebody(
+    state: WorldState,
+    regionFor: (locationId: string | null) => string | null
+): { place: LocationRecord; provinceId: string | null; townPays: number }[] {
+    const out: { place: LocationRecord; provinceId: string | null; townPays: number }[] = [];
+    for (const place of state.locations) {
+        if (!isBelowTheLid(place)) continue;
+        if (place.kind !== 'settlement' && place.kind !== 'vein') continue;
+        if (place.tags.includes('forbidden')) continue;
+        const townPays = whatATownPaysItsHolder(place);
+        if (place.kind === 'settlement' && townPays <= 0) continue;
+        out.push({ place, provinceId: regionFor(place.id), townPays });
+    }
+    return out;
+}
+
+/**
+ * The ground THIS house would reach for, priced to it.
+ *
+ * Its own province, because the thing that makes a house walk its people out to
+ * a piece of ground is the ground being near enough to walk to - the same
+ * scoping `forbiddenGroundInTheProvinceOf` states for the same reason.
+ *
+ * Nobody's, or somebody's this house owes nothing to. An ally's town is not on
+ * the table: a body that would ruin the one relationship it has is a body
+ * making a different decision, and `ALLIED_STANDING` is the world's own line.
+ */
+function groundThisHouseCouldTake(
+    paying: readonly { place: LocationRecord; provinceId: string | null; townPays: number }[],
+    faction: FactionRecord,
+    byId: ReadonlyMap<string, FactionRecord>,
+    provinceOfTheSeat: string | null
+): GroundThatPays[] {
+    const share = whatItCanPutOnTheGround(Number(faction.resources.reliable_ordinal ?? 0));
+    const out: GroundThatPays[] = [];
+    for (const row of paying) {
+        if (provinceOfTheSeat === null || row.provinceId !== provinceOfTheSeat) continue;
+        const holderId = row.place.controllingFactionId;
+        if (holderId === faction.id) continue;
+        const holder = holderId === null ? null : byId.get(holderId) ?? null;
+        if (holder && holder.dissolvedOnDay !== null) continue;
+        if (holder && (faction.standing[holder.id] ?? 0) >= ALLIED_STANDING) continue;
+        out.push({
+            locationId: row.place.id,
+            name: row.place.name,
+            paysAYear: row.place.kind === 'vein'
+                ? Math.round(whatAVeinPaysItsHolder(share))
+                : row.townPays,
+            heldById: holder?.id ?? null,
+            heldByName: holder?.name ?? null,
+            theirPowerOrdinal: Number(holder?.resources.power_ordinal ?? 0)
+        });
+    }
+    return out;
+}
+
+/**
+ * What a house's purse says about what it has a reason to do.
+ *
+ * ONE READING, and it exists because there are two callers: the yearly pass
+ * below, which hoists the two halves out of the loop because it asks for every
+ * house in the world, and the board a player is standing in front of, which
+ * asks about one. A second answer in the web layer would be a second opinion
+ * about whether a house is broke, and the board and the world would come apart.
+ */
+export function howAHouseStandsForMoney(
+    state: WorldState,
+    faction: FactionRecord
+): { cannotPayItsPeople: boolean; knowsGroundThatWouldPayIt: boolean } {
+    let members = 0;
+    for (const npc of state.npcs) {
+        if (npc.status === 'alive' && npc.factionId === faction.id) members++;
+    }
+    const payroll = members * A_STIPEND_PER_MEMBER_PER_YEAR;
+    const purse = howThePurseIsRunning(
+        Number(faction.resources.spirit_stones ?? 0), payroll);
+    if (purse !== 'cannot_pay') {
+        return { cannotPayItsPeople: false, knowsGroundThatWouldPayIt: false };
+    }
+    const could = groundThisHouseCouldTake(
+        groundThatPaysSomebody(state, id => regionOf(state, id)),
+        faction,
+        new Map(state.factions.map(f => [f.id, f] as const)),
+        regionOf(state, faction.seatLocationId)
+    );
+    return {
+        cannotPayItsPeople: true,
+        knowsGroundThatWouldPayIt: whichGroundWouldPayIt(could, payroll) !== null
+    };
+}
+
 /**
  * Houses put people on the road, and what comes back is news.
  */
-function applySendings(state: WorldState, year: number, day: number): number {
+function applySendings(
+    state: WorldState,
+    year: number,
+    day: number,
+    actOnAnEmptyPurse: boolean
+): number {
     const rng = forStream(state.seed, 'sendings', year);
     const roster = new Map<string, Candidate[]>();
     const roll = new Map<string, OnTheRoll[]>();
@@ -2173,6 +2344,10 @@ function applySendings(state: WorldState, year: number, day: number): number {
         })
     );
     const openGround = whereTheOpenGroundIs(state.locations, state.currentDay);
+    // WHAT THE WORLD HAS THAT PAYS, once for the whole pass. Asked only by the
+    // houses that could not pay their own people, and there are usually none.
+    const paying = groundThatPaysSomebody(state, regionFor);
+    const houseById = new Map(state.factions.map(f => [f.id, f] as const));
 
     let sent = 0;
     for (const faction of state.factions) {
@@ -2199,6 +2374,23 @@ function applySendings(state: WorldState, year: number, day: number): number {
 
         if (!rng.chance(SENDINGS_PER_HOUSE_YEAR)) continue;
 
+        // ── WHAT THE PURSE SAYS, WHICH IS A REASON THIS HOUSE HAS ────────
+        //
+        // The yearly economy has already run and has already clamped this
+        // house's purse at whatever it could pay, so both terms are this year's.
+        // A house that could not pay its people has a reason no solvent house
+        // has, and `NEED_PREDICATES` is where that lives - nothing below
+        // branches on being broke.
+        const onTheRoll = roll.get(faction.id) ?? [];
+        const payroll = onTheRoll.length * A_STIPEND_PER_MEMBER_PER_YEAR;
+        const purse = howThePurseIsRunning(
+            Number(faction.resources.spirit_stones ?? 0), payroll);
+        const couldTake = actOnAnEmptyPurse && purse === 'cannot_pay'
+            ? groundThisHouseCouldTake(
+                paying, faction, houseById, regionFor(faction.seatLocationId))
+            : [];
+        const wouldPayIt = whichGroundWouldPayIt(couldTake, payroll);
+
         // KEPT, NOT THROWN AWAY. This was asked as a predicate and the answer
         // discarded, so the errand a house opened because it knew of a door
         // sent the party somewhere else entirely and the door stayed unvisited.
@@ -2223,7 +2415,9 @@ function applySendings(state: WorldState, year: number, day: number): number {
             hasAFind: find !== null,
             sitsDownWith: circleCandidatesFor(state, faction).map(f => f.id),
             standsNearForbiddenGround:
-                forbiddenGroundInTheProvinceOf(state.locations, faction.seatLocationId)
+                forbiddenGroundInTheProvinceOf(state.locations, faction.seatLocationId),
+            cannotPayItsPeople: purse === 'cannot_pay',
+            knowsGroundThatWouldPayIt: wouldPayIt !== null
         };
         const reasons = reasonsOpenTo(house);
         if (reasons.length === 0) continue;
@@ -2253,7 +2447,17 @@ function applySendings(state: WorldState, year: number, day: number): number {
         // world's own record then said anybody had been anywhere, which is why a
         // house's knowledge of its own province stopped at whoever happened to
         // die there.
-        const goingTo = whereASendingGoes({
+        //
+        // AND THE ONE ERRAND THAT NAMES ITS OWN GROUND. A house reaching for the
+        // ground that would pay its people already knows which piece: it is the
+        // smallest thing in its own province that would cover the payroll. There
+        // is nothing to draw.
+        const named = reason.needs === BECAUSE_IT_CANNOT_PAY ? wouldPayIt : null;
+        // DRAWN WHATEVER THE REASON IS, so the stream does not depend on which
+        // reason came up - the same rule the event draw at the top of this file
+        // keeps, and the reason a control arm for the motive is comparable to
+        // the world without it at all.
+        const drawn = whereASendingGoes({
             needs: reason.needs,
             fromLocationId: faction.seatLocationId,
             theFind: find?.locationId ?? null,
@@ -2277,11 +2481,23 @@ function applySendings(state: WorldState, year: number, day: number): number {
             elsewhere: groundAPartyCanBeSentTo(state.locations),
             pick: count => rng.int(0, Math.max(0, count - 1))
         });
+        const goingTo = named?.locationId ?? drawn;
+        const pitchDrawn = best + rng.int(-5, 1);
 
         const posting = postingFor({
             reason,
             house,
-            pitchOrdinal: best + rng.int(-5, 1),
+            // WHAT THE GROUND WOULD TAKE TO HOLD, when the errand is a piece of
+            // ground somebody is standing on. Not the house's own best: the
+            // question a party walking onto a town faces is whoever is already
+            // there, and for ground nobody holds it is what the place itself
+            // asks of anybody standing on it.
+            pitchOrdinal: named === null
+                ? pitchDrawn
+                : Math.max(
+                    named.theirPowerOrdinal,
+                    state.locations.find(l => l.id === named.locationId)?.thresholds.mastery ?? 0
+                ),
             locationId: goingTo ?? faction.seatLocationId,
             // What they went on: the best thing in the yard, which is the best
             // thing the house could pay for. Null is walking, and walking is
@@ -2293,6 +2509,21 @@ function applySendings(state: WorldState, year: number, day: number): number {
         const party = whoTheHouseCanSend(posting, party0);
         if (party.length === 0) continue;
 
+        // WALKING ONTO SOMEBODY'S GROUND IS A DECISION, and it is the elders'.
+        // A broke house having the reason is not the same as the house acting on
+        // it: the room is what makes one house march and the house next door sit
+        // still with the same empty purse, and the difference is who is in it.
+        if (named !== null) {
+            const said = whetherTheHouseReaches({
+                what: 'taking_ground_that_pays',
+                purse,
+                roll: onTheRoll,
+                rankCount: faction.ranks.length,
+                asOfDay: day
+            });
+            if (!said.reaches) continue;
+        }
+
         // A HOUSE DOES NOT SEND PEOPLE AT SOMETHING IT EXPECTS TO LOSE THEM TO.
         // `duties.ts` has said so since it was written and the sending module names
         // the same two bands - the difference between the two files is the whole
@@ -2300,7 +2531,25 @@ function applySendings(state: WorldState, year: number, day: number): number {
         // the world declines to stop somebody taking it off the wall. This is the
         // house's half, and it is the module's own predicate rather than a
         // threshold invented here.
-        if (isImpossibleTier(tierFor(posting, party).band)) continue;
+        //
+        // AND THAT `continue` WAS THE RISK AVERSION, which is correct for a house
+        // with something to lose and was being applied to one that has nothing.
+        // A house that could not pay its people this year does not decline; it
+        // asks its own elders, who are moved by the empty purse the same way a
+        // war moves them in `what-a-house-opens-its-treasury-for.ts`.
+        let reachedPastItsWeight = false;
+        if (isImpossibleTier(tierFor(posting, party).band)) {
+            if (!actOnAnEmptyPurse || purse !== 'cannot_pay') continue;
+            const said = whetherTheHouseReaches({
+                what: 'reaching_past_its_weight',
+                purse,
+                roll: onTheRoll,
+                rankCount: faction.ranks.length,
+                asOfDay: day
+            });
+            if (!said.reaches) continue;
+            reachedPastItsWeight = true;
+        }
 
         const sending = resolveSending({
             posting,
@@ -2368,12 +2617,423 @@ function applySendings(state: WorldState, year: number, day: number): number {
             creditWhatCameBack(faction, partyOrdinal(party), party.length);
         }
 
+        // AND THE GROUND CHANGES HANDS, OR IT DOES NOT. The whole of what the
+        // house went for, and the same three writes `vein_lost` makes - the
+        // place, the two holds, and what the people who lost it now carry.
+        if (named !== null) {
+            theGroundWasTakenOrItWasNot(state, {
+                faction, named, sending, day: sending.returnsOnDay,
+                rng: forStream(state.seed, 'taking-what-pays', faction.id, year)
+            });
+        }
+
         const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
-        if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING) {
+        if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING
+            || reachedPastItsWeight || named !== null) {
             appendWorldFact(state, news);
         }
     }
     return sent;
+}
+
+/**
+ * A house walked onto ground that pays, and either it holds it now or it does
+ * not.
+ *
+ * WHAT IT COSTS EITHER WAY. The party is the strongest people the house has -
+ * `whoTheHouseCanSend` sorts that way - and whoever did not come back is
+ * already `markMissing` by the time this runs. What is left is the ground and
+ * what the people who were standing on it think about the house that came.
+ */
+function theGroundWasTakenOrItWasNot(
+    state: WorldState,
+    input: {
+        faction: FactionRecord;
+        named: GroundThatPays;
+        sending: ReturnType<typeof resolveSending>;
+        day: number;
+        rng: CultivationRNG;
+    }
+): void {
+    const { faction, named, sending, day, rng } = input;
+    const holder = named.heldById === null
+        ? null : state.factions.find(f => f.id === named.heldById) ?? null;
+    const took = sending.outcome === 'finished';
+    const place = state.locations.find(l => l.id === named.locationId) ?? null;
+    if (!place) return;
+
+    if (took) {
+        const changed = applyLocationChange(place, {
+            onDay: day,
+            kind: 'conquered',
+            summary: holder
+                ? `${place.name} passed to the ${houseName(faction.name)}.`
+                : `${place.name} answers to the ${houseName(faction.name)} now, and did not `
+                  + 'answer to anybody before.',
+            causeKnown: true,
+            patch: {
+                controllingFactionId: faction.id,
+                addTags: ['changed_hands']
+            }
+        });
+        replaceLocation(state, changed.location);
+
+        if (holder) {
+            holder.controlledLocationIds =
+                holder.controlledLocationIds.filter(id => id !== place.id);
+            if (place.kind === 'vein') {
+                holder.resources.veins = Math.max(0, (holder.resources.veins ?? 0) - 1);
+            }
+            adjustStandingBetween(faction, holder, -0.3);
+            openPersonalAccount(
+                state, holder.id, faction.id, day, `Took ${place.name}.`, rng);
+        }
+        if (!faction.controlledLocationIds.includes(place.id)) {
+            faction.controlledLocationIds.push(place.id);
+        }
+        if (place.kind === 'vein') {
+            faction.resources.veins = (faction.resources.veins ?? 0) + 1;
+        }
+    } else if (holder) {
+        // They came anyway. Whoever was standing there knows who it was.
+        adjustStandingBetween(faction, holder, -0.3);
+    }
+
+    appendWorldFact(state, makeFact({
+        day,
+        kind: 'resource_contested',
+        scale: 'regional',
+        summary: took
+            ? `The ${houseName(faction.name)} could not pay its own people and took `
+              + `${place.name}` + (holder ? ` off the ${houseName(holder.name)}.` : '.')
+            : `The ${houseName(faction.name)} could not pay its own people and walked onto `
+              + `${place.name}` + (holder ? ` while the ${houseName(holder.name)} held it` : '')
+              + `. ${sending.lost.length} of the ${sending.party.length} it sent did not come back.`,
+        actors: [],
+        locationId: place.id,
+        factionIds: holder ? [faction.id, holder.id] : [faction.id],
+        visibility: 'public',
+        magnitude: took ? 0.7 : 0.5,
+        data: {
+            becauseItCannotPay: true,
+            took,
+            paysAYear: named.paysAYear,
+            lost: sending.lost.length,
+            unattributed: took
+                ? 'The people collecting at that gate are not the ones who were there last '
+                  + 'year, and nobody local will say what happened to the ones who were.'
+                : 'A column went up the road in good order and came back down it in less '
+                  + 'than good order, and fewer.'
+        }
+    }));
+}
+
+/**
+ * How often somebody's own reasons are weighed against staying.
+ *
+ * Five years, the same shape `ADVANCEMENT_REVIEW_YEARS` uses and for the same
+ * reason: this is asked of every person on every roll, and a world runs for
+ * thousands of years. A person is considered in one year of five and their
+ * reasons are a fact about them, so the cadence changes when they leave and
+ * never whether they would.
+ */
+const HOW_OFTEN_SOMEBODY_WEIGHS_IT = 5;
+
+/**
+ * People decide for themselves, and go.
+ *
+ * THE HOUSE DOES NOT DECIDE THIS ONE. Every other way somebody in this world
+ * ends up on the road is an institution dispatching them - a posting, an
+ * errand, a race to a door that opened. This is the other half, and the test
+ * for every line of it is who decided: the person, and the house finds out.
+ *
+ * WHERE THE PAYOFF COMES FROM, and it is why this is wiring rather than a
+ * feature: `roadsInReachOf` is read by `applyAdvancement` off the person's
+ * CURRENT location, and `howSomebodyStandsToAGround` already answers
+ * `somewhere_else` for every dao ground in a province they are not in. Walking
+ * there is the whole of the change. Nothing had ever walked.
+ */
+function applyPeopleWalkingOut(
+    state: WorldState,
+    year: number,
+    day: number,
+    enabled: boolean
+): number {
+    if (!enabled) return 0;
+    const slot = ((year % HOW_OFTEN_SOMEBODY_WEIGHS_IT) + HOW_OFTEN_SOMEBODY_WEIGHS_IT)
+        % HOW_OFTEN_SOMEBODY_WEIGHS_IT;
+
+    // THE GROUND THAT TEACHES A ROAD, read once. There are two dozen of these
+    // in the world and this is asked of everybody on every roll.
+    const teaching: { place: LocationRecord; ground: GroundAsTheRuleReadsIt }[] = [];
+    for (const place of state.locations) {
+        if (!place.tags.includes(DAO_GROUND_TAG)) continue;
+        const ground = groundAtLocation(place);
+        if (ground) teaching.push({ place, ground });
+    }
+
+    // AND THE DOORS STANDING OPEN, by province, so somebody with no road to
+    // walk to still has something local worth leaving for.
+    const ruinsByProvince = new Map<string, LocationRecord[]>();
+    for (const place of state.locations) {
+        if (place.kind !== 'ruin' || !place.discovered || place.sealed) continue;
+        if (!isBelowTheLid(place) || place.tags.includes('forbidden')) continue;
+        const province = regionOf(state, place.id);
+        if (province === null) continue;
+        const here = ruinsByProvince.get(province);
+        if (here) here.push(place); else ruinsByProvince.set(province, [place]);
+    }
+
+    // What each house could pay, and what it teaches. One read per house
+    // rather than one per person.
+    const paidThisYear = new Map<string, boolean>();
+    const teachesTo = new Map<string, number | null>();
+    const rollSize = new Map<string, number>();
+    // AND NOT A MAP OF EVERY STATUS IN THE WORLD. It was one, and it cost a
+    // `Map.set` per person per year over a roster that holds the dead - twelve
+    // million of them across a five-century soak - to answer a question asked
+    // only of the handful of people whose slot comes up. `indexById` is
+    // memoised and answers the same thing for the ties that are actually read.
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        rollSize.set(npc.factionId, (rollSize.get(npc.factionId) ?? 0) + 1);
+    }
+    for (const house of state.factions) {
+        const payroll = (rollSize.get(house.id) ?? 0) * A_STIPEND_PER_MEMBER_PER_YEAR;
+        // THE SAME READING THE HOUSE'S OWN MOTIVE TAKES, so a house that could
+        // not pay and a disciple who was not paid are one fact rather than two.
+        paidThisYear.set(house.id, howThePurseIsRunning(
+            Number(house.resources.spirit_stones ?? 0), payroll) !== 'cannot_pay');
+        teachesTo.set(house.id, houseTeachingCeiling(house.id));
+    }
+
+    // WHO DECIDED IT, IN ONE PASS, BEFORE ANYBODY MOVES. The group is people
+    // who each decided, so everybody's own answer has to exist before it can be
+    // asked who is walking the same way.
+    const leaving: {
+        at: number;
+        npc: NpcRecord;
+        why: readonly WhyTheyWentOut[];
+        to: SomewhereWorthGoing;
+    }[] = [];
+
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc.status !== 'alive' || npc.factionId === null) continue;
+        // THE SLOT BEFORE THE EXPENSIVE READS. Four in five people are not
+        // being asked this year and everything below costs more than a hash.
+        if (reviewSlot(npc.id, HOW_OFTEN_SOMEBODY_WEIGHS_IT) !== slot) continue;
+        if (!isBelowTheLid(npc)) continue;
+        // Never the player's row: which house they are in and whether they
+        // walk out of it are theirs, and a pass that decided it would be the
+        // engine taking the decision the whole of this file is about.
+        if (!isTheWorldsToMove(npc)) continue;
+        // AND NOT A BEAST. It holds no purse, is taught nothing, and the roll
+        // it is on is an arrangement rather than a membership.
+        if (theSpeciesItIs(npc) !== null) continue;
+        // Somebody already out on the house's business is out on the house's
+        // business. They decide when they are back.
+        if (npc.activity && isAwayOnSomething(npc.activity.kind)) continue;
+        const house = state.factions.find(f => f.id === npc.factionId);
+        if (!house || house.dissolvedOnDay !== null) continue;
+        // The head of a house is the house. Nobody walks out of their own hall.
+        if (npc.factionRankIndex >= house.ranks.length - 1) continue;
+
+        const standing = standingOfNpc(state, npc);
+        const roads: SomewhereWorthGoing[] = [];
+        for (const row of teaching) {
+            const how = howSomebodyStandsToAGround(row.ground, standing);
+            if (how.shortBy !== 'somewhere_else') continue;
+            if (npc.cultivation.realmOrdinal < row.ground.fromOrdinal) continue;
+            roads.push({
+                locationId: row.place.id,
+                name: row.place.name,
+                why: `The ${row.ground.domain} road is taught by standing at `
+                    + `${row.place.name}, and nothing nearer teaches it.`,
+                survivalOrdinal: row.place.thresholds.survival
+            });
+        }
+
+        const province = regionOf(state, npc.locationId);
+        const ruins: SomewhereWorthGoing[] = (
+            province === null ? [] : ruinsByProvince.get(province) ?? []
+        ).map(place => ({
+            locationId: place.id,
+            name: place.name,
+            why: `${place.name} is standing open a few days from here.`,
+            survivalOrdinal: place.thresholds.survival
+        }));
+
+        const to = whereTheyWouldGo(roads, ruins);
+        if (to === null) continue;
+
+        let didNotComeBack = 0;
+        for (const tie of npc.relationships) {
+            const other = indexById(state.npcs, tie.targetId);
+            const was = other < 0 ? null : state.npcs[other]!.status;
+            if (was === 'missing' || was === 'physically_dead') didNotComeBack++;
+        }
+
+        const why = whyTheyWouldLeave({
+            ordinal: npc.cultivation.realmOrdinal,
+            houseTeachingCeiling: teachesTo.get(house.id) ?? null,
+            theHousePaidThem: paidThisYear.get(house.id) ?? true,
+            peopleTheyKnewWhoDidNotComeBack: didNotComeBack,
+            factionRankIndex: npc.factionRankIndex,
+            spiritStones: npc.spiritStones,
+            aRoadAProvinceAway: roads.length > 0
+        });
+        if (!whetherTheyGoThisYear(
+            why, forStream(state.seed, 'walks-out', npc.id, year))) continue;
+
+        leaving.push({ at: i, npc, why, to });
+    }
+    if (leaving.length === 0) return 0;
+
+    // AND WHO IS WALKING THE SAME WAY. Each of these decided on their own
+    // account; what puts them on one road is that they already knew each other
+    // and were already standing in the same place.
+    const spoken = new Set<string>();
+    let out = 0;
+    for (const who of leaving) {
+        if (spoken.has(who.npc.id)) continue;
+        const withThem = whoWouldGoWithThem(leaving
+            .filter(other => other.npc.id !== who.npc.id && !spoken.has(other.npc.id))
+            .map(other => ({
+                id: other.npc.id,
+                goingTheSameWay: other.to.locationId === who.to.locationId,
+                // Off the same roll counts as knowing each other: two people
+                // walking out of one hall in one year have stood in the same
+                // rooms whether or not the ledger wrote a row about it.
+                knownToThem: other.npc.factionId === who.npc.factionId
+                    || relationshipWith(who.npc, other.npc.id) !== null
+                    || relationshipWith(other.npc, who.npc.id) !== null
+            })));
+        const onTheRoad = new Set(withThem.fellInOnTheRoad);
+        const withIds = [...withThem.setOutTogether, ...withThem.fellInOnTheRoad];
+        const party = [who, ...leaving.filter(o => withIds.includes(o.npc.id))];
+        for (const member of party) spoken.add(member.npc.id);
+        out += party.length;
+
+        const partyIds = party.map(m => m.npc.id);
+        const houseId = who.npc.factionId;
+        const houseRow = houseId === null
+            ? null : state.factions.find(f => f.id === houseId) ?? null;
+
+        for (const member of party) {
+            const gone: NpcRecord = {
+                ...setLocation(member.npc, who.to.locationId, day),
+                // Off the roll. Nobody released them; they are simply not there
+                // any more, and `WHY_UNAFFILIATED` in `rogues.ts` has said since
+                // it was written that this is how most of that population
+                // arrives.
+                factionId: null,
+                factionRankIndex: -1,
+                tags: [...member.npc.tags, `${WALKED_OUT}${member.why[0]}`],
+                activity: {
+                    // Chasing a thing they need, which is the kind's own words.
+                    // NOT `out_with_a_party`: that has a term and a place to
+                    // come back to, and the keeper would call them overdue for
+                    // a journey nobody sent them on.
+                    kind: 'their_own_business',
+                    note: `Left the compound. ${who.to.why}`,
+                    withIds: partyIds.filter(id => id !== member.npc.id),
+                    sinceDay: day,
+                    untilDay: null,
+                    returnTo: null
+                }
+            };
+            state.npcs[member.at] = addGoal(gone, {
+                kind: 'cultivation',
+                text: who.to.why,
+                priority: 0.7,
+                obstacles: [...member.why]
+            }, day);
+        }
+
+        // AND THE GROUND ASKS WHAT IT ASKS. Nobody underwrote this trip: a
+        // party a house sends is pitched at what the house thinks it can
+        // survive, and these people pitched themselves. `thresholds.survival`
+        // is the world's own bar and is the only one applied.
+        const lost: NpcRecord[] = [];
+        for (const member of party) {
+            if (member.npc.cultivation.realmOrdinal >= who.to.survivalOrdinal) continue;
+            state.npcs[member.at] = markMissing(
+                state.npcs[member.at], day,
+                `Walked out of ${houseRow ? houseRow.name : 'a compound'} for `
+                + `${who.to.name} and did not come out of it.`
+            );
+            lost.push(member.npc);
+        }
+
+        // AND THE TIE A ROAD WRITES. Two people out of two different halls who
+        // were going the same way and are now walking it together: the whole of
+        // what falling in with somebody is, and it is an ordinary relationship
+        // row rather than a second notion of company.
+        for (const member of party) {
+            if (!onTheRoad.has(member.npc.id)) continue;
+            const a = state.npcs[who.at];
+            const b = state.npcs[member.at];
+            state.npcs[who.at] = upsertRelationship(a, {
+                targetId: b.id, targetName: b.name, kind: 'ally', standing: 0.2,
+                note: 'Fell in with them on the road.'
+            }, day);
+            state.npcs[member.at] = upsertRelationship(b, {
+                targetId: a.id, targetName: a.name, kind: 'ally', standing: 0.2,
+                note: 'Fell in with them on the road.'
+            }, day);
+        }
+
+        appendWorldFact(state, makeFact({
+            day,
+            kind: 'migration',
+            scale: 'local',
+            summary:
+                `${party.map(m => m.npc.name).join(', ')} left `
+                + `${houseRow ? `the ${houseName(houseRow.name)}` : 'the roll'} `
+                + `for ${who.to.name}. `
+                + `${reasonSaidPlainly(who.why[0])}`
+                + (lost.length > 0
+                    ? ` ${lost.length} of them did not come out of it.` : ''),
+            actors: party.map(m => ({ id: m.npc.id, name: m.npc.name, role: 'left' })),
+            locationId: who.to.locationId,
+            factionIds: houseId ? [houseId] : [],
+            visibility: 'faction',
+            magnitude: 0.3 + Math.min(0.3, party.length * 0.1),
+            data: {
+                walkedOut: true,
+                why: who.why.join('; '),
+                party: party.length,
+                fellInOnTheRoad: onTheRoad.size,
+                lost: lost.length,
+                unattributed:
+                    'A compound is a name or two short this season and is not saying which, '
+                    + 'and somebody on the road is wearing robes with the badge cut off.'
+            }
+        }));
+    }
+    return out;
+}
+
+/** A tag saying somebody left of their own accord, and what for. */
+const WALKED_OUT = 'walked-out:';
+
+/** The reason, as somebody in the world would say it. */
+function reasonSaidPlainly(why: WhyTheyWentOut | undefined): string {
+    switch (why) {
+        case 'the house cannot teach them further':
+            return 'There was nothing left in that hall to learn.';
+        case 'a road a province away':
+            return 'What they wanted is taught by standing somewhere, and not there.';
+        case 'the house did not pay them':
+            return 'The stipend did not come this year.';
+        case 'somebody they knew did not come back':
+            return 'Somebody they went in with is still out there.';
+        case 'nothing in the hall is theirs':
+            return 'They held no room and had nothing put by.';
+        default:
+            return '';
+    }
 }
 
 /**
@@ -2890,6 +3550,22 @@ export const A_STIPEND_PER_MEMBER_PER_YEAR = 45;
  */
 export const WHAT_A_MEMBER_LIVES_ON = 0.8;
 
+/**
+ * What one vein pays the house standing on it, in stones a year.
+ *
+ * Named rather than inlined because a house reaching for ground has to be able
+ * to ask what that ground is worth, and a second spelling of this product is a
+ * second opinion about what a rock is. The figure itself is unchanged: it is
+ * the `veins * 5_000 * (0.5 + share)` term this pass has always charged.
+ *
+ * `share` is `whatItCanPutOnTheGround` of the holder's reliable rung - so the
+ * same vein is worth more to a house that can work it, which is the ordering
+ * the rest of the economy is built on.
+ */
+export function whatAVeinPaysItsHolder(share: number): number {
+    return 5_000 * (0.5 + share);
+}
+
 function applyFactionEconomy(state: WorldState): void {
     // One pass over the locations for the whole world rather than one per
     // house: this runs every simulated year, and a filter per faction is
@@ -2952,7 +3628,7 @@ function applyFactionEconomy(state: WorldState): void {
         // this file - and a figure written at seeding would go on stating what
         // the house held then.
         const towns = townIncome.get(faction.id) ?? 0;
-        const income = veins * 5_000 * (0.5 + share)
+        const income = veins * whatAVeinPaysItsHolder(share)
             + levy + towns + members * 30 * (1 + share);
         const payroll = members * A_STIPEND_PER_MEMBER_PER_YEAR;
         const upkeep = payroll + (faction.resources.tribute_owed_per_year ?? 0) * 0.1;
@@ -3589,9 +4265,22 @@ const TEMPLATES: Template[] = [
                     < Number(aggressor.resources.power_ordinal ?? 0) - CASUAL_KILL_MAX_GAP
             );
             const deaths: DeathHandoff[] = [];
+            // READ THE ROW BACK BEFORE WRITING IT. `losses` is a snapshot taken
+            // before any of them died, and `settleNpcDeath` writes onto the
+            // OTHER people it names - a disciple whose master died two lines
+            // ago carries the fact that says so. Killing them off the snapshot
+            // put the pre-death row back and the link went with it, which is
+            // what `what-a-world-must-never-contain.test.ts` reads as a fact
+            // naming somebody who does not carry it. One house losing twelve
+            // people in a day is where master and disciple are most likely to
+            // both be on the list.
             for (const npc of losses) {
-                replaceNpc(state, markDead(npc, day, `Killed when the ${houseName(aggressor.name)} came.`));
-                deaths.push(settleNpcDeath(state, npc, day));
+                const at = indexById(state.npcs, npc.id);
+                const fresh = at >= 0 ? state.npcs[at] : npc;
+                replaceNpc(state, markDead(
+                    fresh, day, `Killed when the ${houseName(aggressor.name)} came.`));
+                deaths.push(settleNpcDeath(
+                    state, at >= 0 ? state.npcs[at] : fresh, day));
             }
             const severity = before.length === 0
                 ? 1 : Math.min(1, losses.length / before.length);

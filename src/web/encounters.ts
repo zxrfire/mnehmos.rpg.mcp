@@ -29,6 +29,7 @@ import {
     type EncounterValence
 } from '../engine/encounters/index.js';
 import { theRung } from './facts.js';
+import { howAHouseStandsForMoney } from '../engine/world/the-world-changing-on-its-own.js';
 import {
     whatAHouseHasOnItsBoard
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
@@ -798,7 +799,12 @@ export function theHouseAsItStands(
             // it decides who it holds a gathering between.
             sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
             standsNearForbiddenGround:
-                forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId)
+                forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId),
+            // WHAT ITS PURSE SAYS, off the world's own reading rather than a
+            // second one. A house that could not pay its people this year posts
+            // an errand nobody else in the world has, and a player standing at
+            // the wall is the person who finds out first.
+            ...howAHouseStandsForMoney(deps.world, faction)
         },
         reach,
         reachOfTheRest,
@@ -886,7 +892,8 @@ function theHousesWhoseWallThisIs(
                 hasAFind: find !== null,
                 sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
                 standsNearForbiddenGround:
-                    forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId)
+                    forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId),
+                ...howAHouseStandsForMoney(deps.world, faction)
             },
             reach,
             // Nobody off the roll is counted into a house's reach, so a

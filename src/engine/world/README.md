@@ -2299,6 +2299,61 @@ as seeing nothing**:
   all, and spatial is grid A* waiting on the fold. What is missing is a verb that
   declares the approach at a gate and spends the risk.
 
+## A purse is a motive, and so is a ceiling
+
+Two motives were added together because they are the same shape: a fact the yearly pass
+already computes, read as a reason somebody has, routed into a decision that already
+existed. Neither adds a ledger, a second economy, or a second notion of what anybody
+wants.
+
+**A house that cannot pay reaches for the ground that would pay it.**
+`what-a-house-does-when-it-cannot-pay.ts` reads `spirit_stones` against the payroll the
+economy charges itself, in YEARS of wages rather than in stones - a thousand stones is a
+fortune to a house of four and a fortnight to one of forty. Measured on three seeded
+worlds at a century, between one and eight of about thirty-five live houses hold nothing
+at all, and every one of them holds no vein.
+
+The motive enters through two doors that were already there and nothing branches on being
+broke:
+
+- `ground_that_pays_somebody_else` is a `needs` key in
+  `why-a-house-puts-a-party-on-the-road.ts`. **The predicate is the motive**: a solvent
+  house is not offered the reason, so `reasonsOpenTo` - read by the world's sending pass
+  AND by the duty board a player stands in front of - shows it the day the purse runs out.
+- the sending pass declined an impossible tier outright, and **that `continue` was the
+  risk aversion**. It is correct for a house with something to lose and was being applied
+  to one with nothing. A broke house puts the question to its own elders instead, through
+  `whatTheBodyWants` with the purse shifting the reading - the same door a war enters by
+  in `what-a-house-opens-its-treasury-for.ts`.
+
+Which ground is not a draw: the smallest thing in its own province that would cover the
+payroll, and where nothing would, the largest thing there is.
+
+**A compound is safe, and that is not what a cultivator is for.**
+`why-somebody-walks-out-of-a-compound.ts` is the other half of everybody who is on a road:
+until it existed, every traveller in the world had been dispatched by an institution.
+The reasons are read, never invented, and two of the readers they come off had no caller
+anywhere in `src/`:
+
+- `houseTeachingCeiling` - the top of what a house's own arts could carry anybody to.
+  Authored and tested, and a disciple standing at the top of everything their house had
+  was indistinguishable from one at the bottom of it.
+- `shortBy: 'somewhere_else'` in `howSomebodyStandsToAGround` - the engine saying, of
+  every dao ground in the world, that somebody would have it if they went there. And
+  `roadsInReachOf`, which `applyAdvancement` already reads at every review, takes the
+  province off the person's CURRENT location. **The payoff for walking there was wired the
+  whole time and nothing had ever walked.**
+
+A few people end up on one road two ways - set out together because they already knew each
+other, or fell in because they were going the same way - and the party is
+`NpcActivity.withIds`, which `who-is-on-the-road-with-you.ts` argues is the only place a
+party may live. Nobody underwrites the trip, so `thresholds.survival` is what the ground
+asks and a fifth of them do not come out of it.
+
+Both carry a `PressureOptions` switch, defaulted on and never turned off by the game,
+because AGENTS.md is explicit that a stash-and-rerun is not a control arm and both arms
+have to run in one command.
+
 ## Reading order
 
 ```text
