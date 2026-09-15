@@ -54,7 +54,14 @@ function world(): WorldState {
             id: 'npc-disciple', name: 'Yun Qi', status: 'alive', locationId: 'village',
             factionId: 'house', factionRankIndex: 0,
             cultivation: { realmOrdinal: 5 }, relationships: [], activity: null,
-            identity: { bornOnDay: 0 }
+            identity: { bornOnDay: 0 },
+            // `tags` IS NOT OPTIONAL, and the cast below is why this row got
+            // away without it. The gate asks `isTheWorldsToMove` now - the
+            // world does not know things on the player's behalf - and that
+            // reads `tags` on whoever is asking, so a row without it crashed
+            // rather than answering. An empty list is what an ordinary person
+            // of the world carries; the player's row is the one that is marked.
+            tags: []
         }],
         objects: [],
         history: { eras: [], facts: [], nextFactSeq: 1 }

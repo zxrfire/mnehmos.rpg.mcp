@@ -107,11 +107,28 @@ describe('an absence now costs the people who knew you', () => {
         const base = await worldAt120();
         const state = advanceWorldYears(base, 0).state;
 
-        // The absentee the audit picks: whoever the most people hold a tie to.
+        // The absentee the audit picks: whoever the most people hold a tie OF A
+        // WAITING KIND to.
+        //
+        // It used to count every inbound tie, and that is not the property this
+        // test is about. Measured when a correctness fix upstream thinned the
+        // household graph: the subject it chose, `npc-162`, held 23 inbound ties
+        // and exactly ONE of them was a waiting kind - so the whole of "a
+        // hundred years cost somebody" rested on one person's seeded coin flips
+        // at a reduced rate, and it came out zero. Nothing about the absence
+        // layer had changed. The same world, one arm either side of the fix:
+        //
+        //     with the fix      waiting ties 1     settled over 100y  0
+        //     without it        waiting ties 3     settled over 100y  2
+        //
+        // `WAITING_KINDS` is the engine's own list and is asserted against below,
+        // so counting with it is reading the rule rather than restating it.
+        const waitingKinds = new Set(WAITING_KINDS);
         const counts = new Map<string, number>();
         for (const npc of state.npcs) {
             if (!isActing(npc.status)) continue;
             for (const rel of npc.relationships) {
+                if (!waitingKinds.has(rel.kind)) continue;
                 counts.set(rel.targetId, (counts.get(rel.targetId) ?? 0) + 1);
             }
         }

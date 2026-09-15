@@ -205,8 +205,37 @@ export function couldHaveBeenAParentTo(
     childAge: number,
     day: number
 ): boolean {
+    // AND THEY HAVE TO HAVE BEEN ALIVE WHEN THE CHILD WAS BORN.
+    //
+    // This asked the candidate's AGE and never their death, which is the whole
+    // of the check for the parent that is DRAWN - `couldParent` asks `isHere`
+    // first, so a corpse never reaches it. The second parent is INHERITED off a
+    // spouse tie and reaches this function directly, so nothing stood between a
+    // household and somebody who had been dead for years.
+    //
+    // Played, on `probe-w19`: a sixteen-year-old opened being told *"Ye Puxian.
+    // Family. Did the raising. Killed 25 years ago."* - a person who died nine
+    // years before the player existed, credited with having raised them. Two of
+    // four such households in a thirty-thousand-birth sweep were like that.
+    //
+    // This is the asymmetry the banner on `bindNewbornToHousehold` is about,
+    // caught a third time: every condition the drawn parent is held to, the
+    // inherited one has to be held to here.
+    const died = whenTheyDied(candidate);
+    if (died !== null && died < day - childAge * DAYS_PER_YEAR) return false;
     return ageInYears(candidate, day) >= childAge + HOUSEHOLD_MIN_AGE
         && candidate.relationships.filter(r => r.kind === 'child').length < SIBLINGS_PER_HOUSEHOLD;
+}
+
+/**
+ * The day somebody died, or null for anybody still standing or merely lost.
+ *
+ * `missing` and `unknown` are not deaths - `isUnadjudicated` says outright that
+ * they mean the engine does not know what happened - and somebody unaccounted
+ * for may perfectly well have fathered a child before they vanished.
+ */
+function whenTheyDied(npc: NpcRecord): number | null {
+    return npc.status === 'physically_dead' ? npc.diedOnDay ?? null : null;
 }
 
 /**
@@ -429,6 +458,27 @@ export interface HouseholdPairing {
 }
 
 /**
+ * Write both halves of one household, at the standing and under the note every
+ * marriage in this world carries.
+ *
+ * Exported because a third caller cannot go through {@link formHouseholds} and
+ * must still land on the same rows: `the-marriages-a-world-opens-holding.ts`
+ * writes the marriages the catalog STATES, and a stated marriage is not a
+ * pairing - there is nobody to draw, no place to group by and no rate to ask.
+ * What it shares with a drawn one is everything downstream reads.
+ */
+export function bindHousehold(
+    state: WorldState,
+    at: Map<string, number>,
+    one: NpcRecord,
+    other: NpcRecord,
+    began: number
+): void {
+    bind(state, at, one.id, other, 'spouse', SPOUSE_STANDING, 'Their household.', began);
+    bind(state, at, other.id, one, 'spouse', SPOUSE_STANDING, 'Their household.', began);
+}
+
+/**
  * Two unattached adults standing in the same place, bound into a household.
  */
 export function formHouseholds(
@@ -466,9 +516,7 @@ export function formHouseholds(
                 if (other.relationships.some(r => r.targetId === one.id && BLOOD_KINDS.has(r.kind))) continue;
                 if (input.couldPair && !input.couldPair(one, other)) continue;
 
-                const began = input.beganOn(one, other);
-                bind(state, at, one.id, other, 'spouse', SPOUSE_STANDING, 'Their household.', began);
-                bind(state, at, other.id, one, 'spouse', SPOUSE_STANDING, 'Their household.', began);
+                bindHousehold(state, at, one, other, input.beganOn(one, other));
                 spoken.add(one.id);
                 spoken.add(other.id);
                 made++;
