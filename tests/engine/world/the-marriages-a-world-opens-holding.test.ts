@@ -43,13 +43,16 @@ import { describe, expect, it } from 'vitest';
 
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
-import { createNpc, markDead, setRealm, type NpcRecord } from '../../../src/engine/world/npc-state.js';
+import {
+    createNpc, markDead, setRealm, upsertRelationship, type NpcRecord
+} from '../../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
     bindNewbornToHousehold,
-    SPOUSE_STANDING
+    SPOUSE_STANDING,
+    theOtherChildrenOf
 } from '../../../src/engine/world/the-ties-an-ordinary-life-produces.js';
 import {
     everFormedOne,
@@ -192,6 +195,38 @@ describe('the marriages a world opens holding', () => {
 
         expect(household.parentIds).toEqual(['npc-0', 'npc-1']);
         expect(child.relationships.filter(r => r.kind === 'parent')).toHaveLength(2);
+    });
+
+    /**
+     * A BROTHER WHO DIED IS STILL A BROTHER, IF HE CULTIVATED.
+     *
+     * The owner, generalising the mortal ruling to death: *"if sibling dies as
+     * a mortal, drop. if dies as a cultivator, mark as dead in entities. this
+     * is true for everyone."* `theOtherChildrenOf` used to ask `isHere`, which
+     * is alive AND below the Lid, so ANY dead sibling was filtered and the life
+     * read as though they had never existed. Measured at 1 of 40 lives before
+     * the rule changed.
+     *
+     * The mortal half is deliberately unchanged: a dead mortal is dropped,
+     * because the world keeps nothing to name.
+     */
+    it('keeps a dead sibling who cultivated and drops one who did not', () => {
+        const state = town([
+            { ordinal: 20, age: 300 },
+            { ordinal: 20, age: 120, dead: true },
+            { ordinal: 0, age: 60, dead: true }
+        ]);
+        const at = new Map(state.npcs.map((npc, i) => [npc.id, i]));
+        for (const childId of ['npc-1', 'npc-2']) {
+            state.npcs[0] = upsertRelationship(state.npcs[0], {
+                targetId: childId, targetName: childId, kind: 'child', standing: 0.75
+            }, state.currentDay);
+        }
+
+        const inIt = theOtherChildrenOf(state, at, [state.npcs[0]], 'somebody-else')
+            .map(one => one.id);
+        expect(inIt, 'the dead cultivator is not in the household').toContain('npc-1');
+        expect(inIt, 'the dead mortal is still in the household').not.toContain('npc-2');
     });
 
     it('is the same world on the same seed', () => {

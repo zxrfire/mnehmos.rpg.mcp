@@ -4,6 +4,7 @@
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR, GUIDANCE_FULL_GAP } from '../cultivation/cultivation.js';
+import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import { isBelowTheLid } from './layers.js';
 // The one number the whole file is calibrated against, imported rather than
 // retyped for the reason `time.ts` states: a threshold that exists in two
@@ -217,6 +218,16 @@ export function couldHaveBeenAParentTo(
  * a mortal household without writing a row for it, and a second walk of the
  * parents' children there would be a second opinion about who somebody's
  * family is.
+ *
+ * AND A BROTHER WHO DIED IS STILL A BROTHER, IF HE CULTIVATED. The design
+ * owner, generalising the mortal ruling to death: *"if sibling dies as a
+ * mortal, drop. if dies as a cultivator, mark as dead in entities. this is true
+ * for everyone."* So this asks {@link isBelowTheLid} and the realm rather than
+ * {@link isHere}: somebody past {@link FOUNDATION_ORDINAL} who has died is a
+ * person the world still holds and can still be asked about, and the opening
+ * already knows how to say `Dead these 40 years.` A dead mortal is dropped,
+ * because there is nothing to name - which is the same ruling, not a different
+ * one.
  */
 export function theOtherChildrenOf(
     state: WorldState,
@@ -229,8 +240,12 @@ export function theOtherChildrenOf(
         for (const tie of parent.relationships) {
             if (tie.kind !== 'child' || tie.targetId === childId) continue;
             const j = at.get(tie.targetId);
-            if (j === undefined || !isHere(state.npcs[j])) continue;
-            out.set(tie.targetId, state.npcs[j]);
+            if (j === undefined) continue;
+            const them = state.npcs[j];
+            if (!isBelowTheLid(them)) continue;
+            if (them.status !== 'alive'
+                && them.cultivation.realmOrdinal < FOUNDATION_ORDINAL) continue;
+            out.set(tie.targetId, them);
         }
     }
     return [...out.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
