@@ -3957,6 +3957,247 @@ const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
 export const MEMBERS: readonly Member[] = [...AUTHORED_MEMBERS, ...COURT_MEMBERS];
 
 // ─────────────────────────────────────────────────────────────────────────
+// HOUSEHOLDS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * WHO THE CATALOG'S OWN PEOPLE ARE MARRIED TO.
+ *
+ * ── WHY A MARRIAGE IS WRITTEN DOWN AND A GRUDGE IS NOT ───────────────────
+ *
+ * The design owner, ruling on both at once: *"hardcode the authored figure
+ * marriages, but not the grudges."*
+ *
+ * WHO SOMEBODY IS MARRIED TO IS A FACT ABOUT THEM. WHAT TWO PEOPLE DID TO EACH
+ * OTHER IS A FACT ABOUT A WORLD. A member's rank, root, house and habit are the
+ * same in every world this catalog builds, and a household is that kind of fact:
+ * it is part of who the person is before any particular world opens. So it is
+ * written here, beside them, and every world gets the same answer.
+ *
+ * A killing is the opposite. `the-wrongs-a-world-opens-holding.ts` mints one for
+ * the world it happens in, and two worlds from two seeds carry different ones -
+ * which is what makes a fresh run's grievance that run's own history rather than
+ * a line of catalog everybody has already read.
+ *
+ * ── WHAT THIS REPLACED ───────────────────────────────────────────────────
+ *
+ * Measured on two seeded worlds before this existed: every marriage in a fresh
+ * world - 26 and 28 of them - was between two catalog figures, and not one
+ * involved anybody else. The marriage seeding drew them, so the Circuit Envoy's
+ * wife was a different woman in every world, and the catalog's most carefully
+ * written people were the only population the draw could reach. The draw itself
+ * is not wrong and still runs; it no longer runs over these people.
+ *
+ * ── HOW A PAIR WAS CHOSEN ────────────────────────────────────────────────
+ *
+ * Four are marriages the roster above already asserts and declines to finish:
+ * it says somebody married in and never says to whom. The rest are pairs the two
+ * entries already read as - a man who has done a two-man job alone for three
+ * years and the man who wants a posting with other people in it - and the note
+ * on each row says what it was read off, so a later reader can disagree with the
+ * reading rather than guess at it.
+ *
+ * Pairs avoid the top of a house where they can. `seedFactions` derives `rival`
+ * and `ally` rows from the next four down onto whoever is at the top, a spouse
+ * row outranks both, and a marriage written across one replaces it. The Keeper
+ * of the Ninefold Register is the exception and cannot not be: she married in,
+ * she is at the top of the house, and every Yan in it therefore holds a derived
+ * row toward her. The seeding writes the marriage and counts the row it took -
+ * one, in every world - because the catalog outranks a rank table.
+ *
+ * ── WHAT IS NOT HERE ─────────────────────────────────────────────────────
+ *
+ * THE LINE AT OLD RIVER, whose roster says one of the nine *"married his second
+ * cousin"* and does not say which cousin. The file's whole content is which
+ * branch married its own and which married out, so guessing the other end would
+ * be writing the one thing it is about. It stays unwritten until somebody who
+ * owns that family says.
+ *
+ * AND THE HOUSES THAT DO NOT MARRY. The Severed cut their ties and price the
+ * cutting; the Nine Peaks are an ascetic order; the Hollow Court asks nothing of
+ * anybody and holds nobody. No rule refuses them - they simply have no row.
+ */
+
+export const AuthoredMarriageSchema = z.object({
+    /** A {@link Member} id, from the roster above. */
+    oneId: z.string().min(1),
+    /** The other. Order carries nothing; the tie is symmetric. */
+    otherId: z.string().min(1),
+    /** What the two entries already say that this was read off. */
+    note: z.string().min(20)
+});
+export type AuthoredMarriage = z.infer<typeof AuthoredMarriageSchema>;
+
+/**
+ * Every marriage the catalog states, in one list.
+ */
+export const AUTHORED_MARRIAGES: readonly AuthoredMarriage[] = Object.freeze([
+    // THE FOUR THE CATALOG ALREADY ASSERTS AND LEAVES HALF-WRITTEN.
+    {
+        oneId: 'member-jin-erchun',
+        otherId: 'member-jin-tianlu',
+        note: 'She married in six years ago and works the shift nobody born to the clan will take. '
+            + 'He is the blood clan\'s son who wants to leave and has carried an unused boat token for three.'
+    },
+    {
+        oneId: 'member-xu-zhengsu',
+        otherId: 'member-gu-changle',
+        note: 'She married in from the Immovable Mountain Temple and kept the Xu, in a house of Gu.'
+    },
+    {
+        oneId: 'member-cao-duan',
+        otherId: 'member-yan-changshi',
+        note: 'She married in from the Flowing Light Tower and did not take the Yan, in a house of Yan.'
+    },
+    {
+        oneId: 'member-lin-muyan',
+        otherId: 'member-lin-liangfu',
+        note: 'He is twenty-nine and wants the forty years of oathwright training to begin at thirty. '
+            + 'She argues annually for it to be shortened and loses annually.'
+    },
+
+    // AND THE PAIRS THE TWO ENTRIES ALREADY READ AS.
+    {
+        oneId: 'member-cao-hengzhi',
+        otherId: 'member-cao-shuangqing',
+        note: 'He answers direct questions directly and has been formally told twice that it is not '
+            + 'the house\'s manner. She wants an apprentice who will still be here in forty years.'
+    },
+    {
+        oneId: 'member-xu-heshan',
+        otherId: 'member-xu-kanping',
+        note: 'He wants a posting with other people in it. The ninth perimeter is a two-man job and '
+            + 'has been done alone for three years.'
+    },
+    {
+        oneId: 'member-fu-jingsheng',
+        otherId: 'member-fu-lingchuan',
+        note: 'He has walked the unsurveyed forty li twice and will not say why. He carries the chain '
+            + 'itself on every journey and wants the Clear River Ford station opened in his lifetime.'
+    },
+    {
+        oneId: 'member-chu-wuji',
+        otherId: 'member-chu-hengan',
+        note: 'He jokes about the house\'s filing to an audience of nine. He has formally requested an '
+            + 'audit of the house\'s own work four times. One household, two ways of saying it.'
+    },
+    {
+        oneId: 'member-ge-yiran',
+        otherId: 'member-wen-danyang',
+        note: 'She was given a bed, a bowl and no duties and invented a full day of them. He settles '
+            + 'the four settlements\' disputes for food and wants an argument with somebody who disagrees.'
+    },
+    {
+        oneId: 'member-mu-yanling',
+        otherId: 'member-cai-ruzhen',
+        note: 'She wants selection upward at the next competition. The other puts people forward and '
+            + 'has managed one in nine years who was still there afterwards.'
+    },
+    {
+        oneId: 'member-yu-ziyan',
+        otherId: 'member-ye-puxian',
+        note: 'He has killed two of the Caravan and names them when drinking. She reads graves better '
+            + 'than anybody in the region and holds the contract that makes her a legitimate supplier.'
+    },
+    {
+        oneId: 'member-nie-shiyu',
+        otherId: 'member-liang-tuoshan',
+        note: 'She refines with the door propped and a bucket of sand by her foot. He has kept every '
+            + 'failed heaven-grade crucible for thirty years. Both are working on the same missing steps.'
+    },
+    {
+        oneId: 'member-nie-zhaoxin',
+        otherId: 'member-su-jinglan',
+        note: 'He wants to federate the border road and be remembered for it. She wants the Alliance to '
+            + 'stay river people and stop talking about the road. A household that argues.'
+    },
+    {
+        oneId: 'member-third-face-ren',
+        otherId: 'member-kettle-shen',
+        note: 'He sublets half his grant days at a markup, which is not permitted and is not policed. '
+            + 'She is the clerk who is not empowered to make an exception and says so pleasantly.'
+    },
+    {
+        oneId: 'member-ye-anping',
+        otherId: 'member-gao-zhaolin',
+        note: 'She carries the probation chit the Pavilion issued her, folded through. He keeps the '
+            + 'yard\'s attendance on a board nobody asked him to keep. Neither is going anywhere.'
+    },
+    {
+        oneId: 'member-lin-mudan',
+        otherId: 'member-zhu-renshan',
+        note: 'She recruits in person off the list of who was refused where. He wants the supply '
+            + 'quarrel settled by purchase rather than by killing.'
+    },
+    {
+        oneId: 'member-xiao-hanning',
+        otherId: 'member-bai-tuoyun',
+        note: 'She carries the Sovereign\'s own arithmetic folded in her sleeve and has checked it '
+            + 'three times. He teaches in a hall cold enough to crack a cup and provides the cups.'
+    },
+    {
+        oneId: 'member-qu-yaoguang',
+        otherId: 'member-xun-zhenning',
+        note: 'She prices instruction in food and has never been paid in stones. He calls the league\'s '
+            + 'having no ground a philosophy and carries a survey map of an abandoned hillside.'
+    },
+    {
+        oneId: 'member-min-boyan',
+        otherId: 'member-kong-zhaoting',
+        note: 'He calculates eleven more years of work and wants to finish before he dies. She writes '
+            + 'the name on the inside of her wrist before every funeral she is sent to.'
+    },
+    {
+        oneId: 'member-xiang-yunzhao',
+        otherId: 'member-tu-baochen',
+        note: 'He runs the book on how long each intake lasts and pays out honestly. He makes every '
+            + 'applicant read the contract terms aloud in front of two witnesses.'
+    },
+    {
+        oneId: 'member-nie-shuang',
+        otherId: 'member-yin-cuo',
+        note: 'She will not open the last volume for anybody. He is a rung short of it and closer than '
+            + 'anybody in a generation, and has stopped losing the bed argument politely.'
+    },
+    {
+        oneId: 'member-farside-wen',
+        otherId: 'member-nie-out-of-salt-reach',
+        note: 'She writes the price into the book in the minute she says it and has never gone back to '
+            + 'a line. He bought two salt flats in his own name rather than the port\'s.'
+    },
+    {
+        oneId: 'member-survey-wen',
+        otherId: 'member-longstake-mu',
+        note: 'He keeps the only complete map of safe ground in an unlocked shed and is tired of '
+            + 'explaining why. She is the strongest Warden in the region and says so first, as a joke.'
+    },
+    {
+        oneId: 'member-qin-fusheng',
+        otherId: 'member-yao-wangchun',
+        note: 'He keeps a private book of who has bought below rate, more accurate than the Hall\'s. '
+            + 'She prices a valley in her head on the walk in and stopped saying the number aloud.'
+    },
+    {
+        oneId: 'member-bo-shuyi',
+        otherId: 'member-kang-lishu',
+        note: 'He has climbed the tether chain twice at night and told exactly one person. She inspects '
+            + 'the chain annually and has filed twenty-six identical reports.'
+    },
+    {
+        oneId: 'member-dai-huaiyu',
+        otherId: 'member-zong-ruilin',
+        note: 'He wants one week in which nobody asks him where a piece came from. He has run the floor '
+            + 'for nine years and signs everything, including his own letters, "acting".'
+    },
+    {
+        oneId: 'member-lou-tingwei',
+        otherId: 'member-xue-songyi',
+        note: 'He pins his sleeves back even at meals and eats alone for it. She goes alone to the '
+            + 'ninth spring at dawn on the first of each month and cannot say what the duty is for.'
+    }
+]);
+
+// ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 

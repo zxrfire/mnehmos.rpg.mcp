@@ -37,6 +37,34 @@
  * cultivators, so a little under half of them keep a household and a clear
  * majority do not. Both edges are real failures - nought is where this started,
  * and everybody is a census rather than a place.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * AND THEN WHO THEY ARE MARRIED TO STOPPED BEING A DRAW
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * The owner, later: *"hardcode the authored figure marriages, but not the
+ * grudges."* Who somebody is married to is a fact about them and belongs in the
+ * catalog beside their rank; what two people did to each other is a fact about a
+ * world and must not.
+ *
+ * The measurement that made it urgent. Two seeded worlds, every spouse tie in
+ * each classified by which end was authored:
+ *
+ *     marriages in the world              26      28
+ *     between two catalog figures         26      28
+ *     with anybody else on either end      0       0
+ *
+ * A fresh world holds 126 to 128 living cultivators and 126 of them are
+ * authored, so the draw's entire reachable population WAS the catalog, and the
+ * Keeper of the Ninefold Register's husband was a different man in every world.
+ *
+ * After, on the same six seeds: 27 marriages, all 27 of them stated, the set
+ * identical in every world, and the drawn pass landing NOTHING in any of the
+ * six - which is a demographic fact about a fresh world rather than a broken
+ * pass, and the reason the rate assertions below now read a catalog rather than
+ * a curve. Married share of living cultivators 0.34 to 0.35, against 0.41 to
+ * 0.44 before, and the world's rival rows fall from 38 to 37: the one derived
+ * row a stated marriage replaces, in every world.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -44,8 +72,12 @@ import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
 import {
-    createNpc, markDead, setRealm, upsertRelationship, type NpcRecord
+    createNpc, markDead, setRealm, somebodyTheCatalogWrote, upsertRelationship
 } from '../../../src/engine/world/npc-state.js';
+import { AUTHORED_MARRIAGES, MEMBERS } from '../../../src/data/cultivation/members.js';
+import {
+    worldIdForCatalogPerson
+} from '../../../src/engine/world/a-catalog-person-and-their-world-row.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
@@ -274,9 +306,13 @@ describe('what a seeded world holds', () => {
             married += wed.length;
             said.push(`${seed} ${wed.length}/${cults.length}`);
 
-            // Nobody outside that population was touched.
+            // Nobody outside that population was DRAWN for. The rung bar is the
+            // drawn pass's and it does not reach a stated marriage - a catalog
+            // figure is kept by name at any rung, which is the whole reason the
+            // bar exists and the reason it does not apply to them.
             for (const npc of state.npcs) {
                 if (!npc.relationships.some(r => r.kind === 'spouse')) continue;
+                if (somebodyTheCatalogWrote(npc)) continue;
                 expect(npc.cultivation.realmOrdinal,
                     `${seed}: ${npc.name} is married and is not a cultivator`)
                     .toBeGreaterThanOrEqual(FOUNDATION_ORDINAL);
@@ -292,6 +328,64 @@ describe('what a seeded world holds', () => {
         expect(share, `married share ${share.toFixed(2)} - ${said.join(' ')}`)
             .toBeLessThan(0.7);
     }, 120_000);
+
+    /**
+     * WHO A CATALOG FIGURE IS MARRIED TO IS THE SAME IN EVERY WORLD.
+     *
+     * The ruling, as an assertion. Before it, every marriage in a fresh world
+     * was drawn and every one of them was between two catalog figures, so the
+     * answer to "who is the Keeper of the Ninefold Register married to" was a
+     * different man in every world - a fact about a person deciding itself from
+     * a world seed.
+     *
+     * Both halves are pinned. EVERY stated marriage is written, so a pair the
+     * catalog names and the seeder quietly dropped goes red rather than leaving
+     * somebody the catalog says is married holding nothing. And the SET of
+     * married catalog figures is identical across four seeds, which is the claim
+     * itself rather than a proxy for it.
+     */
+    it('writes every marriage the catalog states, the same way in every world', async () => {
+        const known = new Set(MEMBERS.map(member => member.id));
+        for (const marriage of AUTHORED_MARRIAGES) {
+            expect(known, `${marriage.oneId} is not in the catalog`).toContain(marriage.oneId);
+            expect(known, `${marriage.otherId} is not in the catalog`).toContain(marriage.otherId);
+        }
+
+        const perSeed: string[] = [];
+        for (const seed of SEEDS) {
+            const state = await world(seed);
+            const at = new Map(state.npcs.map(npc => [npc.id, npc]));
+
+            for (const marriage of AUTHORED_MARRIAGES) {
+                const one = at.get(worldIdForCatalogPerson(marriage.oneId));
+                const other = at.get(worldIdForCatalogPerson(marriage.otherId));
+                expect(one, `${seed}: ${marriage.oneId} has no world row`).toBeDefined();
+                expect(other, `${seed}: ${marriage.otherId} has no world row`).toBeDefined();
+                const tie = one!.relationships.find(r => r.targetId === other!.id);
+                expect(tie?.kind, `${seed}: ${one!.name} is not married to ${other!.name}`)
+                    .toBe('spouse');
+                // Both halves, and at the standing every marriage carries -
+                // a stated one has to be indistinguishable from a lived one.
+                expect(other!.relationships.find(r => r.targetId === one!.id)?.kind)
+                    .toBe('spouse');
+                expect(tie!.standing).toBeCloseTo(SPOUSE_STANDING, 5);
+                expect(tie!.note).toBe('Their household.');
+            }
+
+            perSeed.push(state.npcs
+                .filter(npc => somebodyTheCatalogWrote(npc)
+                    && npc.relationships.some(r => r.kind === 'spouse'))
+                .flatMap(npc => npc.relationships
+                    .filter(r => r.kind === 'spouse')
+                    .map(r => [npc.id, r.targetId].sort().join('|')))
+                .sort()
+                .filter((pair, i, all) => all.indexOf(pair) === i)
+                .join(','));
+        }
+
+        expect(new Set(perSeed).size,
+            'the catalog\'s marriages differ between worlds').toBe(1);
+    }, 300_000);
 
     /**
      * A FRESH WORLD IS NOT A NEWLY CREATED ONE. Marriages performed at midnight

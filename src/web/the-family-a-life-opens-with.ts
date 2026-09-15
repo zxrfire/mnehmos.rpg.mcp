@@ -50,6 +50,15 @@
  * the person is still there to be found. Both readings land on the same number,
  * and it is the same one the marriage seeding uses.
  *
+ * AND SOMEBODY THE CATALOG WROTE IS PAST IT AT ANY RUNG, which is the ruling
+ * applied rather than an exception to it. The question is whether the world can
+ * still speak of the person in a hundred years, the rung is a proxy for it, and
+ * `theWorldForgetsTheMortalDead` says in its own code where the proxy stops: it
+ * deletes the mortal dead and keeps everybody a catalog names. So a Sword Hand
+ * at ordinal 4 standing on her sect's ground is a record, a tie and a place to
+ * go, and a player born there can be her child. A villager at the same rung is
+ * still a mention, for the reason above and for no other.
+ *
  * AND THERE IS NO HOMECOMING. `I go home` is travel to an ordinary place: walk
  * there, look at who is standing there, done. No verb, no scene, no derived
  * account of who died while you were away. The owner, asked how much of one to
@@ -119,7 +128,9 @@ import {
     rosterOf,
     theOtherChildrenOf
 } from '../engine/world/the-ties-an-ordinary-life-produces.js';
-import { createNpc, type NpcRecord, type RelationshipKind } from '../engine/world/npc-state.js';
+import {
+    createNpc, somebodyTheCatalogWrote, type NpcRecord, type RelationshipKind
+} from '../engine/world/npc-state.js';
 import { getNpc, upsertNpc, type WorldState } from '../engine/world/world-state.js';
 
 /** The two kinds a birth produces, as the household machinery names them. */
@@ -234,7 +245,18 @@ export function theFamilyThisLifeOpensWith(input: FamilyInput): KinFromBirth[] {
     //
     // The membership is `theOtherChildrenOf`, which is the same read the bind
     // path uses, so a mentioned household and a bound one are the same people.
-    if (chosen.cultivation.realmOrdinal < FOUNDATION_ORDINAL) {
+    //
+    // AND THE RUNG IS NOT THE QUESTION - WHETHER THE WORLD KEEPS THEM IS. The
+    // owner's reason for the mention is *"cuz we don't track mortals, so we
+    // don't have a choice"*: a mortal can die, move or be cleaned up and nothing
+    // will ever say so. `theWorldForgetsTheMortalDead` is that sentence in code,
+    // and it has an exception - somebody the catalog wrote is kept by name at
+    // ANY rung, because the catalog still holds it. So a Sword Hand of the Cold
+    // Sword Sect at ordinal 4 is a real record and a real tie, and the ruling is
+    // untouched: what it refuses is a promise this engine cannot keep, and this
+    // is one it can.
+    if (chosen.cultivation.realmOrdinal < FOUNDATION_ORDINAL
+        && !somebodyTheCatalogWrote(chosen)) {
         const { at } = rosterOf(world);
         return [
             { npc: chosen, kind: 'parent', aMentionOnly: true },

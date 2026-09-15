@@ -10,12 +10,19 @@
  * measured at the point a player would notice - which is not "the world has six
  * killings in it" but **of the settlements a run can open in, how many put
  * somebody who can be told in the room.**
+ *
+ * AND THE POPULATION IT DRAWS FROM CHANGED. It refused anybody the catalog wrote
+ * in either role; the design owner lifted that, and the test that pinned the
+ * refusal is replaced below by the two claims that replace it - that a wrong may
+ * name an authored figure, and that it is still minted per world rather than
+ * written down anywhere. What survived of the old guard is the head of a house,
+ * which was always a separate rule for a mechanical reason.
  */
 
 import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
-import { isActing } from '../../../src/engine/world/npc-state.js';
+import { isActing, somebodyTheCatalogWrote } from '../../../src/engine/world/npc-state.js';
 import { drawBirth } from '../../../src/engine/birth/birth.js';
 import { OPEN_KILLINGS_PER_PROVINCE } from '../../../src/engine/world/the-wrongs-a-world-opens-holding.js';
 import { SEVERITY_ORDER } from '../../../src/engine/social/grudges.js';
@@ -101,26 +108,83 @@ describe('the wrongs a world opens holding', () => {
     }, 120000);
 
     /**
-     * Nobody the catalog wrote is on either side of one of these.
+     * A WRONG MAY NAME SOMEBODY THE CATALOG WROTE, AND IS STILL THIS WORLD'S OWN.
      *
-     * A guard for something this pass was measured doing. The first version drew
-     * the doer from everybody able, and produced *"The Storm Tyrant killed Lu
-     * Zhenshi at Deep Snow Village"* and *"First Seat killed Shen Rongfeng"* - the seeder
-     * writing an unsettled murder onto the record of the most heavily authored
-     * people in the world, asserted by nothing in the catalog. A seeder does not
-     * argue with the writing.
+     * This pass used to refuse an authored figure in either role, and the
+     * refusal was argued: the first version drew the doer from everybody able
+     * and produced *"The Storm Tyrant killed Lu Zhenshi at Deep Snow Village"*,
+     * which is the seeder writing an unsettled murder onto the record of the
+     * most heavily authored people in the world. The design owner has ruled the
+     * other way - *wrongs may touch authored figures* - and the distinction that
+     * makes it safe is the one `members.ts` states from the other end, in WHO THE
+     * CATALOG'S OWN PEOPLE ARE MARRIED TO: a marriage is a fact about a person
+     * and is hardcoded, a killing is a fact about a world and must not be. So the guard that
+     * survives is not about authorship at all. It is `never kills the head of a
+     * house` below, which is mechanical - the faction row is priced on that
+     * person - and it covers an authored apex and a procedural one alike.
+     *
+     * Measured over these six seeds after the change: 35 killings, 8 with an
+     * authored victim and 18 with an authored killer, and all six worlds carried
+     * a different set. Before it, an authored figure appeared in 0 of 24.
+     *
+     * The two assertions are the two halves of the ruling. That authored figures
+     * ARE reached, so lifting the guard did something; and that the killings are
+     * MINTED, so no two worlds carry the same history. A per-killing identity
+     * check would be wrong here and is deliberately not made: the candidate pool
+     * in a thin province is small enough that two seeds can land the same pair,
+     * and they did once in six. The claim is about the world, not the row.
      */
-    it('never puts a curated figure on either side of one', async () => {
+    it('lets a wrong name an authored figure, and mints a different one per world', async () => {
+        let authoredVictims = 0;
+        let authoredKillers = 0;
+        let killings = 0;
+        const perWorld: string[] = [];
+
         for (const seed of SEEDS) {
             const state = await world(seed);
             const at = new Map(state.npcs.map(npc => [npc.id, npc]));
+            const said: string[] = [];
+            for (const fact of pricedIn(state)) {
+                const doerId = String(fact.data.deedDoerId);
+                const victimId = fact.actors.find(a => a.id !== doerId)!.id;
+                if (somebodyTheCatalogWrote(at.get(victimId)!)) authoredVictims++;
+                if (somebodyTheCatalogWrote(at.get(doerId)!)) authoredKillers++;
+                killings++;
+                said.push(`${doerId}>${victimId}`);
+            }
+            perWorld.push(said.sort().join(','));
+        }
+
+        expect(killings, 'no world holds a wrong at all').toBeGreaterThan(0);
+        expect(authoredVictims + authoredKillers,
+            'the guard is lifted and nothing came through it').toBeGreaterThan(0);
+        // Not itself seeded, so unique. Every world carries its own history.
+        expect(new Set(perWorld).size,
+            `two worlds carry the same killings: ${perWorld.join(' | ')}`).toBe(SEEDS.length);
+    }, 300000);
+
+    /**
+     * AND A VICTIM SURVIVES THE MORTAL SWEEP FOR ONE OF TWO REASONS.
+     *
+     * `theWorldForgetsTheMortalDead` deletes a mortal who dies. It keeps two
+     * populations, and an opening victim now lands in either: somebody the
+     * catalog wrote is kept by NAME, and a procedural farmer is kept only by the
+     * priced-deed exception that exists for exactly this pass.
+     *
+     * Measured over these six seeds: of 35 victims, 8 are authored and 27 are
+     * procedural, and every one of the 27 stands below Foundation. So the
+     * exception is still load-bearing and will stay so while the seeder's own
+     * population is mortal - which is the honest answer to whether lifting the
+     * catalog guard let it be retired. It did not.
+     */
+    it('leaves every victim standing in the world after the mortal sweep', async () => {
+        for (const seed of SEEDS) {
+            const state = await world(seed);
+            const held = new Set(state.npcs.map(npc => npc.id));
             for (const fact of pricedIn(state)) {
                 for (const actor of fact.actors) {
-                    const npc = at.get(actor.id)!;
-                    expect(npc.tags.some(t => t.startsWith('catalog:')),
-                        `${actor.name} in "${fact.summary}"`).toBe(false);
-                    expect(npc.id.startsWith('npc-line-'),
-                        `${actor.name} in "${fact.summary}"`).toBe(false);
+                    expect(held, `${seed}: "${fact.summary}" names a row nothing holds`)
+                        .toContain(actor.id);
                 }
             }
         }

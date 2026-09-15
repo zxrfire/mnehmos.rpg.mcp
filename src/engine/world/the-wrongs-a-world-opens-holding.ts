@@ -1,34 +1,55 @@
 /**
  * The wrongs a world is already holding on the day it opens.
  *
- * ── THE VICTIM IS A MORTAL, AND THAT IS NOT AN OVERSIGHT ─────────────────
+ * ── A WRONG MAY NAME SOMEBODY THE CATALOG WROTE ──────────────────────────
  *
- * `theWorldForgetsTheMortalDead` deletes a mortal who dies, so the obvious
- * reading is that this pass should be drawing its victims from cultivators
- * instead. Measured on a seeded world of 616 people, it cannot be:
+ * It did not, and the refusal was argued. The first cut of this pass drew from
+ * everybody able and produced *"The Storm Tyrant killed Lu Zhenshi at Deep Snow
+ * Village"* - the seeder writing an unsettled murder onto the record of the most
+ * heavily authored people in the world, asserted by nothing in the catalog. The
+ * guard that followed said a seeder does not argue with the writing, and it was
+ * right about the part it could see.
  *
- *     living cultivators below the Lid                        128
- *     of them NOT written by a catalog                          2
- *     of those with a blood tie, unranked, with a legal killer  0
+ * WHAT IT WAS ACTUALLY PROTECTING, on inspection, was two different things
+ * wearing one rule:
  *
- * The procedural population tops out at ordinal 14. Every cultivator in a
- * seeded world who has a family is a catalog figure, and this pass refuses to
- * write an unsettled murder onto an authored person in either role - see
- * {@link whoDidIt}. Restricting the draw to cultivators produced ZERO killings
- * in every world swept, which is the fresh world losing the only wrong it has.
+ *   THE WRITING, which is the catalog's to change and not a seeder's. The design
+ *   owner has now ruled on it directly - *wrongs may touch authored figures* -
+ *   so this half is lifted. A killing minted for one world is that world's
+ *   history rather than a claim about the person, which is the same distinction
+ *   `members.ts` states from the other end: a marriage is a fact about somebody
+ *   and is hardcoded; a grudge is a fact about a world and must not be.
  *
- * So the ruling lands on the other side, and it is the ruling's own reason
- * rather than an exception to it: the engine drops the farmers it *was never
- * able to say anything about*, and a man whose brother still carries the
- * account for his killing is not one of them. `theWorldHasNoWayToSpeakOf`
- * keeps anybody a priced deed names.
+ *   A FIGURE THE WORLD READS A NUMBER OFF, which is mechanical and survives. A
+ *   house's `power_ordinal` is its strongest member, so killing that person
+ *   leaves the faction row priced on a corpse. That rule is `heads` below, it was
+ *   always separate, it has nothing to do with who wrote anybody, and it is what
+ *   keeps the head of an apex out of a casual murder in every world.
+ *
+ * ── AND IT IS MINTED, NEVER SEEDED ───────────────────────────────────────
+ *
+ * The owner again, in the same breath: *"not itself seeded so unique."* Nothing
+ * about this killing is written in a catalog. It is drawn once, as the world is
+ * laid out, from that world's own stream - so two worlds off two seeds carry
+ * different killings between different people, and a player who has read every
+ * word of the catalog still does not know who died here.
+ *
+ * ── WHAT IT COSTS THE MORTAL SWEEP ───────────────────────────────────────
+ *
+ * `theWorldForgetsTheMortalDead` deletes a mortal who dies and keeps anybody a
+ * priced deed names, and that exception exists because of this pass: a man whose
+ * brother still carries the account for his killing is not one of the farmers
+ * the engine was never able to say anything about. Where the victim is somebody
+ * the catalog wrote the exception is not needed - they are kept by name at any
+ * rung - and where the victim is a procedural mortal it still is. Both happen.
+ * See the test for the split.
  */
 
 import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { isBelowTheLid } from './layers.js';
 import { settleNpcDeath } from './time.js';
-import { markDead, somebodyTheCatalogWrote, type NpcRecord } from './npc-state.js';
+import { markDead, type NpcRecord } from './npc-state.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import type { Party } from '../social-leverage/what-a-deed-leaves.js';
 import type { InheritanceRelation } from '../social/grudges.js';
@@ -123,6 +144,9 @@ export function seedTheWrongsStillOpen(
 
     // Whoever is at the top of each house. Never a victim: the faction row is
     // priced on them and `seedFactions` has already handed them the top rung.
+    // This is the one refusal that survived the catalog guard being lifted, and
+    // it is mechanical rather than editorial - it reads the roll, not the
+    // byline, so it covers an authored apex and a procedural one alike.
     const heads = new Set<string>();
     for (const faction of state.factions) {
         const members = living
@@ -156,7 +180,6 @@ export function seedTheWrongsStillOpen(
         const candidates = inProvince
             .filter(n =>
                 !heads.has(n.id)
-                && !somebodyTheCatalogWrote(n)
                 && n.relationships.some(r => BLOOD.has(r.kind)))
             .sort((a, b) => (a.id < b.id ? -1 : 1));
         if (candidates.length === 0) continue;
@@ -274,21 +297,14 @@ function whoDidIt(
         ? state.factions.find(f => f.id === victim.factionId) ?? null
         : null;
 
+    // Somebody able, who is not the victim's own household. Authorship is not
+    // asked about on this side either - see the header - and the one thing that
+    // is still refused is refused for a reason about the world rather than about
+    // the writing: somebody standing BELOW the person they killed did not.
     const able = inProvince
         .filter(n =>
             n.id !== victim.id
             && !blood.has(n.id)
-            // A CURATED FIGURE IS NEVER THE ONE WHO DID IT, for the same reason one
-            // is never the victim. Found by measurement: the first version of this
-            // pass, drawing from everybody able, produced "The Storm Tyrant killed
-            // Lu Zhenshi at Deep Snow Village" and "First Seat killed Shen
-            // Rongfeng" - the seeder writing an unsettled murder onto the record of
-            // the most heavily authored people in the world, in a fact nothing in
-            // the catalog says. A seeder does not argue with the writing. Whether
-            // an authored figure should be allowed to have done something before
-            // the world opened is a question for the person who wrote them, not for
-            // this pass.
-            && !somebodyTheCatalogWrote(n)
             && n.cultivation.realmOrdinal > victim.cultivation.realmOrdinal)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
     if (able.length === 0) return null;

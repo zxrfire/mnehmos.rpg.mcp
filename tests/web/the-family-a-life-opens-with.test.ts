@@ -329,6 +329,55 @@ describe('the family a life opens with', () => {
         expect(world.npcs.find(npc => npc.id === player.id)!.relationships).toEqual([]);
     });
 
+    /**
+     * AND SOMEBODY THE CATALOG WROTE IS A RECORD AT ANY RUNG.
+     *
+     * The mention rule is not about the rung. The owner's reason for it is
+     * *"cuz we don't track mortals, so we don't have a choice"* - a mortal can
+     * die, move or be cleaned up and nothing will ever say so, so a tie to one
+     * is a promise the engine cannot keep. `theWorldForgetsTheMortalDead` is
+     * that sentence in code and it carries the exception this test encodes: a
+     * catalog figure is kept by name at any rung, so the promise IS keepable and
+     * the mention is the wrong answer for them.
+     *
+     * Measured across 3,000 births on three pinned worlds: 24 lives open as the
+     * child of an authored figure, and ALL 24 would have read as a name and
+     * nothing else before this - the Duan line at Old River Village stand at
+     * ordinal 0 to 2, and the Cold Sword Sect's Sword Hand and Standing Sword at
+     * 4 and 8. The same six run seeds gave the same household in all three
+     * worlds, because who these people are married to is now catalog and not
+     * draw.
+     *
+     * Break it by dropping the `somebodyTheCatalogWrote` term and this goes red
+     * on `aMentionOnly`.
+     */
+    it('binds a catalog figure below Foundation rather than mentioning them', () => {
+        const world = hamlet([40, 22], [4, 8]);
+        for (const id of ['npc-0', 'npc-1']) {
+            const at = world.npcs.findIndex(npc => npc.id === id);
+            world.npcs[at] = { ...world.npcs[at], tags: ['catalog:member'] };
+        }
+        world.npcs.push(createNpc(world.seed, {
+            id: player.id, name: player.name,
+            bornOnDay: world.currentDay - 16 * DAYS_PER_YEAR,
+            onDay: world.currentDay, occupation: 'the one being played'
+        }));
+
+        const kin = theFamilyThisLifeOpensWith({
+            world, cultivator: player, candidates: here(world), seed: 's',
+            bornToCultivators: false
+        });
+
+        expect(kin.length, 'the catalog figure was not drawn at all').toBeGreaterThan(0);
+        for (const one of kin) expect(one.aMentionOnly).toBe(false);
+        // And the row is real on both ends, which is the whole difference
+        // between a record and a name.
+        const me = world.npcs.find(npc => npc.id === player.id)!;
+        expect(me.relationships.some(tie => tie.kind === 'parent')).toBe(true);
+        const parent = world.npcs.find(npc => npc.id === kin[0].npc.id)!;
+        expect(parent.relationships.some(tie => tie.targetId === player.id)).toBe(true);
+    });
+
     it('is the same household on a second read of the same life', () => {
         const world = hamlet([40, 44, 50], [20, 18, 19]);
         const first = theFamilyThisLifeOpensWith({

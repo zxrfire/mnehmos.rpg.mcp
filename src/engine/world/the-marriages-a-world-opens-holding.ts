@@ -36,10 +36,34 @@
  * with weight - a cultivating household, a line, and something a child is born
  * into.
  *
+ * THE RUNG BAR DOES NOT REACH A STATED MARRIAGE, and the reason is the bar's
+ * own. A mortal household is refused because the world cannot keep a mortal:
+ * `theWorldForgetsTheMortalDead` deletes them, so the other half of the tie goes
+ * and the widow cannot be widowed. A catalog figure is kept by name at whatever
+ * rung they stand - that sweep's explicit exception - so the reason does not
+ * reach them, and the Coal Hand who married into the forge clan is recorded at
+ * ordinal 6.
+ *
  * The line between the two is not this file's to draw and is not drawn here.
  * {@link FOUNDATION_ORDINAL} already carries it, in the words of the module
  * that owns the ladder: *"below it a character is a mortal with a party trick,
  * above it they are a cultivator."*
+ *
+ * AND NOBODY THE CATALOG WROTE IS DRAWN FOR AT ALL. The design owner:
+ * *"hardcode the authored figure marriages, but not the grudges."* Who somebody
+ * is married to is a fact about them and belongs beside their rank and their
+ * house, so it is written in `members.ts` beside them and is
+ * the same in every world; what two people did to each other is a fact about a
+ * world and is minted per seed by `the-wrongs-a-world-opens-holding.ts`.
+ *
+ * That ruling landed on a pass that was, measured, doing nothing else. Two
+ * seeded worlds before it: 26 and 28 marriages, EVERY ONE of them between two
+ * catalog figures, none involving anybody else. A fresh world holds 126 to 128
+ * living cultivators and 126 of them are authored, so the draw's whole reachable
+ * population was the catalog. It still runs, over the two or three cultivators
+ * the seeder produces itself, and lands nothing in most worlds - which is a
+ * demographic fact about a fresh world and not a broken pass. See
+ * {@link seedTheMarriagesTheCatalogStates} for the half that now carries it.
  *
  * AND A CULTIVATOR WHO MARRIED A MORTAL IS NOT RECORDED. Both ends or neither.
  * The argument for recording the cultivator's half alone is real - they are the
@@ -85,15 +109,18 @@
 import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
+import { AUTHORED_MARRIAGES } from '../../data/cultivation/members.js';
+import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { isBelowTheLid } from './layers.js';
 import {
+    bindHousehold,
     formHouseholds,
     HOUSEHOLD_MIN_AGE,
     HOUSEHOLD_PER_YEAR,
     rosterOf,
     type Roster
 } from './the-ties-an-ordinary-life-produces.js';
-import type { NpcRecord } from './npc-state.js';
+import { somebodyTheCatalogWrote, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -127,6 +154,23 @@ export const NEVER_KEEPS_A_HOUSEHOLD = 0.62;
 export interface MarriagesSeeded {
     /** Households written. Each is two rows. */
     households: number;
+    /** Of those, the ones the catalog states. Identical in every world. */
+    stated: number;
+    /**
+     * Stated marriages this world holds no row for either half of.
+     *
+     * A catalog and a seeder disagreeing about who exists, and a pass that
+     * swallows one leaves somebody the catalog says is married holding nothing.
+     * The test asserts this is nought.
+     */
+    statedUnwritten: number;
+    /**
+     * Stated marriages written over a tie `seedFactions` had derived.
+     *
+     * Reported because it is a real loss and has to stay small and visible. See
+     * {@link seedTheMarriagesTheCatalogStates} for why the marriage wins.
+     */
+    statedOverDerived: number;
     /** Of those, ones whose other half is no longer alive. */
     widowed: number;
 }
@@ -171,33 +215,24 @@ export function seedTheMarriagesStandingInAPlace(
 ): MarriagesSeeded {
     const { at } = roster;
 
+    // The stated ones FIRST, so the draw below sees them as spoken for and
+    // cannot pair somebody the catalog has already married to somebody else.
+    const stated = seedTheMarriagesTheCatalogStates(state, presentDay, at);
+
     const candidates = state.npcs.filter(npc =>
         npc.locationId !== null
         && isBelowTheLid(npc)
         && isACultivator(npc)
+        // NOBODY THE CATALOG WROTE IS DRAWN FOR. Theirs are stated - see
+        // {@link seedTheMarriagesTheCatalogStates}, which has already run.
+        && !somebodyTheCatalogWrote(npc)
         && ageInYears(npc, lastDayAlive(npc, presentDay)) >= HOUSEHOLD_MIN_AGE
         && !npc.relationships.some(r => r.kind === 'spouse'));
 
-    // A DAY, NOT MIDNIGHT ON DAY ZERO. Drawn between the day the later of the
-    // two became old enough and the day the earlier of them stopped being
-    // available, so a world opens holding marriages of every length its people
-    // could have kept one - some of them centuries old.
-    const began = (one: NpcRecord, other: NpcRecord): number => {
-        const opens = Math.max(
-            one.identity.bornOnDay + HOUSEHOLD_MIN_AGE * DAYS_PER_YEAR,
-            other.identity.bornOnDay + HOUSEHOLD_MIN_AGE * DAYS_PER_YEAR
-        );
-        const closes = Math.min(
-            lastDayAlive(one, presentDay), lastDayAlive(other, presentDay));
-        if (closes <= opens) return opens;
-        // Keyed on the pair rather than drawn from the place's stream, so it
-        // can be asked twice - once to check the window is real and once to
-        // date the tie - without moving.
-        const rng = forStream(state.seed, 'a-household-began', `${one.id}:${other.id}`);
-        return Math.floor(opens + rng.float(0, 1) * (closes - opens));
-    };
+    const began = (one: NpcRecord, other: NpcRecord): number =>
+        whenAHouseholdBegan(state, one, other, presentDay);
 
-    const households = formHouseholds(state, at, {
+    const drawn = formHouseholds(state, at, {
         candidates,
         wouldPair: one => forStream(state.seed, 'keeps-a-household', one.id)
             .chance(everFormedOne(ageInYears(one, lastDayAlive(one, presentDay)) - HOUSEHOLD_MIN_AGE)),
@@ -227,5 +262,109 @@ export function seedTheMarriagesStandingInAPlace(
         npc.status === 'alive'
         && npc.relationships.some(r => r.kind === 'spouse' && gone.has(r.targetId))).length;
 
-    return { households, widowed };
+    return {
+        households: stated.written + drawn,
+        stated: stated.written,
+        statedUnwritten: stated.unwritten,
+        statedOverDerived: stated.overDerived,
+        widowed
+    };
+}
+
+/**
+ * The day a household began, drawn between the later coming of age and the
+ * earlier ending.
+ *
+ * A DAY, NOT MIDNIGHT ON DAY ZERO, so a world opens holding marriages of every
+ * length its people could have kept one - some of them centuries old.
+ *
+ * A STATED MARRIAGE IS DATED BY THE WORLD AND NOT BY THE CATALOG, which is not
+ * a hole in the ruling. The catalog does not give these people a birthday: their
+ * age is derived from the rung they stand at and moves with the seed, so a date
+ * written down beside the pair would sit outside one of the two lives in most
+ * worlds. WHO is the fact; HOW LONG is what this world made of it.
+ */
+function whenAHouseholdBegan(
+    state: WorldState,
+    one: NpcRecord,
+    other: NpcRecord,
+    presentDay: number
+): number {
+    const opens = Math.max(
+        one.identity.bornOnDay + HOUSEHOLD_MIN_AGE * DAYS_PER_YEAR,
+        other.identity.bornOnDay + HOUSEHOLD_MIN_AGE * DAYS_PER_YEAR
+    );
+    const closes = Math.min(
+        lastDayAlive(one, presentDay), lastDayAlive(other, presentDay));
+    if (closes <= opens) return opens;
+    // Keyed on the pair rather than drawn from the place's stream, so it can be
+    // asked twice - once to check the window is real and once to date the tie -
+    // without moving.
+    const rng = forStream(state.seed, 'a-household-began', `${one.id}:${other.id}`);
+    return Math.floor(opens + rng.float(0, 1) * (closes - opens));
+}
+
+/** What one run over {@link AUTHORED_MARRIAGES} managed. */
+interface StatedMarriages {
+    written: number;
+    unwritten: number;
+    overDerived: number;
+}
+
+/**
+ * Write the marriages the catalog states.
+ *
+ * No place grouping, no rate and no draw: there is nothing to decide. The two
+ * people are named, and the only questions are whether the world holds them and
+ * whether writing the tie would destroy another.
+ *
+ * NEITHER HALF HAS TO BE STANDING IN THE SAME PLACE, which is the one rule of
+ * the drawn pass that cannot apply. `formHouseholds` groups by location because
+ * it is looking for two people who could plausibly have met; a stated marriage
+ * has already happened, and where the two of them stand today is a posting
+ * rather than an objection.
+ *
+ * AND A STATED MARRIAGE OUTRANKS A DERIVED TIE, which is the ordinary rule in
+ * this repo read the other way round: a seeder does not argue with the writing.
+ * The only rows that can be standing between two catalog figures when this runs
+ * are the `rival` and `ally` ones `seedFactions` derives from rank order, and
+ * one of them is in the way of the clearest marriage in the catalog - the Keeper
+ * of the Ninefold Register married in and did not take the house name, and the
+ * house's four Yan are the four who hold "Was the other candidate" and "Serves
+ * under" toward her, because she is at the top of it. Refusing there would mean
+ * the one marriage `members.ts` states in as many words is the one no world
+ * holds.
+ *
+ * So it is written, and the row it replaces is counted rather than lost
+ * quietly - the defect `the-families-a-world-opens-holding.ts` measured at a
+ * third of the world's other ties was a DRAWN family eating seeded rows in bulk
+ * and silently, and neither of those is true here.
+ */
+function seedTheMarriagesTheCatalogStates(
+    state: WorldState,
+    presentDay: number,
+    at: Map<string, number>
+): StatedMarriages {
+    let written = 0;
+    let unwritten = 0;
+    let overDerived = 0;
+
+    for (const marriage of AUTHORED_MARRIAGES) {
+        const oneAt = at.get(worldIdForCatalogPerson(marriage.oneId));
+        const otherAt = at.get(worldIdForCatalogPerson(marriage.otherId));
+        if (oneAt === undefined || otherAt === undefined) {
+            unwritten++;
+            continue;
+        }
+        const one = state.npcs[oneAt];
+        const other = state.npcs[otherAt];
+        if (one.relationships.some(r => r.targetId === other.id && r.kind !== 'spouse')
+            || other.relationships.some(r => r.targetId === one.id && r.kind !== 'spouse')) {
+            overDerived++;
+        }
+        bindHousehold(state, at, one, other, whenAHouseholdBegan(state, one, other, presentDay));
+        written++;
+    }
+
+    return { written, unwritten, overDerived };
 }

@@ -31,7 +31,12 @@
  *     200 years    7 of 7
  *
  * Nothing goes before the world produces somebody up to the ground, and then it
- * goes quickly. The cause is not the gate: the `openable` pool at day 0 is ONE
+ * goes quickly. **That last figure no longer holds and the retraction is kept
+ * here rather than in place of it: measured again on this tree over six pinned
+ * worlds, 1 of 10 never-shut grounds is emptied at 200 years.** The drop is in
+ * the pressure pass and not in this category - see the note on the sweep below,
+ * which measured both arms of an unrelated seeding change and got the same 1 of
+ * 10 either way. The cause is not the gate: the `openable` pool at day 0 is ONE
  * OR TWO LOCATIONS and all of it is never-shut ground, because a never-shut
  * site is `discovered` by construction and an ordinary sealed ruin is not until
  * prospecting finds it. So every firing of a weight-8 event lands on this
@@ -167,60 +172,114 @@ describe('the world can take one, and only somebody up to it can', () => {
         for (const site of found) expect(site.tags).not.toContain('emptied');
     });
 
-    it('empties one, and never by somebody the ground would have killed', () => {
+    /**
+     * WHETHER THE WORLD EVER TAKES ONE IS A QUESTION ABOUT WORLDS, SO IT IS
+     * ASKED OF SEVERAL.
+     *
+     * Both of these used to run on `alpha` alone and assert that it emptied
+     * one. That reading has gone stale, and NOT because of the change that
+     * caught it. Measured over six pinned worlds at 200 years, on this tree,
+     * with the seeding change that exposed it reverted line by line and put
+     * back - the same six either way:
+     *
+     *     never-shut ground in the six    10
+     *     emptied by 200 years             1
+     *
+     * against the 7 of 7 the header above records. The rate fell somewhere
+     * between that measurement and this one, in the pressure pass rather than
+     * here, and it is written down rather than absorbed: this file is not the
+     * place to change it and whoever owns `the-world-changing-on-its-own.ts`
+     * should be told the number.
+     *
+     * What the single seed was doing, meanwhile, was pinning WHICH of the six
+     * happened to be the one - an unrelated seeding change moved the hit from
+     * `alpha` to `charlie` and turned both of these red without touching the
+     * claim either of them makes. So the corpus is the four worlds the header
+     * measured, plus two, and the existence claim is asked of the set.
+     *
+     * THE GATE IS ASKED OF EVERY OPENING IN EVERY WORLD, which is the half that
+     * was never seed-dependent and is the half worth having: an opener below
+     * `thresholds.mastery` is the world handing a place to somebody the ground
+     * would have killed, and it goes red on the first one anywhere in the set.
+     */
+    const SWEPT = ['alpha', 'bravo', 'charlie', 'echo', 'delta', 'foxtrot'];
+
+    function lived(seed: string) {
         const state = seedWorld({
-            seed: 'alpha', catalog: fixtureCatalog(), presentYear: 1000, population: 250
+            seed, catalog: fixtureCatalog(), presentYear: 1000, population: 250
         }).state;
         const from = state.currentDay;
         const out = applyPressure(state, from, from + 200 * YEAR, { maxEvents: 1_000_000 });
+        return { state, out };
+    }
 
-        const taken = neverShutIn(state).filter(l => l.tags.includes('emptied'));
-        expect(taken.length).toBeGreaterThan(0);
+    it('empties one, and never by somebody the ground would have killed', () => {
+        let emptied = 0;
+        let standing = 0;
+        let openings = 0;
+        const said: string[] = [];
 
-        // WHOEVER IS NAMED ON THE EVENT IS SOMEBODY THE GROUND ADMITS. The
-        // thresholds are the test, and the top of them is what taking the place
-        // means - below it the same row reads `surviving`, which is coming back
-        // out rather than coming out with anything.
-        const byId = new Map(state.locations.map(l => [l.id, l]));
-        const openings = out.events.filter(e =>
-            e.kind === 'ruin_opened' && e.fact.locationId != null
-            && byId.get(e.fact.locationId)?.tags.includes(LEFT_TO_BE_FOUND));
-        expect(openings.length).toBeGreaterThan(0);
-        for (const opening of openings) {
-            const site = byId.get(opening.fact.locationId!)!;
-            const opener = opening.fact.actors.find(a => a.role === 'opener');
-            expect(opener).toBeDefined();
-            const npc = state.npcs.find(n => n.id === opener!.id);
-            expect(npc).toBeDefined();
-            expect(npc!.cultivation.realmOrdinal).toBeGreaterThanOrEqual(site.thresholds.mastery);
+        for (const seed of SWEPT) {
+            const { state, out } = lived(seed);
+            const here = neverShutIn(state);
+            standing += here.length;
+            const taken = here.filter(l => l.tags.includes('emptied'));
+            emptied += taken.length;
+            said.push(`${seed} ${taken.length}/${here.length}`);
+
+            // WHOEVER IS NAMED ON THE EVENT IS SOMEBODY THE GROUND ADMITS. The
+            // thresholds are the test, and the top of them is what taking the
+            // place means - below it the same row reads `surviving`, which is
+            // coming back out rather than coming out with anything.
+            const byId = new Map(state.locations.map(l => [l.id, l]));
+            for (const opening of out.events) {
+                if (opening.kind !== 'ruin_opened' || opening.fact.locationId == null) continue;
+                const site = byId.get(opening.fact.locationId);
+                if (!site?.tags.includes(LEFT_TO_BE_FOUND)) continue;
+                openings++;
+                const opener = opening.fact.actors.find(a => a.role === 'opener');
+                expect(opener, `${seed}: an opening with nobody on it`).toBeDefined();
+                const npc = state.npcs.find(n => n.id === opener!.id);
+                expect(npc, `${seed}: ${opener!.name} is not in the world`).toBeDefined();
+                expect(npc!.cultivation.realmOrdinal,
+                    `${seed}: ${npc!.name} took ${site.name} from under its own floor`)
+                    .toBeGreaterThanOrEqual(site.thresholds.mastery);
+            }
         }
+
+        expect(standing, 'no never-shut ground in any of the six').toBeGreaterThan(0);
+        expect(openings, `nothing opened any of it: ${said.join(', ')}`).toBeGreaterThan(0);
+        expect(emptied, `the world took none of it: ${said.join(', ')}`).toBeGreaterThan(0);
     });
 
     it('takes the art off a legacy and the goods off a treasury', () => {
-        const state = seedWorld({
-            seed: 'alpha', catalog: fixtureCatalog(), presentYear: 1000, population: 250
-        }).state;
-        const from = state.currentDay;
-        applyPressure(state, from, from + 200 * YEAR, { maxEvents: 1_000_000 });
+        let emptied = 0;
 
-        const taken = neverShutIn(state).filter(l => l.tags.includes('emptied'));
-        expect(taken.length).toBeGreaterThan(0);
-        const emptiedIds = new Set(taken.map(l => l.id));
+        for (const seed of SWEPT) {
+            const { state } = lived(seed);
+            const taken = neverShutIn(state).filter(l => l.tags.includes('emptied'));
+            emptied += taken.length;
+            const emptiedIds = new Set(taken.map(l => l.id));
 
-        // NOTHING IS STILL LYING IN GROUND THE WORLD HAS DECLARED EMPTY. A
-        // place tagged `emptied` with its stock still in it is the world saying
-        // two things at once.
-        for (const object of state.objects) {
-            if (object.locationId === null || !emptiedIds.has(object.locationId)) continue;
-            expect(object.possessorId).not.toBeNull();
+            // NOTHING IS STILL LYING IN GROUND THE WORLD HAS DECLARED EMPTY. A
+            // place tagged `emptied` with its stock still in it is the world
+            // saying two things at once.
+            for (const object of state.objects) {
+                if (object.locationId === null || !emptiedIds.has(object.locationId)) continue;
+                expect(object.possessorId, `${seed}: ${object.name} is still lying there`)
+                    .not.toBeNull();
+            }
+
+            // And where a legacy went, the art that came off it is a catalog row
+            // somebody is now carrying.
+            for (const site of taken) {
+                const art = theArtLeftInThisGround(site);
+                if (art === null) continue;
+                expect(state.npcs.some(n => n.cultivation.techniqueIds.includes(art)),
+                    `${seed}: ${art} came off ${site.name} and nobody holds it`).toBe(true);
+            }
         }
 
-        // And where a legacy went, the art that came off it is a catalog row
-        // somebody is now carrying.
-        for (const site of taken) {
-            const art = theArtLeftInThisGround(site);
-            if (art === null) continue;
-            expect(state.npcs.some(n => n.cultivation.techniqueIds.includes(art))).toBe(true);
-        }
+        expect(emptied, 'nothing was emptied in any of the six').toBeGreaterThan(0);
     });
 });
