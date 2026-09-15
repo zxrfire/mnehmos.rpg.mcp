@@ -168,10 +168,14 @@ import {
 export * from './planned-action.js';
 import type { PlannedAction } from './planned-action.js';
 import {
+    A_HOUSE_BEING_ASKED_ABOUT,
+    A_HOUSE_BY_NAME_HOWEVER_SHORT,
+    A_HOUSE_IS_BEING_ASKED_ABOUT,
     A_HOUSE_IS_NAMED,
     A_HOUSE_NAME_IS_SAID,
     A_HOUSE_TYPE_NOUN,
-    A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
+    A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL,
+    theHouseNameSaid
 } from './what-a-house-is-called.js';
 
 // A question about an act is not the act. The mood post-pass, and the guard on
@@ -888,6 +892,19 @@ export function whatATakingNames(text: string, input: string): string | null {
 const EVERY_HOUSE_NAME_SAID = new RegExp(A_HOUSE_NAME_IS_SAID.source, 'gi');
 
 /**
+ * The sentence with the houses' own names taken out of it.
+ *
+ * `outsideAnyName` does this for a name the player CAPITALISED, and says in its
+ * own header that it cannot do it for one typed in lower case because a pattern
+ * table has no place list. It does now: `what-a-house-is-called.ts` derives one
+ * from the catalog, so a gate that anchors on a category noun can ask its
+ * question of what is left however the player typed it.
+ */
+export function withoutTheHousesNamed(text: string): string {
+    return text.replace(EVERY_HOUSE_NAME_SAID, ' ');
+}
+
+/**
  * Asking what your standing entitles you to on your house's ground.
  */
 export const GROUND_TIME_QUESTION = new RegExp([
@@ -918,8 +935,7 @@ export const GROUND_TIME_QUESTION = new RegExp([
  */
 export function asksAfterGroundTime(text: string): boolean {
     if (GROUND_TIME_QUESTION.test(text)) return true;
-    const withoutTheirNames = text.replace(EVERY_HOUSE_NAME_SAID, ' ');
-    return /\b(?:chamber|vein|cave|ground|room)\b/.test(withoutTheirNames)
+    return /\b(?:chamber|vein|cave|ground|room)\b/.test(withoutTheHousesNamed(text))
         && A_HOUSE_IS_NAMED.test(text)
         && /\b(?:go to|use|ask for|request|time on|cultivate in|cultivate at|sit in|where|what|how much|am i allowed|can i)\b/.test(text);
 }
@@ -1680,10 +1696,25 @@ function theHouseBeingAskedAbout(input: string): string | undefined {
  * Deliberately not the market read: "what is for sale here" is a counter with
  * prices on it, and this is a body's own vault, which is not for sale and is
  * the point of asking.
+ *
+ * ── AND WHICH HOUSES IT COULD BE ASKED OF CAME OFF A HAND LIST ───────────
+ *
+ * Fifteen house words were written out here, and the catalog has twenty-seven.
+ * Measured over every row of `SECTS`: NINE houses could not be asked this
+ * question at all - Clearwater Ward, Six Li Patrol, Fallen Grain Caravan, Sand
+ * Well Caravan, Hollow Bell Wanderers, Still Blade Peak, Flowing Light Tower,
+ * Earth Vein Tower, Bone Lantern Cult - because their type noun was not on the
+ * line, and a tenth, The Severed, because its name is one word. A birth that
+ * opened knowing exactly two houses drew two of them.
+ *
+ * `A_HOUSE_BEING_ASKED_ABOUT` is the catalog's own answer, so a house added
+ * tomorrow is askable the day it is added. It is the asked-about form rather
+ * than `A_HOUSE_IS_NAMED` because this question's SHAPE - what does X have -
+ * already says a body is the subject, which is what lets a one-word name in.
  */
 export const WHAT_A_HOUSE_HAS = new RegExp(
     [
-        String.raw`\bwhat (?:do(?:es)?|has|have)\b[^.?]*\b(?:sect|house|clan|pavilion|hall|court|order|temple|alliance|palace|terrace|fortress|grove|valley|market)\b[^.?]*\b(?:have|hold|holds|own|owns|got|worth|keep|keeps)\b`,
+        String.raw`\bwhat (?:do(?:es)?|has|have)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:have|hold|holds|own|owns|got|worth|keep|keeps)\b`,
         String.raw`\bhow (?:rich|wealthy|poor) (?:is|are)\b`,
         String.raw`\bwhat (?:is|are) (?:in )?(?:their|its|the) (?:vault|treasury|coffers|reserves|shelves|hold)\b`,
         String.raw`\bwhat (?:do(?:es)?|have|has) they (?:have|hold|holds|own|owns|got|keep|keeps) (?:to (?:their|its) name|in (?:the )?(?:vault|treasury|coffers))\b`,
@@ -2299,10 +2330,31 @@ export const SELLING_VERBS =
 export const SELLING_SUBJECT_VERBS = new RegExp(`${SELLING_VERBS}|offer|offers|offering|put up`);
 
 /**
+ * "The <somebody>" a board question is put about, who is not a house.
+ *
+ * `the \w+` here is the smith, the herbalist, the stallholder - the one word a
+ * player uses for whoever is behind the counter. A house whose whole NAME is
+ * one word fits it exactly, and `The Severed` is the catalog's one: measured
+ * over every row of `SECTS`, "what does the Severed have" reached the market
+ * board, and it was the last house that could not be asked what it holds.
+ *
+ * The exclusion comes off the catalog rather than out of a line here, so the
+ * next one-word house is covered the day it is written.
+ */
+const THE_PERSON_BEHIND_THE_COUNTER =
+    String.raw`(?!(?:${A_HOUSE_BY_NAME_HOWEVER_SHORT})\b)the \w+`;
+
+/**
  * Asking what a thing FETCHES rather than putting it down.
  */
-export const SELLING_ASKED_AS_A_BOARD =
-    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading)|what do(?:es)? (?:you|they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/;
+export const SELLING_ASKED_AS_A_BOARD = new RegExp(
+    String.raw`\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading)|what do(?:es)? (?:you|they|he|she|people|anybody|anyone|everybody|${THE_PERSON_BEHIND_THE_COUNTER}) (?:sell|trade|stock|have))\b`
+);
+
+/** Who in this square is dealing, and what they have out. */
+const WHO_HERE_IS_SELLING = new RegExp(
+    String.raw`\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|${THE_PERSON_BEHIND_THE_COUNTER}) (?:sell|trade|stock|have))\b`
+);
 
 /**
  * THE BOARD QUESTION PUT TO THE PERSON BEHIND THE COUNTER.
@@ -3391,6 +3443,29 @@ const WHAT_THEY_WERE_MADE_TO_TAKE =
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 
+/**
+ * Which of the interact intents a sentence is, read off the sentence without
+ * the houses' own names in it.
+ *
+ * TWO ROWS HERE CARRY A NOUN, AND TWO HOUSES ARE NAMED FOR IT. `negotiate`
+ * matches `alliance` and `trade` matches `market`, so the Clear River Alliance
+ * and the Silver Island Market claimed their own intent out of their own
+ * names. Measured over every row of `SECTS`: "where is the Clear River
+ * Alliance" came back as a negotiation and "where is the Silver Island Market"
+ * as a haggle, while the other thirty-six houses travelled. Every other
+ * question about those two went the same way - who leads it, what it teaches,
+ * whether it would take somebody.
+ *
+ * This is the Earth Vein Tower defect (see `asksAfterGroundTime`) on a
+ * different gate, and it takes the same cure. A verb survives the stripping,
+ * so "I negotiate with the Clear River Alliance" and "I trade at the Silver
+ * Island Market" are untouched; what stops is a sentence whose only claim to
+ * the intent was the house's name.
+ */
+function theInteractIntent(text: string): string | undefined {
+    return matchIntent(withoutTheHousesNamed(text), INTERACT_INTENT_PATTERNS);
+}
+
 const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['deceive', /\b(?:lie to|deceive|mislead|misdirect|bluff|pretend|disguise|pose as|feign|trick)\b/],
     /**
@@ -4102,7 +4177,7 @@ function planIntent(input: string): PlannedAction {
             // forbids, reachable by choosing your words. The demand path reads the
             // same self-fact, so limit one does not bite there either; what it adds
             // is the resolver, the day and the marks.
-            intent: matchIntent(text, INTERACT_INTENT_PATTERNS) ?? 'talk',
+            intent: theInteractIntent(text) ?? 'talk',
             topic: A_TOPIC_ABOUT_THEMSELVES[ownFact]
         };
     }
@@ -4483,7 +4558,7 @@ function planIntent(input: string): PlannedAction {
         const asked = /\bfor sale\b/.test(text) ? null : requestPutToSomebody(input);
         if (asked) {
             const leverage = LEVERAGE_BEHIND_INTENT[
-                matchIntent(text, INTERACT_INTENT_PATTERNS) ?? ''
+                theInteractIntent(text) ?? ''
             ];
             // A TERM ONLY MEANS SOMETHING WHERE ONE IS SERVED. Asking somebody
             // along for a month is a different ask from asking them along; no
@@ -4800,7 +4875,7 @@ function planIntent(input: string): PlannedAction {
     if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
         return {
             action: 'interact',
-            intent: matchIntent(text, INTERACT_INTENT_PATTERNS) ?? 'talk',
+            intent: theInteractIntent(text) ?? 'talk',
             ...(asked.person ? { target: asked.person } : {}),
             ...(asked.topic ? { topic: asked.topic } : {})
         };
@@ -5036,7 +5111,7 @@ function planIntent(input: string): PlannedAction {
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
             && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(bare))
         // WHO, rather than WHAT
-        || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/.test(text)
+        || WHO_HERE_IS_SELLING.test(text)
         // OFFERING, which is how a player asks it when somebody is standing in
         // front of them. `what does he have` reached the board and `what is he
         // offering` reached nothing - the same question in the shape people
@@ -5728,7 +5803,12 @@ function planIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)
-        && (A_HOUSE_IS_NAMED.test(text) || /\b(?:here|it|this|my|our)\b/.test(text))
+        // The asked-about form rather than the general one, for the reason
+        // `A_HOUSE_BEING_ASKED_ABOUT` gives: "who leads the X" says a body is
+        // the subject before X is read, so the catalog's one-word name is safe
+        // here where it is not safe in the question everything asks. Measured:
+        // "who leads the Severed" reached nothing at all.
+        && (A_HOUSE_IS_BEING_ASKED_ABOUT.test(text) || /\b(?:here|it|this|my|our)\b/.test(text))
         // Unless it is being put to a person, in which case it is a question
         // asked of somebody rather than a read of the player's own house.
         && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
@@ -5743,10 +5823,10 @@ function planIntent(input: string): PlannedAction {
         //
         // Only a catalog name is carried, never the bare type noun: "who runs
         // the sect" means the asker's own and has to keep meaning it. The match
-        // is the catalog's own spelling because `A_HOUSE_NAME_IS_SAID` is built
+        // is the catalog's own spelling because the name alternation is built
         // out of the catalog, longest name first, so what it matched IS the
         // house rather than a phrase somebody has to guess at.
-        const named = A_HOUSE_NAME_IS_SAID.exec(text)?.[0];
+        const named = theHouseNameSaid(text);
         return { action: 'sect', intent: 'standing', ...(named ? { target: named } : {}) };
     }
 
@@ -5942,13 +6022,13 @@ function planIntent(input: string): PlannedAction {
         const offeredTo = whoIsBeingOfferedSomething(input);
         if (offeredTo
             && /\b(?:offer|offers|offering|offered)\b/.test(text)
-            && !matchIntent(text, INTERACT_INTENT_PATTERNS)) {
+            && !theInteractIntent(text)) {
             return { action: 'interact', target: offeredTo, intent: 'trade' };
         }
     }
 
     // ── interact: everything done to or with a person or a faction ──
-    const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
+    const interactIntent = theInteractIntent(text);
     if (interactIntent) {
         const leverage = LEVERAGE_BEHIND_INTENT[interactIntent];
         const subject = extractSubject(input, INTERACT_SUBJECT_VERBS);

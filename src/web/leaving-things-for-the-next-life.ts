@@ -1070,7 +1070,26 @@ export function legacyStep(
     // The listing, which is the sentence before all four and names nothing on
     // purpose. A question with the noun in it, or somebody asking outright
     // where a thing could be left.
-    if ((noun || house !== undefined) && LEGACY_QUESTION.test(text)) {
+    //
+    // ── A HOUSE'S NAME IS NOT A QUESTION ABOUT A DEPOSIT ─────────────────
+    //
+    // This read `noun || house !== undefined`, and `LEGACY_QUESTION` is any
+    // interrogative at all, so EVERY question naming a custody house was a
+    // question about its counter. Measured over every row of `SECTS`: "what
+    // does the Lantern Hall have", "who leads the Lantern Hall" and "where is
+    // the Lantern Hall" all came back as the deposit listing, for all six
+    // houses that take custody - Lantern Hall, Thousand Treasure Pavilion,
+    // Jade Register Hall, Vermilion Seal Terrace, Shrinking Earth Pavilion,
+    // Ninefold Karma Palace. Three different questions, one answer, and it
+    // was the answer to none of them.
+    //
+    // The cure is the one `asksAfterGroundTime` uses for the same defect: ask
+    // the gate's own question of what is there BESIDES the proper name. Here
+    // that is the noun - a cache, a deposit, my things, safekeeping - and it
+    // costs the house half nothing, because a question that names a house AND
+    // says it is about leaving or collecting carries a lodge or claim verb and
+    // has already been taken by the two branches above.
+    if (noun && LEGACY_QUESTION.test(text)) {
         return { action: 'legacy', intent: 'counters', ...(house ? { target: house } : {}) };
     }
     if (/\b(?:where (?:can|could|should) i (?:leave|lodge|bury|put|keep)|who (?:would|will) hold)\b/.test(text)) {

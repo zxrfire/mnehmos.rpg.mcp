@@ -14,6 +14,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SECTS } from '../../src/data/cultivation/sects';
+import { parseIntent } from '../../src/web/actions';
 import {
     HOUSE_TYPE_NOUNS,
     HOUSE_TYPE_NOUNS_THAT_STAND_ALONE
@@ -71,5 +72,91 @@ describe('what a house is called', () => {
         const shadowed = HOUSE_TYPE_NOUNS.filter((word, at) =>
             HOUSE_TYPE_NOUNS.slice(0, at).some(earlier => word.includes(earlier)));
         expect(shadowed).toEqual([]);
+    });
+});
+
+/**
+ * ═════════════════════════════════════════════════════════════════════════
+ * AND THE ONLY THING THAT PROVES THE LIST IS USED: A SWEEP.
+ *
+ * The three assertions above check the LIST against the catalog, and the list
+ * was correct the whole time the parser was wrong. A gate can carry its own
+ * hand-written house words, and the ratchet above never sees it - which is
+ * exactly what happened, one catalog growth later.
+ *
+ * Measured, `parseIntent('what does the <name> have')` over every row of
+ * `SECTS`: 16 of 38 houses did not reach the holdings read.
+ *
+ *   TEN reached no intent at all, because `WHAT_A_HOUSE_HAS` carried fifteen
+ *   house words of its own and the catalog has twenty-seven - Clearwater Ward,
+ *   Six Li Patrol, Fallen Grain Caravan, Sand Well Caravan, Hollow Bell
+ *   Wanderers, Still Blade Peak, Flowing Light Tower, Earth Vein Tower, Bone
+ *   Lantern Cult - and The Severed, whose whole name is one word, went to the
+ *   market board on `what does the \w+ have`.
+ *
+ *   SIX went to the deposit counter, because `legacyStep` read a custody
+ *   house's NAME plus any interrogative as a question about its counter -
+ *   Lantern Hall, Thousand Treasure Pavilion, Jade Register Hall, Vermilion
+ *   Seal Terrace, Shrinking Earth Pavilion, Ninefold Karma Palace. The same
+ *   six answered "who leads the X" and "where is the X" with the counter too.
+ *
+ * It was found by playing: a birth opened knowing exactly two houses and both
+ * were on the list, so the player could not ask about either of the only two
+ * houses their life had given them.
+ *
+ * A SWEEP AND NOT EXAMPLES. Every one of these questions had a passing example
+ * test over a house whose type noun happened to be on the hand list. The only
+ * thing that catches the thirty-ninth house is asking all of them.
+ * ═════════════════════════════════════════════════════════════════════════
+ */
+describe('every house in the catalog can be asked about by name', () => {
+    /** How a player addresses a house, which is the name without its article. */
+    const asked = (house: { name: string }) => house.name.replace(/^The\s+/, '');
+
+    const sweep = (
+        phrase: (name: string) => string
+    ): ReadonlyArray<[string, { action?: string; intent?: string; target?: string }]> =>
+        SECTS.map(house => [
+            house.name,
+            parseIntent(phrase(asked(house))) as { action?: string; intent?: string; target?: string }
+        ]);
+
+    it('what does the X have reaches the holdings read, and carries which X', () => {
+        const wrong = sweep(name => `what does the ${name} have`)
+            .filter(([name, plan]) =>
+                plan.intent !== 'what_they_hold' || plan.target !== name.replace(/^The\s+/, ''));
+
+        expect(
+            wrong.map(([name, plan]) => `${name} -> ${plan.action}/${plan.intent}`),
+            'A house that cannot be asked what it has. The fix is a rule, never a '
+            + 'list: WHAT_A_HOUSE_HAS reads A_HOUSE_BEING_ASKED_ABOUT, which is built '
+            + 'from the catalog.'
+        ).toEqual([]);
+    });
+
+    it('who leads the X reaches the standing read, and carries which X', () => {
+        const wrong = sweep(name => `who leads the ${name}`)
+            .filter(([name, plan]) =>
+                plan.action !== 'sect'
+                || plan.intent !== 'standing'
+                || plan.target !== name.replace(/^The\s+/, '').toLowerCase());
+
+        expect(
+            wrong.map(([name, plan]) => `${name} -> ${plan.action}/${plan.intent}`),
+            'A question about who leads a house answered about a different house, or '
+            + 'about the asker\'s own.'
+        ).toEqual([]);
+    });
+
+    it('where is the X is a place to travel to, for every house', () => {
+        const wrong = sweep(name => `where is the ${name}`)
+            .filter(([, plan]) => plan.action !== 'destinations');
+
+        expect(
+            wrong.map(([name, plan]) => `${name} -> ${plan.action}/${plan.intent}`),
+            'A house whose own name took the question about where it is. Two did: '
+            + 'the Clear River Alliance on the word `alliance` and the Silver Island '
+            + 'Market on `market`, both out of INTERACT_INTENT_PATTERNS.'
+        ).toEqual([]);
     });
 });

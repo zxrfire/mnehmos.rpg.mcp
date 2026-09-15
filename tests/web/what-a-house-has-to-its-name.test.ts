@@ -49,26 +49,21 @@ function asked(house: { name: string }): string {
 /**
  * Whether the question can be put about this house at all.
  *
- * ── A GAP, WRITTEN DOWN AND NOT CLOSED ───────────────────────────────────
+ * ── A GAP THAT WAS WRITTEN DOWN HERE, AND IS NOW CLOSED ──────────────────
  *
- * 16 of the 38 houses in the catalog cannot be asked this question. Measured by
- * running `parseIntent('what does the <name> have')` over every row of `SECTS`:
- * NINE reach no intent at all - Clearwater Ward, Six Li Patrol, Fallen Grain
- * Caravan, Sand Well Caravan, Hollow Bell Wanderers, Still Blade Peak, Flowing
- * Light Tower, Bone Lantern Cult, The Severed - and SEVEN are taken by another
- * verb: six by `counters` (Lantern Hall, Thousand Treasure Pavilion, Jade
- * Register Hall, Vermilion Seal Terrace, Shrinking Earth Pavilion, Ninefold
- * Karma Palace) and Earth Vein Tower by `ground_time`, which reads the word
- * `Vein` out of the house's own name.
+ * 16 of the 38 houses could not be asked this question. Measured by running
+ * `parseIntent('what does the <name> have')` over every row of `SECTS`: TEN
+ * reached no intent at all and SIX were taken by the deposit counter. Both
+ * causes were a word read out of a house's own name, and both are fixed -
+ * `WHAT_A_HOUSE_HAS` asks the catalog which words a house is called by instead
+ * of a hand list, and `legacyStep` no longer reads a house's name as a question
+ * about its counter.
  *
- * That is the defect `the-nouns-a-house-ends-with.test.ts` exists for, one
- * catalog growth later, and it is not this file's to fix: `what does the X
- * have` is about the GATE over a vault, and a house whose name the question
- * cannot carry never reaches the gate to be tested against it.
- *
- * So the house is filtered here rather than pinned - the first one this
- * cultivator has heard of used to be taken, and on `holds-low` that is the Six
- * Li Patrol, which falls straight through to "Ning Xuchen does not know it".
+ * The ratchet is the sweep in `the-nouns-a-house-ends-with.test.ts`, which is
+ * where this family already lived and where a catalog growth is checked. This
+ * stays an assertion rather than a filter, because the file it sits in is about
+ * the BAND GATE over a vault, and a house the question cannot carry never
+ * reaches the gate to be tested against it.
  */
 function theQuestionReaches(house: { name: string }): boolean {
     const plan = parseIntent(`what does the ${asked(house)} have`) as
@@ -88,30 +83,16 @@ async function somebodyAndAHouseTheyKnow(seed: string) {
     const heardOf = SECTS.filter(sect => knows(sect.id));
     expect(heardOf.length, 'this cultivator has heard of nobody').toBeGreaterThan(0);
 
-    // The ones they were born knowing, first. `holds-low` was born knowing two
-    // houses and both of them are on the list above - the Six Li Patrol and the
-    // Fallen Grain Caravan - so where that happens the name is taught, which is
-    // the same one row hearing it in a square would write. What is being tested
-    // is the band gate over a vault, not which houses a birth happens to name.
-    const known = heardOf.find(theQuestionReaches)
-        ?? SECTS.filter(theQuestionReaches)[0];
-    expect(known, 'no house in the catalog can be asked this question').toBeTruthy();
-    if (!heardOf.includes(known!)) {
-        (harness.game as unknown as { knowledge: { learnIfNew(row: unknown): unknown } })
-            .knowledge.learnIfNew({
-                holderId: cultivator.id,
-                kind: 'sect',
-                id: known!.id,
-                name: known!.name,
-                onDay: 0,
-                sourceKind: 'told',
-                sourceNote: 'Somebody said the name.',
-                stance: 'knows',
-                statement: `${known!.name} exists.`,
-                confidence: 1
-            });
-    }
-    return { harness, id: cultivator.id, house: known! };
+    // The first one they were born knowing. It used to be filtered for whether
+    // the question could be put about it at all - `holds-low` opens knowing the
+    // Six Li Patrol and the Fallen Grain Caravan, and neither could be asked -
+    // and now every house can, so the filter is an assertion.
+    const known = heardOf[0];
+    expect(
+        theQuestionReaches(known),
+        `${known.name} cannot be asked what it has`
+    ).toBe(true);
+    return { harness, id: cultivator.id, house: known };
 }
 
 describe('the sentence', () => {

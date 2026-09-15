@@ -18,6 +18,11 @@
  * `the-nouns-a-house-ends-with.test.ts` is the ratchet: a house added to the
  * catalog whose last word is not on this list fails, which is the only way a
  * list like this stays true to the thing it describes.
+ *
+ * AND THE LIST BEING RIGHT IS NOT THE PARSER BEING RIGHT. The list was correct
+ * the whole time `WHAT_A_HOUSE_HAS` carried fifteen house words of its own, and
+ * 16 of the 38 houses could not be asked what they held. The sweep in that same
+ * test file is what catches a gate that answers the question itself.
  */
 
 import { SECTS } from '../data/cultivation/sects.js';
@@ -97,7 +102,8 @@ export const A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL =
  * one word after that is skipped: `The Severed` would put every severed
  * meridian and severed hand in the game on the sect verb, which is the reason
  * `the-nouns-a-house-ends-with.test.ts` already gives for keeping that word out
- * of the type nouns.
+ * of the type nouns. `A_HOUSE_BY_NAME_HOWEVER_SHORT` is where such a house
+ * becomes reachable, on the narrower terms it states.
  */
 export const A_HOUSE_BY_NAME = SECTS
     .map(house => house.name.trim().replace(/^the\s+/i, '').toLowerCase())
@@ -115,6 +121,62 @@ export const A_HOUSE_BY_NAME = SECTS
  * a named thing.
  */
 export const A_HOUSE_NAME_IS_SAID = new RegExp(`\\b(?:${A_HOUSE_BY_NAME})\\b`, 'i');
+
+/**
+ * The names `A_HOUSE_BY_NAME` drops, with the article the catalog spells them
+ * with.
+ *
+ * A house whose whole name is one word - `The Severed` is the catalog's only
+ * one today - is dropped above because `severed` on its own would put every
+ * severed meridian and severed hand in the game on the sect verb. With the
+ * article in front it is much narrower, and narrow enough for a gate whose own
+ * SHAPE has already established that a body is the subject: "what does the
+ * severed have" and "who leads the severed" are asking after an institution
+ * before the name is read at all.
+ *
+ * It is still not narrow enough for the general question. `A_HOUSE_IS_NAMED`
+ * is consulted as a VETO in several places - a sentence naming a house is not
+ * a handing-over, not a listing of the category - and "I give the severed hand
+ * to him" would lose its verb. So this stays a separate export with one
+ * caller-shaped use, rather than widening the one everything asks.
+ */
+export const A_HOUSE_BY_NAME_HOWEVER_SHORT = [
+    ...SECTS
+        .map(house => house.name.trim().toLowerCase())
+        .filter(name => /^the\s+\S+$/.test(name))
+        .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')),
+    A_HOUSE_BY_NAME
+].join('|');
+
+/**
+ * "This sentence names a house, and its shape already says it is about one."
+ *
+ * The name half only, for a gate that has to carry WHICH house was asked about
+ * rather than only whether one was. The match may lead with the article, which
+ * the one-word form requires; `theHouseNameSaid` takes it off.
+ */
+export const A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT =
+    new RegExp(`\\b(?:${A_HOUSE_BY_NAME_HOWEVER_SHORT})\\b`, 'i');
+
+/** The catalog name a sentence carries, as the catalog spells it, or nothing. */
+export function theHouseNameSaid(text: string): string | undefined {
+    return A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT.exec(text)?.[0].replace(/^the\s+/i, '');
+}
+
+/**
+ * "The house this sentence is about" - for a gate that is already about one.
+ *
+ * Both halves of `A_HOUSE_BY_NAME_OR_KIND`, plus the one-word names above. A
+ * question shaped "what does the X have" or "who leads the X" says a body is
+ * the subject before X is read, so it can afford a name the general question
+ * cannot.
+ */
+export const A_HOUSE_BEING_ASKED_ABOUT =
+    `${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}|${A_HOUSE_BY_NAME_HOWEVER_SHORT}`;
+
+/** The finished question, for a gate that is already about a house. */
+export const A_HOUSE_IS_BEING_ASKED_ABOUT =
+    new RegExp(`\\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\\b`, 'i');
 
 /**
  * Both halves as one alternation, for a pattern that has its own shape round it.
