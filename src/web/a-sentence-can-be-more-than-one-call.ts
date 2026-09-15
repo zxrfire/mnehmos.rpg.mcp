@@ -74,6 +74,22 @@ export function spendsSomething(step: PlanStep): boolean {
 
 /**
  * The steps in a phase-1 response, or null if there is no sequence in it.
+ *
+ * EACH STEP IS GIVEN ITS OWN CLAUSE TO READ, NEVER THE WHOLE SENTENCE.
+ * `carryWhatOnlyTheSentenceKnows` was written for the single-verb path, where
+ * the sentence IS the act and putting the sentence's facts back on it is the
+ * whole point. A sentence holding a plan holds several acts, so the same call
+ * with the whole input hands every step the facts of every clause.
+ *
+ * Measured, on `I look for work and then sit down and cultivate for a year`
+ * with a reader that answered `work(days=90)` then `cultivate(days=365)`: the
+ * WORK step came out at 365 days. The span override is deliberately the one
+ * field that beats a value the model supplied, for the reason written on it -
+ * a player who types twenty years must not be given five - and pointed at a
+ * whole sentence it takes the year meant for the sitting and spends it hauling.
+ * The step's own words are in `said`, and `theClauseThisStepQuotes` is what
+ * says whether they really are the player's; a step that quotes nothing still
+ * reads the whole input, which is what it had before.
  */
 export function stepsInTheResponse(raw: unknown, input: string): PlanStep[] | null {
     const list = arrayOfSteps(raw);
@@ -83,9 +99,11 @@ export function stepsInTheResponse(raw: unknown, input: string): PlanStep[] | nu
     for (const entry of list.slice(0, MOST_CALLS_IN_ONE_TURN * 2)) {
         const validated = validatePlan(entry);
         if (!validated.ok) continue;
+        const said = theWordsThisStepCameFrom(entry);
+        const ownWords = theClauseThisStepQuotes({ action: validated.action, said }, input);
         steps.push({
-            action: carryWhatOnlyTheSentenceKnows(validated.action, input),
-            said: theWordsThisStepCameFrom(entry)
+            action: carryWhatOnlyTheSentenceKnows(validated.action, ownWords ?? input),
+            said
         });
     }
     return steps;

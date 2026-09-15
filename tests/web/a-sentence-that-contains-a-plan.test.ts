@@ -18,6 +18,7 @@ import { ProviderNarrator } from '../../src/web/narrator.js';
 import type { LLMProvider } from '../../src/agent/provider/types.js';
 import { whatThisTurnMayRun } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { theSentenceSaysItsOwnOrder } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
+import { stepsInTheResponse } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 
 /** A provider whose phase-1 answers are the plans below, one per turn. */
 function planning(plans: string[]): LLMProvider {
@@ -287,19 +288,30 @@ describe('a turn spends at most one costly act', () => {
  * Both halves are fixed here. The clause reporter is off when a plan ran, since
  * a turn that ran three verbs has already answered the question it asks; and
  * the question does not fire at all, because the player wrote "and then".
+ *
+ * ── THE FIRST CLAUSE IS THE PLAYED ONE AGAIN, AND WAS NOT ────────────────
+ *
+ * The rule above is unchanged. What changed is the sentence it was measured
+ * on: this had drifted to `I look for work and then sit down and cultivate for
+ * a year`, and `i look for work` was ruled a SEARCH rather than a taking - the
+ * board, which spends nothing. So the sentence stopped holding two costly acts
+ * and stopped being able to say anything about which of them a turn runs.
+ *
+ * Restored to the turn the header records. `move` is costly on any reading, so
+ * the claim is about sequencing rather than about how one verb is read.
  */
 describe('where the player said the order, the turn takes it and asks nothing', () => {
     it('runs the first act, holds the rest, and files exactly one ruling', async () => {
         const { game } = await playing([
             STEPS(
-                { action: 'work', days: 90, said: 'look for work' },
+                { action: 'move', target: 'Cloud Gate', said: 'I go to Cloud Gate' },
                 { action: 'cultivate', days: 365, said: 'sit down and cultivate for a year' }
             )
         ]);
         await game.newRun('Probe');
         const before = game.state().run.elapsedDays;
 
-        const turn = await game.act('I look for work and then sit down and cultivate for a year');
+        const turn = await game.act('I go to Cloud Gate and then sit down and cultivate for a year');
 
         // No question, and no contradiction: one account of one turn.
         expect(turn.toolCalls.filter(row => row.name === 'engine.whichComesFirst')).toHaveLength(0);
@@ -401,13 +413,21 @@ describe('a free read that finds nothing does not cost the player the act they a
                 // The clause reads as `work` to the table on its own, which is
                 // what the danger check compares against - see
                 // `theClauseThisStepQuotes`.
-                { action: 'work', days: 90, said: 'and look for work' }
+                //
+                // A TAKING, AND IT SAYS SO. This clause was `and look for work`,
+                // which is now the BOARD - a search, ruled apart from a taking -
+                // so the sentence had no costly act left in it and the claim
+                // below had nothing to be about. The claim is unchanged; the
+                // clause is the one it needs.
+                { action: 'work', days: 90, said: 'and take work for the season' }
             )
         ]);
         await game.newRun('Probe');
         const before = game.state().run.elapsedDays;
 
-        const turn = await game.act('I look over the stalls, ask who is selling, and look for work');
+        const turn = await game.act(
+            'I look over the stalls, ask who is selling, and take work for the season'
+        );
 
         // All three reached the engine, in order, and the plan did not stop.
         expect(turn.toolCalls.filter(row => row.name === 'engine.step').map(r => r.action))
@@ -473,6 +493,37 @@ describe('the deterministic tier is untouched', () => {
         };
 
         expect(await play()).toEqual(await play());
+    });
+});
+
+/**
+ * A STEP READS ITS OWN CLAUSE, AND THE SENTENCE'S FACTS ARE NOT ALL ITS OWN.
+ *
+ * `carryWhatOnlyTheSentenceKnows` puts back what a model's answer cannot carry,
+ * and the span is the one field it overrides a model on - a player who typed
+ * twenty years must not be handed five. Pointed at a whole sentence that holds
+ * a PLAN, that override takes a span stated in one clause and spends it on
+ * another: measured, a reader answering `work(days=90)` then
+ * `cultivate(days=365)` had its work step come back at 365, so a sentence
+ * asking for a stretch of work and then a year of sitting bought a year of
+ * hauling and no sitting at all.
+ *
+ * Unit rather than played, because the defect is in the reading and a played
+ * turn would be measuring the work verb as well.
+ */
+describe('a step reads its own clause', () => {
+    it('does not spend on one clause a span another clause stated', () => {
+        const steps = stepsInTheResponse(
+            {
+                steps: [
+                    { action: 'work', days: 90, said: 'take work' },
+                    { action: 'cultivate', days: 365, said: 'sit down and cultivate for a year' }
+                ]
+            },
+            'I take work and then sit down and cultivate for a year'
+        )!;
+
+        expect(steps.map(step => step.action.days)).toEqual([90, 365]);
     });
 });
 

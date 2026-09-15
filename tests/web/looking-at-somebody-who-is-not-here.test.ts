@@ -203,12 +203,22 @@ describe('everything that can be inspected', () => {
  * the name on the front of it. Every phrasing of it reaches `investigate` with
  * the right target through the pattern table, so the parser is right - the
  * MODEL answered a sentence naming a person with the verb that reads the
- * surroundings, and `look` declares `takes: ['intent']`.
+ * surroundings.
  *
  * The existing guard compares COST and both readings are free, so it waved it
  * through. This is the same shape as the giving-and-taking rule: a hard
  * boundary on one axis, checked separately, because the axis the cost rule
  * measures does not contain it.
+ *
+ * ── AND THE GUARD ONCE ASKED THE WRONG QUESTION ──────────────────────────
+ *
+ * It asked whether the VERB had a slot for a subject, which was true of `look`
+ * on the day it was written: the glossary declared `takes: ['intent']`. Five of
+ * `look`'s reads have read `action.target` since they landed, so the glossary
+ * was corrected to `['intent', 'target']` and this guard stopped firing - on
+ * this sentence, and on `I buy the <manual>`, which is how a played test of the
+ * narration prompt found it. A slot belongs to the verb. Dropping the subject
+ * belongs to the reading, and the reading is what may not do it.
  */
 describe('a model may not answer a sentence about something with a read of the room', () => {
     /** A provider that answers `look` to everything, which is what ollama did. */
@@ -228,8 +238,11 @@ describe('a model may not answer a sentence about something with a read of the r
             const row = planned(result);
             expect(row!.summary, said).toMatch(/investigate\(target="Shellback"\)/);
             // Never silently: the routing row is the row that exists to say
-            // where the verb came from, and it says what was declined.
-            expect(row!.summary, said).toMatch(/nowhere to put a subject/);
+            // where the verb came from, and it says what was declined. Worded
+            // about the READING for the reason in the header - the row used to
+            // say the verb had "nowhere to put a subject", which stopped being
+            // true of `look` without the defect it names stopping.
+            expect(row!.summary, said).toMatch(/left the subject out of it/);
             expect(result.state.run.elapsedDays, said).toBe(0);
         }
     }, 200_000);

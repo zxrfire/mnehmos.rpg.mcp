@@ -139,9 +139,19 @@ function namesASubject(plan: PlannedAction): boolean {
 
 /**
  * THE SECOND THING A MODEL'S READING MAY NOT DO: DROP THE OBJECT.
+ *
+ * WHAT IS ASKED IS WHETHER THE READING CAME OUT HOLDING THE SUBJECT, NOT
+ * WHETHER THE VERB HAS A SLOT FOR ONE. The first cut asked the slot question,
+ * because the case it was written against was `look`, which declared
+ * `takes: ['intent']`. Five of `look`'s reads have read `action.target` since
+ * they landed - which house is being asked about - so the glossary was
+ * corrected to `['intent', 'target']`, and this guard silently stopped firing
+ * on the sentence it exists for. A slot is a property of the verb; dropping the
+ * object is a property of the reading, and it is the reading that is being
+ * checked.
  */
 function theObjectWasDropped(fromModel: PlannedAction, input: string): ReadingCheck | null {
-    if (canCarryASubject(fromModel.action)) return null;
+    if (namesASubject(fromModel)) return null;
 
     const fromTable = parseIntent(input);
     if (fromTable.action === fromModel.action) return null;
@@ -153,7 +163,9 @@ function theObjectWasDropped(fromModel: PlannedAction, input: string): ReadingCh
     return {
         action: fromTable,
         declined:
-            `the model read this as ${labelFor(fromModel)}, which has nowhere to put a subject; `
+            `the model read this as ${labelFor(fromModel)} and left the subject out of it (`
+            + `${canCarryASubject(fromModel.action)
+                ? 'the verb has a slot for one' : 'the verb has nowhere to put one'}); `
             + `the sentence names one, and reading it without a model reaches `
             + `${labelFor(fromTable)} on "${(fromTable.target ?? fromTable.topic ?? '').slice(0, 40)}". `
             + 'A model may read a sentence any way it likes; it may not answer a sentence about '
