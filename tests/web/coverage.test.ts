@@ -1033,6 +1033,75 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I do him a service',
             'I do a service for the old man',
             'I serve out my term'
+        ],
+        // ── THE FIVE READS ABOUT A HOUSE THAT NOTHING HAD EVER NAMED ─────
+        //
+        // Every one of them was implemented, routed and dispatched, and the
+        // glossary named seven of `look`'s twelve intents - so the model, which
+        // reads the sentence before the table does, had never heard of them.
+        // They are written here rather than into `UNTESTED_DOORS` because they
+        // arrived with their road: the pattern table has had a line for each
+        // since the day they landed. `an-intent-the-glossary-never-names.test.ts`
+        // is the ratchet that found them.
+        'look/what_they_hold': [
+            'what does the sect hold',
+            'what is in their vault',
+            'how rich is the sect'
+        ],
+        'look/what_they_teach': [
+            'what does the sect teach',
+            'what is on their shelf',
+            'how high would the sect carry me'
+        ],
+        'look/who_is_above_them': [
+            'who stands behind them',
+            'how many immortals do they have',
+            'what lineage do they have'
+        ],
+        'look/what_is_made_here': [
+            'what is made here',
+            'what does this province produce',
+            'what leaves this province'
+        ],
+        // The one that needs a NAME, because a sentence naming no house is
+        // asking for the listing rather than about a house. Read out of the
+        // catalog rather than invented, which is the rule about names the game
+        // prints.
+        'look/would_they_take_me': [
+            'would the Azure Dew Sect take me',
+            'would the Azure Dew Sect take somebody like me',
+            'am I good enough for the Azure Dew Sect'
+        ],
+        // ── AND THE OFFICER HALF OF A HOUSE ──────────────────────────────
+        'sect/authority': [
+            'what do I run',
+            'which rooms are mine',
+            'on what authority'
+        ],
+        'sect/decree': [
+            'by order of the sect the outer disciples are to carry it',
+            'the sect orders the outer disciples to gather'
+        ],
+        'sect/take': [
+            'I take a manual from the library',
+            'I take a scroll from the scripture pavilion'
+        ],
+        // ── AND THE THREE COERCIONS ONLY THE TABLE KNEW ABOUT ────────────
+        //
+        // The polite four were named and these were not, which is the
+        // softening AGENTS.md describes: a vocabulary that can only say the
+        // mild version of an act has taken a side.
+        'coerce/swallow': [
+            'I force him to swallow the pill',
+            'I hold her down and make her drink it'
+        ],
+        'coerce/marry': [
+            'I force her to marry me',
+            'I make him wed me whether he wants to or not'
+        ],
+        'coerce/furnace': [
+            'I take her as my furnace',
+            'I use him as a cauldron'
         ]
     };
 

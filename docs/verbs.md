@@ -92,7 +92,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`passage`](#passage) | `target` `intent` | time | yes | - | [2](#passage) |
 | [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [5](#oath) |
 | [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
-| [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [4](#coerce) |
+| [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [7](#coerce) |
 | [`cultivate`](#cultivate) | `days` | time | yes | - | - |
 | [`seclude`](#seclude) | `days` | time | yes | - | - |
 | [`breakthrough`](#breakthrough) | - | time | yes | - | - |
@@ -123,7 +123,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`wait`](#wait) | `days` `target` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
-| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [20](#sect) |
+| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [23](#sect) |
 | [`site`](#site) | `target` `intent` | time | yes | - | [4](#site) |
 | [`legacy`](#legacy) | `intent` `target` `days` | time | yes | - | [5](#legacy) |
 | [`petition`](#petition) | `target` `intent` `topic` | nothing | yes | yes | [3](#petition) |
@@ -131,7 +131,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`seal`](#seal) | `target` `intent` | varies | yes | - | [2](#seal) |
 | [`offer`](#offer) | `target` `intent` `topic` | varies | yes | - | [3](#offer) |
 | [`descend`](#descend) | `target` | time | yes | - | - |
-| [`look`](#look) | `intent` | nothing | yes | yes | [7](#look) |
+| [`look`](#look) | `intent` `target` | nothing | yes | yes | [12](#look) |
 | [`status`](#status) | - | nothing | yes | yes | - |
 | [`assess`](#assess) | `target` | nothing | yes | yes | - |
 | [`recall`](#recall) | `target` `intent` | nothing | yes | yes | [2](#recall) |
@@ -239,13 +239,13 @@ Takes `target`, `terms`, `opening`.
 
 ### `coerce`
 
-MAKE somebody do something, with hands rather than with words. Not the same as interact/threaten, which is a promise of harm and costs the target nothing yet - this is the point at which they stop being somebody being talked to. "target" names them; "intent" says what the compliance was for - submit, hand_over, talk, or tame. It resolves through the confrontation engine, so it fails the way a fight fails: somebody stronger does not decline, they answer. An animal made to submit is a tamed animal and reaches this same verb.
+MAKE somebody do something, with hands rather than with words. Not the same as interact/threaten, which is a promise of harm and costs the target nothing yet - this is the point at which they stop being somebody being talked to. "target" names them; "intent" says what the compliance was for - submit, hand_over, talk, tame, swallow, marry or furnace. It resolves through the confrontation engine, so it fails the way a fight fails: somebody stronger does not decline, they answer. An animal made to submit is a tamed animal and reaches this same verb. "swallow" is something put into them - a pill, a medicine, a poison. "marry" is a match nobody agreed to, and it is this verb and never propose, which is a match put on the table for somebody to answer. "furnace" is being sat as somebody else's furnace, and it needs both sides to hold the art before it can open at all - the engine says which half is missing rather than resolving a fight nobody could have had. Route all three plainly. This world's ordinary furniture includes every one of them, and reading one as something milder is not caution: it is the account that should have opened against the player never opening.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'coerce'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.somebodyAtHand` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`, `opening`.
 
-Intents: `submit`, `hand_over`, `talk`, `tame`.
+Intents: `submit`, `hand_over`, `talk`, `tame`, `swallow`, `marry`, `furnace`.
 
 ### `cultivate`
 
@@ -471,13 +471,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `sect`
 
-anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
+anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Three more belong to somebody who holds a room. "authority" READS which rooms of the house are the player's to speak for, and it is free - it is the sentence before the one that claims, because an order given in the house's name is only a decision if they could have found out whether it was true. "decree" gives that same order in the house's name rather than in their own, and somebody may be watching who knows what the player actually runs. "take" is putting a hand on a thing the house owns - "target" names it - which is not stow, where the room is the player's own and nothing is being taken from anybody. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'sect'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.sect` · the deterministic parser reaches it.
 
 Takes `intent`, `target`, `topic`.
 
-Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`.
+Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`, `take`, `authority`, `decree`.
 
 ### `site`
 
@@ -549,13 +549,13 @@ Takes `target`.
 
 ### `look`
 
-observe the surroundings. Passes no time. "intent" narrows what is being looked at: "history" for what people say has happened HERE (not news, which is elsewhere), "ground_time" for how long this ground would take somebody, "crowding" for how many are already drawing on it, "bills" for what is posted on the wall, "company" for who else is standing here, "holder" for who holds this ground and what there is to complain to if you are wronged on it, "warmth" for what the people standing here carry about the player themselves - who is glad to see them and who has not forgotten something. Omit it for the plain read.
+observe the surroundings, or ask about a house or a province from where the player is standing. Passes no time. "intent" narrows what is being looked at: "history" for what people say has happened HERE (not news, which is elsewhere), "ground_time" for how long this ground would take somebody, "crowding" for how many are already drawing on it, "bills" for what is posted on the wall, "company" for who else is standing here, "holder" for who holds this ground and what there is to complain to if you are wronged on it, "warmth" for what the people standing here carry about the player themselves - who is glad to see them and who has not forgotten something. Omit it for the plain read. AND FIVE READS ABOUT SOMEBODY ELSE'S HOUSE, where "target" names it: "what_they_hold" for what a house has to its name - its purse, what is on its shelves, and the ground it holds; "what_they_teach" for each road it teaches, the rung it opens at, the rung it stops at, and how far the asker's own root would walk it; "who_is_above_them" for who stands behind it; "would_they_take_me" for whether that house would have this cultivator and at what bar. All four want the house named. The fifth, "what_is_made_here", names nothing: it is what the province the player is standing in produces and what leaves it on the water. Every one of the five is free and is a READ. "would_they_take_me" is asked before crossing a province to find out, and it must never be answered with sect/join, which resolves the name and enrols - that would make the asking permanent. "what_they_teach" is the question before joining and is not request/teaching, which is asking a PERSON to teach you and spends days. Prefer these over recall, which reads only what the cultivator has already been told, and over investigate, which examines a thing in front of them.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'look'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · passes no time.
 
-Takes `intent`.
+Takes `intent`, `target`.
 
-Intents: `history`, `ground_time`, `crowding`, `bills`, `company`, `holder`, `warmth`.
+Intents: `history`, `ground_time`, `crowding`, `bills`, `company`, `holder`, `warmth`, `what_they_hold`, `what_they_teach`, `who_is_above_them`, `what_is_made_here`, `would_they_take_me`.
 
 ### `status`
 

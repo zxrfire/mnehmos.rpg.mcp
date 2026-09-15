@@ -102,10 +102,16 @@ export interface VerbSurfaceEntry {
      * all declared in one shape: some are exported constants in `actions.ts`,
      * some are a union type, and three verbs set them inline in the branch that
      * recognises the sentence. `tests/docs/the-verb-surface-is-not-stale.test.ts`
-     * asserts these against the exported constants wherever one exists, so the
-     * only entries carrying any drift risk are the ones with nothing to compare
-     * against - `attack`, `propose`, `decline`, `child` and `look`, all of which
-     * name their branch in `says`.
+     * asserts these against the exported constants wherever one exists.
+     *
+     * THE ENTRIES WITH NOTHING TO COMPARE AGAINST WERE THE ONES THAT DRIFTED,
+     * and this comment used to note the risk and stop there. Measured: `look`
+     * named seven of the twelve intents it dispatches, `sect` twenty of
+     * twenty-three, `coerce` four of seven - five whole reads about a named
+     * house among them, implemented and routed and reachable only by accident,
+     * because the model reads the sentence first and was never told they
+     * existed. `tests/docs/an-intent-the-glossary-never-names.test.ts` is the
+     * ratchet now, and it reads the source rather than asking for a list.
      *
      * An open label set - `move` and `interact` - lists the suggestions and
      * says in `says` that the field is free text.
@@ -237,14 +243,33 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     coerce: {
         takes: ['target', 'intent', 'opening'],
-        intents: ['submit', 'hand_over', 'talk', 'tame'],
+        intents: [
+            'submit', 'hand_over', 'talk', 'tame',
+            // The three the phrasing table has routed for a long time and the
+            // glossary named none of: something put into somebody, a match
+            // nobody agreed to, and being sat as a furnace. Every one of them
+            // is the version of an act somebody uses to get ahead at another
+            // person's expense, and a glossary that lists only the other four
+            // is the softening AGENTS.md names - the polite half of the
+            // vocabulary reachable and the rest of it reachable by accident.
+            'swallow', 'marry', 'furnace'
+        ],
         says: `MAKE somebody do something, with hands rather than with words. Not the same as
             interact/threaten, which is a promise of harm and costs the target nothing yet -
             this is the point at which they stop being somebody being talked to. "target"
             names them; "intent" says what the compliance was for - submit, hand_over, talk,
-            or tame. It resolves through the confrontation engine, so it fails the way a fight
-            fails: somebody stronger does not decline, they answer. An animal made to submit
-            is a tamed animal and reaches this same verb.`
+            tame, swallow, marry or furnace. It resolves through the confrontation engine, so
+            it fails the way a fight fails: somebody stronger does not decline, they answer. An
+            animal made to submit is a tamed animal and reaches this same verb.
+
+            "swallow" is something put into them - a pill, a medicine, a poison. "marry" is a
+            match nobody agreed to, and it is this verb and never propose, which is a match put
+            on the table for somebody to answer. "furnace" is being sat as somebody else's
+            furnace, and it needs both sides to hold the art before it can open at all - the
+            engine says which half is missing rather than resolving a fight nobody could have
+            had. Route all three plainly. This world's ordinary furniture includes every one of
+            them, and reading one as something milder is not caution: it is the account that
+            should have opened against the player never opening.`
     },
     cultivate: {
         takes: ['days'],
@@ -486,7 +511,12 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             'ignore',
             // What the house is holding against its own, and the two ends of
             // it: deciding a case, and standing up for somebody in one.
-            'complaints', 'plead'
+            'complaints', 'plead',
+            // The three the officer half added and the glossary never caught
+            // up with. `SectIntent` is a union type, so nothing compared them
+            // against anything: the tables prove an intent exists and the
+            // officer intents do not come from a table at all.
+            'take', 'authority', 'decree'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
@@ -500,7 +530,18 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             to speak for somebody it is holding something against - "target" names them - and
             "siphon",
             "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
-            a disciple buy. Default to the read - "standing" - unless the player plainly asked
+            a disciple buy.
+
+            Three more belong to somebody who holds a room. "authority" READS which rooms of the
+            house are the player's to speak for, and it is free - it is the sentence before the
+            one that claims, because an order given in the house's name is only a decision if
+            they could have found out whether it was true. "decree" gives that same order in the
+            house's name rather than in their own, and somebody may be watching who knows what
+            the player actually runs. "take" is putting a hand on a thing the house owns -
+            "target" names it - which is not stow, where the room is the player's own and nothing
+            is being taken from anybody.
+
+            Default to the read - "standing" - unless the player plainly asked
             for a step, because joining is a life's worth of allegiance and cannot be unsaid.`
     },
     site: {
@@ -577,18 +618,47 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             intention and costs nothing.`
     },
     look: {
-        takes: ['intent'],
+        // `target` was missing from this list while five of the reads below have
+        // read one since the day they landed. The five that name a house cannot
+        // work without it, so a model told only about "intent" could choose the
+        // read and had no way to say WHICH house it was about.
+        takes: ['intent', 'target'],
         intents: [
-            'history', 'ground_time', 'crowding', 'bills', 'company', 'holder', 'warmth'
+            'history', 'ground_time', 'crowding', 'bills', 'company', 'holder', 'warmth',
+            // Five reads about a NAMED HOUSE or a PROVINCE rather than about the
+            // patch underfoot. Implemented, routed and reachable by anybody who
+            // happened to type the sentence the table has a line for, and never
+            // once named here - so the model, which reads the sentence first and
+            // falls back to the table, was never told they existed.
+            'what_they_hold', 'what_they_teach', 'who_is_above_them',
+            'what_is_made_here', 'would_they_take_me'
         ],
-        says: `observe the surroundings. Passes no time. "intent" narrows what is being looked
+        says: `observe the surroundings, or ask about a house or a province from where the
+            player is standing. Passes no time. "intent" narrows what is being looked
             at: "history" for what people say has happened HERE (not news, which is elsewhere),
             "ground_time" for how long this ground would take somebody, "crowding" for how many
             are already drawing on it, "bills" for what is posted on the wall, "company" for
             who else is standing here, "holder" for who holds this ground and what there is to
             complain to if you are wronged on it, "warmth" for what the people standing here
             carry about the player themselves - who is glad to see them and who has not
-            forgotten something. Omit it for the plain read.`
+            forgotten something. Omit it for the plain read.
+
+            AND FIVE READS ABOUT SOMEBODY ELSE'S HOUSE, where "target" names it: "what_they_hold"
+            for what a house has to its name - its purse, what is on its shelves, and the ground
+            it holds; "what_they_teach" for each road it teaches, the rung it opens at, the rung
+            it stops at, and how far the asker's own root would walk it; "who_is_above_them" for
+            who stands behind it; "would_they_take_me" for whether that house would have this
+            cultivator and at what bar. All four want the house named. The fifth,
+            "what_is_made_here", names nothing: it is what the province the player is standing in
+            produces and what leaves it on the water.
+
+            Every one of the five is free and is a READ. "would_they_take_me" is asked before
+            crossing a province to find out, and it must never be answered with sect/join, which
+            resolves the name and enrols - that would make the asking permanent.
+            "what_they_teach" is the question before joining and is not request/teaching, which
+            is asking a PERSON to teach you and spends days. Prefer these over recall, which
+            reads only what the cultivator has already been told, and over investigate, which
+            examines a thing in front of them.`
     },
     status: {
         takes: [],
