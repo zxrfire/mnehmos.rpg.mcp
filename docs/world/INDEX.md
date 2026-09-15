@@ -375,7 +375,7 @@ it describes.
 
 | File | What it answers | Lines | Also in |
 |---|---|---|---|
-| [`a-family-that-came-down-from-a-changed-beast.ts`](../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.ts) | THE ONE FAMILY IN THE WORLD THAT CAME DOWN FROM SOMETHING THAT CHANGED. | 230 | - |
+| [`a-family-that-came-down-from-a-changed-beast.ts`](../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.ts) | THE ONE FAMILY IN THE WORLD THAT CAME DOWN FROM SOMETHING THAT CHANGED. | 242 | - |
 | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | What a favour is for: it skips the admission ordinal. | 331 | - |
 | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | The artifact catalog. | 742 | - |
 | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | Spirit beasts - the part of the world that is dangerous and is not a person. | 3988 | [`trust.md`](houses/trust.md) |
@@ -402,7 +402,7 @@ it describes.
 | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3089 | - |
 | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | Bodies that will hold a thing for somebody who is not coming back, and the terms each of them holds it on. | 378 | - |
 | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | The ancient tier: what a richer age made, what is left of it, and who is holding the remains. | 808 | - |
-| [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 4307 | - |
+| [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 4445 | - |
 | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 668 | - |
 | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | The named dead, the named absent, and the named enormous. | 1278 | - |
 | [`pills.ts`](../../src/data/cultivation/pills.ts) | Alchemy - the pill catalog. | 871 | - |
@@ -680,8 +680,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `IMMORTAL_HOLDINGS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 5 | 8 |
 | `LID_THEORIES` | [`history.ts`](../../src/data/cultivation/history.ts) | 5 | 10 |
 | `ARCHIVE_COPIES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 5 | 13 |
-| `NAMED_FIGURES` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 5 | 20 |
 | `WHAT_AN_ARTIFACT_IS_MADE_OF` | [`what-an-artifact-is-made-of.ts`](../../src/data/cultivation/what-an-artifact-is-made-of.ts) | 5 | 20 |
+| `NAMED_FIGURES` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 5 | 22 |
 | `ANCHORING_A_CACHE` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 6 | - |
 | `SEA_CARGO` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 6 | 4 |
 | `AUCTION_VENUES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 6 | 6 |
@@ -716,8 +716,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DAO_HOUSES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 8 | 34 |
 | `THE_DEEPEST_ROADS` | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | 8 | 34 |
 | `WOUND_TYPES` | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | 9 | 27 |
-| `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 14 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 15 |
+| `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 18 |
 | `PLACES_THAT_TEACH_A_DAO` | [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) | 10 | 25 |
 | `FALLEN` | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | 10 | 28 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 10 | 37 |
@@ -728,20 +728,20 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 48 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 17 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
-| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 18 | 14 |
-| `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 79 |
+| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 19 | 14 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 19 | 33 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 22 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 41 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 119 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 21 | 32 |
+| `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 21 | 89 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 22 | 31 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 93 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 126 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 41 | 63 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 182 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 87 | 369 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 93 | 84 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 87 | 387 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 95 | 84 |
 
 <!-- END GENERATED: design-constants -->
 

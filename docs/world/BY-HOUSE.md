@@ -28,7 +28,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-azure-cloud-pavilion` · its entry: [`sects.ts:464`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`members.ts`](../../src/data/cultivation/members.ts) 13 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 11 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`origin.md`](../../docs/world/houses/origin.md) 5
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`members.ts`](../../src/data/cultivation/members.ts) 14 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 11 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`origin.md`](../../docs/world/houses/origin.md) 5
   …and 32 more files.
 
 **Constants most about it:** `IMMORTAL_HOLDINGS`, `LOW_FALL_PREFECTURES`, `STOCK_VERSUS_FLOW`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, `ARTIFACTS`, and 26 more
