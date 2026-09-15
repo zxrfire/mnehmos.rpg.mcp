@@ -113,7 +113,7 @@ import { aDeedEntersTheWorld } from '../../src/engine/world/a-deed-enters-the-wo
 import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened';
 import { makeFact } from '../../src/engine/world/history';
 import { createWorld, getNpc, type WorldState } from '../../src/engine/world/world-state';
-import { createNpc, markDead, upsertRelationship } from '../../src/engine/world/npc-state';
+import { createNpc, markDead } from '../../src/engine/world/npc-state';
 import { makeLocation } from '../../src/engine/world/locations';
 import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation';
 import type { Cultivator } from '../../src/schema/cultivation';

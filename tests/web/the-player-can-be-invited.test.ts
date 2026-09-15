@@ -195,6 +195,10 @@ describe('the row is not a free agent', () => {
         };
         state.npcs.push(control);
 
+        const before = state.npcs
+            .filter(n => n.id !== PLAYER_ID)
+            .map(n => ({ id: n.id, ordinal: n.cultivation.realmOrdinal }));
+
         advanceWorldForPlay(state, { days: 365 * 300, stopOnInterrupt: false });
 
         const player = state.npcs.find(n => n.id === PLAYER_ID)!;
@@ -208,11 +212,33 @@ describe('the row is not a free agent', () => {
 
         // The control is what proves the guard is a guard and not a dead pass:
         // three centuries did something to somebody.
-        const others = state.npcs.filter(n => n.id !== PLAYER_ID);
+        //
+        // BEING GONE COUNTS AS SOMETHING. This read the survivors and asked
+        // whether any of them had moved, which was a fair question while a
+        // dead mortal stayed on the roster as a row marked dead. It is not one
+        // now: `theWorldForgetsTheMortalDead` deletes them, and three centuries
+        // is long enough that both of these people - 60 and 30 at the start,
+        // neither of them past the Change - are simply gone. `others` came back
+        // empty, `some` came back false, and the anti-vacuity guard fired on a
+        // pass that had in fact done the most it can do to somebody.
+        //
+        // So the census goes round the advance, and a change is a rung moved, a
+        // status changed, OR a person the world stopped keeping.
+        const after = new Map(state.npcs.map(n => [n.id, n]));
+        const moved = before.filter(was => {
+            const now = after.get(was.id);
+            if (now === undefined) return true;
+            return now.cultivation.realmOrdinal !== was.ordinal || now.status !== 'alive';
+        });
         expect(
-            others.some(n => n.cultivation.realmOrdinal !== 10 || n.status !== 'alive'),
+            moved.length,
             'three centuries changed nobody at all, so this proves nothing'
-        ).toBe(true);
+        ).toBeGreaterThan(0);
+
+        // And the row outlasts them, which is the fourth claim in the header:
+        // the lifespan pass would otherwise have written the player's death
+        // into the chronicle in the middle of their own run.
+        expect(after.has(PLAYER_ID), 'the world buried the player').toBe(true);
     }, 120_000);
 
     it('is never enrolled in a house it did not walk into, nor handed a book', () => {
