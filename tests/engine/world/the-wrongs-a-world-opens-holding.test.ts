@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
 import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
 import { isActing, somebodyTheCatalogWrote } from '../../../src/engine/world/npc-state.js';
 import { drawBirth } from '../../../src/engine/birth/birth.js';
@@ -307,4 +308,141 @@ describe('the wrongs a world opens holding', () => {
         expect(share, `pooled: ${perWorld.join(', ')}`).toBeGreaterThan(0.05);
         expect(share, `pooled: ${perWorld.join(', ')}`).toBeLessThan(0.45);
     }, 300000);
+});
+
+/**
+ * AND THE SAME RULE ONCE THE WORLD STARTS RUNNING.
+ *
+ * The pass above worked at seed time and stopped working the moment the clock
+ * moved. Measured across 13 pinned worlds at population 240, 25 years each,
+ * both arms in one instrument:
+ *
+ *     killings a world was SEEDED holding, priced        74 of 74
+ *     killings those worlds PRODUCED, priced              0 of 215
+ *
+ * A killing with no `deedWeight` is one nobody inherits, one
+ * `whatATellingLandsOn` will not write a row about, and one whose victim the
+ * mortal sweep deletes - so the world committed a murder and was left holding
+ * no debt, no grudge and no corpse. 100 of those 215 rows had the victim struck
+ * off them entirely, which is the record no longer saying a killing happened at
+ * all.
+ *
+ * Afterwards, on the same instrument: 172 of 216 carry a debt and 44 correctly
+ * do not, and 181 of 1,950 births open knowing about a killing the world did,
+ * against none before.
+ *
+ * ── THE RULE IS THIS PASS'S OWN, ASKED AT THE GRAVE ─────────────────────
+ *
+ * The draw above refuses a victim with no blood on the record, so every deed it
+ * writes is one somebody is left holding. A pass reacting to a fight cannot
+ * choose who died, so it asks `whoTheyLeave` after the fact instead - the same
+ * question, and the better half of it: it drops anybody already buried, which a
+ * world at day zero never has to think about.
+ */
+describe('and the wrongs a world commits', () => {
+    const RUN_FOR = ['ran-a', 'ran-b', 'ran-c'];
+    const YEARS = 25;
+    /** The state, and the rows it was already holding before the clock moved. */
+    interface Lived { state: WorldState; seeded: ReadonlySet<string> }
+    let lived: Lived[] | null = null;
+
+    async function worldsThatRan(): Promise<Lived[]> {
+        if (lived) return lived;
+        const out: Lived[] = [];
+        for (const seed of RUN_FOR) {
+            const state = await world(seed);
+            // WHAT THE WORLD WAS BORN HOLDING, taken before it moves. Without
+            // this every claim below is satisfied by the seeded killings, which
+            // were already priced and are the population this work is NOT
+            // about - the first cut of these tests passed with the stamp
+            // toggled off for exactly that reason.
+            const seeded = new Set(state.history.facts.map(fact => fact.id));
+            advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
+            out.push({ state, seeded });
+        }
+        lived = out;
+        return out;
+    }
+
+    /** Every row the world WROTE that says somebody killed somebody. */
+    const killingsIn = (lived: Lived) => lived.state.history.facts.filter(fact =>
+        !lived.seeded.has(fact.id)
+        && fact.actors.some(who => who.role === 'killer')
+        && fact.actors.some(who => who.role === 'victim'));
+
+    it('leave a debt, which not one of them used to', async () => {
+        let priced = 0;
+        for (const one of await worldsThatRan()) {
+            priced += killingsIn(one).filter(f => 'deedWeight' in f.data).length;
+        }
+        expect(priced).toBeGreaterThan(0);
+    });
+
+    /**
+     * The half that makes it a rule rather than a flat yes. Somebody who
+     * answered to nobody and left nobody leaves no account, and the world says
+     * so by writing the killing and pricing nothing.
+     */
+    it('and not every one of them does', async () => {
+        let unpriced = 0;
+        for (const one of await worldsThatRan()) {
+            unpriced += killingsIn(one).filter(f => !('deedWeight' in f.data)).length;
+        }
+        expect(unpriced).toBeGreaterThan(0);
+    });
+
+    /**
+     * The claim the seeded half already makes, asked of the produced half: a
+     * priced deed is what `whoIsStillCarriedFor` keeps a row over the mortal
+     * sweep for, so a killing the world is holding an account for has somebody
+     * to hold it ABOUT. Without this the player's murdered neighbour is a name
+     * that stops resolving.
+     */
+    it('and leave a victim the world can still be asked about', async () => {
+        for (const one of await worldsThatRan()) {
+            const roster = new Set(one.state.npcs.map(npc => npc.id));
+            for (const fact of killingsIn(one)) {
+                if (!('deedWeight' in fact.data)) continue;
+                const victim = fact.actors.find(who => who.role === 'victim')!;
+                expect(roster.has(victim.id), `${fact.summary} names nobody the world holds`)
+                    .toBe(true);
+            }
+        }
+    });
+
+    /**
+     * BOTH DOORS, and asserted because there are two and they were fixed
+     * separately. A world kills people through the yearly pressure table - one
+     * person murders another - and through the fight resolver, which is where
+     * a war's dead come out; the second is also the player's own door. A claim
+     * that only counted rows would have been satisfied by either on its own.
+     */
+    it('through both of the doors a world kills people by', async () => {
+        const doors = new Set<string>();
+        for (const one of await worldsThatRan()) {
+            for (const fact of killingsIn(one)) {
+                if (!('deedWeight' in fact.data)) continue;
+                doors.add('pressure' in fact.data ? 'the yearly pass' : 'a fight');
+            }
+        }
+        expect(doors).toEqual(new Set(['the yearly pass', 'a fight']));
+    });
+
+    /**
+     * Read off the rows rather than off the writer: a killing the world was
+     * born holding and one it committed last year have to be the same kind of
+     * thing to everything downstream, or the telling layer has two populations
+     * and only knows about one.
+     */
+    it('are the same kind of row as the ones the world opened holding', async () => {
+        for (const one of await worldsThatRan()) {
+            const weights = new Set(killingsIn(one)
+                .filter(f => 'deedWeight' in f.data)
+                .map(f => String(f.data.deedWeight)));
+            expect(weights.size).toBeGreaterThan(0);
+            for (const weight of weights) {
+                expect(SEVERITY_ORDER as readonly string[]).toContain(weight);
+            }
+        }
+    });
 });

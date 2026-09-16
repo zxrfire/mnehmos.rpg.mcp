@@ -375,10 +375,17 @@ export function factsForTelling(input: {
 /**
  * The weight the deed was priced at on the day, or null where nobody priced it.
  *
- * `deedWeight` is stamped by `aDeedEntersTheWorld` and by nothing else, so its
+ * `deedWeight` is stamped through `aPricedDeed` and by nothing else, so its
  * presence is exactly the question *did anybody price this as a deed*. A war, a
  * succession or a spirit tide has no answer to that, and a person cannot hold an
  * account about one.
+ *
+ * Three writers go through that one function now, and the two that were added
+ * are why this reader stopped being about the seeder alone: a killing the world
+ * commits is stamped where somebody is LEFT to carry it, so the population this
+ * layer can write a row about is no longer only the wrongs a world was born
+ * holding. A death with nobody behind it still answers null, which is the same
+ * question and the same honest no.
  */
 function weightOf(fact: HistoricalFact): Severity | null {
     const weight = fact.data.deedWeight;

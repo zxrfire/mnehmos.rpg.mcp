@@ -667,13 +667,22 @@ function theWorldHasNoWayToSpeakOf(npc: NpcRecord, remembered: ReadonlySet<strin
  * a softening of it: what is being deleted is *the corpses of farmers the
  * engine was never able to say anything about*, and a man whose brother still
  * carries the account for his killing is not one of them. A priced deed IS an
- * account - `aDeedEntersTheWorld` stamps `deedWeight` on every fact it writes,
+ * account - `deedWeight` is stamped through `aPricedDeed` and by nothing else,
  * and `what-a-telling-lands-on.ts` reads the same field to decide what a person
  * can be told - so this asks the field rather than holding a second opinion
  * about which wrongs count.
  *
  * Measured over two hundred years of one seeded world: 928 rows swept, 9 kept
  * by this. It is the exception being small that makes it an exception.
+ *
+ * THAT FIGURE WAS THE DEFECT SPEAKING, and it is left standing because it says
+ * what the world used to be. Only `seedTheWrongsStillOpen` wrote the field, so
+ * the only killings this kept anybody for were the ones the world was BORN
+ * holding; a murder it committed in year twelve was swept like a farmer. The
+ * two passes that produce killings now stamp it as well, on the seeder's own
+ * rule - somebody is left to carry it - so the exception is wider than nine
+ * rows and is still an exception: 172 of 216 produced killings across 13 pinned
+ * worlds at 25 years, and 44 that correctly leave nothing.
  */
 function whoIsStillCarriedFor(facts: readonly HistoricalFact[]): Set<string> {
     const remembered = new Set<string>();

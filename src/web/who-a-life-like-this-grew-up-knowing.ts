@@ -475,9 +475,19 @@ function whoEndedThem(world: WorldState, npc: NpcRecord): AKillingBehindAFace | 
  *   is a fact about the world that nobody is carrying, `whatATellingLandsOn`
  *   will not write a row about it, and `whoIsStillCarriedFor` does not keep the
  *   victim over the mortal sweep - so there is often not even a row left to be
- *   told about. Measured: on 13 pinned worlds run 25 years, every one of the 22
- *   killed second parents a mortal household holds came through a path that
- *   opened no account, so the honest answer for all 22 is that nobody told them.
+ *   told about. Measured when only the seeder priced anything: on 13 pinned
+ *   worlds run 25 years, every one of the 22 killed second parents a mortal
+ *   household holds came through a path that opened no account, so the honest
+ *   answer for all 22 was that nobody told them.
+ *
+ *   THAT WAS THE WORLD NOT PRICING ITS OWN KILLINGS, not this condition being
+ *   strict, and the two passes that produce them now price the ones somebody is
+ *   left to carry. Same instrument, same 13 worlds, 1,950 births: 0 lives
+ *   opened knowing about a killing, and 181 do. Every one of the 181 is
+ *   something the world DID - at 25 years the wrongs it was born holding are
+ *   all older than a sixteen-year-old and none of them can reach a childhood,
+ *   which is why the before figure is zero rather than the 45 the same births
+ *   give at world open.
  *
  *   IT HAPPENED INSIDE THIS LIFE'S OWN YEARS. Nobody grew up around somebody
  *   who was already dead, so the bound is the age the run opens at. The wrongs

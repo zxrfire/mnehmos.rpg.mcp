@@ -19,7 +19,10 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { createWorld } from '../../../src/engine/world/world-state.js';
+import {
+    createWorld,
+    theWorldForgetsTheMortalDead
+} from '../../../src/engine/world/world-state.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import {
     addGoal,
@@ -444,6 +447,151 @@ describe('the accounts it hands back', () => {
         expect(named.opens.length).toBeGreaterThan(0);
         for (const row of named.opens) {
             expect(hasANameOnIt({ subjectId: row.subjectId })).toBe(true);
+        }
+    });
+});
+
+/**
+ * A KILLING THE WORLD COMMITS LEAVES A DEBT, AND ONE NOBODY IS LEFT CARRYING
+ * DOES NOT.
+ *
+ * ── WHAT WAS WRONG ──────────────────────────────────────────────────────
+ *
+ * `deedWeight` is what `whoIsStillCarriedFor` keeps a victim's row over the
+ * mortal sweep for, what `whatATellingLandsOn` looks for before it will write a
+ * row, and what a life's opening reads to decide whether a childhood had a
+ * murder in it. Until now exactly one pass wrote it: `seedTheWrongsStillOpen`,
+ * at world creation.
+ *
+ * Measured across 13 pinned worlds at population 240, run 25 years, both arms
+ * in one instrument (`probe-what-a-killing-the-world-commits-leaves.ts`,
+ * toggling only the two lines this claim is about):
+ *
+ *                                      before      after
+ *     killings the world wrote            215        216
+ *     of those, still legible as one      115        196
+ *     victim struck off the record        100         20
+ *     carrying a debt                       0        172
+ *     correctly carrying none              115         44
+ *     deaths of every kind in the span   2,182      2,182
+ *
+ * The world commits the same killings either way - 2,182 deaths, identical on
+ * both arms. What changed is that it used to forget who they were done to.
+ *
+ * And at the far end, 1,950 births across the same 13 worlds:
+ *
+ *     lives opening knowing about a killing    0  ->  181   (9.3%)
+ *       from a wrong the world was BORN with   0       0
+ *       from something the world DID           0     181
+ *
+ * Zero before is not a rounding of the seeded figure. At world open 45 of those
+ * 1,950 lives hear about a seeded wrong, unchanged by this work; twenty-five
+ * years later every one of those killings is older than a sixteen-year-old and
+ * none of them can reach a childhood. The wrongs layer had a shelf life.
+ *
+ * ── THE RULE, AND WHERE IT CAME FROM ────────────────────────────────────
+ *
+ * The seeder's. It draws only victims with blood on the record, so that the
+ * deed it writes is one somebody is left holding. `whoTheyLeave` is that same
+ * question asked at the grave instead of at the draw, which is what a pass
+ * reacting to a fight needs - it cannot choose who died.
+ *
+ * A PERSON, NEVER THE HOUSE, and that is the discriminating half. The bout
+ * layer's `heldBy` is wider: a house with something invested in a ranked member
+ * holds an account, and the ledger rows open for it. But all three readers of
+ * `deedWeight` ask whether somebody is left to CARRY it, and an institution
+ * carries none of them. Measured: pricing on the house as well takes the
+ * confrontation pass from 121 rows to 155, which is the rule the design owner
+ * declined when he said *yes if it makes sense*.
+ */
+describe('a killing somebody is left carrying', () => {
+    /** The death row the world wrote, which is the one these claims are about. */
+    const theDeathRow = (did: { facts: readonly { kind: string; data: Record<string, unknown> }[] }) =>
+        did.facts.find(f => f.kind === 'death');
+
+    it('is written down as a deed the world holds', () => {
+        const did = fought(withPeople().state, { outcome: 'lethal', finished: true });
+
+        expect(did.died).toBe(true);
+        const row = theDeathRow(did);
+        expect(row).toBeDefined();
+        expect('deedWeight' in row!.data).toBe(true);
+    });
+
+    /**
+     * The one number on the row is the one the bout layer already decided, not
+     * a second opinion about the same killing. `grudges.ts` requires severity
+     * to be settled once, and it is settled for the ledger rows beside it.
+     */
+    it('at the weight the accounts beside it were opened at', () => {
+        const did = fought(withPeople().state, { outcome: 'lethal', finished: true });
+
+        expect(did.opens.length).toBeGreaterThan(0);
+        expect(theDeathRow(did)!.data.deedWeight).toBe(did.opens[0]!.severity);
+    });
+
+    /**
+     * `build()` gives them a rank in a house the world holds no row for and
+     * nobody of their own, so both halves of `heldBy` are empty. The bout
+     * module's own words for this case: *they answered to nobody and left
+     * nobody, so there is nobody to answer to.*
+     */
+    it('and a killing nobody is left carrying is not', () => {
+        const did = fought(build().state, { outcome: 'lethal', finished: true });
+
+        expect(did.died).toBe(true);
+        expect(did.opens).toEqual([]);
+        expect('deedWeight' in theDeathRow(did)!.data).toBe(false);
+    });
+
+    /**
+     * THE CLAIM THAT DOES THE WORK. The house holds an account - the row is
+     * there in `opens` - and the world's record still says nobody is carrying
+     * it, because a house cannot inherit a death, cannot be told about one, and
+     * did not grow up next door to anybody.
+     */
+    it('but a house on its own is not somebody who carries it', () => {
+        const { state } = build();
+        state.factions.push({
+            id: 'house-a',
+            name: 'The Eastern Shelf',
+            alignment: 'righteous'
+        } as unknown as WorldState['factions'][number]);
+
+        const did = fought(state, { outcome: 'lethal', finished: true });
+
+        expect(did.opens.some(row => row.holderId === 'house-a')).toBe(true);
+        expect('deedWeight' in theDeathRow(did)!.data).toBe(false);
+    });
+
+    /**
+     * The whole point of the field, asked of the pass that reads it. A mortal
+     * the world has no way to speak of is deleted on the next sweep along with
+     * every mention of them - so without this the player's neighbour who was
+     * murdered last year is not a person the world can be asked about.
+     */
+    it('so the victim is still there after the world forgets its mortal dead', () => {
+        // Both halves stated outright rather than as one agreement between the
+        // field and the sweep, which is green whenever the field is never
+        // written - and that is exactly the tree this work started on.
+        for (const [what, arrange, expected] of [
+            ['somebody who left people', withPeople, true],
+            ['somebody who left nobody', build, false]
+        ] as [string, () => { state: WorldState; them: NpcRecord }, boolean][]) {
+            const { state, them } = arrange();
+            // Below Foundation, which is the line the sweep reads.
+            state.npcs[0] = {
+                ...state.npcs[0],
+                cultivation: { ...state.npcs[0].cultivation, realmOrdinal: 2 }
+            };
+            const did = fought(state, { outcome: 'lethal', finished: true });
+            expect('deedWeight' in theDeathRow(did)!.data, `${what}: the row`)
+                .toBe(expected);
+
+            theWorldForgetsTheMortalDead(state);
+
+            expect(state.npcs.some(n => n.id === them.id), `${what}: the roster`)
+                .toBe(expected);
         }
     });
 });

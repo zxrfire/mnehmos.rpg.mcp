@@ -43,6 +43,34 @@
  * the catalog wrote the exception is not needed - they are kept by name at any
  * rung - and where the victim is a procedural mortal it still is. Both happen.
  * See the test for the split.
+ *
+ * ── AND THE SAME RULE ONCE THE CLOCK MOVES ───────────────────────────────
+ *
+ * This pass worked at world creation and stopped working the moment the world
+ * started running. Measured across 13 pinned worlds at population 240, 25 years
+ * each, both arms in one instrument:
+ *
+ *     killings a world was SEEDED holding, priced     74 of 74
+ *     killings those worlds PRODUCED, priced           0 of 215
+ *
+ * So a murder the world committed left no debt, no grudge and no corpse - 100
+ * of those 215 rows had the victim struck off them by the mortal sweep, which
+ * is the record no longer saying a killing happened at all. The design owner,
+ * asked whether a world-produced killing should leave one: *"yes if it makes
+ * sense like if someone saves you and dies."*
+ *
+ * The rule that answers that did not need inventing, because it is this pass's.
+ * The draw below refuses a victim with no blood on the record, so every deed it
+ * writes is one somebody is left holding; `whoTheyLeave` is the same question
+ * asked at the grave rather than at the draw, which is what a pass reacting to
+ * a fight needs - it cannot choose who died. See {@link whatAKillingLeaves},
+ * which the yearly pass calls, and the same rule applied at the fight resolver
+ * in `what-a-confrontation-does-to-somebody-the-world-holds.ts`.
+ *
+ * Afterwards, same instrument: 172 of 216 carry a debt and 44 correctly do not,
+ * and 181 of 1,950 births open knowing about a killing the world DID, against
+ * none before. Nothing in this pass's own draw moved - 45 of those 1,950 lives
+ * hear about a seeded wrong at world open, on either arm.
  */
 
 import { forStream } from '../cultivation/rng.js';
@@ -51,7 +79,11 @@ import { isBelowTheLid } from './layers.js';
 import { settleNpcDeath } from './time.js';
 import { theWorldEnds, theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
-import type { Party } from '../social-leverage/what-a-deed-leaves.js';
+import {
+    whatADeedLeaves,
+    type Party,
+    type WhatADeedLeaves
+} from '../social-leverage/what-a-deed-leaves.js';
 import type { InheritanceRelation } from '../social/grudges.js';
 import type { WorldState, FactionRecord } from './world-state.js';
 
@@ -98,6 +130,76 @@ const AS_THE_LEDGER_PUTS_IT: Readonly<Record<string, InheritanceRelation>> = Obj
 
 function isHere(npc: NpcRecord): boolean {
     return npc.status === 'alive' && isBelowTheLid(npc);
+}
+
+/**
+ * Somebody, as the deed layer wants them, read off the world's own record.
+ *
+ * Exported because the world's own killings are priced the same way this pass
+ * prices the ones it writes, and `the-world-changing-on-its-own.ts` should not
+ * hold a second reading of the same row. See {@link whatAKillingLeaves}.
+ */
+export function asTheDeedLayerReadsThem(
+    state: WorldState,
+    npc: NpcRecord,
+    withKin: boolean
+): Party {
+    return partyFor(state, npc, withKin);
+}
+
+/**
+ * What a killing leaves, or null where nobody is left to carry it.
+ *
+ * ── THIS PASS'S OWN RULE, ASKED AT THE GRAVE ─────────────────────────────
+ *
+ * The draw below refuses a victim with no blood on the record, so that every
+ * deed this pass writes is one somebody is left holding - and then hands their
+ * household to `whatADeedLeaves` as `kin`, which is what puts the account on a
+ * brother from day one. That is the whole rule, and it worked only at world
+ * creation: a killing the world COMMITTED wrote a chronicle row and no weight,
+ * so nobody inherited it and the victim was swept.
+ *
+ * Asked here instead of at a draw, because a pass that is reacting to a fight
+ * does not get to choose who died. `whoTheyLeave` is the same question and the
+ * better half of it - it drops anybody already buried, which this pass never
+ * has to think about and a running world does, and it picks up the heirs and
+ * the disciples that a bare blood filter misses.
+ *
+ * A PERSON, NEVER THE HOUSE. `whatADeedLeaves` will open a house's account for
+ * a ranked member as well, and it should - but the three readers of `deedWeight`
+ * all ask whether somebody is left to CARRY it, and an institution carries none
+ * of them. So the house may be a holder and is never the reason.
+ */
+export function whatAKillingLeaves(
+    state: WorldState,
+    input: {
+        /** The record as it stood at death, which is when the kin list is right. */
+        victim: NpcRecord;
+        killer: NpcRecord;
+        day: number;
+        /** Who is left, from `whoTheyLeave`. Empty means nobody carries it. */
+        theyLeft: readonly { id: string; relation: InheritanceRelation }[];
+        description: string;
+    }
+): WhatADeedLeaves | null {
+    if (input.theyLeft.length === 0) return null;
+    return whatADeedLeaves({
+        deed: {
+            cause: 'killed_kin',
+            paidBy: 'subject',
+            cost: A_LIFE,
+            irreversible: true,
+            onDay: input.day,
+            description: input.description
+        },
+        actor: partyFor(state, input.killer, false),
+        subject: { ...partyFor(state, input.victim, false), kin: input.theyLeft },
+        // Somebody is still standing there to be taken to their house, or to be
+        // found directly. See the draw below for why `beyond` is not written.
+        reach: input.killer.factionId ? 'answerable' : 'unbacked',
+        // The dead hold nothing. Their people hold it from day one.
+        principalCannotHoldIt: true
+    });
 }
 
 function partyFor(state: WorldState, npc: NpcRecord, withKin: boolean): Party {

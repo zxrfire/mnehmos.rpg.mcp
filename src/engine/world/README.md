@@ -1512,6 +1512,46 @@ Four passes fix it, all at creation, and none invents a mechanism:
 | `the-families-a-world-opens-holding.ts` | Households out of people standing in the same settlement, through `couldParent` and `bindNewbornToHousehold` unchanged, so a seeded tie is byte-identical to one a birth writes | `BORN_TO_SOMEBODY_STANDING_HERE` is the chance for somebody who HAS an eligible parent beside them. Realised: **34-41% of the living hold a blood tie**, in households of two to four |
 | `the-wrongs-a-world-opens-holding.ts` | Open killings, priced by `whatADeedLeaves` and written by `aDeedEntersTheWorld` - the same pricer and the same writer a played killing uses | `OPEN_KILLINGS_PER_PROVINCE` = 1. Realised: **5-6 a world, under 2% of the living bereaved**, and about **one run in six** opens in a room with one of those families in it |
 
+### And the killings a world COMMITS
+
+The pass above ran at creation and stopped there, which meant the wrongs layer had a shelf
+life. Measured across 13 pinned worlds at population 240, 25 years each, both arms in one
+instrument:
+
+|  | before | after |
+|---|---|---|
+| killings a world was SEEDED holding, priced | 74 of 74 | 74 of 74 |
+| killings those worlds PRODUCED | 215 | 216 |
+| of those, carrying a debt | **0** | **172** |
+| correctly carrying none | 215 | 44 |
+| victim struck off the record by the sweep | 100 | 20 |
+| deaths of every kind in the span | 2,182 | 2,182 |
+| of 1,950 births, lives opening knowing a killing | **0** | **181** |
+
+The world commits the same killings either way. What it used to do was forget who they were
+done to: with no `deedWeight`, nobody inherits the death, `whatATellingLandsOn` will not
+write a row about it, and `whoIsStillCarriedFor` does not keep the victim - so the murder
+left no debt, no grudge and no corpse.
+
+**The rule is the seeder's own and was not reinvented.** That pass will only draw a victim
+with blood on the record, so that the deed it writes is one somebody is left holding.
+`whoTheyLeave` is the same question asked at the grave instead of at the draw, which is what
+a pass reacting to a fight needs - it cannot choose who died - and it is the better half of
+it, because it drops anybody already buried and picks up heirs and disciples.
+
+**A person, never the house.** The bout layer's `heldBy` is wider: a house with something
+invested in a ranked member holds an account, and the ledger rows open for it. But all three
+readers of `deedWeight` ask whether somebody is left to CARRY it, and an institution
+inherits nothing, is told nothing and grew up next door to nobody. Pricing on the house as
+well takes the fight resolver from 121 rows to 155.
+
+Two writers, because a world kills people through two doors and both were dark:
+
+| | |
+|---|---|
+| `the-world-changing-on-its-own.ts`, the `killing` template | One person murders another. Priced through `whatAKillingLeaves`, which is the seeder's own pricer |
+| `what-a-confrontation-does-to-somebody-the-world-holds.ts` | Every fight the world resolves, which is where a war's dead come out - and the player's own door. It already opened the ledger rows and wrote a chronicle row that said nobody was carrying it |
+
 **A DRAWN marriage is cultivators only, at both ends.** The design owner: *"your parents can be
 mortal and don't bother. but if they're cultivators, seed this relationship."* A village of
 farmers pairing off is below the resolution this engine works at; two cultivators married to

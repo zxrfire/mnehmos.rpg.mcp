@@ -138,6 +138,31 @@ const MAGNITUDE_AT: Readonly<Record<Severity, number>> = Object.freeze({
 const CARRIES_PAST_THE_TOWN: Severity = 'grave';
 
 // ─────────────────────────────────────────────────────────────────────────
+// THE STAMP
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The columns that make a row a priced deed, for a writer already making one.
+ *
+ * `deedWeight` is what `whoIsStillCarriedFor` keeps a victim's row over the
+ * mortal sweep for, what `whatATellingLandsOn` looks for before it will write a
+ * row, and what a life's opening reads to decide whether a death it knew about
+ * is an open killing. Three readers, one field, and until now exactly one
+ * writer - {@link aDeedEntersTheWorld}.
+ *
+ * That was the defect rather than the design. A pass that PRODUCES a killing is
+ * already writing the row for it, and calling `aDeedEntersTheWorld` as well
+ * would put two killings in the world for one death. So the stamp is separable
+ * from the write, and a pass that has decided the weight itself - the bout
+ * layer decides it for every fight in the world - stamps its own row through
+ * this. The rule that survives is the one that matters: the key is spelled in
+ * one place and nothing types the string.
+ */
+export function aPricedDeed(weight: Severity): { deedWeight: Severity } {
+    return { deedWeight: weight };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE CALLER SUPPLIES
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -290,7 +315,7 @@ export function aDeedEntersTheWorld(
         visibility: workedOut ? (heavy ? 'public' : 'regional') : 'secret',
         causeKnown: workedOut,
         data: {
-            deedWeight: weight,
+            ...aPricedDeed(weight),
             unattributed: input.unattributed,
             ...(input.data ?? {})
         }

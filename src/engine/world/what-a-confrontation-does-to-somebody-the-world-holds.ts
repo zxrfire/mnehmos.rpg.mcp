@@ -95,7 +95,7 @@
  *                 out.
  */
 
-import type { Injury } from '../../schema/cultivation.js';
+import type { Injury, SectAlignment } from '../../schema/cultivation.js';
 import type { ConfrontationOutcome } from '../cultivation/combat.js';
 import { fillConsequences, makeFact, type HistoricalFact } from './history.js';
 import { GRUDGE_STANDING } from './gatherings.js';
@@ -103,7 +103,8 @@ import {
     carryingWounds,
     isActing,
     markDead,
-    upsertRelationship
+    upsertRelationship,
+    type NpcRecord
 } from './npc-state.js';
 import type { InheritanceRelation, ObligationInput } from '../social/grudges.js';
 import {
@@ -115,7 +116,8 @@ import { recordPermanentWounds } from './recording-the-day-a-wound-was-taken.js'
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
-import { indexById, type WorldState } from './world-state.js';
+import { aPricedDeed } from './a-deed-enters-the-world-as-a-fact.js';
+import { indexById, type FactionRecord, type WorldState } from './world-state.js';
 
 /**
  * The confrontation, as the resolver reported it, from the loser's side.
@@ -321,15 +323,47 @@ export function whatTheConfrontationDidToThem(
     // from one of its own dying.
     let handoff: DeathHandoff | null = null;
     let died = false;
+    // Who is left holding it, read at the one moment the answer is right. See
+    // the block below for why this is computed before the row rather than
+    // beside the accounts, where it used to live.
+    let theyLeft: readonly { id: string; relation: InheritanceRelation }[] = [];
+    // The record as it stood at death, which is what the chronicle row is
+    // written about. Held here because the row is now written after the bout
+    // has been priced rather than inside the branch that kills them.
+    let dying: NpcRecord | null = null;
 
     if (input.lost && input.finished) {
-        const dying = state.npcs[at];
+        dying = state.npcs[at];
         state.npcs[at] = markDead(dying, day, `Killed by ${input.byName}.`);
         // Handed the record as it stood at death - with the account on it - so
         // the heir inherits the enmity along with everything else.
         handoff = settleNpcDeath(state, dying, day);
         died = true;
+        theyLeft = whoTheyLeave({
+            dead: state.npcs[at],
+            heirs: handoff.heirs,
+            stillHere: id => state.npcs.some(n => n.id === id && n.status === 'alive')
+        });
+    }
 
+    // ── WHAT THE FIGHT CAME TO, DECIDED ONCE ─────────────────────────────
+    //
+    // Hoisted out of `accountsFor`, where it used to be computed after the
+    // chronicle row had already been written, because the ROW needs the answer
+    // too. `followed.against` is null exactly where there is nobody left to
+    // hold it, and that null is the whole of the rule below.
+    const followed = input.lost
+        ? whatFollowsFromTheBout({
+            terms: input.terms ?? 'open',
+            outcome: input.outcome,
+            loserDied: died,
+            witnesses: input.witnesses ?? 0,
+            theirHouse: theirHouse(state, at),
+            theirPeople: theyLeft
+        })
+        : null;
+
+    if (died && dying && handoff && followed) {
         facts.push(appendWorldFact(state, makeFact({
             day,
             kind: 'death',
@@ -345,6 +379,36 @@ export function whatTheConfrontationDidToThem(
             visibility: 'regional',
             magnitude: Math.min(1, 0.35 + dying.cultivation.realmOrdinal * 0.02),
             causeKnown: true,
+            // ── A DEATH A PERSON IS LEFT CARRYING IS A PRICED DEED ───────
+            //
+            // The rule is `seedTheWrongsStillOpen`'s, applied to a killing the
+            // world COMMITS rather than one it was born holding. That pass will
+            // only draw a victim who has blood on the record, so that the deed
+            // it writes is one somebody is left holding; `whoTheyLeave` is the
+            // same question asked at the grave instead of at the draw, and it
+            // is the better half of it - it drops anybody already buried and
+            // picks up the heirs and the disciples a bare blood filter misses.
+            //
+            // A PERSON, NOT THE HOUSE. `followed.heldBy` is wider than this on
+            // purpose: a house that had something invested in a ranked member
+            // holds an account for them, and the ledger rows below open for it.
+            // But the three readers of this field all ask whether somebody is
+            // left to CARRY it - `whoIsStillCarriedFor` keeps the row so a
+            // person can inherit the death, `whatATellingLandsOn` writes a row
+            // for a person who was told, and a life's opening asks whether the
+            // childhood had a murder in it. An institution carries none of
+            // those, which is why the seeder asks for blood and not for a rank.
+            //
+            // This was the defect. Every killing in a world that RUNS comes
+            // through here or through the yearly pass, the accounts below were
+            // already being opened for them, and the chronicle row said nothing
+            // - so `whoIsStillCarriedFor` dropped the victim on the next mortal
+            // sweep and the only killings that could reach a player's opening
+            // life were the ones the world was born holding. The ledger and the
+            // record disagreed about whether anybody was carrying it.
+            data: theyLeft.length > 0 && followed.against
+                ? aPricedDeed(followed.against.severity)
+                : {},
             consequences: fillConsequences({
                 immediate: 'One fewer, and somebody knows who did it.',
                 losers: [{ id: dying.id, name: dying.name, role: 'victim' }],
@@ -390,78 +454,58 @@ export function whatTheConfrontationDidToThem(
     //
     // Decided by the module that owns the table and rendered by the module that
     // owns the rows. Nothing here prices anything: `whatFollowsFromTheBout`
-    // reads what the resolver already said and returns a severity and a list of
-    // parties, and `theAccountsAFightOpens` turns that into ledger rows.
+    // read what the resolver already said, above, and `theAccountsAFightOpens`
+    // turns its answer into ledger rows.
     //
     // The victim's people come off the handoff, which was computed on the
     // record as it stood at death - the only moment the answer is right.
     // `principalCannotHoldIt` is implicit and is the bout module's rule: the
     // people are read only where the loser died, because the dead hold nothing
     // and somebody ruined and living already holds their own record.
-    const theyLeft = handoff
-        ? whoTheyLeave({
-            dead: state.npcs[at],
-            heirs: handoff.heirs,
-            stillHere: id => state.npcs.some(n => n.id === id && n.status === 'alive')
+    const opens = followed
+        ? theAccountsAFightOpens({
+            followed,
+            parties: {
+                actor: { id: input.byId, name: input.byName },
+                loser: { id: state.npcs[at].id, name: state.npcs[at].name },
+                houseId: state.npcs[at].factionId ?? null,
+                houseName: houseOf(state, at)?.name ?? null
+            },
+            onDay: day,
+            // The death row where there is one, so a reader in forty years can
+            // walk from the account to the event and back. A crippling writes
+            // no chronicle row of its own and correctly carries none.
+            triggeringEventId: facts.find(f => f.kind === 'death')?.id ?? null,
+            ...(input.knownTo === undefined ? {} : { knownTo: input.knownTo })
         })
         : [];
-    const opens = accountsFor(state, input, at, { died, theyLeft }, facts);
 
     return {
         wrote: true, wounds: input.wounds.length, died, handoff, facts, lines, opens, theyLeft
     };
 }
 
-/**
- * The rows a fight leaves, through the one decider both callers share.
- *
- * Split out only so the body above stays readable. Everything it reads is
- * already settled: who lost, whether they died, whose they were, and who they
- * left.
- */
-function accountsFor(
-    state: WorldState,
-    input: WhatTheFightDecided,
-    at: number,
-    dead: { died: boolean; theyLeft: readonly { id: string; relation: InheritanceRelation }[] },
-    facts: readonly HistoricalFact[]
-): ObligationInput[] {
-    if (!input.lost) return [];
+/** The house on the row, or null for somebody who answers to nobody. */
+function houseOf(state: WorldState, at: number): FactionRecord | null {
     const them = state.npcs[at];
-    const house = them.factionId
+    return them.factionId
         ? state.factions.find(f => f.id === them.factionId) ?? null
         : null;
+}
 
-    const followed = whatFollowsFromTheBout({
-        terms: input.terms ?? 'open',
-        outcome: input.outcome,
-        loserDied: dead.died,
-        witnesses: input.witnesses ?? 0,
-        theirHouse: house
-            ? {
-                alignment: house.alignment,
-                // Somebody the house has anything invested in. A place on the
-                // rank ladder is the world's own statement of that and the one
-                // `whenItIsDoneToOneOfOurs` already asks for.
-                ranked: them.factionRankIndex >= 0
-            }
-            : null,
-        theirPeople: dead.theyLeft
-    });
-
-    return theAccountsAFightOpens({
-        followed,
-        parties: {
-            actor: { id: input.byId, name: input.byName },
-            loser: { id: them.id, name: them.name },
-            houseId: house?.id ?? null,
-            houseName: house?.name ?? null
-        },
-        onDay: input.day,
-        // The death row where there is one, so a reader in forty years can walk
-        // from the account to the event and back. A crippling writes no
-        // chronicle row of its own and correctly carries none.
-        triggeringEventId: facts.find(f => f.kind === 'death')?.id ?? null,
-        ...(input.knownTo === undefined ? {} : { knownTo: input.knownTo })
-    });
+/**
+ * The house, as the bout layer wants it: what it stands for, and whether it has
+ * anything invested in this person.
+ *
+ * A place on the rank ladder is the world's own statement of that, and the one
+ * `whenItIsDoneToOneOfOurs` already asks for.
+ */
+function theirHouse(
+    state: WorldState,
+    at: number
+): { alignment: SectAlignment | null; ranked: boolean } | null {
+    const house = houseOf(state, at);
+    return house
+        ? { alignment: house.alignment, ranked: state.npcs[at].factionRankIndex >= 0 }
+        : null;
 }

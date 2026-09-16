@@ -287,10 +287,14 @@ import {
     type AreaStatus
 } from './what-is-true-of-a-place-right-now.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
+import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
+import { aPricedDeed } from './a-deed-enters-the-world-as-a-fact.js';
+import { whatAKillingLeaves } from './the-wrongs-a-world-opens-holding.js';
 import {
     indexById,
     getLocation,
     makeFaction,
+    makeScheduledEffect,
     type FactionRecord,
     type ScheduledEffect,
     type WorldState
@@ -5291,13 +5295,34 @@ const TEMPLATES: Template[] = [
             state.npcs[at] = dead;
             const handoff = settleNpcDeath(state, dying, day);
 
+            const summary =
+                `${killer.name} killed ${victim.name}`
+                + (victimFaction ? ` of the ${houseName(victimFaction.name)}` : '') + '.';
+
+            // ── AND SOMEBODY IS LEFT CARRYING IT, OR NOBODY IS ──────────
+            //
+            // The same rule and the same pricer `seedTheWrongsStillOpen` uses
+            // for the killings a world OPENS holding, asked at the grave rather
+            // than at the draw - see `whatAKillingLeaves`. Every one of the
+            // seeder's is a priced deed and not one of the world's own was, so
+            // `whoIsStillCarriedFor` swept the victim, nothing inherited the
+            // death, and a life could only ever open knowing about a killing
+            // the world was born with.
+            const theyLeft = whoTheyLeave({
+                dead: dying,
+                heirs: handoff.heirs,
+                stillHere: id => state.npcs.some(n => n.id === id && n.status === 'alive')
+            });
+            const leaves = whatAKillingLeaves(state, {
+                victim: dying, killer, day, theyLeft, description: summary
+            });
+
             return emit(state, 'killing', day, {
                 day,
                 kind: 'grudge_opened',
                 scale: 'personal',
-                summary:
-                    `${killer.name} killed ${victim.name}` +
-                    (victimFaction ? ` of the ${houseName(victimFaction.name)}` : '') + '.',
+                summary,
+                ...(leaves ? { data: aPricedDeed(leaves.weight) } : {}),
                 actors: [
                     { id: killer.id, name: killer.name, role: 'killer' },
                     { id: victim.id, name: victim.name, role: 'victim' }
@@ -6019,19 +6044,35 @@ const TEMPLATES: Template[] = [
             adjustStandingBetween(a, b, -0.3);
 
             const resolvesIn = years(rng.int(2, 25));
-            const effect: ScheduledEffect = {
+            // Through the world's own constructor, so the defaults on a
+            // scheduled effect are stated in one place. NOT through `schedule()`,
+            // which is the other half of the same duplication and cannot be used
+            // here: it is copy-on-write and returns a new `WorldState`, and every
+            // template in this table mutates the one it was handed. So the id is
+            // still minted twice in the tree. Reconciling that is a change to
+            // `schedule()`'s contract, which has callers in two test files and
+            // none in `src/`, and it is not this change.
+            const effect: ScheduledEffect = makeScheduledEffect({
                 id: `e${state.nextEffectSeq++}`,
                 kind: 'war_resolves',
                 dueOnDay: day + resolvesIn,
                 summary: `The war between the ${houseName(a.name)} and the ${houseName(b.name)} came to an end.`,
-                actorIds: [],
-                locationId: null,
+                // ── A WAR IS FOUGHT OVER GROUND, AND THIS WAS NULL ───────
+                //
+                // `advanceTime` fires this effect and writes the fact for it at
+                // the effect's own location, and `InterruptPolicy.locationIds`
+                // is what hands control back to somebody sitting there. With no
+                // location, the end of a war the player has been living through
+                // reached nobody standing anywhere: it was a faction row moving
+                // and a line in a digest for whoever happened to be on the roll.
+                //
+                // The seat of the side the effect is already filed under. A war
+                // has two doors and this field has room for one, so it is the
+                // one the rest of the row already names rather than a choice
+                // made here - and a house with no seat still resolves, at
+                // nowhere, exactly as it did.
+                locationId: a.seatLocationId ?? null,
                 factionId: a.id,
-                repeatDays: null,
-                interrupts: false,
-                chance: 1,
-                fired: false,
-                firedOnDay: null,
                 // THE BASELINE, AND WHY IT IS STORED RATHER THAN DERIVED. How badly
                 // a house is losing is what it can put out now against what it
                 // could put out on the day the fighting started, and that second
@@ -6051,7 +6092,7 @@ const TEMPLATES: Template[] = [
                     ledA: highestRankAlive(state, a.id),
                     ledB: highestRankAlive(state, b.id)
                 }
-            };
+            });
             state.schedule.push(effect);
 
             return emit(state, 'war_opened', day, {
