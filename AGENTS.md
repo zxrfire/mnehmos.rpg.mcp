@@ -490,6 +490,14 @@ knows. The design owner:
 > *"your skip skip or skip skip skip in a company manages like a BUNCH of people.
 > you know your skip skip and skip skip skip but not everyone they manage, so it
 > doesn't have to be strictly pyramidal, just vaguely."*
+>
+> *"a sect probably has hundreds of outer and 100 inner, but you really only
+> interact with a few."*
+
+Both numbers are true at once and they are answers to different questions. The
+sect's pyramid is what the PROSE says; the slice is what the ENGINE holds. A
+reader who finds a house with four outer disciples on its roll has not found a
+house of four people - they have found the four a player would meet.
 
 So a house of fifteen modelled people should have somebody at most of its rungs,
 not a heap at the bottom and the catalog's named figures at the top. A steeply
