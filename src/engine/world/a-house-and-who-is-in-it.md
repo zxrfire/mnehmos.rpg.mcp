@@ -27,6 +27,19 @@ house of four people. They have found the four a player would meet. This is
 `theWorldForgetsTheMortalDead` one level up: **the engine models what can be
 played with.** Do not "complete" it.
 
+**And the arithmetic is the other half of the argument, for when somebody
+proposes a more realistic roster.** Thirty-eight houses at five hundred members
+each is nineteen thousand people. The world holds about eight hundred and fifty
+today, and three thousand simulated years of it already takes half an hour to
+soak. Twenty-two times that is not a richer world, it is a world nobody can run
+a test against - and every one of those rows would be a person no player ever
+meets, drawn by a pass, aged by a pass, killed by a pass and swept by a pass.
+
+So the slice is not a compromise forced by performance, and it is not
+performance dressed as design either. The two reasons agree: **the people worth
+computing are the people somebody could meet**, and it happens that computing
+only those is also the only version that runs.
+
 ## The size
 
 **Ten to twenty modelled people per house**, and it is a guideline rather than a
