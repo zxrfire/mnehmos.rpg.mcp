@@ -456,151 +456,195 @@ hand-written lists of house words and none of them had ever heard of a guild.
 
 ---
 
-## A roster is who you could know, not how many exist
+## How many people a house has, and who they are
 
-> **The people a house has modelled are the ones a player could plausibly come to know.
-> How many the house has in the fiction is a different number and the engine does not
-> need it.**
+> **A roster is who a player could come to know. It is not how many the house has.**
 
-The design owner's own way of putting it:
+Both numbers are true and they answer different questions. The sect's real size
+is what the **prose** says; the roster is what the **engine** holds. The design
+owner:
 
-> *"think, ur in a company, even if it's huge, you only know like 10-20 people tops. same
-> idea."*
-> *"we don't have to keep track of that many cultivators, 10-20 per sect is already a lot
-> for gameplay? that should fill up the rungs good."*
-
-So a sect of five hundred disciples is a sect of five hundred disciples in the prose, and
-a dozen or two rows in the world. That is not a simplification to be apologised for or
-"completed" later - it is the same rule as `theWorldForgetsTheMortalDead`, one level up.
-The engine models what can be played with.
-
-**This is a guideline and explicitly not a hard rule.** The owner said so in the same
-breath. An apex may run richer and a guard posting may hold three; what matters is that a
-number is chosen because of what a player can hold in their head, not because of what a
-sect would really have.
-
-### And the shape is a slice, not a triangle
-
-The same rule applied to RANK rather than to headcount, and it is the half that
-is easy to get wrong. A sect's hierarchy really is a pyramid - hundreds of outer
-disciples, one Pavilion Master. **A modelled roster is not that pyramid. It is a
-narrow vertical slice through it**, because that is the shape of what one person
-knows. The design owner:
-
-> *"your skip skip or skip skip skip in a company manages like a BUNCH of people.
-> you know your skip skip and skip skip skip but not everyone they manage, so it
-> doesn't have to be strictly pyramidal, just vaguely."*
->
 > *"a sect probably has hundreds of outer and 100 inner, but you really only
 > interact with a few."*
+> *"think, ur in a company, even if it's huge, you only know like 10-20 people
+> tops. same idea."*
 
-Both numbers are true at once and they are answers to different questions. The
-sect's pyramid is what the PROSE says; the slice is what the ENGINE holds. A
-reader who finds a house with four outer disciples on its roll has not found a
-house of four people - they have found the four a player would meet.
+A reader who finds a house with four outer disciples on its roll has not found a
+house of four people. They have found the four a player would meet. This is
+`theWorldForgetsTheMortalDead` one level up: **the engine models what can be
+played with.** Do not "complete" it.
 
-So a house of fifteen modelled people should have somebody at most of its rungs,
-not a heap at the bottom and the catalog's named figures at the top. A steeply
-pyramidal taper reads as correct and produces a house with no middle: measured,
+### The size
+
+**Ten to twenty modelled people per house**, and it is a guideline rather than a
+number to hit — *"this isn't a hard rule"*, *"some can have more some can have
+less"*. An apex may run richer; a guard posting may hold three. What matters is
+that a figure is chosen for what a player can hold in their head rather than for
+what a sect would really have, and that **houses still differ from one another**
+for reasons the catalog already states.
+
+Before tuning any bound that governs parties or postings, check whether the
+roster is the thing that is wrong. The owner: **"3 people out is fine if the
+sect has 15 people."** The same party that looks like a house emptying itself at
+a roll of 7 is an ordinary errand at 15.
+
+### The shape: narrow at the bottom, complete at the top
+
+A sect's hierarchy really is a pyramid. **A roster is not that pyramid — it is a
+narrow vertical slice through it**, because that is the shape of what one person
+knows:
+
+> *"your skip skip or skip skip skip in a company manages like a BUNCH of
+> people. you know your skip skip and skip skip skip but not everyone they
+> manage, so it doesn't have to be strictly pyramidal, just vaguely."*
+
+So the roster is two different things stacked, and they are **not** governed by
+the same rule:
+
+- **The bands are SAMPLED.** Outer, inner, core. A few out of hundreds, because
+  those are who a player happens to meet. Vaguely pyramidal — more low than
+  high — and never a strict taper.
+- **The postings are COMPLETE.** Everyone in a sect knows who the punishment
+  elder is, so a player must be able to deal with them. Not sampled, not
+  tapered, not conditional on how big the roll is.
+
+An empty middle is the failure this section exists to prevent. Measured once:
 a seven-rung ladder gave rung 3 its first seat at a roll of 26 and rung 5 at
 162, so **rungs 2 to 5 were empty in every house in the world** while the ladder
-looked properly shaped.
+looked correctly shaped. The middle is where the genre lives — inner and core
+disciples competing, being passed over, being promoted — and it is load-bearing
+for the conclave and slot designs, where choosing three people for a place means
+little if the choice is between outer disciples and elders with nobody between.
 
-**An empty middle costs more than it looks.** The middle is where the genre
-lives - inner and core disciples competing, being passed over, being promoted -
-and it is load-bearing for the slot and conclave designs: choosing three people
-for a place means little when the choice is between outer disciples and elders
-with nobody between. A player climbing their own house has no steps to climb.
+`sects.ts` already warns about the cause in its own header: **"`elderRungOf`
+reads this shape: the elders are the top three rungs, floored at index 2...
+Nothing should re-derive it from a fraction."** A rank population computed as a
+proportion of the roll is the defect.
 
-### The slice is narrow at the bottom and COMPLETE at the top
+### The words
 
-The sampling runs one way only, and getting this backwards produces a house
-nobody can deal with. The design owner:
+The design owner's definitions, which are exact and should not be paraphrased:
 
-> *"BUT YOU DO NEED TO INTERACT WITH EVERY ELDER AND EVERYONE KNOWS THE 3
-> CONCLAVE DISCIPLES"* / *"and the patriarch"*
-> *"i mean every OFFICE HOLDING elder"*
-
-So the roster is two different things stacked:
-
-- **the bands are sampled** - a few outer disciples out of hundreds, a few inner
-  out of a hundred, because those are the ones a player happens to meet
-- **the offices are complete** - every office-holding elder, every conclave seat,
-  the patriarch. Not sampled, not tapered, not subject to roll size. **Everyone
-  in a sect knows who the punishment elder is**, so a player must be able to deal
-  with them, and a house whose office exists with nobody in the world holding it
-  is a house that cannot answer for itself.
-
-Note "office holding". Not every person who has reached an elder's realm - the
-posts. A house with three elder offices has three, however many people stand at
-that rung in the fiction.
-
-**And a non-office-holding elder MAY exist - it simply is not required.** The
-owner's words are *"non office holding elders don't have to exist"*, which is a
-permission and not a prohibition. Somebody senior with no post is a perfectly
-good person to meet; what the engine owes is the posts, and anybody else at that
-rung is the sampling doing its ordinary work. Do not write a rule that FORBIDS
-them - that would be the same mistake as requiring them, one sign flipped.
-
-### Three words, and the third one collapses
-
-The design owner's definitions, which are worth having exactly because an
-implementer will otherwise invent a flag for the third:
-
+> *"an office = an elder with a posting"*
+> *"an elder = a rank"*
+> *"a protector = a rank"*
 > *"a guest elder is an external elder without an office"*
 > *"an external elder joining is just an elder"*
+> *"non office holding elders don't have to exist"* — **it MIGHT**
 
-- **an elder is a RANK.** Somebody of elder standing within the sect, on the
-  roll, whether or not they have a posting. The owner: *"a regular elder (from
-  within the sect) with no office is just elder"*
-- **an office is AN ELDER WITH A POSTING.** Not a second category beside the
-  rank - the pairing of the two. The owner's own definition: *"an office = an
-  elder with a posting. an elder = a rank."* So a sect's postings are the thing
-  that must be occupied, and the occupant is an elder by construction
-- **a guest elder** is external, holds no posting, and is **not on the roll** -
-  `GUEST_ELDERS` in `governance-and-water-rights.ts` is exactly this category,
-  already named and already populated, and `travel-verbs.ts` already says in its
-  own comment that guests are not in the house's roll
-- **an external elder who joins is just an elder.** There is no hybrid, no
-  "guest holding a post", no third state to model.
+| word | what it is |
+|---|---|
+| **rank** | a position in the order of precedence. Outer, inner, core, elder, and so on. `ranks` on the catalog row |
+| **posting** | a job somebody does — punishment, discipline, a conclave seat. Named per house by the catalog |
+| **office** | **an elder WITH a posting.** The pairing, not a third category |
+| **elder** | a rank. On the roll, posting or no posting |
+| **guest elder** | an **external** elder with no posting, **typically of another tradition** — somebody who does not practise your sect's arts. Deliberately **not on the roll**: `GUEST_ELDERS` carries a `traditionId` saying exactly that, and `travel-verbs.ts` already states guests are not in the house's roll |
 
-So the "non-office-holding elder that MAY exist" is not a gap waiting to be
-filled - **it is the guest elder, and it already exists.** And when a house fills
-a vacancy from outside, nothing converts: the person takes the office and the
-word "guest" stops applying, because being a guest was only ever the state of
-having no office.
+Three consequences, each of which someone has tried to model as a special case
+and none of which is one:
 
-This is also what makes the taper defect a defect rather than a thin world: a
-posting is a job somebody does, and a job does not go away because the roll is
-smaller.
+1. **What must be occupied is a sect's POSTINGS.** The occupant is an elder by
+   construction, so there is no separate seniority rule to write.
+2. **An elder with no posting needs no flag.** Not required, **not forbidden**.
+   *"It might."* A rule that removes them is the same error as one that demands
+   them, with the sign flipped.
+3. **An external elder who joins is just an elder.** No hybrid, no
+   guest-holding-a-post. Being a guest was only ever the state of having no
+   posting, so taking one ends it and nothing converts.
 
-**`protector` is deliberately out of this rule.** The word does two jobs and
-`THE_OFFICE` in `false-immortals.ts` spends two thousand words on it: at an
-ordinary sect it is a posting like any other and is filled; at the top of the
-world it is RESERVED for a False Immortal and has stood empty for eight hundred
-years on purpose, because *"a house with a vacant protector's chair is not short
-of strong people, it is declining to pretend that a strong person is the same
-thing."* Read that entry before touching anything protector-shaped, and note
-that it records an earlier draft getting it wrong by re-deriving a chair from a
-crossing count, which *"counts departures and vacancies together, and the two
-are opposite outcomes."*
+   **But joining is gated, and the gate is the arts.** A sect has arts it
+   prefers — `teaches` on its catalog row — and an elder teaches juniors, so
+   somebody who cannot teach the house's shelf cannot hold a posting in it. The
+   owner: *"if they become an elder, they obviously ought to practice your
+   sect's arts... doesn't make sense for an elder elder to be unable to teach
+   the sect's arts to juniors."* **That is why a guest stays a guest**, and it
+   is the same rule as the copy gate elsewhere in this engine: you pass on only
+   what you have taken to its end.
 
-"Vaguely pyramidal" is the instruction, and it governs the BANDS. More people low than high, and nobody's
-rung left empty because a real sect would have needed a hundred people to fill
-it.
+   `GUEST_ELDERS` shows the arrangement working and its price. Shen Yiao sits at
+   the Azure Cloud Pavilion, has drawn a blade for them twice in forty years,
+   and takes cave rent and silence in return — while the row's own `hostRisk`
+   says *"she is stronger than the Pavilion Master, is not bound by its rules,
+   and the disciples have begun going to her rather than to the Sword Elders,
+   which nobody has said out loud."* A guest is useful, unbound, and not a
+   member.
 
-### What it is for, and the figure it fixes
+It is the military arrangement: rank is what you are, a posting is what you do,
+and a Colonel between commands is still a Colonel.
 
-A roster running 1 to 29 with a median of 7 is too thin to feel alive: the ladder has gaps,
-a house cannot both send a party and answer its own gate, and every bound that asks what a
-house can spare bites immediately. Filling out to a dozen or two puts people on the rungs
-without asking the engine to carry a population.
+### `protector` is a rank, it is not an office, and it is outside the chain
 
-And it makes the arithmetic elsewhere read correctly rather than tightly. In the owner's
-words: **"3 people out is fine if the sect has 15 people."** The same party that looks like
-a house emptying itself at a roster of 7 is an ordinary errand at a roster of 15 - so
-before tuning a bound that governs parties, check whether the roster is the thing that is
-wrong.
+**A protector has no posting**, so it is not an office and no posting rule
+reaches it. What it is instead, in the owner's words:
+
+> *"well the sect patriarch can't really order the protector around"*
+> *"but neither can the protector order the sect patriarch around"*
+> *"the protector just has one job and answers to the survival of the sect as a
+> whole. hence, outside."*
+> *"but in prestige it's equal to patriarch or higher"*
+> *"(protector is usually stronger too, maybe a retired patriarch)"*
+
+So a protector is **outside the order of command in both directions**, and **at
+or above the patriarch in prestige**. Two different axes, and they must be kept
+apart: command is who may order whom, prestige is what somebody is worth being
+seen with.
+
+**Which means `sects.ts` reaches the right conclusion by a reason it states
+wrongly.** Its header keeps the protector's chair out of `ranks` because *"an
+office is not a position in an order of precedence"* — and a protector was never
+an office. But it genuinely does not belong in `ranks`, because `ranks` is a
+chain of command and a protector stands outside one. **Leave it beside the
+ladder.** Correct the sentence if you like; do not move the arrangement to
+match it.
+
+
+And before touching anything protector-shaped, read `THE_OFFICE` in
+`src/data/cultivation/false-immortals.ts`. The word does two jobs. At an
+ordinary sect it is a strong veteran who stays in the compound — *"the dude who
+comes to your sect in the time of need"* — and it is filled and unremarkable. At
+the top of the world it is **reserved** for a False Immortal and has stood empty
+for eight hundred years on purpose:
+
+> *"a house with a vacant protector's chair is not short of strong people, it is
+> declining to pretend that a strong person is the same thing."*
+
+So an empty protector's chair is content, not a gap. Do not fill it, cover it,
+or promote into it. That entry also records an earlier draft getting this wrong
+by re-deriving a chair from a crossing count, which *"counts departures and
+vacancies together, and the two are opposite outcomes."*
+
+### The shape has to survive time passing
+
+Seeding the shape right is a **day-one** property, and the world then runs for
+centuries. People die, are killed, walk out, cross the Lid. Measured on a
+neighbouring question: **members standing at their own seat go from 207 of 306
+at world open to 42 of 363 at a hundred years.** A shape that is only seeded
+rots.
+
+So a vacancy has three steps, and the middle one is the interesting one:
+
+1. a posting's holder dies or leaves
+2. **somebody senior covers it** — the way an acting officer does. This is
+   deliberately visible: a house whose patriarch is also acting punishment elder
+   is a house under strain, and that is a fact a player can find, a rival can
+   read, and the power index can price. Silent succession hides the same event
+3. **the house then fills the chair** — by promoting from within, or from
+   outside via `GUEST_ELDERS`, who are exactly the pool of elders with no posting
+
+Covering should look temporary, who covers should be derived from the ladder
+rather than always the patriarch, and **a house can run out of people to cover
+with** — which is a real outcome rather than an error, and means the house is
+failing.
+
+### Where the rest of this is written down
+
+- `src/engine/world/README.md` — the passes that seed and move a house's people
+- `src/data/cultivation/README.md` — the catalogs the shape is read from,
+  including `ranks`, the postings a house holds, and `GUEST_ELDERS`
+- `src/data/cultivation/false-immortals.ts` — `THE_OFFICE`, on the two senses of
+  protector and why a vacancy there means something
+- `src/data/cultivation/sects.ts` — the header rule that `elderRungOf` is the
+  top three rungs and must not be re-derived from a fraction
 
 ---
 

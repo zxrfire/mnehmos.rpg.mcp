@@ -270,6 +270,26 @@ real, at which point it is generated and *then* persisted. The rule is stated in
 
 ---
 
+
+## How many people a house has
+
+**The rule lives in `AGENTS.md`, under "How many people a house has, and who
+they are".** It is not restated here, because it has been restated four times
+already and the copies drifted.
+
+The short of it: a roster is who a player could come to know - ten to twenty a
+house as a guideline - and NOT how many the house has in the fiction. The bands
+(outer, inner, core) are sampled; the postings are complete, because everyone in
+a sect knows who the punishment elder is. An office is an elder with a posting;
+an elder is a rank; a guest elder is an external elder with no posting and is
+deliberately not on the roll. `protector` is a rank, is not an office, and is
+the one piece still unsettled - read `THE_OFFICE` in `false-immortals.ts` before
+touching it.
+
+The passes on this side that build and move a house's people are the ones to
+read next: the seeder's rank-and-file pass, the sending roster, and whatever
+fills a posting when its holder dies.
+
 ## Locations carry environment, not just a name
 
 A location is an environmental modifier. Keep it lightweight:

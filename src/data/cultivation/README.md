@@ -57,6 +57,28 @@ is a number that goes stale silently. Ask the catalog.
 
 ---
 
+
+## How many people a house has
+
+**The rule lives in `AGENTS.md`, under "How many people a house has, and who
+they are".** It is not restated here, because it has been restated four times
+already and the copies drifted.
+
+The short of it: a roster is who a player could come to know - ten to twenty a
+house as a guideline - and NOT how many the house has in the fiction. The bands
+(outer, inner, core) are sampled; the postings are complete, because everyone in
+a sect knows who the punishment elder is. An office is an elder with a posting;
+an elder is a rank; a guest elder is an external elder with no posting and is
+deliberately not on the roll. `protector` is a rank, is not an office, and is
+the one piece still unsettled - read `THE_OFFICE` in `false-immortals.ts` before
+touching it.
+
+What this side owns: `ranks` on each house, the postings a house holds,
+`GUEST_ELDERS` in `governance-and-water-rights.ts`, and `THE_OFFICE` in
+`false-immortals.ts`. The header of `sects.ts` carries the rule that
+`elderRungOf` is the top three rungs and must not be re-derived from a
+fraction - which is the defect that left the middle of every ladder empty.
+
 ## Balance philosophy: grade is a single legible axis
 
 There are five grades - `mortal`, `earth`, `heaven`, `immortal`, `chaos` - and they are

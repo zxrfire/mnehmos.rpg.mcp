@@ -62,7 +62,7 @@ describe('the world answers when it would cut in', () => {
     function withOneEffectOnTheBooks(at: { locationId?: string | null; interrupts?: boolean }) {
         const bare = createWorld({ seed: 'interrupt-fixture' });
         const { state } = schedule(bare, {
-            kind: 'faction_action',
+            kind: 'concurrent_event',
             dueOnDay: bare.currentDay + 400,
             summary: 'The gate below is opened and there are people on the path.',
             locationId: at.locationId ?? null,
@@ -71,7 +71,7 @@ describe('the world answers when it would cut in', () => {
         return state;
     }
 
-    const policyFor = (state: WorldState, locationIds: string[], sealed = false) =>
+    const policyFor = (locationIds: string[], sealed = false) =>
         whatReachesSomebodySpendingASpanHere({
             actorId: 'somebody',
             locationIds,
@@ -83,20 +83,20 @@ describe('the world answers when it would cut in', () => {
         const state = withOneEffectOnTheBooks({ locationId: 'loc-here' });
         const from = Math.floor(state.currentDay);
 
-        const found = whenTheWorldWouldInterrupt(state, policyFor(state, ['loc-here']), from, 3650);
+        const found = whenTheWorldWouldInterrupt(state, policyFor(['loc-here']), from, 3650);
         expect(found, 'an effect at the place they are sitting reaches them').not.toBeNull();
         expect(found!.onDay - from).toBe(400);
         expect(found!.cause).toBe('local_event');
 
         // The same books, a shorter sitting. Nothing on them is inside it.
         expect(
-            whenTheWorldWouldInterrupt(state, policyFor(state, ['loc-here']), from, 100),
+            whenTheWorldWouldInterrupt(state, policyFor(['loc-here']), from, 100),
             'a span that ends before the effect is due is not cut by it'
         ).toBeNull();
 
         // And somebody sitting somewhere else is not reached by it at all.
         expect(
-            whenTheWorldWouldInterrupt(state, policyFor(state, ['loc-elsewhere']), from, 3650)
+            whenTheWorldWouldInterrupt(state, policyFor(['loc-elsewhere']), from, 3650)
         ).toBeNull();
     });
 
@@ -106,7 +106,7 @@ describe('the world answers when it would cut in', () => {
         // short for a reason the world then does not produce.
         const state = withOneEffectOnTheBooks({ locationId: 'loc-here' });
         const from = Math.floor(state.currentDay);
-        const policy = policyFor(state, ['loc-here']);
+        const policy = policyFor(['loc-here']);
 
         const forecast = whenTheWorldWouldInterrupt(state, policy, from, 3650);
         const moved = advanceTime(state, 3650, { interruptPolicy: policy, stopOnInterrupt: true });
@@ -140,7 +140,7 @@ describe('the world answers when it would cut in', () => {
             .toEqual([]);
 
         const { state } = schedule(world, {
-            kind: 'faction_action',
+            kind: 'concurrent_event',
             dueOnDay: world.currentDay + 400,
             summary: 'The Reach is closed to anybody without a plate.',
             locationId: 'loc-region'
@@ -148,13 +148,13 @@ describe('the world answers when it would cut in', () => {
         const standing = thisPlaceAndWhatContainsIt(state, 'loc-site');
         expect(
             whenTheWorldWouldInterrupt(
-                state, policyFor(state, standing), Math.floor(state.currentDay), 3650
+                state, policyFor(standing), Math.floor(state.currentDay), 3650
             ),
             'a thing that happens to the region happens where they are sitting'
         ).not.toBeNull();
         expect(
             whenTheWorldWouldInterrupt(
-                state, policyFor(state, ['loc-site']), Math.floor(state.currentDay), 3650
+                state, policyFor(['loc-site']), Math.floor(state.currentDay), 3650
             ),
             'and the exact match on its own is the defect, not the fix'
         ).toBeNull();
@@ -164,7 +164,7 @@ describe('the world answers when it would cut in', () => {
         const ordinary = withOneEffectOnTheBooks({ locationId: 'loc-here' });
         const from = Math.floor(ordinary.currentDay);
         expect(
-            whenTheWorldWouldInterrupt(ordinary, policyFor(ordinary, ['loc-here'], true), from, 3650),
+            whenTheWorldWouldInterrupt(ordinary, policyFor(['loc-here'], true), from, 3650),
             'the ordinary business of a place does not reach through a sealed door'
         ).toBeNull();
 
@@ -174,7 +174,7 @@ describe('the world answers when it would cut in', () => {
         // showed up years later.
         const flagged = withOneEffectOnTheBooks({ locationId: 'loc-here', interrupts: true });
         const through = whenTheWorldWouldInterrupt(
-            flagged, policyFor(flagged, ['loc-here'], true), Math.floor(flagged.currentDay), 3650
+            flagged, policyFor(['loc-here'], true), Math.floor(flagged.currentDay), 3650
         );
         expect(through, 'a flagged consequence reaches through a shut door').not.toBeNull();
         expect(through!.cause).toBe('scheduled_interrupt');
@@ -224,7 +224,7 @@ describe('three systems, one answer about what ended the span', () => {
         const cut = whatCutTheSpanShort({
             asked: 3650, lived: 400,
             skip: { requestedDays: 400, simulatedDays: 12, interrupted: true, interruptReason: 'starvation_begun', died: false },
-            arrival: { firstInterruptDay: 400 }, world: { onDay: 900, summary: 'a gate opens' },
+            arrival: { firstInterruptDay: 400 }, world: { inDays: 900, summary: 'a gate opens' },
             startDay: 0
         });
         expect(cut?.cause).toBe('the_body');
@@ -236,14 +236,14 @@ describe('three systems, one answer about what ended the span', () => {
     it('otherwise blames whichever of the two outer cuts landed first', () => {
         const byArrival = whatCutTheSpanShort({
             asked: 3650, lived: 400, skip: skipThatRan(400),
-            arrival: { firstInterruptDay: 400 }, world: { onDay: 900, summary: 'a gate opens' },
+            arrival: { firstInterruptDay: 400 }, world: { inDays: 900, summary: 'a gate opens' },
             startDay: 0
         });
         expect(byArrival?.cause).toBe('somebody_arrived');
 
         const byWorld = whatCutTheSpanShort({
             asked: 3650, lived: 900, skip: skipThatRan(900),
-            arrival: { firstInterruptDay: null }, world: { onDay: 900, summary: 'a gate opens' },
+            arrival: { firstInterruptDay: null }, world: { inDays: 900, summary: 'a gate opens' },
             startDay: 0
         });
         expect(byWorld?.cause).toBe('the_world');

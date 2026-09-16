@@ -13,7 +13,7 @@
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldForPlay } from '../src/engine/world/driver.js';
-import { getNpc, type WorldState } from '../src/engine/world/world-state.js';
+import { getNpc } from '../src/engine/world/world-state.js';
 import { drawBirth } from '../src/engine/birth/birth.js';
 import { facesFromHome } from '../src/web/who-a-life-like-this-grew-up-knowing.js';
 import type { Cultivator } from '../src/schema/cultivation.js';
