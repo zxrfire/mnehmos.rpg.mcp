@@ -34,6 +34,9 @@ import {
 } from '../engine/world/standing-at-the-gate-of-a-house.js';
 import { sectGroundId } from '../engine/world/seeding.js';
 import { theHouseTheirTokenNames } from '../engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-plate-at-the-house.js';
+import { theyKnowTheFace } from '../engine/social/how-a-house-reads-a-face.js';
+import { howTheirPeopleSeeYourFace } from './how-a-houses-people-see-your-face.js';
 import {
     rankIndexOnAHousesRoll,
     whereSomebodyStandsOnAHousesRoll,
@@ -135,14 +138,30 @@ export function whatTheGateOfThisHouseSays(
     // WHOSE PEOPLE ARE OUT HERE, and they are read off the same roster every
     // other verb reads rather than off the house's catalog roll: a name on the
     // roll who is four provinces away cannot walk anybody through a gate.
-    const theirPeopleHere: SomebodyOfTheHouse[] = game.present(cultivator)
+    const presentOfTheHouse = game.present(cultivator)
         .filter(row => row.sectId === house.factionId)
         .map(row => ({
             id: row.id,
             name: row.name,
+            realmOrdinal: row.realmOrdinal,
             rankIndex: rankIndexOf(game, row.id, ranks.length)
         }))
         .filter(row => row.rankIndex >= 0);
+    const theirPeopleHere: SomebodyOfTheHouse[] = presentOfTheHouse
+        .map(row => ({ id: row.id, name: row.name, rankIndex: row.rankIndex }));
+
+    // WHOSE FACE THEY KNOW, read by the same trust reading a lecture hall uses.
+    // No sentence is in hand at a gate, so no concealment is declared here.
+    const faces = howTheirPeopleSeeYourFace(game, cultivator, {
+        houseId: house.factionId,
+        witnesses: presentOfTheHouse,
+        keepingItToThemselves: false
+    });
+    const knowing = faces
+        .map(({ witness, face }) => ({ name: witness.name, read: theyKnowTheFace(face) }))
+        .find(one => one.read.known) ?? null;
+    const aFaceTheyKnow = knowing === null ? null : { name: knowing.name, because: knowing.read.because };
+    const inTheRobes = world !== null && wearsTheRobesOf(world.objects, cultivator.id, house.factionId);
 
     // WHAT THE GATE READS, which is what they are carrying and not the roll.
     // Whether a token still answers is asked of the person it was cut for.
@@ -161,7 +180,9 @@ export function whatTheGateOfThisHouseSays(
         standing,
         theirPeopleHere,
         hostedBy,
-        theTokenNames
+        theTokenNames,
+        inTheRobes,
+        aFaceTheyKnow
     });
 }
 

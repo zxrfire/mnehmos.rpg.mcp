@@ -22,6 +22,12 @@
  *                   can see, so somebody on the roll with none is stopped and
  *                   asked - an obstacle, with the other roads still said - and
  *                   somebody off it carrying a genuine one passes.
+ *                   Below the token rung a house knows its people by FACE: one
+ *                   of its own in its robes, whose face somebody at the gate
+ *                   knows (`theyKnowTheFace`, the trust model's reference axis),
+ *                   passes with no token. Anybody in the robes whose face
+ *                   nobody places - a new arrival at a big house, or a stranger
+ *                   in stolen robes - is stopped and asked, not turned away.
  *   you are a guest somebody of standing brought you. Who may host is a rank
  *                   reading and not a field: anybody the house lets give an
  *                   order can host, which is `authorityTier` above `ordered`.
@@ -103,6 +109,15 @@ export interface AtTheGateInput {
      * would wave everybody on the roll through, which is what it did.
      */
     theTokenNames: string | null;
+    /** Whether they are wearing this house's robes. `wearsTheRobesOf`. */
+    inTheRobes: boolean;
+    /**
+     * Somebody of the house at the gate who knows their face, where anybody
+     * does, and why. `theyKnowTheFace` over each of `theirPeopleHere`, which is
+     * the trust model's reference axis read from the house's end. Null for
+     * nobody. The gate decides what that is worth; this only says who and why.
+     */
+    aFaceTheyKnow: { name: string; because: string } | null;
 }
 
 export interface WhatTheGateSays {
@@ -140,14 +155,29 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         theObjectNames: input.factionId,
         theTokenNames: input.theTokenNames
     });
-    const way: HowYouStandAtAGate = theTokenSays === 'they agree'
+    // KNOWN BY FACE, WHICH IS HOW A HOUSE KNOWS ITS PEOPLE BELOW THE TOKEN RUNG.
+    // One of its own, in its robes, whose face somebody at the gate knows. The
+    // roll is asked only because a face that is not the house's is not one of
+    // its faces: somebody who knows a stranger knows they are not of the house.
+    const knownByFace = !(theTokenSays === 'they agree')
+        && onTheRoll && input.inTheRobes && input.aFaceTheyKnow !== null;
+    const way: HowYouStandAtAGate = theTokenSays === 'they agree' || knownByFace
         ? 'on the roll'
         : input.hostedBy ? 'brought in'
-        : onTheRoll ? 'stopped and asked'
+        // IN THE ROBES IS STOPPED RATHER THAN TURNED AWAY, whether or not the
+        // roll agrees: a guard who cannot place the face asks for a token, and
+        // a stranger in stolen robes is asked the same question as a disciple
+        // nobody here has met. That is the disguise road working.
+        : onTheRoll || input.inTheRobes ? 'stopped and asked'
         : 'turned away';
 
     const facts: string[] = [];
-    if (way === 'on the roll') {
+    if (way === 'on the roll' && knownByFace) {
+        const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
+        facts.push(`${input.aFaceTheyKnow!.name} at the gate of the ${input.factionName} knows your `
+            + `face and you are in the house's robes, so nobody asks you for a token: `
+            + `${input.aFaceTheyKnow!.because} By the roll you are ${rung}.`);
+    } else if (way === 'on the roll') {
         const rung = onTheRoll ? input.ranks[Math.min(input.standing!, rankCount - 1)] : null;
         facts.push(`The gate asks for a token, reads it as the ${input.factionName}'s, and does not `
             + `stop you${rung ? `. By the roll you are ${rung}` : ''}.`);
@@ -156,20 +186,42 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
             + (onTheRoll ? ', whatever the roll says.' : ' and on no roll.'));
     } else {
         if (way === 'stopped and asked') {
-            // AN OBSTACLE AND NOT A REFUSAL. The roll says they belong and the
-            // gate cannot read a roll, so they are stopped and asked - and every
-            // road below is still open to them.
-            const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
-            facts.push(`The gate of the ${input.factionName} stops you and asks for a token. `
-                + (theTokenSays === 'they do not agree'
-                    ? 'The one you carry is another house\'s.'
-                    : 'There is no token to read.')
-                + ` You are ${rung} on its roll, and nothing about you here shows it.`);
-            facts.push(carriesATokenAt(input.standing!)
-                ? `A token is cut inside the ${input.factionName} for anybody on its roll at your `
-                  + 'rung, by whoever keeps the roll. Being entered there is what gives you one.'
-                : 'Your rung carries no token. A house knows its people that far down by face, '
-                  + 'and by somebody vouching for them.');
+            // AN OBSTACLE AND NOT A REFUSAL. The gate cannot read a roll and
+            // nobody at it places the face, so they are stopped and asked - and
+            // every road below is still open to them.
+            const noToken = theTokenSays === 'they do not agree'
+                ? 'The one you carry is another house\'s.'
+                : 'There is no token to read.';
+            // WHY THE FACE DID NOT ANSWER, said as what is true at the gate.
+            const theFace = !input.inTheRobes
+                ? 'You are not in the house\'s robes.'
+                : input.aFaceTheyKnow === null
+                    ? 'You are in its robes, and nobody at the gate knows your face.'
+                    : '';
+            if (onTheRoll) {
+                const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
+                facts.push([
+                    `The gate of the ${input.factionName} stops you and asks for a token.`,
+                    noToken,
+                    theFace,
+                    `You are ${rung} on its roll, and nothing about you here shows it.`
+                ].filter(part => part.length > 0).join(' '));
+                facts.push(carriesATokenAt(input.standing!)
+                    ? `A token is cut inside the ${input.factionName} for anybody on its roll at your `
+                      + 'rung, by whoever keeps the roll. Being entered there is what gives you one.'
+                    : 'Your rung carries no token. A house knows its people that far down by face: '
+                      + 'somebody at the gate who has dealt with you, or a house small enough that '
+                      + 'every face in it is known.');
+            } else {
+                // In the robes and off the roll. What is said is what a guard
+                // says to anybody in those robes they cannot place, and nothing
+                // about a roll the guard cannot see.
+                facts.push([
+                    `The gate of the ${input.factionName} stops you and asks for a token.`,
+                    noToken,
+                    theFace
+                ].filter(part => part.length > 0).join(' '));
+            }
         } else {
             facts.push(`The gate of the ${input.factionName} is held. Nobody on it is senior and `
                 + 'none of them has to be.');

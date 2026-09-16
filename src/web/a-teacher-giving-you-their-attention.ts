@@ -70,8 +70,6 @@ import type { GameService } from './turn-engine.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { guestPlaceHeldBy } from '../server/consolidated/sect-guest.js';
 import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
-import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-about-you.js';
-import { noticesThatTheyAreThere } from '../engine/social/presence-recognition.js';
 import {
     severityOfTheWrong,
     shapeOf
@@ -81,12 +79,10 @@ import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { whatTheRoomDecides } from '../engine/social-leverage/what-a-room-decides-about-one-of-its-own.js';
 import { whatAFineComesTo } from './a-room-hands-down-what-it-decided.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
-import { openLedgerBetween, tieFrom, type DatabaseHandle } from './encounters.js';
-import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-plate-at-the-house.js';
-import { A_ROLL_A_PLAYER_COULD_KNOW } from '../engine/world/a-house-raises-its-own.js';
-import { pathTo, purposeOf } from '../engine/world/architecture.js';
-import { theGroundUnderYou } from '../engine/social-leverage/ground-trust.js';
-import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
+import { type DatabaseHandle } from './encounters.js';
+import { howTheirPeopleSeeYourFace } from './how-a-houses-people-see-your-face.js';
+import { whetherAFaceIsRemarkable } from '../engine/social/how-a-house-reads-a-face.js';
+import { pathTo } from '../engine/world/architecture.js';
 import { whetherYouAreWorthTheTrouble } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whoAnsweredTheShout, type CouldBeCalled } from '../engine/cultivation/unfinished-fight.js';
 import { assessPower, type CombatantInput } from '../engine/cultivation/combat.js';
@@ -95,7 +91,6 @@ import {
     combatantFromOpponent
 } from '../server/consolidated/combat-manage.js';
 import { houseStanding } from '../engine/encounters/what-a-house-asks-of-somebody-it-cannot-order.js';
-import type { WorldState } from '../engine/world/world-state.js';
 
 /**
  * The two labels `teach` dispatches on beside handing an art on: sitting in on
@@ -646,44 +641,15 @@ export const attentionVerbs = {
             && npc.factionId === house);
         const witnesses = beside.length > 0 ? beside : [teacher];
 
-        // WHAT IS THE SAME FOR EVERY WITNESS
-        const hiding = whatYouAreNotShowing(rawInput) !== null;
-        const inTheRobes = wearsTheRobesOf(world.objects, cultivator.id, house);
-        const houseSize = howManyAHouseReallyHas(world, house);
-        const ofTheHouse = world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === house);
-        const strongestOfTheHouse = ofTheHouse.reduce<number | null>(
-            (top, npc) => top === null || npc.cultivation.realmOrdinal > top ? npc.cultivation.realmOrdinal : top,
-            null
-        );
-        const ground = theGroundUnderYou(
-            holding, statusesInArea(world.statuses, world.locations, placeId ?? '', today)
-        );
-
-        const readings = witnesses.map(witness => {
-            const known = tieFrom(this.repos, witness.id, cultivator.id) !== null
-                || openLedgerBetween(this.repos, cultivator.id, witness.id).length > 0;
-            return {
-                witness,
-                reading: whetherAFaceIsRemarkable({
-                    registers: noticesThatTheyAreThere({
-                        theirOrdinal: cultivator.realmOrdinal,
-                        yourOrdinal: witness.cultivation.realmOrdinal,
-                        known
-                    }),
-                    knowsThem: known,
-                    inTheRobes,
-                    takenForRung: whatTheyCanPlaceAbout({
-                        theirOrdinal: cultivator.realmOrdinal,
-                        readerOrdinal: witness.cultivation.realmOrdinal,
-                        keepingItToThemselves: hiding,
-                        hasDealtWithThemBefore: known
-                    }).rungTheyAreTakenFor,
-                    strongestOfTheHouse,
-                    houseSize,
-                    groundUnderDuress: ground.underDuress
-                })
-            };
-        });
+        // HOW EACH OF THEM READS THE FACE. `howTheirPeopleSeeYourFace`, which the
+        // gate asks too, so a face is read one way wherever it is looked at.
+        const readings = howTheirPeopleSeeYourFace(this, cultivator, {
+            houseId: house,
+            witnesses: witnesses.map(npc => ({
+                id: npc.id, name: npc.name, realmOrdinal: npc.cultivation.realmOrdinal, npc
+            })),
+            keepingItToThemselves: whatYouAreNotShowing(rawInput) !== null
+        }).map(({ witness, face }) => ({ witness: witness.npc, reading: whetherAFaceIsRemarkable(face) }));
         const seen = readings.find(one => one.reading.remarkable) ?? null;
         if (seen === null) {
             return {
@@ -1033,94 +999,10 @@ export function whatATalkIsWorthToTheHouse(
     return Math.round(dutyRate * (days / ORDINARY_DUTY_DAYS) * studentsWorth);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// WHETHER A STRANGER'S FACE STANDS OUT
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * How many people a house really has, which is not how many are on its roll.
- *
- * `a-house-and-who-is-in-it.md`: the roll is who a player could come to know,
- * and a sect has hundreds of outer disciples nobody models. The one figure the
- * world holds for the rest is the room the house sleeps them in - the
- * dormitory, cut by `architecture.ts` for the heads the compound was built for.
- * A house that takes nobody in has no dormitory and no unmodelled hundreds, and
- * for that house the roll IS the house.
- */
-export function howManyAHouseReallyHas(
-    world: Pick<WorldState, 'locations' | 'npcs'>,
-    houseId: string
-): number {
-    const slept = world.locations
-        .filter(place => place.data?.factionId === houseId && purposeOf(place) === 'dormitory')
-        .reduce((sum, place) => sum + Math.max(0, Number(place.data?.capacity ?? 0)), 0);
-    if (slept > 0) return slept;
-    return world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === houseId).length;
-}
-
-export interface AFaceBeingLookedAt {
-    /** Whether the face registers at all, from the witness's rung. */
-    registers: boolean;
-    /** Whether the witness has dealt with this person and knows who they are. */
-    knowsThem: boolean;
-    /** Whether they wear this house's robes. */
-    inTheRobes: boolean;
-    /** The rung the witness takes them for, which a concealment can lower. */
-    takenForRung: number;
-    /** The strongest living person of the house, or null for a house of nobody. */
-    strongestOfTheHouse: number | null;
-    /** `howManyAHouseReallyHas`. */
-    houseSize: number;
-    /** Whether the ground is having a bad year. */
-    groundUnderDuress: boolean;
-}
-
-/**
- * Whether a stranger's face stands out to one person of the house, and why.
- *
- * Every clause is one of the trust model's axes, kept apart, and they are asked
- * in the order a look reaches them. Nothing here is a chance: the reads it is
- * made of are facts, and a stranger either fits the room or does not.
- *
- *   no register      a face the witness does not register cannot stand out
- *   known            somebody who has dealt with you knows you are not of it
- *   no robes         the house's people dress as the house; a stranger in
- *                    their own clothes is the first thing anybody sees
- *   above the house  a face taken for a rung nobody of the house stands at
- *   a small house    `A_ROLL_A_PLAYER_COULD_KNOW` is how many faces one person
- *                    holds; a house no bigger than that knows all of its own
- *   a bad year       a house in trouble looks twice at every face
- *
- * Past all six an unfamiliar face in the right robes is ordinary.
- */
-export function whetherAFaceIsRemarkable(face: AFaceBeingLookedAt): { remarkable: boolean; because: string } {
-    if (!face.registers) {
-        return { remarkable: false, because: 'the face does not register from where they stand.' };
-    }
-    if (face.knowsThem) {
-        return { remarkable: true, because: 'they have dealt with you and know you are not of the house.' };
-    }
-    if (!face.inTheRobes) {
-        return { remarkable: true, because: 'you are not in the house\'s robes, and everybody else is.' };
-    }
-    if (face.strongestOfTheHouse !== null && face.takenForRung > face.strongestOfTheHouse) {
-        return {
-            remarkable: true,
-            because: `you are taken for ${rankName(face.takenForRung)}, and nobody of the house stands `
-                + 'that high.'
-        };
-    }
-    if (face.houseSize <= A_ROLL_A_PLAYER_COULD_KNOW) {
-        return {
-            remarkable: true,
-            because: `the house is ${face.houseSize} people, few enough that every face in it is known.`
-        };
-    }
-    if (face.groundUnderDuress) {
-        return { remarkable: true, because: 'the place is having a bad year, and every face is looked at twice.' };
-    }
-    return {
-        remarkable: false,
-        because: `an unfamiliar face in the robes of a house of ${face.houseSize} is nobody in particular.`
-    };
-}
+// Moved to `engine/social/how-a-house-reads-a-face.ts` when the gate needed the same read.
+// Re-exported so nothing that imported it from here has to change.
+export {
+    howManyAHouseReallyHas,
+    whetherAFaceIsRemarkable,
+    type AFaceBeingLookedAt
+} from '../engine/social/how-a-house-reads-a-face.js';

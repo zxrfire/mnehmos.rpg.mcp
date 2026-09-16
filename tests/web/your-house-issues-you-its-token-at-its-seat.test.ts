@@ -40,6 +40,10 @@ import {
 import { wearsTheRobesOf } from '../../src/engine/world/a-recruit-is-given-their-plate-at-the-house';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from '../../src/web/walking-up-to-a-house';
 import type { WorldState } from '../../src/engine/world/world-state';
+import { howManyAHouseReallyHas } from '../../src/engine/social/how-a-house-reads-a-face';
+import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../src/engine/world/a-house-raises-its-own';
+import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
+import { createDebt } from '../../src/engine/social/grudges';
 
 const WORLD = 'a-house-you-can-walk-to';
 
@@ -117,6 +121,65 @@ describe('your house issues you its robes and token at its seat', () => {
         await game.act('I look around');
         world = game.atHand!;
         expect(tokenOf(world, cultivator.id)).toBe(faction.id);
+    }, 240_000);
+
+    /**
+     * BELOW THE TOKEN RUNG, BY FACE. Rung 0 carries no token and every new
+     * disciple starts there, so the gate reads the face: a large house does not
+     * know a new arrival's, and somebody at the gate who has dealt with them
+     * does. The account written is the ordinary one, and `openLedgerBetween` is
+     * one of the two things the trust read counts as having dealt with somebody.
+     */
+    it('stops a rung-0 disciple in robes whose face nobody at a large house knows, and passes them once somebody does', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'known-by-face', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Servant');
+        const opened = (await game.loadWorld())!;
+
+        // A large house - more than one person can hold the faces of - with the
+        // most of its own standing at its gate, asked of the world.
+        const large = opened.factions
+            .filter(f => f.dissolvedOnDay === null && f.seatLocationId !== null)
+            .filter(f => howManyAHouseReallyHas(opened, f.id) > A_ROLL_A_PLAYER_COULD_KNOW)
+            .map(f => ({
+                faction: f,
+                seat: opened.locations.find(l => l.id === f.seatLocationId)!,
+                atTheGate: opened.npcs.filter(n =>
+                    n.status === 'alive' && n.factionId === f.id && n.locationId === f.seatLocationId).length
+            }))
+            .filter(row => row.seat !== undefined)
+            .sort((a, b) => b.atTheGate - a.atTheGate)[0];
+        expect(large, 'this world has no large seated house').toBeTruthy();
+        const { faction, seat } = large!;
+
+        // Walked there first, so the arrangement is made in the world the read sees.
+        await game.act(`I travel to the ${faction.name}`);
+        expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
+        repos.sects.addMember(faction.id, cultivator.id, 0);
+        await game.act('I look around');
+        const world = game.atHand!;
+        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'entered at the seat').toBe(true);
+        expect(tokenOf(world, cultivator.id), 'rung 0 carries a token').toBeNull();
+
+        const current = repos.cultivators.getById(cultivator.id)!;
+        const witness = game.present(current).find(row => row.sectId === faction.id);
+        expect(witness, 'nobody of the house is at its gate to read a face').toBeTruthy();
+        const house = theHouseWhoseGateThisIs(world, seat.name)!;
+
+        const unknown = whatTheGateOfThisHouseSays(game, current, house);
+        expect(unknown.way).toBe('stopped and asked');
+        expect(unknown.facts.join(' ')).toContain('nobody at the gate knows your face');
+
+        writeOneObligation(repos.db as any, createDebt({
+            holderId: witness!.id,
+            subjectId: cultivator.id,
+            cause: 'saved_life',
+            severity: 'serious',
+            onDay: 0,
+            description: 'Somebody at the gate who has dealt with you.'
+        }));
+        const known = whatTheGateOfThisHouseSays(game, current, house);
+        expect(known.way).toBe('on the roll');
+        expect(known.facts.join(' ')).toMatch(/knows your face/);
     }, 240_000);
 
     it('enters somebody who joins while already standing at the seat, on that turn', async () => {

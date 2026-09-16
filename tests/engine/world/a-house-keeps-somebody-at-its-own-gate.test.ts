@@ -162,6 +162,8 @@ describe('a house keeps somebody at its own gate', () => {
             admissionOrdinal: 1,
             standing: null,
             theTokenNames: null,
+            inTheRobes: false,
+            aFaceTheyKnow: null,
             theirPeopleHere: stillHere.map(
                 p => ({ id: p.id, name: p.name, rankIndex: p.rankIndex }))
         });
@@ -187,6 +189,8 @@ describe('a house keeps somebody at its own gate', () => {
             admissionOrdinal: 1,
             standing: null,
             theTokenNames: null,
+            inTheRobes: false,
+            aFaceTheyKnow: null,
             theirPeopleHere: []
         });
         expect(gate.couldHost).toHaveLength(0);
