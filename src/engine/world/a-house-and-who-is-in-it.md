@@ -282,17 +282,28 @@ who was always there and had not been worth a row until now** - which is also
 exactly how it reads in the genre. An elder nobody has heard of is the ordinary
 case, not a cheat: you were never going to have met all five hundred.
 
-So a promotion pass may **mint** a row rather than only moving one, and that is
-not the world inventing a person. It is the slice widening by one, because
-somebody who was previously only a number has become somebody a player might
-deal with. The test of a new row is whether it is the sort of person the house
-would have had, not whether it existed yesterday.
+**And the pipeline for this already exists - do not write a minting pass.** The
+world already bears people (`the-world-changing-on-its-own.ts` creates rows at
+runtime), already enrols them (`applyRecruitment`, yearly, over every house
+tagged `recruits`), and already promotes them (`applyPromotions`, gated on a
+free seat and on the rung's realm bar). Birth, intake, promotion: the three
+steps of an elder rising from somebody nobody had heard of are all there and
+all running.
+
+**So the defect is throughput, not a missing mechanism**, and that is a
+different investigation. A fifth of every ladder is empty at a century with all
+three passes running, so something in the chain does not keep pace with deaths
+at the top - and the honest first question is which link, measured, rather than
+which pass to add. `applyPromotions` deliberately returns no seats for the head
+rung, on the grounds that a head is a succession rather than a promotion, and
+nobody has yet found the succession machinery a comment in that file refers to.
+That is the first place to look.
 
 **What follows for anything that fills a post:** never fail for want of a
-candidate inside the slice. Look in the slice first, because somebody already
-rendered is the better story - a disciple the player has met rising to an
-elder's chair is worth more than a stranger doing it - and mint only when the
-slice cannot answer.
+candidate inside the slice, and prefer the slice when it can answer - a
+disciple the player has actually met rising to an elder's chair is worth more
+than a stranger doing it. When it cannot, the person who takes the chair is
+somebody who was always there and had not been worth a row until now.
 
 ## The shape has to survive time passing
 
