@@ -16626,24 +16626,48 @@ ${fit.line}`;
     }
 
     /**
-     * The strongest person in this cultivator's own house who is above them.
+     * The strongest person above this cultivator who is teaching them right
+     * now, or null.
+     *
+     * GUIDANCE IS ATTENTION, NOT PRESENCE. Ruled by the design owner, and a
+     * pillar of the genre: a master standing beside you ignoring you teaches
+     * you nothing. Somebody guides you when they are actually at it, which the
+     * world already records as a fact - an activity of kind `teaching` with you
+     * among `withIds` - and that costs them time, energy and a lot of turns of
+     * their own. A written copy is the way that works without anybody's
+     * attention.
+     *
+     * Who will give you that attention is a separate question with its own
+     * answer: an acknowledged master (`FLAG_MASTER`, written only when a
+     * `discipleship` request is granted) as a matter of course, anybody else
+     * only if they agree to. Neither is read here. This read used to take the
+     * whole catalog roll of the player's house and a remembered ordinal, so a
+     * senior nobody had agreed to, dead or three provinces away, sped them up.
+     *
+     * With no world loaded there is nobody's activity to read, so that mode
+     * keeps the ordinal remembered when a master took them on.
      */
     private guideFor(cultivator: Cultivator): number | null {
-        let best: number | null = null;
-
-        // AND SOMEBODY WHO TOOK THEM ON
-        const took = readFlag(this.db, cultivator.id, FLAG_MASTER);
-        if (took) {
-            const ordinal = Number(took.split(':').pop());
-            if (Number.isFinite(ordinal) && ordinal > cultivator.realmOrdinal) best = ordinal;
+        const world = this.atHand;
+        if (!world) {
+            const took = readFlag(this.db, cultivator.id, FLAG_MASTER);
+            if (!took) return null;
+            const ordinal = Number(took.slice(took.lastIndexOf(':') + 1));
+            return Number.isFinite(ordinal) && ordinal > cultivator.realmOrdinal ? ordinal : null;
         }
 
-        const held = this.repos.sects.getMembership(cultivator.id);
-        if (!held) return best;
-        for (const member of getMembersOf(held.sectId)) {
-            if (member.id === cultivator.id) continue;
-            if (member.realmOrdinal <= cultivator.realmOrdinal) continue;
-            if (best === null || member.realmOrdinal > best) best = member.realmOrdinal;
+        const place = worldLocationFor(world, cultivator.location);
+        if (!place) return null;
+        const today = Math.floor(world.currentDay);
+        let best: number | null = null;
+        for (const npc of npcsAt(world, place.id)) {
+            const doing = npc.activity;
+            if (!doing || doing.kind !== 'teaching') continue;
+            if (!(doing.withIds ?? []).includes(cultivator.id)) continue;
+            if (doing.untilDay !== null && doing.untilDay !== undefined && doing.untilDay < today) continue;
+            const ordinal = npc.cultivation.realmOrdinal;
+            if (ordinal <= cultivator.realmOrdinal) continue;
+            if (best === null || ordinal > best) best = ordinal;
         }
         return best;
     }
