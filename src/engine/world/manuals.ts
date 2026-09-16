@@ -16,6 +16,12 @@ import {
 import type { SectAlignment } from '../../schema/cultivation.js';
 import { SECTS } from '../../data/cultivation/sects.js';
 import type { SpiritRootKey } from '../../schema/cultivation.js';
+import {
+    takeTheArtOffThePage,
+    theManualInThisHandFor,
+    USES_A_MANUAL_OF_THIS_GRADE_HOLDS,
+    whatIsLeftIn
+} from './what-a-manual-has-left-in-it.js';
 
 /**
  * The working library of each house, by faction id.
@@ -269,9 +275,55 @@ export function refreshChosen(state: WorldState): NpcRecord[] {
 }
 
 /**
- * Books somebody has become entitled to since they were last looked at.
+ * One art passed on, and what it cost somebody other than the student.
  */
-export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
+export interface ALesson {
+    techniqueId: string;
+    /** The master whose time it took, or null when nobody's did. */
+    teacherId: string | null;
+    /** The house's copy a use came off, for a grade that runs out. Null otherwise. */
+    book: ObjectRecord | null;
+}
+
+/**
+ * Where a master's time is spoken for: the day they are free to take the next
+ * student. One tag, rewritten, never a second one.
+ */
+const TEACHING_UNTIL = 'teaching-until:';
+
+/** Whether this person has a student in front of them on this day. */
+export function isTeachingOn(npc: Pick<NpcRecord, 'tags'>, day: number): boolean {
+    const tag = npc.tags.find(t => t.startsWith(TEACHING_UNTIL));
+    return tag !== undefined && Number(tag.slice(TEACHING_UNTIL.length)) > day;
+}
+
+/**
+ * Books somebody has become entitled to since they were last looked at, and
+ * who it costs.
+ *
+ * A MASTER TEACHES ONE STUDENT AT A TIME, AND IT TAKES THE COPY SPAN. Carrying
+ * somebody over a gap in a shelf used to cost nothing: anybody in the house
+ * tall enough to OPEN the book counted as its teacher, taught any number of
+ * people in a year, and spent no time doing it. The teacher is now somebody
+ * who has taken the art to its end - `canReproduce`, the gate that lets them
+ * write a copy out - and the lesson takes `yearsToWriteOutACopy` of their time,
+ * one student at a time. The curve lives there and nowhere else.
+ *
+ * `canTransmit` in `../encounters/acquisition.ts` is the encounter rule and is
+ * looser: a teacher who went part of the way may transmit up to where they
+ * stopped. The world's own pass holds the stricter line.
+ *
+ * A HEAVEN BOOK READ WITH NOBODY TEACHING IT SPENDS A USE. Opening a book you
+ * are tall enough for still needs no teacher. At a grade that runs out
+ * (`what-a-manual-has-left-in-it.ts`) that reading takes the art off a copy
+ * the house holds, and a house with no copy left cannot do it. A lesson takes
+ * nothing out of the book, so where both are open the master is preferred.
+ */
+export function newlyEntitled(
+    state: WorldState,
+    npc: NpcRecord,
+    day: number = state.currentDay
+): ALesson[] {
     const held = new Set(npc.cultivation.techniqueIds);
     const ordinal = npc.cultivation.realmOrdinal;
 
@@ -289,22 +341,38 @@ export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
         const reach = npc.tags.includes('chosen')
             ? shelf.length
             : shelfReach(npc.factionRankIndex, rankCount, shelf.length);
+
         // A SHELF IS NOT A STAIRCASE, AND SOMEBODY HAS TO CARRY YOU OVER THE GAP.
-        const teachable = new Set<string>();
+        const freeMaster = new Map<string, string>();
         for (const other of state.npcs) {
             if (other.status !== 'alive' || other.factionId !== npc.factionId) continue;
-            if (other.id === npc.id) continue;
+            if (other.id === npc.id || isTeachingOn(other, day)) continue;
             for (const id of other.cultivation.techniqueIds) {
-                const m = shelf.find(x => x.id === id);
-                if (m && other.cultivation.realmOrdinal >= m.requiredOrdinal) teachable.add(id);
+                if (!freeMaster.has(id) && canReproduce(other, id)) freeMaster.set(id, other.id);
             }
         }
-        const open = shelf
-            .slice(0, reach)
-            .filter(m => (m.requiredOrdinal <= ordinal || teachable.has(m.id))
-                && suitsRoot(npc.cultivation.spiritRoot, m.element)
-                && !held.has(m.id));
-        return open.length > 0 ? [open[open.length - 1].id] : [];
+
+        let lesson: ALesson | null = null;
+        for (const m of shelf.slice(0, reach)) {
+            if (held.has(m.id) || !suitsRoot(npc.cultivation.spiritRoot, m.element)) continue;
+            const teacherId = freeMaster.get(m.id) ?? null;
+            const grade = getTechnique(m.id)?.grade;
+            const runsOut = grade !== undefined && USES_A_MANUAL_OF_THIS_GRADE_HOLDS[grade] !== null;
+            if (teacherId !== null && (runsOut || m.requiredOrdinal > ordinal)) {
+                lesson = { techniqueId: m.id, teacherId, book: null };
+                continue;
+            }
+            if (m.requiredOrdinal > ordinal) continue;
+            if (!runsOut) {
+                lesson = { techniqueId: m.id, teacherId: null, book: null };
+                continue;
+            }
+            const book = theManualInThisHandFor(state.objects, npc.factionId, m.id);
+            if (book !== null && !whatIsLeftIn(book, grade!).isSpent) {
+                lesson = { techniqueId: m.id, teacherId: null, book };
+            }
+        }
+        return lesson === null ? [] : [lesson];
     }
 
     // Unbacked: only what a stall would have, and only if they have nothing
@@ -320,7 +388,51 @@ export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
             && m.requiredOrdinal <= ordinal
             && suitsRoot(npc.cultivation.spiritRoot, m.element)
             && !held.has(m.id));
-    return stock.length > 0 ? [stock[0].id] : [];
+    return stock.length > 0 ? [{ techniqueId: stock[0].id, teacherId: null, book: null }] : [];
+}
+
+/**
+ * Hand somebody the art they are entitled to this year and charge whoever it
+ * cost: the master's time, or a use off the house's copy. False when there was
+ * nothing to hand them.
+ */
+export function handOnWhatTheyAreEntitledTo(state: WorldState, at: number, day: number): boolean {
+    const npc = state.npcs[at];
+    if (npc === undefined || npc.status !== 'alive') return false;
+    const [lesson] = newlyEntitled(state, npc, day);
+    if (lesson === undefined) return false;
+
+    if (lesson.book !== null) {
+        const grade = getTechnique(lesson.techniqueId)?.grade;
+        const where = state.objects.findIndex(o => o.id === lesson.book!.id);
+        if (grade === undefined || where < 0) return false;
+        const taken = takeTheArtOffThePage(state.objects[where], { grade, byId: npc.id, onDay: day });
+        if (!taken.took) return false;
+        state.objects[where] = taken.object;
+    }
+    if (lesson.teacherId !== null) {
+        const t = state.npcs.findIndex(n => n.id === lesson.teacherId);
+        const span = yearsToWriteOutACopy(lesson.techniqueId) ?? 0;
+        if (t >= 0) {
+            state.npcs[t] = {
+                ...state.npcs[t],
+                tags: [
+                    ...state.npcs[t].tags.filter(tag => !tag.startsWith(TEACHING_UNTIL)),
+                    `${TEACHING_UNTIL}${Math.ceil(day + span * 365)}`
+                ],
+                updatedOnDay: day
+            };
+        }
+    }
+    state.npcs[at] = {
+        ...npc,
+        cultivation: {
+            ...npc.cultivation,
+            techniqueIds: [...npc.cultivation.techniqueIds, lesson.techniqueId]
+        },
+        updatedOnDay: day
+    };
+    return true;
 }
 
 /** The stable id of a house's holding of one manual, so re-seeding is idempotent. */
@@ -784,8 +896,7 @@ function teachableIn(state: WorldState, factionId: string, shelf: Manual[]): Set
     for (const other of state.npcs) {
         if (other.status !== 'alive' || other.factionId !== factionId) continue;
         for (const id of other.cultivation.techniqueIds) {
-            const at = required.get(id);
-            if (at !== undefined && other.cultivation.realmOrdinal >= at) teachable.add(id);
+            if (required.has(id) && canReproduce(other, id)) teachable.add(id);
         }
     }
     index.byFaction.set(factionId, teachable);
@@ -980,6 +1091,9 @@ const DEEPEST_ROAD_CAP = TECHNIQUES.reduce(
  * half years and an elders' road near seven, which is the shape the shelf bands
  * already imply - `copiesOf` gives a house one apex copy and a dozen primers
  * for the same reason.
+ *
+ * ONE OF THE TWO LEVERS on how fast an upper art spreads: a lesson and a copy
+ * both take this span. See `how-far-up-the-world-reaches.md` before tuning it.
  */
 export function yearsToWriteOutACopy(techniqueId: string): number | null {
     const bar = masteryBarFor(techniqueId);

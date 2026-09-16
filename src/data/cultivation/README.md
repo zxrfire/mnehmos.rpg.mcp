@@ -58,6 +58,13 @@ is a number that goes stale silently. Ask the catalog.
 ---
 
 
+## How far up the world reaches
+
+**The rule lives in `src/engine/world/how-far-up-the-world-reaches.md`.** How
+many people stand near the top, how that is meant to swing over the ages, and
+the two levers on it: how long a master takes to teach an art and to write one
+out, both read off `yearsToWriteOutACopy`.
+
 ## How many people a house has
 
 **The rule lives in `src/engine/world/a-house-and-who-is-in-it.md`.** It is not restated here, because it has been restated four times
