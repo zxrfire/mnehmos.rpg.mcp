@@ -64,18 +64,17 @@ describe('what the narrator is told about the player', () => {
 
         // Out of the catalog the stall reads from, not written out here: a name
         // this test hard-coded would be measuring somebody else's rename.
-        // A NAME THE BOARD PRINTS IS A NAME THE GAME MUST ACCEPT, and one of
-        // them is not. The board's first row used to be the Lesser Qi-Gathering
-        // Manual and is now the Cross-Meridian Strike: every art gained a cap
-        // when the two kinds of technique collapsed into one, so the stall
-        // carries eight books rather than two and six of them are fighting
-        // arts. `I buy the Cross-Meridian Strike` leaves the pouch empty where
-        // the same sentence about the gathering manual does not.
+        // A NAME THE BOARD PRINTS IS A NAME THE GAME MUST ACCEPT, and for a
+        // while none of them was. The reader here answers `{"action":"buy"}` -
+        // the verb and no subject, which is the commonest shape a small model
+        // answers with - and nothing put the subject back, so every row of the
+        // board bought nothing.
         //
-        // That is a defect in the buy path and it is written down rather than
-        // worked around: this test walks the board until a row lands, so it
-        // measures the PROMPT rather than the parser, and the day the parser
-        // takes every printed name the loop stops on the first row.
+        // FIXED SINCE, in `carryWhatOnlyTheSentenceKnows`, and this loop now
+        // stops on the first row. It is kept as a loop rather than pinned to
+        // row one because the subject of this test is the PROMPT and not the
+        // parser, and `a-name-the-board-printed-is-a-name-the-board-sells.test.ts`
+        // is where the board is walked on purpose.
         let title = '';
         for (const row of manualsAStallCarries()) {
             await harness.game.act(`I buy the ${row.name}`);

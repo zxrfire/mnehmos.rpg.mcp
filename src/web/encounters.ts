@@ -42,6 +42,7 @@ import {
 import { thereIsNoDoorAt } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
 import { whoCouldNominateInto } from '../engine/social-leverage/who-can-put-your-name-up-for-a-posting.js';
 import { isSealedOn } from '../engine/world/what-ground-a-place-is.js';
+import type { InterruptPolicy } from '../engine/world/time.js';
 import {
     aFindThisHouseCouldSendFor,
     forbiddenGroundInTheProvinceOf,
@@ -324,6 +325,213 @@ export function arrivableForSpan<F extends { id: string; day: number; magnitude:
 export function daysActuallySpent(roll: EncounterRoll, startDay: number, requested: number): number {
     if (roll.firstInterruptDay === null) return requested;
     return Math.max(1, Math.min(requested, roll.firstInterruptDay - startDay));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT CUT A SPAN SHORT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the world lets reach somebody spending a span here.
+ *
+ * A fact about where they are sitting, not a policy about what they may type.
+ * The one thing that changes it is the door: a sealed sitting is not reached by
+ * the ordinary business of the place, which is the entire reason a house builds
+ * halls - but somebody who comes for YOU by name still gets through one, and so
+ * does anything the world flagged as interrupting on its own account.
+ */
+export function whatReachesSomebodySpendingASpanHere(where: {
+    actorId: string;
+    /**
+     * Where they are standing AND every place that contains it.
+     *
+     * A place is inside a region and the region is inside a layer, and the
+     * world writes at all three scales: measured on a fixture world, every
+     * located opportunity sat on a REGION id while a played cultivator stands
+     * on a site inside one, so an exact match found nothing anywhere ever.
+     * Somebody sitting on Silver Island is in the Drowned Reach, and something
+     * that happens to the Drowned Reach happens where they are sitting.
+     */
+    locationIds: readonly string[];
+    factionIds: readonly string[];
+    /** A closed door. Not emptiness - see `seclusion-verbs.ts`. */
+    behindAShutDoor: boolean;
+}): InterruptPolicy {
+    return {
+        actorId: where.actorId,
+        locationIds: where.behindAShutDoor ? [] : where.locationIds,
+        // A SHUT DOOR KEEPS OUT THE HOUSE'S ORDINARY BUSINESS TOO. The vein
+        // assessments a sect runs every twelve years are exactly what a door is
+        // for; somebody who comes for you by name is exactly what it is not, and
+        // that is `onActorInvolved`, which stays on either way.
+        factionIds: where.behindAShutDoor ? [] : where.factionIds,
+        onScheduledInterrupt: true,
+        onActorInvolved: true,
+        onLocalEvents: !where.behindAShutDoor,
+        // Both default false and both stay false. An opportunity opening
+        // somewhere is not somebody knocking on the door, and a window shutting
+        // unclaimed is something a player learns about afterwards rather than
+        // something that stands them up mid-sentence. They reach the player
+        // through the digest, which is where a thing you were not there for
+        // belongs.
+        onOpportunityOpens: false,
+        onOpportunityCloses: false
+    };
+}
+
+/**
+ * Which of the three things that can end a span early actually did.
+ *
+ * THREE SYSTEMS, ONE ANSWER. A span can be cut by somebody arriving (the
+ * encounter window, which decides before a day is spent), by the world (a
+ * scheduled consequence at this place, or one naming this person), or by the
+ * body (the skip's own stop - a wound, an empty pack, a wall). Until this
+ * existed all three were live and none of them was reported as the reason,
+ * because nothing asked.
+ *
+ * `null` when the span ran to the end, and null is the common case.
+ *
+ * Note the guard on zero: a span that ran in full still sets `interrupted` when
+ * the last chunk carried a warning, and announcing a loss of no days beside two
+ * identical figures is the defect `facts.ts` already fixed once at the other end
+ * of the same pipe.
+ */
+export interface SpanCutShort {
+    /** What the sentence asked for. */
+    askedDays: number;
+    /** What was lived before something ended it. */
+    livedDays: number;
+    cause: 'somebody_arrived' | 'the_world' | 'the_body';
+    /** What cut in, stated. Not narrated - the narrator writes the prose. */
+    what: string;
+}
+
+export function whatCutTheSpanShort(span: {
+    /** What the player's sentence asked for. */
+    asked: number;
+    /** What the span was cut to before the skip ran. */
+    lived: number;
+    skip: { requestedDays: number; simulatedDays: number; interrupted: boolean; interruptReason: string | null; died: boolean };
+    /** The arrival window, if one was rolled. Days are in the RUN's frame. */
+    arrival: { firstInterruptDay: number | null } | null;
+    /**
+     * What the world said it would do, if it was asked.
+     *
+     * DAYS FROM THE START OF THE SPAN, never a world day. The run clock and the
+     * world clock are joined at the advance and not before it, so an absolute
+     * day out of one frame compared against an absolute day out of the other
+     * decides the cause by whatever drift is between them.
+     */
+    world: { inDays: number; summary: string } | null;
+    /** Absolute day the span began, in the run's frame. */
+    startDay: number;
+}): SpanCutShort | null {
+    const asked = Math.max(0, Math.floor(span.asked));
+    const livedDays = Math.max(0, Math.floor(span.skip.simulatedDays));
+    if (livedDays >= asked) return null;
+    // A death is not an interruption. The run ended; there is no next sentence
+    // to make from where they are standing, and every other surface says so.
+    if (span.skip.died) return null;
+
+    // THE BODY FIRST, because it is the innermost and the most specific: the
+    // skip was handed `lived` days and did not finish them, which no arrival and
+    // no world event can explain.
+    if (span.skip.simulatedDays < span.skip.requestedDays) {
+        return {
+            askedDays: asked,
+            livedDays,
+            cause: 'the_body',
+            what: span.skip.interruptReason?.replace(/[_:]/g, ' ')
+                ?? 'the stretch could not be carried to the end'
+        };
+    }
+
+    // Then whichever of the two OUTER cuts landed first. Both are decided before
+    // a day is spent, so the earlier one is the one that actually decided.
+    // Both as days from the start of the span, which is the one frame they
+    // share.
+    const arrivedIn = span.arrival?.firstInterruptDay === null
+        || span.arrival?.firstInterruptDay === undefined
+        ? null
+        : span.arrival.firstInterruptDay - span.startDay;
+    const worldIn = span.world?.inDays ?? null;
+    const arrivalWins = arrivedIn !== null && (worldIn === null || arrivedIn <= worldIn);
+    if (arrivalWins) {
+        return {
+            askedDays: asked,
+            livedDays,
+            cause: 'somebody_arrived',
+            what: 'somebody reached you before the stretch was done'
+        };
+    }
+    if (span.world !== null) {
+        return {
+            askedDays: asked,
+            livedDays,
+            cause: 'the_world',
+            what: span.world.summary
+        };
+    }
+    return null;
+}
+
+/**
+ * The span was cut short, stated for the player. One sentence, no inference.
+ */
+export function sayingWhatEndedTheSpan(cut: SpanCutShort, humanise: (days: number) => string): string {
+    return `${humanise(cut.livedDays)} of the ${humanise(cut.askedDays)} were spent: `
+        + `${cut.what}.`;
+}
+
+/**
+ * The same, for the engine channel.
+ *
+ * Filed on EVERY span that was cut, not only on one that lost a later clause.
+ * `engine.planCutShort` is the plan layer's row and only exists where there was
+ * a plan; this is the span's own, and it is what makes the three causes
+ * countable without reading prose. Shaped for `ToolCallRecord` without importing
+ * it, for the reason `encounterCalls` gives.
+ */
+export function theRowForASpanCutShort(
+    action: string,
+    cut: SpanCutShort
+): { name: string; action: string; summary: string; ok: boolean } {
+    return {
+        name: 'engine.spanCutShort',
+        action,
+        summary: `${cut.livedDays} of the ${cut.askedDays} day(s) asked for were spent. `
+            + `Cut short by ${cut.cause}: ${cut.what}.`,
+        // The span ran and what it reached came off. Nothing failed.
+        ok: true
+    };
+}
+
+/**
+ * What the world said it would do to this span, whether or not it got to.
+ *
+ * The world shortens the span BEFORE the skip runs, and the skip can then stop
+ * earlier still - so the world can decide something and never be the reason.
+ * Without this row that decision is invisible: an operator reading a stretch cut
+ * at day fifty by a wound cannot tell whether the world had also ended it at
+ * day twelve hundred, and the two are different worlds to be playing in.
+ *
+ * Engine channel only. Nothing here reaches the player: a forecast the world
+ * did not get to keep is exactly the sort of thing the narrator must never be
+ * handed as an observation.
+ */
+export function theRowForWhatTheWorldWouldHaveDone(
+    action: string,
+    asked: number,
+    cut: { days: number; interrupt: { cause: string; summary: string } }
+): { name: string; action: string; summary: string; ok: boolean } {
+    return {
+        name: 'engine.theWorldWouldCutIn',
+        action,
+        summary: `The world would end this span after ${cut.days} of the ${asked} day(s) asked `
+            + `for (${cut.interrupt.cause}: ${cut.interrupt.summary}), so that is what the span `
+            + 'was cut to before anything was spent. What actually ended it may still be nearer.',
+        ok: true
+    };
 }
 
 /**

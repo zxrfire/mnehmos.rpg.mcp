@@ -1249,6 +1249,55 @@ export function sayingWhereItStopped(
         + 'Nothing was spent on what came after.';
 }
 
+/**
+ * What the player reads when the WORLD ended the sentence partway.
+ *
+ * Not a refusal and not a death. The step ran, it came off, and something
+ * ended it before the span it asked for was done - so the clauses after it in
+ * the same sentence were never reached.
+ *
+ * STATED, NOT NARRATED. What ran, what did not, and what cut in; the narrator
+ * turns that into the scene. The line does not apologise for the interruption,
+ * does not offer to resume it, and does not tell the player what to do next -
+ * the unrun half never happened and their next sentence is made from where they
+ * are actually standing, which is the whole of what this is for.
+ */
+export function sayingWhatTheWorldCutOff(
+    stoppedOn: PlanStep,
+    notReached: readonly PlanStep[],
+    whatCutIn: string
+): string {
+    if (notReached.length === 0) return '';
+    const named = notReached.map(whatThisStepIsCalled);
+    const rest = named.length === 1
+        ? named[0]!
+        : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+    return `"${whatThisStepIsCalled(stoppedOn)}" was cut short: ${whatCutIn}. `
+        + `"${rest}" ${named.length === 1 ? 'was' : 'were'} never reached and cost nothing. `
+        + 'You are where that left you.';
+}
+
+/** The same, for the engine channel. */
+export function theRowForAPlanTheWorldCutOff(
+    stoppedOn: PlanStep,
+    notReached: readonly PlanStep[],
+    cut: { cause: string; livedDays: number; askedDays: number; what: string }
+): ToolCallRecordish {
+    const at = `${stoppedOn.action.action}`
+        + `${stoppedOn.action.target ? `(${stoppedOn.action.target})` : '()'}`;
+    return {
+        name: 'engine.planCutShort',
+        action: stoppedOn.action.action,
+        summary: `${at} ran ${cut.livedDays} of the ${cut.askedDays} day(s) it asked for and `
+            + `was cut short by ${cut.cause}: ${cut.what}. `
+            + `${notReached.length} later step${notReached.length === 1 ? '' : 's'} never ran `
+            + `and cost nothing: ${notReached.map(s => s.action.action).join(', ')}.`,
+        // The step itself came off. Marking it failed in the surface an operator
+        // reads to find failures is the same lie a landed-but-fatal step told.
+        ok: true
+    };
+}
+
 /** The same, for the engine channel. */
 export function theRowThatSaysWhereItStopped(
     stoppedOn: PlanStep,

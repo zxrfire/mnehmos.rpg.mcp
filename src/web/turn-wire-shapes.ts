@@ -25,6 +25,7 @@ import type {
 import type { TollLedgerEntry } from '../server/consolidated/cultivation-support.js';
 import type { PlanSource } from './actions.js';
 import type { CrossroadsView } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
+import type { SpanCutShort } from './encounters.js';
 import type { EngineFacts } from './facts.js';
 import type { FightView } from './fight-answers.js';
 import type { Hearing } from './hearsay.js';
@@ -210,4 +211,19 @@ export interface Execution {
      * `shown-this-turn.ts` holds the rule and the one writer.
      */
     perceived?: Perception[];
+    /**
+     * That the span this step asked for did not run to the end, and what ended it.
+     *
+     * THE WORLD INTERRUPTING IS NOT AN ERROR. A step that was cut short still
+     * ran, still cost what it cost, and still succeeded at everything it got to
+     * - so `outcome` stays `executed` and nothing here is a refusal. What it
+     * does mean is that the clauses AFTER it in the same sentence never happened:
+     * somebody who said "I sit for thirty years and then go to the market" and
+     * was stood up in year two is not at the market, and running the market
+     * clause anyway is the engine deciding the interruption did not count.
+     *
+     * Absent on every step that does not spend a span, and null on every span
+     * that ran in full - which is most of them.
+     */
+    cutShort?: SpanCutShort | null;
 }

@@ -72,6 +72,10 @@ import {
     encounterCalls,
     encountersFor,
     recordEncounters,
+    sayingWhatEndedTheSpan,
+    theRowForASpanCutShort,
+    theRowForWhatTheWorldWouldHaveDone,
+    whatCutTheSpanShort,
     withEncounterDeltas
 } from './encounters.js';
 import {
@@ -364,7 +368,20 @@ export const seclusionVerbs = {
                 rollIdentity: PLAYER_ROLL_IDENTITY
             }
         );
-        const lived = daysActuallySpent(enc, startDay, days);
+        // AND THE WORLD GETS A SAY IN HOW LONG THIS RUNS.
+        //
+        // Asked here rather than after, and folded into the same figure the
+        // arrival window feeds, because everything downstream is priced off
+        // `lived`: the provisions are bought per day, the world is advanced
+        // exactly as far as the body went, and the encounter roll is cut to it.
+        // A sitting the world ends in year two must not be provisioned for
+        // thirty.
+        //
+        // A shut door is a fact about the place: it keeps out the ordinary
+        // business of wherever they are sitting, and it does not keep out
+        // somebody who has come for them by name.
+        const worldCut = this.whenTheWorldWouldCutIn(cultivator, days, sealed);
+        const lived = Math.min(daysActuallySpent(enc, startDay, days), worldCut?.days ?? days);
 
         const provisioning = this.buyProvisions(
             cultivator, lived, options.resuming?.rationsLeft ?? 0
@@ -652,14 +669,43 @@ export const seclusionVerbs = {
             facts.prose = `${facts.prose}\n\n${said.join('\n')}`;
         }
 
+        // ── WHAT ENDED IT, SAID ONCE AND AS A FACT ───────────────────────
+        //
+        // Three things can end a long sitting early and until now none of them
+        // was named as the reason: the arrival window cut the span before the
+        // skip saw it, the world knocked, or the body gave out inside it. The
+        // player was told the two figures and left to guess which.
+        //
+        // Stated, not narrated. What ran, what did not, and what cut in - the
+        // narrator writes the scene from that, and a line describing the
+        // mechanism in the engine's own voice is the thing the house style is
+        // for refusing.
+        const cutShort = whatCutTheSpanShort({
+            asked: days, lived, skip, arrival: enc, startDay,
+            world: worldCut ? { inDays: worldCut.days, summary: worldCut.interrupt.summary } : null
+        });
+        if (cutShort !== null) {
+            const line = sayingWhatEndedTheSpan(cutShort, humanDays);
+            facts.lines.unshift(line);
+            (facts.required ??= []).push(line);
+            facts.structure.push(
+                `Span cut short by ${cutShort.cause}: ${cutShort.livedDays} of `
+                + `${cutShort.askedDays} day(s) were spent. Later clauses in the same sentence `
+                + 'do not run.'
+            );
+        }
+
         return {
             facts,
             events: [...skip.events, ...enc2.events].sort((a, b) => a.dayOffset - b.dayOffset),
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
+            cutShort,
             calls: [
                 ...skipCalls(verb, skip, provisioning.line),
+                ...(cutShort ? [theRowForASpanCutShort(verb, cutShort)] : []),
+                ...(worldCut ? [theRowForWhatTheWorldWouldHaveDone(verb, days, worldCut)] : []),
                 ...tollCalls(applied.tollLines),
                 ...encounterCalls(happened, verb, enc),
                 ...worldCalls(world)
@@ -982,7 +1028,12 @@ export const seclusionVerbs = {
                 rollIdentity: PLAYER_ROLL_IDENTITY
             }
         );
-        const lived = daysActuallySpent(enc, startDay, days);
+        // The world gets the same say here it gets over a decade in a cave. A
+        // shut door only exists where somebody shut one: `shortSkip` runs the
+        // verbs that are on their feet as well as the two that sit, and
+        // somebody walking a road is reached by whatever is happening on it.
+        const worldCut = this.whenTheWorldWouldCutIn(cultivator, days, activity === 'sealed');
+        const lived = Math.min(daysActuallySpent(enc, startDay, days), worldCut?.days ?? days);
         const before = withEncounterDeltas(cultivator, enc);
 
         const skip = simulateTimeSkip(before, lived, {
@@ -1041,14 +1092,33 @@ export const seclusionVerbs = {
             facts.prose = `${facts.prose}\n\n${world.lines.join('\n')}`;
         }
 
+        // The same three causes and the same one sentence. See `longSkip`.
+        const cutShort = whatCutTheSpanShort({
+            asked: days, lived, skip, arrival: enc, startDay,
+            world: worldCut ? { inDays: worldCut.days, summary: worldCut.interrupt.summary } : null
+        });
+        if (cutShort !== null) {
+            const line = sayingWhatEndedTheSpan(cutShort, humanDays);
+            facts.lines.unshift(line);
+            (facts.required ??= []).push(line);
+            facts.structure.push(
+                `Span cut short by ${cutShort.cause}: ${cutShort.livedDays} of `
+                + `${cutShort.askedDays} day(s) were spent. Later clauses in the same sentence `
+                + 'do not run.'
+            );
+        }
+
         return {
             facts,
             events: [...skip.events, ...enc2.events].sort((a, b) => a.dayOffset - b.dayOffset),
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
+            cutShort,
             calls: [
                 ...skipCalls(label.toLowerCase().startsWith('practice') ? 'train_technique' : 'wait', skip, null),
+                ...(cutShort ? [theRowForASpanCutShort(label.toLowerCase(), cutShort)] : []),
+                ...(worldCut ? [theRowForWhatTheWorldWouldHaveDone(label.toLowerCase(), days, worldCut)] : []),
                 ...encounterCalls(happened, label.toLowerCase(), enc),
                 ...worldCalls(world)
             ]

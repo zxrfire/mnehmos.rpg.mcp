@@ -562,6 +562,99 @@ function earliestOpportunityInterrupt(
     return best;
 }
 
+/**
+ * When the world would hand control back inside this span, WITHOUT moving it.
+ *
+ * `advanceTime` has always known how to stop. What it cannot do is answer the
+ * question the play loop asks BEFORE anything is spent: how many of these days
+ * does this person get? The play loop settles a span in one direction - the
+ * window decides how long it runs, the skip runs exactly that, and the world is
+ * then moved exactly as far as the body went - so moving the world first would
+ * commit days a wound on day four means nobody reaches, and moving it twice
+ * would fire the same year twice. Hence a READ.
+ *
+ * Deterministic against the advance that follows, by construction: whether an
+ * effect lands is `forStream(seed, 'schedule', id, day)`, minted fresh from
+ * those four things. And the rule about WHICH effects stop somebody is not
+ * restated - `interruptCauseFor` is the one copy, and this calls it.
+ *
+ * It cannot see an effect the span itself puts on the books; the pressure layer
+ * schedules as it goes. A span is only ever cut by this and never lengthened,
+ * so the worst case is that such an effect reaches the player through the
+ * ordinary digest instead of through the span.
+ */
+export function whenTheWorldWouldInterrupt(
+    state: WorldState,
+    policy: InterruptPolicy,
+    fromDay: number,
+    days: number
+): WorldInterrupt | null {
+    const span = Math.max(0, Math.floor(days));
+    if (span <= 0) return null;
+    const target = fromDay + span;
+
+    let best: WorldInterrupt | null =
+        earliestOpportunityInterrupt(state, policy, fromDay, target);
+
+    for (const effect of state.schedule) {
+        if (effect.fired) continue;
+        const cause = interruptCauseFor(effect, policy);
+        if (cause === null) continue;
+        // Never past what something else already found. A repeating effect can
+        // be due a thousand times in three hundred years and only the first of
+        // them can stop anybody.
+        const until = best === null ? target : Math.min(target, best.onDay);
+        for (const day of whenThisFallsDue(effect, fromDay, until)) {
+            // The same two lines `advanceTime` runs, in the same order: the
+            // stream is keyed on the day it is due, and a certainty does not
+            // draw from it at all.
+            const landed = effect.chance >= 1
+                || forStream(state.seed, 'schedule', effect.id, day).chance(effect.chance);
+            if (!landed) continue;
+            const earlier = best === null
+                || day < best.onDay
+                // `advanceTime` breaks a tie by id, because that is the order
+                // it sorted the queue in. Same tie, same winner.
+                || (day === best.onDay && effect.id < best.sourceId);
+            if (earlier) {
+                best = {
+                    onDay: day,
+                    cause,
+                    summary: effect.summary,
+                    sourceId: effect.id,
+                    locationId: effect.locationId
+                };
+            }
+            break;
+        }
+    }
+    return best;
+}
+
+/** Every day inside `(fromDay, toDay]` this effect falls due on. */
+function* whenThisFallsDue(
+    effect: ScheduledEffect,
+    fromDay: number,
+    toDay: number
+): Generator<number> {
+    const repeat = effect.repeatDays ?? 0;
+    if (repeat <= 0) {
+        if (effect.dueOnDay > fromDay && effect.dueOnDay <= toDay) yield effect.dueOnDay;
+        return;
+    }
+    let day = effect.dueOnDay;
+    if (day <= fromDay) {
+        // Closed form, not a walk: an annual effect first written four hundred
+        // years ago must not cost four hundred iterations to skip past.
+        day += Math.ceil((fromDay + 1 - day) / repeat) * repeat;
+    }
+    let guard = 0;
+    while (day <= toDay && guard++ < 100_000) {
+        yield day;
+        day += repeat;
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // DEATH
 // ─────────────────────────────────────────────────────────────────────────

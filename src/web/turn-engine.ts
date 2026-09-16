@@ -5,6 +5,9 @@
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { randomUUID } from 'crypto';
 import { getNpc } from '../engine/world/world-state.js';
+// THE WORLD INTERRUPTS. `time.ts` has known how since it was written and had no
+// caller; `whenTheWorldWouldCutIn` below is the one.
+import { whenTheWorldWouldInterrupt, type WorldInterrupt } from '../engine/world/time.js';
 import { everybodyDrawingHere } from '../engine/people/there-is-one-kind-of-person.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import type { ManualQuality, SectAlignment } from '../schema/cultivation.js';
@@ -553,6 +556,8 @@ import {
     recordDaysServed,
     PLAYER_ROLL_IDENTITY,
     arrivableForSpan,
+    whatReachesSomebodySpendingASpanHere,
+    type SpanCutShort,
     completeDuty,
     dutyFromOffer,
     refuseDuty,
@@ -904,6 +909,9 @@ import {
     whatTheChoiceLandedOnStructurally,
     sayingWhatIsStillToCome,
     sayingWhatItCostTheRest,
+    sayingWhatTheWorldCutOff,
+    theClauseThisStepQuotes,
+    theRowForAPlanTheWorldCutOff,
     sayingWhatTheReadingDropped,
     theRowForAChoice,
     theRowForADroppedClause,
@@ -1744,6 +1752,35 @@ const ADMIN_RESET = /^(?:reset|restart|regenerate|reroll|new_run|newrun)(?![a-z_
  */
 function aFightChargesNothingFor(verb: ActionName): boolean {
     return verb === 'status' || verb === 'assess' || verb === FALLBACK_ACTION;
+}
+
+/**
+ * Where somebody is standing, and every place that has them inside it.
+ *
+ * The world writes at more than one scale. Measured on a fixture world: every
+ * located opportunity and every located effect sat on a REGION id, while a
+ * played cultivator stands on a SITE inside one - so a policy matching the place
+ * exactly found nothing, anywhere, ever, and the world's own door was shut by
+ * arithmetic rather than by design.
+ *
+ * Containment, which is a fact about the world: somebody sitting on Silver
+ * Island is in the Drowned Reach, and a thing that happens to the Drowned Reach
+ * happens where they are sitting. Empty when the world does not know where they
+ * are, which is the right answer - nothing reaches somebody who is nowhere.
+ */
+export function thisPlaceAndWhatContainsIt(world: WorldState, locationId: string | null): string[] {
+    if (locationId === null) return [];
+    const chain = [locationId];
+    const seen = new Set(chain);
+    let at = world.locations.find(l => l.id === locationId) ?? null;
+    // Bounded by the roster, so a parent cycle written by anything cannot spin.
+    let guard = 0;
+    while (at?.parentId && !seen.has(at.parentId) && guard++ < 64) {
+        chain.push(at.parentId);
+        seen.add(at.parentId);
+        at = world.locations.find(l => l.id === at!.parentId) ?? null;
+    }
+    return chain;
 }
 
 export class GameService {
@@ -3391,6 +3428,8 @@ export class GameService {
         let stoppedOn: PlanStep | null = null;
         /** Whether the step that stopped the plan had LANDED. See `howTheStepWent`. */
         let stoppedHavingLanded = false;
+        /** What the world did to the step that stopped the plan, if that is why. */
+        let cutShortBy: SpanCutShort | null = null;
         let notReached: readonly PlanStep[] = [];
 
         // What the clause before this one was about, so "press IT into his hand"
@@ -3422,9 +3461,36 @@ export class GameService {
             lastThingNamed = theThingThisStepNamed(step) ?? lastThingNamed;
             // The world the last step left, re-read rather than remembered.
             const now = this.currentRun();
+            // ── A STEP READS ITS OWN CLAUSE, NOT THE WHOLE SENTENCE ──────
+            //
+            // `carryWhatOnlyTheSentenceKnows` fills any field a step left
+            // undefined from `parseIntent` of whatever text it is handed,
+            // whenever the two readings agree on the verb - so handing it the
+            // whole sentence bleeds fields across clauses. Measured:
+            //
+            //   parseIntent("...ask who is selling, and take work for the
+            //     season")            -> { action: work, intent: board }
+            //   parseIntent("take work for the season")
+            //                         -> { action: work, days: 90 }
+            //
+            // and the executor got `{ work, days: 90, intent: board }`, so the
+            // clause that said take the job read the wall instead and spent
+            // nothing. The same defect as the span bleed already fixed in
+            // `a-sentence-can-be-more-than-one-call.ts`, on the other side of
+            // the same seam - and it has to be shut before a chain can stop
+            // cleanly partway, because a step that inherited its intent from a
+            // clause that never ran is not one anybody can say did or did not
+            // happen.
+            //
+            // `theClauseThisStepQuotes` is the same helper `stepsInTheResponse`
+            // aligns with, so a step's words mean the same thing at both ends.
+            // Null where the step quoted nothing that is actually in the
+            // sentence - a step the reader invented, or one whose quote drifted
+            // - and there the whole sentence is still the honest fallback.
             const one = await this.execute(
                 step.action, now.run, now.cultivator,
-                this.ambientFor(now.cultivator, now.run), rawInput
+                this.ambientFor(now.cultivator, now.run),
+                theClauseThisStepQuotes(step, rawInput) ?? rawInput
             );
             // Read BEFORE the bookkeeping row goes on, as well as excluding it
             // there. Two guards for one mistake, because the mistake read as a
@@ -3437,11 +3503,29 @@ export class GameService {
             }
             done.push(one);
 
-            // TWO WAYS A PLAN ENDS EARLY, AND THEY ARE DIFFERENT
+            // THREE WAYS A PLAN ENDS EARLY, AND THEY ARE DIFFERENT
             const stillAlive = this.currentRun().cultivator.alive;
             if (went === 'did_not_come_off' || !stillAlive) {
                 stoppedOn = step;
                 stoppedHavingLanded = went !== 'did_not_come_off';
+                notReached = budget.toRun.slice(i + 1);
+                break;
+            }
+            // AND THE THIRD IS THE WORLD, WHICH DOES NOT WAIT POLITELY.
+            //
+            // The step ran, it came off, and the span it asked for did not
+            // finish. This loop broke only on a refusal and on a death, so the
+            // market clause of "sit for thirty years, then go to the market"
+            // ran on the same turn as a sitting that ended in year two - no
+            // single call was wrong, the plan simply never asked.
+            //
+            // NOT a queue and NOT a held plan. The unrun half never happened
+            // and cost nothing; the next sentence is made from where the
+            // interruption left them.
+            if (one.cutShort) {
+                stoppedOn = step;
+                stoppedHavingLanded = true;
+                cutShortBy = one.cutShort;
                 notReached = budget.toRun.slice(i + 1);
                 break;
             }
@@ -3473,12 +3557,21 @@ export class GameService {
         const folded: Execution = foldTheCallsIntoOneTurn(done);
 
         if (stoppedOn !== null && notReached.length > 0) {
-            const said = stoppedHavingLanded
-                ? sayingWhatItCostTheRest(stoppedOn, notReached)
-                : sayingWhereItStopped(stoppedOn, notReached);
+            // THREE ENDINGS, THREE SENTENCES. A step the world refused, a step
+            // that came off and killed them, and a step the world cut short are
+            // different things to be standing in afterwards, and a player who
+            // cannot tell them apart cannot tell the world acting from the
+            // parser failing.
+            const said = cutShortBy !== null
+                ? sayingWhatTheWorldCutOff(stoppedOn, notReached, cutShortBy.what)
+                : stoppedHavingLanded
+                    ? sayingWhatItCostTheRest(stoppedOn, notReached)
+                    : sayingWhereItStopped(stoppedOn, notReached);
             sayThisWhateverTheNarratorDoes(folded.facts, said);
             folded.calls.push(
-                theRowThatSaysWhereItStopped(stoppedOn, notReached, stoppedHavingLanded)
+                cutShortBy !== null
+                    ? theRowForAPlanTheWorldCutOff(stoppedOn, notReached, cutShortBy)
+                    : theRowThatSaysWhereItStopped(stoppedOn, notReached, stoppedHavingLanded)
             );
         }
 
@@ -18016,6 +18109,54 @@ ${fit.line}`;
         ));
 
         return reportFromDigest(advance?.result.digest ?? null);
+    }
+
+    /**
+     * How many of these days the world is going to let them have.
+     *
+     * Asked BEFORE anything is spent, and it moves nothing. `stopOnInterrupt`,
+     * `InterruptPolicy` and `WorldInterrupt` have been complete in `time.ts`
+     * since the layer was written and no production caller ever passed one, so
+     * a player who sat down for thirty years sat all thirty however hard the
+     * world knocked. This is the caller.
+     *
+     * The answer comes back in DAYS FROM NOW rather than as a world day,
+     * because the run clock and the world clock are joined at the advance and
+     * not before it - a handler that spent days without moving the world leaves
+     * them apart until the next `catchUp`, and an absolute day read out of one
+     * frame and applied in the other would silently shorten or lengthen the
+     * span by the drift.
+     *
+     * Null when the world is off, when there is no span, or - the usual case -
+     * when nothing on the books reaches this person here.
+     */
+    whenTheWorldWouldCutIn(
+        cultivator: Cultivator,
+        days: number,
+        behindAShutDoor: boolean
+    ): { days: number; interrupt: WorldInterrupt } | null {
+        const world = this.atHand;
+        if (!this.worldEnabled || world === null) return null;
+        const span = Math.max(0, Math.floor(days));
+        if (span <= 0) return null;
+
+        const from = Math.floor(world.currentDay);
+        const found = whenTheWorldWouldInterrupt(
+            world,
+            whatReachesSomebodySpendingASpanHere({
+                actorId: cultivator.id,
+                locationIds: thisPlaceAndWhatContainsIt(world, this.worldPlaceOf(cultivator)),
+                factionIds: cultivator.sectId ? [cultivator.sectId] : [],
+                behindAShutDoor
+            }),
+            from,
+            span
+        );
+        if (found === null) return null;
+        // At least one day, for the same reason `daysActuallySpent` floors at
+        // one: a span that spends nothing does not move the clock, and a turn
+        // that does not move the clock can be typed again forever.
+        return { days: Math.max(1, Math.min(span, found.onDay - from)), interrupt: found };
     }
 
     /**
