@@ -18,7 +18,7 @@ import {
     INTENT_ACTIONS
 } from './action-set.js';
 import {
-    MAX_CULTIVATION_DAYS,
+    LONGER_THAN_ANY_LIFE,
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_SECLUSION_DAYS,
     DEFAULT_WORK_DAYS
@@ -45,12 +45,22 @@ export const INTERACT_INTENTS = [
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
     /**
-     * Duration for `cultivate`, in days. Bounded on both ends so a model that
-     * answers `1e9` cannot ask the simulator for a heat-death-of-the-universe
-     * loop, and one that answers `0` cannot produce a no-op the player paid a
-     * turn for.
+     * Duration for `cultivate`, in days.
+     *
+     * ── WHY THE CEILING HERE IS ABSURDLY HIGH, AND HAS TO BE ─────────────
+     *
+     * It was `MAX_CULTIVATION_DAYS`, one flat century, and a `days` over it did
+     * not throw and did not drop the field: it failed `safeParse`, so the WHOLE
+     * PLAN was discarded and the turn fell back to the deterministic parser.
+     * The same over-long span therefore meant two different things depending on
+     * which path read the sentence, and neither path told the player anything.
+     *
+     * A Zod schema is static. It cannot know whose body is asking, so it cannot
+     * hold the real bound - which is the life left in that body. Its job shrinks
+     * to rejecting what is not a span at all, and the bound moves to a runtime
+     * check where the cultivator is: `aSpanPastTheEndOfThisLife`.
      */
-    days: z.number().int().min(1).max(MAX_CULTIVATION_DAYS).optional(),
+    days: z.number().int().min(1).max(LONGER_THAN_ANY_LIFE).optional(),
     /**
      * Free text: a destination for `travel`, a person for `talk`, a thing for
      * `investigate` or `search`, an art for `train_technique`, a formula for

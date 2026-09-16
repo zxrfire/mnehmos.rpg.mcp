@@ -17,8 +17,10 @@ import {
     effectiveLifespanYears,
     rankName,
     realmForOrdinal,
+    UNBOUNDED_LIFESPAN_YEARS,
     type RealmKey
 } from './realms.js';
+import { DAYS_PER_YEAR } from './cultivation.js';
 import { lifespanWithPhysique, physiqueOrNull } from './physiques.js';
 import { bleedingInjuryCount } from './injuries.js';
 import type { Injury } from '../../schema/cultivation.js';
@@ -540,6 +542,33 @@ export function lifespanRemaining(
         Partial<Pick<Cultivator, 'immortalStatus' | 'physique'>>
 ): number {
     return lifespanCeilingFor(cultivator) - cultivator.age;
+}
+
+/**
+ * The same span in days, which is the unit every act is asked for in.
+ *
+ * THE WHOLE OF WHAT IS LEFT, WITH NO MARGIN. Sitting down until you die is a
+ * coherent act, so the bound on a span is the life and nothing shorter; a
+ * refusal fires past what the body has, never near it.
+ *
+ * `Infinity` for a True Immortal and for any ceiling the ladder marks
+ * unbounded, read off the same two conditions `evaluateDeathConditions` uses
+ * below - somebody outside the arithmetic has no span, and a number here would
+ * be a claim about a body that does not have one.
+ *
+ * Seven places derived this from `lifespanForOrdinal` alone. That answer is the
+ * rung's, not the body's: a Profound Yin physique gets 0.35 of the rung's
+ * years, so the rung-only figure sits 2.9x past the age at which the death gate
+ * already returns `lifespan_exhausted`.
+ */
+export function daysOfLifeRemaining(
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'age'> &
+        Partial<Pick<Cultivator, 'immortalStatus' | 'physique'>>
+): number {
+    if ((cultivator.immortalStatus ?? 'none') === 'true_immortal') return Infinity;
+    const ceiling = lifespanCeilingFor(cultivator);
+    if (!Number.isFinite(ceiling) || ceiling >= UNBOUNDED_LIFESPAN_YEARS) return Infinity;
+    return Math.max(0, Math.floor(lifespanRemaining(cultivator) * DAYS_PER_YEAR));
 }
 
 /**

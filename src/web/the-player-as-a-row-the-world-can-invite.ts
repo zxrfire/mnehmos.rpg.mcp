@@ -97,7 +97,7 @@
 import type { Cultivator } from '../schema/cultivation.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
 import { MORTAL_LAYER } from '../engine/world/layers.js';
-import { lifespanForOrdinal } from '../engine/cultivation/realms.js';
+import { lifespanCeilingFor } from '../engine/cultivation/survival.js';
 import {
     createNpc,
     PLAYER_ROW_TAG,
@@ -159,8 +159,14 @@ export function standInTheWorld(
         hp: cultivator.hp,
         bodyOnDay: onDay,
         techniqueIds: cultivator.knownTechniques.slice(),
+        // The BODY's ceiling, not the rung's. Written from `lifespanForOrdinal`
+        // it was the one physique-blind mirror row in the world - harmless only
+        // because `time.ts` skips the player when it collects the day's dead,
+        // so the row was wrong and nothing read it. Everybody else's row comes
+        // off `lifespanWithPhysique` in `npc-state.ts`; this is the same answer
+        // with the immortal status folded in as well.
         lifespanEndsOnDay:
-            bornOnDay + lifespanForOrdinal(cultivator.realmOrdinal) * DAYS_PER_YEAR,
+            bornOnDay + Math.round(lifespanCeilingFor(cultivator) * DAYS_PER_YEAR),
         lastAdvancedOnDay: onDay,
         accumulatingSinceDay: onDay
     };

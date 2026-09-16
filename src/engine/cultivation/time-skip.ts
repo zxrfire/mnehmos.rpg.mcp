@@ -30,7 +30,7 @@ import {
     type TimeSkipResult,
     type TollResult
 } from '../../schema/cultivation.js';
-import { lifespanForOrdinal, rankName } from './realms.js';
+import { rankName } from './realms.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { AMBIENT_REFRESH_DAYS, ambientForBlock, impliedDensityFor } from './ambient.js';
 import {
@@ -81,6 +81,7 @@ import {
     burnSatiety,
     eat,
     evaluateDeathConditions,
+    lifespanCeilingFor,
     satietyBurnMultiplier,
     stillNeedsToEat,
     turnsUntilStarvation
@@ -551,6 +552,14 @@ export function simulateTimeSkip(
         knownTechniques: cultivator.knownTechniques,
         roadsWithinReach,
         immortalStatus,
+        // THE BODY, WHICH WAS NOT HERE. Without it `evaluateDeathConditions`
+        // read `physique` as undefined and priced every skip at the rung's
+        // ceiling, so a Profound Yin cultivator (0.35 of the rung's years) sat
+        // 2.9x past the age at which the same gate kills them outside a skip.
+        // `lifespanCeilingFor` below reads this object for the same reason, so
+        // the boundary the chunker stops on and the gate that kills cannot
+        // disagree.
+        physique: cultivator.physique,
         name: cultivator.name,
         injuries,
         hp,
@@ -972,7 +981,11 @@ export function simulateTimeSkip(
                       rate.perDay
                   )
                 : Infinity,
-            lifespanDays: daysUntilYear(lifespanForOrdinal(ordinal), rawAge()),
+            // Off `snapshot()`, which carries the LIVE rung, the immortal
+            // status a crossing inside this skip may have granted, and the
+            // body - so the chunk boundary is the same ceiling the death gate
+            // enforces rather than a second answer derived from the rung.
+            lifespanDays: daysUntilYear(lifespanCeilingFor(snapshot()), rawAge()),
             stagnationDays: daysUntilYear(stagnationYearsForOrdinal(ordinal), rawYearsAtRealm()),
             starvationDays:
                 grainAbstinence || rations > 0

@@ -2,16 +2,17 @@
  * Reading the parts of a sentence.
  */
 
-import { MAX_CULTIVATION_DAYS } from './verb-day-costs.js';
+/** The unit a span was said in, so an answer can come back in the same one. */
+export type SpanUnit = 'day' | 'week' | 'month' | 'season' | 'year' | 'decade' | 'century';
 
-const DURATION_UNITS: ReadonlyArray<[RegExp, number]> = [
-    [/\b(?:day|days)\b/, 1],
-    [/\b(?:week|weeks)\b/, 7],
-    [/\b(?:month|months)\b/, 30],
-    [/\b(?:season|seasons)\b/, 90],
-    [/\b(?:year|years|yr|yrs)\b/, 365],
-    [/\b(?:decade|decades)\b/, 3650],
-    [/\b(?:century|centuries)\b/, 36_500]
+const DURATION_UNITS: ReadonlyArray<[RegExp, number, SpanUnit]> = [
+    [/\b(?:day|days)\b/, 1, 'day'],
+    [/\b(?:week|weeks)\b/, 7, 'week'],
+    [/\b(?:month|months)\b/, 30, 'month'],
+    [/\b(?:season|seasons)\b/, 90, 'season'],
+    [/\b(?:year|years|yr|yrs)\b/, 365, 'year'],
+    [/\b(?:decade|decades)\b/, 3650, 'decade'],
+    [/\b(?:century|centuries)\b/, 36_500, 'century']
 ];
 
 /**
@@ -113,16 +114,30 @@ export const WORD_NUMBER_ALTERNATION = Object.keys(WORD_NUMBERS)
     .map(word => `${word} `)
     .join('|');
 
+/** A span a sentence names, in days and in the unit it was said in. */
+export interface ASpanNamedInASentence {
+    /** Whole days, exactly as asked. Never shortened. */
+    readonly days: number;
+    /** Days in the unit the sentence used. */
+    readonly unitDays: number;
+    /** That unit's singular noun. */
+    readonly unit: SpanUnit;
+}
+
 /**
- * Days named in a phrase, or null when none is.
+ * The span a phrase names, or null when it names none.
+ *
+ * THE UNIT TRAVELS WITH THE FIGURE. A player who typed "a thousand years" is
+ * owed an answer in years; handing back 365,000 days makes them do the
+ * arithmetic the engine already did.
  */
-export function parseDuration(input: string): number | null {
+export function theSpanTheSentenceNames(input: string): ASpanNamedInASentence | null {
     // "half a year" reads as one token to a scanner walking backwards from the
     // unit, and "a" means one. Normalising it up front is cheaper than teaching
     // the scanner to look two words back.
     const text = input.toLowerCase().replace(/\bhalf\s+an?\b/g, '0.5');
 
-    for (const [unitPattern, unitDays] of DURATION_UNITS) {
+    for (const [unitPattern, unitDays, unit] of DURATION_UNITS) {
         const match = unitPattern.exec(text);
         if (!match) continue;
 
@@ -131,8 +146,7 @@ export function parseDuration(input: string): number | null {
 
         const count = howManyWereNamed(tail);
 
-        const days = Math.round(count * unitDays);
-        return Math.max(1, Math.min(MAX_CULTIVATION_DAYS, days));
+        return { days: Math.max(1, Math.round(count * unitDays)), unitDays, unit };
     }
 
     // A bare number with no unit is not a duration. "I strike the barrier 3
@@ -141,24 +155,34 @@ export function parseDuration(input: string): number | null {
 }
 
 /**
- * The span the sentence ASKED for, with no ceiling applied.
+ * Days named in a phrase, or null when none is.
+ *
+ * ── IT USED TO CLAMP, AND NEVER SAID SO ──────────────────────────────────
+ *
+ * This returned `min(days, MAX_CULTIVATION_DAYS)`, so "I cultivate for a
+ * thousand years" arrived downstream as a hundred and every account of the
+ * turn reported the engine's own ceiling as the player's intention.
+ * `durationAskedFor` existed beside it purely to recover the figure that had
+ * been taken away - a second read of the same sentence, kept because the first
+ * one destroyed its answer. Silently shortening a span is the agency rule
+ * broken from the far side: what bounds a span is the life, and that is not a
+ * fact a parser holds. The parser reads what was said; the bound is applied
+ * where the cultivator is, and it is spoken.
+ */
+export function parseDuration(input: string): number | null {
+    return theSpanTheSentenceNames(input)?.days ?? null;
+}
+
+/**
+ * The span the sentence asked for.
+ *
+ * Now the same read as {@link parseDuration}, because nothing clamps any more
+ * and there is no longer a shortened figure to recover. Kept only because four
+ * call sites still spell it this way; they collapse into `parseDuration` the
+ * next time that file is open.
  */
 export function durationAskedFor(input: string): number | null {
-    const text = input.toLowerCase().replace(/\bhalf\s+an?\b/g, '0.5');
-
-    for (const [unitPattern, unitDays] of DURATION_UNITS) {
-        const match = unitPattern.exec(text);
-        if (!match) continue;
-
-        const before = text.slice(0, match.index).trim();
-        const tail = before.split(/[\s,]+/).filter(Boolean).slice(-2);
-
-        const count = howManyWereNamed(tail);
-
-        return Math.max(1, Math.round(count * unitDays));
-    }
-
-    return null;
+    return parseDuration(input);
 }
 
 /**
