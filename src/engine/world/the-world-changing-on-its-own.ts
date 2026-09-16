@@ -230,7 +230,9 @@ import {
     notFinishedChance,
     partyOrdinal,
     tierFor,
+    whatTheHouseCanSpare,
     whoTheHouseCanSend,
+    type OnTheRollForAnErrand,
     type Candidate,
     type HouseAsItStands
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
@@ -2509,7 +2511,7 @@ function applySendings(
     actOnAnEmptyPurse: boolean
 ): number {
     const rng = forStream(state.seed, 'sendings', year);
-    const roster = new Map<string, Candidate[]>();
+    const roster = new Map<string, OnTheRollForAnErrand[]>();
     const roll = new Map<string, OnTheRoll[]>();
     const at = new Map<string, number>();
     // Where each name on a roll is standing, for whether the province's talk
@@ -2550,7 +2552,22 @@ function applySendings(
         // decision that is theirs.
         if (!isTheWorldsToMove(npc)) continue;
         const bucket = roster.get(npc.factionId);
-        const row = { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal };
+        // THREE COLUMNS THE ROSTER NEVER CARRIED, all read off the npc already
+        // in hand. Where somebody is standing and what rank they hold are what
+        // `whatTheHouseCanSpare` needs to know who must stay at the seat; the
+        // term is what stops a house drafting somebody it has already sent
+        // somewhere. `isAwayOnSomething` is this pass's own predicate, so
+        // nothing new decides what being spent means.
+        const row = {
+            id: npc.id,
+            name: npc.name,
+            ordinal: npc.cultivation.realmOrdinal,
+            rankIndex: npc.factionRankIndex,
+            locationId: npc.locationId,
+            committedUntilDay: npc.activity && isAwayOnSomething(npc.activity.kind)
+                ? npc.activity.untilDay ?? null
+                : null
+        };
         if (bucket) bucket.push(row); else roster.set(npc.factionId, [row]);
     }
 
@@ -2582,6 +2599,19 @@ function applySendings(
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
         const party0 = roster.get(faction.id);
         if (!party0 || party0.length === 0) continue;
+
+        // AND WHAT THE HOUSE CAN ACTUALLY SPARE. Three bounds already applied -
+        // the errand's hands, the craft's heads, the chest - and none of them
+        // asked whether anybody was left. Measured before this: a third of
+        // seated houses had every living member standing somewhere that was
+        // not their own seat after a single day, and the gate then told a
+        // visitor there was nobody of the house to ask.
+        const spare = whatTheHouseCanSpare({
+            roster: party0,
+            rankCount: faction.ranks.length,
+            seatLocationId: faction.seatLocationId,
+            onDay: day
+        });
 
         // A solvent house keeps something in the yard, and WHICH something is
         // what it can afford. The writer `adjustCountedHolding` never had, and
@@ -2657,7 +2687,7 @@ function applySendings(
         // instead of to an offer: a house sends people at work it expects them to
         // come back from. The draw still reaches a rung above them now and again,
         // which is where a sending becomes a story.
-        const best = party0.reduce((n, c) => Math.max(n, c.ordinal), 0);
+        const best = spare.free.reduce((n, c) => Math.max(n, c.ordinal), 0);
 
         // ── WHERE THEY GO, AND IT IS DECIDED BEFORE THE POSTING IS WRITTEN ───
         //
@@ -2762,7 +2792,7 @@ function applySendings(
             // module's own eligibility filter rather than a second copy of it.
             available: whoTheHouseCanSend(
                 { ceilingOrdinal: reason.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER },
-                party0
+                spare.free
             ).length
         });
         // AND THE CHEST PAYS FOR THE GROUND THAT IS NOT THERE. One debit, off
@@ -2774,7 +2804,7 @@ function applySendings(
                 0, Number(faction.resources.spirit_stones ?? 0) - posting.stonesBurned
             );
         }
-        const party = whoTheHouseCanSend(posting, party0);
+        const party = whoTheHouseCanSend(posting, spare.free);
         if (party.length === 0) continue;
 
         // WALKING ONTO SOMEBODY'S GROUND IS A DECISION, and it is the elders'.
