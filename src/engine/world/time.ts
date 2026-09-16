@@ -35,6 +35,7 @@ import {
 } from './npc-state.js';
 import { heirsOf, type HeirRef } from './lineage.js';
 import {
+    isOpportunityOpen,
     missedWindowsFor,
     nextWindow,
     windowsBetween,
@@ -89,7 +90,12 @@ export type InterruptCause =
     | 'faction_event'
     | 'opportunity_opens'
     | 'opportunity_closes'
-    | 'actor_involved';
+    | 'actor_involved'
+    /**
+     * The ground where they are standing did something it will not do again in
+     * their lifetime. See {@link theOnlyOneTheyWillGet}.
+     */
+    | 'window_not_coming_again';
 
 export interface WorldInterrupt {
     onDay: number;
@@ -509,6 +515,49 @@ function interruptCauseFor(
 }
 
 /**
+ * Whether this window is the only one of its kind this person will get.
+ *
+ * THE RULE THAT LETS THE WORLD REACH SOMEBODY IN NO HOUSE, and the one place
+ * the two legitimate limiters meet: a fact about the world - how often this
+ * ground opens - read against a fact about the body - how much span is left to
+ * wait with. Nothing here is a constant, and nothing here is a rule about how a
+ * sentence may be shaped.
+ *
+ * Measured on three fixture worlds, and the reason a rarity rule here is a
+ * chasm rather than a knife edge: of 49 opportunities per world, 43 come round
+ * annually or oftener and 6 come round every 46 to 116 years, with nothing in
+ * between. The annual ones are one ripening per region - the ordinary business
+ * of a place, which is what a shut door and the digest are both for.
+ *
+ * It reads differently at the three heights, which is the point rather than a
+ * side effect: sixty years is the only chance a Qi Condensation cultivator will
+ * see, and it is weather to somebody carrying thirty thousand.
+ *
+ * A null lifespan is nobody by that id on the roster, and then the rule cannot
+ * be applied and claims nothing.
+ */
+function theOnlyOneTheyWillGet(
+    opp: OpportunityWindow,
+    opensOnDay: number,
+    lifespanEndsOnDay: number | null
+): boolean {
+    if (lifespanEndsOnDay === null || lifespanEndsOnDay <= opensOnDay) return false;
+    if (opp.recurrenceDays === null || opp.recurrenceDays <= 0) return true;
+    // From the day it opens, not from today. A cycle shorter than a whole
+    // lifespan can still have its next turn fall past the end of one when the
+    // opening is late, and asking from today gets that case wrong in the
+    // direction that matters - it is exactly the person with one chance left.
+    return opensOnDay + opp.recurrenceDays > lifespanEndsOnDay;
+}
+
+/** The day this person's span runs out, or null when the world has no row for them. */
+function whenTheirSpanRunsOut(state: WorldState, actorId: string | undefined): number | null {
+    if (!actorId) return null;
+    const npc = state.npcs.find(n => n.id === actorId);
+    return npc ? npc.cultivation.lifespanEndsOnDay : null;
+}
+
+/**
  * The first opportunity window in the span that should stop a long action.
  *
  * Closed-form: `nextWindow` and `windowsBetween` do not iterate days, so this
@@ -522,11 +571,45 @@ function earliestOpportunityInterrupt(
 ): WorldInterrupt | null {
     const wantOpen = policy.onOpportunityOpens ?? false;
     const wantClose = policy.onOpportunityCloses ?? false;
-    if (!wantOpen && !wantClose) return null;
     const locations = new Set(policy.locationIds ?? []);
+    // A window that will not come again is not governed by either flag above.
+    // `onOpportunityOpens` is about being told a door is open SOMEWHERE and
+    // stays false; this is about the ground under their feet. It enters by the
+    // door every other local event enters by - an explicit match on where they
+    // are standing, which `whatReachesSomebodySpendingASpanHere` empties when a
+    // door is shut - so sealing yourself in still costs you the ruin opening.
+    const endsOn = whenTheirSpanRunsOut(state, policy.actorId);
+    const wantOnlyOne = (policy.onLocalEvents ?? true) && locations.size > 0 && endsOn !== null;
+    if (!wantOpen && !wantClose && !wantOnlyOne) return null;
     let best: WorldInterrupt | null = null;
 
     for (const opp of state.opportunities) {
+        if (
+            wantOnlyOne &&
+            opp.locationId !== null &&
+            locations.has(opp.locationId) &&
+            // Already standing open when they sat down is not the world cutting
+            // in - it is something they walked past. Only an opening INSIDE the
+            // span stops anybody.
+            !isOpportunityOpen(opp, fromDay)
+        ) {
+            const w = nextWindow(opp, fromDay + 1);
+            if (
+                w && w.opensOnDay > fromDay && w.opensOnDay <= toDay &&
+                theOnlyOneTheyWillGet(opp, w.opensOnDay, endsOn)
+            ) {
+                if (!best || w.opensOnDay < best.onDay) {
+                    best = {
+                        onDay: w.opensOnDay,
+                        cause: 'window_not_coming_again',
+                        summary:
+                            `${opp.name} is open. The next opening is past the end of this lifespan.`,
+                        sourceId: opp.id,
+                        locationId: opp.locationId
+                    };
+                }
+            }
+        }
         if (locations.size > 0 && (!opp.locationId || !locations.has(opp.locationId))) continue;
         if (wantOpen) {
             const w = nextWindow(opp, fromDay + 1);
