@@ -317,8 +317,19 @@ disciple the player has actually met rising to an elder's chair is worth more
 than a stranger doing it. When it cannot, the person who takes the chair is
 somebody who was always there and had not been worth a row until now.
 
-**And such a person is ROLLED, never listed.** The owner: *"minting is rng,
-it's not hardcoded."* The world already bears people off a seeded stream, and a
+**And such a person is ROLLED, never listed**, at a rate that comes off how big
+the house is said to be. The owner: *"minting is rng, it's not hardcoded"*, and
+*"it falls out of the narrative size of the world/sect."*
+
+Note that "minting" is a convenient word rather than a new mechanism: what
+happens is the world bearing and enrolling somebody, which it already does
+yearly. And no sect row carries a member count today, so the size to read is
+the one `a-house-raises-its-own.ts` already derives - the ladder, the house's
+standing, whether it recruits, and how long it has stood. **Read that rather
+than adding a number**; a second measure of how big a house is would be a
+second measure of how big a house is.
+
+ The world already bears people off a seeded stream, and a
 new elder is drawn the same way - deterministic for a given seed, different
 between seeds, and nobody's authored fallback. A hand-written list of
 understudies would make every world produce the same replacement elder, which
