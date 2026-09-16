@@ -317,6 +317,15 @@ disciple the player has actually met rising to an elder's chair is worth more
 than a stranger doing it. When it cannot, the person who takes the chair is
 somebody who was always there and had not been worth a row until now.
 
+**And such a person is ROLLED, never listed.** The owner: *"minting is rng,
+it's not hardcoded."* The world already bears people off a seeded stream, and a
+new elder is drawn the same way - deterministic for a given seed, different
+between seeds, and nobody's authored fallback. A hand-written list of
+understudies would make every world produce the same replacement elder, which
+is the opposite of what the catalog's authored figures are for: **those are
+fixed because they are facts about the world, and everybody else varies because
+they are not.**
+
 ## The shape has to survive time passing
 
 Seeding the shape right is a **day-one** property, and the world then runs for
