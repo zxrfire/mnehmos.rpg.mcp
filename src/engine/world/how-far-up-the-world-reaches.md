@@ -87,9 +87,6 @@ Measured with `scripts/probe-does-a-house-keep-its-shape.ts`, seed `shape-a`,
 
 Recorded 2026-09-16. Delete a line when it is fixed.
 
-- **A splinter mints its library from memory.** `librariesCarriedOutBy` makes
-  a fresh book row for every art its founders hold, mastered or not, at full
-  uses. For heaven and above that is a book the world did not have.
 - **A player cannot write out a copy to give away.** The world's masters write
   copies for their house's shelf, and the player can sell a copy, but there is
   no verb for writing one out for a disciple.

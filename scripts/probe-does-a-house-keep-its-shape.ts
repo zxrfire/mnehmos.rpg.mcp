@@ -41,7 +41,10 @@ import { theWorldForgetsTheMortalDead } from '../src/engine/world/world-state.js
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import { rankRealmBand } from '../src/data/cultivation/members.js';
-import { ordinalExpectedAt } from '../src/engine/world/promotion-inside-a-house.js';
+import { assessPromotions, ordinalExpectedAt } from '../src/engine/world/promotion-inside-a-house.js';
+import { theRoomsThisHouseHas } from '../src/engine/social-leverage/authority-for-an-order.js';
+import { roomAuthorityOf } from '../src/engine/world/architecture.js';
+import { isElderRank } from '../src/engine/cultivation/leadership.js';
 import { theSpeciesItIs } from '../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { canReproduce, copyCount, manualIdOf } from '../src/engine/world/manuals.js';
 import { LEFT_IN_THE_GROUND } from '../src/engine/world/what-a-ruin-has-on-its-shelves.js';
@@ -66,6 +69,20 @@ interface Before {
     seat: Seat | null;
     status: string;
     tags: string[];
+    merit: number;
+}
+
+/** Read off the row rather than through the module, so a control arm without it still runs. */
+function meritOf(npc: NpcRecord): number {
+    const m = (npc as { merit?: { houseId: string; points: number } | null }).merit;
+    return m && m.houseId === npc.factionId ? m.points : 0;
+}
+
+function quantiles(xs: number[]): number[] {
+    if (xs.length === 0) return [];
+    const v = xs.slice().sort((a, b) => a - b);
+    const at = (q: number) => v[Math.min(v.length - 1, Math.floor(q * v.length))];
+    return [v.length, at(0.25), at(0.5), at(0.75), v[v.length - 1]];
 }
 
 function liveHouses(state: WorldState): Map<string, number> {
@@ -149,11 +166,16 @@ function sample(state: WorldState, year: number): unknown {
         const counts = new Array(rungs).fill(0);
         const qualified = new Array(rungs).fill(0);
         const bestOrdinal = new Array(rungs).fill(-1);
+        const merit: number[][] = Array.from({ length: rungs }, () => []);
         for (const m of members) {
             const r = Math.min(m.factionRankIndex, rungs - 1);
             counts[r]++;
             bestOrdinal[r] = Math.max(bestOrdinal[r], m.cultivation.realmOrdinal);
+            merit[r].push(meritOf(m));
         }
+        const offices = theRoomsThisHouseHas(state.locations, id)
+            .filter(p => roomAuthorityOf(p).office).length;
+        const elders = members.filter(m => isElderRank(m.factionRankIndex, rungs)).length;
         for (let r = 1; r < rungs; r++) {
             const bar = barFor(state, id, r, rungs);
             qualified[r] = members.filter(m => m.factionRankIndex === r - 1
@@ -161,13 +183,23 @@ function sample(state: WorldState, year: number): unknown {
         }
         const f = state.factions.find(x => x.id === id)!;
         out[id] = {
-            rungs, counts, qualified, bestOrdinal,
+            rungs, counts, qualified, bestOrdinal, merit, offices, elders,
+            noOfficeElders: offices > 0 ? Math.max(0, elders - offices) : null,
             seated: f.seatLocationId !== null,
             recruits: f.tags.includes('recruits')
         };
     }
+    const blocked: Record<string, number> = {};
+    const assessed = assessPromotions(state);
+    for (const b of assessed.blocked) blocked[b.reason] = (blocked[b.reason] ?? 0) + 1;
+    // Read loosely, so a control arm whose promotions carry neither field still runs.
+    for (const p of assessed.promotions as { decidedBy?: string; withoutAnOffice?: boolean }[]) {
+        const key = `decided:${p.decidedBy ?? 'unrecorded'}${p.withoutAnOffice ? ':no-office' : ''}`;
+        blocked[key] = (blocked[key] ?? 0) + 1;
+    }
     return {
         year, living: state.npcs.filter(n => n.status === 'alive').length, rows: state.npcs.length,
+        blocked,
         top: theTopOfThePopulation(state), roads: theHighRoads(state),
         attention: theAttentionBeingGiven(state), houses: out
     };
@@ -304,12 +336,13 @@ async function main(): Promise<void> {
     if (!RESUME) appendFileSync(`${OUT}.series.jsonl`, JSON.stringify(sample(state, startYear)) + '\n');
 
     let flows: Flows = new Map();
+    let meritAtPromotion: Record<string, number[]> = {};
     const started = Date.now();
     for (let y = 1; y <= YEARS; y++) {
         const housesBefore = liveHouses(state);
         const before = new Map<string, Before>();
         for (const npc of state.npcs) {
-            before.set(npc.id, { seat: seatOf(npc, housesBefore), status: npc.status, tags: npc.tags });
+            before.set(npc.id, { seat: seatOf(npc, housesBefore), status: npc.status, tags: npc.tags, merit: meritOf(npc) });
         }
 
         theYearWithoutTheForgetting(state);
@@ -328,6 +361,7 @@ async function main(): Promise<void> {
                     for (let r = s.rung; r < now.rung; r++) {
                         bump(flows, s.houseId, 'out:promoted_off', r, s.rungs);
                         bump(flows, s.houseId, 'in:promoted_onto', r + 1, s.rungs);
+                        (meritAtPromotion[`${r + 1}/${s.rungs}`] ??= []).push(was.merit);
                     }
                 } else if (now.rung < s.rung) {
                     bump(flows, s.houseId, 'out:demoted', s.rung, s.rungs);
@@ -378,9 +412,12 @@ async function main(): Promise<void> {
         theWorldForgetsTheMortalDead(state);
         if (y % 100 === 0 || y === YEARS) {
             const dump: Record<string, Record<string, number>> = {};
+            const promoted: Record<string, number[]> = {};
+            for (const [k, v] of Object.entries(meritAtPromotion)) promoted[k] = quantiles(v);
             for (const [h, m] of flows) dump[h] = Object.fromEntries(m);
-            appendFileSync(`${OUT}.flows.jsonl`, JSON.stringify({ toYear: year, span: y % 100 === 0 ? 100 : y % 100, flows: dump }) + '\n');
+            appendFileSync(`${OUT}.flows.jsonl`, JSON.stringify({ toYear: year, span: y % 100 === 0 ? 100 : y % 100, flows: dump, meritAtPromotion: promoted }) + '\n');
             flows = new Map();
+            meritAtPromotion = {};
             writeFileSync(`${OUT}.notes.json`, JSON.stringify(unknownNotes, null, 1), 'utf8');
             const secs = Math.round((Date.now() - started) / 1000);
             console.log(`year ${year}  rows ${state.npcs.length}  living ${state.npcs.filter(n => n.status === 'alive').length}  facts ${state.history.facts.length}  ${secs}s`);

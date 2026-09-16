@@ -226,7 +226,7 @@ export class WorldStateRepository {
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
-                history_fact_ids, memory_ids, activity
+                history_fact_ids, memory_ids, activity, merit
             ) VALUES (
                 @id, @worldId, @name,
                 @bornOnDay, @origin, @sex, @physique, @bloodlineSpecies, @bloodlineTier,
@@ -237,7 +237,7 @@ export class WorldStateRepository {
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
-                @historyFactIds, @memoryIds, @activity
+                @historyFactIds, @memoryIds, @activity, @merit
             )
         `);
 
@@ -928,7 +928,8 @@ export class WorldStateRepository {
                 tags: JSON.stringify(npc.tags),
                 historyFactIds: JSON.stringify(npc.historyFactIds),
                 memoryIds: JSON.stringify(npc.memoryIds),
-                activity: npc.activity === null ? null : JSON.stringify(npc.activity)
+                activity: npc.activity === null ? null : JSON.stringify(npc.activity),
+                merit: npc.merit ? JSON.stringify(npc.merit) : null
             });
 
             for (const goal of npc.goals) {
@@ -1548,6 +1549,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         historyFactIds: parseArray(row.history_fact_ids),
         memoryIds: parseArray(row.memory_ids),
         activity: parseActivity(row.activity),
+        merit: parseMerit(row.merit),
         status: row.status as NpcRecord['status'],
         bodyId: row.body_id,
         soulState: row.soul_state as NpcRecord['soulState'],
@@ -2095,6 +2097,23 @@ interface NpcRow {
     history_fact_ids: string;
     memory_ids: string;
     activity: string | null;
+    merit: string | null;
+}
+
+/**
+ * A house's count in somebody's favour. Undefined for none, which is how a row
+ * that never had one is built, so a world round-trips equal to itself.
+ */
+function parseMerit(raw: string | null): NpcRecord['merit'] {
+    if (raw === null || raw === undefined) return undefined;
+    try {
+        const parsed = JSON.parse(raw) as { houseId?: unknown; points?: unknown };
+        return typeof parsed.houseId === 'string' && Number.isFinite(parsed.points)
+            ? { houseId: parsed.houseId, points: Number(parsed.points) }
+            : undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 interface GoalRow {

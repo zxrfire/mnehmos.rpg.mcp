@@ -165,6 +165,7 @@ import {
 } from './manuals.js';
 import { applyWhatThePartyCarriedOut } from './what-a-ruin-has-on-its-shelves.js';
 import { giveThisYearsAttention } from './who-is-given-attention-this-year.js';
+import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import {
     applyOrdinaryLifeTies,
@@ -3834,8 +3835,13 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         // the errand took them, which is truer than teleporting them into a
         // location the world no longer holds.
         const back = doing.returnTo ?? null;
+        // A TERM SERVED IS SERVICE. A sending or a posting that ran its term
+        // and came home is counted by the house it was for; a journey to a
+        // house that took them is not service yet.
+        const served = doing.kind === 'travelling' ? npc
+            : creditMerit(npc, whatServiceIsWorth(npc.cultivation.realmOrdinal, doing.untilDay - doing.sinceDay));
         state.npcs[i] = {
-            ...(back !== null && standing.has(back) ? setLocation(npc, back, day) : npc),
+            ...(back !== null && standing.has(back) ? setLocation(served, back, day) : served),
             activity: null
         };
         home++;
@@ -5902,9 +5908,7 @@ const TEMPLATES: Template[] = [
 
             // AND THE BOOKS THEY WALKED OUT WITH, WHICH IS WHY THIS IS A HOUSE AND
             // NOT A BUILDING.
-            state.objects.push(
-                ...librariesCarriedOutBy(state, splinter, [founder, ...leavers])
-            );
+            librariesCarriedOutBy(state, splinter, [founder, ...leavers], day);
 
             for (const npc of [founder, ...leavers]) {
                 replaceNpc(state, {

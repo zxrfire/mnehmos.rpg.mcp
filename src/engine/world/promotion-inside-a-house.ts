@@ -74,6 +74,12 @@ import type { FactionRecord } from './world-state.js';
 import type { WorldState } from './world-state.js';
 import { rankRealmBand } from '../../data/cultivation/members.js';
 import { whatItCanPutOnTheGround } from './seeding.js';
+import { meritWith } from './what-a-house-counts-in-somebodys-favour.js';
+import { requiredContributionForRank } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
+import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
+import { elderRungOf, isElderRank } from '../cultivation/leadership.js';
+import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
+import { roomAuthorityOf } from './architecture.js';
 
 /**
  * How many people a house will seat at each rank.
@@ -208,10 +214,27 @@ export interface Promotion {
     factionId: string;
     fromRank: number;
     toRank: number;
+    /**
+     * What put them ahead of the first person left standing: a whole realm, the
+     * house's count of their service, or only the rung. `uncontested` when
+     * nobody who qualified was left behind.
+     */
+    decidedBy: 'realm' | 'merit' | 'ordinal' | 'uncontested';
+    /** True for an elder seated past the house's offices. */
+    withoutAnOffice: boolean;
 }
 
-/** Why somebody who has outgrown their rank is still standing in it. */
-export type BlockedReason = 'no_seat' | 'outranked' | 'not_yet';
+/**
+ * Why somebody who has outgrown their rank is still standing in it.
+ *
+ *   no_seat                  the rung is full and it does not grow
+ *   outranked                there was a seat, and somebody ahead took it
+ *   not_enough_merit         tall enough, and has not served the house enough
+ *   no_room_without_office   good enough to be an elder with no office, and the
+ *                            house already carries as many of those as it will
+ */
+export type BlockedReason =
+    | 'no_seat' | 'outranked' | 'not_yet' | 'not_enough_merit' | 'no_room_without_office';
 
 export interface Blocked {
     npcId: string;
@@ -271,7 +294,7 @@ export function assessPromotions(state: WorldState): {
             const seats = seatsAtRank(rank, rankCount, members.length, abundance);
             const bar = barFor(house.id, rank, rankCount, admission, power);
 
-            const candidates = members
+            const tall = members
                 .filter(m => m.factionRankIndex === rank - 1)
                 .filter(m => m.cultivation.realmOrdinal >= bar)
                 // NOT THE PLAYER'S ROW. It holds a seat where it stands, but
@@ -280,37 +303,155 @@ export function assessPromotions(state: WorldState): {
                 // player took the room here, was never written, and the seat
                 // stood empty that year while the next candidate was told they
                 // had been outranked.
-                .filter(m => isTheWorldsToMove(m))
-                // Favour is a promotion over somebody, so it sorts first.
-                .sort((a, b) => {
-                    const fa = a.tags.includes('chosen') ? 1 : 0;
-                    const fb = b.tags.includes('chosen') ? 1 : 0;
-                    if (fa !== fb) return fb - fa;
-                    return b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
-                        || a.id.localeCompare(b.id);
-                });
+                .filter(m => isTheWorldsToMove(m));
+
+            // THE TWO MINIMUMS ARE GATES, BEFORE ANY ORDER. Somebody a whole
+            // realm up who has not served does not qualify at all.
+            const needed = meritNeededFor(rank);
+            for (const m of tall) {
+                if (meritWith(m, house.id) >= needed) continue;
+                blocked.push({ npcId: m.id, factionId: house.id, atRank: rank - 1, reason: 'not_enough_merit' });
+            }
+            const candidates = tall
+                .filter(m => meritWith(m, house.id) >= needed)
+                .sort((a, b) => byStanding(a, b, house.id, needed));
             if (candidates.length === 0) continue;
 
-            const room = Math.max(0, seats - atRank[rank]);
+            // ── THE ELDER BAND SEATS AS MANY WITH AN OFFICE AS THERE ARE OFFICES ──
+            //
+            // An office is an elder with a posting, and the postings are the
+            // office rooms `whoIsInChargeOfWhat` deals, one to a person, among
+            // everybody at an elder rung. So the band's seats with an office are
+            // the rooms left after the posts above it. A house with no rooms
+            // built (a splinter, before it has a compound) has nothing to count
+            // and keeps the halving seats.
+            const band = isElderBand(rank, rankCount);
+            const offices = band ? officesOf(state, house.id) : 0;
+            const aboveBand = band ? atRank.slice(rank + 1).reduce((n, x) => n + x, 0) : 0;
+            const withOffice = band && offices > 0 ? Math.max(0, offices - aboveBand) : seats;
+            const room = Math.max(0, withOffice - atRank[rank]);
+            const withoutOffice = band && offices > 0 ? Math.max(0, atRank[rank] - withOffice) : 0;
+            let roomWithoutOffice = band && offices > 0
+                ? Math.max(0, noOfficeEldersAHouseCarries(offices) - withoutOffice)
+                : 0;
+            const barRealm = realmIndex(bar);
+
             for (let i = 0; i < candidates.length; i++) {
                 const npc = candidates[i];
+                const firstLeft = candidates[room] ?? null;
                 if (i < room) {
                     promotions.push({
                         npcId: npc.id, factionId: house.id,
-                        fromRank: rank - 1, toRank: rank
+                        fromRank: rank - 1, toRank: rank,
+                        decidedBy: whatDecidedIt(npc, firstLeft, house.id, needed),
+                        withoutAnOffice: false
                     });
                     atRank[rank]++;
                     atRank[rank - 1]--;
-                } else {
-                    blocked.push({
-                        npcId: npc.id, factionId: house.id, atRank: rank - 1,
-                        reason: room === 0 ? 'no_seat' : 'outranked'
-                    });
+                    continue;
                 }
+                // REALLY GOOD: a whole major realm above the elder bar, with the
+                // merit minimum already cleared above. Seated with no office,
+                // up to what the house will carry.
+                const reallyGood = band && offices > 0
+                    && realmIndex(npc.cultivation.realmOrdinal) >= barRealm + 1;
+                if (reallyGood && roomWithoutOffice > 0) {
+                    promotions.push({
+                        npcId: npc.id, factionId: house.id,
+                        fromRank: rank - 1, toRank: rank,
+                        decidedBy: 'realm',
+                        withoutAnOffice: true
+                    });
+                    roomWithoutOffice--;
+                    atRank[rank]++;
+                    atRank[rank - 1]--;
+                    continue;
+                }
+                blocked.push({
+                    npcId: npc.id, factionId: house.id, atRank: rank - 1,
+                    reason: reallyGood ? 'no_room_without_office' : room === 0 ? 'no_seat' : 'outranked'
+                });
             }
         }
     }
     return { promotions, blocked };
+}
+
+/**
+ * The merit a rung asks for, in contribution: the same curve a player's
+ * promotion reads, so one rule measures both.
+ */
+export function meritNeededFor(rankIndex: number): number {
+    return requiredContributionForRank(rankIndex);
+}
+
+/**
+ * How many elders with no office a house will carry, off how many offices it has.
+ *
+ * A house does not keep many of those - a title and a stipend for somebody it
+ * does not put in charge of anything - so a quarter of its offices, and always
+ * room for one exceptional person.
+ */
+export const NO_OFFICE_ELDERS_PER_OFFICE = 0.25;
+
+export function noOfficeEldersAHouseCarries(offices: number): number {
+    return Math.max(1, Math.floor(offices * NO_OFFICE_ELDERS_PER_OFFICE));
+}
+
+/** The office rooms a house has built. */
+function officesOf(state: WorldState, houseId: string): number {
+    return theRoomsThisHouseHas(state.locations, houseId)
+        .filter(purpose => roomAuthorityOf(purpose).office).length;
+}
+
+/**
+ * Whether this rung is the elder band: an elder rung below the posts.
+ *
+ * The posts are the head and, where the ladder has room for one above the
+ * elders, the grand elder - the reading `rosterByRung` in `leadership.ts` takes.
+ */
+function isElderBand(rank: number, rankCount: number): boolean {
+    if (!isElderRank(rank, rankCount) || rank >= rankCount - 1) return false;
+    const grand = rankCount - 2;
+    const hasGrand = grand > Math.min(elderRungOf(rankCount), rankCount - 1);
+    return !(hasGrand && rank === grand);
+}
+
+function realmIndex(ordinal: number): number {
+    return REALM_TIERS.indexOf(realmForOrdinal(ordinal));
+}
+
+/**
+ * What being chosen is worth, as merit, within a realm.
+ *
+ * The house has already decided about them, which is worth a rung's service in
+ * the order it takes people. It orders; it does not open the merit gate, which
+ * is service, and it never lifts anybody over a whole realm.
+ */
+function standingMerit(npc: NpcRecord, houseId: string, needed: number): number {
+    return meritWith(npc, houseId) + (npc.tags.includes('chosen') ? Math.max(1, needed) : 0);
+}
+
+/** Realm first, a whole realm wins; then merit; then the rung; then the id. */
+function byStanding(a: NpcRecord, b: NpcRecord, houseId: string, needed: number): number {
+    return realmIndex(b.cultivation.realmOrdinal) - realmIndex(a.cultivation.realmOrdinal)
+        || standingMerit(b, houseId, needed) - standingMerit(a, houseId, needed)
+        || b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
+        || a.id.localeCompare(b.id);
+}
+
+function whatDecidedIt(
+    winner: NpcRecord,
+    firstLeft: NpcRecord | null,
+    houseId: string,
+    needed: number
+): Promotion['decidedBy'] {
+    if (firstLeft === null) return 'uncontested';
+    if (realmIndex(winner.cultivation.realmOrdinal) !== realmIndex(firstLeft.cultivation.realmOrdinal)) {
+        return 'realm';
+    }
+    if (standingMerit(winner, houseId, needed) !== standingMerit(firstLeft, houseId, needed)) return 'merit';
+    return 'ordinal';
 }
 
 /**

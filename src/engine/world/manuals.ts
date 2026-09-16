@@ -4,7 +4,7 @@
 
 import type { NpcRecord } from './npc-state.js';
 import type { FactionRecord, WorldState } from './world-state.js';
-import { isRuined, makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
+import { isRuined, makeObject, transferPossession, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
@@ -526,49 +526,44 @@ export function seedSectLibraries(state: WorldState): ObjectRecord[] {
 
 /**
  * The library a new house starts with: the copies its founders walked out with.
+ *
+ * ONLY BOOKS THAT EXIST. This minted a fresh row, at full uses, for every art
+ * any founder held - mastered or not, and whether or not a copy of it was
+ * anywhere in the world. At heaven and above that was a book the world did not
+ * have. A book is a thing: what the founders carry out is the rows already in
+ * their own hands, moved with whatever is left in them, and ownership does not
+ * move with possession - a copy of the old house's walked out is still the old
+ * house's. Everything else the new house has to write out, through
+ * `applyManualCopying`, by somebody who has taken the art to its end.
+ *
+ * Returns how many books came with them.
  */
 export function librariesCarriedOutBy(
     state: WorldState,
     faction: FactionRecord,
-    carriers: readonly NpcRecord[]
-): ObjectRecord[] {
-    const copies = new Map<string, number>();
-    for (const npc of carriers) {
-        for (const id of new Set(npc.cultivation.techniqueIds)) {
-            if (!stopsSomewhere(getTechnique(id))) continue;
-            copies.set(id, (copies.get(id) ?? 0) + 1);
-        }
+    carriers: readonly NpcRecord[],
+    onDay: number
+): number {
+    const hands = new Set(carriers.map(c => c.id));
+    let carried = 0;
+    for (let i = 0; i < state.objects.length; i++) {
+        const o = state.objects[i]!;
+        if (o.kind !== 'manual' || o.possessorId === null || !hands.has(o.possessorId)) continue;
+        if (isRuined(o) || manualIdOf(o) === null) continue;
+        state.objects[i] = {
+            ...transferPossession(o, {
+                onDay,
+                toHolderId: faction.id,
+                toHolderName: faction.name,
+                how: 'gifted',
+                transfersOwnership: false,
+                note: `Carried out to the ${faction.name} by the people who founded it.`
+            }),
+            locationId: faction.seatLocationId
+        };
+        carried++;
     }
-    if (copies.size === 0) return [];
-
-    const held = new Set(
-        state.objects
-            .filter(o => o.kind === 'manual' && o.possessorId === faction.id && !isRuined(o))
-            .map(manualIdOf)
-    );
-
-    const made: ObjectRecord[] = [];
-    for (const [techniqueId, count] of [...copies].sort((a, b) => a[0].localeCompare(b[0]))) {
-        if (held.has(techniqueId)) continue;
-        const t = getTechnique(techniqueId) as { id: string; name: string; cap?: number | null };
-        const cap = Number(t.cap);
-        made.push(makeObject({
-            id: libraryObjectId(faction.id, techniqueId),
-            name: t.name,
-            kind: 'manual',
-            significance: significanceOfManual(techniqueId, cap),
-            description:
-                `The ${faction.name}'s copies of a cultivation manual carrying to ordinal ${cap}, `
-                + 'brought out of the house it split from.',
-            possessorId: faction.id,
-            ownerId: faction.id,
-            ownerName: faction.name,
-            locationId: faction.seatLocationId,
-            tags: ['manual', 'library', 'carried-out', `faction:${faction.id}`],
-            data: { techniqueId, cap, copies: count }
-        }));
-    }
-    return made;
+    return carried;
 }
 
 /**

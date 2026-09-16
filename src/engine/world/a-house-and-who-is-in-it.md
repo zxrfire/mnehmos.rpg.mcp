@@ -258,6 +258,29 @@ three elder posts and never more than the band below it holds. Somebody strong
 arriving where there is no room does not displace anybody and is not promoted
 into thin air. They are an elder without an office, or they go.
 
+**How a house decides who rises** (`promotion-inside-a-house.ts`, pinned by
+`a-house-promotes-by-realm-then-merit.test.ts`):
+
+1. **Two gates.** The rung's realm bar, and its merit minimum. Merit is service
+   the house counts - a posting or a sending served to term, attention given -
+   held on `NpcRecord.merit` against one house, in the units of a player's
+   `contribution`, and the minimum is the player's own curve,
+   `requiredContributionForRank`. Somebody tall enough who has not served is
+   blocked `not_enough_merit`.
+2. **Then the order.** A whole major realm up wins. Within a realm, merit; being
+   chosen counts as merit there and never across a realm. Then the rung, then
+   the id.
+3. **The elder band seats as many with an office as there are offices** left
+   after the posts above it. Past that, somebody a whole realm above the elder
+   bar who has the merit is made an elder with no office, up to
+   `NO_OFFICE_ELDERS_PER_OFFICE` of the house's offices and never fewer than one;
+   past that they are blocked `no_room_without_office`. A house with no office
+   rooms built keeps the halving seats.
+
+The outside half of that path - an elder brought in rather than raised, priced
+by `externalElderCost` and drawn from people who can teach the house's arts -
+is not built. The background has no store of standing to charge the price to.
+
 **And going is the half that is not built.** `why-somebody-walks-out-of-a-
 compound.ts` has the right reason in it - `'nothing in the hall is theirs'`,
 whose own comment reads *"No room, no office, and nothing in the purse"* - but

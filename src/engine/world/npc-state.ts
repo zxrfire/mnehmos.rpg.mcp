@@ -462,6 +462,12 @@ export interface NpcCultivation {
     accumulatingSinceDay: number;
 }
 
+/** Service a house counts, held against the one house that counts it. */
+export interface HouseMerit {
+    houseId: string;
+    points: number;
+}
+
 export interface NpcRecord {
     id: string;
     name: string;
@@ -481,6 +487,13 @@ export interface NpcRecord {
      * What they are actually holding.
      */
     spiritStones: number;
+
+    /**
+     * What the house they serve counts in their favour, and which house that
+     * is. Read and credited only through
+     * `what-a-house-counts-in-somebodys-favour.ts`. Absent is none.
+     */
+    merit?: HouseMerit | null;
 
     goals: NpcGoal[];
     relationships: NpcRelationship[];

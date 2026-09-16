@@ -26,6 +26,7 @@ import { forStream } from '../cultivation/rng.js';
 import { isBelowTheLid } from './layers.js';
 import { isAwayOnSomething, isTheWorldsToMove, type NpcActivity, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
+import { creditMerit, whatAttentionIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 
 /**
  * How often a house holds a lecture, as a share of years.
@@ -66,8 +67,16 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
 
     const teach = (at: number, withIds: string[], note: string): void => {
         const teacher = state.npcs[at]!;
+        // Attention given is service to the teacher's own house, priced as a
+        // player's talk is: see `what-a-house-counts-in-somebodys-favour.ts`.
+        const ofTheHouse = withIds.filter(id => {
+            const i = byId.get(id);
+            return i !== undefined && state.npcs[i]!.factionId === teacher.factionId;
+        }).length;
+        const worth = whatAttentionIsWorth(
+            teacher.cultivation.realmOrdinal, untilDay - day, ofTheHouse, withIds.length);
         state.npcs[at] = {
-            ...teacher,
+            ...creditMerit(teacher, worth),
             activity: { kind: 'teaching', note, withIds, sinceDay: day, untilDay },
             updatedOnDay: day
         };

@@ -984,6 +984,13 @@ function addWorldColumns(db: Database.Database): void {
             console.error(`[Migration] Adding activity column to ${table} table`);
             db.exec(`ALTER TABLE ${table} ADD COLUMN activity TEXT;`);
         }
+        // What a house counts in somebody's favour, as JSON naming the house.
+        // NULL is none, which is the honest reading of every row written before
+        // service was counted: nobody has been credited for anything yet.
+        if (!columns.includes('merit')) {
+            console.error(`[Migration] Adding merit column to ${table} table`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN merit TEXT;`);
+        }
     }
 
     // HOW MUCH ROOM A THING TAKES AND WHAT IT WEIGHS. Litres and kilograms on
