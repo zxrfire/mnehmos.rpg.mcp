@@ -456,6 +456,44 @@ hand-written lists of house words and none of them had ever heard of a guild.
 
 ---
 
+## A roster is who you could know, not how many exist
+
+> **The people a house has modelled are the ones a player could plausibly come to know.
+> How many the house has in the fiction is a different number and the engine does not
+> need it.**
+
+The design owner's own way of putting it:
+
+> *"think, ur in a company, even if it's huge, you only know like 10-20 people tops. same
+> idea."*
+> *"we don't have to keep track of that many cultivators, 10-20 per sect is already a lot
+> for gameplay? that should fill up the rungs good."*
+
+So a sect of five hundred disciples is a sect of five hundred disciples in the prose, and
+a dozen or two rows in the world. That is not a simplification to be apologised for or
+"completed" later - it is the same rule as `theWorldForgetsTheMortalDead`, one level up.
+The engine models what can be played with.
+
+**This is a guideline and explicitly not a hard rule.** The owner said so in the same
+breath. An apex may run richer and a guard posting may hold three; what matters is that a
+number is chosen because of what a player can hold in their head, not because of what a
+sect would really have.
+
+### What it is for, and the figure it fixes
+
+A roster running 1 to 29 with a median of 7 is too thin to feel alive: the ladder has gaps,
+a house cannot both send a party and answer its own gate, and every bound that asks what a
+house can spare bites immediately. Filling out to a dozen or two puts people on the rungs
+without asking the engine to carry a population.
+
+And it makes the arithmetic elsewhere read correctly rather than tightly. In the owner's
+words: **"3 people out is fine if the sect has 15 people."** The same party that looks like
+a house emptying itself at a roster of 7 is an ordinary errand at a roster of 15 - so
+before tuning a bound that governs parties, check whether the roster is the thing that is
+wrong.
+
+---
+
 ## Every read runs both ways unless there is a reason it cannot
 
 > **If the engine can answer "given this phrase, what does it mean", it must also answer
