@@ -135,10 +135,23 @@ person.** The catalog's Frostmirror watch reads as one person standing in a
 town for a hundred and ninety years and it is not: *"it's one but not
 necessarily the same one... they never advance cuz they get swapped out for the
 next Core Formation disciple."* One body in the post at a time, changed out
-when they outgrow it, and the watch unbroken behind them. **It is the same
-rotation as elder postings** - one rule, not two - so anything that fills or
-empties a post should treat a junior's watch and an elder's office the same
-way.
+when they outgrow it, and the watch unbroken behind them. A tour can still run
+decades, because Core Formation is a long realm.
+
+**What is shared is that the post outlives the person. What ends a tour is
+not the same at both ends of the ladder:**
+
+- **a junior leaves a posting by OUTGROWING it** - they advance, and advancing
+  is what takes them out of the chair. Nobody advances in the post because
+  that is the exit
+- **an elder holds a posting until they GIVE IT UP** - the owner: *"elders are
+  typically until you wanna give it up."* Tenure, not rotation. It ends when
+  they stand down, or when they die
+
+So a pass that fills posts can share its filling, and must not share its
+emptying. A junior's chair comes free on a breakthrough; an elder's comes free
+on a decision or a death - which is also why the covering question matters more
+at the top: an elder's seat empties without warning.
 
 **The gate guard is the one to keep in mind, because a measured bug already
 depends on it.** A house with nobody on the gate tells a visitor *"nobody of the
