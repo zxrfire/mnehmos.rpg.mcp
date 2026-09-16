@@ -37,6 +37,7 @@ import {
     type LocationRecord
 } from './locations.js';
 import { isBelowTheLid } from './layers.js';
+import { couldHostAGuest } from './standing-at-the-gate-of-a-house.js';
 import {
     daysByConveyance,
     whatTheChestBurns,
@@ -748,6 +749,143 @@ export interface Candidate {
     id: string;
     name: string;
     ordinal: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE FOURTH BOUND, WHICH IS WHAT THE HOUSE CAN SPARE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Somebody on a roll, with the two facts that decide whether they can go.
+ *
+ * Both are read off the world's own rows by the caller and neither is stored
+ * here: where they are standing is `NpcRecord.locationId`, and what they are
+ * already committed to is the term on `NpcRecord.activity`.
+ */
+export interface OnTheRollForAnErrand extends Candidate {
+    /** Where they stand on their own house's ladder. */
+    rankIndex: number;
+    /** Where they are standing now. */
+    locationId: string | null;
+    /**
+     * The day a commitment already made runs out, or null for somebody free.
+     *
+     * The caller decides which activities take somebody away - the yearly pass
+     * has one predicate for it, and an errand and a station are both "gone,
+     * until" - so nothing here is a second opinion about what being spent is.
+     */
+    committedUntilDay: number | null;
+}
+
+export interface WhatTheHouseCanSpare {
+    /** The roster an errand may actually be drawn out of. */
+    free: readonly Candidate[];
+    /**
+     * Who is held at the gate, where anybody could be. Null where nobody who
+     * could host was standing there to begin with, which is a fact about the
+     * house rather than a decision taken here.
+     */
+    keptAtTheGate: Candidate | null;
+    /** How many of the roll were already out on something when this was asked. */
+    alreadySpent: number;
+}
+
+/**
+ * Who a house can actually spare, which is the bound nothing was applying.
+ *
+ * ── THE DEFECT, MEASURED ─────────────────────────────────────────────────
+ *
+ * A party's size was bounded by the errand's `hands`, the conveyance's `heads`
+ * and the purse, and by nothing about the house. So a house put every living
+ * name on its roll on one road at once, and the world's own chronicle said so:
+ * *"Azure Cloud Pavilion sent 9 on looking for disciples, a fair going at
+ * ordinal 38. The term is 22 days and they are not back."* That house had
+ * eleven modelled people and the other two had died of old age.
+ *
+ * Measured on three seeded worlds after one advanced year, seated houses with
+ * every living member standing in one place that is not their own seat: 3 of
+ * 38, 4 of 37, 1 of 38. And with nobody at all at the seat: 4, 5 and 1, every
+ * one of them a house with somebody out with a party.
+ *
+ * AND NOBODY CHECKED WHETHER SOMEBODY WAS ALREADY OUT. A roster was built off
+ * `status` and `factionId` alone, so a name still on the road when the year
+ * turned was posted to a second errand and the first party's rows went on
+ * naming them.
+ *
+ * ── WHAT A HOUSE HAS TO KEEP, AND WHERE THAT CAME FROM ───────────────────
+ *
+ * Not a number. Three readers in three unrelated subsystems already fail when a
+ * house's seat is empty, and between them they say what has to stay:
+ *
+ *   the gate      `standingAtTheGateOf` filters whoever is at hand through
+ *                 `couldHostAGuest`, and with nobody left tells a visitor
+ *                 *"Nobody of the house is out here to ask."* An empty house
+ *                 has stopped being reachable by a sentence.
+ *   the yard      `runChallenge` builds the people in a host's courtyard from
+ *                 whoever is alive AT THE SEAT, and `whoCouldHaveStoppedIt`
+ *                 reads it. A host house that is away does not get a hand in,
+ *                 and a bout kills somebody it would have stopped.
+ *   the ground    the kill read sets a house's stage to `placed` when any of
+ *                 its people are standing there and `named` when none are, so
+ *                 a house with nobody home cannot put a name to a killing on
+ *                 its own ground and opens no account for it.
+ *
+ * The gate's is the strongest of the three and satisfies all of them: SOMEBODY
+ * WHO COULD HOST A GUEST IS STANDING AT THE SEAT. `couldHostAGuest` is that
+ * reading and this does not restate it, so the rung moves when the ladder does.
+ *
+ * ONE, BECAUSE THE RULE IS "NOT THE LAST ONE" RATHER THAN A QUOTA. The gate
+ * asks whether the set is empty and nothing asks how big it is, so what the
+ * errand may not do is empty it. A house with four elders at home sends three
+ * and a house with one sends none of them.
+ *
+ * AND IT IS THE CHEAPEST ONE WHO STAYS. `whoTheHouseCanSend` takes the
+ * strongest first, so holding back the weakest host costs the party the head it
+ * would have taken last, and costs it nothing at all wherever the party was not
+ * going to take everybody anyway.
+ *
+ * WHAT THIS CANNOT REACH, stated rather than left to be discovered: a house
+ * with nobody at its seat before the errand keeps nobody, and the answer comes
+ * back with `keptAtTheGate: null`. Measured on one seeded world, members
+ * standing at their own seat: 207 of 306 at world open, 64 of 321 at
+ * twenty-five years, 42 of 363 at a hundred - the rest in settlements on town
+ * postings that are never recalled. So the gate figure this closes completely
+ * after one year is only a fifth of it a century in. That is a different
+ * defect in a different pass and saying so is the whole of what this does
+ * about it.
+ */
+export function whatTheHouseCanSpare(input: {
+    roster: readonly OnTheRollForAnErrand[];
+    /** The house's own ladder length, which is what makes a rung an elder. */
+    rankCount: number;
+    /** The house's seat. Null for a house with no hall, which keeps nobody. */
+    seatLocationId: string | null;
+    /** The day being asked about, against the terms already running. */
+    onDay: number;
+}): WhatTheHouseCanSpare {
+    const free = input.roster.filter(
+        p => p.committedUntilDay === null || p.committedUntilDay <= input.onDay);
+    const alreadySpent = input.roster.length - free.length;
+
+    const atTheGate = input.seatLocationId === null ? [] : free.filter(
+        p => p.locationId === input.seatLocationId
+            && couldHostAGuest(p.rankIndex, input.rankCount));
+    const kept = atTheGate.reduce<OnTheRollForAnErrand | null>(
+        (held, p) => held === null
+            || p.ordinal < held.ordinal
+            || (p.ordinal === held.ordinal && p.id < held.id)
+            ? p
+            : held,
+        null
+    );
+
+    return {
+        free: kept === null ? free : free.filter(p => p.id !== kept.id),
+        keptAtTheGate: kept === null
+            ? null
+            : { id: kept.id, name: kept.name, ordinal: kept.ordinal },
+        alreadySpent
+    };
 }
 
 /**
