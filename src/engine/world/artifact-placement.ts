@@ -47,8 +47,10 @@
  */
 
 import type { WorldState } from './world-state.js';
-import type { ObjectRecord } from './possessions.js';
+import type { ObjectRecord, ProvenanceEntry } from './possessions.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { ARTIFACTS } from '../../data/cultivation/artifacts.js';
+import { TRACKED_CRAFT } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import { isCatalogPerson, worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { idsForFaction } from '../../data/cultivation/governance-and-water-rights.js';
 
@@ -67,6 +69,71 @@ import { idsForFaction } from '../../data/cultivation/governance-and-water-right
  * under. See the banner: that is a join, and the only one here.
  */
 export function seedArtifacts(state: WorldState): ObjectRecord[] {
+    return seat(state, ARTIFACTS);
+}
+
+/**
+ * And the craft that are objects, which is the same defect one catalog over.
+ *
+ * `TRACKED_CRAFT` is five rows - three hulls, a named carriage, and the hull
+ * nobody came back for - and the seeder read none of them, so a lived world
+ * contained ZERO spirit boats however long it ran. Measured on three seeds at
+ * three hundred years: no house ever finished one either, because a heaven
+ * grade bill wants six cores and `sending-for-materials` is capped below the
+ * rung that brings one home. The only thing in the world that crosses open
+ * water existed in a catalog nothing read, and every downstream mechanic that
+ * asks what a house arrived on - the burn, the arrival a gate reads, a hull
+ * changing hands - had nothing to operate on.
+ *
+ * Separate from the artifacts only because the two catalogs are separate. Same
+ * join, same rules, same pass.
+ */
+export function seedTheCraftThatAreObjects(state: WorldState): ObjectRecord[] {
+    return seat(state, TRACKED_CRAFT).map(row => ({
+        ...row,
+        provenance: [theDayItWasBuilt(state, row), ...row.provenance]
+    }));
+}
+
+/**
+ * The first link, on a thing the world opened holding.
+ *
+ * A HULL THAT EXISTS ON DAY ONE WAS BUILT BY SOMEBODY. `mintCraft` always
+ * pushes a `crafted` link, `craft()` in the catalog pushes none - a catalog row
+ * has no absolute day to date one with - and a seeded hull therefore arrived
+ * with an empty chain. That is not "we do not know"; it is the record saying
+ * nothing at all, and the first thing to append to it - a sale - would be a
+ * second link on a chain that starts nowhere.
+ *
+ * So the seeder writes it, because the seeder is what knows the day.
+ * `builtYearsAgo` is the catalog's own column and is the whole of the date.
+ *
+ * WHAT IT DOES NOT INVENT is a builder. The catalog states an owner and states
+ * nothing about a wright, and the honest link says the thing was built and that
+ * the record does not carry by whom - which is the shape the Dry Hull's own
+ * description already argues for, where the chain has a hole where both the
+ * builder and the owner should be.
+ */
+function theDayItWasBuilt(state: WorldState, row: ObjectRecord): ProvenanceEntry {
+    const years = typeof row.data.builtYearsAgo === 'number' ? row.data.builtYearsAgo : 0;
+    const moored = typeof row.data.mooredAt === 'string' ? row.data.mooredAt : '';
+    return {
+        onDay: Math.max(0, state.currentDay - Math.round(years * DAYS_PER_YEAR)),
+        holderId: row.ownerId,
+        holderName: row.ownerName,
+        how: 'crafted',
+        source: moored,
+        previousHolderId: null,
+        previousHolderName: null,
+        factId: null,
+        note: row.ownerId === null
+            ? `Built ${years} years ago. The record does not carry by whom, and does not `
+                + 'carry who owned it either.'
+            : `Built ${years} years ago. The record does not carry by whom.`
+    };
+}
+
+function seat(state: WorldState, rows: readonly ObjectRecord[]): ObjectRecord[] {
     const factions = new Set(state.factions.map(f => f.id));
     const seats = new Map(state.factions.map(f => [f.id, f.seatLocationId]));
 
@@ -89,7 +156,7 @@ export function seedArtifacts(state: WorldState): ObjectRecord[] {
 
     const out: ObjectRecord[] = [];
 
-    for (const row of ARTIFACTS) {
+    for (const row of rows) {
         // A kind, not an object. See the banner.
         if (row.significance === 'mundane') continue;
         const ownerId = row.ownerId ? asTheWorldFilesIt(row.ownerId) : row.ownerId;

@@ -75,6 +75,7 @@ import {
 } from './locations.js';
 import { WHAT_SHUTS_IT, whatShutsThisDoor } from './a-door-that-closes-is-not-a-door-nobody-opened.js';
 import {
+    theErrandADoorIs,
     whoSendsWhenADoorOpens,
     type AHouseOnTheRoad
 } from './a-door-that-opens-is-a-race.js';
@@ -182,7 +183,13 @@ import {
 import { shameTag } from '../social/shame.js';
 import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
-import { applyDoorsAndTheirPlaces } from './a-year-at-the-doors.js';
+import { applyDoorsAndTheirPlaces, type ADoorsYear } from './a-year-at-the-doors.js';
+import { convergenceOf } from './convergence.js';
+import {
+    whatAHouseWouldSell,
+    type AHouseAtTheTable
+} from './a-house-sells-what-it-built.js';
+import { boughtFromItsOwner } from './ownership-transfer.js';
 import { applyGatherings, circleCandidatesFor } from './gatherings.js';
 import {
     fightTheWarsThisYear,
@@ -235,11 +242,18 @@ import {
     whatIsWorthARowOffABody
 } from './a-beast-that-climbs-also-fights-and-dies.js';
 import {
+    CARRIAGES_BY_GRADE,
     CONVEYANCE_RECIPES,
+    WHAT_A_CRAFT_COSTS_TO_COMMISSION,
     adjustCountedHolding,
     countedHolding,
+    getConveyance,
     requireConveyance
 } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
+import {
+    bestForThisRoad,
+    type Conveyance
+} from './what-a-conveyance-does-to-a-journey.js';
 import {
     conveyanceKeptAs,
     deliver,
@@ -648,9 +662,9 @@ export function applyPressure(
         // year is on the board the conclave reads when it decides who goes;
         // before the economy, so the levy a held door takes is in the purse
         // the same year counts.
-        for (const door of applyDoorsAndTheirPlaces(
-            state, year, withinSpan(year * 365 + 165, fromDay, toDay)
-        )) {
+        const doorsDay = withinSpan(year * 365 + 165, fromDay, toDay);
+        const doorsYear = applyDoorsAndTheirPlaces(state, year, doorsDay);
+        for (const door of doorsYear) {
             if (door.shut === null || door.storedFact === null) continue;
             events.push({
                 kind: 'zone_forbidden',
@@ -666,9 +680,21 @@ export function applyPressure(
                 opens: [...door.accounts]
             });
         }
+        // AND THE PEOPLE THE CONCLAVES CHOSE ACTUALLY GO. The allocation above
+        // is the whole of the decision and none of the walking; see
+        // `thePeopleAConclaveChoseWalkThrough`. The year's own last day, so a
+        // party whose term outruns the span is still standing in the doorway
+        // rather than reported back after the world's clock.
+        thePeopleAConclaveChoseWalkThrough(
+            state, doorsYear, doorsDay, Math.min(yearEndsOn, toDay));
         // And then the ties an ordinary life produces, on the same yearly line.
         applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
         applyFactionEconomy(state);
+        // And a house that could not pay its people sells what it built, to
+        // somebody it would sit down with. AFTER the economy, so the purse it
+        // is read against is this year's, and before the sendings, so what it
+        // got for the thing is in the chest the party is sent out of.
+        applyWhatAHouseHadToSell(state, withinSpan(year * 365 + 172, fromDay, toDay));
         // And then the house spends some of what it just counted on putting
         // people on the road. AFTER the economy, so a house buys the carriage
         // out of the purse this year filled, and after recruitment, so
@@ -2218,25 +2244,6 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
 const SENDINGS_PER_HOUSE_YEAR = 0.2;
 
 /**
- * What a house pays for a carriage of each grade.
- *
- * This was ONE number and ONE carriage: every house in the world bought a shod
- * carriage and nothing else, however rich or poor it was, which is a specific
- * standing where a system belongs. The catalog carries three grades and a house
- * buys the best one it can pay for out of what it already holds.
- */
-const A_CARRIAGE_COSTS: Readonly<Record<string, number>> = Object.freeze({
-    'conv-carriage-heaven': 40_000,
-    'conv-carriage-earth': 8_000,
-    'conv-carriage-mortal': 1_500
-});
-
-/** Best first, so the first one a house can pay for is the one it gets. */
-const CARRIAGES_BY_GRADE: readonly string[] = [
-    'conv-carriage-heaven', 'conv-carriage-earth', 'conv-carriage-mortal'
-];
-
-/**
  * How heavy a finished sending has to be before anybody repeats it.
  */
 const WORTH_REPEATING = 0.35;
@@ -2346,6 +2353,124 @@ export function howAHouseStandsForMoney(
         cannotPayItsPeople: true,
         knowsGroundThatWouldPayIt: whichGroundWouldPayIt(could, payroll) !== null
     };
+}
+
+/**
+ * Everything this house could put a party on, counted and tracked alike.
+ *
+ * THE YARD WAS THE CARRIAGES AND NOTHING ELSE, and the two halves of a house's
+ * transport are kept in two different places by design - a counted craft is a
+ * line in `resources`, a tracked one is a row in `state.objects` with a past -
+ * so the pass that asks what a house is taking asked one of them. A house that
+ * built or bought a hull walked its people out on a carriage.
+ *
+ * Walking is not a row here. Nothing offered is `bestForThisRoad`'s null, and
+ * null is what the caller already reads as walking.
+ */
+function whatThisHouseCouldTakeOut(
+    state: WorldState,
+    faction: FactionRecord
+): { conveyance: Conveyance; power: number | null }[] {
+    const out: { conveyance: Conveyance; power: number | null }[] = [];
+    for (const id of CARRIAGES_BY_GRADE) {
+        if (countedHolding(faction.resources, id) > 0) {
+            out.push({ conveyance: requireConveyance(id), power: null });
+        }
+    }
+    for (const thing of state.objects) {
+        if (thing.ownerId !== faction.id) continue;
+        const id = thing.data.conveyanceId;
+        if (typeof id !== 'string') continue;
+        const kind = getConveyance(id);
+        if (kind === undefined) continue;
+        out.push({ conveyance: kind, power: thing.power ?? null });
+    }
+    return out;
+}
+
+/**
+ * A house that could not pay its people sells the thing it built.
+ *
+ * The decision is `whatAHouseWouldSell`'s and the whole of it; this moves the
+ * stones, the register and the row in the ledger. It runs after the economy so
+ * the purse it reads is this year's, and before the sendings so a house that
+ * sold something this year can put people on the road with the proceeds.
+ *
+ * ONE SALE A HOUSE A YEAR. A body clearing out its yard in an afternoon is a
+ * body dissolving, which the world already has a pass for.
+ */
+function applyWhatAHouseHadToSell(state: WorldState, day: number): number {
+    const roll = new Map<string, number>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        roll.set(npc.factionId, (roll.get(npc.factionId) ?? 0) + 1);
+    }
+
+    const asAtTheTable = (f: FactionRecord): AHouseAtTheTable => ({
+        id: f.id,
+        name: f.name,
+        purse: Number(f.resources.spirit_stones ?? 0)
+    });
+
+    let sold = 0;
+    for (const faction of state.factions) {
+        if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
+        const payroll = (roll.get(faction.id) ?? 0) * A_STIPEND_PER_MEMBER_PER_YEAR;
+        const purse = Number(faction.resources.spirit_stones ?? 0);
+        if (howThePurseIsRunning(purse, payroll) !== 'cannot_pay') continue;
+
+        const deal = whatAHouseWouldSell({
+            seller: asAtTheTable(faction),
+            owns: state.objects.filter(o => o.ownerId === faction.id),
+            circle: circleCandidatesFor(state, faction).map(asAtTheTable),
+            shortBy: payroll - purse
+        });
+        if (deal === null) continue;
+
+        const buyer = state.factions.find(f => f.id === deal.buyer.id);
+        if (!buyer) continue;
+        const index = indexById(state.objects, deal.craft.id);
+        if (index < 0) continue;
+
+        buyer.resources.spirit_stones = Math.max(
+            0, Number(buyer.resources.spirit_stones ?? 0) - deal.price);
+        faction.resources.spirit_stones = purse + deal.price;
+        state.objects[index] = boughtFromItsOwner(state.objects[index]!, {
+            buyer: { id: buyer.id, name: buyer.name },
+            seller: { id: faction.id, name: faction.name },
+            onDay: day,
+            price: deal.price,
+            source: `${faction.name}'s yard`
+        });
+        sold++;
+
+        appendWorldFact(state, makeFact({
+            day,
+            kind: 'treasure_found',
+            scale: 'regional',
+            // WHAT A WATCHER SEES, which is the thing moored somewhere else. A
+            // house's insolvency is not visible from outside it, and a public
+            // row stating the motive is the engine reading its own column
+            // aloud - the narrator then writes it as something a stranger
+            // observed. The figure and the shortfall stay in `data`, where the
+            // two houses' own reading of it can reach them.
+            summary:
+                `${deal.craft.name} is moored on ${buyer.name}'s ground. `
+                + `It was ${faction.name}'s.`,
+            locationId: faction.seatLocationId,
+            factionIds: [faction.id, buyer.id],
+            actors: [],
+            visibility: 'public',
+            magnitude: 0.5,
+            data: {
+                craftId: deal.craft.id,
+                conveyanceId: String(deal.craft.data.conveyanceId ?? ''),
+                price: deal.price,
+                shortBy: deal.shortBy
+            }
+        }));
+    }
+    return sold;
 }
 
 /**
@@ -2464,10 +2589,10 @@ function applySendings(
             .filter(row => countedHolding(faction.resources, row.id) > 0);
         if (yard.length === 0) {
             const purse = faction.resources.spirit_stones ?? 0;
-            const bought = CARRIAGES_BY_GRADE.find(id => purse >= A_CARRIAGE_COSTS[id]!);
+            const bought = CARRIAGES_BY_GRADE.find(id => purse >= WHAT_A_CRAFT_COSTS_TO_COMMISSION[id]!);
             if (bought !== undefined) {
                 faction.resources = adjustCountedHolding(faction.resources, bought, 1);
-                faction.resources.spirit_stones = purse - A_CARRIAGE_COSTS[bought]!;
+                faction.resources.spirit_stones = purse - WHAT_A_CRAFT_COSTS_TO_COMMISSION[bought]!;
             }
         }
 
@@ -2586,6 +2711,21 @@ function applySendings(
         const goingTo = named?.locationId ?? drawn;
         const pitchDrawn = best + rng.int(-5, 1);
 
+        // WHAT SUITS THIS ROAD AND THIS CHEST. Asked with the WORK's own head
+        // count rather than with the party, because the party is not decided
+        // yet and is decided BY this: `postingFor` fills the craft out to what
+        // it holds. Asking with the finished party would be circular, and
+        // asking with the craft's capacity would price a house out of the very
+        // thing that makes its parties big.
+        const inTheChest = Number(faction.resources.spirit_stones ?? 0);
+        const taking = bestForThisRoad(
+            whatThisHouseCouldTakeOut(state, faction),
+            reason.days,
+            reason.hands,
+            false,
+            inTheChest
+        );
+
         const posting = postingFor({
             reason,
             house,
@@ -2601,13 +2741,35 @@ function applySendings(
                     state.locations.find(l => l.id === named.locationId)?.thresholds.mastery ?? 0
                 ),
             locationId: goingTo ?? faction.seatLocationId,
-            // What they went on: the best thing in the yard, which is the best
-            // thing the house could pay for. Null is walking, and walking is
-            // what the reason's own term already assumes.
-            conveyance: CARRIAGES_BY_GRADE
-                .map(id => requireConveyance(id))
-                .find(row => countedHolding(faction.resources, row.id) > 0) ?? null
+            // ── WHAT THEY WENT ON, AND WHAT THE CHEST WILL COVER ─────────
+            //
+            // Not "the best thing in the yard" any more, which was a grade
+            // order read off a list and knew nothing about the road or the
+            // purse. `bestForThisRoad` is the one answer to which craft suits a
+            // journey, it is the answer the player's own `ride` takes, and its
+            // `purse` argument is what prices a house out: a hull whose burn
+            // this chest will not cover is not an option, so the house takes
+            // the carriage and arrives late. That is a consequence the world
+            // already models rather than a refusal.
+            conveyance: taking?.conveyance ?? null,
+            conveyancePower: taking?.power ?? null,
+            purse: inTheChest,
+            // Whom this house actually has for this errand, read through the
+            // module's own eligibility filter rather than a second copy of it.
+            available: whoTheHouseCanSend(
+                { ceilingOrdinal: reason.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER },
+                party0
+            ).length
         });
+        // AND THE CHEST PAYS FOR THE GROUND THAT IS NOT THERE. One debit, off
+        // the figure the posting itself carries, so what a house is charged and
+        // what a board would quote cannot come apart. Zero on anything standing
+        // on a vein, which is every carriage in the world.
+        if (posting.stonesBurned > 0) {
+            faction.resources.spirit_stones = Math.max(
+                0, Number(faction.resources.spirit_stones ?? 0) - posting.stonesBurned
+            );
+        }
         const party = whoTheHouseCanSend(posting, party0);
         if (party.length === 0) continue;
 
@@ -4143,6 +4305,156 @@ function applyLastCrossing(
 // mid-window announces a closing nobody was told about.
 
 /**
+ * The people a conclave chose walk through the door it chose them for.
+ *
+ * ── WHAT WAS DECIDED AND THEN DROPPED ────────────────────────────────────
+ *
+ * `applyDoorsAndTheirPlaces` runs the whole allocation: the holder deals the
+ * places it has, each house that got any ranks its own people for them,
+ * `creditWhatTheyLearned` pays out the training, and `whatBeingPassedOverDoes`
+ * opens the grudge and writes the goal against whoever took the last place. It
+ * returns `deal`, `conclaves` and `andTheyDid`, and the yearly pass read
+ * `shut` and `storedFact` and nothing else.
+ *
+ * So a house ranked its people for a door, four of them were passed over and
+ * resented it, three were told they were going - and nobody went. Nobody moved,
+ * nobody was at risk, nothing came out, and the place at the door that the
+ * grudge is ABOUT was worth nothing to the person who won it.
+ *
+ * ── AND THE PARTY IS THE CONCLAVE'S, NOT THE ROSTER'S ────────────────────
+ *
+ * `whoTheHouseCanSend` is not asked here and that is the whole point. It takes
+ * the strongest names off the roll, which is the right answer for an errand the
+ * house invents and the wrong one for a door: the conclave already decided,
+ * over a ranked field, and it is the decision the grudges are written against.
+ * Sending anybody else would make those grudges false.
+ *
+ * Everything after that is the ordinary errand road - the term, the term
+ * running past the end of the span, the move, the loss, the news - because a
+ * place at a door is an errand a house was given rather than one it opened.
+ */
+function thePeopleAConclaveChoseWalkThrough(
+    state: WorldState,
+    doors: readonly ADoorsYear[],
+    day: number,
+    /** The last day of the year being reported on. */
+    spanEndsOn: number
+): number {
+    const at = new Map<string, number>();
+    for (let i = 0; i < state.npcs.length; i++) at.set(state.npcs[i]!.id, i);
+    const errand = theErrandADoorIs();
+    let walked = 0;
+
+    for (const row of doors) {
+        if (row.conclaves.length === 0) continue;
+        const door = getLocation(state, row.doorId);
+        if (!door) continue;
+
+        for (const decided of row.conclaves) {
+            const faction = state.factions.find(f => f.id === decided.factionId);
+            if (!faction || faction.dissolvedOnDay !== null) continue;
+            // The world's to move, and alive. A conclave ranks whoever was on
+            // the roll when it sat; the player's mirror row is never spent by
+            // the world, and neither is somebody the year has since killed.
+            const party: Candidate[] = [];
+            for (const going of decided.going) {
+                const index = at.get(going.npcId);
+                const npc = index === undefined ? undefined : state.npcs[index];
+                if (!npc || npc.status !== 'alive' || !isTheWorldsToMove(npc)) continue;
+                party.push({ id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal });
+            }
+            if (party.length === 0) continue;
+
+            // THE TERM IS THE WINDOW, the same reading `whoSendsWhenADoorOpens`
+            // takes off the same schedule, because it is the same door shutting.
+            const window = convergenceOf(door, day);
+            const term = {
+                ...errand,
+                days: Math.max(1, Math.min(errand.days, window.windowDays || errand.days))
+            };
+            const purse = Number(faction.resources.spirit_stones ?? 0);
+            const taking = bestForThisRoad(
+                whatThisHouseCouldTakeOut(state, faction), term.days, party.length, false, purse);
+            const posting = postingFor({
+                reason: term,
+                house: { id: faction.id, name: faction.name },
+                pitchOrdinal: door.thresholds.survival,
+                locationId: door.id,
+                conveyance: taking?.conveyance ?? null,
+                conveyancePower: taking?.power ?? null,
+                purse,
+                // The door's count, dealt by the holder and then by the
+                // conclave. Neither the errand nor the craft moves it.
+                hands: party.length
+            });
+            if (posting.stonesBurned > 0) {
+                faction.resources.spirit_stones = Math.max(0, purse - posting.stonesBurned);
+            }
+
+            const when = whenTheErrandHappened({
+                notBefore: day, reportedOn: day, spanEndsOn, term: posting.days
+            });
+            const partyIds = party.map(p => p.id);
+            const note = `At ${door.name} for the ${houseName(faction.name)}, on a place the `
+                + 'house was dealt.';
+            const moveThem = (untilDay: number): void => {
+                for (const member of party) {
+                    const index = at.get(member.id);
+                    const npc = index === undefined ? undefined : state.npcs[index];
+                    if (index === undefined || !npc || !isTheWorldsToMove(npc)) continue;
+                    state.npcs[index] = {
+                        ...setLocation(npc, door.id, day),
+                        activity: {
+                            kind: 'out_with_a_party',
+                            note,
+                            withIds: partyIds.filter(id => id !== member.id),
+                            sinceDay: day,
+                            untilDay,
+                            returnTo: npc.locationId
+                        }
+                    };
+                }
+            };
+
+            walked++;
+            if (when.stillOut) {
+                moveThem(when.returnsOnDay);
+                appendWorldFact(state, newsOfAPartyStillOut({
+                    posting, party, departsOnDay: day, dueOnDay: when.returnsOnDay
+                }));
+                continue;
+            }
+
+            const sending = resolveSending({
+                posting,
+                party,
+                departsOnDay: when.departsOnDay,
+                rng: forStream(state.seed, 'a-place-at-a-door', door.id, faction.id, String(day)),
+                location: door
+            });
+            moveThem(sending.returnsOnDay);
+            for (const missing of sending.lost) {
+                const index = at.get(missing.id);
+                if (index === undefined) continue;
+                const gone = theWorldLoses(
+                    state.npcs[index]!,
+                    sending.returnsOnDay,
+                    `Went into ${door.name} on ${faction.name}'s place and did not come back.`
+                );
+                if (!gone) continue;
+                state.npcs[index] = gone;
+            }
+
+            const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+            if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING) {
+                appendWorldFact(state, news);
+            }
+        }
+    }
+    return walked;
+}
+
+/**
  * A door stands open and the houses that can reach it send people.
  *
  * WHO GOES IS NOT DECIDED HERE. `whoSendsWhenADoorOpens` is the reading, and it
@@ -4194,7 +4506,12 @@ function theProvinceGoes(
                 id: f.id,
                 name: f.name,
                 seatLocationId: f.seatLocationId,
-                roster: roster.get(f.id) ?? []
+                roster: roster.get(f.id) ?? [],
+                // The same two columns the yearly sendings pass reads, so a
+                // house at a door and a house on an errand cannot disagree
+                // about what it owns or what it can afford to run.
+                yard: whatThisHouseCouldTakeOut(state, f),
+                purse: Number(f.resources.spirit_stones ?? 0)
             })),
         walkingDaysTo: id => reach.get(id),
         hasAnythingOfTheGround: personId =>
@@ -4203,6 +4520,16 @@ function theProvinceGoes(
 
     for (const house of going) {
         const rng = forStream(state.seed, 'a-door-opens', door.id, house.houseId, String(day));
+        // AND THE CHEST PAYS FOR THE GROUND THAT IS NOT THERE, by the same
+        // debit the yearly errand takes and off the same figure.
+        if (house.posting.stonesBurned > 0) {
+            const chest = state.factions.find(f => f.id === house.houseId);
+            if (chest) {
+                chest.resources.spirit_stones = Math.max(
+                    0, Number(chest.resources.spirit_stones ?? 0) - house.posting.stonesBurned
+                );
+            }
+        }
         // A RACE CANNOT BE BACKDATED. The party could not have set out before
         // the door opened, so `notBefore` is the opening and not the span - and
         // an errand whose term runs past the end of the span is a party still

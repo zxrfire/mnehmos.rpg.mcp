@@ -72,7 +72,7 @@ import { makeOpportunity, years, type OpportunityWindow } from './opportunities.
 import { dayOfYear, makeFact, appendFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
-import { seedArtifacts } from './artifact-placement.js';
+import { seedArtifacts, seedTheCraftThatAreObjects } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
 import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
@@ -297,6 +297,9 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // of them into the world, so the immortal weapon a house's whole standing
     // rests on existed only in a catalog nothing read. See `goods.ts`.
     state.objects.push(...seedArtifacts(state));
+    // And the hulls, which is the same defect one catalog over. See
+    // `seedTheCraftThatAreObjects`: no world has ever contained a spirit boat.
+    state.objects.push(...seedTheCraftThatAreObjects(state));
     state.objects.push(...seedComprehensionMaterials(state));
     // And the ground that teaches a road, which is the other half of the same
     // problem: a material is spent and gone, a terrace is not, and the gate in

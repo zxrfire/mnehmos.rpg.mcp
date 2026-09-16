@@ -50,6 +50,7 @@ import {
     whoSendsWhenADoorOpens,
     type AHouseThatCouldGo
 } from '../../../src/engine/world/a-door-that-opens-is-a-race.js';
+import { whatADoorAdmits } from '../../../src/engine/world/a-door-with-a-count-on-it.js';
 import { wingsOf } from '../../../src/engine/world/provenance.js';
 import { whatTheDoorOfThisRuinSays } from '../../../src/web/walking-up-to-a-door-that-closes.js';
 
@@ -182,6 +183,39 @@ describe('a door that opens is a race', () => {
             slip: null
         });
         expect(quiet.lines.join(' ')).not.toContain('standing here');
+    });
+
+    /**
+     * ── A DOOR SOMEBODY DOLES OUT IS NOT A RACE ──────────────────────────
+     *
+     * Found by wiring the conclaves through. `a-year-at-the-doors.ts` deals the
+     * places at a held, counted door and a house then ranks a field of its own
+     * people for them; this pass asked nothing at all about who held the ground,
+     * so on the same opening day the whole province turned up anyway. The
+     * disciple who won a place and the three who were passed over for it stood
+     * in the same doorway, which makes the grudge about nothing.
+     *
+     * The door table already had the reading - `doled_out` is the one cell of
+     * four with a count in a house's hand, and its own account says *there is no
+     * going anyway*. This asks it rather than stating a second rule.
+     */
+    it('sends nobody racing to a door whose places a house is handing out', () => {
+        const open = doorOpenFor(180);
+        expect(whoGoes(open).length).toBeGreaterThan(0);
+
+        const doled = { ...open, controllingFactionId: 'house-that-holds-it' };
+        expect(whatADoorAdmits({ ruin: doled }).cell).toBe('doled_out');
+        expect(whoGoes(doled)).toEqual([]);
+    });
+
+    /**
+     * And the other three cells are still a race. Held ground with no count on
+     * it hands out nothing, so turning up is not a thing anybody has to beat.
+     */
+    it('still races to held ground that has no count on it', () => {
+        const uncounted = { ...doorOpenFor(180), cycle: null, sealed: false,
+            controllingFactionId: 'house-that-holds-it' };
+        expect(whatADoorAdmits({ ruin: uncounted }).cell).not.toBe('doled_out');
     });
 
     it('leaves out a house nothing connects to the door', () => {

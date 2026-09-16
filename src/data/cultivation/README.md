@@ -310,6 +310,26 @@ understand, resource-hungry, politically unsupported. And potentially exceptiona
 - **Add the test.** Each catalog's invariants are asserted in `tests/data/cultivation/`.
   A new entry that breaks a band should fail there, not in play.
 
+### Describing is free. STATING binds the world
+
+A catalog row mostly describes - a name, a rung, one concrete thing - and the world then
+does what it does with the person, including ending them. A row may also STATE that
+somebody is standing, with `theCatalogStatesTheyAreStanding` (declared by
+`WhatACatalogStates` in `../../engine/world/npc-state.ts`, carried onto the record as a tag
+by whichever seeder instantiates the row). The world's own passes then may not end them,
+and nothing else changes: they are moved, climb, marry and are robbed like anybody, and a
+player who kills them has killed them.
+
+It is opt-in and meant to stay rare. **The test: would a death make a sentence somewhere
+FALSE, or just out of date?** Only the first is a statement. A catalog that declines to
+resolve whether somebody lives, a house's *fear* that an enemy survives, and a claim about
+"its strongest, in post" - a role that re-reads off the roster - are all descriptions, and
+none of them may carry it.
+
+Measured before it existed, over 24 pinned worlds at 200 years: **8 of 48 stated-standing
+rows were ended by the world**, across four different passes. The full reasoning, including
+what the flag deliberately does not express, is on the declaration.
+
 ### Encounter weighting
 
 `weight` is a relative draw weight within the set of entries whose ordinal range contains

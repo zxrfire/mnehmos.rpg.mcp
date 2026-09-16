@@ -197,6 +197,71 @@ export interface TakingInput {
 }
 
 /**
+ * Bought, and both parties say so.
+ *
+ * THE FIRST ROUTE HAD NO FUNCTION. This file's banner has named it since it was
+ * written - *bought, given, inherited, granted by a house that had it to grant*
+ * - and only the two contested routes were ever built, so the one way ownership
+ * moves that nobody argues about could not be performed at all. What that cost
+ * is specific: a house can build a hull and could not sell one, and the design
+ * owner's *"sects do trade between each other"* had nothing to run on.
+ *
+ * The claim is `purchase` at full strength, and it is acknowledged BY THE
+ * SELLER by construction. That is the whole difference between this route and
+ * the other two: force of arms needs everybody else to accept it and standing
+ * over a thing needs nobody left to argue, while a sale needs exactly one
+ * party's word and has it - the person who handed it over. A sale nobody
+ * acknowledges is a story about a sale.
+ *
+ * Money is not moved here. Whose chest is whose is a question about the two
+ * bodies rather than about the object, and this module holds no purse.
+ */
+export function boughtFromItsOwner(object: ObjectRecord, input: {
+    buyer: { id: string; name: string };
+    seller: { id: string; name: string };
+    onDay: number;
+    /** What was paid, for the provenance line. Not charged here. */
+    price: number;
+    source: string;
+    note?: string;
+    evidenceFactIds?: string[];
+    /** Anybody else who accepts it. The seller is on the list without asking. */
+    acknowledgedBy?: readonly string[];
+}): ObjectRecord {
+    // A SALE MOVES THE REGISTER. Whether it puts the thing in anybody's HAND is
+    // the separate fact this whole module is built on, and it is derived rather
+    // than passed: a thing nobody was carrying is a thing nobody is carrying
+    // now. A hull bought out of a yard is moored in a different yard, and a
+    // blade bought off a man's belt is on somebody else's. The chain records the
+    // buyer either way, because the chain is what happened.
+    const carried = object.possessorId !== null;
+    const moved = transferPossession(object, {
+        onDay: input.onDay,
+        toHolderId: input.buyer.id,
+        toHolderName: input.buyer.name,
+        how: 'bought',
+        transfersOwnership: true,
+        source: input.source,
+        note: input.note ?? `Sold by ${input.seller.name} for ${input.price} stones.`
+    });
+    const held = carried ? moved : { ...moved, possessorId: null };
+    const claimed = assertClaim(held, {
+        claimantId: input.buyer.id,
+        claimantName: input.buyer.name,
+        basis: 'purchase',
+        assertedOnDay: input.onDay,
+        strength: 1,
+        evidenceFactIds: input.evidenceFactIds ?? [],
+        note: `Bought from ${input.seller.name} for ${input.price} stones.`
+    });
+    const minted = claimed.claims[claimed.claims.length - 1];
+    return [input.seller.id, ...(input.acknowledgedBy ?? [])].reduce(
+        (carrying, byId) => acknowledgeClaim(carrying, minted.id, byId),
+        claimed
+    );
+}
+
+/**
  * Taken in a war, and the world says so.
  *
  * Possession, ownership, a `conquest` claim and its acknowledgements, in that

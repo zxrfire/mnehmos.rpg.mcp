@@ -2994,6 +2994,104 @@ worth anything to be given.
   has learned nothing. A deep field therefore teaches more than a shallow one, which is why
   a house invites anybody at all.
 
+### And the people a conclave chose walk through the door
+
+`applyDoorsAndTheirPlaces` runs the whole allocation - the holder deals, the house ranks a
+field of its own, `creditWhatTheyLearned` pays the training out, `whatBeingPassedOverDoes`
+opens the goal and the tie against whoever took the last place - and the yearly pass read
+`shut` and `storedFact` and dropped `deal`, `conclaves` and `andTheyDid` on the floor. So
+the world wrote the grudges and **nobody went in**, which makes the grudge about nothing.
+
+`thePeopleAConclaveChoseWalkThrough` is the walking half, and the party is the conclave's
+list rather than `whoTheHouseCanSend`'s. That is the ruling and not a convenience: the
+roster read takes the strongest names on the roll, and the ground is often closed above
+them - so the people the grudges are written about and the people who went would have been
+two different sets.
+
+**And a door somebody doles out is not a race.** `whoSendsWhenADoorOpens` asked nothing
+about who held the ground, so on the same opening day the whole province turned up at a
+door whose places had just been dealt: the disciple who won a place and the three passed
+over for it stood in the same doorway. The door table already answered it -
+`whoDecidesWhoGoesIn(cell)`, whose `doled_out` account says *there is no going anyway* - so
+the gate reads that rather than stating a second rule.
+
+## A house sends what it can carry, and pays for the ground that is not there
+
+`SENDINGS_PER_HOUSE_YEAR` is **0.2 and stays 0.2**: one party on the road per house per
+five years. Asked whether that was too rare, the design owner kept the cadence and moved
+the party - people who live for centuries take one substantial expedition every five years,
+not four small ones a year, and how substantial it is depends on the treasury.
+
+So `reason.hands` is the **floor**, not the answer. `postingFor` fills the party out to what
+the house is travelling on (`conveyance.heads`), back down to what the chest will pay to
+carry (`howManyTheChestWillCarry`), and never above how many the house actually has
+(`available`). Walking is one head and therefore changes nothing, which is what keeps a
+house with an empty yard sending exactly what it always sent.
+
+**Measured**, party sizes off the ledger's own actor rows, three seeded worlds:
+
+|  | 100 years | 300 years |
+|---|---|---|
+| before | 3.8 / 4.4 / 3.9 | 3.3 / 3.9 / 3.7 |
+| after | 4.6 / 4.8 / 5.1 | 4.2 / 4.5 / 4.5 |
+
+The lift is about a fifth and the reason is worth stating rather than tuning away: **a
+house's roll runs 1 to 29 people with a median of 7**, so for most houses in the world the
+binding constraint is how many people it HAS. The conveyance decides the party only at the
+houses that own something big.
+
+**And the chest is charged.** `whatTheChestBurns` had been written, exported and tested
+with nothing in the world charging it to anybody - every journey was free. `applySendings`
+and `theProvinceGoes` now pick with `bestForThisRoad` **with the purse in hand**, so a craft
+whose burn the chest will not cover is not an option and the house takes the carriage and
+arrives late. That is a consequence the world already models, not a refusal.
+
+**What the spread actually looks like**, three seeds
+([`probe-what-a-house-can-afford-to-put-on-the-road.ts`](../../../scripts/probe-what-a-house-can-afford-to-put-on-the-road.ts)):
+89-97% of houses cover a thirty-head crossing at 100 years and 83-97% at 300, and the purse
+ratio p90/p50 runs 5.4-6.4 at 100 against 6.7-8.7 at 300 on two of the three seeds. **The
+gap holds rather than widens.** The third reads 53.6 at 300, and the cause is the median
+rather than the top: that world founded five houses in the span and a new house starts
+poor. p90/p10 is not the statistic to use here - p10 goes to zero whenever a world holds a
+house that has just folded. The honest reading is that the burn is not what separates rich from
+poor at century scale: a thirty-head crossing over a 120-day road is 720 stones against a
+median purse of 140,000. Where it bites is at world open, where a seeded purse is 200-1,400
+(`seeding.ts`) and the same crossing is a real decision. **The house economy compounds and
+the burn does not**, which is a finding about the economy rather than about conveyances.
+
+### A hull is built, then sold
+
+Three things were missing and each hid the next.
+
+- **No hull existed in any world.** `TRACKED_CRAFT` is five rows and the seeder read none of
+  them, so a lived world contained **zero spirit boats** however long it ran - and none was
+  ever built either, because a heaven-grade bill wants six cores and `sending-for-materials`
+  is capped below the rung that brings one home. Same defect `seedArtifacts` exists to fix,
+  one catalog over. `seedTheCraftThatAreObjects` seats them, and gives each one the first
+  link in its chain: a thing that exists on day one was built by somebody, and the seeder is
+  what knows the day. It does **not** invent a wright - the catalog states an owner and no
+  builder, so the link says so.
+- **Nothing could be bought.** `ownership-transfer.ts` names four routes and had functions
+  for the two contested ones; the uncontested one had none. `boughtFromItsOwner` is it, and
+  the claim it asserts is acknowledged by the seller by construction - that one party's word
+  is the whole difference between a sale and the other two routes. A sale moves the register;
+  whether it puts the thing in a HAND is derived, not passed, so a moored hull stays moored.
+- **No price, correctly.** `WHAT_A_CRAFT_COSTS_TO_COMMISSION` has three carriage rows and no
+  boat row, because nobody commissions 2,400 days of work. A sale is not a commission, so
+  `whatACraftWouldFetch` prices a hull against the dearest craft the table DOES price, by the
+  only figure the two bills differ in that anybody pays for: 40,000 x 2,400/700 = **137,143**.
+
+The design owner, on sects trading with each other: *"why should they not?"*
+
+Who sells is a motive the world already holds - `howThePurseIsRunning` says `cannot_pay` -
+and who buys is `circleCandidatesFor`, the same reading a gathering and a visit take. A
+house sells the **cheapest** thing that covers what it is short of, and will not sell
+something that does not cover it: losing the hull and still missing payroll is nobody's
+decision.
+
+**Not reachable by a sentence yet.** Nothing in `src/web/` lets a player buy or sell a
+craft, and no verb was written for it here.
+
 ### The open competition, and the half of it that is built
 
 `gatherings.ts` is the **closed** competition and is complete: houses that would sit down

@@ -211,6 +211,35 @@ export function adjustCountedHolding(
 }
 
 /**
+ * What a house pays to have one built for it, in spirit stones.
+ *
+ * Three rows, and the absences are the statement. A carriage is COMMISSIONED -
+ * somebody in the province builds them and a house with a purse has one by
+ * spring - and a hull is not: `build-spirit-boat` is 2,400 days of work by a
+ * pair of hands almost nobody has, which is the number that makes it an
+ * undertaking rather than a purchase. So there is no boat row, no mount row
+ * (the price of a mount is a hunt, which its own description states), and no
+ * row for flight on one's own blade, which is not property.
+ *
+ * A hull therefore reaches a second house exactly one way: somebody built it
+ * and somebody sold it. See `a-house-sells-what-it-built.ts`, which prices that
+ * against these rows rather than adding a fourth.
+ *
+ * Lived in the world pass as `A_CARRIAGE_COSTS` and moved here unchanged: it is
+ * a price table, which is data, and a second reader needed it.
+ */
+export const WHAT_A_CRAFT_COSTS_TO_COMMISSION: Readonly<Record<string, number>> = Object.freeze({
+    'conv-carriage-heaven': 40_000,
+    'conv-carriage-earth': 8_000,
+    'conv-carriage-mortal': 1_500
+});
+
+/** Best first, so the first one a house can pay for is the one it gets. */
+export const CARRIAGES_BY_GRADE: readonly string[] = [
+    'conv-carriage-heaven', 'conv-carriage-earth', 'conv-carriage-mortal'
+];
+
+/**
  * The counted conveyance a transport line on the price board actually is.
  */
 export const CONVEYANCE_ON_THE_PRICE_BOARD: Readonly<Record<string, string>> = Object.freeze({

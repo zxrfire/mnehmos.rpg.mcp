@@ -37,7 +37,11 @@ import {
     type LocationRecord
 } from './locations.js';
 import { isBelowTheLid } from './layers.js';
-import { daysByConveyance, type Conveyance } from './what-a-conveyance-does-to-a-journey.js';
+import {
+    daysByConveyance,
+    whatTheChestBurns,
+    type Conveyance
+} from './what-a-conveyance-does-to-a-journey.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE HOUSE, AS THE BINDING PASS NEEDS IT
@@ -568,13 +572,83 @@ export interface Posting {
     conveyanceId: string | null;
     /** The reason's term before the conveyance was applied. */
     walkingDays: number;
-    /** How many the house means to put on it. */
+    /**
+     * How many the house means to put on it.
+     *
+     * THE WORK STATES A FLOOR AND THE CONVEYANCE STATES THE REST.
+     * `reason.hands` is what the errand needs - three walk a leak down, forty
+     * fight a war - and it used to be the whole answer, so a house that owned a
+     * thing holding thirty sent five and twenty-five seats went out empty.
+     *
+     * A house sends once in five years (`SENDINGS_PER_HOUSE_YEAR`, unchanged),
+     * so one party is meant to be substantial - and what makes it substantial is
+     * what is carrying it, which is also what the treasury decides. The size of
+     * the party and the cost of the journey therefore come off one column rather
+     * than off a multiplier picked to make the figure look right. Walking is
+     * heads 1 and changes nothing.
+     *
+     * AND THE CHEST IS THE OTHER BOUND: a house with a hull and a thin purse
+     * sails with twelve rather than thirty. {@link howManyTheChestWillCarry}.
+     */
     hands: number;
     /** Above this nobody is sent. Null where the errand has no ceiling. */
     ceilingOrdinal: number | null;
     atStake: AtStake;
     /** The place, when the caller knows one. Carried for the sighting. */
     locationId: string | null;
+    /**
+     * Spirit stones this journey burns, out of whoever's chest is paying.
+     *
+     * Zero for everything that stands on ground, which is every carriage and
+     * every mount in the world - `whatTheChestBurns` is the one reading and it
+     * is asked here rather than in each caller, so the figure a house is
+     * charged and the figure a board quotes cannot disagree.
+     *
+     * REPORTED, NOT CHARGED. Nothing in this module holds a purse.
+     */
+    stonesBurned: number;
+}
+
+/**
+ * Trips this craft needs to move this many people.
+ */
+function tripsFor(heads: number, conveyance: Conveyance): number {
+    return Math.ceil(Math.max(1, heads) / Math.max(1, Math.floor(conveyance.heads)));
+}
+
+/**
+ * How many of a party a chest will actually pay to carry.
+ *
+ * Between the floor the work asks for and the ceiling the craft holds, the
+ * largest number this purse covers. A purse of null is a caller with no chest
+ * in hand and prices nothing out, which is the same convention
+ * `bestForThisRoad` keeps for the same reason.
+ *
+ * Asked one head at a time rather than solved. The burn is
+ * `whatTheChestBurns`'s answer and a closed form here would be a second
+ * spelling of it, which is the copy that disagrees the first time either moves.
+ * The loop is at most the capacity of the largest craft in the world.
+ */
+export function howManyTheChestWillCarry(input: {
+    conveyance: Conveyance;
+    daysOneWay: number;
+    floor: number;
+    ceiling: number;
+    purse: number | null;
+}): number {
+    const floor = Math.max(1, Math.floor(input.floor));
+    const ceiling = Math.max(floor, Math.floor(input.ceiling));
+    if (input.purse === null) return ceiling;
+    for (let heads = ceiling; heads > floor; heads--) {
+        const burn = whatTheChestBurns({
+            conveyance: input.conveyance,
+            daysOneWay: input.daysOneWay,
+            heads,
+            trips: tripsFor(heads, input.conveyance)
+        });
+        if (burn <= input.purse) return heads;
+    }
+    return floor;
 }
 
 /**
@@ -595,23 +669,78 @@ export function postingFor(input: {
     conveyance?: Conveyance | null;
     /** The craft's rung, for a tracked one. Ignored below heaven grade. */
     conveyancePower?: number | null;
+    /**
+     * What the chest holds, where the caller holds one. Bounds the party on
+     * anything that burns stones; omitted prices nothing out.
+     */
+    purse?: number | null;
+    /**
+     * How many go, where that was settled by something other than the work.
+     *
+     * A place at a counted door is dealt by the holder and then dealt again by
+     * the house's own conclave, so the number going is the door's and neither
+     * the errand's nor the craft's. Given, the craft does not grow it and the
+     * chest does not shrink it - what it does change is what the journey burns,
+     * which is priced on the party that is actually going.
+     */
+    hands?: number | null;
+    /**
+     * How many the house actually has for this errand.
+     *
+     * `whoTheHouseCanSend` is the reading - `hands: Number.MAX_SAFE_INTEGER`
+     * against the roster gives it without a second copy of the eligibility
+     * filter. Passed so that `stonesBurned` is priced on the party that goes
+     * rather than on the seats: a house with a hull and eight people pays to
+     * move eight, and a posting that charged for thirty would be charging for
+     * twenty-two empty benches.
+     */
+    available?: number | null;
 }): Posting {
     const walkingDays = input.reason.days;
     const conveyance = input.conveyance ?? null;
+    const power = input.conveyancePower ?? null;
+    const days = conveyance
+        ? daysByConveyance(walkingDays, conveyance, power)
+        : walkingDays;
+    // See `Posting.hands`. The work's floor, filled out to what is carrying it,
+    // and back down to what the chest will pay to carry.
+    const settled = input.hands ?? null;
+    const wanted = settled !== null
+        ? Math.max(1, Math.floor(settled))
+        : conveyance === null
+        ? input.reason.hands
+        : howManyTheChestWillCarry({
+            conveyance,
+            daysOneWay: days,
+            floor: input.reason.hands,
+            ceiling: Math.max(input.reason.hands, conveyance.heads),
+            purse: input.purse ?? null
+        });
+    // AND NEVER MORE THAN THE HOUSE HAS. A posting for more people than exist
+    // on the roll prices a journey for benches nobody sits on - see
+    // `available`. A caller with no roster in hand is not capped, which is the
+    // honest answer for one writing a posting before it knows who is going.
+    const hands = input.available === null || input.available === undefined
+        ? wanted
+        : Math.max(1, Math.min(wanted, Math.floor(input.available)));
     return {
         reason: input.reason,
         houseId: input.house.id,
         houseName: input.house.name,
         pitchOrdinal: clampOrdinal(input.pitchOrdinal),
-        days: conveyance
-            ? daysByConveyance(walkingDays, conveyance, input.conveyancePower ?? null)
-            : walkingDays,
+        days,
         walkingDays,
         conveyanceId: conveyance?.id ?? null,
-        hands: input.reason.hands,
+        hands,
         ceilingOrdinal: input.reason.ceilingOrdinal,
         atStake: input.reason.atStake,
-        locationId: input.locationId ?? null
+        locationId: input.locationId ?? null,
+        stonesBurned: conveyance === null ? 0 : whatTheChestBurns({
+            conveyance,
+            daysOneWay: days,
+            heads: hands,
+            trips: tripsFor(hands, conveyance)
+        })
     };
 }
 

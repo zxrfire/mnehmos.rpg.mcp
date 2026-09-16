@@ -69,8 +69,10 @@ import {
     type HasAnythingOfTheGround
 } from './a-house-knows-a-date-because-somebody-in-it-does.js';
 import { convergenceOf } from './convergence.js';
+import { whatADoorAdmits, whoDecidesWhoGoesIn } from './a-door-with-a-count-on-it.js';
 import { beingAtADoorOnTheDayItOpens } from './being-at-a-door-on-the-day-it-opens.js';
 import type { LocationRecord } from './locations.js';
+import { bestForThisRoad, type Conveyance } from './what-a-conveyance-does-to-a-journey.js';
 import { wingsOf } from './provenance.js';
 import {
     isImpossibleTier,
@@ -87,6 +89,24 @@ export interface AHouseThatCouldGo {
     name: string;
     seatLocationId: string | null;
     roster: readonly Candidate[];
+    /**
+     * What the house could put the party on, counted and tracked alike.
+     *
+     * WHICH HOUSES TURN UP IS NOT AFFECTED BY THIS and must not be: the gate
+     * below is `reading.onFoot`, deliberately, and the header's measurement is
+     * what happens when a faster road is allowed to decide who reaches a door.
+     * What a yard changes is how long they are gone and how many of them go,
+     * which is `postingFor`'s answer off the craft's own capacity.
+     *
+     * Empty, or absent, and they walk - which is what every caller got before
+     * a house's yard was readable from here at all.
+     */
+    yard?: readonly { conveyance: Conveyance; power: number | null }[];
+    /**
+     * What is in the chest. A craft whose burn this will not cover is not an
+     * option, and a party is filled only as far as the chest carries it.
+     */
+    purse?: number | null;
 }
 
 export interface AHouseOnTheRoad {
@@ -136,6 +156,21 @@ export function whoSendsWhenADoorOpens(input: {
     const convergence = convergenceOf(input.door, input.onDay);
     if (!convergence.cyclical || !convergence.open) return [];
 
+    // ── AND A DOOR SOMEBODY DOLES OUT IS NOT A RACE ──────────────────────
+    //
+    // The door table's own cell, read through its own function. `doled_out` is
+    // the one cell of four where a house has a count in its hand, and what it
+    // says in as many words is *there is no going anyway* - which is the whole
+    // of why a place at one is worth ranking a field over.
+    //
+    // This pass asked nothing about who held the ground, so the province turned
+    // up on opening day at a door whose places had just been dealt by a
+    // conclave. Both mechanisms were live at once and the second one made the
+    // first worth nothing: the disciple who won a place and the three who were
+    // passed over were all standing in the same doorway.
+    if (whoDecidesWhoGoesIn(whatADoorAdmits({ ruin: input.door }).cell)
+        === 'a_house_hands_them_out') return [];
+
     const reason = theErrandADoorIs();
     const depthWanted = wingsOf(input.door).reduce((deep, w) => Math.max(deep, w.depthDays), 0);
     const out: AHouseOnTheRoad[] = [];
@@ -167,19 +202,28 @@ export function whoSendsWhenADoorOpens(input: {
         });
         if (!reading.onFoot.works) continue;
 
+        // THE TERM OF THIS ERRAND IS THE WINDOW. The reason's own term is the
+        // general case - a find somebody has to go and open takes as long as it
+        // takes - and a door takes back the ground when it shuts whatever
+        // anybody has finished.
+        const term = { ...reason, days: Math.min(reason.days, convergence.windowDays) };
+        const purse = house.purse ?? null;
+        const taking = bestForThisRoad(house.yard ?? [], term.days, term.hands, false, purse);
         const posting = postingFor({
-            reason: {
-                ...reason,
-                // THE TERM OF THIS ERRAND IS THE WINDOW. The reason's own term
-                // is the general case - a find somebody has to go and open
-                // takes as long as it takes - and a door takes back the ground
-                // when it shuts whatever anybody has finished.
-                days: Math.min(reason.days, convergence.windowDays)
-            },
+            reason: term,
             house,
             // What the ground asks of somebody who means to live through it.
             pitchOrdinal: input.door.thresholds.survival,
-            locationId: input.door.id
+            locationId: input.door.id,
+            conveyance: taking?.conveyance ?? null,
+            conveyancePower: taking?.power ?? null,
+            purse,
+            // What this house has for it, through the eligibility filter the
+            // party itself is drawn with two lines below.
+            available: whoTheHouseCanSend(
+                { ceilingOrdinal: term.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER },
+                house.roster
+            ).length
         });
         const party = whoTheHouseCanSend(posting, house.roster);
         if (party.length === 0) continue;
