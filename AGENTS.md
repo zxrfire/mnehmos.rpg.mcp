@@ -542,6 +542,29 @@ good person to meet; what the engine owes is the posts, and anybody else at that
 rung is the sampling doing its ordinary work. Do not write a rule that FORBIDS
 them - that would be the same mistake as requiring them, one sign flipped.
 
+### Three words, and the third one collapses
+
+The design owner's definitions, which are worth having exactly because an
+implementer will otherwise invent a flag for the third:
+
+> *"a guest elder is an external elder without an office"*
+> *"an external elder joining is just an elder"*
+
+- **an elder** holds an office, is on the roll, and every office a sect has must
+  have one
+- **a guest elder** is external, holds no office, and is **not on the roll** -
+  `GUEST_ELDERS` in `governance-and-water-rights.ts` is exactly this category,
+  already named and already populated, and `travel-verbs.ts` already says in its
+  own comment that guests are not in the house's roll
+- **an external elder who joins is just an elder.** There is no hybrid, no
+  "guest holding a post", no third state to model.
+
+So the "non-office-holding elder that MAY exist" is not a gap waiting to be
+filled - **it is the guest elder, and it already exists.** And when a house fills
+a vacancy from outside, nothing converts: the person takes the office and the
+word "guest" stops applying, because being a guest was only ever the state of
+having no office.
+
 This is also what makes the taper defect a defect rather than a thin world: an
 office is a chair, and a chair does not get emptier because the room is smaller.
 
