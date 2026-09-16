@@ -1159,7 +1159,7 @@ export class ProviderNarrator implements Narrator {
         // loses the leverage the social resolver reads, a count of rations
         // becomes a defaulted month - and the two modes stop being the same
         // game. See `carryWhatOnlyTheSentenceKnows` for the measurement.
-        const chosen = carryWhatOnlyTheSentenceKnows(validated.action, input);
+        const chosen = carryWhatOnlyTheSentenceKnows(validated.action, input, [], true);
 
         // And the one thing the model's reading may not be: the reason this
         // turn can cost days, a wound, or the run. Degraded exactly the way

@@ -281,6 +281,148 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
  * the note under {@link TIME_CONSUMING_ACTIONS} carries it.
  */
 
+// A VERB THAT COSTS STILL HAS A READ INSIDE IT
+
+/**
+ * The label that reaches a costly verb's free read, where it has one.
+ *
+ * `READ_ONLY_ACTIONS` answers on the VERB, and eleven verbs are free on one
+ * label and costly on the rest. Until this existed the only such verb anybody
+ * had noticed was `interact`, and everything else was priced by its name.
+ *
+ * MEASURED BY EXECUTING EACH PLAN, not read off the table that produces them.
+ * `theReadThatAnswersIt` substitutes a free read for a costly act when a
+ * sentence turns out to be a question, and thirteen of the plans it emits carry
+ * a verb that is on neither list - so `costsTheAskerNothing`, whose own first
+ * line that function is, called its own output costly. Played:
+ *
+ *     "I look for work and then sit down and cultivate for a year"
+ *
+ * returned the job board, spent nothing, held the cultivation, and told the
+ * player *"a turn spends one act that costs, and this one is spent."*
+ *
+ * Every entry below was run through the executor against a pinned world and
+ * checked for a changed cultivator row, a changed run row and a time skip.
+ * Seven of them mark themselves - `sect/summons`, `sect/duty`,
+ * `sect/authority`, `guard/ask`, bare `refine`, bare `craft` and `oath/read`
+ * come back through `freeAction`, which is the engine saying so in its own
+ * voice. The rest change nothing and reach no skip.
+ *
+ * AND ONE THAT THE TABLE CLAIMED AND THE ENGINE DENIED. `sect/siphon` is
+ * absent, and its absence is the point of measuring rather than listing:
+ * `theReadThatAnswersIt` carried a comment saying that naming neither a pace
+ * nor a span is a request to see the reserves without taking anything, and
+ * `handleSiphon` is called with `months: max(1, ...)` whatever it is handed.
+ * There is no read mode. The question is routed to the standing read instead,
+ * and what the house is holding is a read this engine does not have yet.
+ */
+export const THE_LABEL_THAT_REACHES_A_VERBS_READ:
+    Readonly<Partial<Record<ActionName, readonly string[]>>> = {
+    /** Asking whether there is any is the board. Taking some is a season. */
+    work: ['board'],
+    /** Naming nobody is the roster of who would keep a watch. */
+    guard: ['ask'],
+    /**
+     * Seven of the house's twenty-three. The listing, the guest terms, what the
+     * house asked of you, the duty board, what is in your gift, what the hall
+     * teaches, and where you stand in it.
+     */
+    sect: ['', 'guest', 'summons', 'duty', 'authority', 'curriculum', 'standing'],
+    /** The board, which is a price list. */
+    passage: ['', 'board'],
+    /** What the swearer already carries. */
+    oath: ['', 'read'],
+    /** Reading it from outside is the free step of the four. */
+    site: ['outside'],
+    /** What the counters here will take. */
+    legacy: ['', 'counters'],
+    /** What it would take to ask them, and what they are after. */
+    request: ['weigh', 'wants'],
+    /** One house's stance toward another, read rather than declared. */
+    posture: ['', 'stance'],
+    /** What is known of the thing under the mountain. */
+    seal: ['', 'read'],
+    /** The line an offering would go up, and the reading of a silence. */
+    offer: ['', 'channel'],
+    /**
+     * The cauldron's listing and the bench's: forty-two recipes and every bill,
+     * filtered by rung, with what the pouch is short of. Both are reached by
+     * naming no thing rather than by a label, which is what
+     * {@link A_NAMED_THING_IS_WHAT_THESE_VERBS_SPEND_ON} is for.
+     */
+    refine: [''],
+    craft: ['']
+} as const;
+
+/**
+ * Verbs whose read stops being a read the moment the plan names a THING.
+ *
+ * The label is not the whole discriminator for these, and treating it as one
+ * is how a question becomes an act. Measured against the executor:
+ *
+ *   `refine`/`craft`   naming a formula or a hull spends the materials; naming
+ *                      nothing is the list of what could be made
+ *   `sect/duty`        a posting the board carries is ACCEPTED, and
+ *                      `acceptDuty` runs the months through `shortSkip`
+ *   `sect/curriculum`  an art the house holds is put into the hall or taken
+ *                      out of it; with none it is a read of the library
+ *   `site/outside`     unchanged by a name - the site is what is being read
+ *
+ * `site` is deliberately absent: reading one from outside is the same free
+ * step whether or not the sentence says which.
+ */
+export const A_NAMED_THING_IS_WHAT_THESE_VERBS_SPEND_ON: readonly ActionName[] = [
+    'refine', 'craft'
+] as const;
+
+/**
+ * The labels that stop being a read when the plan carries a topic.
+ *
+ * One entry, and it is the reason this is a list rather than a boolean.
+ * `sect/guest` is the guest terms - free, repeatable, and the answer to "could
+ * I study at the Frostmirror Court" - until `topic` says `accept` or `depart`,
+ * which are the two branches that put somebody on or off a roll.
+ */
+export const THE_TOPIC_THAT_TURNS_A_READ_INTO_AN_ACT:
+    Readonly<Partial<Record<ActionName, Readonly<Record<string, readonly string[]>>>>> = {
+    sect: { guest: ['accept', 'depart'] }
+} as const;
+
+/**
+ * Labels whose read is a read only while the plan names nobody and nothing.
+ *
+ * `sect` with no label at all is the third, and it is the one that would have
+ * shipped wrong. Measured over the 234-sentence player corpus: `"I join the
+ * Azure Dew Sect"` and `"I want to join a sect"` both reach a bare `sect`, and
+ * a bare `sect` carrying a name the player holds is a JOIN - the fall-through
+ * past the intent switch resolves the house and calls `handleJoin`. Only the
+ * one carrying no name is the listing. The question path is unaffected either
+ * way, because `theReadThatAnswersIt` reaches the listing by dropping the name.
+ */
+const A_NAME_TURNS_THESE_INTO_AN_ACT: Readonly<Record<string, readonly string[]>> = {
+    sect: ['', 'duty', 'curriculum']
+};
+
+/**
+ * Whether this plan reaches the free read inside a verb that otherwise costs.
+ */
+export function thePlanIsTheReadInsideTheVerb(plan: {
+    action: ActionName;
+    intent?: string;
+    target?: string;
+    topic?: string;
+}): boolean {
+    const label = plan.intent ?? '';
+    if (!(THE_LABEL_THAT_REACHES_A_VERBS_READ[plan.action] ?? []).includes(label)) return false;
+
+    const named = (plan.target ?? '').trim().length > 0;
+    if (named && A_NAMED_THING_IS_WHAT_THESE_VERBS_SPEND_ON.includes(plan.action)) return false;
+    if (named && (A_NAME_TURNS_THESE_INTO_AN_ACT[plan.action] ?? []).includes(label)) return false;
+
+    const commits = THE_TOPIC_THAT_TURNS_A_READ_INTO_AN_ACT[plan.action]?.[label] ?? [];
+    return !commits.includes((plan.topic ?? '').trim());
+}
+
 // A VERB SHOULD ANSWER TO ITS OWN NAME
 
 /**
@@ -926,8 +1068,25 @@ export const INTERACT_SETTLES_NOTHING: ReadonlySet<string> = new Set([
  * How this act can end badly, given the verb and - where the verb alone cannot say
  * - the intent.
  */
-export function canEndBadly(action: ActionName, intent?: string): readonly HowAnActCanEndBadly[] {
+export function canEndBadly(
+    action: ActionName,
+    intent?: string,
+    /**
+     * The thing the plan named, where the caller has one.
+     *
+     * Only `refine` and `craft` read it, and they are the two verbs whose read
+     * is reached by naming NOTHING - see
+     * {@link A_NAMED_THING_IS_WHAT_THESE_VERBS_SPEND_ON}. Absent, a bare
+     * `craft` is the bench listing, which is what it is.
+     */
+    target?: string
+): readonly HowAnActCanEndBadly[] {
     if (action === 'interact' && INTERACT_SETTLES_NOTHING.has(intent ?? 'talk')) return [];
+    // THE SAME RULE AS THE LINE ABOVE, FOR THE OTHER ELEVEN VERBS THAT HAVE
+    // ONE. A read cannot hurt anybody: `passage/board` is a price list,
+    // `legacy/counters` is what the counters here will take, and neither of
+    // them is the journey or the burial the verb's row in the table describes.
+    if (thePlanIsTheReadInsideTheVerb({ action, intent, target })) return [];
     return HOW_EACH_VERB_CAN_END_BADLY[action];
 }
 
@@ -935,6 +1094,6 @@ export function canEndBadly(action: ActionName, intent?: string): readonly HowAn
  * Whether this act can hurt the person who takes it. The boolean over {@link
  * canEndBadly}, which is what a caller ranking sentences wants.
  */
-export function canHurtYou(action: ActionName, intent?: string): boolean {
-    return canEndBadly(action, intent).length > 0;
+export function canHurtYou(action: ActionName, intent?: string, target?: string): boolean {
+    return canEndBadly(action, intent, target).length > 0;
 }

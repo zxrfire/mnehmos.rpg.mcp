@@ -687,7 +687,25 @@ export function whoIsBeingOfferedSomething(input: string): string | undefined {
         .exec(input)
         ?? new RegExp(
             String.raw`\b(?:how much|what)\s+(?:do|does|would|will)\s+`
-            + String.raw`(him|her|them|he|she|they|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+`
+            // A DESCRIPTION IS A PERSON TOO, AND THIS SLOT CAN ONLY HOLD ONE.
+            //
+            // The offer read above takes a pronoun or a capitalised name
+            // because `offer the manual` puts a THING in the same slot. Here
+            // nothing does: what follows is `want`, `take`, `ask` or `charge`,
+            // and a manual wants nothing. So the slot is widened to the words
+            // a player uses when they have not been told a name - "the
+            // merchant", "the old woman at the stall" - and the thing guard
+            // below still throws out anything that reads as an object.
+            //
+            // MEASURED BY PLAYING. "how much does the merchant want for what
+            // he is carrying" reached `interact/trade` with NO TARGET, so
+            // `haggleOverAPrice` never set `facing`, never narrowed the offers
+            // to that person, and fell through to the stall - where the rate
+            // is stamped with whoever the screen before had named. A man with
+            // four standing offers of his own was made to quote a book he does
+            // not hold.
+            + String.raw`(him|her|them|he|she|they|`
+            + String.raw`(?:the |that |this )?[A-Za-z][\w'-]*(?:\s+[\w'-]+){0,3}?)\s+`
             + String.raw`(?:wants?|takes?|asks?|charges?|let it go)\b`
         ).exec(input);
     if (!said) return undefined;

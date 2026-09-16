@@ -19,6 +19,7 @@ import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import {
     ACTION_NAMES,
     PRESSING_SOMEBODY,
+    THE_LABEL_THAT_REACHES_A_VERBS_READ,
     costsTheAskerNothing,
     type ActionName
 } from './actions.js';
@@ -568,13 +569,22 @@ const LANE_GLOSSARY = LANE_NAMES.map(lane => {
 
 /**
  * Which verbs cost the player something, composed rather than written down.
+ *
+ * THREE LISTS, BECAUSE THERE ARE THREE ANSWERS. `interact` was the only verb
+ * anybody had noticed sitting on both sides, and it is one of twelve: naming
+ * no thing at a cauldron is the recipe list and naming a formula spends the
+ * herbs, asking what a house teaches is free and joining it is not. A prompt
+ * that puts those in the FREE column is telling the model that joining a sect
+ * costs nothing.
  */
 function whichVerbsSpendSomething(): string {
     const free: ActionName[] = [];
     const spends: ActionName[] = [];
+    const both: ActionName[] = [];
     for (const name of ACTION_NAMES) {
         if (name === 'interact') continue;
-        (costsTheAskerNothing({ action: name }) ? free : spends).push(name);
+        if (THE_LABEL_THAT_REACHES_A_VERBS_READ[name] !== undefined) both.push(name);
+        else (costsTheAskerNothing({ action: name }) ? free : spends).push(name);
     }
     const pressing = [...PRESSING_SOMEBODY].sort().join(', ');
     return [
@@ -582,8 +592,11 @@ function whichVerbsSpendSomething(): string {
         `sentence needs: ${free.join(', ')}.`,
         `SPENDS - these take days, the purse or the body, and a turn does at most ONE:`,
         `${spends.join(', ')}.`,
-        `"interact" is on both sides and the intent decides: free on talk, trade, apologise and`,
-        `the like, and it SPENDS on ${pressing}.`
+        `BOTH, AND THE INTENT DECIDES - each of these has one read inside it that costs`,
+        `nothing and spends on everything else: ${both.join(', ')}. When the sentence is`,
+        `asking rather than doing, answer with the read.`,
+        `"interact" is the same shape: free on talk, trade, apologise and the like, and it`,
+        `SPENDS on ${pressing}.`
     ].join('\n');
 }
 

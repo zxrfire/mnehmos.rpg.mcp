@@ -1452,7 +1452,9 @@ export const situatedReads = {
                 ? a
                 : (() => {
                     const plan = parseIntent(a.say);
-                    return { ...a, canHurtYou: canHurtYou(plan.action, plan.intent) };
+                    return {
+                        ...a, canHurtYou: canHurtYou(plan.action, plan.intent, plan.target)
+                    };
                 })());
         } catch {
             return [];

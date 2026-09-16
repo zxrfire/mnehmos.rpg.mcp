@@ -2,7 +2,7 @@
  * A question about an act is not the act.
  */
 
-import { READ_ONLY_ACTIONS } from './action-set.js';
+import { READ_ONLY_ACTIONS, thePlanIsTheReadInsideTheVerb } from './action-set.js';
 import type { PlannedAction } from './planned-action.js';
 
 /**
@@ -19,8 +19,24 @@ export const PRESSING_SOMEBODY: ReadonlySet<string> = new Set([
 
 /**
  * Whether this PLAN takes nothing from the player.
+ *
+ * ASKED OF THE PLAN AND NOT OF THE VERB, and for eleven verbs besides
+ * `interact` that is the whole of the answer. See
+ * {@link THE_LABEL_THAT_REACHES_A_VERBS_READ} for what was measured and how.
+ *
+ * This function is `theReadThatAnswersIt`'s own first line, and until the
+ * table existed it called that function's own output costly - so a player who
+ * asked what work there was got the board, spent nothing, and was told their
+ * turn was spent.
  */
 export function costsTheAskerNothing(plan: PlannedAction): boolean {
+    return theVerbIsNothingButARead(plan) || thePlanIsTheReadInsideTheVerb(plan);
+}
+
+/**
+ * Whether the VERB is a read, which is the older and narrower question.
+ */
+function theVerbIsNothingButARead(plan: PlannedAction): boolean {
     return plan.action === 'interact'
         ? !PRESSING_SOMEBODY.has(plan.intent ?? '')
         : READ_ONLY_ACTIONS.includes(plan.action);
@@ -190,7 +206,15 @@ export function theWholeSentenceIsAQuestion(input: string): boolean {
  */
 export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
     // A read is already the answer to a question about it.
-    if (costsTheAskerNothing(plan)) return plan;
+    //
+    // ASKED OF THE VERB HERE, WHICH IS NARROWER THAN `costsTheAskerNothing` AND
+    // HAS TO BE. The eleven verbs with a read inside them reach it through the
+    // switch below, and the switch does more than attach a label: `{sect}`
+    // carrying the player's own words for a house is free and is still not the
+    // read, because the listing is reached by DROPPING the name and a name
+    // nobody has said to you is refused. Returning early on those answered "can
+    // I join this sect?" with *"Not a name you hold"* instead of the listing.
+    if (theVerbIsNothingButARead(plan)) return plan;
 
     switch (plan.action) {
         case 'interact':
@@ -236,11 +260,25 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
                 // ASKING WHAT REFUSING COSTS MUST NEVER REFUSE
                 : plan.intent === 'summons' || plan.intent === 'refuse'
                     ? { action: 'sect', intent: 'summons' }
-                : plan.intent === 'duty' || plan.intent === 'siphon'
+                : plan.intent === 'duty'
                         || plan.intent === 'authority' || plan.intent === 'curriculum'
                     // These have a READ mode reached by naming nothing further:
-                    // the wall, the position of the reserves, who answers for
-                    // what, and what the house teaches.
+                    // the wall, who answers for what, and what the house
+                    // teaches.
+                    //
+                    // `siphon` WAS ON THIS LINE AND HAS NO SUCH MODE. The
+                    // comment here said that naming neither a pace nor a span
+                    // is a request to see the reserves without taking
+                    // anything; `handleSiphon` is called with
+                    // `months: max(1, ...)` whatever it is handed, so a
+                    // QUESTION about robbing the treasury robbed it for a
+                    // month. Measured by executing the plan this line
+                    // produced. It falls through to the standing read below,
+                    // which is the nearest free read of the house there is -
+                    // what the reserves hold is a read this engine does not
+                    // have, and until it does, a question about them is
+                    // answered with where the asker stands in the house
+                    // rather than with a crime.
                     //
                     // `authority` was falling through to `standing` below, so
                     // *"what do I run"* - a question about what is in your gift

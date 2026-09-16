@@ -58,6 +58,7 @@ import {
     INTERACT_INTENTS,
     PRESSING_SOMEBODY,
     READ_ONLY_ACTIONS,
+    THE_LABEL_THAT_REACHES_A_VERBS_READ,
     costsTheAskerNothing,
     parseIntent
 } from '../../src/web/actions';
@@ -565,13 +566,81 @@ describe('asking whether somebody could be moved does not move them', () => {
                 `interact(${intent})`
             ).toBe(!PRESSING_SOMEBODY.has(intent));
         }
-        // Every other verb keeps answering exactly as the list does.
+        // ── AND ELEVEN MORE VERBS ANSWER OFF THE LABEL TOO ───────────────
+        //
+        // This loop used to assert that every verb but `interact` answered
+        // exactly as `READ_ONLY_ACTIONS` does, and the docstring in the family
+        // below said in so many words that the predicate was wrong for six of
+        // them and that fixing it wanted its own change. That change has
+        // landed. `THE_LABEL_THAT_REACHES_A_VERBS_READ` is the measured list -
+        // every entry executed against a pinned world and checked for a moved
+        // clock, a moved purse and a time skip - so the verbs on it answer off
+        // the plan and every verb not on it still answers off the list.
+        //
+        // Read in both directions, because half of it is the guard: a verb
+        // quietly added to the read table would otherwise make a costly act
+        // free with nothing going red.
         for (const action of ACTION_NAMES) {
             if (action === 'interact') continue;
-            expect(costsTheAskerNothing({ action }), action)
-                .toBe(READ_ONLY_ACTIONS.includes(action));
+            const reads = THE_LABEL_THAT_REACHES_A_VERBS_READ[action];
+            if (reads === undefined) {
+                expect(costsTheAskerNothing({ action }), action)
+                    .toBe(READ_ONLY_ACTIONS.includes(action));
+                continue;
+            }
+            for (const label of reads) {
+                expect(
+                    costsTheAskerNothing({ action, ...(label ? { intent: label } : {}) }),
+                    `${action}(${label || 'no label'}) is the read inside the verb`
+                ).toBe(true);
+            }
+            expect(
+                costsTheAskerNothing({ action, intent: 'a label nothing dispatches' }),
+                `${action} went free on a label it does not have`
+            ).toBe(false);
         }
     });
+
+    /**
+     * THE LIE THE CLASSIFICATION WAS TELLING, PINNED WHERE THE PLAYER READS IT.
+     *
+     * Not a unit assertion, because the defect was never in what the function
+     * returned - it was in the sentence the turn printed. Played on the
+     * deterministic tier:
+     *
+     *     "I look for work and then sit down and cultivate for a year"
+     *
+     * returned the job board, spent nothing, held the cultivation, and ended on
+     * *"a turn spends one act that costs, and this one is spent."* Nothing was
+     * spent. The board is a free read and the sentence still had its one costly
+     * act in front of it.
+     *
+     * Asserted on the CLOCK and on the report together: either alone can be
+     * satisfied the wrong way. The sentence is the same shape with the sitting
+     * swapped for a journey, because a beginner with no method is REFUSED the
+     * cultivation for an unrelated reason and a refused act cannot show that
+     * the turn was free to spend itself on something.
+     */
+    it('does not tell the player a free read spent their turn', async () => {
+        const { game } = await makeGameInWorld({
+            seed: 'work-then-go', worldSeed: 'work-then-go-world'
+        });
+        await game.newRun('Prober');
+        const before = game.state().run.elapsedDays;
+
+        const turn = await game.act('I look for work and then go to Cloud Gate');
+
+        // The board is a read, and the turn says so where it says what it did.
+        expect(
+            turn.toolCalls.find(row => row.name === 'engine.step' && row.action === 'work')!
+                .summary
+        ).toContain('free');
+        // So the one costly act in the sentence ran, and nothing was held over.
+        expect(turn.toolCalls.filter(row => row.name === 'engine.stillToCome')).toHaveLength(0);
+        expect(turn.narration, turn.narration).not.toContain('this one is spent');
+        expect(game.state().run.elapsedDays, 'the journey was not made')
+            .toBeGreaterThan(before);
+    }, 120_000);
 
     /** And commanding still commands, for every one of the seven. */
     it('still reaches the attempt when the player has decided', () => {
@@ -776,25 +845,29 @@ describe('a question about what would follow is not the act it names', () => {
      *
      * The first draft of this asserted `costsTheAskerNothing(parseIntent(said))`
      * and went red on two of the family. Chasing that found something worth more
-     * than the test: **`costsTheAskerNothing` is answered at the ACTION and is
-     * wrong for six verbs.** It asks {@link READ_ONLY_ACTIONS} by name, and
+     * than the test: **`costsTheAskerNothing` was answered at the ACTION and was
+     * wrong for eleven verbs.** It asked {@link READ_ONLY_ACTIONS} by name, and
      * `sect`, `site`, `posture`, `offer`, `oath` and `passage` are all absent
      * from it while `theReadThatAnswersIt` routes every one of them to a read by
-     * dropping the intent. So the predicate calls those reads costly.
+     * dropping the intent. So the predicate called those reads costly.
      *
-     * The proof that the predicate and not the guard is what is wrong:
+     * The proof that the predicate and not the guard was what was wrong:
      * `can I leave my sect` - INSTANCE 3 at the top of this file, the sentence
      * that permanently left a house and the reason this module exists - resolves
      * to `{sect, standing, leaving}`, spends nothing, and `costsTheAskerNothing`
-     * returns FALSE for it. An instrument that fails the canonical case is the
+     * returned FALSE for it. An instrument that fails the canonical case is the
      * instrument, not the finding.
      *
-     * That is the `interact` shape in six more verbs, and this file's own
-     * docstring already argues why it cannot be a list. Not fixed here: widening
-     * that predicate changes what every consumer believes, including the
-     * dropped-clause reporter whose measured corpus was calibrated against it,
-     * and it wants its own change with its own arms. Recorded so the next person
-     * does not read the `false` as a finding about the mood guard.
+     * FIXED SINCE, and the fix is `THE_LABEL_THAT_REACHES_A_VERBS_READ` in
+     * `action-set.ts` - the `interact` shape written out for the other eleven,
+     * measured against the executor rather than listed. Two of the six named
+     * above turned out not to be a matched pair: `sect/siphon` had a comment
+     * claiming a read mode and `handleSiphon` takes a month whatever it is
+     * handed, so a QUESTION about the treasury robbed it.
+     *
+     * This test is unchanged by any of that, which is the point of it being
+     * played: it asserts the clock and the purse rather than a classification,
+     * and it was green before the predicate was right and is green after.
      *
      * So the bar is what the player would actually notice: one pinned world, one
      * run, every sentence in the family put to it, and the clock and the purse

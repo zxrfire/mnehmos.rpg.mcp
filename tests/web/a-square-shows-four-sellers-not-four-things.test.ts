@@ -55,7 +55,7 @@ const SELLABLE = TECHNIQUES
 function aSquareHolding(carrying: readonly (readonly string[])[]): WorldState {
     const state = createWorld({ seed: 'stalls', skipPriorAges: true, regionCount: 0 });
     state.locations.push(makeLocation({
-        id: 'square', name: 'The Square', kind: 'market_town', qiDensity: 0.3
+        id: 'square', name: 'The Square', kind: 'settlement', qiDensity: 0.3
     }));
     carrying.forEach((arts, index) => {
         let npc: NpcRecord = createNpc(state.seed, {

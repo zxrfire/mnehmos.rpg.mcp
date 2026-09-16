@@ -102,7 +102,7 @@ export function stepsInTheResponse(raw: unknown, input: string): PlanStep[] | nu
         const said = theWordsThisStepCameFrom(entry);
         const ownWords = theClauseThisStepQuotes({ action: validated.action, said }, input);
         steps.push({
-            action: carryWhatOnlyTheSentenceKnows(validated.action, ownWords ?? input),
+            action: carryWhatOnlyTheSentenceKnows(validated.action, ownWords ?? input, [], true),
             said
         });
     }

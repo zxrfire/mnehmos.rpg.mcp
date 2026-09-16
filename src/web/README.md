@@ -282,8 +282,23 @@ It is whether a sentence reaches it.
 `action-set.ts` carries the classification lists over `ACTION_NAMES`, and until recently
 every one of them was about the same question: **does this act SPEND?**
 `READ_ONLY_ACTIONS` and `TIME_CONSUMING_ACTIONS` split free from costly, and
-`costsTheAskerNothing` in `asking-is-not-doing.ts` asks it of a whole plan because
-`interact` is free on three intents and costly on the other eight.
+`costsTheAskerNothing` in `asking-is-not-doing.ts` asks it of a whole plan.
+
+**A verb that costs still has a read inside it, and `interact` was not the only one.**
+`THE_LABEL_THAT_REACHES_A_VERBS_READ` names the label that reaches each - the job board
+inside `work`, the guest terms inside `sect`, the price list inside `passage`, the bench
+listing inside `craft` - measured by executing every one of them against a pinned world
+and checking for a moved clock, a moved purse and a time skip. It matters because
+`theReadThatAnswersIt` substitutes those reads for a costly act when a sentence turns out
+to be a question, so a classification answered on the verb called that function's own
+output costly: played, *"I look for work and then sit down and cultivate for a year"*
+returned the board, spent nothing, and told the player their turn was spent.
+
+Two things narrow it, and both were found by measuring rather than by reading the table:
+naming a thing turns `refine`, `craft`, `sect/duty` and `sect/curriculum` into the act
+(and a bare `sect` carrying a house name is a JOIN), and a `topic` of `accept` or `depart`
+turns the guest terms into a place on a roll. `sect/siphon` is absent because it claimed a
+read mode in a comment and `handleSiphon` takes a month whatever it is handed.
 
 **Nothing answered whether an act can HURT you**, and that is a different question with a
 different answer for most verbs:

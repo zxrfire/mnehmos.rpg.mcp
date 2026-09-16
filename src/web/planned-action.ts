@@ -335,6 +335,23 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * The verbs whose subject is a THING the catalogs hold, rather than a face, a
+ * place or a line on a board.
+ *
+ * The distinction is about what a WRONG name costs. An object name is matched
+ * against a closed catalog and refused by name with the board attached, so
+ * carrying one across from the sentence can only ever improve a plan that had
+ * none. A face, a place or a posting is resolved against the world, and the
+ * table's reading of those is the whole tail of the sentence - so carrying one
+ * across turns "whoever is at hand" into "nobody here is called that".
+ */
+export const WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG: readonly PlannedAction['action'][] = [
+    'buy', 'sell', 'consume_pill', 'destroy', 'stow',
+    'learn_technique', 'list_techniques', 'train_technique', 'acquisition', 'derive',
+    'refine'
+] as const;
+
+/**
  * Put back the facts about the SENTENCE that a model's answer cannot carry.
  */
 export function carryWhatOnlyTheSentenceKnows(
@@ -343,7 +360,22 @@ export function carryWhatOnlyTheSentenceKnows(
     /**
      * Who is standing in front of the player, when the caller knows.
      */
-    whoIsStandingHere: readonly SomebodyStandingHere[] = []
+    whoIsStandingHere: readonly SomebodyStandingHere[] = [],
+    /**
+     * Whether the THING the sentence named may be put back as well.
+     *
+     * Off by default, and the default is the point. This runs at two kinds of
+     * call site: phase 1, where the plan has just come back from a reader and
+     * an absent subject means the reader dropped one; and
+     * `GameService.carryOut`, which runs AFTER the reference resolver has had
+     * the plan. That resolver deliberately takes an unbindable phrase OFF the
+     * field so the verb falls back to its own listing - "I buy the cheaper one"
+     * over a tied board is answered with the board - and putting the words back
+     * there would undo the one thing it did.
+     *
+     * So the phase-1 callers ask for it and the executor does not.
+     */
+    andTheThingTheSentenceNamed = false
 ): PlannedAction {
     const fromSentence = parseIntent(input);
     const merged: PlannedAction = { ...action };
@@ -359,6 +391,50 @@ export function carryWhatOnlyTheSentenceKnows(
     }
 
     if (fromSentence.action !== action.action) return merged;
+
+    // ── AND THE THING THEY NAMED, WHICH NOTHING PUT BACK ─────────────────
+    //
+    // The block above fills a PERSON off who is standing here, and every field
+    // below is one the phase-1 prompt never asks for. Between them they left
+    // the commonest field of all uncovered: a model that answers `{"action":
+    // "buy"}` to a sentence naming the thing being bought.
+    //
+    // FOUND BY PLAYING. `I buy the Cross-Meridian Strike` - row one of the
+    // stall board, printed by the game two lines earlier - reached the engine
+    // with nothing to buy, so the purchase silently did not happen while the
+    // prose described the stall correctly. Any name the game prints is a name
+    // the game must accept, and the first row of the first board a player sees
+    // was not one.
+    //
+    // It is a FAMILY rather than one row: nothing here is about books or about
+    // buying. Every targeted verb loses its subject the same way whenever a
+    // reader answers with the verb alone, which is the shape a small model
+    // answers with most often.
+    //
+    // ONLY WHERE THE TWO READINGS AGREE ON THE VERB, which is the guard the
+    // whole of the rest of this function sits behind: the sentence's own
+    // reading of a DIFFERENT act is not a fact about this one. And only where
+    // the plan carries no subject, because the model is the better reader of
+    // which words name the thing.
+    //
+    // AND ONLY FOR THE VERBS WHOSE TARGET IS AN OBJECT OFF A CATALOG. That
+    // restriction is not caution, it is the measurement:
+    // {@link whoIsStandingHere} above exists because the table's target for a
+    // person verb is the whole tail of the sentence, and
+    // `a-name-the-verb-dropped-is-put-back.test.ts` pins two of those - "I tell
+    // Cao Antao what Ru Anwei said" yields the target "Cao Antao what Ru Anwei
+    // said", and a plan carrying that is worse off than a plan carrying
+    // nothing, because an absent target means whoever is at hand and a wrong
+    // one is a refusal about somebody who is not there. The same is true of a
+    // job on a board and a place on the map. An object name is resolved against
+    // a closed catalog, so a wrong one is refused BY NAME with the board
+    // attached, which is a good turn rather than a lost one.
+    if (andTheThingTheSentenceNamed
+        && (merged.target ?? '').trim().length === 0
+        && WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG.includes(merged.action)
+        && (fromSentence.target ?? '').trim().length > 0) {
+        merged.target = fromSentence.target;
+    }
 
     // What the player put on the table. Read by `resolveAttempt`, and by
     // nothing that a model is allowed to influence.
