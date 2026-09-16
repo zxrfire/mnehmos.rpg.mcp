@@ -16,6 +16,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     whatThisPersonWouldPartWith,
+    whatThisPersonWouldSellOverACounter,
+    whatTheyDealIn,
     whyThisOneWouldGo,
     itIsTheThingTheyAreStillUsing,
     theirPurseIsThin,
@@ -26,6 +28,7 @@ import {
     type SomebodyStandingHere
 } from '../../../src/engine/world/what-somebody-standing-here-would-part-with.js';
 import { earningsPerYear } from '../../../src/engine/cultivation/origin.js';
+import { FOUNDATION_ORDINAL, MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 
 function person(over: Partial<SomebodyStandingHere> = {}): SomebodyStandingHere {
     return {
@@ -212,6 +215,69 @@ describe('the thin-purse line moves with the ladder', () => {
         // figure, and `origin.ts` says the same thing from the other side: a
         // farm child does not have a small budget, they have very nearly none.
         expect(theirPurseIsThin({ ...person({ ordinal: 0 }), spiritStones: 30 })).toBe(true);
+    });
+});
+
+describe('which board somebody deals off is read off them', () => {
+    // The ruling: *"rando npcs only sell random mortal items"*, *"a cultivator
+    // only sells cultivator items"*. The line is the one the ladder already
+    // draws, so the whole of the split is a rung comparison and no field was
+    // added to anybody to carry it.
+    it('puts the line exactly where the ladder puts it, all the way up', () => {
+        for (let rung = 0; rung <= MAX_ORDINAL; rung++) {
+            expect(whatTheyDealIn({ ordinal: rung }), `rung ${rung}`)
+                .toBe(rung < FOUNDATION_ORDINAL ? 'the_mortal_board' : 'what_they_hold');
+        }
+    });
+
+    it('does not move with the purse, the house, or what is in their hands', () => {
+        // Everything else about a person varies here and the answer does not:
+        // the split is about the rung and about nothing else.
+        const rung = FOUNDATION_ORDINAL - 1;
+        expect(whatTheyDealIn(person({ ordinal: rung, spiritStones: 0, factionId: null })))
+            .toBe(whatTheyDealIn(person({ ordinal: rung, spiritStones: 99_999 })));
+    });
+});
+
+describe('a counter is not a shelf', () => {
+    const stock = [
+        { id: 'price-mule', name: 'Mule', askStones: 14 },
+        { id: 'price-millet', name: 'Bowl of millet', askStones: 1 }
+    ];
+
+    it('offers everything on it and withholds nothing', () => {
+        // Nothing here is scarce. The mortal board carries no quantity anywhere
+        // on it, on purpose, and a stallholder who sells a bowl of millet has
+        // another - so the three refusals that protect a cultivator's own road
+        // have nothing to protect.
+        const read = whatThisPersonWouldSellOverACounter(person({ ordinal: 4 }), stock);
+        expect(read.offers.map(o => o.thingId)).toEqual(['price-mule', 'price-millet']);
+        expect(read.withheld).toEqual([]);
+    });
+
+    it('asks the board figure and does not discount it', () => {
+        // A person who did not set the rate does not move it, which is why the
+        // eagerness scale reads zero for this one reason.
+        expect(HOW_BADLY_THEY_WANT_IT_GONE.it_is_what_they_deal_in).toBe(0);
+        const broke = whatThisPersonWouldSellOverACounter(
+            person({ ordinal: 4, spiritStones: 0 }), stock
+        ).offers[0];
+        const comfortable = whatThisPersonWouldSellOverACounter(
+            person({ ordinal: 4, spiritStones: 99_999 }), stock
+        ).offers[0];
+        expect(broke.why).toBe('it_is_what_they_deal_in');
+        expect(broke.askStones).toBe(broke.listStones);
+        expect(broke.askStones).toBe(comfortable.askStones);
+    });
+
+    it('marks the offer as the mortal board so nothing calls a sack of salt a copy', () => {
+        const offer = whatThisPersonWouldSellOverACounter(person({ ordinal: 4 }), stock).offers[0];
+        expect(offer.fromTheMortalBoard).toBe(true);
+        const held = whatThisPersonWouldPartWith(
+            person(), [thing({ usefulUntil: 13, listStones: 8 })]
+        ).offers;
+        expect(held.length).toBe(1);
+        expect(held[0].fromTheMortalBoard).toBe(false);
     });
 });
 

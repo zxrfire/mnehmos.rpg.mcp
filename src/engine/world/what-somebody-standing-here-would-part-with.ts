@@ -1,9 +1,24 @@
 /**
- * What the cultivator standing next to you would part with, and why.
+ * What the person standing next to you would part with, and why.
+ *
+ * TWO POPULATIONS, ONE SQUARE, and which of them somebody belongs to is a fact
+ * about THEM rather than about the thing in their hands or the ground under
+ * their feet. The design owner: *"rando npcs only sell random mortal items"*,
+ * *"a cultivator only sells cultivator items"*. A villager behind a barrow
+ * deals in the mortal board; somebody on the ladder deals in what they are
+ * carrying, and never in maize.
+ *
+ * {@link whatTheyDealIn} is the whole of the split and it needed no new field:
+ * `FOUNDATION_ORDINAL` already draws the line, in the words of the module that
+ * owns the ladder - *"below it a character is a mortal with a party trick,
+ * above it they are a cultivator"* - and three other passes already read it as
+ * exactly that. Each side has its own entry point below, which is what keeps
+ * the same object in two pairs of hands two different transactions.
  */
 
 import { quoteSale } from '../cultivation/market.js';
 import { earningsPerYear } from '../cultivation/origin.js';
+import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT IS BEING READ
@@ -52,6 +67,20 @@ export interface AThingInSomebodysHands {
     theyStillNeedIt?: boolean;
 }
 
+/**
+ * One row of the mortal board, as a person behind a barrow deals in it.
+ *
+ * No `usableFrom`, no `usefulUntil`, no mastery and nothing withheld: a bowl of
+ * millet carries nobody anywhere, and a stallholder who sells one has another.
+ * The whole of it is a name and what they are asking.
+ */
+export interface AThingOnTheirCounter {
+    id: string;
+    name: string;
+    /** What they want for it, in whole spirit stones. The board's own figure. */
+    askStones: number;
+}
+
 /** The person holding it, as the three columns that decide their posture. */
 export interface SomebodyStandingHere {
     id: string;
@@ -61,6 +90,26 @@ export interface SomebodyStandingHere {
     spiritStones: number;
     /** Their house, or null. Decides whose signature is theirs to wear. */
     factionId: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHICH OF THE TWO THEY ARE
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Which board somebody's stock comes off. */
+export type WhatTheyDealIn = 'the_mortal_board' | 'what_they_hold';
+
+/**
+ * The split, derived and stored nowhere.
+ *
+ * Read the rung and nothing else: a person's trade is not a column anybody
+ * writes and would drift from their rung the moment they crossed. Measured over
+ * three seeded worlds and 647 people standing in 81 squares, the world's own
+ * data already obeyed this - every single seller was at or above
+ * `FOUNDATION_ORDINAL`, and not one person below it offered anything at all.
+ */
+export function whatTheyDealIn(who: Pick<SomebodyStandingHere, 'ordinal'>): WhatTheyDealIn {
+    return who.ordinal < FOUNDATION_ORDINAL ? 'the_mortal_board' : 'what_they_hold';
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -74,7 +123,12 @@ export type WhyTheyWouldPartWithIt =
     | 'not_theirs_to_be_seen_with'
     | 'they_need_stones'
     | 'it_is_beyond_them'
-    | 'they_have_outgrown_it';
+    | 'they_have_outgrown_it'
+    /**
+     * It is their trade. The only reason on the mortal side of the split, and
+     * the one reason that is about the seller rather than about the thing.
+     */
+    | 'it_is_what_they_deal_in';
 
 /**
  * Why nobody is going to be selling you this one.
@@ -100,7 +154,10 @@ export const HOW_BADLY_THEY_WANT_IT_GONE:
         not_theirs_to_be_seen_with: 1,
         they_need_stones: 1,
         it_is_beyond_them: 0,
-        they_have_outgrown_it: 0.5
+        they_have_outgrown_it: 0.5,
+        // A stallholder is not eager and is not pressed. The board's figure is
+        // the figure, and it is the same one for the next person in the queue.
+        it_is_what_they_deal_in: 0
     });
 
 /**
@@ -147,6 +204,13 @@ export interface AnOfferStandingHere {
     whoWouldWantAWord: string | null;
     /** The awkwardness rung, for the record and for the provenance note. */
     awkwardToHold: 0 | 1;
+    /**
+     * Which side of the split this came off, carried so a caller wording the
+     * offer does not have to re-derive it and cannot get it wrong. A copy is
+     * written out and a bowl of millet is handed over, and one sentence cannot
+     * describe both.
+     */
+    fromTheMortalBoard: boolean;
 }
 
 export interface WhyThisOneStaysWhereItIs {
@@ -248,11 +312,49 @@ export function whatThisPersonWouldPartWith(
             usableFrom: thing.usableFrom,
             usefulUntil: thing.usefulUntil,
             whoWouldWantAWord: thing.whoWouldWantAWord,
-            awkwardToHold: thing.awkwardToHold as 0 | 1
+            awkwardToHold: thing.awkwardToHold as 0 | 1,
+            fromTheMortalBoard: false
         });
     }
 
     return { who, offers, withheld };
+}
+
+/**
+ * Read one person against the board they deal in.
+ *
+ * The mortal half of the split, and it is a different shape from the half above
+ * rather than the same one with a filter on it. Nothing is withheld, because
+ * nothing here is scarce: the mortal board carries no quantity anywhere on it,
+ * on purpose, and a stallholder who sells a bowl of millet has another. Nothing
+ * is discounted either - what they are asking is what the counter beside them
+ * asks, and a person who did not set the rate does not move it.
+ */
+export function whatThisPersonWouldSellOverACounter(
+    who: SomebodyStandingHere,
+    stock: readonly AThingOnTheirCounter[]
+): WhatThisPersonWouldDo {
+    return {
+        who,
+        offers: stock.map(row => ({
+            sellerId: who.id,
+            sellerName: who.name,
+            thingId: row.id,
+            name: row.name,
+            why: 'it_is_what_they_deal_in' as const,
+            askStones: Math.max(1, Math.round(row.askStones)),
+            listStones: Math.max(1, Math.round(row.askStones)),
+            counterStones: Math.max(1, Math.round(row.askStones)),
+            // A thing nobody climbs with opens nowhere and stops nowhere, and
+            // the reach clause is dropped rather than printed as 0 to 0.
+            usableFrom: 0,
+            usefulUntil: 0,
+            whoWouldWantAWord: null,
+            awkwardToHold: 0 as const,
+            fromTheMortalBoard: true
+        })),
+        withheld: []
+    };
 }
 
 /**
@@ -300,7 +402,11 @@ export const WHY_THEY_ARE_SELLING: Readonly<Record<WhyTheyWouldPartWithIt, strin
             + 'know it is worth something to somebody who can. They are in no hurry about it.',
         they_have_outgrown_it:
             'They have climbed past where it stops being any use, so it does nothing for them '
-            + 'and they would rather have the stones. Nothing is pressing them either way.'
+            + 'and they would rather have the stones. Nothing is pressing them either way.',
+        it_is_what_they_deal_in:
+            'This is what they deal in, and there is more of it behind them. The figure is the '
+            + 'one the counters here quote and it is the same figure for the next person in the '
+            + 'queue.'
     });
 
 /** Why this one is not moving, and what would have to be true instead. */

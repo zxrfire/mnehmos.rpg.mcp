@@ -19,6 +19,17 @@ export function stonesToCash(stones: number): number {
     return Math.round(stones * CASH_PER_STONE);
 }
 
+/**
+ * What a cash price comes to in the only coin a cultivator carries.
+ *
+ * Up, and never below one: a purse holds whole stones, cannot make change under
+ * a hundred cash, and must never be charged less than the board quoted. The
+ * rounding favours the mortal, which is the rule where the two currencies meet.
+ */
+export function stonesForACashPrice(cash: number): number {
+    return Math.max(1, Math.ceil(cashToStones(cash)));
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // OCCUPATIONS
 // What a poor cultivator does between breakthroughs, and what everyone else
@@ -261,6 +272,27 @@ export const PRICES: readonly Price[] = [
     { id: 'price-culling-bounty', name: 'Beast-culling bounty', category: 'service', cash: 350, unit: 'head', note: 'Paid by a village out of its own store, which means the village decides what it can afford to be afraid of. Below this figure nobody comes.', gives: { kind: 'quoted_only', because: 'a bounty is collected for a head brought in, not paid out at a stall' } },
     { id: 'price-village-well', name: 'A well sunk', category: 'land', cash: 5_000, unit: 'each', note: 'Fifty stones, raised over years by a whole village, and the largest thing most hamlets will ever do collectively.', gives: { kind: 'quoted_only', because: 'a village raises a well over years; nobody sells one' } }
 ];
+
+/**
+ * The rows somebody behind a barrow actually deals in.
+ *
+ * Derived from `PRICES`, because a second list of what a village sells would
+ * have to agree with the first and would not. Two of a row's own statements
+ * take it off a person's counter, and nothing else does:
+ *
+ *   `quoted_only`  the row says in its own words that it is reached another
+ *                  way - passage by naming where you are going, ground by
+ *                  taking it, a bounty by bringing a head in.
+ *   `pill`         an alchemist made it, which puts it on the far side of the
+ *                  seller split: a cultivator's stock and never a villager's.
+ *
+ * The spirit-beast meal stays, and that is not an oversight. It is a mortal
+ * counter's cultivator-facing row - meat off something a hunter killed, priced
+ * for whoever can taste the difference - and a village butcher selling it to a
+ * passing cultivator is the ordinary transaction it was written for.
+ */
+export const THE_MORTAL_BOARD: readonly Price[] = PRICES.filter(price =>
+    price.gives.kind !== 'quoted_only' && price.gives.kind !== 'pill');
 
 // ─────────────────────────────────────────────────────────────────────────
 // SETTLEMENTS
