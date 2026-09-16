@@ -9,9 +9,10 @@
  * that and nothing else. Everything in this file is how people get into that
  * set and what it costs the person at the front of it:
  *
- *   asked for it   a `request` of kind `guidance`. An acknowledged master
- *                  (`FLAG_MASTER`) says yes as a matter of course; anybody else
- *                  is an ordinary request, priced where every request is.
+ *   asked for it   a `request` of kind `guidance`, priced and rolled where
+ *                  every request is. A master may say no: what makes their yes
+ *                  likelier is the tie the resolver already weighs, and what
+ *                  they are already doing can decline it before anything rolls.
  *   taught an art  the same attention for `yearsToWriteOutACopy`, the span
  *                  `teaching-somebody-what-you-hold.ts` spends from the other
  *                  side and argues for in its own header.
@@ -30,9 +31,8 @@
  *
  * `guidanceMultiplier` is the one rate. A teacher in front of several people is
  * worth less to each of them than a teacher in front of one, and the thinning is
- * one figure, `ATTENTION_THINS_AS` in the rate's own file, applied to the part of the rate
- * the teacher adds. See {@link whatTheirAttentionIsWorth} for why that is said
- * as a rung rather than as a second multiplier.
+ * one figure, `ATTENTION_THINS_AS` in the rate's own file. `rateTermsFor` hands the
+ * rate the teacher's rung and the size of the set, and the rate does the thinning.
  *
  * ── WHAT IT COSTS THEM ───────────────────────────────────────────────────
  *
@@ -44,10 +44,11 @@
  * restated here.
  */
 
-import { GUIDANCE_FULL_GAP, DAYS_PER_YEAR, guidanceMultiplier, shareOfAttention } from '../engine/cultivation/cultivation.js';
+import { DAYS_PER_YEAR, guidanceMultiplier, shareOfAttention } from '../engine/cultivation/cultivation.js';
+import { isTeachingSomebody } from '../engine/world/an-npc-striking-at-the-next-wall.js';
 import { rankName } from '../engine/cultivation/realms.js';
-import type { NpcActivity, NpcRecord } from '../engine/world/npc-state.js';
-import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { setLocation, type NpcActivity, type NpcRecord } from '../engine/world/npc-state.js';
+import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { yearsToWriteOutACopy } from '../engine/world/manuals.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import {
@@ -77,13 +78,24 @@ import {
 } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import { createObligation } from '../engine/social/grudges.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
-import {
-    theyCanBeHeld,
-    whatTheRoomDecides
-} from '../engine/social-leverage/what-a-room-decides-about-one-of-its-own.js';
+import { whatTheRoomDecides } from '../engine/social-leverage/what-a-room-decides-about-one-of-its-own.js';
 import { whatAFineComesTo } from './a-room-hands-down-what-it-decided.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { openLedgerBetween, tieFrom, type DatabaseHandle } from './encounters.js';
+import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-plate-at-the-house.js';
+import { A_ROLL_A_PLAYER_COULD_KNOW } from '../engine/world/a-house-raises-its-own.js';
+import { pathTo, purposeOf } from '../engine/world/architecture.js';
+import { theGroundUnderYou } from '../engine/social-leverage/ground-trust.js';
+import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
+import { whetherYouAreWorthTheTrouble } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
+import { whoAnsweredTheShout, type CouldBeCalled } from '../engine/cultivation/unfinished-fight.js';
+import { assessPower, type CombatantInput } from '../engine/cultivation/combat.js';
+import {
+    combatantFromCultivator,
+    combatantFromOpponent
+} from '../server/consolidated/combat-manage.js';
+import { houseStanding } from '../engine/encounters/what-a-house-asks-of-somebody-it-cannot-order.js';
+import type { WorldState } from '../engine/world/world-state.js';
 
 /**
  * The two labels `teach` dispatches on beside handing an art on: sitting in on
@@ -96,69 +108,53 @@ export const TEACH_INTENTS = ['listen', 'lecture'] as const;
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The part of a sole student's guidance each of `listeners` people gets.
+ * Whether a person is giving attention to somebody named, still in its term.
  *
- * The thinning is the rate's own, `shareOfAttention` beside
- * `guidanceMultiplier`, so the player and the world's people are thinned by
- * one figure. See `ATTENTION_THINS_AS` for why it is what it is.
+ * The world's own answer (`isTeachingSomebody`), so the player and the world's
+ * people are read by one rule about when a term ends and about a `teaching`
+ * activity with nobody named in it, which is not attention given to anybody.
  */
-export function shareOfTheirAttention(listeners: number): number {
-    return shareOfAttention(listeners);
-}
-
-/**
- * What a teacher's divided attention is worth to one student, said as the rung
- * whose whole attention would be worth the same. Null when it is worth nothing.
- *
- * SAID AS A RUNG, because `guideOrdinal` is the one term the rate takes and a
- * second multiplier beside it would be a second guidance rule. The gap is capped
- * at `GUIDANCE_FULL_GAP` before it is thinned, which is where
- * `guidanceMultiplier` stops rising - so the rate this produces is exactly one
- * plus the share times what a sole student would have been added, at every gap.
- * A fractional rung is fine: nothing reads it but the rate.
- */
-export function whatTheirAttentionIsWorth(
-    studentOrdinal: number,
-    teacherOrdinal: number,
-    listeners: number
-): number | null {
-    const gap = teacherOrdinal - studentOrdinal;
-    if (gap <= 0) return null;
-    return studentOrdinal + Math.min(gap, GUIDANCE_FULL_GAP) * shareOfTheirAttention(listeners);
-}
-
-/** Whether a person is at the front of anything today. */
-export function isTeachingToday(npc: Pick<NpcRecord, 'activity'>, today: number): boolean {
-    const doing = npc.activity;
-    if (!doing || doing.kind !== 'teaching') return false;
-    return doing.untilDay === null || doing.untilDay === undefined || doing.untilDay >= today;
+export function isTeachingToday(npc: Pick<NpcRecord, 'activity' | 'status'>, today: number): boolean {
+    return isTeachingSomebody(npc, today);
 }
 
 /** Who a person is teaching today, or nobody. */
-export function whoTheyAreTeaching(npc: Pick<NpcRecord, 'activity'>, today: number): string[] {
+export function whoTheyAreTeaching(npc: Pick<NpcRecord, 'activity' | 'status'>, today: number): string[] {
     return isTeachingToday(npc, today) ? [...npc.activity!.withIds] : [];
 }
 
 /**
- * What a person is in the middle of that they could not put down to teach.
+ * What a person is in the middle of that they would not put down to teach, and
+ * the day it ends where it has one.
  *
- * Three kinds and only three, because each is a fact about a body that is
- * already spoken for: channels open and mending, a fight with a beast that is
- * going one way or the other, and a party somewhere else waiting on them. Being
- * at their own practice, at a table or even teaching somebody else is not on the
- * list - a master with disciples in front of him takes one more.
+ * ONE READ OF THEIR ACTIVITY, ruled by the design owner: a master may not say
+ * yes, and the reasons are what they are already doing - their own cultivation,
+ * sitting with a dao, a fight, open channels, a party somewhere else. There is no
+ * list of excuses here. The split is `whetherTheyWouldLookUp`, the world's own
+ * answer to which kinds face out of a room and which are turned away from it,
+ * and it is the only per-kind judgement read: somebody talking, idle, at a
+ * counter or at the work of their rank looks up, and whether they agree is the
+ * ordinary weight of the ask. Somebody already teaching looks up too, because a
+ * master with disciples in front of him takes one more.
+ *
+ * A party the student is out with is not somewhere else.
  */
 export function whatTheyCannotPutDown(
     npc: Pick<NpcRecord, 'activity'>,
     studentId: string,
     today: number
-): NpcActivity | null {
+): { doing: NpcActivity; freeInDays: number | null } | null {
     const doing = npc.activity;
     if (!doing) return null;
     if (doing.untilDay !== null && doing.untilDay !== undefined && doing.untilDay < today) return null;
-    if (doing.kind === 'mending' || doing.kind === 'fighting_a_beast') return doing;
-    if (doing.kind === 'out_with_a_party' && !doing.withIds.includes(studentId)) return doing;
-    return null;
+    if (whetherTheyWouldLookUp(doing.kind)) return null;
+    if (doing.kind === 'out_with_a_party' && doing.withIds.includes(studentId)) return null;
+    return {
+        doing,
+        freeInDays: doing.untilDay === null || doing.untilDay === undefined
+            ? null
+            : Math.max(1, doing.untilDay - today)
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -319,10 +315,9 @@ export const attentionVerbs = {
             ));
         }
 
-        const worth = whatTheirAttentionIsWorth(
+        const multiplier = guidanceMultiplier(
             cultivator.realmOrdinal, row.cultivation.realmOrdinal, given.listeners
         );
-        const multiplier = guidanceMultiplier(cultivator.realmOrdinal, worth);
 
         let execution: Execution;
         try {
@@ -349,7 +344,7 @@ export const attentionVerbs = {
                 + `${given.sinceDay} to ${given.untilDay}; ${lived} of ${span} day(s) were lived. `
                 + `Worth x${multiplier.toFixed(3)} on the rate: guidanceMultiplier from `
                 + `${rankName(row.cultivation.realmOrdinal)} over ${rankName(cultivator.realmOrdinal)}, `
-                + `thinned to ${(shareOfTheirAttention(given.listeners) * 100).toFixed(0)}% for `
+                + `thinned to ${(shareOfAttention(given.listeners) * 100).toFixed(0)}% for `
                 + `${given.listeners} in front of them. The attention ended with the span. Their row `
                 + 'carries no energy store, so what it cost them is the days.',
             ok: lived > 0
@@ -580,35 +575,50 @@ export const attentionVerbs = {
     /**
      * Somebody who is not of the house, sitting in on its teaching.
      *
-     * Ruled by the design owner, in three parts. Nothing refuses the lecture
-     * because the listener is not a member: being in the room is the gate, and
-     * however they got in - past the guard, over a wall - they sit down like
-     * anybody. What follows is the world's: either they blend in, or they are
-     * seen, and being seen puts them out or before the house's own room.
+     * Ruled by the design owner, in parts. Nothing refuses the lecture because
+     * the listener is not a member: being in the room is the gate, and however
+     * they got in they sit down like anybody. What follows is the world's:
+     * either they blend in, or they are seen.
      *
-     * WHO NOTICES is the house's own people sitting in the same set, because
-     * they are who is beside a stranger and who knows which faces belong, and
-     * the person at the front where nobody of the house is listening. A
-     * JUDGEMENT, stated as one: it is what lets somebody who has put their
-     * weight away pass among disciples weaker than them while an elder talks.
-     * Two reads that already exist decide it, and no chance of this file's own -
-     * nothing in the engine answers *passes as one of ours* with a probability,
-     * so this is the plainest recognition the engine has, named:
+     * ── WHETHER THEY ARE SEEN IS THE TRUST MODEL, READ ONCE PER WITNESS ─────
      *
-     *   noticesThatTheyAreThere  whether a presence registers at all
-     *                            (`presence-recognition.ts`). Somebody nine rungs
-     *                            above the speaker does not register as a face.
-     *   whatTheyCanPlaceAbout    whether what they are can be placed, which a
-     *                            concealment said in the sentence can stop
-     *                            (`what-they-can-place-about-you.ts`).
+     * `docs/world/houses/trust.md`: being believed is read on independent axes
+     * and never collapsed into one number. Who looks is the house's own people
+     * sitting in the same set, and the person at the front where nobody of the
+     * house is listening. For each, {@link whetherAFaceIsRemarkable} reads:
      *
-     * SEEN, a row is opened the ordinary way - `trespassed`, whose severity
-     * `severityOfTheWrong` reads off nothing taken and nobody harmed - and the
-     * room decides with `whatTheRoomDecides`, told they are not one of its own
-     * and who of the house here could hold them. A house that can hold them puts
-     * them out, and takes the stones where the room settles on a fine. A house
-     * that cannot is a standoff: the room's decision is recorded and nobody lays
-     * a hand on them. The deed enters the world through `aDeedEntersTheWorld`.
+     *   realm      whether they register the face at all
+     *              (`noticesThatTheyAreThere`) and what rung they take it for
+     *              against any concealment (`whatTheyCanPlaceAbout`)
+     *   reference  whether they have dealt with this person, and whether the
+     *              house is small enough that its faces are known - its real
+     *              size, `howManyAHouseReallyHas`, never the roll
+     *   the ground whether the place is having a bad year (`theGroundUnderYou`)
+     *   signals    whether the stranger wears this house's robes
+     *              (`wearsTheRobesOf`). A token is read by somebody who asks,
+     *              and a look does not ask.
+     *
+     * Deterministic, because every one of those reads is.
+     *
+     * ── SEEN, AND WHAT THE HOUSE CAN DO ABOUT IT ────────────────────────────
+     *
+     * A row is opened the ordinary way: `trespassed`, which reads as slight
+     * because nothing was taken and nobody harmed. Then who has hands on them is
+     * the ordinary answer to any confrontation, and there is no standoff rule:
+     *
+     *   the house people here can take them   `whetherYouAreWorthTheTrouble`
+     *                                         reads anything but beyond them,
+     *                                         and the room's sentence is carried
+     *                                         out: put out, and fined where the
+     *                                         room says a fine
+     *   they cannot, and send for somebody    `whoAnsweredTheShout`, over the
+     *                                         house's people inside the same
+     *                                         compound. One who ends it arrives
+     *                                         and the sentence follows; one who
+     *                                         does not end it arrives and it is
+     *                                         a fight nobody has started yet
+     *   nobody in the house stands that high  the house cannot order them and
+     *                                         says so, which is `houseStanding`
      */
     whetherTheySeeYouDoNotBelong(
         this: GameService,
@@ -619,8 +629,9 @@ export const attentionVerbs = {
     ): { caught: Execution | null; passed: string | null } {
         const world = this.atHand;
         if (!world) return { caught: null, passed: null };
-        const ground = whoHoldsTheGround(world.locations, this.worldPlaceOf(cultivator));
-        const house = ground.holding === 'held' ? ground.holderFactionId : null;
+        const placeId = this.worldPlaceOf(cultivator);
+        const holding = whoHoldsTheGround(world.locations, placeId);
+        const house = holding.holding === 'held' ? holding.holderFactionId : null;
         if (!house) return { caught: null, passed: null };
         const membership = this.repos.sects.getMembership(cultivator.id);
         if (membership?.sectId === house) return { caught: null, passed: null };
@@ -628,45 +639,66 @@ export const attentionVerbs = {
             return { caught: null, passed: null };
         }
 
-        // WHO LOOKS. The house's own people sitting in the same set, because
-        // they are who is beside a stranger and who knows which faces belong;
-        // the person at the front where nobody of the house is listening.
-        const today0 = Math.floor(world.currentDay);
-        const listening = new Set(whoTheyAreTeaching(teacher, today0));
+        // WHO LOOKS
+        const today = Math.floor(world.currentDay);
+        const listening = new Set(whoTheyAreTeaching(teacher, today));
         const beside = world.npcs.filter(npc => listening.has(npc.id) && npc.status === 'alive'
             && npc.factionId === house);
         const witnesses = beside.length > 0 ? beside : [teacher];
+
+        // WHAT IS THE SAME FOR EVERY WITNESS
         const hiding = whatYouAreNotShowing(rawInput) !== null;
-        const seenBy = witnesses.find(witness => {
+        const inTheRobes = wearsTheRobesOf(world.objects, cultivator.id, house);
+        const houseSize = howManyAHouseReallyHas(world, house);
+        const ofTheHouse = world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === house);
+        const strongestOfTheHouse = ofTheHouse.reduce<number | null>(
+            (top, npc) => top === null || npc.cultivation.realmOrdinal > top ? npc.cultivation.realmOrdinal : top,
+            null
+        );
+        const ground = theGroundUnderYou(
+            holding, statusesInArea(world.statuses, world.locations, placeId ?? '', today)
+        );
+
+        const readings = witnesses.map(witness => {
             const known = tieFrom(this.repos, witness.id, cultivator.id) !== null
                 || openLedgerBetween(this.repos, cultivator.id, witness.id).length > 0;
-            return noticesThatTheyAreThere({
-                theirOrdinal: cultivator.realmOrdinal,
-                yourOrdinal: witness.cultivation.realmOrdinal,
-                known
-            }) && whatTheyCanPlaceAbout({
-                theirOrdinal: cultivator.realmOrdinal,
-                readerOrdinal: witness.cultivation.realmOrdinal,
-                keepingItToThemselves: hiding,
-                hasDealtWithThemBefore: known
-            }).theyCanBePlaced;
-        }) ?? null;
-        if (seenBy === null) {
+            return {
+                witness,
+                reading: whetherAFaceIsRemarkable({
+                    registers: noticesThatTheyAreThere({
+                        theirOrdinal: cultivator.realmOrdinal,
+                        yourOrdinal: witness.cultivation.realmOrdinal,
+                        known
+                    }),
+                    knowsThem: known,
+                    inTheRobes,
+                    takenForRung: whatTheyCanPlaceAbout({
+                        theirOrdinal: cultivator.realmOrdinal,
+                        readerOrdinal: witness.cultivation.realmOrdinal,
+                        keepingItToThemselves: hiding,
+                        hasDealtWithThemBefore: known
+                    }).rungTheyAreTakenFor,
+                    strongestOfTheHouse,
+                    houseSize,
+                    groundUnderDuress: ground.underDuress
+                })
+            };
+        });
+        const seen = readings.find(one => one.reading.remarkable) ?? null;
+        if (seen === null) {
             return {
                 caught: null,
                 passed:
-                    `Not of ${ground.holderName ?? house}, and passed for one of them: none of the `
-                    + `${witnesses.length} of the house looking could place them `
-                    + `(noticesThatTheyAreThere and whatTheyCanPlaceAbout, `
-                    + `${hiding ? 'with their weight put away' : 'with nothing hidden'}).`
+                    `Not of ${holding.holderName ?? house}, and passed for one of them: `
+                    + readings.map(one => `${one.witness.name}: ${one.reading.because}`).join(' ')
             };
         }
+        const seenBy = seen.witness;
 
         // ── SEEN ─────────────────────────────────────────────────────────
         const onDay = Math.floor(run.elapsedDays);
-        const today = Math.floor(world.currentDay);
         const severity = severityOfTheWrong('trespassed');
-        const houseName = ground.holderName ?? house;
+        const houseName = holding.holderName ?? house;
         const row = createObligation({
             kind: 'grudge',
             holderId: house,
@@ -682,32 +714,114 @@ export const attentionVerbs = {
         });
         writeOneObligation(this.db as unknown as DatabaseHandle, row);
 
-        const placeId = this.worldPlaceOf(cultivator);
-        const ofTheHouseHere = world.npcs.filter(npc => npc.locationId === placeId
-            && npc.status === 'alive' && npc.factionId === house);
-        const strongest = ofTheHouseHere.reduce<number | null>(
-            (top, npc) => top === null || npc.cultivation.realmOrdinal > top ? npc.cultivation.realmOrdinal : top,
+        const noticed = seenBy.id === teacher.id
+            ? `${teacher.name} stops talking and looks at you, and you are not one of ${houseName}:`
+            : `${seenBy.name}, sitting in front of ${teacher.name} with you, looks at you twice and `
+              + `says so, and you are not one of ${houseName}:`;
+        const lines: string[] = [`${noticed} ${seen.reading.because}`];
+        const structure: string[] = [`Seen by ${seenBy.name}: ${seen.reading.because}`];
+
+        // ── WHO HAS HANDS ON THEM ────────────────────────────────────────
+        const hereNow = world.npcs.filter(npc => npc.locationId === placeId && npc.status === 'alive'
+            && npc.factionId === house);
+        const strongestHere = hereNow.reduce<NpcRecord | null>(
+            (top, npc) => top === null || npc.cultivation.realmOrdinal > top.cultivation.realmOrdinal ? npc : top,
             null
         );
-        const hands = { strongest, theirs: cultivator.realmOrdinal };
-        const decided = whatTheRoomDecides({
-            what: { does: 'reports', toId: house, line: `${seenBy.name} saw it and said so.` },
-            theirsToPunish: true,
-            alignment: ground.alignment,
-            severity,
-            houseId: house,
-            theHouseGaveThemSomething: false,
-            oneOfTheirOwn: false,
-            hands
-        });
-        const held = theyCanBeHeld(hands);
+        const theyCanTakeThem = (ordinal: number) => whetherYouAreWorthTheTrouble({
+            theirOrdinal: ordinal,
+            yourOrdinal: cultivator.realmOrdinal
+        }) !== 'beyond_them';
 
-        const noticed = seenBy.id === teacher.id
-            ? `${teacher.name} stops talking and looks at you,`
-            : `${seenBy.name}, sitting in front of ${teacher.name} with you, looks at you twice and says so,`;
-        const lines: string[] = [];
+        let hands: { id: string; name: string } | null =
+            strongestHere && theyCanTakeThem(strongestHere.cultivation.realmOrdinal)
+                ? { id: strongestHere.id, name: strongestHere.name }
+                : null;
+
+        if (hands === null) {
+            // THEY SEND FOR SOMEBODY: the shout, over the house's people inside
+            // the same compound. Answering for the ground is why they come.
+            const seat = pathTo(world.locations, placeId ?? '').find(place => place.kind === 'sect_seat') ?? null;
+            const inside = (locationId: string | null) => seat !== null && locationId !== null
+                && pathTo(world.locations, locationId).some(place => place.id === seat.id);
+            const candidates: CouldBeCalled[] = world.npcs
+                .filter(npc => npc.status === 'alive' && npc.factionId === house
+                    && npc.locationId !== placeId && inside(npc.locationId))
+                .map(npc => ({
+                    id: npc.id,
+                    name: npc.name,
+                    realmOrdinal: npc.cultivation.realmOrdinal,
+                    standing: 0,
+                    answersForThisGround: true
+                }));
+            const ambient: AmbientQi = 'normal';
+            const intruder = assessPower(combatantFromCultivator(cultivator, this.repos), { ambient });
+            const shout = whoAnsweredTheShout(candidates, intruder, { ambient }, who => {
+                const body = combatantFromOpponent({
+                    name: who.name,
+                    realmOrdinal: who.realmOrdinal
+                }, this.repos);
+                return assessPower(isGuidingErrorBody(body)
+                    ? combatantFromCultivator(cultivator, this.repos)
+                    : body as CombatantInput, { ambient });
+            });
+            structure.push(
+                `Nobody of ${houseName} here could take them (strongest here: `
+                + `${strongestHere ? rankName(strongestHere.cultivation.realmOrdinal) : 'nobody'}); `
+                + `whoAnsweredTheShout over ${candidates.length} inside the compound: ${shout.line}`
+            );
+
+            if (shout.answered) {
+                const came = world.npcs.findIndex(npc => npc.id === shout.answered!.id);
+                if (came >= 0 && placeId) {
+                    world.npcs[came] = setLocation(world.npcs[came]!, placeId, today);
+                }
+                if (shout.endsIt) {
+                    hands = { id: shout.answered.id, name: shout.answered.name };
+                    lines.push(
+                        `Nobody here can make you go, so somebody is sent for, and `
+                        + `${shout.answered.name} comes.`
+                    );
+                } else {
+                    lines.push(
+                        `Nobody here can make you go, so somebody is sent for, and `
+                        + `${shout.answered.name} comes and stands in front of you. It is a fight if `
+                        + 'either of you starts one.'
+                    );
+                    structure.push(
+                        `${shout.answered.name} could matter against the intruder and does not end it `
+                        + 'on arrival. No fight is opened: nothing in the engine opens a held fight '
+                        + 'that the player did not start.'
+                    );
+                }
+            } else {
+                const standing = houseStanding(house, cultivator.realmOrdinal);
+                lines.push(
+                    `Nobody of ${houseName} standing here, or anywhere inside, stands high enough to `
+                    + 'make you go. Nobody lays a hand on you. You are asked to leave, which is '
+                    + 'all a house can do with somebody it cannot order.'
+                );
+                structure.push(
+                    `Nobody answered, so the house negotiates. houseStanding reads ${standing} for `
+                    + `${rankName(cultivator.realmOrdinal)}: nothing it says is an order.`
+                );
+            }
+        }
+
+        // ── AND WHERE THE HOUSE HAS HANDS ON THEM, THE ROOM'S SENTENCE ──────
         let stonesTaken = 0;
-        if (held) {
+        let decidedLine = 'No sentence: the house never had hands on them.';
+        if (hands !== null) {
+            const decided = whatTheRoomDecides({
+                what: { does: 'reports', toId: house, line: `${seenBy.name} saw it and said so.` },
+                theirsToPunish: true,
+                alignment: holding.alignment,
+                severity,
+                houseId: house,
+                theHouseGaveThemSomething: false,
+                oneOfTheirOwn: false
+            });
+            decidedLine = decided.line;
             if (decided.sentence === 'a fine') {
                 const fine = whatAFineComesTo(cultivator.realmOrdinal, severity).stones;
                 stonesTaken = Math.min(fine, cultivator.spiritStones);
@@ -721,15 +835,8 @@ export const attentionVerbs = {
                 : null;
             if (outside) this.repos.cultivators.update(cultivator.id, { location: outside.name });
             lines.push(
-                `${noticed} and you are not one of ${houseName}. `
-                + `You are put out${outside ? `, and you are standing in ${outside.name}` : ''}.`
+                `${hands.name} puts you out${outside ? `, and you are standing in ${outside.name}` : ''}.`
                 + (stonesTaken > 0 ? ` ${stonesTaken} spirit stones are taken off you on the way.` : '')
-            );
-        } else {
-            lines.push(
-                `${noticed} and you are not one of ${houseName}. `
-                + `Nobody of ${houseName} standing here stands as high as you, and nobody lays a hand `
-                + 'on you. The talk does not go on while you sit there.'
             );
         }
 
@@ -748,27 +855,21 @@ export const attentionVerbs = {
             summary:
                 `${cultivator.name}, who is not of ${houseName}, was found sitting in on `
                 + `${teacher.name}'s teaching inside the house`
-                + (held ? ' and was put out.' : ', and nobody there could make them leave.'),
+                + (hands !== null ? ' and was put out.' : ', and was not put out.'),
             unattributed: `Somebody who was not of ${houseName} was found listening inside it.`,
-            data: { sentence: decided.sentence, held }
+            data: { putOut: hands !== null }
         });
         this.theWorldMoved();
 
         const execution = refused('attention.seenInside', 'teach', factsForRefusal(
-            held ? 'You are put out.' : 'Nobody here can put you out.',
+            hands !== null ? 'You are put out.' : 'You are seen, and not put out.',
             lines.join(' '),
-            `trespassed: ${row.id} (${severity}) held by ${house}. ${decided.line} `
-            + `Strongest of the house here: ${strongest ?? 'nobody'} against ${cultivator.realmOrdinal}.`
+            `trespassed: ${row.id} (${severity}) held by ${house}. ${structure.join(' ')}`
         ));
         execution.calls.push({
             name: 'engine.whatTheRoomDecides',
             action: 'teach',
-            summary:
-                `${decided.line} Not one of their own, so the rungs read what they need: nothing was `
-                + `given, and a stranger's fine is stones off their person. ${held
-                    ? `Held by somebody at ${rankName(strongest ?? 0)}; put out${stonesTaken > 0 ? `, ${stonesTaken} stones taken` : ''}.`
-                    : 'Nobody who could hold them; the sentence was not laid on them.'} `
-                + `Deed ${deed.fact.id} written.`,
+            summary: `${decidedLine} Deed ${deed.fact.id} written.`,
             ok: true
         });
         return { caught: execution, passed: null };
@@ -897,7 +998,7 @@ export const attentionVerbs = {
                 `${cultivator.name} at ${rankName(cultivator.realmOrdinal)} gave a talk at ${where} to `
                 + `${free.length} (${ofTheHouse} of their own house) for ${lived} of ${days} day(s). `
                 + `Each listener's row was written teaching with the speaker in withIds and put back `
-                + `afterwards; each got ${(shareOfTheirAttention(free.length) * 100).toFixed(0)}% of `
+                + `afterwards; each got ${(shareOfAttention(free.length) * 100).toFixed(0)}% of `
                 + `what a sole student would. Contribution credited: ${credit}, being a duty's rate `
                 + 'at the speaker\'s own rung over the days, times the house listeners counted as '
                 + 'the share of attention each got.',
@@ -928,6 +1029,98 @@ export function whatATalkIsWorthToTheHouse(
 ): number {
     if (listenersOfTheHouse <= 0 || days <= 0) return 0;
     const dutyRate = CONTRIBUTION_BASE + speakerOrdinal * CONTRIBUTION_PER_ORDINAL;
-    const studentsWorth = listenersOfTheHouse * shareOfTheirAttention(listeners);
+    const studentsWorth = listenersOfTheHouse * shareOfAttention(listeners);
     return Math.round(dutyRate * (days / ORDINARY_DUTY_DAYS) * studentsWorth);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHETHER A STRANGER'S FACE STANDS OUT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How many people a house really has, which is not how many are on its roll.
+ *
+ * `a-house-and-who-is-in-it.md`: the roll is who a player could come to know,
+ * and a sect has hundreds of outer disciples nobody models. The one figure the
+ * world holds for the rest is the room the house sleeps them in - the
+ * dormitory, cut by `architecture.ts` for the heads the compound was built for.
+ * A house that takes nobody in has no dormitory and no unmodelled hundreds, and
+ * for that house the roll IS the house.
+ */
+export function howManyAHouseReallyHas(
+    world: Pick<WorldState, 'locations' | 'npcs'>,
+    houseId: string
+): number {
+    const slept = world.locations
+        .filter(place => place.data?.factionId === houseId && purposeOf(place) === 'dormitory')
+        .reduce((sum, place) => sum + Math.max(0, Number(place.data?.capacity ?? 0)), 0);
+    if (slept > 0) return slept;
+    return world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === houseId).length;
+}
+
+export interface AFaceBeingLookedAt {
+    /** Whether the face registers at all, from the witness's rung. */
+    registers: boolean;
+    /** Whether the witness has dealt with this person and knows who they are. */
+    knowsThem: boolean;
+    /** Whether they wear this house's robes. */
+    inTheRobes: boolean;
+    /** The rung the witness takes them for, which a concealment can lower. */
+    takenForRung: number;
+    /** The strongest living person of the house, or null for a house of nobody. */
+    strongestOfTheHouse: number | null;
+    /** `howManyAHouseReallyHas`. */
+    houseSize: number;
+    /** Whether the ground is having a bad year. */
+    groundUnderDuress: boolean;
+}
+
+/**
+ * Whether a stranger's face stands out to one person of the house, and why.
+ *
+ * Every clause is one of the trust model's axes, kept apart, and they are asked
+ * in the order a look reaches them. Nothing here is a chance: the reads it is
+ * made of are facts, and a stranger either fits the room or does not.
+ *
+ *   no register      a face the witness does not register cannot stand out
+ *   known            somebody who has dealt with you knows you are not of it
+ *   no robes         the house's people dress as the house; a stranger in
+ *                    their own clothes is the first thing anybody sees
+ *   above the house  a face taken for a rung nobody of the house stands at
+ *   a small house    `A_ROLL_A_PLAYER_COULD_KNOW` is how many faces one person
+ *                    holds; a house no bigger than that knows all of its own
+ *   a bad year       a house in trouble looks twice at every face
+ *
+ * Past all six an unfamiliar face in the right robes is ordinary.
+ */
+export function whetherAFaceIsRemarkable(face: AFaceBeingLookedAt): { remarkable: boolean; because: string } {
+    if (!face.registers) {
+        return { remarkable: false, because: 'the face does not register from where they stand.' };
+    }
+    if (face.knowsThem) {
+        return { remarkable: true, because: 'they have dealt with you and know you are not of the house.' };
+    }
+    if (!face.inTheRobes) {
+        return { remarkable: true, because: 'you are not in the house\'s robes, and everybody else is.' };
+    }
+    if (face.strongestOfTheHouse !== null && face.takenForRung > face.strongestOfTheHouse) {
+        return {
+            remarkable: true,
+            because: `you are taken for ${rankName(face.takenForRung)}, and nobody of the house stands `
+                + 'that high.'
+        };
+    }
+    if (face.houseSize <= A_ROLL_A_PLAYER_COULD_KNOW) {
+        return {
+            remarkable: true,
+            because: `the house is ${face.houseSize} people, few enough that every face in it is known.`
+        };
+    }
+    if (face.groundUnderDuress) {
+        return { remarkable: true, because: 'the place is having a bad year, and every face is looked at twice.' };
+    }
+    return {
+        remarkable: false,
+        because: `an unfamiliar face in the robes of a house of ${face.houseSize} is nobody in particular.`
+    };
 }

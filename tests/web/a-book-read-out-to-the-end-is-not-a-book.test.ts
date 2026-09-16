@@ -88,3 +88,37 @@ describe('a heaven-grade book the player reads out', () => {
         expect(after.provenance[after.provenance.length - 1].how).toBe('lost');
     }, 300_000);
 });
+
+/**
+ * AND A BOOK THAT ENDED IS NOT ON ANYBODY'S SHELF.
+ *
+ * `ruin` clears the hand and keeps the owner, so the row still says whose book
+ * it was. `heldByTheirHouse` - what a house is asked a price against - read the
+ * owner half with no ruin check, and found a house's dust as a book on its
+ * shelf. The world's own shelf reads already skip a ruined row; this is the
+ * player's side of the same rule.
+ */
+describe('a house asked for a book it read to the end', () => {
+    it('is not holding one', async () => {
+        const { heldByTheirHouse } = await import('../../src/web/what-a-holder-would-take-for-it');
+        const { ruin } = await import('../../src/engine/world/possessions');
+        const house = BOOK.house!.id;
+        const book = makeObject({
+            id: 'a-house-copy',
+            name: BOOK.t.name,
+            kind: 'manual',
+            significance: 'significant',
+            possessorId: house,
+            ownerId: house,
+            ownerName: BOOK.house!.name,
+            data: { techniqueId: BOOK.t.id, copies: 1 }
+        });
+        const world = { objects: [book] } as unknown as Parameters<typeof heldByTheirHouse>[0];
+        expect(heldByTheirHouse(world, house, BOOK.t.id)?.id).toBe('a-house-copy');
+
+        const dust = ruin(book, { onDay: 1, source: 'a reader', note: 'read to the end' });
+        expect(dust.ownerId, 'ruin no longer keeps the owner, so this test measures nothing').toBe(house);
+        const after = { objects: [dust] } as unknown as Parameters<typeof heldByTheirHouse>[0];
+        expect(heldByTheirHouse(after, house, BOOK.t.id)).toBeNull();
+    });
+});

@@ -207,7 +207,7 @@ import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
 import { capOf } from '../data/cultivation/techniques.js';
-import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
+import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, guidanceMultiplier, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { practiceMatchBonus } from '../engine/cultivation/understanding.js';
 import { getMembersOf } from '../data/cultivation/members.js';
@@ -1100,7 +1100,6 @@ import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
 import {
     attentionVerbs,
-    whatTheirAttentionIsWorth,
     whoTheyAreTeaching
 } from './a-teacher-giving-you-their-attention.js';
 // The route `acquisition` has always offered and nothing could walk.
@@ -15764,6 +15763,7 @@ ${fit.line}`;
     rateTermsFor(cultivator: Cultivator): {
         techniqueCap: number | null;
         guideOrdinal: number | null;
+        guideListeners: number;
         techniqueBonus: number;
         sectBonus: number;
     } {
@@ -15787,7 +15787,7 @@ ${fit.line}`;
             // ladder ends the question for every other book they own.
             if (theirs === null || theirs === undefined) return {
                 techniqueCap: null,
-                guideOrdinal: this.guideFor(cultivator),
+                ...this.guideFor(cultivator),
                 ...this.multipliersFor(cultivator)
             };
             cap = cap === null ? theirs : Math.max(cap, theirs);
@@ -15796,7 +15796,7 @@ ${fit.line}`;
         return {
             // NO_MANUAL_CEILING when they hold none. Not null - see above.
             techniqueCap: anyManual ? cap : NO_MANUAL_CEILING,
-            guideOrdinal: this.guideFor(cultivator),
+            ...this.guideFor(cultivator),
             ...this.multipliersFor(cultivator)
         };
     }
@@ -16315,8 +16315,8 @@ ${fit.line}`;
                 theirOrdinal > cultivator.realmOrdinal
                     ? `${party.name} takes you on. What that is worth is not a title: somebody who `
                       + 'has stood further up than you can tell you what you are doing wrong '
-                      + 'while you are still doing it, when they are watching. Ask them to watch '
-                      + 'you sit and they will.'
+                      + 'while you are still doing it, when they are watching. Asking them to '
+                      + 'watch you sit is still asking.'
                     : `${party.name} agrees, and it changes nothing about how fast you climb. `
                       + 'Guidance is the gap between the guide and the guided, and there is none.'
             );
@@ -16325,9 +16325,9 @@ ${fit.line}`;
                 action: 'request',
                 summary:
                     `${party.name}, standing at ${theRung(theirOrdinal)}, is recorded as `
-                    + `${cultivator.name}'s master. It is read when this cultivator asks them for `
-                    + 'guidance, which they then give as a matter of course; the rate reads their '
-                    + 'attention and not the title, and a span under their eye is worth '
+                    + `${cultivator.name}'s master. The tie the asking left is what makes a later `
+                    + 'ask of theirs likelier; the rate reads their attention and not the title, '
+                    + 'and a span under their eye is worth '
                     + `${theirOrdinal > cultivator.realmOrdinal
                         ? 'up to half again on the rate'
                         : 'nothing at all, the guide standing no higher than the guided'}.`,
@@ -16643,40 +16643,44 @@ ${fit.line}`;
      * attention.
      *
      * Who will give you that attention is a separate question with its own
-     * answer: an acknowledged master (`FLAG_MASTER`, written only when a
-     * `discipleship` request is granted) as a matter of course, anybody else
-     * only if they agree to. Neither is read here. This read used to take the
+     * answer: whoever agrees to, a master included, through the ordinary
+     * request. It is not read here. This read used to take the
      * whole catalog roll of the player's house and a remembered ordinal, so a
      * senior nobody had agreed to, dead or three provinces away, sped them up.
      *
      * With no world loaded there is nobody's activity to read, so that mode
      * keeps the ordinal remembered when a master took them on.
      */
-    private guideFor(cultivator: Cultivator): number | null {
+    private guideFor(cultivator: Cultivator): { guideOrdinal: number | null; guideListeners: number } {
+        const nobody: { guideOrdinal: number | null; guideListeners: number } =
+            { guideOrdinal: null, guideListeners: 1 };
         const world = this.atHand;
         if (!world) {
             const took = readFlag(this.db, cultivator.id, FLAG_MASTER);
-            if (!took) return null;
+            if (!took) return nobody;
             const ordinal = Number(took.slice(took.lastIndexOf(':') + 1));
-            return Number.isFinite(ordinal) && ordinal > cultivator.realmOrdinal ? ordinal : null;
+            return Number.isFinite(ordinal) && ordinal > cultivator.realmOrdinal
+                ? { guideOrdinal: ordinal, guideListeners: 1 }
+                : nobody;
         }
 
         const place = worldLocationFor(world, cultivator.location);
-        if (!place) return null;
+        if (!place) return nobody;
         const today = Math.floor(world.currentDay);
-        let best: number | null = null;
+        let best = nobody;
+        let bestWorth = 1;
         for (const npc of npcsAt(world, place.id)) {
             const listening = whoTheyAreTeaching(npc, today);
             if (!listening.includes(cultivator.id)) continue;
-            // AND ATTENTION DIVIDES. A teacher in front of a hall is worth less to
-            // each person in it than the same teacher in front of one, said as
-            // the rung whose whole attention would be worth the same - see
-            // `whatTheirAttentionIsWorth` for the one figure and why.
-            const worth = whatTheirAttentionIsWorth(
+            // AND ATTENTION DIVIDES, by the rate's own rule: of several teachers
+            // the one worth most is taken, which is not always the highest. The
+            // same choice `guidanceFor` makes for the world's people.
+            const worth = guidanceMultiplier(
                 cultivator.realmOrdinal, npc.cultivation.realmOrdinal, listening.length
             );
-            if (worth === null) continue;
-            if (best === null || worth > best) best = worth;
+            if (worth <= bestWorth) continue;
+            best = { guideOrdinal: npc.cultivation.realmOrdinal, guideListeners: listening.length };
+            bestWorth = worth;
         }
         return best;
     }

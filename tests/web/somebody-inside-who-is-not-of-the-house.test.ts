@@ -9,20 +9,23 @@
  *     whole of the gate, and a player standing somewhere else is told where
  *     they are standing rather than told they may not.
  *   - *"Either you somehow blend in as a disciple, or you get kicked out."*
- *     Blending in is read off the recognition the engine already has
- *     (`noticesThatTheyAreThere`, `whatTheyCanPlaceAbout`), and a stranger who
- *     has put their weight away among weaker disciples gets the rate like anybody.
+ *     Blending in is the trust model, which was already built
+ *     (`docs/world/houses/trust.md`): realm against any concealment, reference
+ *     for the house's faces measured against the house's REAL size rather than
+ *     its roll, the ground, and what the stranger is wearing. The first cut read
+ *     realm alone and could not tell a stranger in the house's robes in a house
+ *     of hundreds from the same stranger in a house of twelve.
  *   - Being seen opens the ordinary row. `trespassed` is a kind of wrong whose
  *     shape is nothing taken and nobody harmed, so `severityOfTheWrong` reads it
  *     as slight without being told to.
  *   - *"An intruder is obviously treated differently from a disciple who broke a
- *     rule, and how strong the intruder is matters too."* The same ladder in
- *     `whatTheRoomDecides`, read through what each rung NEEDS; and a house that
- *     has nobody who could hold the stranger does not hand down a sentence it
- *     cannot lay on them.
- *
- * WHAT WENT RED FIRST: every `whatTheRoomDecides` case below that passes
- * `oneOfTheirOwn` or `hands` was a type error, and `trespassed` was not a wrong.
+ *     rule."* The same ladder in `whatTheRoomDecides`, read through what each
+ *     rung NEEDS.
+ *   - *"Depends on how strong, same as how regular fights resolve."* There is
+ *     no standoff rule. Whether the house gets hands on them is the ordinary
+ *     confrontation: the house people here if they can take them, somebody sent
+ *     for if one will come, and otherwise the house can only ask them to leave.
+ *     The first cut had a `hands` term inside the room, which is gone.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -36,7 +39,16 @@ import {
     whatTheRoomDecides,
     type WhatWasBrought
 } from '../../src/engine/social-leverage/what-a-room-decides-about-one-of-its-own';
+import {
+    howManyAHouseReallyHas,
+    whetherAFaceIsRemarkable,
+    type AFaceBeingLookedAt
+} from '../../src/web/a-teacher-giving-you-their-attention';
+import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../src/engine/world/a-house-raises-its-own';
+import { aUniformFor } from '../../src/engine/world/a-recruit-is-given-their-plate-at-the-house';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
+import { whetherYouAreWorthTheTrouble } from '../../src/engine/social-leverage/what-a-house-does-when-it-catches-you';
+import { heightAloneWouldHideThem } from '../../src/engine/social/presence-recognition';
 import type { Cultivator } from '../../src/schema/cultivation';
 
 const WORLD = 'a-xianxia-run';
@@ -61,7 +73,6 @@ function aStranger(over: Partial<WhatWasBrought> = {}): WhatWasBrought {
         houseId: null,
         theHouseGaveThemSomething: false,
         oneOfTheirOwn: false,
-        hands: { strongest: 20, theirs: 3 },
         ...over
     };
 }
@@ -78,23 +89,13 @@ describe('the room, for somebody who is not one of its own', () => {
         const demonic = whatTheRoomDecides(aStranger({ alignment: 'demonic' }));
         expect(righteous.sentence).toBe('a rebuke');
         expect(rung(demonic.sentence)).toBeGreaterThan(rung(righteous.sentence));
-        // Nothing was given, so nothing is taken back: the rung below stands.
-        expect(demonic.sentence).not.toBe('what the house gave is taken back');
     });
 
-    it('does not simply sentence a stranger who stands above everybody the house could send', () => {
-        const heldDown = whatTheRoomDecides(aStranger({ alignment: 'demonic' }));
-        const tooStrong = whatTheRoomDecides(aStranger({
-            alignment: 'demonic', hands: { strongest: 5, theirs: 30 }
+    it('never takes back from a stranger what was never given, whatever the caller says', () => {
+        const told = whatTheRoomDecides(aStranger({
+            alignment: 'demonic', severity: 'serious', theHouseGaveThemSomething: true
         }));
-        expect(heldDown.nobodyCanHoldThem).toBe(false);
-        expect(tooStrong.nobodyCanHoldThem).toBe(true);
-        expect(rung(tooStrong.sentence)).toBeLessThan(rung(heldDown.sentence));
-        expect(tooStrong.line).toMatch(/confrontation rather than a sentence/);
-        // And a house with nobody to send at all holds nobody either.
-        expect(whatTheRoomDecides(aStranger({
-            alignment: 'demonic', hands: { strongest: null, theirs: 1 }
-        })).nobodyCanHoldThem).toBe(true);
+        expect(told.sentence).not.toBe('what the house gave is taken back');
     });
 
     it('leaves the member ladder exactly where it was', () => {
@@ -105,12 +106,64 @@ describe('the room, for somebody who is not one of its own', () => {
         expect(member('righteous').sentence).toBe('a rebuke');
         expect(member('neutral').sentence).toBe('a fine');
         expect(member('demonic').sentence).toBe('a fine');
-        expect(member('demonic').nobodyCanHoldThem).toBe(false);
     });
 });
 
-/** A house's own ground with a teacher on it and one of the house listening. */
-async function insideAHouse(seed: string) {
+describe('whether a stranger\'s face stands out', () => {
+    const inRobesInABigHouse: AFaceBeingLookedAt = {
+        registers: true,
+        knowsThem: false,
+        inTheRobes: true,
+        takenForRung: 3,
+        strongestOfTheHouse: 30,
+        houseSize: 300,
+        groundUnderDuress: false
+    };
+
+    it('lets a stranger in the house\'s robes pass among the outer disciples of a large house', () => {
+        expect(whetherAFaceIsRemarkable(inRobesInABigHouse).remarkable).toBe(false);
+    });
+
+    it('notices the same stranger in a small house where everybody knows everybody', () => {
+        const small = whetherAFaceIsRemarkable({ ...inRobesInABigHouse, houseSize: A_ROLL_A_PLAYER_COULD_KNOW });
+        expect(small.remarkable).toBe(true);
+        expect(small.because).toMatch(/every face in it is known/);
+    });
+
+    it('notices a stranger without the robes, whatever the size of the house', () => {
+        const bare = whetherAFaceIsRemarkable({ ...inRobesInABigHouse, inTheRobes: false });
+        expect(bare.remarkable).toBe(true);
+        expect(bare.because).toMatch(/robes/);
+    });
+
+    it('keeps each axis apart: a face that does not register, a known face, a bad year', () => {
+        expect(whetherAFaceIsRemarkable({ ...inRobesInABigHouse, inTheRobes: false, registers: false }).remarkable)
+            .toBe(false);
+        expect(whetherAFaceIsRemarkable({ ...inRobesInABigHouse, knowsThem: true }).remarkable).toBe(true);
+        expect(whetherAFaceIsRemarkable({ ...inRobesInABigHouse, groundUnderDuress: true }).remarkable).toBe(true);
+        expect(whetherAFaceIsRemarkable({ ...inRobesInABigHouse, takenForRung: 31 }).remarkable).toBe(true);
+    });
+
+    it('measures a house by the rooms it sleeps people in, and by its roll where it sleeps nobody', async () => {
+        const harness = await makeGameInWorld({ seed: 'house-size', worldSeed: WORLD });
+        await harness.game.newRun('Prober');
+        const world = (await harness.game.loadWorld())!;
+        const withADormitory = world.locations.find(place => place.data?.purpose === 'dormitory');
+        expect(withADormitory, 'no house in this world has a dormitory').toBeDefined();
+        const houseId = String(withADormitory!.data.factionId);
+        const roll = world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === houseId).length;
+        expect(howManyAHouseReallyHas(world, houseId)).toBeGreaterThan(roll);
+        expect(howManyAHouseReallyHas({ locations: [], npcs: world.npcs }, houseId)).toBe(roll);
+    }, 120_000);
+});
+
+/**
+ * A house's own ground with a teacher on it and one of the house listening.
+ *
+ * `large` asks for a house whose real size is past what one person knows the
+ * faces of, which is the house a stranger in its robes can pass in.
+ */
+async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     await harness.game.newRun('Prober');
     await harness.game.act('I buy a year of provisions');
@@ -119,10 +172,14 @@ async function insideAHouse(seed: string) {
     const world = (await harness.game.loadWorld())!;
     const me = harness.game.currentRun().cultivator;
 
-    let found: { placeId: string; placeName: string; teacherId: string; listenerId: string } | null = null;
+    let found: {
+        placeId: string; placeName: string; teacherId: string; listenerId: string;
+        houseId: string; houseName: string;
+    } | null = null;
     for (const place of [...world.locations].sort((a, b) => (a.id < b.id ? -1 : 1))) {
         const ground = whoHoldsTheGround(world.locations, place.id);
         if (ground.holding !== 'held' || !ground.holderFactionId) continue;
+        if (opts.large && howManyAHouseReallyHas(world, ground.holderFactionId) <= A_ROLL_A_PLAYER_COULD_KNOW) continue;
         const ofTheHouse = world.npcs
             .filter(npc => npc.locationId === place.id && npc.status === 'alive'
                 && npc.factionId === ground.holderFactionId)
@@ -131,9 +188,13 @@ async function insideAHouse(seed: string) {
         const teacher = ofTheHouse[0];
         const listener = ofTheHouse.find(npc => npc.id !== teacher?.id
             && teacher !== undefined
-            && npc.cultivation.realmOrdinal + 2 <= teacher.cultivation.realmOrdinal);
+            && npc.cultivation.realmOrdinal + 2 <= teacher.cultivation.realmOrdinal
+            && npc.cultivation.realmOrdinal >= me.realmOrdinal);
         if (!teacher || !listener) continue;
-        found = { placeId: place.id, placeName: place.name, teacherId: teacher.id, listenerId: listener.id };
+        found = {
+            placeId: place.id, placeName: place.name, teacherId: teacher.id, listenerId: listener.id,
+            houseId: ground.holderFactionId, houseName: ground.holderName ?? ground.holderFactionId
+        };
         break;
     }
     expect(found, 'no house ground in this world has a teacher and a weaker listener on it').not.toBeNull();
@@ -155,7 +216,15 @@ async function insideAHouse(seed: string) {
     const listener = world.npcs.find(npc => npc.id === found!.listenerId)!;
     const here = harness.game.present(harness.game.currentRun().cultivator).map(row => row.id);
     expect(here, 'moving the player did not put the teacher in front of them').toContain(teacher.id);
-    return { harness, me, teacher, listener };
+
+    /** The house's robes on the player, the way a robe off a line would be. */
+    const putOnTheRobes = () => {
+        world.objects.push(aUniformFor({
+            memberId: me.id, houseId: found!.houseId, houseName: found!.houseName, onDay: today
+        }));
+        harness.game.theWorldMoved();
+    };
+    return { harness, world, me, teacher, listener, placeName: found!.placeName, putOnTheRobes };
 }
 
 function watchTheRate(game: unknown): (number | null)[] {
@@ -171,7 +240,7 @@ function watchTheRate(game: unknown): (number | null)[] {
 }
 
 describe('sitting in on a house\'s teaching without being of the house', () => {
-    it('is seen, put out, and the row is opened, when nothing is hidden', async () => {
+    it('is seen without the house\'s robes, put out, and the row is opened', async () => {
         const { harness, me, teacher } = await insideAHouse('seen-inside');
         const before = harness.game.currentRun().run.elapsedDays;
 
@@ -180,27 +249,68 @@ describe('sitting in on a house\'s teaching without being of the house', () => {
 
         expect(turn.toolCalls.map(call => call.name), text).toContain('engine.whatTheRoomDecides');
         expect(turn.toolCalls.map(call => call.name)).not.toContain('world.theyGiveTheirAttention');
-        expect(text).toMatch(/you are not one of/);
+        expect(text).toMatch(/not in the house's robes/);
+        expect(text).toMatch(/puts you out/);
         expect(ledgerAbout(harness.db, me.id).some(row => row.tags.includes('trespassed')), text)
             .toBe(true);
         // No span: being put out ends the attention before it began.
         expect(harness.game.currentRun().run.elapsedDays).toBe(before);
     }, 180_000);
 
-    it('gets the rate like anybody, when their weight is put away among weaker disciples', async () => {
-        const { harness, me, teacher, listener } = await insideAHouse('blends-in');
-        // Above the one sitting beside them, below the one talking: a concealment
-        // holds against the first and the second has something to give.
-        const between = listener.cultivation.realmOrdinal + 1;
-        expect(between).toBeLessThan(teacher.cultivation.realmOrdinal);
-        harness.db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?').run(between, me.id);
+    it('passes in the house\'s robes in a large house, and gets the rate like anybody', async () => {
+        const { harness, me, putOnTheRobes, teacher } = await insideAHouse('blends-in', { large: true });
+        putOnTheRobes();
         const seen = watchTheRate(harness.game);
 
-        const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk, hiding my cultivation`) as Turn;
+        const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk`) as Turn;
         const text = everythingSaid(turn);
 
         expect(turn.toolCalls.map(call => call.name), text).toContain('world.theyGiveTheirAttention');
-        expect(seen.some(g => g !== null && g > between), text).toBe(true);
+        expect(seen.some(g => g !== null && g > me.realmOrdinal), text).toBe(true);
         expect(ledgerAbout(harness.db, me.id).some(row => row.tags.includes('trespassed'))).toBe(false);
+    }, 180_000);
+
+    it('is not simply put out when nobody the house has can make them go', async () => {
+        const { harness, world, me, teacher, listener, placeName } = await insideAHouse('too-strong');
+        // A GUEST AT THE FRONT OF THE ROOM, of no house, standing high enough to
+        // have something to give somebody past everybody of the house who is
+        // listening. The house's own people beside the intruder are who look,
+        // and who would have to put them out. Arranged, because a guest elder
+        // lecturing in a compound is a row the world writes and not one a turn
+        // reaches.
+        const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+        world.npcs[at] = {
+            ...world.npcs[at]!,
+            factionId: null,
+            factionRankIndex: -1,
+            cultivation: { ...world.npcs[at]!.cultivation, realmOrdinal: 44 }
+        };
+        harness.game.theWorldMoved();
+        // HIGH ENOUGH THAT NOBODY OF THE HOUSE HERE COULD TAKE THEM, and not so
+        // high that the listener beside them does not register the face at all
+        // - `presence-recognition.ts` hides somebody that far up, and a stranger
+        // nobody registers is a stranger nobody sees. Both read off the engine.
+        const placeId = world.npcs.find(npc => npc.id === listener.id)!.locationId;
+        const houseId = listener.factionId!;
+        const strongestOfTheHouseHere = Math.max(...world.npcs
+            .filter(npc => npc.locationId === placeId && npc.status === 'alive' && npc.factionId === houseId)
+            .map(npc => npc.cultivation.realmOrdinal));
+        let ordinal: number | null = null;
+        for (let k = strongestOfTheHouseHere + 1; k < 44; k++) {
+            if (whetherYouAreWorthTheTrouble({ theirOrdinal: strongestOfTheHouseHere, yourOrdinal: k }) !== 'beyond_them') continue;
+            if (heightAloneWouldHideThem(k, listener.cultivation.realmOrdinal)) break;
+            ordinal = k;
+            break;
+        }
+        expect(ordinal, 'no rung is both past the house here and visible to the listener').not.toBeNull();
+        await harness.game.act(`ADMIN set_realm ordinal=${ordinal}`);
+        const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk`) as Turn;
+        const text = everythingSaid(turn);
+
+        expect(text).not.toMatch(/puts you out/);
+        expect(text).toMatch(/sent for|asked to leave/);
+        expect(harness.game.currentRun().cultivator.location).toBe(placeName);
+        // Seen is still seen: the row is on the ledger either way.
+        expect(ledgerAbout(harness.db, me.id).some(row => row.tags.includes('trespassed'))).toBe(true);
     }, 180_000);
 });

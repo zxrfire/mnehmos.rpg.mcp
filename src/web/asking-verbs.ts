@@ -151,6 +151,7 @@ import { materialBeingCarriedBy, materialInThePouch } from './what-is-on-the-ben
 import { askingSomebodyToMakeYouSomething } from '../engine/social-leverage/index.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
 import { FLAG_LAST_ADDRESSED, FLAG_MASTER } from './flag-keys.js';
+import { howCloseTheyStandToTheirWall } from './standing-guard.js';
 import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
 import { DEFAULT_CULTIVATION_DAYS } from './verb-day-costs.js';
 import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
@@ -1306,10 +1307,17 @@ ${unnamed}`;
                 place: placeName(cultivator),
                 theirMaster: masterId === party.id,
                 cannotPutDown: busy && this.atHand
-                    ? whatThatLooksLike(busy, busy.withIds
+                    ? whatThatLooksLike(busy.doing, busy.doing.withIds
                         .map(id => this.atHand!.npcs.find(row => row.id === id)?.name)
                         .filter((name): name is string => !!name))
                     : null,
+                freeInDays: busy?.freeInDays ?? null,
+                // AT THEIR OWN WALL: the years the next rung asks of them are
+                // gathered and the strike is theirs to make. The world's own
+                // arithmetic, through the one construction a turn has of it.
+                atTheirWall: theirRow && this.atHand
+                    ? howCloseTheyStandToTheirWall(this.atHand, theirRow, ambient, today).ready
+                    : false,
                 alreadyTeaching: theirRow
                     ? whoTheyAreTeaching(theirRow, today).filter(id => id !== cultivator.id).length
                     : 0
@@ -1371,30 +1379,15 @@ ${unnamed}`;
 
         // ── ATTENTION NOBODY HAS TO BE ASKED FOR ─────────────────────────
         //
-        // Two ways past the roll, and both are facts rather than exceptions:
-        // somebody already teaching the room you are standing in is heard by
-        // sitting down, and a master who took you on watches you sit as a matter
-        // of course. Everybody else is the ordinary request below.
-        if (shape === 'guidance' && attention && !weighing) {
-            if (theirRow && isTeachingToday(theirRow, today)
-                && !whoTheyAreTeaching(theirRow, today).includes(cultivator.id)) {
-                return this.sitInOn(run, cultivator, ambient, party.name, term, rawInput);
-            }
-            if (attention.theirMaster) {
-                const span = await this.aSpanUnderTheirEye(
-                    run, cultivator, ambient, { id: party.id, name: party.name }, term,
-                    `${party.name} took ${cultivator.name} on and watched them sit without being `
-                    + 'asked twice'
-                );
-                span.facts.lines.unshift(...costing.lines);
-                span.calls.push(...costing.structure.map(line => ({
-                    name: 'engine.priceTheAsk',
-                    action: 'request' as ActionName,
-                    summary: line,
-                    ok: true
-                })));
-                return span;
-            }
+        // Somebody already teaching the room you are standing in is heard by
+        // sitting down. Everybody else, a master included, is the ordinary
+        // request below: the design owner ruled that a master may not say yes,
+        // and what makes a master's yes likelier is the tie the resolver
+        // already weighs, not a branch here.
+        if (shape === 'guidance' && attention && !weighing
+            && theirRow && isTeachingToday(theirRow, today)
+            && !whoTheyAreTeaching(theirRow, today).includes(cultivator.id)) {
+            return this.sitInOn(run, cultivator, ambient, party.name, term, rawInput);
         }
 
         const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;

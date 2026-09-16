@@ -109,7 +109,7 @@ import { STEP_CEILING_BY_GRADE } from '../engine/cultivation/taking-the-heaven-a
 import { pillTradeTier } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { isCommonlyHeld, manualIdOf, significanceOfManual } from '../engine/world/manuals.js';
 import { significanceOfPill } from '../engine/world/where-the-pills-actually-are.js';
-import type { ObjectRecord } from '../engine/world/possessions.js';
+import { isRuined, type ObjectRecord } from '../engine/world/possessions.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { OnTheTable } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import type { ATrackedThing } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
@@ -380,6 +380,11 @@ export function heldByTheirHouse(
     return world.objects.find(o =>
         thisRowIs(o, thingId)
         && o.data?.spent !== true
+        // A BOOK READ TO ITS END KEEPS ITS ROW AND ITS OWNER. `ruin` clears the
+        // hand and leaves `ownerId`, so the owner half of this read found a
+        // house's dust and priced it as a book on its shelf. `isRuined` is the
+        // stored answer the world's own shelf reads use.
+        && !isRuined(o)
         && (o.possessorId === factionId || o.ownerId === factionId)) ?? null;
 }
 

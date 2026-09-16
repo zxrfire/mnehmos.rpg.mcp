@@ -757,8 +757,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             for a month", "I cultivate under Elder Hu's guidance for a year", "will you watch me
             run the form"; "days" is how long; the span is spent sitting with the guided rate,
             and it is their attention and not their presence that counts, so a master standing
-            nearby who is not asked teaches nothing; a master who took the player on says yes as
-            a matter of course and anybody else is asked like any favour), discipleship (be
+            nearby who is not asked teaches nothing; anybody, a master included, is asked like
+            any favour and may say no, and somebody at their own practice or at their own wall
+            declines and says when they will be free), discipleship (be
             taken on), introduction (be put in front of somebody), telling (be told something
             they know), a_thing (be given, lent or sold an object), terms (what would it take -
             the price asked before it is paid), a_trade (something put down for it that is not

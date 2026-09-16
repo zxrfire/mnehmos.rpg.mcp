@@ -840,6 +840,10 @@ export interface WhereTheirAttentionIs {
      * somebody standing there, or null. See `whatTheyCannotPutDown`.
      */
     cannotPutDown: string | null;
+    /** Days until what they are in the middle of ends, where it has an end. */
+    freeInDays?: number | null;
+    /** Whether they have gathered what their own next rung asks and are about to strike. */
+    atTheirWall?: boolean;
     /** How many are already in front of them, not counting the asker. */
     alreadyTeaching: number;
 }
@@ -849,10 +853,18 @@ export interface WhereTheirAttentionIs {
  *
  * Three refusals before the resolver, each a fact about the world rather than
  * about the sentence: they are not here, they stand no higher than you, or they
- * are in the middle of something a body cannot put down. An acknowledged master
- * past those says yes as a matter of course - the caller does not roll - and
- * anybody else is `a_real_favour`, their days on yours, which is what
- * `baseWeightOf` says for the kind.
+ * are in the middle of something that faces away from the room. Past those it is
+ * `a_real_favour`, their days on yours, which is what `baseWeightOf` says for the
+ * kind - for an acknowledged master too. The design owner: a master may not say
+ * yes. What makes a master likelier to is the tie the resolver already weighs.
+ *
+ * Being at their own wall is read, through `howCloseTheyStandToTheirWall`.
+ *
+ * TWO REASONS A MASTER MIGHT GIVE THAT ARE NOT READ HERE, because nothing holds
+ * them yet. Having given you time recently: an activity is
+ * put back when it ends and no record of a past one is kept. Being in the
+ * middle of making something you commissioned, or of writing out a copy: a
+ * commission and `applyManualCopying` write no activity on the maker.
  */
 function costOfGuidance(
     asking: TheOneAsking,
@@ -890,13 +902,29 @@ function costOfGuidance(
             + 'and guidanceMultiplier is 1 when the guide is not above the guided.'
         );
     }
+    if (where.atTheirWall === true) {
+        return refusal(
+            `${asked.name} is at their own wall.`,
+            `${asked.name} is at their own wall: they have gathered what the rung above `
+            + `${rankName(asked.ordinal)} asks and are about to strike at it. Somebody that close `
+            + 'to their own crossing has no days to give to yours, and when it is over, one way or the other, the question can be asked '
+            + 'again.',
+            'Refused before the resolver, so no day was spent: readyToStrike reads ready for them, '
+            + 'through howCloseTheyStandToTheirWall.'
+        );
+    }
     if (where.cannotPutDown !== null) {
+        const free = where.freeInDays === null || where.freeInDays === undefined
+            ? 'Nothing says when it ends.'
+            : `It ends in ${where.freeInDays} day${where.freeInDays === 1 ? '' : 's'}, and the same `
+              + 'question can be asked then.';
         return refusal(
             `${asked.name} is in the middle of something.`,
-            `${asked.name} is ${where.cannotPutDown}. That is not a thing a body puts down to watch `
-            + 'somebody else sit, and when it is over the same question can be asked again.',
-            'Refused before the resolver, so no day was spent: their own activity is one they '
-            + 'cannot put down (mending, a fight with a beast, or a party somewhere else).'
+            `${asked.name} is ${where.cannotPutDown}`
+            + `${where.theirMaster ? ', and took you on all the same' : ''}. That is turned away `
+            + `from the room and is not put down to watch somebody sit. ${free}`,
+            'Refused before the resolver, so no day was spent: their own activity is one that faces '
+            + 'away from a room (whetherTheyWouldLookUp is false for it).'
         );
     }
 
@@ -905,40 +933,26 @@ function costOfGuidance(
         ? []
         : [`${asked.name} already has ${others} in front of them. You would be one more, and what `
             + 'each of you gets thins with every one.'];
-    if (where.theirMaster) {
-        return {
-            ask: 'a_real_favour',
-            lines: [
-                `${asked.name} took you on. Watching you sit is what that was for, and they do not `
-                + `need to be asked twice: ${days} of their attention, spent on you and not on their `
-                + 'own practice.',
-                ...crowd
-            ],
-            structure: [
-                `An acknowledged master: FLAG_MASTER names ${asked.id}. They agree as a matter of `
-                + `course, so nothing is rolled and no stones change hands. ${days} asked for.`
-            ],
-            techniqueId: null,
-            refusal: null,
-            askBack: null
-        };
-    }
     return {
         ask: 'a_real_favour',
         lines: [
             `You are asking for ${days} of somebody else's attention on your sitting. What it costs `
             + 'them is their own practice for as long as it lasts.',
             ...crowd,
-            theyWant === null
-                ? `${asked.name} has named no price for it, and has no reason yet to spend their days `
-                  + 'on a stranger.'
-                : `${asked.name} is already after something this cultivator could reach: ${theyWant}. `
-                  + 'That is what there is to trade with.'
+            where.theirMaster
+                ? `${asked.name} took you on, and what stands between the two of you is on the scale `
+                  + 'this is weighed on. A master may still say no.'
+                : theyWant === null
+                    ? `${asked.name} has named no price for it, and has no reason yet to spend their `
+                      + 'days on a stranger.'
+                    : `${asked.name} is already after something this cultivator could reach: `
+                      + `${theyWant}. That is what there is to trade with.`
         ],
         structure: [
             `Being watched is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is priced as `
             + `${theAskInWords('a_real_favour')} - ${days} of the asked person's days, the same `
-            + 'weight asking them along carries. Not their master, so the ordinary resolver decides.'
+            + 'weight asking them along carries. The ordinary resolver decides, for a master too: '
+            + 'the tie between them is one of its terms.'
         ],
         techniqueId: null,
         refusal: null,

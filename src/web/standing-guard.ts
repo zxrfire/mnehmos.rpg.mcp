@@ -72,14 +72,16 @@ import {
 import { rankName, triggersHeavenlyTribulation } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import {
-    guideOrdinalFor,
+    guidanceFor,
     readyToStrike,
+    type Readiness,
     strikeAtTheWall
 } from '../engine/world/an-npc-striking-at-the-next-wall.js';
 import { BOOKLESS_CEILING, reachableCeilingFor } from '../engine/world/manuals.js';
 import { roadsInReachOf } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
 import { groundRateAt } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
-import { markDead } from '../engine/world/npc-state.js';
+import { markDead, type NpcRecord } from '../engine/world/npc-state.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import { recordCrossing } from '../engine/world/recording-what-a-crossing-did.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { createObligation } from '../engine/social/grudges.js';
@@ -144,6 +146,47 @@ const WHY_NOT: Readonly<Record<
         + 'between parties who are not already bound by something older than it, and the tie '
         + 'between you is younger than the arrangement would be.'
 };
+
+/**
+ * Where somebody the world holds stands against their next wall, today, here.
+ *
+ * `readyToStrike` is the world's own arithmetic, asked unchanged; this is the
+ * one construction of the conditions it wants from a turn rather than from the
+ * yearly pass. Read by the watch over a crossing, and by a master asked for
+ * attention - somebody at their own wall has no days to spare for yours.
+ *
+ * THE GUIDE IS ATTENTION, NOT A TIE. `guidanceFor` is what the world's pass
+ * reads: somebody at their own place whose `teaching` activity has them in it,
+ * thinned by the size of that set. This read took `guideOrdinalFor` with no
+ * day and no set size, so a term that had run still counted and a hall lecture
+ * counted as a lesson; the wall a watch is kept over is the one the world's own
+ * pass would strike at, so it asks the same question the same way.
+ */
+export function howCloseTheyStandToTheirWall(
+    world: WorldState,
+    npc: NpcRecord,
+    ambient: AmbientQi,
+    today: number
+): Readiness {
+    const location = npc.locationId === null
+        ? undefined
+        : world.locations.find(row => row.id === npc.locationId);
+    const manualCeiling = reachableCeilingFor(world, npc) || BOOKLESS_CEILING;
+    const byId = new Map(world.npcs.map(row => [row.id, row]));
+    const guidance = guidanceFor(npc, byId, today);
+    return readyToStrike(npc, today, {
+        // The ground they are standing on. `ambient` is the band the turn
+        // already computed for this square, and the rate is the one this
+        // location supplies - today's figure rather than the yearly pass's
+        // average over a chamber allocation, because this is a question about
+        // one place on one day.
+        ambient,
+        rateMultiplier: groundRateAt(location) ?? 1,
+        guideOrdinal: guidance?.ordinal ?? null,
+        guideListeners: guidance?.listeners ?? 1,
+        manualCeiling
+    });
+}
 
 export const guardVerbs = {
     /**
@@ -269,22 +312,7 @@ export const guardVerbs = {
         // unchanged. Almost everybody is refused by it, which is correct and is
         // what makes the answer worth anything: a watch is kept over a crossing
         // and there is no crossing to keep one over most of the time.
-        const location = npc.locationId === null
-            ? undefined
-            : world.locations.find(row => row.id === npc.locationId);
-        const manualCeiling = reachableCeilingFor(world, npc) || BOOKLESS_CEILING;
-        const byId = new Map(world.npcs.map(row => [row.id, row]));
-        const readiness = readyToStrike(npc, today, {
-            // The ground both of them are standing on. `ambient` is the band
-            // the turn already computed for this square, and the rate is the
-            // one this location supplies - today's figure rather than the
-            // yearly pass's average over a chamber allocation, because a watch
-            // is a thing happening in one place on one day.
-            ambient,
-            rateMultiplier: groundRateAt(location) ?? 1,
-            guideOrdinal: guideOrdinalFor(npc, byId),
-            manualCeiling
-        });
+        const readiness = howCloseTheyStandToTheirWall(world, npc, ambient, today);
         if (!readiness.ready) {
             return refused('engine.readyToStrike', 'guard', factsForRefusal(
                 `${npc.name} is not about to cross anything.`,

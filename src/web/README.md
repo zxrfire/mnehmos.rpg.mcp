@@ -829,8 +829,8 @@ Four rules it keeps.
   lift it."* Being taught an art is a span at the teacher's elbow, not an afternoon. An
   introduction writes the third party into the knowledge table. Discipleship writes the
   master (`FLAG_MASTER`), and what `guideFor` reads is not that but somebody's attention - a
-  `teaching` activity with the player in it - which a master gives when asked, as a matter of
-  course. See `a-teacher-giving-you-their-attention.ts`.
+  `teaching` activity with the player in it - which anybody, a master included, may agree or
+  decline to give. See `a-teacher-giving-you-their-attention.ts`.
 - **A refusal names what would work.** Every one, without exception - what this person is
   actually carrying, who teaches it, that a stall sells a copy, that an introduction runs
   along a line somebody is already standing on. "No" is a bug.

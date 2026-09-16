@@ -21,12 +21,7 @@ import { describe, expect, it } from 'vitest';
 
 import { npcsAt } from '../../src/engine/world/world-state';
 import { upsertRelationship } from '../../src/engine/world/npc-state';
-import {
-    guideOrdinalFor,
-    readyToStrike
-} from '../../src/engine/world/an-npc-striking-at-the-next-wall';
-import { BOOKLESS_CEILING, reachableCeilingFor } from '../../src/engine/world/manuals';
-import { groundRateAt } from '../../src/engine/world/the-ground-somebody-is-actually-standing-on';
+import { howCloseTheyStandToTheirWall } from '../../src/web/standing-guard';
 import { TIE_MUST_PREDATE_BY_DAYS } from '../../src/engine/cultivation/standing-guard-over-somebody-elses-crossing';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { worldLocationFor } from '../../src/web/entities';
@@ -62,23 +57,17 @@ async function somebodyAtTheirWall(game: any, standing: number) {
     const here = worldLocationFor(world, whereTheyAre(game));
     if (!here) return null;
     const day = Math.floor(world.currentDay);
-    const byId = new Map(world.npcs.map((n: any) => [n.id, n]));
     const player = game.state().cultivator;
 
     // Readiness is read on the ground they would be standing on, because that
     // is what the verb reads. Somebody ready in a rich chamber is not
     // necessarily ready in this square, and taking their old answer would be
-    // arranging a state the game cannot produce.
-    const conditionsHere = (npc: any) => ({
-        ambient: here.ambient ?? 'normal',
-        rateMultiplier: groundRateAt(here) ?? 1,
-        guideOrdinal: guideOrdinalFor(npc, byId as any),
-        manualCeiling: reachableCeilingFor(world, npc) || BOOKLESS_CEILING
-    });
-
+    // arranging a state the game cannot produce. Through the verb's own read
+    // rather than a copy of its conditions, which is what this used to build.
     for (const candidate of world.npcs) {
         if (candidate.status !== 'alive' || candidate.id === player.id) continue;
-        if (!readyToStrike(candidate, day, conditionsHere(candidate)).ready) continue;
+        const standingHere = { ...candidate, locationId: here.id };
+        if (!howCloseTheyStandToTheirWall(world, standingHere, here.ambient ?? 'normal', day).ready) continue;
 
         // Two preconditions arranged and nothing else: they are standing here,
         // and the two of you go back a long way. The crossing, its odds, the
@@ -96,6 +85,51 @@ async function somebodyAtTheirWall(game: any, standing: number) {
     }
     return null;
 }
+
+/**
+ * THE GUIDE ON A WATCH IS ATTENTION, NOT A TIE.
+ *
+ * `guideOrdinalFor` once meant "the highest living master, wherever they are",
+ * and the watch read it that way. The world's own pass now reads attention -
+ * somebody at the person's own place whose `teaching` activity has them in it,
+ * thinned by the set's size - and the wall a watch is kept over has to be the
+ * wall that pass would strike at. So a master tie with nobody teaching changes
+ * nothing, and a teacher actually at it does.
+ */
+describe('how close somebody stands to their wall, for a watch', () => {
+    it('reads a teacher at it and ignores a master who is not', async () => {
+        const { game } = await makeGameInWorld({ seed: 'guard-guide', worldSeed: 'w-guard-ask' });
+        await game.newRun('Warden');
+        const world = (await game.loadWorld())!;
+        const day = Math.floor(world.currentDay);
+        // Somebody anywhere whose next rung has a price at all - a stretch that
+        // returns nothing has no years to be shortened - and anybody above them,
+        // put where they stand. Where they stand is arranged; both readings are
+        // the verb's own.
+        const student: any = world.npcs.find((n: any) => n.status === 'alive' && n.locationId !== null
+            && Number.isFinite(howCloseTheyStandToTheirWall(world, n, 'normal', day).yearsNeeded));
+        expect(student, 'nobody in this world is climbing at all').toBeDefined();
+        const above: any = world.npcs.find((n: any) => n.status === 'alive'
+            && n.cultivation.realmOrdinal >= student.cultivation.realmOrdinal + 4);
+        expect(above, 'nobody stands well above them').toBeDefined();
+        const master = { ...above, locationId: student.locationId };
+        world.npcs[world.npcs.findIndex((n: any) => n.id === above.id)] = master;
+
+        const alone = howCloseTheyStandToTheirWall(world, student, 'normal', day);
+        const tied = upsertRelationship(student, {
+            targetId: master.id, targetName: master.name, kind: 'master', standing: 0.8, note: 'took them on'
+        }, day - 1);
+        world.npcs[world.npcs.findIndex((n: any) => n.id === student.id)] = tied;
+        expect(howCloseTheyStandToTheirWall(world, tied, 'normal', day).yearsNeeded).toBe(alone.yearsNeeded);
+
+        world.npcs[world.npcs.findIndex((n: any) => n.id === master.id)] = {
+            ...master,
+            activity: { kind: 'teaching', note: 'correcting them', withIds: [student.id], sinceDay: day, untilDay: day + 30 }
+        };
+        const taught = howCloseTheyStandToTheirWall(world, tied, 'normal', day);
+        expect(taught.yearsNeeded).toBeLessThan(alone.yearsNeeded);
+    }, 120_000);
+});
 
 describe('standing guard over somebody else\'s crossing', () => {
     /**

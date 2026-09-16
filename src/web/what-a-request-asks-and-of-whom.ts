@@ -101,8 +101,7 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
             return 'a_courtesy';
         case 'teaching':
         // Their days spent on yours, which is `a_real_favour`'s own definition.
-        // An acknowledged master is not asked through this weight at all: they
-        // agree as a matter of course, and the caller skips the roll.
+        // A master is asked at this weight too; the tie is a term of the roll.
         case 'guidance':
         case 'discipleship':
         case 'a_thing':

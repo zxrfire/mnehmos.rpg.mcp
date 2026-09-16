@@ -22,35 +22,35 @@
  *
  *   1. Presence is not attention: a master beside the player who is not teaching
  *      them is worth nothing on the rate.
- *   2. Asking an acknowledged master writes their attention for the span, the
- *      rate reads it while the span runs, no roll is made, and it ends after.
- *   3. A stranger can agree, through the ordinary request: priced, rolled, and
- *      the asking spends its own days before the span.
+ *   2. A master may say no. Asking one goes through the same roll as asking
+ *      anybody, and what makes them likelier to agree is the tie the resolver
+ *      already weighs: the odds for the same person rise once they have taken
+ *      the player on. A master at their own wall, or turned away at their own
+ *      practice, declines before anything is rolled, and says why and when.
+ *      This used to pin an unrolled yes; the design owner ruled it out.
+ *   3. A yes writes the attention for the span, the rate reads it while the
+ *      span runs, and it ends after. The asking spends its own days first.
  *   4. Being taught an art spends the teacher's attention for
  *      `yearsToWriteOutACopy`, and a lesson cut short leaves nothing.
- *   5. Attention divides: one figure, `ATTENTION_THINS_AS`, and the rate
- *      a listener gets is exactly the share of what a sole student would.
+ *   5. Attention divides by the rate's own rule: `rateTermsFor` hands the rate
+ *      the teacher's rung and the size of the set, and the rate thins it.
  *   6. Somebody already teaching the room is sat in on without asking, and the
  *      set is put back afterwards.
  *   7. A player standing somewhere else hears nothing, and is told where they are.
  *   8. Giving a talk writes the listeners and puts them back.
  *
- * Preconditions are arranged where playing to them would be the flaky part: the
- * master is the row a granted `discipleship` request writes (`FLAG_MASTER`), and
+ * Preconditions are arranged where playing to them would be the flaky part:
  * what somebody is at is their activity row, which the world writes the same way.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeGameInWorld, type Harness } from './harness';
+import { guidanceMultiplier } from '../../src/engine/cultivation/cultivation';
 import { writeFlag } from '../../src/server/consolidated/cultivation-support';
 import { FLAG_MASTER } from '../../src/web/flag-keys';
-import { ATTENTION_THINS_AS, guidanceMultiplier } from '../../src/engine/cultivation/cultivation';
 import { yearsToWriteOutACopy } from '../../src/engine/world/manuals';
-import {
-    shareOfTheirAttention,
-    whatATalkIsWorthToTheHouse,
-    whatTheirAttentionIsWorth
-} from '../../src/web/a-teacher-giving-you-their-attention';
+import { whatATalkIsWorthToTheHouse } from '../../src/web/a-teacher-giving-you-their-attention';
+import { howCloseTheyStandToTheirWall } from '../../src/web/standing-guard';
 import type { Cultivator } from '../../src/schema/cultivation';
 
 const WORLD = 'a-xianxia-run';
@@ -68,19 +68,27 @@ function everythingSaid(turn: Turn): string {
     return [turn.narration, ...turn.toolCalls.map(call => call.summary)].join('\n');
 }
 
-/** Every `guideOrdinal` the rate was handed while a turn ran. */
-function watchTheRate(harness: Harness): (number | null)[] {
+interface Terms { guideOrdinal: number | null; guideListeners: number }
+
+/** Every guide term the rate was handed while a turn ran, as the rung it came from. */
+function watchTheRate(harness: Harness, all?: Terms[]): (number | null)[] {
     const seen: (number | null)[] = [];
-    const game = harness.game as unknown as {
-        rateTermsFor(c: Cultivator): { guideOrdinal: number | null };
-    };
+    const game = harness.game as unknown as { rateTermsFor(c: Cultivator): Terms };
     const original = game.rateTermsFor.bind(game);
     game.rateTermsFor = (c: Cultivator) => {
         const terms = original(c);
         seen.push(terms.guideOrdinal);
+        all?.push(terms);
         return terms;
     };
     return seen;
+}
+
+/** The odds a weighed ask printed, as a fraction. */
+function theOddsOf(turn: Turn): number {
+    const hit = /\((\d+(?:\.\d+)?)%\)/.exec(everythingSaid(turn));
+    expect(hit, `no odds in: ${everythingSaid(turn)}`).not.toBeNull();
+    return Number(hit![1]) / 100;
 }
 
 /** GIVEN a fresh run standing somewhere, fed, and somebody above them here. */
@@ -103,18 +111,23 @@ async function somebodyAboveHere(seed: string) {
         .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
             || (a.id < b.id ? -1 : 1));
     expect(above.length, 'nobody above the player is standing where the run opened').toBeGreaterThan(0);
-    const teacher = above[0]!;
-    const others = world.npcs.filter(npc => here.has(npc.id) && npc.id !== teacher.id
+    const teacher = above[0];
+    const others = world.npcs.filter(npc => here.has(npc.id) && npc.id !== teacher!.id
         && npc.status === 'alive');
     // Put them at something that is not teaching, so the arrangement starts
-    // from a master who is here and is not paying attention.
-    const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+    // from a master who is here and is not paying attention. And NOT AT THEIR
+    // OWN WALL: somebody who has gathered what their next rung asks declines
+    // anybody's ask and strikes at it inside the days an ask spends, which is
+    // its own test below. Their progress clock is started today.
+    const today0 = Math.floor(world.currentDay);
+    const at = world.npcs.findIndex(npc => npc.id === teacher!.id);
     world.npcs[at] = {
-        ...teacher,
+        ...teacher!,
+        cultivation: { ...teacher!.cultivation, accumulatingSinceDay: today0 },
         activity: { kind: 'idle', note: 'looking at nothing', withIds: [], sinceDay: Math.floor(world.currentDay) }
     };
     harness.game.theWorldMoved();
-    return { harness, world, me, teacher: world.npcs[at]!, others };
+    return { harness, world, me, teacher: world.npcs[at]!, others, above };
 }
 
 function theirActivity(world: { npcs: { id: string; activity: unknown }[] }, id: string) {
@@ -122,36 +135,31 @@ function theirActivity(world: { npcs: { id: string; activity: unknown }[] }, id:
         { kind: string; withIds: string[]; untilDay?: number | null } | null;
 }
 
-describe('attention divides, by one figure', () => {
-    it('gives a sole student the whole of it and each of a room a share', () => {
-        expect(shareOfTheirAttention(1)).toBe(1);
-        expect(shareOfTheirAttention(4)).toBeCloseTo(1 / Math.pow(4, ATTENTION_THINS_AS));
-        for (let n = 2; n < 40; n++) {
-            expect(shareOfTheirAttention(n)).toBeLessThan(shareOfTheirAttention(n - 1));
-        }
-    });
-
-    it('is exactly the share of what a sole student would be added, at every gap', () => {
-        for (const gap of [1, 4, 8, 16, 30]) {
-            const alone = guidanceMultiplier(0, whatTheirAttentionIsWorth(0, gap, 1)) - 1;
-            expect(alone).toBeCloseTo(guidanceMultiplier(0, gap) - 1);
-            for (const n of [2, 5, 13]) {
-                const each = guidanceMultiplier(0, whatTheirAttentionIsWorth(0, gap, n)) - 1;
-                expect(each).toBeCloseTo(alone * shareOfTheirAttention(n));
+describe('attention divides, by the rate\'s own rule', () => {
+    it('hands the rate the teacher\'s own rung and the size of the set', async () => {
+        const { harness, world, me, teacher, others } = await somebodyAboveHere('guided-terms');
+        const today = Math.floor(world.currentDay);
+        const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+        world.npcs[at] = {
+            ...world.npcs[at]!,
+            activity: {
+                kind: 'teaching', note: 'a talk', withIds: [me.id, ...others.slice(0, 3).map(o => o.id)],
+                sinceDay: today, untilDay: today + 5
             }
+        };
+        const terms = harness.game.rateTermsFor(harness.game.currentRun().cultivator) as unknown as Terms;
+        expect(terms.guideOrdinal).toBe(teacher.cultivation.realmOrdinal);
+        expect(terms.guideListeners).toBe(1 + Math.min(3, others.length));
+        if (terms.guideListeners > 1) {
+            expect(guidanceMultiplier(me.realmOrdinal, terms.guideOrdinal, terms.guideListeners))
+                .toBeLessThan(guidanceMultiplier(me.realmOrdinal, terms.guideOrdinal, 1));
         }
-    });
-
-    it('is worth nothing from somebody who does not stand above', () => {
-        expect(whatTheirAttentionIsWorth(10, 10, 1)).toBeNull();
-        expect(whatTheirAttentionIsWorth(10, 3, 1)).toBeNull();
-    });
+    }, 120_000);
 });
 
 describe('a master beside you is not a master watching you', () => {
     it('gives guideOrdinal null while they are not teaching the player', async () => {
-        const { harness, me, teacher, others } = await somebodyAboveHere('guided-presence');
-        writeFlag(harness.db, me.id, FLAG_MASTER, `${teacher.id}:${teacher.cultivation.realmOrdinal}`);
+        const { harness, teacher, others } = await somebodyAboveHere('guided-presence');
         expect(harness.game.rateTermsFor(harness.game.currentRun().cultivator).guideOrdinal).toBeNull();
 
         // Teaching somebody ELSE is not attention on the player either.
@@ -171,42 +179,113 @@ describe('a master beside you is not a master watching you', () => {
     }, 120_000);
 });
 
-describe('asking an acknowledged master to watch you sit', () => {
-    for (const said of [
-        (name: string) => `I ask ${name} to guide my cultivation for 10 days`,
-        () => 'I ask my master to guide my cultivation for 10 days'
-    ]) {
-        it(`"${said('<name>')}" writes their attention, and the rate reads it over the span`, async () => {
-            const { harness, me, teacher } = await somebodyAboveHere('guided-master');
-            writeFlag(harness.db, me.id, FLAG_MASTER, `${teacher.id}:${teacher.cultivation.realmOrdinal}`);
-            const before = harness.game.currentRun().run.elapsedDays;
-            const seen = watchTheRate(harness);
+describe('a master may say no', () => {
+    /**
+     * MEASURED, AND IT IS NOT "USUALLY AGREES". On this world and seed the odds
+     * were 2.0% before the player was taken on and 2.0% after: the tie a
+     * granted discipleship leaves is too weak to move an ask a realm or more
+     * upward off the resolver's floor. That is the ordinary resolver's answer
+     * and no special case was written to change it, so this pins only that a
+     * master is asked through the same roll and that being taken on never
+     * makes it LESS likely.
+     */
+    it('is asked through the same roll, and being taken on never makes a yes less likely', async () => {
+        const { harness, teacher } = await somebodyAboveHere('guided-master-odds');
+        const asked = `could I ask ${teacher.name} to guide my cultivation for 10 days`;
+        const asAStranger = theOddsOf(await harness.game.act(asked) as Turn);
 
-            const turn = await harness.game.act(said(teacher.name)) as Turn;
+        // TAKEN ON BY PLAYING, forced because the landing is a roll: the
+        // `discipleship` yes writes `FLAG_MASTER` and the tie the ask leaves.
+        const took = await harness.game.act(
+            `ADMIN request I beg ${teacher.name} to take me as a disciple`
+        ) as Turn;
+        expect(everythingSaid(took)).toMatch(/takes you on/);
 
-            const text = everythingSaid(turn);
-            expect(turn.toolCalls.map(call => call.name), text).toContain('world.theyGiveTheirAttention');
-            // AS A MATTER OF COURSE. Nothing was rolled.
-            expect(turn.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
-            // The span ran, and the rate was handed the teacher while it did.
-            expect(harness.game.currentRun().run.elapsedDays - before).toBeGreaterThan(0);
-            const guided = seen.filter((g): g is number => g !== null);
-            expect(guided.length, 'the rate never saw anybody guiding').toBeGreaterThan(0);
-            expect(Math.max(...guided)).toBeGreaterThan(me.realmOrdinal);
-            // What it cost them is said, as a fact.
-            expect(text).toMatch(/not at their own practice/);
+        const asTheirDisciple = theOddsOf(await harness.game.act(asked) as Turn);
+        expect(asTheirDisciple, `stranger ${asAStranger}, disciple ${asTheirDisciple}`)
+            .toBeGreaterThanOrEqual(asAStranger);
+    }, 180_000);
 
-            // AND IT ENDED. Nobody is watching the player now.
-            const world = (await harness.game.loadWorld())!;
-            expect(theirActivity(world, teacher.id)?.withIds ?? []).not.toContain(me.id);
-            expect(harness.game.rateTermsFor(harness.game.currentRun().cultivator).guideOrdinal)
-                .toBeNull();
-        }, 180_000);
-    }
+    it('writes their attention on a yes, reads it over the span, and ends it after', async () => {
+        const { harness, me, teacher } = await somebodyAboveHere('guided-master');
+        await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
+        const before = harness.game.currentRun().run.elapsedDays;
+        const seen = watchTheRate(harness);
+
+        const turn = await harness.game.act(
+            'ADMIN request I ask my master to guide my cultivation for 10 days'
+        ) as Turn;
+        const text = everythingSaid(turn);
+        const names = turn.toolCalls.map(call => call.name);
+
+        expect(names, text).toContain('engine.resolveAttempt');
+        expect(names, text).toContain('world.theyGiveTheirAttention');
+        expect(harness.game.currentRun().run.elapsedDays - before).toBeGreaterThan(10);
+        expect(seen.some(g => g !== null && g > me.realmOrdinal), 'the rate never saw anybody guiding').toBe(true);
+        expect(text).toMatch(/not at their own practice/);
+
+        const world = (await harness.game.loadWorld())!;
+        expect(theirActivity(world, teacher.id)?.withIds ?? []).not.toContain(me.id);
+        expect(harness.game.rateTermsFor(harness.game.currentRun().cultivator).guideOrdinal).toBeNull();
+    }, 180_000);
+
+    it('declines at their own practice, naming it and when they are free', async () => {
+        const { harness, world, teacher } = await somebodyAboveHere('guided-busy');
+        await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
+        const today = Math.floor(world.currentDay);
+        const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+        world.npcs[at] = {
+            ...world.npcs[at]!,
+            activity: {
+                kind: 'their_practice', note: 'behind a closed door, and not to be interrupted',
+                withIds: [], sinceDay: today, untilDay: today + 40
+            }
+        };
+        harness.game.theWorldMoved();
+        const before = harness.game.currentRun().run.elapsedDays;
+
+        const turn = await harness.game.act('I ask my master to guide my cultivation for 10 days') as Turn;
+        const text = everythingSaid(turn);
+        expect(text).toMatch(/behind a closed door/);
+        expect(text).toMatch(/It ends in 40 days/);
+        expect(turn.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
+        expect(harness.game.currentRun().run.elapsedDays).toBe(before);
+    }, 180_000);
+
+    it('declines at their own wall, and says so', async () => {
+        const { harness, world, me, teacher } = await somebodyAboveHere('guided-wall');
+        // THE MASTER IS THE ROW A GRANTED DISCIPLESHIP WRITES, arranged rather
+        // than played: playing it spends days, and on this seed the person the
+        // world had placed there was gone from the world by the end of them.
+        writeFlag(harness.db, me.id, FLAG_MASTER, `${teacher.id}:${teacher.cultivation.realmOrdinal}`);
+        const today = Math.floor(world.currentDay);
+        // AT THE WALL BY THE WORLD'S OWN ARITHMETIC. Their clocks are arranged
+        // and `readyToStrike` is asked whether that is enough, at the thinnest
+        // band, so it holds at whatever band the turn runs at.
+        const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+        const now = howCloseTheyStandToTheirWall(world, world.npcs[at]!, 'thin', today);
+        expect(Number.isFinite(now.yearsNeeded), 'their next rung has no price to have gathered').toBe(true);
+        world.npcs[at] = {
+            ...world.npcs[at]!,
+            cultivation: {
+                ...world.npcs[at]!.cultivation,
+                lastAdvancedOnDay: today - 1,
+                accumulatingSinceDay: today - Math.ceil(now.yearsNeeded * 365) - 2
+            }
+        };
+        expect(howCloseTheyStandToTheirWall(world, world.npcs[at]!, 'thin', today).ready,
+            'the arrangement did not put them at their wall').toBe(true);
+        harness.game.theWorldMoved();
+        const before = harness.game.currentRun().run.elapsedDays;
+
+        const turn = await harness.game.act('I ask my master to guide my cultivation for 10 days') as Turn;
+        expect(everythingSaid(turn)).toMatch(/at their own wall/);
+        expect(turn.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
+        expect(harness.game.currentRun().run.elapsedDays).toBe(before);
+    }, 180_000);
 
     it('refuses with the fact when they do not stand above the player', async () => {
         const { harness, me, teacher } = await somebodyAboveHere('guided-level');
-        writeFlag(harness.db, me.id, FLAG_MASTER, `${teacher.id}:${teacher.cultivation.realmOrdinal}`);
         harness.db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?')
             .run(teacher.cultivation.realmOrdinal, me.id);
         const before = harness.game.currentRun().run.elapsedDays;
@@ -319,7 +398,8 @@ describe('somebody already teaching the room', () => {
             }
         };
         harness.game.theWorldMoved();
-        const seen = watchTheRate(harness);
+        const terms: Terms[] = [];
+        watchTheRate(harness, terms);
 
         const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk`) as Turn;
         const names = turn.toolCalls.map(call => call.name);
@@ -327,11 +407,12 @@ describe('somebody already teaching the room', () => {
 
         expect(names, text).toContain('world.theyGiveTheirAttention');
         expect(names).not.toContain('engine.resolveAttempt');
-        const guided = seen.filter((g): g is number => g !== null);
+        const guided = terms.filter(t => t.guideOrdinal !== null);
         expect(guided.length, text).toBeGreaterThan(0);
         // Two in front of them, so less than the player alone would get.
-        const alone = whatTheirAttentionIsWorth(me.realmOrdinal, teacher.cultivation.realmOrdinal, 1)!;
-        expect(Math.max(...guided)).toBeLessThan(alone);
+        expect(guided[0]!.guideListeners).toBe(2);
+        expect(guidanceMultiplier(me.realmOrdinal, guided[0]!.guideOrdinal, 2))
+            .toBeLessThan(guidanceMultiplier(me.realmOrdinal, teacher.cultivation.realmOrdinal, 1));
 
         const after = (await harness.game.loadWorld())!;
         expect(theirActivity(after, teacher.id)?.withIds).toEqual([others[0]!.id]);
