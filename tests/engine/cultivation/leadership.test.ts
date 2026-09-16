@@ -57,6 +57,7 @@ import {
     resolveAct,
     resolveErrand,
     rosterByRung,
+    ELDER_POSTS_A_HOUSE_KEEPS,
     shieldedCost,
     standingAfterYears,
     type ActCost,
@@ -216,6 +217,55 @@ describe('a house is a pyramid, which is why authority is worth anything', () =>
         for (let i = 1; i < roster.length; i++) {
             expect(roster[i]).toBeLessThanOrEqual(roster[i - 1]);
         }
+    });
+
+    // ── A LADDER WITH A MIDDLE ───────────────────────────────────────────
+    //
+    // The defect this bounds: the taper was steep enough that rung 3 of a
+    // seven-rung ladder got its first occupant at a roll of 26 and rung 5 at
+    // 162, while a house holds about fifteen people. Measured at world open
+    // over five seeds, 298 of 1225 rank slots stood empty and they were rungs
+    // 2 to 5 - 60 of 245 in one world - with 45 of 110 ELDER slots among them.
+    // AGENTS.md, "And the shape is a slice, not a triangle", is the ruling.
+
+    /** What a house is worth modelling, per `A_ROLL_A_PLAYER_COULD_KNOW`. */
+    const A_ROLL_A_HOUSE_ACTUALLY_HOLDS = 15;
+
+    it('leaves nobody\'s rung empty at the roll a house actually holds', () => {
+        for (const sect of SECTS) {
+            const roster = rosterByRung(A_ROLL_A_HOUSE_ACTUALLY_HOLDS, sect.ranks.length);
+            expect(roster.reduce((a, b) => a + b, 0), sect.id).toBe(A_ROLL_A_HOUSE_ACTUALLY_HOLDS);
+            for (let rung = 0; rung < sect.ranks.length; rung++) {
+                expect(roster[rung], `${sect.id} ${sect.ranks[rung]}`).toBeGreaterThanOrEqual(1);
+            }
+        }
+    });
+
+    it('keeps the posts singular however large the house gets', () => {
+        // A post is a chair somebody sits in, not the top slice of a
+        // population, so it does not grow with the house. The bands take
+        // everybody else - which is what makes a house bottom-heavy.
+        for (const sect of SECTS) {
+            const ladder = sect.ranks.length;
+            const huge = rosterByRung(4_000, ladder);
+            expect(huge[ladder - 1], sect.id).toBe(1);
+            const grandRung = ladder - 2;
+            if (grandRung > elderRungOf(ladder)) expect(huge[grandRung], sect.id).toBe(1);
+            expect(huge[elderRungOf(ladder)], sect.id).toBeLessThanOrEqual(ELDER_POSTS_A_HOUSE_KEEPS);
+            // And the bulk is still at the bottom rather than spread evenly.
+            expect(huge[0], sect.id).toBeGreaterThan(huge[1] ?? 0);
+        }
+    });
+
+    it('fills the bands before the posts when a house cannot staff both', () => {
+        // A house of four in a seven-rung ladder is a house that cannot staff
+        // its ladder, which is a real outcome rather than a rounding error. It
+        // keeps its head and stands the rest at the bottom, and no post is
+        // invented over an empty house.
+        const small = rosterByRung(4, 7);
+        expect(small.reduce((a, b) => a + b, 0)).toBe(4);
+        expect(small[6]).toBe(1);
+        expect(small.slice(0, 4)).toEqual([1, 1, 1, 0]);
     });
 
     it('gives a more senior rung more hands to call on', () => {

@@ -273,15 +273,32 @@ describe('the seeded world, read off the register', () => {
     it('leaves the world root histogram on the table it always had', () => {
         // THE REVERSE FAILURE. Conditioning placed people must not tilt the
         // world's roots toward whatever the big houses teach.
-        const derived = state.npcs.filter(n =>
-            n.status === 'alive' && !n.tags.some(t => t.startsWith('catalog:')));
-        expect(derived.length).toBeGreaterThan(200);
+        //
+        // POOLED OVER THREE WORLDS, and the pooling is the assertion rather
+        // than a convenience. On one world of ~640 derived people a single root
+        // is 6 or 7 people wide at this tolerance, so the figure it reports is
+        // mostly weather: `root-read` alone put `dual_metal_wood` at 0.0400
+        // against a bound of 0.04 while the same run's other seeds sat at 0.019
+        // to 0.028, and one person either way decided whether it passed. It
+        // went over - 0.04001 - when `rosterByRung` stopped emptying the middle
+        // of the ladder, because a raised person's root is drawn against the
+        // RUNG they stand on and those people now stand higher. The tilt that
+        // test is for is a tilt in the world, so the world is what it now
+        // measures: pooled, n≈1944, the worst root sits at 0.0153.
+        const worlds = [state, ...['root-read-b', 'root-read-c']
+            .map(seed => seedWorld({ seed, catalog }).state)];
         const tally = new Map<SpiritRootKey, number>();
-        for (const n of derived) {
-            tally.set(n.cultivation.spiritRoot, (tally.get(n.cultivation.spiritRoot) ?? 0) + 1);
+        let people = 0;
+        for (const world of worlds) {
+            for (const n of world.npcs) {
+                if (n.status !== 'alive' || n.tags.some(t => t.startsWith('catalog:'))) continue;
+                tally.set(n.cultivation.spiritRoot, (tally.get(n.cultivation.spiritRoot) ?? 0) + 1);
+                people++;
+            }
         }
+        expect(people).toBeGreaterThan(600);
         for (const root of SPIRIT_ROOTS) {
-            const share = (tally.get(root.key) ?? 0) / derived.length;
+            const share = (tally.get(root.key) ?? 0) / people;
             expect(Math.abs(share - rootProbability(root.key))).toBeLessThan(0.04);
         }
     });

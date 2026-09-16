@@ -22,9 +22,11 @@
  *     houses under 5                3-4    ->  0
  *     houses at 10-20               9-13   ->  30-33
  *   distinct realms on a roll, MED  6-7    ->  9
- *   rank rungs with nobody on them  60/245 -> 60/245, UNCHANGED, and the
- *                                   empty ones are rungs 2-5. See the note
- *                                   at the foot of this file.
+ *   rank rungs with nobody on them  60/245 -> 60/245, UNCHANGED by the roll,
+ *                                   and the empty ones were rungs 2-5. Closed
+ *                                   since, by the posts/bands split in
+ *                                   `rosterByRung`: 2/245 at world open. See
+ *                                   the note at the foot of this file.
  *   power_ordinal moved             0 houses of 38, every seed
  *
  * Run: npx tsx scripts/probe-how-many-people-a-house-is-worth-modelling.ts
@@ -174,3 +176,22 @@ void main();
 // many there are, and it would move who is an elder in every house in the
 // world - which reaches the sending pass, the gate, and who may order whom. It
 // is deliberately NOT done here.
+//
+// ── IT HAS SINCE BEEN CLOSED, AND IT WAS NOT THE CURVE ───────────────────
+//
+// `rosterByRung` was tapering a POST the way it tapers a band. A rank ladder
+// holds both: bands, where a taper is right, and posts - the elder's chair, the
+// grand elder, the head - which are chairs somebody sits in and do not grow
+// with the house. `sects.ts` already said so in its own header, and said
+// `elderRungOf` is the authority on where the posts start and that nothing
+// should re-derive it from a fraction. The taper was the fraction.
+//
+// Same five seeds, same rolls, world open: rank rungs with nobody on them
+// 60/245 -> 2/245, and the ELDER rungs among them 45/110 empty -> 1. Nobody's
+// `power_ordinal` moved and nobody's place in the standing order moved. What it
+// cost, and it is the only thing it cost: four or five catalog figures a world
+// stand one rung lower inside the elder tier, because the grand elder's seat is
+// one spot and somebody stronger now stands in it.
+//
+// `probe-whether-a-house-has-a-middle.ts` is the measurement, and it carries
+// the decay at 25 and 100 years as well.

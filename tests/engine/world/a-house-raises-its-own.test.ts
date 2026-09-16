@@ -37,13 +37,19 @@
  * errand the design owner called ordinary.
  *
  * WHAT DID NOT MOVE, said because it would otherwise read as a claim: the RANK
- * rungs. 60 of 245 stand empty before and after, and they are rungs 2 to 5.
- * That is `rosterByRung`'s taper rather than the roll - rung 3 of a seven-rung
- * ladder gets its first seat at a roll of 26 and rung 5 at 162, so no roll a
- * player could hold in their head reaches them. The REALM ladder is the half
- * that filled. Nor does this reach the gate at a century: by then most houses
- * have nobody at the seat because of town postings never recalled, which
+ * rungs. 60 of 245 stood empty before and after this pass, and they were rungs
+ * 2 to 5. That was `rosterByRung`'s taper rather than the roll - rung 3 of a
+ * seven-rung ladder got its first seat at a roll of 26 and rung 5 at 162, so no
+ * roll a player could hold in their head reached them. The REALM ladder is the
+ * half this pass filled. Nor does it reach the gate at a century: by then most
+ * houses have nobody at the seat because of town postings never recalled, which
  * `a-house-keeps-somebody-at-its-own-gate` already recorded.
+ *
+ * THE RUNGS HAVE SINCE FILLED, and not from here: `rosterByRung` stopped
+ * tapering a POST the way it tapers a band. Same five seeds, same rolls,
+ * measured at world open: 60 of 245 empty -> 2 of 245, and 45 of 110 empty
+ * ELDER slots -> 1. The roll is untouched by that change, which is the point
+ * of recording both numbers in one place.
  *
  * THE SPREAD IS THE RESULT, not the median. A world where every house holds
  * fifteen would be worse than one that runs thin, so the assertions below bound
