@@ -9,7 +9,7 @@ import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
 import { DiceEngine } from '../../math/dice.js';
-import type { Technique } from '../../schema/cultivation.js';
+import type { Cultivator, Run, Technique } from '../../schema/cultivation.js';
 import {
     DAYS_PER_YEAR,
     conflictsWithRoot,
@@ -399,19 +399,23 @@ export async function handleListAvailable(
     };
 }
 
-export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<object> {
-    const repos = ensureCultivationDb();
-    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
-    if (isGuidingErrorBody(resolved)) return resolved;
-
-    const { run, cultivator } = resolved;
-    const technique = getTechnique(args.techniqueId);
-    if (!technique) {
-        return guidingError('unknown_technique', `No art with id ${args.techniqueId} exists.`, {
-            hint: 'technique_manage({ action: "list_available" }) lists what this cultivator can reach.'
-        });
-    }
-
+/**
+ * Why this art cannot go into this cultivator, or null when nothing stands in the way.
+ *
+ * Every gate `handleLearn` holds before it writes anything, lifted out whole so
+ * that a span spent being taught by a person can ask BEFORE the months are spent
+ * rather than after them. A lesson that ends with the student told the art was
+ * above their rung all along has spent a season on a refusal the engine could
+ * have given on the first day. `handleLearn` still asks this first, so there is
+ * one list of gates and not two.
+ */
+export function whyThisArtWillNotGoIn(
+    repos: CultivationRepos,
+    run: Run,
+    cultivator: Cultivator,
+    technique: Technique,
+    provenance: z.infer<typeof LearnSchema>['provenance']
+): object | null {
     if (repos.techniques.knows(cultivator.id, technique.id)) {
         return guidingError('already_known', `${cultivator.name} already knows ${technique.name}.`, {
             hint: 'Use practise to raise mastery.'
@@ -467,7 +471,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
     const asAGuest = aGuestIsTaughtThis(
         repos.db, cultivator.id, cultivator.realmOrdinal, technique.id
     );
-    if (!isCommonlyHeld(technique.id) && args.provenance === undefined && !asAGuest) {
+    if (!isCommonlyHeld(technique.id) && provenance === undefined && !asAGuest) {
         const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
         if (!house?.teaches.includes(technique.id)) {
             // A refusal names what would work, and where the player is already
@@ -525,7 +529,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
     // stall carries is learned by being shown it, which is what
     // `transmissionModeOf` has always said about anything `taught`.
     if (isSoldAtAStall(technique.id)
-        && args.provenance === undefined
+        && provenance === undefined
         && !asAGuest
         && !holdsACopyOf(repos.db, cultivator.id, technique.id)) {
         const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
@@ -580,6 +584,26 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
             }
         );
     }
+    return null;
+}
+
+export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const technique = getTechnique(args.techniqueId);
+    if (!technique) {
+        return guidingError('unknown_technique', `No art with id ${args.techniqueId} exists.`, {
+            hint: 'technique_manage({ action: "list_available" }) lists what this cultivator can reach.'
+        });
+    }
+
+    // THE GATES, asked once and in one place. See `whyThisArtWillNotGoIn`.
+    const refusedAtTheGate = whyThisArtWillNotGoIn(repos, run, cultivator, technique, args.provenance);
+    if (refusedAtTheGate) return refusedAtTheGate;
+    const root = getSpiritRoot(cultivator.spiritRoot);
 
     const conflicts =
         technique.element !== null && conflictsWithRoot(root, technique.element);

@@ -45,6 +45,16 @@
  * answer is the world's opinion of the act.
  *
  * ═════════════════════════════════════════════════════════════════════════
+ * AND SOMEBODY WHO IS NOT ONE OF ITS OWN
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * The same ladder, the same index, the same three numbers. What differs is what
+ * each rung needs - see `WHAT_A_SENTENCE_NEEDS` - and whether the house has
+ * anybody who can hold the person at all, which a stranger standing above
+ * everybody the house could send is the answer to. The file keeps its name
+ * because the ladder is the house's; the person on it need not be.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
  * INTERCESSION IS THE SAME SHAPE ONE STEP FURTHER
  * ═════════════════════════════════════════════════════════════════════════
  *
@@ -199,6 +209,70 @@ export interface WhatWasBrought {
      */
     theHouseGaveThemSomething?: boolean;
     intercession?: AnIntercession | null;
+    /**
+     * Whether they are one of the house's own. Absent reads as yes, which is
+     * every caller this file was written for. See {@link WHAT_A_SENTENCE_NEEDS}
+     * for what changes when they are not.
+     */
+    oneOfTheirOwn?: boolean;
+    /**
+     * Who would have to lay hands on them, as the strongest rung among them, and
+     * the rung of the person being sentenced. Absent means nobody asked, which
+     * is every member case: a house's own people are inside its walls and under
+     * its hand. Null `strongest` is a house with nobody to send at all.
+     */
+    hands?: { strongest: number | null; theirs: number };
+}
+
+/**
+ * What each sentence needs before a house can hand it down, and nothing else.
+ *
+ * NOT A SECOND LADDER. The design owner: an intruder is obviously treated
+ * differently from a disciple who broke a rule, and how strong the intruder is
+ * matters too. The difference is not a table of what strangers get; it is what
+ * each rung on the ONE ladder requires, read off what the rung is:
+ *
+ *   something given   you cannot take back what you never gave. A stranger was
+ *                     given nothing, so that rung falls to the one below, which
+ *                     is the rule this file already had for members.
+ *   a place on the    the contribution half of a fine is a figure in the
+ *   roll              house's own book, and a stranger has no line in it. What
+ *                     is left of a fine for them is the stones, off their person.
+ *   hands             everything carried out ON a person - the stones off a
+ *                     stranger, what was given taken back, a seal, a crippling,
+ *                     a death - needs somebody to hold them while it is done.
+ *                     `WHO_CARRIES_IT_OUT` already says four of these have
+ *                     somebody sent; a stranger's fine joins them because there
+ *                     is no book to move it in.
+ *
+ * A rebuke needs nothing: it is a row the house holds, and a house can hold a
+ * row about anybody.
+ */
+export const WHAT_A_SENTENCE_NEEDS: Readonly<Record<Sentence, {
+    somethingGiven: boolean;
+    handsOnAMember: boolean;
+    handsOnAStranger: boolean;
+}>> = Object.freeze({
+    'no case': { somethingGiven: false, handsOnAMember: false, handsOnAStranger: false },
+    'a rebuke': { somethingGiven: false, handsOnAMember: false, handsOnAStranger: false },
+    'a fine': { somethingGiven: false, handsOnAMember: false, handsOnAStranger: true },
+    'what the house gave is taken back': { somethingGiven: true, handsOnAMember: true, handsOnAStranger: true },
+    'years sealed and held': { somethingGiven: false, handsOnAMember: true, handsOnAStranger: true },
+    'the capability taken': { somethingGiven: false, handsOnAMember: true, handsOnAStranger: true },
+    death: { somethingGiven: false, handsOnAMember: true, handsOnAStranger: true }
+});
+
+/**
+ * Whether the house has anybody who could actually hold them.
+ *
+ * Somebody standing above everybody who would come is not arrested. A house can
+ * only sentence a body it can hold, and what is left when it cannot is whatever
+ * a confrontation achieves - which is the ordinary fight or standoff, and never a
+ * sentence handed down as though they had been held.
+ */
+export function theyCanBeHeld(hands: WhatWasBrought['hands']): boolean {
+    if (!hands) return true;
+    return hands.strongest !== null && hands.strongest >= hands.theirs;
 }
 
 export interface TheSentence {
@@ -208,6 +282,12 @@ export interface TheSentence {
     word: HowTheWordLanded;
     /** Where the sentence is carried out. See {@link WHO_CARRIES_IT_OUT}. */
     carriedOutBy: string;
+    /**
+     * True where the room would have gone further and nobody the house could
+     * send stands high enough to hold them. The sentence is then only what needs
+     * no hands, and anything more is a confrontation rather than a sentence.
+     */
+    nobodyCanHoldThem: boolean;
     /** Engine truth, one line, for the mechanical channel. Never narration. */
     line: string;
 }
@@ -225,6 +305,7 @@ export function whatTheRoomDecides(brought: WhatWasBrought): TheSentence {
         beforeAnybodySpoke: 'no case',
         word: 'none offered',
         carriedOutBy: WHO_CARRIES_IT_OUT['no case'],
+        nobodyCanHoldThem: false,
         line
     });
 
@@ -245,28 +326,48 @@ export function whatTheRoomDecides(brought: WhatWasBrought): TheSentence {
     let at = Math.min(SENTENCES_IN_ORDER.length - 1, Math.max(1, reached));
     // Nothing was ever given, so there is nothing to take back. The rung below
     // is what the room can actually do, and it does that instead.
-    if (SENTENCES_IN_ORDER[at] === 'what the house gave is taken back'
+    if (WHAT_A_SENTENCE_NEEDS[SENTENCES_IN_ORDER[at]].somethingGiven
         && brought.theHouseGaveThemSomething !== true) {
         at -= 1;
     }
     const beforeAnybodySpoke = SENTENCES_IN_ORDER[at];
 
     const word = howTheWordLanded(brought);
-    const sentence = word === 'it moved one rung'
+    let sentence = word === 'it moved one rung'
         ? SENTENCES_IN_ORDER[Math.max(1, at - 1)]
         : beforeAnybodySpoke;
+
+    // AND WHETHER ANYBODY CAN HOLD THEM. Down the ladder to the heaviest rung
+    // that needs no hands, which is never lower than a rebuke.
+    const stranger = brought.oneOfTheirOwn === false;
+    const needsHands = (s: Sentence): boolean => stranger
+        ? WHAT_A_SENTENCE_NEEDS[s].handsOnAStranger
+        : WHAT_A_SENTENCE_NEEDS[s].handsOnAMember;
+    const held = theyCanBeHeld(brought.hands);
+    const wouldHaveBeen = sentence;
+    if (!held) {
+        let i = SENTENCES_IN_ORDER.indexOf(sentence);
+        while (i > 1 && needsHands(SENTENCES_IN_ORDER[i])) i -= 1;
+        sentence = SENTENCES_IN_ORDER[i];
+    }
+    const nobodyCanHoldThem = sentence !== wouldHaveBeen;
 
     return {
         sentence,
         beforeAnybodySpoke,
         word,
         carriedOutBy: WHO_CARRIES_IT_OUT[sentence],
+        nobodyCanHoldThem,
         line:
             `The room reads it as ${SEVERITY_IN_WORDS[brought.severity]}. `
             + (sentence === beforeAnybodySpoke
                 ? `It settles on ${sentence}.`
-                : `It would have been ${beforeAnybodySpoke}; somebody spoke for them, and it `
-                  + `is ${sentence}.`)
+                : nobodyCanHoldThem
+                    ? `It would have been ${wouldHaveBeen}, and nobody the house could send `
+                      + `stands high enough to hold them; what is left is ${sentence}, and `
+                      + 'anything more is a confrontation rather than a sentence.'
+                    : `It would have been ${beforeAnybodySpoke}; somebody spoke for them, and it `
+                      + `is ${sentence}.`)
     };
 }
 

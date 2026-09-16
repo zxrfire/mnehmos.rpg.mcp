@@ -243,17 +243,37 @@ export const GUIDANCE_MAX_BONUS = 0.5;
 export const GUIDANCE_FULL_GAP = 8;
 
 /**
- * What being guided by somebody at `guideOrdinal` is worth at `realmOrdinal`.
+ * How attention thins across the set it is given to.
+ *
+ * A master with one disciple, a master with several, and a hall lecture are
+ * one mechanic: attention given to a set. Each listener's share of the bonus
+ * is divided by the set's size raised to this. At one it would be divided
+ * evenly, and a lecture would reach many people for no more in total than one
+ * lesson - which is not what a lecture is for. At a half, a hall of sixteen
+ * gives each listener a quarter of a lesson and four lessons' worth between
+ * them: cheaper per head, worth less to each, and reaching many.
+ */
+export const ATTENTION_THINS_AS = 0.5;
+
+/** The part of a sole student's guidance each of `listeners` people gets. */
+export function shareOfAttention(listeners: number): number {
+    return 1 / Math.pow(Math.max(1, Math.floor(listeners)), ATTENTION_THINS_AS);
+}
+
+/**
+ * What being guided by somebody at `guideOrdinal` is worth at `realmOrdinal`,
+ * as one of `listeners` people that attention is being given to.
  */
 export function guidanceMultiplier(
     realmOrdinal: number,
-    guideOrdinal?: number | null
+    guideOrdinal?: number | null,
+    listeners: number = 1
 ): number {
     if (guideOrdinal === null || guideOrdinal === undefined) return 1;
     if (!Number.isFinite(guideOrdinal)) return 1;
     const gap = guideOrdinal - realmOrdinal;
     if (gap <= 0) return 1;
-    return 1 + GUIDANCE_MAX_BONUS * Math.min(1, gap / GUIDANCE_FULL_GAP);
+    return 1 + GUIDANCE_MAX_BONUS * Math.min(1, gap / GUIDANCE_FULL_GAP) * shareOfAttention(listeners);
 }
 
 /**
@@ -718,6 +738,8 @@ export interface CultivationOptions {
      * or below you teaches you nothing about where you are standing.
      */
     guideOrdinal?: number | null;
+    /** How many people that guide's attention is spread across. One when omitted. */
+    guideListeners?: number | null;
     /**
      * Multiplier from somebody practising the SAME art beside them.
      */
@@ -733,7 +755,7 @@ const DEFAULT_OPTIONS: Required<
     Omit<
         CultivationOptions,
         'techniqueElement' | 'techniqueSubject' | 'techniqueCap' | 'techniqueSpan'
-        | 'techniqueQuality' | 'guideOrdinal' | 'ground' | 'sharedPracticeBonus'
+        | 'techniqueQuality' | 'guideOrdinal' | 'guideListeners' | 'ground' | 'sharedPracticeBonus'
     >
 > = {
     techniqueBonus: 1,
@@ -906,7 +928,7 @@ export function computeCultivationRate(
             label: opts.guideOrdinal === null || opts.guideOrdinal === undefined
                 ? 'No one guiding'
                 : `Guided from ${rankName(opts.guideOrdinal)}`,
-            multiplier: guidanceMultiplier(ordinal, opts.guideOrdinal)
+            multiplier: guidanceMultiplier(ordinal, opts.guideOrdinal, opts.guideListeners ?? 1)
         },
         {
             // Soft, and the reason territory is worth fighting over. Everyone

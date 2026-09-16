@@ -826,8 +826,11 @@ Four rules it keeps.
   it was written and nothing had ever passed it. Being taught still meets the manual's own
   entry requirement, which is `manuals.md`'s second gate: *"rank says what the house will give
   you; the manual's own entry requirement says what you can open, and being favoured does not
-  lift it."* An introduction writes the third party into the knowledge table. Discipleship
-  writes a master that `guideFor` reads on every cultivation span.
+  lift it."* Being taught an art is a span at the teacher's elbow, not an afternoon. An
+  introduction writes the third party into the knowledge table. Discipleship writes the
+  master (`FLAG_MASTER`), and what `guideFor` reads is not that but somebody's attention - a
+  `teaching` activity with the player in it - which a master gives when asked, as a matter of
+  course. See `a-teacher-giving-you-their-attention.ts`.
 - **A refusal names what would work.** Every one, without exception - what this person is
   actually carrying, who teaches it, that a stall sells a copy, that an introduction runs
   along a line somebody is already standing on. "No" is a bug.

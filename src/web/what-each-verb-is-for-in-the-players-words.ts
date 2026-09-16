@@ -128,6 +128,7 @@ export interface VerbSurfaceEntry {
  */
 const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     teaching: true,
+    guidance: true,
     discipleship: true,
     introduction: true,
     telling: true,
@@ -413,8 +414,19 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             player plainly asked to learn something.`
     },
     teach: {
-        takes: ['target', 'topic'],
-        says: `HAND AN ART ON TO SOMEBODY ELSE - the speaker doing the teaching, which is the
+        takes: ['target', 'topic', 'intent', 'days'],
+        // `TEACH_INTENTS`, spelled out because the document generator reads
+        // this file as text. The not-stale test holds the two together.
+        intents: ['listen', 'lecture'],
+        says: `SOMEBODY'S ATTENTION ON THE PEOPLE IN FRONT OF THEM, from either end of the room.
+            "intent" is "listen" to sit in on whoever is already teaching where the player is
+            standing - "I go and listen to the lecture", "I sit in on Elder Hu's talk" - with
+            "target" naming them when the sentence did; no asking and no price, and what each
+            listener gets thins with how many are listening. "intent" is "lecture" to give a
+            talk to whoever here stands below the speaker - "I give a dao lecture for three
+            days"; "days" is how long, it costs those days, and the listeners who are of the
+            speaker's own house earn the speaker contribution. With no intent it is: HAND AN
+            ART ON TO SOMEBODY ELSE - the speaker doing the teaching, which is the
             opposite direction from learn_technique and from request/teaching. "target" is who
             is being taught and must be somebody standing here; "topic" is which art, and may
             be left out, in which case the engine picks from what this teacher could pass to
@@ -733,13 +745,20 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             about anything other than their own account of who they are, which is interact.`
     },
     request: {
-        // "days" is read by the company kind alone, which is the only ask that
-        // spends the days of the person being asked rather than the asker's.
+        // "days" is read by the two kinds that spend the days of the person being
+        // asked as well as the asker's: company and guidance.
         takes: ['target', 'intent', 'topic', 'days'],
         intents: REQUEST_KINDS,
         says: `ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must
             not be routed there. "target" is who it is put to; "intent" is what kind of thing is
-            being asked for - teaching (be taught an art, or handed its book), discipleship (be
+            being asked for - teaching (be taught an art: it takes the months or years the art
+            is worth at their elbow, and an interrupted lesson leaves nothing), guidance (be
+            watched and corrected while you cultivate - "I ask my master to guide my cultivation
+            for a month", "I cultivate under Elder Hu's guidance for a year", "will you watch me
+            run the form"; "days" is how long; the span is spent sitting with the guided rate,
+            and it is their attention and not their presence that counts, so a master standing
+            nearby who is not asked teaches nothing; a master who took the player on says yes as
+            a matter of course and anybody else is asked like any favour), discipleship (be
             taken on), introduction (be put in front of somebody), telling (be told something
             they know), a_thing (be given, lent or sold an object), terms (what would it take -
             the price asked before it is paid), a_trade (something put down for it that is not

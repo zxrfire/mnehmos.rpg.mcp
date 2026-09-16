@@ -83,6 +83,17 @@ export type Wrong =
      * states: a ninth PHRASING needs no code, a ninth KIND of harm is a row here.
      */
     | 'insulted'
+    /**
+     * Somebody on their ground who had no business being there.
+     *
+     * A kind of its own because the shape is its own: no force, nothing taken,
+     * nothing that cannot be put right by leaving. What the intruder DID while
+     * inside is a different row with its own shape - a thief who came in to
+     * steal is `robbed` as well - so this one stays the lightest thing on the
+     * table. The design owner: somebody wandering in to listen is not a thief or
+     * a spy.
+     */
+    | 'trespassed'
     /** They are dead, and the record has to go somewhere else. */
     | 'killed';
 
@@ -146,6 +157,10 @@ const SHAPE_OF: Readonly<Record<Wrong, TheShapeOfAWrong>> = Object.freeze({
         // out loud, in front of the same people.
         force: false, somethingWasTaken: true, canBeGivenBack: true,
         theySurviveToHoldIt: true, theyMayNeverBeCertain: false, cause: 'humiliation'
+    },
+    trespassed: {
+        force: false, somethingWasTaken: false, canBeGivenBack: true,
+        theySurviveToHoldIt: true, theyMayNeverBeCertain: false, cause: 'other'
     },
     violated: {
         force: true, somethingWasTaken: true, canBeGivenBack: false,
@@ -543,6 +558,7 @@ function whatWasDone(wrong: Wrong): string {
         deceived: 'being lied to',
         interrogated: 'being leaned on for answers',
         insulted: 'being made small in front of people',
+        trespassed: 'somebody inside who had no business there',
         wounded: 'being cut',
         violated: 'what was done to them',
         interfered_with_a_crossing: 'somebody reaching into their crossing',

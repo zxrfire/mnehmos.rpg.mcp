@@ -333,7 +333,11 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     if (topic && TOPIC_ACTIONS.includes(name)) {
         action.topic = topic.toLowerCase().replace(/[^a-z0-9 _-]/g, '').trim().slice(0, 40) || undefined;
     }
-    if (days && name === 'sect') action.days = days;
+    // AND THE TWO THAT READ A SPAN WITHOUT BEING TIMED: how long somebody was
+    // asked to come or to watch, and how long a talk runs. Not in
+    // `TIMED_ACTIONS`, whose default is a month of sitting and would turn every
+    // unspanned ask into one.
+    if (days && (name === 'sect' || name === 'request' || name === 'teach')) action.days = days;
 
     if (reason) action.reason = reason;
 

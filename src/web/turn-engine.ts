@@ -1098,6 +1098,11 @@ import {
 import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 // The other half of being taught, which nothing in the engine could do.
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
+import {
+    attentionVerbs,
+    whatTheirAttentionIsWorth,
+    whoTheyAreTeaching
+} from './a-teacher-giving-you-their-attention.js';
 // The route `acquisition` has always offered and nothing could walk.
 import { derivationVerbs, precedentForTheRoadOf } from './writing-what-comes-next.js';
 import { serviceVerbs } from './doing-somebody-a-service.js';
@@ -3905,7 +3910,10 @@ export class GameService {
         // used - "1000 years was asked for. 84 years is the whole of what is
         // left" - because a player told only that it is too long has been made
         // to guess at a bound the engine already holds.
-        if (action.action === 'cultivate' || action.action === 'seclude') {
+        // A span somebody is asked to watch is a sitting too, and the same body
+        // is doing the sitting.
+        if (action.action === 'cultivate' || action.action === 'seclude'
+            || (action.action === 'request' && action.intent === 'guidance')) {
             const asked = Math.floor(Number(action.days ?? 0));
             const pastTheEnd = asked >= 1
                 ? aSpanPastTheEndOfThisLife(
@@ -4493,6 +4501,15 @@ ${noticedWaiting}`;
                 return this.learnTechnique(cultivator, action.target);
 
             case 'teach':
+                // THE ROOM RATHER THAN ONE PERSON. Sitting in on whoever is
+                // already teaching here, or standing at the front of it - both
+                // the same `teaching` row. See `a-teacher-giving-you-their-attention.ts`.
+                if (action.intent === 'listen') {
+                    return this.sitInOn(run, cultivator, ambient, action.target, action.days, rawInput);
+                }
+                if (action.intent === 'lecture') {
+                    return this.giveATalk(run, cultivator, ambient, action.days);
+                }
                 // The same verb read from the other end. Who is being taught is
                 // `target`, which art is `topic`, and both halves are needed -
                 // see `teach` in TARGETED_ACTIONS.
@@ -16152,10 +16169,27 @@ ${fit.line}`;
         costing: RequestCosting,
         meeting: { id: string; name: string; factionId: string | null; here: boolean } | null,
         /** The term and the destination, for the one ask that has them. */
-        along: { forDays: number; bound: string | null } = { forDays: 0, bound: null }
-    ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
+        along: { forDays: number; bound: string | null } = { forDays: 0, bound: null },
+        ambient: AmbientQi = 'normal'
+    ): Promise<{ lines: string[]; calls: ToolCallRecord[]; span?: Execution | null }> {
         const lines: string[] = [];
         const calls: ToolCallRecord[] = [];
+
+        // ── THEIR ATTENTION, FOR A SPAN ──────────────────────────────────
+        //
+        // What saying yes to `guidance` does, and the one runner every way into
+        // somebody's attention goes through. See
+        // `a-teacher-giving-you-their-attention.ts`.
+        if (kind === 'guidance') {
+            const now = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            const runNow = this.repos.runs.getById(run.id) ?? run;
+            const span = await this.aSpanUnderTheirEye(
+                runNow, now, ambient, { id: party.id, name: party.name },
+                Math.max(1, Math.trunc(along.forDays)),
+                `${party.name} agreed to watch ${cultivator.name} sit`
+            );
+            return { lines, calls, span };
+        }
 
         // ── AND THEY ARE ON THE ROAD WITH YOU ────────────────────────────
         //
@@ -16233,47 +16267,16 @@ ${fit.line}`;
         }
 
         if (kind === 'teaching' && costing.techniqueId) {
-            const art = getTechnique(costing.techniqueId);
-            // THE SECOND GATE. `manuals.md`: rank says what a house will give
-            // you and the manual's own entry requirement says what you can
-            // open, and being favoured does not lift it. So somebody agreeing
-            // to teach you is not the same event as the art going in, and where
-            // it does not go in the reason is `handleLearn`'s own and is stated.
-            const taught = await handleLearn({
-                action: 'learn',
-                techniqueId: costing.techniqueId,
-                cultivatorId: cultivator.id,
-                provenance: 'taught_by_a_person'
-            });
-            if (isGuidingErrorBody(taught)) {
-                lines.push(`They sit down with you, and it does not go in. ${taught.message}`);
-                calls.push({
-                    name: 'technique_manage.learn',
-                    action: 'request',
-                    summary:
-                        `${party.name} agreed and `
-                        + `${art?.name ?? costing.techniqueId} still did not go in: `
-                        + `${taught.message} Two gates, and this is the second one - what a `
-                        + 'person will give you and what you can open are different questions, '
-                        + 'and being favoured does not lift the book\'s own bar.',
-                    ok: false
-                });
-            } else {
-                lines.push(
-                    `${party.name} teaches you ${art?.name ?? 'it'}, and it goes in. It is on you `
-                    + 'now, for as long as you keep climbing on it.'
-                );
-                calls.push({
-                    name: 'technique_manage.learn',
-                    action: 'request',
-                    summary:
-                        `${art?.name ?? costing.techniqueId} is on `
-                        + `${cultivator.name}'s sheet, recorded as having been taught by a `
-                        + 'person rather than bought, found or inherited.',
-                    ok: true
-                });
-            }
-            return { lines, calls };
+            // A SPAN WITH THE TEACHER'S ATTENTION, NOT AN AFTERNOON. This used to
+            // put the art in the moment they said yes. Being walked down an art
+            // takes what the other direction takes, and the two gates are asked
+            // before the months rather than after them - see `anArtFromThem`.
+            const now = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            const runNow = this.repos.runs.getById(run.id) ?? run;
+            const lesson = await this.anArtFromThem(
+                runNow, now, ambient, { id: party.id, name: party.name }, costing.techniqueId
+            );
+            return { lines: lesson.lines, calls: lesson.calls, span: lesson.span };
         }
 
         if (kind === 'introduction' && meeting) {
@@ -16312,7 +16315,8 @@ ${fit.line}`;
                 theirOrdinal > cultivator.realmOrdinal
                     ? `${party.name} takes you on. What that is worth is not a title: somebody who `
                       + 'has stood further up than you can tell you what you are doing wrong '
-                      + 'while you are still doing it, and it shows in the rate from here.'
+                      + 'while you are still doing it, when they are watching. Ask them to watch '
+                      + 'you sit and they will.'
                     : `${party.name} agrees, and it changes nothing about how fast you climb. `
                       + 'Guidance is the gap between the guide and the guided, and there is none.'
             );
@@ -16321,8 +16325,9 @@ ${fit.line}`;
                 action: 'request',
                 summary:
                     `${party.name}, standing at ${theRung(theirOrdinal)}, is recorded as `
-                    + `${cultivator.name}'s master. It is read on every cultivation span from `
-                    + `here, and is worth `
+                    + `${cultivator.name}'s master. It is read when this cultivator asks them for `
+                    + 'guidance, which they then give as a matter of course; the rate reads their '
+                    + 'attention and not the title, and a span under their eye is worth '
                     + `${theirOrdinal > cultivator.realmOrdinal
                         ? 'up to half again on the rate'
                         : 'nothing at all, the guide standing no higher than the guided'}.`,
@@ -16661,13 +16666,17 @@ ${fit.line}`;
         const today = Math.floor(world.currentDay);
         let best: number | null = null;
         for (const npc of npcsAt(world, place.id)) {
-            const doing = npc.activity;
-            if (!doing || doing.kind !== 'teaching') continue;
-            if (!(doing.withIds ?? []).includes(cultivator.id)) continue;
-            if (doing.untilDay !== null && doing.untilDay !== undefined && doing.untilDay < today) continue;
-            const ordinal = npc.cultivation.realmOrdinal;
-            if (ordinal <= cultivator.realmOrdinal) continue;
-            if (best === null || ordinal > best) best = ordinal;
+            const listening = whoTheyAreTeaching(npc, today);
+            if (!listening.includes(cultivator.id)) continue;
+            // AND ATTENTION DIVIDES. A teacher in front of a hall is worth less to
+            // each person in it than the same teacher in front of one, said as
+            // the rung whose whole attention would be worth the same - see
+            // `whatTheirAttentionIsWorth` for the one figure and why.
+            const worth = whatTheirAttentionIsWorth(
+                cultivator.realmOrdinal, npc.cultivation.realmOrdinal, listening.length
+            );
+            if (worth === null) continue;
+            if (best === null || worth > best) best = worth;
         }
         return best;
     }
@@ -19189,8 +19198,9 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, StowVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, DerivationVerbs, ServiceVerbs, ChallengeVerb {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, StowVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, DerivationVerbs, ServiceVerbs, ChallengeVerb, AttentionVerbs {}
 type ChallengeVerb = typeof challengeVerb;
+type AttentionVerbs = typeof attentionVerbs;
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
 type CraftVerbs = typeof craftVerbs;
@@ -19210,4 +19220,4 @@ type GuardVerbs = typeof guardVerbs;
 type TeachingVerbs = typeof teachingVerbs;
 type DerivationVerbs = typeof derivationVerbs;
 type ServiceVerbs = typeof serviceVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, stowVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, derivationVerbs, serviceVerbs, challengeVerb);
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, stowVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, derivationVerbs, serviceVerbs, challengeVerb, attentionVerbs);

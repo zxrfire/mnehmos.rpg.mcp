@@ -150,6 +150,15 @@ import { whatTheyWereAskedToMake } from './what-somebody-was-asked-to-make.js';
 import { materialBeingCarriedBy, materialInThePouch } from './what-is-on-the-bench.js';
 import { askingSomebodyToMakeYouSomething } from '../engine/social-leverage/index.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
+import { FLAG_LAST_ADDRESSED, FLAG_MASTER } from './flag-keys.js';
+import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
+import { DEFAULT_CULTIVATION_DAYS } from './verb-day-costs.js';
+import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import {
+    isTeachingToday,
+    whatTheyCannotPutDown,
+    whoTheyAreTeaching
+} from './a-teacher-giving-you-their-attention.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import {
     type TheOfferHeld,
@@ -213,6 +222,9 @@ function askWeightOf(text: string): AskWeight {
  */
 const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing',
+    // A span of somebody's attention on your sitting. It spends the days of both
+    // people, and what saying yes writes is their `teaching` activity.
+    'guidance',
     // Their days, which is the only ask that spends the days of the person
     // being asked. It goes down the ordinary request road - one costing, one
     // roll, one record - and what it leaves behind is a term written onto their
@@ -1063,7 +1075,19 @@ ${unnamed}`;
         days?: number
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
-        const query = (target ?? '').trim();
+        let query = (target ?? '').trim();
+        // WHOEVER THEY WERE TALKING TO, where the sentence named nobody. "Will
+        // you come with me", "will you watch me run the form": the pattern table
+        // hands these over with no target on the promise that the person is
+        // whoever is being spoken to, and nothing here kept it. The same row the
+        // oath reads for the same reason.
+        if (query.length < 2) {
+            const addressed = readFlag(this.db, cultivator.id, FLAG_LAST_ADDRESSED);
+            const talkingTo = addressed
+                ? this.present(cultivator).find(row => row.id === addressed)
+                : undefined;
+            if (talkingTo) query = talkingTo.name;
+        }
 
         // What was asked for. The plan carries it; the sentence is re-read only
         // where the plan came from a model that gave a label and no shape, and
@@ -1119,7 +1143,22 @@ ${unnamed}`;
         );
         if (ofItself) return ofItself;
 
-        const party = this.partyPutTo(cultivator, query, scope);
+        // "MY MASTER" IS WHOEVER TOOK THEM ON. A description resolves a tie off the
+        // player's world row, and taking somebody on writes `FLAG_MASTER` and no
+        // tie - so the sentence the design owner used, "I ask my master to guide
+        // my cultivation", named nobody. Read only where the ordinary resolver
+        // found nobody, so a tie the world does hold still wins.
+        const master = readFlag(this.db, cultivator.id, FLAG_MASTER);
+        const masterId = master ? master.slice(0, master.lastIndexOf(':')) : null;
+        const masterName = masterId && theDescriptionThisIs(query)?.tie === 'master'
+            ? this.atHand?.npcs.find(row => row.id === masterId)?.name
+                ?? this.repos.cultivators.getById(masterId)?.name
+                ?? null
+            : null;
+        const party = this.partyPutTo(cultivator, query, scope)
+            ?? (masterName
+                ? resolveCultivator(this.repos, masterName, cultivator.id, scope, cultivator.realmOrdinal)
+                : null);
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
 
         // A HOUSE IS NOT A PERSON
@@ -1250,7 +1289,32 @@ ${unnamed}`;
         // on a yes all name the same number.
         const term = shape === 'company'
             ? Math.max(1, Math.trunc(days ?? A_SEASON_ON_THE_ROAD))
-            : 0;
+            // What a bare "I cultivate" spends, so asking to be watched for no
+            // stated span spends what sitting for no stated span does.
+            : shape === 'guidance'
+                ? Math.max(1, Math.trunc(days ?? DEFAULT_CULTIVATION_DAYS))
+                : 0;
+
+        // WHERE THEIR ATTENTION IS, read off their own row. Whether they took
+        // this cultivator on is `FLAG_MASTER`, the one record of that.
+        const theirRow = this.atHand?.npcs.find(row => row.id === party.id) ?? null;
+        const today = Math.floor(this.atHand?.currentDay ?? 0);
+        const busy = theirRow ? whatTheyCannotPutDown(theirRow, cultivator.id, today) : null;
+        const attention = shape === 'guidance'
+            ? {
+                here: this.present(cultivator).some(row => row.id === party.id),
+                place: placeName(cultivator),
+                theirMaster: masterId === party.id,
+                cannotPutDown: busy && this.atHand
+                    ? whatThatLooksLike(busy, busy.withIds
+                        .map(id => this.atHand!.npcs.find(row => row.id === id)?.name)
+                        .filter((name): name is string => !!name))
+                    : null,
+                alreadyTeaching: theirRow
+                    ? whoTheyAreTeaching(theirRow, today).filter(id => id !== cultivator.id).length
+                    : 0
+            }
+            : undefined;
         // THE WORLD'S OWN NAME FOR IT, not the player's. `theWorldsNameFor`
         // hands back what the sentence said where nothing matches, so an
         // unrecognised destination still reads as the player wrote it.
@@ -1259,7 +1323,7 @@ ${unnamed}`;
             : null;
 
         const costing = whatItWouldCostThem({
-            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company',
+            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'guidance',
             asking,
             asked,
             techniqueId: asArt?.id ?? null,
@@ -1272,7 +1336,8 @@ ${unnamed}`;
                     bound,
                     forDays: term
                 }
-                : {})
+                : {}),
+            ...(attention ? { attention, forDays: term } : {})
         });
 
         // THEY ASK BACK, WHICH IS NOT A REFUSAL, AND THE ANSWER HAS SOMEWHERE
@@ -1302,6 +1367,34 @@ ${unnamed}`;
                 costing.refusal.prose,
                 costing.refusal.structure
             ));
+        }
+
+        // ── ATTENTION NOBODY HAS TO BE ASKED FOR ─────────────────────────
+        //
+        // Two ways past the roll, and both are facts rather than exceptions:
+        // somebody already teaching the room you are standing in is heard by
+        // sitting down, and a master who took you on watches you sit as a matter
+        // of course. Everybody else is the ordinary request below.
+        if (shape === 'guidance' && attention && !weighing) {
+            if (theirRow && isTeachingToday(theirRow, today)
+                && !whoTheyAreTeaching(theirRow, today).includes(cultivator.id)) {
+                return this.sitInOn(run, cultivator, ambient, party.name, term, rawInput);
+            }
+            if (attention.theirMaster) {
+                const span = await this.aSpanUnderTheirEye(
+                    run, cultivator, ambient, { id: party.id, name: party.name }, term,
+                    `${party.name} took ${cultivator.name} on and watched them sit without being `
+                    + 'asked twice'
+                );
+                span.facts.lines.unshift(...costing.lines);
+                span.calls.push(...costing.structure.map(line => ({
+                    name: 'engine.priceTheAsk',
+                    action: 'request' as ActionName,
+                    summary: line,
+                    ok: true
+                })));
+                return span;
+            }
         }
 
         const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;
@@ -1591,14 +1684,50 @@ ${alsoSaid.join(' ')}`;
 
         // ── AND THE THING ACTUALLY HAPPENS ───────────────────────────────
         if (result.outcome === 'taken' || result.outcome === 'turned') {
+            // A SPAN DOES NOT BEGIN AFTER THE ASKING DID NOT END. Whatever cut
+            // the asking short - or ended the life doing it - is also what the
+            // lesson would have started in the middle of.
+            const spansDays = shape === 'guidance' || (shape === 'teaching' && costing.techniqueId);
+            const stillHere = this.repos.cultivators.getById(cultivator.id)?.alive ?? false;
+            if (spansDays && (spent.cutShort || !stillHere)) {
+                const line = `${party.name} said yes, and what happened while you were asking came `
+                    + 'first. Nothing of the lesson began.';
+                facts.lines.push(line);
+                facts.prose = `${facts.prose}
+
+${line}`;
+                return execution;
+            }
             const done = await this.whatTheyAgreedTo(
-                run, cultivator, party, shape, costing, meeting, { forDays: term, bound }
+                run, cultivator, party, shape, costing, meeting, { forDays: term, bound }, ambient
             );
             facts.lines.push(...done.lines);
-            facts.prose = `${facts.prose}
+            if (done.lines.length > 0) {
+                facts.prose = `${facts.prose}
 
 ${done.lines.join(' ')}`;
+            }
             execution.calls.push(...done.calls);
+            // AND THE SPAN IT SPENT IS THE TURN'S SPAN. The asking took days of
+            // its own and was already applied; the lesson's skip is the one the
+            // turn reports, and what cut it short is what cut the turn short.
+            if (done.span) {
+                facts.lines.push(...done.span.facts.lines);
+                facts.structure.push(...done.span.facts.structure);
+                if (done.span.facts.prose.length > 0) {
+                    facts.prose = `${facts.prose}
+
+${done.span.facts.prose}`;
+                }
+                if (done.span.facts.required?.length) {
+                    (facts.required ??= []).push(...done.span.facts.required);
+                }
+                execution.events = [...execution.events, ...done.span.events];
+                execution.timeSkip = done.span.timeSkip ?? execution.timeSkip;
+                execution.breakthrough = done.span.breakthrough ?? execution.breakthrough;
+                execution.cutShort = done.span.cutShort ?? execution.cutShort ?? null;
+                execution.calls.push(...done.span.calls);
+            }
         }
 
         return execution;

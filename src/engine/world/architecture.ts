@@ -536,6 +536,17 @@ export type RoomPurpose =
      * taking board work had no counterparty at all.
      */
     | 'mission_hall'
+    /**
+     * Where somebody gives a talk to whoever of the house is inside to hear it.
+     *
+     * The design owner: dao lectures are a common part of the genre, given by
+     * whoever is the most advanced available, and anyone inside may attend. A
+     * lecture here is the ordinary `teaching` activity with everybody in the
+     * room in its `withIds` - see `a-teacher-giving-you-their-attention.ts` - so
+     * the room adds no rule of its own about who may listen. Who can reach it is
+     * the access chain's answer, the same as for every other room.
+     */
+    | 'lecture_hall'
     | 'residence'
     | 'formation_node';
 
@@ -620,6 +631,11 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // room at 0.6, so anything under that APPENDS and moves nothing. Deepening
     // this room past 0.6 would reintroduce that defect exactly.
     mission_hall: { kind: 'hall', depth: 0.3, obviousness: 0.9, qiLift: 0, sealed: false, office: true, capacityPer: 0.25, hazards: [] },
+    // NOT AN OFFICE, so `whoIsInChargeOfWhat` deals exactly what it dealt: see
+    // the note on `mission_hall` above for what adding an office costs. Depth
+    // 0.15 puts it in the outermost precinct beside the practice yard, because
+    // a talk is given to the house and the house includes its newest disciple.
+    lecture_hall: { kind: 'hall', depth: 0.15, obviousness: 0.85, qiLift: 0, sealed: false, office: false, capacityPer: 0.5, hazards: [] },
     audience_hall: { kind: 'hall', depth: 0.55, obviousness: 0.75, qiLift: 0, sealed: false, office: false, capacityPer: 0.3, hazards: [] },
     tribute_room: { kind: 'vault', depth: 0.6, obviousness: 0.3, qiLift: 0, sealed: true, office: true, capacityPer: 0.05, hazards: [] },
     meditation_cell: { kind: 'chamber', depth: 0.5, obviousness: 0.4, qiLift: 8, sealed: false, office: false, capacityPer: 0.12, hazards: [] },
@@ -709,6 +725,7 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
         case 'infirmary': return 'the infirmary';
         case 'workshop': return 'the workshop';
         case 'mission_hall': return inward ? 'the posting cut' : 'the mission hall';
+        case 'lecture_hall': return inward ? 'the speaking cut' : 'the lecture hall';
         case 'audience_hall': return 'the audience hall';
         case 'tribute_room': return 'the tribute room';
         case 'meditation_cell': return inward ? 'the sitting cuts' : 'the meditation cells';
@@ -959,6 +976,10 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
         out.push('treasury');
     }
     out.push('residence');
+    // A house that takes people in has people to talk to, the same column the
+    // dormitory and the mission hall read. APPENDED LAST so every room that
+    // existed before keeps its place in the list.
+    if (input.recruits) out.push('lecture_hall');
     return out;
 }
 
@@ -1178,6 +1199,7 @@ function resourcesFor(purpose: RoomPurpose): string[] {
         case 'workshop': return ['ore'];
         case 'vein_chamber': return ['qi'];
         case 'scripture_pavilion':
+        case 'lecture_hall':
         case 'archive': return ['teaching'];
         case 'refectory': return ['food'];
         default: return [];
@@ -1428,6 +1450,7 @@ function purposeLine(purpose: RoomPurpose, capacity: number): string {
         case 'infirmary': return `Beds, and a ledger of who owes for one.${held}`;
         case 'workshop': return `Where the house makes what it can still make.${held}`;
         case 'audience_hall': return `Where the house is answered, and answers.${held}`;
+        case 'lecture_hall': return `Mats in rows facing one seat, and whoever is in the seat is talking.${held}`;
         case 'tribute_room': return 'Where what is owed is counted before it leaves.';
         case 'meditation_cell': return `Cells. The qi is thicker in here than in the yard.${held}`;
         case 'vein_chamber': return 'Directly over the vein. There is not room in here for everybody who wants it.';

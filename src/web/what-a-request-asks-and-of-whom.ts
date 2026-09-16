@@ -14,6 +14,16 @@ import { A_SPAN_AND_WHAT_FOLLOWS, WORD_NUMBER_ALTERNATION } from './sentence-par
  */
 export type RequestKind =
     | 'teaching'
+    /**
+     * ASKING SOMEBODY TO WATCH YOU SIT, which is not asking them for an art.
+     *
+     * The design owner: guidance is attention, not presence. A master standing
+     * beside you ignoring you gives nothing, and somebody who agrees to correct
+     * you is spending their own days on it. What this asks for is a span of that
+     * attention, and what saying yes writes is the ordinary `teaching` activity
+     * on the person asked - see `a-teacher-giving-you-their-attention.ts`.
+     */
+    | 'guidance'
     | 'discipleship'
     | 'introduction'
     | 'telling'
@@ -90,6 +100,10 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         case 'terms':
             return 'a_courtesy';
         case 'teaching':
+        // Their days spent on yours, which is `a_real_favour`'s own definition.
+        // An acknowledged master is not asked through this weight at all: they
+        // agree as a matter of course, and the caller skips the roll.
+        case 'guidance':
         case 'discipleship':
         case 'a_thing':
         case 'a_trade':
@@ -602,6 +616,47 @@ const ASKING_TO_BE_TAKEN_ON =
     /\b(?:take me (?:on\b|as (?:a|your|his|her|their) (?:disciple|student|pupil|apprentice))|take me under|accept me as (?:a |your |his |her |their )?(?:disciple|student|pupil|apprentice)|make me (?:your|his|her|their|a) (?:disciple|student|pupil|apprentice)|be my (?:master|teacher|mentor|shifu|sifu)|become my (?:master|teacher|mentor)|(?:disciple|student|apprentice)ship|have me as (?:a|your|his|her|their) (?:disciple|student|pupil|apprentice))\b/i;
 
 /**
+ * Being watched while you sit, which is attention and not an art.
+ *
+ * READ BEFORE THE TEACHING WORDS, because "guide me" is in both lists and the
+ * difference is whether a road follows it: "guide me through the Iron Bell
+ * Manual" names an art and is a teaching, "guide my cultivation for a month"
+ * and "guide me for a year" name nothing and are a span of somebody's eye.
+ */
+export const ASKING_FOR_GUIDANCE = new RegExp(
+    String.raw`\b(?:guide|oversee|supervise|watch over|look over|correct|keep an eye on)\s+`
+    + String.raw`(?:me in\s+|me through\s+)?my\s+(?:cultivation|practi[cs]e|training|sitting|breathing|forms?|circulation|qi)\b`
+    + String.raw`|\bguide me\b(?!\s+(?:in|through|down|along|up)\s+(?!my\b))`
+    + String.raw`|\bwatch me\s+(?:cultivate|practi[cs]e|train|sit|circulate|run\s+(?:the|my|through the|through my)\s+forms?|work (?:the|my|through the) forms?)\b`
+    + String.raw`|\b(?:sit|stay) with me while i\s+(?:cultivate|practi[cs]e|train|sit)\b`
+    + String.raw`|\b(?:give|offer)\s+me\s+(?:some\s+)?(?:guidance|pointers)\b`
+    + String.raw`|\bcoach me\b`,
+    'i'
+);
+
+/**
+ * Sitting under somebody, said as a cultivation sentence with the person inside it.
+ *
+ * "I cultivate under Elder Hu's guidance for a year" has no asking verb and so
+ * never reaches `requestPutToSomebody`; it used to be read as a bare sitting
+ * and the person was thrown away. The person is returned for the request to be
+ * put to, and undefined when the sentence names nobody.
+ */
+const UNDER_SOMEBODYS_EYE = new RegExp(
+    String.raw`\bunder\s+(?:the\s+)?(?:guidance|eye|instruction|tutelage|supervision|direction)\s+of\s+(.{2,60}?)(?=\s+for\b|\s*[.!?]?$)`
+    + String.raw`|\bunder\s+(.{2,60}?)(?:'s|s'|’s)\s+(?:guidance|eye|instruction|tutelage|supervision|direction)\b`
+    + String.raw`|\bwith\s+(.{2,60}?)\s+(?:guiding|watching|correcting|overseeing|supervising)\s+(?:me|it|my)\b`,
+    'i'
+);
+
+export function whoTheyAreSittingUnder(input: string): string | undefined {
+    const hit = UNDER_SOMEBODYS_EYE.exec(input);
+    if (!hit) return undefined;
+    const person = cleanPerson(hit[1] ?? hit[2] ?? hit[3] ?? '');
+    return person && !NAMES_NOBODY.test(person) ? person : undefined;
+}
+
+/**
  * Being taught, and being handed the book, which end in the same place.
  */
 const ASKING_TO_BE_TAUGHT =
@@ -732,6 +787,7 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
     if (clause.trim().length === 0) return { kind: 'unstated' };
 
     if (ASKING_TO_BE_TAKEN_ON.test(clause)) return { kind: 'discipleship' };
+    if (ASKING_FOR_GUIDANCE.test(clause)) return { kind: 'guidance' };
     if (ASKING_TO_BE_TAUGHT.test(clause)) {
         return { kind: 'teaching', object: objectAfter(clause, AFTER_THE_TEACHING_VERB) };
     }

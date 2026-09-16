@@ -38,6 +38,7 @@ import {
     type ActionName
 } from '../../src/web/actions.js';
 import { LEGACY_INTENTS } from '../../src/web/leaving-things-for-the-next-life.js';
+import { TEACH_INTENTS } from '../../src/web/a-teacher-giving-you-their-attention.js';
 import {
     WHAT_EACH_VERB_IS_FOR,
     composeActionGlossary,
@@ -94,7 +95,8 @@ const DECLARED_INTENTS: ReadonlyArray<[ActionName, readonly string[]]> = [
     ['recall', RECALL_INTENTS],
     ['seal', SEAL_INTENTS],
     ['site', SITE_INTENTS],
-    ['legacy', LEGACY_INTENTS]
+    ['legacy', LEGACY_INTENTS],
+    ['teach', TEACH_INTENTS]
 ];
 
 /**

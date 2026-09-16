@@ -90,11 +90,13 @@ import {
     whatIsBeingAskedAboutThem
 } from '../engine/social/what-somebody-knows-about-themselves.js';
 import {
+    ASKING_FOR_GUIDANCE,
     askingWhatSomebodyIsAfter,
     namesAKindRatherThanAThing,
     requestPutToSomebody,
     whatIsBeingAskedToBeTold,
-    whereACompanyAskIsBound
+    whereACompanyAskIsBound,
+    whoTheyAreSittingUnder
 } from './what-a-request-asks-and-of-whom.js';
 import { whatAThreatPromises } from './what-a-threat-promises.js';
 // The board's own trade names, so any job the listing prints is a job a player
@@ -4036,6 +4038,27 @@ const TEACHING_SOMEBODY_ELSE = new RegExp([
  * has no such thing - but it is not the speaker teaching either, and reading it
  * as one would have the player spend a season they never offered.
  */
+/**
+ * Sitting in on a talk somebody is already giving. The first capture is a person
+ * named in front of the talk ("Elder Hu's lecture"), the second a person named
+ * after the verb ("sit in on Elder Hu").
+ */
+const A_TALK = String.raw`(?:dao\s+)?(?:lecture|lectures|talk|sermon|discourse|lesson|class|teaching|exposition)`;
+const LISTENING_TO_SOMEBODY_TEACH = new RegExp(
+    String.raw`\b(?:sit|sits|sitting|go|goes|going)\s+in\s+on\s+(?:the\s+|a\s+)?(?:(.{2,40}?)(?:'s|s'|’s)\s+)?${A_TALK}\b`
+    + String.raw`|\b(?:sit|sits|sitting|go|goes|going)\s+in\s+on\s+(?!(?:the|a|an)\s)(.{2,40}?)(?=\s+for\b|\s*[,;.!?]|\s*$)`
+    + String.raw`|\b(?:listen|listens|listening|attend|attends|attending|hear|hears|go\s+to|goes\s+to|join|joins)\s+(?:to\s+)?(?:the\s+|a\s+)?(?:(.{2,40}?)(?:'s|s'|’s)\s+)?${A_TALK}\b`,
+    'i'
+);
+
+/** Giving a talk to whoever is in the room. */
+const GIVING_A_TALK = new RegExp(
+    String.raw`\b(?:give|gives|giving|deliver|delivers|delivering|hold|holds|holding)\s+(?:a|an)\s+(?:dao\s+)?(?:lecture|talk|sermon|discourse)\b`
+    + String.raw`|^\s*(?:i\s+)?(?:lecture|lectures|lecturing)\b`
+    + String.raw`|\bexpound(?:s|ing)?\s+(?:on\s+|upon\s+)?(?:the|my)\s+dao\b`,
+    'i'
+);
+
 const SOMEBODY_ELSE_IS_THE_TEACHER =
     /\b(?:ask|asks|asking|beg|begs|begging|persuade|persuades|convince|convinces|request|requests|get|gets|have)\b[^.?!]{0,30}\bto\s+(?:teach|instruct|tutor|train|show)\b/;
 
@@ -4436,6 +4459,29 @@ function planIntent(input: string): PlannedAction {
             action: 'destroy',
             target: extractSubject(input, BREAKING_SUBJECT_VERBS)
         };
+    }
+
+    // SITTING IN ON SOMEBODY'S TALK, AND GIVING ONE. Ahead of handing an art
+    // on, because "I give a talk to the outer disciples" shares its nouns with
+    // teaching somebody and is a different act: the room rather than one
+    // person, and attention rather than an art. See
+    // `a-teacher-giving-you-their-attention.ts`, where all three are one row.
+    {
+        const listening = LISTENING_TO_SOMEBODY_TEACH.exec(input);
+        if (listening) {
+            const days = parseDuration(text);
+            const who = cleanPlace((listening[1] ?? listening[2] ?? listening[3] ?? '').trim());
+            return {
+                action: 'teach',
+                intent: 'listen',
+                ...(who && !/^(?:the|a|an)$/i.test(who) ? { target: who } : {}),
+                ...(days ? { days } : {})
+            };
+        }
+        if (GIVING_A_TALK.test(text) && !SOMEBODY_ELSE_IS_THE_TEACHER.test(text)) {
+            const days = parseDuration(text);
+            return { action: 'teach', intent: 'lecture', ...(days ? { days } : {}) };
+        }
     }
 
     // HANDING AN ART ON. Beside the watch because the two are the giving pair,
@@ -4847,6 +4893,20 @@ function planIntent(input: string): PlannedAction {
     // AHEAD of the request read below only in the sense that it catches what
     // that read cannot; a sentence that names somebody falls through to it and
     // keeps its target.
+    // ── ASKED TO WATCH, SAID TO SOMEBODY'S FACE ──────────────────────────
+    //
+    // "will you watch me run the form", "please guide my cultivation". The same
+    // gap as the two branches around it and the same answer: no target, because
+    // the person is whoever is being spoken to.
+    {
+        const faceToFace = input.trim();
+        if (/^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)/i.test(faceToFace)
+            && ASKING_FOR_GUIDANCE.test(faceToFace)) {
+            const days = parseDuration(text);
+            return { action: 'request', intent: 'guidance', ...(days ? { days } : {}) };
+        }
+    }
+
     {
         const alongside = input.trim();
         const asksNobodyInParticular =
@@ -4878,7 +4938,11 @@ function planIntent(input: string): PlannedAction {
             // along for a month is a different ask from asking them along; no
             // other request kind spends the days of the person being asked, so
             // no other kind has anything to do with the number.
-            const term = asked.kind === 'company' ? parseDuration(text) : null;
+            // `guidance` is the second: the span is how long they are asked to
+            // watch, and it is the span the sitting then runs for.
+            const term = asked.kind === 'company' || asked.kind === 'guidance'
+                ? parseDuration(text)
+                : null;
             return {
                 action: 'request',
                 target: asked.person,
@@ -6570,6 +6634,16 @@ function planIntent(input: string): PlannedAction {
         || /\b(?:train|trains|training|rest|rests|resting)\s+for\b/.test(text)
         || /\b(?:make|makes|making|set|sets|setting)\s+(?:up\s+)?camp\b/.test(text)
         || /\b(?:go|goes|going)\s+to\s+sleep\b/.test(text))) {
+        // -- AND WHETHER SOMEBODY IS WATCHING THEM DO IT ------------------
+        //
+        // "I cultivate under Elder Hu's guidance for a year" names a person whose
+        // attention is being counted on, which is theirs to give: it is the same
+        // ask as "I ask Elder Hu to guide my cultivation", put the other way round.
+        const under = whoTheyAreSittingUnder(input);
+        if (under) {
+            const days = parseDuration(text);
+            return { action: 'request', intent: 'guidance', target: under, ...(days ? { days } : {}) };
+        }
         // -- AND WHETHER SOMEBODY IS SITTING IT WITH THEM -----------------
         const alongside = whoIsSittingWithThem(input);
         return {

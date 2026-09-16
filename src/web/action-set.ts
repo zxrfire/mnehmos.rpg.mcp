@@ -819,7 +819,15 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
     /**
      * `work` carries exactly one label and it exists to make a QUESTION free.
      */
-    'work'
+    'work',
+    /**
+     * `teach` picks which end of somebody's attention the speaker is at: none
+     * hands an art on to one person, `listen` sits in on whoever is already
+     * teaching the room, `lecture` puts the speaker at the front of it. See
+     * `TEACH_INTENTS`. An unrecognised label falls to handing an art on, which
+     * refuses before anything is spent when nobody is named.
+     */
+    'teach'
     /**
      * ── AND `coerce` IS DELIBERATELY NOT HERE ────────────────────────────
      */

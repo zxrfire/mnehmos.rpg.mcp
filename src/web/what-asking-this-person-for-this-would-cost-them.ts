@@ -838,6 +838,132 @@ function costOfDiscipleship(asking: TheOneAsking, asked: TheOneBeingAsked): Requ
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// BEING WATCHED WHILE YOU SIT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the world says about the person being asked to watch, read by the caller
+ * off their own row because this module has no world handle.
+ */
+export interface WhereTheirAttentionIs {
+    /** Whether they are standing where the asker is. */
+    here: boolean;
+    /** The asker's own place, for a refusal that says where they are. */
+    place: string;
+    /** Whether `FLAG_MASTER` names them: they took this asker on. */
+    theirMaster: boolean;
+    /**
+     * What they are in the middle of and could not put down, as it looks to
+     * somebody standing there, or null. See `whatTheyCannotPutDown`.
+     */
+    cannotPutDown: string | null;
+    /** How many are already in front of them, not counting the asker. */
+    alreadyTeaching: number;
+}
+
+/**
+ * Asking somebody to watch you sit for a span.
+ *
+ * Three refusals before the resolver, each a fact about the world rather than
+ * about the sentence: they are not here, they stand no higher than you, or they
+ * are in the middle of something a body cannot put down. An acknowledged master
+ * past those says yes as a matter of course - the caller does not roll - and
+ * anybody else is `a_real_favour`, their days on yours, which is what
+ * `baseWeightOf` says for the kind.
+ */
+function costOfGuidance(
+    asking: TheOneAsking,
+    asked: TheOneBeingAsked,
+    where: WhereTheirAttentionIs,
+    forDays: number,
+    theyWant: string | null
+): RequestCosting {
+    const days = `${forDays} day${forDays === 1 ? '' : 's'}`;
+    const refusal = (headline: string, prose: string, structure: string): RequestCosting => ({
+        ask: 'a_real_favour',
+        lines: [],
+        structure: [structure],
+        techniqueId: null,
+        refusal: { headline, prose, structure },
+        askBack: null
+    });
+
+    if (!where.here) {
+        return refusal(
+            `${asked.name} is not where you are.`,
+            `You are at ${where.place}, and ${asked.name} is not standing in it. Somebody watches `
+            + 'you sit in the room you are sitting in.',
+            `Refused before the resolver, so no day was spent: ${asked.id} is not at the asker's `
+            + 'location, and guidance is read off who is standing there.'
+        );
+    }
+    if (asked.ordinal <= asking.ordinal) {
+        return refusal(
+            `${asked.name} has nothing to show you from where they stand.`,
+            `${asked.name} stands at ${rankName(asked.ordinal)} and you at `
+            + `${rankName(asking.ordinal)}. What somebody watching you sit gives is the distance `
+            + 'between the two of you, and there is none to give.',
+            `Refused before the resolver, so no day was spent: ${theGapInWords(asked.ordinal, asking.ordinal)}, `
+            + 'and guidanceMultiplier is 1 when the guide is not above the guided.'
+        );
+    }
+    if (where.cannotPutDown !== null) {
+        return refusal(
+            `${asked.name} is in the middle of something.`,
+            `${asked.name} is ${where.cannotPutDown}. That is not a thing a body puts down to watch `
+            + 'somebody else sit, and when it is over the same question can be asked again.',
+            'Refused before the resolver, so no day was spent: their own activity is one they '
+            + 'cannot put down (mending, a fight with a beast, or a party somewhere else).'
+        );
+    }
+
+    const others = where.alreadyTeaching;
+    const crowd = others === 0
+        ? []
+        : [`${asked.name} already has ${others} in front of them. You would be one more, and what `
+            + 'each of you gets thins with every one.'];
+    if (where.theirMaster) {
+        return {
+            ask: 'a_real_favour',
+            lines: [
+                `${asked.name} took you on. Watching you sit is what that was for, and they do not `
+                + `need to be asked twice: ${days} of their attention, spent on you and not on their `
+                + 'own practice.',
+                ...crowd
+            ],
+            structure: [
+                `An acknowledged master: FLAG_MASTER names ${asked.id}. They agree as a matter of `
+                + `course, so nothing is rolled and no stones change hands. ${days} asked for.`
+            ],
+            techniqueId: null,
+            refusal: null,
+            askBack: null
+        };
+    }
+    return {
+        ask: 'a_real_favour',
+        lines: [
+            `You are asking for ${days} of somebody else's attention on your sitting. What it costs `
+            + 'them is their own practice for as long as it lasts.',
+            ...crowd,
+            theyWant === null
+                ? `${asked.name} has named no price for it, and has no reason yet to spend their days `
+                  + 'on a stranger.'
+                : `${asked.name} is already after something this cultivator could reach: ${theyWant}. `
+                  + 'That is what there is to trade with.'
+        ],
+        structure: [
+            `Being watched is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is priced as `
+            + `${theAskInWords('a_real_favour')} - ${days} of the asked person's days, the same `
+            + 'weight asking them along carries. Not their master, so the ordinary resolver decides.'
+        ],
+        techniqueId: null,
+        refusal: null,
+        askBack: null
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // BEING ASKED ALONG
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -1011,8 +1137,10 @@ function costOfCompany(
 
 export interface RequestToPrice {
     kind: Extract<
-        RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company'
+        RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'guidance'
     >;
+    /** Their row, for the guidance ask. See {@link WhereTheirAttentionIs}. */
+    attention?: WhereTheirAttentionIs;
     asking: TheOneAsking;
     asked: TheOneBeingAsked;
     /** The art, when one resolved. */
@@ -1050,6 +1178,17 @@ export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
                 request.where ?? { outWith: null, otherwiseAt: null },
                 request.bound ?? null,
                 Math.max(1, Math.trunc(request.forDays ?? A_SEASON_ON_THE_ROAD)),
+                request.theyWant ?? null
+            );
+        case 'guidance':
+            return costOfGuidance(
+                request.asking,
+                request.asked,
+                request.attention ?? {
+                    here: false, place: 'nowhere anybody has named', theirMaster: false,
+                    cannotPutDown: null, alreadyTeaching: 0
+                },
+                Math.max(1, Math.trunc(request.forDays ?? 1)),
                 request.theyWant ?? null
             );
         case 'teaching':

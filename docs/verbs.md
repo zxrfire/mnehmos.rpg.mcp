@@ -113,7 +113,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`stow`](#stow) | `intent` `target` | varies | yes | - | [3](#stow) |
 | [`list_techniques`](#list_techniques) | - | nothing | yes | yes | - |
 | [`learn_technique`](#learn_technique) | `target` | time | yes | - | - |
-| [`teach`](#teach) | `target` `topic` | time | yes | - | - |
+| [`teach`](#teach) | `target` `topic` `intent` `days` | time | yes | - | [2](#teach) |
 | [`acquisition`](#acquisition) | `target` | nothing | yes | yes | - |
 | [`derive`](#derive) | `target` | time | yes | - | - |
 | [`ceiling`](#ceiling) | - | nothing | yes | yes | - |
@@ -138,7 +138,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
-| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [12](#request) |
+| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [13](#request) |
 | [`challenge`](#challenge) | `target` | varies | yes | - | - |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
@@ -401,11 +401,13 @@ Takes `target`.
 
 ### `teach`
 
-HAND AN ART ON TO SOMEBODY ELSE - the speaker doing the teaching, which is the opposite direction from learn_technique and from request/teaching. "target" is who is being taught and must be somebody standing here; "topic" is which art, and may be left out, in which case the engine picks from what this teacher could pass to this student and asks if there is more than one. Only reachable with an art the speaker holds and has taken to the end - the same bar a master in the world has to clear to write a copy out. It spends the time the art is worth, which is months for a primer and years for a deep road, puts the art on the other person, and opens an account in the teacher's favour. Whose art it was is priced on the same four rungs a leaked book is: handing on a house's own canon is not refused, it is answered.
+SOMEBODY'S ATTENTION ON THE PEOPLE IN FRONT OF THEM, from either end of the room. "intent" is "listen" to sit in on whoever is already teaching where the player is standing - "I go and listen to the lecture", "I sit in on Elder Hu's talk" - with "target" naming them when the sentence did; no asking and no price, and what each listener gets thins with how many are listening. "intent" is "lecture" to give a talk to whoever here stands below the speaker - "I give a dao lecture for three days"; "days" is how long, it costs those days, and the listeners who are of the speaker's own house earn the speaker contribution. With no intent it is: HAND AN ART ON TO SOMEBODY ELSE - the speaker doing the teaching, which is the opposite direction from learn_technique and from request/teaching. "target" is who is being taught and must be somebody standing here; "topic" is which art, and may be left out, in which case the engine picks from what this teacher could pass to this student and asks if there is more than one. Only reachable with an art the speaker holds and has taken to the end - the same bar a master in the world has to clear to write a copy out. It spends the time the art is worth, which is months for a primer and years for a deep road, puts the art on the other person, and opens an account in the teacher's favour. Whose art it was is priced on the same four rungs a leaked book is: handing on a house's own canon is not refused, it is answered.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'teach'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
-Takes `target`, `topic`.
+Takes `target`, `topic`, `intent`, `days`.
+
+Intents: `listen`, `lecture`.
 
 ### `acquisition`
 
@@ -605,13 +607,13 @@ Takes `target`, `topic`.
 
 ### `request`
 
-ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must not be routed there. "target" is who it is put to; "intent" is what kind of thing is being asked for - teaching (be taught an art, or handed its book), discipleship (be taken on), introduction (be put in front of somebody), telling (be told something they know), a_thing (be given, lent or sold an object), terms (what would it take - the price asked before it is paid), a_trade (something put down for it that is not money), advancement (be raised a rung in your own house - it only moves if the person asked is the one whose call it is, and money alone will not buy it), company (ask them to come with you - "topic" is where the party is bound when the sentence said, and "days" is how long they were asked for; they travel with the player until the term runs out, and most people have no reason to follow a stranger), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do them a small favour; costs a day and no stones, and it is the only thing that makes a stranger somebody who will do you a favour later); "topic" is what was named - the art, the person, the thing. This is the ONLY route to being taught by a person, which the engine says repeatedly is one of the two ways past a manual's ceiling. It spends days and can spend the purse, so choose it only when the player is actually asking somebody for something rather than asking about them.
+ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must not be routed there. "target" is who it is put to; "intent" is what kind of thing is being asked for - teaching (be taught an art: it takes the months or years the art is worth at their elbow, and an interrupted lesson leaves nothing), guidance (be watched and corrected while you cultivate - "I ask my master to guide my cultivation for a month", "I cultivate under Elder Hu's guidance for a year", "will you watch me run the form"; "days" is how long; the span is spent sitting with the guided rate, and it is their attention and not their presence that counts, so a master standing nearby who is not asked teaches nothing; a master who took the player on says yes as a matter of course and anybody else is asked like any favour), discipleship (be taken on), introduction (be put in front of somebody), telling (be told something they know), a_thing (be given, lent or sold an object), terms (what would it take - the price asked before it is paid), a_trade (something put down for it that is not money), advancement (be raised a rung in your own house - it only moves if the person asked is the one whose call it is, and money alone will not buy it), company (ask them to come with you - "topic" is where the party is bound when the sentence said, and "days" is how long they were asked for; they travel with the player until the term runs out, and most people have no reason to follow a stranger), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do them a small favour; costs a day and no stones, and it is the only thing that makes a stranger somebody who will do you a favour later); "topic" is what was named - the art, the person, the thing. This is the ONLY route to being taught by a person, which the engine says repeatedly is one of the two ways past a manual's ceiling. It spends days and can spend the purse, so choose it only when the player is actually asking somebody for something rather than asking about them.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'request'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.request` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`, `topic`, `days`.
 
-Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
+Intents: `teaching`, `guidance`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
 
 ### `challenge`
 
