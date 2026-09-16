@@ -29,8 +29,8 @@
  *                        column where NPC records have only an ordinal.
  *   betrayalOfSelling    whose art it is, on the four-rung scale the world
  *                        already prices a leaked book on.
- *   monthsToCopy         how much work the whole of this art is, counted in the
- *                        realm sections it covers.
+ *   yearsToWriteOutACopy how much work the whole of this art is: two months for
+ *                        a primer, years for a deep road.
  *   aDeedEntersTheWorld  what it buys: a favour, priced by `whatADeedLeaves`.
  *
  * ── WHAT THIS FILE PINS ──────────────────────────────────────────────────

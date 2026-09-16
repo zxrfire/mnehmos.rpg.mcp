@@ -480,8 +480,8 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      */
     'learn_technique',
     /**
-     * Handing one on spends the months the art is worth - `monthsToCopy`, the
-     * same body of work counted the same way - and `shortSkip` runs the food
+     * Handing one on spends the span the art is worth - `yearsToWriteOutACopy`,
+     * see `teaching-somebody-what-you-hold.ts` - and `shortSkip` runs the food
      * clock and the encounter window over them.
      */
     'teach',

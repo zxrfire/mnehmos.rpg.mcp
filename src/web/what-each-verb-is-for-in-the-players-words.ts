@@ -420,7 +420,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             be left out, in which case the engine picks from what this teacher could pass to
             this student and asks if there is more than one. Only reachable with an art the
             speaker holds and has taken to the end - the same bar a master in the world has to
-            clear to write a copy out. It spends the months the art is worth, puts the art on
+            clear to write a copy out. It spends the time the art is worth, which is months for a primer and years for a deep road, puts the art on
             the other person, and opens an account in the teacher's favour. Whose art it was
             is priced on the same four rungs a leaked book is: handing on a house's own canon
             is not refused, it is answered.`

@@ -26,9 +26,14 @@
  *                        own author said it would invert to for free.
  *   betrayalOfSelling    WHOSE IT WAS, on the four rungs the world already
  *                        prices a leaked book on.
- *   monthsToCopy         HOW LONG. The same body of work counted the same way -
- *                        a road's realm sections - because walking somebody
- *                        down an art covers what writing it out covers.
+ *   yearsToWriteOutACopy HOW LONG. Walking somebody down an art is the work of
+ *                        putting down what you understood, which is what a
+ *                        master writing it out spends, so it is that span: two
+ *                        months for a primer and nine years for the deepest
+ *                        road. NOT `monthsToCopy`, which is a copyist's flat
+ *                        labour on paper. Ruled by the design owner: teaching
+ *                        is not a fast thing, and it gets harder the higher the
+ *                        art goes.
  *
  * ── WHY THE BAR IS THE COPYIST'S BAR AND NOT A LOWER ONE ─────────────────
  *
@@ -69,9 +74,9 @@ import {
     masteryBarFor,
     noHouseCanCallItTheirs,
     suitsRoot,
-    whoseArt
+    whoseArt,
+    yearsToWriteOutACopy
 } from '../engine/world/manuals.js';
-import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { relationshipWith, type NpcRecord } from '../engine/world/npc-state.js';
 import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
@@ -488,14 +493,18 @@ export const teachingVerbs = {
         const rung = betrayalOfSelling({ factionId: myHouse }, art.id, ownerFactionId);
         const ownerName = ownerFactionId ? getSect(ownerFactionId)?.name ?? ownerFactionId : null;
 
-        // ── THE MONTHS ───────────────────────────────────────────────────
+        // ── THE SPAN ─────────────────────────────────────────────────────
         //
-        // The same figure `sellACopyOfAnArt` spends, for the same reason: what
-        // is being handed over is the whole art, and the work in it is counted
-        // by the realm sections it covers rather than by how it leaves the hand.
+        // What a master spends putting down what they understood, off the one
+        // curve that states it. `couldWriteOutACopy` has just passed, so the
+        // art has a bar and the span is not null.
         const carries = Number(row.cap ?? art.requiredOrdinal);
-        const months = monthsToCopy(art.requiredOrdinal, carries);
-        const days = Math.max(1, Math.round(months * (DAYS_PER_YEAR / 12)));
+        const years = yearsToWriteOutACopy(art.id) ?? 0;
+        const days = Math.max(1, Math.round(years * DAYS_PER_YEAR));
+        const months = Math.max(1, Math.round(years * 12));
+        const howLong = months < 24
+            ? `${months} month${months === 1 ? '' : 's'}`
+            : `${Math.round(years)} years`;
 
         const today = Math.floor(world.currentDay);
         const onDay = Math.floor(run.elapsedDays);
@@ -522,7 +531,7 @@ export const teachingVerbs = {
             const facts = factsForToolResult(
                 `The lesson stopped before ${art.name} was in.`,
                 [
-                    `${months} month${months === 1 ? '' : 's'} was what it would have taken and `
+                    `${howLong} was what it would have taken and `
                     + `${lived} day${lived === 1 ? '' : 's'} is what you got. A road goes in whole `
                     + `or not at all, so ${student.name} is carrying nothing of it.`,
                     ...spent.facts.lines
@@ -540,10 +549,10 @@ export const teachingVerbs = {
                 outcome: 'executed',
                 calls: [
                     {
-                        name: 'world.monthsToCopy',
+                        name: 'world.yearsToWriteOutACopy',
                         action: 'teach',
                         summary:
-                            `${months} month(s) asked of it and ${lived} day(s) lived. Nothing `
+                            `${howLong} asked of it and ${lived} day(s) lived. Nothing `
                             + 'was written onto the student.',
                         ok: false
                     },
@@ -574,10 +583,10 @@ export const teachingVerbs = {
                 ok: true
             },
             {
-                name: 'world.monthsToCopy',
+                name: 'world.yearsToWriteOutACopy',
                 action: 'teach',
                 summary:
-                    `${months} month(s) at their elbow, off the realm sections ${art.name} covers `
+                    `${howLong} at their elbow, off how far ${art.name} reaches `
                     + `(${art.requiredOrdinal} -> ${carries}). ${days} day(s) spent.`,
                 ok: true
             },
@@ -610,7 +619,7 @@ export const teachingVerbs = {
             factionIds: student.factionId ? [student.factionId] : [],
             summary:
                 `${cultivator.name} walked ${student.name} down ${art.name} over `
-                + `${months} month${months === 1 ? '' : 's'}.`,
+                + `${howLong}.`,
             unattributed:
                 'Somebody came out of a season carrying a method they did not have going in, and '
                 + 'would not say who put it there.',
@@ -737,7 +746,7 @@ export const teachingVerbs = {
         const facts = factsForToolResult(
             `${student.name} carries ${art.name} now.`,
             [
-                `${months} month${months === 1 ? '' : 's'} at their elbow, and it went in. It is `
+                `${howLong} at their elbow, and it went in. It is `
                 + 'on them for as long as they keep climbing on it.',
                 whatItCostsYouToHandItOver(rung, student.name, ownerName),
                 reach === null
@@ -752,8 +761,8 @@ export const teachingVerbs = {
         );
         facts.structure.push(
             `teach: student=${student.id} at ordinal ${student.cultivation.realmOrdinal}; `
-            + `${art.id} at teacher mastery ${known.mastery.toFixed(2)}; monthsToCopy `
-            + `${art.requiredOrdinal} -> ${carries} is ${months} month(s), ${days} day(s); `
+            + `${art.id} at teacher mastery ${known.mastery.toFixed(2)}; yearsToWriteOutACopy `
+            + `${art.requiredOrdinal} -> ${carries} is ${years.toFixed(2)} year(s), ${days} day(s); `
             + `betrayalOfSelling rung ${rung}`
             + (ownerFactionId ? ` against ${ownerFactionId}` : ', nobody\'s property')
             + `. ${noHouseCanCallItTheirs(art.id)

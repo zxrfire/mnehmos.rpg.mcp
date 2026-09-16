@@ -161,6 +161,7 @@ import {
     masteryBarFor,
     unauthorisedPractice,
     whoseArt,
+    yearsToWriteOutACopy,
     FULLY_MASTERED
 } from '../engine/world/manuals.js';
 import {
@@ -203,7 +204,6 @@ import {
 } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
-import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
 import { capOf } from '../data/cultivation/techniques.js';
@@ -12181,7 +12181,14 @@ ${opened.text}` : receipt,
             localMultiplier: local
         });
         const paid = Math.max(1, quote.offeredStones);
-        const months = monthsToCopy(opens, carriesTo);
+        // How long a master takes to put down what they understood, off the
+        // one curve that says it. `couldWriteOutACopy` has passed, so it is not
+        // null. Later roads take a decent chunk of a life.
+        const years = yearsToWriteOutACopy(art.id) ?? 0;
+        const months = Math.max(1, Math.round(years * 12));
+        const howLong = months < 24
+            ? `${months} month${months === 1 ? '' : 's'}`
+            : `${Math.round(years)} years`;
         const days = Math.max(1, Math.round(months * (DAYS_PER_YEAR / 12)));
 
         // AND WHO, STANDING HERE, COULD SAY WHOSE IT WAS
@@ -12202,7 +12209,7 @@ ${opened.text}` : receipt,
         this.repos.runs.incrementTurn(run.id, 1);
 
         const facts = factsForToolResult(`A copy of ${art.name}, written out and sold.`, [
-            `${months} month${months === 1 ? '' : 's'} at the desk, and ${paid} spirit `
+            `${howLong} at the desk, and ${paid} spirit `
             + `stone${paid === 1 ? '' : 's'} for the finished thing. ${after.spiritStones} in the `
             + 'purse now. What you sold is a copy; you still hold the art.',
             ...(rung === 0
@@ -12217,8 +12224,8 @@ ${opened.text}` : receipt,
                 ])
         ]);
         facts.structure.push(
-            `${art.id}: mastery ${known.mastery.toFixed(2)}, copied in ${months} month(s) `
-            + `(monthsToCopy ${opens} -> ${carriesTo}). quoteSale against a list of ${list} at the `
+            `${art.id}: mastery ${known.mastery.toFixed(2)}, copied in ${years.toFixed(2)} year(s) `
+            + `(yearsToWriteOutACopy ${opens} -> ${carriesTo}). quoteSale against a list of ${list} at the `
             + `${regionId} multiplier (x${local}) offered ${quote.offeredStones}; paid ${paid}. `
             + `betrayalOfSelling rung ${rung}`
             + (ownerFactionId ? ` against ${ownerFactionId}.` : ', nobody\'s property.')
@@ -12232,7 +12239,7 @@ ${opened.text}` : receipt,
                     `One copy of ${art.name} for ${paid} spirit stone(s) against a list of `
                     + `${list}, priced by the regard a ${theRung(cultivator.realmOrdinal)} is `
                     + 'held in. '
-                    + `${months} month(s) of copying. The art stays where it was: what moved is `
+                    + `${howLong} of copying. The art stays where it was: what moved is `
                     + 'a copy.',
                 ok: true
             },

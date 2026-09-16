@@ -39,11 +39,11 @@ import { getSect } from '../data/cultivation/sects.js';
 import {
     betrayalOfSelling,
     couldWriteOutACopy,
-    whoseArt
+    whoseArt,
+    yearsToWriteOutACopy
 } from '../engine/world/manuals.js';
 import {
     copyistMonthlyCash,
-    monthsToCopy,
     stallPriceStones,
     isSoldAtAStall
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
@@ -93,9 +93,13 @@ export function whatOneCopyIsWorth(techniqueId: string): number | null {
     const opens = row.requiredOrdinal ?? 0;
     const wage = copyistMonthlyCash(opens);
     if (wage === null) return null;
-    // A FIGHTING ART IS A BOOK THAT CROSSES NO REALM
-    const carriesTo = row.cap == null ? opens : Number(row.cap);
-    const cash = wage * monthsToCopy(opens, carriesTo);
+    // WHAT IS PAID FOR IS THE MASTER'S TIME, NOT THE PAPER. A book no stall
+    // carries is written out from memory by somebody who finished it, and
+    // `yearsToWriteOutACopy` is how long that takes: two months for a primer,
+    // years for a deep road. The flat paper figure is the stall's.
+    const years = yearsToWriteOutACopy(techniqueId);
+    if (years === null) return null;
+    const cash = wage * years * 12;
     return Math.max(1, Math.ceil(cash / CASH_PER_STONE));
 }
 
