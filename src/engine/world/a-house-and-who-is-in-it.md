@@ -375,10 +375,12 @@ bar, so a house can hold an empty elder chair, a queue of candidates and a
 working promotion pass, and still seat nobody - because nobody has climbed far
 enough to qualify. A measurement from elsewhere this session is suggestive: the
 pool the world's own passes draw from runs a median of 9 and a 99th percentile
-of 21, against elder rungs that want considerably more. `applyPromotions` deliberately returns no seats for the head
+of 21, against elder rungs that want considerably more. `applyPromotions` returned no seats for the head
 rung, on the grounds that a head is a succession rather than a promotion, and
-nobody has yet found the succession machinery a comment in that file refers to.
-That is the first place to look.
+there was no succession machinery anywhere. Measured over 2,500 years on one
+seed, the head rung took in nobody and the catalog houses went from 38 heads
+to 0. The head's chair is now one seat: it fills from the rung below only when
+it stands empty. See `a-house-fills-an-empty-head-from-the-rung-below.test.ts`.
 
 **What follows for anything that fills a post:** never fail for want of a
 candidate inside the slice, and prefer the slice when it can answer - a

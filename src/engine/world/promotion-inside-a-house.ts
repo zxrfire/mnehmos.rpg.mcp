@@ -69,7 +69,7 @@
  * the narrator can say it out loud before it costs somebody a century.
  */
 
-import type { NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { FactionRecord } from './world-state.js';
 import type { WorldState } from './world-state.js';
 import { rankRealmBand } from '../../data/cultivation/members.js';
@@ -78,9 +78,8 @@ import { whatItCanPutOnTheGround } from './seeding.js';
 /**
  * How many people a house will seat at each rank.
  *
- * Halving upward, floored at one, because a house with nobody in its top seat
- * is not a house with a vacancy - it is a house without a master, which is a
- * different and much larger event handled by the succession machinery.
+ * Halving upward, floored at one. The top seat is exactly one, and filling it
+ * when it stands empty is the succession.
  *
  * The bottom rank is uncapped. A house can always take another sweeper, and the
  * limit on its intake is what it can feed rather than how many stools it has.
@@ -92,11 +91,16 @@ export function seatsAtRank(
     abundance = 0
 ): number {
     if (rankIndex <= 0) return Number.MAX_SAFE_INTEGER;
-    // The top seat is not a promotion. It is a succession, it happens when the
-    // person in it dies or leaves, and the machinery for that lives elsewhere -
-    // routine promotion filling it would quietly install a weaker head over a
-    // living master, which is not a thing a house does.
-    if (rankIndex >= rankCount - 1) return 0;
+    // THE TOP SEAT IS ONE SEAT, and a seat that is held has no room in it - so
+    // this can never install a weaker head over a living master. It fills only
+    // when the head is gone: a succession, by the strongest of the rung below
+    // who clears the head's own bar. It was 0, on the grounds that "the
+    // machinery for that lives elsewhere", and nothing anywhere did it. Measured
+    // over 2,500 years on one seed: the head rung took in nobody by promotion,
+    // lost about 0.18 people per house per century, and the 38 catalog houses
+    // fell from 38 heads to 0 while every other rung held between 0.7 and 0.95
+    // filled. Heads survived only in houses a splinter had just founded.
+    if (rankIndex >= rankCount - 1) return rankIndex === rankCount - 1 ? 1 : 0;
     if (rankIndex >= rankCount) return 0;
     // WHERE RESOURCES ARE NOT SCARCE, NEITHER IS PROMOTION.
     //
@@ -270,6 +274,13 @@ export function assessPromotions(state: WorldState): {
             const candidates = members
                 .filter(m => m.factionRankIndex === rank - 1)
                 .filter(m => m.cultivation.realmOrdinal >= bar)
+                // NOT THE PLAYER'S ROW. It holds a seat where it stands, but
+                // the house raises the player only when asked, and
+                // `applyPromotions` refuses to write it. Left in, a qualified
+                // player took the room here, was never written, and the seat
+                // stood empty that year while the next candidate was told they
+                // had been outranked.
+                .filter(m => isTheWorldsToMove(m))
                 // Favour is a promotion over somebody, so it sorts first.
                 .sort((a, b) => {
                     const fa = a.tags.includes('chosen') ? 1 : 0;

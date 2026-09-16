@@ -703,9 +703,11 @@ export function applyTeachingLines(
 
         const power = Number(faction.resources.power_ordinal ?? 0);
         const rankCount = Math.max(1, faction.ranks.length);
-        // The deepest LIVING master already standing above each student, which
-        // is what `guideOrdinalFor` will read and therefore the only thing that
-        // decides whether another master is worth anything to them.
+        // The deepest LIVING master already standing above each student. A tie
+        // is who would give a student attention; `guideOrdinalFor` pays only
+        // for attention actually being given - a lesson in progress, in the
+        // same place - so this decides whether another master is worth binding,
+        // not what the rate reads.
         const guideOf = (n: NpcRecord): number | null => {
             let best: number | null = null;
             for (const tie of n.relationships) {
@@ -766,8 +768,8 @@ export function applyTeachingLines(
             if (needs.length === 0) continue;
 
             // Masters accumulate UPWARD or not at all. A second teacher who is
-            // no deeper than the one already standing over them adds nothing to
-            // `guideOrdinalFor`, which reads the deepest living master - so
+            // no deeper than the one already standing over them could add
+            // nothing the deeper one's lesson would not - so
             // binding one would spend a teacher's hours to move no number, and
             // fill the student's three slots with people who cannot help.
             const already = guideOf(student);

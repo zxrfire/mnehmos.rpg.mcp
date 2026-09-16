@@ -9,6 +9,7 @@ import {
 } from '../cultivation/breakthrough.js';
 import {
     computeCultivationRate,
+    guidanceMultiplier,
     DAYS_PER_YEAR
 } from '../cultivation/cultivation.js';
 import {
@@ -61,20 +62,104 @@ export function masterIdsOf(npc: NpcRecord): string[] {
 }
 
 /**
- * The highest LIVING master standing above them, or null for nobody.
+ * The attention somebody is being given RIGHT NOW, where they stand.
+ *
+ * Guidance is attention. A master with one disciple, a master with several and
+ * a hall lecture are one mechanic: somebody at the listener's own location
+ * whose activity is `teaching` with the listener named in `withIds`. A master
+ * tie says who would routinely give it; being tied to somebody posted three
+ * provinces away, or standing in the same hall at something else, is worth
+ * nothing to the rate. This read was "the highest living master tie, wherever
+ * they are", which paid the whole guidance term for a teacher who was not
+ * there and cost the teacher nothing.
+ *
+ * The set's size thins what each listener gets - `guidanceMultiplier` - so of
+ * several teachers the one worth most is the one taken, which is not always
+ * the highest. `day` retires attention whose term has run.
  */
-export function guideOrdinalFor(
+export function guidanceFor(
     npc: NpcRecord,
-    livingById: ReadonlyMap<string, NpcRecord>
-): number | null {
-    let best: number | null = null;
-    for (const masterId of masterIdsOf(npc)) {
-        const master = livingById.get(masterId);
-        if (!master || master.status !== 'alive') continue;
-        const ord = master.cultivation.realmOrdinal;
-        if (best === null || ord > best) best = ord;
+    livingById: ReadonlyMap<string, NpcRecord>,
+    day?: number
+): { ordinal: number; listeners: number } | null {
+    let best: { ordinal: number; listeners: number } | null = null;
+    let bestWorth = 1;
+    for (const teacher of whoIsTeaching(livingById, day).get(npc.id) ?? []) {
+        if (teacher.locationId === null || teacher.locationId !== npc.locationId) continue;
+        const ordinal = teacher.cultivation.realmOrdinal;
+        const listeners = teacher.activity!.withIds.length;
+        const worth = guidanceMultiplier(npc.cultivation.realmOrdinal, ordinal, listeners);
+        if (best === null || worth > bestWorth) {
+            best = { ordinal, listeners };
+            bestWorth = worth;
+        }
     }
     return best;
+}
+
+/** The rung of whoever is giving them attention, for callers that price it alone. */
+export function guideOrdinalFor(
+    npc: NpcRecord,
+    livingById: ReadonlyMap<string, NpcRecord>,
+    day?: number
+): number | null {
+    return guidanceFor(npc, livingById, day)?.ordinal ?? null;
+}
+
+/**
+ * What giving attention takes out of the teacher's own year.
+ *
+ * TIME AND ENERGY IN ONE FIGURE. Hours at somebody's elbow or in front of a
+ * hall are hours not spent on their own practice, and guiding spends the
+ * teacher's own qi. An NPC row carries no qi reserve or fatigue that a rate or
+ * a crossing reads, so there is nowhere separate to charge the energy and this
+ * stands for both. THE SAME WHATEVER THE SET'S SIZE: a lecture to forty costs
+ * the lecturer what one disciple costs a master, which is why a hall is the
+ * cheap way to reach many. A quarter, so a teacher still mostly cultivates.
+ */
+export const TEACHING_TAKES_THIS_MUCH_OF_A_TEACHERS_YEAR = 0.25;
+
+/** The multiplier on a teacher's own rate while they are giving attention. */
+export function whatTeachingLeavesOfAMastersRate(
+    npc: NpcRecord,
+    livingById: ReadonlyMap<string, NpcRecord>,
+    day?: number
+): number {
+    if (!isTeachingSomebody(npc, day) || npc.locationId === null) return 1;
+    const anybodyThere = npc.activity!.withIds.some(id => {
+        const listener = livingById.get(id);
+        return listener !== undefined && listener.status === 'alive'
+            && listener.locationId === npc.locationId;
+    });
+    return anybodyThere ? 1 - TEACHING_TAKES_THIS_MUCH_OF_A_TEACHERS_YEAR : 1;
+}
+
+/** Whether this person is giving attention to somebody named, still in its term. */
+export function isTeachingSomebody(npc: Pick<NpcRecord, 'activity' | 'status'>, day?: number): boolean {
+    const a = npc.activity;
+    if (npc.status !== 'alive' || a === null || a.kind !== 'teaching' || a.withIds.length === 0) return false;
+    return day === undefined || a.untilDay === undefined || a.untilDay === null || a.untilDay > day;
+}
+
+/** Listener id to everybody giving them attention, read once per roster and day. */
+const TEACHING = new WeakMap<ReadonlyMap<string, NpcRecord>, { day: number | undefined; byStudent: Map<string, NpcRecord[]> }>();
+
+function whoIsTeaching(
+    livingById: ReadonlyMap<string, NpcRecord>,
+    day: number | undefined
+): Map<string, NpcRecord[]> {
+    const cached = TEACHING.get(livingById);
+    if (cached && cached.day === day) return cached.byStudent;
+    const byStudent = new Map<string, NpcRecord[]>();
+    for (const teacher of livingById.values()) {
+        if (!isTeachingSomebody(teacher, day)) continue;
+        for (const id of teacher.activity!.withIds) {
+            const list = byStudent.get(id);
+            if (list) list.push(teacher); else byStudent.set(id, [teacher]);
+        }
+    }
+    TEACHING.set(livingById, { day, byStudent });
+    return byStudent;
 }
 
 // THE ROADS BESIDES THEIR OWN
@@ -102,6 +187,8 @@ export interface WallConditions {
     rateMultiplier: number;
     /** The rung of whoever is teaching them, or null. */
     guideOrdinal: number | null;
+    /** How many people that attention is spread across. One when omitted. */
+    guideListeners?: number | null;
     /** How far the book in their hands teaches. Their hard stop. */
     manualCeiling: number;
 }
@@ -191,7 +278,8 @@ export function readyToStrike(
             // enforces inside the rate.
             techniqueCap: conditions.manualCeiling,
             techniqueBonus: 1 + npc.cultivation.attributes.insight * 0.06,
-            guideOrdinal: conditions.guideOrdinal
+            guideOrdinal: conditions.guideOrdinal,
+            guideListeners: conditions.guideListeners ?? 1
         }
     ).perDay;
     if (rate <= 0) return notReady;

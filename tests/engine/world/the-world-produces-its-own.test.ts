@@ -27,9 +27,12 @@ import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import {
+    guidanceFor,
     guideOrdinalFor,
     readyToStrike,
-    strikeAtTheWall
+    strikeAtTheWall,
+    TEACHING_TAKES_THIS_MUCH_OF_A_TEACHERS_YEAR,
+    whatTeachingLeavesOfAMastersRate
 } from '../../../src/engine/world/an-npc-striking-at-the-next-wall.js';
 import { applyManualCopying, manualIdOf, copyCount } from '../../../src/engine/world/manuals.js';
 import { createNpc, carryingWounds, woundsCarriedBy } from '../../../src/engine/world/npc-state.js';
@@ -408,30 +411,56 @@ describe('the upper ladder is arrived at rather than inherited', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('who is teaching you is read off the world, not invented', () => {
-    it('takes the guide from the master tie the world already wrote', () => {
-        const student = createNpc('guide', { id: 's', bornOnDay: 0, onDay: 0 });
-        const master = createNpc('guide', {
-            id: 'm', bornOnDay: 0, onDay: 0, cultivation: { realmOrdinal: 25 }
-        });
-        const byId = new Map([[master.id, master]]);
+    // Guidance is attention, not presence and not a tie. This read was "the
+    // highest living master tie, wherever they are": a master posted three
+    // provinces away still paid the whole guidance term, and it cost the
+    // master nothing. It now reads somebody at the student's own location whose
+    // activity is `teaching` with the student in the set.
+    const master = createNpc('guide', {
+        id: 'm', bornOnDay: 0, onDay: 0, locationId: 'hall', cultivation: { realmOrdinal: 25 }
+    });
+    const student = {
+        ...createNpc('guide', { id: 's', bornOnDay: 0, onDay: 0, locationId: 'hall' }),
+        relationships: [{
+            targetId: 'm', targetName: master.name, kind: 'master' as const,
+            standing: 0.6, note: '', sinceDay: 0, lastChangedDay: 0,
+            factIds: [], inheritedFromId: null
+        }]
+    };
+    const teaching = (withIds: string[], untilDay: number | null = null) => ({
+        ...master,
+        activity: { kind: 'teaching' as const, note: '', withIds, sinceDay: 0, untilDay }
+    });
 
-        expect(guideOrdinalFor(student, byId), 'a student with no tie has no guide')
-            .toBeNull();
+    it('pays nothing for a tie whose master is not giving the attention', () => {
+        expect(guideOrdinalFor(student, new Map([[master.id, master]]))).toBeNull();
+    });
 
-        const taught = {
-            ...student,
-            relationships: [{
-                targetId: 'm', targetName: master.name, kind: 'master' as const,
-                standing: 0.6, note: '', sinceDay: 0, lastChangedDay: 0,
-                factIds: [], inheritedFromId: null
-            }]
-        };
-        expect(guideOrdinalFor(taught, byId)).toBe(25);
+    it('pays the teacher who is teaching them, where they stand', () => {
+        const byId = new Map([[master.id, teaching(['s'])]]);
+        expect(guideOrdinalFor(student, byId)).toBe(25);
 
-        // A master who has died stops teaching. Being abandoned by the person
-        // who was carrying you is an outcome, not an oversight.
-        const dead = new Map([[master.id, { ...master, status: 'physically_dead' as const }]]);
-        expect(guideOrdinalFor(taught, dead)).toBeNull();
+        const elsewhere = new Map([[master.id, { ...teaching(['s']), locationId: 'a-town' }]]);
+        expect(guideOrdinalFor(student, elsewhere), 'a master in another place').toBeNull();
+
+        const dead = new Map([[master.id, { ...teaching(['s']), status: 'physically_dead' as const }]]);
+        expect(guideOrdinalFor(student, dead), 'a master who has died').toBeNull();
+
+        const over = new Map([[master.id, teaching(['s'], 100)]]);
+        expect(guideOrdinalFor(student, over, 200), 'attention whose term has run').toBeNull();
+    });
+
+    it('thins with the set, and costs the teacher the same whatever its size', () => {
+        const one = new Map([[master.id, teaching(['s'])]]);
+        const hall = new Map([[master.id, teaching(['s', 'a', 'b', 'c'])]]);
+        expect(guidanceFor(student, one)?.listeners).toBe(1);
+        expect(guidanceFor(student, hall)?.listeners).toBe(4);
+
+        const listeners = new Map([[student.id, student]]);
+        const cost = 1 - TEACHING_TAKES_THIS_MUCH_OF_A_TEACHERS_YEAR;
+        expect(whatTeachingLeavesOfAMastersRate(teaching(['s']), listeners)).toBe(cost);
+        expect(whatTeachingLeavesOfAMastersRate(teaching(['s', 'a', 'b', 'c']), listeners)).toBe(cost);
+        expect(whatTeachingLeavesOfAMastersRate(master, listeners), 'not teaching').toBe(1);
     });
 
     it('makes the rung reachable that was not reachable alone', () => {

@@ -58,6 +58,7 @@ import type { RuinCharacter } from '../../data/cultivation/inheritance-trials.js
 import { theArtsWrittenDownIn } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
 import {
     housesTeaching,
+    manualCeilingOf,
     manualIdOf,
     significanceOfManual,
     suitsRoot,
@@ -65,8 +66,9 @@ import {
 } from './manuals.js';
 import type { LocationRecord } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
-import { makeObject, type ObjectRecord } from './possessions.js';
+import { isRuined, makeObject, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
+import { takeTheArtOffThePage } from './what-a-manual-has-left-in-it.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT SORT OF PLACE KEPT BOOKS
@@ -306,6 +308,7 @@ export function booksLyingIn(state: WorldState, locationId: string): ObjectRecor
             && o.possessorId === null
             && o.locationId === locationId
             && o.tags.includes(LEFT_IN_THE_GROUND)
+            && !isRuined(o)
     );
 }
 
@@ -412,8 +415,28 @@ export function applyWhatThePartyCarriedOut(
             }
         };
 
-        const reader = whoOfThemCouldOpenIt(
-            input.readers.filter(r => !readThisTrip.has(r.id)), manual);
+        // CARRYING IS NOT READING. Being able to open a book is not deciding to,
+        // any more than holding a pill is swallowing it. A party out for a
+        // house carries the book home whole, and who reads it is the house's
+        // decision, taken where every shelf book's is - `newlyEntitled`. That
+        // matters most for a one-reader book: the house choosing who gets its
+        // single read is a story, and whoever picked it up taking it is not.
+        // Somebody out for themselves decides for themselves, and reads only
+        // what carries them past what they already hold.
+        let reader = input.house !== null ? null : whoOfThemCouldOpenIt(
+            input.readers.filter(r => !readThisTrip.has(r.id)
+                && manual.cap > manualCeilingOf(r)), manual);
+        // AND READING TAKES THE ART OFF THE PAGE, off this row. At heaven and
+        // above that is a use, the same one a player spends, and the row keeps
+        // what is left wherever it goes next. A book already read out teaches
+        // nobody.
+        const grade = getTechnique(manual.id)?.grade;
+        if (reader !== null && grade !== undefined) {
+            const taken = takeTheArtOffThePage(
+                state.objects[at], { grade, byId: reader.id, onDay: input.onDay });
+            if (taken.took) state.objects[at] = taken.object;
+            else reader = null;
+        }
         if (reader !== null) {
             readThisTrip.add(reader.id);
             const row = state.npcs.findIndex(n => n.id === reader.id);

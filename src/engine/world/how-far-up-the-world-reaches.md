@@ -65,18 +65,31 @@ years for the deepest road. To tune how fast upper arts spread, change that
 curve and nothing else. It is not `monthsToCopy`, which prices a copyist's flat
 labour on paper, and `manuals.ts` says why the two must not be merged.
 
+## Attention, in the world's own passes
+
+Guidance is attention given to a set, and a master with disciples and a hall
+lecture are one mechanic: a person whose activity is `teaching` with the set in
+`withIds`. `who-is-given-attention-this-year.ts` writes it each year - masters
+to the disciples standing with them (closed), and a lecture inside a house's
+compound to whoever is there (open). `guidanceFor` pays a listener only for
+attention given where they stand, thinned by the set's size
+(`ATTENTION_THINS_AS`), and the teacher pays
+`TEACHING_TAKES_THIS_MUCH_OF_A_TEACHERS_YEAR` whatever the size. An art crosses
+a shelf's gap only through a teacher at this who has finished it, at one chance
+in `yearsToWriteOutACopy` a year. A book of a grade that runs out is read off
+its own row, and a house's reading of one is a fact in the ledger.
+
+Measured with `scripts/probe-does-a-house-keep-its-shape.ts`, seed `shape-a`,
+2,500 years, control against this: people above 29 went 31 to 42 and 31 to
+41, above 35 went 14 to 21 and 14 to 25. Neither a drain nor a pile-up.
+
 ## Where the code does not match this yet
 
 Recorded 2026-09-16. Delete a line when it is fixed.
 
-- **The background teaching path has no span.** `applyBookAcquisition` hands
-  out `newlyEntitled` (`manuals.ts`), which gives a house member a shelf art
-  the moment anyone alive in the house holds it at the rung it needs. The
-  teacher need not have finished the art, and one teacher can teach any number
-  of people in a year. The player's lesson already takes the span.
-- **An NPC reading a found book spends no use.** The reader in
-  `what-a-ruin-has-on-its-shelves.ts` adds the art without touching the use
-  counter, so the one-reader rule holds for the player and not for the world.
+- **A splinter mints its library from memory.** `librariesCarriedOutBy` makes
+  a fresh book row for every art its founders hold, mastered or not, at full
+  uses. For heaven and above that is a book the world did not have.
 - **A player cannot write out a copy to give away.** The world's masters write
   copies for their house's shelf, and the player can sell a copy, but there is
   no verb for writing one out for a disciple.

@@ -4,7 +4,7 @@
 
 import type { NpcRecord } from './npc-state.js';
 import type { FactionRecord, WorldState } from './world-state.js';
-import { makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
+import { isRuined, makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
@@ -22,6 +22,9 @@ import {
     USES_A_MANUAL_OF_THIS_GRADE_HOLDS,
     whatIsLeftIn
 } from './what-a-manual-has-left-in-it.js';
+import { isTeachingSomebody } from './an-npc-striking-at-the-next-wall.js';
+import { makeFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 
 /**
  * The working library of each house, by faction id.
@@ -107,7 +110,9 @@ function shelvesOf(state: WorldState): Map<string, Manual[]> {
 
     const held = new Map<string, Set<string>>();
     for (const object of state.objects) {
-        if (object.kind !== 'manual' || object.possessorId === null) continue;
+        // A book read to its end is dust. Its row stays, the way a dead
+        // person's does, and it is no longer on anybody's shelf.
+        if (object.kind !== 'manual' || object.possessorId === null || isRuined(object)) continue;
         const techniqueId = manualIdOf(object);
         if (techniqueId === null) continue;
         let ids = held.get(object.possessorId);
@@ -286,28 +291,20 @@ export interface ALesson {
 }
 
 /**
- * Where a master's time is spoken for: the day they are free to take the next
- * student. One tag, rewritten, never a second one.
- */
-const TEACHING_UNTIL = 'teaching-until:';
-
-/** Whether this person has a student in front of them on this day. */
-export function isTeachingOn(npc: Pick<NpcRecord, 'tags'>, day: number): boolean {
-    const tag = npc.tags.find(t => t.startsWith(TEACHING_UNTIL));
-    return tag !== undefined && Number(tag.slice(TEACHING_UNTIL.length)) > day;
-}
-
-/**
  * Books somebody has become entitled to since they were last looked at, and
  * who it costs.
  *
- * A MASTER TEACHES ONE STUDENT AT A TIME, AND IT TAKES THE COPY SPAN. Carrying
+ * AN ART IS CARRIED OVER A GAP ONLY BY SOMEBODY GIVING YOU ATTENTION. Carrying
  * somebody over a gap in a shelf used to cost nothing: anybody in the house
- * tall enough to OPEN the book counted as its teacher, taught any number of
- * people in a year, and spent no time doing it. The teacher is now somebody
- * who has taken the art to its end - `canReproduce`, the gate that lets them
- * write a copy out - and the lesson takes `yearsToWriteOutACopy` of their time,
- * one student at a time. The curve lives there and nowhere else.
+ * tall enough to OPEN the book counted as its teacher, from any distance, for
+ * any number of people in a year. The teacher is now somebody standing where
+ * the student stands, whose activity is `teaching` with the student in the set
+ * (`who-is-given-attention-this-year.ts` decides who that is), and who has
+ * taken the art to its end - `canReproduce`, the gate that lets them write a
+ * copy out. It comes across at the copy pass's own odds, one in
+ * `yearsToWriteOutACopy` a year, so a deep road takes years of attention and
+ * a primer takes a season. The teacher's cost is the attention itself, charged
+ * on their rate while it is given.
  *
  * `canTransmit` in `../encounters/acquisition.ts` is the encounter rule and is
  * looser: a teacher who went part of the way may transmit up to where they
@@ -345,8 +342,9 @@ export function newlyEntitled(
         // A SHELF IS NOT A STAIRCASE, AND SOMEBODY HAS TO CARRY YOU OVER THE GAP.
         const freeMaster = new Map<string, string>();
         for (const other of state.npcs) {
-            if (other.status !== 'alive' || other.factionId !== npc.factionId) continue;
-            if (other.id === npc.id || isTeachingOn(other, day)) continue;
+            if (other.id === npc.id || !isTeachingSomebody(other, day)) continue;
+            if (!other.activity!.withIds.includes(npc.id)) continue;
+            if (other.locationId === null || other.locationId !== npc.locationId) continue;
             for (const id of other.cultivation.techniqueIds) {
                 if (!freeMaster.has(id) && canReproduce(other, id)) freeMaster.set(id, other.id);
             }
@@ -409,20 +407,33 @@ export function handOnWhatTheyAreEntitledTo(state: WorldState, at: number, day: 
         const taken = takeTheArtOffThePage(state.objects[where], { grade, byId: npc.id, onDay: day });
         if (!taken.took) return false;
         state.objects[where] = taken.object;
+        // A HOUSE GIVING A READ OF A BOOK THAT RUNS OUT IS A FACT, and the last
+        // read most of all: "this house had a heaven book, and gave its last
+        // reading to X". Stated once, and the narrator writes it.
+        const house = state.factions.find(f => f.id === npc.factionId);
+        appendWorldFact(state, makeFact({
+            day,
+            kind: 'inheritance',
+            scale: 'personal',
+            actors: [{ id: npc.id, name: npc.name, role: 'reader' }],
+            locationId: npc.locationId,
+            factionIds: house ? [house.id] : [],
+            summary: taken.ruined
+                ? `${house?.name ?? 'The house'} gave the last reading of ${lesson.book.name} to ${npc.name}, and the book went to dust.`
+                : `${house?.name ?? 'The house'} gave a reading of ${lesson.book.name} to ${npc.name}.`,
+            visibility: 'faction',
+            magnitude: taken.ruined ? 0.5 : 0.3,
+            data: {
+                objectId: lesson.book.id,
+                techniqueId: lesson.techniqueId,
+                readsLeft: taken.after.left,
+                wentToDust: taken.ruined
+            }
+        }));
     }
     if (lesson.teacherId !== null) {
-        const t = state.npcs.findIndex(n => n.id === lesson.teacherId);
-        const span = yearsToWriteOutACopy(lesson.techniqueId) ?? 0;
-        if (t >= 0) {
-            state.npcs[t] = {
-                ...state.npcs[t],
-                tags: [
-                    ...state.npcs[t].tags.filter(tag => !tag.startsWith(TEACHING_UNTIL)),
-                    `${TEACHING_UNTIL}${Math.ceil(day + span * 365)}`
-                ],
-                updatedOnDay: day
-            };
-        }
+        const span = yearsToWriteOutACopy(lesson.techniqueId) ?? YEARS_TO_COPY_A_PRIMER;
+        if (!forStream(state.seed, 'a-lesson', npc.id, day).chance(Math.min(1, 1 / span))) return false;
     }
     state.npcs[at] = {
         ...npc,
@@ -532,7 +543,7 @@ export function librariesCarriedOutBy(
 
     const held = new Set(
         state.objects
-            .filter(o => o.kind === 'manual' && o.possessorId === faction.id)
+            .filter(o => o.kind === 'manual' && o.possessorId === faction.id && !isRuined(o))
             .map(manualIdOf)
     );
 
@@ -1145,7 +1156,9 @@ export function applyManualCopying(
     const holdingAt = new Map<string, number>();
     for (let i = 0; i < state.objects.length; i++) {
         const o = state.objects[i];
-        if (o.kind !== 'manual' || o.possessorId === null) continue;
+        // Never onto a row that is dust: that would put pages back into a book
+        // that stopped existing. A fresh copy is a fresh row.
+        if (o.kind !== 'manual' || o.possessorId === null || isRuined(o)) continue;
         const techniqueId = manualIdOf(o);
         if (techniqueId === null) continue;
         holdingAt.set(`${o.possessorId}|${techniqueId}`, i);

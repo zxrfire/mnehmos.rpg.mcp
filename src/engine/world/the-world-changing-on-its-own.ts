@@ -126,9 +126,10 @@ import { applyRuinProspecting } from './how-the-world-keeps-finding-more-ruins.j
 import { repairRetiredWoundKeys } from './recording-the-day-a-wound-was-taken.js';
 import { deriveOrdinal, whatItCanPutOnTheGround } from './seeding.js';
 import {
-    guideOrdinalFor,
+    guidanceFor,
     readyToStrike,
-    strikeAtTheWall
+    strikeAtTheWall,
+    whatTeachingLeavesOfAMastersRate
 } from './an-npc-striking-at-the-next-wall.js';
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import { getOrigin } from '../cultivation/origin.js';
@@ -158,10 +159,11 @@ import {
 import type { AmbientQi, ApproachLeverage } from '../../schema/cultivation.js';
 import {
     applyManualCopying,
-    newlyEntitled, refreshChosen, reachableCeilingFor,
+    handOnWhatTheyAreEntitledTo, refreshChosen, reachableCeilingFor,
     mightFindARoad, roadTheyFound, librariesCarriedOutBy, BOOKLESS_CEILING
 } from './manuals.js';
 import { applyWhatThePartyCarriedOut } from './what-a-ruin-has-on-its-shelves.js';
+import { giveThisYearsAttention } from './who-is-given-attention-this-year.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import {
     applyOrdinaryLifeTies,
@@ -628,6 +630,10 @@ export function applyPressure(
         // back into circulation, and the only route to the top of the ladder that
         // runs through a person rather than through luck.
         applyManualCopying(state, year, withinSpan(year * 365 + 95, fromDay, toDay));
+        // Who teaches whom this year: masters their present disciples, and a
+        // lecture in the compound. BEFORE the handout and the review, which are
+        // the two things that read it.
+        giveThisYearsAttention(state, year, withinSpan(year * 365 + 97, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         // Ground gets dug open, a material comes out of a hole, and a house
         // spends one of the things it can never replace on the disciple who is
@@ -1368,7 +1374,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
 
             houseFallbackRate(rooms, provinceRate)
 
-        );
+        ) * whatTeachingLeavesOfAMastersRate(npc, byId, day);
         const age = Math.floor((day - npc.identity.bornOnDay) / 365);
 
         // THE BOOK IS THE HARDER OF THE TWO CEILINGS.
@@ -1407,10 +1413,12 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         }
 
         // THE DERIVATION HAS RUN OUT. THE LADDER TAKES OVER.
+        const guidance = guidanceFor(npc, byId, day);
         const conditions = {
             ambient: ambientAround(state, npc, region),
             rateMultiplier,
-            guideOrdinal: guideOrdinalFor(npc, byId),
+            guideOrdinal: guidance?.ordinal ?? null,
+            guideListeners: guidance?.listeners ?? 1,
             manualCeiling
         };
         const readiness = readyToStrike(npc, day, conditions);
@@ -2161,19 +2169,7 @@ function applyBookAcquisition(state: WorldState, year: number, day: number): num
     const looks = Math.max(1, Math.round(living.length / 8));
     for (let s = 0; s < looks; s++) {
         const at = living[rng.int(0, living.length - 1)];
-        const npc = state.npcs[at];
-        if (npc.status !== 'alive') continue;
-        const gained = newlyEntitled(state, npc);
-        if (gained.length === 0) continue;
-        state.npcs[at] = {
-            ...npc,
-            cultivation: {
-                ...npc.cultivation,
-                techniqueIds: [...npc.cultivation.techniqueIds, ...gained]
-            },
-            updatedOnDay: day
-        };
-        handed++;
+        if (handOnWhatTheyAreEntitledTo(state, at, day)) handed++;
     }
     return handed;
 }

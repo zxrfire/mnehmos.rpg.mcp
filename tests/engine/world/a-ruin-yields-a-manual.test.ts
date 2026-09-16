@@ -45,6 +45,7 @@ import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { makeLocation, makeThresholds } from '../../../src/engine/world/locations.js';
 import type { NpcRecord } from '../../../src/engine/world/npc-state.js';
+import { isRuined } from '../../../src/engine/world/possessions.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { housesTeaching, manualIdOf } from '../../../src/engine/world/manuals.js';
 import { TECHNIQUES, getTechnique } from '../../../src/data/cultivation/techniques.js';
@@ -258,7 +259,10 @@ describe('what comes out of the hole', () => {
 
     const HOUSE = { id: 'house-probe', name: 'The Probe Hall', seatLocationId: null };
 
-    it('lands the copy on the house shelf and the road on the reader', () => {
+    it('lands the copy on the house shelf unread, for the house to decide who reads it', () => {
+        // Carrying is not reading. The finder used to take the art on the spot,
+        // which for a one-reader book meant whoever picked it up spent the
+        // house's only read. The house decides through `newlyEntitled`.
         const state = world();
         const { door, books } = holeWithBooksInIt(state);
         expect(books.length).toBeGreaterThan(0);
@@ -277,9 +281,9 @@ describe('what comes out of the hole', () => {
             expect(object.tags).not.toContain(LEFT_IN_THE_GROUND);
             expect(object.tags).toContain('library');
         }
-        const carrying = state.npcs.find(n => n.id === reader.id)!.cultivation.techniqueIds;
-        expect(carrying).toHaveLength(1);
-        expect(out.some(row => row.readById === reader.id && row.cap === highest)).toBe(true);
+        expect(state.npcs.find(n => n.id === reader.id)!.cultivation.techniqueIds).toEqual([]);
+        expect(out.every(row => row.readById === null)).toBe(true);
+        expect(out.some(row => row.cap === highest)).toBe(true);
     });
 
     it('still brings out a book nobody who went can open', () => {
@@ -307,8 +311,9 @@ describe('what comes out of the hole', () => {
         expect(books.length).toBeGreaterThan(1);
         const elder = personAt(state, 'elder', 40);
 
+        // Out for themselves, so the reading is theirs to decide.
         applyWhatThePartyCarriedOut(state, {
-            locationId: door.id, house: HOUSE, readers: [elder], onDay: 500
+            locationId: door.id, house: null, readers: [elder], onDay: 500
         });
 
         expect(state.npcs.find(n => n.id === elder.id)!.cultivation.techniqueIds).toHaveLength(1);
@@ -324,6 +329,36 @@ describe('what comes out of the hole', () => {
         expect(whoOfThemCouldOpenIt([low, high], { ...book, requiredOrdinal: 44 })).toBeNull();
     });
 
+    it('teaches nobody off a heaven book whose uses are already spent', () => {
+        // The world's own reader took the art off the page for nothing: the use
+        // counter was spent only on the player's path, so the one-reader rule
+        // for immortal and chaos books and the three-reader rule for heaven held
+        // for the player and for nobody else. The book still comes home.
+        const state = world();
+        const { door } = holeWithBooksInIt(state, 'loc-hole-read-out');
+        for (let i = 0; i < state.objects.length; i++) {
+            const o = state.objects[i];
+            if (o.locationId !== door.id) continue;
+            state.objects[i] = { ...o, data: { ...o.data, usesSpent: 99 } };
+        }
+        const reader = personAt(state, 'late', 40);
+
+        // Out for themselves, so it is theirs to read if anything is left in it.
+        const out = applyWhatThePartyCarriedOut(state, {
+            locationId: door.id, house: null, readers: [reader], onDay: 500
+        });
+
+        const runsOut = out.filter(row =>
+            ['heaven', 'immortal', 'chaos'].includes(getTechnique(row.techniqueId)?.grade ?? ''));
+        expect(runsOut.length).toBeGreaterThan(0);
+        for (const row of runsOut) {
+            expect(row.readById).toBeNull();
+            expect(state.objects.find(o => o.id === row.objectId)!.possessorId).toBe(reader.id);
+        }
+        const learned = state.npcs.find(n => n.id === reader.id)!.cultivation.techniqueIds;
+        for (const row of runsOut) expect(learned).not.toContain(row.techniqueId);
+    });
+
     it('leaves a rogue carrying their own copy rather than seeding a library', () => {
         const state = world();
         const { door } = holeWithBooksInIt(state, 'loc-hole-rogue');
@@ -336,8 +371,11 @@ describe('what comes out of the hole', () => {
         expect(out.length).toBeGreaterThan(0);
         for (const row of out) {
             const object = state.objects.find(o => o.id === row.objectId)!;
-            expect(object.possessorId).toBe(rogue.id);
             expect(object.tags).not.toContain('library');
+            // In their pouch - unless they read it to its end, and then it is
+            // dust with its row kept, the way a dead person's is.
+            if (isRuined(object)) expect(row.readById).toBe(rogue.id);
+            else expect(object.possessorId).toBe(rogue.id);
         }
     });
 });
