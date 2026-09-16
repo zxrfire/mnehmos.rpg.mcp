@@ -16,6 +16,8 @@ import {
     SAY_TO_YIELD
 } from './fight-answers.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import { oneOf } from '../utils/a-count-agrees-with-what-it-counts.js';
+import { parseIntent } from './verb-pattern-table.js';
 import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wound.js';
 
 /**
@@ -686,7 +688,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             if (cure.stones !== null) {
                 add({
                     id: 'medicine',
-                    say: `I buy a ${cure.name}`,
+                    say: `I buy ${oneOf(cure.name)}`,
                     routesTo: 'buy',
                     urgency: cure.affordable ? 'now' : 'soon',
                     because: whatToSayAboutTheCure(cure),
@@ -897,7 +899,25 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         const pick = affordable[0] ?? here.goodsOnOfferHere[0];
         if (pick) {
             const covered = pick.askStones <= here.spiritStones;
-            add(naming('buy_on_offer', `I buy a ${pick.name}`, 'buy', 'open',
+            // THE ONE SENTENCE IN THIS FILE THAT CANNOT KNOW ITS OWN VERB.
+            //
+            // Everywhere else the route is written down beside the sentence,
+            // and a test asserts the pairing - which is the point of the field.
+            // Here the sentence is a catalog row the author never saw, and the
+            // row decides the verb: `A month of rations` is provisioning and
+            // `Five-Breath Circulation Scripture` is a purchase, because
+            // "a month of rations" names a span of being fed and the
+            // provisioning branch reads it before `buy` does. Declaring `buy`
+            // for both was a second opinion about a question the router already
+            // answers, and it was wrong on the mortal board's food rows: the
+            // chip said `buy`, the turn ran `provision`, and the narrator's
+            // prompt was handed the wrong verb for the sentence beside it.
+            //
+            // So this one asks. Played, on the rations row: 1 ration bought at
+            // the seller's own 2 stones, which is the transaction the chip
+            // describes - the verb was the only thing that was untrue.
+            const say = `I buy ${oneOf(pick.name)}`;
+            add(naming('buy_on_offer', say, parseIntent(say).action, 'open',
                 `Somebody standing here would let a copy of ${pick.name} go for `
                 + `${pick.askStones} spirit stone${pick.askStones === 1 ? '' : 's'}, and the `
                 + `purse holds ${here.spiritStones}. `

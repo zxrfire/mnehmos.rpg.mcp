@@ -45,7 +45,29 @@
  * RED-CHECKED. With the redirect in `move` removed, the first arm fails on the
  * player never having left home; with `couldHostAGuest` widened to everybody on
  * the roll, the guest arm's control (an outer disciple who owes you cannot walk
- * you in) fails.
+ * you in) fails. And with the guest arm's settling turn made free again rather
+ * than costly, the guest arm fails - which is the defect below.
+ *
+ * ── AND THE ARRANGEMENT HAS TO BE MADE IN THE WORLD THE ACT WILL SEE ─────
+ *
+ * The guest arm went red for a while and nothing about the guest road had
+ * moved. It read its host out of the world on day 0 and then played a sentence,
+ * and the first costly turn drags the world through a pass of its own before
+ * the verb runs: the house it had chosen sent nine of its eleven modelled
+ * people out on an errand that day and the other two died of old age, so the
+ * gate read `0 could host` and a claim with nothing wrong with it failed.
+ *
+ * Two things were wrong here and both are fixed above: the house was taken by
+ * ARRAY POSITION rather than asked for by the property the arm needs, and the
+ * property was read one pass early. Measured after: the guest road walks the
+ * player in at 12 of the 12 houses that still have somebody on the gate.
+ *
+ * The emptying itself is a live defect and is not this file's subject: 5 of 38
+ * seated houses, on this world and on `strip-a`, have every living member in
+ * one place that is not their own seat after the first advanced day. It is
+ * reported where the sendings live. Written down here rather than left as a
+ * silence, because the next person to see this arm go red should know what
+ * else is in the neighbourhood.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -58,11 +80,66 @@ const WORLD = 'a-house-you-can-walk-to';
 
 /** A seated house, asked of the engine rather than named. */
 function aSeatedHouse(world: { locations: any[]; factions: any[] }) {
+    for (const house of everySeatedHouse(world)) return house;
+    return null;
+}
+
+/** Every house with a seat, in the order the world holds them. */
+function everySeatedHouse(world: { locations: any[]; factions: any[] }) {
+    const out: { faction: any; seat: any }[] = [];
     for (const faction of world.factions) {
         const seat = world.locations.find(
             row => row.kind === 'sect_seat' && row.data?.factionId === faction.id
         );
-        if (seat) return { faction, seat };
+        if (seat) out.push({ faction, seat });
+    }
+    return out;
+}
+
+/** Who of a house is standing at its own gate, alive, on a rung. */
+function onTheGateOf(world: { npcs: any[] }, faction: any, seat: any) {
+    return world.npcs.filter(n =>
+        n.factionId === faction.id
+        && n.locationId === seat.id
+        && n.status !== 'physically_dead'
+        && typeof n.factionRankIndex === 'number'
+        && n.factionRankIndex >= 0);
+}
+
+/**
+ * A house whose gate has both a host and an outer disciple standing at it.
+ *
+ * THE ARRANGEMENT IS ASKED FOR BY ITS PROPERTIES, NOT TAKEN BY POSITION, and
+ * it is asked AFTER the world has moved. Both halves were defects and the
+ * second one is the one that bit.
+ *
+ * `aSeatedHouse` returns the first faction in the array that has a seat, which
+ * is an ordering the seeder chose. That house was Azure Cloud Pavilion, and on
+ * the first advanced day the world sent nine of its eleven modelled people -
+ * the pavilion master included - out on an errand, while the other two died of
+ * old age. So the host this arm had picked out of the world a moment earlier
+ * was three provinces away by the time the act ran, the gate read `0 could
+ * host`, and the arm failed on a claim about the guest road that had nothing
+ * wrong with it.
+ *
+ * MEASURED, on this world and on `strip-a`: 5 of 38 seated houses have every
+ * living member in one place that is not their own seat after the first
+ * advanced day, and the guest road itself walks the player in at 12 of the 12
+ * houses that still have somebody on the gate when the sentence runs. The
+ * emptying is a real defect and it is reported where the sendings live; it is
+ * not this file's subject, and pinning it here would have made the guest road
+ * untestable rather than testing the sending.
+ */
+function aHouseWhoseGateIsStaffed(world: { locations: any[]; factions: any[]; npcs: any[] }) {
+    for (const { faction, seat } of everySeatedHouse(world)) {
+        const atTheGate = onTheGateOf(world, faction, seat);
+        const ranks: string[] = faction.ranks;
+        const host = atTheGate.find(n => couldHostAGuest(n.factionRankIndex, ranks.length));
+        const junior = [...atTheGate].sort(
+            (a, b) => a.factionRankIndex - b.factionRankIndex)[0];
+        if (host && junior && junior.factionRankIndex === 0) {
+            return { faction, seat, atTheGate, host, junior };
+        }
     }
     return null;
 }
@@ -134,32 +211,33 @@ describe('a house is somewhere you can walk to', () => {
     it('walks somebody in behind a host who owes them, and not behind anybody else', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-guest', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Guest');
-        const loaded = await game.loadWorld();
-        expect(loaded, 'the run opened without a world').toBeTruthy();
-        const world = loaded!;
-        const { faction, seat } = aSeatedHouse(world)!;
+        const opened = await game.loadWorld();
+        expect(opened, 'the run opened without a world').toBeTruthy();
+
+        // A DAY SPENT BEFORE ANYTHING IS ARRANGED, and it has to be a day the
+        // world sees. The first costly turn drags the world through its own
+        // first pass, which moves people; a host read out of the world before
+        // that has happened is a host who may not be there when the sentence
+        // runs. A free look will not do it - it spends nothing, so the world
+        // stands still and the arrangement is made against a world one pass
+        // behind the act. See `aHouseWhoseGateIsStaffed`.
+        await game.act(`I travel to the ${aSeatedHouse(opened!)!.seat.name}`);
+        const world = (await game.loadWorld())!;
 
         // WHO MAY HOST IS A RANK READING. Asked of the same function the gate
         // asks, so the test cannot disagree with the engine about which rung it
-        // is - which is the ordering this repo has been bitten by before.
-        const ranks: string[] = faction.ranks;
-        // Read off the people the house actually has AT its gate, so the test
+        // is - which is the ordering this repo has been bitten by before. And
+        // read off the people the house actually has AT its gate, so the test
         // never has to move anybody and never disagrees with what the verb sees.
-        const atTheGate = world.npcs.filter((n: any) =>
-            n.factionId === faction.id
-            && n.locationId === seat.id
-            && typeof n.factionRankIndex === 'number'
-            && n.factionRankIndex >= 0);
-        const host = atTheGate.find((n: any) => couldHostAGuest(n.factionRankIndex, ranks.length));
-        expect(host, 'this house has nobody at its gate who could host').toBeTruthy();
+        const found = aHouseWhoseGateIsStaffed(world);
+        expect(found, 'no house in this world has a staffed gate to be a guest at').toBeTruthy();
+        const { faction, seat, host, junior } = found!;
+        const ranks: string[] = faction.ranks;
 
         // THE CONTROL IS THE BOTTOM RUNG, picked by its rung and not by the
         // rule, so widening the rule cannot quietly delete the control. The
         // rung IS what this test is about, which is the one case AGENTS.md
         // allows a rank index to be pinned.
-        const junior = [...atTheGate].sort(
-            (a: any, b: any) => a.factionRankIndex - b.factionRankIndex
-        )[0];
         expect(junior.factionRankIndex, 'no outer disciple is at this gate').toBe(0);
         expect(
             couldHostAGuest(junior.factionRankIndex, ranks.length),

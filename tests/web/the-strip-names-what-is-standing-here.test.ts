@@ -36,12 +36,25 @@
  * notice. This is the second one, and it is a CENSUS rather than a sample -
  * every settlement in the catalog, on pinned worlds, so the number is exact
  * for the worlds it names rather than an estimate of them.
+ *
+ * ── What (1) caught, in Green Water City on `strip-a` ────────────────────
+ *
+ *     "I buy a A month of rations"     said to route to `buy`, routed to
+ *                                      `provision`
+ *
+ * Both halves came of a catalog name the composing site never saw.
+ * `THE_MORTAL_BOARD` writes its rows as sentences, so the article was printed
+ * twice; and the row is what decides the verb, so the hand-written `buy` was a
+ * second opinion about a question `parseIntent` already answers. Played, the
+ * turn itself was sound - 1 ration at the seller's own 2 stones - which is why
+ * only the pairing showed it.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import { REGIONS } from '../../src/data/cultivation/regions.js';
 import { AMBIENT_QI_RATE_MULTIPLIER } from '../../src/schema/cultivation.js';
+import { ACTION_NAMES } from '../../src/web/action-set.js';
 import { parseIntent } from '../../src/web/actions.js';
 import { whatTheySaidInTheFight } from '../../src/web/fight-answers.js';
 import type { Affordance } from '../../src/web/what-is-worth-doing-standing-here.js';
@@ -127,6 +140,16 @@ describe('every sentence the row composes is one the parser keeps', () => {
         for (const [say, routesTo] of seen) {
             expect(parseIntent(say).action, say).toBe(routesTo);
             expect(parseIntent(say).action, say).not.toBe('unclear');
+            // AND IT ROUTES SOMEWHERE THE ENGINE ACTUALLY HAS.
+            //
+            // The pairing above is the whole claim only while every `routesTo`
+            // is written by hand. `buy_on_offer` now asks the router for its
+            // own - its sentence is a catalog row and the row decides the verb,
+            // which is recorded where it happens - so for that one entry the
+            // line above cannot fail, and this is what still can. `unclear` is
+            // not the only bad answer available; a verb nothing handles is the
+            // same blank look one step further on.
+            expect(ACTION_NAMES as readonly string[], say).toContain(routesTo);
         }
     }, 300000);
 });

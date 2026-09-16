@@ -187,3 +187,27 @@ export function howMany(count: number, noun: string): string {
     const one = noun.replace(ITS_OWN_ARTICLE, '');
     return `${count} ${count === 1 ? one : pluralOf(one)}`;
 }
+
+/**
+ * One of a thing, with whichever article it needs and no second one.
+ *
+ * The other half of {@link howMany}, and the same defect from the other end:
+ * a catalog name arrives at runtime and the site printing it never saw the
+ * word. `THE_MORTAL_BOARD` writes rows as sentences - `A month of rations`,
+ * `A drawn carriage` - so a site writing `a ${name}` composes
+ *
+ *     I buy a A month of rations
+ *
+ * which is what the suggestion strip handed the player. `turn-engine.ts`
+ * already strips the article inline at its own yard listing, which is the
+ * signature of a rule that wants one home rather than a copy per site.
+ *
+ * An article the name brought with it is lowercased and the rest of the name
+ * is left exactly as the catalog wrote it: these names sit mid-sentence, and
+ * `Five-Breath Circulation Scripture` is a proper name where `A month` is not.
+ */
+export function oneOf(noun: string): string {
+    const own = noun.match(ITS_OWN_ARTICLE);
+    if (own) return `${own[0].toLowerCase()}${noun.slice(own[0].length)}`;
+    return `${/^[aeiou]/i.test(noun.trim()) ? 'an' : 'a'} ${noun}`;
+}

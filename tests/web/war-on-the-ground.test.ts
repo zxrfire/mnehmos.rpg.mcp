@@ -46,12 +46,24 @@ import type { LocationRecord } from '../../src/engine/world/locations';
  * The world's seed, and it is half of the pin.
  *
  * A run seed alone fixes nothing about who is at war with whom - see
- * `makeGameInWorld`. On this world seed Clearwater Ward and Six Li Patrol
- * are openly fighting inside the first advanced year, and each holds a war
- * status on its own seat.
+ * `makeGameInWorld`. On this world seed some pair of houses is openly fighting
+ * within forty advanced years, and each holds a war status on its own seat.
+ *
+ * WHICH pair is not pinned, and the first cut of this file pinned it. It named
+ * `Clearwater Ward grounds` in a constant because that was the seat the war
+ * stood on the afternoon this was written; a season of changes to
+ * `the-world-changing-on-its-own.ts` later, the same seed puts the war on
+ * Stone Marrow Hall and Ancient Bough Grove instead, and all six cases here
+ * went red on a square with nothing true of it. Nothing about the readers had
+ * moved - measured, every one of them answers on the seat the war is actually
+ * on: 2x on the board, +0.5 danger, passage stopped, five lines to somebody
+ * standing in it.
+ *
+ * So the seat is read out of the status the loop waited for. Which house is
+ * fighting is the engine's choice and this file has no business restating it;
+ * that the ground is read is the claim.
  */
 const WORLD = 'war-1';
-const SEAT = 'Clearwater Ward grounds';
 
 async function standingOnAWarSeat() {
     const h = await makeGameInWorld({ seed: 'probe-war', worldSeed: WORLD });
@@ -60,21 +72,24 @@ async function standingOnAWarSeat() {
     // The world's own pass, a year at a time, until one stands. Nothing here
     // arranges a war: `groundUnderAWar` proposes it off two houses that are
     // actually fighting, and this waits for that to happen.
+    const standingWar = (world: { statuses: readonly any[]; currentDay: number }) => {
+        const day = Math.floor(world.currentDay);
+        return world.statuses.find(s => s.kind === 'war' && s.liftedOnDay === null
+            && day >= s.beganOnDay && day < s.reviewOnDay);
+    };
+
     let live = false;
     for (let year = 0; year < 40 && !live; year++) {
         const run = h.repos.runs.getActiveRun(cultivator.id)!;
         await advanceWorldForCultivator(run, h.repos.cultivators.getById(cultivator.id)!, 365);
-        const world = await worldForRun(run);
-        const day = Math.floor(world.currentDay);
-        live = world.statuses.some(s => s.kind === 'war' && s.liftedOnDay === null
-            && day >= s.beganOnDay && day < s.reviewOnDay);
+        live = standingWar(await worldForRun(run)) !== undefined;
     }
     expect(live).toBe(true);
 
     const run = h.repos.runs.getActiveRun(cultivator.id)!;
     const world = await worldForRun(run);
     const day = Math.floor(world.currentDay);
-    const seat = world.locations.find(l => l.name === SEAT)!;
+    const seat = world.locations.find(l => l.id === standingWar(world)!.areaId)!;
 
     // Somewhere with nothing true of it, for the control arm. Same world, same
     // day, same call - which is the only comparison worth taking while other
@@ -88,7 +103,7 @@ async function standingOnAWarSeat() {
         && priceMultiplierInArea(world.statuses, world.locations, l.id, day) === 1
         && dangerDeltaInArea(world.statuses, world.locations, l.id, day) === 0)!;
 
-    h.db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(SEAT, cultivator.id);
+    h.db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(seat.name, cultivator.id);
     return { ...h, cultivator, world, run, seat, quiet, day };
 }
 
