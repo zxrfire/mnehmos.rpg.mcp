@@ -273,8 +273,7 @@ real, at which point it is generated and *then* persisted. The rule is stated in
 
 ## How many people a house has
 
-**The rule lives in `AGENTS.md`, under "How many people a house has, and who
-they are".** It is not restated here, because it has been restated four times
+**The rule lives in `src/engine/world/a-house-and-who-is-in-it.md`.** It is not restated here, because it has been restated four times
 already and the copies drifted.
 
 The short of it: a roster is who a player could come to know - ten to twenty a
