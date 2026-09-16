@@ -150,11 +150,36 @@ export function readWhatIsOnOfferHere(
         ));
     }
 
-    const offers = read
+    // ── FOUR SELLERS, WHICH IS WHAT THE CONSTANT SAYS ────────────────────
+    //
+    // This flattened every offer, sorted by price and took four, so the cap
+    // counted OFFERS while its name and its own doc line count SELLERS. One
+    // cheap seller consumed the whole allowance and everybody else standing
+    // there was invisible - measured on a square where a man held four things
+    // and a second man's stock could not be reached at all.
+    //
+    // Cheapest-first still decides who is shown and in what order; what
+    // changed is that a seller's second thing waits until every other seller
+    // has had a first. So the square puts four PEOPLE in front of somebody,
+    // which is what it says it does, and a crowded square stops looking like
+    // one man's stall.
+    const wanted = read
         .flatMap(person => person.offers)
         .filter(offer => !(alreadyHolds?.(offer.thingId) ?? false))
-        .sort((a, b) => a.askStones - b.askStones || a.thingId.localeCompare(b.thingId))
-        .slice(0, SELLERS_SHOWN);
+        .sort((a, b) => a.askStones - b.askStones || a.thingId.localeCompare(b.thingId));
+
+    const offers: typeof wanted = [];
+    const takenFrom = new Map<string, number>();
+    for (let round = 0; offers.length < SELLERS_SHOWN; round++) {
+        const before = offers.length;
+        for (const offer of wanted) {
+            if (offers.length >= SELLERS_SHOWN) break;
+            if ((takenFrom.get(offer.sellerId) ?? 0) !== round) continue;
+            offers.push(offer);
+            takenFrom.set(offer.sellerId, round + 1);
+        }
+        if (offers.length === before) break;
+    }
 
     return { offers, read, peopleHere: here.length };
 }
