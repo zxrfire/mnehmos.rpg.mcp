@@ -1,5 +1,41 @@
 /**
  * Who, in this square, would sell you something - the half that goes and looks.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * WHO SELLS WHAT, WHICH IS A RULE ABOUT THE SELLER AND NOT ABOUT THE SQUARE
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * The design owner's split, stated plainly and NOT YET IMPLEMENTED HERE:
+ *
+ *   > "rando npcs only sell random mortal items"
+ *   > "a cultivator only sells cultivator items"
+ *   > "that's the split"
+ *
+ * So what somebody deals in is decided by WHAT THEY ARE, not by where they are
+ * standing or by what the last screen quoted. A villager behind a barrow sells
+ * the things a village sells; somebody on the ladder sells arts, pills and
+ * objects, and never maize. Two populations, one square, and a question put to
+ * one of them must not be answered out of the other's stock.
+ *
+ * WHAT IS THERE NOW, measured: this module reads arts out of
+ * `cultivation.techniqueIds` and prices them, so the CULTIVATOR half exists and
+ * the mortal half does not - there is no barrow, and a mortal standing here
+ * offers nothing rather than offering bread. The gap is therefore additive: a
+ * mortal's stock is missing, not misfiled.
+ *
+ * AND ONE LIVE DEFECT THE SPLIT WOULD CLOSE. `haggleOverAPrice` in
+ * `turn-engine.ts` falls back to a rate carried over from an earlier screen and
+ * stamps the name of whoever is facing onto it, so a person with standing
+ * offers of their own can be made to quote a book they do not hold. The
+ * narrower cause is that "how much does X want for what they are carrying"
+ * does not put X in `action.target`, so the person never becomes `facing` and
+ * the offers are never narrowed to them. Fixing the target extraction is the
+ * first half; the seller split above is what makes the answer right rather than
+ * merely attributed to the correct mouth.
+ *
+ * DO NOT implement the split as a filter on the THING. It is a fact about the
+ * person: the same object in a cultivator's hands and in a villager's is two
+ * different transactions, and a rule written on the object cannot say so.
  */
 
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
