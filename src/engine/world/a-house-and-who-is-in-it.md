@@ -297,16 +297,26 @@ case, not a cheat: you were never going to have met all five hundred.
 **And the pipeline for this already exists - do not write a minting pass.** The
 world already bears people (`the-world-changing-on-its-own.ts` creates rows at
 runtime), already enrols them (`applyRecruitment`, yearly, over every house
-tagged `recruits`), and already promotes them (`applyPromotions`, gated on a
-free seat and on the rung's realm bar). Birth, intake, promotion: the three
-steps of an elder rising from somebody nobody had heard of are all there and
-all running.
+tagged `recruits`), **already climbs them** (`applyAdvancement`, on a review
+cycle, for everybody alive below the Lid and never the player), and already
+promotes them (`applyPromotions`, gated on a free seat and on the rung's realm
+bar). Born, taken in, risen, promoted: all four steps of an elder coming up
+from somebody nobody had heard of are there and all of them run.
 
 **So the defect is throughput, not a missing mechanism**, and that is a
 different investigation. A fifth of every ladder is empty at a century with all
-three passes running, so something in the chain does not keep pace with deaths
-at the top - and the honest first question is which link, measured, rather than
-which pass to add. `applyPromotions` deliberately returns no seats for the head
+three passes running, so some link in the chain does not keep pace with
+deaths at the top - and the honest first question is WHICH link, measured,
+rather than which pass to add. There are four candidates and they fail
+differently: too few born, too few taken in, **too few climbing high enough**,
+or seats that exist and are never dealt.
+
+The third is worth suspecting first. Promotion is gated on the rung's realm
+bar, so a house can hold an empty elder chair, a queue of candidates and a
+working promotion pass, and still seat nobody - because nobody has climbed far
+enough to qualify. A measurement from elsewhere this session is suggestive: the
+pool the world's own passes draw from runs a median of 9 and a 99th percentile
+of 21, against elder rungs that want considerably more. `applyPromotions` deliberately returns no seats for the head
 rung, on the grounds that a head is a succession rather than a promotion, and
 nobody has yet found the succession machinery a comment in that file refers to.
 That is the first place to look.
