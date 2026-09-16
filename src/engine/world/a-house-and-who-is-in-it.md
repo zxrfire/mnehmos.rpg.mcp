@@ -217,6 +217,36 @@ or promote into it. That entry also records an earlier draft getting this wrong
 by re-deriving a chair from a crossing count, which *"counts departures and
 vacancies together, and the two are opposite outcomes."*
 
+## A chair that is not there is not a chair
+
+Slots are finite and strength does not manufacture one. The design owner, asked
+whether a curated figure's stated rank should be exact or a floor:
+
+> *"i mean, if there's no slots, there's no slots?"*
+> *"maybe you have an op guest elder with no slots (so they get pushed out) and
+> they just stay as a no office elder"*
+> *"or they wanna leave"*
+
+So a stated rank stays a **floor** rather than becoming exact. The floor cannot
+invent a seat, because the seats are capped independently - a house keeps up to
+three elder posts and never more than the band below it holds. Somebody strong
+arriving where there is no room does not displace anybody and is not promoted
+into thin air. They are an elder without an office, or they go.
+
+**And going is the half that is not built.** `why-somebody-walks-out-of-a-
+compound.ts` has the right reason in it - `'nothing in the hall is theirs'`,
+whose own comment reads *"No room, no office, and nothing in the purse"* - but
+its condition is `factionRankIndex <= 0 && spiritStones < NOTHING_PUT_BY`, the
+BOTTOM of the ladder. It fires for a penniless outer disciple and can never
+fire for the case the comment describes and the owner named: somebody who is
+strong, is worth a chair, and finds every chair taken.
+
+That is one of the genre's commonest departures - the talented disciple who
+leaves because the house has nowhere to put them - and the engine currently
+cannot express it. Whoever takes it should read the reason's comment first: the
+sentence was written for the right rule and the condition was written for a
+different one.
+
 ## The shape has to survive time passing
 
 Seeding the shape right is a **day-one** property, and the world then runs for
