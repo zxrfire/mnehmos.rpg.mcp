@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { RegardProfileSchema } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { offeredTo, regardOf, type RegardAskerInput } from '../../engine/cultivation/regard.js';
+import { DAO_HOUSES } from './sects.js';
 
 /** Cash to the spirit stone. The one conversion the whole file rests on. */
 export const CASH_PER_STONE = 100;
@@ -273,11 +274,100 @@ export const PRICES: readonly Price[] = [
     { id: 'price-village-well', name: 'A well sunk', category: 'land', cash: 5_000, unit: 'each', note: 'Fifty stones, raised over years by a whole village, and the largest thing most hamlets will ever do collectively.', gives: { kind: 'quoted_only', because: 'a village raises a well over years; nobody sells one' } }
 ];
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHOSE COUNTER A ROW SITS AT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The house a row is transacted across, when a row is transacted across one.
+ *
+ * WHAT NULL MEANS, WHICH IS THE COMMON CASE AND HAS TO STAY ONE. Millet, cloth,
+ * a letter written, a bell rung, a coffin: nobody's counter in particular.
+ * Anybody standing behind a barrow deals in those, and null is the answer for 40
+ * of the 43 rows. A column somebody had to fill in for all forty would be a
+ * column that was wrong about most of them within a month.
+ *
+ * WHAT A HOUSE MEANS WHEN THERE IS ONE, and the two readings are not the same:
+ *
+ *   NOT  "only this house may sell this" - a rule written on the good, which
+ *        would make the row vanish wherever the house is not, and the player
+ *        would be told nothing rather than told no.
+ *   BUT  "this house's counter is where it is done" - a fact about a PLACE.
+ *        The row stays on the board, stays quotable, and names the door. A
+ *        player standing in a village learns that gate registration is three
+ *        stones a year at the Jade Register Hall and that there is not one
+ *        here, which is content; a village that has simply never heard of it
+ *        is an empty world.
+ *
+ * NOTHING NEW WAS WRITTEN DOWN TO GET THIS. The catalog already says it, in the
+ * house's own `services` array, and the row's display name is the head of that
+ * sentence word for word:
+ *
+ *   Gate registration               'gate registration, cheap, compulsory in
+ *                                    nine cities, and the House's real income'
+ *   Oath witnessing                 'oath witnessing, at a fee proportional to
+ *                                    the penalty clause rather than the sum'
+ *   Placement of a foreign          'placement of a foreign cultivator inside a
+ *   cultivator                       realm, which no table can do and which the
+ *                                    house sells at a published error rate of
+ *                                    one in six'
+ *
+ * Measured over the whole catalog: 3 of 43 rows match a house service by name,
+ * and nothing matches loosely that does not match exactly - so the read is the
+ * fact rather than a heuristic that happened to land. A fourth row named after
+ * a service a house advertises joins this on its own, and a second table would
+ * have had to be remembered.
+ *
+ * The cost of deriving is that a rename on either side breaks the link SILENTLY
+ * and a villager starts selling oath witnessing again.
+ * `a-house-keeps-its-own-counter.test.ts` is the ratchet: it names the three and
+ * goes red on a rename, which is the repo's rename-across-the-tree rule doing
+ * its job rather than an argument for keeping the fact twice.
+ */
+export interface WhoseCounterThisIs {
+    /** An id in `sects.ts`. Never a body invented for this file. */
+    factionId: string;
+    name: string;
+    /** The house's own words, which are the whole reason this row is theirs. */
+    saysItSells: string;
+}
+
+export function whoseCounterThisSitsAt(
+    price: Pick<Price, 'name'>
+): WhoseCounterThisIs | null {
+    const named = price.name.toLowerCase();
+    // `services` is a dao house's field and not a sect's, which is the catalog
+    // agreeing with the thing being looked for: a counter open to the world is
+    // what a dao house IS, and a sect supplies its own people.
+    for (const house of DAO_HOUSES) {
+        for (const service of house.services) {
+            if (service.toLowerCase().startsWith(named)) {
+                return { factionId: house.id, name: house.name, saysItSells: service };
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * Where to go for it, for anything that has to say so out loud.
+ *
+ * Engine-authored and stated once, so the board, a refusal and a scene cannot
+ * each invent their own sentence about the same door.
+ */
+export function whereThisIsActuallyDone(price: Pick<Price, 'name'>): string | null {
+    const house = whoseCounterThisSitsAt(price);
+    return house === null
+        ? null
+        : `${price.name} is done at the ${house.name}'s own counter and at nobody else's. `
+          + `The house's word for it: ${house.saysItSells}.`;
+}
+
 /**
  * The rows somebody behind a barrow actually deals in.
  *
  * Derived from `PRICES`, because a second list of what a village sells would
- * have to agree with the first and would not. Two of a row's own statements
+ * have to agree with the first and would not. Three of a row's own statements
  * take it off a person's counter, and nothing else does:
  *
  *   `quoted_only`  the row says in its own words that it is reached another
@@ -285,6 +375,13 @@ export const PRICES: readonly Price[] = [
  *                  taking it, a bounty by bringing a head in.
  *   `pill`         an alchemist made it, which puts it on the far side of the
  *                  seller split: a cultivator's stock and never a villager's.
+ *   a house's own  see {@link whoseCounterThisSitsAt}. A villager offering to
+ *                  put you on the register, witness your oath or place a
+ *                  stranger inside a realm is not a cheap version of those
+ *                  things - it is a person claiming to be an institution. What
+ *                  a scribe sells is a letter and what a bell keeper sells is a
+ *                  stroke of the bell, and neither of those has a house's name
+ *                  against it in the catalog.
  *
  * The spirit-beast meal stays, and that is not an oversight. It is a mortal
  * counter's cultivator-facing row - meat off something a hunter killed, priced
@@ -292,7 +389,8 @@ export const PRICES: readonly Price[] = [
  * passing cultivator is the ordinary transaction it was written for.
  */
 export const THE_MORTAL_BOARD: readonly Price[] = PRICES.filter(price =>
-    price.gives.kind !== 'quoted_only' && price.gives.kind !== 'pill');
+    price.gives.kind !== 'quoted_only' && price.gives.kind !== 'pill'
+    && whoseCounterThisSitsAt(price) === null);
 
 // ─────────────────────────────────────────────────────────────────────────
 // SETTLEMENTS

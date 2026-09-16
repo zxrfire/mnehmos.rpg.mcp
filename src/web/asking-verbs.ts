@@ -78,7 +78,7 @@ import {
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
-import { transferPossession } from '../engine/world/possessions.js';
+import { boughtFromItsOwner } from '../engine/world/ownership-transfer.js';
 import {
     type SomebodyWithGoals,
     type TheClocksSomebodyIsUnder,
@@ -1707,12 +1707,15 @@ ${done.lines.join(' ')}`;
             const world = this.atHand;
             const at = (world?.objects ?? []).findIndex(row => row.id === offered.tracked!.id);
             if (world && at >= 0) {
-                world.objects[at] = transferPossession(world.objects[at]!, {
+                // THE ONE ROUTE FOR A SALE, RATHER THAN THE BARE MOVE. See the
+                // note on the other side of this trade: `boughtFromItsOwner`
+                // derives whether possession moves instead of asserting it, and
+                // mints the `purchase` claim this side was never writing.
+                world.objects[at] = boughtFromItsOwner(world.objects[at]!, {
+                    buyer: { id: party.id, name: party.name },
+                    seller: { id: cultivator.id, name: cultivator.name },
                     onDay: today,
-                    toHolderId: party.id,
-                    toHolderName: party.name,
-                    how: 'bought',
-                    transfersOwnership: true,
+                    price: 0,
                     source: `Traded to ${party.name} by ${cultivator.name}`,
                     note: `Given for a ${inReturnFor}, which went the other way across the same `
                         + 'table. Not sold for stones.'
@@ -1985,6 +1988,14 @@ ${done.lines.join(' ')}`;
                    + `${repairWeightInStones(doseAsked).toLocaleString('en-US')} spirit stones, `
                    + 'and the houses that can pay that are a list somebody could write down.';
 
+        // AND THE SAME SENTENCE FOR ANYTHING ELSE THAT HAS ONE. The dose line
+        // above is the older shape - a branch on one catalog - and the field on
+        // the row is the general one: a thing whose route is not obvious from a
+        // bar says what moves it, and a craft is the second thing that needs to.
+        // A player told only how high the offer has to reach, for an object no
+        // counter in the world carries, has been handed a number and no road.
+        const howOneMoves = whatMovesADose ?? thing.whatMovesOne ?? null;
+
         // ── A DOSE THE WORLD KEEPS AS A NUMBER RATHER THAN AS A THING ────
         //
         // `repairStorageModel` splits the four grades on the line `items.md`
@@ -2161,7 +2172,7 @@ ${done.lines.join(' ')}`;
                     ...(theyWillTake === 'a service' && doneForThem === null
                         ? [whatWouldPutYouOnTheServiceRung(party.name)]
                         : []),
-                    ...(whatMovesADose === null ? [] : [whatMovesADose]),
+                    ...(howOneMoves === null ? [] : [howOneMoves]),
                     ...(need?.goal
                         ? [`What they are carrying of their own: ${need.goal.text}`]
                         : [])
@@ -2245,25 +2256,46 @@ ${done.lines.join(' ')}`;
         ];
 
         const took = result.outcome === 'taken' || result.outcome === 'turned';
+        // Whether the thing is now ON them, which is derived off the row rather
+        // than assumed. See the transfer below.
+        let inHand = true;
         if (took) {
             // THE ROW MOVES. IT IS NOT COPIED
             const index = (world?.objects ?? []).findIndex(o => o.id === onShelf.id);
             if (world && index >= 0) {
-                world.objects[index] = transferPossession(world.objects[index], {
+                // ── ONE ROUTE FOR A SALE, AND IT WAS NOT BEING TAKEN ─────
+                //
+                // `ownership-transfer.ts` names four ways a thing changes hands
+                // and `boughtFromItsOwner` is the uncontested one. This site
+                // was calling `transferPossession` under it, which did two
+                // things wrong and neither showed up on a pill:
+                //
+                //   A CLAIM WAS NEVER MINTED. The register moved and nothing
+                //   recorded on what basis, which is the defect that module's
+                //   own banner was written about.
+                //   POSSESSION WAS ASSERTED RATHER THAN DERIVED. A thing
+                //   nobody was carrying is a thing nobody is carrying now - a
+                //   hull bought out of a yard is moored in a different yard,
+                //   not slung over the buyer. `transferPossession` puts the
+                //   buyer's id in `possessorId` unconditionally, so the first
+                //   craft to come down this path would have been towed away.
+                world.objects[index] = boughtFromItsOwner(world.objects[index], {
+                    buyer: { id: cultivator.id, name: cultivator.name },
+                    seller: {
+                        id: onShelf.ownerId ?? party.id,
+                        name: onShelf.ownerName || party.name
+                    },
                     onDay: today,
-                    toHolderId: cultivator.id,
-                    toHolderName: cultivator.name,
-                    // The catalog's own word for a thing that changed hands for
-                    // a consideration. That the consideration was not money is
-                    // what the note carries; `AcquisitionMode` is deliberately
-                    // a small closed set and does not need a barter member.
-                    how: 'bought',
-                    transfersOwnership: true,
+                    // Not sold for stones. Above the cash line money is not the
+                    // medium, and the claim says so in those words rather than
+                    // recording a price of nothing.
+                    price: 0,
                     source: `Traded by ${onShelf.ownerName ?? party.name}`,
                     note: `Given for ${answer.theBestPutDown ?? 'something offered'}, which `
                         + `carried them to rung ${answer.theBestOnTheTable} against a thing that `
                         + `carries to rung ${answer.theHeightToReach}. Not sold for stones.`
                 });
+                inHand = world.objects[index].possessorId === cultivator.id;
                 // The turn wrapper writes the world when this is set, so a
                 // restart cannot lose the fact that the shelf is now empty.
                 this.theWorldMoved();
@@ -2287,8 +2319,17 @@ ${done.lines.join(' ')}`;
             // it the gate alone would only mean a thing has to be yours ONCE,
             // and could then be offered for the rest of your life.
             const gone = this.whatTheOfferCost(cultivator, party, offered, thing.name, today);
+            // WHERE IT ENDED UP IS READ, NOT ASSERTED. "In your pouch" is true
+            // of a pill and of a blade and false of everything nobody carries:
+            // a hull that changed owner is moored where it was moored, and the
+            // sentence saying otherwise would be the engine contradicting the
+            // row it had just written.
             lines.push(
-                `${party.name} takes what you offered and the ${thing.name} is in your pouch. `
+                `${party.name} takes what you offered and the ${thing.name} is `
+                + (inHand
+                    ? 'in your pouch. '
+                    : 'yours. Nobody moved it and nobody had to: it sits where it sat, and '
+                      + 'what changed is whose it is. ')
                 + 'It came off a shelf that is now short of one, and the record says whose it '
                 + `was.${gone === null ? '' : ` ${gone}`}`
             );
@@ -2304,7 +2345,7 @@ ${done.lines.join(' ')}`;
         // the sentence a player types is usually the offer and not the question,
         // and being told what would have worked is the difference between a
         // closed door and a route.
-        if (!took && whatMovesADose !== null) lines.push(whatMovesADose);
+        if (!took && howOneMoves !== null) lines.push(howOneMoves);
         lines.push(...spent.facts.lines);
 
         const facts = factsForToolResult(

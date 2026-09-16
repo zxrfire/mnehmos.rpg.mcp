@@ -242,7 +242,9 @@ export function boughtFromItsOwner(object: ObjectRecord, input: {
         how: 'bought',
         transfersOwnership: true,
         source: input.source,
-        note: input.note ?? `Sold by ${input.seller.name} for ${input.price} stones.`
+        note: input.note ?? (input.price > 0
+            ? `Sold by ${input.seller.name} for ${input.price} stones.`
+            : `Handed over by ${input.seller.name} for something that was not stones.`)
     });
     const held = carried ? moved : { ...moved, possessorId: null };
     const claimed = assertClaim(held, {
@@ -252,7 +254,15 @@ export function boughtFromItsOwner(object: ObjectRecord, input: {
         assertedOnDay: input.onDay,
         strength: 1,
         evidenceFactIds: input.evidenceFactIds ?? [],
-        note: `Bought from ${input.seller.name} for ${input.price} stones.`
+        // A SALE IS NOT ALWAYS FOR STONES, and a claim that says it was for
+        // zero of them is a false line in the one record the buyer's heirs will
+        // argue off. Above the cash line money is not the medium at all - the
+        // barter path closes half this world's real trades - so the claim says
+        // which of the two happened rather than printing a figure that is only
+        // sometimes a figure.
+        note: input.price > 0
+            ? `Bought from ${input.seller.name} for ${input.price} stones.`
+            : `Had off ${input.seller.name} for something that was not stones.`
     });
     const minted = claimed.claims[claimed.claims.length - 1];
     return [input.seller.id, ...(input.acknowledgedBy ?? [])].reduce(

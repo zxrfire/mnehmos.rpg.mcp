@@ -35,6 +35,9 @@
  *                          same rule as everything above it, and the reason
  *                          there is no branch anywhere on what the object is
  *                          called.
+ *   A CRAFT                the rung its GRADE is pitched at, not the rating of
+ *                          any one hull. A rating belongs to an object and a
+ *                          bar must not move with how the question was phrased.
  *   A RATED OBJECT         `power`, the one hierarchy of force in this world.
  *   ANYTHING ELSE          **what the person offering it is worth.** An oath, a
  *                          service, a name, a placement, information, a favour
@@ -82,6 +85,16 @@ import { ARTIFACTS } from '../data/cultivation/artifacts.js';
 import { parseCount, WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 import { HERBS } from '../data/cultivation/herbs.js';
 import {
+    TRACKED_CRAFT,
+    getConveyance,
+    recipeForConveyance,
+    trackedConveyanceKinds
+} from '../data/cultivation/what-a-house-moves-its-people-on.js';
+import { whatACraftWouldFetch } from '../engine/world/a-house-sells-what-it-built.js';
+import {
+    significanceForConveyance
+} from '../engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
+import {
     IMMORTAL_ITEMS,
     ImmortalGradeSchema,
     type ImmortalGrade
@@ -100,7 +113,7 @@ import type { ObjectRecord } from '../engine/world/possessions.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { OnTheTable } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import type { ATrackedThing } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
-import type { Pill } from '../schema/cultivation.js';
+import type { Pill, TechniqueGrade } from '../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT WAS ASKED FOR
@@ -124,6 +137,17 @@ export interface TheThingAskedFor {
      * game making something harder than it is.
      */
     pastTheCashLine: boolean;
+    /**
+     * How one of these actually changes hands, for the things where knowing the
+     * bar is not enough to act on.
+     *
+     * A refusal or an answer that says only how high the offer has to reach
+     * leaves a player who cannot reach it with nothing to do next. Where the
+     * world has a settled answer - it moves privately between houses, and at
+     * about this many stones - the row says so. Absent for everything whose
+     * route is already obvious from the bar.
+     */
+    whatMovesOne?: string;
 }
 
 /**
@@ -211,6 +235,62 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
         };
     }
 
+    // ── A CRAFT, AND THE ONLY ROUTE IT HAS EVER HAD ──────────────────────
+    //
+    // `WHAT_A_CRAFT_COSTS_TO_COMMISSION` has no hull row on purpose, so a hull
+    // reaches a second owner one way: somebody built it and somebody sold it.
+    // The engine half landed - `whatACraftWouldFetch` prices one and
+    // `boughtFromItsOwner` moves the register - and nothing a player could say
+    // reached either, because this read asked five catalogs and not this one.
+    //
+    // TWO WAYS TO NAME ONE, AND THEY RESOLVE TO DIFFERENT THINGS ON PURPOSE.
+    // A named hull is a particular object and the ask is about that object, so
+    // it answers with the row's own id. A kind is any hull the house has, which
+    // is the only way to reach one the world BUILT during the run: `mintCraft`
+    // gives it an id nobody could type and a name no catalog holds, and
+    // `data.conveyanceId` is the one field every craft row carries.
+    //
+    // Priced at the rung its grade is pitched at, which is the reading the art
+    // branch and the medicine branch already take. NOT `power`: a rating
+    // belongs to a particular hull, and a bar that moved with how the player
+    // phrased the question would not be a bar.
+    const namedCraft = TRACKED_CRAFT.find(row => alike(row.name));
+    const craft = namedCraft
+        ? getConveyance(String(namedCraft.data.conveyanceId))
+        : trackedConveyanceKinds().find(kind => alikeWithoutTheArticle(kind.name, what));
+    // A null grade is the row that is not property - flight on one's own blade -
+    // and it is never tracked, so this is unreachable rather than a case.
+    if (craft && craft.grade !== null) {
+        const band = pillBandOrdinal(craft.grade);
+        const fetches = whatACraftWouldFetch(craft.id);
+        const bill = recipeForConveyance(craft.id);
+        return {
+            id: namedCraft ? namedCraft.id : craft.id,
+            // The catalog's kind names carry their own article - `A spirit
+            // boat` - and every sentence downstream writes `a ${name}`. Same
+            // strip the conveyance branch of `buy` already makes, for the same
+            // reason it makes it.
+            name: namedCraft ? namedCraft.name : craft.name.replace(/^an?\s+/i, ''),
+            carriesTo: band,
+            tracked: { significance: significanceForConveyance(craft.grade), forOrdinal: band },
+            // Never a counter, at any figure. Nobody commissions one, so
+            // sending a player to a stall sends them to a stall that could not
+            // get one if it wanted to.
+            pastTheCashLine: true,
+            ...(fetches === null ? {} : {
+                whatMovesOne:
+                    'No counter has ever held one'
+                    + (bill === undefined
+                        ? ''
+                        : `: it is ${bill.workDays.toLocaleString('en-US')} days of work by `
+                          + 'hands almost nobody has, so nothing is commissioned')
+                    + '. It moves between houses, at about '
+                    + `${fetches.toLocaleString('en-US')} spirit stones, and the houses that `
+                    + 'could pay that are a list somebody could write down.'
+            })
+        };
+    }
+
     // A rated object. `power` is the one hierarchy of force in this world, and
     // a weapon lets its holder strike at its own rung.
     const object = ARTIFACTS.find(row => alike(row.name));
@@ -247,6 +327,24 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
     }
 
     return null;
+}
+
+/**
+ * The same loose read, with the article off BOTH sides.
+ *
+ * `alike` strips a leading `the` off the catalog name only, which is right for
+ * every catalog it was written against: those rows are called `The Hidden Edge`
+ * and nobody says `a Hidden Edge`. A conveyance row is called `A spirit boat`,
+ * so "the spirit boat" - what a player says about the one they were just told
+ * about - matched in neither direction. Same defect `withoutTheArticle` in
+ * `object-theft.ts` records from the other end: "A spirit boat" against "the
+ * spirit boat" scored 40 and missed.
+ */
+function alikeWithoutTheArticle(name: string, said: string): boolean {
+    const strip = (s: string): string => s.replace(/^(?:an?|the)\s+/i, '').toLowerCase();
+    const bare = strip(name);
+    const asked = strip(said);
+    return bare === asked || bare.includes(asked) || asked.includes(bare);
 }
 
 function describePill(pill: Pill): TheThingAskedFor {
@@ -288,19 +386,28 @@ export function heldByTheirHouse(
 /**
  * Whether this row is the thing with that id.
  *
- * Four conventions, because the one possessions table stores four kinds of
+ * Five conventions, because the one possessions table stores five kinds of
  * thing and each names its catalog row differently: an artifact keeps the
  * catalog id as its OWN id, a pill carries `data.pillId`, a manual carries
- * `data.techniqueId` behind `manualIdOf`, and a repair dose carries
+ * `data.techniqueId` behind `manualIdOf`, a repair dose carries
  * `data.medicineId` because its own id records which house's shelf it was
- * seeded onto. This used to be `kind === 'pill'` and nothing else, which is why
- * asking after anything but a pill found no holder even where the register
- * listed one; the dose line was the same defect one catalog further along.
+ * seeded onto, and a craft carries `data.conveyanceId`. This used to be
+ * `kind === 'pill'` and nothing else, which is why asking after anything but a
+ * pill found no holder even where the register listed one; the dose line was
+ * the same defect one catalog further along, and the craft line is the same
+ * defect again.
+ *
+ * The craft line is the only one that is deliberately a KIND rather than an
+ * instance, and it is what reaches a hull the world built during the run:
+ * `mintCraft` mints `obj-craft-<house>-<year>`, which no catalog holds and
+ * nobody could type, and `data.conveyanceId` is the one field it shares with
+ * the five in `TRACKED_CRAFT`.
  */
 export function thisRowIs(row: ObjectRecord, thingId: string): boolean {
     return row.id === thingId
         || row.data?.pillId === thingId
         || row.data?.medicineId === thingId
+        || row.data?.conveyanceId === thingId
         || manualIdOf(row) === thingId;
 }
 
@@ -378,8 +485,8 @@ function firstRungOf(key: RealmKey): number {
  * the same thing about the pill half in its own words.
  *
  * The order is the order the pricing has always taken and must not be
- * rearranged: money, an art, a medicine, something from above, a rated object,
- * a herb, and then the open medium. A name that answers to two catalogs
+ * rearranged: money, an art, a medicine, something from above, a craft, a rated
+ * object, a herb, and then the open medium. A name that answers to two catalogs
  * belongs to the first of them, which is a rule about resolution rather than
  * about worth.
  */
@@ -389,6 +496,7 @@ export type TheOfferNamed =
     | { medium: 'a_medicine'; what: string; id: string; name: string }
     | { medium: 'a_repair_dose'; what: string; id: string; name: string }
     | { medium: 'from_above'; what: string; id: string; name: string; promotes: boolean }
+    | { medium: 'a_craft'; what: string; id: string; name: string; grade: TechniqueGrade }
     | { medium: 'a_thing'; what: string; id: string; name: string }
     | { medium: 'a_herb'; what: string; id: string; name: string }
     | { medium: 'an_undertaking'; what: string };
@@ -452,6 +560,26 @@ export function whatTheOfferNames(named: string): TheOfferNamed {
             // GATE still holds: a thing nobody can price is still a thing, and
             // still has to be in your hands before you can put it down.
             promotes: fromAbove.effect === 'promote_realm'
+        };
+    }
+
+    // A CRAFT, WHICH IS WHAT A PLAYER PUTS DOWN ONCE THEY HAVE ONE. The read
+    // that finds a hull on a house's shelf and the read that finds one in the
+    // player's hands are the same question with the sides swapped, and only one
+    // of them existing is how a thing becomes buyable and never sellable.
+    // Resolved to the KIND for the reason `theThingAskedFor` gives: the id a
+    // built hull carries is not one anybody could type.
+    const namedCraft = TRACKED_CRAFT.find(row => answersTo(row.name, what));
+    const craft = namedCraft
+        ? getConveyance(String(namedCraft.data.conveyanceId))
+        : trackedConveyanceKinds().find(kind => alikeWithoutTheArticle(kind.name, what));
+    if (craft && craft.grade !== null) {
+        return {
+            medium: 'a_craft',
+            what,
+            id: namedCraft ? namedCraft.id : craft.id,
+            name: namedCraft ? namedCraft.name : craft.name,
+            grade: craft.grade
         };
     }
 
@@ -566,6 +694,13 @@ export function whatIsBeingPutDown(
                 : Math.max(0, reachable),
             singular: true
         };
+    }
+
+    // A craft, at the rung its grade is pitched at - the same unit
+    // `theThingAskedFor` reads for one, so a hull is worth the same height
+    // whichever side of the table it is on.
+    if (offer.medium === 'a_craft') {
+        return { what: offer.name, carriesThemTo: pillBandOrdinal(offer.grade), singular: true };
     }
 
     // ── A RATED OBJECT, OFF THE FIELD EVERY RATED OBJECT ALREADY CARRIES ──

@@ -69,10 +69,28 @@ export interface WhatAHouseHasToItsName {
 /**
  * The things a house both owns and is holding, which is what it HAS.
  *
- * The same read `whatIsLeftInTheHold` does for a settlement, and deliberately
- * the same one: a thing a house owns but somebody else is carrying is not in
- * its vault, and the day it stops being true for a settlement it must stop
- * being true here too.
+ * The same read `whatIsLeftInTheHold` does for a settlement: a thing a house
+ * owns but SOMEBODY ELSE is carrying is not in its vault.
+ *
+ * ── AND NOBODY CARRYING IT IS NOT SOMEBODY ELSE CARRYING IT ──────────────
+ *
+ * The predicate was `possessorId === factionId`, which reads both of those as
+ * the same fact and they are not. A craft is moored, never carried - `craft()`
+ * and `mintCraft` both set `possessorId: null` on purpose, because a hull with
+ * a possessor is a hull `bestObjectHeldBy` would arm somebody with - so every
+ * hull and every named carriage in the world was owned by a house and listed
+ * against none of them. A player asking what the Azure Cloud Pavilion has to
+ * its name was told about its shelves and not about the best hull in two
+ * provinces, sitting in its own yard.
+ *
+ * This is the same predicate `heldByTheirHouse` reads when somebody asks a
+ * house's price for a thing, which is why the two now agree about what is
+ * there: being told a house holds one and then being told it does not was the
+ * same defect twice over.
+ *
+ * `whatIsLeftInTheHold` in `war-spoils.ts` still reads the narrow form, and
+ * that is a separate question with a real answer either way - whether a war
+ * carries off a moored hull is a design decision and not a predicate.
  */
 export function theThingsAHouseIsSittingOn(
     objects: readonly ObjectRecord[],
@@ -81,7 +99,7 @@ export function theThingsAHouseIsSittingOn(
     return objects
         .filter(row =>
             row.ownerId === factionId
-            && row.possessorId === factionId
+            && (row.possessorId === factionId || row.possessorId === null)
             && !isRuined(row)
             && !isInert(row))
         .map(row => ({

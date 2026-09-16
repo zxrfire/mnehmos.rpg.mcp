@@ -51,7 +51,8 @@ import { TECHNIQUES, getTechnique } from '../../src/data/cultivation/techniques.
 import {
     PRICES,
     THE_MORTAL_BOARD,
-    getPrice
+    getPrice,
+    whoseCounterThisSitsAt
 } from '../../src/data/cultivation/mortal-world.js';
 import { FOUNDATION_ORDINAL, MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { makeCultivator } from '../engine/cultivation/fixtures.js';
@@ -276,6 +277,41 @@ describe('the mortal board is derived from the price list, not written twice', (
                 .not.toBe('pill');
             expect(row.gives.kind, `${row.id} says in its own words it is not bought at a counter`)
                 .not.toBe('quoted_only');
+        }
+    });
+
+    /**
+     * AND NOTHING AN INSTITUTION OWNS.
+     *
+     * Three rows on the board are a named house's own counter - an entry on the
+     * Jade Register Hall's register, an oath witnessed by the Vermilion Seal
+     * Terrace, a realm placement by the Ninefold Karma Palace - and a villager
+     * behind a barrow was drawing them like millet. Measured over three seeded
+     * worlds (81 settlement squares, 633 villagers with a barrow out, 1,252
+     * offers): **145 of those offers were one of the three**, 37 / 55 / 53. On
+     * the same three worlds and the same draw afterwards: 1,252 offers, 0 of
+     * them, and the same 22 distinct ordinary rows across the same 80 squares.
+     *
+     * A scribe really does write letters and a bell keeper really does ring the
+     * bell, which is why those rows stay: what separates them is that a house
+     * says in its own `services` array that the other three are its trade. See
+     * `a-house-keeps-its-own-counter.test.ts`.
+     *
+     * Swept over barrows rather than over the board, because the board being
+     * right is the cause and a villager's stock is what a player sees.
+     */
+    it('puts no house\'s own counter on anybody\'s barrow', () => {
+        const offered = new Set<string>();
+        for (let i = 0; i < 400; i++) {
+            for (const row of whatIsOnTheirCounter({ id: `barrow-${i}` }, 'region-low-fall', 'sweep')) {
+                offered.add(row.id);
+            }
+        }
+        expect(offered.size, 'the sweep drew too few rows to say anything')
+            .toBeGreaterThan(THE_MORTAL_BOARD.length - 2);
+        for (const id of offered) {
+            const row = getPrice(id)!;
+            expect(whoseCounterThisSitsAt(row), `${id} is a house's own counter`).toBeNull();
         }
     });
 });

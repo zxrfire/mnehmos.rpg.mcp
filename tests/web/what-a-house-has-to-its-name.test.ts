@@ -153,6 +153,41 @@ describe('what is counted as theirs', () => {
         );
         expect(held.map(t => t.id)).toEqual(['a']);
     });
+
+    /**
+     * AND NOBODY CARRYING IT IS NOT SOMEBODY ELSE CARRYING IT.
+     *
+     * The predicate read `possessorId === factionId`, which treats those two as
+     * the same fact. A craft is moored and never carried - `craft()` and
+     * `mintCraft` both set `possessorId: null`, because a hull with a possessor
+     * is one `bestObjectHeldBy` would arm somebody with - so every hull and
+     * every named carriage in the world was owned by a house and listed against
+     * none of them. A visitor asking what the Azure Cloud Pavilion had to its
+     * name was told about its shelves and not about the best hull in two
+     * provinces, sitting in its own yard.
+     *
+     * Red-checked by putting `possessorId === factionId` back: this goes red on
+     * the moored row and the test above stays green, which is the pair that
+     * says the two cases are genuinely different.
+     */
+    it('counts a thing it owns that nobody is carrying', () => {
+        const held = theThingsAHouseIsSittingOn(
+            [
+                makeObject({
+                    id: 'hull', name: 'A hull', kind: 'artifact',
+                    significance: 'significant', power: 38,
+                    ownerId: 'h', ownerName: 'a house', possessorId: null
+                }),
+                makeObject({
+                    id: 'theirs', name: 'Somebody else\'s hull', kind: 'artifact',
+                    significance: 'significant', power: 38,
+                    ownerId: 'other', ownerName: 'another house', possessorId: null
+                })
+            ],
+            'h'
+        );
+        expect(held.map(t => t.id)).toEqual(['hull']);
+    });
 });
 
 describe('played', () => {

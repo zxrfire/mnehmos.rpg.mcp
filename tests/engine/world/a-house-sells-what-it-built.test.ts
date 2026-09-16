@@ -258,6 +258,38 @@ describe('the route nobody argues about', () => {
         expect(claim.strength).toBe(1);
         expect(claim.acknowledgedByIds).toContain('house-poor');
     });
+
+    /**
+     * A SALE IS NOT ALWAYS FOR STONES.
+     *
+     * This route is what the player-facing barter path closes on now, and above
+     * the cash line money is not the medium at all - so the price handed in is
+     * genuinely zero, and the claim read "Bought from X for 0 stones". That is
+     * a false line in the one record a later claimant argues off: it says a
+     * price was agreed and names it as nothing. Said plainly instead, in both
+     * the claim and the chain.
+     */
+    it('records a trade that was not for stones as one', () => {
+        const after = boughtFromItsOwner(aHull('house-poor'), {
+            buyer: { id: 'house-rich', name: 'rich' },
+            seller: { id: 'house-poor', name: 'poor' },
+            onDay: DAY,
+            price: 0,
+            source: 'a yard'
+        });
+        const claim = after.claims[after.claims.length - 1]!;
+        expect(claim.basis).toBe('purchase');
+        expect(claim.note).not.toMatch(/0 stones/);
+        expect(claim.note).toMatch(/not stones/);
+        expect(after.provenance[after.provenance.length - 1]!.note).not.toMatch(/0 stones/);
+        // And a real figure still reads as one.
+        const paid = boughtFromItsOwner(aHull('house-poor'), {
+            buyer: { id: 'house-rich', name: 'rich' },
+            seller: { id: 'house-poor', name: 'poor' },
+            onDay: DAY, price: 137_143, source: 'a yard'
+        });
+        expect(paid.claims[paid.claims.length - 1]!.note).toMatch(/137143 stones/);
+    });
 });
 
 describe('the world does it', () => {
