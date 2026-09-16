@@ -153,6 +153,14 @@ emptying. A junior's chair comes free on a breakthrough; an elder's comes free
 on a decision or a death - which is also why the covering question matters more
 at the top: an elder's seat empties without warning.
 
+**And the Kiln Wardens and the Deeproot Court are rotations too**, which is the
+standing "a posting is not a sect" ruling and this one meeting. They teach
+nothing and take nobody because there is nobody to take - people are seconded
+in and rotate out, from lower sects as well as from an apex, on the same slot
+mechanic the ruins use. So they are a posting at the scale of an institution
+rather than a house with a thin roll, and a pass that tries to give them a
+roster, a ladder or an intake has misread what they are.
+
 **The gate guard is the one to keep in mind, because a measured bug already
 depends on it.** A house with nobody on the gate tells a visitor *"nobody of the
 house is out here to ask"*, and that was found by a test failing rather than by
