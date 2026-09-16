@@ -368,11 +368,44 @@ it widens.
 
 Note that "minting" is a convenient word rather than a new mechanism: what
 happens is the world bearing and enrolling somebody, which it already does
-yearly. And no sect row carries a member count today, so the size to read is
-the one `a-house-raises-its-own.ts` already derives - the ladder, the house's
-standing, whether it recruits, and how long it has stood. **Read that rather
-than adding a number**; a second measure of how big a house is would be a
-second measure of how big a house is.
+yearly.
+
+### Track the house's real size, and let the odds fall out
+
+**A house should carry its FULL size as a number that moves over time**, and the
+chance of somebody rising into a chair comes off it. The owner: *"you should
+probably track the full size of a sect, and this is just a # that changes with
+time, so the odds of minting these higher ranks falls out."*
+
+So the modelled dozen is the slice, and beside it sits the count of everybody
+else - five hundred, or forty - which grows and shrinks as the house prospers,
+loses a war, stops recruiting or closes its door. A big house restocks its
+elders readily because it has hundreds coming up; a small one cannot, and that
+is a fact about the house rather than a dial. **The number is the input and the
+odds are the output.** Do not tune the odds directly.
+
+This supersedes an earlier note in this file which said to read the size
+`a-house-raises-its-own.ts` derives rather than adding a number. That
+derivation exists to size the SLICE and answers a different question: how many
+rows are worth holding. How many people the house actually has is not
+recoverable from it, and the two should not be made to stand in for one
+another.
+
+### And the person who rises may be somebody you know, or you
+
+**The pool is not only the unmodelled.** The owner: *"and can also be minted
+from an npc that you already know or you yourself."*
+
+So when a chair comes free the candidates are, in order of what they are worth
+as a story: **the player**, somebody the player has met, somebody on the roll
+they have not, and only then a person drawn out of the count. A disciple whose
+name the player learned at a gathering becoming an elder is worth far more than
+a stranger doing it, and **the player being the one promoted is the whole point
+of having a ladder at all.**
+
+Which means this cannot be a pass that only creates people. It is a pass that
+FILLS A CHAIR, and creating somebody is what it does when the better answers
+are unavailable.
 
  The world already bears people off a seeded stream, and a
 new elder is drawn the same way - deterministic for a given seed, different
