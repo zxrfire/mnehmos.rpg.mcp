@@ -833,7 +833,7 @@ export interface WhereTheirAttentionIs {
     here: boolean;
     /** The asker's own place, for a refusal that says where they are. */
     place: string;
-    /** Whether `FLAG_MASTER` names them: they took this asker on. */
+    /** Whether they took this asker on, off the asker's side of the bond. */
     theirMaster: boolean;
     /**
      * What they are in the middle of and could not put down, as it looks to

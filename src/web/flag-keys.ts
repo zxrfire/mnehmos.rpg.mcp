@@ -37,19 +37,6 @@ export const FLAG_STEP_TAKEN = 'unearned_step_taken';
 export const FLAG_RATIONS_HELD = 'rations_held';
 
 /**
- * Who agreed to teach this cultivator, and where they stand.
- *
- * `<personId>:<ordinal>`. Read by `guideFor`, which is what turns it into a
- * number: a house supplies a guide because somebody in it is above you, and a
- * person who took you on supplies one for exactly the same reason and by
- * exactly the same arithmetic. `manuals.md` calls this the third and most
- * demanding shape a teaching takes - "a teacher and no book at all... their
- * progress now runs through somebody's goodwill rather than an object they
- * hold".
- */
-export const FLAG_MASTER = 'master_who_took_them_on';
-
-/**
  * Who is on their knees in front of this cultivator, and the turn it happened.
  *
  * Stored as `<id>:<turn>`. A submission is the outcome of a confrontation and

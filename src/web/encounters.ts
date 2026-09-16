@@ -1827,6 +1827,71 @@ export function theChildrenTheyRaised(
 }
 
 /**
+ * A bond sworn between two people, written down on both sides.
+ *
+ * The owner's standing rule is that every relationship runs both ways. The
+ * resolver reads these rows (`theirTie`, `yourTie`), so a bond that exists only
+ * as a flag is a near-stranger to every ask that follows it - measured, a master
+ * who had taken the player on agreed to watch them sit 2.0% of the time. The
+ * TYPE is set rather than accumulated and the strength is raised to at least
+ * what was sworn, never lowered: kneeling does not undo a tie that was already
+ * deeper than a new bond starts.
+ */
+export function recordABondBothWays(
+    repos: CultivationRepos,
+    sides: readonly { fromId: string; toId: string; type: RelationshipType; strength: number }[],
+    onDay: number,
+    summary: string
+): void {
+    const db = repos.db as unknown as DatabaseHandle;
+    repos.db.transaction(() => {
+        for (const side of sides) {
+            const existing = readRelationship(db, side.fromId, side.toId);
+            const base = existing ?? createRelationship({
+                fromId: side.fromId,
+                toId: side.toId,
+                type: side.type,
+                onDay,
+                strength: side.strength,
+                significance: 'defining'
+            });
+            const updated = updateRelationship(base, {
+                onDay,
+                type: side.type,
+                strength: Math.max(base.strength, side.strength),
+                significance: 'defining',
+                appendHistory: summary
+            });
+            const withEvent = recordRelationshipEvent(updated, {
+                onDay,
+                kind: 'bond_sworn',
+                summary,
+                significance: 'defining'
+            });
+            writeRelationship(db, withEvent);
+            const event = withEvent.events[withEvent.events.length - 1];
+            if (event) writeRelationshipEvent(db, withEvent.id, event);
+        }
+    })();
+}
+
+/**
+ * Whoever this cultivator knelt to, off their own side of the bond, or null.
+ *
+ * The one read of "my master", replacing a flag that held a name and a rung
+ * beside the tie. Most recent active bond first, so a second master taken after
+ * the first is the one answered.
+ */
+export function theMasterTheyKneltTo(repos: CultivationRepos, cultivatorId: string): string | null {
+    const row = (repos.db as unknown as DatabaseHandle).prepare(
+        'SELECT to_character_id AS id FROM relationships '
+        + "WHERE from_character_id = ? AND type = 'master' AND active = 1 "
+        + 'ORDER BY established_on_day DESC LIMIT 1'
+    ).get(cultivatorId) as { id: string } | undefined;
+    return row?.id ?? null;
+}
+
+/**
  * The tie an attempt formed, written down - both sides, allowed to disagree.
  */
 export function recordTheTieAnAttemptLeft(

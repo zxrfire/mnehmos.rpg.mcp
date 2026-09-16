@@ -66,6 +66,7 @@ import {
     type Severity
 } from '../social/grudges.js';
 import type { RelationshipKind } from '../world/npc-state.js';
+import { DISCIPLE_STANDING, MASTER_STANDING } from '../world/the-ties-an-ordinary-life-produces.js';
 
 /**
  * How far above a master stands, in rungs.
@@ -230,7 +231,9 @@ export function whatABondOpens(input: {
             targetId: student.id,
             targetName: student.name,
             kind: 'disciple',
-            standing: 0.5,
+            // The world's own figures for the two ends, which is what a bond
+            // between two of its people starts at. One answer for both.
+            standing: DISCIPLE_STANDING,
             note: `Took ${student.name} as their own on day ${onDay}.`
         },
         {
@@ -238,7 +241,7 @@ export function whatABondOpens(input: {
             targetId: master.id,
             targetName: master.name,
             kind: 'master',
-            standing: 0.5,
+            standing: MASTER_STANDING,
             note: `Knelt to ${master.name} on day ${onDay}.`
         }
     ];

@@ -86,7 +86,7 @@ import {
     theOnesInParticularAt,
     theSpeciesItIs
 } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
-import { carryingWounds, markDead, type NpcRecord } from '../engine/world/npc-state.js';
+import { carryingWounds, markDead, upsertRelationship, type NpcRecord } from '../engine/world/npc-state.js';
 import { whatTheirBodyShows } from '../engine/world/what-a-body-shows-when-somebody-walks-up.js';
 import { recordPermanentWounds } from '../engine/world/recording-the-day-a-wound-was-taken.js';
 // Who answers for a beast that was killed. The whole module had no caller
@@ -607,7 +607,9 @@ import {
     countedHoldingKey
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 // ── AND A WORD GIVEN, CARRIED, OR NOT KEPT ───────────────────────────────
-import { openOathsHeldBy } from './encounters.js';
+import { openOathsHeldBy, recordABondBothWays, theMasterTheyKneltTo } from './encounters.js';
+import { whatABondOpens, whetherYouMayTake } from '../engine/social-leverage/taking-somebody-as-your-own.js';
+import type { RelationshipType } from '../engine/social/relationships.js';
 import {
     whatWalkingOutOfItCosts,
     whatWouldCloseIt
@@ -1058,7 +1060,6 @@ import {
 } from './turn-constants.js';
 import {
     FLAG_LAST_ADDRESSED,
-    FLAG_MASTER,
     FLAG_RATIONS_HELD,
     FLAG_STEP_TAKEN,
     FLAG_YIELDING_TO_YOU
@@ -16310,27 +16311,90 @@ ${fit.line}`;
 
         if (kind === 'discipleship') {
             const theirOrdinal = party.party?.realmOrdinal ?? 0;
-            writeFlag(this.db, cultivator.id, FLAG_MASTER, `${party.id}:${theirOrdinal}`);
+            const master = { id: party.id, name: party.name, ordinal: theirOrdinal };
+            const student = {
+                id: cultivator.id,
+                name: cultivator.name,
+                ordinal: cultivator.realmOrdinal,
+                masterId: theMasterTheyKneltTo(this.repos, cultivator.id)
+            };
+            // WHETHER THERE IS A BOND TO SEAL AT ALL. `whetherYouMayTake` is the
+            // one answer to that, and it answers about the world rather than
+            // about permission: too near is two people on the same stretch.
+            const may = whetherYouMayTake(master, student);
+            if (!may.may) {
+                lines.push(`${party.name} hears you out, and there is nothing to seal. ${may.reason}`);
+                calls.push({
+                    name: 'social.whetherYouMayTake',
+                    action: 'request',
+                    summary: `No bond written: ${may.why}. ${may.reason}`,
+                    ok: false
+                });
+                return { lines, calls };
+            }
+
+            // ── THE BOND, BOTH WAYS, IN BOTH STORES ─────────────────────────
+            //
+            // This wrote a flag and nothing else, so every ask the player put to
+            // their own master afterwards was weighed as an ask to a stranger:
+            // measured, 2.0% to be watched while they sat. The design owner's
+            // standing rule is that every relationship runs both ways.
+            // `whatABondOpens` is the producer, and it writes the tie at each end,
+            // the oath each end swore, and a grudge where the student walked away
+            // from somebody else to do it. The person exists in two stores, which
+            // is drift being worked off (AGENTS.md), and each has a reader: the
+            // world rows are what a description like "my master" and the world's
+            // own passes read, the relationship rows are what the resolver reads.
+            const runDay = Math.floor(run.elapsedDays);
+            const opened = whatABondOpens({ master, student, onDay: runDay });
+            const world = this.atHand;
+            if (world) {
+                const worldDay = Math.floor(world.currentDay);
+                for (const tie of opened.ties) {
+                    const at = world.npcs.findIndex(npc => npc.id === tie.holderId);
+                    if (at < 0) continue;
+                    world.npcs[at] = upsertRelationship(world.npcs[at]!, {
+                        targetId: tie.targetId,
+                        targetName: tie.targetName,
+                        kind: tie.kind,
+                        standing: tie.standing,
+                        note: tie.note
+                    }, worldDay);
+                }
+                this.theWorldMoved();
+            }
+            recordABondBothWays(
+                this.repos,
+                opened.ties.map(tie => ({
+                    fromId: tie.holderId,
+                    toId: tie.targetId,
+                    type: tie.kind as RelationshipType,
+                    strength: tie.standing
+                })),
+                runDay,
+                opened.sealing.summary
+            );
+            for (const row of [...opened.oaths, ...opened.grudges]) {
+                writeOneObligation(this.db as unknown as DatabaseHandle, row);
+            }
+
             lines.push(
-                theirOrdinal > cultivator.realmOrdinal
-                    ? `${party.name} takes you on. What that is worth is not a title: somebody who `
-                      + 'has stood further up than you can tell you what you are doing wrong '
-                      + 'while you are still doing it, when they are watching. Asking them to '
-                      + 'watch you sit is still asking.'
-                    : `${party.name} agrees, and it changes nothing about how fast you climb. `
-                      + 'Guidance is the gap between the guide and the guided, and there is none.'
+                `${party.name} takes you on. What that is worth is not a title: somebody who `
+                + 'has stood further up than you can tell you what you are doing wrong while you '
+                + `are still doing it, when they are watching. You owe them ${Math.round((opened.dueOnDay - runDay) / DAYS_PER_YEAR)} `
+                + 'years of service, and they owe you as long of teaching.'
             );
             calls.push({
                 name: 'engine.takeAMaster',
                 action: 'request',
                 summary:
-                    `${party.name}, standing at ${theRung(theirOrdinal)}, is recorded as `
-                    + `${cultivator.name}'s master. The tie the asking left is what makes a later `
-                    + 'ask of theirs likelier; the rate reads their attention and not the title, '
-                    + 'and a span under their eye is worth '
-                    + `${theirOrdinal > cultivator.realmOrdinal
-                        ? 'up to half again on the rate'
-                        : 'nothing at all, the guide standing no higher than the guided'}.`,
+                    `${party.name}, standing at ${theRung(theirOrdinal)}, took ${cultivator.name} `
+                    + `on. Written both ways: a 'disciple' tie on ${party.name}'s side and a 'master' `
+                    + `tie on ${cultivator.name}'s, at the world's own standings, on the world rows and `
+                    + `the relationship rows; ${opened.oaths.length} oaths, due on day `
+                    + `${opened.dueOnDay}; ${opened.grudges.length} grudge(s) from a master left `
+                    + 'behind. The resolver reads the tie on every later ask; the rate reads '
+                    + 'attention and not the title.',
                 ok: true
             });
             return { lines, calls };
@@ -16654,15 +16718,12 @@ ${fit.line}`;
     private guideFor(cultivator: Cultivator): { guideOrdinal: number | null; guideListeners: number } {
         const nobody: { guideOrdinal: number | null; guideListeners: number } =
             { guideOrdinal: null, guideListeners: 1 };
+        // With no world there is nobody's activity to read, and so nobody
+        // giving attention. This used to fall back on a remembered master and
+        // rung, which was presence standing in for attention in exactly the one
+        // mode nothing could check it.
         const world = this.atHand;
-        if (!world) {
-            const took = readFlag(this.db, cultivator.id, FLAG_MASTER);
-            if (!took) return nobody;
-            const ordinal = Number(took.slice(took.lastIndexOf(':') + 1));
-            return Number.isFinite(ordinal) && ordinal > cultivator.realmOrdinal
-                ? { guideOrdinal: ordinal, guideListeners: 1 }
-                : nobody;
-        }
+        if (!world) return nobody;
 
         const place = worldLocationFor(world, cultivator.location);
         if (!place) return nobody;

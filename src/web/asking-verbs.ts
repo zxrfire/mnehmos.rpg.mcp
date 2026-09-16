@@ -109,6 +109,7 @@ import { askedAbout, whetherTheyHoldIt } from './asked.js';
 import {
     type DatabaseHandle,
     openLedgerBetween,
+    theMasterTheyKneltTo,
     tieFrom
 } from './encounters.js';
 import {
@@ -150,7 +151,7 @@ import { whatTheyWereAskedToMake } from './what-somebody-was-asked-to-make.js';
 import { materialBeingCarriedBy, materialInThePouch } from './what-is-on-the-bench.js';
 import { askingSomebodyToMakeYouSomething } from '../engine/social-leverage/index.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
-import { FLAG_LAST_ADDRESSED, FLAG_MASTER } from './flag-keys.js';
+import { FLAG_LAST_ADDRESSED } from './flag-keys.js';
 import { howCloseTheyStandToTheirWall } from './standing-guard.js';
 import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
 import { DEFAULT_CULTIVATION_DAYS } from './verb-day-costs.js';
@@ -1144,13 +1145,12 @@ ${unnamed}`;
         );
         if (ofItself) return ofItself;
 
-        // "MY MASTER" IS WHOEVER TOOK THEM ON. A description resolves a tie off the
-        // player's world row, and taking somebody on writes `FLAG_MASTER` and no
-        // tie - so the sentence the design owner used, "I ask my master to guide
-        // my cultivation", named nobody. Read only where the ordinary resolver
-        // found nobody, so a tie the world does hold still wins.
-        const master = readFlag(this.db, cultivator.id, FLAG_MASTER);
-        const masterId = master ? master.slice(0, master.lastIndexOf(':')) : null;
+        // "MY MASTER" IS WHOEVER THEY KNELT TO, READ OFF THE TIE. Standing in
+        // front of them, a description resolves it off the player's world row,
+        // which taking somebody on now writes. Standing anywhere else nobody is
+        // there to be described, so the player's own side of the bond names them
+        // and the refusal can say they are not here.
+        const masterId = theMasterTheyKneltTo(this.repos, cultivator.id);
         const masterName = masterId && theDescriptionThisIs(query)?.tie === 'master'
             ? this.atHand?.npcs.find(row => row.id === masterId)?.name
                 ?? this.repos.cultivators.getById(masterId)?.name
@@ -1297,7 +1297,7 @@ ${unnamed}`;
                 : 0;
 
         // WHERE THEIR ATTENTION IS, read off their own row. Whether they took
-        // this cultivator on is `FLAG_MASTER`, the one record of that.
+        // this cultivator on is their own side of the bond, `theMasterTheyKneltTo`.
         const theirRow = this.atHand?.npcs.find(row => row.id === party.id) ?? null;
         const today = Math.floor(this.atHand?.currentDay ?? 0);
         const busy = theirRow ? whatTheyCannotPutDown(theirRow, cultivator.id, today) : null;

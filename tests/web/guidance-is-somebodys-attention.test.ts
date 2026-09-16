@@ -25,7 +25,8 @@
  *   2. A master may say no. Asking one goes through the same roll as asking
  *      anybody, and what makes them likelier to agree is the tie the resolver
  *      already weighs: the odds for the same person rise once they have taken
- *      the player on. A master at their own wall, or turned away at their own
+ *      the player on. Measured on this world: 2.0% as a stranger, 15.1% once
+ *      taken on. Not "usually yes", and no special case was written to make it so. A master at their own wall, or turned away at their own
  *      practice, declines before anything is rolled, and says why and when.
  *      This used to pin an unrolled yes; the design owner ruled it out.
  *   3. A yes writes the attention for the span, the rate reads it while the
@@ -46,8 +47,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeGameInWorld, type Harness } from './harness';
 import { guidanceMultiplier } from '../../src/engine/cultivation/cultivation';
-import { writeFlag } from '../../src/server/consolidated/cultivation-support';
-import { FLAG_MASTER } from '../../src/web/flag-keys';
+import { recordABondBothWays, tieFrom } from '../../src/web/encounters';
 import { yearsToWriteOutACopy } from '../../src/engine/world/manuals';
 import { whatATalkIsWorthToTheHouse } from '../../src/web/a-teacher-giving-you-their-attention';
 import { howCloseTheyStandToTheirWall } from '../../src/web/standing-guard';
@@ -92,7 +92,7 @@ function theOddsOf(turn: Turn): number {
 }
 
 /** GIVEN a fresh run standing somewhere, fed, and somebody above them here. */
-async function somebodyAboveHere(seed: string) {
+async function somebodyAboveHere(seed: string, opts: { atLeast?: number } = {}) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     await harness.game.newRun('Prober');
     await harness.game.act('I buy a year of provisions');
@@ -111,7 +111,10 @@ async function somebodyAboveHere(seed: string) {
         .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
             || (a.id < b.id ? -1 : 1));
     expect(above.length, 'nobody above the player is standing where the run opened').toBeGreaterThan(0);
-    const teacher = above[0];
+    // A master stands at least `A_MASTER_STANDS_THIS_FAR_ABOVE` over a disciple;
+    // under that there is no bond to seal. Tests of a master ask for that gap.
+    const teacher = above.find(npc => npc.cultivation.realmOrdinal - me.realmOrdinal >= (opts.atLeast ?? 1));
+    expect(teacher, `nobody here stands ${opts.atLeast ?? 1} rungs above the player`).toBeDefined();
     const others = world.npcs.filter(npc => here.has(npc.id) && npc.id !== teacher!.id
         && npc.status === 'alive');
     // Put them at something that is not teaching, so the arrangement starts
@@ -181,33 +184,70 @@ describe('a master beside you is not a master watching you', () => {
 
 describe('a master may say no', () => {
     /**
-     * MEASURED, AND IT IS NOT "USUALLY AGREES". On this world and seed the odds
-     * were 2.0% before the player was taken on and 2.0% after: the tie a
-     * granted discipleship leaves is too weak to move an ask a realm or more
-     * upward off the resolver's floor. That is the ordinary resolver's answer
-     * and no special case was written to change it, so this pins only that a
-     * master is asked through the same roll and that being taken on never
-     * makes it LESS likely.
+     * THE BOND IS WRITTEN BOTH WAYS, AND THE RESOLVER READS IT.
+     *
+     * Taking somebody on used to write one flag and no relationship, so the
+     * resolver weighed a master's reply to their own disciple as a reply to a
+     * stranger. Measured before the fix on this seed: 2.0% to be watched while
+     * sitting, before being taken on and after. The design owner's standing
+     * rule is that every relationship runs both ways; the bond is now a
+     * `disciple` tie on the master's side and a `master` tie on the student's,
+     * on the world rows and on the relationship rows, at the world's own
+     * standings, with the oaths each end swore.
+     *
+     * The margin is printed in the assertion. It is NOT "usually yes": see the
+     * report. The resolver's tie term is `TIE_WEIGHT` times the strength, and a
+     * plain favour asked a few rungs upward starts well under the floor that
+     * term can lift it from.
      */
-    it('is asked through the same roll, and being taken on never makes a yes less likely', async () => {
-        const { harness, teacher } = await somebodyAboveHere('guided-master-odds');
+    it('writes the bond both ways, and a master is likelier to say yes than a stranger', async () => {
+        const { harness, me, teacher } = await somebodyAboveHere('guided-master-odds', { atLeast: 4 });
         const asked = `could I ask ${teacher.name} to guide my cultivation for 10 days`;
         const asAStranger = theOddsOf(await harness.game.act(asked) as Turn);
 
-        // TAKEN ON BY PLAYING, forced because the landing is a roll: the
-        // `discipleship` yes writes `FLAG_MASTER` and the tie the ask leaves.
         const took = await harness.game.act(
             `ADMIN request I beg ${teacher.name} to take me as a disciple`
         ) as Turn;
         expect(everythingSaid(took)).toMatch(/takes you on/);
 
+        // BOTH ROWS, BOTH STORES.
+        const world = (await harness.game.loadWorld())!;
+        const theirs = world.npcs.find(npc => npc.id === teacher.id)?.relationships
+            .find(tie => tie.targetId === me.id);
+        const mine = world.npcs.find(npc => npc.id === me.id)?.relationships
+            .find(tie => tie.targetId === teacher.id);
+        expect(theirs?.kind).toBe('disciple');
+        expect(mine?.kind).toBe('master');
+        expect(tieFrom(harness.repos as never, teacher.id, me.id)?.type).toBe('disciple');
+        expect(tieFrom(harness.repos as never, me.id, teacher.id)?.type).toBe('master');
+
         const asTheirDisciple = theOddsOf(await harness.game.act(asked) as Turn);
+        console.log(`GUIDANCE ODDS: stranger ${asAStranger}, disciple ${asTheirDisciple}, margin ${(asTheirDisciple - asAStranger).toFixed(4)}`);
         expect(asTheirDisciple, `stranger ${asAStranger}, disciple ${asTheirDisciple}`)
-            .toBeGreaterThanOrEqual(asAStranger);
+            .toBeGreaterThan(asAStranger);
+    }, 180_000);
+
+    /**
+     * STANDING IN FRONT OF THEM, "my master" is resolved off the player's world
+     * row, which the bond writes - the test above asks it that way and is
+     * answered. STANDING ELSEWHERE, a request reaches only who is present or on
+     * the cultivator table, for any name at all, so the answer is the fact about
+     * where the player stands and nothing is spent.
+     */
+    it('resolves "my master" through the tie, and elsewhere says nobody here is', async () => {
+        const { harness, world, me, teacher } = await somebodyAboveHere('guided-master-elsewhere', { atLeast: 4 });
+        await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
+        const elsewhere = world.locations.find(row => row.kind === 'settlement'
+            && row.id !== teacher.locationId);
+        harness.repos.cultivators.update(me.id, { location: elsewhere!.name });
+        const before = harness.game.currentRun().run.elapsedDays;
+        const turn = await harness.game.act('I ask my master to guide my cultivation for 10 days') as Turn;
+        expect(everythingSaid(turn)).toMatch(/master to you/);
+        expect(harness.game.currentRun().run.elapsedDays).toBe(before);
     }, 180_000);
 
     it('writes their attention on a yes, reads it over the span, and ends it after', async () => {
-        const { harness, me, teacher } = await somebodyAboveHere('guided-master');
+        const { harness, me, teacher } = await somebodyAboveHere('guided-master', { atLeast: 4 });
         await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
         const before = harness.game.currentRun().run.elapsedDays;
         const seen = watchTheRate(harness);
@@ -230,7 +270,7 @@ describe('a master may say no', () => {
     }, 180_000);
 
     it('declines at their own practice, naming it and when they are free', async () => {
-        const { harness, world, teacher } = await somebodyAboveHere('guided-busy');
+        const { harness, world, teacher } = await somebodyAboveHere('guided-busy', { atLeast: 4 });
         await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
         const today = Math.floor(world.currentDay);
         const at = world.npcs.findIndex(npc => npc.id === teacher.id);
@@ -254,10 +294,14 @@ describe('a master may say no', () => {
 
     it('declines at their own wall, and says so', async () => {
         const { harness, world, me, teacher } = await somebodyAboveHere('guided-wall');
-        // THE MASTER IS THE ROW A GRANTED DISCIPLESHIP WRITES, arranged rather
-        // than played: playing it spends days, and on this seed the person the
-        // world had placed there was gone from the world by the end of them.
-        writeFlag(harness.db, me.id, FLAG_MASTER, `${teacher.id}:${teacher.cultivation.realmOrdinal}`);
+        // THE BOND AS A GRANTED DISCIPLESHIP WRITES IT, arranged rather than
+        // played: playing it spends days, and on this seed the person the world
+        // had placed there was gone from the world by the end of them. The
+        // student's side of the relationship rows is what "my master" reads.
+        recordABondBothWays(harness.repos as never, [
+            { fromId: me.id, toId: teacher.id, type: 'master', strength: 0.6 },
+            { fromId: teacher.id, toId: me.id, type: 'disciple', strength: 0.5 }
+        ], 0, 'arranged');
         const today = Math.floor(world.currentDay);
         // AT THE WALL BY THE WORLD'S OWN ARITHMETIC. Their clocks are arranged
         // and `readyToStrike` is asked whether that is enough, at the thinnest
