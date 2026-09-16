@@ -321,7 +321,7 @@ import {
     DEFAULT_WORK_DAYS,
     GATHERING_DAYS,
     HUNTING_DAYS,
-    MAX_CULTIVATION_DAYS,
+    aSpanPastTheEndOfThisLife,
     TRAINING_DAYS,
     DEFAULT_RECALL_INTENT,
     DEFAULT_PASSAGE_INTENT,
@@ -335,6 +335,7 @@ import {
     type PlannedAction,
     type RecallIntent
 } from './actions.js';
+import { theSpanTheSentenceNames } from './sentence-parts.js';
 import {
     theClauseThisTurnDidNotRun,
     sayingWhatWasNotDone,
@@ -3165,11 +3166,14 @@ export class GameService {
         if (!Number.isFinite(requested) || requested < 1) {
             throw new GameError('Cultivation needs a whole number of days, at least one.');
         }
-        if (requested > MAX_CULTIVATION_DAYS) {
-            throw new GameError(`The longest seclusion this engine will resolve in one pass is ${MAX_CULTIVATION_DAYS} days.`);
-        }
-
         const { run, cultivator } = this.requireLiveRun();
+        // THE BOUND IS THE BODY, NOT A CONSTANT. This refused anything past a
+        // flat century for everybody - a mortal could ask for a hundred years
+        // they did not have, and somebody who could sit for five hundred could
+        // not. The refusal carries the figure, because being told "too long"
+        // makes a player guess at a bound the engine already knows.
+        const pastTheEnd = aSpanPastTheEndOfThisLife(cultivator, requested);
+        if (pastTheEnd) throw new GameError(pastTheEnd.line);
         const ambient = this.ambientFor(cultivator, run);
         // Pressing Cultivate with a fork standing is going, and then sitting
         // down again for a fresh stretch. Captured before `runSeclusion` clears
@@ -3887,14 +3891,43 @@ export class GameService {
                 ]
             };
 
+        // ── AND A SPAN IS BOUNDED BY THE LIFE ASKING FOR IT ──────────────
+        //
+        // THE FREE-TEXT PATH HAD NO BOUND AT ALL. The typed entry points
+        // refused anything past a flat century; a sentence went through
+        // `parseDuration`, which silently clamped to the same century without
+        // saying so, and a second un-clamped read existed only to recover the
+        // figure the first had thrown away. Both clamps are gone, so a span
+        // past the end of a life now has to be refused here or it runs and the
+        // cultivator dies of the arithmetic.
+        //
+        // The refusal carries the figure and answers in the unit the sentence
+        // used - "1000 years was asked for. 84 years is the whole of what is
+        // left" - because a player told only that it is too long has been made
+        // to guess at a bound the engine already holds.
+        if (action.action === 'cultivate' || action.action === 'seclude') {
+            const asked = Math.floor(Number(action.days ?? 0));
+            const pastTheEnd = asked >= 1
+                ? aSpanPastTheEndOfThisLife(
+                    asTheyStand, asked, theSpanTheSentenceNames(rawInput)
+                )
+                : null;
+            if (pastTheEnd) {
+                return refused('engine.aSpanPastTheEnd', action.action, factsForRefusal(
+                    'Longer than the life asking for it.',
+                    pastTheEnd.line,
+                    `Asked ${pastTheEnd.requestedDays} days against ${pastTheEnd.daysLeft} `
+                    + `left: ${pastTheEnd.rank}, age ${pastTheEnd.age} of a `
+                    + `${pastTheEnd.ceilingYears}-year ceiling. Nothing spent.`
+                ));
+            }
+        }
+
         switch (action.action) {
             // `durationAskedFor` is the UNCLAMPED span in the sentence.
-            // `action.days` has already been through `parseDuration`, which
-            // silently caps at MAX_CULTIVATION_DAYS - so "I cultivate for 100000
-            // years" arrived here as 36500 and the player was told "Seclusion of
-            // 100 years was intended", which is the engine reporting its own
-            // ceiling as somebody else's intention. Carried so the account can say
-            // what was asked and what was capped.
+            // `action.days` has already been through `parseDuration`, which no
+            // longer clamps - the bound is the life above, and the account can
+            // still say what was asked.
             case 'cultivate':
                 // A target on `cultivate` is somebody named as sitting it with
                 // them, and the shared road is the only thing that reads it -
@@ -16942,10 +16975,11 @@ ${fit.line}`;
         if (!Number.isFinite(requested) || requested < 1) {
             throw new GameError('A stretch is a whole number of days, at least one.');
         }
-        if (requested > MAX_CULTIVATION_DAYS) {
-            throw new GameError(`The longest seclusion this engine will resolve in one pass is ${MAX_CULTIVATION_DAYS} days.`);
-        }
         const { cultivator } = this.currentRun();
+        // Provisioning for a stretch is bounded by the same life the stretch
+        // is. See `cultivate` above.
+        const pastTheEnd = aSpanPastTheEndOfThisLife(cultivator, requested);
+        if (pastTheEnd) throw new GameError(pastTheEnd.line);
         return whatFeedingThisStretchCosts(cultivator, this.rationsHeld(cultivator), requested);
     }
 
