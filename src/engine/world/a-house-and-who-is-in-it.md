@@ -64,6 +64,18 @@ knows:
 > people. you know your skip skip and skip skip skip but not everyone they
 > manage, so it doesn't have to be strictly pyramidal, just vaguely."*
 
+**The slice keeps the pyramid's shape because it is DRAWN FROM one.** The owner:
+*"you SEE a thin slice, but that thin slice is made from the population
+pyramid."* That is why a roster comes out bottom-heavy without anybody
+enforcing it, and why the aggregate across every house is a pyramid nobody
+computed. The pyramid is the population; the slice is a sample of it; the
+sample inherits the shape without the engine having to instantiate the
+population to get it.
+
+Which is also the whole economy of the arrangement. Sample from a pyramid and
+you get the narrative shape of a pyramid for the cost of a dozen rows a house.
+Instantiate the pyramid and you get the same shape for nineteen thousand.
+
 So the roster is two different things stacked, and they are **not** governed by
 the same rule:
 
