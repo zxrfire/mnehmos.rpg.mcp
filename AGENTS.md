@@ -406,6 +406,61 @@ you want is an item.
 
 ---
 
+## Find out whether the question is already answered
+
+> **Most fixes in this repo are moving a question to where it is already
+> answered, not answering it again. Look before you write.**
+
+This is the single most reliable pattern here, and it is worth checking first
+every time because the alternative is expensive: a second answer does not
+announce itself. It compiles, it passes, and it drifts away from the first one
+over months until two parts of the engine disagree about something neither of
+them knows the other holds.
+
+Instances, all of them found rather than predicted:
+
+- A fuel rate for a spirit boat was about to be invented. `what-a-sea-crossing-
+  costs.ts` already stated it, flat, and stated WHY it is flat: *"what is being
+  bought is the absence of ground rather than any property of the buyer."* The
+  work was importing a constant, not choosing one.
+- A rule for which killings leave a debt. The seeder already had one and simply
+  was not applying it to killings the world produced afterwards. The fight
+  resolver was already computing who was left; it wrote a row saying nobody
+  was.
+- Whether a life could have been told about a killing. One reader answers
+  correctly and another answers `unaware` for every question at turn zero. The
+  wrong one would have looked like a working rule that never fired.
+- Where mortals stop and cultivators begin, for a market split.
+  `FOUNDATION_ORDINAL` already drew that line in its own words, and three other
+  passes already read it as exactly that.
+- Which houses own which counters. Each house already advertises the service in
+  its own catalog entry, word for word.
+- How many people a rung seats. `sects.ts` says in its header that nothing
+  should re-derive it from a fraction, two lines above the sentence that sent
+  somebody looking, and the one line doing it was deriving it from a fraction.
+
+### The two ways it goes wrong
+
+**Writing a second answer.** The tell is a function that has to agree with
+another function. If you find yourself reasoning about whether your number
+matches somebody else's, you are building the drift rather than avoiding it.
+
+**Assuming an answer that exists is reachable.** The opposite failure, and it is
+worse because grep cannot see it. A whole subsystem here had a caller, was
+invoked every year, had eight test files, and had never once run in the game as
+played. **"It has a caller" is not proof that anything runs.** When you find the
+existing answer, check that something actually asks it, on the path the game
+uses.
+
+### What to do when you find one
+
+Point at it. Do not restate it near where you are working, however tempting the
+convenience: a paraphrase beside the code is a second source of truth with a
+head start on diverging. If the existing answer is in the wrong place, move it
+and leave nothing behind.
+
+---
+
 ## A name evokes what it is, and is tellable from every other name
 
 The WORLD half of naming - what register a sect, an art, a pill or a place is in,
