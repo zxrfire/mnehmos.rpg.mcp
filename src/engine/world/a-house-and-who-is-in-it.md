@@ -329,13 +329,31 @@ failing a normal loss rate, or people leaving a chair without dying at all.
 Measure all three before concluding; the instinct is to look only at who is
 coming up, and at least one exit is known to be broken.
 
+**And keep two different decays apart, because they have been conflated here
+and they have different causes.** The owner: *"posted away elders aren't lost
+though."* Quite right - somebody on a posting still holds their rank and is
+still the house's. What they are not is STANDING THERE.
+
+- **Presence decay** - people exist, hold their chairs, and are somewhere else.
+  This is what the 207 of 306 down to 42 of 363 measures, and it is what breaks
+  the gate, the courtyard read and hosting. Postings never recalled is the
+  cause.
+- **Roster decay** - the house genuinely has nobody at a rank. This is what a
+  fifth of every ladder empty at a century measures, and it is what breaks
+  promotion and who can be sent.
+
+A posted-away elder fills a rank slot and empties a seat. So the two figures
+answer different questions, and a fix for one need not move the other. Say which
+you are measuring.
+
 Start with the ways somebody leaves a chair while still alive, because those
 are the ones that should not be happening at all:
 
 - **posted away and never recalled.** Measured: members standing at their own
   seat fall from 207 of 306 to 42 of 363 over a century, and they are not dead,
   they are in towns. Town postings return people to wherever they last were
-  rather than to the compound
+  rather than to the compound. **This is presence, not loss** - the house still
+  has them
 - **killed.** The world's own passes take people, and the party pass dominates
   the ones that do
 - **walked out.** Which the engine can barely express - see the walk-out gap
