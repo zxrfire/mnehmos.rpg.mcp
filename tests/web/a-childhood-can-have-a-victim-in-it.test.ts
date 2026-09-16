@@ -82,6 +82,41 @@
  * it.
  *
  * ═════════════════════════════════════════════════════════════════════════
+ * THE HOUSEHOLD HALF IS NOT SOMETHING A SEED CAN HOLD
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * Read the table again: 466 of the 470 arrive through the street and 4 through
+ * kin. A pinned seed for the kin half is a one-in-seven-thousand draw, and this
+ * file held one - `probe-w1/probe-r1-221`, picked out of that sweep. It has
+ * stopped being a kin arrangement. That birth opens on Cold Sword Sect ground,
+ * which holds five living catalog members, one married couple among them, and
+ * nobody dead at all, so there is no second parent for a killing to have taken.
+ * Nothing in the opening moved: the other three pins say exactly what they said.
+ *
+ * Re-measured on this tree, 1,950 births over 13 pinned worlds:
+ *
+ *     lives                                              1,950
+ *     lives whose own faces include a victim                27   1.38%
+ *       as a face from the street                           27
+ *       as kin                                               0
+ *
+ * 0 of 27 is what 4-in-470 predicts rather than evidence of a shut door, and the
+ * door is open on the world's side: over 24 pinned worlds, 21 households hold a
+ * priced killing whose victim died inside a childhood and left a living spouse
+ * old enough to have done the raising. Every one is on a house's ground, because
+ * the reach table only lets a sixteen-year-old have grown up beside somebody
+ * that far up where a birth puts them inside the walls.
+ *
+ * So the household half is ARRANGED, the way the street half's admission rules
+ * already are, and the played sweep now promises only what a played sweep can.
+ *
+ * AND ONE DOOR THAT IS GENUINELY SHUT, written down rather than closed here: a
+ * MORTAL household is a mention and inherits no second parent at all, so a
+ * mortal whose father was murdered ten years ago is told nothing - while the
+ * same man reaches the opening if he was a neighbour. That is the mortal ruling
+ * and the street ruling meeting, and which of them wins is not this file's.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
  * WHAT THE ASSERTIONS ENCODE
  * ═════════════════════════════════════════════════════════════════════════
  *
@@ -92,7 +127,8 @@
  *
  *   The tier is `whoTheyCarryFor`'s. A neighbour is a name and a killing; kin
  *   is that and an account the player can act on, and the opening says so in
- *   the same words the telling layer would.
+ *   the same words the telling layer would. Both tiers are still asserted; only
+ *   the kin one is arranged rather than drawn.
  *
  *   A heading promises only what the lines under it deliver. A dead person has
  *   no whereabouts, so `and where each of them is` goes.
@@ -113,26 +149,32 @@ import { aDeedEntersTheWorld } from '../../src/engine/world/a-deed-enters-the-wo
 import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened';
 import { makeFact } from '../../src/engine/world/history';
 import { createWorld, getNpc, type WorldState } from '../../src/engine/world/world-state';
-import { createNpc, markDead } from '../../src/engine/world/npc-state';
+import { createNpc, markDead, upsertRelationship } from '../../src/engine/world/npc-state';
 import { makeLocation } from '../../src/engine/world/locations';
 import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation';
+import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms';
 import type { Cultivator } from '../../src/schema/cultivation';
 
 /**
- * Four arrangements out of the sweep, chosen to cover both tiers and both
- * answers to whether the killer can be named.
+ * Four arrangements out of the sweep, chosen to cover both answers to whether
+ * the killer can be named, on four different worlds.
  *
  * Pinned in both halves. An unpinned `worldEnabled` game mints a world from
  * `randomUUID()`, so a run seed alone pins a coincidence.
+ *
+ * All four are faces from the street, and that is not a narrowing of what is
+ * covered - see the header. A kin pin is a one-in-seven-thousand draw and the
+ * one this file held has been re-drawn by the world work since; the household
+ * tier is arranged instead, under `aHouseholdWithAKilledParent`.
  */
 const WHERE_IT_HAPPENS = [
-    // A face from the street, and the killer is this life's own parent.
+    // The killer is this life's own parent.
     { worldSeed: 'probe-w3', seed: 'probe-r3-0' },
     { worldSeed: 'probe-w4', seed: 'probe-r4-1' },
-    // A face from the street whose killer is a stranger to this life.
+    // A killer this life has never been given a name for.
     { worldSeed: 'probe-w1', seed: 'probe-r1-37' },
-    // And the kin case, which is the only one the first cut could reach.
-    { worldSeed: 'probe-w1', seed: 'probe-r1-221' }
+    // And one on a sect town rather than a village, where the reach is wider.
+    { worldSeed: 'probe-w16', seed: 'probe-r16-30' }
 ];
 
 const A_BLOCK_OPENS = /^(The household|People (you|they) can already put a name to)/;
@@ -226,8 +268,17 @@ describe('a childhood can have a victim in it', () => {
         }
     }, 900_000);
 
-    /** Both tiers are reached by the four, or the sweep above proves nothing. */
-    it('reaches a face from the street and a face from the household', async () => {
+    /**
+     * The played half of what used to be `reaches a face from the street and a
+     * face from the household`. The household half of that claim rested on one
+     * seed drawing a 4-in-30,000 arrangement, which is the shape of a test that
+     * is green by luck; it is arranged below instead, and the reasoning and the
+     * numbers for the split are in the header.
+     *
+     * Asserted as a membership rather than as "all four are street", because
+     * which tier a given seed draws is the engine's choice and not this file's.
+     */
+    it('reaches a face from the street on the worlds it is pinned to', async () => {
         const ties: string[] = [];
         for (const pinned of WHERE_IT_HAPPENS) {
             const { db, game } = await makeGameInWorld(pinned);
@@ -237,7 +288,7 @@ describe('a childhood can have a victim in it', () => {
             ties.push(/^The household/.test(theHeadingAbove(recap, at)) ? 'kin' : 'street');
             db.close();
         }
-        expect(new Set(ties)).toEqual(new Set(['kin', 'street']));
+        expect(new Set(ties), 'no pinned world drew a victim off the street').toContain('street');
     }, 900_000);
 
     // ─────────────────────────────────────────────────────────────────────
@@ -348,6 +399,114 @@ describe('a childhood can have a victim in it', () => {
         const faces = drawnFrom(aStreetWithAKilling({ yearsAgo: 10, priced: false }));
         expect(faces.map(one => one.name)).not.toContain('The Dead One');
         expect(faces.length, 'the living are still drawn').toBeGreaterThan(0);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // WHO THE HOUSEHOLD ADMITS
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * A house's ground holding one widowed household: the parent who did the
+     * raising, the spouse who was killed inside this life's own years, and the
+     * person who killed them, too young to have raised anybody.
+     *
+     * TWO THINGS ARE LOAD-BEARING AND NEITHER IS A NUMBER CHOSEN HERE.
+     *
+     *   THE HOUSEHOLD IS A CULTIVATING ONE. Below {@link FOUNDATION_ORDINAL} a
+     *   household is a MENTION - no tie, no whereabouts, and no second parent
+     *   inherited - so a mortal family cannot reach this case at all. That is
+     *   the mortal ruling rather than a gap in the draw, and it is why a birth
+     *   on a house's ground is the arrangement.
+     *
+     *   THE PLAYER HAS A ROW. The kin tier is `whoTheyCarryFor`'s, and that
+     *   reads the HEARER's own ties - which only land where the world already
+     *   holds them a row. Without one the household still comes back and the
+     *   account does not, which is the asymmetry `the-family-a-life-opens-with`
+     *   has had to be taught twice.
+     */
+    function aHouseholdWithAKilledParent(opts: { yearsAgo: number }): WorldState {
+        const state = createWorld({ seed: 'household', skipPriorAges: true, regionCount: 0 });
+        state.currentDay = 100 * DAYS_PER_YEAR;
+        state.locations.push(makeLocation({
+            id: 'home', name: 'Autumn Gate', kind: 'settlement', qiDensity: 0.4
+        }));
+        const standing: [string, string, number, number][] = [
+            ['npc-left', 'The One Left', FOUNDATION_ORDINAL, 60],
+            ['npc-killed', 'The One Killed', FOUNDATION_ORDINAL, 60],
+            ['npc-killer', 'The Killer', FOUNDATION_ORDINAL, 20],
+            ['pc', 'Probe', 0, 16]
+        ];
+        for (const [id, name, ordinal, age] of standing) {
+            state.npcs.push(createNpc(state.seed, {
+                id, name,
+                bornOnDay: state.currentDay - age * DAYS_PER_YEAR,
+                onDay: state.currentDay,
+                locationId: 'home',
+                occupation: id === 'pc' ? 'the one being played' : 'disciple',
+                cultivation: { realmOrdinal: ordinal }
+            }));
+        }
+
+        // Both ends, though the bind reads only the parent's. A half-written
+        // marriage is a shape the world never produces.
+        for (const [a, b] of [['npc-left', 'npc-killed'], ['npc-killed', 'npc-left']]) {
+            const i = state.npcs.findIndex(npc => npc.id === a);
+            const other = state.npcs.find(npc => npc.id === b)!;
+            state.npcs[i] = upsertRelationship(state.npcs[i], {
+                targetId: other.id, targetName: other.name, kind: 'spouse',
+                standing: 0.8, note: 'Their household.'
+            }, state.currentDay);
+        }
+
+        const killedOn = state.currentDay - Math.round(opts.yearsAgo * DAYS_PER_YEAR);
+        aDeedEntersTheWorld(state, {
+            kind: 'death',
+            day: killedOn,
+            locationId: 'home',
+            actors: [
+                { id: 'npc-killer', name: 'The Killer', role: 'killer' },
+                { id: 'npc-killed', name: 'The One Killed', role: 'victim' }
+            ],
+            summary: 'The Killer killed The One Killed at Autumn Gate.',
+            unattributed: 'Somebody was found dead here some years ago.',
+            weight: 'grave'
+        });
+        const at = state.npcs.findIndex(npc => npc.id === 'npc-killed');
+        state.npcs[at] = markDead(state.npcs[at], killedOn, 'Killed by The Killer.');
+        return state;
+    }
+
+    /**
+     * THE HALF A PINNED SEED USED TO CARRY. Arranged rather than drawn, because
+     * the draw reaches it once in seven thousand births - see the header for
+     * the measurement and for the 21 households across 24 worlds that say the
+     * world does produce it.
+     */
+    it('hands a killed parent back as kin, and as somebody to carry for', () => {
+        const world = aHouseholdWithAKilledParent({ yearsAgo: 11 });
+        const faces = facesFromHome({
+            world,
+            cultivator: {
+                id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0, age: 16
+            } as Cultivator,
+            origin: 'sect_retainer',
+            seed: 'v'
+        });
+
+        const dead = faces.find(one => one.name === 'The One Killed');
+        expect(dead, 'the household still inherits only a living spouse').toBeDefined();
+        expect(dead!.tie, 'the second parent, inherited off the spouse tie').toBe('parent');
+        expect(dead!.aMentionOnly, 'a household with rows in it is not a mention').toBe(false);
+        expect(dead!.diedYearsAgo).toBe(11);
+        expect(dead!.killedBy).toEqual({
+            killerId: 'npc-killer', killerName: 'The Killer', anAccountWasOpened: true
+        });
+
+        // AND THE TIER IS THE ENGINE'S, asked through the call the telling
+        // layer makes rather than rebuilt here.
+        const carries = new Set(whoTheyCarryFor('pc', getNpc(world, 'pc')).ids);
+        expect(carries.has('npc-killed'),
+            'the household landed and the account behind it did not').toBe(true);
     });
 
     // ─────────────────────────────────────────────────────────────────────
