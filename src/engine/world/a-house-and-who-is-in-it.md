@@ -353,6 +353,19 @@ somebody who was always there and had not been worth a row until now.
 the house is said to be. The owner: *"minting is rng, it's not hardcoded"*, and
 *"it falls out of the narrative size of the world/sect."*
 
+**It is rare, and it is a promotion into EXISTENCE.** Because the top barely
+decays, chairs seldom come free, so this happens occasionally rather than
+constantly. And when it does, the owner's framing is the one to build to: *"we
+simulate the sect has x outer and x inner disciples, and ONE OF THEM INEVITABLY
+BECOMES AN ELDER - that person is now a real NPC."*
+
+So nothing is conjured. The hundreds were always there as a number; one of them
+was always going to rise; and the moment they do, they stop being part of a
+count and start being somebody with a name a player can ask after. **The row is
+created at the moment the person becomes worth knowing, not at the moment they
+come into being.** That is the slice widening by one, and it is the only time
+it widens.
+
 Note that "minting" is a convenient word rather than a new mechanism: what
 happens is the world bearing and enrolling somebody, which it already does
 yearly. And no sect row carries a member count today, so the size to read is
