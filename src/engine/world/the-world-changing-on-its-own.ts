@@ -96,13 +96,14 @@ import {
     activeGoals,
     addGoal,
     createNpc,
+    isAwayOnSomething,
     isTheWorldsToMove,
     theWorldEnds,
     theWorldLoses,
     theWorldMayEnd,
     relationshipWith,
-    type NpcActivity,
     setLocation,
+    whereTheyGoBackTo,
     setRealm,
     upsertRelationship,
     type NpcRecord
@@ -2886,7 +2887,7 @@ function applySendings(
                             withIds: partyIds.filter(id => id !== member.id),
                             sinceDay: day,
                             untilDay: due,
-                            returnTo: row.locationId
+                            returnTo: whereTheyGoBackTo(row)
                         }
                     };
                 }
@@ -2940,8 +2941,10 @@ function applySendings(
                         untilDay: sending.returnsOnDay,
                         // Where they came from, which is not their house's
                         // front door. A disciple who lives in a village comes
-                        // back to the village.
-                        returnTo: row.locationId
+                        // back to the village - and one drafted out of a
+                        // posting comes back to wherever that posting would
+                        // have sent them.
+                        returnTo: whereTheyGoBackTo(row)
                     }
                 };
             }
@@ -3790,7 +3793,12 @@ function applyPostings(state: WorldState, year: number, day: number): number {
                     withIds: [],
                     sinceDay: day,
                     untilDay: day + years * DAYS_PER_YEAR,
-                    returnTo: who.locationId
+                    // THE HOUSE, NOT WHEREVER THEY WERE. A posting is the
+                    // house putting somebody in a town, so it ends at the
+                    // house. Measured before: members standing at their own
+                    // seat fell from four in five at world open to one in ten
+                    // at a century, and they were not dead, they were in towns.
+                    returnTo: faction.seatLocationId ?? whereTheyGoBackTo(who)
                 }
             };
             posted++;
@@ -3800,26 +3808,16 @@ function applyPostings(state: WorldState, year: number, day: number): number {
 }
 
 /**
- * The activities that take somebody away and end on a day.
- *
- * One predicate rather than a comparison at each site: an errand and a station
- * are both "gone, until", and every pass that brings people home or notices
- * they have not come home asks the same question of both.
- */
-function isAwayOnSomething(kind: NpcActivity['kind']): boolean {
-    return kind === 'out_with_a_party' || kind === 'stationed';
-}
-
-/**
  * Everybody whose errand is over, standing where they started.
  *
  * Reads the term off the activity rather than off a list of who is out, so a
  * world loaded from disk mid-sending brings the right people home without
  * anything having had to persist a roster of parties.
  *
- * Home is their house's seat. Somebody whose house dissolved while they were
- * away stays where they are, which is a truer answer than teleporting them to a
- * hall that is not there any more.
+ * Home is whatever the activity was written with, and the writer decides it: an
+ * errand brings somebody back to where they set out from, and a posting brings
+ * them back to the house (`applyPostings`). A place that has since ceased to
+ * exist leaves them where they are.
  */
 function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
     const standing = new Set(state.locations.map(l => l.id));
@@ -3832,12 +3830,9 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         if (doing.untilDay === null || doing.untilDay === undefined) continue;
         if (day < doing.untilDay) continue;
 
-        // BACK WHERE THEY CAME FROM, which is not their house's seat. A
-        // disciple who lives in a village lives in the village; posting the
-        // whole world home to a front door drains settlements one party at a
-        // time. A place that has since ceased to exist leaves them standing
-        // where the errand took them, which is truer than teleporting them into
-        // a location the world no longer holds.
+        // A place that has since ceased to exist leaves them standing where
+        // the errand took them, which is truer than teleporting them into a
+        // location the world no longer holds.
         const back = doing.returnTo ?? null;
         state.npcs[i] = {
             ...(back !== null && standing.has(back) ? setLocation(npc, back, day) : npc),
@@ -4444,7 +4439,7 @@ function thePeopleAConclaveChoseWalkThrough(
                             withIds: partyIds.filter(id => id !== member.id),
                             sinceDay: day,
                             untilDay,
-                            returnTo: npc.locationId
+                            returnTo: whereTheyGoBackTo(npc)
                         }
                     };
                 }
@@ -4588,7 +4583,7 @@ function theProvinceGoes(
                         withIds: partyIds.filter(id => id !== member.id),
                         sinceDay: day,
                         untilDay,
-                        returnTo: row.locationId
+                        returnTo: whereTheyGoBackTo(row)
                     }
                 };
             }

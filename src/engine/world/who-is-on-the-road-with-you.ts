@@ -42,7 +42,7 @@
  */
 
 import type { NpcRecord } from './npc-state.js';
-import { setLocation } from './npc-state.js';
+import { setLocation, whereTheyGoBackTo } from './npc-state.js';
 
 /**
  * The activity kind a party on the road is at. The world sim's own, not a
@@ -178,7 +178,9 @@ export interface TakingThemWithYou {
  * `returnTo` is where each of them is standing NOW, and not the leader's place
  * and not a house's seat: a disciple who lives in a village comes back to the
  * village, which is the reason that field exists and the settlement-draining
- * defect it was added against.
+ * defect it was added against. Somebody already away on something keeps the
+ * home that errand holds - `whereTheyGoBackTo` - or taking them along a second
+ * time would write the road as home.
  */
 export function takeThemWithYou(
     npcs: readonly NpcRecord[],
@@ -201,7 +203,7 @@ export function takeThemWithYou(
                 ],
                 sinceDay: input.onDay,
                 untilDay: input.untilDay,
-                returnTo: npc.locationId
+                returnTo: whereTheyGoBackTo(npc)
             }
         });
     }

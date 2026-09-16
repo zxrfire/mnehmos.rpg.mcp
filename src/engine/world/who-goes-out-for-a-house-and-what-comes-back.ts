@@ -848,11 +848,11 @@ export interface WhatTheHouseCanSpare {
  * with nobody at its seat before the errand keeps nobody, and the answer comes
  * back with `keptAtTheGate: null`. Measured on one seeded world, members
  * standing at their own seat: 207 of 306 at world open, 64 of 321 at
- * twenty-five years, 42 of 363 at a hundred - the rest in settlements on town
- * postings that are never recalled. So the gate figure this closes completely
- * after one year is only a fifth of it a century in. That is a different
- * defect in a different pass and saying so is the whole of what this does
- * about it.
+ * twenty-five years, 42 of 363 at a hundred - the rest in settlements, because
+ * postings were never recalled. That was a different pass and is fixed there
+ * (`whereTheyGoBackTo`, and `applyPostings` ending a posting at the house):
+ * houses unable to answer their gate at a century went from 80 of 236 to 19 of
+ * 239 over six seeds.
  */
 export function whatTheHouseCanSpare(input: {
     roster: readonly OnTheRollForAnErrand[];

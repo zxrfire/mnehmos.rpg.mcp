@@ -336,8 +336,9 @@ still the house's. What they are not is STANDING THERE.
 
 - **Presence decay** - people exist, hold their chairs, and are somewhere else.
   This is what the 207 of 306 down to 42 of 363 measures, and it is what breaks
-  the gate, the courtyard read and hosting. Postings never recalled is the
-  cause.
+  the gate, the courtyard read and hosting. Postings never recalled was the
+  cause for the people a house opened with, and is fixed - see below. What is
+  left of it is people who joined since and were enrolled where they stood.
 - **Roster decay** - the house genuinely has nobody at a rank. This is what a
   fifth of every ladder empty at a century measures, and it is what breaks
   promotion and who can be sent.
@@ -349,11 +350,17 @@ you are measuring.
 Start with the ways somebody leaves a chair while still alive, because those
 are the ones that should not be happening at all:
 
-- **posted away and never recalled.** Measured: members standing at their own
-  seat fall from 207 of 306 to 42 of 363 over a century, and they are not dead,
-  they are in towns. Town postings return people to wherever they last were
-  rather than to the compound. **This is presence, not loss** - the house still
-  has them
+- **posted away and never recalled.** Fixed. Every writer of an away activity
+  took wherever the person was standing as home, so a party that drafted
+  somebody out of a posting wrote the town as home, and a posting ended wherever
+  they had been. A posting now ends at the house, and somebody already away keeps
+  the home that errand holds (`whereTheyGoBackTo`). Summed over six seeds at a
+  century, members at their own seat went from 341 of 3050 to 697 of 3054 and
+  houses unable to answer their gate from 80 of 236 to 19 of 239; rank and
+  elder slots empty did not move beyond seed noise, **because this was presence,
+  not loss** - the house still had them. What remains off the seat is recruits:
+  `applyRecruitment` enrols people where they stand and nothing brings them in.
+  `probe-does-a-posting-bring-anybody-home.ts` carries the figures
 - **killed.** The world's own passes take people, and the party pass dominates
   the ones that do
 - **walked out.** Which the engine can barely express - see the walk-out gap

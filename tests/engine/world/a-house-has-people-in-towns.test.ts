@@ -30,13 +30,23 @@ import type { WorldState } from '../../../src/engine/world/world-state';
 const SEEDS = ['town-a', 'town-b'];
 const YEARS = 200;
 let cached: WorldState[] | null = null;
+/** Per world, who was standing in their own house's compound when it opened, by house. */
+const atTheirSeatAtOpen = new Map<WorldState, Map<string, string>>();
 
 async function worldsLived(): Promise<WorldState[]> {
     if (cached) return cached;
     const catalog = await loadCultivationCatalog();
     cached = SEEDS.map(seed => {
         const { state } = seedWorld({ seed, catalog });
+        const home = new Map<string, string>();
+        const seatOf = new Map(state.factions.map(f => [f.id, f.seatLocationId]));
+        for (const n of state.npcs) {
+            if (n.status !== 'alive' || n.factionId === null) continue;
+            const seat = seatOf.get(n.factionId) ?? null;
+            if (seat !== null && n.locationId === seat) home.set(n.id, n.factionId);
+        }
         advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
+        atTheirSeatAtOpen.set(state, home);
         return state;
     });
     return cached;
@@ -117,6 +127,55 @@ describe('a house stations people outside itself', () => {
             // seed that runs cold does not fail a claim about the shape.
             expect(busy / alive.length).toBeGreaterThan(0.1);
         }
+    });
+
+    it('and a posting ends at the house that made it', async () => {
+        // A posting is the house putting somebody in a town, so the house is
+        // where it ends. Measured at two hundred years before this held: 3 and
+        // 4 in a hundred postings pointed home at the house, the rest at
+        // whichever town or ruin the person had last been drafted out of. A
+        // house whose seat moved while somebody was out is the honest exception.
+        let posted = 0;
+        let home = 0;
+        for (const state of await worldsLived()) {
+            const seatOf = new Map(state.factions
+                .filter(f => f.dissolvedOnDay === null)
+                .map(f => [f.id, f.seatLocationId]));
+            for (const who of stationed(state)) {
+                const seat = who.factionId === null ? null : seatOf.get(who.factionId) ?? null;
+                if (seat === null) continue;
+                posted++;
+                if (who.activity!.returnTo === seat) home++;
+            }
+        }
+        expect(posted).toBeGreaterThan(0);
+        expect(home / posted).toBeGreaterThan(0.9);
+    });
+
+    it('so nobody who lived in the compound is left standing idle somewhere else', async () => {
+        // Measured at two hundred years before: 23 of 72 and 26 of 78 people
+        // who stood in their own compound at world open, and were still on its
+        // roll, were idle in a town or a ruin with nothing bringing them back.
+        // Away on the house's business is not idle; standing in a settlement
+        // with no errand is.
+        let kept = 0;
+        const idle: string[] = [];
+        for (const state of await worldsLived()) {
+            const seatOf = new Map(state.factions
+                .filter(f => f.dissolvedOnDay === null)
+                .map(f => [f.id, f.seatLocationId]));
+            for (const who of state.npcs) {
+                const house = atTheirSeatAtOpen.get(state)?.get(who.id);
+                if (house === undefined || who.status !== 'alive' || who.factionId !== house) continue;
+                const seat = seatOf.get(house) ?? null;
+                if (seat === null) continue;
+                kept++;
+                const away = who.activity?.kind === 'stationed' || who.activity?.kind === 'out_with_a_party';
+                if (who.locationId !== seat && !away) idle.push(`${who.name} at ${who.locationId}`);
+            }
+        }
+        expect(kept).toBeGreaterThan(0);
+        expect(idle, idle.join(', ')).toHaveLength(0);
     });
 
     it('and an elder is among the people a house can spare', async () => {

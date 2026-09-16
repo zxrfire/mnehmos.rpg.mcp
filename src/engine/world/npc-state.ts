@@ -840,6 +840,40 @@ export function setLocation(npc: NpcRecord, locationId: string | null, onDay: nu
     return { ...npc, locationId, updatedOnDay: onDay, lastConfirmedOnDay: onDay };
 }
 
+/**
+ * The activities that take somebody away and end on a day.
+ *
+ * One predicate rather than a comparison at each site: an errand and a station
+ * are both "gone, until", and every pass that brings people home, notices they
+ * have not come home, or asks where home is asks the same question of both.
+ */
+export function isAwayOnSomething(kind: NpcActivity['kind']): boolean {
+    return kind === 'out_with_a_party' || kind === 'stationed';
+}
+
+/**
+ * Where somebody comes back to from an errand that is starting now.
+ *
+ * Where they are standing, unless they are already away on something. Then it
+ * is where THAT was going to bring them, because standing in a town on a posting
+ * is not living there.
+ *
+ * Measured before this existed: every writer of an away activity took
+ * `npc.locationId`, and a term that has run out is not brought home until the
+ * yearly pass reaches it. A posting written on day 64 of a year is read on day
+ * 62, so every posting stood in its town for most of a year with its term over,
+ * free to be drafted - and the party that drafted it wrote the town as home.
+ * The conclave door did the same to a posting still running. Over a century
+ * that stranded most of a house in settlements.
+ */
+export function whereTheyGoBackTo(npc: Pick<NpcRecord, 'locationId' | 'activity'>): string | null {
+    const doing = npc.activity;
+    if (doing && isAwayOnSomething(doing.kind) && doing.returnTo) {
+        return doing.returnTo;
+    }
+    return npc.locationId;
+}
+
 export function setFaction(
     npc: NpcRecord,
     factionId: string | null,
