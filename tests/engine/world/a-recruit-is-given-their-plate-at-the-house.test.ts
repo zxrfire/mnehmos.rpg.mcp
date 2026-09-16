@@ -133,7 +133,8 @@ function atTheDoorway(state: WorldState, id: string) {
     return whatTheTwoSay({
         theAskerKnowsWhatItIs: true,
         theObjectNames: HOUSE,
-        theTokenNames: theHouseTheirTokenNames(state.objects, { id, isAlive: npc(state, id).status === 'alive' })
+        theTokenNames: theHouseTheirTokenNames(
+            state.objects, id, memberId => state.npcs.some(n => n.id === memberId && n.status === 'alive'))
     });
 }
 

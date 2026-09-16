@@ -154,7 +154,7 @@ async function main(): Promise<void> {
                     if (owed) { r.owedAToken++; if (holds) r.holdAToken++; }
                     if (objects.get(plateIdFor(n.id))?.ownerId === n.factionId) r.plateHangs++;
                     if (n.activity?.kind === 'travelling' && (n.activity.untilDay ?? null) !== null) r.onTheRoad++;
-                    const proof = theHouseTheirTokenNames(state.objects, { id: n.id, isAlive: true });
+                    const proof = theHouseTheirTokenNames(state.objects, n.id, id => state.npcs.some(x => x.id === id && x.status === 'alive'));
                     if (proof !== n.factionId) { r.noProof++; if (!here) r.noProofOutside++; }
                     if (!here && !robed) {
                         r.outsideNeverEntered++;

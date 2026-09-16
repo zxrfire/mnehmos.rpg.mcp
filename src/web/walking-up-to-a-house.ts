@@ -33,6 +33,7 @@ import {
     type WhatTheGateSays
 } from '../engine/world/standing-at-the-gate-of-a-house.js';
 import { sectGroundId } from '../engine/world/seeding.js';
+import { theHouseTheirTokenNames } from '../engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
 import {
     rankIndexOnAHousesRoll,
     whereSomebodyStandsOnAHousesRoll,
@@ -143,6 +144,14 @@ export function whatTheGateOfThisHouseSays(
         }))
         .filter(row => row.rankIndex >= 0);
 
+    // WHAT THE GATE READS, which is what they are carrying and not the roll.
+    // Whether a token still answers is asked of the person it was cut for.
+    const theTokenNames = world === null ? null : theHouseTheirTokenNames(
+        world.objects,
+        cultivator.id,
+        memberId => world.npcs.some(npc => npc.id === memberId && npc.status === 'alive')
+    );
+
     return standingAtTheGateOf({
         factionId: house.factionId,
         factionName: house.factionName,
@@ -151,7 +160,8 @@ export function whatTheGateOfThisHouseSays(
         admissionOrdinal: catalog?.admissionOrdinal ?? 0,
         standing,
         theirPeopleHere,
-        hostedBy
+        hostedBy,
+        theTokenNames
     });
 }
 

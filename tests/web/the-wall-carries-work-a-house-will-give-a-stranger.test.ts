@@ -159,12 +159,32 @@ describe('what a house is asking after comes off its own plates', () => {
     });
 
     /**
-     * AND THE GATE IS THE HOUSE'S. A house with nobody at the realm that cuts a
-     * plate is not told one of its own is gone, so it posts no search - the
+     * AND THE GATE IS THE PLATE ON THE WALL. A house that never cut one for
+     * somebody is not told they are gone, so it posts no search - the
      * difference between a house and a gathering of people, arriving without a
      * rule written for it.
+     *
+     * This arm used to arrange it by dropping every member of the house under
+     * the rung a plate is cut at, AFTER world open had cut theirs, and assert no
+     * search. That was the hall inferring its wall from who could cut today,
+     * which `a-house-reads-its-own-roll-off-the-plates.test.ts` records being
+     * replaced by reading the plate rows. The two situations are now two arms.
      */
-    it('posts no search for a house that could never cut a plate', async () => {
+    it('posts no search for somebody the house never cut a plate for', async () => {
+        const state = seedWorld({
+            seed: 'a-house-comes-looking', catalog: await loadCultivationCatalog()
+        }).state;
+        const gone = state.npcs.find(npc =>
+            npc.status === 'alive' && npc.factionId && carriesATokenAt(npc.factionRankIndex))!;
+        gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
+
+        // A wall with nothing on it: the house never cut a plate for anybody.
+        state.objects = state.objects.filter(o =>
+            !(o.ownerId === gone.factionId && o.tags.includes('life-plate')));
+        expect(whoEachHouseIsLookingFor(state).get(gone.factionId!)).toBeUndefined();
+    });
+
+    it('but a house that has lost everybody who could cut one still reads the plates it hung', async () => {
         const state = seedWorld({
             seed: 'a-house-comes-looking', catalog: await loadCultivationCatalog()
         }).state;
@@ -173,12 +193,15 @@ describe('what a house is asking after comes off its own plates', () => {
         gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
 
         // Everybody on that roll drops under the rung a plate is cut at, which
-        // is the state the world sim reaches by killing a house's elders.
+        // is the state the world sim reaches by killing a house's elders. The
+        // plate cut before that is still on the wall and still whole.
         for (const npc of state.npcs) {
             if (npc.factionId !== gone.factionId) continue;
             npc.cultivation = { ...npc.cultivation, realmOrdinal: platesAreCutAt() - 1 };
         }
-        expect(whoEachHouseIsLookingFor(state).get(gone.factionId!)).toBeUndefined();
+        const asks = whoEachHouseIsLookingFor(state).get(gone.factionId!);
+        expect(asks).toHaveLength(1);
+        expect(asks![0]).toMatchObject({ kind: 'missing', who: gone.name });
     });
 
     /** And a search reaches the wall as an ask like any other once it exists. */

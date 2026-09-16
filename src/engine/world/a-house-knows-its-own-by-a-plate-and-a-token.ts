@@ -343,8 +343,17 @@ export const WHEN_SILENCE_BECOMES_A_CAPTIVE = 90;
 export interface OneOnTheRoll {
     memberId: string;
     memberName: string;
-    /** Their rung, which decides whether a plate was ever cut for them. */
-    rankIndex: number;
+    /**
+     * Whether a plate for them hangs on the house's wall, read off the row by
+     * {@link whoHasAPlateOnTheWallOf}.
+     *
+     * This was their rung, with the plate inferred from it. That was a second
+     * copy of a fact the plate row holds, and it disagreed in both directions:
+     * somebody promoted onto the rung while away read as plated with nothing on
+     * the wall, and a house that had lost its last Foundation hand read nothing
+     * at all off plates still hanging there.
+     */
+    theyHaveAPlate: boolean;
     holderIsAlive: boolean;
     daysSinceAnybodySawThem: number;
 }
@@ -370,21 +379,19 @@ export interface WhatTheHallSays {
  * The hall is recomputed from the roll every time it is asked, which is why
  * there is no call site that can forget to shatter a plate.
  *
- * AND AN EMPTY LIST FOR A HOUSE THAT CANNOT CUT THEM, which is not the same as
- * a list of `nothing_yet`. A house with nobody at Foundation is not told its
- * people are fine. It is not told anything.
+ * AND ONLY THE PEOPLE WITH A PLATE ON THE WALL. A house reads its plates, so
+ * somebody it never cut one for is not on the list at all - which is how a house
+ * that could never cut one is told nothing, rather than told its people are fine.
  */
 export function whatTheHallSays(input: {
-    ordinalsOnTheRoll: readonly number[];
     roll: readonly OneOnTheRoll[];
 }): WhatTheHallSays[] {
-    if (!thisHouseCanIssue(input.ordinalsOnTheRoll)) return [];
-    return input.roll.map(member => ({
+    return input.roll.filter(member => member.theyHaveAPlate).map(member => ({
         memberId: member.memberId,
         memberName: member.memberName,
         unseenForDays: member.daysSinceAnybodySawThem,
         reading: whatAHouseMakesOfSilence({
-            theyHaveAPlate: carriesATokenAt(member.rankIndex),
+            theyHaveAPlate: true,
             holderIsAlive: member.holderIsAlive,
             daysSinceAnybodySawThem: member.daysSinceAnybodySawThem
         })
@@ -475,19 +482,47 @@ export type WhatTheTwoSay =
  *
  * Read off the one possessions table, so it answers the way a doorway would: a
  * recruit still on the road to the house that took them has joined it and has
- * nothing to show for it, and this says null. A token that no longer answers -
- * its holder is dead - reads as none, by `theTokenStillAnswers`.
+ * nothing to show for it, and this says null.
+ *
+ * WHOSE LIFE IT ANSWERS FOR IS THE PERSON IT WAS CUT FOR, not the person
+ * carrying it. A first cut asked about the carrier, which would have let a token
+ * taken off a corpse open a gate - the one route this file exists to close. A
+ * token carried by somebody else whose issuee is alive still answers, which is
+ * the seam the header keeps open on purpose.
  */
 export function theHouseTheirTokenNames(
-    objects: readonly Pick<ObjectRecord, 'kind' | 'possessorId' | 'ownerId' | 'tags'>[],
-    holder: { id: string; isAlive: boolean }
+    objects: readonly Pick<ObjectRecord, 'kind' | 'possessorId' | 'ownerId' | 'tags' | 'data'>[],
+    carrierId: string,
+    /** Whether the person a token was cut for is alive. The world's own row. */
+    stillAlive: (memberId: string) => boolean
 ): string | null {
-    if (!theTokenStillAnswers(holder.isAlive)) return null;
     const token = objects.find(object =>
         object.kind === 'token'
-        && object.possessorId === holder.id
-        && object.tags.includes('identity'));
+        && object.possessorId === carrierId
+        && object.tags.includes('identity')
+        && typeof object.data?.memberId === 'string'
+        && theTokenStillAnswers(stillAlive(object.data.memberId)));
     return token?.ownerId ?? null;
+}
+
+/**
+ * The members of a house who have a plate on its wall.
+ *
+ * Read off the plate rows rather than inferred from a rung: a plate is cut once,
+ * by somebody who could, and hangs whether or not anybody in the house could cut
+ * another today. Somebody promoted onto the rung and not yet entered at the house
+ * has none.
+ */
+export function whoHasAPlateOnTheWallOf(
+    objects: readonly Pick<ObjectRecord, 'ownerId' | 'tags' | 'data'>[],
+    houseId: string
+): Set<string> {
+    const hanging = new Set<string>();
+    for (const object of objects) {
+        if (object.ownerId !== houseId || !object.tags.includes('life-plate')) continue;
+        if (typeof object.data?.memberId === 'string') hanging.add(object.data.memberId);
+    }
+    return hanging;
 }
 
 export function whatTheTwoSay(input: {

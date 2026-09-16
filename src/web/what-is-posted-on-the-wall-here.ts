@@ -52,7 +52,8 @@ import {
 import type { AtStake } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import {
     theOnesNobodyCanFind,
-    whatTheHallSays
+    whatTheHallSays,
+    whoHasAPlateOnTheWallOf
 } from '../engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
 import type { KnowledgeGate } from './knowledge.js';
 
@@ -215,9 +216,9 @@ export function housesWithSomethingToSay(
  * missing-person notices on it - which is correct rather than convenient: with
  * no world there is no roll and nobody has gone anywhere.
  *
- * The gate is the house's, not the person's. `whatTheHallSays` returns nothing
- * at all for a house that could never cut a plate, so such a house posts no
- * search: it does not know one of its own is gone.
+ * The gate is the plate on the wall. `whatTheHallSays` reads only people a
+ * plate hangs for, so a house that never cut one for somebody posts no search
+ * for them: it does not know one of its own is gone.
  */
 export function whoEachHouseIsLookingFor(
     world: WorldState | null | undefined
@@ -234,14 +235,12 @@ export function whoEachHouseIsLookingFor(
     }
 
     for (const [houseId, members] of byHouse) {
+        const plated = whoHasAPlateOnTheWallOf(world.objects, houseId);
         const looking = theOnesNobodyCanFind(whatTheHallSays({
-            ordinalsOnTheRoll: members
-                .filter(npc => npc.status === 'alive')
-                .map(npc => npc.cultivation.realmOrdinal),
             roll: members.map(npc => ({
                 memberId: npc.id,
                 memberName: npc.name,
-                rankIndex: npc.factionRankIndex,
+                theyHaveAPlate: plated.has(npc.id),
                 holderIsAlive: npc.status === 'alive',
                 daysSinceAnybodySawThem: Math.max(0, world.currentDay - npc.lastConfirmedOnDay)
             }))

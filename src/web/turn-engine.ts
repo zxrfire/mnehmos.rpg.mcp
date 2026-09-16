@@ -270,6 +270,7 @@ import {
 // Type-only in the other direction, so no cycle: that module takes a
 // `GameService` as a type and imports nothing from here at runtime.
 import { theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import {
     whatTheyWillTakeFor,
     whereTheOfferLanded,
@@ -2970,6 +2971,21 @@ export class GameService {
         // Read fresh rather than reusing `after`: being fetched spends a day,
         // and the room's own gate is read off the clock as it now stands.
         await this.theRoomSitsOnWhatTheHouseHoldsAboutYou(execution, this.currentRun());
+
+        // AND WHAT THEIR HOUSE HAS ISSUED THEM, read off the roll and where they
+        // are standing now the turn is over, so every way of arriving, joining,
+        // rising or leaving reaches it. After the room, which can put them off a
+        // roll; before the estate, which is only for the dead.
+        const issued = settleWhatYourHouseHasIssuedYou(this, this.currentRun().cultivator);
+        if (issued) {
+            execution.calls.push({
+                name: 'world.settleWhatYourHouseHasIssuedYou',
+                action: 'roll',
+                summary: issued.structure,
+                ok: true
+            });
+            for (const line of issued.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
 
         // AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD
         const died = this.settleTheEstateIfTheyDied();

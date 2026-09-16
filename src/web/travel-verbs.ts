@@ -296,7 +296,9 @@ function whatIsAtTheGateHere(
     lines.push(...whatYouAlreadyHoldAboutThem(game, cultivator, house));
 
     const gate = whatTheGateOfThisHouseSays(game, cultivator, house);
-    const host = gate.way === 'turned away'
+    // Stopped is an obstacle like being turned away is, and the same road past
+    // it is open: somebody who owes you walks you in.
+    const host = gate.way === 'turned away' || gate.way === 'stopped and asked'
         ? whoWouldWalkYouIn(game, cultivator, gate.couldHost)
         : null;
     const said = host ? whatTheGateOfThisHouseSays(game, cultivator, house, host) : gate;

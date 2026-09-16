@@ -17,7 +17,11 @@
  * `the-town-at-the-foot-of-a-house.ts` says why the market is a reading of that
  * row rather than a second one, and what it costs.
  *
- *   you belong      you are on the roll, and the gate is a door you use.
+ *   you belong      the gate asks for a token and reads it as the house's. The
+ *                   roll is behind the wall and the token is what the guard
+ *                   can see, so somebody on the roll with none is stopped and
+ *                   asked - an obstacle, with the other roads still said - and
+ *                   somebody off it carrying a genuine one passes.
  *   you are a guest somebody of standing brought you. Who may host is a rank
  *                   reading and not a field: anybody the house lets give an
  *                   order can host, which is `authorityTier` above `ordered`.
@@ -39,11 +43,20 @@
  */
 
 import { ELDER_RUNG_FLOOR, isElderRank, isHeadOfHouse } from '../cultivation/leadership.js';
+import { carriesATokenAt, whatTheTwoSay } from './a-house-knows-its-own-by-a-plate-and-a-token.js';
 import { purposeOf } from './architecture.js';
 import type { LocationRecord } from './locations.js';
 
-/** How somebody is standing at a gate they have walked up to. */
-export type HowYouStandAtAGate = 'on the roll' | 'brought in' | 'turned away';
+/**
+ * How somebody is standing at a gate they have walked up to.
+ *
+ * `on the roll` is the gate reading them as one of the house's own, and what it
+ * reads is the TOKEN: a guard cannot see a roll. So somebody on the roll with
+ * nothing to show is `stopped and asked`, and somebody off it carrying a genuine
+ * token of the house passes - the seam `a-house-knows-its-own-by-a-plate-and-a-
+ * token.ts` keeps open on purpose.
+ */
+export type HowYouStandAtAGate = 'on the roll' | 'stopped and asked' | 'brought in' | 'turned away';
 
 /**
  * Whether a rung may bring an outsider through its own gate.
@@ -84,6 +97,12 @@ export interface AtTheGateInput {
     theirPeopleHere: readonly SomebodyOfTheHouse[];
     /** Who has already agreed to bring them in, where anybody has. */
     hostedBy?: SomebodyOfTheHouse | null;
+    /**
+     * The house the token they are carrying names, or null for none.
+     * `theHouseTheirTokenNames`. REQUIRED, because a gate that forgot to ask
+     * would wave everybody on the roll through, which is what it did.
+     */
+    theTokenNames: string | null;
 }
 
 export interface WhatTheGateSays {
@@ -113,27 +132,57 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         p => p.rankIndex >= 0 && !couldHostAGuest(p.rankIndex, rankCount)
     );
 
-    const way: HowYouStandAtAGate = input.standing !== null && input.standing >= 0
+    const onTheRoll = input.standing !== null && input.standing >= 0;
+    // THE GATE ASKS, which is the one thing a look does not do. The object the
+    // token is held against is the house whose gate this is.
+    const theTokenSays = whatTheTwoSay({
+        theAskerKnowsWhatItIs: true,
+        theObjectNames: input.factionId,
+        theTokenNames: input.theTokenNames
+    });
+    const way: HowYouStandAtAGate = theTokenSays === 'they agree'
         ? 'on the roll'
-        : input.hostedBy ? 'brought in' : 'turned away';
+        : input.hostedBy ? 'brought in'
+        : onTheRoll ? 'stopped and asked'
+        : 'turned away';
 
     const facts: string[] = [];
     if (way === 'on the roll') {
-        const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
-        facts.push(`The gate reads you as ${rung} of the ${input.factionName} and does not stop `
-            + 'you.');
+        const rung = onTheRoll ? input.ranks[Math.min(input.standing!, rankCount - 1)] : null;
+        facts.push(`The gate asks for a token, reads it as the ${input.factionName}'s, and does not `
+            + `stop you${rung ? `. By the roll you are ${rung}` : ''}.`);
     } else if (way === 'brought in') {
-        facts.push(`${input.hostedBy!.name} walks you past the gate. You are here as their guest `
-            + 'and on no roll.');
+        facts.push(`${input.hostedBy!.name} walks you past the gate. You are here as their guest`
+            + (onTheRoll ? ', whatever the roll says.' : ' and on no roll.'));
     } else {
-        facts.push(`The gate of the ${input.factionName} is held. Nobody on it is senior and `
-            + 'none of them has to be.');
-        // WHAT WOULD CHANGE IT, and all three roads are said, not one.
-        facts.push(input.recruits
-            ? `A place on the roll would open it. The ${input.factionName} looks at people from `
-              + `rung ${input.admissionOrdinal} up.`
-            : `The ${input.factionName} takes no applicants, so there is no road onto its roll `
-              + 'from outside.');
+        if (way === 'stopped and asked') {
+            // AN OBSTACLE AND NOT A REFUSAL. The roll says they belong and the
+            // gate cannot read a roll, so they are stopped and asked - and every
+            // road below is still open to them.
+            const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
+            facts.push(`The gate of the ${input.factionName} stops you and asks for a token. `
+                + (theTokenSays === 'they do not agree'
+                    ? 'The one you carry is another house\'s.'
+                    : 'There is no token to read.')
+                + ` You are ${rung} on its roll, and nothing about you here shows it.`);
+            facts.push(carriesATokenAt(input.standing!)
+                ? `A token is cut inside the ${input.factionName} for anybody on its roll at your `
+                  + 'rung, by whoever keeps the roll. Being entered there is what gives you one.'
+                : 'Your rung carries no token. A house knows its people that far down by face, '
+                  + 'and by somebody vouching for them.');
+        } else {
+            facts.push(`The gate of the ${input.factionName} is held. Nobody on it is senior and `
+                + 'none of them has to be.');
+            if (theTokenSays === 'they do not agree') {
+                facts.push('The token you carry is another house\'s, and it opens nothing here.');
+            }
+            // WHAT WOULD CHANGE IT, and all three roads are said, not one.
+            facts.push(input.recruits
+                ? `A place on the roll would open it. The ${input.factionName} looks at people from `
+                  + `rung ${input.admissionOrdinal} up.`
+                : `The ${input.factionName} takes no applicants, so there is no road onto its roll `
+                  + 'from outside.');
+        }
         if (couldHost.length > 0) {
             facts.push(`Somebody who can bring you through is here: `
                 + `${couldHost.map(p => p.name).join(', ')}. A guest walks in behind a host and `
@@ -165,7 +214,7 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         couldAskForYou,
         facts,
         structure: `standingAtTheGateOf(${input.factionId}): ${way}; standing=`
-            + `${input.standing ?? 'none'}; ${couldHost.length} could host, `
+            + `${input.standing ?? 'none'}; token: ${theTokenSays}; ${couldHost.length} could host, `
             + `${couldAskForYou.length} could ask. Nothing spent.`
     };
 }

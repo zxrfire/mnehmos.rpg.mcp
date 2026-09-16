@@ -14,33 +14,35 @@
  * the content - a whole plate over somebody nobody can find is the signature
  * that sends paper out of the compound.
  *
- * AND THE HOUSE-LEVEL GATE IS THE ONE THAT MATTERS. A house with nobody at
- * Foundation cut no plates, so it reads NOTHING off its hall - not "they are
- * fine", not "they are dead". It is not told. That is the difference between a
- * house and a gathering of people, and a reading that quietly returned
- * `nothing_yet` for such a house would have erased it.
+ * ── AND IT READS THE PLATE, NOT THE RUNG ─────────────────────────────────
+ *
+ * This file used to hand the hall each member's rung and the roll's ordinals,
+ * and the hall inferred a plate from `carriesATokenAt` and a wall from
+ * `thisHouseCanIssue`. Both were second copies of a fact the plate rows hold,
+ * and they came apart once plates were cut after world open: somebody promoted
+ * onto the token rung while away read as plated with nothing on the wall, and a
+ * house that lost its last Foundation hand read nothing off plates still
+ * hanging. So a member carries whether a plate hangs for them, read by
+ * `whoHasAPlateOnTheWallOf`, and the hall reads only those. A house that never
+ * cut one for anybody is still told nothing, which is the distinction the old
+ * gate existed to keep.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
-    THE_RUNG_A_HOUSE_ISSUES_AT,
     WHEN_SILENCE_BECOMES_A_CAPTIVE,
-    platesAreCutAt,
+    issueTo,
     theOnesNobodyCanFind,
     whatTheHallSays,
+    whoHasAPlateOnTheWallOf,
     type OneOnTheRoll
 } from '../../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
-
-/** A house that can cut plates: somebody on it is at the realm that does. */
-const CAN_CUT = [0, 2, platesAreCutAt()];
-/** A house that cannot. Everybody on it is under the rung. */
-const CANNOT_CUT = [0, 2, platesAreCutAt() - 1];
 
 function member(over: Partial<OneOnTheRoll> = {}): OneOnTheRoll {
     return {
         memberId: 'member-1',
         memberName: 'Yan Shuling',
-        rankIndex: THE_RUNG_A_HOUSE_ISSUES_AT,
+        theyHaveAPlate: true,
         holderIsAlive: true,
         daysSinceAnybodySawThem: 0,
         ...over
@@ -49,14 +51,13 @@ function member(over: Partial<OneOnTheRoll> = {}): OneOnTheRoll {
 
 describe('a house reads its own roll off the plates', () => {
     it('says nothing about somebody who was seen this morning', () => {
-        const said = whatTheHallSays({ ordinalsOnTheRoll: CAN_CUT, roll: [member()] });
+        const said = whatTheHallSays({ roll: [member()] });
         expect(said).toHaveLength(1);
         expect(said[0]!.reading).toBe('nothing_yet');
     });
 
     it('knows the moment one of its own dies', () => {
         const said = whatTheHallSays({
-            ordinalsOnTheRoll: CAN_CUT,
             roll: [member({ holderIsAlive: false, daysSinceAnybodySawThem: 0 })]
         });
         expect(said[0]!.reading).toBe('they_are_dead');
@@ -68,58 +69,62 @@ describe('a house reads its own roll off the plates', () => {
      */
     it('reads a whole plate over a silence as somebody holding them', () => {
         const said = whatTheHallSays({
-            ordinalsOnTheRoll: CAN_CUT,
             roll: [member({ daysSinceAnybodySawThem: WHEN_SILENCE_BECOMES_A_CAPTIVE })]
         });
         expect(said[0]!.reading).toBe('somebody_has_them');
     });
 
-    it('is not told anything at all where it could not cut a plate', () => {
+    it('is not told anything at all about people it never cut a plate for', () => {
         expect(whatTheHallSays({
-            ordinalsOnTheRoll: CANNOT_CUT,
             roll: [
-                member({ holderIsAlive: false }),
-                member({ memberId: 'member-2', daysSinceAnybodySawThem: 400 })
+                member({ theyHaveAPlate: false, holderIsAlive: false }),
+                member({ memberId: 'member-2', theyHaveAPlate: false, daysSinceAnybodySawThem: 400 })
             ]
         })).toEqual([]);
-    });
-
-    /**
-     * The rung gate is the person-level half and it is separate: a house that
-     * CAN cut plates still cut none for its servants, so their silence reads as
-     * nothing. Nobody comes looking for somebody nobody put on a wall.
-     */
-    it('holds no plate for anybody under the rung it issues at', () => {
-        const said = whatTheHallSays({
-            ordinalsOnTheRoll: CAN_CUT,
-            roll: [member({
-                rankIndex: THE_RUNG_A_HOUSE_ISSUES_AT - 1,
-                daysSinceAnybodySawThem: 400
-            })]
-        });
-        expect(said[0]!.reading).toBe('nothing_yet');
     });
 
     /** Derived, so it cannot drift: the same roll read twice says the same thing. */
     it('is a read and not a write', () => {
         const roll = [member({ daysSinceAnybodySawThem: 400 })];
-        const once = whatTheHallSays({ ordinalsOnTheRoll: CAN_CUT, roll });
-        const twice = whatTheHallSays({ ordinalsOnTheRoll: CAN_CUT, roll });
+        const once = whatTheHallSays({ roll });
+        const twice = whatTheHallSays({ roll });
         expect(twice).toEqual(once);
         expect(roll[0]!.daysSinceAnybodySawThem).toBe(400);
+    });
+});
+
+describe('whether a plate hangs is the plate row', () => {
+    const cut = (memberId: string, houseId: string) => issueTo({
+        memberId, memberName: memberId, houseId, houseName: houseId, plateRoomId: 'hall', onDay: 0
+    });
+
+    it('names the members a house cut plates for, and nobody else', () => {
+        const a = cut('cut-for', 'house-a');
+        const other = cut('elsewhere', 'house-b');
+        const hanging = whoHasAPlateOnTheWallOf([a.token, a.plate, other.token, other.plate], 'house-a');
+        expect([...hanging]).toEqual(['cut-for']);
+    });
+
+    it('and a token carried about is not a plate on the wall', () => {
+        const a = cut('cut-for', 'house-a');
+        expect(whoHasAPlateOnTheWallOf([a.token], 'house-a').size).toBe(0);
     });
 });
 
 describe('who a house would put on a wall outside', () => {
     it('is the ones it knows are alive and cannot find, and nobody else', () => {
         const readings = whatTheHallSays({
-            ordinalsOnTheRoll: CAN_CUT,
             roll: [
                 member({ memberId: 'here', daysSinceAnybodySawThem: 0 }),
                 member({ memberId: 'dead', holderIsAlive: false }),
                 member({
                     memberId: 'taken',
                     memberName: 'Mo Qingzhi',
+                    daysSinceAnybodySawThem: WHEN_SILENCE_BECOMES_A_CAPTIVE + 30
+                }),
+                member({
+                    memberId: 'never-plated',
+                    theyHaveAPlate: false,
                     daysSinceAnybodySawThem: WHEN_SILENCE_BECOMES_A_CAPTIVE + 30
                 })
             ]
@@ -138,7 +143,6 @@ describe('who a house would put on a wall outside', () => {
      */
     it('never puts a death on it', () => {
         const readings = whatTheHallSays({
-            ordinalsOnTheRoll: CAN_CUT,
             roll: [member({ holderIsAlive: false, daysSinceAnybodySawThem: 900 })]
         });
         expect(theOnesNobodyCanFind(readings)).toEqual([]);

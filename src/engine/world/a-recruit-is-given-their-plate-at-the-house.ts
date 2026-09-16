@@ -152,8 +152,8 @@ export function uniformsForEverybodyAlreadyOnARoll(state: WorldState): ObjectRec
 const HOW_FAR_UP_A_ROOM_SITS = 3;
 
 /** Whether a place is the seat or a room inside it. */
-function isInsideTheCompound(
-    byId: ReadonlyMap<string, LocationRecord>,
+export function isInsideTheCompound(
+    byId: ReadonlyMap<string, Pick<LocationRecord, 'parentId'>>,
     locationId: string | null,
     seatId: string
 ): boolean {
@@ -163,6 +163,120 @@ function isInsideTheCompound(
         at = byId.get(at)?.parentId ?? null;
     }
     return false;
+}
+
+/** The hall a house hangs its plates in, or null where it has none built. */
+export function whereThisHouseHangsItsPlates(
+    locations: readonly LocationRecord[],
+    houseId: string
+): string | null {
+    return locations.find(l => purposeOf(l) === WHERE_THE_PLATES_HANG && l.data?.factionId === houseId)?.id ?? null;
+}
+
+/**
+ * Whoever holds the room the roll is kept in. See the file header on why this
+ * is null in every house today.
+ */
+export function theKeeperOfTheRollIn(
+    locations: readonly LocationRecord[],
+    house: { id: string; ranks: readonly string[] },
+    roll: readonly { id: string; rankIndex: number }[]
+): string | null {
+    return whoAnswersAbout(portfoliosIn({
+        locations,
+        sectId: house.id,
+        roll,
+        rankCount: house.ranks.length
+    }), THE_ROOM_THE_ROLL_IS_KEPT_IN);
+}
+
+/**
+ * LEAVING MEANS HANDING IT BACK, which the token's own doc has always said and
+ * nothing did. Somebody alive and off the roll that issued a robe or a token is
+ * not carrying it any more. Without this a disciple who walked out and was later
+ * taken back on, somewhere else, still wore the old robes and read as already
+ * entered - measured on `town-b`: out in year 188, back on the same roll at a
+ * dao ground in 192, and never sent to the house.
+ *
+ * `rollOf` answers the house somebody is on today, null for none, and undefined
+ * for somebody the caller is not asking about - who is skipped. Mutates in place
+ * and returns how many were handed back.
+ */
+export function handBackWhatTheyNoLongerBelongTo(
+    objects: ObjectRecord[],
+    rollOf: (personId: string) => string | null | undefined
+): number {
+    let handed = 0;
+    for (let i = 0; i < objects.length; i++) {
+        const object = objects[i]!;
+        if (object.possessorId === null || !object.tags.includes('issued')) continue;
+        // Only from the person it was issued to. A robe or a token in somebody
+        // else's hands is the seam the plate file keeps open on purpose - a
+        // genuine tag in the wrong hands still reads as the house's.
+        if (object.data?.memberId !== object.possessorId) continue;
+        const onRoll = rollOf(object.possessorId);
+        if (onRoll === undefined || onRoll === object.ownerId) continue;
+        objects[i] = { ...object, possessorId: null };
+        handed++;
+    }
+    return handed;
+}
+
+/**
+ * What a house gives one of its own who is standing in its compound.
+ *
+ * THE ONE ANSWER, asked by the yearly pass for the world's people and by the
+ * played turn for the player, so the two cannot come to different conclusions
+ * about who is owed what. Robes to anybody on the roll not wearing them - the
+ * stock is infinite. A token and a plate, cut by `issueTo`, to anybody at a rung
+ * that carries one (`carriesATokenAt`) in a house somebody can cut them in
+ * (`thisHouseCanIssue`), who is not already carrying this house's token.
+ *
+ * Pure: rows out, to be put by id. Nothing here reads where they are standing,
+ * which is the caller's question.
+ */
+export function whatTheHouseGivesThem(input: {
+    house: { id: string; name: string };
+    person: { id: string; name: string; rankIndex: number };
+    wearsItsRobes: boolean;
+    holdsItsToken: boolean;
+    /** `thisHouseCanIssue` over the roll's ordinals. */
+    canCut: boolean;
+    /** The hall, or the seat where the house has none built. */
+    plateRoomId: string | null;
+    /** Asked only when a plate is actually cut. */
+    keeperOfTheRoll: () => string | null;
+    onDay: number;
+}): { robes: ObjectRecord | null; token: ObjectRecord | null; plate: ObjectRecord | null } {
+    const robes = input.wearsItsRobes ? null : aUniformFor({
+        memberId: input.person.id,
+        houseId: input.house.id,
+        houseName: input.house.name,
+        onDay: input.onDay
+    });
+    if (input.holdsItsToken || !input.canCut || !carriesATokenAt(input.person.rankIndex)) {
+        return { robes, token: null, plate: null };
+    }
+    const issued = issueTo({
+        memberId: input.person.id,
+        memberName: input.person.name,
+        houseId: input.house.id,
+        houseName: input.house.name,
+        plateRoomId: input.plateRoomId,
+        onDay: input.onDay,
+        cutById: input.keeperOfTheRoll()
+    });
+    return { robes, token: issued.token, plate: issued.plate };
+}
+
+/** Whether this person is carrying a token this house cut for them. */
+export function holdsTheTokenOf(
+    objects: readonly Pick<ObjectRecord, 'id' | 'possessorId' | 'ownerId'>[],
+    personId: string,
+    houseId: string
+): boolean {
+    const id = tokenIdFor(personId);
+    return objects.some(o => o.id === id && o.possessorId === personId && o.ownerId === houseId);
 }
 
 export interface WhatTheHouseDidAboutItsRoll {
@@ -213,25 +327,10 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
         return object.possessorId === npc.id && object.ownerId === houseId;
     };
 
-    // LEAVING MEANS HANDING IT BACK, which the token's own doc has always said
-    // and nothing did. Somebody alive and off the roll that issued a robe or a
-    // token is not carrying it any more. Without this a disciple who walked out
-    // and was later taken back on, somewhere else, still wore the old robes and
-    // read as already entered - measured on `town-b`: out in year 188, back on
-    // the same roll at a dao ground in 192, and never sent to the house.
+    // Leaving means handing it back. See `handBackWhatTheyNoLongerBelongTo`.
     const onRollOf = new Map<string, string | null>();
     for (const npc of state.npcs) if (npc.status === 'alive') onRollOf.set(npc.id, npc.factionId);
-    for (let i = 0; i < state.objects.length; i++) {
-        const object = state.objects[i]!;
-        if (object.possessorId === null || !object.tags.includes('issued')) continue;
-        // Only from the person it was issued to. A robe or a token in somebody
-        // else's hands is the seam the plate file keeps open on purpose - a
-        // genuine tag in the wrong hands still reads as the house's.
-        if (object.data?.memberId !== object.possessorId) continue;
-        if (!onRollOf.has(object.possessorId)) continue;
-        if (onRollOf.get(object.possessorId) === object.ownerId) continue;
-        state.objects[i] = { ...object, possessorId: null };
-    }
+    handBackWhatTheyNoLongerBelongTo(state.objects, id => onRollOf.get(id));
 
     // Who is wearing whose robes, gathered once after the hand-back.
     const robed = new Set<string>();
@@ -243,6 +342,8 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
     const wears = (npc: NpcRecord, houseId: string): boolean => robed.has(`${npc.id}|${houseId}`);
 
     const byId = new Map(state.locations.map(l => [l.id, l]));
+    // Gathered once rather than asked per house: the same answer as
+    // `whereThisHouseHangsItsPlates`, which walks every location per call.
     const plateRoomOf = new Map<string, string>();
     for (const location of state.locations) {
         if (purposeOf(location) !== WHERE_THE_PLATES_HANG) continue;
@@ -261,37 +362,37 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
         let keeper: string | null | undefined;
         const keeperOfTheRoll = (): string | null => {
             if (keeper === undefined) {
-                keeper = whoAnswersAbout(portfoliosIn({
-                    locations: state.locations,
-                    sectId: house.id,
-                    roll: members.map(m => ({ id: m.npc.id, rankIndex: m.npc.factionRankIndex })),
-                    rankCount: house.ranks.length
-                }), THE_ROOM_THE_ROLL_IS_KEPT_IN);
+                keeper = theKeeperOfTheRollIn(
+                    state.locations,
+                    house,
+                    members.map(m => ({ id: m.npc.id, rankIndex: m.npc.factionRankIndex }))
+                );
             }
             return keeper;
         };
         let reach: Map<string, number> | undefined;
 
         const enter = (npc: NpcRecord): void => {
-            if (!wears(npc, house.id)) {
-                put(aUniformFor({ memberId: npc.id, houseId: house.id, houseName: house.name, onDay: day }));
+            const given = whatTheHouseGivesThem({
+                house,
+                person: { id: npc.id, name: npc.name, rankIndex: npc.factionRankIndex },
+                wearsItsRobes: wears(npc, house.id),
+                holdsItsToken: holds(tokenIdFor(npc.id), npc, house.id),
+                canCut,
+                plateRoomId: plateRoomOf.get(house.id) ?? seat,
+                keeperOfTheRoll,
+                onDay: day
+            });
+            if (given.robes) {
+                put(given.robes);
                 robed.add(`${npc.id}|${house.id}`);
                 done.entered++;
             }
-            if (!canCut || !carriesATokenAt(npc.factionRankIndex)) return;
-            if (holds(tokenIdFor(npc.id), npc, house.id)) return;
-            const issued = issueTo({
-                memberId: npc.id,
-                memberName: npc.name,
-                houseId: house.id,
-                houseName: house.name,
-                plateRoomId: plateRoomOf.get(house.id) ?? seat,
-                onDay: day,
-                cutById: keeperOfTheRoll()
-            });
-            put(issued.token);
-            put(issued.plate);
-            done.cut++;
+            if (given.token && given.plate) {
+                put(given.token);
+                put(given.plate);
+                done.cut++;
+            }
         };
 
         for (const { at, npc } of members) {

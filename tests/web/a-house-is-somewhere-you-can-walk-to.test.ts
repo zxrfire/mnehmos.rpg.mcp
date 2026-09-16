@@ -37,7 +37,14 @@
  *                what would change the answer rather than hiding the house.
  *                NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING
  *                NOTHING.
- *   belongs      somebody on the roll is not stopped.
+ *   belongs      this used to be "somebody on the roll is not stopped", read
+ *                off the roll. A gate cannot see a roll: it reads a token,
+ *                which is cut at the house (`what-your-house-has-issued-you.ts`).
+ *                So a member arriving with nothing to show is stopped and
+ *                asked, told there is no token to read and what would give
+ *                them one, and entered at the seat on the same turn.
+ *                `your-house-issues-you-its-token-at-its-seat.test.ts` holds
+ *                the rest: a member carrying their token is not stopped.
  *   a guest      somebody who is owed by a host walks in behind them. Who may
  *                host is read off `ELDER_RUNG_FLOOR` - the rung below which no
  *                house makes an elder of anybody - and is not a new field.
@@ -185,7 +192,7 @@ describe('a house is somewhere you can walk to', () => {
         ).toBe(true);
     }, 180_000);
 
-    it('does not stop somebody of the house', async () => {
+    it('stops somebody of the house who has nothing to show, and enters them at its seat', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-member', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Disciple');
         const loaded = await game.loadWorld();
@@ -203,9 +210,14 @@ describe('a house is somewhere you can walk to', () => {
 
         const prose = turn.narration ?? '';
         expect(
-            /not stop|does not stop|reads you as/i.test(prose),
-            'the gate refused one of its own'
+            /no token to read/i.test(prose),
+            'the gate let a member through on a roll it cannot see'
         ).toBe(true);
+        expect(
+            /turned away|takes no applicants|A place on the roll would open it/i.test(prose),
+            'a member was read as a stranger rather than stopped as one of the house'
+        ).toBe(false);
+        expect(/Entered on the roll/.test(prose), 'arriving at the seat did not enter them').toBe(true);
     }, 180_000);
 
     it('walks somebody in behind a host who owes them, and not behind anybody else', async () => {
