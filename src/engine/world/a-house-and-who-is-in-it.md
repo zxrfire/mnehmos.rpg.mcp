@@ -311,7 +311,29 @@ rather than which pass to add. There are four candidates and they fail
 differently: too few born, too few taken in, **too few climbing high enough**,
 or seats that exist and are never dealt.
 
-The third is worth suspecting first. Promotion is gated on the rung's realm
+**And before suspecting any of them, notice that the top should barely decay at
+all.** The owner: *"those people live a long time."* Measured elsewhere this
+session: a Nascent Soul cultivator at two hundred has eight hundred years left.
+So a century should take almost nobody off an elder rung by age, and an elder
+ladder that empties over one is not attrition - **something is removing people
+who were not going to die.**
+
+That reorders the whole investigation. Look first at the ways somebody leaves a
+chair while still alive:
+
+- **posted away and never recalled.** Measured: members standing at their own
+  seat fall from 207 of 306 to 42 of 363 over a century, and they are not dead,
+  they are in towns. Town postings return people to wherever they last were
+  rather than to the compound
+- **killed.** The world's own passes take people, and the party pass dominates
+  the ones that do
+- **walked out.** Which the engine can barely express - see the walk-out gap
+  above, where the one reason that should cover a blocked senior checks the
+  bottom of the ladder instead
+
+Only after those does the climb become the suspect.
+
+The third link is worth suspecting after that. Promotion is gated on the rung's realm
 bar, so a house can hold an empty elder chair, a queue of candidates and a
 working promotion pass, and still seat nobody - because nobody has climbed far
 enough to qualify. A measurement from elsewhere this session is suggestive: the
