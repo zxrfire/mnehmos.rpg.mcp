@@ -550,12 +550,14 @@ implementer will otherwise invent a flag for the third:
 > *"a guest elder is an external elder without an office"*
 > *"an external elder joining is just an elder"*
 
-- **an elder** is somebody of elder standing within the sect, on the roll,
-  **whether or not they hold an office** - the owner again: *"a regular elder
-  (from within the sect) with no office is just elder"*
-- **an office** is a chair, and every chair a sect has must have somebody in it.
-  The holder is an elder; the reverse does not follow
-- **a guest elder** is external, holds no office, and is **not on the roll** -
+- **an elder is a RANK.** Somebody of elder standing within the sect, on the
+  roll, whether or not they have a posting. The owner: *"a regular elder (from
+  within the sect) with no office is just elder"*
+- **an office is AN ELDER WITH A POSTING.** Not a second category beside the
+  rank - the pairing of the two. The owner's own definition: *"an office = an
+  elder with a posting. an elder = a rank."* So a sect's postings are the thing
+  that must be occupied, and the occupant is an elder by construction
+- **a guest elder** is external, holds no posting, and is **not on the roll** -
   `GUEST_ELDERS` in `governance-and-water-rights.ts` is exactly this category,
   already named and already populated, and `travel-verbs.ts` already says in its
   own comment that guests are not in the house's roll
@@ -568,8 +570,20 @@ a vacancy from outside, nothing converts: the person takes the office and the
 word "guest" stops applying, because being a guest was only ever the state of
 having no office.
 
-This is also what makes the taper defect a defect rather than a thin world: an
-office is a chair, and a chair does not get emptier because the room is smaller.
+This is also what makes the taper defect a defect rather than a thin world: a
+posting is a job somebody does, and a job does not go away because the roll is
+smaller.
+
+**`protector` is deliberately out of this rule.** The word does two jobs and
+`THE_OFFICE` in `false-immortals.ts` spends two thousand words on it: at an
+ordinary sect it is a posting like any other and is filled; at the top of the
+world it is RESERVED for a False Immortal and has stood empty for eight hundred
+years on purpose, because *"a house with a vacant protector's chair is not short
+of strong people, it is declining to pretend that a strong person is the same
+thing."* Read that entry before touching anything protector-shaped, and note
+that it records an earlier draft getting it wrong by re-deriving a chair from a
+crossing count, which *"counts departures and vacancies together, and the two
+are opposite outcomes."*
 
 "Vaguely pyramidal" is the instruction, and it governs the BANDS. More people low than high, and nobody's
 rung left empty because a real sect would have needed a hundred people to fill
