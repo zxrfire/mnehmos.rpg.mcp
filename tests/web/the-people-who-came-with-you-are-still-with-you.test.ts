@@ -78,7 +78,12 @@ function placeRow(game: any, location: string | null) {
 /** Somewhere in the world that is not here. */
 function somewhereElse(game: any, location: string | null): string {
     const here = (location ?? '').toLowerCase();
+    // A PLACE SOMEBODY STANDS IN. This took the first row of any kind, which is
+    // a province, and a province is a container nobody stands on: travelling to
+    // one now ends at its largest town (`whereTheRoadEndsIn`), so the party is
+    // standing in the town and not on the row this picked.
     const found = (game.atHand?.locations ?? [])
+        .filter((row: { kind: string }) => row.kind === 'settlement')
         .map((row: { name: string }) => row.name)
         .find((name: string) => name.toLowerCase() !== here);
     expect(found, 'the world has nowhere else in it').toBeDefined();

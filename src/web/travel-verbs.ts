@@ -102,6 +102,8 @@ import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
 import { abodeLocationId } from '../engine/world/immortal-world.js';
 import { getLocation, getNpc, type WorldState } from '../engine/world/world-state.js';
+import { populationWeightOf, type LocationRecord } from '../engine/world/locations.js';
+import { pathTo } from '../engine/world/architecture.js';
 import { layerOf, type LayerKey } from '../engine/world/layers.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
@@ -492,6 +494,25 @@ export function whereHomeIs(
     return { kind: 'nowhere' };
 }
 
+/**
+ * The most populous place inside a province that somebody could be standing in,
+ * or null where it holds none. See `whereTheRoadEndsIn` for why.
+ */
+export function theMostPeopledPlaceIn(
+    world: Pick<WorldState, 'locations'>,
+    provinceId: string
+): LocationRecord | null {
+    let best: LocationRecord | null = null;
+    for (const place of world.locations) {
+        if (place.kind !== 'settlement' || place.sealed) continue;
+        if (place.thresholds.entry > 0 || place.thresholds.survival > 0) continue;
+        if (populationWeightOf(place) <= 0) continue;
+        if (!pathTo(world.locations, place.id).some(step => step.id === provinceId)) continue;
+        if (best === null || populationWeightOf(place) > populationWeightOf(best)) best = place;
+    }
+    return best;
+}
+
 export const travelVerbs = {
     /**
      * Going somewhere, however it was meant.
@@ -690,7 +711,9 @@ export const travelVerbs = {
         const asProvince = regionIdOfPlace(place.name)
             ? undefined
             : REGIONS.find(region => bareName(region.name) === bareName(place.name));
-        const arrivedAt = worldRow?.name ?? asProvince?.name ?? place.name;
+        // AND A PROVINCE IS NOT SOMEWHERE ANYBODY STANDS. See `whereTheRoadEndsIn`.
+        const roadEnds = this.whereTheRoadEndsIn(worldRow?.name ?? asProvince?.name ?? place.name);
+        const arrivedAt = roadEnds.name;
 
         // ── AND THE ROAD IS AS LONG AS THE CATALOG SAYS IT IS ────────────
         //
@@ -751,8 +774,21 @@ export const travelVerbs = {
 
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
         const facts = factsForMove(
-            cultivator, applied.cultivator, place.name, intent, skip, ambient, ambientAfter
+            cultivator, applied.cultivator, arrivedAt, intent, skip, ambient, ambientAfter
         );
+        // WHICH PLACE THE ROAD ENDED AT, where the name typed was a province.
+        // Said on the required channel: a player who typed a province and is
+        // standing in a town has to be told which town.
+        if (roadEnds.provinceName !== null) {
+            const line = `The road into ${roadEnds.provinceName} ends at ${arrivedAt}, the largest town in it, `
+                + 'and that is where you are standing.';
+            facts.lines.unshift(line);
+            facts.required = [...(facts.required ?? []), line];
+            facts.structure.push(
+                `move: ${roadEnds.provinceName} is a region row and nobody stands on one; arrived at `
+                + `${arrivedAt}, the settlement in it with the greatest populationWeightOf.`
+            );
+        }
 
         // ── AND WHO OF YOUR OWN IS STANDING HERE ─────────────────────────
         //
@@ -788,7 +824,7 @@ export const travelVerbs = {
                 {
                     name: 'cultivator.update',
                     action: 'move',
-                    summary: `Location set to "${place.name}" (intent: ${intent}); ambient qi there is ${ambientAfter}.`,
+                    summary: `Location set to "${arrivedAt}" (intent: ${intent}); ambient qi there is ${ambientAfter}.`,
                     ok: true
                 },
                 ...skipCalls('move', skip, null),
@@ -1253,6 +1289,42 @@ export const travelVerbs = {
         };
     },
 
+    /**
+     * Where a journey to this name ends, which is not always the name.
+     *
+     * A PROVINCE IS A CONTAINER, AND NOBODY STANDS ON ONE. `populationWeightOf`
+     * is zero for a region row and `npcsAt` treats one as a place nobody is,
+     * so a player stored on it arrived in a province with nobody about in it
+     * at all. Measured on `in-front-of-somebody-world`: `I travel to <province>`
+     * then `I ask around about <house>` answered *"There is nobody about in The
+     * Jade Gorge at all"* once the seeded travellers who had been stranded on
+     * the region node were given somewhere to go - they had been the only people
+     * who ever stood on it, and `seedSectGround`'s rule that a gate's name is had
+     * by asking in the region had been answered by them alone.
+     *
+     * NOTHING ELSE ALREADY ANSWERS WHERE A PROVINCE'S ROAD COMES IN. No province
+     * names a capital or a principal place, the catalog's place-to-place roads
+     * never cross a border (0 of 42), and a prefecture's seat is per prefecture.
+     * So the road ends at the most populous place in it that anybody could be
+     * standing in, by the world's own measure of where people are:
+     * `populationWeightOf`, over the settlements the world's own birthplace read
+     * would count - not sealed, no bar on entering or surviving there. A house's
+     * ground is NOT one of them: arriving in a province does not hand anybody a
+     * gate, which is exactly what asking in it is for. Ties go to the order the
+     * catalog lists its places in.
+     *
+     * Where the name is not a province, or no world is loaded, this is
+     * `theWorldsNameFor` unchanged.
+     */
+    whereTheRoadEndsIn(this: GameService, place: string): { name: string; provinceName: string | null } {
+        const name = this.theWorldsNameFor(place);
+        const world = this.atHand;
+        const row = world ? worldLocationFor(world, name) : null;
+        if (!world || !row || row.kind !== 'region') return { name, provinceName: null };
+        const town = theMostPeopledPlaceIn(world, row.id);
+        return town ? { name: town.name, provinceName: row.name } : { name, provinceName: null };
+    },
+
     /** The world's own name for somewhere, which is what gets stored. */
     theWorldsNameFor(this: GameService, place: string): string {
         const bare = (name: string) => name.replace(/^the\s+/i, '').toLowerCase();
@@ -1276,7 +1348,7 @@ export const travelVerbs = {
         const going = this.whereThisJourneyGoes(cultivator, target, 'ride');
         if ('facts' in going) return going;
 
-        const arrivedAt = this.theWorldsNameFor(going.name);
+        const arrivedAt = this.whereTheRoadEndsIn(going.name).name;
         const road = this.daysOnTheRoadTo(cultivator, going.name);
         const walkingDays = road ?? SHORT_ACTION_DAYS;
         const available = this.whatTheyCouldRide(cultivator);
@@ -1405,7 +1477,7 @@ export const travelVerbs = {
         const going = this.whereThisJourneyGoes(cultivator, target, 'fold');
         if ('facts' in going) return going;
 
-        const arrivedAt = this.theWorldsNameFor(going.name);
+        const arrivedAt = this.whereTheRoadEndsIn(going.name).name;
 
         // ── A FOLD TAKES NOBODY, AND IT IS THE GRANT THAT SAYS SO ────────
         //
@@ -1658,7 +1730,7 @@ export const travelVerbs = {
 
         this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
         const paid = this.repos.cultivators.getById(cultivator.id)!;
-        const arrivedAt = this.theWorldsNameFor(route.toPlace);
+        const arrivedAt = this.whereTheRoadEndsIn(route.toPlace).name;
 
         const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
             await this.arriveAfterSpending(

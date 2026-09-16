@@ -53,6 +53,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { populationWeightOf, walkingDaysFrom } from './locations.js';
 import { whatSomebodyIsLike } from './what-somebody-is-like-and-where-it-came-from.js';
 import type { ActivityKind, NpcActivity, NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
@@ -698,6 +699,88 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
                 };
             }
         }
+    }
+
+    giveEveryJourneyAnEnd(state, onDay);
+}
+
+/**
+ * A journey has an end, so everybody who opens the world `travelling` is going
+ * somewhere and arrives on a day.
+ *
+ * ── WHAT WAS WRONG ───────────────────────────────────────────────────────
+ *
+ * This file wrote `travelling` with no term: somebody standing on a province
+ * with nowhere named, or passing through a town. Nothing ever ended it, and once
+ * `travelling` counted as away (`isAwayOnSomething`) those people could never
+ * walk out of a house or be present for a lecture. Measured on `afford-a`: 55 at
+ * world open, 42 a year later; on `demography` 58 and 45.
+ *
+ * None of them is somebody who lives on the road. The region-node rows are
+ * "going somewhere, and not stopping for long", and the town rows are passing
+ * through, settling with a carter, waiting on a road that opens at dawn. So
+ * they keep the kind and get what a journey has: a destination and a day.
+ *
+ * ── WHERE THEY ARE GOING ─────────────────────────────────────────────────
+ *
+ * Somewhere people live, nearest first by `walkingDaysFrom`: a settlement on
+ * their own layer, or their own house's seat for somebody on a roll. Among the
+ * nearest, drawn by `populationWeightOf`, which is how this world already decides
+ * who lives where - so a province's travellers do not all walk into the one town
+ * whose id sorts first. The term is the walk, and `bringHomeWhoeverIsDue` puts
+ * them at `returnTo` when it is up, like every other term.
+ */
+function giveEveryJourneyAnEnd(state: WorldState, onDay: number): void {
+    const byId = new Map(state.locations.map(l => [l.id, l]));
+    const seatOf = new Map(state.factions
+        .filter(f => f.dissolvedOnDay === null && f.seatLocationId !== null)
+        .map(f => [f.id, f.seatLocationId!]));
+    const reachFrom = new Map<string, Map<string, number>>();
+
+    for (let at = 0; at < state.npcs.length; at++) {
+        const npc = state.npcs[at]!;
+        const doing = npc.activity;
+        if (npc.status !== 'alive' || !doing || doing.kind !== 'travelling') continue;
+        if ((doing.untilDay ?? null) !== null) continue;
+        const here = npc.locationId === null ? undefined : byId.get(npc.locationId);
+        if (here === undefined) continue;
+
+        let reach = reachFrom.get(here.id);
+        if (reach === undefined) {
+            reach = walkingDaysFrom(state.locations, here.id);
+            reachFrom.set(here.id, reach);
+        }
+        const ownSeat = npc.factionId === null ? null : seatOf.get(npc.factionId) ?? null;
+        let nearest = Infinity;
+        let candidates: { id: string; weight: number }[] = [];
+        for (const [id, days] of reach) {
+            if (id === here.id || days > nearest) continue;
+            const place = byId.get(id);
+            if (place === undefined || place.layer !== here.layer) continue;
+            const livedIn = (place.kind === 'settlement' || id === ownSeat) && populationWeightOf(place) > 0;
+            if (!livedIn) continue;
+            if (days < nearest) { nearest = days; candidates = []; }
+            candidates.push({ id, weight: populationWeightOf(place) });
+        }
+        if (candidates.length === 0) continue;
+
+        candidates.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+        const total = candidates.reduce((sum, c) => sum + c.weight, 0);
+        let draw = forStream(state.seed, 'where-the-journey-ends', npc.id).next() * total;
+        let goingTo = candidates[candidates.length - 1]!.id;
+        for (const c of candidates) {
+            if (draw < c.weight) { goingTo = c.id; break; }
+            draw -= c.weight;
+        }
+
+        state.npcs[at] = {
+            ...npc,
+            activity: {
+                ...doing,
+                untilDay: onDay + Math.max(1, Math.ceil(nearest)),
+                returnTo: goingTo
+            }
+        };
     }
 }
 
