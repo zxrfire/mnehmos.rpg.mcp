@@ -57,9 +57,22 @@ describe('what can be asked after', () => {
         expect(theThingAskedFor('notched sabre', null)?.pastTheCashLine).toBe(false);
     });
 
-    /** And a thing the world does not contain is still nothing. */
+    /**
+     * And a thing the world does not contain is still nothing.
+     *
+     * THE FIXTURE CHANGED AND THE RULE DID NOT. This was "a spirit boat made of
+     * cheese", which stopped being a name no catalog carries the day the
+     * conveyance catalog joined this read: `A spirit boat` is a row now, and
+     * every branch in `theThingAskedFor` matches by containment in both
+     * directions on purpose, so that "his Hidden Edge" and "the spirit boat"
+     * reach the rows they name. A phrase with a real catalog name inside it
+     * resolving to that row is the rule working, not a leak.
+     *
+     * So the fixture is a phrase with no catalog name in it at all, which is
+     * what the assertion was always about.
+     */
     it('still answers nothing for a name no catalog carries', () => {
-        expect(theThingAskedFor('a spirit boat made of cheese', null)).toBeNull();
+        expect(theThingAskedFor('a wheel of cheese', null)).toBeNull();
     });
 
     /**

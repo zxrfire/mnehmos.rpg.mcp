@@ -16,27 +16,32 @@
  * the number was not, and the turn looked entirely ordinary.
  */
 import { describe, expect, it } from 'vitest';
-import { parseIntent, MAX_CULTIVATION_DAYS } from '../../src/web/actions';
+import { parseIntent } from '../../src/web/actions';
 
 const daysOf = (said: string): number | undefined =>
     (parseIntent(said) as { days?: number }).days;
 
 describe('a span said in words', () => {
     it('lets the count in front of a magnitude answer', () => {
-        // All three are above the cap, which is the point: before this they
-        // came out at 100 years, 100 years and one year, three different
-        // wrong answers to three sentences that all mean "longer than the
-        // engine will run".
-        expect(daysOf('I cultivate for five hundred years')).toBe(MAX_CULTIVATION_DAYS);
-        expect(daysOf('I cultivate for two hundred years')).toBe(MAX_CULTIVATION_DAYS);
-        expect(daysOf('I cultivate for a thousand years')).toBe(MAX_CULTIVATION_DAYS);
+        // These read 100 years, 100 years and one year: three different wrong
+        // answers to three sentences that differ by a factor of five.
+        //
+        // They used to be asserted against MAX_CULTIVATION_DAYS, because the
+        // parser then clamped every one of them to a flat century and the
+        // three sentences really did mean the same thing by the time anything
+        // downstream saw them. The clamp is gone - what bounds a span is the
+        // life asking for it, applied where the cultivator is and said out
+        // loud - so the counts are now the whole of what is asserted.
+        expect(daysOf('I cultivate for five hundred years')).toBe(500 * 365);
+        expect(daysOf('I cultivate for two hundred years')).toBe(200 * 365);
+        expect(daysOf('I cultivate for a thousand years')).toBe(1000 * 365);
     });
 
     it('keeps every span that already worked', () => {
         expect(daysOf('I cultivate for ten years')).toBe(3650);
         expect(daysOf('I cultivate for a year')).toBe(365);
         expect(daysOf('I cultivate for three months')).toBe(90);
-        expect(daysOf('I cultivate for 500 years')).toBe(MAX_CULTIVATION_DAYS);
+        expect(daysOf('I cultivate for 500 years')).toBe(500 * 365);
     });
 
     it('stops an article answering for the word behind it', () => {

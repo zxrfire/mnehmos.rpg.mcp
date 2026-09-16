@@ -43,6 +43,11 @@ import {
     roadRefuses,
     drawRootForSomebodyAlreadyInAHouse
 } from './what-root-a-seeded-house-member-has.js';
+import {
+    A_ROLL_A_PLAYER_COULD_KNOW,
+    aRollWorthModelling,
+    theBandARaisedMemberStandsIn
+} from './a-house-raises-its-own.js';
 import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
@@ -129,6 +134,18 @@ export interface SeedWorldOptions {
      * century of world time is linear in it.
      */
     population?: number;
+    /**
+     * The roll an ordinary house is worth modelling, before its own facts scale
+     * it. Defaults to {@link A_ROLL_A_PLAYER_COULD_KNOW}; see
+     * `a-house-raises-its-own.ts` for what it is and where the figure came from.
+     *
+     * A knob on how much world to model, exactly as `population` is - and the
+     * one that makes the rank-and-file pass MEASURABLE, because zero here seeds
+     * the same world without it and both arms then run in one command. Worlds
+     * seeded at two different values are two different worlds and their numbers
+     * do not compare; that is true of `population` too.
+     */
+    rollWorthModelling?: number;
     /** Qi density of the present age. */
     qiDensity?: number;
     priorAges?: { ages?: number; yearsPerAge?: number; factionsPerAge?: number };
@@ -231,6 +248,7 @@ function withoutArticle(name: string): string {
 export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const presentYear = opts.presentYear ?? DEFAULTS.presentYear;
     const population = Math.max(0, opts.population ?? DEFAULTS.population);
+    const rollWorthModelling = Math.max(0, opts.rollWorthModelling ?? A_ROLL_A_PLAYER_COULD_KNOW);
     const qiDensity = opts.qiDensity ?? DEFAULTS.qiDensity;
     const presentDay = dayOfYear(presentYear);
 
@@ -253,7 +271,8 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // `settleTheSeededPastIntoProvinces`.
     state.locations = settleTheSeededPastIntoProvinces(state.locations, opts.seed);
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
-    const npcs = seedPopulation(state, opts.catalog, factions, population, presentDay);
+    const npcs = seedPopulation(
+        state, opts.catalog, factions, population, presentDay, rollWorthModelling);
     // AFTER the population, so every procedural person draws exactly what they
     // drew before this existed, and BEFORE the lineages, so the family the
     // dilution ladder is read off is on a roll like anybody else's. They are
@@ -1428,7 +1447,9 @@ function seedPopulation(
     catalog: WorldCatalog,
     factions: readonly FactionRecord[],
     population: number,
-    presentDay: number
+    presentDay: number,
+    /** See {@link SeedWorldOptions.rollWorthModelling}. */
+    rollWorthModelling: number
 ): NpcRecord[] {
     const regions = catalog.regions;
     if (regions.length === 0 || population === 0) return [];
@@ -1527,6 +1548,14 @@ function seedPopulation(
     // seniors are in the room when the pyramid is built.
     created.push(...seedNamedFigures(state, catalog, presentDay));
     created.push(...seedWhatAHouseActuallyHolds(state, catalog, presentDay, taken));
+    // AND THE RANK AND FILE AROUND THEM. Last of the three, so what the catalog
+    // states is on the roll first and is counted before anything is raised -
+    // the people here fill a shortfall and never dilute a curated figure. After
+    // the apex pass for the same reason in the other direction: a house that
+    // needed an instance it did not derive must get one off its own catalog
+    // roll rather than off somebody its ground happened to carry.
+    created.push(
+        ...seedThePeopleAHouseRaised(state, catalog, presentDay, taken, rollWorthModelling));
 
     assignFactionRoles(state, catalogById, presentDay);
     return created;
@@ -1786,6 +1815,164 @@ function seedWhatAHouseActuallyHolds(
 
         state.npcs.push(npc);
         created.push(npc);
+    }
+
+    return created;
+}
+
+/**
+ * The rank and file a house raised, which is most of what a house is.
+ *
+ * `a-house-raises-its-own.ts` holds the ruling, what the figure is made of and
+ * the measurement; this puts the people on the ground.
+ *
+ * Three things are true of everybody seeded here and each is a fact about the
+ * house rather than about them:
+ *
+ * - they stand on the house's ground, because that is where somebody the house
+ *   raised lives. It is also the half that answers the gate.
+ * - their rung comes off `rosterByRung`, the same taper the role pass reads, so
+ *   the ladder fills bottom-heavy instead of stacking at the door.
+ * - their realm comes off `rankRealmBand`, which is the catalog's own statement
+ *   of what somebody at that rank of that house stands at - capped below the
+ *   strongest the house already holds, so `power_ordinal` cannot move.
+ *
+ * Their root and their origin are DRAWN, by the same two functions the apex
+ * pass uses and for the same reason: which births produce somebody who
+ * finished a climb inside a house is not the same question as which births
+ * happen, and this house's road is what they finished it on.
+ */
+function seedThePeopleAHouseRaised(
+    state: WorldState,
+    catalog: WorldCatalog,
+    presentDay: number,
+    /** Names already spoken for in this world. See the note in `seedPopulation`. */
+    taken: Set<string>,
+    /** See {@link SeedWorldOptions.rollWorthModelling}. */
+    rollWorthModelling: number
+): NpcRecord[] {
+    const created: NpcRecord[] = [];
+    if (rollWorthModelling <= 0) return created;
+    const catalogById = new Map(catalog.factions.map(f => [f.id, f]));
+
+    for (const faction of state.factions) {
+        const cf = catalogById.get(faction.id);
+        if (!cf || !cf.recruits) continue;
+
+        const here = state.npcs.filter(n => n.factionId === faction.id && n.status === 'alive');
+        // Nobody to stand under. A house the catalog names nobody in and the
+        // population never reached is left as it is rather than being invented.
+        if (here.length === 0) continue;
+
+        const wanted = aRollWorthModelling({
+            rankCount: faction.ranks.length,
+            powerOrdinal: cf.powerOrdinal,
+            admissionOrdinal: cf.admissionOrdinal,
+            recruits: cf.recruits,
+            // A house with no founding day on the record is not a young house.
+            // It is a house nobody wrote a date for, and reading that as "stood
+            // for no time at all" would empty it.
+            scale: rollWorthModelling,
+            yearsStanding: faction.foundedOnDay === null
+                ? Number.POSITIVE_INFINITY
+                : (presentDay - faction.foundedOnDay) / DAYS_PER_YEAR
+        });
+        const short = wanted - here.length;
+        if (short <= 0) continue;
+
+        const ladder = faction.ranks.length;
+        const strongest = here.reduce((best, n) => Math.max(best, n.cultivation.realmOrdinal), 0);
+        const road = houseRoadOf(cf);
+        const takes = whoAHouseWillTake(faction.id);
+        const region = catalog.regions.find(r => r.factionIds.includes(faction.id)) ?? null;
+        const ground = groundAHouseFiguresStandOn(state, catalog, cf);
+
+        // Seats the taper wants at the roll this house is worth modelling, less
+        // the ones its own people are already standing on. Filled from the
+        // bottom, which is where a house that took somebody in this decade puts
+        // them.
+        const seats = rosterByRung(wanted, ladder);
+        for (const npc of here) {
+            const rung = npc.factionRankIndex;
+            if (rung >= 0 && rung < seats.length) seats[rung] = Math.max(0, seats[rung] - 1);
+        }
+
+        let raised = 0;
+        for (let rung = 0; rung < ladder && raised < short; rung++) {
+            for (let k = 0; k < (seats[rung] ?? 0) && raised < short; k++) {
+                const band = theBandARaisedMemberStandsIn(faction.id, rung, strongest);
+                // No room under the cap at this rung: the house holds one fewer
+                // rather than gaining somebody who would outrank its own head.
+                if (!band) break;
+
+                const id = `npc-raised-${faction.id}-${raised}`;
+                if (state.npcs.some(n => n.id === id)) { raised++; continue; }
+                const rng = forStream(state.seed, 'a-house-raises-its-own', id);
+                const ordinal = clampOrdinal(rng.int(band.minOrdinal, band.maxOrdinal));
+
+                // Old enough to have got there and young enough to still be
+                // here. The first half is the same expression the named figures
+                // use; the second is the ladder's own span for the rung they
+                // stand at, which that expression outruns at the bottom of the
+                // ladder where a rung costs more years than a life is long.
+                const span = lifespanForOrdinal(ordinal);
+                const age = Math.max(
+                    MIN_AGE + 1,
+                    Math.min(
+                        Math.floor(span * 0.9),
+                        MIN_AGE + Math.round(ordinal * NAMED_YEARS_PER_ORDINAL) + rng.int(0, 30)
+                    )
+                );
+
+                let npc = createNpc(state.seed, {
+                    id,
+                    bornOnDay: presentDay - years(age),
+                    onDay: presentDay,
+                    locationId: ground,
+                    occupation: 'unknown',
+                    takenNames: taken,
+                    ...(takes !== null ? { sex: takes } : {}),
+                    origin: drawOriginForSomebodyAlreadyAtOrdinal(
+                        forStream(state.seed, 'seed-origin', id).next(), ordinal
+                    ).key,
+                    cultivation: {
+                        spiritRoot: drawRootForSomebodyAlreadyInAHouse(
+                            forStream(state.seed, 'seed-root', id).next(), road, ordinal, rung
+                        ).key
+                    },
+                    // NO `region:` TAG, and the omission is the same one the
+                    // catalog figures already have. That tag says somebody was
+                    // born to a province and is held to its ceiling and its
+                    // rate; these people stand on a house's ground, which is
+                    // the whole reason they got where they are, and
+                    // `groundReachOf` is what carried them. Tagging them with a
+                    // province would make the world read them against a
+                    // ceiling they were never under.
+                    tags: [`raised:${faction.id}`, `faction:${faction.id}`]
+                });
+                taken.add(npc.name);
+
+                npc = setRealm(npc, ordinal, presentDay - years(rng.int(0, 8)));
+                npc = {
+                    ...npc,
+                    factionId: faction.id,
+                    factionRankIndex: rung,
+                    spiritStones: holdingsFor(ordinal, rung, rng),
+                    cultivation: {
+                        ...npc.cultivation,
+                        foundation: ordinal >= 13 ? 'stable' : 'incomplete',
+                        specialties: getSpiritRoot(npc.cultivation.spiritRoot).elements.slice()
+                    }
+                };
+                if (region) {
+                    npc = addGoal(npc, goalFor(npc, region, rng), presentDay - years(rng.int(1, 20)));
+                }
+
+                state.npcs.push(npc);
+                created.push(npc);
+                raised++;
+            }
+        }
     }
 
     return created;

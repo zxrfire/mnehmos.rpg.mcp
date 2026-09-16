@@ -15,6 +15,7 @@ import { resolveRuntimeProviderConfig } from '../../src/agent/provider/config';
 import { buildNarrator } from '../../src/web/server';
 import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator';
 import { validatePlan, parseIntent, parseDuration, extractJsonObject } from '../../src/web/actions';
+import { LONGER_THAN_ANY_LIFE } from '../../src/web/verb-day-costs';
 import {
     makeGame, cultivatorRow, injuryCount, planned, engineCalls,
     ScriptedProvider, UnreachableProvider
@@ -211,14 +212,35 @@ describe('the schema gate itself', () => {
         expect(plan.action.intent).toBeUndefined();
     });
 
-    it('keeps days only for cultivate, and only inside the bounds', () => {
+    /**
+     * A SCHEMA REJECTS THE ABSURD AND NOTHING ELSE.
+     *
+     * `days` used to be bounded above by `MAX_CULTIVATION_DAYS`, one flat
+     * century, and a span over it neither threw nor dropped the field: it
+     * failed `safeParse`, so the WHOLE PLAN was discarded and the turn fell
+     * back to the deterministic parser. The same over-long span therefore
+     * meant two different things depending on which path read the sentence,
+     * and neither path said anything to the player.
+     *
+     * The real bound is the life left in the body asking, which a static
+     * schema cannot know. It moved to a runtime check that holds the
+     * cultivator and answers with the figure - see
+     * `a-span-longer-than-the-life-asking-for-it.test.ts` - and what is left
+     * here is the shape: a whole number, at least one, not a span at all past
+     * the ladder's own marker for a life with no end.
+     */
+    it('keeps days only for cultivate, and only where it is still a number of days', () => {
         expect(validatePlan({ action: 'cultivate', days: 3650 })).toEqual({
             ok: true, action: { action: 'cultivate', days: 3650 }
         });
         expect(validatePlan({ action: 'cultivate', days: 0 }).ok).toBe(false);
         expect(validatePlan({ action: 'cultivate', days: -5 }).ok).toBe(false);
-        expect(validatePlan({ action: 'cultivate', days: 36_501 }).ok).toBe(false);
         expect(validatePlan({ action: 'cultivate', days: 1.5 }).ok).toBe(false);
+        expect(validatePlan({ action: 'cultivate', days: LONGER_THAN_ANY_LIFE + 1 }).ok)
+            .toBe(false);
+        // And a five-hundred-year seclusion is a plan, not a malformed field.
+        // It reaches the engine, which answers it against the body.
+        expect(validatePlan({ action: 'cultivate', days: 500 * 365 }).ok).toBe(true);
         // Missing duration is legal; it defaults rather than failing.
         expect(validatePlan({ action: 'cultivate' })).toEqual({
             ok: true, action: { action: 'cultivate', days: 30 }

@@ -179,8 +179,20 @@ const catalog = await loadCultivationCatalog();
 
 describe('the seeded world reads correctly off the register', () => {
     const { state } = seedWorld({ seed: 'register-read', catalog });
+    // THE SPLIT IS "WHOSE ORIGIN CAME OFF WHICH DRAW", not "who is in the
+    // catalog", and for a while those were the same set. The seeder has exactly
+    // two origin draws: `rollOrigin` inside `createNpc` for somebody the
+    // province derived, and `drawOriginForSomebodyAlreadyAtOrdinal` for
+    // somebody it placed at a rung. `a-house-raises-its-own.ts` added a third
+    // kind of person to the world - a house's own rank and file, placed at a
+    // rung off `rankRealmBand` like the apexes and carrying `raised:` - and
+    // they take the second draw for exactly the apex's reason. Reading them as
+    // provincial population put 9 of them in the lottery assertion below, which
+    // was the test naming the wrong set rather than the world going wrong.
+    const wasPlacedAtARung = (npc: { tags: readonly string[] }) =>
+        npc.tags.some(t => t.startsWith('catalog:') || t.startsWith('raised:'));
     const placed = state.npcs.filter(n => n.tags.some(t => t.startsWith('catalog:')));
-    const derived = state.npcs.filter(n => !n.tags.some(t => t.startsWith('catalog:')));
+    const derived = state.npcs.filter(n => !wasPlacedAtARung(n));
 
     it('no longer reads thin_county all the way down', () => {
         const high = placed.filter(n => HOUSEHOLD_ORIGINS.includes(n.identity.origin));

@@ -66,18 +66,24 @@ const GRADES: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immorta
  * Two seeds, and they are NOT a sample - said plainly because the log looks
  * like one and would be quoted as one.
  *
- * Measured while writing this file: `seedWorld` returns an identical realm
+ * Measured while writing this file: `seedWorld` returned an identical realm
  * histogram for every seed tried. 587 alive, and the same count at every rung
- * from 17 to 44, on `medicine-supply-a`, `medicine-supply-b` and `zzz`. The
- * standing population's SHAPE is fixed by the catalog the seeder places from;
- * the seed varies who and where, not how many stand how high. Variation enters
- * when the world is advanced, which is what `the-pyramid.test.ts` measures and
- * this file deliberately does not.
+ * from 17 to 44, on `medicine-supply-a`, `medicine-supply-b` and `zzz`. So the
+ * second arm was a determinism guard rather than a second observation, and
+ * nothing here could be reported as a spread. `AGENTS.md`: a control arm at one
+ * seed is two samples, not a control - and two arms that cannot differ are one
+ * sample twice.
  *
- * So the second arm is a determinism guard rather than a second observation,
- * and nothing here may be reported as a spread. `AGENTS.md`: a control arm at
- * one seed is two samples, not a control - and two arms that cannot differ are
- * one sample twice.
+ * THAT IS NO LONGER TRUE BELOW THE TOP OF THE LADDER, and the log has to be
+ * read accordingly. `a-house-raises-its-own.ts` has each house raise its own
+ * rank and file, which fills by a count depending on who the seed already put
+ * on its roll, so the headcount now varies by seed: 610 / 610 / 610 became
+ * 857 / 849 / 850. The rungs above what the derived population reaches are
+ * still identical at every seed, because those people are placed from the
+ * catalog - so the shape claim this file rests on is intact and the arms are
+ * now a small sample at the bottom and a determinism guard at the top. Two
+ * seeds is still not a spread worth quoting; see the guard below for which
+ * half is which.
  */
 const SEEDS = ['medicine-supply-a', 'medicine-supply-b'] as const;
 
@@ -103,7 +109,13 @@ const RUNS = SEEDS.map(seed => ({ seed, ...makersIn(seed) }));
 const pooled = (grade: TechniqueGrade): number =>
     RUNS.reduce((sum, run) => sum + (run.by.get(grade) ?? 0), 0);
 
-/** Measured at the time of writing: 587 alive, 587 / 89 / 30 / 0 / 0 by grade. */
+/**
+ * At the time of writing: 587 alive, 587 / 89 / 30 / 0 / 0 by grade.
+ * After `a-house-raises-its-own.ts`: 857 / 849 alive, and 101 / 33 / 0 / 0
+ * above mortal on both seeds. The rank and file a house raises stand at the
+ * bottom of the ladder, so what moved is the mortal band and the near edge of
+ * earth; heaven and above are the catalog's people and did not move at all.
+ */
 
 describe('who can actually make each grade of medicine', () => {
     it('prints the supply side of the ladder', () => {
@@ -119,47 +131,59 @@ describe('who can actually make each grade of medicine', () => {
         expect(RUNS.every(r => r.alive > 100)).toBe(true);
     });
 
-    it('is the same world at every seed, which is why the log is one reading', () => {
-        // The finding that keeps the numbers above honest. If seeding ever
-        // starts varying the HISTOGRAM, this goes red and the file needs real
-        // pooling rather than a determinism guard. That half is still exact
-        // and is the half the log rests on.
+    it('fixes the top of the ladder at every seed, and lets the bottom be a population', () => {
+        // ── THIS WAS A DETERMINISM GUARD AND IS NO LONGER ONE ────────────
         //
-        // THE HEADCOUNT IS NO LONGER EXACT, BY ONE, AND THE REASON IS KNOWN.
-        // It was exact because every house the seeder placed from filled the
-        // same way at every seed. Adding the Orchid Court - a second house
-        // that takes one sex - made the affiliation draw reject differently
-        // per seed, and a house's own roll fills by a seed-dependent count, so
-        // two worlds now differ by a person. Measured: 594 against 595.
+        // It used to assert that every seed gave the same world, because every
+        // house the seeder placed from filled the same way at every seed. Two
+        // passes have since made a house's roll seed-dependent on purpose: the
+        // Orchid Court, a second house that takes one sex, made the affiliation
+        // draw reject differently per seed (one person of drift, 594 against
+        // 595), and `a-house-raises-its-own.ts` now has each house raise its
+        // own rank and file up to what it is worth modelling, which fills by a
+        // count that depends on who the seed already put on its roll.
         //
-        // WHERE IT SHOWS, measured rather than assumed: the mortal band and
-        // nowhere else. Everybody alive can make mortal grade, so one more
-        // person alive is one more mortal-grade maker; earth, heaven, immortal
-        // and chaos are identical across both arms, which means the drift is a
-        // headcount at the bottom rather than the shape of the ladder moving.
+        // MEASURED, THREE SEEDS, BOTH ARMS, ONE COMMAND
+        // (`rollWorthModelling: 0` is the world without the rank-and-file pass):
         //
-        // The claim this file makes is about SHAPE - "the seed varies who and
-        // where, not how many stand how high" - and that claim survives
-        // exactly. So the bound is loosened to what it actually needs rather
-        // than the file being converted to pooling for one person of drift. If
-        // it ever widens past a handful, or reaches a band above mortal, take
-        // the file's own advice and pool it properly.
+        //                         without              with
+        //   alive                 610, 610, 610   ->   857, 849, 850
+        //   mortal makers         610, 610, 610   ->   857, 849, 850
+        //   earth makers           96,  96,  95   ->   101, 101,  97
+        //   heaven makers          33,  33,  33   ->    33,  33,  33
+        //   immortal / chaos        0,   0,   0   ->     0,   0,   0
+        //
+        // So the drift is now eight people and it has reached the earth band,
+        // which are the two conditions the old comment named for taking this
+        // file's own advice instead of loosening a bound - and loosening one to
+        // today's figure is the move AGENTS.md names outright. The claim is
+        // rewritten to what is actually true rather than renegotiated.
+        //
+        // WHAT IS TRUE: the top of the ladder is placed from the catalog and
+        // does not move with the seed. The bottom is a POPULATION, and a
+        // population varies - that is what makes it a population. So the bands
+        // no living derived person reaches are still asserted exactly, and the
+        // two the population does reach are pooled by the test below rather
+        // than compared between seeds.
         const first = RUNS[0];
-        const DRIFT = 2;
+        const FIXED_BY_THE_CATALOG: readonly TechniqueGrade[] = ['heaven', 'immortal', 'chaos'];
         for (const run of RUNS.slice(1)) {
-            expect(Math.abs(run.alive - first.alive), `${run.seed} population differs`)
-                .toBeLessThanOrEqual(DRIFT);
-            for (const grade of GRADES) {
+            for (const grade of FIXED_BY_THE_CATALOG) {
+                expect(run.by.get(grade) ?? 0, `${run.seed} ${grade} makers differ`)
+                    .toBe(first.by.get(grade) ?? 0);
+            }
+        }
+        // And the bands that do vary vary by a POPULATION's worth and not by a
+        // ladder's: a seed may not change which rung the supply thins out at.
+        // Asserted as a share so it cannot be quietly widened into meaning
+        // nothing the way an absolute headcount could.
+        for (const run of RUNS.slice(1)) {
+            for (const grade of ['mortal', 'earth'] as const) {
                 const mine = run.by.get(grade) ?? 0;
                 const theirs = first.by.get(grade) ?? 0;
-                // Mortal may drift by the headcount above it. Every band that
-                // says something about the shape of the ladder stays exact.
-                if (grade === 'mortal') {
-                    expect(Math.abs(mine - theirs), `${run.seed} mortal makers drifted`)
-                        .toBeLessThanOrEqual(DRIFT);
-                } else {
-                    expect(mine, `${run.seed} ${grade} makers differ`).toBe(theirs);
-                }
+                expect(Math.abs(mine - theirs) / Math.max(1, theirs),
+                    `${run.seed} ${grade} makers moved by more than a population's worth`)
+                    .toBeLessThan(0.1);
             }
         }
     });

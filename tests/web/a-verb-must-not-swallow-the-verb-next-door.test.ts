@@ -15,7 +15,6 @@ import {
     parseIntent,
     parseDuration,
     durationAskedFor,
-    MAX_CULTIVATION_DAYS,
     TIME_CONSUMING_ACTIONS
 } from '../../src/web/actions';
 
@@ -86,20 +85,27 @@ describe('a pocket is not a plant', () => {
     });
 });
 
-describe('the ceiling on a seclusion is a fact the player is told', () => {
+describe('the parser reads a span and does not bound it', () => {
     /**
-     * `parseDuration` clamps at MAX_CULTIVATION_DAYS and said nothing about
+     * `parseDuration` clamped at MAX_CULTIVATION_DAYS and said nothing about
      * having done so, so "I cultivate for 100000 years" answered "Seclusion of
      * 100 years was intended" - a thousandfold correction that reads like the
-     * engine agreeing with you.
+     * engine agreeing with you. This test pinned the clamp as something the
+     * parser "must" do, with `durationAskedFor` beside it to recover the figure
+     * the clamp had thrown away.
+     *
+     * Neither half survives. A parser does not know whose body is asking, so it
+     * cannot hold a bound made of one: it reads what was said, and the bound -
+     * the whole of the life left, no margin - is applied where the cultivator
+     * is and spoken with the figure attached. See
+     * `a-span-longer-than-the-life-asking-for-it.test.ts`.
      */
-    it('clamps, as it must, and the clamp is now recoverable', () => {
+    it('reads a span the size it was said, however long', () => {
         const asked = durationAskedFor('I cultivate for 100000 years');
         const granted = parseDuration('I cultivate for 100000 years');
 
-        expect(granted).toBe(MAX_CULTIVATION_DAYS);
-        expect(asked).toBe(100_000 * 365);
-        expect(asked!).toBeGreaterThan(granted!);
+        expect(granted).toBe(100_000 * 365);
+        expect(asked).toBe(granted);
     });
 
     it('reads the same as parseDuration on every span the engine will actually run', () => {

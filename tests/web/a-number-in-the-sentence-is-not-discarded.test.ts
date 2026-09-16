@@ -58,23 +58,31 @@ describe('a count of rations', () => {
 
 describe('a span longer than the engine will price', () => {
     /**
-     * `parseDuration` caps at MAX_CULTIVATION_DAYS, so nine thousand years of
-     * rations arrived as a hundred and the account reported a hundred as though
-     * that were the ask. The honest form was already three lines away: a purse
-     * that covers less than the ask says "which is less than you went in for".
+     * `parseDuration` used to cap at MAX_CULTIVATION_DAYS, so nine thousand
+     * years of rations arrived as a hundred and the account reported a hundred
+     * as though that were the ask. The first repair made the clamp RECOVERABLE
+     * and had the account name it - "9999 years was asked for, the most this
+     * engine will provision against in one go is 100 years".
+     *
+     * The clamp itself is now gone: what bounds a span is the life asking for
+     * it, not a constant, and a parser holds no facts about a body. So there is
+     * no engine figure standing in for the player's own any more, and the only
+     * thing that shortens this purchase is the purse - which the account has
+     * always said, three lines down, in the form that was honest all along.
      */
-    it('says it was cut down, rather than reporting its own figure as the ask', async () => {
+    it('lets the purse be what cuts it, and says so', async () => {
         const { db, game } = makeGame({ seed: 'rations-clamp', worldEnabled: true });
         const { cultivator } = await game.newRun('Eater');
         db.prepare('UPDATE cultivators SET spirit_stones = 50000 WHERE id = ?').run(cultivator.id);
 
         const acted = await game.act('I buy 9999 years of rations');
 
-        expect(acted.narration).toMatch(/9999 years was asked for/);
-        expect(acted.narration).toMatch(/100 years/);
+        expect(acted.narration).toMatch(/less than you went in for/);
+        // And no ceiling of the engine's own is reported as the player's ask.
+        expect(acted.narration).not.toMatch(/was asked for/);
     }, 60_000);
 
-    it('says nothing about a clamp when nothing was clamped', async () => {
+    it('says nothing about a ceiling when nothing has one', async () => {
         const { db, game } = makeGame({ seed: 'rations-noclamp', worldEnabled: true });
         const { cultivator } = await game.newRun('Eater');
         db.prepare('UPDATE cultivators SET spirit_stones = 50000 WHERE id = ?').run(cultivator.id);
