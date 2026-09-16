@@ -1,5 +1,5 @@
 /**
- * Bastion (Sebastopyr) Seeder — REWRITE
+ * Bastion (Sebastopyr) Seeder - REWRITE
  * --------------------------------------
  * Bridges docs/bastion/rpg-mcp-bootstrap.json to the live rpg-mcp engine by
  * invoking consolidated tool handlers in-process with a fabricated
@@ -21,7 +21,7 @@
  *   • Stain / aspersoir / grace facts go into agent_manage.add_secret so
  *     the bound LLM actually reads them, NOT into canonical_moment notes.
  *   • Bestiary entries are narrative-only canonical_moment notes (never
- *     character_manage.create — they have no real stat blocks).
+ *     character_manage.create - they have no real stat blocks).
  *   • Factions / plot_threads / timeline / pantheon / bargain_ledger /
  *     rpg_mcp_seeds → narrative_manage.batch_add with proper note types
  *     and urgency buckets.
@@ -35,7 +35,7 @@
  * Run:
  *   npx tsx scripts/seed-bastion.ts
  *
- * The DB path resolves through getDb() — uses RPG_MCP_DB_PATH or the
+ * The DB path resolves through getDb() - uses RPG_MCP_DB_PATH or the
  * platform AppData default (Windows: %APPDATA%/rpg-mcp/rpg.db).
  */
 
@@ -53,7 +53,7 @@ import { CharacterRepository } from '../src/storage/repos/character.repo.js';
 import { NpcMemoryRepository, type Familiarity, type Disposition, type Importance } from '../src/storage/repos/npc-memory.repo.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONFIG  —  the live world and pre-built rooms (DO NOT regenerate)
+// CONFIG  -  the live world and pre-built rooms (DO NOT regenerate)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SESSION_ID = 'bastion-seeder';
@@ -69,7 +69,7 @@ const SEBASTOPYR_WORLD_ID = '33e0a378-0278-41ea-bd7a-1645b914a777';
 const EXISTING_ROOMS: Record<string, string> = {
     'Vocation House Inner Chamber':   '62ff2dd0-57af-4a9f-8207-695ef77b70f4',
     'Vestibule of Discernment':       'a492cab2-473a-4dab-8c5e-dd6116e1ddb6',
-    'Cathedral Sebastinum — Nave':    'e33202b2-7d2d-4227-b7f7-ec9eabf3be2f',
+    'Cathedral Sebastinum - Nave':    'e33202b2-7d2d-4227-b7f7-ec9eabf3be2f',
     'Sanctuary of the Sebastopater':  '8435cc73-59fd-49b3-a739-ed7124d14c43',
     'Choir of the Watch':             'cc50876f-c764-4c1d-b345-69e209aa659b',
     'Hall of the Long Vigil':         'a0048871-3808-489e-baa8-c074c074c428',
@@ -250,7 +250,7 @@ const CATEGORY_TIER: Record<string, Tier> = {
     'sister_carcer':                        2,
     'veriarch_confessor':                   2,
     'veriarch_sympathetic':                 2,
-    'confessor_murdered':                   1  // deceased — level low, narrative only
+    'confessor_murdered':                   1  // deceased - level low, narrative only
 };
 
 function categoryToTemplate(category: string | undefined): Template {
@@ -270,7 +270,7 @@ function bucketUrgency(raw: unknown): UrgencyBucket {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// NPC → ROOM placement (FROM SURVEY — 38 hand-curated assignments)
+// NPC → ROOM placement (FROM SURVEY - 38 hand-curated assignments)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -632,7 +632,7 @@ async function callPlain(
 }
 
 function ensureBaseDescription(parts: Array<string | undefined>): string {
-    const joined = parts.filter(Boolean).map(s => (s as string).trim()).join(' — ').trim();
+    const joined = parts.filter(Boolean).map(s => (s as string).trim()).join(' - ').trim();
     if (joined.length >= 10) return joined;
     return (joined || 'A place in Sebastopyr.') + ' '.repeat(Math.max(0, 10 - joined.length));
 }
@@ -644,7 +644,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 1 — LOCATIONS (skip existing 19; generate only net-new)
+// PHASE 1 - LOCATIONS (skip existing 19; generate only net-new)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -666,7 +666,7 @@ async function seedLocations(boot: Bootstrap, worldId: string): Promise<PhaseCou
             preMapped += 1;
         }
     }
-    log(`Phase 1/8: locations — ${preMapped} pre-built rooms reused, ${boot.locations.length - preMapped} candidates for generation`);
+    log(`Phase 1/8: locations - ${preMapped} pre-built rooms reused, ${boot.locations.length - preMapped} candidates for generation`);
 
     for (const loc of boot.locations) {
         if (EXISTING_ROOMS[loc.name]) {
@@ -685,7 +685,7 @@ async function seedLocations(boot: Bootstrap, worldId: string): Promise<PhaseCou
                 baseDescription,
                 biomeContext: biome,
                 atmospherics
-                // NOTE: no previousNodeId / direction — the bootstrap topology
+                // NOTE: no previousNodeId / direction - the bootstrap topology
                 // isn't a linear east-walk. Connections can be added later.
             });
 
@@ -702,7 +702,7 @@ async function seedLocations(boot: Bootstrap, worldId: string): Promise<PhaseCou
                     action: 'add',
                     worldId,
                     type: 'canonical_moment',
-                    content: `Location meta: ${loc.name} — ring=${raw.ring ?? 'n/a'}, type=${raw.type ?? loc.kind ?? 'unknown'}.`,
+                    content: `Location meta: ${loc.name} - ring=${raw.ring ?? 'n/a'}, type=${raw.type ?? loc.kind ?? 'unknown'}.`,
                     metadata: {
                         locationId: roomId,
                         ring: raw.ring,
@@ -728,7 +728,7 @@ async function seedLocations(boot: Bootstrap, worldId: string): Promise<PhaseCou
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 2 — FACTIONS  (narrative_manage.batch_add, build name index)
+// PHASE 2 - FACTIONS  (narrative_manage.batch_add, build name index)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const factionNameToUuid = new Map<string, string>();
@@ -811,7 +811,7 @@ function resolveFactionId(label: string | undefined): string | undefined {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 3 — NPCs  (character_manage.create + currentRoomId via repo)
+// PHASE 3 - NPCs  (character_manage.create + currentRoomId via repo)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const npcIdToCharacterId = new Map<string, string>();
@@ -872,7 +872,7 @@ async function seedNpcs(boot: Bootstrap): Promise<PhaseCounters> {
             npcIdToCharacterId.set(raw.id, characterId);
             counters.created += 1;
 
-            // Place at assigned room (post-create — schema has no currentRoomId).
+            // Place at assigned room (post-create - schema has no currentRoomId).
             const assignedRoomName = NPC_ROOM_PLACEMENT[raw.id];
             if (assignedRoomName) {
                 const roomId = roomNameToUuid.get(assignedRoomName);
@@ -897,7 +897,7 @@ async function seedNpcs(boot: Bootstrap): Promise<PhaseCounters> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 4 — AGENTS  +  SECRETS  (llm-bindable subset)
+// PHASE 4 - AGENTS  +  SECRETS  (llm-bindable subset)
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function seedAgents(boot: Bootstrap): Promise<PhaseCounters> {
@@ -947,7 +947,7 @@ async function seedAgents(boot: Bootstrap): Promise<PhaseCounters> {
 
         // Push the mystery layer (stain / aspersoir / grace / role context)
         // into agent_manage.add_secret regardless of whether create was new
-        // (re-runs are safe — duplicate secrets are tolerated by the runtime).
+        // (re-runs are safe - duplicate secrets are tolerated by the runtime).
         const secrets = buildSecrets(npc);
         for (const secret of secrets) {
             try {
@@ -1012,7 +1012,7 @@ function buildSecrets(npc: BootstrapNpc): Array<{ content: string; importance: '
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 5 — NPC MEMORY  (seed 2-3 bible-rooted memories per llm-bindable NPC)
+// PHASE 5 - NPC MEMORY  (seed 2-3 bible-rooted memories per llm-bindable NPC)
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface SeedMemory {
@@ -1026,13 +1026,13 @@ interface SeedMemory {
 /**
  * Hand-curated per-NPC seed memories drawn from the bible. Keyed by raw.id.
  * Used by NpcMemoryRepository.recordMemory with characterId == npcId == the
- * created character UUID — i.e. the NPC's "private journal" of remembered
+ * created character UUID - i.e. the NPC's "private journal" of remembered
  * facts that any relationship-aware query can surface.
  */
 const NPC_SEED_MEMORIES: Record<string, SeedMemory[]> = {
     npc_001: [
-        { summary: 'I am the living head of the Cathedral, but my Stain reads 1.4 not clean. The Court of Pyric Audit does not know — or pretends not to.', importance: 'critical', topics: ['stain', 'office_of_pyric_audit', 'cathedral'] },
-        { summary: 'The Mournwing Letter — Paragon Halidan\'s warning — must not reach me. I have not seen it. Mortane sees my mail first.', importance: 'high', topics: ['mournwing_letter', 'paragon', 'mortane'] }
+        { summary: 'I am the living head of the Cathedral, but my Stain reads 1.4 not clean. The Court of Pyric Audit does not know - or pretends not to.', importance: 'critical', topics: ['stain', 'office_of_pyric_audit', 'cathedral'] },
+        { summary: 'The Mournwing Letter - Paragon Halidan\'s warning - must not reach me. I have not seen it. Mortane sees my mail first.', importance: 'high', topics: ['mournwing_letter', 'paragon', 'mortane'] }
     ],
     npc_002: [
         { summary: 'I am the Paragon, Warden of Ferrostat. I sent the Mournwing Letter east toward Sebastopyr. I have not received an acknowledgment.', importance: 'critical', topics: ['mournwing_letter', 'ferrostat', 'sebastopyr'] },
@@ -1047,16 +1047,16 @@ const NPC_SEED_MEMORIES: Record<string, SeedMemory[]> = {
         { summary: 'The parallel readings Korreth Slag-Tongue is conducting in the Audit-Below are unauthorized. I have not stopped them.', importance: 'high', topics: ['parallel_readings', 'korreth', 'audit_below'] }
     ],
     npc_008: [
-        { summary: 'I am the Vexillarius — I sign orders in the Paragon\'s voice. The Paragon does not always know what I have signed.', importance: 'critical', topics: ['vexillarius', 'paragon', 'orders'] },
+        { summary: 'I am the Vexillarius - I sign orders in the Paragon\'s voice. The Paragon does not always know what I have signed.', importance: 'critical', topics: ['vexillarius', 'paragon', 'orders'] },
         { summary: 'The Iron March cohort is being reinforced for the PD 606 Paragon visit. I do not know whose order this actually is.', importance: 'high', topics: ['iron_march', 'pd_606', 'cohort'] }
     ],
     npc_012: [
         { summary: 'I struck the Octave Bargain in PD 588 with Vox-Quae-In-Tenebris-Numerat. Three readings have come back CLEAN, ANOMALY, UNKNOWN. The fourth reading is PD 608.', importance: 'critical', topics: ['octave_bargain', 'quartermaster_of_tongues', 'pd_608'] },
         { summary: 'I am the senior Custodes Numeri. I authored the bargain in chambers and signed in my own hand. No one else knows.', importance: 'critical', topics: ['custodes_numeri', 'octave_bargain', 'secret'] },
-        { summary: 'My apparent Stain at PD 600 was unknown. Actual: 3.2. The Sebast-Auditor has not flagged me — I do not know why.', importance: 'high', topics: ['stain', 'pd_600'] }
+        { summary: 'My apparent Stain at PD 600 was unknown. Actual: 3.2. The Sebast-Auditor has not flagged me - I do not know why.', importance: 'high', topics: ['stain', 'pd_600'] }
     ],
     npc_013: [
-        { summary: 'The Choir of the Watch must be sung at exactly 11°C or the parallel-music ledger inverts. I cannot say why — only that I have heard it invert.', importance: 'critical', topics: ['choir_of_the_watch', 'parallel_music', 'temperature'] }
+        { summary: 'The Choir of the Watch must be sung at exactly 11°C or the parallel-music ledger inverts. I cannot say why - only that I have heard it invert.', importance: 'critical', topics: ['choir_of_the_watch', 'parallel_music', 'temperature'] }
     ],
     npc_014: [
         { summary: 'I am Crown Regent. The Cathedral and the Crown are co-dependent and mutually-distrustful. My House holds the Lower Pyr.', importance: 'high', topics: ['crown', 'house_veillarde', 'lower_pyr'] }
@@ -1070,7 +1070,7 @@ const NPC_SEED_MEMORIES: Record<string, SeedMemory[]> = {
         { summary: 'My own Stain is 3.4. I am known to the Cathedral. The license is the only thing keeping me unconfessed.', importance: 'high', topics: ['stain', 'license'] }
     ],
     npc_019: [
-        { summary: 'I broker honest divine bargains at the south gate. Asperine Vesselain (heretic) works the road outside — I do not stop her because she is honest about the price.', importance: 'high', topics: ['divine_bargain', 'south_gate', 'asperine_vesselain'] }
+        { summary: 'I broker honest divine bargains at the south gate. Asperine Vesselain (heretic) works the road outside - I do not stop her because she is honest about the price.', importance: 'high', topics: ['divine_bargain', 'south_gate', 'asperine_vesselain'] }
     ],
     npc_024: [
         { summary: 'I am Vox-Quae-In-Tenebris-Numerat, Quartermaster of Tongues. The Long Ledger in the Audit-Below records every Word the Cathedral pretends never to have spoken. Velim Aurriste\'s Octave Bargain is in column VII.', importance: 'critical', topics: ['long_ledger', 'octave_bargain', 'velim_aurriste'] },
@@ -1083,10 +1083,10 @@ const NPC_SEED_MEMORIES: Record<string, SeedMemory[]> = {
         { summary: 'I lead the Conscripted League. We are heretics by Cathedral definition. We have a press, a chapel-network, and a Refusal we publish under Hester Brunn\'s name.', importance: 'critical', topics: ['conscripted_league', 'heresy', 'the_refusal'] }
     ],
     npc_028: [
-        { summary: 'I edit The Refusal. I was a Lector until PD 597. The Brothers of the Cinder Hand keep my press hidden — Veriarch Thelos di Cinderost shelters us.', importance: 'high', topics: ['the_refusal', 'cinder_hand', 'thelos_di_cinderost'] }
+        { summary: 'I edit The Refusal. I was a Lector until PD 597. The Brothers of the Cinder Hand keep my press hidden - Veriarch Thelos di Cinderost shelters us.', importance: 'high', topics: ['the_refusal', 'cinder_hand', 'thelos_di_cinderost'] }
     ],
     npc_031: [
-        { summary: 'I am Archvigil and Chief Summoner. I have nine seconds to discern a summon — the rite gives me no more. I sign the cohort roll each dawn at the Outer Vocation House Hall.', importance: 'critical', topics: ['summoning', 'vocation_house', 'nine_seconds'] }
+        { summary: 'I am Archvigil and Chief Summoner. I have nine seconds to discern a summon - the rite gives me no more. I sign the cohort roll each dawn at the Outer Vocation House Hall.', importance: 'critical', topics: ['summoning', 'vocation_house', 'nine_seconds'] }
     ]
 };
 
@@ -1139,7 +1139,7 @@ async function seedNpcMemories(boot: Bootstrap): Promise<PhaseCounters> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 6 — PLOT THREADS
+// PHASE 6 - PLOT THREADS
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function seedPlotThreads(boot: Bootstrap, worldId: string): Promise<PhaseCounters> {
@@ -1192,7 +1192,7 @@ async function seedPlotThreads(boot: Bootstrap, worldId: string): Promise<PhaseC
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 7 — BESTIARY  (narrative_manage canonical_moment ONLY — no characters)
+// PHASE 7 - BESTIARY  (narrative_manage canonical_moment ONLY - no characters)
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function seedBestiary(boot: Bootstrap, worldId: string): Promise<PhaseCounters> {
@@ -1243,7 +1243,7 @@ async function seedBestiary(boot: Bootstrap, worldId: string): Promise<PhaseCoun
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 8 — TIMELINE / PANTHEON / DAILY LIFE / BARGAIN LEDGER / RPG_MCP_SEEDS
+// PHASE 8 - TIMELINE / PANTHEON / DAILY LIFE / BARGAIN LEDGER / RPG_MCP_SEEDS
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function seedTimeline(boot: Bootstrap, worldId: string): Promise<PhaseCounters> {

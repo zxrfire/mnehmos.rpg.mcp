@@ -477,7 +477,7 @@ played with.** Do not "complete" it.
 ### The size
 
 **Ten to twenty modelled people per house**, and it is a guideline rather than a
-number to hit — *"this isn't a hard rule"*, *"some can have more some can have
+number to hit - *"this isn't a hard rule"*, *"some can have more some can have
 less"*. An apex may run richer; a guard posting may hold three. What matters is
 that a figure is chosen for what a player can hold in their head rather than for
 what a sect would really have, and that **houses still differ from one another**
@@ -490,7 +490,7 @@ a roll of 7 is an ordinary errand at 15.
 
 ### The shape: narrow at the bottom, complete at the top
 
-A sect's hierarchy really is a pyramid. **A roster is not that pyramid — it is a
+A sect's hierarchy really is a pyramid. **A roster is not that pyramid - it is a
 narrow vertical slice through it**, because that is the shape of what one person
 knows:
 
@@ -502,8 +502,8 @@ So the roster is two different things stacked, and they are **not** governed by
 the same rule:
 
 - **The bands are SAMPLED.** Outer, inner, core. A few out of hundreds, because
-  those are who a player happens to meet. Vaguely pyramidal — more low than
-  high — and never a strict taper.
+  those are who a player happens to meet. Vaguely pyramidal - more low than
+  high - and never a strict taper.
 - **The postings are COMPLETE.** Everyone in a sect knows who the punishment
   elder is, so a player must be able to deal with them. Not sampled, not
   tapered, not conditional on how big the roll is.
@@ -511,8 +511,8 @@ the same rule:
 An empty middle is the failure this section exists to prevent. Measured once:
 a seven-rung ladder gave rung 3 its first seat at a roll of 26 and rung 5 at
 162, so **rungs 2 to 5 were empty in every house in the world** while the ladder
-looked correctly shaped. The middle is where the genre lives — inner and core
-disciples competing, being passed over, being promoted — and it is load-bearing
+looked correctly shaped. The middle is where the genre lives - inner and core
+disciples competing, being passed over, being promoted - and it is load-bearing
 for the conclave and slot designs, where choosing three people for a place means
 little if the choice is between outer disciples and elders with nobody between.
 
@@ -530,15 +530,15 @@ The design owner's definitions, which are exact and should not be paraphrased:
 > *"a protector = a rank"*
 > *"a guest elder is an external elder without an office"*
 > *"an external elder joining is just an elder"*
-> *"non office holding elders don't have to exist"* — **it MIGHT**
+> *"non office holding elders don't have to exist"* - **it MIGHT**
 
 | word | what it is |
 |---|---|
 | **rank** | a position in the order of precedence. Outer, inner, core, elder, and so on. `ranks` on the catalog row |
-| **posting** | a job somebody does — punishment, discipline, a conclave seat. Named per house by the catalog |
+| **posting** | a job somebody does - punishment, discipline, a conclave seat. Named per house by the catalog |
 | **office** | **an elder WITH a posting.** The pairing, not a third category |
 | **elder** | a rank. On the roll, posting or no posting |
-| **guest elder** | an **external** elder with no posting, **typically of another tradition** — somebody who does not practise your sect's arts. Deliberately **not on the roll**: `GUEST_ELDERS` carries a `traditionId` saying exactly that, and `travel-verbs.ts` already states guests are not in the house's roll |
+| **guest elder** | an **external** elder with no posting, **typically of another tradition** - somebody who does not practise your sect's arts. Deliberately **not on the roll**: `GUEST_ELDERS` carries a `traditionId` saying exactly that, and `travel-verbs.ts` already states guests are not in the house's roll |
 
 Three consequences, each of which someone has tried to model as a special case
 and none of which is one:
@@ -553,7 +553,7 @@ and none of which is one:
    posting, so taking one ends it and nothing converts.
 
    **But joining is gated, and the gate is the arts.** A sect has arts it
-   prefers — `teaches` on its catalog row — and an elder teaches juniors, so
+   prefers - `teaches` on its catalog row - and an elder teaches juniors, so
    somebody who cannot teach the house's shelf cannot hold a posting in it. The
    owner: *"if they become an elder, they obviously ought to practice your
    sect's arts... doesn't make sense for an elder elder to be unable to teach
@@ -563,7 +563,7 @@ and none of which is one:
 
    `GUEST_ELDERS` shows the arrangement working and its price. Shen Yiao sits at
    the Azure Cloud Pavilion, has drawn a blade for them twice in forty years,
-   and takes cave rent and silence in return — while the row's own `hostRisk`
+   and takes cave rent and silence in return - while the row's own `hostRisk`
    says *"she is stronger than the Pavilion Master, is not bound by its rules,
    and the disciples have begun going to her rather than to the Sword Elders,
    which nobody has said out loud."* A guest is useful, unbound, and not a
@@ -591,7 +591,7 @@ seen with.
 
 **Which means `sects.ts` reaches the right conclusion by a reason it states
 wrongly.** Its header keeps the protector's chair out of `ranks` because *"an
-office is not a position in an order of precedence"* — and a protector was never
+office is not a position in an order of precedence"* - and a protector was never
 an office. But it genuinely does not belong in `ranks`, because `ranks` is a
 chain of command and a protector stands outside one. **Leave it beside the
 ladder.** Correct the sentence if you like; do not move the arrangement to
@@ -600,8 +600,8 @@ match it.
 
 And before touching anything protector-shaped, read `THE_OFFICE` in
 `src/data/cultivation/false-immortals.ts`. The word does two jobs. At an
-ordinary sect it is a strong veteran who stays in the compound — *"the dude who
-comes to your sect in the time of need"* — and it is filled and unremarkable. At
+ordinary sect it is a strong veteran who stays in the compound - *"the dude who
+comes to your sect in the time of need"* - and it is filled and unremarkable. At
 the top of the world it is **reserved** for a False Immortal and has stood empty
 for eight hundred years on purpose:
 
@@ -624,26 +624,26 @@ rots.
 So a vacancy has three steps, and the middle one is the interesting one:
 
 1. a posting's holder dies or leaves
-2. **somebody senior covers it** — the way an acting officer does. This is
+2. **somebody senior covers it** - the way an acting officer does. This is
    deliberately visible: a house whose patriarch is also acting punishment elder
    is a house under strain, and that is a fact a player can find, a rival can
    read, and the power index can price. Silent succession hides the same event
-3. **the house then fills the chair** — by promoting from within, or from
+3. **the house then fills the chair** - by promoting from within, or from
    outside via `GUEST_ELDERS`, who are exactly the pool of elders with no posting
 
 Covering should look temporary, who covers should be derived from the ladder
 rather than always the patriarch, and **a house can run out of people to cover
-with** — which is a real outcome rather than an error, and means the house is
+with** - which is a real outcome rather than an error, and means the house is
 failing.
 
 ### Where the rest of this is written down
 
-- `src/engine/world/README.md` — the passes that seed and move a house's people
-- `src/data/cultivation/README.md` — the catalogs the shape is read from,
+- `src/engine/world/README.md` - the passes that seed and move a house's people
+- `src/data/cultivation/README.md` - the catalogs the shape is read from,
   including `ranks`, the postings a house holds, and `GUEST_ELDERS`
-- `src/data/cultivation/false-immortals.ts` — `THE_OFFICE`, on the two senses of
+- `src/data/cultivation/false-immortals.ts` - `THE_OFFICE`, on the two senses of
   protector and why a vacancy there means something
-- `src/data/cultivation/sects.ts` — the header rule that `elderRungOf` is the
+- `src/data/cultivation/sects.ts` - the header rule that `elderRungOf` is the
   top three rungs and must not be re-derived from a fraction
 
 ---
