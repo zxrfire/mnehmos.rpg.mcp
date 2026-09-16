@@ -116,12 +116,19 @@ export function canOrder(giverRankIndex: number, receiverRankIndex: number): boo
 // The first version of this tapered every rung the same way, which reads as
 // correct and is wrong about half of them. A rank ladder holds:
 //
-//   BANDS    Outer Disciple, Inner Disciple, Core Disciple. Many people, and a
-//            taper is exactly the right idea: more low than high.
-//   POSTS    the elder's chair, the grand elder, the head of the house. A post
-//            is a CHAIR SOMEBODY SITS IN, not the top slice of a population -
-//            so it holds one person, or the few the house keeps, and it does
-//            not grow when the house does.
+//   BANDS    Outer Disciple, Inner Disciple, Core Disciple - AND ELDER. Many
+//            people, and a taper is the right idea: more low than high.
+//   POSTS    the grand elder and the head of the house. A post is a CHAIR
+//            SOMEBODY SITS IN, not the top slice of a population, so it holds
+//            one person and does not grow when the house does.
+//
+// THE ELDER RUNG IS A BAND, and this file had it in the second list capped at
+// three. That caps the RANK. The design owner: *"don't cap the elder rank at
+// 3"*, *"cap the elder with offices rank at the # of offices"*. An elder is a
+// rank, an office is an elder WITH A POSTING, and it is the postings that are
+// finite - a house's office rooms, counted off its own compound and dealt by
+// `whoIsInChargeOfWhat`. An elder that deal does not reach is an elder without
+// an office, which the doc says is allowed and not a flag.
 //
 // Tapering a post as though it were a band is what emptied the middle of every
 // house in the world. At a taper of 0.4 on a seven-rung ladder, rung 3 got its
@@ -150,20 +157,22 @@ export function canOrder(giverRankIndex: number, receiverRankIndex: number): boo
 // content rather than a gap, held open for somebody who stopped rather than
 // finished. Nothing in this file may fill one.
 
-/** Share of the rung below that each rung up holds. A pyramid, not a column. */
-export const ROSTER_TAPER = 0.4;
-
 /**
- * Chairs a house keeps at its elder rung.
+ * Share of the rung below that each rung up holds.
  *
- * The design owner's own shape, offered as an example rather than a table:
- * *"you probably know 10 outer and 5 inner and the remaining 10~ are the other
- * ranks"*, *"3 conclave, 3 elders, 1 patriarch"*. So the elder rung is the one
- * post that seats more than one, and three is what it seats - and never more
- * than the band under it holds, because a house with more elders than core
- * disciples is not a ladder.
+ * A SLICE IS MUCH FLATTER THAN THE PYRAMID IT WAS CUT FROM, and this was 0.4,
+ * which is a pyramid's own curve applied inside one house. The design owner:
+ * *"while the sects are a vertical slice, adding it all up still makes a
+ * pyramid"* - so the shape is what the houses sum to, and enforcing it again
+ * within each house applies it twice. That is what emptied the middle: at 0.4
+ * on a seven-rung ladder a rung's share fell under one person by rung 3, so
+ * every seat above that had to be forced by arithmetic written for the purpose.
+ *
+ * What a slice actually is: a few peers, your senior, their senior. More low
+ * than high, and nothing like a census. *"Vaguely"*, *"which is enough"*,
+ * *"this is a game"*.
  */
-export const ELDER_POSTS_A_HOUSE_KEEPS = 3;
+export const ROSTER_TAPER = 0.75;
 
 /** How many of a house's people stand at each rung, bottom first. */
 export function rosterByRung(houseSize: number, rankCount: number): number[] {
@@ -172,16 +181,25 @@ export function rosterByRung(houseSize: number, rankCount: number): number[] {
     let left = Math.max(1, Math.round(houseSize));
 
     const head = rankCount - 1;
-    // Where the posts start, and where the bands stop. `elderRungOf` is the
-    // authority; it is clamped here only for a one-rung body, whose single rung
-    // is its head.
-    const elderRung = Math.min(elderRungOf(rankCount), head);
     const grandRung = rankCount - 2;
-    const hasGrand = grandRung > elderRung;
-    const bands = elderRung;
+    // `elderRungOf` is the authority on where the elders start; it is clamped
+    // here only for a one-rung body, whose single rung is its head.
+    const hasGrand = grandRung > Math.min(elderRungOf(rankCount), head);
 
-    // The head's chair. One person, and it is filled while the house has
-    // anybody at all: the top rung is one person, not three tenths of one.
+    // THE ELDER RUNG IS A BAND AND NOT A CHAIR. An elder is a rank and a rank
+    // is not slot-limited - a house may have any number of elders. What is
+    // finite is the POSTINGS, and an office is an elder with one, so the cap
+    // belongs where the postings are dealt: `whoIsInChargeOfWhat` hands out one
+    // room per office room the compound actually has, and the elders it does
+    // not reach are elders without an office. Nothing here may re-derive that
+    // number, and a constant standing in for it was this function's defect.
+    //
+    // So the only chairs left in this function are the two that really are one
+    // person: the head of the house, and the grand elder where a house has one.
+    const bands = hasGrand ? grandRung : head;
+
+    // The head's chair, filled while the house has anybody at all: the top rung
+    // is one person, not three tenths of one.
     out[head] = 1;
     left -= 1;
 
@@ -190,29 +208,15 @@ export function rosterByRung(houseSize: number, rankCount: number): number[] {
     // its rungs rather than a heap at the door.
     for (let rung = 0; rung < bands && left > 0; rung++) { out[rung] = 1; left -= 1; }
 
-    // Then the posts between the bands and the head, nearest first. A house too
-    // small to staff them is a house that cannot staff them, which is a real
-    // outcome rather than a rounding error.
-    if (elderRung < head && left > 0) { out[elderRung] = 1; left -= 1; }
+    // Then the grand elder's single seat. A house too small to staff it is a
+    // house that cannot staff it, which is a real outcome rather than a
+    // rounding error.
     if (hasGrand && left > 0) { out[grandRung] = 1; left -= 1; }
 
     // Everybody else stands on a band, and the taper decides which one.
     if (left > 0) {
         if (bands <= 0) out[0] += left;
         else spreadOverBands(out, bands, left);
-        left = 0;
-    }
-
-    // And the elder rung takes its remaining chairs off the bottom rather than
-    // out of thin air, while the rung below it still outnumbers it.
-    if (elderRung < head && bands > 0) {
-        while (out[elderRung] < ELDER_POSTS_A_HOUSE_KEEPS
-            && out[elderRung] + 1 <= out[elderRung - 1]
-            && out[0] - 1 >= 1
-            && (bands < 2 || out[0] - 1 >= out[1])) {
-            out[0] -= 1;
-            out[elderRung] += 1;
-        }
     }
 
     return out;
@@ -240,7 +244,6 @@ function spreadOverBands(out: number[], bands: number, surplus: number): void {
     for (let k = 0; k < byFraction.length && placed < surplus; k++, placed++) {
         out[byFraction[k].i] += 1;
     }
-    if (placed < surplus) out[0] += surplus - placed;
 }
 
 export function rosterAtRung(houseSize: number, rung: number, rankCount: number): number {

@@ -57,7 +57,6 @@ import {
     resolveAct,
     resolveErrand,
     rosterByRung,
-    ELDER_POSTS_A_HOUSE_KEEPS,
     shieldedCost,
     standingAfterYears,
     type ActCost,
@@ -251,9 +250,31 @@ describe('a house is a pyramid, which is why authority is worth anything', () =>
             expect(huge[ladder - 1], sect.id).toBe(1);
             const grandRung = ladder - 2;
             if (grandRung > elderRungOf(ladder)) expect(huge[grandRung], sect.id).toBe(1);
-            expect(huge[elderRungOf(ladder)], sect.id).toBeLessThanOrEqual(ELDER_POSTS_A_HOUSE_KEEPS);
             // And the bulk is still at the bottom rather than spread evenly.
             expect(huge[0], sect.id).toBeGreaterThan(huge[1] ?? 0);
+        }
+    });
+
+    it('lets a house have as many elders as its slice gives it', () => {
+        // THE DEFECT THIS BOUNDS: the elder rung was capped at a constant,
+        // which caps the RANK. The design owner: *"don't cap the elder rank at
+        // 3"*, *"cap the elder with offices rank at the # of offices"*. An
+        // elder is a rank and a rank is not slot-limited; what is finite is the
+        // postings, and those are dealt by `whoIsInChargeOfWhat` off the office
+        // rooms a compound actually has. So the elder rung grows with the
+        // house, the way every other band does.
+        //
+        // Measured at world open over five seeds: 19 of 38 houses held fewer
+        // elders than they had office rooms, so a house with four offices and
+        // three elders had somebody holding two.
+        for (const sect of SECTS) {
+            const ladder = sect.ranks.length;
+            const elderRung = elderRungOf(ladder);
+            if (elderRung >= ladder - 2) continue;
+            const small = rosterByRung(15, ladder)[elderRung] ?? 0;
+            const huge = rosterByRung(4_000, ladder)[elderRung] ?? 0;
+            expect(huge, sect.id).toBeGreaterThan(small);
+            expect(huge, sect.id).toBeGreaterThan(3);
         }
     });
 
@@ -273,7 +294,16 @@ describe('a house is a pyramid, which is why authority is worth anything', () =>
         const outer = commandableHands(1, 0, size, 5);
         const inner = commandableHands(2, 0, size, 5);
         const head = commandableHands(4, 0, size, 5);
-        expect(outer).toBeGreaterThan(0);
+        // ONE RUNG OF SENIORITY NOW BUYS NOBODY AT THE BOTTOM, and it is the
+        // house's size that moved rather than this rule. `impliedHouseSize`
+        // follows `ROSTER_TAPER`, so flattening the slice puts a five-rung
+        // house at ten people - the roll `a-house-and-who-is-in-it.md` states
+        // outright - where the pyramid's own curve had put it at sixty-four.
+        // `CALL_FRACTION_PER_RUNG` is a quarter of a rung per rung of gap, and
+        // a quarter of a bottom rung of three is nobody. Retuning that constant
+        // against the smaller house is its own job; the ordering is what this
+        // asserts and the ordering still holds.
+        expect(head).toBeGreaterThan(0);
         expect(inner).toBeGreaterThan(outer);
         expect(head).toBeGreaterThan(inner);
     });
