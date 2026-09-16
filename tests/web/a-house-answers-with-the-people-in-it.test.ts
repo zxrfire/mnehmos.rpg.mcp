@@ -93,7 +93,7 @@ describe('asking a house what a match would take', () => {
         // is the half a person reads. One of the three tiers has to have been
         // said in words.
         expect(said, 'the room was recorded but never said to the player').toMatch(
-            /the one the room turned on|holds the seat, settled it anyway|every other elder are on the same side/
+            /the one the room turned on|heads the house, settled it anyway|every other elder are on the same side/
         );
     }, 120_000);
 
