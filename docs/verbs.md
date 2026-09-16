@@ -257,7 +257,7 @@ Takes `days`.
 
 ### `seclude`
 
-deliberate closed-door seclusion: safe from encounters, and from every opportunity that would have found you. "days", default 365.
+deliberate closed-door seclusion: shut away from the opportunities that would have found you, and from most of what would have happened to you - but a door is not immunity, and being disturbed in closed-door cultivation is an ordinary event rather than an edge case. "days", default 365.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'seclude'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.runSeclusion` · the deterministic parser reaches it · spends in-world time.
 

@@ -278,8 +278,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     seclude: {
         takes: ['days'],
-        says: `deliberate closed-door seclusion: safe from encounters, and from every
-            opportunity that would have found you. "days", default 365.`
+        says: `deliberate closed-door seclusion: shut away from the opportunities that would
+            have found you, and from most of what would have happened to you - but a door
+            is not immunity, and being disturbed in closed-door cultivation is an ordinary
+            event rather than an edge case. "days", default 365.`
     },
     breakthrough: {
         takes: [],
