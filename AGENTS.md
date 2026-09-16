@@ -535,7 +535,7 @@ The design owner's definitions, which are exact and should not be paraphrased:
 | word | what it is |
 |---|---|
 | **rank** | a position in the order of precedence. Outer, inner, core, elder, and so on. `ranks` on the catalog row |
-| **posting** | a job somebody does - punishment, discipline, a conclave seat. Named per house by the catalog |
+| **posting** | a job somebody does - punishment, discipline, a conclave seat, a watch in a town. Named per house by the catalog, and **not an elder's thing**: see below |
 | **office** | **an elder WITH a posting.** The pairing, not a third category |
 | **elder** | a rank. On the roll, posting or no posting |
 | **guest elder** | an **external** elder with no posting, **typically of another tradition** - somebody who does not practise your sect's arts. Deliberately **not on the roll**: `GUEST_ELDERS` carries a `traditionId` saying exactly that, and `travel-verbs.ts` already states guests are not in the house's roll |
@@ -571,6 +571,28 @@ and none of which is one:
 
 It is the military arrangement: rank is what you are, a posting is what you do,
 and a Colonel between commands is still a Colonel.
+
+**And a posting is not an elder's thing.** Juniors hold them too - **the gate
+guard**, a disciple sent to sit in a town and watch, the sect missions where
+somebody is the house's eyes. The catalog already has one of the latter:
+Frostmirror keeps *"one disciple resident at Green Water City who never
+advances, never returns to the glacier, and files nothing anybody has
+intercepted."* An office is an elder with a posting; a posting on its own is
+just a job, and anybody can be given one.
+
+**The gate guard is the one to keep in mind, because a measured bug already
+depends on it.** A house with nobody on the gate tells a visitor *"nobody of the
+house is out here to ask"*, and that was found by a test failing rather than by
+anybody looking. So "a house keeps somebody who could host a guest" is not a
+special rule about hospitality - **it is the gate-guard posting being filled**,
+which is the same rule as every other posting. If a house cannot answer its own
+door, look for an empty posting before inventing anything.
+
+**Most outer and inner disciples have none.** A posting on a junior is the
+exception and should stay one - the owner: *"most outer and inner disciples
+don't, only few do."* Treat it the way the bands are treated: a few out of the
+sampled many, rather than a property everybody carries. If a pass finds most of
+a house's juniors posted somewhere, that pass is wrong.
 
 ### `protector` is a rank, it is not an office, and it is outside the chain
 
