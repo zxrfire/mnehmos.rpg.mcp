@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import type { WorldState } from '../../../src/engine/world/world-state.js';
 import {
     countedHolding,
     describeCountedHoldings
@@ -32,17 +33,51 @@ describe('a house builds something out of what came back', () => {
      * nothing at heaven grade is ever built. One seed produced three and the
      * next produced none, which is what that sentence looks like from close
      * up rather than a defect. AGENTS.md: pool the sample, never widen the bar.
+     *
+     * LAZY, AND THAT IS LOAD-BEARING. This was `const worlds = (async () =>
+     * ...)()` in this describe body, and the file then could not run at all:
+     * `[vitest-worker]: Timeout calling "resolveSnapshotPath"`, one unhandled
+     * error, four tests never run, and a suite that reports 915 files passing
+     * and says nothing about the four claims it dropped.
+     *
+     * The `await` hands control back, so `describe` returns and collection
+     * completes; the three builds - a minute of unbroken synchronous work -
+     * then run in a microtask AFTER collection, which is exactly the window
+     * where the worker is waiting on `resolveSnapshotPath`. That call's budget
+     * is 60s (`DEFAULT_TIMEOUT = 6e4` in birpc) and vitest 1.6.1 threads no
+     * option to it, so the plaster of raising it does not exist.
+     *
+     * Three runs of this one file alone, no contention:
+     *
+     *     eager, 22:37   53.88s   collect 3.40s   tests 5ms      4 passed
+     *     lazy,  22:56   65.03s   collect 3.79s   tests 60.96s   3 passed, 1 failed
+     *     eager, 22:59   75.67s   collect 4.55s   tests 0ms      0 ran, 1 error
+     *
+     * The first and third are the same code: the world pass got heavier during
+     * the evening and carried the build past 60s, which is the whole difference
+     * between a file that squeaks in and a file that vanishes. `tests 5ms` and
+     * `tests 0ms` against a minute of wall clock are the signature - time
+     * charged to nothing is time spent where vitest cannot see it.
+     *
+     * Deferring the build to whoever asks for it first puts that minute inside
+     * a test, where the 900s timeouts below cover it and no RPC is in flight.
+     * `a-lookup-is-a-memo-not-a-second-store.test.ts` and
+     * `the-world-produces-its-own.test.ts` already do this, for this reason.
      */
-    const worlds = (async () => {
-        const catalog = await loadCultivationCatalog();
-        return ['yard-a', 'yard-b', 'yard-c'].map(seed => {
-            const { state } = seedWorld({ seed, catalog });
-            return advanceWorldYears(state, 500).state;
-        });
-    })();
+    let built: Promise<WorldState[]> | null = null;
+    function worlds(): Promise<WorldState[]> {
+        built ??= (async () => {
+            const catalog = await loadCultivationCatalog();
+            return ['yard-a', 'yard-b', 'yard-c'].map(seed => {
+                const { state } = seedWorld({ seed, catalog });
+                return advanceWorldYears(state, 500).state;
+            });
+        })();
+        return built;
+    }
 
     it('lays keels, launches some and loses some, over five centuries', async () => {
-        const yard = (await worlds).flatMap(
+        const yard = (await worlds()).flatMap(
             state => state.history.facts.filter(f => f.data.conveyanceRecipe !== undefined)
         );
         expect(yard.length).toBeGreaterThan(10);
@@ -54,7 +89,7 @@ describe('a house builds something out of what came back', () => {
     }, 900_000);
 
     it('puts counted craft in the yard', async () => {
-        for (const state of await worlds) {
+        for (const state of await worlds()) {
             const live = state.factions.filter(f => f.dissolvedOnDay === null);
             expect(live.some(
                 f => !/Nothing in the yard/.test(describeCountedHoldings(f.resources))
@@ -68,7 +103,7 @@ describe('a house builds something out of what came back', () => {
         // day and a witness - which is the opposite of everything else tracked
         // in this world, where the interesting objects are the ones nobody can
         // find a giver for.
-        const craft = (await worlds).flatMap(
+        const craft = (await worlds()).flatMap(
             state => state.objects.filter(o => o.tags.includes('conveyance'))
         );
         expect(craft.length).toBeGreaterThan(0);
@@ -81,7 +116,7 @@ describe('a house builds something out of what came back', () => {
         // to answer for it, and that is a find rather than a gap. What must
         // never happen is the third state this used to allow: a row still
         // naming an institution that stopped existing centuries ago.
-        const standing = new Set((await worlds).flatMap(
+        const standing = new Set((await worlds()).flatMap(
             state => state.factions.filter(f => f.dissolvedOnDay === null).map(f => f.id)
         ));
         for (const row of craft) {
@@ -99,7 +134,7 @@ describe('a house builds something out of what came back', () => {
         // Without a ceiling a house builds the same carriage forever -
         // measured at eight of them in one yard - and never reaches the bill
         // that produces the only tracked craft anybody makes.
-        for (const state of await worlds) {
+        for (const state of await worlds()) {
             for (const faction of state.factions) {
                 expect(countedHolding(faction.resources, 'conv-carriage-mortal'))
                     .toBeLessThanOrEqual(3);
