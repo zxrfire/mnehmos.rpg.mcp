@@ -112,6 +112,61 @@ tests pass.
 
 ---
 
+## The agency rule
+
+> **What limits a player is the world and their own body. Never a rule about how
+> sentences may be shaped.**
+
+The design owner named this after a long thread in which every limit we proposed
+turned out to be one of ours rather than one of the world's, and each was removed:
+
+- A cap on how many acts a sentence may contain. Removed - the world interrupts
+  you, which is a fact about the world.
+- A taxonomy of verbs into spans that may be combined and acts that may not.
+  Removed - **every** span can be interrupted partway, including seclusion, so
+  there were never two kinds.
+- `MAX_CULTIVATION_DAYS = 36_500`, one flat century for everybody. Wrong in both
+  directions at once: a mortal may ask for a hundred years they do not have, and
+  somebody who could sit for five hundred cannot. The bound is a lifespan.
+
+The case that settles it, in the owner's words:
+
+> *"i ought to be able to seclude myself until i pass away. that's a valid
+> action. i can't do more than that cuz it's incoherent."*
+
+**Note what the bound is made of.** Sitting down for the rest of your life is
+allowed because it is coherent; a thousand years at ordinal 0 is refused because
+there is no you at the end of it to have been secluded. Not policy - arithmetic
+about a body. That is the shape every limit in this engine should have, and a
+limit you cannot state that way is probably one of ours.
+
+### It runs both ways
+
+The player keeps agency: the engine does not silently shorten a span, does not
+bundle several decisions into one act, and does not refuse without saying what
+the answer would have been. **A refusal carries the number.** Somebody told they
+may have eighty years has learned where they stand on the ladder and can say the
+thing they meant; somebody told "that is too long" has been made to guess, and
+guessing at a bound is the worst kind of turn to spend.
+
+The world keeps agency too: it interrupts. It does not wait politely while a
+plan executes. That is why a long chain of acts needs no rule against it - the
+reason not to type one is that it is a bet nothing happens to you, which in this
+genre is a bad bet.
+
+### What this rules out
+
+Before adding any limit, say which it is. If it is neither, it is not wanted.
+
+- a fact about the world - a door is shut, nobody here sells that, you were
+  interrupted
+- a fact about the body - your span, your rung, what your root can walk
+
+A flat constant standing where a rule should be is the commonest way this gets
+broken, and it is usually visible as being wrong in *both* directions at once.
+
+---
+
 ## The engine states what can be perceived, not what the record holds
 
 The engine knows everything. A person standing in a square knows what they can
