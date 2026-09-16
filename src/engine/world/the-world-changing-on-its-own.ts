@@ -108,6 +108,7 @@ import {
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
+import { enterWhoeverHasReachedTheHouse } from './a-recruit-is-given-their-plate-at-the-house.js';
 import {
     haveTheyWorkedItOut,
     resolveAttempt,
@@ -649,6 +650,9 @@ export function applyPressure(
         // back is on the right roll when the year's admissions run.
         applyFosterageReturns(state, withinSpan(year * 365 + 130, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
+        // Joined where they stood; entered on the roll, robed and cut a plate
+        // at the house. See `a-recruit-is-given-their-plate-at-the-house.ts`.
+        enterWhoeverHasReachedTheHouse(state, withinSpan(year * 365 + 151, fromDay, toDay));
         // And then the people those two passes produced meet each other. After
         // books and after recruitment, so a chosen named this year can be sent
         // this year rather than waiting a turn of the clock; before the economy,

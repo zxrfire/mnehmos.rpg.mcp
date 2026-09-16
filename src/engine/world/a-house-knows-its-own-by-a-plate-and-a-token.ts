@@ -184,6 +184,11 @@ export function issueTo(input: {
     /** The hall the plates hang in, or the seat where a house has no hall. */
     plateRoomId: string | null;
     onDay: number;
+    /**
+     * Whoever holds the room the roll is kept in, where anybody does. Absent at
+     * world open, when the roll was cut before anybody was watching.
+     */
+    cutById?: string | null;
 }): { token: ObjectRecord; plate: ObjectRecord } {
     const token = makeObject({
         id: tokenIdFor(input.memberId),
@@ -205,7 +210,7 @@ export function issueTo(input: {
         power: null,
         locationId: null,
         tags: ['identity', 'issued', `house:${input.houseId}`, `member:${input.memberId}`],
-        data: { memberId: input.memberId, issuedOnDay: input.onDay }
+        data: { memberId: input.memberId, issuedOnDay: input.onDay, cutById: input.cutById ?? null }
     });
 
     const plate = makeObject({
@@ -464,6 +469,26 @@ export type WhatTheTwoSay =
     | 'they do not agree'
     /** No token at all, which is its own answer and a harsh one. */
     | 'no token to read';
+
+/**
+ * The house the token somebody is carrying names, or null where they carry none.
+ *
+ * Read off the one possessions table, so it answers the way a doorway would: a
+ * recruit still on the road to the house that took them has joined it and has
+ * nothing to show for it, and this says null. A token that no longer answers -
+ * its holder is dead - reads as none, by `theTokenStillAnswers`.
+ */
+export function theHouseTheirTokenNames(
+    objects: readonly Pick<ObjectRecord, 'kind' | 'possessorId' | 'ownerId' | 'tags'>[],
+    holder: { id: string; isAlive: boolean }
+): string | null {
+    if (!theTokenStillAnswers(holder.isAlive)) return null;
+    const token = objects.find(object =>
+        object.kind === 'token'
+        && object.possessorId === holder.id
+        && object.tags.includes('identity'));
+    return token?.ownerId ?? null;
+}
 
 export function whatTheTwoSay(input: {
     /** True only where the person asking knows what such an object is. */

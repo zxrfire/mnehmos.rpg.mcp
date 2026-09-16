@@ -843,12 +843,17 @@ export function setLocation(npc: NpcRecord, locationId: string | null, onDay: nu
 /**
  * The activities that take somebody away and end on a day.
  *
- * One predicate rather than a comparison at each site: an errand and a station
- * are both "gone, until", and every pass that brings people home, notices they
- * have not come home, or asks where home is asks the same question of both.
+ * One predicate rather than a comparison at each site: an errand, a station and
+ * a journey are all "gone, until", and every pass that brings people home,
+ * notices they have not come home, or asks where home is asks the same question
+ * of all three. `travelling` with a term is a recruit who has been to the house
+ * that took them to be entered on its roll and is walking home
+ * (`a-recruit-is-given-their-plate-at-the-house.ts`); the return pass is what
+ * gets them there. The term-less `travelling` seeding writes for somebody on a
+ * road is never ended by anything, and now also reads as away.
  */
 export function isAwayOnSomething(kind: NpcActivity['kind']): boolean {
-    return kind === 'out_with_a_party' || kind === 'stationed';
+    return kind === 'out_with_a_party' || kind === 'stationed' || kind === 'travelling';
 }
 
 /**
