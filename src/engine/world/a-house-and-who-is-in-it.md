@@ -260,6 +260,40 @@ cannot express it. Whoever takes it should read the reason's comment first: the
 sentence was written for the right rule and the condition was written for a
 different one.
 
+## A slice is not a closed population
+
+**The people who fill a chair are mostly people nobody has heard of.** The
+design owner:
+
+> *"the game still needs to simulate an elder rising (most likely from someone
+> you haven't heard of), or else the top will thin out over time"*
+
+This is the consequence that makes the slice work, and getting it wrong is how
+a world quietly dies at the top. If promotion can only move somebody who is
+already on the roll, then a house with four modelled disciples has four
+candidates for the rest of time, and every death at the top is a permanent
+loss. **Measured: a fifth of every ladder stands empty at a century, elder
+rungs included, and members standing at their own seat fall from 207 of 306 to
+42 of 363.**
+
+The unmodelled hundreds are not absent. They are unrendered. So when a chair
+comes free and nobody in the slice can take it, **the house produces somebody
+who was always there and had not been worth a row until now** - which is also
+exactly how it reads in the genre. An elder nobody has heard of is the ordinary
+case, not a cheat: you were never going to have met all five hundred.
+
+So a promotion pass may **mint** a row rather than only moving one, and that is
+not the world inventing a person. It is the slice widening by one, because
+somebody who was previously only a number has become somebody a player might
+deal with. The test of a new row is whether it is the sort of person the house
+would have had, not whether it existed yesterday.
+
+**What follows for anything that fills a post:** never fail for want of a
+candidate inside the slice. Look in the slice first, because somebody already
+rendered is the better story - a disciple the player has met rising to an
+elder's chair is worth more than a stranger doing it - and mint only when the
+slice cannot answer.
+
 ## The shape has to survive time passing
 
 Seeding the shape right is a **day-one** property, and the world then runs for
