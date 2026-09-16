@@ -535,6 +535,13 @@ Note "office holding". Not every person who has reached an elder's realm - the
 posts. A house with three elder offices has three, however many people stand at
 that rung in the fiction.
 
+**And a non-office-holding elder MAY exist - it simply is not required.** The
+owner's words are *"non office holding elders don't have to exist"*, which is a
+permission and not a prohibition. Somebody senior with no post is a perfectly
+good person to meet; what the engine owes is the posts, and anybody else at that
+rung is the sampling doing its ordinary work. Do not write a rule that FORBIDS
+them - that would be the same mistake as requiring them, one sign flipped.
+
 This is also what makes the taper defect a defect rather than a thin world: an
 office is a chair, and a chair does not get emptier because the room is smaller.
 
