@@ -311,15 +311,26 @@ rather than which pass to add. There are four candidates and they fail
 differently: too few born, too few taken in, **too few climbing high enough**,
 or seats that exist and are never dealt.
 
-**And before suspecting any of them, notice that the top should barely decay at
-all.** The owner: *"those people live a long time."* Measured elsewhere this
-session: a Nascent Soul cultivator at two hundred has eight hundred years left.
-So a century should take almost nobody off an elder rung by age, and an elder
-ladder that empties over one is not attrition - **something is removing people
-who were not going to die.**
+**Both sides of this are slow, and that is the whole difficulty.** The owner:
+*"those people live a long time"*, and then the correction worth having -
+*"elders don't often die, but it's also HARD to hit elder, right? but they do
+die in expeditions, taking people out to ruins, old age, fights, etc."*
 
-That reorders the whole investigation. Look first at the ways somebody leaves a
-chair while still alive:
+So neither half is negligible. A Nascent Soul cultivator at two hundred has
+eight hundred years left, so **age is the slowest of the exits** rather than
+the main one - but expeditions, ruins and fights take elders steadily, and they
+are the people a house sends when something matters. And the supply is
+genuinely constrained: reaching an elder rung is hard, so a chair does not
+refill simply because somebody is available.
+
+**The question is therefore a balance rather than a culprit**, and a ladder
+emptying over a century could be losses outpacing a slow intake, a slow intake
+failing a normal loss rate, or people leaving a chair without dying at all.
+Measure all three before concluding; the instinct is to look only at who is
+coming up, and at least one exit is known to be broken.
+
+Start with the ways somebody leaves a chair while still alive, because those
+are the ones that should not be happening at all:
 
 - **posted away and never recalled.** Measured: members standing at their own
   seat fall from 207 of 306 to 42 of 363 over a century, and they are not dead,
@@ -331,9 +342,10 @@ chair while still alive:
   above, where the one reason that should cover a blocked senior checks the
   bottom of the ladder instead
 
-Only after those does the climb become the suspect.
+Then the deaths that are supposed to happen - expeditions, ruins, fights, and
+age last - measured as a rate rather than assumed to be small.
 
-The third link is worth suspecting after that. Promotion is gated on the rung's realm
+And then the climb. Promotion is gated on the rung's realm
 bar, so a house can hold an empty elder chair, a queue of candidates and a
 working promotion pass, and still seat nobody - because nobody has climbed far
 enough to qualify. A measurement from elsewhere this session is suggestive: the
