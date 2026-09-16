@@ -153,13 +153,14 @@ emptying. A junior's chair comes free on a breakthrough; an elder's comes free
 on a decision or a death - which is also why the covering question matters more
 at the top: an elder's seat empties without warning.
 
-**And the Kiln Wardens and the Deeproot Court are rotations too**, which is the
-standing "a posting is not a sect" ruling and this one meeting. They teach
-nothing and take nobody because there is nobody to take - people are seconded
-in and rotate out, from lower sects as well as from an apex, on the same slot
-mechanic the ruins use. So they are a posting at the scale of an institution
-rather than a house with a thin roll, and a pass that tries to give them a
-roster, a ladder or an intake has misread what they are.
+**The Kiln Wardens and the Deeproot Court are rotations too, and that is
+already modelled - do not restate it here.** `PostingSchema` in
+`src/data/cultivation/governance-and-water-rights.ts` is the record: who may
+appoint, what a posting is worth from below and from above, where an appointee
+goes afterwards, what being passed over does, and what a completed term buys in
+a promotion queue. The schema's own header explains why those two bodies are
+the exception and why the schism was possible at all - *"a posting is a thing
+that can be reposted. A sect cannot be."* Read it there.
 
 **The gate guard is the one to keep in mind, because a measured bug already
 depends on it.** A house with nobody on the gate tells a visitor *"nobody of the
