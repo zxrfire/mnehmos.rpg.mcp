@@ -550,8 +550,11 @@ implementer will otherwise invent a flag for the third:
 > *"a guest elder is an external elder without an office"*
 > *"an external elder joining is just an elder"*
 
-- **an elder** holds an office, is on the roll, and every office a sect has must
-  have one
+- **an elder** is somebody of elder standing within the sect, on the roll,
+  **whether or not they hold an office** - the owner again: *"a regular elder
+  (from within the sect) with no office is just elder"*
+- **an office** is a chair, and every chair a sect has must have somebody in it.
+  The holder is an elder; the reverse does not follow
 - **a guest elder** is external, holds no office, and is **not on the roll** -
   `GUEST_ELDERS` in `governance-and-water-rights.ts` is exactly this category,
   already named and already populated, and `travel-verbs.ts` already says in its
