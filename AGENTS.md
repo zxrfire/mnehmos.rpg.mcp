@@ -512,7 +512,33 @@ and it is load-bearing for the slot and conclave designs: choosing three people
 for a place means little when the choice is between outer disciples and elders
 with nobody between. A player climbing their own house has no steps to climb.
 
-"Vaguely pyramidal" is the instruction. More people low than high, and nobody's
+### The slice is narrow at the bottom and COMPLETE at the top
+
+The sampling runs one way only, and getting this backwards produces a house
+nobody can deal with. The design owner:
+
+> *"BUT YOU DO NEED TO INTERACT WITH EVERY ELDER AND EVERYONE KNOWS THE 3
+> CONCLAVE DISCIPLES"* / *"and the patriarch"*
+> *"i mean every OFFICE HOLDING elder"*
+
+So the roster is two different things stacked:
+
+- **the bands are sampled** - a few outer disciples out of hundreds, a few inner
+  out of a hundred, because those are the ones a player happens to meet
+- **the offices are complete** - every office-holding elder, every conclave seat,
+  the patriarch. Not sampled, not tapered, not subject to roll size. **Everyone
+  in a sect knows who the punishment elder is**, so a player must be able to deal
+  with them, and a house whose office exists with nobody in the world holding it
+  is a house that cannot answer for itself.
+
+Note "office holding". Not every person who has reached an elder's realm - the
+posts. A house with three elder offices has three, however many people stand at
+that rung in the fiction.
+
+This is also what makes the taper defect a defect rather than a thin world: an
+office is a chair, and a chair does not get emptier because the room is smaller.
+
+"Vaguely pyramidal" is the instruction, and it governs the BANDS. More people low than high, and nobody's
 rung left empty because a real sect would have needed a hundred people to fill
 it.
 
