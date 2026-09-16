@@ -479,6 +479,35 @@ breath. An apex may run richer and a guard posting may hold three; what matters 
 number is chosen because of what a player can hold in their head, not because of what a
 sect would really have.
 
+### And the shape is a slice, not a triangle
+
+The same rule applied to RANK rather than to headcount, and it is the half that
+is easy to get wrong. A sect's hierarchy really is a pyramid - hundreds of outer
+disciples, one Pavilion Master. **A modelled roster is not that pyramid. It is a
+narrow vertical slice through it**, because that is the shape of what one person
+knows. The design owner:
+
+> *"your skip skip or skip skip skip in a company manages like a BUNCH of people.
+> you know your skip skip and skip skip skip but not everyone they manage, so it
+> doesn't have to be strictly pyramidal, just vaguely."*
+
+So a house of fifteen modelled people should have somebody at most of its rungs,
+not a heap at the bottom and the catalog's named figures at the top. A steeply
+pyramidal taper reads as correct and produces a house with no middle: measured,
+a seven-rung ladder gave rung 3 its first seat at a roll of 26 and rung 5 at
+162, so **rungs 2 to 5 were empty in every house in the world** while the ladder
+looked properly shaped.
+
+**An empty middle costs more than it looks.** The middle is where the genre
+lives - inner and core disciples competing, being passed over, being promoted -
+and it is load-bearing for the slot and conclave designs: choosing three people
+for a place means little when the choice is between outer disciples and elders
+with nobody between. A player climbing their own house has no steps to climb.
+
+"Vaguely pyramidal" is the instruction. More people low than high, and nobody's
+rung left empty because a real sect would have needed a hundred people to fill
+it.
+
 ### What it is for, and the figure it fixes
 
 A roster running 1 to 29 with a median of 7 is too thin to feel alive: the ladder has gaps,
