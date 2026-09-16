@@ -249,12 +249,16 @@ export interface FaceFromHome {
      */
     diedYearsAgo: number | null;
     /**
-     * Null unless the world holds a killing this person was the victim of.
+     * The killing this life could have been told about, or null.
      *
      * Read off the world's own record rather than kept here. Somebody killed is
      * a different sentence from somebody dead, and until this was asked the
      * opening printed `Dead these 12 years.` over a wrong the world was still
-     * carrying an open account for.
+     * carrying an open account for. `anAccountWasOpened` is always true on a
+     * face for the reason {@link theKillingThisLifeCouldHaveBeenToldAbout}
+     * gives - a killing nobody opened an account for is not one anybody was
+     * told - and it stays on the shape because that read hands the same record
+     * back ungated.
      */
     killedBy: AKillingBehindAFace | null;
     /**
@@ -299,6 +303,8 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     const wanted = bandFor(FACES_A_CHILDHOOD_LEAVES, reach, f => f.faces);
     const rungs = bandFor(A_CHILDHOOD_REACHES, reach, r => r.rungs);
 
+    // ONE READ DECIDES BOTH WHO IS A FACE AND WHAT IS SAID ABOUT THEM.
+    //
     // A FACE NEED NOT STILL BE STANDING. This asked `status === 'alive'` and
     // nothing else, so the only dead person who could ever reach the opening was
     // a parent - the household inherits a spouse whether or not that spouse is
@@ -308,10 +314,12 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     //
     // `couldParent` asks `isHere` for itself, so admitting the killed here does
     // not put a corpse in the household draw.
+    const toldAbout = (npc: NpcRecord): AKillingBehindAFace | null =>
+        theKillingThisLifeCouldHaveBeenToldAbout(
+            world, npc, world.currentDay, cultivator.age);
+
     const stillStandingOrKilledInTheseYears = (npc: NpcRecord): boolean =>
-        npc.status === 'alive'
-        || aChildhoodCouldStillHaveHadThemInIt(
-            npc, whoEndedThem(world, npc), world.currentDay, cultivator.age);
+        npc.status === 'alive' || toldAbout(npc) !== null;
 
     const eligible = (npcs: readonly NpcRecord[]): NpcRecord[] => npcs
         .filter(npc => npc.id !== cultivator.id)
@@ -350,7 +358,24 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
         candidates: atHome,
         seed,
         bornToCultivators: house !== null && house.standingFrom >= FOUNDATION_ORDINAL
-    });
+    })
+        // A MENTION THE WORLD IS ABOUT TO FORGET IS NOT A NAME.
+        //
+        // `theOtherChildrenOf` already drops a dead mortal on the design
+        // owner's ruling - *"if sibling dies as a mortal, drop. if dies as a
+        // cultivator, mark as dead in entities. this is true for everyone"* -
+        // and the second parent reaches a mention through a different read, so
+        // the same test is applied to them here rather than restated there.
+        //
+        // Derived rather than copied: `aMentionOnly` already carries the two
+        // other terms `theWorldForgetsTheMortalDead` asks about - below
+        // Foundation, and nobody the catalog wrote - so what is left is whether
+        // a priced deed is keeping the row, which is what `toldAbout` reads.
+        // A dead mortal with no account open is deleted on the world's next
+        // pass, and naming them hands the player a name that stops resolving.
+        .filter(one => !(one.aMentionOnly
+            && one.npc.status !== 'alive'
+            && toldAbout(one.npc) === null));
     const kinIds = new Set(kin.map(one => one.npc.id));
 
     // AND IF THE HAMLET ITSELF IS EMPTY, THE AREA AROUND IT.
@@ -386,9 +411,10 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     const day = world.currentDay;
     return [
         ...kin.map(one => toFace(
-            world, one.npc, WHAT_A_HOUSEHOLD_TIE_IS[one.kind], placeOf, one.kind, day,
-            one.aMentionOnly)),
-        ...draw.map((npc, at) => toFace(world, npc, notes[at % notes.length], placeOf, null, day))
+            one.npc, toldAbout(one.npc), WHAT_A_HOUSEHOLD_TIE_IS[one.kind], placeOf, one.kind,
+            day, one.aMentionOnly)),
+        ...draw.map((npc, at) =>
+            toFace(npc, toldAbout(npc), notes[at % notes.length], placeOf, null, day))
     ];
 }
 
@@ -432,34 +458,59 @@ function whoEndedThem(world: WorldState, npc: NpcRecord): AKillingBehindAFace | 
 }
 
 /**
- * Somebody the street draw may still hand over, though they are not standing.
+ * A killing this life could have been told about, or null.
  *
- * THE DESIGN OWNER, ON WHY THIS IS NOT ONLY KIN: *"why can't it be an
- * acquaintance you made? grudges already have tiers"*. A childhood that had a
- * killing in it is the case the wrongs were described as producing - *a dead
- * friend or family* - and the friend half was unreachable while this filter
- * asked only whether somebody was alive.
+ * THE RULE IS THAT YOU KNOW WHAT YOU WERE TOLD, and it is the ordinary rule
+ * rather than a special case for anybody. The design owner, asked what a mortal
+ * whose father was murdered ten years ago hears: *if he knows then it counts
+ * otherwise he doesn't know what happened to his parents and that's fine.* Both
+ * halves are the design. A life that opens without it is a legitimate and common
+ * opening, and a path that always told them would be the same defect as one that
+ * never did.
  *
  * TWO CONDITIONS, AND NEITHER IS A NUMBER CHOSEN HERE.
  *
  *   THE ACCOUNT IS OPEN. A priced deed, which is the same field the telling
- *   layer and the mortal sweep read. A killing nobody ever opened an account
- *   for is a fact about the world and not a wrong this life is carrying.
+ *   layer and the mortal sweep read. A killing nobody ever opened an account for
+ *   is a fact about the world that nobody is carrying, `whatATellingLandsOn`
+ *   will not write a row about it, and `whoIsStillCarriedFor` does not keep the
+ *   victim over the mortal sweep - so there is often not even a row left to be
+ *   told about. Measured: on 13 pinned worlds run 25 years, every one of the 22
+ *   killed second parents a mortal household holds came through a path that
+ *   opened no account, so the honest answer for all 22 is that nobody told them.
  *
  *   IT HAPPENED INSIDE THIS LIFE'S OWN YEARS. Nobody grew up around somebody
  *   who was already dead, so the bound is the age the run opens at. The wrongs
  *   pass dates its killings across a span wider than a childhood, so this is
  *   load-bearing rather than a formality: about half of them fall before a
  *   sixteen-year-old was born.
+ *
+ * ASKED FOR EVERY FACE AND NOT ONLY FOR THE STREET. It used to gate admission
+ * to the street draw only, so a killed parent the household inherited said
+ * `Killed` whatever the world was or was not holding - one rule for a neighbour
+ * and none for a parent. Now the same answer decides both whether a dead face is
+ * a face at all and whether the line says a killing, and a death the world holds
+ * no account for reads as what it is: `Dead these 11 years.`
+ *
+ * WHAT THIS DELIBERATELY DOES NOT ASK is whether the killing is still being
+ * repeated where this life stands. `whatOneOfTheWorldsOwnPeopleKnows` answers
+ * exactly that and it was measured here first: asked at every settlement in 13
+ * worlds about every killing those worlds hold, it answered that it could be
+ * told 1,998 times out of 1,998. A grave killing clears every province, so a
+ * check on circulation is a check that is always true, and the thing that
+ * actually decides whether this life heard is WHO ITS CHILDHOOD CONTAINED -
+ * which is the draw above, not a second gate.
  */
-function aChildhoodCouldStillHaveHadThemInIt(
+function theKillingThisLifeCouldHaveBeenToldAbout(
+    world: WorldState,
     npc: NpcRecord,
-    killing: AKillingBehindAFace | null,
     onDay: number,
     age: number
-): boolean {
-    if (killing === null || !killing.anAccountWasOpened) return false;
-    return onDay - (npc.diedOnDay ?? 0) <= age * DAYS_PER_YEAR;
+): AKillingBehindAFace | null {
+    const killing = whoEndedThem(world, npc);
+    if (killing === null || !killing.anAccountWasOpened) return null;
+    if (onDay - (npc.diedOnDay ?? 0) > age * DAYS_PER_YEAR) return null;
+    return killing;
 }
 
 /**
@@ -479,8 +530,8 @@ function theSamePartOfTheWorld(world: WorldState, here: LocationRecord): NpcReco
 }
 
 function toFace(
-    world: WorldState,
     npc: NpcRecord,
+    killedBy: AKillingBehindAFace | null,
     sourceNote: string,
     placeOf: ReadonlyMap<string, LocationRecord>,
     tie: RelationshipKind | null,
@@ -500,7 +551,7 @@ function toFace(
         diedYearsAgo: npc.status === 'alive'
             ? null
             : Math.max(0, Math.floor((onDay - (npc.diedOnDay ?? onDay)) / DAYS_PER_YEAR)),
-        killedBy: whoEndedThem(world, npc),
+        killedBy,
         whereTheyAre: standing ? { id: standing.id, name: standing.name } : null,
         // What the holder ends up carrying. For a neighbour: a face and a name,
         // and the explicit statement that it is nothing more than that, because

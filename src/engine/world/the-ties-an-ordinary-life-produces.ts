@@ -281,6 +281,38 @@ export function theOtherChildrenOf(
 }
 
 /**
+ * The second parent a household gives, or null where it gives one.
+ *
+ * The same extraction {@link theOtherChildrenOf} is, for the same reason: a
+ * caller that only wants to NAME a household has to get the answer the one that
+ * binds it gets. `the-family-a-life-opens-with.ts` names a mortal household
+ * without writing a row for it, and it named ONE parent - not because a mortal
+ * household has one, but because the read for the other lived inside the write
+ * and could not be asked. A killed mortal parent was invisible for that reason
+ * alone.
+ *
+ * It is not invented: it is whoever this person is already married to, held to
+ * every condition the drawn parent is held to except being alive, which is the
+ * half a widowed household must not ask. {@link nothingElseBetween} is NOT asked
+ * here - that is a rule about writing a row, and who is in a household does not
+ * change because a row is in the way.
+ */
+export function theOtherParentOf(
+    state: WorldState,
+    at: Map<string, number>,
+    parent: NpcRecord,
+    childAge: number,
+    day: number
+): NpcRecord | null {
+    const spouseTie = parent.relationships.find(r => r.kind === 'spouse');
+    if (!spouseTie) return null;
+    const j = at.get(spouseTie.targetId);
+    const spouse = j === undefined ? null : state.npcs[j];
+    if (!spouse || !isBelowTheLid(spouse)) return null;
+    return couldHaveBeenAParentTo(spouse, childAge, day) ? spouse : null;
+}
+
+/**
  * Somebody already in this world who could be a parent to a newborn here.
  */
 export function couldParent(candidates: readonly NpcRecord[], childAge: number, day: number): NpcRecord[] {
@@ -358,34 +390,17 @@ export function bindNewbornToHousehold(
     const parent = state.npcs[parentAt];
     const parents: NpcRecord[] = [parent];
 
-    // A household, when there is one. The second parent is not invented: it is
-    // whoever this person is already married to, and if they are not married
-    // the child has one parent, which is common and is not a gap.
-    //
-    // A PARENT WHO HAS DIED IS STILL A PARENT. This asked `isHere`, which is
-    // alive AND below the Lid, so a widowed household produced a child with one
-    // parent and no record that there had been another - the one case where the
-    // world holds the fact and the person it is about cannot be told it. The
-    // Lid half is kept: somebody who went up is not in this world to be a
-    // parent in it, which is `above.ts`'s to decide and not this pass's.
-    //
-    // AND OLD ENOUGH, which the chosen parent is checked for by `couldParent`
-    // and the second one never was - harmless while nobody was married, and
-    // measured the moment somebody was: a spouse born after the child came back
-    // as their parent. The other two conditions are asked here rather than
-    // taken from `couldParent` because that one also asks whether they are
-    // still alive, which is the half a widowed household must not ask.
+    // Who the second parent is, and whether a row may be written for them, are
+    // two questions. {@link theOtherParentOf} answers the first - including for
+    // a spouse who has died, which is the half a widowed household must not ask
+    // and which this site once got wrong in three ways at once. What stays here
+    // is the second: `nothingElseBetween`, because a tie somebody else wrote is
+    // a reason not to WRITE and never a reason to say the household is smaller
+    // than it is.
     const childAge = ageInYears(child, day);
-    const spouseTie = parent.relationships.find(r => r.kind === 'spouse');
-    if (spouseTie) {
-        const j = at.get(spouseTie.targetId);
-        const spouse = j === undefined ? null : state.npcs[j];
-        if (spouse
-            && isBelowTheLid(spouse)
-            && couldHaveBeenAParentTo(spouse, childAge, day)
-            && nothingElseBetween(state, at, child, spouse.id, 'parent', 'child')) {
-            parents.push(spouse);
-        }
+    const spouse = theOtherParentOf(state, at, parent, childAge, day);
+    if (spouse && nothingElseBetween(state, at, child, spouse.id, 'parent', 'child')) {
+        parents.push(spouse);
     }
 
     const siblingIds = new Set<string>();

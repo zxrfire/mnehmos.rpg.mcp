@@ -74,9 +74,17 @@
  *
  * What the player loses with it is real and was accepted: `I look at my mother`
  * stops resolving, the opening drops the whereabouts clause for a mortal
- * parent, and a player whose parents are mortal carries for nobody. That last
- * one is consistent rather than a hole, because an untracked mortal's killing
- * is not recorded either.
+ * parent, and a player whose parents are mortal carries for nobody.
+ *
+ * AND A MENTION NAMES THE WHOLE HOUSEHOLD, both parents and the other children.
+ * A mortal who was KILLED is the one mortal the world keeps -
+ * `whoIsStillCarriedFor` holds the row of everybody a priced deed names, which
+ * is the exception `theWorldForgetsTheMortalDead` carries - so a dead mortal
+ * parent is nameable where the world is still carrying them and is not where it
+ * is about to forget them. WHICH OF THE TWO is not asked here: it is the same
+ * question as whether the killing may be said at all, and `facesFromHome` asks
+ * it once for both. Carrying for them is still refused whatever the answer -
+ * a mention writes no tie, and `whoTheyCarryFor` reads ties.
  *
  * AND THE WORLD'S OWN MORTAL FAMILIES ARE UNTOUCHED. This is player-side and
  * must stay player-side: `the-families-a-world-opens-holding.ts` puts a blood
@@ -126,7 +134,8 @@ import {
     bindNewbornToHousehold,
     couldParent,
     rosterOf,
-    theOtherChildrenOf
+    theOtherChildrenOf,
+    theOtherParentOf
 } from '../engine/world/the-ties-an-ordinary-life-produces.js';
 import {
     createNpc, somebodyTheCatalogWrote, type NpcRecord, type RelationshipKind
@@ -255,12 +264,37 @@ export function theFamilyThisLifeOpensWith(input: FamilyInput): KinFromBirth[] {
     // Sword Sect at ordinal 4 is a real record and a real tie, and the ruling is
     // untouched: what it refuses is a promise this engine cannot keep, and this
     // is one it can.
+    // AND IT IS THE WHOLE HOUSEHOLD, WHICH IT WAS NOT.
+    //
+    // This named one parent and the children, because the read for the second
+    // parent lived inside `bindNewbornToHousehold` and there was no way to ask
+    // it without writing. So a mortal life opened knowing it had one parent
+    // whatever the world held - and a mortal parent who had been KILLED was
+    // unreachable for that reason alone, which is the open question
+    // `a-childhood-can-have-a-victim-in-it` recorded and the design owner then
+    // ruled on: you know what you were told, and a killing the world is still
+    // holding is a thing the people who raised you can tell you.
+    //
+    // Measured on 1,950 births over 13 pinned worlds, twice. On the day a world
+    // opens, NO mortal parent holds a spouse tie at all - `seedTheMarriages`
+    // pairs cultivators only - so the case cannot arise and 0 of 1,853 mortal
+    // households were short anybody. After the same worlds ran 25 years, 1,355
+    // of 1,634 held one and 22 had a second parent who had been killed inside
+    // the life's own sixteen years. Every one of the 22 said nothing.
+    //
+    // A mention and nothing more, exactly as before: no tie, no whereabouts,
+    // and nothing that can go stale. Whether a DEAD one is somebody the world
+    // will still have next year is the caller's to ask - see the header.
     if (chosen.cultivation.realmOrdinal < FOUNDATION_ORDINAL
         && !somebodyTheCatalogWrote(chosen)) {
         const { at } = rosterOf(world);
+        const other = theOtherParentOf(world, at, chosen, Math.floor(cultivator.age), day);
+        const parents = other === null ? [chosen] : [chosen, other];
         return [
-            { npc: chosen, kind: 'parent', aMentionOnly: true },
-            ...theOtherChildrenOf(world, at, [chosen], cultivator.id)
+            ...parents.map(npc => ({
+                npc, kind: 'parent' as RelationshipKind, aMentionOnly: true
+            })),
+            ...theOtherChildrenOf(world, at, parents, cultivator.id)
                 .map(npc => ({ npc, kind: 'kin' as RelationshipKind, aMentionOnly: true }))
         ];
     }

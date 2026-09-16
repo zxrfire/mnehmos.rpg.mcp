@@ -110,11 +110,88 @@
  * So the household half is ARRANGED, the way the street half's admission rules
  * already are, and the played sweep now promises only what a played sweep can.
  *
- * AND ONE DOOR THAT IS GENUINELY SHUT, written down rather than closed here: a
- * MORTAL household is a mention and inherits no second parent at all, so a
- * mortal whose father was murdered ten years ago is told nothing - while the
- * same man reaches the opening if he was a neighbour. That is the mortal ruling
- * and the street ruling meeting, and which of them wins is not this file's.
+ * ═════════════════════════════════════════════════════════════════════════
+ * THE DOOR THIS FILE RECORDED AS SHUT, AND WHY IT IS NOT A MORTAL RULE
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * This header used to end on an open question: a MORTAL household is a mention
+ * and inherited no second parent, so a mortal whose father was murdered ten
+ * years ago was told nothing, while the same man reached the opening if he was
+ * a neighbour. The design owner has ruled, and the ruling is not about mortals:
+ *
+ *   > "if he knows then it counts otherwise he doesn't know what happened to
+ *   > his parents and that's fine it doesn't matter to the story"
+ *
+ * YOU KNOW WHAT YOU WERE TOLD. Both halves are the design - a life that opens
+ * never having found out is a legitimate and common opening, so a path that
+ * always told them would be the same defect as one that never did.
+ *
+ * ── WHAT THE SHUT DOOR ACTUALLY WAS ──────────────────────────────────────
+ *
+ * Not a ruling about mortals meeting a ruling about the street. The read for a
+ * second parent lived INSIDE `bindNewbornToHousehold` and there was no way to
+ * ask it without writing a row, so the mention path named one parent whatever
+ * the world held. `theOtherParentOf` is that read extracted, exactly as
+ * `theOtherChildrenOf` already was and for the reason that one gives.
+ *
+ * Measured, 1,950 births over 13 pinned worlds, twice:
+ *
+ *     on the day a world opens
+ *       mortal households drawn                          1,853  95.0%
+ *       whose named parent holds a spouse tie                0
+ *
+ *     the same worlds, run 25 years
+ *       mortal households drawn                          1,634  83.8%
+ *       whose named parent holds a spouse tie            1,355
+ *       whose second parent was killed in these years       22
+ *
+ * So on day one the case cannot arise at all - `seedTheMarriages` pairs
+ * cultivators only, and a mortal has no second parent for a killing to have
+ * taken. It arises once the world has run, and all 22 said nothing.
+ *
+ * What the extraction moves, on the same 1,950 births:
+ *
+ *     lives naming two parents      day one          4 ->     4
+ *                                   at 25 years     94 -> 1,108
+ *
+ * Nothing on a fresh world changes, because there is nothing there to name.
+ *
+ * ── AND THE ANSWER FOR ALL 22 IS STILL THAT NOBODY TOLD THEM ─────────────
+ *
+ * Every one of those 22 killings came through a path that opened no account -
+ * no `deedWeight` on the row. That is the same field `whatATellingLandsOn` looks
+ * for before it will write a row and the same one `whoIsStillCarriedFor` keeps
+ * the victim over the mortal sweep for, so a killing without it is one nobody is
+ * carrying and one whose victim the world DELETES on its next pass. It is
+ * therefore the honest sense of OPEN, and it is what the opening asks - for a
+ * parent now as well as for a neighbour, which it did not before. A mortal
+ * parent the world is about to forget is not named at all; a cultivator is, and
+ * says the ending without the killing.
+ *
+ * Which is a finding about the world and is left where it was found: THE
+ * WORLD'S OWN KILLINGS OPEN NO ACCOUNT. The wrongs a world opens holding are
+ * priced; the 115 further killings 13 worlds produced over 25 years are not one
+ * of them, so nobody inherits them and the victims are swept.
+ *
+ * ── WHICH KNOWLEDGE READER, AND WHY NOT THE OTHER ONE ────────────────────
+ *
+ * `whatOneOfTheWorldsOwnPeopleKnows` is the reader for a question of this shape
+ * - the player has a world row by the time the faces are drawn, `newRun` puts
+ * one there - and `KnowledgeGate` is not, because at turn 0 the player's table
+ * holds nothing about any killing and a gate on it answers `unaware` every time.
+ *
+ * So the right reader was asked, and then measured before it was wired:
+ *
+ *     asked at every settlement in 13 worlds about every killing they hold
+ *     could have been told                              1,998 / 1,998  100%
+ *
+ * A grave killing clears every province, so circulation is a check that cannot
+ * fail and adding one would have been a path that always tells them wearing a
+ * gate. What actually decides whether a life heard is WHO ITS CHILDHOOD
+ * CONTAINED, and that is the draw rather than a second reader:
+ *
+ *     lives whose faces include a victim                    32 / 1,950  1.64%
+ *     lives that open never having been told             1,918 / 1,950  98.4%
  *
  * ═════════════════════════════════════════════════════════════════════════
  * WHAT THE ASSERTIONS ENCODE
@@ -133,7 +210,14 @@
  *   A heading promises only what the lines under it deliver. A dead person has
  *   no whereabouts, so `and where each of them is` goes.
  *
- * Red-checked four ways, each producing exactly the failures named below.
+ *   A MORTAL HOUSEHOLD NAMES THE WHOLE HOUSEHOLD, and a killed parent in one is
+ *   said. It is still a mention - no tie, no whereabouts - which is why the
+ *   account is not offered with it.
+ *
+ *   AND A DEATH THE WORLD OPENED NO ACCOUNT FOR IS A DEATH. One rule for a
+ *   parent and a neighbour alike, where the parent had none.
+ *
+ * Red-checked, each assertion producing exactly the failure named beside it.
  */
 
 import type Database from 'better-sqlite3';
@@ -412,11 +496,11 @@ describe('a childhood can have a victim in it', () => {
      *
      * TWO THINGS ARE LOAD-BEARING AND NEITHER IS A NUMBER CHOSEN HERE.
      *
-     *   THE HOUSEHOLD IS A CULTIVATING ONE. Below {@link FOUNDATION_ORDINAL} a
-     *   household is a MENTION - no tie, no whereabouts, and no second parent
-     *   inherited - so a mortal family cannot reach this case at all. That is
-     *   the mortal ruling rather than a gap in the draw, and it is why a birth
-     *   on a house's ground is the arrangement.
+     *   WHETHER THE HOUSEHOLD CULTIVATES. Below {@link FOUNDATION_ORDINAL} a
+     *   household is a MENTION - the names and nothing else - and above it the
+     *   ties are written. Both are arranged here, because the ruling is that
+     *   the rule is the same for both and the only way to show that is to run
+     *   it twice.
      *
      *   THE PLAYER HAS A ROW. The kin tier is `whoTheyCarryFor`'s, and that
      *   reads the HEARER's own ties - which only land where the world already
@@ -424,16 +508,21 @@ describe('a childhood can have a victim in it', () => {
      *   account does not, which is the asymmetry `the-family-a-life-opens-with`
      *   has had to be taught twice.
      */
-    function aHouseholdWithAKilledParent(opts: { yearsAgo: number }): WorldState {
+    function aHouseholdWithAKilledParent(
+        opts: { yearsAgo: number; mortal?: boolean; priced?: boolean }
+    ): WorldState {
         const state = createWorld({ seed: 'household', skipPriorAges: true, regionCount: 0 });
         state.currentDay = 100 * DAYS_PER_YEAR;
         state.locations.push(makeLocation({
             id: 'home', name: 'Autumn Gate', kind: 'settlement', qiDensity: 0.4
         }));
+        // A mortal household is the same arrangement one realm down. Nothing
+        // else about it changes, which is the point of running it twice.
+        const rung = opts.mortal === true ? 0 : FOUNDATION_ORDINAL;
         const standing: [string, string, number, number][] = [
-            ['npc-left', 'The One Left', FOUNDATION_ORDINAL, 60],
-            ['npc-killed', 'The One Killed', FOUNDATION_ORDINAL, 60],
-            ['npc-killer', 'The Killer', FOUNDATION_ORDINAL, 20],
+            ['npc-left', 'The One Left', rung, 60],
+            ['npc-killed', 'The One Killed', rung, 60],
+            ['npc-killer', 'The Killer', rung, 20],
             ['pc', 'Probe', 0, 16]
         ];
         for (const [id, name, ordinal, age] of standing) {
@@ -459,18 +548,38 @@ describe('a childhood can have a victim in it', () => {
         }
 
         const killedOn = state.currentDay - Math.round(opts.yearsAgo * DAYS_PER_YEAR);
-        aDeedEntersTheWorld(state, {
-            kind: 'death',
-            day: killedOn,
-            locationId: 'home',
-            actors: [
-                { id: 'npc-killer', name: 'The Killer', role: 'killer' },
-                { id: 'npc-killed', name: 'The One Killed', role: 'victim' }
-            ],
-            summary: 'The Killer killed The One Killed at Autumn Gate.',
-            unattributed: 'Somebody was found dead here some years ago.',
-            weight: 'grave'
-        });
+        const actors = [
+            { id: 'npc-killer', name: 'The Killer', role: 'killer' },
+            { id: 'npc-killed', name: 'The One Killed', role: 'victim' }
+        ];
+        const summary = 'The Killer killed The One Killed at Autumn Gate.';
+        // The two doors again, and the same difference. See the street fixture
+        // above: `aDeedEntersTheWorld` stamps `deedWeight` and a bare
+        // `appendWorldFact` does not, and the world's own yearly passes take
+        // the second one.
+        if (opts.priced === false) {
+            appendWorldFact(state, makeFact({
+                day: killedOn,
+                kind: 'death',
+                scale: 'personal',
+                summary,
+                actors,
+                locationId: 'home',
+                visibility: 'regional',
+                magnitude: 0.4,
+                causeKnown: true
+            }), { recur: false });
+        } else {
+            aDeedEntersTheWorld(state, {
+                kind: 'death',
+                day: killedOn,
+                locationId: 'home',
+                actors,
+                summary,
+                unattributed: 'Somebody was found dead here some years ago.',
+                weight: 'grave'
+            });
+        }
         const at = state.npcs.findIndex(npc => npc.id === 'npc-killed');
         state.npcs[at] = markDead(state.npcs[at], killedOn, 'Killed by The Killer.');
         return state;
@@ -507,6 +616,118 @@ describe('a childhood can have a victim in it', () => {
         const carries = new Set(whoTheyCarryFor('pc', getNpc(world, 'pc')).ids);
         expect(carries.has('npc-killed'),
             'the household landed and the account behind it did not').toBe(true);
+    });
+
+    /**
+     * THE HALF THIS FILE RECORDED AS A SHUT DOOR. The same arrangement one
+     * realm down, which is the whole of the difference between a household the
+     * world writes ties for and one it only names.
+     *
+     * The mention is unchanged in what it claims - no tie, no whereabouts - and
+     * that is why the account is not offered: `whoTheyCarryFor` reads ties, and
+     * a mention writes none. A player whose parents are mortal carrying for
+     * nobody is `the-family-a-life-opens-with`'s standing ruling and is not
+     * softened here.
+     */
+    it('names a killed parent in a mortal household, and claims nothing else', () => {
+        const world = aHouseholdWithAKilledParent({ yearsAgo: 11, mortal: true });
+        const faces = facesFromHome({
+            world,
+            cultivator: {
+                id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0, age: 16
+            } as Cultivator,
+            origin: 'thin_county',
+            seed: 'v'
+        });
+
+        const dead = faces.find(one => one.name === 'The One Killed');
+        expect(dead, 'nobody named them at all').toBeDefined();
+        // THE TIE IS THE ASSERTION, not that they appear. They are standing in
+        // the birthplace, so the street draw reaches them here whatever the
+        // household does - which is exactly the asymmetry the open question
+        // named, and is not what the world produces: of the 22 killed second
+        // parents measured over 13 worlds run 25 years, NONE was reachable off
+        // the street, because the street asks whether the world opened an
+        // account and none of those killings had one.
+        expect(dead!.tie, 'a mortal household still names one parent and stops').toBe('parent');
+        expect(dead!.aMentionOnly, 'a mortal household claims nothing').toBe(true);
+        expect(dead!.whereTheyAre, 'a mention names no place').toBeNull();
+        expect(dead!.diedYearsAgo).toBe(11);
+        expect(dead!.killedBy).toEqual({
+            killerId: 'npc-killer', killerName: 'The Killer', anAccountWasOpened: true
+        });
+
+        // AND THE ONE WHO DID THE RAISING IS STILL THERE. A second parent is an
+        // addition to the household, never a replacement for the first.
+        expect(faces.filter(one => one.tie === 'parent').map(one => one.name).sort())
+            .toEqual(['The One Killed', 'The One Left']);
+
+        const carries = new Set(whoTheyCarryFor('pc', getNpc(world, 'pc')).ids);
+        expect(carries.has('npc-killed'),
+            'a mention wrote a tie, and the account came with it').toBe(false);
+    });
+
+    /**
+     * AND THE OTHER DIRECTION, FOR A MORTAL HOUSEHOLD: NOTHING IS SAID AT ALL.
+     *
+     * The owner's *"otherwise he doesn't know what happened to his parents and
+     * that's fine"*, and it is not a softening - it is the mortal ruling doing
+     * its own job. A dead mortal the world opened no account for is deleted by
+     * `theWorldForgetsTheMortalDead` on the next pass, so a name here is a name
+     * that stops resolving, which is the one thing a mention may not be.
+     *
+     * This is the case the world actually produces: of the 22 killed second
+     * parents measured over 13 worlds run 25 years, every one arrived through a
+     * path that opened no account.
+     */
+    it('says nothing of a mortal parent the world is about to forget', () => {
+        const world = aHouseholdWithAKilledParent({
+            yearsAgo: 11, mortal: true, priced: false
+        });
+        const faces = facesFromHome({
+            world,
+            cultivator: {
+                id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0, age: 16
+            } as Cultivator,
+            origin: 'thin_county',
+            seed: 'v'
+        });
+
+        expect(faces.map(one => one.name), 'named somebody the world will not keep')
+            .not.toContain('The One Killed');
+        // AND THE HOUSEHOLD IS STILL A HOUSEHOLD. The drop is one person, not
+        // the mention.
+        expect(faces.some(one => one.tie === 'parent' && one.name === 'The One Left'),
+            'the one who did the raising went with them').toBe(true);
+    });
+
+    /**
+     * AND FOR A CULTIVATING ONE, THE ENDING WITHOUT THE KILLING. A killing the
+     * world opened no account for is a death: nobody is carrying it, nothing
+     * will write a telling about it, and the mortal sweep does not keep a victim
+     * over it. The street has refused this since it learned to take the dead;
+     * the household never asked, so a parent said `Killed` on a row the world
+     * was holding nothing about.
+     *
+     * The person stays, because somebody past {@link FOUNDATION_ORDINAL} who has
+     * died is somebody the world keeps whatever else is true - the same ruling,
+     * from its other end.
+     */
+    it('reads a killing the world opened no account for as a death', () => {
+        const world = aHouseholdWithAKilledParent({ yearsAgo: 11, priced: false });
+        const faces = facesFromHome({
+            world,
+            cultivator: {
+                id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0, age: 16
+            } as Cultivator,
+            origin: 'sect_retainer',
+            seed: 'v'
+        });
+
+        const dead = faces.find(one => one.name === 'The One Killed');
+        expect(dead, 'the household still inherits its second parent').toBeDefined();
+        expect(dead!.diedYearsAgo).toBe(11);
+        expect(dead!.killedBy, 'the opening said a killing nobody is carrying').toBeNull();
     });
 
     // ─────────────────────────────────────────────────────────────────────
