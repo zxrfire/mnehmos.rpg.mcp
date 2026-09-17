@@ -23,7 +23,8 @@
  *                               who is not one of the world's people is given
  *                               where that person was standing, and the writer
  *                               of it puts the row there
- *   the work of their rank      the office they hold, where they hold one
+ *   the work of their rank      the office they hold, where they hold one, and
+ *                               just outside it where that office is sealed
  *   anything else in the table  the first room in `ROOMS_A_THING_IS_DONE_IN`
  *                               the house has
  *   otherwise                   the seat: the gate and the forecourt it opens on
@@ -163,7 +164,15 @@ export function whereTheyAreStanding(
             .map(purpose => compound.rooms.get(purpose))
             .filter((room): room is LocationRecord => room !== undefined)
             .at(-1);
-        return office?.id ?? stored;
+        if (!office) return stored;
+        // A SEALED OFFICE IS KEPT FROM JUST OUTSIDE IT. The design owner: *"yes,
+        // just outside it."* Somebody in charge of a treasury, a tribute room or
+        // a discipline hall stands in the place that room opens from, with the
+        // door behind them, which is where anybody who has business with them
+        // can reach them through the walls. The place it opens from is the row
+        // it hangs off: its precinct, or the hall a room under a hall is cut
+        // beneath.
+        return office.sealed ? (office.parentId ?? stored) : office.id;
     }
 
     const room = (ROOMS_A_THING_IS_DONE_IN[doing.kind] ?? [])

@@ -133,9 +133,16 @@ async function inFrontOfTheHouse(
     //
     // DOWN TO THE ROOM. A house's people are read into the room what they are
     // at is done in (`where-inside-a-house-somebody-is-standing.ts`), and a
-    // room holder at the work of their rank is behind their office. This put
-    // the player at the row's stored location, the seat, where neither the
-    // holder nor anybody else of the house was standing any longer.
+    // room holder at the work of their rank is at their office, or just outside
+    // it where the office is sealed. This put the player at the row's stored
+    // location, the seat, where neither the holder nor anybody else of the house
+    // was standing any longer.
+    //
+    // STILL PLACED AND NOT WALKED, measured: a new disciple at the bottom rung
+    // asking to walk to the elders' precinct is told nobody has shown them
+    // where it is, which is `roomStageFor` below `placed`, and its wall is
+    // above their rung besides. Both are the house's own rules about who
+    // reaches its elders, and neither is what this file is about.
     const faced = facing === 'the holder' ? call.holderId : somebodyElse?.id;
     const row = world.npcs?.find(n => n.id.endsWith(String(faced)));
     const standingAt = row && world.npcs

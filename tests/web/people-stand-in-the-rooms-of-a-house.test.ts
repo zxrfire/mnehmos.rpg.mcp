@@ -100,6 +100,14 @@ describe('a house\'s people, read into its rooms', () => {
                 const purpose = purposeOf(world.locations.find(row => row.id === id)!) ?? 'precinct';
                 if (here.length > 0) byPurpose.set(purpose, (byPurpose.get(purpose) ?? 0) + here.length);
                 for (const npc of here) expect(npc.factionId).toBe(compound.houseId);
+                // A SEALED OFFICE IS KEPT FROM JUST OUTSIDE IT. The design owner:
+                // *"yes, just outside it."* Nobody at the work of their rank is
+                // read in behind a locked door they hold; they stand in the place
+                // it opens from. (Somebody at the shelves of a sealed archive is
+                // at the shelves, and the ruling was about the office.)
+                const room = world.locations.find(row => row.id === id)!;
+                const atTheirOffice = here.filter(npc => npc.activity?.kind === 'the_work_of_their_rank');
+                expect(room.sealed && atTheirOffice.length > 0, `${room.name} has its holder inside a locked door`).toBe(false);
             }
             expect(read, `${seatId}: a person was lost or counted twice`).toBe(npcsWithin(world, seatId, compounds).length);
         }

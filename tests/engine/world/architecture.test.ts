@@ -536,7 +536,7 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
 
     it('cuts the room of the craft a house is focused on larger, and gives medicine its furnace floor', () => {
         const plain = broadHouse();
-        const pills = broadHouse({ specialities: ['support'] });
+        const pills = broadHouse({ specialities: ['alchemy'] });
         expect(roomsFor(pills)).toContain('furnace_room');
         // Within one seat of the multiple: a capacity is a whole number of seats,
         // rounded once on the larger figure rather than doubled after rounding.
@@ -545,6 +545,20 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
         ).toBeLessThanOrEqual(1);
         larger(capacityOf(pills, 'alchemy_hall'), capacityOf(plain, 'alchemy_hall'));
         expect(capacityOf(pills, 'alchemy_hall')).toBeGreaterThan(capacityOf(plain, 'alchemy_hall'));
+    });
+
+    /**
+     * RARE AND EXCLUSIVE. The design owner: *"Almost everyone can do it, few
+     * focus exclusively on it."* Healing arts and qi-gathering manuals are not a
+     * trade in medicine, and they gave 23 of 38 houses the focus.
+     */
+    it('does not read healing or cultivation as a trade in medicine', () => {
+        for (const specialities of [['support'], ['cultivation'], ['support', 'cultivation', 'defense']]) {
+            const house = broadHouse({ specialities });
+            expect(whatAHouseIsFocusedOn(house).pills, specialities.join(', ')).toBe(false);
+            expect(roomsFor(house)).not.toContain('furnace_room');
+            expect(roomsFor(house)).toContain('alchemy_hall');
+        }
     });
 
     it('gives the forge focus to no house, not even one that calls itself a forge', () => {

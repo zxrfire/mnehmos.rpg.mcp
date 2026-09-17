@@ -16,7 +16,10 @@ import {
     howMuchOfTheirReachItAsksFor,
     whatACommissionComesTo,
     whetherTheirHandsCanDoIt,
-    type WhatYouAskedThemToMake
+    type WhatYouAskedThemToMake,
+    whatTheMakersTimeComesTo,
+    whatTheMaterialsComeTo,
+    daysAtTheWork
 } from '../../../src/engine/social-leverage/commissioning-a-craft';
 import { whatTheBodyWants, type OnTheRoll } from '../../../src/engine/social-leverage/what-a-body-wants-is-what-its-deciders-want';
 import { createFavor, createGrudge, createObligation, type ObligationRecord } from '../../../src/engine/social/grudges';
@@ -332,6 +335,31 @@ describe('paying for it', () => {
     });
 });
 
+describe('a commission costs whatever the maker asks', () => {
+    /**
+     * The design owner: *"Whatever the maker asks. Their time is presumably
+     * valuable, depends on realm."* The price is this maker's days at the work
+     * at this maker's own rate, and the materials they put in. It was a year of
+     * the income of the rung that could only just make the thing, whoever made
+     * it: 54 stones for a mortal slip and 375 for earth-grade work.
+     */
+    it('is the maker\'s time at their rate plus the materials, and moves with the hand', () => {
+        const gate = refiningOrdinalFor('earth');
+        for (const ordinal of [gate, gate + 5, gate + 15]) {
+            expect(whatACommissionComesTo('earth', false, ordinal)).toBe(Math.max(1, Math.round(
+                whatTheMakersTimeComesTo('earth', ordinal) + whatTheMaterialsComeTo('earth')
+            )));
+        }
+        // A hand far past the grade spends fewer days on it, and asks less for
+        // the whole of it even at a better rate.
+        expect(daysAtTheWork('earth', gate + 15)).toBeLessThan(daysAtTheWork('earth', gate));
+        expect(whatTheMakersTimeComesTo('earth', gate + 15)).toBeLessThan(whatTheMakersTimeComesTo('earth', gate));
+        // A grade nothing is worked out of puts no materials in.
+        expect(whatTheMaterialsComeTo('mortal')).toBe(0);
+        expect(whatTheMaterialsComeTo('earth')).toBeGreaterThan(0);
+    });
+});
+
 describe('above the cash line the medium is a thing, not a purse', () => {
     const above: TechniqueGrade = 'heaven';
     const ordinal = refiningOrdinalFor(above);
@@ -585,7 +613,10 @@ describe('the player taking a commission', () => {
             const asked = somebodyAsksThePlayer(0, { grade, playerOrdinal: MAX_ORDINAL });
             const asking = askOnce(0, { grade, ordinal: MAX_ORDINAL });
             expect(asked.priceInStones).toEqual(asking.priceInStones);
-            expect(asked.priceInStones).toEqual(whatACommissionComesTo(grade));
+            // THE MAKER'S OWN ASK. The design owner: *"Whatever the maker asks.
+            // Their time is presumably valuable, depends on realm."* So the
+            // figure both sides quote is the one for a hand at this maker's rung.
+            expect(asked.priceInStones).toEqual(whatACommissionComesTo(grade, false, MAX_ORDINAL));
         }
     });
 

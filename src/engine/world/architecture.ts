@@ -967,8 +967,19 @@ export const A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER = 2;
  * Which of the two crafts a house is focused on, read off what its catalog row
  * carries for code.
  *
- * MEDICINE off `specialities`: `alchemy`, `support` or `cultivation`, the same
- * words that have always given a house its furnace floor.
+ * A FOCUS IS RARE AND EXCLUSIVE. The design owner: *"Same idea as pills. Almost
+ * everyone can do it, few focus exclusively on it."* Every house has both rooms;
+ * a focus is a house whose catalog makes the craft its main business.
+ *
+ * MEDICINE: a house whose `specialities` name `alchemy`. It read `alchemy`,
+ * `support` or `cultivation`, which gave 23 of 38 houses the focus - healing
+ * arts and qi-gathering manuals are not a trade in medicine. No house in the
+ * catalog names `alchemy` today: the specialities are technique categories,
+ * and the list is unordered and unweighted (its own comment says it is for
+ * matchmaking and rumour text), so it carries no primary to read instead.
+ * `trade.devotion` says for code how much of a house its trade is, and what the
+ * trade is lives only in `trade.makes`, which is prose. So the medicine focus,
+ * like the forge focus, goes to no house until the catalog marks one.
  *
  * ARTIFACTS: NO HOUSE, FOR NOW, AND THIS WAITS ON A FIELD. Nothing in a house's
  * catalog row says for code that it is focused on forging: the specialities are
@@ -983,7 +994,7 @@ export function whatAHouseIsFocusedOn(
 ): { pills: boolean; artifacts: boolean } {
     const specialities = new Set(input.specialities.map(s => s.toLowerCase()));
     return {
-        pills: specialities.has('alchemy') || specialities.has('support') || specialities.has('cultivation'),
+        pills: specialities.has('alchemy'),
         artifacts: false
     };
 }

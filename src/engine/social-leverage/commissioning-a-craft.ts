@@ -19,17 +19,16 @@
  * Both enter through `readingOf`, the same door a war enters the treasury by,
  * so nothing downstream knows a commission from any other question.
  *
- * ── AND WHY THE PRICE IS A PROPERTY OF THE THING ─────────────────────────
+ * ── AND THE PRICE IS WHATEVER THE MAKER ASKS ─────────────────────────────
  *
- * A mortal slip costs what a mortal slip costs, whoever cuts it: a year of the
- * income of the rung that can only just make one. Everything about the
- * particular pair of hands is in the reading and none of it is in the figure.
- *
- * Measured against the catalog: 54 spirit stones at mortal grade and 375 at
- * earth, which is 0.4 and 2.1 years of the income of the rung each is made for.
- * Both sit inside `COMMODITY_YEARS_OF_INCOME`, which is the same line
- * `gradeTradeTier` draws when it prices those two grades and refuses to price
- * heaven and above.
+ * The design owner: *"Whatever the maker asks. Their time is presumably
+ * valuable, depends on realm."* So a commission comes to this maker's days at
+ * the work, at this maker's own rate, and the materials they put in - see
+ * `whatACommissionComesTo`. It used to be a property of the thing alone, a year
+ * of the income of the rung that could only just make one: 54 spirit stones for
+ * a mortal slip and 375 for earth-grade work, whoever made it. Stones still
+ * move only the grades `gradeTradeTier` prices, and heaven and above are still
+ * priced by `whatItWouldTake` and not by a figure.
  */
 
 import { pillBandOrdinal } from '../cultivation/breakthrough.js';
@@ -55,7 +54,9 @@ import {
     type WhatIsInTheSlip
 } from '../world/a-talisman-is-one-act-somebody-already-paid-for.js';
 import {
+    whatItIsMadeOf,
     whatTheBenchIsShortOf,
+    whatWouldFill,
     whyTheBenchIsShort,
     type ASlotNobodyFilled
 } from '../../data/cultivation/what-an-artifact-is-made-of.js';
@@ -297,13 +298,44 @@ export function daysAtTheWork(grade: TechniqueGrade, makerOrdinal: number): numb
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
+ * What the maker's days at the work are worth, in spirit stones.
+ *
+ * THEIR OWN RATE, at their own realm, for as long as the work takes their
+ * hand. The rate is `earningsPerYear`, the one answer to what a year of work
+ * pays somebody at a rank, spread over the days of a year; the days are
+ * `daysAtTheWork`. A higher hand asks more for a day and spends fewer of them.
+ */
+export function whatTheMakersTimeComesTo(grade: TechniqueGrade, makerOrdinal: number): number {
+    return (earningsPerYear(makerOrdinal) / DAYS_PER_YEAR) * daysAtTheWork(grade, makerOrdinal);
+}
+
+/**
+ * What the materials of this grade come to, where the maker puts them in: the
+ * cheapest thing that fills each slot of its recipe. Nothing for a grade no
+ * recipe is worked for.
+ */
+export function whatTheMaterialsComeTo(grade: TechniqueGrade): number {
+    const recipe = whatItIsMadeOf(grade);
+    if (recipe === null) return 0;
+    return recipe.reduce((sum, slot) => sum + (whatWouldFill(slot)[0]?.value ?? 0), 0);
+}
+
+/**
  * What a commission of this grade comes to in spirit stones, or null where
  * stones are not the medium. NULL IS THE WHOLE POINT and a caller must not fall
  * back to another figure: above the line the price is `whatItWouldTake`'s.
+ *
+ * WHATEVER THE MAKER ASKS. The design owner: *"Whatever the maker asks. Their
+ * time is presumably valuable, depends on realm."* So it is this maker's time at
+ * this maker's rate, {@link whatTheMakersTimeComesTo}, and the materials they
+ * put in. It was a year of the income of the rung that can only just make the
+ * thing, whoever made it, which priced a master's afternoon as a novice's year.
+ * With no maker named the hand is the one at the grade's own gate.
  */
 export function whatACommissionComesTo(
     grade: TechniqueGrade,
-    aRing = false
+    aRing = false,
+    makerOrdinal: number = refiningOrdinalFor(grade)
 ): number | null {
     // A RING IS PRICED AS A FOLD, not as its materials. The design owner: a
     // heaven-grade ring is absurdly expensive, equivalent to a heaven-grade
@@ -311,7 +343,7 @@ export function whatACommissionComesTo(
     // FOLD and not about the ore, and `whatARingCosts` is where it is made.
     if (aRing) return whatARingCosts(grade);
     if (gradeTradeTier(grade) !== 'commodity') return null;
-    return Math.round(earningsPerYear(refiningOrdinalFor(grade)));
+    return Math.max(1, Math.round(whatTheMakersTimeComesTo(grade, makerOrdinal) + whatTheMaterialsComeTo(grade)));
 }
 
 /**
@@ -466,7 +498,7 @@ export function askingSomebodyToMakeYouSomething(
         input.maker.ordinal,
         input.materialsToHand
     );
-    const priceInStones = whatACommissionComesTo(input.ask.grade);
+    const priceInStones = whatACommissionComesTo(input.ask.grade, false, input.maker.ordinal);
 
     if (!hands.theyCan) {
         return {
@@ -551,7 +583,7 @@ export function askingSomebodyToMakeYouSomething(
  * A MET PRICE IS THE ARMOURY ELDER'S RUBBER STAMP - below the line things have
  * prices, and somebody offered what a thing is worth says yes unless they
  * positively do not want to. `A_REASON_TO_SAY_NO` is borrowed rather than
- * chosen. Measured before it: a stranger putting down the full 54 stones for a
+ * chosen. Measured before it, at the old flat price: a stranger putting down the full 54 stones for a
  * mortal slip was agreed with 19% of the time, which is a wall wearing an
  * economy. Under-paying is unchanged, and above the cash line a purse never
  * meets the price at all.
