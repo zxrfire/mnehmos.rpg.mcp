@@ -76,6 +76,7 @@
 import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { isBelowTheLid } from './layers.js';
+import { populationWeightOf } from './locations.js';
 import { settleNpcDeath } from './time.js';
 import { theWorldEnds, theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
@@ -293,9 +294,49 @@ export function seedTheWrongsStillOpen(
             n.locationId !== null && !container.has(n.locationId));
         const drawFrom = inATown.length > 0 ? inATown : candidates;
 
+        // ── WHERE IN THE PROVINCE, BY HOW MANY LIVE THERE ────────────────
+        //
+        // The draw was one row in however many the province holds, which was
+        // the same thing as where its people live only while every modelled
+        // row stood in a town. It stopped being so when a house's rank and
+        // file were seeded (`8166972a`): a compound's rows are the slice of the
+        // house a player could come to know, not a headcount, and they came to
+        // outnumber the towns. Killings followed the rows onto house ground.
+        //
+        // Measured, twelve worlds and the thirty births
+        // `a-fresh-world-has-somebody-to-tell.test.ts` sweeps: bereaved people
+        // standing where a life opens, 25 of 64 before authored figures could
+        // be named (`df07943a`), 22 of 103 after, 11 of 109 once houses were
+        // seeded; runs that opened beside one, 23 of 360, then 15, then 9.
+        //
+        // So the place is drawn first, by `populationWeightOf` - the one answer
+        // to where a province's people live, the same weight births and
+        // demography read - and the victim among the candidates standing there.
+        // A house's ground is still a place, weighted as its household, so an
+        // authored figure on it can still be the one killed.
+        const byPlace = new Map<string, NpcRecord[]>();
+        for (const n of drawFrom) {
+            const held = byPlace.get(n.locationId!);
+            if (held) held.push(n); else byPlace.set(n.locationId!, [n]);
+        }
+        const places = [...byPlace.keys()].sort()
+            .map(id => ({ id, weight: populationWeightOfId(state, id) }))
+            .filter(p => p.weight > 0);
+        const aPlace = (): readonly NpcRecord[] => {
+            if (places.length === 0) return drawFrom;
+            const total = places.reduce((sum, p) => sum + p.weight, 0);
+            let roll = rng.next() * total;
+            for (const p of places) {
+                if (roll < p.weight) return byPlace.get(p.id)!;
+                roll -= p.weight;
+            }
+            return byPlace.get(places[places.length - 1]!.id)!;
+        };
+
         let madeHere = 0;
         for (let draw = 0; draw < OPEN_KILLINGS_PER_PROVINCE; draw++) {
-            const victim = drawFrom[rng.int(0, drawFrom.length - 1)];
+            const there = aPlace();
+            const victim = there[rng.int(0, there.length - 1)];
             const victimAt = at.get(victim.id);
             if (victimAt === undefined) continue;
             if (state.npcs[victimAt].status !== 'alive') continue;
@@ -431,6 +472,12 @@ function whoDidIt(
     const inTheSameTown = pool.filter(n => n.locationId === victim.locationId);
     const from = inTheSameTown.length > 0 ? inTheSameTown : pool;
     return from[rng.int(0, from.length - 1)];
+}
+
+/** `populationWeightOf` for a location id, or nothing for a place the world does not hold. */
+function populationWeightOfId(state: WorldState, id: string): number {
+    const place = state.locations.find(l => l.id === id);
+    return place ? populationWeightOf(place) : 0;
 }
 
 /**

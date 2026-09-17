@@ -243,6 +243,24 @@ import type { Cultivator } from '../../src/schema/cultivation';
  * Four arrangements out of the sweep, chosen to cover both answers to whether
  * the killer can be named, on four different worlds.
  *
+ * RE-DRAWN, AND WHY. The pins these replaced stopped opening beside a killing at
+ * `8166972a`, which seeded houses with their rank and file: the seeded killings
+ * were drawn as one row among a province's rows, compounds came to hold most of
+ * them, and the killings moved onto house ground with them (the parent of that
+ * commit passes, it and every commit since fail on `probe-w4`). Drawing the
+ * killing's place by `populationWeightOf` put them back where lives open - see
+ * `a-fresh-world-has-somebody-to-tell.test.ts` - and re-dealt the draw again, so
+ * these four come out of a sweep on that tree: worlds `probe-w1` to `probe-w24`,
+ * births `probe-rN-k`, a pure pre-filter for a priced killing inside a childhood
+ * at the birth place, then played. 120 played, 46 lives with a killing among
+ * their faces, on 23 of the 24 worlds; named 24, unnamed 22. No life in the
+ * sweep had its own parent as the killer, so the category the old pins claimed
+ * is not claimed here.
+ *
+ * A PIN ON A DRAW IS A PIN ON THE DRAW. When the seeding moves these will be
+ * re-dealt again; the sweep above is the instrument, and what the assertions
+ * below pin is what the opening says about whatever killing it finds.
+ *
  * Pinned in both halves. An unpinned `worldEnabled` game mints a world from
  * `randomUUID()`, so a run seed alone pins a coincidence.
  *
@@ -252,13 +270,13 @@ import type { Cultivator } from '../../src/schema/cultivation';
  * tier is arranged instead, under `aHouseholdWithAKilledParent`.
  */
 const WHERE_IT_HAPPENS = [
-    // The killer is this life's own parent.
-    { worldSeed: 'probe-w3', seed: 'probe-r3-0' },
-    { worldSeed: 'probe-w4', seed: 'probe-r4-1' },
-    // A killer this life has never been given a name for.
-    { worldSeed: 'probe-w1', seed: 'probe-r1-37' },
-    // And one on a sect town rather than a village, where the reach is wider.
-    { worldSeed: 'probe-w16', seed: 'probe-r16-30' }
+    // A village, and a killer this life can put a name to.
+    { worldSeed: 'probe-w7', seed: 'probe-r7-6' },
+    // A village, and a killer nobody has named to them.
+    { worldSeed: 'probe-w6', seed: 'probe-r6-43' },
+    // And a sect town rather than a village, where the reach is wider - both answers.
+    { worldSeed: 'probe-w14', seed: 'probe-r14-2' },
+    { worldSeed: 'probe-w17', seed: 'probe-r17-4' }
 ];
 
 const A_BLOCK_OPENS = /^(The household|People (you|they) can already put a name to)/;

@@ -312,16 +312,39 @@ describe('the world can take one, and only somebody up to it can', () => {
         let emptied = 0;
 
         for (const seed of SWEPT) {
-            const { state } = lived(seed);
+            const { state, out } = lived(seed);
             const taken = neverShutIn(state).filter(l => l.tags.includes('emptied'));
             emptied += taken.length;
             const emptiedIds = new Set(taken.map(l => l.id));
+
+            // WHAT A HOUSE LIVING THERE SINCE HAS PUT UP IS NOT WHAT WAS LEFT.
+            // A splinter can take an emptied ruin for its seat, and a house with
+            // no ancestral hall hangs its plates at its seat (`issueTo`). Found
+            // on `golf` once plates were cut after world open: The Warm Gate was
+            // emptied on day 378030, a splinter seated itself there, and cut a
+            // plate on day 393256 that hangs on its own wall. So an object is
+            // exempt only when a live house is seated on that ground AND the
+            // object went up after the emptying - stock standing there when it
+            // was taken is still pinned.
+            const seatOf = new Map(state.factions
+                .filter(f => f.dissolvedOnDay === null)
+                .map(f => [f.id, f.seatLocationId]));
+            const emptiedOn = new Map<string, number>();
+            for (const event of out.events) {
+                if (event.kind !== 'ruin_opened' || event.fact.locationId == null) continue;
+                emptiedOn.set(event.fact.locationId, Math.min(
+                    emptiedOn.get(event.fact.locationId) ?? Infinity, event.fact.day));
+            }
 
             // NOTHING IS STILL LYING IN GROUND THE WORLD HAS DECLARED EMPTY. A
             // place tagged `emptied` with its stock still in it is the world
             // saying two things at once.
             for (const object of state.objects) {
                 if (object.locationId === null || !emptiedIds.has(object.locationId)) continue;
+                const putUpOn = Number(object.data?.hungOnDay ?? object.data?.issuedOnDay ?? Number.NaN);
+                const theHouseLivesHere = object.ownerId !== null
+                    && seatOf.get(object.ownerId) === object.locationId;
+                if (theHouseLivesHere && putUpOn > (emptiedOn.get(object.locationId) ?? Infinity)) continue;
                 expect(object.possessorId, `${seed}: ${object.name} is still lying there`)
                     .not.toBeNull();
             }

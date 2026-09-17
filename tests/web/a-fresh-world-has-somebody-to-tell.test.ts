@@ -101,7 +101,22 @@ const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
  *
  * So the claim is now tested in the shape it was always making - a FRESH WORLD
  * has somebody to tell, in most worlds - and the played tests take whichever
- * pair the same sweep finds first. `seedWorld` needs no database and the whole
+ * pair the same sweep finds first.
+ *
+ * AND THEN THE KILLINGS WALKED ONTO HOUSE GROUND, and the floor caught it. The
+ * same sweep, run on exported trees at each commit: 23 of 360, then 15 once a
+ * wrong could name an authored figure (`df07943a`), 11 once houses were seeded
+ * with their rank and file (`8166972a`), and 9 by the tree this went red on.
+ * Neither change was wrong. The seeder drew its victim as one row among the
+ * province's rows, which had meant where the province's people live only while
+ * every row stood in a town; once a compound's slice outnumbered the towns, the
+ * bereaved moved with it - standing where a life opens, 25 of 64, then 11 of 109,
+ * with 72 of the 109 on a house's ground.
+ *
+ * Fixed where the draw is, not by lowering this floor: `seedTheWrongsStillOpen`
+ * draws the place by `populationWeightOf` and the victim there. Measured after:
+ * 24 of 360, 11 of 12 worlds; 30 of the bereaved stand where a life opens and 31
+ * still on house ground; authored victims 19 of 69, down from 29, and not zero. `seedWorld` needs no database and the whole
  * sweep costs about four seconds, which is what makes reading affordable where
  * pinning was not.
  */
@@ -263,7 +278,8 @@ describe('a fresh world has somebody to tell', () => {
      *
      * Floors at roughly half the measured figures, so an ordinary drift in the
      * seeder does not fail this and a collapse does. Measured over 12 worlds and
-     * 30 births each: 10 of 12 worlds, 23 of 360 pairs.
+     * 30 births each: 10 of 12 worlds, 23 of 360 pairs; after the killings were
+     * drawn by where people live (see the header), 11 of 12 and 24 of 360.
      */
     it('is a property of fresh worlds rather than of one seed', async () => {
         const { pairs, hits, worldsWithOne } = await theSweep();
