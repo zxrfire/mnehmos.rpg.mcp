@@ -521,7 +521,10 @@ strike and a way out, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
 single use, don't bother making them tracked, they're just counted"*. A house
 keeps a stock of them, hands a few to whoever it sends or stations away, and
 burning one takes one off the count; nothing is left in the world. *"You just
-have a fungible stack."*
+have a fungible stack."* Each slip is **marked with a house** and answers to it, so a stack
+is fungible within one house's mark. **Anyone at Foundation or above can make
+them**, and **making them for the house is service that earns merit**, the same
+as any other task off the board.
 
 **And the house comes to them.** *"The house sends people to give you more
 stack, check up on you, every once in a while, if you are out in a posting."*
