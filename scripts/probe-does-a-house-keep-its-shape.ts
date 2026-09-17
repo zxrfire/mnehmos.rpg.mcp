@@ -207,7 +207,16 @@ function sample(state: WorldState, year: number): unknown {
 
 /** Sets of people being taught right now, closed (a master's) and open (a hall). */
 function theAttentionBeingGiven(state: WorldState): Record<string, number> {
-    const out = { closedSets: 0, closedListeners: 0, openSets: 0, openListeners: 0 };
+    const out = { closedSets: 0, closedListeners: 0, openSets: 0, openListeners: 0, writingACopy: 0, copiesOnShelves: 0, writtenOutRows: 0 };
+    for (const n of state.npcs) {
+        const thing = (n.activity as { thingId?: string | null } | null)?.thingId;
+        if (n.status === 'alive' && typeof thing === 'string') out.writingACopy++;
+    }
+    for (const o of state.objects) {
+        if (o.kind !== 'manual' || o.possessorId === null || o.tags.includes('ruined')) continue;
+        out.copiesOnShelves += copyCount(o);
+        if (o.tags.includes('written-out')) out.writtenOutRows++;
+    }
     for (const n of state.npcs) {
         const a = n.activity;
         if (n.status !== 'alive' || a === null || a.kind !== 'teaching' || a.withIds.length === 0) continue;

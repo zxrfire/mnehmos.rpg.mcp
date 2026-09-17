@@ -141,6 +141,11 @@ export interface NpcRelationship {
     factIds: string[];
     /** Set when the tie was inherited rather than earned. */
     inheritedFromId: string | null;
+    /**
+     * The last day one of these two gave the other attention. Written on both
+     * ends; see `who-is-given-attention-this-year.ts`. Absent is never.
+     */
+    lastAttentionOnDay?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -403,6 +408,12 @@ export interface NpcActivity {
      * which `demography.test.ts` catches as a settlement with nobody in it.
      */
     returnTo?: string | null;
+    /**
+     * The catalog id of the thing they are making, for work that makes one - a
+     * copy of an art being written out. The work lands when `untilDay` comes;
+     * this is what it lands as.
+     */
+    thingId?: string | null;
 }
 
 export interface NpcCultivation {

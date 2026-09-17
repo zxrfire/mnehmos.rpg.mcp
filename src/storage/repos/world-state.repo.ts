@@ -256,10 +256,10 @@ export class WorldStateRepository {
         this.insertRelationshipStmt = db.prepare(`
             INSERT OR REPLACE INTO world_relationships (
                 world_id, owner_id, target_id, target_name, kind, standing, note,
-                since_day, last_changed_day, fact_ids, inherited_from_id
+                since_day, last_changed_day, fact_ids, inherited_from_id, last_attention_on_day
             ) VALUES (
                 @worldId, @ownerId, @targetId, @targetName, @kind, @standing, @note,
-                @sinceDay, @lastChangedDay, @factIds, @inheritedFromId
+                @sinceDay, @lastChangedDay, @factIds, @inheritedFromId, @lastAttentionOnDay
             )
         `);
 
@@ -1267,7 +1267,8 @@ function relationshipParams(
         sinceDay: relationship.sinceDay,
         lastChangedDay: relationship.lastChangedDay,
         factIds: JSON.stringify(relationship.factIds),
-        inheritedFromId: relationship.inheritedFromId
+        inheritedFromId: relationship.inheritedFromId,
+        lastAttentionOnDay: relationship.lastAttentionOnDay ?? null
     };
 }
 
@@ -1593,7 +1594,10 @@ function rowToRelationship(row: RelationshipRow): NpcRelationship {
         sinceDay: row.since_day,
         lastChangedDay: row.last_changed_day,
         factIds: parseArray(row.fact_ids),
-        inheritedFromId: row.inherited_from_id
+        inheritedFromId: row.inherited_from_id,
+        // Undefined rather than null for never, which is how a tie that never
+        // had one is built, so a world round-trips equal to itself.
+        lastAttentionOnDay: row.last_attention_on_day ?? undefined
     };
 }
 
@@ -2146,6 +2150,7 @@ interface RelationshipRow {
     last_changed_day: number;
     fact_ids: string;
     inherited_from_id: string | null;
+    last_attention_on_day?: number | null;
 }
 
 interface MemoryRow {

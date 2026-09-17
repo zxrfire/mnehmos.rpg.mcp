@@ -83,6 +83,18 @@ Measured with `scripts/probe-does-a-house-keep-its-shape.ts`, seed `shape-a`,
 2,500 years, control against this: people above 29 went 31 to 42 and 31 to
 41, above 35 went 14 to 21 and 14 to 25. Neither a drain nor a pile-up.
 
+**A master's year is a desk or a lesson, not both.** A copy that outlasts the
+year it was started in is the master's activity (`thingId` names the art,
+`untilDay` is the day it lands), and a master at a desk is not free to teach.
+The years a copy takes are drawn once at the desk with the odds the yearly
+roll had. Before this, a master wrote and taught in the same year for free.
+Measured 1,000 years on `shape-a` and `shape-b` against a frozen control:
+people above 29, 35 and 41 within the noise at every century; library rows
+written out equal on one seed and 9% fewer on the other; masters' closed
+sets of attention roughly half. The attention a tie carried is stamped on
+both ends (`lastAttentionOnDay`) and read as recent within
+`ATTENTION_IS_RECENT_FOR_DAYS`.
+
 ## Where the code does not match this yet
 
 Recorded 2026-09-16. Delete a line when it is fixed.

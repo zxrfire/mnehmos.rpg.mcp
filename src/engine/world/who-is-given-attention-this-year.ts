@@ -24,7 +24,13 @@
 
 import { forStream } from '../cultivation/rng.js';
 import { isBelowTheLid } from './layers.js';
-import { isAwayOnSomething, isTheWorldsToMove, type NpcActivity, type NpcRecord } from './npc-state.js';
+import {
+    isAwayOnSomething,
+    isTheWorldsToMove,
+    type NpcActivity,
+    type NpcRecord,
+    type NpcRelationship
+} from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { creditMerit, whatAttentionIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 
@@ -43,12 +49,14 @@ const SETS_DOWN_FOR_A_LESSON: ReadonlySet<NpcActivity['kind']> = new Set([
     'comprehending', 'drawing_on_the_ground', 'teaching'
 ]);
 
-function freeToTeach(npc: NpcRecord): boolean {
+function freeToTeach(npc: NpcRecord, day: number): boolean {
     if (npc.status !== 'alive' || !isBelowTheLid(npc) || !isTheWorldsToMove(npc)) return false;
     if (npc.locationId === null) return false;
     const a = npc.activity;
     if (a === null) return true;
     if (isAwayOnSomething(a.kind)) return false;
+    // Somebody in the middle of making a thing is busy with it until it is made.
+    if (isMakingSomething(a, day)) return false;
     if (a.kind !== 'teaching' && a.withIds.length > 0) return false;
     return SETS_DOWN_FOR_A_LESSON.has(a.kind);
 }
@@ -58,10 +66,79 @@ function present(npc: NpcRecord): boolean {
         && !(npc.activity !== null && isAwayOnSomething(npc.activity.kind));
 }
 
+/**
+ * How long attention counts as recent: one turn of this pass.
+ *
+ * Attention is given in sets that run to the end of a year, and the next year's
+ * pass stamps the ties they ran along. So a tie stamped within the last year is
+ * one the last set passed along, and one stamped before that is a set ago - a
+ * master who gave you their time last year has, and one who gave it two years
+ * ago has since given it to somebody else.
+ */
+export const ATTENTION_IS_RECENT_FOR_DAYS = 365;
+
+/** Whether attention passed along this tie, either way, recently enough to count. */
+export function gaveAttentionRecently(
+    tie: Pick<NpcRelationship, 'lastAttentionOnDay'> | null | undefined,
+    day: number
+): boolean {
+    const last = tie?.lastAttentionOnDay;
+    return last !== null && last !== undefined && day - last <= ATTENTION_IS_RECENT_FOR_DAYS;
+}
+
+/**
+ * The same person with attention recorded as passing between them and somebody
+ * they hold a tie to, on this day. A person they hold no tie to gets nothing
+ * written: a hall of strangers is not somebody who gave you time.
+ */
+export function withAttentionRecorded(npc: NpcRecord, otherId: string, day: number): NpcRecord {
+    const at = npc.relationships.findIndex(r => r.targetId === otherId);
+    if (at < 0) return npc;
+    const prev = npc.relationships[at]!;
+    if ((prev.lastAttentionOnDay ?? -Infinity) >= day) return npc;
+    const relationships = npc.relationships.slice();
+    relationships[at] = { ...prev, lastAttentionOnDay: day };
+    return { ...npc, relationships };
+}
+
+/** Whether this activity is work that makes a thing, still under way on this day. */
+export function isMakingSomething(activity: NpcActivity | null, day: number): boolean {
+    return activity !== null && typeof activity.thingId === 'string'
+        && activity.untilDay !== null && activity.untilDay !== undefined && activity.untilDay > day;
+}
+
+/**
+ * Stamp the ties last year's attention ran along, both ends, with the day it
+ * ended. A set that is still standing when its term has run is a set that was
+ * given. One whose activity something else replaced before then is not
+ * stamped: nothing records how much of it happened, and claiming all of it
+ * would be the engine inventing time somebody spent.
+ */
+function recordTheAttentionThatEnded(
+    state: WorldState,
+    byId: ReadonlyMap<string, number>,
+    day: number
+): void {
+    for (let i = 0; i < state.npcs.length; i++) {
+        const teacher = state.npcs[i]!;
+        const a = teacher.activity;
+        if (teacher.status !== 'alive' || a === null || a.kind !== 'teaching') continue;
+        if (a.untilDay === null || a.untilDay === undefined || a.untilDay > day) continue;
+        const ended = a.untilDay;
+        for (const id of a.withIds) {
+            const j = byId.get(id);
+            if (j === undefined) continue;
+            state.npcs[i] = withAttentionRecorded(state.npcs[i]!, id, ended);
+            state.npcs[j] = withAttentionRecorded(state.npcs[j]!, teacher.id, ended);
+        }
+    }
+}
+
 /** Write this year's attention onto the teachers. Returns how many sets were given it. */
 export function giveThisYearsAttention(state: WorldState, year: number, day: number): number {
     const untilDay = year * 365 + 364;
     const byId = new Map(state.npcs.map((n, i) => [n.id, i] as const));
+    recordTheAttentionThatEnded(state, byId, day);
     const teaching = new Set<string>();
     let sets = 0;
 
@@ -99,7 +176,7 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         const at = byId.get(masterId);
         if (at === undefined) continue;
         const master = state.npcs[at]!;
-        if (!freeToTeach(master)) continue;
+        if (!freeToTeach(master, day)) continue;
         const here = disciples.filter(id => {
             const d = state.npcs[byId.get(id)!]!;
             return d.locationId === master.locationId
@@ -118,7 +195,7 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         // disciple, an outer one if nobody else is.
         let lecturerAt = -1;
         for (const n of inside) {
-            if (n.factionId !== house.id || teaching.has(n.id) || !freeToTeach(n)) continue;
+            if (n.factionId !== house.id || teaching.has(n.id) || !freeToTeach(n, day)) continue;
             const at = byId.get(n.id)!;
             if (lecturerAt < 0 || n.cultivation.realmOrdinal > state.npcs[lecturerAt]!.cultivation.realmOrdinal) {
                 lecturerAt = at;

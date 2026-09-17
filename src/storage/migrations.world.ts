@@ -993,6 +993,13 @@ function addWorldColumns(db: Database.Database): void {
         }
     }
 
+    // The last day attention passed along a tie, either way. NULL is never,
+    // which is the honest reading of every tie written before it was kept.
+    if (!columnsOf('world_relationships').includes('last_attention_on_day')) {
+        console.error('[Migration] Adding last_attention_on_day column to world_relationships table');
+        db.exec('ALTER TABLE world_relationships ADD COLUMN last_attention_on_day INTEGER;');
+    }
+
     // HOW MUCH ROOM A THING TAKES AND WHAT IT WEIGHS. Litres and kilograms on
     // every object, because what somebody can carry is limited by both and they
     // bind differently - see `what-a-body-can-carry-and-what-a-ring-holds.ts`.

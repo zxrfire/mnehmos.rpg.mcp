@@ -23,6 +23,7 @@ import {
     whatIsLeftIn
 } from './what-a-manual-has-left-in-it.js';
 import { isTeachingSomebody } from './an-npc-striking-at-the-next-wall.js';
+import { isAwayOnSomething } from './npc-state.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 
@@ -1139,6 +1140,11 @@ export interface WrittenCopy {
     copies: number;
 }
 
+/** Writing out a copy for the house is the work of a master's rung. */
+const WRITING_OUT_A_COPY = 'the_work_of_their_rank' as const;
+
+const DAYS_IN_A_YEAR = 365;
+
 /**
  * Every copy written out this year, and the library rows they land in.
  */
@@ -1162,8 +1168,11 @@ export function applyManualCopying(
     // ── Who is in each house, so "how many people are waiting for this" is a
     // lookup rather than a scan. ──
     const members = new Map<string, NpcRecord[]>();
-    for (const npc of state.npcs) {
+    const npcAt = new Map<string, number>();
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i]!;
         if (npc.status !== 'alive' || !npc.factionId) continue;
+        npcAt.set(npc.id, i);
         const list = members.get(npc.factionId);
         if (list) list.push(npc); else members.set(npc.factionId, [npc]);
     }
@@ -1206,8 +1215,30 @@ export function applyManualCopying(
             // decoration - the years were charged to nobody and nothing was
             // given up to spend them.
             let sitting: { techniqueId: string; at: number | undefined; have: number } | null = null;
+            const mi = npcAt.get(master.id)!;
+            const doing = master.activity;
+
+            // ── A COPY ALREADY ON THE DESK ───────────────────────────────
+            //
+            // Work that is under way is on their activity, naming the art and
+            // the day it will be done, so they can be seen and asked about as
+            // busy with it. Until that day they are at it; on it, the copy lands
+            // as the book it was, whatever the shelf now wants.
+            if (doing !== null && doing.kind === WRITING_OUT_A_COPY
+                && typeof doing.thingId === 'string' && doing.untilDay !== null && doing.untilDay !== undefined) {
+                if (doing.untilDay > day) continue;
+                state.npcs[mi] = { ...state.npcs[mi]!, activity: null };
+                if (!canReproduce(master, doing.thingId)) continue;
+                const at = holdingAt.get(`${faction.id}|${doing.thingId}`);
+                sitting = { techniqueId: doing.thingId, at, have: at === undefined ? 0 : copyCount(state.objects[at]) };
+            }
+
+            // Somebody away is not at a desk this year. Nothing is started for
+            // them. Anything else they are at stops for the desk, as it always
+            // did: the yearly roll this replaced was taken whatever they were at.
+            const free = doing === null || !isAwayOnSomething(doing.kind);
             let worst = -1;
-            for (const techniqueId of master.cultivation.techniqueIds) {
+            for (const techniqueId of sitting === null && free ? master.cultivation.techniqueIds : []) {
                 if (!canReproduce(master, techniqueId)) continue;
                 const at = holdingAt.get(`${faction.id}|${techniqueId}`);
                 const have = at === undefined ? 0 : copyCount(state.objects[at]);
@@ -1232,18 +1263,44 @@ export function applyManualCopying(
                 }
             }
             if (sitting === null) continue;
+            const finishing = doing !== null && doing.kind === WRITING_OUT_A_COPY
+                && doing.thingId === sitting.techniqueId;
 
-            // The one book they are at this year.
+            // The one book they are at.
             {
                 const { techniqueId, at, have } = sitting;
                 const key = `${faction.id}|${techniqueId}`;
                 const holding = at === undefined ? null : state.objects[at];
 
-                const span = yearsToWriteOutACopy(techniqueId);
-                if (span === null) continue;
-                const rng = forStream(state.seed, 'write-out-a-copy', master.id, techniqueId, year);
-                const years = have === 0 ? span : span * A_SPARE_IS_PUT_OFF_THIS_MUCH;
-                if (!rng.chance(1 / years)) continue;
+                if (!finishing) {
+                    const span = yearsToWriteOutACopy(techniqueId);
+                    if (span === null) continue;
+                    // HOW MANY YEARS IT TAKES, DRAWN ONCE AT THE DESK. The same
+                    // odds the yearly roll always had - one in `years` of being
+                    // done in any year - so a copy takes as long as it did, and
+                    // the difference is that the day it will be done is a fact
+                    // about the person from the day they sit down.
+                    const rng = forStream(state.seed, 'write-out-a-copy', master.id, techniqueId, year);
+                    const years = have === 0 ? span : span * A_SPARE_IS_PUT_OFF_THIS_MUCH;
+                    let yearsAtIt = 1;
+                    while (!rng.chance(1 / years) && yearsAtIt < 10_000) yearsAtIt++;
+                    if (yearsAtIt > 1) {
+                        const name = (getTechnique(techniqueId) as { name?: string } | undefined)?.name ?? techniqueId;
+                        state.npcs[mi] = {
+                            ...state.npcs[mi]!,
+                            activity: {
+                                kind: WRITING_OUT_A_COPY,
+                                note: `writing out a copy of ${name} for the ${faction.name}'s shelf`,
+                                withIds: [],
+                                sinceDay: day,
+                                untilDay: day + (yearsAtIt - 1) * DAYS_IN_A_YEAR,
+                                thingId: techniqueId
+                            },
+                            updatedOnDay: day
+                        };
+                        continue;
+                    }
+                }
 
                 if (holding === null || at === undefined) {
                     const t = getTechnique(techniqueId) as { name: string; cap?: number | null };
