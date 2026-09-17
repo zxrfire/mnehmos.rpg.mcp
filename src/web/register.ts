@@ -47,6 +47,7 @@ import {
     buildItemsRegister,
     renderItemsSection,
     renderTrackedCraftSection,
+    renderCommunicationTalismanSection,
     type RegisterItems
 } from './register-items.js';
 import {
@@ -8031,6 +8032,8 @@ ${immortalObjectHolders(reg, blocks)}
 ${renderRepairMedicineHolders()}
 
 ${renderTrackedCraftSection()}
+
+${renderCommunicationTalismanSection()}
 
 <!-- WHY THIS IS ON THE LEDGER AND NOT ON THE ARTS TAB, WHERE IT WAS.
      Every row here names a house and says what that house is holding, how it

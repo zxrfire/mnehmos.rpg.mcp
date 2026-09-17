@@ -914,7 +914,23 @@ export function resolveObject(
     const wanted = query.trim();
     if (wanted.length < 3 || !scope?.objects || scope.objects.length === 0) return null;
 
-    const named = best(wanted, scope.objects, object => object.name);
+    // A PERSON'S NAME IS ABOUT THE PERSON, NOT ABOUT A THING NAMED FOR THEM.
+    // Every house hangs a life lamp for each of its own, called "the life lamp
+    // of <name>", and a name is contained in that - so "I look at Cao Jingyan",
+    // typed by somebody who has known Cao Jingyan since childhood and is one
+    // town away from them, resolved to their lamp in their house's Life Lamp
+    // Hall and read that out instead of saying they were not here. Where the words are the whole of a name this holder
+    // has for a person, only a thing that carries exactly those words is it.
+    const aPersonTheyHold = scope.gate
+        .awareness(scope.holderId, 'cultivator')
+        .some(row => matchScore(wanted, row.name) === 100);
+    const named = best(
+        wanted,
+        aPersonTheyHold
+            ? scope.objects.filter(object => matchScore(wanted, object.name) === 100)
+            : scope.objects,
+        object => object.name
+    );
     // By the person holding it. Their best rated thing, which is the one a
     // sentence about "the sword in his hand" is about - and the same ordering
     // `bestObjectHeldBy` arms somebody with, because there is one answer to

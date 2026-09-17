@@ -12,6 +12,13 @@ import { TECHNIQUES } from '../data/cultivation/techniques.js';
 import { LOST_MATERIALS } from '../data/cultivation/lost-ages.js';
 import { SITES } from '../data/cultivation/inheritance-trials.js';
 import {
+    CUT_IN_A_SITTING,
+    DAYS_A_SITTING_TAKES,
+    THE_COMMUNICATION_TALISMAN,
+    WHO_CAN_CUT_A_COMMUNICATION_TALISMAN
+} from '../data/cultivation/communication-talismans.js';
+import { howMuchAGradeIsWorthTracking } from '../engine/world/possessions.js';
+import {
     STRUCTURAL_REPAIR_MEDICINES,
     STRUCTURAL_REPAIR_HOLDINGS
 } from '../data/cultivation/structural-repair-medicine.js';
@@ -994,6 +1001,32 @@ export function renderTrackedCraftSection(): string {
   ${unowned === 0
         ? ''
         : `<p class="note"><strong>${unowned} of them has no owner and no holder.</strong> That is a hole in the chain rather than a kind of ownership: somebody built it and somebody owned it, and the record carries neither. The four layers - owner, possessor, location, provenance - are kept apart so that a gap in one of them can be stated instead of guessed at.</p>`}
+</section>`;
+}
+
+/**
+ * The communication talisman: the slip a house's people send word home on.
+ *
+ * One catalog row, and a reader should see it, because it is how a house hears
+ * from anybody it has out in the world. What is shown is the row and the three
+ * facts about it, all read off `communication-talismans.ts`: how far word goes,
+ * who can cut one, how many a sitting cuts, and whether it is kept counted or
+ * tracked, which is `howMuchAGradeIsWorthTracking`'s answer and not a word typed
+ * here. Exported so the sheet adds it with one call.
+ */
+export function renderCommunicationTalismanSection(): string {
+    const t = THE_COMMUNICATION_TALISMAN;
+    const kept = howMuchAGradeIsWorthTracking(t.grade) === 'mundane' ? 'counted, a stack with a number on it' : 'tracked, a row with a history';
+    return `
+<section>
+  <div class="sh"><h2>The communication talisman</h2><span class="r">${esc(t.grade)} grade &middot; one catalog row</span></div>
+  <p class="note"><strong>${esc(t.what)}</strong> Every one carries the mark of a house, and word goes only to that house.</p>
+  <ul class="spendlist">
+    <li>How far word goes: <strong>${t.reachWalkingDays}</strong> walking days, which is the near provinces.</li>
+    <li>Who can cut one: ${rung(WHO_CAN_CUT_A_COMMUNICATION_TALISMAN)} and above.</li>
+    <li>A sitting: <strong>${CUT_IN_A_SITTING}</strong> cut in ${DAYS_A_SITTING_TAKES} day${DAYS_A_SITTING_TAKES === 1 ? '' : 's'}, from nothing a recipe names.</li>
+    <li>How it is kept: ${esc(kept)}.</li>
+  </ul>
 </section>`;
 }
 

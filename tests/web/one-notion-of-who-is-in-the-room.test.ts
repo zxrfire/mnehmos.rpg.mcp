@@ -31,8 +31,18 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { makeGame } from './harness';
+import { makeGameInWorld } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
+
+/**
+ * THE WORLD IS PINNED. `makeGame` minted a new world every run, so who was
+ * standing where the run opened was a draw: sampled over twelve unpinned
+ * worlds, the village a run opens in held between one and five people. A world
+ * that put nobody there answers "nobody in front of you", which is correct and
+ * a red here that has nothing to do with the resolver. The full suite at
+ * fffe3cf6 drew one.
+ */
+const PINNED = 'world-probe-c';
 
 /** The five that were measured, plus the two that share the resolver. */
 const POINTED_AT_SOMEBODY = [
@@ -61,7 +71,7 @@ describe('one notion of who is in the room', () => {
         // than a resolver failure. That is the game working and it would read
         // here as the feature broken.
         for (const line of POINTED_AT_SOMEBODY) {
-            const { game } = makeGame({ seed: 'probe-c', worldEnabled: true });
+            const { game } = await makeGameInWorld({ seed: 'probe-c', worldSeed: PINNED });
             await game.newRun('Probe');
             const said = await game.act(line) as { narration?: string };
             const text = said.narration ?? '';
@@ -75,7 +85,7 @@ describe('one notion of who is in the room', () => {
         // and its last element is the deepest person present, so answering an
         // indefinite pointer with it hands a Qi Condensation disciple the
         // strongest body in the square to pick a fight with.
-        const { db, game } = makeGame({ seed: 'probe-c', worldEnabled: true });
+        const { db, game } = await makeGameInWorld({ seed: 'probe-c', worldSeed: PINNED });
         const { cultivator } = await game.newRun('Probe');
         const known = new KnowledgeGate(db)
             .awareness(cultivator.id)
@@ -91,7 +101,7 @@ describe('one notion of who is in the room', () => {
         // The gate this must never weaken. Widening `POINTING` is a statement
         // about DESCRIPTIONS; an invented name is still an invented name, and
         // it must not quietly become whoever is standing nearest.
-        const { game } = makeGame({ seed: 'probe-c', worldEnabled: true });
+        const { game } = await makeGameInWorld({ seed: 'probe-c', worldSeed: PINNED });
         await game.newRun('Probe');
         const said = await game.act('I spar with Nobody Of That Name') as { narration?: string };
         expect((said.narration ?? '').toLowerCase()).toContain(FOUND_NOBODY);

@@ -57,6 +57,11 @@ import type { LocationRecord } from '../../src/engine/world/locations';
 import { rosterFor } from '../../src/web/encounters';
 import { whoCouldRaiseYou } from '../../src/engine/social-leverage/a-rung-nobody-earned';
 import { createFavor } from '../../src/engine/social/grudges';
+import {
+    whereCompoundsAre,
+    whereTheyAreStanding
+} from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import type { NpcRecord } from '../../src/engine/world/npc-state';
 import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { baseWeightOf } from '../../src/web/what-a-request-asks-and-of-whom';
 import { requestPutToSomebody } from '../../src/web/what-a-request-asks-and-of-whom';
@@ -70,7 +75,11 @@ import { parseIntent } from '../../src/web/actions';
  * stands. Nothing is hard-coded, so a reshuffle of the catalog moves this test
  * with it instead of breaking it.
  */
-async function inFrontOfTheHouse(seed: string) {
+async function inFrontOfTheHouse(
+    seed: string,
+    /** Whose room the player is put in: the one who holds the call, or somebody else of the house. */
+    facing: 'the holder' | 'somebody else' = 'the holder'
+) {
     const { db, game } = await makeGameInWorld({ seed, worldSeed: `${seed}-world` });
     const { cultivator } = await game.newRun('Probe');
     db.prepare('UPDATE cultivators SET spirit_stones = 8000 WHERE id = ?').run(cultivator.id);
@@ -91,7 +100,9 @@ async function inFrontOfTheHouse(seed: string) {
     expect(held, `seed ${seed} left them on nobody's roll`).toBeTruthy();
 
     const world = await svc.loadWorld() as {
-        npcs?: Array<{ id: string; locationId?: string }>;
+        npcs?: NpcRecord[];
+        factions?: Array<{ id: string; ranks: string[] }>;
+        currentDay?: number;
         // The rows the engine actually holds. Written out narrower here once,
         // which made `portfoliosIn` look as though it took a pair of strings.
         locations?: readonly LocationRecord[];
@@ -119,8 +130,23 @@ async function inFrontOfTheHouse(seed: string) {
 
     // Standing where they stand. See the header: travel cannot reach a house's
     // own compound on day 0, so this is arranged.
-    const row = world.npcs?.find(n => n.id.endsWith(String(call.holderId)));
-    const place = world.locations?.find(l => l.id === row?.locationId);
+    //
+    // DOWN TO THE ROOM. A house's people are read into the room what they are
+    // at is done in (`where-inside-a-house-somebody-is-standing.ts`), and a
+    // room holder at the work of their rank is behind their office. This put
+    // the player at the row's stored location, the seat, where neither the
+    // holder nor anybody else of the house was standing any longer.
+    const faced = facing === 'the holder' ? call.holderId : somebodyElse?.id;
+    const row = world.npcs?.find(n => n.id.endsWith(String(faced)));
+    const standingAt = row && world.npcs
+        ? whereTheyAreStanding(
+            world as never,
+            whereCompoundsAre({ locations: [...(world.locations ?? [])] }),
+            row,
+            new Set(world.npcs.map(n => n.id))
+        )
+        : null;
+    const place = world.locations?.find(l => l.id === standingAt);
     expect(place, `seed ${seed}: the person holding the room stands nowhere`).toBeTruthy();
     db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
         .run(place!.name, cultivator.id);
@@ -163,7 +189,7 @@ describe('a rung is somebody\'s to give', () => {
 
     it('will not be given by somebody who does not hold the room', async () => {
         const { db, game, cultivator, held, somebodyElse, holder } =
-            await inFrontOfTheHouse(`${SEED}-porter`);
+            await inFrontOfTheHouse(`${SEED}-porter`, 'somebody else');
         const before = Number((db.prepare('SELECT spirit_stones FROM cultivators WHERE id = ?')
             .get(cultivator.id) as { spirit_stones: number }).spirit_stones);
 
