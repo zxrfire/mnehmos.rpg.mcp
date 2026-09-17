@@ -19,7 +19,9 @@ import {
     type WhatYouAskedThemToMake,
     whatTheMakersTimeComesTo,
     whatTheMaterialsComeTo,
-    daysAtTheWork
+    daysAtTheWork,
+    whatAYearOfAMakersTimeIsWorth,
+    WHERE_WAGES_ON_OFFER_STOP_CLIMBING
 } from '../../../src/engine/social-leverage/commissioning-a-craft';
 import { whatTheBodyWants, type OnTheRoll } from '../../../src/engine/social-leverage/what-a-body-wants-is-what-its-deciders-want';
 import { createFavor, createGrudge, createObligation, type ObligationRecord } from '../../../src/engine/social/grudges';
@@ -350,22 +352,61 @@ describe('a commission costs whatever the maker asks', () => {
                 whatTheMakersTimeComesTo('earth', ordinal) + whatTheMaterialsComeTo('earth')
             )));
         }
-        // A hand far past the grade spends fewer days on it, and asks less for
-        // the whole of it even at a better rate.
+        // A hand far past the grade spends fewer days on it, and each of its
+        // days is worth far more than the days it saves.
         expect(daysAtTheWork('earth', gate + 15)).toBeLessThan(daysAtTheWork('earth', gate));
-        expect(whatTheMakersTimeComesTo('earth', gate + 15)).toBeLessThan(whatTheMakersTimeComesTo('earth', gate));
+        expect(whatTheMakersTimeComesTo('earth', gate + 15)).toBeGreaterThan(whatTheMakersTimeComesTo('earth', gate));
         // A grade nothing is worked out of puts no materials in.
         expect(whatTheMaterialsComeTo('mortal')).toBe(0);
         expect(whatTheMaterialsComeTo('earth')).toBeGreaterThan(0);
     });
 });
 
-describe('above the cash line the medium is a thing, not a purse', () => {
+/**
+ * THE PRICE RISES WITH THE MAKER'S REALM AT A FIXED GRADE. The design owner:
+ * *"how can stronger makers ask the same per day? Heaven grade should be
+ * expensive because their time is vastly more expensive."* The rate a maker
+ * asks keeps climbing past where the wages on offer stop.
+ */
+describe('a stronger maker asks more for the same thing', () => {
+    it('rises with the maker\'s realm, for every grade a hand below the Lid can make', () => {
+        for (const grade of ['mortal', 'earth', 'heaven'] as const) {
+            const gate = refiningOrdinalFor(grade);
+            // Never less for a higher hand, from the gate up. A mortal slip is a
+            // day's work, and below a stone a day it rounds to the one-stone
+            // floor, so it is strictly dearer only once a day is worth more.
+            let before = 0;
+            for (let o = gate; o <= MAX_ORDINAL; o++) {
+                const price = whatACommissionComesTo(grade, false, o) as number;
+                expect(price, `${grade} at ${o}`).toBeGreaterThanOrEqual(before);
+                before = price;
+            }
+            // And more, six rungs at a time, past where the wages on offer stop.
+            const from = Math.max(gate, Math.ceil(WHERE_WAGES_ON_OFFER_STOP_CLIMBING));
+            const hands = [from, from + 6, from + 12].filter(o => o <= MAX_ORDINAL);
+            const prices = hands.map(o => whatACommissionComesTo(grade, false, o) as number);
+            for (let i = 1; i < prices.length; i++) {
+                expect(prices[i], `${grade} at ${hands[i]} against ${hands[i - 1]}`).toBeGreaterThan(prices[i - 1]!);
+            }
+        }
+    });
+
+    it('keeps a maker\'s year climbing past where the wages on offer stop', () => {
+        const flat = Math.ceil(WHERE_WAGES_ON_OFFER_STOP_CLIMBING);
+        expect(whatAYearOfAMakersTimeIsWorth(flat + 10)).toBeGreaterThan(whatAYearOfAMakersTimeIsWorth(flat) * 10);
+    });
+});
+
+describe('above the cash line a maker still has a price, and a singular thing still reaches', () => {
     const above: TechniqueGrade = 'heaven';
     const ordinal = refiningOrdinalFor(above);
 
-    it('quotes no figure at all for it', () => {
-        expect(whatACommissionComesTo(above)).toBeNull();
+    it('quotes a figure for heaven grade, and none for what nothing below the Lid makes', () => {
+        const heaven = whatACommissionComesTo(above);
+        expect(heaven).not.toBeNull();
+        expect(heaven!).toBeGreaterThan(whatACommissionComesTo('earth', false, ordinal)!);
+        expect(whatACommissionComesTo('immortal')).toBeNull();
+        expect(whatACommissionComesTo('chaos')).toBeNull();
     });
 
     it('and something singular that reaches high enough moves them where money did not', () => {
@@ -384,8 +425,11 @@ describe('above the cash line the medium is a thing, not a purse', () => {
             onTheTable: [{ what: 'a village sword', carriesThemTo: 0, singular: true }]
         });
         expect(reaching).toBeGreaterThan(short);
+        // A purse well short of the maker's figure moves them less than the
+        // singular thing that reaches.
+        const price = whatACommissionComesTo(above, false, ordinal) as number;
         expect(reaching).toBeGreaterThan(
-            howOften({ grade: above, ordinal, nearness: 'nearby', stones: 1_000_000 })
+            howOften({ grade: above, ordinal, nearness: 'nearby', stones: Math.round(price / 10) })
         );
     });
 
@@ -398,11 +442,12 @@ describe('above the cash line the medium is a thing, not a purse', () => {
         })).toBe(howOften({ grade: above, ordinal, nearness: 'nearby' }));
     });
 
-    it('and the refusal says what would reach, rather than quoting a figure', () => {
-        const said = askOnce(1, { grade: above, ordinal, nearness: 'distant', stones: 10_000 });
+    it('and the refusal names the maker\'s own figure', () => {
+        const price = whatACommissionComesTo(above, false, ordinal) as number;
+        const said = askOnce(1, { grade: above, ordinal, nearness: 'distant', stones: Math.round(price / 10) });
         expect(said.agreed).toBe(false);
-        expect(said.line).not.toMatch(/spirit stones/i);
-        expect(said.line).toMatch(/singular|carries/i);
+        expect(said.line).toContain(String(price));
+        expect(said.line).toMatch(/spirit stones/i);
     });
 });
 

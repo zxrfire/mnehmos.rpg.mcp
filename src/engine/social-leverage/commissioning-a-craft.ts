@@ -26,9 +26,9 @@
  * the work, at this maker's own rate, and the materials they put in - see
  * `whatACommissionComesTo`. It used to be a property of the thing alone, a year
  * of the income of the rung that could only just make one: 54 spirit stones for
- * a mortal slip and 375 for earth-grade work, whoever made it. Stones still
- * move only the grades `gradeTradeTier` prices, and heaven and above are still
- * priced by `whatItWouldTake` and not by a figure.
+ * a mortal slip and 375 for earth-grade work, whoever made it, and heaven grade
+ * had no figure at all. Every grade a hand below the Lid can make now has one;
+ * only immortal and chaos, which nothing down here makes, are without.
  */
 
 import { pillBandOrdinal } from '../cultivation/breakthrough.js';
@@ -37,11 +37,16 @@ import {
     whatARingCosts,
     whyTheFoldWillNotHold
 } from '../world/what-a-body-can-carry-and-what-a-ring-holds.js';
-import { gradeTradeTier } from '../cultivation/buying-and-bartering-pills.js';
-import { earningsPerYear } from '../cultivation/origin.js';
+import {
+    EARNINGS_PER_ORDINAL,
+    EARNINGS_RANK_CAP,
+    PRICE_GROWTH_PER_ORDINAL,
+    earningsPerYear
+} from '../cultivation/origin.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 import {
     canRefineGrade,
+    madeBelowTheLid,
     highestGradeRefinableAt,
     refiningOrdinalFor,
     whyTheCauldronRefuses
@@ -258,10 +263,19 @@ export const YEARS_TO_MAKE_A_HEAVEN_THING = 9;
  *
  * `howMuchOfTheirReachItAsksFor` is one at the gate and nothing at the top of
  * the ladder, and nothing is not a span: a master still sits down to it. A
- * tenth, so the same thing is ten times quicker at the top than at the gate and
- * never free.
+ * quarter, so the same thing is four times quicker at the top than at the gate
+ * and never free.
+ *
+ * WHY A QUARTER AND NOT LESS. A maker's day is worth `PRICE_GROWTH_PER_ORDINAL`
+ * (1.35) more for every rung past where the wages on offer stop, so a rung may
+ * shave no more than about a quarter of the days (1 / 1.35) before the higher
+ * hand asks less for the same thing - which the design owner ruled out. The
+ * reach falls in a straight line, so the share of the days a rung shaves grows
+ * as it nears nothing: it was a tenth, and a heaven-grade commission came out
+ * cheaper from a hand at 44 than from a hand at 43. Below a quarter the steepest
+ * rung shaves about fifteen percent.
  */
-export const A_HAND_FAR_PAST_IT_STILL_SPENDS = 0.1;
+export const A_HAND_FAR_PAST_IT_STILL_SPENDS = 0.25;
 
 /** Where a grade sits on the making curve. Nothing above heaven is made below the Lid. */
 const MADE_GRADE_STEP: Readonly<Record<TechniqueGrade, number>> = {
@@ -298,15 +312,48 @@ export function daysAtTheWork(grade: TechniqueGrade, makerOrdinal: number): numb
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
+ * The rung at which `earningsPerYear` stops climbing: where its rank multiplier
+ * reaches `EARNINGS_RANK_CAP`. Read off the curve's own constants, so it moves
+ * if they do.
+ */
+export const WHERE_WAGES_ON_OFFER_STOP_CLIMBING = (EARNINGS_RANK_CAP - 1) / EARNINGS_PER_ORDINAL;
+
+/**
+ * What a year of a maker's own time is worth, at their realm, in spirit stones.
+ *
+ * THE DESIGN OWNER: *"how can stronger makers ask the same per day? Heaven
+ * grade should be expensive because their time is vastly more expensive."*
+ * `earningsPerYear` is the world's answer to what the work on offer pays a
+ * rank, and it flattens at {@link WHERE_WAGES_ON_OFFER_STOP_CLIMBING}, because
+ * nobody hires a Nascent Soul to guard a caravan. That is a fact about wages,
+ * not about what a master's time is worth, so it is read up to where it
+ * flattens and no further.
+ *
+ * PAST IT, EVERY RUNG IS WORTH `PRICE_GROWTH_PER_ORDINAL` MORE. Nothing in the
+ * engine states a master's rate outright; what it does state is how steeply the
+ * price of everything climbs with the rank it is for, which is the figure a
+ * breakthrough pill and a torn meridian are priced on, and which
+ * `origin-odds.ts` already ties a cultivator's own earning power to. So a hand
+ * past the flat part asks what the flat part asked, times that growth for every
+ * rung above it: continuous where the two meet, and never flat.
+ */
+export function whatAYearOfAMakersTimeIsWorth(makerOrdinal: number): number {
+    const ordinal = Math.max(0, makerOrdinal);
+    if (ordinal <= WHERE_WAGES_ON_OFFER_STOP_CLIMBING) return earningsPerYear(ordinal);
+    return earningsPerYear(WHERE_WAGES_ON_OFFER_STOP_CLIMBING)
+        * Math.pow(PRICE_GROWTH_PER_ORDINAL, ordinal - WHERE_WAGES_ON_OFFER_STOP_CLIMBING);
+}
+
+/**
  * What the maker's days at the work are worth, in spirit stones.
  *
  * THEIR OWN RATE, at their own realm, for as long as the work takes their
- * hand. The rate is `earningsPerYear`, the one answer to what a year of work
- * pays somebody at a rank, spread over the days of a year; the days are
- * `daysAtTheWork`. A higher hand asks more for a day and spends fewer of them.
+ * hand: {@link whatAYearOfAMakersTimeIsWorth} spread over the days of a year,
+ * times `daysAtTheWork`. A higher hand spends fewer days on the thing, and each
+ * of their days is worth far more than the days they save.
  */
 export function whatTheMakersTimeComesTo(grade: TechniqueGrade, makerOrdinal: number): number {
-    return (earningsPerYear(makerOrdinal) / DAYS_PER_YEAR) * daysAtTheWork(grade, makerOrdinal);
+    return (whatAYearOfAMakersTimeIsWorth(makerOrdinal) / DAYS_PER_YEAR) * daysAtTheWork(grade, makerOrdinal);
 }
 
 /**
@@ -322,8 +369,13 @@ export function whatTheMaterialsComeTo(grade: TechniqueGrade): number {
 
 /**
  * What a commission of this grade comes to in spirit stones, or null where
- * stones are not the medium. NULL IS THE WHOLE POINT and a caller must not fall
- * back to another figure: above the line the price is `whatItWouldTake`'s.
+ * nobody below the Lid could make it: immortal and chaos grades are sent down
+ * rather than made (`madeBelowTheLid`), so there is no maker to ask a price of.
+ *
+ * EVERY GRADE A HAND HERE CAN MAKE HAS A PRICE. The design owner, on heaven
+ * grade: *"their time is vastly more expensive."* It used to stop at the grades
+ * `gradeTradeTier` calls commodities and hand heaven-grade work to
+ * `whatItWouldTake` with no figure at all.
  *
  * WHATEVER THE MAKER ASKS. The design owner: *"Whatever the maker asks. Their
  * time is presumably valuable, depends on realm."* So it is this maker's time at
@@ -342,7 +394,7 @@ export function whatACommissionComesTo(
     // spirit boat, and a court has maybe one - which is a statement about the
     // FOLD and not about the ore, and `whatARingCosts` is where it is made.
     if (aRing) return whatARingCosts(grade);
-    if (gradeTradeTier(grade) !== 'commodity') return null;
+    if (!madeBelowTheLid(grade)) return null;
     return Math.max(1, Math.round(whatTheMakersTimeComesTo(grade, makerOrdinal) + whatTheMaterialsComeTo(grade)));
 }
 
@@ -585,18 +637,18 @@ export function askingSomebodyToMakeYouSomething(
  * positively do not want to. `A_REASON_TO_SAY_NO` is borrowed rather than
  * chosen. Measured before it, at the old flat price: a stranger putting down the full 54 stones for a
  * mortal slip was agreed with 19% of the time, which is a wall wearing an
- * economy. Under-paying is unchanged, and above the cash line a purse never
- * meets the price at all.
+ * economy. Under-paying is unchanged, and where there is no maker to ask a price
+ * of, a purse never meets one.
  */
 export function whetherThatIsAYes(reading: number, paid: number): boolean {
     return paid >= 1 ? reading > -A_REASON_TO_SAY_NO : reading > 0;
 }
 
 /**
- * How far what was put down reaches, 0..1. Stones count for exactly the grades
- * the open market carries, which is `gradeTradeTier`'s answer arriving as a null
- * price; above that line a purse is worth nothing however large, which is what
- * `OnTheTable.singular` says and the two must not disagree.
+ * How far what was put down reaches, 0..1. Stones count for every grade a maker
+ * has named a price for; where the price is null - nothing below the Lid makes
+ * the thing - a purse is worth nothing however large, and the table is what
+ * reaches.
  */
 export function howFarTheOfferReaches(input: {
     priceInStones: number | null;

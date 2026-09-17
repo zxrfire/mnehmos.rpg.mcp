@@ -234,13 +234,30 @@ export interface SectAmbition {
     movedOn: string;
 }
 
+/**
+ * A craft a house has made its main business, written among its specialities.
+ *
+ * The design owner: every house makes pills and every house makes artifacts,
+ * and a focus is rare and exclusive - *"almost everyone can do it, few focus
+ * exclusively on it."* So only a house whose trade IS the craft carries one, and
+ * `whatAHouseIsFocusedOn` in `architecture.ts` reads it. The words are read as
+ * text everywhere else a speciality is read, which is rumour and a sect's own
+ * description.
+ */
+export type HouseCraft = 'alchemy' | 'forging';
+
 export interface SectEntry extends Sect {
     /** Technique ids the sect will teach, gated by rank in the engine. */
     teaches: readonly string[];
     /** The art the sect is known for, or null where it teaches nothing. */
     signatureTechniqueId: string | null;
-    /** Categories the sect is strong in, for matchmaking and rumour text. */
-    specialities: readonly TechniqueCategory[];
+    /**
+     * Categories the sect is strong in, for matchmaking and rumour text, and the
+     * one craft it has made its whole business where it has one. A craft is not a
+     * technique category, so the two are one list of two kinds: see
+     * {@link HouseCraft}.
+     */
+    specialities: readonly (TechniqueCategory | HouseCraft)[];
     /** Ids of sects with a standing feud. Symmetric across the catalog. */
     rivals: readonly string[];
     /** Where the sect sits, in coarse terms worldgen can attach to a region. */
@@ -1176,7 +1193,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'molten-core-refinement-scripture'
         ],
         signatureTechniqueId: 'meridian-knitting-needle-art',
-        specialities: ['support', 'cultivation'],
+        // ITS TRADE IS THE CAULDRON, and `alchemy` is the marker the medicine focus
+        // reads. See `whatAHouseIsFocusedOn`.
+        specialities: ['alchemy', 'support', 'cultivation'],
         rivals: ['sect-thousand-treasure-pavilion'],
         territory: 'Furnace halls beside the volcanic fields, and a fixed price list nobody negotiates.',
         recruits: true,
@@ -1223,7 +1242,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'molten-core-refinement-scripture'
         ],
         signatureTechniqueId: 'cinder-lotus-blossom',
-        specialities: ['attack', 'movement', 'cultivation'],
+        // ITS TRADE IS THE GREAT FURNACE, and `forging` is the marker the forge focus
+        // reads. See `whatAHouseIsFocusedOn`.
+        specialities: ['forging', 'attack', 'movement', 'cultivation'],
         rivals: ['sect-azure-cloud-pavilion', 'sect-nine-abyss-flame-sect'],
         territory: 'A clan compound built into the flank of a live volcano, around a furnace that was already there.',
         recruits: true,

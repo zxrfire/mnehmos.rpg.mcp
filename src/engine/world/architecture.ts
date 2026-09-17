@@ -973,21 +973,15 @@ export const A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER = 2;
  *
  * MEDICINE: a house whose `specialities` name `alchemy`. It read `alchemy`,
  * `support` or `cultivation`, which gave 23 of 38 houses the focus - healing
- * arts and qi-gathering manuals are not a trade in medicine. No house in the
- * catalog names `alchemy` today: the specialities are technique categories,
- * and the list is unordered and unweighted (its own comment says it is for
- * matchmaking and rumour text), so it carries no primary to read instead.
- * `trade.devotion` says for code how much of a house its trade is, and what the
- * trade is lives only in `trade.makes`, which is prose. So the medicine focus,
- * like the forge focus, goes to no house until the catalog marks one.
+ * arts and qi-gathering manuals are not a trade in medicine. The design owner
+ * chose the house: the Cinnabar Crucible Sect, whose trade is the cauldron.
  *
- * ARTIFACTS: NO HOUSE, FOR NOW, AND THIS WAITS ON A FIELD. Nothing in a house's
- * catalog row says for code that it is focused on forging: the specialities are
- * technique categories, the row carries no tags, and `trade.makes` is prose
- * marked for people and never for code. Reading it out of the house's name
- * ("Forge") was tried and taken out, because a fact read from a name is a
- * defect this repo has already named. Every house still has its Artifact
- * Refining Hall; none has the larger one until the catalog can say which.
+ * FORGING: a house whose `specialities` name `forging`. The design owner chose
+ * the Ashen Forge Clan. Both words are a `HouseCraft` in the sect catalog.
+ *
+ * NOT OUT OF A NAME. Reading the forge focus off "Forge" in a house's name was
+ * tried and taken out, because a fact read from a name is a defect this repo has
+ * already named; the catalog carries the word now.
  */
 export function whatAHouseIsFocusedOn(
     input: Pick<CompoundInput, 'specialities'>
@@ -995,7 +989,7 @@ export function whatAHouseIsFocusedOn(
     const specialities = new Set(input.specialities.map(s => s.toLowerCase()));
     return {
         pills: specialities.has('alchemy'),
-        artifacts: false
+        artifacts: specialities.has('forging')
     };
 }
 

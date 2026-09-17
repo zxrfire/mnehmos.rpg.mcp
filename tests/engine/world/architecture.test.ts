@@ -23,6 +23,7 @@ import {
     type CompoundInput
 } from '../../../src/engine/world/architecture.js';
 import { makeLocation, type LocationRecord } from '../../../src/engine/world/locations.js';
+import { SECTS } from '../../../src/data/cultivation/sects.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FIXTURES
@@ -561,9 +562,25 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
         }
     });
 
-    it('gives the forge focus to no house, not even one that calls itself a forge', () => {
-        const forge = broadHouse({ factionName: 'Broad Forge Clan' });
-        expect(whatAHouseIsFocusedOn(forge).artifacts).toBe(false);
-        expect(capacityOf(forge, 'artifact_refining_hall')).toBe(capacityOf(broadHouse(), 'artifact_refining_hall'));
+    it('gives the forge focus off the catalog\'s word, and never off a house\'s name', () => {
+        const named = broadHouse({ factionName: 'Broad Forge Clan' });
+        expect(whatAHouseIsFocusedOn(named).artifacts).toBe(false);
+        expect(capacityOf(named, 'artifact_refining_hall')).toBe(capacityOf(broadHouse(), 'artifact_refining_hall'));
+
+        const forge = broadHouse({ specialities: ['forging', 'attack'] });
+        expect(whatAHouseIsFocusedOn(forge)).toEqual({ pills: false, artifacts: true });
+        expect(capacityOf(forge, 'artifact_refining_hall')).toBeGreaterThan(capacityOf(broadHouse(), 'artifact_refining_hall'));
+    });
+
+    /**
+     * THE TWO THE DESIGN OWNER CHOSE, read out of the sect catalog: the Cinnabar
+     * Crucible Sect focuses on medicine and the Ashen Forge Clan on forging, and
+     * nobody else on either.
+     */
+    it('gives the medicine focus to the Cinnabar Crucible and the forge focus to the Ashen Forge, and to nobody else', () => {
+        const pills = SECTS.filter(sect => whatAHouseIsFocusedOn(sect).pills).map(sect => sect.id);
+        const forges = SECTS.filter(sect => whatAHouseIsFocusedOn(sect).artifacts).map(sect => sect.id);
+        expect(pills).toEqual(['sect-cinnabar-crucible-sect']);
+        expect(forges).toEqual(['sect-ashen-forge-clan']);
     });
 });
