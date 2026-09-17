@@ -31,6 +31,21 @@
  * than the transfers above, because turning the motive on changes which errands
  * happen at all and reseeds everything downstream - so the honest attributable
  * figure is the transfer count, not the map diff.
+ *
+ * WHETHER GROUND CHANGES HANDS IS ASSERTED OVER THREE SEEDS, NOT ONE. A take is
+ * a sending that finishes, and at a handful of reaches in 250 years one seed can
+ * draw none. It did: `purse-a` went to 10 reaches and 0 taken once the house
+ * passes changed around it. Measured at 250 years, nine seeds, the current tree
+ * against a copy with the census and merit changes reversed:
+ *
+ *     arm                  reaches   taken   seeds with none taken
+ *     current              66        17      1 (purse-a)
+ *     without the changes  72        23      0
+ *
+ * And a copy with only the merit change reversed, on the first three seeds,
+ * drew none taken on `purse-c`. The same rate within the noise of the counts,
+ * and a zero turns up on some seed either way - so one seed was pinning a draw,
+ * and pooling three is the claim.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -232,15 +247,17 @@ describe('the room is what makes one house march and the next one sit still', ()
 
 const HORIZON_YEARS = 250;
 const SEED = 'purse-a';
+/** The seeds the transfer claim is pooled over. See the header. */
+const SEEDS_FOR_A_TRANSFER = ['purse-a', 'purse-b', 'purse-c'] as const;
 
 interface Arm {
     state: WorldState;
     acts: { summary: string; took: boolean; lost: number }[];
 }
 
-async function arm(actOnAnEmptyPurse: boolean): Promise<Arm> {
+async function arm(actOnAnEmptyPurse: boolean, seed: string = SEED): Promise<Arm> {
     const catalog = await loadCultivationCatalog();
-    const { state } = seedWorld({ seed: SEED, catalog });
+    const { state } = seedWorld({ seed, catalog });
     advanceWorldYears(state, HORIZON_YEARS, {
         stopOnInterrupt: false,
         pressure: { housesActOnAnEmptyPurse: actOnAnEmptyPurse }
@@ -300,8 +317,12 @@ describe('a world where houses act on an empty purse, against one where they do 
 
     it('moves ground, so the map says it happened', async () => {
         const { on } = await arms();
-        const took = on.acts.filter(a => a.took);
-        expect(took.length, 'no ground ever changed hands over a payroll').toBeGreaterThan(0);
+        let took = on.acts.filter(a => a.took).length;
+        for (const seed of SEEDS_FOR_A_TRANSFER.filter(s => s !== SEED)) {
+            took += (await arm(true, seed)).acts.filter(a => a.took).length;
+        }
+        expect(took, 'no ground ever changed hands over a payroll, on any of three seeds')
+            .toBeGreaterThan(0);
     }, 900_000);
 
     it('does none of it with the motive switched off', async () => {

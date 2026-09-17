@@ -66,7 +66,7 @@ async function levelWith(names: readonly string[]): Promise<number> {
  * somebody left to hold it, so a test about the account goes where there is
  * somebody, and takes the world's own answer for who that is.
  */
-async function whereSomebodyWouldBeMissed(): Promise<{ locationId: string; victims: string[] }> {
+async function whereSomebodyWouldBeMissed(): Promise<{ locationId: string; placeName: string; victims: string[] }> {
     const world = await activeWorld();
     const alive = new Set(world.state.npcs.filter(n => n.status === 'alive').map(n => n.id));
     const missed = world.state.npcs.filter(npc =>
@@ -83,7 +83,14 @@ async function whereSomebodyWouldBeMissed(): Promise<{ locationId: string; victi
     const [locationId, names] = [...byPlace].sort(
         (a, b) => (b[1].length - a[1].length) || a[0].localeCompare(b[0])
     )[0] ?? ['', []];
-    return { locationId, victims: names };
+    // THE ADMIN VERBS TAKE A PLACE'S NAME, never its id: `set_location` looks
+    // the text up in a gazetteer of names. Measured on `world-align`: the
+    // busiest place is now a house's grounds, `loc-house-immovable-mountain-
+    // ground` tied five precinct names and was refused, the player never moved,
+    // and all three killings resolved to nobody - so the ledger was empty
+    // because nothing happened, not because a killing wrote nothing.
+    const placeName = world.state.locations.find(l => l.id === locationId)?.name ?? locationId;
+    return { locationId, placeName, victims: names };
 }
 
 /** Ties that leave somebody holding it. The engine's set, not a second one. */
@@ -431,10 +438,10 @@ describe('the dead hold nothing, so the people they left do', () => {
         const { cultivator } = await game.newRun('Taker');
         // Far enough above them that the killing is not in doubt. Arranging.
         await game.act('ADMIN set_realm 30');
-        const { locationId, victims } = await whereSomebodyWouldBeMissed();
+        const { placeName, victims } = await whereSomebodyWouldBeMissed();
         expect(victims.length, 'nobody in this world has anybody').toBeGreaterThanOrEqual(3);
-        await game.act(`ADMIN grant_knowledge kind=place name=${locationId}`);
-        await game.act(`ADMIN set_location ${locationId}`);
+        await game.act(`ADMIN grant_knowledge kind=place name=${placeName}`);
+        await game.act(`ADMIN set_location ${placeName}`);
 
         const theDead = victims.slice(0, 3);
         for (const who of theDead) await game.act(`I kill ${who}`);

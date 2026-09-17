@@ -58,6 +58,7 @@ import {
     refiningOrdinalFor
 } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import type { TechniqueGrade } from '../../../src/schema/cultivation.js';
+import { somebodyTheCatalogWrote } from '../../../src/engine/world/npc-state.js';
 
 /** Ascending, which is the order the claim is made in. */
 const GRADES: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'];
@@ -89,9 +90,15 @@ const SEEDS = ['medicine-supply-a', 'medicine-supply-b'] as const;
 
 const catalog = await loadCultivationCatalog();
 
-function makersIn(seed: string): { by: Map<TechniqueGrade, number>; alive: number } {
+function makersIn(seed: string): {
+    by: Map<TechniqueGrade, number>;
+    /** The same count, over the people a catalog wrote rather than the seeder derived. */
+    byTheCatalog: Map<TechniqueGrade, number>;
+    alive: number;
+} {
     const { state } = seedWorld({ seed, catalog });
     const by = new Map<TechniqueGrade, number>(GRADES.map(g => [g, 0]));
+    const byTheCatalog = new Map<TechniqueGrade, number>(GRADES.map(g => [g, 0]));
     let alive = 0;
     for (const npc of state.npcs) {
         if (npc.status !== 'alive') continue;
@@ -99,10 +106,11 @@ function makersIn(seed: string): { by: Map<TechniqueGrade, number>; alive: numbe
         for (const grade of GRADES) {
             if (canRefineGrade(grade, npc.cultivation.realmOrdinal)) {
                 by.set(grade, (by.get(grade) ?? 0) + 1);
+                if (somebodyTheCatalogWrote(npc)) byTheCatalog.set(grade, (byTheCatalog.get(grade) ?? 0) + 1);
             }
         }
     }
-    return { by, alive };
+    return { by, byTheCatalog, alive };
 }
 
 const RUNS = SEEDS.map(seed => ({ seed, ...makersIn(seed) }));
@@ -165,13 +173,41 @@ describe('who can actually make each grade of medicine', () => {
         // no living derived person reaches are still asserted exactly, and the
         // two the population does reach are pooled by the test below rather
         // than compared between seeds.
+        //
+        // AND THE DERIVED POPULATION NOW REACHES THE HEAVEN BAND, by a handful.
+        // `b5578561` flattened the per-house taper from 0.4 to 0.75, so more
+        // people are raised onto a house's upper rungs, and a few grand elders
+        // the seeder derived stand at 29 to 33 - which is the heaven refining
+        // rung. Bisected: every commit before it gives 33 heaven makers at both
+        // seeds, and from it on 36 and 37. Measured over six seeds at HEAD:
+        //
+        //   seed                 heaven makers   of them the catalog's   derived
+        //   medicine-supply-a    36              33                      3
+        //   medicine-supply-b    37              33                      4
+        //   mc, md, me, mf       35, 35, 36, 36  33 at every seed        2, 2, 3, 3
+        //
+        // So what is fixed by the catalog is still fixed, and is asserted
+        // exactly over the catalog's own people. What the population adds at the
+        // top is a population and varies, and it is bounded below as a share of
+        // the catalog's figure - a quarter, where six seeds measured at most an
+        // eighth - so a pass that floods the heaven band with derived people is
+        // still caught.
         const first = RUNS[0];
-        const FIXED_BY_THE_CATALOG: readonly TechniqueGrade[] = ['heaven', 'immortal', 'chaos'];
         for (const run of RUNS.slice(1)) {
-            for (const grade of FIXED_BY_THE_CATALOG) {
+            for (const grade of ['heaven', 'immortal', 'chaos'] as const) {
+                expect(run.byTheCatalog.get(grade) ?? 0, `${run.seed} ${grade} makers the catalog wrote differ`)
+                    .toBe(first.byTheCatalog.get(grade) ?? 0);
+            }
+            for (const grade of ['immortal', 'chaos'] as const) {
                 expect(run.by.get(grade) ?? 0, `${run.seed} ${grade} makers differ`)
                     .toBe(first.by.get(grade) ?? 0);
             }
+        }
+        for (const run of RUNS) {
+            const derived = (run.by.get('heaven') ?? 0) - (run.byTheCatalog.get('heaven') ?? 0);
+            expect(derived / Math.max(1, run.byTheCatalog.get('heaven') ?? 0),
+                `${run.seed}: ${derived} derived people can make heaven grade`)
+                .toBeLessThan(0.25);
         }
         // And the bands that do vary vary by a POPULATION's worth and not by a
         // ladder's: a seed may not change which rung the supply thins out at.
