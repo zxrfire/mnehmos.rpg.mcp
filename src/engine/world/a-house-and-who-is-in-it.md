@@ -513,7 +513,7 @@ to a watch, out with a party, recruiting in a province. The design owner:
 > *"that also gives a way for the people the sect stations out to report back"*
 
 So **a house hears from its people without waiting for them to walk home.**
-The channel is a **transmission talisman**: a slip keyed to where it answers
+The channel is a **communication talisman**: a slip keyed to where it answers
 (the house's hall, a master, a named person), burnt once, carrying a short
 message the same day. It is the third kind of act a slip holds, beside a
 strike and a way out, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
@@ -544,7 +544,7 @@ Rulings from the same night, which the talisman is one link of:
 - **you join where you are recruited**, and you do not get your token, your
   robes or your life lamp until you reach the house - *"so you don't really
   have proof"*. A house has an infinite stock of robes.
-- **the recruiter burns a transmission talisman to inform the Internal Affairs
+- **the recruiter burns a communication talisman to inform the Internal Affairs
   Elder**, who keeps the life lamps, **and the house expects the recruit by
   name**. At the gate a new
   arrival says who recruited them and where, and is let in on that: *"the sect
