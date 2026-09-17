@@ -271,6 +271,9 @@ import {
 // `GameService` as a type and imports nothing from here at runtime.
 import { theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
+import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
+import { theHouseExpects } from '../engine/world/a-house-expects-somebody-it-took-on.js';
+import { THE_INTERNAL_AFFAIRS_ELDER } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import {
     whatTheyWillTakeFor,
     whereTheOfferLanded,
@@ -491,6 +494,9 @@ import {
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
 import { getHerb, type Herb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
+import { getRecipe } from '../data/cultivation/recipes.js';
+import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
+import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 // Above a certain grade a pill has a value and no price. The refusal that says
 // so already existed and nothing asked it.
 import {
@@ -1114,6 +1120,11 @@ import {
 } from '../engine/social-leverage/a-service-is-something-done.js';
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
+import {
+    communicationTalismanVerbs,
+    theCommunicationTalismansOnYou,
+    theLineForCommunicationTalismans
+} from './sending-word-on-a-communication-talisman.js';
 import { stowVerbs, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
@@ -3256,10 +3267,10 @@ export class GameService {
     /**
      * WHO EACH HOUSE IS ASKING AFTER, WHICH ONLY THE WORLD KNOWS.
      *
-     * A house cuts a life plate for every disciple it can and reads its own roll
-     * off them: an intact plate with nobody seen for a season is MISSING, which
+     * A house lights a life lamp for every disciple it can and reads its own roll
+     * off them: a lamp still burning with nobody seen for a season is MISSING, which
      * is a different fact from dead and is the one that goes on a town wall.
-     * Those plates were being cut and never read - the three readings had no
+     * Those lamps were being lit and never read - the three readings had no
      * caller anywhere in `src/`, so a seeded world carried hundreds of them as
      * objects and a member disappearing reached nobody.
      *
@@ -4371,6 +4382,10 @@ ${noticedWaiting}`;
                 return this.challenge(run, cultivator, action.target);
 
             case 'tell': {
+                // At a distance, on a communication talisman.
+                if (action.intent === 'send_word') {
+                    return this.sendWord(run, cultivator, action.target, action.topic);
+                }
                 // The telling is read against the world's own history, so the
                 // world has to be in hand. Loaded the way `roads` loads it.
                 this.atHand = this.atHand ?? await this.loadWorld();
@@ -7527,12 +7542,44 @@ ${noticed}`;
                 ledger: ledgerAbout(this.repos.db as unknown as ObligationDb, cultivator.id),
                 asOfDay: Math.floor(run.elapsedDays)
             });
+            // AND SOMEBODY OF THE HOUSE HAS TO BE TAKING PEOPLE ON, where they
+            // stand, today. See `who-takes-you-on.ts`.
+            const taking = whoIsTakingPeopleOnHere(this, cultivator, run, named.id);
             const result = await handleJoin({
                 action: 'join',
                 sectId: named.id,
                 cultivatorId: cultivator.id
-            }, { leaning: council.leaning });
-            return this.fromToolResult('sect_manage.join', 'sect', result, named.name);
+            }, {
+                leaning: council.leaning,
+                nobodyIsTakingPeopleOnHere: taking === null ? undefined
+                    : taking.taking ? null : { refusal: taking.refusal, structure: taking.structure }
+            });
+            const joined = this.fromToolResult('sect_manage.join', 'sect', result, named.name);
+            // AND WHOEVER TOOK THEM ON OWES THE HOUSE WORD OF IT, which is what
+            // lets somebody never entered past its gate. A house that sent for
+            // them has its own word already.
+            const onItsRoll = joined.outcome === 'executed'
+                && this.repos.sects.getMembership(cultivator.id)?.sectId === named.id;
+            if (onItsRoll && this.atHand && (result as { recalled?: unknown }).recalled) {
+                theHouseExpects(this.atHand, {
+                    houseId: named.id, person: { id: cultivator.id, name: cultivator.name },
+                    recruiter: null, where: null, takenOnDay: Math.floor(this.atHand.currentDay),
+                    reportedBy: null, onDay: Math.floor(this.atHand.currentDay),
+                    addressedTo: THE_INTERNAL_AFFAIRS_ELDER
+                });
+                this.theWorldMoved();
+            }
+            const tookOn = onItsRoll && taking !== null && taking.taking
+                ? whoTookYouOn(this, cultivator, named.id, taking)
+                : null;
+            if (tookOn) {
+                for (const line of tookOn.lines) {
+                    joined.facts.lines.push(line);
+                    joined.facts.prose = `${joined.facts.prose}\n\n${line}`;
+                }
+                joined.facts.structure.push(tookOn.structure);
+            }
+            return joined;
         }
 
         // A house was named and it resolved to nothing, so the listing below is an
@@ -9397,7 +9444,41 @@ ${line}`;
             supplements: []
         });
 
-        return this.fromToolResult('alchemy_manage.refine', 'refine', result, recipe.name);
+        const refined = this.fromToolResult('alchemy_manage.refine', 'refine', result, recipe.name);
+        if (refined.outcome !== 'executed') return refined;
+
+        // ── AND THE DAYS AT THE CAULDRON ─────────────────────────────────
+        //
+        // Refining took no time at all. It takes what the grade of the pill asks
+        // of this hand, off `daysAtTheWork` - the one curve the bench and a
+        // commission read - spent through `shortSkip` after the cauldron has
+        // answered, because `handleRefine` owns the roll and the ingredients and
+        // a refusal there must spend nothing.
+        const pill = getPill(getRecipe(recipe.id)?.producesPillId ?? '');
+        if (!pill) return refined;
+        // AT THE CAULDRON IN YOUR OWN HOUSE'S ROOM FOR IT, where you are inside it.
+        const wentTo = intoTheRoomTheWorkIsDoneIn(this, cultivator, 'medicine');
+        if (wentTo) {
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            refined.facts.lines.unshift(wentTo);
+        }
+        const days = daysAtTheWork(pill.grade, cultivator.realmOrdinal);
+        const spent = await this.shortSkip(
+            run, cultivator, this.ambientFor(cultivator, run), TRAVEL_FOCUS,
+            `At the cauldron over ${recipe.name}`, days
+        );
+        const line = `${days} day${days === 1 ? '' : 's'} at the cauldron.`;
+        refined.facts.lines.unshift(line);
+        refined.facts.prose = `${line}\n\n${refined.facts.prose}`;
+        refined.facts.structure.push(
+            `daysAtTheWork(${pill.grade}, ordinal ${cultivator.realmOrdinal}) = ${days}, spent through shortSkip.`
+        );
+        return {
+            ...refined,
+            events: [...refined.events, ...spent.events],
+            timeSkip: spent.timeSkip,
+            calls: [...refined.calls, ...spent.calls]
+        };
     }
 
     /**
@@ -12751,8 +12832,11 @@ ${opened.text}` : receipt,
                     : ', and a body at this rung has stopped needing them.')
             );
         }
+        const slips = theLineForCommunicationTalismans(
+            theCommunicationTalismansOnYou(this.db, cultivator.id),
+            houseId => this.atHand?.factions.find(f => f.id === houseId)?.name ?? houseId);
         if (pills.length === 0 && herbs.length === 0 && carried.length === 0
-            && carriedRows.length === 0
+            && carriedRows.length === 0 && slips.length === 0
             && books.length === 0 && yard.length === 0 && rations === 0) {
             // "Nothing at all" would be a lie with a cache in the ground, and
             // it is exactly the lie this read was ruled against: technically
@@ -12794,6 +12878,7 @@ ${opened.text}` : receipt,
                             : ''}`)
                 ].join(', ') + '.');
             }
+            lines.push(...slips);
             if (pills.length > 0) {
                 lines.push('Pills: ' + pills.map(p => `${p.quantity ?? 1} x ${p.name ?? 'unnamed'}`).join(', ') + '.');
             }
@@ -15179,7 +15264,7 @@ ${fit.line}`;
         // `acceptedOnDay` is what makes this settle the row `acceptDuty` wrote
         // rather than write a second one beside it. See `DutyLedgerInput`.
         const settlement: DutyLedgerInput = {
-            ...ledger, cultivator: after, onDay: doneOn, acceptedOnDay: ledger.onDay
+            ...ledger, cultivator: after, onDay: doneOn, acceptedOnDay: ledger.onDay, world: this.atHand
         };
         // WHETHER THE TERM WAS ACTUALLY SERVED. `shortSkip` cuts a span at its
         // first interrupt, and being alive was the only thing `completeDuty`
@@ -15585,7 +15670,7 @@ ${fit.line}`;
         // `acceptedOnDay` is what makes this settle the row `acceptDuty` wrote
         // rather than write a second one beside it. See `DutyLedgerInput`.
         const settlement: DutyLedgerInput = {
-            ...ledger, cultivator: after, onDay: doneOn, acceptedOnDay: ledger.onDay
+            ...ledger, cultivator: after, onDay: doneOn, acceptedOnDay: ledger.onDay, world: this.atHand
         };
         // WHETHER THE TERM WAS ACTUALLY SERVED. `shortSkip` cuts a span at its
         // first interrupt, and being alive was the only thing `completeDuty`
@@ -19311,3 +19396,7 @@ type TeachingVerbs = typeof teachingVerbs;
 type DerivationVerbs = typeof derivationVerbs;
 type ServiceVerbs = typeof serviceVerbs;
 Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, stowVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, derivationVerbs, serviceVerbs, challengeVerb, attentionVerbs);
+// Communication talismans, merged on their own line so the list above is untouched.
+export interface GameService extends CommunicationTalismanVerbs {}
+type CommunicationTalismanVerbs = typeof communicationTalismanVerbs;
+Object.assign(GameService.prototype, communicationTalismanVerbs);

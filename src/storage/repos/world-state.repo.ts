@@ -1787,14 +1787,38 @@ function rowToAreaStatus(row: AreaStatusRow): AreaStatus {
     };
 }
 
+/**
+ * WHAT A SAVE CALLED A LIFE PLATE IS A LIFE LAMP. The design owner renamed them,
+ * and a save written before that holds each one as `life-plate-<member>`, tagged
+ * `life-plate`, with the day it was put up as `hungOnDay`. Read under the names
+ * the engine asks for; the next write of the world stores them that way, because
+ * a write clears the world's rows first. Without this an old save's houses read
+ * nobody off their lamps and never missed anybody again.
+ */
+const A_LIFE_PLATE_ONCE = 'life-plate';
+
+function asALampIfItWasAPlate(row: ObjectRow): Pick<ObjectRecord, 'id' | 'name' | 'tags' | 'data'> {
+    const tags = parseArray<string>(row.tags);
+    const data = parseRecord<ObjectRecord['data'][string]>(row.data);
+    if (!row.id.startsWith(`${A_LIFE_PLATE_ONCE}-`)) return { id: row.id, name: row.name, tags, data };
+    const { hungOnDay, ...rest } = data;
+    return {
+        id: `life-lamp-${row.id.slice(A_LIFE_PLATE_ONCE.length + 1)}`,
+        name: row.name.replace(/^the life plate of /, 'the life lamp of '),
+        tags: tags.map(tag => (tag === A_LIFE_PLATE_ONCE ? 'life-lamp' : tag)),
+        data: hungOnDay === undefined ? rest : { ...rest, litOnDay: hungOnDay }
+    };
+}
+
 function rowToObject(
     row: ObjectRow,
     claims: OwnershipClaim[],
     provenance: ProvenanceEntry[]
 ): ObjectRecord {
+    const named = asALampIfItWasAPlate(row);
     return {
-        id: row.id,
-        name: row.name,
+        id: named.id,
+        name: named.name,
         kind: row.kind as ObjectRecord['kind'],
         significance: row.significance as ObjectRecord['significance'],
         description: row.description,
@@ -1811,8 +1835,8 @@ function rowToObject(
         provenance,
         knownOwnershipBy: parseArray(row.known_ownership_by),
         locationId: row.location_id,
-        tags: parseArray(row.tags),
-        data: parseRecord(row.data),
+        tags: named.tags,
+        data: named.data,
         nextClaimSeq: row.next_claim_seq
     };
 }

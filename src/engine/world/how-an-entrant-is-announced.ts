@@ -17,7 +17,7 @@
  * carries the name and the house; what a crowd hears is a reading over that row
  * and drifts from it by construction rather than by two writers agreeing. This
  * is the same rule `what-people-are-saying.ts` keeps for rumour and
- * `a-house-knows-its-own-by-a-plate-and-a-token.ts` keeps for a roll.
+ * `a-house-knows-its-own-by-a-lamp-and-a-token.ts` keeps for a roll.
  *
  * ── AND IT IS THE ONE PLACE AN AFFILIATION IS LEGITIMATELY VISIBLE ───────
  *

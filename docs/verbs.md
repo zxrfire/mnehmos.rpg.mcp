@@ -137,7 +137,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recall`](#recall) | `target` `intent` | nothing | yes | yes | [2](#recall) |
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
-| [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
+| [`tell`](#tell) | `target` `topic` `intent` | varies | yes | - | [1](#tell) |
 | [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [13](#request) |
 | [`challenge`](#challenge) | `target` | varies | yes | - | - |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
@@ -599,11 +599,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `tell`
 
-TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The other direction of news: that one asks what people are saying, this one carries it to the person it is about. "target" is who is being told and they have to be here; "topic" is what is being said, in the player's own words, including the name of whoever is being blamed if the sentence gives one. Use it for "I tell him that Cao Antao killed his brother", "I let her know who killed her master", "I tell him what happened to his brother" and "I tell him that I killed his brother". Passes no time. Route it whether or not the claim is true - naming the wrong person, or a killing that never happened, is an ordinary thing to say and the engine is what answers for it. ALSO FOR TELLING SOMEBODY WHO YOU ARE, which is the same act one subject over: "I tell the gate guard that I am of the Cinnabar Crucible Sect", "I introduce myself to the steward as a Core Formation cultivator", "I tell her my name is Shen Wuyi". Route those the same way whether or not any of it is so - the engine holds what this cultivator actually is and decides. A bare greeting with no name, house or rung in it is interact, not this. NOT for "tell me about X", which is a question and belongs to investigate, and NOT for a threat, which is about something that has not happened yet.
+TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The other direction of news: that one asks what people are saying, this one carries it to the person it is about. "target" is who is being told and they have to be here; "topic" is what is being said, in the player's own words, including the name of whoever is being blamed if the sentence gives one. Use it for "I tell him that Cao Antao killed his brother", "I let her know who killed her master", "I tell him what happened to his brother" and "I tell him that I killed his brother". Passes no time. Route it whether or not the claim is true - naming the wrong person, or a killing that never happened, is an ordinary thing to say and the engine is what answers for it. ALSO FOR TELLING SOMEBODY WHO YOU ARE, which is the same act one subject over: "I tell the gate guard that I am of the Cinnabar Crucible Sect", "I introduce myself to the steward as a Core Formation cultivator", "I tell her my name is Shen Wuyi". Route those the same way whether or not any of it is so - the engine holds what this cultivator actually is and decides. A bare greeting with no name, house or rung in it is interact, not this. NOT for "tell me about X", which is a question and belongs to investigate, and NOT for a threat, which is about something that has not happened yet. AND AT A DISTANCE, intent "send_word": word sent on a communication talisman (a transmission or message talisman) to somebody who is not here. "target" is who it is for - "my master", "the sect", a house or a person's name - and "topic" is the message. Use it for "I burn a communication talisman to tell my master that the pass is held" and "I send word to the sect that I have found a door". Passes no time.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'tell'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.loadWorld` · the deterministic parser reaches it.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'tell'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
-Takes `target`, `topic`.
+Takes `target`, `topic`, `intent`.
+
+Intents: `send_word`.
 
 ### `request`
 

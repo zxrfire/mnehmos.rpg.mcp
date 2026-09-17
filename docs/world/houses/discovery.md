@@ -362,7 +362,7 @@ and still answers for a road somebody is about to walk down.
 | What goes up | Where it comes from |
 |---|---|
 | **An intake** | the house needs people and cannot get them by name alone |
-| **A search** | one of its own is alive on the plate and has stopped answering. See [Tokens shatter](./trust.md#tokens-shatter-so-somebody-has-to-be-taken-alive) - a house with no plates never posts one, because it has not been told |
+| **A search** | one of its own is alive by their lamp and has stopped answering. See [Tokens shatter](./trust.md#tokens-shatter-so-somebody-has-to-be-taken-alive) - a house with no lamps never posts one, because it has not been told |
 | **Work** | an errand where nothing but stones is at stake. It pays, and it is not a way in |
 | **A warning** | ground the house answers for, and what is moving on it. It asks nothing of anybody |
 
@@ -382,7 +382,7 @@ the paper, so walking toward an intake brings it closer rather than pushing it a
 notices name no day at all, which is the cheapest way to keep that promise.
 
 **What the engine has no answer for yet: a bounty.** The obvious fifth kind is a house
-paying for an account of a death it cannot explain - a shattered plate and no body, which
+paying for an account of a death it cannot explain - a lamp gone out and no body, which
 [`items.md`](../things/items.md) already reads from the other end as provenance. The
 channel would carry it unchanged; what is missing is the fact it would be gated on.
 A death currently reaches the house's own reading of its hall and stops there, so nothing

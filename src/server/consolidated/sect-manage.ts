@@ -332,6 +332,13 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
 export interface WhatTheHouseMakesOfThem {
     /** `WhereTheBodyLands.leaning`, on -1..+1. */
     leaning?: number | null;
+    /**
+     * Where the caller has a world to read it off: why nobody of the house is
+     * taking people on where they stand today, or null where somebody is.
+     * Undefined for a caller with no world, which is weighed as it always was.
+     * See `src/web/who-takes-you-on.ts`.
+     */
+    nobodyIsTakingPeopleOnHere?: { refusal: string; structure: string } | null;
 }
 
 export async function handleJoin(
@@ -494,6 +501,20 @@ export async function handleJoin(
     // AND THEN SOMEBODY HAS TO SAY YES
     const sentFor = recallDueFor(repos, cultivator);
     const recalledHere = sentFor !== null && sentFor.toFactionId === sect.id;
+
+    // NOBODY JOINS A HOUSE OUT OF THIN AIR. The design owner: houses hold
+    // selections at their grounds and send people out looking for seedlings,
+    // and are not open every day of the year. After every bar, because what
+    // the house would ask of somebody is worth knowing before where to find
+    // it; before the look, because nobody is there to look. A recall is the
+    // house sending for them, which is its own road.
+    const nobody = house?.nobodyIsTakingPeopleOnHere ?? null;
+    if (!recalledHere && nobody !== null) {
+        return guidingError('nobody_is_taking_people_on_here', nobody.refusal, {
+            sectId: sect.id,
+            hint: nobody.structure
+        });
+    }
 
     const beforeHere = repos.sects.formerMembership(sect.id, cultivator.id);
     const chance = Math.min(0.92, Math.max(0.15,

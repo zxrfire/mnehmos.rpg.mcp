@@ -117,7 +117,7 @@ export interface OwnershipClaim {
  *   becomes is not known until somebody works it.
  *   NULL ON A FINISHED ARTIFACT is a defect, not a statement that the thing is
  *   harmless. Measured in a seeded world: 91 of 235 artifacts carried none, all
- *   of them departure talismans, priced null because they are no use in a fight
+ *   of them teleportation talismans, priced null because they are no use in a fight
  *   - which is a different question from what rung the thing is. A row with no
  *   ordinal reads as an unfinished thing to everything that looks at it.
  *

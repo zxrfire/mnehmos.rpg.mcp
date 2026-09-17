@@ -162,6 +162,8 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // a journey and "I buy a carriage" is a purchase.
     craft: [
         'I build a carriage',
+        'I make some communication talismans',
+        'I cut five communication talismans for the sect',
         'I make a cart',
         'I put together a wagon',
         'I lay down the keel of a spirit boat',
@@ -906,6 +908,15 @@ describe('every intent DECLARED is a door somebody can find', () => {
         'sect/order': [
             'I order the outer disciples to gather',
             'I give an order to the outer disciples'
+        ],
+        // Word at a distance, on a communication talisman. The engine's word and
+        // the two a player may use for the same slip.
+        'tell/send_word': [
+            'I burn a communication talisman to tell my master that the pass is held',
+            'I send word to the sect that I have found a door',
+            'I use a transmission talisman to warn my master about the beast',
+            'I crush a message talisman and tell the sect that the town is taken',
+            'send word home that I am alive'
         ],
         // Paying in, kept beside it: the guard that stopped an order being a
         // donation must not have stopped a donation being one.

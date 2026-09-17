@@ -144,7 +144,7 @@ describe('taking one off', () => {
     });
 
     it('tells the hand that laid it, whenever it can break at all', () => {
-        // The jade plate cracking on a mountain a province away, seen from the
+        // The life lamp going out in a hall a province away, seen from the
         // other end: a seal is the caster's work, so it going is something that
         // happens to them wherever they are.
         const broke = whatBreakingASealTakes({

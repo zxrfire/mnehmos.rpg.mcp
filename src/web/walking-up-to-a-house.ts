@@ -29,12 +29,14 @@ import { getSect } from '../data/cultivation/sects.js';
 import {
     standingAtTheGateOf,
     whoseGateThisIs,
+    type AtTheGateInput,
     type SomebodyOfTheHouse,
     type WhatTheGateSays
 } from '../engine/world/standing-at-the-gate-of-a-house.js';
+import { whatTheHouseMakesOfSomebodyNew } from '../engine/world/a-house-expects-somebody-it-took-on.js';
 import { sectGroundId } from '../engine/world/seeding.js';
-import { theHouseTheirTokenNames } from '../engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
-import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-plate-at-the-house.js';
+import { theHouseTheirTokenNames } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
+import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { theyKnowTheFace } from '../engine/social/how-a-house-reads-a-face.js';
 import { howTheirPeopleSeeYourFace } from './how-a-houses-people-see-your-face.js';
 import {
@@ -182,8 +184,53 @@ export function whatTheGateOfThisHouseSays(
         hostedBy,
         theTokenNames,
         inTheRobes,
-        aFaceTheyKnow
+        aFaceTheyKnow,
+        expected: theWordTheHouseHasOf(game, cultivator, faction)
     });
+}
+
+/**
+ * Whether the gate of this house lets this cultivator in on its word, when they
+ * have never been entered: expected and able to name who took them on, sent for,
+ * or admitted on questioning. The seat enters them on exactly this.
+ */
+export function theHouseTakesYourWord(
+    game: GameService,
+    cultivator: Cultivator,
+    house: WorldState['factions'][number]
+): boolean {
+    const word = theWordTheHouseHasOf(game, cultivator, house);
+    if (word === null) return false;
+    if (word.reading === 'expected' && word.recruiterName === null) return true;
+    return word.reading !== 'rejected on questioning' && word.theyCanSayWhoTookThemOn;
+}
+
+/**
+ * What this house makes of this cultivator if they are new at its gate - expected,
+ * or what questioning them comes to - and whether they can say who took them on:
+ * they can when they know the recruiter by name.
+ */
+function theWordTheHouseHasOf(
+    game: GameService,
+    cultivator: Cultivator,
+    house: WorldState['factions'][number] | null
+): AtTheGateInput['expected'] {
+    const world = game.atHand;
+    const row = world?.npcs.find(npc => npc.id === cultivator.id) ?? null;
+    if (house === null || world === null || row === null) return null;
+    const made = whatTheHouseMakesOfSomebodyNew(world, house, row);
+    if (made.reading === 'nobody took them on') return null;
+    const named = made.reading === 'expected'
+        ? { id: made.word.recruiterId, name: made.word.recruiterName, where: made.word.whereName }
+        : { id: made.account.recruiterId, name: made.account.recruiterName, where: made.account.whereName };
+    return {
+        reading: made.reading,
+        recruiterName: named.name,
+        whereName: named.where,
+        theyCanSayWhoTookThemOn: named.id !== null
+            && game.knowledge.isAwareOf(cultivator.id, 'cultivator', named.id),
+        because: made.reading === 'expected' ? null : made.because
+    };
 }
 
 /**

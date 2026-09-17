@@ -55,20 +55,29 @@
 
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import type { RuinCharacter } from '../../data/cultivation/inheritance-trials.js';
-import { theArtsWrittenDownIn } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
+import { theArtsWrittenDownIn, theRungThisWasSetFor } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
 import {
     housesTeaching,
     manualCeilingOf,
     manualIdOf,
+    shelfOf,
+    shelfReach,
     significanceOfManual,
     suitsRoot,
     type Manual
 } from './manuals.js';
 import type { LocationRecord } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
-import { isRuined, makeObject, type ObjectRecord } from './possessions.js';
+import { howMuchAGradeIsWorthTracking, isRuined, makeObject, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
 import { takeTheArtOffThePage } from './what-a-manual-has-left-in-it.js';
+import { meritWith } from './what-a-house-counts-in-somebodys-favour.js';
+import { requiredContributionForRank } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
+import { turnItInToTheHouse, whatTheHouseMakesOf } from './what-a-house-gives-merit-for.js';
+import { highestGradeRefinableAt } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
+import { getPillsByGrade } from '../../data/cultivation/pills.js';
+import { everyIngredientThatIs } from '../cultivation/what-a-cauldron-will-take.js';
+import { whatOfThisAHouseKeeps } from './what-a-house-keeps-in-its-treasury.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT SORT OF PLACE KEPT BOOKS
@@ -277,6 +286,139 @@ export function theBooksBehindTheirDoor(input: {
     }));
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHAT ELSE WAS LEFT, WHICH IS NOT PAPER
+// ─────────────────────────────────────────────────────────────────────────
+
+/** What else a place can have been keeping when it stopped. */
+export type WhatElseWasKept =
+    /** Doses, on a shelf or in a pouch. */
+    | 'medicine'
+    /** What grows, cut and dried. */
+    | 'what_grows'
+    /** What comes off a beast: hide, bone, a core. */
+    | 'what_comes_off_a_beast';
+
+/**
+ * The design owner: *"you could find other stuff in a ruin."* The same column
+ * as {@link WHAT_A_SHELF_HOLDS}, keyed on the same character, so a character
+ * added to the schema has to say both. Only what an existing catalog can supply:
+ * the herb and beast-material tables and the pill table. Weapons, stones and
+ * ore have no catalog to draw from yet, so a battlefield does not leave blades
+ * and a cut does not leave ore.
+ */
+export const WHAT_ELSE_THE_GROUND_HOLDS: Readonly<Record<RuinCharacter, readonly WhatElseWasKept[]>> = {
+    archive: [],
+    teaching_hall: [],
+    // A house's store, sealed with it: goods rather than paper.
+    vault: ['medicine', 'what_grows', 'what_comes_off_a_beast'],
+    // The seat's own stores, what was left of them.
+    compound: ['medicine'],
+    // What one person had to hand.
+    dwelling: ['medicine'],
+    // A refining floor: what it made and what it made it out of.
+    workshop: ['medicine', 'what_comes_off_a_beast'],
+    // What was on the bodies.
+    ossuary: ['medicine'],
+    // What fell there: the beasts in it and what the dead carried.
+    battlefield: ['what_comes_off_a_beast', 'medicine'],
+    scar: [],
+    waystation: ['medicine'],
+    // Beds, run to seed.
+    physic_garden: ['what_grows'],
+    array_anchor: [],
+    cut: [],
+    open_ground: []
+};
+
+/** Marks goods lying where the place left them, so the party that gets in carries them out. */
+export const LEFT_WITH_THE_PLACE = 'left-with-the-place';
+
+/**
+ * The goods a piece of described ground was left holding.
+ *
+ * AT THE HEIGHT ITS BUILDER COULD WORK AND NO HIGHER. The grade is the best the
+ * ground's own rung could refine (`highestGradeRefinableAt` off
+ * `theRungThisWasSetFor`), and which kinds of it is `whatOfThisAHouseKeeps` -
+ * the same reading a living house's stores take, so a ruin is a store that
+ * stopped. Nothing below the Lid makes an immortal thing and the refining gate
+ * says so: no ruin down here holds one. One of each, once, and never restocked.
+ */
+export function theGoodsLeftIn(input: {
+    location: LocationRecord;
+    character: RuinCharacter;
+    onDay: number;
+}): ObjectRecord[] {
+    const kinds = WHAT_ELSE_THE_GROUND_HOLDS[input.character] ?? [];
+    if (kinds.length === 0) return [];
+    const rung = theRungThisWasSetFor(input.location);
+    const grade = highestGradeRefinableAt(rung);
+    if (grade === null) return [];
+    const out: ObjectRecord[] = [];
+    const place = input.location.id;
+
+    const lying = (row: {
+        id: string; name: string; kind: 'material' | 'pill'; data: Record<string, string | number | boolean | null>;
+        extraTags: string[];
+    }): ObjectRecord => makeObject({
+        id: `left-${place}-goods-${row.id}`,
+        name: row.name,
+        kind: row.kind,
+        significance: howMuchAGradeIsWorthTracking(grade),
+        description: `${row.name}, where it was left when the place stopped. Nobody has carried it out.`,
+        possessorId: null,
+        ownerId: null,
+        ownerName: '',
+        power: null,
+        locationId: place,
+        tags: [row.kind, ...row.extraTags, `grade:${grade}`, LEFT_WITH_THE_PLACE, `ruin:${place}`],
+        data: { ...row.data, grade, quantity: 1, leftInTheGroundOnDay: input.onDay }
+    });
+
+    for (const kind of kinds) {
+        if (kind === 'medicine') {
+            const doses = getPillsByGrade(grade)
+                .map(p => ({ id: p.id, name: p.name, grade, value: Number(p.value), harvestOrdinal: 0, from: 'a_growing_thing' as const }))
+                .sort((a, b) => a.value - b.value || (a.id < b.id ? -1 : 1));
+            for (const pill of whatOfThisAHouseKeeps(doses, grade, rung)) {
+                out.push(lying({ id: pill.id, name: pill.name, kind: 'pill', data: { pillId: pill.id }, extraTags: [] }));
+            }
+            continue;
+        }
+        const from = kind === 'what_grows' ? 'a_growing_thing' : 'a_beast';
+        for (const material of whatOfThisAHouseKeeps(
+            everyIngredientThatIs({ grade, from, withinReachOf: rung }), grade, rung)) {
+            out.push(lying({
+                id: material.id,
+                name: material.name,
+                kind: 'material',
+                data: { materialId: material.id, value: material.value },
+                extraTags: ['material', from === 'a_beast' ? 'beast_material' : 'herb']
+            }));
+        }
+    }
+    return out;
+}
+
+/** Everything a piece of described ground was left holding: its books and its goods. */
+export function whatWasLeftIn(input: {
+    location: LocationRecord;
+    character: RuinCharacter;
+    onDay: number;
+}): ObjectRecord[] {
+    return [...theBooksLeftIn(input), ...theGoodsLeftIn(input)];
+}
+
+/** Goods lying in this piece of ground that nobody has carried out. */
+export function goodsLyingIn(state: WorldState, locationId: string): ObjectRecord[] {
+    return state.objects.filter(
+        o => o.possessorId === null
+            && o.locationId === locationId
+            && o.tags.includes(LEFT_WITH_THE_PLACE)
+            && !isRuined(o)
+    );
+}
+
 /**
  * Shelve what this ground was holding, once.
  *
@@ -349,27 +491,72 @@ export interface CameOutOfTheGround {
     cap: number;
     requiredOrdinal: number;
     locationId: string;
-    /** Who holds the copy now: the house where there is one, else the carrier. */
+    /** Who holds the copy now: the house where it went to one, else whoever carried it. */
     holderId: string;
     holderName: string;
-    /** Who read it on the way home, or null where nobody who went could. */
+    /** Who read it on the way home, or null where nobody who went did. */
     readById: string | null;
     readByName: string;
+    /** Who turned it in to their house for merit, or null. */
+    turnedInById: string | null;
+    /** The merit that earned them. Zero where nobody turned it in. */
+    meritForIt: number;
 }
 
 /**
- * Whoever got in carries out what was on the shelf.
+ * Whether reading this book carries somebody further than turning it in would.
  *
- * TWO WRITES, AND THEY ARE DIFFERENT FACTS. The copy goes to the HOUSE where
- * there was one, because a book is a thing and the house is what outfitted the
- * errand - and because that is what puts it on `shelfOf` and therefore in front
- * of `newlyEntitled`, which is the only way anybody who did not go ever reads
- * it. Somebody with no house carries their own, which is honest and is also why
- * a rogue who opens a hole does not seed a library.
+ * One comparison. The book carries them to its cap. The merit carries them to
+ * the highest rung below the head it pays for on their own house's ladder
+ * (`requiredContributionForRank`), and what that rung opens is the furthest book
+ * on the house's shelf it reaches (`shelfReach`) that suits their root. Reading
+ * wins only where the book goes further. Somebody off the house's roll, or with
+ * nothing the house would credit, has no merit to weigh.
+ */
+export function readingCarriesThemFurther(
+    state: WorldState,
+    reader: NpcRecord,
+    manual: Manual,
+    houseId: string,
+    merit: number
+): boolean {
+    const house = state.factions.find(f => f.id === houseId);
+    if (reader.factionId !== houseId || house === undefined || merit <= 0) return true;
+    const rankCount = house.ranks.length;
+    const total = meritWith(reader, houseId) + merit;
+    let buys = Math.max(0, reader.factionRankIndex);
+    for (let rank = buys + 1; rank <= rankCount - 2; rank++) {
+        if (requiredContributionForRank(rank) <= total) buys = rank;
+    }
+    const shelf = shelfOf(state, houseId);
+    let opens = manualCeilingOf(reader);
+    for (const m of shelf.slice(0, shelfReach(buys, rankCount, shelf.length))) {
+        if (suitsRoot(reader.cultivation.spiritRoot, m.element)) opens = Math.max(opens, m.cap);
+    }
+    return manual.cap > opens;
+}
+
+/**
+ * Whoever got in carries out what was on the shelf, and decides what to do with it.
  *
- * The person who carried it out has read it, which is a fact about them rather
- * than about the shelf. One book each: an elder does not come home in four
- * months having read the whole archive.
+ * Ruled by the design owner: *"if you found it, you can read it, or you can
+ * turn it into the sect for merit."* Per book:
+ *
+ *   read        the strongest of them who can open it, whom it carries past what
+ *               they hold, and for whom it goes further than the merit would
+ *               (`readingCarriesThemFurther`). A use comes off this row, one
+ *               book each. What is left goes to the house for nothing where the
+ *               house wants it - the default, because the read was the finder's
+ *               share of an errand the house outfitted - and otherwise the
+ *               reader keeps it.
+ *   turn it in  nobody read it and the house wants it: the strongest of them on
+ *               its roll hands it over whole and is credited for it
+ *               (`turnItInToTheHouse`, which says what a house wants and what it
+ *               is worth).
+ *   keep it     otherwise, with whoever carried it. A rogue can only read or keep.
+ *
+ * A book the house takes goes on `shelfOf`, which is what puts it in front of
+ * `newlyEntitled` for everybody who did not go.
  */
 export function applyWhatThePartyCarriedOut(
     state: WorldState,
@@ -383,9 +570,16 @@ export function applyWhatThePartyCarriedOut(
     }
 ): CameOutOfTheGround[] {
     const found = booksLyingIn(state, input.locationId);
-    if (found.length === 0) return [];
-    const carrier = input.readers.find(r => r.status === 'alive') ?? null;
+    const goods = goodsLyingIn(state, input.locationId);
+    if (found.length === 0 && goods.length === 0) return [];
+    const alive = input.readers
+        .map(r => state.npcs.find(n => n.id === r.id) ?? r)
+        .filter(r => r.status === 'alive');
+    const strongest = (rows: readonly NpcRecord[]): NpcRecord | null => rows.reduce<NpcRecord | null>(
+        (best, r) => best === null || r.cultivation.realmOrdinal > best.cultivation.realmOrdinal ? r : best, null);
+    const carrier = strongest(alive);
     if (input.house === null && carrier === null) return [];
+    const house = input.house;
 
     const out: CameOutOfTheGround[] = [];
     const readThisTrip = new Set<string>();
@@ -394,38 +588,28 @@ export function applyWhatThePartyCarriedOut(
         if (techniqueId === null) continue;
         const manual = manualOf(techniqueId);
         if (manual === null) continue;
-
         const at = state.objects.findIndex(o => o.id === object.id);
         if (at < 0) continue;
-        const holder = input.house ?? { id: carrier!.id, name: carrier!.name, seatLocationId: null };
-        state.objects[at] = {
-            ...object,
-            possessorId: holder.id,
-            ownerId: holder.id,
-            ownerName: holder.name,
-            locationId: input.house === null ? carrier!.locationId : input.house.seatLocationId,
-            tags: [
-                ...object.tags.filter(t => t !== LEFT_IN_THE_GROUND),
-                ...(input.house === null ? [] : ['library', `faction:${input.house.id}`])
-            ],
-            data: {
-                ...object.data,
-                carriedOutOf: input.locationId,
-                carriedOutOnDay: input.onDay
-            }
-        };
 
-        // CARRYING IS NOT READING. Being able to open a book is not deciding to,
-        // any more than holding a pill is swallowing it. A party out for a
-        // house carries the book home whole, and who reads it is the house's
-        // decision, taken where every shelf book's is - `newlyEntitled`. That
-        // matters most for a one-reader book: the house choosing who gets its
-        // single read is a story, and whoever picked it up taking it is not.
-        // Somebody out for themselves decides for themselves, and reads only
-        // what carries them past what they already hold.
-        let reader = input.house !== null ? null : whoOfThemCouldOpenIt(
-            input.readers.filter(r => !readThisTrip.has(r.id)
-                && manual.cap > manualCeilingOf(r)), manual);
+        // A party nobody came back from leaves the house with what it found,
+        // and nobody to have read it.
+        if (house !== null && carrier === null) {
+            state.objects[at] = carriedTo(object, input, house.id, house.name, house.seatLocationId, true);
+            out.push(cameOut(object, manual, input.locationId, house.id, house.name));
+            continue;
+        }
+
+        // Into the carrier's hands, which is where the choice is made. The
+        // house's valuation is read before anybody reads it.
+        state.objects[at] = carriedTo(object, input, carrier!.id, carrier!.name, carrier!.locationId, false);
+        const merit = house === null ? 0 : whatTheHouseMakesOf(state, house.id, state.objects[at]!).merit;
+
+        const couldRead = alive.filter(r => !readThisTrip.has(r.id) && manual.cap > manualCeilingOf(r));
+        let reader = whoOfThemCouldOpenIt(
+            house === null
+                ? couldRead
+                : couldRead.filter(r => readingCarriesThemFurther(state, r, manual, house.id, merit)),
+            manual);
         // AND READING TAKES THE ART OFF THE PAGE, off this row. At heaven and
         // above that is a use, the same one a player spends, and the row keeps
         // what is left wherever it goes next. A book already read out teaches
@@ -433,37 +617,119 @@ export function applyWhatThePartyCarriedOut(
         const grade = getTechnique(manual.id)?.grade;
         if (reader !== null && grade !== undefined) {
             const taken = takeTheArtOffThePage(
-                state.objects[at], { grade, byId: reader.id, onDay: input.onDay });
+                state.objects[at]!, { grade, byId: reader.id, onDay: input.onDay });
             if (taken.took) state.objects[at] = taken.object;
             else reader = null;
         }
         if (reader !== null) {
-            readThisTrip.add(reader.id);
-            const row = state.npcs.findIndex(n => n.id === reader.id);
+            const readerId = reader.id;
+            readThisTrip.add(readerId);
+            const row = state.npcs.findIndex(n => n.id === readerId);
             if (row >= 0) {
                 state.npcs[row] = {
-                    ...state.npcs[row],
+                    ...state.npcs[row]!,
                     cultivation: {
-                        ...state.npcs[row].cultivation,
-                        techniqueIds: [...state.npcs[row].cultivation.techniqueIds, manual.id]
+                        ...state.npcs[row]!.cultivation,
+                        techniqueIds: [...state.npcs[row]!.cultivation.techniqueIds, manual.id]
                     },
                     updatedOnDay: input.onDay
                 };
             }
         }
 
+        let turnedInById: string | null = null;
+        let meritForIt = 0;
+        if (house !== null && !isRuined(state.objects[at]!)) {
+            // Whoever of them is on the house's roll hands it in: the reader
+            // where somebody read it, and otherwise the strongest of them.
+            const giver = reader !== null && reader.factionId === house.id
+                ? reader
+                : strongest(alive.filter(r => r.factionId === house.id));
+            if (giver !== null) {
+                const holding = state.objects[at]!;
+                state.objects[at] = { ...holding, possessorId: giver.id, ownerId: giver.id, ownerName: giver.name };
+                meritForIt = turnItInToTheHouse(state, {
+                    npcId: giver.id, objectId: object.id, onDay: input.onDay, forMerit: reader === null
+                });
+                if (state.objects[at]!.ownerId !== house.id) state.objects[at] = holding;
+                if (reader === null && meritForIt > 0) turnedInById = giver.id;
+            }
+        }
+
+        const now = state.objects[at]!;
         out.push({
-            objectId: object.id,
-            techniqueId: manual.id,
-            name: manual.name,
-            cap: manual.cap,
-            requiredOrdinal: manual.requiredOrdinal,
-            locationId: input.locationId,
-            holderId: holder.id,
-            holderName: holder.name,
+            ...cameOut(object, manual, input.locationId, now.ownerId ?? carrier!.id, now.ownerName || carrier!.name),
             readById: reader?.id ?? null,
-            readByName: reader?.name ?? ''
+            readByName: reader?.name ?? '',
+            turnedInById,
+            meritForIt
         });
     }
+    // AND THE GOODS, which nobody reads. The house takes what it wants and the
+    // strongest of them on its roll is credited for it; whoever carried the
+    // rest out keeps it. Nothing here sells anything.
+    for (const object of goods) {
+        const at = state.objects.findIndex(o => o.id === object.id);
+        if (at < 0) continue;
+        if (house !== null && carrier === null) {
+            state.objects[at] = carriedTo(object, input, house.id, house.name, house.seatLocationId, false);
+            continue;
+        }
+        if (carrier === null) continue;
+        const giver = house === null ? null : strongest(alive.filter(r => r.factionId === house.id));
+        const holder = giver ?? carrier;
+        state.objects[at] = carriedTo(object, input, holder.id, holder.name, holder.locationId, false);
+        if (giver !== null) turnItInToTheHouse(state, { npcId: giver.id, objectId: object.id, onDay: input.onDay });
+    }
     return out;
+}
+
+/** The row, out of the ground and in somebody's hands. */
+function carriedTo(
+    object: ObjectRecord,
+    input: { locationId: string; onDay: number },
+    holderId: string,
+    holderName: string,
+    locationId: string | null,
+    library: boolean
+): ObjectRecord {
+    return {
+        ...object,
+        possessorId: holderId,
+        ownerId: holderId,
+        ownerName: holderName,
+        locationId,
+        tags: [
+            ...object.tags.filter(t => t !== LEFT_IN_THE_GROUND && t !== LEFT_WITH_THE_PLACE),
+            ...(library ? ['library', `faction:${holderId}`] : [])
+        ],
+        data: {
+            ...object.data,
+            carriedOutOf: input.locationId,
+            carriedOutOnDay: input.onDay
+        }
+    };
+}
+
+function cameOut(
+    object: ObjectRecord,
+    manual: Manual,
+    locationId: string,
+    holderId: string,
+    holderName: string
+): CameOutOfTheGround {
+    return {
+        objectId: object.id,
+        techniqueId: manual.id,
+        name: manual.name,
+        cap: manual.cap,
+        requiredOrdinal: manual.requiredOrdinal,
+        locationId,
+        holderId,
+        holderName,
+        readById: null,
+        readByName: '',
+        turnedInById: null,
+        meritForIt: 0
+    };
 }

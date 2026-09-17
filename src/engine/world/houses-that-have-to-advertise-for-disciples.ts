@@ -240,26 +240,9 @@ export interface WallInput {
  * What is nailed up here today.
  */
 export function billsOnTheWall(input: WallInput): RecruitingBill[] {
-    const slots = BILLS_A_WALL_CARRIES[input.ground];
-    if (slots <= 0) return [];
-
-    const eligible = housesThatHaveToAdvertise(input.field)
-        .filter(h => h.postsInPublic && reachesThisGround(h, input.placeProvinceId));
-    if (eligible.length === 0) return [];
-
     const window = Math.floor(Math.max(0, input.onDay) / A_BILL_STAYS_UP_FOR_DAYS);
-    const rng = forStream(input.seed, 'recruiting_bills', input.placeName, window);
-
-    // Drawn without replacement: one house does not paper a wall with itself.
-    const pool = [...eligible];
-    const drawn: AdvertisingHouse[] = [];
-    while (drawn.length < slots && pool.length > 0) {
-        drawn.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
-    }
-
-    const windowStart = window * A_BILL_STAYS_UP_FOR_DAYS;
     const today = Math.floor(input.onDay);
-    return drawn.map(house => {
+    return drawnOnThisWall(input, window).map(({ house, inTheWindow }) => {
         // THE DAY IS A PROPERTY OF THE PAPER, NOT OF WHOEVER IS READING IT.
         //
         // Anchored to `floor(onDay)` this drew a fresh future date on every
@@ -273,7 +256,6 @@ export function billsOnTheWall(input: WallInput): RecruitingBill[] {
         // anchor was there for - never a date behind the reader - without the
         // drift. One jump at the moment the intake falls is the intake having
         // happened.
-        const inTheWindow = windowStart + rng.int(1, A_BILL_STAYS_UP_FOR_DAYS);
         const opensOnDay = inTheWindow > today
             ? inTheWindow
             : inTheWindow + A_BILL_STAYS_UP_FOR_DAYS;
@@ -299,6 +281,61 @@ export function billsOnTheWall(input: WallInput): RecruitingBill[] {
                 + `${opensOnDay - today} days, and will hear ${takesFrom}.`
         };
     });
+}
+
+/**
+ * The houses a wall carries paper for in one window, and the day each intake is
+ * held. The one draw both {@link billsOnTheWall} and {@link anIntakeHeldHere}
+ * read, in the order it was always taken.
+ */
+function drawnOnThisWall(
+    input: WallInput,
+    window: number
+): { house: AdvertisingHouse; inTheWindow: number }[] {
+    const slots = BILLS_A_WALL_CARRIES[input.ground];
+    if (slots <= 0 || window < 0) return [];
+
+    const eligible = housesThatHaveToAdvertise(input.field)
+        .filter(h => h.postsInPublic && reachesThisGround(h, input.placeProvinceId));
+    if (eligible.length === 0) return [];
+
+    const rng = forStream(input.seed, 'recruiting_bills', input.placeName, window);
+
+    // Drawn without replacement: one house does not paper a wall with itself.
+    const pool = [...eligible];
+    const drawn: AdvertisingHouse[] = [];
+    while (drawn.length < slots && pool.length > 0) {
+        drawn.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
+    }
+    const windowStart = window * A_BILL_STAYS_UP_FOR_DAYS;
+    return drawn.map(house => ({ house, inTheWindow: windowStart + rng.int(1, A_BILL_STAYS_UP_FOR_DAYS) }));
+}
+
+/**
+ * The intake this house is holding at this place on this day, where its paper
+ * named one here and it has not yet closed: open from the day on the paper for
+ * `runsForDays`. Null otherwise. Both days a paper can name count: the day in
+ * its window, and the same day a window on, which is what the paper says once
+ * the first has passed (see `billsOnTheWall`). A player who waited for the day on
+ * the paper finds the intake held.
+ */
+export function anIntakeHeldHere(
+    input: WallInput,
+    houseId: string,
+    runsForDays: number
+): { opensOnDay: number; closesOnDay: number } | null {
+    const today = Math.floor(input.onDay);
+    const window = Math.floor(Math.max(0, today) / A_BILL_STAYS_UP_FOR_DAYS);
+    const reach = 1 + Math.ceil(runsForDays / A_BILL_STAYS_UP_FOR_DAYS);
+    for (let w = window; w >= window - reach; w--) {
+        const held = drawnOnThisWall(input, w).find(row => row.house.id === houseId);
+        if (!held) continue;
+        for (const opensOnDay of [held.inTheWindow, held.inTheWindow + A_BILL_STAYS_UP_FOR_DAYS]) {
+            const closesOnDay = opensOnDay + runsForDays - 1;
+            if (opensOnDay <= today && today <= closesOnDay) return { opensOnDay, closesOnDay };
+        }
+    }
+    return null;
 }
 
 /**
@@ -341,8 +378,8 @@ export function whatABillGrants(bill: RecruitingBill): {
  */
 export type TheAsk =
     /**
-     * One of its own, alive on the plate and not answering. Gated on the house
-     * having plates at all - see `a-house-knows-its-own-by-a-plate-and-a-token.ts`,
+     * One of its own, alive by their lamp and not answering. Gated on the house
+     * having lamps at all - see `a-house-knows-its-own-by-a-lamp-and-a-token.ts`,
      * where a house with nobody at Foundation is never told anything.
      */
     | { kind: 'missing'; who: string; unseenForDays: number }
@@ -428,7 +465,7 @@ function whatThePaperSays(
     switch (ask.kind) {
         case 'missing':
             return `${house.name} is asking after ${ask.who}, of their own, not seen for `
-                + `${ask.unseenForDays} days. The plate cut for them is whole.`;
+                + `${ask.unseenForDays} days. The lamp lit for them still burns.`;
         case 'work':
             return `${house.name} is paying for hands and is not asking whose disciple you are. `
                 + `${ask.what} About ${ask.days} days, and it wants ${ask.hands} of them.`;

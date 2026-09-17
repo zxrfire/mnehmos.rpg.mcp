@@ -53,8 +53,8 @@ import type { AtStake } from '../data/cultivation/why-a-house-puts-a-party-on-th
 import {
     theOnesNobodyCanFind,
     whatTheHallSays,
-    whoHasAPlateOnTheWallOf
-} from '../engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+    whoHasALampBurningIn
+} from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import type { KnowledgeGate } from './knowledge.js';
 
 /**
@@ -208,7 +208,7 @@ export function housesWithSomethingToSay(
 }
 
 /**
- * Who each house is looking for, off its own wall of plates.
+ * Who each house is looking for, off its own hall of lamps.
  *
  * THE ONE ASK THAT NEEDS THE WORLD AND NOT THE CATALOG. A missing disciple is a
  * fact about the roll as it stands today, so this takes the world rather than
@@ -216,8 +216,8 @@ export function housesWithSomethingToSay(
  * missing-person notices on it - which is correct rather than convenient: with
  * no world there is no roll and nobody has gone anywhere.
  *
- * The gate is the plate on the wall. `whatTheHallSays` reads only people a
- * plate hangs for, so a house that never cut one for somebody posts no search
+ * The gate is the lamp in the hall. `whatTheHallSays` reads only people a
+ * lamp burns for, so a house that never lit one for somebody posts no search
  * for them: it does not know one of its own is gone.
  */
 export function whoEachHouseIsLookingFor(
@@ -235,12 +235,12 @@ export function whoEachHouseIsLookingFor(
     }
 
     for (const [houseId, members] of byHouse) {
-        const plated = whoHasAPlateOnTheWallOf(world.objects, houseId);
+        const lit = whoHasALampBurningIn(world.objects, houseId);
         const looking = theOnesNobodyCanFind(whatTheHallSays({
             roll: members.map(npc => ({
                 memberId: npc.id,
                 memberName: npc.name,
-                theyHaveAPlate: plated.has(npc.id),
+                theyHaveALamp: lit.has(npc.id),
                 holderIsAlive: npc.status === 'alive',
                 daysSinceAnybodySawThem: Math.max(0, world.currentDay - npc.lastConfirmedOnDay)
             }))

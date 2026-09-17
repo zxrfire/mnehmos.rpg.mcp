@@ -9,7 +9,7 @@
  *
  * MEASURED BEFORE THIS, on three worlds seeded from the production catalog:
  * 606 people, and the ones carrying an object owned by somebody else were
- * carrying a house TOKEN - the identity plate every member wears. A plate is
+ * carrying a house TOKEN - the identity token every member carries. A token is
  * not a loan, so the count of people in this world carrying something a house
  * had lent them was effectively nil, in every world, always.
  *
@@ -89,10 +89,10 @@ describe('what a house has out on loan', () => {
         expect(loans[0].toNpcId).toBe('picked');
     });
 
-    it('lends nothing mundane, nothing already out, and no identity plate', () => {
+    it('lends nothing mundane, nothing already out, and no identity token', () => {
         for (const unlendable of [
             thing('lot', { significance: 'mundane' }),
-            thing('plate', { kind: 'token' }),
+            thing('token', { kind: 'token' }),
             thing('gone', { possessorId: 'somebody' })
         ]) {
             expect(
@@ -235,9 +235,9 @@ describe('what people have lent to their juniors', () => {
         expect(whatPeopleHaveLentToTheirJuniors(world(
             roll, [owns('treasure', SENIOR, { possessorId: 'npc-third' })]
         ))).toEqual([]);
-        // An identity plate is not a treasure, and neither is a lot of pots.
+        // An identity token is not a treasure, and neither is a lot of pots.
         expect(whatPeopleHaveLentToTheirJuniors(world(
-            roll, [owns('plate', SENIOR, { kind: 'token' })]
+            roll, [owns('token', SENIOR, { kind: 'token' })]
         ))).toEqual([]);
         expect(whatPeopleHaveLentToTheirJuniors(world(
             roll, [owns('pots', SENIOR, { significance: 'mundane' })]

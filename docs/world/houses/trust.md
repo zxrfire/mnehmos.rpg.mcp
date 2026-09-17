@@ -304,7 +304,7 @@ works on a province and fails in a room containing one well-connected old man.**
 
 <!-- tier: 2 trigger="somebody is carrying a house's token that is not theirs, or a house notices one of its own has stopped answering" -->
 
-**A house keeps a plate for each of its disciples, and the plate shatters when they die.**
+**A house keeps a life lamp burning for each of its disciples in its Life Lamp Hall, and the lamp goes out when they die.**
 The disciple's own token goes with them. Nothing about this is subtle and every consequence
 below falls straight out of it:
 
@@ -315,7 +315,7 @@ below falls straight out of it:
   rescued. **It is a far better thing for the world to contain than a body in a ditch.**
 - **A house knows the instant one of its own dies.** There are no unreported deaths inside a
   house - only unexplained ones.
-- **And a disciple who is missing while their plate is still whole is the worse signature.**
+- **And a disciple who is missing while their lamp is still burning is the worse signature.**
   The house knows they live and knows they are not answering, which is precisely what a captive
   looks like. **That is when the posters go out** - onto the same walls the intakes are nailed
   to, as one kind of notice among four. See [an intake is one kind of
@@ -345,13 +345,13 @@ question the object can answer at all.
 
 **Two things follow that are worth building toward.**
 
-**The unhoused are the safe target.** A rogue cultivator has no plate and no house to miss them,
+**The unhoused are the safe target.** A rogue cultivator has no lamp and no house to miss them,
 so the entire apparatus above never engages. The people nobody would come looking for are the
 people it is safe to rob, and **the world should be legible about that** rather than pretending
 the risk is evenly distributed.
 
-**And a shattered plate is a question, not an answer.** It tells a house that one of theirs died
-and nothing else - not where, not how, not by whose hand. A house holding a shattered plate and
+**And a lamp that has gone out is a question, not an answer.** It tells a house that one of theirs died
+and nothing else - not where, not how, not by whose hand. A house with a lamp gone out and
 no body will pay for the answer, and somebody who brings the remains back gets credit for it.
 See [`items.md`](../things/items.md) on provenance, which is the same fact read from the other end.
 
@@ -751,7 +751,7 @@ mistakes it for a description of the running world will build on sand.
 | **`RESERVED_SURNAMES`** - lineage names never rolled | **wired**, `src/engine/world/reading-a-lineage-off-a-name.ts` |
 | **Reading a family off a name** | **wired**, and this row used to point at the wrong function: `surnameOf` is a two-line split in `history.ts` used by the family seeder. The lineage read is `lineageNameOf` -> `readALineageOffAName` -> `readTheRollFor` in `reading-a-lineage-off-a-name.ts`, and `resolveCultivator` in `src/web/entities.ts` calls the last two, gated on the reader holding a name for the house |
 | **Recognising whose art you just watched** | **built**, `src/engine/world/recognising-whose-art-you-just-watched.ts`, and reachable by typing *"is this the Azure Cloud's art"* |
-| **Life plates, and tokens that shatter** | **built and now read**, `src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.ts`. A plate is cut by somebody at Foundation or above, which is a HOUSE-level gate and not a person-level one: a house with nobody at that rung has no plates for anybody, so it cannot read its own roll and is never told when one of its own dies. `seedTreasuries` hangs one for every disciple of every house that can cut them; `whatTheHallSays` reads the roll against them, and a whole plate over somebody nobody has seen for a season is what puts a search on a wall in a town. **A SHATTERED plate still reaches nothing outside the hall**: the reading says they are dead, and no world fact, knowledge row or notice follows from it. Which is a gap and not a decision - the house that holds a shattered plate and no account of it is exactly the house that would pay a stranger for one |
+| **Life lamps, and tokens that shatter** | **built and now read**, `src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.ts`. A lamp is lit by somebody at Foundation or above, which is a HOUSE-level gate and not a person-level one: a house with nobody at that rung has no lamps for anybody, so it cannot read its own roll and is never told when one of its own dies. `seedTreasuries` lights one in the Life Lamp Hall for every disciple of every house that can light them; `whatTheHallSays` reads the roll against them, and a lamp still burning for somebody nobody has seen for a season is what puts a search on a wall in a town. **A lamp that has GONE OUT still reaches nothing outside the hall**: the reading says they are dead, and no world fact, knowledge row or notice follows from it. Which is a gap and not a decision - the house with a lamp gone out and no account of it is exactly the house that would pay a stranger for one |
 | **A jade tag carrying a house's name** | **built**, same file. Issued from rank 1 up (`carriesATokenAt`) |
 | **Sealed ancestors** | **in the catalogs** - `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` - and read only where they are LISTED: `src/web/lore.ts` walks the held instruments and the unowned, `src/web/register.ts` reads a house's roll of them. **Nothing in `src/engine/` reads any of the three**, so a sealed ancestor is still something the world can describe and not something it can do anything with |
 | **The ground as a third axis** | **built and reached by the player**, `src/engine/social-leverage/ground-trust.ts`, off `src/engine/world/ground-holder.ts`. This row said the player could not reach it; `pressSomebody` now fills `where` with `theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator))` at all three of its call sites in `asking-verbs.ts` |

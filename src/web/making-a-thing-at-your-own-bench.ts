@@ -32,14 +32,14 @@
  * `taking-the-materials-off-the-bench.ts` takes what it named.
  *
  * ═════════════════════════════════════════════════════════════════════════
- * WHAT IT COSTS, AND WHY THAT IS THE MATERIALS AND NOT DAYS
+ * WHAT IT COSTS: THE MATERIALS AND THE DAYS
  * ═════════════════════════════════════════════════════════════════════════
  *
- * No days. `refine` spends none either - `action-set.ts` carries `refine: []`
- * and says so - and a slip is the same kind of act as a pill: materials, a
- * cauldron or a brush, one sitting. The yard is the other shape and spends
- * thousands of days, because a hull is thousands of days of work and the catalog
- * says so.
+ * The materials, and the days the grade asks of this hand: `daysAtTheWork` in
+ * `commissioning-a-craft.ts`, the one curve a cauldron and a commission read,
+ * spent by the verb through `shortSkip`. A third of a day for a mortal slip and
+ * years for heaven-grade work at the gate. The yard is its own shape and
+ * spends what the catalog gives a hull.
  *
  * NO ROLL EITHER, and that is a stated absence rather than an oversight. The
  * rung and the bench ARE the difficulty here - `whetherTheirHandsCanDoIt` is two

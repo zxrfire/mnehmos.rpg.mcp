@@ -42,12 +42,13 @@ export function gradeAskedFor(named: string): TechniqueGrade {
 const A_SLIP = /\b(?:talisman|talismans|slip|slips|charm|charms|paper|seal|seals)\b/i;
 
 /**
- * A way out rather than a strike.
+ * A teleportation talisman rather than a strike. A player may call it an escape
+ * talisman or a way out, and those words are read here.
  *
  * Both kinds exist and the sentence usually says which. A slip with nothing in
  * the sentence about going anywhere is the common one, which is the strike.
  */
-const A_WAY_OUT =
+const A_TELEPORTATION =
     /\b(?:escape|escaping|gets?|got|getting) (?:me |us |him |her |them )?out\b|\b(?:escape|escaping|way out|teleport|teleportation|flee|fleeing|fold|folding|transport|carries me|carry me)\b/i;
 
 /** And a ring, which is folded space rather than worked material. */
@@ -80,7 +81,7 @@ export function aBenchCouldMakeThat(named: string): boolean {
 export function whatTheyWereAskedToMake(named: string): WhatYouAskedThemToMake {
     const grade = gradeAskedFor(named);
     const slip: WhatIsInTheSlip | null = A_SLIP.test(named)
-        ? (A_WAY_OUT.test(named) ? 'a_way_out' : 'a_strike')
+        ? (A_TELEPORTATION.test(named) ? 'a_teleportation' : 'a_strike')
         : null;
     return {
         // The player's own words, echoed. Read by no conditional here or in the

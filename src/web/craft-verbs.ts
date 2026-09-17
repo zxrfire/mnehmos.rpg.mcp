@@ -59,7 +59,10 @@ import {
     type BuildPlan
 } from './half-built-craft.js';
 import { landTheMaking, planTheMaking } from './making-a-thing-at-your-own-bench.js';
+import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
+import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
+import { whatIsBeingCut } from './communication-talisman-phrasings.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
@@ -109,6 +112,12 @@ export const craftVerbs = {
     ): Promise<Execution> {
         const today = Math.floor(run.elapsedDays);
         const said = (target ?? '').trim();
+
+        // Communication talismans are counted stock cut by the handful, not a
+        // bench's one thing. See `sending-word-on-a-communication-talisman.ts`.
+        if (whatIsBeingCut(said) !== null) {
+            return await this.cutCommunicationTalismans(run, cultivator, ambient, said);
+        }
 
         // ── A YARD OR A BENCH ────────────────────────────────────────────
         //
@@ -255,7 +264,13 @@ export const craftVerbs = {
     },
 
     /**
-     * One sitting at a bench, which costs materials and no days.
+     * Making one thing at a bench: the days the grade asks of this hand, then the
+     * materials, then the thing.
+     *
+     * THE DAYS FIRST, through `shortSkip` like the yard, so the food clock, the
+     * encounter window and the world tick run over them, and somebody who does
+     * not come back from the bench puts nothing in and takes nothing out. How
+     * many is `daysAtTheWork`, the one curve a commission and a cauldron read.
      *
      * The world is loaded BEFORE the plan, because the bench is the player's
      * pouch and the rows they are carrying together and a plan built without
@@ -289,28 +304,77 @@ export const craftVerbs = {
             return answer;
         }
 
-        const made = landTheMaking({ db: this.db, objects, cultivator, plan, today });
+        // ── IN THE ROOM IT IS DONE IN, inside your own house ─────────────
+        // A slip is cut wherever you are sitting; anything else made at a bench
+        // is worked where the house works ore. See `intoTheRoomTheWorkIsDoneIn`.
+        const wentTo = intoTheRoomTheWorkIsDoneIn(this, cultivator, plan.ask!.slip ? null : 'an_artifact');
+        if (wentTo) cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+
+        // ── THE DAYS AT IT ───────────────────────────────────────────────
+        const days = daysAtTheWork(plan.ask!.grade, cultivator.realmOrdinal);
+        const spent = await this.shortSkip(
+            run, cultivator, this.ambientFor(cultivator, run), BENCH_FOCUS,
+            `Making ${plan.ask!.named}`, days
+        );
+        const after = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        const lived = spent.timeSkip?.simulatedDays ?? days;
+        if (!after.alive || lived < days) {
+            const facts = factsForToolResult(
+                'The work stops before it is done.',
+                [...spent.facts.lines, 'Nothing went into it that did not come back out, and nothing was made.']
+            );
+            facts.structure.push(
+                `craft at a bench: ${lived} of ${days} day(s) at ${plan.ask!.grade}-grade work, stopped. `
+                + 'The materials are untouched; a made thing is whole or not at all.'
+            );
+            return { facts, events: spent.events, timeSkip: spent.timeSkip, breakthrough: null, outcome: 'executed', calls: spent.calls };
+        }
+        const finishedOn = Math.floor(this.repos.runs.getById(run.id)?.elapsedDays ?? today + days);
+        // THE WORLD AS THE DAYS LEFT IT. The span advances the world and may hand
+        // back a different state, so the rows written into are read again here:
+        // a thing pushed onto the array from before the span is a thing nobody
+        // holds afterwards.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const rowsNow = this.atHand?.objects ?? objects;
+        const made = landTheMaking({ db: this.db, objects: rowsNow, cultivator: after, plan, today: finishedOn });
         // The world is marked moved only where something moved. A take that
         // returns nothing has written nothing, which is what makes this safe.
         if (made.minted) {
-            objects.push(made.minted);
+            rowsNow.push(made.minted);
             this.theWorldMoved();
         }
 
-        const facts = factsForToolResult(plan.headline, [...plan.lines, ...made.lines]);
-        facts.structure.push(...plan.structure, ...made.structure);
+        const facts = factsForToolResult(plan.headline, [
+            ...(wentTo ? [wentTo] : []),
+            `${days} day${days === 1 ? '' : 's'} at the work.`,
+            ...plan.lines,
+            ...made.lines
+        ]);
+        facts.structure.push(
+            ...plan.structure,
+            `daysAtTheWork(${plan.ask!.grade}, ordinal ${cultivator.realmOrdinal}) = ${days}, spent through shortSkip.`,
+            ...made.structure
+        );
         // WHAT THEY CANNOT PLAY WITHOUT. Materials came out of their hands and a
         // thing went into them, and both are irreversible - the same rule the
         // yard applies to the turn its slip cleared.
         if (made.minted) facts.required = made.lines.slice();
 
-        const answer = this.freeAction(run, 'craft', facts);
-        answer.calls = made.calls.map(call => ({
-            name: call.name,
-            action: 'craft',
-            summary: call.summary,
-            ok: true
-        }));
-        return answer;
+        return {
+            facts,
+            events: spent.events,
+            timeSkip: spent.timeSkip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [
+                ...spent.calls,
+                ...made.calls.map(call => ({
+                    name: call.name,
+                    action: 'craft',
+                    summary: call.summary,
+                    ok: true
+                }))
+            ]
+        };
     }
 };

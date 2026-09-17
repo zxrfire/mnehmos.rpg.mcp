@@ -272,28 +272,43 @@ describe('a master may say no', () => {
     /**
      * TIME GIVEN WITHIN THE YEAR IS A REASON, NOT A REFUSAL. A played span
      * stamps the tie on both ends the way the world's own attention pass does,
-     * and the next ask reads the stamp as a heavier ask through the ordinary
-     * resolver. The odds are printed.
+     * and the next ask reads the stamp as a stated reason, weighed on the
+     * disposition term the resolver already takes. A moderate drop and not the
+     * floor, on the design owner's ruling that it be a smaller effect than a
+     * heavier ask was. The odds are printed.
+     *
+     * THE SAME ASK, WITH AND WITHOUT THE STAMP. A span that was agreed to moves
+     * other terms as well - the tie strengthens on a yes - so the comparison is
+     * made after it, with the day it remembers cleared, and nothing else moved.
      */
     it('remembers the time it gave, and weighs more of it so soon as a reason to say no', async () => {
         const { harness, me, teacher } = await somebodyAboveHere('guided-recently', { atLeast: 4 });
         await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
         const asked = `could I ask ${teacher.name} to guide my cultivation for 10 days`;
-        const beforeAnyTime = theOddsOf(await harness.game.act(asked) as Turn);
 
         const span = await harness.game.act('ADMIN request I ask my master to guide my cultivation for 10 days') as Turn;
         expect(span.toolCalls.map(call => call.name), everythingSaid(span)).toContain('world.theyGiveTheirAttention');
         const world = (await harness.game.loadWorld())!;
-        const theirs = world.npcs.find(npc => npc.id === teacher.id)?.relationships
-            .find(tie => tie.targetId === me.id);
-        expect(theirs?.lastAttentionOnDay, 'the master\'s side of the tie does not remember the span').toEqual(expect.any(Number));
+        const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+        const tieAt = world.npcs[at]!.relationships.findIndex(tie => tie.targetId === me.id);
+        expect(world.npcs[at]!.relationships[tieAt]?.lastAttentionOnDay,
+            'the master\'s side of the tie does not remember the span').toEqual(expect.any(Number));
 
-        const again = await harness.game.act(asked) as Turn;
-        const afterTheTime = theOddsOf(again);
-        console.log(`GUIDANCE ODDS AFTER TIME GIVEN: before ${beforeAnyTime}, after ${afterTheTime}`);
-        expect(everythingSaid(again)).toMatch(/given you their time within the year/);
-        expect(again.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
-        expect(afterTheTime).toBeLessThan(beforeAnyTime);
+        const soSoon = await harness.game.act(asked) as Turn;
+        const withTheTime = theOddsOf(soSoon);
+        expect(everythingSaid(soSoon)).toMatch(/given you their time within the year/);
+        expect(soSoon.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
+
+        const relationships = world.npcs[at]!.relationships.slice();
+        relationships[tieAt] = { ...relationships[tieAt]!, lastAttentionOnDay: null };
+        world.npcs[at] = { ...world.npcs[at]!, relationships };
+        harness.game.theWorldMoved();
+        const withoutTheTime = theOddsOf(await harness.game.act(asked) as Turn);
+
+        console.log(`GUIDANCE ODDS, TIME GIVEN WITHIN THE YEAR: without ${withoutTheTime}, with ${withTheTime}`);
+        expect(withTheTime).toBeLessThan(withoutTheTime);
+        // Not the floor: the ask was not made heavier.
+        expect(withTheTime).toBeGreaterThan(0.02);
     }, 240_000);
 
     it('declines at their own practice, naming it and when they are free', async () => {

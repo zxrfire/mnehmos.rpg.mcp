@@ -34,7 +34,7 @@
  * measuring a configuration nobody plays.
  */
 
-import { makeGameInWorld, cultivatorRow } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld, cultivatorRow } from './harness';
 import { SITES } from '../../src/data/cultivation/inheritance-trials';
 import { circulating, whatTheySay } from '../../src/engine/world/what-people-are-saying';
 import { buildPlayerDigest, simpleAccess } from '../../src/engine/world/digest';
@@ -94,6 +94,7 @@ describe('a gift to a house is a thing the world contains', () => {
             });
         const { cultivator } = await game.newRun('Probe');
         db.prepare('UPDATE cultivators SET spirit_stones = ? WHERE id = ?').run(400, cultivator.id);
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
         await game.act('I join the Azure Dew Sect');
 
         const before = await game.loadWorld();
@@ -130,6 +131,7 @@ describe('a gift to a house is a thing the world contains', () => {
             const { cultivator } = await game.newRun('Probe');
             db.prepare('UPDATE cultivators SET spirit_stones = ? WHERE id = ?')
                 .run(purse, cultivator.id);
+            await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
             await game.act('I join the Azure Dew Sect');
             await game.act('I donate 300 spirit stones to the sect');
             const world = (await game.loadWorld())!;

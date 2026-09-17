@@ -44,6 +44,7 @@ import {
     theSeatOfTheCompound,
     whereCompoundsAre
 } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { ROOMS_A_THING_IS_MADE_IN, type WhatIsBeingMade } from '../engine/world/architecture.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
@@ -79,6 +80,53 @@ function namesThisRoom(room: LocationRecord, wanted: string): boolean {
     const own = aRoomsOwnName(room).toLowerCase();
     const purpose = (purposeOf(room) ?? '').replace(/_/g, ' ');
     return own === wanted || purpose === wanted || (wanted.length >= 4 && own.endsWith(` ${wanted}`));
+}
+
+/**
+ * Going to the room a piece of work is done in, before doing it.
+ *
+ * Somebody of a house who sits down to refine a pill or work a made thing inside
+ * that house's walls does it in the room cut for it, the same rooms
+ * `ROOMS_A_THING_IS_MADE_IN` reads the house's own people into. Only your own
+ * house, only where it has the room, and only through the same walls a walk
+ * goes through: a room this person could not walk to is not one they go to
+ * work in. Nothing else moves them, and a communication talisman, which is cut
+ * wherever the cutter is sitting, moves nobody.
+ *
+ * Returns the line that says where they went, or null where they stayed put.
+ */
+export function intoTheRoomTheWorkIsDoneIn(
+    game: GameService,
+    cultivator: Cultivator,
+    making: WhatIsBeingMade | null
+): string | null {
+    const world = game.atHand;
+    if (!world || making === null) return null;
+    const membership = game.repos.sects.getMembership(cultivator.id);
+    if (!membership) return null;
+    const compounds = whereCompoundsAre(world);
+    const hereId = game.worldPlaceOf(cultivator);
+    const seat = theSeatOfTheCompound(world, hereId, compounds);
+    if (seat === null || hereId === null) return null;
+    const compound = compounds.bySeat.get(seat.id)!;
+    if (compound.houseId !== membership.sectId) return null;
+    const room = ROOMS_A_THING_IS_MADE_IN[making]
+        .map(purpose => compound.rooms.get(purpose))
+        .find((one): one is LocationRecord => one !== undefined);
+    if (!room || room.id === hereId) return null;
+    const house = game.repos.sects.getById(membership.sectId);
+    const { access } = howThisCultivatorStandsInTheHouseHolding({
+        ground: room,
+        cultivator,
+        standing: house
+            ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length }
+            : null,
+        onDay: Math.floor(world.currentDay)
+    });
+    const reach = reachThrough(pathTo(world.locations, room.id), access, { enteredAt: seat.id });
+    if (reach.stoppedAt !== null || reach.level === 'barred') return null;
+    game.repos.cultivators.update(cultivator.id, { location: room.name });
+    return `You go to ${room.name} to do the work.`;
 }
 
 /**

@@ -18,7 +18,7 @@
  */
 
 import { parseIntent } from '../../src/web/actions';
-import { makeGame } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGame } from './harness';
 
 describe('the sentences that ask for it', () => {
     it('all reach the read', () => {
@@ -54,6 +54,7 @@ describe('what the read says', () => {
         const { db, game } = makeGame({ seed: 'ground-entitlement', worldEnabled: true });
         const { cultivator } = await game.newRun('Member');
         db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
         await game.act('I join the Azure Dew Sect');
 
         const asked = await game.act('where can I cultivate in the sect');

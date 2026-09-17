@@ -35,7 +35,16 @@
 
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { whatTheyHold, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
-import { ROOMS_A_THING_IS_DONE_IN, purposeOf, type RoomPurpose } from './architecture.js';
+import {
+    ROOMS_A_THING_IS_DONE_IN,
+    ROOMS_A_THING_IS_MADE_IN,
+    purposeOf,
+    type RoomPurpose,
+    type WhatIsBeingMade
+} from './architecture.js';
+import { getPill } from '../../data/cultivation/pills.js';
+import { getTechnique } from '../../data/cultivation/techniques.js';
+import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
 import type { LocationRecord } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
@@ -126,6 +135,15 @@ export function whereTheyAreStanding(
     if (doing.withIds.some(id => !people.has(id))) return stored;
 
     if (doing.kind === 'the_work_of_their_rank') {
+        // MAKING A THING IS DONE WHERE THAT THING IS MADE, before the office:
+        // somebody at a cauldron is at the cauldron, whatever they hold.
+        const making = whatIsBeingMade(doing.thingId ?? null);
+        if (making !== null) {
+            const room = ROOMS_A_THING_IS_MADE_IN[making]
+                .map(purpose => compound.rooms.get(purpose))
+                .find((one): one is LocationRecord => one !== undefined);
+            if (room) return room.id;
+        }
         if (compound.offices === null) {
             const faction = state.factions.find(row => row.id === compound.houseId);
             compound.offices = portfoliosIn({
@@ -152,6 +170,26 @@ export function whereTheyAreStanding(
         .map(purpose => compound.rooms.get(purpose))
         .find((one): one is LocationRecord => one !== undefined);
     return room?.id ?? stored;
+}
+
+/**
+ * What kind of made thing an activity's `thingId` names, or null where it is
+ * not one a room is cut for.
+ *
+ * Medicine is a pill id. A copy of an art is a technique id, and a
+ * communication talisman is cut wherever the cutter sits; neither moves anybody.
+ * Anything else being made is a made thing, which has no catalog of its own to
+ * be looked up in - a blade somebody forges is named by whoever forged it - so
+ * it is read as what is left rather than matched. NOT read off the artifact
+ * catalog: that table is the world's named treasures, not what a bench turns
+ * out, and importing it here put this module in an import cycle.
+ */
+export function whatIsBeingMade(thingId: string | null): WhatIsBeingMade | null {
+    if (thingId === null || thingId.length === 0) return null;
+    if (getPill(thingId) !== undefined) return 'medicine';
+    if (getTechnique(thingId) !== undefined) return null;
+    if (thingId === THE_COMMUNICATION_TALISMAN.id) return null;
+    return 'an_artifact';
 }
 
 /**

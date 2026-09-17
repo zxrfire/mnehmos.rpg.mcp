@@ -2875,7 +2875,7 @@ and the DEPTH, in and back out. A party whose deciders can read the schedule set
 arrive and spends none of the window travelling, which at a seven-day window is the whole
 difference between a road and no road - **knowing when is itself a road**, and it is the
 information edge a house trades on. The other two are one fold spent differently: a senior
-who folds the party in is still standing there to cover the way back, and a way-out slip is
+who folds the party in is still standing there to cover the way back, and a teleportation talisman is
 ONE act, so burning it to arrive leaves nothing to leave with. Measured over twelve worlds,
 72 sites, every seat priced through this function against the deepest wing:
 

@@ -7,7 +7,7 @@
  * moment the ordinal population was completed. A carriage was already excluded
  * by name; the general form was not stated anywhere.
  *
- * The case that made it urgent: a departure talisman cut by a hand at 32 stands
+ * The case that made it urgent: a teleportation talisman cut by a hand at 32 stands
  * at 32. Swinging it is not what it is for. It was dormant only because nothing
  * yet puts one in anybody's hands, and a dormant hazard is a hazard.
  */
@@ -17,7 +17,7 @@ import { isSomethingYouWouldSwing, makeObject } from '../../../src/engine/world/
 import { cutATalisman } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
 
 
-function aSlip(what: 'a_strike' | 'a_way_out') {
+function aSlip(what: 'a_strike' | 'a_teleportation') {
     return cutATalisman({
         id: `slip-${what}`,
         name: 'a slip',
@@ -40,7 +40,7 @@ describe('what somebody would raise in a fight', () => {
         // Both stand at 32 and neither is a weapon slot. A strike slip is used
         // once and gone, which is a different move from carrying a thing into
         // every exchange.
-        for (const what of ['a_strike', 'a_way_out'] as const) {
+        for (const what of ['a_strike', 'a_teleportation'] as const) {
             const slip = aSlip(what);
             expect(slip.power).not.toBeNull();
             expect(isSomethingYouWouldSwing(slip)).toBe(false);

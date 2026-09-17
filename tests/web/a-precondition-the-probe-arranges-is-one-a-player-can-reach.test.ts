@@ -156,9 +156,11 @@ describe('given a beginner, when they ask a house to take them', () => {
         expect(willing, houses).toBeTruthy();
 
         const answer = await said(game, `I ask to join the ${willing!.trim()}`);
-        // Either they were taken, or the house looked and declined. Both are
-        // the engine having decided; neither is it failing to understand.
-        expect(answer, answer).toMatch(/Taken on by|did not take them|already serves/i);
+        // Either they were taken, or the house looked and declined, or nobody
+        // of the house is taking anybody on where they stand today - which says
+        // when and where somebody is. All three are the engine having decided;
+        // none is it failing to understand.
+        expect(answer, answer).toMatch(/Taken on by|did not take them|already serves|is taking anybody on here today/i);
 
         if (/Taken on by/i.test(answer)) {
             expect(game.state().cultivator.sectId).toBeTruthy();

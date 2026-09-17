@@ -162,6 +162,7 @@ import {
     whoTheyAreTeaching
 } from './a-teacher-giving-you-their-attention.js';
 import { gaveAttentionRecently } from '../engine/world/who-is-given-attention-this-year.js';
+import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import {
     type TheOfferHeld,
@@ -189,6 +190,7 @@ import {
     requestPutToSomebody
 } from './what-a-request-asks-and-of-whom.js';
 import {
+    TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND,
     type TheOneAsking,
     type TheOneBeingAsked,
     whatItWouldCostThem
@@ -1479,7 +1481,11 @@ ${unnamed}`;
                 factionId: asked.factionId,
                 alignment: theirSect?.alignment ?? null,
                 ranked: party.party.ranked,
-                openHandedness
+                // Having given this asker time within the year closes the hand a
+                // little: a stated reason, weighed on the disposition term.
+                openHandedness: attention?.gaveAttentionRecently === true
+                    ? Math.max(-1, openHandedness - TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND)
+                    : openHandedness
             },
             onDay: Math.floor(run.elapsedDays),
             // AND WHAT THE TWO OF THEM ALREADY ARE TO EACH OTHER
@@ -1988,9 +1994,22 @@ ${done.span.facts.prose}`;
             onDay: Math.floor(run.elapsedDays)
         });
 
-        return this.freeAction(run, 'request', factsForACommission(
+        const answered = this.freeAction(run, 'request', factsForACommission(
             party.name, cultivator.name, asked, answer
         ));
+        // HOW LONG IT WOULD TAKE THEM, off the one curve a bench and a cauldron
+        // read. Said and not spent: this asks and answers, and nothing is placed
+        // with them, so nothing is written on their activity either.
+        if (answer.hands.theyCan) {
+            const days = daysAtTheWork(asked.grade, party.party.realmOrdinal);
+            const line = `It would take ${party.name} ${days} day${days === 1 ? '' : 's'} at the work.`;
+            answered.facts.lines.push(line);
+            answered.facts.prose = `${answered.facts.prose}\n\n${line}`;
+            answered.facts.structure.push(
+                `daysAtTheWork(${asked.grade}, ordinal ${party.party.realmOrdinal}) = ${days}. Not spent: a commission is asked and answered here and not placed.`
+            );
+        }
+        return answered;
     },
 
     /**

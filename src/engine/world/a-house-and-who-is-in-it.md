@@ -262,7 +262,9 @@ into thin air. They are an elder without an office, or they go.
 `a-house-promotes-by-realm-then-merit.test.ts`):
 
 1. **Two gates.** The rung's realm bar, and its merit minimum. Merit is service
-   the house counts - a posting or a sending served to term, attention given -
+   the house counts - a posting or a sending served to term, attention given,
+   work taken off its board (`a-disciple-takes-work-off-the-board.ts`), and a
+   thing it wants handed in (`what-a-house-gives-merit-for.ts`) -
    held on `NpcRecord.merit` against one house, in the units of a player's
    `contribution`, and the minimum is the player's own curve,
    `requiredContributionForRank`. Somebody tall enough who has not served is
@@ -436,6 +438,17 @@ Note that "minting" is a convenient word rather than a new mechanism: what
 happens is the world bearing and enrolling somebody, which it already does
 yearly.
 
+**What is built of this, and what is not.** A house whose compound stands and
+sleeps people nobody models, and whose roll is short of `aRollWorthModelling`,
+has one of its own outer disciples come forward each year, at rank 0
+(`a-house-takes-in-one-of-its-own.ts`). Everything above rank 0 is still
+climbed. And a house is judged, not its slice: it falls when it cannot pay, or
+when its roll is empty and it has nobody else - no compound, or a compound a
+conquest made a ruin (`whetherAHouseHasFailed`). The real size used is the
+dormitory the compound was built with (`howManyAHouseReallyHas`), which does
+not yet move with the house's fortunes; the tracked number below is still to
+build.
+
 ### Track the house's real size, and let the odds fall out
 
 **A house should carry its FULL size as a number that moves over time**, and the
@@ -516,7 +529,7 @@ So **a house hears from its people without waiting for them to walk home.**
 The channel is a **communication talisman**: a slip keyed to where it answers
 (the house's hall, a master, a named person), burnt once, carrying a short
 message the same day. It is the third kind of act a slip holds, beside a
-strike and a way out, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
+strike and a teleportation talisman, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
 - **but it is counted, not tracked**. The owner: *"these are too common and
 single use, don't bother making them tracked, they're just counted"*. A house
 keeps a stock of them, hands a few to whoever it sends or stations away, and
@@ -560,6 +573,18 @@ Rulings from the same night, which the talisman is one link of:
   gate **in the house's robes and on a face somebody there knows**; an unknown
   face in robes is stopped and asked, which is also exactly how a disguise
   works.
+- **with no report - the recruiter died first, or has not got back - the recruit
+  is questioned by the Internal Affairs Elder**: *"the house still knows the
+  recruiter went to the area and knows what their standards are, right?
+  Questioned and allowed if matched, else rejected."* The house reads what it
+  already holds - whose the recruiter is, where they were then, its own
+  admission bar - and keeps nothing new for it.
+- **nobody joins a house out of thin air**: *"Houses hold selection ceremonies
+  at their sect grounds too. They aren't open 365 days a year. They send people
+  out looking for seedlings, and open up recruitment once every x years."* A
+  player is taken on by somebody out looking for disciples, at a selection at the
+  house's grounds, or at the intake its paper names, and whoever did it is their
+  recruiter. See `when-a-house-takes-people-on.ts` and `src/web/who-takes-you-on.ts`.
 
 ## Where the rest of this is written down
 

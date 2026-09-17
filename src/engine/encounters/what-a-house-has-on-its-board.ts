@@ -246,6 +246,9 @@ export function whatAHouseHasOnItsBoard(input: {
     const byId = new Map<string, EncounterEntry>();
     for (const reason of reasonsOpenTo(input.house)) {
         for (const pitchedAt of pitches) {
+            // Work nobody under the reason's floor can do is not pitched under
+            // it, so somebody standing below it is not offered it at all.
+            if (reason.floorOrdinal !== null && pitchedAt < reason.floorOrdinal) continue;
             const offer = aPostingAsAnOffer({
                 reason,
                 house: { id: input.house.id, name: input.house.name },

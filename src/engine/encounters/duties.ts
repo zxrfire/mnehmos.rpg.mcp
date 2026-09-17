@@ -201,12 +201,17 @@ export function contributionPerStoneOverDays(days: number): number {
  * (`passing-a-duty-down-to-somebody-else.ts`): what the board would have paid
  * for that work, as money. It is not a way in.
  *
- * There is no rate at which spirit stones become contribution, and there must
- * not be one. Contribution is the record of what somebody DID for a house, and
- * a rung is bought with it - so a money-to-contribution rate is cash buying a
- * rung with one step hidden in the middle. Somebody may still pay a house
- * (`donate`); the stones reach the treasury and the ledger of service does not
- * move.
+ * There is no fixed rate at which spirit stones become contribution. Somebody
+ * may still pay a house (`donate`); the stones reach the treasury and the
+ * ledger of service does not move.
+ *
+ * What exists instead is a house's WANT, ruled by the design owner: buying a
+ * thing and turning it in is fine *"if it's something the sect wants"*. A house
+ * credits a thing it cannot simply buy for itself, at what getting it another
+ * way would cost it, and the want saturates: once it holds one, the next is
+ * worth nothing. So stones cannot be poured in without limit, not because
+ * bought goods are refused but because the want fills. The rate above prices
+ * goods turned in. See `what-a-house-gives-merit-for.ts`.
  */
 
 export interface DutyTerms {

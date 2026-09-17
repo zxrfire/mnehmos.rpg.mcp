@@ -19,7 +19,7 @@
  * stranger to a house that knows exactly what they were.
  */
 
-import { makeGame } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGame } from './harness';
 
 function seatOf(db: ReturnType<typeof makeGame>['db'], id: string) {
     return db.prepare(
@@ -32,6 +32,8 @@ describe('the revolving door', () => {
         const { db, game } = makeGame({ seed: 'revolving', worldEnabled: true });
         const { cultivator } = await game.newRun('Door');
         db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
 
         await game.act('I join the Azure Dew Sect');
         const joined = seatOf(db, cultivator.id)!;
@@ -48,6 +50,7 @@ describe('the revolving door', () => {
         // scored the word `sect` against the register and joined the Azure Dew
         // Sect one line after the game had said knowing a name is not an
         // introduction. See GENERIC_HOUSE_PHRASE in `GameService.sect`.
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
         const back = await game.act('I join the Azure Dew Sect');
 
         expect(seatOf(db, cultivator.id)!.rank_index, 'the door handed out free ranks')
@@ -68,6 +71,8 @@ describe('the revolving door', () => {
         db.prepare(
             'UPDATE cultivators SET spirit_stones = 500, realm_ordinal = 16 WHERE id = ?'
         ).run(cultivator.id);
+
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
 
         await game.act('I join the Azure Dew Sect');
 

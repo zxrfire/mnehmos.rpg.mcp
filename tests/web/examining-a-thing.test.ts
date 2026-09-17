@@ -22,13 +22,16 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { makeGameInWorld, type Harness } from './harness.js';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld, type Harness } from './harness.js';
 
 async function aReaderAt(seed: string, ordinal: number, house?: string): Promise<Harness> {
     const harness = await makeGameInWorld({ seed, worldSeed: 'examining-a-thing', adminMode: true });
     await harness.game.newRun('Shen Yue');
     if (ordinal > 0) await harness.game.act(`ADMIN set_realm ordinal=${ordinal}`);
-    if (house) await harness.game.act(`ADMIN sect join ${house}`);
+    if (house) {
+        await aRecruiterOfTheHouseIsHere(harness.game, house);
+        await harness.game.act(`ADMIN sect join ${house}`);
+    }
     return harness;
 }
 

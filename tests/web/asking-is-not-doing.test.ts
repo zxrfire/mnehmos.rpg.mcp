@@ -52,7 +52,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type Database from 'better-sqlite3';
-import { makeGame, makeGameInWorld, cultivatorRow, type Harness } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGame, makeGameInWorld, cultivatorRow, type Harness } from './harness';
 import {
     ACTION_NAMES,
     INTERACT_INTENTS,
@@ -69,7 +69,10 @@ import {
     manualsAStallCarries,
     stallPriceStones
 } from '../../src/engine/world/what-a-copy-of-a-manual-costs-at-a-stall';
-import { npcsAt } from '../../src/engine/world/world-state';
+// Read down to the room, the way the verbs read who is standing here: a house's
+// own people at a room's work are in that room and not at its seat. See
+// `where-inside-a-house-somebody-is-standing.ts`.
+import { npcsStandingIn as npcsAt } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 
 const PRIMER = 'lesser-qi-gathering-manual';
@@ -90,10 +93,11 @@ const sectOf = (db: Database.Database, id: string) =>
  */
 async function intoAHouse(
     db: Database.Database,
-    game: { act(text: string): Promise<unknown> },
+    game: Harness['game'],
     id: string
 ): Promise<string> {
     for (let attempt = 0; attempt < 12; attempt++) {
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
         await game.act('I join the Azure Dew Sect');
         const held = sectOf(db, id);
         if (held !== null) return held;
@@ -810,6 +814,7 @@ describe('a house takes somebody on, or it does not', () => {
         for (let i = 0; i < seeds; i++) {
             const { db, game } = makeGame({ seed: `door-${i}`, worldEnabled: true });
             const { cultivator } = await game.newRun('Lin Baoqing');
+            await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
             await game.act('I join the Azure Dew Sect');
             if (sectOf(db, cultivator.id) !== null) taken++;
         }
@@ -1283,6 +1288,7 @@ describe('a conditional is not a commitment', () => {
         expect(promised, 'the read named no rank for a house that would take them').toBeTruthy();
 
         // Now actually commit, which must still work.
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
         await game.act('I join the Azure Dew Sect');
         const after = await game.state();
 

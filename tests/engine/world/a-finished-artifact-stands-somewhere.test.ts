@@ -8,7 +8,7 @@
  * and the claim is about all of them.
  *
  * WHAT IT CAUGHT. 91 of 235 artifacts in a seeded world carried no ordinal, and
- * every one of them was a departure talisman: `cutATalisman` priced the way-out
+ * every one of them was a teleportation talisman: `cutATalisman` priced the
  * slip at null on the reasoning that it is no use in a fight, which is a
  * different question from what rung the thing is. The 61% went red here.
  *
@@ -100,9 +100,9 @@ describe('what a slip stands at is the hand that cut it, not the act inside it',
      * the same rung; only one of them is swung, and being swung is not what an
      * ordinal measures.
      */
-    it('a strike slip and a way out cut by one hand stand at the same rung', () => {
+    it('a strike slip and a teleportation talisman cut by one hand stand at the same rung', () => {
         for (let crafterOrdinal = 0; crafterOrdinal <= MAX_ORDINAL; crafterOrdinal++) {
-            const cut = (what: 'a_strike' | 'a_way_out') => cutATalisman({
+            const cut = (what: 'a_strike' | 'a_teleportation') => cutATalisman({
                 id: `slip-${what}-${crafterOrdinal}`,
                 name: 'a slip',
                 grade: 'earth',
@@ -111,8 +111,8 @@ describe('what a slip stands at is the hand that cut it, not the act inside it',
                 crafterOrdinal,
                 onDay: 0
             });
-            expect(cut('a_way_out').power).toBe(cut('a_strike').power);
-            expect(cut('a_way_out').power).not.toBeNull();
+            expect(cut('a_teleportation').power).toBe(cut('a_strike').power);
+            expect(cut('a_teleportation').power).not.toBeNull();
         }
     });
 });
@@ -127,16 +127,16 @@ describe('the one thing that legitimately stands nowhere', () => {
     });
 });
 
-describe('and a house keeps no way out it could not have made', () => {
-    it('stocks departure slips only where somebody there can fold', async () => {
-        // Measured before the guard: seeded escape slips spanned ordinals
+describe('and a house keeps no teleportation talisman it could not have made', () => {
+    it('stocks teleportation talismans only where somebody there can fold', async () => {
+        // Measured before the guard: seeded teleportation talismans spanned ordinals
         // 14..44, and `FOLD_FLOOR_ORDINAL` is 29 - so every house under it was
         // holding paper that carries zero distance. A way out that is not one
         // is worse than none, because a disciple handed one believes they have
         // a way out.
         for (const objects of await everyWorldsObjects()) {
             const escapes = objects.filter(o =>
-                o.tags.includes('talisman') && o.tags.includes('escape'));
+                o.tags.includes('talisman') && o.tags.includes('teleportation'));
             for (const slip of escapes) {
                 expect(Number(slip.data?.carriesWalkingDays ?? 0)).toBeGreaterThan(0);
             }

@@ -18,6 +18,8 @@ import {
     roomsVisibleTo,
     styleTagsOf,
     survivingTags,
+    whatAHouseIsFocusedOn,
+    A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER,
     type CompoundInput
 } from '../../../src/engine/world/architecture.js';
 import { makeLocation, type LocationRecord } from '../../../src/engine/world/locations.js';
@@ -500,5 +502,54 @@ describe('nothing in the lore is bespoke', () => {
         expect(a.precincts.length).not.toBe(b.precincts.length);
         expect(a.style.tags).not.toEqual(b.style.tags);
         expect(a.locations.length).not.toBe(b.locations.length);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// BOTH CRAFTS, IN EVERY HOUSE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The design owner: *"same as the pill houses, every house makes artifacts,
+ * some are focused on artifacts."* Every compound has a room to refine pills in
+ * and a room to forge artifacts in, and a focus on the craft is a difference of
+ * degree: a larger room, and for medicine the furnace floor besides.
+ *
+ * The forge focus is given to no house yet: it waits on a field in the catalog
+ * code can read, and a house's name is not one.
+ *
+ * Red-checked: dropping the two appended rooms from `roomsFor` fails the first
+ * arm, and dropping the focus multiplier from `growCompound` fails the second.
+ */
+describe('every house makes pills and artifacts, and a focus is a matter of degree', () => {
+    const capacityOf = (input: CompoundInput, purpose: string) =>
+        Number(growCompound(seat(), input, { seed: 'crafts', presentDay: 2_000 }).locations
+            .find(row => purposeOf(row) === purpose)?.data.capacity ?? 0);
+
+    it('gives a house with no craft focus an alchemy hall and an Artifact Refining Hall', () => {
+        const rooms = roomsFor(broadHouse());
+        expect(whatAHouseIsFocusedOn(broadHouse())).toEqual({ pills: false, artifacts: false });
+        expect(rooms).toContain('alchemy_hall');
+        expect(rooms).toContain('artifact_refining_hall');
+        expect(rooms).not.toContain('furnace_room');
+    });
+
+    it('cuts the room of the craft a house is focused on larger, and gives medicine its furnace floor', () => {
+        const plain = broadHouse();
+        const pills = broadHouse({ specialities: ['support'] });
+        expect(roomsFor(pills)).toContain('furnace_room');
+        // Within one seat of the multiple: a capacity is a whole number of seats,
+        // rounded once on the larger figure rather than doubled after rounding.
+        const larger = (focused: number, ordinary: number) => expect(
+            Math.abs(focused - ordinary * A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER)
+        ).toBeLessThanOrEqual(1);
+        larger(capacityOf(pills, 'alchemy_hall'), capacityOf(plain, 'alchemy_hall'));
+        expect(capacityOf(pills, 'alchemy_hall')).toBeGreaterThan(capacityOf(plain, 'alchemy_hall'));
+    });
+
+    it('gives the forge focus to no house, not even one that calls itself a forge', () => {
+        const forge = broadHouse({ factionName: 'Broad Forge Clan' });
+        expect(whatAHouseIsFocusedOn(forge).artifacts).toBe(false);
+        expect(capacityOf(forge, 'artifact_refining_hall')).toBe(capacityOf(broadHouse(), 'artifact_refining_hall'));
     });
 });

@@ -29,7 +29,7 @@
  *                  sometimes and never says when. Handing the ungated read to a
  *                  narrator is the defect `a-door-that-closes-is-not-a-door-
  *                  nobody-opened.ts` warns about in its own header.
- *   the two roads  somebody at the folding floor, or a way-out slip. Where
+ *   the two roads  somebody at the folding floor, or a teleportation talisman. Where
  *                  neither is here they are named anyway, which is the standing
  *                  rule: not having the standing to go in is not the same as
  *                  seeing nothing.
@@ -163,7 +163,7 @@ describe('a door that shuts is said to somebody standing at it', () => {
         const prose = said.lines.join(' ');
         // NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING NOTHING.
         expect(/folds them in and stands at the door/i.test(prose)).toBe(true);
-        expect(/way-out slip/i.test(prose)).toBe(true);
+        expect(/teleportation talisman/i.test(prose)).toBe(true);
     });
 
     it('reads the escort off whoever is actually here', () => {
@@ -182,9 +182,9 @@ describe('a door that shuts is said to somebody standing at it', () => {
     it('reads the second road off the slip somebody is carrying', () => {
         const slip = cutATalisman({
             id: 'obj-slip',
-            name: 'Way-Out Talisman',
+            name: 'Teleportation Talisman',
             grade: 'earth',
-            what: 'a_way_out',
+            what: 'a_teleportation',
             crafterId: 'npc-maker',
             crafterOrdinal: FOLD_FLOOR_ORDINAL,
             onDay: 0

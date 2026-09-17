@@ -33,7 +33,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
-import { engineCalls, makeGameInWorld } from './harness';
+import { aRecruiterOfTheHouseIsHere, engineCalls, makeGameInWorld } from './harness';
 import type { ActResult } from '../../src/web/turn-wire-shapes';
 
 /** The resolver's own one-line account, which names what was on the table. */
@@ -69,7 +69,10 @@ async function anAskerAt(options: {
         `ADMIN spawn_encounter ordinal=${options.theirRung} name=${options.theirName}`
         + (options.theirAlignment ? ` alignment=${options.theirAlignment}` : '')
     );
-    if (options.joins) await game.act(`ADMIN sect join ${options.joins}`);
+    if (options.joins) {
+        await aRecruiterOfTheHouseIsHere(game, options.joins);
+        await game.act(`ADMIN sect join ${options.joins}`);
+    }
     return game;
 }
 

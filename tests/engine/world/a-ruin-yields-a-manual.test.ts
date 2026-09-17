@@ -259,10 +259,10 @@ describe('what comes out of the hole', () => {
 
     const HOUSE = { id: 'house-probe', name: 'The Probe Hall', seatLocationId: null };
 
-    it('lands the copy on the house shelf unread, for the house to decide who reads it', () => {
-        // Carrying is not reading. The finder used to take the art on the spot,
-        // which for a one-reader book meant whoever picked it up spent the
-        // house's only read. The house decides through `newlyEntitled`.
+    // Who reads a book a house's party carries out, and whether the house gets
+    // it, is the finder's decision now: `a-finder-reads-what-they-found-or-turns-it-in.test.ts`.
+
+    it('brings every book out of the hole', () => {
         const state = world();
         const { door, books } = holeWithBooksInIt(state);
         expect(books.length).toBeGreaterThan(0);
@@ -276,13 +276,8 @@ describe('what comes out of the hole', () => {
         expect(out).toHaveLength(books.length);
         expect(booksLyingIn(state, door.id)).toEqual([]);
         for (const row of out) {
-            const object = state.objects.find(o => o.id === row.objectId)!;
-            expect(object.possessorId).toBe(HOUSE.id);
-            expect(object.tags).not.toContain(LEFT_IN_THE_GROUND);
-            expect(object.tags).toContain('library');
+            expect(state.objects.find(o => o.id === row.objectId)!.tags).not.toContain(LEFT_IN_THE_GROUND);
         }
-        expect(state.npcs.find(n => n.id === reader.id)!.cultivation.techniqueIds).toEqual([]);
-        expect(out.every(row => row.readById === null)).toBe(true);
         expect(out.some(row => row.cap === highest)).toBe(true);
     });
 
@@ -297,11 +292,7 @@ describe('what comes out of the hole', () => {
 
         expect(out.length).toBeGreaterThan(0);
         expect(out.every(row => row.readById === null)).toBe(true);
-        // On the house's shelf, waiting for somebody who can - which is what
-        // makes it a thing the house teaches rather than a thing one person had.
-        for (const row of out) {
-            expect(state.objects.find(o => o.id === row.objectId)!.possessorId).toBe(HOUSE.id);
-        }
+        expect(booksLyingIn(state, door.id)).toEqual([]);
         expect(state.npcs.find(n => n.id === tooLow.id)!.cultivation.techniqueIds).toEqual([]);
     });
 

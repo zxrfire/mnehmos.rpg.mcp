@@ -80,14 +80,44 @@ describe('a newborn is born somewhere somebody can stand', () => {
         expect(after.alive).toBeLessThanOrEqual(before.alive * 1.1);
     }, 180_000);
 
-    it('leaves no settlement without a soul in it', async () => {
-        // The condition the encounter system actually depends on. An empty
-        // settlement produces person-free events forever.
+    /**
+     * WHAT THIS GUARDED, AND WHAT OF IT IS STILL TRUE.
+     *
+     * It asserted that no settlement at all stood empty at 80 years, because an
+     * empty settlement produces person-free events forever. The design owner has
+     * since ruled that a recruit entered at their house's seat MOVES INTO THE
+     * COMPOUND (`a-recruit-is-given-their-lamp-at-the-house.ts`), and the
+     * settlements lose the people houses recruit. That was measured before the
+     * ruling, on this seed at 80 years: people in settlements 548 with recruits
+     * going home and 338 with them moving in. Measured after it, on this tree:
+     *
+     *     seed          80y: in settlements   empty                  150y: empty
+     *     demography    344 (open 199)        Plum Village,          Pine Spring,
+     *                                         Pine Spring            The Far Shore
+     *     afford-a      334 (open 222)        4 small places         none
+     *     afford-b      327 (open 210)        Two Streams, Pine Spr. Pine Spring
+     *     afford-c      330 (open 214)        3 small places         4 small places
+     *
+     * Every empty one is a village, a hamlet or a waystation, and followed year by
+     * year on this seed their people left for the seat of the house they were on
+     * the roll of - Plum Village lost 7 that way in 80 years and had 4 born - so
+     * it is the ruling, with births too slow to refill a small place, and not a
+     * defect in either. Three of those names were already empty on the afford
+     * seeds before any recruit went anywhere. Refilling a village is a separate
+     * question and it is not this guard's.
+     *
+     * WHAT STAYS PINNED is what never happened on any seed at either horizon: a
+     * TOWN or a CITY with nobody in it. Those are where encounters, markets and
+     * walls are, and a house recruiting out of one does not empty it.
+     */
+    it('leaves no town or city without a soul in it, whatever the houses recruit', async () => {
         const { state } = await advancedWorld(80);
-        const empty = state.locations
-            .filter(l => l.kind === 'settlement' && npcsAt(state, l.id).length === 0)
-            .map(l => l.name);
-        expect(empty, `settlements with nobody in them: ${empty.join(', ')}`).toHaveLength(0);
+        const aTownOrACity = (tags: readonly string[]) =>
+            tags.includes('market_town') || tags.includes('sect_town') || tags.includes('city');
+        const towns = state.locations.filter(l => l.kind === 'settlement' && aTownOrACity(l.tags));
+        expect(towns.length, 'the world holds no towns to ask about').toBeGreaterThan(0);
+        const empty = towns.filter(l => npcsAt(state, l.id).length === 0).map(l => l.name);
+        expect(empty, `towns and cities with nobody in them: ${empty.join(', ')}`).toHaveLength(0);
     }, 180_000);
 
     it('puts nobody on a region node after the original cohort is gone', async () => {

@@ -869,14 +869,29 @@ export interface WhereTheirAttentionIs {
  * Being at their own wall is read, through `howCloseTheyStandToTheirWall`.
  *
  * Having given you time within the year is read too, off the tie between you
- * (`gaveAttentionRecently`). It is not a refusal: more of somebody's days so
- * soon after the last is a heavier ask, and the resolver weighs it as one.
+ * (`gaveAttentionRecently`). It is not a refusal and it is not a heavier ask:
+ * it is a stated reason, weighed through the disposition term the resolver
+ * already takes. See {@link TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND}.
  *
  * ONE REASON NOT READ HERE, because nothing holds it: being in the middle of
  * making something you commissioned. A commission writes no activity on the
  * maker. Writing out a copy does, and is read above as something they cannot
  * put down.
  */
+/**
+ * How much less open-handed somebody is about their days, having given the asker
+ * some within the year, on the disposition axis the resolver reads (-1..1).
+ *
+ * THE LIGHTEST LEVER THE RESOLVER ALREADY HAS. The ask ladder has nothing
+ * between `a_real_favour` and `against_their_interest`, and the step between
+ * them took a disciple from 13.5% to the 2% floor. The disposition term is
+ * `openHandedness x DISPOSITION_MAX (0.18) x DISPOSITION_REACH`, which is 1 for a
+ * real favour, so a third of the axis is 0.06 off the odds: less than one open
+ * favour the other way is worth (0.08), which is the size of a reason and not
+ * of a refusal.
+ */
+export const TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND = 1 / 3;
+
 /**
  * What they are in the middle of, as the refusal a busy person gives.
  *
@@ -966,11 +981,11 @@ function costOfGuidance(
         return refusal(busy.headline, busy.prose, busy.structure);
     }
 
-    // TIME GIVEN WITHIN THE YEAR. A heavier ask, weighed by the resolver like
-    // any other: their days again, so soon after the last, come out of their
-    // own road. Never a refusal on its own.
+    // TIME GIVEN WITHIN THE YEAR. A stated reason, weighed by the asker's side
+    // as a hand a little less open (`TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND`).
+    // The ask stays what it is. Never a refusal on its own.
     const soSoon = where.gaveAttentionRecently === true;
-    const ask: AskWeight = soSoon ? 'against_their_interest' : 'a_real_favour';
+    const ask: AskWeight = 'a_real_favour';
     const others = where.alreadyTeaching;
     const crowd = others === 0
         ? []
@@ -998,10 +1013,12 @@ function costOfGuidance(
         structure: [
             `Being watched is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is priced as `
             + `${theAskInWords(ask)} - ${days} of the asked person's days`
+            + ', the same weight asking them along carries. '
             + (soSoon
-                ? ', one rung heavier than asking them along, because gaveAttentionRecently reads the '
-                  + 'tie between them as attention given within ATTENTION_IS_RECENT_FOR_DAYS. '
-                : ', the same weight asking them along carries. ')
+                ? 'gaveAttentionRecently reads the tie between them as attention given within '
+                  + 'ATTENTION_IS_RECENT_FOR_DAYS, so their open-handedness is taken '
+                  + `${TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND.toFixed(2)} down its -1..1 axis for this ask. `
+                : '')
             + 'The ordinary resolver decides, for a master too: the tie between them is one of its terms.'
         ],
         techniqueId: null,

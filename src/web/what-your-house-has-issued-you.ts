@@ -3,11 +3,11 @@
  *
  * The player joins a house the way anybody does - where they stand - and is
  * given nothing for it until they are at its seat: robes, and a token with a
- * plate on the wall where their rung carries one. Leaving hands both back.
+ * lamp lit for them where their rung carries one. Leaving hands both back.
  *
  * ── THE SAME RULES AS EVERYBODY ELSE ─────────────────────────────────────
  *
- * `whatTheHouseGivesThem` in `a-recruit-is-given-their-plate-at-the-house.ts`
+ * `whatTheHouseGivesThem` in `a-recruit-is-given-their-lamp-at-the-house.ts`
  * is the one answer, asked by the world's yearly pass for its own people and
  * here for the player. The robes and the token are the world's own rows with the
  * player's id as possessor - the form every tracked thing the player carries
@@ -24,26 +24,27 @@
  * one added, and costs a pass over the world's objects.
  *
  * Measured before this existed: `issueTo` had no caller on the played side at
- * all, so no player had ever carried a token or had a plate hung for them, and
+ * all, so no player had ever carried a token or had a lamp lit for them, and
  * `sect_manage` joined a player to a house from anywhere without either.
  */
 
 import {
     thisHouseCanIssue
-} from '../engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+} from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import {
     handBackWhatTheyNoLongerBelongTo,
     holdsTheTokenOf,
     isInsideTheCompound,
-    theKeeperOfTheRollIn,
+    theInternalAffairsElderIn,
     wearsTheRobesOf,
     whatTheHouseGivesThem,
-    whereThisHouseHangsItsPlates
-} from '../engine/world/a-recruit-is-given-their-plate-at-the-house.js';
+    whereThisHouseBurnsItsLamps
+} from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
+import { theyAreEntered } from '../engine/world/a-house-expects-somebody-it-took-on.js';
 import { upsertObject } from '../engine/world/world-state.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
-import { rankIndexOf } from './walking-up-to-a-house.js';
+import { rankIndexOf, theHouseTakesYourWord } from './walking-up-to-a-house.js';
 
 export interface WhatYourHouseIssued {
     /** Facts for the player. What changed hands, and nothing else. */
@@ -95,9 +96,14 @@ export function settleWhatYourHouseHasIssuedYou(
     const seat = house?.seatLocationId ?? null;
     const here = game.worldPlaceOf(cultivator);
     const byId = new Map(world.locations.map(l => [l.id, l]));
-    if (house && seat && here && isInsideTheCompound(byId, here, seat)) {
+    // NEVER ENTERED IS ENTERED ON THE HOUSE'S WORD, as it is for everybody in
+    // the yearly pass: robed already, or let in on what the house makes of
+    // them, which is what the gate reads too. See `theHouseTakesYourWord`.
+    const robedAlready = house !== null && wearsTheRobesOf(world.objects, cultivator.id, house.id);
+    if (house && seat && here && isInsideTheCompound(byId, here, seat)
+        && (robedAlready || theHouseTakesYourWord(game, cultivator, house))) {
         const roll = world.npcs.filter(n => n.status === 'alive' && n.factionId === house.id);
-        const plateRoomId = whereThisHouseHangsItsPlates(world.locations, house.id) ?? seat;
+        const lampRoomId = whereThisHouseBurnsItsLamps(world.locations, house.id) ?? seat;
         const given = whatTheHouseGivesThem({
             house,
             person: {
@@ -108,26 +114,27 @@ export function settleWhatYourHouseHasIssuedYou(
             wearsItsRobes: wearsTheRobesOf(world.objects, cultivator.id, house.id),
             holdsItsToken: holdsTheTokenOf(world.objects, cultivator.id, house.id),
             canCut: thisHouseCanIssue(roll.map(n => n.cultivation.realmOrdinal)),
-            plateRoomId,
-            keeperOfTheRoll: () => theKeeperOfTheRollIn(
+            lampRoomId,
+            internalAffairsElder: () => theInternalAffairsElderIn(
                 world.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex }))
             ),
             onDay: Math.floor(world.currentDay)
         });
         if (given.robes) {
             Object.assign(world, upsertObject(world, given.robes));
+            theyAreEntered(world, house.id, cultivator.id);
             lines.push(`Entered on the roll of ${house.name} at its seat: robes with the house's `
                 + 'mark on them are yours to wear.');
             structure.push(`whatTheHouseGivesThem: robes ${given.robes.id}.`);
         }
-        if (given.token && given.plate) {
+        if (given.token && given.lamp) {
             Object.assign(world, upsertObject(world, given.token));
-            Object.assign(world, upsertObject(world, given.plate));
-            const hall = byId.get(plateRoomId)?.name ?? 'the hall';
-            lines.push(`A jade token with ${house.name} cut into it is yours, and a plate for you `
-                + `hangs in ${hall}. A gate that asks for a token will read it.`);
-            structure.push(`whatTheHouseGivesThem: token ${given.token.id}, plate ${given.plate.id} `
-                + `in ${plateRoomId}, cut by ${String(given.token.data.cutById ?? 'nobody holding the roll room')}.`);
+            Object.assign(world, upsertObject(world, given.lamp));
+            const hall = byId.get(lampRoomId)?.name ?? 'the hall';
+            lines.push(`A jade token with ${house.name} cut into it is yours, and a lamp for you `
+                + `burns in ${hall}. A gate that asks for a token will read it.`);
+            structure.push(`whatTheHouseGivesThem: token ${given.token.id}, lamp ${given.lamp.id} `
+                + `in ${lampRoomId}, cut by ${String(given.token.data.cutById ?? 'nobody holding the roll room')}.`);
         }
     }
 

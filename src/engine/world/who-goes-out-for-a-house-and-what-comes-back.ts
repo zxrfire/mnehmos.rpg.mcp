@@ -110,6 +110,18 @@ export interface HouseAsItStands {
      * or folds, and a single boolean would have said it was about to march.
      */
     knowsGroundThatWouldPayIt?: boolean;
+    /**
+     * Whether somebody this house keeps on a posting is due to be looked in on.
+     * Set only by the pass that keeps that cadence, so no board ever offers it.
+     * See `what-a-house-hears-from-its-people-away.ts`.
+     */
+    someoneIsDueALookIn?: boolean;
+    /**
+     * Whether its stock of communication talismans is below what it keeps.
+     * `itsCommunicationTalismansRunLow` is the one reading. Absent where the
+     * caller has not asked, which is every board today.
+     */
+    itsCommunicationTalismansRunLow?: boolean;
 }
 
 /**
@@ -134,7 +146,9 @@ export const NEED_PREDICATES: Record<ReasonNeed, (house: HouseAsItStands) => boo
     a_counterpart: house => (house.sitsDownWith?.length ?? 0) > 0,
     forbidden_ground: house => house.standsNearForbiddenGround === true,
     ground_that_pays_somebody_else: house =>
-        house.cannotPayItsPeople === true && house.knowsGroundThatWouldPayIt === true
+        house.cannotPayItsPeople === true && house.knowsGroundThatWouldPayIt === true,
+    somebody_out_on_a_posting: house => house.someoneIsDueALookIn === true,
+    communication_talismans_running_low: house => house.itsCommunicationTalismansRunLow === true
 };
 
 /**
@@ -310,7 +324,7 @@ export function whatStandingOnItGives(
         if (roll) return roll;
         roll = new Set<string>();
         for (const fact of sited.get(locationId) ?? []) {
-            for (const actor of fact.actors) roll.add(actor.id);
+            for (const actor of fact.actors) if (actor.role !== SENT_WORD_HOME) roll.add(actor.id);
             for (const id of fact.witnessIds) roll.add(id);
         }
         wasThere.set(locationId, roll);
@@ -341,6 +355,24 @@ export const WENT_AND_DID_NOT = 'lost';
  * correct, because nobody has reported to it.
  */
 export const WENT_AND_IS_NOT_BACK = 'out';
+/**
+ * And somebody who did not come back and sent word instead, on a communication
+ * talisman. The house was told, so {@link whatAHousesOwnErrandsBringBack} reads
+ * it; the sender need not have stood on the ground the word is about, so
+ * {@link whatStandingOnItGives} does not.
+ */
+export const SENT_WORD_HOME = 'sent word';
+
+/**
+ * How heavy a fact has to be before anybody repeats it: a finished sending's
+ * news, and what somebody away sends home about another house or the ground.
+ *
+ * Moved here from the yearly pass so the word from people away reads the same
+ * bar rather than a second one. Measured against it over two seeds at a century:
+ * a promotion onto an elder rung weighs 0.40 to 0.49, a master taken 0.30, a
+ * death 0.66 and up, a door opening 0.55 and up.
+ */
+export const WORTH_REPEATING = 0.35;
 
 /**
  * Where a house's own parties have been, off the same ledger and the same two
@@ -394,7 +426,7 @@ export function whatAHousesOwnErrandsBringBack(
             // every actor marked lost, and a house that lost everybody it sent
             // was told nothing - which is the whole of why the outcome is on
             // the roles.
-            if (!fact.actors.some(a => a.role === WENT_AND_CAME_BACK)) continue;
+            if (!fact.actors.some(a => a.role === WENT_AND_CAME_BACK || a.role === SENT_WORD_HOME)) continue;
             for (const houseId of fact.factionIds) told.add(houseId);
         }
         reported.set(locationId, told);
@@ -1516,7 +1548,7 @@ export function whatAFailedSendingTakes(input: {
  * "they went out and the record does not say where" rather than as home.
  */
 /** Whether the errand ends at somebody's hall or out on ground. */
-export const WHERE_A_NEED_SENDS_YOU: Record<ReasonNeed, 'a_seat' | 'ground'> = {
+export const WHERE_A_NEED_SENDS_YOU: Record<ReasonNeed, 'a_seat' | 'ground' | 'home'> = {
     nothing: 'ground',
     ground: 'ground',
     a_subsidiary: 'a_seat',
@@ -1529,7 +1561,11 @@ export const WHERE_A_NEED_SENDS_YOU: Record<ReasonNeed, 'a_seat' | 'ground'> = {
     forbidden_ground: 'ground',
     // The ground itself, and never the hall of whoever is standing on it. A
     // house walking onto a town it means to take is not being received.
-    ground_that_pays_somebody_else: 'ground'
+    ground_that_pays_somebody_else: 'ground',
+    // The town the posting is in. The pass that keeps the cadence names it.
+    somebody_out_on_a_posting: 'ground',
+    // Work done at the house, which is the one errand that goes nowhere.
+    communication_talismans_running_low: 'home'
 };
 
 /**
@@ -1569,6 +1605,8 @@ const WHO_A_NEED_IS_ABOUT:
     // The ground names itself, and whoever is standing on it is not receiving
     // anybody. The caller knows which piece and says so.
     ground_that_pays_somebody_else: () => [],
+    somebody_out_on_a_posting: () => [],
+    communication_talismans_running_low: () => [],
     an_ally: house => Object.entries(house.standing)
         .filter(([, regard]) => regard >= ALLIED_STANDING)
         .map(([id]) => id),
@@ -1588,12 +1626,39 @@ export function whichHousesAReasonIsAbout(
 }
 
 /**
+ * Cut inside a place rather than a place of its own: `interior` is the word the
+ * compound generator writes on every precinct, room and node it makes, and the
+ * one the readers of a compound walk.
+ */
+export function insideSomebodysWalls(location: Pick<LocationRecord, 'tags'>): boolean {
+    return location.tags.includes('interior');
+}
+
+/**
+ * Nowhere anybody stands: a region is a container, and inside somebody's walls
+ * is a room read off what a person is doing. Checked by kind rather than by
+ * `populationWeightOf`, which defaults a row with no weight to 1 - and a seeded
+ * province carries none. Measured on `demography`: board parties were written
+ * onto five province nodes in the first seven years before this.
+ */
+export function nowhereToStand(location: Pick<LocationRecord, 'kind' | 'tags'>): boolean {
+    return location.kind === 'region' || insideSomebodysWalls(location);
+}
+
+/**
  * Ground a party can be sent to stand on, by id.
  *
  * The `elsewhere` contract {@link whereASendingGoes} states, as the filter it
  * describes: not a hall, not above the lid, and somewhere with people on it. A
  * region is a container and a party posted to one is inside the map rather than
  * on it.
+ *
+ * AND NOT A PROVINCE, AND NOT INSIDE ANYBODY'S WALLS ({@link nowhereToStand}).
+ * A precinct, a room and a formation node all
+ * have people standing in them, and a party drawn onto one had somebody's hall
+ * written as where they were - a room is read off what a person is doing
+ * (`where-inside-a-house-somebody-is-standing.ts`), never stored. A house's own
+ * seat, for work done at home, is its own case in {@link whereASendingGoes}.
  */
 /**
  * Ground these houses hold, for a party sent to a house that has no hall.
@@ -1613,6 +1678,7 @@ export function groundTheseHousesHold(
         .filter(l => l.controllingFactionId !== null
             && theirs.has(l.controllingFactionId)
             && l.kind !== 'sect_seat'
+            && !nowhereToStand(l)
             && isBelowTheLid(l)
             && populationWeightOf(l) > 0)
         .map(l => l.id);
@@ -1653,6 +1719,7 @@ export function groundAPartyCanBeSentTo(
 ): readonly string[] {
     return locations
         .filter(l => l.kind !== 'sect_seat'
+            && !nowhereToStand(l)
             && isBelowTheLid(l)
             && populationWeightOf(l) > 0)
         .map(l => l.id);
@@ -1714,6 +1781,7 @@ export function whereASendingGoes(input: {
     pick: (count: number) => number;
 }): string | null {
     if (input.needs === 'a_find' && input.theFind) return input.theFind;
+    if (WHERE_A_NEED_SENDS_YOU[input.needs] === 'home') return input.fromLocationId;
 
     const notHome = (ids: readonly string[]): string[] =>
         ids.filter(id => id !== input.fromLocationId);

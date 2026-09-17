@@ -5,7 +5,7 @@
  *
  * `standingAtTheGateOf` passed anybody whose rung on the house's roll was known,
  * and `whatTheTwoSay` and `theHouseTheirTokenNames` had no caller at all. So the
- * token - the one thing `a-house-knows-its-own-by-a-plate-and-a-token.ts` says a
+ * token - the one thing `a-house-knows-its-own-by-a-lamp-and-a-token.ts` says a
  * stranger reads - was never read by anybody, and a recruit who had joined in a
  * village a province away walked through their house's gate on the strength of
  * a record nobody at the gate could see.
@@ -15,7 +15,7 @@
  *   carrying the house's token   passes, whatever the roll says. Off the roll
  *                                too: a genuine tag in the wrong hands still
  *                                reads as the house's, which is the seam the
- *                                plate file keeps open on purpose
+ *                                lamp file keeps open on purpose
  *   on the roll, no token        stopped and asked: "no token to read". An
  *                                obstacle, so a host, an asker and the wall are
  *                                all still said
@@ -42,7 +42,7 @@ import { describe, expect, it } from 'vitest';
 import {
     issueTo,
     theHouseTheirTokenNames
-} from '../../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+} from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import {
     standingAtTheGateOf,
     type AtTheGateInput
@@ -69,6 +69,7 @@ function atTheGate(over: Partial<AtTheGateInput>): ReturnType<typeof standingAtT
         theTokenNames: null,
         inTheRobes: false,
         aFaceTheyKnow: null,
+        expected: null,
         ...over
     });
 }
@@ -191,7 +192,7 @@ describe('whose face a house knows is the trust model\'s reading, from the house
 describe('the token a gate reads answers for the person it was cut for', () => {
     const { token } = issueTo({
         memberId: 'issued-to', memberName: 'Issued To', houseId: 'house-a', houseName: 'Stone Gate Sect',
-        plateRoomId: 'hall', onDay: 0
+        lampRoomId: 'hall', onDay: 0
     });
 
     it('in their own hands, while they live', () => {

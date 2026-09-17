@@ -319,10 +319,10 @@ describe('the world can take one, and only somebody up to it can', () => {
 
             // WHAT A HOUSE LIVING THERE SINCE HAS PUT UP IS NOT WHAT WAS LEFT.
             // A splinter can take an emptied ruin for its seat, and a house with
-            // no ancestral hall hangs its plates at its seat (`issueTo`). Found
-            // on `golf` once plates were cut after world open: The Warm Gate was
-            // emptied on day 378030, a splinter seated itself there, and cut a
-            // plate on day 393256 that hangs on its own wall. So an object is
+            // no Life Lamp Hall lights its lamps at its seat (`issueTo`). Found
+            // on `golf` once lamps were lit after world open: The Warm Gate was
+            // emptied on day 378030, a splinter seated itself there, and lit a
+            // lamp on day 393256 that burns on its own ground. So an object is
             // exempt only when a live house is seated on that ground AND the
             // object went up after the emptying - stock standing there when it
             // was taken is still pinned.
@@ -341,10 +341,20 @@ describe('the world can take one, and only somebody up to it can', () => {
             // saying two things at once.
             for (const object of state.objects) {
                 if (object.locationId === null || !emptiedIds.has(object.locationId)) continue;
-                const putUpOn = Number(object.data?.hungOnDay ?? object.data?.issuedOnDay ?? Number.NaN);
+                const putUpOn = Number(object.data?.litOnDay ?? object.data?.issuedOnDay ?? Number.NaN);
                 const theHouseLivesHere = object.ownerId !== null
                     && seatOf.get(object.ownerId) === object.locationId;
                 if (theHouseLivesHere && putUpOn > (emptiedOn.get(object.locationId) ?? Infinity)) continue;
+                // AND WHAT WENT INTO THE GROUND THERE SINCE. Found on `echo` once
+                // houses grew a Life Lamp Hall and waited on word of their
+                // recruits, and the seeded worlds moved: a
+                // splinter's robes were looted off a body, and the looter died
+                // at Fallen Wall 83 years after it was emptied and was buried
+                // with them. A grave dug after the emptying is not what was
+                // left; stock that came to rest there before it still is.
+                const cameToRest = object.provenance[object.provenance.length - 1];
+                if (cameToRest && cameToRest.holderId === null
+                    && cameToRest.onDay > (emptiedOn.get(object.locationId) ?? Infinity)) continue;
                 expect(object.possessorId, `${seed}: ${object.name} is still lying there`)
                     .not.toBeNull();
             }

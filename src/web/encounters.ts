@@ -31,6 +31,7 @@ import {
 import { theRung } from './facts.js';
 import { howAHouseStandsForMoney } from '../engine/world/the-world-changing-on-its-own.js';
 import {
+    theReasonBehind,
     whatAHouseHasOnItsBoard
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
 import { dutyTermsFor, takeableOffAWall } from '../engine/encounters/duties.js';
@@ -59,6 +60,10 @@ import {
     type WhereTheOpenGroundIs,
     type HouseAsItStands
 } from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
+import {
+    itsCommunicationTalismansRunLow,
+    whatCuttingForTheHouseLands
+} from '../engine/world/what-a-house-hears-from-its-people-away.js';
 import type { SendingReason } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { forStream } from '../engine/cultivation/rng.js';
 // The one answer to who a house would sit down with. The world holds its own
@@ -1009,6 +1014,10 @@ export function theHouseAsItStands(
             sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
             standsNearForbiddenGround:
                 forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId),
+            // Its communication talismans, off the reading the world's own board takes.
+            itsCommunicationTalismansRunLow: itsCommunicationTalismansRunLow(
+                deps.world, faction.id,
+                deps.world.npcs.filter(n => n.factionId === faction.id && n.status === 'alive').length),
             // WHAT ITS PURSE SAYS, off the world's own reading rather than a
             // second one. A house that could not pay its people this year posts
             // an errand nobody else in the world has, and a player standing at
@@ -1380,6 +1389,13 @@ export interface DutyLedgerInput {
     entryId: string;
     /** What the situation was, factually. Usually the occurrence summary. */
     what: string;
+    /**
+     * The world, where the settlement should land what the work made. A duty
+     * taken off a house's board that makes something - cutting communication
+     * talismans - lands it through the same function the world's own close
+     * does. Absent, nothing lands.
+     */
+    world?: WorldState | null;
 }
 
 /**
@@ -1472,6 +1488,8 @@ export interface DutySettlementResult {
     /** Contribution actually credited. Zero outside a house. */
     contribution: number;
     stones: number;
+    /** How many of what the work makes went into the house's stock. */
+    landed: number;
     /** Engine-authored, for `facts.lines`. */
     line: string;
 }
@@ -1519,6 +1537,18 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
         }
     })();
 
+    // AND WHAT THE WORK MADE. A notice whose reason makes a thing lands it
+    // through the one landing the world's own close uses, with the player as
+    // the maker and the days from the word given to the day it was done.
+    const makes = theReasonBehind(input.entryId)?.makes ?? null;
+    const landed = input.world && makes !== null
+        ? whatCuttingForTheHouseLands(input.world, {
+            alive: cultivator.alive,
+            houseId: duty.factionId ?? null,
+            ordinal: cultivator.realmOrdinal
+        }, { thingId: makes, sinceDay: acceptedOn, untilDay: input.onDay })
+        : 0;
+
     // THE EYEBROW IS NOT STATED HERE ANY MORE, and where it moved to is the
     // point. This line rode the settlement, which put "posted eleven rungs
     // under you" at COMPLETION and addressed it to nobody. The design owner:
@@ -1530,10 +1560,12 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
         obligation: settled,
         contribution: credited,
         stones: duty.stones,
-        line: credited > 0
+        landed,
+        line: (credited > 0
             ? `Completed. ${credited} contribution credited with `
               + `${duty.factionName ?? 'the house'}, and ${duty.stones} spirit stones paid.`
-            : `Completed. ${duty.stones} spirit stones paid, and nothing on anybody's ledger.`
+            : `Completed. ${duty.stones} spirit stones paid, and nothing on anybody's ledger.`)
+            + (landed > 0 ? ` ${landed} went into the house's stores.` : '')
     };
 }
 

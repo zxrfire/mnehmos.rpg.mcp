@@ -1,7 +1,7 @@
 /**
  * A slip that can never be burned is a row in a treasury.
  *
- * A departure talisman is one fold somebody else paid for. It breaks the rule
+ * A teleportation talisman is one fold somebody else paid for. It breaks the rule
  * everything else in this engine obeys - that what you can do is what you are -
  * exactly once, and then it is paper. `FOLD_FLOOR_ORDINAL` is 29 and most of the
  * people it saves are nowhere near it.
@@ -28,7 +28,7 @@ import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
 import { advanceWorldForPlay } from '../../../src/engine/world/driver';
-import { whoBurnedAWayOut } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
+import { whoBurnedATeleportationTalisman } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
 import { cutATalisman } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
 import { transferPossession, type ObjectRecord } from '../../../src/engine/world/possessions';
 import type { WorldState } from '../../../src/engine/world/world-state';
@@ -94,9 +94,9 @@ describe('who the door opens for', () => {
     function aSlipInTheHandOf(who: string, carries: number): ObjectRecord {
         const cut = cutATalisman({
             id: `slip-${who}`,
-            name: 'a departure talisman',
+            name: 'a teleportation talisman',
             grade: 'earth',
-            what: 'a_way_out',
+            what: 'a_teleportation',
             crafterId: null,
             crafterOrdinal: carries > 0 ? 40 : 10,
             onDay: 0
@@ -108,7 +108,7 @@ describe('who the door opens for', () => {
 
     it('takes the person who was about to be finished, and nobody else', () => {
         const objects = [aSlipInTheHandOf('doomed', 1), aSlipInTheHandOf('fine', 1)];
-        const out = whoBurnedAWayOut({ objects, aboutToFall: ['doomed'], onDay: 5 });
+        const out = whoBurnedATeleportationTalisman({ objects, aboutToFall: ['doomed'], onDay: 5 });
         expect(out).toEqual(['doomed']);
         // The bystander still has theirs. A caller that asked about everybody
         // present would empty the world's paper in one war.
@@ -117,20 +117,20 @@ describe('who the door opens for', () => {
 
     it('does nothing for somebody carrying nothing', () => {
         const objects: ObjectRecord[] = [];
-        expect(whoBurnedAWayOut({ objects, aboutToFall: ['empty-handed'], onDay: 5 })).toEqual([]);
+        expect(whoBurnedATeleportationTalisman({ objects, aboutToFall: ['empty-handed'], onDay: 5 })).toEqual([]);
     });
 
     it('and nothing for a slip that carries no distance', () => {
         // Cut by a hand under the folding floor: a way out that is not one.
         const objects = [aSlipInTheHandOf('holding-nothing-useful', 0)];
-        expect(whoBurnedAWayOut({ objects, aboutToFall: ['holding-nothing-useful'], onDay: 5 }))
+        expect(whoBurnedATeleportationTalisman({ objects, aboutToFall: ['holding-nothing-useful'], onDay: 5 }))
             .toEqual([]);
     });
 
     it('and never twice out of one slip', () => {
         const objects = [aSlipInTheHandOf('lucky', 1)];
-        expect(whoBurnedAWayOut({ objects, aboutToFall: ['lucky'], onDay: 5 })).toEqual(['lucky']);
+        expect(whoBurnedATeleportationTalisman({ objects, aboutToFall: ['lucky'], onDay: 5 })).toEqual(['lucky']);
         // It is paper now.
-        expect(whoBurnedAWayOut({ objects, aboutToFall: ['lucky'], onDay: 6 })).toEqual([]);
+        expect(whoBurnedATeleportationTalisman({ objects, aboutToFall: ['lucky'], onDay: 6 })).toEqual([]);
     });
 });

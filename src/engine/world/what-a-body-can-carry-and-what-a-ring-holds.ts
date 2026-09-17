@@ -38,6 +38,7 @@ import {
     WHAT_A_CARRIED_THING_TAKES,
     WHAT_A_CARRIED_THING_WEIGHS
 } from './possessions.js';
+import { WHAT_A_SLIP_TAKES, WHAT_A_SLIP_WEIGHS } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 
 /**
  * How big and how heavy a thing is.
@@ -385,7 +386,7 @@ export const HOW_THE_FOLD_PRICES_OUT = howTheFoldPricesOut();
  * per-cultivator flag, so nothing written against held things could see one -
  * the destroy verb told a player holding a book they were carrying nothing.
  */
-export type PouchItemKind = 'pill' | 'herb' | 'artifact' | 'manual';
+export type PouchItemKind = 'pill' | 'herb' | 'artifact' | 'manual' | 'talisman';
 
 /**
  * WHAT ONE OF A CATALOG THING TAKES UP.
@@ -427,6 +428,10 @@ export function whatOneOfTheseTakes(kind: PouchItemKind): HowMuchRoomItTakes {
         // as load - and why a cultivator reads one and leaves it behind.
         case 'manual':
             return { volume: 1.2, weight: 0.5 };
+        // A counted slip of paper, marked with a house. The same size the
+        // tracked slips are, off the talisman file's own two figures.
+        case 'talisman':
+            return { volume: WHAT_A_SLIP_TAKES, weight: WHAT_A_SLIP_WEIGHS };
     }
 }
 

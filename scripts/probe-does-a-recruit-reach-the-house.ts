@@ -1,6 +1,6 @@
 /**
  * Does somebody who joins a house after the world opens ever reach it, and do
- * they ever hold its plate?
+ * they ever hold its lamp?
  *
  * Per seed, at each horizon, over the people on a roll who were NOT on that roll
  * at world open (joined, or changed house):
@@ -10,7 +10,7 @@
  *   robed          carrying this house's robes
  *   owed a token   at a rung that carries one, in a house that can cut them
  *   hold a token   of those, carrying this house's token
- *   plate hangs    a plate for them owned by this house
+ *   lamp burns    a lamp for them owned by this house
  *   on the road    `travelling` to the seat right now
  *   no proof       what a doorway finds: `theHouseTheirTokenNames` is null
  *   years          join to robes, and join to token, median and p90
@@ -30,7 +30,7 @@
  *   after   joiners                977                 2196
  *           robed                  889                 2108
  *           owed a token, hold     241 of 377          1065 of 1263
- *           plates on the wall     241                 1065
+ *           lamps burning          241                 1065
  *           on the road now         57                   55
  *           never entered, away     88                   88
  *
@@ -61,8 +61,8 @@ import {
     theHouseTheirTokenNames,
     thisHouseCanIssue,
     tokenIdFor,
-    plateIdFor
-} from '../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+    lampIdFor
+} from '../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
 const SEEDS = (process.env.PROBE_SEEDS ?? 'afford-a,afford-b,afford-c,roster-d,roster-e,demography').split(',');
@@ -133,7 +133,7 @@ async function main(): Promise<void> {
                 const r = {
                     tokensAtOpen,
                     termlessTravellers: state.npcs.filter(n => n.status === 'alive' && n.activity?.kind === 'travelling' && (n.activity.untilDay ?? null) === null).length,
-                    joiners: 0, inCompound: 0, robed: 0, owedAToken: 0, holdAToken: 0, plateHangs: 0,
+                    joiners: 0, inCompound: 0, robed: 0, owedAToken: 0, holdAToken: 0, lampBurns: 0,
                     onTheRoad: 0, noProof: 0, noProofOutside: 0, outsideNeverEntered: 0,
                     outsideNeverEnteredBusy: 0, foundingSent: foundingSent.size,
                     yearsToRobes: [] as number[], yearsToToken: [] as number[]
@@ -152,7 +152,7 @@ async function main(): Promise<void> {
                     const token = objects.get(tokenIdFor(n.id));
                     const holds = token?.ownerId === n.factionId && token.possessorId === n.id;
                     if (owed) { r.owedAToken++; if (holds) r.holdAToken++; }
-                    if (objects.get(plateIdFor(n.id))?.ownerId === n.factionId) r.plateHangs++;
+                    if (objects.get(lampIdFor(n.id))?.ownerId === n.factionId) r.lampBurns++;
                     if (n.activity?.kind === 'travelling' && (n.activity.untilDay ?? null) !== null) r.onTheRoad++;
                     const proof = theHouseTheirTokenNames(state.objects, n.id, id => state.npcs.some(x => x.id === id && x.status === 'alive'));
                     if (proof !== n.factionId) { r.noProof++; if (!here) r.noProofOutside++; }
@@ -170,7 +170,7 @@ async function main(): Promise<void> {
                 dump[`${arm}:y${horizon}:${seed}`] = r;
                 console.log(
                     `${arm} ${seed} @${horizon}y joiners ${r.joiners}: in compound ${r.inCompound}, robed ${r.robed}, `
-                    + `owed a token ${r.owedAToken} hold one ${r.holdAToken}, plates ${r.plateHangs}, on the road ${r.onTheRoad}, `
+                    + `owed a token ${r.owedAToken} hold one ${r.holdAToken}, lamps ${r.lampBurns}, on the road ${r.onTheRoad}, `
                     + `no proof ${r.noProof} (outside ${r.noProofOutside}), outside never entered ${r.outsideNeverEntered} `
                     + `(busy ${r.outsideNeverEnteredBusy}) | years to robes p50 ${quantile(r.yearsToRobes, 0.5)} `
                     + `p90 ${quantile(r.yearsToRobes, 0.9)} (n ${r.yearsToRobes.length}), to token p50 `

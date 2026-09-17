@@ -6,8 +6,8 @@
  * or trade in expensive $ to do it."*
  *
  * Three questions - can they, will they, what does it cost - and the machinery
- * for all three already existed: `canRefineGrade` and `couldCutAWayOut` for the
- * gates, `openHandednessOf` and the obligation ledger for the leaning,
+ * for all three already existed: `canRefineGrade` and
+ * `couldCutATeleportationTalisman` for the gates, `openHandednessOf` and the obligation ledger for the leaning,
  * `gradeTradeTier` and `whatItWouldTake` for the medium and the bar.
  *
  * ── THE ONE FACT THIS FILE ADDS ──────────────────────────────────────────
@@ -51,7 +51,7 @@ import type { DayIndex } from '../social/common.js';
 import type { ObligationInput, ObligationRecord, Severity } from '../social/grudges.js';
 import { NEARNESS_ORDER, nearnessRank, type Nearness } from '../social/how-near-you-stand-to-somebody.js';
 import {
-    couldCutAWayOut,
+    couldCutATeleportationTalisman,
     type WhatIsInTheSlip
 } from '../world/a-talisman-is-one-act-somebody-already-paid-for.js';
 import {
@@ -71,6 +71,11 @@ import {
     type WhatItWouldTake
 } from './what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import { A_REASON_TO_SAY_NO } from './who-has-to-agree-before-it-leaves-the-store.js';
+import {
+    CUT_IN_A_SITTING,
+    DAYS_A_SITTING_TAKES
+} from '../../data/cultivation/communication-talismans.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -85,7 +90,7 @@ export interface WhatYouAskedThemToMake {
     /** Echoed into the line. Read by no conditional, as `OnTheTable.what` is not. */
     named: string;
     grade: TechniqueGrade;
-    /** Set for a talisman. `a_way_out` needs a hand that can already fold. */
+    /** Set for a talisman. `a_teleportation` needs a hand that can already fold. */
     slip?: WhatIsInTheSlip | null;
     /**
      * True where what is being asked for is a STORAGE RING.
@@ -174,17 +179,18 @@ export function whetherTheirHandsCanDoIt(
             theBenchIsShortOf: []
         };
     }
-    if (ask.slip === 'a_way_out' && !couldCutAWayOut(makerOrdinal)) {
+    if (ask.slip === 'a_teleportation' && !couldCutATeleportationTalisman(makerOrdinal)) {
         return {
             theyCan: false,
             insteadTheyCouldMake,
             why: yours
                 ? 'You can work the materials, and what you want folded into the paper is a road '
-                  + 'you cannot walk yourself. Nobody puts a way out in a slip they could not '
-                  + 'take. A strike slip of the same grade is within your hands.'
+                  + 'you cannot walk yourself. Nobody folds a road into a teleportation talisman '
+                  + 'they could not take. A strike slip of the same grade is within your hands.'
                 : 'They can work the materials, and what you are asking them to fold into the '
-                  + 'paper is a road they cannot walk themselves. Nobody puts a way out in a slip '
-                  + 'they could not take. A strike slip of the same grade is within their hands.',
+                  + 'paper is a road they cannot walk themselves. Nobody folds a road into a '
+                  + 'teleportation talisman they could not take. A strike slip of the same grade '
+                  + 'is within their hands.',
             theBenchIsShortOf: []
         };
     }
@@ -219,6 +225,71 @@ export function howMuchOfTheirReachItAsksFor(grade: TechniqueGrade, makerOrdinal
     if (roomAbove <= 0) return 1;
     const above = Math.max(0, makerOrdinal - gate);
     return clamp(1 - above / roomAbove, 0, 1);
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// HOW LONG IT TAKES
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * The days one mortal-grade thing takes the rung that can only just make it.
+ *
+ * THE BOTTOM END IS THE DESIGN OWNER'S. A communication talisman is mortal
+ * grade and *"making a few takes little time"*: `CUT_IN_A_SITTING` of them in
+ * `DAYS_A_SITTING_TAKES`. So one mortal thing is a third of a day.
+ */
+export const DAYS_TO_MAKE_A_MORTAL_THING = DAYS_A_SITTING_TAKES / CUT_IN_A_SITTING;
+
+/**
+ * The years one heaven-grade thing takes the rung that can only just make it.
+ *
+ * THE TOP END IS THE LONGEST SINGLE WORK THE WORLD ALREADY STATES. Heaven is
+ * the highest grade made below the Lid, and nine years is what
+ * `YEARS_TO_COPY_THE_DEEPEST_ROAD` gives the deepest road in the catalog: the
+ * one other place a person's own hours are spent on one made thing. Written as
+ * a figure rather than imported so this file stays below the world; a test
+ * holds the two equal.
+ */
+export const YEARS_TO_MAKE_A_HEAVEN_THING = 9;
+
+/**
+ * How little of a day's work a hand far past the grade still spends on it.
+ *
+ * `howMuchOfTheirReachItAsksFor` is one at the gate and nothing at the top of
+ * the ladder, and nothing is not a span: a master still sits down to it. A
+ * tenth, so the same thing is ten times quicker at the top than at the gate and
+ * never free.
+ */
+export const A_HAND_FAR_PAST_IT_STILL_SPENDS = 0.1;
+
+/** Where a grade sits on the making curve. Nothing above heaven is made below the Lid. */
+const MADE_GRADE_STEP: Readonly<Record<TechniqueGrade, number>> = {
+    mortal: 0,
+    earth: 1,
+    heaven: 2,
+    immortal: 2,
+    chaos: 2
+};
+
+/**
+ * How many days making one thing of this grade takes this hand.
+ *
+ * ONE CURVE, ANCHORED AT THE TWO ENDS ABOVE: geometric in the grade, because
+ * each grade is a different kind of work rather than more of the same, so a
+ * third of a day for a mortal slip, about a month for earth-grade work and nine
+ * years for heaven at the gate. Then the hand: the share of their reach it asks
+ * for, never less than {@link A_HAND_FAR_PAST_IT_STILL_SPENDS}. Whole days, and
+ * at least one, because a span is spent in days.
+ *
+ * The same curve for a pill and a made thing: a grade is one ladder
+ * (`howHighTheCommissionCarries`), and refining is making.
+ */
+export function daysAtTheWork(grade: TechniqueGrade, makerOrdinal: number): number {
+    const bottom = DAYS_TO_MAKE_A_MORTAL_THING;
+    const top = YEARS_TO_MAKE_A_HEAVEN_THING * DAYS_PER_YEAR;
+    const atTheGate = bottom * Math.pow(top / bottom, MADE_GRADE_STEP[grade] / 2);
+    const hand = Math.max(A_HAND_FAR_PAST_IT_STILL_SPENDS, howMuchOfTheirReachItAsksFor(grade, makerOrdinal));
+    return Math.max(1, Math.ceil(atTheGate * hand));
 }
 
 // ═════════════════════════════════════════════════════════════════════════

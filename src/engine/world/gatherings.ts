@@ -1642,7 +1642,7 @@ export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
  * the general form is that being worth a rung and being a weapon are different
  * facts.
  *
- * A single-use slip is the case that made this urgent. A departure talisman cut
+ * A single-use slip is the case that made this urgent. A teleportation talisman cut
  * by a hand at 32 stands at 32, and swinging it is not what it is for - it is
  * burned once and gone. It was dormant only because nothing yet hands one to
  * anybody, and a hazard that is dormant is still a hazard.

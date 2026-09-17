@@ -391,7 +391,16 @@ function round4(n: number): number {
     return Math.round(n * 1e4) / 1e4;
 }
 
-/** Open records where the subject owes the actor. Both directions of "owed". */
+/**
+ * Open records where the subject owes the actor. Both directions of "owed".
+ *
+ * AND THE OATH TO TEACH, which the design owner rules is a debt: *"the oath to
+ * teach counts as a debt."* A master who knelt a disciple holds an open
+ * `teaching_term` oath about them until the road is walked, and it is owed the
+ * way a debt is owed, so it counts here the way a debt does. It is the only
+ * oath that does: a disciple's term of service is owed the other way, and an
+ * oath about anything else is not something the subject owes the actor.
+ */
 function owedYourWay(input: AttemptInput): number {
     const ledger = input.ledger ?? [];
     let count = 0;
@@ -406,7 +415,12 @@ function owedYourWay(input: AttemptInput): number {
             record.kind === 'favor' &&
             record.holderId === input.actor.id &&
             record.subjectId === input.subject.id;
-        if (theyOweAsDebtor || theyOweAsFavourGiven) count++;
+        const theySworeToTeachYou =
+            record.kind === 'oath' &&
+            record.cause === 'teaching_term' &&
+            record.holderId === input.subject.id &&
+            record.subjectId === input.actor.id;
+        if (theyOweAsDebtor || theyOweAsFavourGiven || theySworeToTeachYou) count++;
     }
     return Math.min(count, OWED_CAP);
 }

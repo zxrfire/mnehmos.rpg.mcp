@@ -1,9 +1,9 @@
 /**
- * A HOUSE KNOWS ITS OWN BY A PLATE AND A TOKEN.
+ * A HOUSE KNOWS ITS OWN BY A LAMP AND A TOKEN.
  *
  * `docs/world/houses/trust.md` has carried this design under its own heading
- * since it was written - a house keeps a plate for each disciple, it shatters
- * when they die, and the disciple's token goes with them. Measured before this
+ * since it was written - a house keeps a life lamp burning for each disciple, it
+ * goes out when they die, and the disciple's token goes with them. Measured before this
  * file: `'token'` was a value of `ObjectKind` that nothing in the engine ever
  * created. The design record and the machinery had no connection at all.
  *
@@ -15,8 +15,8 @@
  * for a world to contain than a body in a ditch.
  *
  * TWO OBJECTS BECAUSE THEY ARE IN TWO PLACES. The token is on the person,
- * wherever they have got to; the plate is on a wall a province away. A house
- * learns from the plate and everybody else reads the token.
+ * wherever they have got to; the lamp burns in a hall a province away. A house
+ * learns from the lamp and everybody else reads the token.
  *
  * AND THE TAG AUTHENTICATES THE LINE, NOT THE PERSON. A genuine tag in the
  * wrong hands still reads as a member of that house. That is the seam somebody
@@ -47,16 +47,16 @@ export function carriesATokenAt(rankIndex: number): boolean {
 }
 
 /**
- * THE REALM A PLATE IS CUT AT.
+ * THE REALM A LAMP IS LIT AT.
  *
- * The design owner: *"let's make life plates a core formation craft. Anyone
- * less than that doesn't get one. Same for identity tokens"*, corrected a
- * moment later to *"someone at least FOUNDATION must craft it for you."*
+ * The design owner, when these were still called life plates: *"let's make
+ * life plates a core formation craft. Anyone less than that doesn't get one.
+ * Same for identity tokens"*, corrected a moment later to *"someone at least FOUNDATION must craft it for you."*
  *
  * A HOUSE-LEVEL GATE AND NOT A PERSON-LEVEL ONE, which is the whole of what it
- * changes. It is not that a disciple must be Foundation to be GIVEN a plate -
- * it is that somebody in the house has to be Foundation to CUT one. A house
- * with nobody at that rung has no plates at all, for anybody: no roll it can
+ * changes. It is not that a disciple must be Foundation to be GIVEN a lamp -
+ * it is that somebody in the house has to be Foundation to LIGHT one. A house
+ * with nobody at that rung has no lamps at all, for anybody: no roll it can
  * read, no notice when one of its own dies, and no token its members can prove
  * themselves with.
  *
@@ -65,14 +65,14 @@ export function carriesATokenAt(rankIndex: number): boolean {
  * version of a court; it is a body that cannot do this at all.
  *
  * MEASURED, AND CURRENTLY NON-BINDING: all 36 houses in a seeded world can
- * field a Foundation hand, so none is without plates today. That is not a
+ * field a Foundation hand, so none is without lamps today. That is not a
  * reason to raise the rung - the gate is there for the bodies the world sim
  * makes later, when a house is broken down to a handful of survivors and
  * quietly loses the ability to know its own dead.
  *
  * ONE RUNG UNDER A QI SEAL, and the gap is the point. Sealing a person opens at
- * Core Formation; cutting the jade that says who they are opens a realm below
- * it. Making the thing that proves an identity is ordinary craft, and taking
+ * Core Formation; lighting the lamp and cutting the jade that say who they are
+ * opens a realm below it. Making the thing that proves an identity is ordinary craft, and taking
  * somebody's ability to draw is not - so most houses can issue and far fewer
  * can hold.
  *
@@ -80,42 +80,42 @@ export function carriesATokenAt(rankIndex: number): boolean {
  * `qiSealOpensAt` is: the tiers have been renamed more than once and a constant
  * copied out of them is a coincidence maintained by attention.
  */
-export const THE_REALM_A_PLATE_IS_CUT_AT = 'foundation_establishment';
+export const THE_REALM_A_LAMP_IS_LIT_AT = 'foundation_establishment';
 
-export function platesAreCutAt(): number {
-    const tier = REALM_TIERS.find(row => row.key === THE_REALM_A_PLATE_IS_CUT_AT);
+export function lampsAreLitAt(): number {
+    const tier = REALM_TIERS.find(row => row.key === THE_REALM_A_LAMP_IS_LIT_AT);
     if (!tier) {
         throw new Error(
-            `No realm tier is keyed ${THE_REALM_A_PLATE_IS_CUT_AT}. Cutting a plate is gated on a `
+            `No realm tier is keyed ${THE_REALM_A_LAMP_IS_LIT_AT}. Lighting a lamp is gated on a `
             + 'realm rather than a number, so a renamed tier has to fail loudly here rather than '
-            + 'silently giving every house plates or none.'
+            + 'silently giving every house lamps or none.'
         );
     }
     return tier.ordinalStart;
 }
 
-/** Whether this hand could cut a plate or a token. */
-export function couldCutAPlate(ordinal: number): boolean {
-    return realmForOrdinal(ordinal).ordinalStart >= platesAreCutAt();
+/** Whether this hand could light a lamp or cut a token. */
+export function couldLightALamp(ordinal: number): boolean {
+    return realmForOrdinal(ordinal).ordinalStart >= lampsAreLitAt();
 }
 
 /**
  * Whether this house can issue at all, off the best hand it has.
  *
  * The house's own question, asked once, rather than a check repeated per
- * member: either somebody here can cut them and everybody eligible gets one, or
+ * member: either somebody here can make them and everybody eligible gets one, or
  * nobody can and the house has none.
  */
 export function thisHouseCanIssue(ordinalsOnTheRoll: readonly number[]): boolean {
-    return ordinalsOnTheRoll.some(couldCutAPlate);
+    return ordinalsOnTheRoll.some(couldLightALamp);
 }
 
-/** The room a house keeps its plates in. Its own hall, at the inner end. */
-export const WHERE_THE_PLATES_HANG = 'ancestral_hall';
+/** The room a house keeps its lamps burning in: the Life Lamp Hall, at the inner end. */
+export const WHERE_THE_LAMPS_BURN = 'life_lamp_hall';
 
-/** Deterministic ids, so a plate and its token can always find each other. */
-export function plateIdFor(memberId: string): string {
-    return `life-plate-${memberId}`;
+/** Deterministic ids, so a lamp and its token can always find each other. */
+export function lampIdFor(memberId: string): string {
+    return `life-lamp-${memberId}`;
 }
 
 export function tokenIdFor(memberId: string): string {
@@ -123,30 +123,30 @@ export function tokenIdFor(memberId: string): string {
 }
 
 /**
- * WHAT A PLATE IS CUT FROM.
+ * WHAT A LAMP IS MADE FROM.
  *
  * The design owner: *"remember it requires foundation establishment materials
  * too - probably beast bones."*
  *
- * DERIVED FROM THE HAND, NOT PICKED. A Foundation hand cuts these, and
+ * DERIVED FROM THE HAND, NOT PICKED. A Foundation hand makes these, and
  * `who-can-refine-a-grade-of-medicine.ts` already owns which grade of material
- * a given rung can work at all - so the grade a plate wants is simply the best
+ * a given rung can work at all - so the grade a lamp wants is simply the best
  * that rung can hold. It comes out MORTAL: earth grade wants Core Formation,
- * which is a realm above the hand doing the cutting.
+ * which is a realm above the hand doing the work.
  *
  * That is worth more than naming a grade here, because the two move together.
- * Reprice what a Foundation hand can work and the plate follows, rather than
+ * Reprice what a Foundation hand can work and the lamp follows, rather than
  * this file quietly asking for something nobody at the rung can hold.
  *
  * AND BONE, WHICH THE CATALOG HAS UNDER ANOTHER NAME. There is no material
  * called a bone in `beasts.ts`; the mortal-grade bone of a beast big enough to
- * cut a tag out of is the Ironhide Tusk, and the earth-grade ones - antler,
+ * carve a lamp out of is the Ironhide Tusk, and the earth-grade ones - antler,
  * horn, fang, tooth - are all a realm too high. So the requirement is stated as
  * a grade and a kind rather than as one id, and a second mortal-grade bone
  * added to the catalog satisfies it with no edit here.
  */
-export function whatAPlateIsCutFrom(): { grade: TechniqueGrade; itIsBone: true } {
-    const grade = highestGradeRefinableAt(platesAreCutAt());
+export function whatALampIsMadeFrom(): { grade: TechniqueGrade; itIsBone: true } {
+    const grade = highestGradeRefinableAt(lampsAreLitAt());
     return {
         // Unreachable while the refining table has a mortal row, which it must:
         // mortal grade opens at ordinal zero. A loud fallback rather than a
@@ -156,40 +156,40 @@ export function whatAPlateIsCutFrom(): { grade: TechniqueGrade; itIsBone: true }
     };
 }
 
-/** Whether this material would do for a plate. */
-export function wouldCutAPlate(material: {
+/** Whether this material would do for a lamp. */
+export function wouldMakeALamp(material: {
     grade: TechniqueGrade;
     taking?: string;
     name?: string;
 }): boolean {
-    const wants = whatAPlateIsCutFrom();
+    const wants = whatALampIsMadeFrom();
     if (material.grade !== wants.grade) return false;
     // Bone, in the words the catalog actually uses for it.
     return /tusk|horn|fang|tooth|antler|bone|plastron|scute/i.test(material.name ?? '');
 }
 
 /**
- * The token somebody carries, and the plate that answers for them.
+ * The token somebody carries, and the lamp that answers for them.
  *
  * TWO OBJECTS AND NOT ONE, because they are in two places and that is the
  * entire mechanism: the token is on the person, wherever they have got to, and
- * the plate is on the wall in a hall a province away. A house learns from the
- * plate; everybody else reads the token.
+ * the lamp burns in a hall a province away. A house learns from the lamp;
+ * everybody else reads the token.
  */
 export function issueTo(input: {
     memberId: string;
     memberName: string;
     houseId: string;
     houseName: string;
-    /** The hall the plates hang in, or the seat where a house has no hall. */
-    plateRoomId: string | null;
+    /** The hall the lamps burn in, or the seat where a house has no hall. */
+    lampRoomId: string | null;
     onDay: number;
     /**
      * Whoever holds the room the roll is kept in, where anybody does. Absent at
      * world open, when the roll was cut before anybody was watching.
      */
     cutById?: string | null;
-}): { token: ObjectRecord; plate: ObjectRecord } {
+}): { token: ObjectRecord; lamp: ObjectRecord } {
     const token = makeObject({
         id: tokenIdFor(input.memberId),
         name: `${input.houseName} identity token`,
@@ -213,55 +213,55 @@ export function issueTo(input: {
         data: { memberId: input.memberId, issuedOnDay: input.onDay, cutById: input.cutById ?? null }
     });
 
-    const plate = makeObject({
-        id: plateIdFor(input.memberId),
-        name: `the life plate of ${input.memberName}`,
+    const lamp = makeObject({
+        id: lampIdFor(input.memberId),
+        name: `the life lamp of ${input.memberName}`,
         kind: 'token',
         significance: 'notable',
         description:
-            `A plate on the wall of the ${input.houseName} hall, cut for ${input.memberName}. It `
-            + 'is whole while they are, and it is the first thing anybody looks at when somebody '
+            `A lamp in the ${input.houseName} Life Lamp Hall, lit for ${input.memberName}. It `
+            + 'burns while they live, and it is the first thing anybody looks at when somebody '
             + 'stops answering.',
-        // NOBODY CARRIES A PLATE. It hangs where it hangs, which is what makes
+        // NOBODY CARRIES A LAMP. It burns where it burns, which is what makes
         // it evidence a house holds rather than a thing that can be lost with
         // the person it answers for.
         possessorId: null,
         ownerId: input.houseId,
         ownerName: input.houseName,
         power: null,
-        locationId: input.plateRoomId,
-        tags: ['life-plate', `house:${input.houseId}`, `member:${input.memberId}`],
-        // No `whole` field. A plate's wholeness is its holder's aliveness,
-        // which is one fact and is asked of the person - see `whatThePlateSays`.
-        data: { memberId: input.memberId, hungOnDay: input.onDay }
+        locationId: input.lampRoomId,
+        tags: ['life-lamp', `house:${input.houseId}`, `member:${input.memberId}`],
+        // No `burning` field. Whether a lamp burns is its holder's aliveness,
+        // which is one fact and is asked of the person - see `whatTheLampSays`.
+        data: { memberId: input.memberId, litOnDay: input.onDay }
     });
 
-    return { token, plate };
+    return { token, lamp };
 }
 
-/** What a house reads off a plate. */
-export type WhatThePlateSays =
-    /** Whole. They are alive, wherever they are. */
+/** What a house reads off a lamp. */
+export type WhatTheLampSays =
+    /** Burning. They are alive, wherever they are. */
     | 'they_live'
-    /** Shattered. They are dead, and the house learned it the moment it broke. */
+    /** Gone out. They are dead, and the house learned it the moment it went out. */
     | 'they_are_dead';
 
 /**
- * WHAT THE PLATE SAYS, DERIVED FROM THE PERSON AND NOT STORED ON THE PLATE.
+ * WHAT THE LAMP SAYS, DERIVED FROM THE PERSON AND NOT STORED ON THE LAMP.
  *
  * A first cut stored `whole` on the row and wrote it at death. That is the
  * second copy of a fact this repo's doctrine forbids, and the reason is not
  * theoretical: `markDead` is called from SIX places across four files, so a
  * stored flag is six chances to forget, and the one that forgot would leave a
- * whole plate hanging for a dead disciple - which is precisely the signature
+ * lamp burning for a dead disciple - which is precisely the signature
  * the world uses to mean *somebody is holding them prisoner*. The bug would not
  * read as a bug. It would read as a kidnapping.
  *
- * A plate's wholeness IS its holder's aliveness. One fact. So it is asked of
+ * Whether a lamp burns IS its holder's aliveness. One fact. So it is asked of
  * the person, every time, and there is nothing to write, nothing to migrate,
  * and no call site that can miss it.
  */
-export function whatThePlateSays(holderIsAlive: boolean): WhatThePlateSays {
+export function whatTheLampSays(holderIsAlive: boolean): WhatTheLampSays {
     return holderIsAlive ? 'they_live' : 'they_are_dead';
 }
 
@@ -278,50 +278,50 @@ export function theTokenStillAnswers(holderIsAlive: boolean): boolean {
 }
 
 /**
- * How a plate and a token read once their holder is gone, for prose.
+ * How a lamp and a token read once their holder is gone, for prose.
  *
  * Nothing is written. These are the words for a state the world is already in,
- * so a shattered plate needs no shattering pass and a dead disciple's token is
+ * so a lamp that has gone out needs no pass to put it out and a dead disciple's token is
  * dust from the moment they die rather than from the moment somebody
  * remembered to write it down.
  */
 export function whatIsLeftOfThem(input: {
     holderIsAlive: boolean;
     holderName: string;
-}): { plate: string; token: string } | null {
+}): { lamp: string; token: string } | null {
     if (input.holderIsAlive) return null;
     return {
-        plate: `The life plate of ${input.holderName} is in pieces on the floor of the hall, `
-            + 'and everybody who was in the room when it went knows what it means.',
+        lamp: `The life lamp of ${input.holderName} has gone out in the Life Lamp Hall, `
+            + 'and everybody who was in the room when it went out knows what it means.',
         token: 'Dust. It went when its holder did, which is why nobody has ever taken a working '
             + 'one off a corpse.'
     };
 }
 
 /**
- * WHOLE PLATE, AND NOBODY HAS SEEN THEM. The signature of a captive.
+ * A LAMP STILL BURNING, AND NOBODY HAS SEEN THEM. The signature of a captive.
  *
- * The document's own reading and the reason the plate is worth keeping: a house
+ * The document's own reading and the reason the lamp is worth keeping: a house
  * that knows somebody LIVES and knows they are not answering is looking at
  * something quite different from a death, and it is the state that sends the
- * posters out. A shattered plate closes a question; a whole one on somebody
+ * posters out. A lamp that has gone out closes a question; one still burning for somebody
  * nobody can find opens a worse one.
  */
 export function whatAHouseMakesOfSilence(input: {
     /** False where this house never issued them one. */
-    theyHaveAPlate: boolean;
+    theyHaveALamp: boolean;
     holderIsAlive: boolean;
     daysSinceAnybodySawThem: number;
 }): 'nothing_yet' | 'they_are_dead' | 'somebody_has_them' {
-    if (!input.theyHaveAPlate) return 'nothing_yet';
-    if (whatThePlateSays(input.holderIsAlive) === 'they_are_dead') return 'they_are_dead';
+    if (!input.theyHaveALamp) return 'nothing_yet';
+    if (whatTheLampSays(input.holderIsAlive) === 'they_are_dead') return 'they_are_dead';
     return input.daysSinceAnybodySawThem >= WHEN_SILENCE_BECOMES_A_CAPTIVE
         ? 'somebody_has_them'
         : 'nothing_yet';
 }
 
 /**
- * How long somebody has to be unaccounted for before a whole plate is read as a
+ * How long somebody has to be unaccounted for before a lamp still burning is read as a
  * captivity rather than an errand.
  *
  * A season. Long enough that ordinary business does not raise it and short
@@ -344,16 +344,16 @@ export interface OneOnTheRoll {
     memberId: string;
     memberName: string;
     /**
-     * Whether a plate for them hangs on the house's wall, read off the row by
-     * {@link whoHasAPlateOnTheWallOf}.
+     * Whether a lamp burns for them in the house's hall, read off the row by
+     * {@link whoHasALampBurningIn}.
      *
-     * This was their rung, with the plate inferred from it. That was a second
-     * copy of a fact the plate row holds, and it disagreed in both directions:
-     * somebody promoted onto the rung while away read as plated with nothing on
-     * the wall, and a house that had lost its last Foundation hand read nothing
-     * at all off plates still hanging there.
+     * This was their rung, with the lamp inferred from it. That was a second
+     * copy of a fact the lamp row holds, and it disagreed in both directions:
+     * somebody promoted onto the rung while away read as having a lamp with none
+     * lit, and a house that had lost its last Foundation hand read nothing at all
+     * off lamps still burning there.
      */
-    theyHaveAPlate: boolean;
+    theyHaveALamp: boolean;
     holderIsAlive: boolean;
     daysSinceAnybodySawThem: number;
 }
@@ -367,31 +367,31 @@ export interface WhatTheHallSays {
 }
 
 /**
- * WHAT A HOUSE LEARNS OFF ITS OWN WALL OF PLATES.
+ * WHAT A HOUSE LEARNS OFF ITS OWN HALL OF LAMPS.
  *
- * The plates were being CUT and never READ. `seedTreasuries` hangs one for
- * every disciple of every house that can cut them, so a fresh world holds
+ * The lamps were being LIT and never READ. `seedTreasuries` lights one for
+ * every disciple of every house that can light them, so a fresh world holds
  * hundreds - and nothing in `src/` asked any of them a question. A house could
  * lose a disciple and the engine did not notice, which is the one fact
  * `docs/world/houses/trust.md` says a house cannot miss.
  *
  * A DERIVATION AND NOT AN EVENT. Nothing is written and nothing is notified.
  * The hall is recomputed from the roll every time it is asked, which is why
- * there is no call site that can forget to shatter a plate.
+ * there is no call site that can forget to put a lamp out.
  *
- * AND ONLY THE PEOPLE WITH A PLATE ON THE WALL. A house reads its plates, so
- * somebody it never cut one for is not on the list at all - which is how a house
- * that could never cut one is told nothing, rather than told its people are fine.
+ * AND ONLY THE PEOPLE WITH A LAMP BURNING. A house reads its lamps, so
+ * somebody it never lit one for is not on the list at all - which is how a house
+ * that could never light one is told nothing, rather than told its people are fine.
  */
 export function whatTheHallSays(input: {
     roll: readonly OneOnTheRoll[];
 }): WhatTheHallSays[] {
-    return input.roll.filter(member => member.theyHaveAPlate).map(member => ({
+    return input.roll.filter(member => member.theyHaveALamp).map(member => ({
         memberId: member.memberId,
         memberName: member.memberName,
         unseenForDays: member.daysSinceAnybodySawThem,
         reading: whatAHouseMakesOfSilence({
-            theyHaveAPlate: true,
+            theyHaveALamp: true,
             holderIsAlive: member.holderIsAlive,
             daysSinceAnybodySawThem: member.daysSinceAnybodySawThem
         })
@@ -401,7 +401,7 @@ export function whatTheHallSays(input: {
 /**
  * The ones a house would ask strangers about.
  *
- * A DEATH IS NOT A SEARCH. A shattered plate closes the question - the house
+ * A DEATH IS NOT A SEARCH. A lamp going out closes the question - the house
  * knows, the moment it goes - so there is nothing to ask anybody for. What
  * sends paper out of a compound is the other reading: alive, and nobody can
  * find them.
@@ -423,23 +423,28 @@ export function theOnesNobodyCanFind(
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
- * THE KEEPER OF THE ROLL.
+ * THE INTERNAL AFFAIRS ELDER.
  *
- * The design owner: *"when you join, an identity plate and token get created
- * for you - that's another elder's job"*, *"idk, give him a name, a role."*
+ * The design owner, before the plates became lamps: *"when you join, an
+ * identity plate and token get created for you - that's another elder's job"*, *"idk, give him a name, a role."*
  *
  * So it is an office, and this repo already decides what an office IS: a SEALED
  * ROOM dealt to a decider by `whoIsInChargeOfWhat`. There is no title table
  * anywhere and adding one would be a second way of saying who is in charge of
- * what. The armoury elder is whoever holds the armoury; the Keeper of the Roll
- * is whoever holds the room the plates hang in.
+ * what. The armoury elder is whoever holds the armoury; the Internal Affairs
+ * Elder is whoever holds the Life Lamp Hall, the room the lamps burn in.
+ *
+ * THE GENRE'S NAME FOR THE JOB. Registering disciples, issuing their tokens and
+ * robes and keeping the life lamps is what an Internal Affairs Elder does in the
+ * genre. The office carried an invented title first, and the design owner
+ * replaced it with the one a reader of the genre already knows.
  *
  * WHICH IS WHY THE NAME IS THE ROOM'S AND NOT A PERSON'S. Nobody is appointed
- * Keeper of the Roll in this engine. Somebody holds the hall, and holding it is
+ * Internal Affairs Elder in this engine. Somebody holds the hall, and holding it is
  * what makes them the person a new disciple is sent to - and what makes losing
  * it a demotion that costs them something specific rather than face.
  */
-export const THE_KEEPER_OF_THE_ROLL = 'Keeper of the Roll';
+export const THE_INTERNAL_AFFAIRS_ELDER = 'Internal Affairs Elder';
 
 /**
  * What the office is, said as the room it is held over.
@@ -447,7 +452,7 @@ export const THE_KEEPER_OF_THE_ROLL = 'Keeper of the Roll';
  * `whoAnswersAbout(portfolios, THE_ROOM_THE_ROLL_IS_KEPT_IN)` is the whole
  * lookup - the same call the punishment hall and the treasury already use.
  */
-export const THE_ROOM_THE_ROLL_IS_KEPT_IN = WHERE_THE_PLATES_HANG;
+export const THE_ROOM_THE_ROLL_IS_KEPT_IN = WHERE_THE_LAMPS_BURN;
 
 // ─────────────────────────────────────────────────────────────────────────
 // AND WHAT A TOKEN IS FOR WHEN SOMEBODY IS CARRYING A MARKED OBJECT
@@ -506,23 +511,23 @@ export function theHouseTheirTokenNames(
 }
 
 /**
- * The members of a house who have a plate on its wall.
+ * The members of a house who have a lamp burning in its hall.
  *
- * Read off the plate rows rather than inferred from a rung: a plate is cut once,
- * by somebody who could, and hangs whether or not anybody in the house could cut
+ * Read off the lamp rows rather than inferred from a rung: a lamp is lit once,
+ * by somebody who could, and burns whether or not anybody in the house could light
  * another today. Somebody promoted onto the rung and not yet entered at the house
  * has none.
  */
-export function whoHasAPlateOnTheWallOf(
+export function whoHasALampBurningIn(
     objects: readonly Pick<ObjectRecord, 'ownerId' | 'tags' | 'data'>[],
     houseId: string
 ): Set<string> {
-    const hanging = new Set<string>();
+    const burning = new Set<string>();
     for (const object of objects) {
-        if (object.ownerId !== houseId || !object.tags.includes('life-plate')) continue;
-        if (typeof object.data?.memberId === 'string') hanging.add(object.data.memberId);
+        if (object.ownerId !== houseId || !object.tags.includes('life-lamp')) continue;
+        if (typeof object.data?.memberId === 'string') burning.add(object.data.memberId);
     }
-    return hanging;
+    return burning;
 }
 
 export function whatTheTwoSay(input: {

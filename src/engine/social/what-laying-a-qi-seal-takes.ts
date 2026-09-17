@@ -277,8 +277,8 @@ export interface BreakingASeal {
      *
      * A seal is the caster's own work held shut by their own strength, so it
      * going is something that happens TO THEM, wherever they are standing. The
-     * genre's jade plate that cracks on a mountain the moment a disciple dies
-     * a province away is the same object seen from the other end.
+     * genre's life lamp that goes out in a hall on a mountain the moment a
+     * disciple dies a province away is the same object seen from the other end.
      *
      * True only for a break. A seal the caster lifts themselves is not news to
      * them, and a break that failed is not news to anybody - which is the whole

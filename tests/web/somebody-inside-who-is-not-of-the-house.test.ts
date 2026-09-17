@@ -45,7 +45,7 @@ import {
     type AFaceBeingLookedAt
 } from '../../src/web/a-teacher-giving-you-their-attention';
 import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../src/engine/world/a-house-raises-its-own';
-import { aUniformFor } from '../../src/engine/world/a-recruit-is-given-their-plate-at-the-house';
+import { aUniformFor } from '../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { whetherYouAreWorthTheTrouble } from '../../src/engine/social-leverage/what-a-house-does-when-it-catches-you';
 import { heightAloneWouldHideThem } from '../../src/engine/social/presence-recognition';

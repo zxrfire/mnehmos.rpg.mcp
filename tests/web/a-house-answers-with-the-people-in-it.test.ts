@@ -31,10 +31,15 @@
 
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGameInWorld } from './harness';
+import { npcsStandingIn } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 
-/** Everybody the world has standing at a place. */
-function npcsAt(world: { npcs: { locationId: string | null; factionId: string | null; name: string; id: string }[] }, locationId: string) {
-    return world.npcs.filter(n => n.locationId === locationId);
+/**
+ * Everybody the world has standing at a place, down to the room, the way the
+ * verbs read it: a house's own people at a room's work are in that room and not
+ * at its seat. See `where-inside-a-house-somebody-is-standing.ts`.
+ */
+function npcsAt(world: unknown, locationId: string) {
+    return npcsStandingIn(world as Parameters<typeof npcsStandingIn>[0], locationId);
 }
 
 /**
@@ -70,8 +75,13 @@ describe('asking a house what a match would take', () => {
         expect(spot, 'no housed person anywhere in the world to propose to').toBeTruthy();
 
         await game.act(`I travel to ${spot!.location.name}`);
-        const here = aPlaceWithAHousedPerson((await game.loadWorld())!);
-        const somebody = (here?.location.id === spot!.location.id ? here : spot)!.people[0];
+        // WHO IS STANDING THERE WHEN THE PLAYER ARRIVES, at the place they
+        // arrived at. The journey spends days and people move; the busiest place
+        // in the world after it is not necessarily where the player is.
+        const arrived = (await game.loadWorld())!;
+        const standing = npcsAt(arrived, spot!.location.id).filter(n => n.factionId);
+        expect(standing.length, 'nobody of a house is standing there when the player arrives').toBeGreaterThan(0);
+        const somebody = standing[0]!;
 
         const result = await game.act(`I propose a match to ${somebody.name}`);
         const said = JSON.stringify(result);

@@ -42,7 +42,9 @@
  *                which is cut at the house (`what-your-house-has-issued-you.ts`).
  *                So a member arriving with nothing to show is stopped and
  *                asked, told there is no token to read and what would give
- *                them one, and entered at the seat on the same turn.
+ *                them one. Nobody told the house to expect this one, so they
+ *                are not entered either (`a-house-expects-somebody-it-took-
+ *                on.ts`).
  *                `your-house-issues-you-its-token-at-its-seat.test.ts` holds
  *                the rest: a member carrying their token is not stopped.
  *   a guest      somebody who is owed by a host walks in behind them. Who may
@@ -198,7 +200,7 @@ describe('a house is somewhere you can walk to', () => {
         ).toBe(true);
     }, 180_000);
 
-    it('stops somebody of the house who has nothing to show, and enters them at its seat', async () => {
+    it('stops somebody of the house who has nothing to show, and does not enter them on nobody\'s word', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-member', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Disciple');
         const loaded = await game.loadWorld();
@@ -223,7 +225,8 @@ describe('a house is somewhere you can walk to', () => {
             /turned away|takes no applicants|A place on the roll would open it/i.test(prose),
             'a member was read as a stranger rather than stopped as one of the house'
         ).toBe(false);
-        expect(/Entered on the roll/.test(prose), 'arriving at the seat did not enter them').toBe(true);
+        expect(/Nobody at the gate was told to expect you/.test(prose), 'the gate did not say it had no word of them').toBe(true);
+        expect(/Entered on the roll/.test(prose), 'entered on nobody\'s word').toBe(false);
     }, 180_000);
 
     it('walks somebody in behind a host who owes them, and not behind anybody else', async () => {

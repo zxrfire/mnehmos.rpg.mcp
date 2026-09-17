@@ -89,7 +89,7 @@ describe('what the words said was wanted', () => {
         expect(whatTheyWereAskedToMake('a slip').slip).toBe('a_strike');
         // Both kinds exist. The sentence usually says which.
         expect(whatTheyWereAskedToMake('a talisman that gets me out of here').slip)
-            .toBe('a_way_out');
+            .toBe('a_teleportation');
         expect(whatTheyWereAskedToMake('a sword').slip).toBeUndefined();
     });
 });

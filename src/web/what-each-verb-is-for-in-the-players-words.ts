@@ -713,7 +713,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             which is the ground's own history and belongs to look.`
     },
     tell: {
-        takes: ['target', 'topic'],
+        takes: ['target', 'topic', 'intent'],
+        intents: ['send_word'],
         says: `TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The
             other direction of news: that one asks what people are saying, this one carries it
             to the person it is about. "target" is who is being told and they have to be here;
@@ -729,7 +730,12 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             Route those the same way whether or not any of it is so - the engine holds what this
             cultivator actually is and decides. A bare greeting with no name, house or rung in it
             is interact, not this. NOT for "tell me about X", which is a question and belongs to
-            investigate, and NOT for a threat, which is about something that has not happened yet.`
+            investigate, and NOT for a threat, which is about something that has not happened yet.
+            AND AT A DISTANCE, intent "send_word": word sent on a communication talisman (a
+            transmission or message talisman) to somebody who is not here. "target" is who it is
+            for - "my master", "the sect", a house or a person's name - and "topic" is the message.
+            Use it for "I burn a communication talisman to tell my master that the pass is held"
+            and "I send word to the sect that I have found a door". Passes no time.`
     },
     challenge: {
         takes: ['target'],

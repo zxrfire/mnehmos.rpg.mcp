@@ -915,13 +915,12 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      */
     train_technique: ['a_span_of_days', 'the_art'],
     /**
-     * On {@link TIME_CONSUMING_ACTIONS} and it reaches no time skip at all -
-     * `GameService.refine` neither advances days nor calls one. Refining makes a
-     * pill; the toxicity is charged when somebody swallows it, which is
-     * `consume_pill`. The classification difference is not a contradiction: one
-     * list is a floor on a misparse and this one is a description.
+     * The days at the cauldron, and nothing else. `GameService.refine` spends
+     * what `daysAtTheWork` gives the pill's grade and this hand through
+     * `shortSkip` once the cauldron has answered. The toxicity is charged when
+     * somebody swallows the pill, which is `consume_pill`.
      */
-    refine: [],
+    refine: ['a_span_of_days'],
     /**
      * Unlike the cauldron, a bench does spend the days, and they run through
      * `shortSkip` - so the encounter window is over them and a bench in a bad place

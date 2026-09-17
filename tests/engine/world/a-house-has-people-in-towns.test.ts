@@ -162,7 +162,7 @@ describe('a house stations people outside itself', () => {
         // NOT SOMEBODY WHO WALKED OUT SINCE. They left on their own account and
         // live where they went; if a house takes them back on there, joining
         // where you stand is right and so is going home after being entered
-        // (`a-recruit-is-given-their-plate-at-the-house.ts`). Found on `town-b`
+        // (`a-recruit-is-given-their-lamp-at-the-house.ts`). Found on `town-b`
         // once being held back became a reason to leave at any rung: Ning Ciyan
         // left the Cold Sword Sect for a dao ground in year 196, was taken back
         // onto Orchid Court's roll there, and was home by 199. What this pins is

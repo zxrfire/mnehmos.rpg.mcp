@@ -33,7 +33,7 @@
  */
 
 import { parseIntent } from '../../src/web/actions';
-import { makeGameInWorld, type Harness } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld, type Harness } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
 
 function ledger(db: Harness['db'], id: string): number {
@@ -67,6 +67,7 @@ async function member(seed: string, purse = 500) {
         .filter(row => row.sourceKind === 'told');
     expect(known.length, `seed ${seed} left the cultivator knowing no house to join`)
         .toBeGreaterThan(0);
+    await aRecruiterOfTheHouseIsHere(game, known[0].id);
     await game.act(`I join the ${known[0].name}`);
 
     const roll = db

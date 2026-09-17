@@ -52,6 +52,11 @@ other two are the levers.
 **A ruin is not a runaway lever.** A find makes at most one person at the top,
 and that is the healthy shape: someone who got there as a story.
 
+**The finder decides.** Whoever carries a book out reads it, where it carries
+them further than the merit turning it in would buy, or turns it in to their
+house whole (`applyWhatThePartyCarriedOut`, `what-a-house-gives-merit-for.ts`).
+A rogue reads or keeps.
+
 **Teaching and copying are the levers.** Neither spends a use, because the
 master carries the art, so nothing but time stops one master handing an upper
 road to a whole house. The design owner's rulings:

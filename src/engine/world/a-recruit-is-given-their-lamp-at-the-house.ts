@@ -1,16 +1,16 @@
 /**
- * A recruit joins where they stand, and is given their plate at the house.
+ * A recruit joins where they stand, and has their lamp lit at the house.
  *
  * The design owner: *"technically you do join, you just don't get your ID and ID
  * plate till you get there, so you don't really have proof. You don't get your
  * uniform either."* And *"for simplicity a house has an infinite stock of
- * uniforms."*
+ * uniforms."* The ID plate there is a token and a life lamp now.
  *
  * ── WHAT WAS WRONG ───────────────────────────────────────────────────────
  *
  * `issueTo` had one caller, `seedTreasuries`, which runs once at world open. So
- * everybody on a roll the day the world began carried a token and had a plate on
- * a wall, and nobody who joined afterwards ever did - not on arrival, not on
+ * everybody on a roll the day the world began carried a token and had a lamp
+ * burning, and nobody who joined afterwards ever did - not on arrival, not on
  * promotion, not in a century. And `applyRecruitment` enrols people wherever
  * they stand, which is correct by the ruling above, with nothing that ever
  * brought them to the house to be entered on its roll.
@@ -19,18 +19,26 @@
  *
  * One pass a year, per house, over its own roll:
  *
- *   in the compound, never entered   a uniform. Always: the stock is infinite.
- *   in the compound, owed a token    a token and a plate, cut by `issueTo`, on
+ *   in the compound, never entered   a uniform, when the house expects them on
+ *                                    the word of whoever took them on
+ *                                    (`a-house-expects-somebody-it-took-on.ts`),
+ *                                    or on questioning, or when nobody took them
+ *                                    on because they were born or woken inside.
+ *                                    Questioned and not matching: off the roll.
+ *                                    The stock is infinite.
+ *   in the compound, owed a token    a token cut and a lamp lit by `issueTo`, on
  *                                    the same two gates the treasury applies -
  *                                    `thisHouseCanIssue` and `carriesATokenAt`.
  *                                    Promotion to the first disciple rung is
  *                                    covered by the same line.
- *   elsewhere, not robed or owed a   to the seat to be entered, as above, and
- *   token, and free to go
- *                                    back: a `travelling` term shaped like
- *                                    every party, with where they live as
+ *   elsewhere, never entered, free   to the seat to LIVE there, on the owner's
+ *                                    ruling *"move into the compound"*: a
+ *                                    `travelling` term with the seat as
  *                                    `returnTo`, ended by `bringHomeWhoeverIsDue`
- *                                    like any other. No mover of its own.
+ *                                    like any other, and entered the year the
+ *                                    pass finds them inside. No mover of its own.
+ *   elsewhere, robed, owed a token   to the seat for it and back, keeping the
+ *                                    home they already had.
  *
  * Until then a doorway finds no token (`theHouseTheirTokenNames` is null), and a
  * recruit who is mid-scene or already away on something keeps having none until
@@ -42,29 +50,26 @@
  * to its own front door; somebody who leaves hands back what they were issued,
  * so somebody taken back on is entered again.
  *
- * ── THE KEEPER OF THE ROLL, WHO DOES NOT EXIST YET ───────────────────────
+ * ── THE INTERNAL AFFAIRS ELDER, WHO DOES NOT EXIST YET ───────────────────
  *
- * The cut is attributed to whoever `whoAnswersAbout` names for
+ * The token is attributed to whoever `whoAnswersAbout` names for
  * `THE_ROOM_THE_ROLL_IS_KEPT_IN`. The ancestral hall is `office: false` in
  * `architecture.ts`, because sealing it reshuffled the office deal, so that
- * lookup is null in every house today and the plate records `cutById: null`. A
- * house that can cut plates still cuts them, which is exactly what the world-open
- * treasury already does without a Keeper; requiring one here would have given
- * the founders plates and every later disciple none. When the hall becomes an
- * office the name arrives with no edit here.
+ * lookup is null in every house today and the token records `cutById: null`. A
+ * house that can light lamps still lights them, which is exactly what the world-open
+ * treasury already does without an Internal Affairs Elder; requiring one here
+ * would have given the founders lamps and every later disciple none. When the
+ * hall becomes an office the name arrives with no edit here.
  */
 
-import { whoAnswersAbout } from '../social-leverage/what-an-elder-is-in-charge-of.js';
-import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { purposeOf } from './architecture.js';
 import {
-    THE_ROOM_THE_ROLL_IS_KEPT_IN,
-    WHERE_THE_PLATES_HANG,
+    WHERE_THE_LAMPS_BURN,
     carriesATokenAt,
     issueTo,
     thisHouseCanIssue,
     tokenIdFor
-} from './a-house-knows-its-own-by-a-plate-and-a-token.js';
+} from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { walkingDaysFrom, type LocationRecord } from './locations.js';
 import {
     isAwayOnSomething,
@@ -75,6 +80,16 @@ import {
 } from './npc-state.js';
 import { makeObject, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
+import {
+    deliverWhatTheyOweTheHouse,
+    theHouseStopsExpecting,
+    theInternalAffairsElderIn,
+    theyAreEntered,
+    whatTheHouseMakesOfSomebodyNew,
+    whoTheHouseExpects
+} from './a-house-expects-somebody-it-took-on.js';
+
+export { theInternalAffairsElderIn } from './a-house-expects-somebody-it-took-on.js';
 
 /**
  * One per issuing, because the stock is infinite: robes handed out again are a
@@ -128,8 +143,8 @@ export function aUniformFor(input: {
 /**
  * Robes for everybody on a roll the day the world opens.
  *
- * They were entered before anybody was watching, the way `seedTreasuries` cuts
- * their plates. Without this the yearly pass would read the whole founding roll
+ * They were entered before anybody was watching, the way `seedTreasuries` lights
+ * their lamps. Without this the yearly pass would read the whole founding roll
  * as never entered and walk every village-dwelling disciple to the gate.
  */
 export function uniformsForEverybodyAlreadyOnARoll(state: WorldState): ObjectRecord[] {
@@ -165,29 +180,12 @@ export function isInsideTheCompound(
     return false;
 }
 
-/** The hall a house hangs its plates in, or null where it has none built. */
-export function whereThisHouseHangsItsPlates(
+/** The hall a house burns its lamps in, or null where it has none built. */
+export function whereThisHouseBurnsItsLamps(
     locations: readonly LocationRecord[],
     houseId: string
 ): string | null {
-    return locations.find(l => purposeOf(l) === WHERE_THE_PLATES_HANG && l.data?.factionId === houseId)?.id ?? null;
-}
-
-/**
- * Whoever holds the room the roll is kept in. See the file header on why this
- * is null in every house today.
- */
-export function theKeeperOfTheRollIn(
-    locations: readonly LocationRecord[],
-    house: { id: string; ranks: readonly string[] },
-    roll: readonly { id: string; rankIndex: number }[]
-): string | null {
-    return whoAnswersAbout(portfoliosIn({
-        locations,
-        sectId: house.id,
-        roll,
-        rankCount: house.ranks.length
-    }), THE_ROOM_THE_ROLL_IS_KEPT_IN);
+    return locations.find(l => purposeOf(l) === WHERE_THE_LAMPS_BURN && l.data?.factionId === houseId)?.id ?? null;
 }
 
 /**
@@ -211,7 +209,7 @@ export function handBackWhatTheyNoLongerBelongTo(
         const object = objects[i]!;
         if (object.possessorId === null || !object.tags.includes('issued')) continue;
         // Only from the person it was issued to. A robe or a token in somebody
-        // else's hands is the seam the plate file keeps open on purpose - a
+        // else's hands is the seam the lamp file keeps open on purpose - a
         // genuine tag in the wrong hands still reads as the house's.
         if (object.data?.memberId !== object.possessorId) continue;
         const onRoll = rollOf(object.possessorId);
@@ -228,8 +226,8 @@ export function handBackWhatTheyNoLongerBelongTo(
  * THE ONE ANSWER, asked by the yearly pass for the world's people and by the
  * played turn for the player, so the two cannot come to different conclusions
  * about who is owed what. Robes to anybody on the roll not wearing them - the
- * stock is infinite. A token and a plate, cut by `issueTo`, to anybody at a rung
- * that carries one (`carriesATokenAt`) in a house somebody can cut them in
+ * stock is infinite. A token cut and a lamp lit, by `issueTo`, to anybody at a
+ * rung that carries one (`carriesATokenAt`) in a house somebody can make them in
  * (`thisHouseCanIssue`), who is not already carrying this house's token.
  *
  * Pure: rows out, to be put by id. Nothing here reads where they are standing,
@@ -243,11 +241,11 @@ export function whatTheHouseGivesThem(input: {
     /** `thisHouseCanIssue` over the roll's ordinals. */
     canCut: boolean;
     /** The hall, or the seat where the house has none built. */
-    plateRoomId: string | null;
-    /** Asked only when a plate is actually cut. */
-    keeperOfTheRoll: () => string | null;
+    lampRoomId: string | null;
+    /** Asked only when a token is actually cut. */
+    internalAffairsElder: () => string | null;
     onDay: number;
-}): { robes: ObjectRecord | null; token: ObjectRecord | null; plate: ObjectRecord | null } {
+}): { robes: ObjectRecord | null; token: ObjectRecord | null; lamp: ObjectRecord | null } {
     const robes = input.wearsItsRobes ? null : aUniformFor({
         memberId: input.person.id,
         houseId: input.house.id,
@@ -255,18 +253,18 @@ export function whatTheHouseGivesThem(input: {
         onDay: input.onDay
     });
     if (input.holdsItsToken || !input.canCut || !carriesATokenAt(input.person.rankIndex)) {
-        return { robes, token: null, plate: null };
+        return { robes, token: null, lamp: null };
     }
     const issued = issueTo({
         memberId: input.person.id,
         memberName: input.person.name,
         houseId: input.house.id,
         houseName: input.house.name,
-        plateRoomId: input.plateRoomId,
+        lampRoomId: input.lampRoomId,
         onDay: input.onDay,
-        cutById: input.keeperOfTheRoll()
+        cutById: input.internalAffairsElder()
     });
-    return { robes, token: issued.token, plate: issued.plate };
+    return { robes, token: issued.token, lamp: issued.lamp };
 }
 
 /** Whether this person is carrying a token this house cut for them. */
@@ -284,8 +282,14 @@ export interface WhatTheHouseDidAboutItsRoll {
     sent: number;
     /** Given robes on arrival. */
     entered: number;
-    /** Given a token and a plate. */
+    /** Given a token, and a lamp lit. */
     cut: number;
+    /** Reports of somebody taken on, made by a recruiter standing in the compound. */
+    reported: number;
+    /** Never entered and not expected, questioned, and let in on what they said. */
+    admittedOnQuestioning: number;
+    /** Questioned, it did not match what the house knows, and turned off its roll. */
+    rejected: number;
 }
 
 /**
@@ -294,7 +298,9 @@ export interface WhatTheHouseDidAboutItsRoll {
  * Mutates `state.npcs` and `state.objects` in place, like every pass beside it.
  */
 export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): WhatTheHouseDidAboutItsRoll {
-    const done: WhatTheHouseDidAboutItsRoll = { sent: 0, entered: 0, cut: 0 };
+    const done: WhatTheHouseDidAboutItsRoll = {
+        sent: 0, entered: 0, cut: 0, reported: 0, admittedOnQuestioning: 0, rejected: 0
+    };
 
     const rolls = new Map<string, number[]>();
     for (let i = 0; i < state.npcs.length; i++) {
@@ -313,8 +319,8 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
             objectAt.set(object.id, state.objects.length);
             state.objects.push(object);
         } else {
-            // A token and plate cut by a house somebody has since left, or
-            // re-cut for somebody whose token is no longer in their hands. The
+            // A token and lamp made by a house somebody has since left, or
+            // made again for somebody whose token is no longer in their hands. The
             // id is the member's, so the new cut takes the row: a house cutting
             // a new token for one of its own cancels the old one.
             state.objects[at] = object;
@@ -343,15 +349,16 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
 
     const byId = new Map(state.locations.map(l => [l.id, l]));
     // Gathered once rather than asked per house: the same answer as
-    // `whereThisHouseHangsItsPlates`, which walks every location per call.
-    const plateRoomOf = new Map<string, string>();
+    // `whereThisHouseBurnsItsLamps`, which walks every location per call.
+    const lampRoomOf = new Map<string, string>();
     for (const location of state.locations) {
-        if (purposeOf(location) !== WHERE_THE_PLATES_HANG) continue;
+        if (purposeOf(location) !== WHERE_THE_LAMPS_BURN) continue;
         const house = location.data?.factionId;
-        if (typeof house === 'string' && !plateRoomOf.has(house)) plateRoomOf.set(house, location.id);
+        if (typeof house === 'string' && !lampRoomOf.has(house)) lampRoomOf.set(house, location.id);
     }
 
-    for (const house of state.factions) {
+    for (let h = 0; h < state.factions.length; h++) {
+        const house = state.factions[h]!;
         if (house.dissolvedOnDay !== null || house.seatLocationId === null) continue;
         const seat = house.seatLocationId;
         if (!byId.has(seat)) continue;
@@ -359,16 +366,16 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
         if (members.length === 0) continue;
 
         const canCut = thisHouseCanIssue(members.map(m => m.npc.cultivation.realmOrdinal));
-        let keeper: string | null | undefined;
-        const keeperOfTheRoll = (): string | null => {
-            if (keeper === undefined) {
-                keeper = theKeeperOfTheRollIn(
+        let elder: string | null | undefined;
+        const internalAffairsElder = (): string | null => {
+            if (elder === undefined) {
+                elder = theInternalAffairsElderIn(
                     state.locations,
                     house,
                     members.map(m => ({ id: m.npc.id, rankIndex: m.npc.factionRankIndex }))
                 );
             }
-            return keeper;
+            return elder;
         };
         let reach: Map<string, number> | undefined;
 
@@ -379,8 +386,8 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
                 wearsItsRobes: wears(npc, house.id),
                 holdsItsToken: holds(tokenIdFor(npc.id), npc, house.id),
                 canCut,
-                plateRoomId: plateRoomOf.get(house.id) ?? seat,
-                keeperOfTheRoll,
+                lampRoomId: lampRoomOf.get(house.id) ?? seat,
+                internalAffairsElder,
                 onDay: day
             });
             if (given.robes) {
@@ -388,20 +395,49 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
                 robed.add(`${npc.id}|${house.id}`);
                 done.entered++;
             }
-            if (given.token && given.plate) {
+            if (given.token && given.lamp) {
                 put(given.token);
-                put(given.plate);
+                put(given.lamp);
                 done.cut++;
             }
         };
 
-        for (const { at, npc } of members) {
+        // A RECRUITER WITH NO SLIP REPORTS WHEN THEY ARE NEXT AT THE HOUSE.
+        // Before anybody is entered, so a recruit and the one who took them on
+        // arriving in the same year are let in that year.
+        for (const { at } of members) {
+            const npc = state.npcs[at]!;
+            if (!isTheWorldsToMove(npc) || !isInsideTheCompound(byId, npc.locationId, seat)) continue;
+            done.reported += deliverWhatTheyOweTheHouse(state, npc.id, house.id, day);
+        }
+
+        for (const { at } of members) {
+            // Read again: a report made above rewrote the recruiter's row.
+            const npc = state.npcs[at]!;
             // The player's mirror row is the player's. What they carry is on
             // their own sheet, and the world does not walk them anywhere.
             if (!isTheWorldsToMove(npc)) continue;
 
             if (isInsideTheCompound(byId, npc.locationId, seat)) {
-                enter(npc);
+                if (!wears(npc, house.id)) {
+                    // NEVER ENTERED: let in on the house's word, which is the
+                    // report of whoever took them on. Without it they are taken
+                    // to the Internal Affairs Elder and questioned, and let in
+                    // or turned off the roll on what the house knows. Somebody
+                    // nobody took on - born or woken inside - is not new at its
+                    // gate. See `whatTheHouseMakesOfSomebodyNew`.
+                    const made = whatTheHouseMakesOfSomebodyNew(state, state.factions[h]!, npc);
+                    if (made.reading === 'rejected on questioning') {
+                        theyAreEntered(state, house.id, npc.id);
+                        const row = state.npcs[at]!;
+                        state.npcs[at] = { ...row, factionId: null, factionRankIndex: -1, updatedOnDay: day };
+                        done.rejected++;
+                        continue;
+                    }
+                    if (made.reading === 'admitted on questioning') done.admittedOnQuestioning++;
+                    theyAreEntered(state, house.id, npc.id);
+                }
+                enter(state.npcs[at]!);
                 continue;
             }
 
@@ -428,10 +464,25 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
             // Nowhere the map can walk to the seat from is a fact about the
             // map, and they stay where they are.
             if (days === undefined) continue;
+            if (!wears(npc, house.id)) {
+                // NEVER ENTERED: they move in. On the road to the seat for the
+                // walk, and entered the year they are standing in it.
+                state.npcs[at] = onTheRoadToLiveAtTheHouse(npc, house.name, seat, day, days);
+                done.sent++;
+                continue;
+            }
+            // ALREADY ONE OF ITS OWN, owed a token: there and back.
             const there = onTheRoadToBeEntered(npc, house.name, seat, day, days);
             state.npcs[at] = there;
             enter(there);
             done.sent++;
+        }
+
+        // Nobody expected any more: dead, off this roll, or entered already.
+        for (const expected of whoTheHouseExpects(state.factions[h]!)) {
+            if (onRollOf.get(expected.personId) === house.id
+                && !robed.has(`${expected.personId}|${house.id}`)) continue;
+            theHouseStopsExpecting(state, house.id, expected.personId);
         }
     }
     return done;
@@ -445,12 +496,46 @@ function freeToSetOut(npc: NpcRecord): boolean {
 }
 
 /**
- * There and back, the way every party the world sends is written: standing at
- * the destination for the term, with where they set out from as `returnTo`, so
- * `bringHomeWhoeverIsDue` ends it like any other. A ROUND TRIP AND NOT A MOVE:
- * joining where you stand is correct, and so is living where you live. Measured
- * with a one-way trip first, on the `demography` seed at 80 years: people in
- * settlements 557 to 338, on sect ground 21% to 46%, and a settlement emptied.
+ * A recruit going to live at the house that took them.
+ *
+ * The design owner: *"move into the compound."* This was a round trip, on the
+ * argument that joining where you stand is right and so is living where you
+ * live, and it was measured against the one-way version: on the `demography`
+ * seed at 80 years, people in settlements 557 to 338 and sect ground 21% to 46%.
+ * The owner has ruled the other way, and the drain is the ruling's consequence
+ * rather than a defect - settlements lose the people houses recruit. See
+ * `demography.test.ts`.
+ *
+ * Walked, not placed: standing where they joined, `travelling` for the walk with
+ * the seat as `returnTo`, so `bringHomeWhoeverIsDue` puts them in the compound
+ * when the term is up and this pass enters them the year it finds them there.
+ */
+function onTheRoadToLiveAtTheHouse(
+    npc: NpcRecord,
+    houseName: string,
+    seat: string,
+    day: number,
+    days: number
+): NpcRecord {
+    return {
+        ...npc,
+        activity: {
+            kind: 'travelling',
+            note: `On the way to ${houseName}, to be entered on its roll and live there.`,
+            withIds: [],
+            sinceDay: day,
+            untilDay: day + Math.max(1, Math.ceil(days)),
+            returnTo: seat
+        },
+        updatedOnDay: day
+    };
+}
+
+/**
+ * There and back, for one of the house's own who is owed a token and lives
+ * elsewhere: standing at the seat for the term, with where they set out from as
+ * `returnTo`, so `bringHomeWhoeverIsDue` ends it like any other. A recruit moves
+ * in (`onTheRoadToLiveAtTheHouse`); somebody already entered keeps their home.
  */
 function onTheRoadToBeEntered(
     npc: NpcRecord,

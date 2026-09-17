@@ -70,17 +70,19 @@ import {
 } from './possessions.js';
 import { purposeOf, type RoomPurpose } from './architecture.js';
 import {
-    couldCutAWayOut,
+    couldCutATeleportationTalisman,
     cutATalisman,
     type WhatIsInTheSlip
 } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 import {
-    WHERE_THE_PLATES_HANG,
+    WHERE_THE_LAMPS_BURN,
     carriesATokenAt,
     issueTo,
     thisHouseCanIssue
-} from './a-house-knows-its-own-by-a-plate-and-a-token.js';
+} from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import type { WorldState } from './world-state.js';
+import { aHousesStockOfCommunicationTalismans } from './a-communication-talisman-carries-word-home.js';
+import { whatAHouseKeepsInStock } from './what-a-house-hears-from-its-people-away.js';
 
 /**
  * The standing at which a house can keep the next grade of furnace.
@@ -236,9 +238,24 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         out.push(...whatElseTheHouseKeeps(house.id, name, roomFor, acting, today));
         out.push(...whatTheHouseKeepsToWorkWith(house.id, name, roomFor, acting, today));
 
+        // ── AND ITS COMMUNICATION TALISMANS ──────────────────────────────
+        //
+        // One counted stack marked with the house, a stack for everybody on the
+        // roll, which is what it hands out to whoever it sends away. See
+        // `what-a-house-hears-from-its-people-away.ts`.
+        const stockRow = aHousesStockOfCommunicationTalismans({
+            houseId: house.id,
+            houseName: name,
+            quantity: whatAHouseKeepsInStock(
+                state.npcs.filter(npc => npc.factionId === house.id && npc.status === 'alive').length),
+            locationId: roomFor(whereInTheHouseItSits('other', 'mundane')),
+            onDay: today
+        });
+        out.push(stockRow);
+
         // ── AND WHO IT KNOWS BY NAME ─────────────────────────────────────
         //
-        // A plate on the wall for every disciple and a token in their hand.
+        // A lamp burning for every disciple and a token in their hand.
         // `docs/world/houses/trust.md` has carried the whole design under its
         // own heading since it was written and NOTHING in the engine ever made
         // one - `'token'` was a value of `ObjectKind` that nothing produced.
@@ -246,7 +263,7 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         // Issued from the rung a house starts putting its name on somebody,
         // which is the first rung that is a disciple rather than a servant.
         //
-        // AND ONLY WHERE THE HOUSE CAN CUT THEM. A plate is a Foundation
+        // AND ONLY WHERE THE HOUSE CAN MAKE THEM. A lamp is a Foundation
         // craft, so a house with nobody at that rung has none at all - no roll
         // it can read, no notice when one of its own dies, and no token its
         // members can prove themselves with. That is a real difference between
@@ -256,7 +273,7 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
             .map(npc => npc.cultivation.realmOrdinal);
         if (!thisHouseCanIssue(onTheRoll)) continue;
 
-        const plateRoom = roomFor(WHERE_THE_PLATES_HANG);
+        const lampRoom = roomFor(WHERE_THE_LAMPS_BURN);
         for (const member of state.npcs) {
             if (member.factionId !== house.id) continue;
             if (member.status !== 'alive') continue;
@@ -266,10 +283,10 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
                 memberName: member.name,
                 houseId: house.id,
                 houseName: name,
-                plateRoomId: plateRoom,
+                lampRoomId: lampRoom,
                 onDay: today
             });
-            out.push(issued.token, issued.plate);
+            out.push(issued.token, issued.lamp);
         }
     }
 
@@ -320,19 +337,19 @@ function whatElseTheHouseKeeps(
 
     // AND THE SLIPS, which are what a house actually hands somebody before it
     // sends them anywhere. A talisman is one act already paid for - a strike at
-    // the maker's strength, or a way out for somebody who could never fold - so
+    // the maker's strength, or a fold for somebody who could never fold - so
     // stocking them is the same decision as stocking medicine and is made off
     // the same ceiling. Mortal ones are counted; anything better is one of it.
     for (const grade of GRADES_A_HOUSE_STOCKS) {
         if (refiningOrdinalFor(grade) > refiningOrdinalFor(ceiling)) continue;
         for (const what of WHAT_A_HOUSE_KEEPS_SLIPS_FOR) {
-            // AND A HOUSE THAT CANNOT FOLD KEEPS NO DEPARTURE SLIPS. Measured
-            // before this guard: seeded escape slips spanned ordinals 14..44,
+            // AND A HOUSE THAT CANNOT FOLD KEEPS NO TELEPORTATION TALISMANS.
+            // Measured before this guard: seeded ones spanned ordinals 14..44,
             // so every house under `FOLD_FLOOR_ORDINAL` was sitting on paper
             // that carries zero distance - a way out that is not one. The
             // predicate that refuses them already existed and nothing called
             // it.
-            if (what === 'a_way_out' && !couldCutAWayOut(acting)) continue;
+            if (what === 'a_teleportation' && !couldCutATeleportationTalisman(acting)) continue;
             out.push(aStockOfSlips({
                 houseId,
                 houseName,
@@ -559,13 +576,14 @@ const A_RUNG_PER_EXTRA_KIND = 5;
  * somebody it is sending out: can they hurt what they meet, and can they get
  * home. A house that stocked only one of them would be making a statement.
  */
-const WHAT_A_HOUSE_KEEPS_SLIPS_FOR: readonly WhatIsInTheSlip[] = ['a_strike', 'a_way_out'];
+const WHAT_A_HOUSE_KEEPS_SLIPS_FOR: readonly WhatIsInTheSlip[] = ['a_strike', 'a_teleportation'];
 
 /**
  * A house's stock of one kind of slip at one grade.
  *
  * The maker is the house's own best hand, which is what `acting` is - so a hill
- * sect's escape slips carry a hill sect's reach, and a court's carry a court's.
+ * sect's teleportation talismans carry a hill sect's reach, and a court's carry
+ * a court's.
  * Nothing here decides who may cut one; `couldCutATalisman` does, off the same
  * table that decides it for medicine.
  */
@@ -580,7 +598,7 @@ function aStockOfSlips(input: {
 }): ObjectRecord {
     const slip = cutATalisman({
         id: `treasury-${input.houseId}-talisman-${input.what}-${input.grade}`,
-        name: `${input.grade}-grade ${input.what === 'a_strike' ? 'strike' : 'departure'} talisman`,
+        name: `${input.grade}-grade ${input.what === 'a_strike' ? 'strike' : 'teleportation'} talisman`,
         grade: input.grade,
         what: input.what,
         crafterId: null,

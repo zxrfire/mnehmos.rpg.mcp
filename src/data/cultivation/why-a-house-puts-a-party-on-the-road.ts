@@ -98,6 +98,10 @@ import { z } from 'zod';
 
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { BEAST_CHANGE_ORDINAL } from './beasts.js';
+import {
+    THE_COMMUNICATION_TALISMAN,
+    WHO_CAN_CUT_A_COMMUNICATION_TALISMAN
+} from './communication-talismans.js';
 import type { RegardBand } from '../../schema/cultivation.js';
 // Type-only, so no module edge is created in either direction. The world's
 // ledger owns the vocabulary for what a thing WAS, and a reason that produced
@@ -201,7 +205,18 @@ export const ReasonNeedSchema = z.enum([
      * desperate: `reasonsOpenTo` simply does not offer it one. See
      * `engine/world/what-a-house-does-when-it-cannot-pay.ts`.
      */
-    'ground_that_pays_somebody_else'
+    'ground_that_pays_somebody_else',
+    /**
+     * Somebody of the house is out on a posting and is due to be looked in on.
+     * `someoneIsDueALookIn`. Set only by the pass that keeps the cadence
+     * (`what-a-house-hears-from-its-people-away.ts`), so no board offers it.
+     */
+    'somebody_out_on_a_posting',
+    /**
+     * The house's own stock of communication talismans is below what it keeps.
+     * `itsCommunicationTalismansRunLow`. The work is done at the house.
+     */
+    'communication_talismans_running_low'
 ]);
 export type ReasonNeed = z.infer<typeof ReasonNeedSchema>;
 
@@ -233,6 +248,19 @@ export const SendingReasonSchema = z.object({
      * where there is no such rung.
      */
     ceilingOrdinal: z.number().int().min(0).max(MAX_ORDINAL).nullable(),
+    /**
+     * The rung below which nobody can do this work at all, or null where anybody
+     * can. The other end of `ceilingOrdinal`: a ceiling is who a house would not
+     * waste on it, a floor is who could not do it. A board does not offer it to
+     * somebody under it.
+     */
+    floorOrdinal: z.number().int().min(0).max(MAX_ORDINAL).nullable(),
+    /**
+     * The catalog id of what the work makes, where it makes a thing, or null.
+     * Carried onto the worker's activity as `thingId`, which is what the work
+     * lands as when its term closes.
+     */
+    makes: z.string().min(1).nullable(),
     /** Days the party is gone. A term, not a computation. */
     days: z.number().int().min(1),
     /** How many the house puts on it when it is not short of anybody. */
@@ -270,6 +298,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'is the one thing at that grade nobody already owns.',
         needs: 'nothing',
         ceilingOrdinal: BEAST_CHANGE_ORDINAL,
+        floorOrdinal: null,
+        makes: null,
         days: 40,
         hands: 5,
         atStake: 'stones',
@@ -284,6 +314,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'house that holds the vein is the only body that can read the ground.',
         needs: 'ground',
         ceilingOrdinal: BEAST_CHANGE_ORDINAL,
+        floorOrdinal: null,
+        makes: null,
         days: 25,
         hands: 12,
         atStake: 'the_ground_itself',
@@ -298,6 +330,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'worth the cost of feeding for forty years.',
         needs: 'nothing',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 150,
         hands: 2,
         atStake: 'nothing_but_the_party',
@@ -312,6 +346,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'said it will arrive.',
         needs: 'nothing',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 60,
         hands: 4,
         atStake: 'standing_with_a_house',
@@ -326,6 +362,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'go down and be the person the terms are collected by.',
         needs: 'a_subsidiary',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 45,
         hands: 3,
         atStake: 'the_grant',
@@ -340,6 +378,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'to be the body that opens it rather than the body that hears about it.',
         needs: 'a_find',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 120,
         hands: 6,
         atStake: 'stones',
@@ -354,6 +394,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'what it holds on terms that make refusing a different conversation.',
         needs: 'a_parent',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 180,
         hands: 10,
         atStake: 'standing_with_a_house',
@@ -368,6 +410,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'travels, with everything the house wants seen travelling alongside.',
         needs: 'an_ally',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 90,
         hands: 6,
         atStake: 'standing_with_a_house',
@@ -382,6 +426,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'house knows whether that is a refusal or a funeral.',
         needs: 'a_subsidiary',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 70,
         hands: 5,
         atStake: 'the_grant',
@@ -399,6 +445,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         // None. A leak does not read the rung of whoever answers it, and the
         // bodies posted over one run from a hill village to an apex's chosen.
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 8,
         hands: 3,
         atStake: 'the_ground_itself',
@@ -416,6 +464,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'the party is the house as far as anybody there is concerned.',
         needs: 'a_counterpart',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 60,
         hands: 5,
         atStake: 'standing_with_a_house',
@@ -430,6 +480,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'both houses named, with the elders of both standing at the edge of it.',
         needs: 'a_counterpart',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 35,
         hands: 6,
         atStake: 'standing_with_a_house',
@@ -449,6 +501,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'own out to the line to see what is there before somebody walks into it.',
         needs: 'forbidden_ground',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 20,
         hands: 4,
         atStake: 'the_ground_itself',
@@ -468,6 +522,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
             + 'that was going to happen this decade is not going to happen.',
         needs: 'a_rival',
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 720,
         hands: 40,
         atStake: 'the_ground_itself',
@@ -484,6 +540,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         // None. A house that cannot make payroll sends whoever it has, and the
         // people it has are the ones it would ordinarily keep at home.
         ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
         days: 90,
         hands: 8,
         atStake: 'the_ground_itself',
@@ -493,6 +551,47 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         // against the others for anybody else: `NEED_PREDICATES` is what keeps
         // it off a solvent house's board, not this number.
         weight: 25
+    },
+    {
+        id: 'sending-to-look-in-on-a-posting',
+        name: 'Looking in on a posting',
+        what: 'Somebody of the house has been in a town for years, and the house sends one person '
+            + 'with a fresh stack of communication talismans to see how they are.',
+        needs: 'somebody_out_on_a_posting',
+        ceilingOrdinal: null,
+        floorOrdinal: null,
+        makes: null,
+        // Days at the post. The road there and back is the map's, added by the
+        // pass that sends them.
+        days: 5,
+        hands: 1,
+        atStake: 'nothing_but_the_party',
+        // What comes back is word of one person, said in the house's own hall.
+        factKind: 'said_in_public',
+        scale: 'personal',
+        // Not drawn against the others. The cadence decides when, and the
+        // weight is only here because every row carries one.
+        weight: 1
+    },
+    {
+        id: 'sending-to-cut-communication-talismans',
+        name: 'Cutting communication talismans',
+        what: 'The house has handed out more of its communication talismans than it has left, and '
+            + 'somebody at Foundation or above sits down at the house and cuts more.',
+        needs: 'communication_talismans_running_low',
+        ceilingOrdinal: null,
+        floorOrdinal: WHO_CAN_CUT_A_COMMUNICATION_TALISMAN,
+        makes: THE_COMMUNICATION_TALISMAN.id,
+        // A few days at it, which is short enough to fit between other work.
+        days: 5,
+        hands: 1,
+        atStake: 'nothing_but_the_party',
+        factKind: 'said_in_public',
+        scale: 'personal',
+        // A rota rather than a decision, like the leak: a house that is short
+        // needs it done this year. Heavy enough to be taken when it is posted,
+        // which is only while the stock is short.
+        weight: 30
     }
 ];
 

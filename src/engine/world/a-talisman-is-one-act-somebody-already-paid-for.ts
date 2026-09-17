@@ -28,6 +28,14 @@
  * Single use is `tags: ['single-use']` and `data.spent`, the shape comprehension
  * materials already use, so a spent slip stays in the world as a row somebody
  * can find two centuries later.
+ *
+ * ── AND THE SLIP THAT CARRIES WORD IS NOT ONE OF THESE ───────────────────
+ *
+ * A communication talisman is counted, not tracked - *"too common and single
+ * use"* - so it is a stack marked with a house rather than a row, and burning one
+ * leaves nothing. It is not a `WhatIsInTheSlip`. See
+ * `src/data/cultivation/communication-talismans.ts` and
+ * `a-communication-talisman-carries-word-home.ts`.
  */
 
 import {
@@ -52,8 +60,22 @@ import type { TechniqueGrade } from '../../schema/cultivation.js';
 export type WhatIsInTheSlip =
     /** One strike, at the strength of the hand that made it. */
     | 'a_strike'
-    /** One fold, over ground the maker could have crossed. */
-    | 'a_way_out';
+    /**
+     * A teleportation talisman: one fold, over ground the maker could have
+     * crossed. The ability stays folding space (`FOLD_*`); only the slip is
+     * called this. A player may still say escape talisman or a way out.
+     */
+    | 'a_teleportation';
+
+/**
+ * The tag a teleportation talisman carries, read by whoever looks for one.
+ *
+ * It was `escape`, and saved worlds from before the rename carry that tag,
+ * `data.talisman: 'a_way_out'` and the name "departure talisman". Nothing maps
+ * them on load: a world regenerates from its seed (`AGENTS.md`), and a rebuilt
+ * one carries these.
+ */
+export const A_TELEPORTATION_TALISMAN = 'teleportation';
 
 /** The realm floor a talisman lifts somebody over, per use. */
 export function whatItLetsYouDo(what: WhatIsInTheSlip): string {
@@ -87,7 +109,7 @@ export function bestTalismanAHandCanCut(crafterOrdinal: number): TechniqueGrade 
  *
  * BOTH SLIPS STAND HERE, not only the strike. A finished thing has had a hand
  * applied to it and therefore has one answer to how strong it is - see the
- * grade-and-ordinal rule in `possessions.ts`. A way-out slip that was priced at
+ * grade-and-ordinal rule in `possessions.ts`. A teleportation talisman priced at
  * null read as an unfinished thing, and 91 of the 235 artifacts in a seeded
  * world were that one row.
  */
@@ -96,18 +118,19 @@ export function whatWasFoldedIn(crafterOrdinal: number): number {
 }
 
 /**
- * How far a way-out talisman carries, in walking days.
+ * How far a teleportation talisman carries, in walking days.
  *
  * The maker's own reach, off the one folding table. A maker below the folding
  * floor cannot put a fold in paper they could not make themselves - so the
- * escape slips in the world all came from hands that could already leave.
+ * teleportation talismans in the world all came from hands that could already
+ * leave.
  */
-export function howFarTheWayOutCarries(crafterOrdinal: number): number {
+export function howFarATeleportationTalismanCarries(crafterOrdinal: number): number {
     return crafterOrdinal < FOLD_FLOOR_ORDINAL ? 0 : foldRangeInWalkingDays(crafterOrdinal);
 }
 
 /** Whether this hand could put a fold in paper at all. */
-export function couldCutAWayOut(crafterOrdinal: number): boolean {
+export function couldCutATeleportationTalisman(crafterOrdinal: number): boolean {
     return crafterOrdinal >= FOLD_FLOOR_ORDINAL;
 }
 
@@ -146,7 +169,7 @@ export function cutATalisman(input: CuttingATalisman): ObjectRecord {
         // A slip of paper. Nothing in a ring is cheaper to carry.
         volume: WHAT_A_SLIP_TAKES,
         weight: WHAT_A_SLIP_WEIGHS,
-        tags: ['talisman', 'single-use', input.what === 'a_strike' ? 'offensive' : 'escape'],
+        tags: ['talisman', 'single-use', input.what === 'a_strike' ? 'offensive' : A_TELEPORTATION_TALISMAN],
         data: {
             talisman: input.what,
             grade: input.grade,
@@ -155,8 +178,8 @@ export function cutATalisman(input: CuttingATalisman): ObjectRecord {
             // The rung folded in is the slip's own ordinal and is not repeated
             // here. It was, and a second copy of a number is a number that
             // drifts.
-            ...(input.what === 'a_way_out'
-                ? { carriesWalkingDays: howFarTheWayOutCarries(input.crafterOrdinal) }
+            ...(input.what === 'a_teleportation'
+                ? { carriesWalkingDays: howFarATeleportationTalismanCarries(input.crafterOrdinal) }
                 : {}),
             sentDown: madeBelowTheLid(input.grade) ? false : true
         }
@@ -213,7 +236,7 @@ export function burnIt(object: ObjectRecord, byId: string, onDay: number): Objec
  * row stays: that this person had one, and used it here, is exactly the kind of
  * thing somebody should be able to find out two centuries later.
  */
-export function whoBurnedAWayOut(input: {
+export function whoBurnedATeleportationTalisman(input: {
     /** Every object the world holds. Mutated in place for the ones burned. */
     objects: ObjectRecord[];
     /** Ids of the people who are about to be finished. */
@@ -224,7 +247,7 @@ export function whoBurnedAWayOut(input: {
     for (const who of input.aboutToFall) {
         const at = input.objects.findIndex(o =>
             o.possessorId === who
-            && o.tags.includes('escape')
+            && o.tags.includes(A_TELEPORTATION_TALISMAN)
             && isUnburnt(o)
             && Number(o.data?.carriesWalkingDays ?? 0) > 0);
         if (at < 0) continue;

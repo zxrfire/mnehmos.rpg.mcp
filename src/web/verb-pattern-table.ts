@@ -79,6 +79,11 @@ import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // like every other verb family's reader, so the harvested spelling vocabulary
 // is unmoved. See `telling-a-wrong.ts`.
 import { whatIsBeingTold } from './telling-a-wrong.js';
+import {
+    communicationTalismansBeingCutIn,
+    theCuttingNoticeIsBeingTaken,
+    whatWordIsBeingSent
+} from './communication-talisman-phrasings.js';
 // And the third half of it: telling somebody who YOU are.
 import { whatIsBeingGivenAsAnAccount } from './an-account-of-yourself.js';
 import { whoseAccountIsBeingChallenged } from './two-accounts-of-one-person.js';
@@ -4452,6 +4457,17 @@ function planIntent(input: string): PlannedAction {
                 : {})
         };
     }
+
+    // WORD ON A COMMUNICATION TALISMAN, AND CUTTING THEM. Above breaking, which
+    // owns "burn" beside "talisman". See `sending-word-on-a-communication-talisman.ts`.
+    const word = whatWordIsBeingSent(input);
+    if (word) return { action: 'tell', intent: 'send_word', target: word.to, topic: word.says };
+    const cutting = communicationTalismansBeingCutIn(input);
+    if (cutting) return { action: 'craft', target: cutting };
+    // And taking the house's notice for the work, whose name has "cutting" and
+    // a thing noun in it, so the taking branch below would read it as a theft.
+    const noticeForCutting = theCuttingNoticeIsBeingTaken(input) ? dutyNamed(text) : undefined;
+    if (noticeForCutting) return { action: 'sect', intent: 'duty', target: noticeForCutting };
 
     // BREAKING A THING, WHICH IS NOT SWINGING ONE
     //

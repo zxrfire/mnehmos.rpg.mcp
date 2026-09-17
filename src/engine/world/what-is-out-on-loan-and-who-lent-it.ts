@@ -21,8 +21,8 @@
  *
  * Measured on three seeded worlds before this: of 415 people, 28 to 31 carried
  * an object owned by somebody else, and every single one of them was a `token`
- * - the identity plate every member of a house wears, from
- * `a-house-knows-its-own-by-a-plate-and-a-token.ts`. A plate is not a loan. So
+ * - the identity token every member of a house carries, from
+ * `a-house-knows-its-own-by-a-lamp-and-a-token.ts`. A token is not a loan. So
  * the honest count of people in this world carrying something a house lent them
  * was **zero**, in every world, always.
  *
@@ -138,7 +138,7 @@ function whoWouldBeTrustedWithIt(
  * WHAT IS WORTH LENDING, which is not everything a house owns.
  *
  * A lot of fired clay cauldrons is `mundane` and nobody tracks whose the third
- * one is, so lending one is not an event. A token is an identity plate and
+ * one is, so lending one is not an event. A token says whose somebody is, and
  * every member has one already. What is left is the tracked half of the
  * treasury, which is the half a house would notice the absence of.
  */

@@ -4,7 +4,7 @@
  * ── WHAT WAS WRONG ───────────────────────────────────────────────────────
  *
  * `issueTo` had no caller on the played side. No player ever carried a token or
- * had a plate hung for them, and the gate passed a player on the strength of the
+ * had a lamp lit for them, and the gate passed a player on the strength of the
  * roll alone - so somebody who joined a house a province away walked through its
  * gate with nothing to show, and somebody who left it kept nothing they could
  * hand back because they had never been given anything.
@@ -13,48 +13,68 @@
  * till you get there, so you don't really have proof. You don't get your uniform
  * either."*
  *
+ * AND THE HOUSE HAS TO EXPECT THEM. The design owner's later ruling: whoever took
+ * somebody on reports it to the Internal Affairs Elder, and somebody never
+ * entered is let in at the gate when the house expects them and they can say who
+ * took them on. See `a-house-expects-somebody-it-took-on.test.ts`.
+ *
  * ── WHAT THIS PINS, PLAYED ───────────────────────────────────────────────
  *
- * Joined away from the seat: nothing. Arriving: stopped at the gate with no
- * token to read, then entered at the seat - robes, a token, a plate on the wall -
+ * Joined away from the seat with nobody's word: nothing, and stopped at the gate
+ * with no token to read and nobody told to expect them. Once the house has the
+ * word: let in, and entered at the seat - robes, a token, a lamp burning -
  * read by the same `whatTheHouseGivesThem` the world's own recruits are. After
- * that the gate reads the token and lets them through. Promoted onto the token
- * rung at the seat: a token. Joined while standing at the seat: entered on the
- * turn. Leaving: both go back, and the gate turns them away.
+ * that the gate reads the token. Promoted onto the token rung at the seat: a
+ * token. Joining at the seat in front of somebody of the house out looking for
+ * disciples: that person took them on, told the house there and then, and they
+ * are entered on the turn.
+ * Leaving: both go back, and the gate turns them away.
  *
- * Preconditions are arranged (a place on the roll, a rung), which `AGENTS.md`
- * permits; the arrivals are played, and the issuing is the turn's own.
+ * Preconditions are arranged (a place on the roll, a rung, a report already made
+ * where the test is not about how it travelled), which `AGENTS.md` permits; the
+ * arrivals and the join are played, and the issuing is the turn's own.
  *
  * Red-checked by removing the post-turn call in `turn-engine.ts`: every claim
  * about what the player carries goes red, and so does the gate passing them
- * once entered.
+ * once entered. By removing `whoTookYouOn` from the join: the join test goes red.
+ * And by entering anybody at the seat whatever the house's word: the first test
+ * goes red, entered on nobody's word.
  */
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import {
-    couldCutAPlate,
+    couldLightALamp,
     theHouseTheirTokenNames,
-    whoHasAPlateOnTheWallOf
-} from '../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token';
-import { wearsTheRobesOf } from '../../src/engine/world/a-recruit-is-given-their-plate-at-the-house';
+    THE_INTERNAL_AFFAIRS_ELDER,
+    whoHasALampBurningIn
+} from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token';
+import { wearsTheRobesOf } from '../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house';
+import {
+    doesTheHouseExpect,
+    theHouseExpects,
+    theyOweTheHouseAReport
+} from '../../src/engine/world/a-house-expects-somebody-it-took-on';
+import { isTheWorldsToMove } from '../../src/engine/world/npc-state';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from '../../src/web/walking-up-to-a-house';
-import type { WorldState } from '../../src/engine/world/world-state';
+import type { FactionRecord, WorldState } from '../../src/engine/world/world-state';
 import { howManyAHouseReallyHas } from '../../src/engine/social/how-a-house-reads-a-face';
 import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../src/engine/world/a-house-raises-its-own';
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createDebt } from '../../src/engine/social/grudges';
+import { getSect } from '../../src/data/cultivation/sects';
+import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 
 const WORLD = 'a-house-you-can-walk-to';
 
-/** A seated house somebody in can cut plates, asked of the world rather than named. */
-function aHouseThatCutsPlates(world: WorldState) {
+/** A seated house somebody in can light lamps, asked of the world rather than named. */
+function aHouseThatLightsLamps(world: WorldState) {
     for (const faction of world.factions) {
         if (faction.dissolvedOnDay !== null || faction.seatLocationId === null) continue;
         const seat = world.locations.find(l => l.id === faction.seatLocationId);
         if (!seat) continue;
         const cuts = world.npcs.some(n =>
-            n.factionId === faction.id && n.status === 'alive' && couldCutAPlate(n.cultivation.realmOrdinal));
+            n.factionId === faction.id && n.status === 'alive' && couldLightALamp(n.cultivation.realmOrdinal));
         if (cuts) return { faction, seat };
     }
     return null;
@@ -63,12 +83,46 @@ function aHouseThatCutsPlates(world: WorldState) {
 const tokenOf = (world: WorldState, id: string) => theHouseTheirTokenNames(
     world.objects, id, memberId => world.npcs.some(n => n.id === memberId && n.status === 'alive'));
 
+type Game = Awaited<ReturnType<typeof makeGameInWorld>>['game'];
+
+/**
+ * ARRANGED: somebody of the house took them on and the word has reached its
+ * Internal Affairs office, however it travelled, and the player knows who.
+ */
+function theHouseHasTheWord(
+    game: Game,
+    person: { id: string; name: string },
+    faction: FactionRecord
+): string {
+    const world = game.atHand!;
+    const recruiter = world.npcs.find(n =>
+        n.status === 'alive' && n.factionId === faction.id && isTheWorldsToMove(n))!;
+    const day = Math.floor(world.currentDay);
+    theyOweTheHouseAReport(world, recruiter.id, { houseId: faction.id, person, placeId: null, onDay: day });
+    theHouseExpects(world, {
+        houseId: faction.id,
+        person,
+        recruiter: { id: recruiter.id, name: recruiter.name },
+        where: null,
+        takenOnDay: day,
+        reportedBy: { id: recruiter.id },
+        onDay: day,
+        addressedTo: THE_INTERNAL_AFFAIRS_ELDER
+    });
+    game.knowledge.learnIfNew({
+        holderId: person.id, kind: 'cultivator', id: recruiter.id, name: recruiter.name,
+        onDay: day, sourceKind: 'witnessed', stage: 'encountered'
+    });
+    game.theWorldMoved();
+    return recruiter.name;
+}
+
 describe('your house issues you its robes and token at its seat', () => {
-    it('gives nothing to somebody who joined elsewhere, stops them at the gate, and enters them there', async () => {
+    it('stops somebody who joined elsewhere at the gate, lets them in on the house\'s word, and enters them there', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'issued-at-the-seat', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Recruit');
-        const found = aHouseThatCutsPlates((await game.loadWorld())!);
-        expect(found, 'this world has no seated house that can cut a plate').not.toBeNull();
+        const found = aHouseThatLightsLamps((await game.loadWorld())!);
+        expect(found, 'this world has no seated house that can light a lamp').not.toBeNull();
         const { faction, seat } = found!;
 
         // On the roll, at a rung that carries a token, and a province away.
@@ -78,20 +132,33 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed before arriving').toBe(false);
         expect(tokenOf(world, cultivator.id), 'a token before arriving').toBeNull();
 
+        // NOBODY'S WORD: stopped, and not entered.
         const turn = await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         const prose = turn.narration ?? '';
         expect(prose, 'the gate did not ask for a token').toMatch(/no token to read/);
-        expect(prose, 'being entered was not said').toMatch(/Entered on the roll/);
+        expect(prose, 'the gate did not say it had no word of them').toMatch(/Nobody at the gate was told to expect you/);
+        world = game.atHand!;
+        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'entered on nobody\'s word').toBe(false);
 
+        // THE HOUSE'S WORD: the gate lets them in, and the seat enters them.
+        const recruiter = theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
+        const house = theHouseWhoseGateThisIs(game.atHand!, seat.name)!;
+        const letIn = whatTheGateOfThisHouseSays(game, repos.cultivators.getById(cultivator.id)!, house);
+        expect(letIn.way).toBe('on the roll');
+        expect(letIn.facts.join(' ')).toContain(`You say ${recruiter} took you on`);
+
+        const entered = await game.act('I look around');
+        expect(entered.narration ?? '', 'being entered was not said').toMatch(/Entered on the roll/);
         world = game.atHand!;
         expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(true);
         expect(tokenOf(world, cultivator.id)).toBe(faction.id);
-        expect(whoHasAPlateOnTheWallOf(world.objects, faction.id).has(cultivator.id)).toBe(true);
+        expect(whoHasALampBurningIn(world.objects, faction.id).has(cultivator.id)).toBe(true);
+        expect(doesTheHouseExpect(world.factions.find(f => f.id === faction.id)!, cultivator.id),
+            'still expected once entered').toBeNull();
 
-        // AND NOW THE GATE READS IT.
+        // AND NOW THE GATE READS THE TOKEN.
         const current = repos.cultivators.getById(cultivator.id)!;
-        const house = theHouseWhoseGateThisIs(world, seat.name)!;
         expect(whatTheGateOfThisHouseSays(game, current, house).way).toBe('on the roll');
 
         // LEAVING HANDS IT BACK.
@@ -108,9 +175,10 @@ describe('your house issues you its robes and token at its seat', () => {
     it('cuts a token for somebody promoted onto the rung while at the seat', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'promoted-at-the-seat', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Servant');
-        const { faction, seat } = aHouseThatCutsPlates((await game.loadWorld())!)!;
+        const { faction, seat } = aHouseThatLightsLamps((await game.loadWorld())!)!;
 
         repos.sects.addMember(faction.id, cultivator.id, 0);
+        theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
         await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
@@ -155,6 +223,7 @@ describe('your house issues you its robes and token at its seat', () => {
         await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         repos.sects.addMember(faction.id, cultivator.id, 0);
+        theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
         await game.act('I look around');
         const world = game.atHand!;
         expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'entered at the seat').toBe(true);
@@ -182,20 +251,58 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(known.facts.join(' ')).toMatch(/knows your face/);
     }, 240_000);
 
-    it('enters somebody who joins while already standing at the seat, on that turn', async () => {
+    it('enters somebody taken on at the seat by one of the house out looking for disciples, on that turn', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'joined-at-the-seat', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Walk-up');
-        const { faction, seat } = aHouseThatCutsPlates((await game.loadWorld())!)!;
+        const opened = (await game.loadWorld())!;
+        const ordinal = repos.cultivators.getById(cultivator.id)!.realmOrdinal;
+
+        // A house that would take them, with its own people at its gate.
+        const house = opened.factions
+            .filter(f => f.dissolvedOnDay === null && f.seatLocationId !== null)
+            .filter(f => (getSect(f.id)?.admissionOrdinal ?? Infinity) <= ordinal)
+            .map(f => ({
+                faction: f,
+                seat: opened.locations.find(l => l.id === f.seatLocationId)!,
+                atTheGate: opened.npcs.filter(n =>
+                    n.status === 'alive' && n.factionId === f.id && n.locationId === f.seatLocationId).length
+            }))
+            .filter(row => row.seat !== undefined && row.atTheGate > 0)
+            .sort((a, b) => b.atTheGate - a.atTheGate)[0];
+        expect(house, 'this world has no house that would take them with anybody at its gate').toBeTruthy();
+        const { faction, seat } = house!;
 
         await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
         expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed off the roll').toBe(false);
 
-        repos.sects.addMember(faction.id, cultivator.id, 1);
-        await game.act('I look around');
+        // ARRANGED: one of the house at the gate is out looking for disciples.
+        // Nobody joins a house out of thin air; see
+        // `nobody-joins-a-house-out-of-thin-air.test.ts`.
+        const here = game.worldPlaceOf(repos.cultivators.getById(cultivator.id)!);
+        const beside = game.present(repos.cultivators.getById(cultivator.id)!)
+            .find(row => row.sectId === faction.id);
+        const at = world.npcs.findIndex(n => n.id === beside?.id);
+        expect(at, 'nobody of the house is at its gate').toBeGreaterThanOrEqual(0);
+        const recruiting = SENDING_REASONS.find(r => r.id === 'sending-to-recruit')!.name.toLowerCase();
+        world.npcs[at] = {
+            ...world.npcs[at]!,
+            locationId: here,
+            activity: {
+                kind: 'out_with_a_party', note: `Out for the ${faction.name} on ${recruiting}.`, withIds: [],
+                sinceDay: Math.floor(world.currentDay), untilDay: Math.floor(world.currentDay) + 150,
+                returnTo: here
+            }
+        };
+        game.theWorldMoved();
+
+        const joined = await game.act(`I join the ${faction.name}`);
+        expect(repos.sects.getMembership(cultivator.id)?.sectId, 'the join did not take').toBe(faction.id);
+        const said = joined.narration ?? '';
+        expect(said, 'who took them on was not said').toMatch(/took you on for/);
+        expect(said, 'being entered was not said').toMatch(/Entered on the roll/);
         world = game.atHand!;
         expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(true);
-        expect(tokenOf(world, cultivator.id)).toBe(faction.id);
     }, 240_000);
 });

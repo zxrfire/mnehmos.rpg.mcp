@@ -35,6 +35,7 @@ import {
 } from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { theSealStillHolds } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
+import { whatNeglectedDisciplesAskOfTheDaoHeart } from '../cultivation/what-a-crossing-asks-of-the-dao-heart.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import {
     bodyStandingOn,
@@ -490,6 +491,13 @@ export function strikeAtTheWall(
         ...(watch && watch.share > 0
             ? { protection: watch.share, protectionBy: watch.by }
             : {}),
+        // 道心: THE OATH TO TEACH. What their neglected disciples ask of the
+        // crossing, by the rule a player master pays by; a master keeping it
+        // pays nothing. See `whatNeglectedDisciplesAskOfTheDaoHeart`.
+        ...(() => {
+            const heart = whatNeglectedDisciplesAskOfTheDaoHeart({ ties: npc.relationships, onDay: day });
+            return heart.share > 0 ? { daoHeart: heart.share, daoHeartOpen: heart.open } : {};
+        })(),
         // WHAT THIS CROSSING CAN CHARGE. Without it the toll runs with nothing
         // to take and books `nothing_left` every time, which is how the world
         // came to cross every boundary free while the player paid.

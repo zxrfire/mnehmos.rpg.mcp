@@ -24,11 +24,74 @@
  *
  * Immortal and chaos grades are sent down rather than made, which
  * `madeBelowTheLid` already decides off the same table it decides for medicine.
+ *
+ * ── ONE VESSEL, OF A KIND ────────────────────────────────────────────────
+ *
+ * The design owner: *"we have cauldrons, what's the artifact crafting
+ * equivalent?"* The genre's answer is the artifact refining furnace, a forge fed
+ * by earth fire. It is the same thing as a cauldron in every respect this file
+ * decides - a graded vessel, worth what its grade is worth, answering only a
+ * hand at that grade's rung, counted or tracked by the one rule - so it is the
+ * same model with the kind as data ({@link REFINING_VESSELS}) and not a second
+ * copy of this file. The cauldron names below stay, and read the table.
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
+import type { RoomPurpose, WhatIsBeingMade } from '../world/architecture.js';
 import { howMuchAGradeIsWorthTracking, type KeptAs } from '../world/possessions.js';
 import { madeBelowTheLid, refiningOrdinalFor } from './who-can-refine-a-grade-of-medicine.js';
+
+/** The kinds of vessel a thing is refined in. */
+export type RefiningVesselKind = 'cauldron' | 'refining_furnace';
+
+/** What a kind of vessel is, as data. */
+export interface ARefiningVessel {
+    kind: RefiningVesselKind;
+    makes: WhatIsBeingMade;
+    /** Its plain name, for a house's cupboard of the cheap ones. */
+    plainName: string;
+    /** The tag a row carries, which is what the treasury and a lending read. */
+    tag: string;
+    /** The room it is kept and worked in. */
+    keptIn: RoomPurpose;
+}
+
+/**
+ * Every kind of vessel. A third is a row here.
+ *
+ * The furnace is kept in the Artifact Refining Hall, which every compound has and
+ * which `ROOMS_A_THING_IS_MADE_IN` reads a maker of artifacts into; the cauldron in
+ * the furnace room, which is where `whereInTheHouseItSits` already puts one.
+ */
+export const REFINING_VESSELS: Readonly<Record<RefiningVesselKind, ARefiningVessel>> = {
+    cauldron: {
+        kind: 'cauldron', makes: 'medicine', plainName: 'fired clay cauldrons', tag: 'cauldron', keptIn: 'furnace_room'
+    },
+    refining_furnace: {
+        kind: 'refining_furnace', makes: 'an_artifact', plainName: 'iron refining furnaces',
+        tag: 'refining_furnace', keptIn: 'artifact_refining_hall'
+    }
+};
+
+/** The vessel a kind of making is done in. */
+export function theVesselFor(making: WhatIsBeingMade): ARefiningVessel {
+    return Object.values(REFINING_VESSELS).find(vessel => vessel.makes === making)!;
+}
+
+/**
+ * What a vessel of this kind and grade adds to the work, for this hand.
+ *
+ * One table for every kind: a vessel of a grade is made of that grade whatever
+ * it is for, so what it is worth and the rung it answers to do not change with
+ * the noun. See {@link WHAT_A_CAULDRON_ADDS}.
+ */
+export function whatThisVesselAddsFor(
+    _kind: RefiningVesselKind,
+    grade: TechniqueGrade,
+    realmOrdinal: number
+): number {
+    return realmOrdinal >= refiningOrdinalFor(grade) ? WHAT_A_CAULDRON_ADDS[grade] : 0;
+}
 
 /**
  * How much a cauldron of this grade is worth bookkeeping.
@@ -84,7 +147,7 @@ export function whatThisCauldronAddsFor(
     grade: TechniqueGrade,
     realmOrdinal: number
 ): number {
-    return realmOrdinal >= refiningOrdinalFor(grade) ? WHAT_A_CAULDRON_ADDS[grade] : 0;
+    return whatThisVesselAddsFor('cauldron', grade, realmOrdinal);
 }
 
 /**

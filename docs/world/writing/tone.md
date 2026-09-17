@@ -491,7 +491,9 @@ A **bottleneck** is where somebody is stuck and it is spoken of as a wall, a bar
 threshold that will not open. Somebody who has given up is **settled**, and settling is a
 real end in this world rather than a failure to mention politely.
 
-**Things.** Spirit stones, spirit herbs, pills, **pill furnace**, talismans, **formations**
+**Things.** Spirit stones, spirit herbs, pills, **pill furnace**, talismans - a
+**teleportation talisman** folds its holder somewhere else once, a **communication
+talisman** carries word to the house whose mark it bears - **formations**
 or **arrays** - never *magic circles* - **jade slip**, **storage ring**, **storage pouch**,
 **manual** or **art** for a technique somebody learns, **treasure**, **dao artifact**.
 

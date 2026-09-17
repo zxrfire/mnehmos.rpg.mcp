@@ -13,6 +13,7 @@ import { createApp, type ProviderStatus } from '../../src/web/server';
 import { announceMode } from '../../src/web/which-mode-this-session-is-playing-in';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
 import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 
 /** In-memory database with the real migrations, foreign keys on. */
 export function makeDb(): Database.Database {
@@ -304,4 +305,66 @@ export function cultivatorRow(db: Database.Database, id: string): Record<string,
 export function injuryCount(db: Database.Database, id: string): number {
     const row = db.prepare('SELECT COUNT(*) AS n FROM cultivator_injuries WHERE cultivator_id = ?').get(id) as { n: number };
     return row.n;
+}
+
+/**
+ * ARRANGED: somebody of this house out looking for disciples, standing where the
+ * current run's cultivator stands.
+ *
+ * Nobody joins a house out of thin air (`src/web/who-takes-you-on.ts`): a join is
+ * refused unless a recruiter is there or the house is holding a selection. A test
+ * whose subject is not how somebody came to be taken on puts a recruiter beside
+ * them first - an errand of the house moved onto their ground, which `AGENTS.md`
+ * permits. Matched by the house's id or name. Returns the recruiter's name and a
+ * way to put them back where they were once the join is done, for a test that
+ * reads the house afterwards; null where there is no world or nobody alive in
+ * the house to send.
+ */
+export async function aRecruiterOfTheHouseIsHere(
+    game: GameService,
+    house: string
+): Promise<{ name: string; backWhereTheyWere(): void } | null> {
+    const world = game.atHand ?? await game.loadWorld();
+    if (!world) return null;
+    const wanted = house.trim().toLowerCase().replace(/^the /, '');
+    const faction = world.factions.find(f => f.dissolvedOnDay === null
+        && (f.id === house || f.name.toLowerCase().replace(/^the /, '') === wanted));
+    if (!faction) return null;
+    const { cultivator } = game.currentRun();
+    const here = game.worldPlaceOf(game.repos.cultivators.getById(cultivator.id) ?? cultivator);
+    if (here === null) return null;
+    // The most junior of the house, who is who a house sends walking village
+    // rolls - and who is least likely to be the person a test is about.
+    let at = -1;
+    for (let i = 0; i < world.npcs.length; i++) {
+        const n = world.npcs[i]!;
+        if (n.status !== 'alive' || n.factionId !== faction.id || n.tags.includes('the-player')) continue;
+        if (at < 0 || n.factionRankIndex < world.npcs[at]!.factionRankIndex) at = i;
+    }
+    if (at < 0) return null;
+    const recruiting = SENDING_REASONS.find(r => r.id === 'sending-to-recruit')!.name.toLowerCase();
+    const npc = world.npcs[at]!;
+    world.npcs[at] = {
+        ...npc,
+        locationId: here,
+        activity: {
+            kind: 'out_with_a_party',
+            note: `Out for the ${faction.name} on ${recruiting}.`,
+            withIds: [],
+            sinceDay: Math.floor(world.currentDay),
+            untilDay: Math.floor(world.currentDay) + 150,
+            returnTo: npc.locationId
+        }
+    };
+    game.theWorldMoved();
+    return {
+        name: npc.name,
+        backWhereTheyWere() {
+            const now = game.atHand;
+            const i = now?.npcs.findIndex(n => n.id === npc.id) ?? -1;
+            if (!now || i < 0) return;
+            now.npcs[i] = { ...now.npcs[i]!, locationId: npc.locationId, activity: npc.activity };
+            game.theWorldMoved();
+        }
+    };
 }

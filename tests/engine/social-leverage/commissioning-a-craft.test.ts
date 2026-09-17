@@ -40,7 +40,7 @@ const NEAREST_FIRST: readonly Nearness[] = [
 
 interface Case {
     grade?: TechniqueGrade;
-    slip?: 'a_strike' | 'a_way_out';
+    slip?: 'a_strike' | 'a_teleportation';
     ordinal?: number;
     nearness?: Nearness;
     stones?: number;
@@ -117,16 +117,16 @@ describe('whether their hands can do it at all', () => {
 
     it('will not fold a road into paper for somebody who cannot walk it', () => {
         // Both gates read off the ladder, so the claim is the ORDERING: there
-        // are hands that can cut a strike slip and cannot cut a way out, and
+        // are hands that can cut a strike slip and cannot cut a teleportation talisman, and
         // never the reverse.
         let strikeOnly = 0;
         for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
             const strike = whetherTheirHandsCanDoIt(
                 { named: 'x', grade: 'mortal', slip: 'a_strike' }, ordinal).theyCan;
-            const wayOut = whetherTheirHandsCanDoIt(
-                { named: 'x', grade: 'mortal', slip: 'a_way_out' }, ordinal).theyCan;
-            expect(wayOut && !strike).toBe(false);
-            if (strike && !wayOut) strikeOnly++;
+            const teleportation = whetherTheirHandsCanDoIt(
+                { named: 'x', grade: 'mortal', slip: 'a_teleportation' }, ordinal).theyCan;
+            expect(teleportation && !strike).toBe(false);
+            if (strike && !teleportation) strikeOnly++;
         }
         expect(strikeOnly).toBeGreaterThan(0);
     });

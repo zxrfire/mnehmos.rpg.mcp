@@ -49,7 +49,7 @@
  *     exists as well - this file pins the ROAD and that one pins the PRICE.
  */
 
-import { makeGameInWorld } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { positionIn } from '../../src/web/standing';
 import { portfoliosIn } from '../../src/engine/social-leverage/authority-for-an-order';
@@ -78,7 +78,9 @@ async function inFrontOfTheHouse(seed: string) {
     const known = new KnowledgeGate(db).awareness(cultivator.id, 'sect')
         .filter(row => row.sourceKind === 'told');
     expect(known.length, `seed ${seed} left them knowing no house`).toBeGreaterThan(0);
+    const recruiter = await aRecruiterOfTheHouseIsHere(game, known[0]!.id);
     await game.act(`I join the ${known[0]!.name}`);
+    recruiter?.backWhereTheyWere();
 
     const svc = game as unknown as {
         repos: Parameters<typeof positionIn>[0];

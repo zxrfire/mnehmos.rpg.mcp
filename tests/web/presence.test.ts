@@ -18,7 +18,10 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { npcsAt } from '../../src/engine/world/world-state';
+// Read down to the room, the way the verbs read who is standing here: a house's
+// own people at a room's work are in that room and not at its seat. See
+// `where-inside-a-house-somebody-is-standing.ts`.
+import { npcsStandingIn as npcsAt } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
 import { SECTS } from '../../src/data/cultivation/sects';
 import { KnowledgeGate } from '../../src/web/knowledge';

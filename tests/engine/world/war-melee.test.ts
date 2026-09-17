@@ -22,7 +22,9 @@ import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { elderRungOf } from '../../../src/engine/cultivation/leadership.js';
 import {
+    areAtWarWithEachOther,
     fightTheWarsThisYear,
     highestRankAlive,
     howAHouseIsFaring,
@@ -331,15 +333,21 @@ describe('the settlement', () => {
     it('a house whose war took everybody it was led by breaks up, and its things go out in arms', async () => {
         // THE THIRD FATE, WHICH HAD NO PRODUCER. `carried off` needs a house
         // with living members that still scatters, and that is exactly a house
-        // whose seniors are gone: the war opened with it led from a rank nobody
-        // left is standing at.
+        // whose seniors are gone: the war opened with it led from its head, and
+        // nobody is left at an elder rung to lead it after. Arranged by taking
+        // everybody on its roll below the elder rungs.
         const { state, a, b } = await twoHousesAtWar('scatter', { dueOnDay: 100 });
+        const house = state.factions.find(f => f.id === a)!;
+        const ledFrom = house.ranks.length - 1;
+        for (const n of state.npcs) {
+            if (n.factionId === a) n.factionRankIndex = Math.min(n.factionRankIndex, elderRungOf(house.ranks.length) - 1);
+        }
         const broughtA = whatAHouseCanPutOut(state, a).summed;
         const row = state.schedule.find(e => e.id === 'e-test-war')!;
         row.data = {
             ...row.data,
             musteredA: broughtA * 4,
-            ledA: highestRankAlive(state, a) + 1
+            ledA: ledFrom
         };
         state.objects.push(makeObject({
             id: 'obj-the-vault', name: 'the ancestral tablet', kind: 'artifact',
@@ -359,6 +367,40 @@ describe('the settlement', () => {
         expect(state.factions.find(f => f.id === a)!.dissolvedOnDay).toBe(400);
         expect(state.npcs.some(n => n.status === 'alive' && n.factionId === null)).toBe(true);
         expect(state.factions.find(f => f.id === b)!.dissolvedOnDay).toBeNull();
+    });
+
+    it('a house whose head fell and whose elders did not holds together', async () => {
+        // `ledStill` read `>= led`, the rung the house was led from when the war
+        // opened, so a head killed in the field scattered a house with its
+        // elders alive - the succession pass seats the next head later in the
+        // same year, after the war is settled. Whoever could lead it holds it.
+        const { state, a } = await twoHousesAtWar('head-fell');
+        const house = state.factions.find(f => f.id === a)!;
+        const head = house.ranks.length - 1;
+        const elder = elderRungOf(house.ranks.length);
+        for (const n of state.npcs) {
+            if (n.factionId === a && n.factionRankIndex >= head) n.factionRankIndex = elder;
+        }
+        expect(highestRankAlive(state, a)).toBeLessThan(head);
+        const row = state.schedule.find(e => e.id === 'e-test-war')!;
+        row.data = { ...row.data, ledA: head };
+        expect(howAHouseIsFaring(state, a)!.ledStill).toBe(true);
+
+        for (const n of state.npcs) {
+            if (n.factionId === a) n.factionRankIndex = Math.min(n.factionRankIndex, elder - 1);
+        }
+        expect(howAHouseIsFaring(state, a)!.ledStill).toBe(false);
+    });
+
+    it('knows which two houses are at war with each other', async () => {
+        // What the destruction of a house is now gated on: a house that comes
+        // for another and leaves nobody standing below its height does it in a
+        // war, never as a draw over rivals at peace.
+        const { state, a, b } = await twoHousesAtWar('at-war-with');
+        expect(areAtWarWithEachOther(state, a, b)).toBe(true);
+        expect(areAtWarWithEachOther(state, b, a)).toBe(true);
+        const third = state.factions.find(f => f.id !== a && f.id !== b)!;
+        expect(areAtWarWithEachOther(state, a, third.id)).toBe(false);
     });
 
     it('a war that cost both sides the same moves nothing', async () => {

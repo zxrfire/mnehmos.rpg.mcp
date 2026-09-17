@@ -18,12 +18,13 @@
  */
 
 import { parseIntent } from '../../src/web/actions';
-import { makeGame, planned } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGame, planned } from './harness';
 
 async function inAHouse(seed: string) {
     const { db, game } = makeGame({ seed, worldEnabled: true });
     const { cultivator } = await game.newRun('Joiner');
     db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+    await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
     await game.act('I join the Azure Dew Sect');
     return { db, game, cultivator };
 }

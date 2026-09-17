@@ -549,7 +549,28 @@ export type RoomPurpose =
      */
     | 'lecture_hall'
     | 'residence'
-    | 'formation_node';
+    | 'formation_node'
+    /**
+     * Where a house keeps a life lamp burning for each of its own.
+     *
+     * The design owner's ruling: life lamps, burning in the Life Lamp Hall.
+     * Its own room rather than the ancestral hall, which is the
+     * house's dead - tablets, and what sleeps under them - where this is the
+     * house's living: a lamp that goes out is somebody who just died. The
+     * Internal Affairs Elder keeps it. See
+     * `a-house-knows-its-own-by-a-lamp-and-a-token.ts`.
+     */
+    | 'life_lamp_hall'
+    /**
+     * Where a house forges and refines artifacts, over its earth fire.
+     *
+     * The design owner: *"same as the pill houses, every house makes artifacts,
+     * some are focused on artifacts."* So every compound has one, the way every
+     * compound now has an alchemy hall, and a house focused on the craft has a
+     * larger one - a difference of degree and not of kind. See
+     * {@link whatAHouseIsFocusedOn}.
+     */
+    | 'artifact_refining_hall';
 
 interface PurposeSpec {
     kind: LocationKind;
@@ -640,15 +661,24 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // more than three rungs: behind a wall the bottom rung cannot pass, and past
     // what a newcomer can find, so the people a talk is for could not walk to it.
     lecture_hall: { kind: 'hall', depth: 0, obviousness: 0.85, qiLift: 0, sealed: false, office: false, capacityPer: 0.5, hazards: [] },
+    // NOT AN OFFICE, for the reason the ancestral hall is not one - see its
+    // note below. Deep, beside the ancestral hall: what it holds is the house's
+    // own record of who is alive, and nobody from outside is walked past it.
+    life_lamp_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: false, capacityPer: 0.05, hazards: [] },
+    // NOT AN OFFICE, so the deal is untouched. Beside the alchemy hall in depth,
+    // because the two are the house's two crafts, and the same heat hazard the
+    // furnace floor carries, because what it burns is fire.
+    artifact_refining_hall: { kind: 'hall', depth: 0.4, obviousness: 0.6, qiLift: 0, sealed: false, office: false, capacityPer: 0.2, hazards: ['heat'] },
     audience_hall: { kind: 'hall', depth: 0.55, obviousness: 0.75, qiLift: 0, sealed: false, office: false, capacityPer: 0.3, hazards: [] },
     tribute_room: { kind: 'vault', depth: 0.6, obviousness: 0.3, qiLift: 0, sealed: true, office: true, capacityPer: 0.05, hazards: [] },
     meditation_cell: { kind: 'chamber', depth: 0.5, obviousness: 0.4, qiLift: 8, sealed: false, office: false, capacityPer: 0.12, hazards: [] },
     vein_chamber: { kind: 'chamber', depth: 0.7, obviousness: 0.25, qiLift: 30, sealed: false, office: false, capacityPer: 0.05, hazards: ['formation', 'pressure'] },
 
     // ── The inner end. Where the house keeps what it will not spend. ─────
-    // NOT SEALED, AND THE KEEPER IS THEREFORE STILL ONLY A NAME. MEASURED.
+    // NOT SEALED, AND THE INTERNAL AFFAIRS ELDER IS THEREFORE STILL ONLY A NAME.
+    // MEASURED.
     //
-    // The design owner asked for the Keeper of the Roll to be a role rather
+    // The design owner asked for the Internal Affairs Elder to be a role rather
     // than a constant, and in this engine an office IS a sealed room dealt by
     // `whoIsInChargeOfWhat`. So sealing this hall is the whole of the change,
     // and it works: every house then names a real person to it.
@@ -665,7 +695,7 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     //
     // That is a fact about the DEAL and not about this room: an office ladder
     // where the number of rooms silently reassigns who runs discipline is going
-    // to keep doing this. The Keeper wants that fixed first - portfolios keyed
+    // to keep doing this. The office wants that fixed first - portfolios keyed
     // to a room rather than to a position in a list - and then this line is one
     // word.
     ancestral_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: false, capacityPer: 0.1, hazards: [] },
@@ -730,6 +760,8 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
         case 'workshop': return 'the workshop';
         case 'mission_hall': return inward ? 'the posting cut' : 'the mission hall';
         case 'lecture_hall': return inward ? 'the speaking cut' : 'the lecture hall';
+        case 'life_lamp_hall': return 'the Life Lamp Hall';
+        case 'artifact_refining_hall': return inward ? 'the forge cut' : 'the Artifact Refining Hall';
         case 'audience_hall': return 'the audience hall';
         case 'tribute_room': return 'the tribute room';
         case 'meditation_cell': return inward ? 'the sitting cuts' : 'the meditation cells';
@@ -866,7 +898,14 @@ export function growCompound(
 
     // ── The rooms ────────────────────────────────────────────────────────
     for (const purpose of roomsFor(input)) {
-        const spec = PURPOSE[purpose];
+        // A HOUSE FOCUSED ON THE CRAFT CUTS THE ROOM LARGER, and that is the
+        // whole of the difference. See `whatAHouseIsFocusedOn`.
+        const spec = aRoomOfItsFocus(purpose, input)
+            ? {
+                ...PURPOSE[purpose],
+                capacityPer: PURPOSE[purpose].capacityPer * A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER
+            }
+            : PURPOSE[purpose];
         const at = precinctAt(precincts, spec.depth);
         const host = precinctRecords[at.index];
         if (!host) continue;
@@ -918,6 +957,44 @@ export function growCompound(
 }
 
 /**
+ * How much more of a room a house focused on its craft cuts, over a house that
+ * is not. Twice: the room is where the craft is done, and a house whose trade
+ * is the craft has twice the people at it. A difference of degree, as ruled.
+ */
+export const A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER = 2;
+
+/**
+ * Which of the two crafts a house is focused on, read off what its catalog row
+ * carries for code.
+ *
+ * MEDICINE off `specialities`: `alchemy`, `support` or `cultivation`, the same
+ * words that have always given a house its furnace floor.
+ *
+ * ARTIFACTS: NO HOUSE, FOR NOW, AND THIS WAITS ON A FIELD. Nothing in a house's
+ * catalog row says for code that it is focused on forging: the specialities are
+ * technique categories, the row carries no tags, and `trade.makes` is prose
+ * marked for people and never for code. Reading it out of the house's name
+ * ("Forge") was tried and taken out, because a fact read from a name is a
+ * defect this repo has already named. Every house still has its Artifact
+ * Refining Hall; none has the larger one until the catalog can say which.
+ */
+export function whatAHouseIsFocusedOn(
+    input: Pick<CompoundInput, 'specialities'>
+): { pills: boolean; artifacts: boolean } {
+    const specialities = new Set(input.specialities.map(s => s.toLowerCase()));
+    return {
+        pills: specialities.has('alchemy') || specialities.has('support') || specialities.has('cultivation'),
+        artifacts: false
+    };
+}
+
+/** Whether this room is the room of a craft this house is focused on. */
+function aRoomOfItsFocus(purpose: RoomPurpose, input: CompoundInput): boolean {
+    const focus = whatAHouseIsFocusedOn(input);
+    return (focus.pills && purpose === 'alchemy_hall') || (focus.artifacts && purpose === 'artifact_refining_hall');
+}
+
+/**
  * Which rooms this house has.
  */
 export function roomsFor(input: CompoundInput): RoomPurpose[] {
@@ -939,7 +1016,10 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // cultivated in centuries.
     if (input.powerOrdinal >= 30 && input.formationIntegrity >= 0.35) out.push('archive');
 
-    if (specialities.has('alchemy') || specialities.has('support') || specialities.has('cultivation')) {
+    // A HOUSE FOCUSED ON MEDICINE has its alchemy hall here and the furnace
+    // floor besides. Every other house has an alchemy hall too, appended at the
+    // end: see {@link whatAHouseIsFocusedOn}.
+    if (whatAHouseIsFocusedOn(input).pills) {
         out.push('alchemy_hall', 'furnace_room');
     }
     if (specialities.has('support') || specialities.has('defense')) out.push('infirmary');
@@ -948,10 +1028,9 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // off. It read `production >= 0.6` against a number that was 0.5 for every
     // house in the catalog, so no compound in the world had one.
     //
-    // The house that makes things without holding ground already has its
-    // rooms: the alchemy hall and the furnace floor come off `specialities`
-    // above, which is why the Ashen Forge Clan keeps its furnace and does not
-    // get an ore hall it has no ore for.
+    // Making things is not this room's: every house forges in its Artifact
+    // Refining Hall, appended at the end. This is where ore off the house's
+    // own ground is worked.
     if (input.holdsVein) out.push('workshop');
     // A ROOM FOR PEOPLE WHO ARE NOT OF THE HOUSE, and it is now here because
     // of who arrives rather than because of how the house is funded. It read
@@ -984,6 +1063,15 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // dormitory and the mission hall read. APPENDED LAST so every room that
     // existed before keeps its place in the list.
     if (input.recruits) out.push('lecture_hall');
+    // Every house keeps the lamps of its own, whether or not anybody in it can
+    // light one today. APPENDED LAST for the same reason as the lecture hall.
+    out.push('life_lamp_hall');
+    // AND BOTH CRAFTS, IN EVERY HOUSE. The design owner: every house makes pills
+    // and every house makes artifacts, and a focus is a difference of degree.
+    // APPENDED LAST, after every room that existed before, so the draws a
+    // compound makes for the rooms ahead of these are the draws it made.
+    if (!out.includes('alchemy_hall')) out.push('alchemy_hall');
+    out.push('artifact_refining_hall');
     return out;
 }
 
@@ -1220,6 +1308,24 @@ export const ROOMS_A_THING_IS_DONE_IN: Readonly<Partial<Record<ActivityKind, rea
     their_practice: ['practice_yard'],
     at_a_table: ['refectory'],
     mustering: ['mission_hall']
+};
+
+/** The kinds of made thing a room is cut for. */
+export type WhatIsBeingMade = 'medicine' | 'an_artifact';
+
+/**
+ * The rooms making a thing is done in, by what is being made, most fitting first.
+ *
+ * Beside {@link ROOMS_A_THING_IS_DONE_IN} and read the same way: somebody at the
+ * work of their rank whose activity names the thing being made is in the room
+ * that thing is made in, where the house has one. Medicine is made at a
+ * cauldron, which the alchemy hall and the furnace floor are for. A made thing
+ * that is not medicine is worked where ore is worked. A communication talisman
+ * is neither: it is cut wherever the cutter is sitting, and is not in the table.
+ */
+export const ROOMS_A_THING_IS_MADE_IN: Readonly<Record<WhatIsBeingMade, readonly RoomPurpose[]>> = {
+    medicine: ['alchemy_hall', 'furnace_room'],
+    an_artifact: ['artifact_refining_hall', 'workshop']
 };
 
 function resourcesFor(purpose: RoomPurpose): string[] {
@@ -1482,6 +1588,8 @@ function purposeLine(purpose: RoomPurpose, capacity: number): string {
         case 'workshop': return `Where the house makes what it can still make.${held}`;
         case 'audience_hall': return `Where the house is answered, and answers.${held}`;
         case 'lecture_hall': return `Mats in rows facing one seat, and whoever is in the seat is talking.${held}`;
+        case 'life_lamp_hall': return 'Lamps in rows, one for each of the house\'s own. Every one still burning is somebody alive.';
+        case 'artifact_refining_hall': return `A forge over earth fire, and the work laid out on the stones around it.${held}`;
         case 'tribute_room': return 'Where what is owed is counted before it leaves.';
         case 'meditation_cell': return `Cells. The qi is thicker in here than in the yard.${held}`;
         case 'vein_chamber': return 'Directly over the vein. There is not room in here for everybody who wants it.';

@@ -46,6 +46,17 @@
  * drew none taken on `purse-c`. The same rate within the noise of the counts,
  * and a zero turns up on some seed either way - so one seed was pinning a draw,
  * and pooling three is the claim.
+ *
+ * AND WHETHER A HOUSE RAN DRY IS READ OVER THE WHOLE RUN, NOT ON ITS LAST DAY.
+ * This asserted that some house could not pay at year 250 on `purse-a`, and it
+ * went red when disciples began taking work off their house's board. Sampled
+ * every 25 years on `purse-a` with that pass off and on: 0 to 3 houses broke at
+ * each sample in both arms, 1 against 0 at year 250, and 6 empty-purse acts over
+ * the 250 years in both. The state was reached in both worlds and the last day
+ * happened to land on a zero, so the count was a draw. What the test exists to
+ * say is that houses in the world do run out of money, so it reads the houses
+ * named by the empty-purse facts across the run, pooled over the three seeds -
+ * and still fails if no house anywhere ever runs dry, or if every house does.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -252,7 +263,8 @@ const SEEDS_FOR_A_TRANSFER = ['purse-a', 'purse-b', 'purse-c'] as const;
 
 interface Arm {
     state: WorldState;
-    acts: { summary: string; took: boolean; lost: number }[];
+    /** Every empty-purse act over the run. `houseId` is the house that could not pay. */
+    acts: { summary: string; took: boolean; lost: number; houseId: string | null }[];
 }
 
 async function arm(actOnAnEmptyPurse: boolean, seed: string = SEED): Promise<Arm> {
@@ -269,7 +281,8 @@ async function arm(actOnAnEmptyPurse: boolean, seed: string = SEED): Promise<Arm
             .map(f => ({
                 summary: f.summary,
                 took: f.data?.took === true,
-                lost: Number(f.data?.lost ?? 0)
+                lost: Number(f.data?.lost ?? 0),
+                houseId: f.factionIds[0] ?? null
             }))
     };
 }
@@ -280,26 +293,31 @@ describe('a world where houses act on an empty purse, against one where they do 
         both ??= (async () => ({ on: await arm(true), off: await arm(false) }))();
         return both;
     }
+    // The other seeds with the motive on, walked once for every test that pools them.
+    const others = new Map<string, Promise<Arm>>();
+    function onSeed(seed: string): Promise<Arm> {
+        if (seed === SEED) return arms().then(a => a.on);
+        let walked = others.get(seed);
+        if (!walked) { walked = arm(true, seed); others.set(seed, walked); }
+        return walked;
+    }
 
     it('reaches the state at all, and names the houses that did', async () => {
-        const { on } = await arms();
-        const payrollOf = (id: string): number => {
-            let members = 0;
-            for (const n of on.state.npcs) {
-                if (n.status === 'alive' && n.factionId === id) members++;
-            }
-            return members * A_STIPEND_PER_MEMBER_PER_YEAR;
-        };
-        const broke = on.state.factions.filter(f =>
-            f.dissolvedOnDay === null
-            && howThePurseIsRunning(
-                Number(f.resources.spirit_stones ?? 0), payrollOf(f.id)) === 'cannot_pay');
         // The condition is reachable and is not the whole world. Both halves
         // matter: an unreachable state is content nothing can get to, and a
-        // universal one is not a state.
-        expect(broke.length, 'no house in the world ever ran out of money').toBeGreaterThan(0);
-        expect(broke.length).toBeLessThan(
-            on.state.factions.filter(f => f.dissolvedOnDay === null).length);
+        // universal one is not a state. Read over the run - see the header.
+        let ranDry = 0;
+        for (const seed of SEEDS_FOR_A_TRANSFER) {
+            const world = await onSeed(seed);
+            const houses = new Set(world.acts
+                .map(a => a.houseId)
+                .filter((id): id is string => id !== null));
+            ranDry += houses.size;
+            expect(houses.size, `${seed}: every house in the world ran out of money`)
+                .toBeLessThan(world.state.factions.length);
+        }
+        expect(ranDry, 'no house in the world ever ran out of money, on any of three seeds')
+            .toBeGreaterThan(0);
     }, 900_000);
 
     it('acts on it, and the acting can fail', async () => {
@@ -319,7 +337,7 @@ describe('a world where houses act on an empty purse, against one where they do 
         const { on } = await arms();
         let took = on.acts.filter(a => a.took).length;
         for (const seed of SEEDS_FOR_A_TRANSFER.filter(s => s !== SEED)) {
-            took += (await arm(true, seed)).acts.filter(a => a.took).length;
+            took += (await onSeed(seed)).acts.filter(a => a.took).length;
         }
         expect(took, 'no ground ever changed hands over a payroll, on any of three seeds')
             .toBeGreaterThan(0);

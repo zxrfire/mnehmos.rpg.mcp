@@ -29,7 +29,7 @@ import { clampQiDensity } from './qi-scale.js';
 import {
     shelveWhatItWasHolding,
     theBooksBehindTheirDoor,
-    theBooksLeftIn
+    whatWasLeftIn
 } from './what-a-ruin-has-on-its-shelves.js';
 import { getLocation, type WorldState } from './world-state.js';
 
@@ -661,8 +661,9 @@ export function applyRuinProspecting(
     // AND WHAT THE GROUND TURNS OUT TO HAVE BEEN HOLDING. Described once,
     // when the world first says what a place is, because that is when it first
     // knows. See `what-a-ruin-has-on-its-shelves.ts`.
-    const shelve = (books: readonly ObjectRecord[]): void => {
-        result.booksLeftInTheGround += shelveWhatItWasHolding(state, books);
+    const shelve = (rows: readonly ObjectRecord[]): void => {
+        result.booksLeftInTheGround += shelveWhatItWasHolding(state, rows.filter(r => r.kind === 'manual'));
+        shelveWhatItWasHolding(state, rows.filter(r => r.kind !== 'manual'));
     };
     // Bodies whose ground the world has already turned up. Read off the
     // locations rather than kept, so a reload cannot lose it and two finds can
@@ -745,7 +746,7 @@ export function applyRuinProspecting(
             // told anything has its shelves intact, and a hall whose leadership was
             // killed does not - so nothing new decides this.
             if (ending.theRecordsSurvive) {
-                shelve(theBooksLeftIn({
+                shelve(whatWasLeftIn({
                     location: state.locations[at]!, character: 'compound', onDay: day
                 }));
             }
@@ -821,7 +822,7 @@ export function applyRuinProspecting(
                     state.locations.push(vault);
                     // What a house seals is what it will not copy, which is the
                     // one kind of book that is worth the six-century wait.
-                    shelve(theBooksLeftIn({
+                    shelve(whatWasLeftIn({
                         location: vault, character: 'vault', onDay: day
                     }));
                 }
@@ -863,7 +864,7 @@ export function applyRuinProspecting(
                 data: { ...region.data, [foundKeyForBand(band)]: prospect.foundInBand + 1 }
             };
             const character = characterOfSeededRuin(alreadyHere, findRng);
-            shelve(theBooksLeftIn({ location: alreadyHere, character, onDay: day }));
+            shelve(whatWasLeftIn({ location: alreadyHere, character, onDay: day }));
             result.found.push({
                 locationId: alreadyHere.id,
                 regionId: region.id,
@@ -966,7 +967,7 @@ export function applyRuinProspecting(
         // whether anybody shelved anything here and the ground's own mastery
         // rung says how high it reaches - so the deep books are in the deep
         // bands, which is the same sentence `SCALE_BY_BAND` above is.
-        shelve(theBooksLeftIn({ location: found, character, onDay: day }));
+        shelve(whatWasLeftIn({ location: found, character, onDay: day }));
 
         // The tally is on the province, because the province is what gets
         // worked out. One integer per band and nothing else: a second table

@@ -44,8 +44,8 @@ import { housesThatHaveToAdvertise } from '../../src/engine/world/houses-that-ha
 import {
     WHEN_SILENCE_BECOMES_A_CAPTIVE,
     carriesATokenAt,
-    platesAreCutAt
-} from '../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+    lampsAreLitAt
+} from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { seedWorld } from '../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../src/engine/world/catalog.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
@@ -122,7 +122,7 @@ describe('the wall carries work a house will give a stranger', () => {
     });
 });
 
-describe('what a house is asking after comes off its own plates', () => {
+describe('what a house is asking after comes off its own lamps', () => {
     /**
      * The gate is the HOUSE'S. With no world there is no roll, so nobody is
      * missing and no search is posted - which is the honest reading rather than
@@ -135,12 +135,12 @@ describe('what a house is asking after comes off its own plates', () => {
     });
 
     /**
-     * The plate read against a real roll.
+     * The lamp read against a real roll.
      *
      * Measured on a seeded world: 606 people, 2 of them unseen for a season at
      * the moment it is made, and NOT ONE search posted - because neither is on
-     * a roll at a rung a plate was cut for. Stop seeing one disciple who has a
-     * plate and their house is asking after them by name the next time anybody
+     * a roll at a rung a lamp was lit for. Stop seeing one disciple who has a
+     * lamp and their house is asking after them by name the next time anybody
      * reads a wall.
      */
     it('asks after somebody the world has stopped seeing', async () => {
@@ -159,18 +159,18 @@ describe('what a house is asking after comes off its own plates', () => {
     });
 
     /**
-     * AND THE GATE IS THE PLATE ON THE WALL. A house that never cut one for
+     * AND THE GATE IS THE LAMP IN THE HALL. A house that never lit one for
      * somebody is not told they are gone, so it posts no search - the
      * difference between a house and a gathering of people, arriving without a
      * rule written for it.
      *
      * This arm used to arrange it by dropping every member of the house under
-     * the rung a plate is cut at, AFTER world open had cut theirs, and assert no
-     * search. That was the hall inferring its wall from who could cut today,
-     * which `a-house-reads-its-own-roll-off-the-plates.test.ts` records being
-     * replaced by reading the plate rows. The two situations are now two arms.
+     * the rung a lamp is lit at, AFTER world open had lit theirs, and assert no
+     * search. That was the hall inferring its lamps from who could light one today,
+     * which `a-house-reads-its-own-roll-off-the-lamps.test.ts` records being
+     * replaced by reading the lamp rows. The two situations are now two arms.
      */
-    it('posts no search for somebody the house never cut a plate for', async () => {
+    it('posts no search for somebody the house never light a lamp for', async () => {
         const state = seedWorld({
             seed: 'a-house-comes-looking', catalog: await loadCultivationCatalog()
         }).state;
@@ -178,13 +178,13 @@ describe('what a house is asking after comes off its own plates', () => {
             npc.status === 'alive' && npc.factionId && carriesATokenAt(npc.factionRankIndex))!;
         gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
 
-        // A wall with nothing on it: the house never cut a plate for anybody.
+        // A hall with nothing burning in it: the house never lit a lamp for anybody.
         state.objects = state.objects.filter(o =>
-            !(o.ownerId === gone.factionId && o.tags.includes('life-plate')));
+            !(o.ownerId === gone.factionId && o.tags.includes('life-lamp')));
         expect(whoEachHouseIsLookingFor(state).get(gone.factionId!)).toBeUndefined();
     });
 
-    it('but a house that has lost everybody who could cut one still reads the plates it hung', async () => {
+    it('but a house that has lost everybody who could light one still reads the lamps it lit', async () => {
         const state = seedWorld({
             seed: 'a-house-comes-looking', catalog: await loadCultivationCatalog()
         }).state;
@@ -192,12 +192,12 @@ describe('what a house is asking after comes off its own plates', () => {
             npc.status === 'alive' && npc.factionId && carriesATokenAt(npc.factionRankIndex))!;
         gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
 
-        // Everybody on that roll drops under the rung a plate is cut at, which
+        // Everybody on that roll drops under the rung a lamp is lit at, which
         // is the state the world sim reaches by killing a house's elders. The
-        // plate cut before that is still on the wall and still whole.
+        // lamp lit before that is still burning.
         for (const npc of state.npcs) {
             if (npc.factionId !== gone.factionId) continue;
-            npc.cultivation = { ...npc.cultivation, realmOrdinal: platesAreCutAt() - 1 };
+            npc.cultivation = { ...npc.cultivation, realmOrdinal: lampsAreLitAt() - 1 };
         }
         const asks = whoEachHouseIsLookingFor(state).get(gone.factionId!);
         expect(asks).toHaveLength(1);

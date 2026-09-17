@@ -53,7 +53,7 @@ import {
     FOLD_GRANT,
     priceFold
 } from './how-far-somebody-can-fold-space-and-what-it-costs.js';
-import { howFarTheWayOutCarries } from './a-talisman-is-one-act-somebody-already-paid-for.js';
+import { howFarATeleportationTalismanCarries } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 import type { LocationRecord } from './locations.js';
 import { daysByConveyance, type Conveyance } from './what-a-conveyance-does-to-a-journey.js';
 
@@ -101,7 +101,7 @@ export interface StandingAtTheDoor {
     onFoot: ARoadToTheDoor;
     /** Null where nobody who could fold them in was offered. */
     behindASenior: ARoadToTheDoor | null;
-    /** Null where nobody is carrying a way out. */
+    /** Null where nobody is carrying a teleportation talisman. */
     onASlip: ARoadToTheDoor | null;
     /** The honest sentence, including when every road is shut. */
     reason: string;
@@ -122,7 +122,7 @@ export interface GettingToADoor {
     conveyancePower?: number | null;
     /** Somebody who would take them out, or null. The escort road. */
     escortOrdinal?: number | null;
-    /** The rung folded into a way-out slip they carry, or null. */
+    /** The rung folded into a teleportation talisman they carry, or null. */
     slipCutAtOrdinal?: number | null;
 }
 
@@ -251,7 +251,7 @@ export function beingAtADoorOnTheDayItOpens(input: GettingToADoor): StandingAtTh
     const slipCutAtOrdinal = input.slipCutAtOrdinal ?? null;
     let onASlip: ARoadToTheDoor | null = null;
     if (slipCutAtOrdinal !== null) {
-        const carries = howFarTheWayOutCarries(slipCutAtOrdinal);
+        const carries = howFarATeleportationTalismanCarries(slipCutAtOrdinal);
         // ONE ACT, ONCE. Burning it to arrive leaves nothing to leave with, so
         // the two spendings are priced apart and the better one is reported.
         const burntToArrive = carries >= crossingDays

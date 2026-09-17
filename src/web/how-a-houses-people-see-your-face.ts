@@ -15,7 +15,7 @@ import {
     type AFaceBeingLookedAt
 } from '../engine/social/how-a-house-reads-a-face.js';
 import { theGroundUnderYou } from '../engine/social-leverage/ground-trust.js';
-import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-plate-at-the-house.js';
+import { wearsTheRobesOf } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { Cultivator } from '../schema/cultivation.js';

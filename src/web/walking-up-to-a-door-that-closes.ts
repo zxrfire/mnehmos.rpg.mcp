@@ -28,7 +28,7 @@
  *
  * Where no road works, the two that would are named anyway, and both are read off
  * what is actually here rather than off a table: whoever is standing in this
- * square at the folding floor or above, and whatever unburnt way-out slip this
+ * square at the folding floor or above, and whatever unburnt teleportation talisman this
  * cultivator has on them.
  */
 
@@ -44,7 +44,10 @@ import {
     SPENT,
     WHAT_SHUTS_IT
 } from '../engine/world/a-door-that-closes-is-not-a-door-nobody-opened.js';
-import { isUnburnt } from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
+import {
+    A_TELEPORTATION_TALISMAN,
+    isUnburnt
+} from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
 import type { CapabilityActor } from '../engine/world/capability.js';
 import { FOLD_FLOOR_ORDINAL } from '../engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
 import type { LocationRecord } from '../engine/world/locations.js';
@@ -92,19 +95,19 @@ export function whoHereCouldFoldYouIn(
 }
 
 /**
- * The unburnt way-out slip this cultivator has on them, or null.
+ * The unburnt teleportation talisman this cultivator has on them, or null.
  *
- * `cutATalisman` tags an escape slip `escape` and stands it at the rung folded
+ * `cutATalisman` tags one `A_TELEPORTATION_TALISMAN` and stands it at the rung folded
  * into it, so the object's own `power` is what the second road is priced on and
  * nothing here keeps a second copy of that number.
  */
-export function theWayOutTheyCarry(
+export function theTeleportationTalismanTheyCarry(
     world: WorldState,
     holderId: string
 ): ObjectRecord | null {
     return (world.objects ?? []).find(row =>
         row.possessorId === holderId
-        && row.tags.includes('escape')
+        && row.tags.includes(A_TELEPORTATION_TALISMAN)
         && isUnburnt(row)) ?? null;
 }
 
@@ -267,7 +270,7 @@ export function whatTheDoorOfThisRuinSays(input: StandingAtThisRuin): WhatTheDoo
     if (!anyRoad) {
         lines.push(`Two things get a party in and back out: somebody at `
             + `${rankName(FOLD_FLOOR_ORDINAL)} or above who folds them in and stands at the `
-            + 'door until they are out, or a way-out slip cut by a hand at that rung, burned '
+            + 'door until they are out, or a teleportation talisman cut by a hand at that rung, burned '
             + 'once.');
     }
 
@@ -313,7 +316,7 @@ export function whatTheDoorHereSays(
         party: capabilityActorFor(cultivator),
         crossingDays,
         escort: whoHereCouldFoldYouIn(game, cultivator),
-        slip: theWayOutTheyCarry(world, cultivator.id),
+        slip: theTeleportationTalismanTheyCarry(world, cultivator.id),
         housesStandingHere: housesWithPeopleStandingHere(game, cultivator)
     });
 }

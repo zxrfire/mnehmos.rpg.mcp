@@ -288,7 +288,7 @@ export function whatTheyCarryForSomebodyElse(
         // same. What this is about is the third case, which is the only one
         // with terms attached to it.
         if (object.ownerId === null || object.ownerId === personId) continue;
-        // AND A HOUSE PLATE IS NOT A LOAN. Every member of every house wears
+        // AND A HOUSE TOKEN IS NOT A LOAN. Every member of every house carries
         // one, so a reading that counted it would fire on ~29 of 415 people in
         // a seeded world and always say the same uninteresting thing. Measured
         // before the lending pass existed, that was the ONLY thing anybody in

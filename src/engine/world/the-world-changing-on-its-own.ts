@@ -108,7 +108,8 @@ import {
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
-import { enterWhoeverHasReachedTheHouse } from './a-recruit-is-given-their-plate-at-the-house.js';
+import { enterWhoeverHasReachedTheHouse } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { aRecruiterOwesTheHouseAReport } from './a-house-expects-somebody-it-took-on.js';
 import {
     haveTheyWorkedItOut,
     resolveAttempt,
@@ -133,6 +134,7 @@ import {
     whatTeachingLeavesOfAMastersRate
 } from './an-npc-striking-at-the-next-wall.js';
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
+import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn } from './a-house-takes-in-one-of-its-own.js';
 import { getOrigin } from '../cultivation/origin.js';
 import {
     groundRateAt, groundTimeShares, houseFallbackRate, rateOverTheYear, roomsHeldBy,
@@ -167,6 +169,10 @@ import {
 import { applyWhatThePartyCarriedOut } from './what-a-ruin-has-on-its-shelves.js';
 import { giveThisYearsAttention } from './who-is-given-attention-this-year.js';
 import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
+import {
+    peopleTakeWorkOffTheirHousesBoard, theBoardWorkTheyAreOn, whatFinishingBoardWorkPays
+} from './a-disciple-takes-work-off-the-board.js';
+import { peopleTurnInWhatTheirHouseWants } from './what-a-house-gives-merit-for.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import {
     howHardBeingHeldBackPresses,
@@ -205,7 +211,8 @@ import { applyGatherings, circleCandidatesFor } from './gatherings.js';
 import {
     fightTheWarsThisYear,
     highestRankAlive,
-    whatAHouseCanPutOut
+    whatAHouseCanPutOut,
+    areAtWarWithEachOther
 } from './war-melee.js';
 import type { ObligationInput } from '../social/grudges.js';
 import {
@@ -222,6 +229,7 @@ import {
 import type { OnTheRoll } from '../social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import {
     ALLIED_STANDING,
+    WORTH_REPEATING,
     aFindThisHouseCouldSendFor,
     forbiddenGroundInTheProvinceOf,
     whatAHousesOwnErrandsBringBack,
@@ -303,6 +311,11 @@ import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
 import { aPricedDeed } from './a-deed-enters-the-world-as-a-fact.js';
 import { whatAKillingLeaves } from './the-wrongs-a-world-opens-holding.js';
+import {
+    theMakerThisIs,
+    whatCuttingForTheHouseLands,
+    wordFromThePeopleAway
+} from './what-a-house-hears-from-its-people-away.js';
 import {
     indexById,
     getLocation,
@@ -657,8 +670,11 @@ export function applyPressure(
         // back is on the right roll when the year's admissions run.
         applyFosterageReturns(state, withinSpan(year * 365 + 130, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
-        // Joined where they stood; entered on the roll, robed and cut a plate
-        // at the house. See `a-recruit-is-given-their-plate-at-the-house.ts`.
+        // And a house of hundreds whose roll has thinned has one of its own come
+        // forward. See `a-house-takes-in-one-of-its-own.ts`.
+        theHousesTakeInTheirOwn(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
+        // Joined where they stood; entered on the roll, robed and a lamp lit
+        // at the house. See `a-recruit-is-given-their-lamp-at-the-house.ts`.
         enterWhoeverHasReachedTheHouse(state, withinSpan(year * 365 + 151, fromDay, toDay));
         // And then the people those two passes produced meet each other. After
         // books and after recruitment, so a chosen named this year can be sent
@@ -732,6 +748,10 @@ export function applyPressure(
         applySendings(
             state, year, withinSpan(year * 365 + 175, fromDay, toDay),
             year * 365, Math.min(yearEndsOn, toDay), actOnAnEmptyPurse);
+        // And what the people away send home, after the sendings so whoever set
+        // out this year has been handed a stack. See
+        // `what-a-house-hears-from-its-people-away.ts`.
+        wordFromThePeopleAway(state, { day: withinSpan(year * 365 + 176, fromDay, toDay) });
         // And the yard works on what the last party brought home. AFTER the
         // sendings, so material that came back this year is material this
         // year's work can go into - a hull is a schedule, and a house hunts
@@ -747,6 +767,13 @@ export function applyPressure(
         // The longest project in the world, on its own clock. It will almost
         // never fire in five hundred years, and that is the point of it.
         applyLastCrossing(state, year, withinSpan(year * 365 + 200, fromDay, toDay));
+        // And the house's own take work off its board, last, so the year's
+        // lessons and reviews found them at home and the term is paid next year
+        // before promotions. See `a-disciple-takes-work-off-the-board.ts`.
+        peopleTakeWorkOffTheirHousesBoard(state, year, withinSpan(year * 365 + 201, fromDay, toDay));
+        // And what anybody on a roll carries that their house wants, handed in.
+        // See `what-a-house-gives-merit-for.ts`.
+        peopleTurnInWhatTheirHouseWants(state, withinSpan(year * 365 + 202, fromDay, toDay));
     }
 
     return { events, yearsStepped, born };
@@ -1001,6 +1028,20 @@ function applyDemography(
         state.npcs.push(npc);
         born.push(npc);
     }
+    // Taken on by a house, or placed in one, and whoever of it took them on owes
+    // it a report. See `a-house-expects-somebody-it-took-on.ts`. After the loop,
+    // so no row is written while the roster above still holds it.
+    for (const child of born) {
+        if (child.factionId === null) continue;
+        const region = regionOf(state, child.locationId);
+        aRecruiterOwesTheHouseAReport(state, {
+            houseId: child.factionId,
+            person: { id: child.id, name: child.name },
+            placeId: child.locationId,
+            onDay: day,
+            inReach: id => id !== null && region !== null && regionOf(state, id) === region
+        });
+    }
     void rng;
     void year;
     return born;
@@ -1239,6 +1280,17 @@ function applyFosterageReturns(state: WorldState, day: number): number {
             updated = { ...updated, factionId: terms.factionId, factionRankIndex: 0 };
         }
         state.npcs[i] = updated;
+        if (answer.returns) {
+            // Taken back on, and whoever of the house did it owes it a report.
+            const region = regionOf(state, updated.locationId);
+            aRecruiterOwesTheHouseAReport(state, {
+                houseId: terms.factionId,
+                person: { id: updated.id, name: updated.name },
+                placeId: updated.locationId,
+                onDay: day,
+                inReach: id => id !== null && region !== null && regionOf(state, id) === region
+            });
+        }
 
         appendWorldFact(state, makeFact({
             day,
@@ -2247,6 +2299,15 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
 
         const faction = options[rng.int(0, options.length - 1)];
         state.npcs[at] = { ...npc, factionId: faction.id, factionRankIndex: 0, updatedOnDay: day };
+        // Whoever of the house took them on owes it a report, which is what
+        // lets them in at the gate. See `a-house-expects-somebody-it-took-on.ts`.
+        aRecruiterOwesTheHouseAReport(state, {
+            houseId: faction.id,
+            person: { id: npc.id, name: npc.name },
+            placeId: npc.locationId,
+            onDay: day,
+            inReach: id => id !== null && home !== null && regionOf(state, id) === home
+        });
         joined++;
     }
     return joined;
@@ -2259,11 +2320,6 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
  * How often a house puts a party on the road, per year.
  */
 const SENDINGS_PER_HOUSE_YEAR = 0.2;
-
-/**
- * How heavy a finished sending has to be before anybody repeats it.
- */
-const WORTH_REPEATING = 0.35;
 
 /** The one reason a house has only because it could not make payroll. */
 const BECAUSE_IT_CANNOT_PAY = 'ground_that_pays_somebody_else';
@@ -3842,7 +3898,8 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         const npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
         const doing = npc.activity;
-        if (!doing || !isAwayOnSomething(doing.kind)) continue;
+        // Board work done at the house closes here too, and goes nowhere.
+        if (!doing || (!isAwayOnSomething(doing.kind) && theBoardWorkTheyAreOn(npc, doing.untilDay) === null)) continue;
         if (doing.untilDay === null || doing.untilDay === undefined) continue;
         if (day < doing.untilDay) continue;
 
@@ -3854,7 +3911,10 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         // and came home is counted by the house it was for; a journey to a
         // house that took them is not service yet.
         const served = doing.kind === 'travelling' ? npc
-            : creditMerit(npc, whatServiceIsWorth(npc.cultivation.realmOrdinal, doing.untilDay - doing.sinceDay));
+            : whatFinishingBoardWorkPays(npc, doing)
+                ?? creditMerit(npc, whatServiceIsWorth(npc.cultivation.realmOrdinal, doing.untilDay - doing.sinceDay));
+        // And what the work made, where it made something.
+        whatCuttingForTheHouseLands(state, theMakerThisIs(npc), doing);
         state.npcs[i] = {
             ...(back !== null && standing.has(back) ? setLocation(served, back, day) : served),
             activity: null
@@ -4899,6 +4959,30 @@ function theWorldsPeople(state: WorldState): NpcRecord[] {
     return state.npcs.filter(isTheWorldsToMove);
 }
 
+/**
+ * Whether a house has failed: it cannot pay, or nobody is left to carry its name.
+ *
+ * NOT BECAUSE ITS ROLL IS SHORT - see `faction_fell`, where the counts that
+ * judged the slice were measured and removed. And an EMPTY roll is not nobody
+ * left either: a house whose compound stands and sleeps people nobody models
+ * still has them (`stillHasPeopleNobodyModels`), and takes one of its own in
+ * (`a-house-takes-in-one-of-its-own.ts`). An empty roll ends a house that has
+ * nobody else.
+ *
+ * AND NOT A BODY WHOSE PEOPLE OUTLAST INSTITUTIONS. Counting heads is the right
+ * test for a house that runs on succession and the wrong one at the top of the
+ * ladder, where a single survivor holds tens of thousands of years and
+ * rebuilding after losing three of four Seats to a crossing is not a body dying
+ * - it is the only thing that body does. The Hollow Court dissolved on every
+ * seed inside three centuries against members who cannot die of time.
+ */
+export function whetherAHouseHasFailed(state: WorldState, f: FactionRecord): boolean {
+    if (standsOnAnUnreachableClock(state, f.id)) return false;
+    if ((f.resources.spirit_stones ?? 0) < 400) return true;
+    if (membersOf(state, f.id).length > 0) return false;
+    return !stillHasPeopleNobodyModels(state, f);
+}
+
 function membersOf(state: WorldState, factionId: string): NpcRecord[] {
     return state.npcs.filter(
         n => n.factionId === factionId && n.status === 'alive' && isBelowTheLid(n)
@@ -5034,6 +5118,13 @@ const TEMPLATES: Template[] = [
                 if (victim.tags.includes('destroyed_by')) continue;
                 const victimPower = Number(victim.resources.power_ordinal ?? 0);
                 for (const aggressor of rivalsOf(state, victim)) {
+                    // IN A WAR, NOT OUT OF ONE. A house that comes for another
+                    // and leaves nobody standing below its own height is the
+                    // end of a war somebody declared, never a draw over every
+                    // pair of rivals with a wide enough gap. Drawn over rivals,
+                    // it ended 12 of the 38 catalog houses in 2,500 years on
+                    // `shape-a`, most of them at peace with the house that came.
+                    if (!areAtWarWithEachOther(state, victim.id, aggressor.id)) continue;
                     if (Number(aggressor.resources.power_ordinal ?? 0)
                         >= victimPower + DECISIVE_MARGIN) {
                         pairs.push({ victim, aggressor });
@@ -5769,22 +5860,21 @@ const TEMPLATES: Template[] = [
         weight: 3,
         apply(state, day, rng) {
             // Bind to whoever the economy has already ruined. Nobody is
-            // chosen: a faction is here because it cannot pay, or because it
-            // lost the vein that was its whole ability to produce cultivators
-            // and has nobody left.
-            const failing = liveFactions(state).filter(f =>
-                ((f.resources.spirit_stones ?? 0) < 400 ||
-                    membersOf(state, f.id).length < 3 ||
-                    (f.tags.includes('lost_vein') && membersOf(state, f.id).length < 6))
-                // AND NOT A BODY WHOSE PEOPLE OUTLAST INSTITUTIONS. Counting heads
-                // is the right test for a house that runs on succession and the
-                // wrong one at the top of the ladder, where a single survivor holds
-                // tens of thousands of years and rebuilding after losing three of
-                // four Seats to a crossing is not a body dying - it is the only
-                // thing that body does. The Hollow Court dissolved on every seed
-                // inside three centuries against members who cannot die of time.
-                && !standsOnAnUnreachableClock(state, f.id)
-            );
+            // chosen: a faction is here because it cannot pay, or because
+            // there is nobody left to carry its name.
+            //
+            // NOT BECAUSE ITS ROLL IS SHORT. This read `members < 3`, and
+            // `lost_vein` with fewer than six, off the roll - and a roll is the
+            // ten or twenty people a player could come to know out of a house
+            // of hundreds (`a-house-and-who-is-in-it.md`), so the test judged
+            // the slice rather than the house. Measured on `shape-a` over 1,000
+            // years: of the 24 houses the catalog wrote that fell, 21 fell on
+            // one of those two counts, most holding hundreds of thousands of
+            // stones and a member with a thousand years or more to live;
+            // 3 fell broke and 1 to a war. The two counts are gone; what is left
+            // of them is nobody at all to carry the name, which
+            // `whetherAHouseHasFailed` reads off the house and not its roll.
+            const failing = liveFactions(state).filter(f => whetherAHouseHasFailed(state, f));
             const faction = pick(rng, failing);
             if (!faction) return null;
 
@@ -5814,7 +5904,13 @@ const TEMPLATES: Template[] = [
             const seat = faction.seatLocationId
                 ? state.locations.find(l => l.id === faction.seatLocationId) ?? null : null;
             const changeIds: string[] = [];
-            if (seat) {
+            // A compound another house is still seated at is not left empty by
+            // this one leaving it. A splinter is seated where its founder stood,
+            // which is usually the grounds of the house it split from.
+            const stillSeatedThere = seat !== null && state.factions.some(other =>
+                other.id !== faction.id && other.dissolvedOnDay === null
+                && other.seatLocationId === seat.id);
+            if (seat && !stillSeatedThere) {
                 const changed = applyLocationChange(seat, {
                     onDay: day,
                     kind: 'abandoned',

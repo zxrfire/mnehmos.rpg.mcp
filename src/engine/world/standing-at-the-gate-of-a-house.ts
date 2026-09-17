@@ -28,6 +28,14 @@
  *                   passes with no token. Anybody in the robes whose face
  *                   nobody places - a new arrival at a big house, or a stranger
  *                   in stolen robes - is stopped and asked, not turned away.
+ *                   Somebody on the roll and never entered - no robes, no token,
+ *                   no face - is let in when the house EXPECTS them and they can
+ *                   say who took them on: the recruiter's report to the
+ *                   Internal Affairs office (`a-house-expects-somebody-it-took-
+ *                   on.ts`). With no report they are questioned by that office,
+ *                   and let in or turned away on whether what they say matches
+ *                   what the house knows. Unable to name who took them on, they
+ *                   are stopped and asked.
  *   you are a guest somebody of standing brought you. Who may host is a rank
  *                   reading and not a field: anybody the house lets give an
  *                   order can host, which is `authorityTier` above `ordered`.
@@ -49,7 +57,7 @@
  */
 
 import { ELDER_RUNG_FLOOR, isElderRank, isHeadOfHouse } from '../cultivation/leadership.js';
-import { carriesATokenAt, whatTheTwoSay } from './a-house-knows-its-own-by-a-plate-and-a-token.js';
+import { carriesATokenAt, whatTheTwoSay } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { purposeOf } from './architecture.js';
 import type { LocationRecord } from './locations.js';
 
@@ -59,7 +67,7 @@ import type { LocationRecord } from './locations.js';
  * `on the roll` is the gate reading them as one of the house's own, and what it
  * reads is the TOKEN: a guard cannot see a roll. So somebody on the roll with
  * nothing to show is `stopped and asked`, and somebody off it carrying a genuine
- * token of the house passes - the seam `a-house-knows-its-own-by-a-plate-and-a-
+ * token of the house passes - the seam `a-house-knows-its-own-by-a-lamp-and-a-
  * token.ts` keeps open on purpose.
  */
 export type HowYouStandAtAGate = 'on the roll' | 'stopped and asked' | 'brought in' | 'turned away';
@@ -118,6 +126,23 @@ export interface AtTheGateInput {
      * nobody. The gate decides what that is worth; this only says who and why.
      */
     aFaceTheyKnow: { name: string; because: string } | null;
+    /**
+     * What the house makes of somebody never entered, where it has anything to
+     * go on: `whatTheHouseMakesOfSomebodyNew` - expected on a report, or what
+     * questioning them came to - with who they say took them on, where, whether
+     * they can say it at all, and the questioning's own reason. A null
+     * `recruiterName` on `expected` is a house that sent for them itself. Null
+     * for no account. REQUIRED for the same reason the token is: a gate that
+     * forgot to ask would stop every new recruit. It is not a token - it is read
+     * only for somebody on the roll and never entered.
+     */
+    expected: {
+        reading: 'expected' | 'admitted on questioning' | 'rejected on questioning';
+        recruiterName: string | null;
+        whereName: string | null;
+        theyCanSayWhoTookThemOn: boolean;
+        because: string | null;
+    } | null;
 }
 
 export interface WhatTheGateSays {
@@ -161,9 +186,22 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
     // its faces: somebody who knows a stranger knows they are not of the house.
     const knownByFace = !(theTokenSays === 'they agree')
         && onTheRoll && input.inTheRobes && input.aFaceTheyKnow !== null;
-    const way: HowYouStandAtAGate = theTokenSays === 'they agree' || knownByFace
+    // EXPECTED, WHICH IS HOW A HOUSE KNOWS SOMEBODY IT HAS NEVER SEEN. On the
+    // roll, never entered, and able to say who took them on, which the house
+    // was told. Not a token: somebody in the robes is past this question, and
+    // somebody off the roll was never on anybody's list.
+    const newAtTheGate = !(theTokenSays === 'they agree') && !knownByFace
+        && onTheRoll && !input.inTheRobes && input.expected !== null;
+    const e = input.expected;
+    const sentFor = newAtTheGate && e!.reading === 'expected' && e!.recruiterName === null;
+    const canSay = newAtTheGate && e!.recruiterName !== null && e!.theyCanSayWhoTookThemOn;
+    const letInAsExpected = sentFor || (canSay && e!.reading !== 'rejected on questioning');
+    const rejectedOnQuestioning = canSay && e!.reading === 'rejected on questioning';
+    const way: HowYouStandAtAGate = theTokenSays === 'they agree' || knownByFace || letInAsExpected
         ? 'on the roll'
         : input.hostedBy ? 'brought in'
+        // QUESTIONED AND IT DID NOT MATCH: a refusal, and said as the reason.
+        : rejectedOnQuestioning ? 'turned away'
         // IN THE ROBES IS STOPPED RATHER THAN TURNED AWAY, whether or not the
         // roll agrees: a guard who cannot place the face asks for a token, and
         // a stranger in stolen robes is asked the same question as a disciple
@@ -172,7 +210,21 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         : 'turned away';
 
     const facts: string[] = [];
-    if (way === 'on the roll' && knownByFace) {
+    const stoppedWithNothingToShow = 'The gate of the ' + input.factionName + ' stops you and asks for a '
+        + 'token. You have none, and nobody at the gate knows your face.';
+    const youSay = e === null || e.recruiterName === null ? ''
+        : ' You say ' + e.recruiterName + ' took you on' + (e.whereName ? ' at ' + e.whereName : '') + '.';
+    const questioned = ' The house has no word of it, and you are taken to its Internal Affairs Elder and '
+        + 'questioned. ' + (e?.because ?? '');
+    if (way === 'on the roll' && sentFor) {
+        facts.push(stoppedWithNothingToShow + ' The house sent for you, the gate has your name, and it lets '
+            + 'you in to be entered on its roll.');
+    } else if (way === 'on the roll' && letInAsExpected && e!.reading === 'expected') {
+        facts.push(stoppedWithNothingToShow + youSay + ' The house was told to expect you by name, and the '
+            + 'gate lets you in to be entered on its roll.');
+    } else if (way === 'on the roll' && letInAsExpected) {
+        facts.push(stoppedWithNothingToShow + youSay + questioned + ' You are let in to be entered on its roll.');
+    } else if (way === 'on the roll' && knownByFace) {
         const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
         facts.push(`${input.aFaceTheyKnow!.name} at the gate of the ${input.factionName} knows your `
             + `face and you are in the house's robes, so nobody asks you for a token: `
@@ -200,10 +252,19 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
                     : '';
             if (onTheRoll) {
                 const rung = input.ranks[Math.min(input.standing!, rankCount - 1)] ?? 'a member';
+                // NEVER ENTERED, AND WHY THE HOUSE'S WORD DID NOT LET THEM IN.
+                const theWord = input.inTheRobes
+                    ? ''
+                    : e === null || e.recruiterName === null
+                        ? 'Nobody at the gate was told to expect you.'
+                        : e.reading === 'expected'
+                            ? 'The house expects somebody of your name, and you cannot say who took you on.'
+                            : 'You cannot say who took you on.';
                 facts.push([
                     `The gate of the ${input.factionName} stops you and asks for a token.`,
                     noToken,
                     theFace,
+                    theWord,
                     `You are ${rung} on its roll, and nothing about you here shows it.`
                 ].filter(part => part.length > 0).join(' '));
                 facts.push(carriesATokenAt(input.standing!)
@@ -222,6 +283,8 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
                     theFace
                 ].filter(part => part.length > 0).join(' '));
             }
+        } else if (rejectedOnQuestioning) {
+            facts.push(stoppedWithNothingToShow + youSay + questioned + ' You are not let in.');
         } else {
             facts.push(`The gate of the ${input.factionName} is held. Nobody on it is senior and `
                 + 'none of them has to be.');

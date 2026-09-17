@@ -1,5 +1,5 @@
 /**
- * A HOUSE KNOWS ITS OWN BY A PLATE AND A TOKEN.
+ * A HOUSE KNOWS ITS OWN BY A LAMP AND A TOKEN.
  *
  * `docs/world/houses/trust.md` has carried this design under its own heading
  * since it was written - *"Tokens shatter, so somebody has to be taken alive"* -
@@ -22,25 +22,29 @@ import {
     THE_ROOM_THE_ROLL_IS_KEPT_IN,
     WHEN_SILENCE_BECOMES_A_CAPTIVE,
     carriesATokenAt,
-    plateIdFor,
+    lampIdFor,
     theTokenStillAnswers,
     tokenIdFor,
     whatAHouseMakesOfSilence,
     whatIsLeftOfThem,
-    whatThePlateSays,
-    couldCutAPlate,
-    platesAreCutAt,
+    whatTheLampSays,
+    couldLightALamp,
+    lampsAreLitAt,
     thisHouseCanIssue,
-    whatAPlateIsCutFrom,
-    wouldCutAPlate
-} from '../../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+    whatALampIsMadeFrom,
+    wouldMakeALamp
+} from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { BEAST_MATERIALS } from '../../../src/data/cultivation/beasts.js';
 import { roomAuthorityOf } from '../../../src/engine/world/architecture.js';
+import Database from 'better-sqlite3';
+import { migrate } from '../../../src/storage/migrations.js';
+import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
+import { fixtureCatalog } from './fixtures.js';
 
 describe('what a house issues', () => {
-    it('gives every disciple a token to carry and a plate on a wall', async () => {
+    it('gives every disciple a token to carry and a lamp burning', async () => {
         const state = seedWorld({
-            seed: 'a-plate-and-a-token', catalog: await loadCultivationCatalog()
+            seed: 'a-lamp-and-a-token', catalog: await loadCultivationCatalog()
         }).state;
         const byId = new Map(state.objects.map(o => [o.id, o]));
 
@@ -52,13 +56,13 @@ describe('what a house issues', () => {
 
         for (const member of members) {
             expect(byId.has(tokenIdFor(member.id)), `${member.name} carries no token`).toBe(true);
-            expect(byId.has(plateIdFor(member.id)), `${member.name} has no plate`).toBe(true);
+            expect(byId.has(lampIdFor(member.id)), `${member.name} has no lamp`).toBe(true);
         }
     });
 
     it('leaves the bottom rung without one, which is what the rung means', async () => {
         const state = seedWorld({
-            seed: 'a-plate-and-a-token', catalog: await loadCultivationCatalog()
+            seed: 'a-lamp-and-a-token', catalog: await loadCultivationCatalog()
         }).state;
         const ids = new Set(state.objects.map(o => o.id));
         const servants = state.npcs.filter(npc =>
@@ -69,19 +73,19 @@ describe('what a house issues', () => {
         }
     });
 
-    it('hangs the plates in the hall and keeps the token on the person', async () => {
+    it('lights the lamps in the hall and keeps the token on the person', async () => {
         const state = seedWorld({
-            seed: 'a-plate-and-a-token', catalog: await loadCultivationCatalog()
+            seed: 'a-lamp-and-a-token', catalog: await loadCultivationCatalog()
         }).state;
         const rooms = new Map(state.locations.map(l => [l.id, l]));
 
-        const plates = state.objects.filter(o => o.tags.includes('life-plate'));
-        expect(plates.length).toBeGreaterThan(50);
-        for (const plate of plates) {
-            // Nobody carries a plate: it is evidence the house holds, and it
+        const lamps = state.objects.filter(o => o.tags.includes('life-lamp'));
+        expect(lamps.length).toBeGreaterThan(50);
+        for (const lamp of lamps) {
+            // Nobody carries a lamp: it is evidence the house holds, and it
             // cannot be lost with the person it answers for.
-            expect(plate.possessorId, `${plate.name} is being carried`).toBeNull();
-            const room = plate.locationId === null ? null : rooms.get(plate.locationId) ?? null;
+            expect(lamp.possessorId, `${lamp.name} is being carried`).toBeNull();
+            const room = lamp.locationId === null ? null : rooms.get(lamp.locationId) ?? null;
             if (room !== null && purposeOf(room) !== null) {
                 expect(purposeOf(room)).toBe(THE_ROOM_THE_ROLL_IS_KEPT_IN);
             }
@@ -100,10 +104,10 @@ describe('what a house issues', () => {
 describe('and only a house that can cut one has any', () => {
     it('needs a Foundation hand on the roll, not a Foundation recipient', () => {
         // A house-level gate: somebody here has to be able to CUT one. A house
-        // with nobody at that rung has no plates at all, for anybody.
-        expect(couldCutAPlate(platesAreCutAt())).toBe(true);
-        expect(couldCutAPlate(platesAreCutAt() - 1)).toBe(false);
-        expect(thisHouseCanIssue([1, 2, platesAreCutAt()])).toBe(true);
+        // with nobody at that rung has no lamps at all, for anybody.
+        expect(couldLightALamp(lampsAreLitAt())).toBe(true);
+        expect(couldLightALamp(lampsAreLitAt() - 1)).toBe(false);
+        expect(thisHouseCanIssue([1, 2, lampsAreLitAt()])).toBe(true);
         expect(thisHouseCanIssue([1, 2, 3])).toBe(false);
         expect(thisHouseCanIssue([])).toBe(false);
     });
@@ -114,20 +118,20 @@ describe('and what one is cut from', () => {
         // Derived from the rung rather than named here, so the two move
         // together: a Foundation hand works mortal grade, because earth wants
         // Core Formation - a realm above the hand doing the cutting.
-        expect(whatAPlateIsCutFrom().grade).toBe('mortal');
-        expect(whatAPlateIsCutFrom().itIsBone).toBe(true);
+        expect(whatALampIsMadeFrom().grade).toBe('mortal');
+        expect(whatALampIsMadeFrom().itIsBone).toBe(true);
     });
 
     it('finds bone in the catalog under the names the catalog uses', () => {
         // There is no material called a bone. The mortal-grade bone of a beast
         // big enough to cut a tag from is the Ironhide Tusk; antler, horn, fang
         // and tooth are all earth grade and a realm too high.
-        const would = BEAST_MATERIALS.filter(m => wouldCutAPlate(m));
-        expect(would.length, 'nothing in the catalog could cut a plate').toBeGreaterThan(0);
+        const would = BEAST_MATERIALS.filter(m => wouldMakeALamp(m));
+        expect(would.length, 'nothing in the catalog could light a lamp').toBeGreaterThan(0);
         for (const material of would) expect(material.grade).toBe('mortal');
         // And the earth-grade bones are refused, which is the point of the grade.
         const antler = BEAST_MATERIALS.find(m => m.name === 'Vein Deer Antler')!;
-        expect(wouldCutAPlate(antler)).toBe(false);
+        expect(wouldMakeALamp(antler)).toBe(false);
     });
 });
 
@@ -136,13 +140,13 @@ describe('and what death does to them', () => {
      * DERIVED AND NOT WRITTEN, which is the whole reason it cannot go wrong.
      * `markDead` is called from six places across four files; a stored flag
      * would be six chances to forget, and the one that forgot would leave a
-     * whole plate hanging for a dead disciple - the exact signature the world
+     * lamp still burning for a dead disciple - the exact signature the world
      * uses to mean somebody is holding them prisoner. The bug would not read as
      * a bug. It would read as a kidnapping.
      */
-    it('reads the plate off the person, so no call site can miss it', () => {
-        expect(whatThePlateSays(true)).toBe('they_live');
-        expect(whatThePlateSays(false)).toBe('they_are_dead');
+    it('reads the lamp off the person, so no call site can miss it', () => {
+        expect(whatTheLampSays(true)).toBe('they_live');
+        expect(whatTheLampSays(false)).toBe('they_are_dead');
     });
 
     it('leaves nothing working on a corpse', () => {
@@ -151,7 +155,7 @@ describe('and what death does to them', () => {
         expect(theTokenStillAnswers(false)).toBe(false);
 
         const left = whatIsLeftOfThem({ holderIsAlive: false, holderName: 'Yan Shuling' });
-        expect(left!.plate).toMatch(/in pieces/);
+        expect(left!.lamp).toMatch(/gone out/);
         expect(left!.token).toMatch(/Dust/);
         expect(whatIsLeftOfThem({ holderIsAlive: true, holderName: 'Yan Shuling' })).toBeNull();
     });
@@ -161,9 +165,9 @@ describe('and what death does to them', () => {
      * are not answering is looking at something quite different from a death,
      * and it is the state that sends the posters out.
      */
-    it('reads a whole plate over a long silence as a captivity', () => {
+    it('reads a lamp still burning over a long silence as a captivity', () => {
         const held = {
-            theyHaveAPlate: true, holderIsAlive: true,
+            theyHaveALamp: true, holderIsAlive: true,
             daysSinceAnybodySawThem: WHEN_SILENCE_BECOMES_A_CAPTIVE
         };
         expect(whatAHouseMakesOfSilence(held)).toBe('somebody_has_them');
@@ -171,7 +175,7 @@ describe('and what death does to them', () => {
         // A death closes the question rather than opening the worse one.
         expect(whatAHouseMakesOfSilence({ ...held, holderIsAlive: false })).toBe('they_are_dead');
         // And a house that never issued them one has nothing to read.
-        expect(whatAHouseMakesOfSilence({ ...held, theyHaveAPlate: false })).toBe('nothing_yet');
+        expect(whatAHouseMakesOfSilence({ ...held, theyHaveALamp: false })).toBe('nothing_yet');
     });
 });
 
@@ -182,14 +186,59 @@ describe('whose job it is', () => {
      * charge of what.
      */
     it('is the room, so the office needs no registry', () => {
-        expect(THE_ROOM_THE_ROLL_IS_KEPT_IN).toBe('ancestral_hall');
-        // NOT SEALED YET, AND THAT IS WHY THE KEEPER IS STILL ONLY A NAME.
-        // `whoIsInChargeOfWhat` deals only sealed rooms, so sealing this hall
-        // is the whole of what makes the Keeper a person somebody can go to.
+        expect(THE_ROOM_THE_ROLL_IS_KEPT_IN).toBe('life_lamp_hall');
+        // NOT SEALED YET, AND THAT IS WHY THE INTERNAL AFFAIRS ELDER IS STILL
+        // ONLY A NAME. `whoIsInChargeOfWhat` deals only sealed rooms, so sealing
+        // this hall is the whole of what makes the office a person somebody can
+        // go to.
         // It was tried and reverted: offices are dealt round-robin over the
         // sealed rooms deepest-first, so adding one shifts every holder by one
         // and moved discipline permanently past the rung that held it. See the
-        // note on `ancestral_hall` in `architecture.ts`.
-        expect(roomAuthorityOf('ancestral_hall').sealed).toBe(false);
+        // note on `ancestral_hall` in `architecture.ts`. The Life Lamp Hall is
+        // not sealed and not an office for the same reason.
+        expect(roomAuthorityOf('life_lamp_hall').sealed).toBe(false);
+        expect(roomAuthorityOf('life_lamp_hall').office).toBe(false);
+    });
+});
+
+describe('and a save from when they were plates', () => {
+    /**
+     * THE DESIGN OWNER RENAMED THEM, AND A SAVE DOES NOT KNOW. Every life lamp
+     * in a world saved before the rename is stored under its old id, tag and
+     * field. Read back unmapped, every house in that world reads nobody off its
+     * lamps and never misses anybody again. Red-checked by returning the row
+     * unmapped in `world-state.repo.ts`: this goes red.
+     */
+    it('reads the old rows back as lamps', () => {
+        const state = seedWorld({ seed: 'a-lamp-and-a-token', catalog: fixtureCatalog(), population: 120 }).state;
+        const lamps = state.objects.filter(o => o.tags.includes('life-lamp'));
+        expect(lamps.length, 'the fixture world lit no lamps').toBeGreaterThan(0);
+
+        const OLD = 'life-plate';
+        const asSaved = {
+            ...state,
+            objects: state.objects.map(o => {
+                if (!o.tags.includes('life-lamp')) return o;
+                const { litOnDay, ...rest } = o.data;
+                return {
+                    ...o,
+                    id: o.id.replace(/^life-lamp-/, `${OLD}-`),
+                    name: o.name.replace(/^the life lamp of /, 'the life plate of '),
+                    tags: o.tags.map(t => (t === 'life-lamp' ? OLD : t)),
+                    data: { ...rest, hungOnDay: litOnDay ?? null }
+                };
+            })
+        };
+
+        const db = new Database(':memory:');
+        db.pragma('foreign_keys = ON');
+        migrate(db);
+        const repo = new WorldStateRepository(db);
+        repo.saveWorld(asSaved);
+        const loaded = repo.loadWorld(state.id)!;
+
+        const back = loaded.objects.filter(o => o.tags.includes('life-lamp'));
+        expect(back).toEqual(lamps);
+        expect(loaded.objects.some(o => o.id.startsWith(`${OLD}-`))).toBe(false);
     });
 });

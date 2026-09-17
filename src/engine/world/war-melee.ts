@@ -2,7 +2,7 @@
  * A war between two houses, which is a group fight and nothing else.
  */
 
-import { whoBurnedAWayOut } from './a-talisman-is-one-act-somebody-already-paid-for.js';
+import { whoBurnedATeleportationTalisman } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 import {
     resolveMelee,
     sideStrength,
@@ -15,6 +15,7 @@ import { A_BLOW_MEANT_TO_END_IT } from '../cultivation/how-a-blow-was-thrown.js'
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { combatantOf } from './gatherings.js';
 import { makeFact, type HistoricalFact } from './history.js';
+import { elderRungOf } from '../cultivation/leadership.js';
 import { theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { isRuined } from './possessions.js';
 import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
@@ -141,7 +142,15 @@ function faringFor(state: WorldState, war: LiveWar): { a: HowAHouseIsFaring; b: 
         spent,
         losing: clamp11(spent - otherSpent),
         standing: livingRoster(state, side.id).length,
-        ledStill: led === null || highestRankAlive(state, side.id) >= led
+        // HELD TOGETHER BY WHOEVER COULD LEAD IT, not by the one who did. This
+        // was `>= led`, the rung the house was led from when the war opened, so
+        // a head killed in the field scattered a house with its elders alive -
+        // the succession pass seats the next head later in the same year, after
+        // the war has already been settled. A house scatters when nobody is
+        // left at an elder rung, or at the rung it was led from if that is
+        // lower.
+        ledStill: led === null
+            || highestRankAlive(state, side.id) >= Math.min(led, elderRungOf(side.ranks.length))
     });
 
     return {
@@ -340,14 +349,14 @@ function fightOneYear(
 
     // ── AND WHO WALKED OUT OF IT ─────────────────────────────────────────
     //
-    // A departure talisman is one fold somebody else paid for, and this is the
+    // A teleportation talisman is one fold somebody else paid for, and this is the
     // moment it exists for: a cultivator about to be finished, using it once,
     // and being somewhere else. It is what lets a weak character survive a
     // strong one without the engine lying about who was stronger.
     const wouldFall = result.combatants
         .filter(c => c.fate === 'finished' || c.fate === 'body_destroyed')
         .map(c => c.id);
-    const walkedOut = new Set(whoBurnedAWayOut({
+    const walkedOut = new Set(whoBurnedATeleportationTalisman({
         objects: state.objects,
         aboutToFall: wouldFall,
         onDay: day
@@ -589,6 +598,11 @@ function settleOneWar(
 /**
  * Every war currently being fought, read off the schedule.
  */
+/** Whether these two houses are in an open war with each other. */
+export function areAtWarWithEachOther(state: WorldState, aId: string, bId: string): boolean {
+    return liveWars(state).some(w => (w.a.id === aId && w.b.id === bId) || (w.a.id === bId && w.b.id === aId));
+}
+
 function liveWars(state: WorldState): LiveWar[] {
     const byId = new Map(state.factions.map(f => [f.id, f]));
     const seen = new Set<string>();

@@ -93,6 +93,7 @@ import {
     COMMON_HOUSE_COUNT,
     COMMON_MANUAL_CAP,
     housesTeaching,
+    yearsToWriteOutACopy,
     type Manual
 } from './manuals.js';
 
@@ -208,6 +209,25 @@ export function stallPriceCash(techniqueId: string): number | null {
 export function stallPriceStones(techniqueId: string): number | null {
     const cash = stallPriceCash(techniqueId);
     return cash === null ? null : Math.max(1, Math.ceil(cash / CASH_PER_STONE));
+}
+
+/**
+ * What one copy of a book is sold for, in spirit stones, whether or not a stall
+ * carries it: the stall's figure, and otherwise the copyist's wage for the years
+ * `yearsToWriteOutACopy` says writing it out from memory takes. Null where
+ * nobody at that rung is hiring.
+ *
+ * The same arithmetic as `whatOneCopyIsWorth` in
+ * `src/web/who-here-is-offering-something.ts`, which should import this.
+ */
+export function whatACopyIsSoldFor(techniqueId: string): number | null {
+    if (isSoldAtAStall(techniqueId)) return stallPriceStones(techniqueId);
+    const row = getTechnique(techniqueId) as { requiredOrdinal?: number } | undefined;
+    if (!row) return null;
+    const wage = copyistMonthlyCash(row.requiredOrdinal ?? 0);
+    const years = yearsToWriteOutACopy(techniqueId);
+    if (wage === null || years === null) return null;
+    return Math.max(1, Math.ceil(wage * years * 12 / CASH_PER_STONE));
 }
 
 /**

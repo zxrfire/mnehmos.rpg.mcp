@@ -84,7 +84,7 @@ import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedWhatSealedPocketsStillGrow } from './what-a-sealed-pocket-still-grows.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
 import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
-import { uniformsForEverybodyAlreadyOnARoll } from './a-recruit-is-given-their-plate-at-the-house.js';
+import { uniformsForEverybodyAlreadyOnARoll } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import {
     applyTheLoans,
     whatEachHouseHasOutOnLoan,
@@ -365,7 +365,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const treasury = seedTreasuries(state);
     state.objects.push(...treasury);
     // And the robes of everybody already on a roll, who were entered on it
-    // before the world began. See `a-recruit-is-given-their-plate-at-the-house.ts`.
+    // before the world began. See `a-recruit-is-given-their-lamp-at-the-house.ts`.
     state.objects.push(...uniformsForEverybodyAlreadyOnARoll(state));
 
     setWhatEverybodyIsAt(state, presentDay);
