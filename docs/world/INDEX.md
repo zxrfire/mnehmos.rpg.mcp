@@ -740,9 +740,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 93 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 126 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 41 | 63 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 186 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 89 | 394 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 95 | 84 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 188 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 89 | 395 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 96 | 85 |
 
 <!-- END GENERATED: design-constants -->
 
