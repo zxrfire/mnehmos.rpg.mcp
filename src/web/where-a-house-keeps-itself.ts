@@ -59,7 +59,7 @@
 
 import type { WorldState } from '../engine/world/world-state.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
-import { npcsAt } from '../engine/world/world-state.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 
 /** A house's own ground, as somebody standing here could describe it. */
 export interface AHouseSomebodyCanPlace {
@@ -108,7 +108,7 @@ export function whoCouldPointAtAHouse(
         .filter(house => typeof house.seatLocationId === 'string' && house.seatLocationId.length > 0)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 
-    for (const npc of [...npcsAt(state, locationId)].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+    for (const npc of [...npcsStandingIn(state, locationId)].sort((a, b) => (a.id < b.id ? -1 : 1))) {
         for (const house of seated) {
             const seatId = house.seatLocationId as string;
             const seat = state.locations.find(l => l.id === seatId);

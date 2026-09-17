@@ -50,6 +50,10 @@ import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { whetherYouAreWorthTheTrouble } from '../../src/engine/social-leverage/what-a-house-does-when-it-catches-you';
 import { heightAloneWouldHideThem } from '../../src/engine/social/presence-recognition';
 import type { Cultivator } from '../../src/schema/cultivation';
+import {
+    npcsStandingIn,
+    whereCompoundsAre
+} from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 
 const WORLD = 'a-xianxia-run';
 
@@ -199,7 +203,6 @@ async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
     }
     expect(found, 'no house ground in this world has a teacher and a weaker listener on it').not.toBeNull();
 
-    harness.repos.cultivators.update(me.id, { location: found!.placeName });
     const today = Math.floor(world.currentDay);
     for (const [who, other] of [[found!.teacherId, found!.listenerId], [found!.listenerId, found!.teacherId]]) {
         const at = world.npcs.findIndex(npc => npc.id === who);
@@ -212,6 +215,16 @@ async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
         };
     }
     harness.game.theWorldMoved();
+    // IN THE ROOM THE TALK IS IN. A house's people at a talk are read into the
+    // hall it is given in (`where-inside-a-house-somebody-is-standing.ts`), so
+    // the player is put where the teacher is standing. Walking there is its own
+    // test, in `people-stand-in-the-rooms-of-a-house.test.ts`, and this file is
+    // about what happens once somebody is in the room.
+    const compounds = whereCompoundsAre(world);
+    const roomId = [found!.placeId, ...(compounds.bySeat.get(found!.placeId)?.inside ?? [])]
+        .find(id => npcsStandingIn(world, id, compounds).some(npc => npc.id === found!.teacherId))!;
+    const room = world.locations.find(place => place.id === roomId)!;
+    harness.repos.cultivators.update(me.id, { location: room.name });
     const teacher = world.npcs.find(npc => npc.id === found!.teacherId)!;
     const listener = world.npcs.find(npc => npc.id === found!.listenerId)!;
     const here = harness.game.present(harness.game.currentRun().cultivator).map(row => row.id);
@@ -224,7 +237,10 @@ async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
         }));
         harness.game.theWorldMoved();
     };
-    return { harness, world, me, teacher, listener, placeName: found!.placeName, putOnTheRobes };
+    return {
+        harness, world, me, teacher, listener, putOnTheRobes,
+        roomId, roomName: room.name, seatName: found!.placeName
+    };
 }
 
 function watchTheRate(game: unknown): (number | null)[] {
@@ -241,7 +257,7 @@ function watchTheRate(game: unknown): (number | null)[] {
 
 describe('sitting in on a house\'s teaching without being of the house', () => {
     it('is seen without the house\'s robes, put out, and the row is opened', async () => {
-        const { harness, me, teacher } = await insideAHouse('seen-inside');
+        const { harness, me, teacher, seatName } = await insideAHouse('seen-inside');
         const before = harness.game.currentRun().run.elapsedDays;
 
         const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk`) as Turn;
@@ -250,7 +266,9 @@ describe('sitting in on a house\'s teaching without being of the house', () => {
         expect(turn.toolCalls.map(call => call.name), text).toContain('engine.whatTheRoomDecides');
         expect(turn.toolCalls.map(call => call.name)).not.toContain('world.theyGiveTheirAttention');
         expect(text).toMatch(/not in the house's robes/);
-        expect(text).toMatch(/puts you out/);
+        // Out through the gate, and standing at the seat: being put out moves you.
+        expect(text).toMatch(/walks you out through the gate/);
+        expect(harness.game.currentRun().cultivator.location, text).toBe(seatName);
         expect(ledgerAbout(harness.db, me.id).some(row => row.tags.includes('trespassed')), text)
             .toBe(true);
         // No span: being put out ends the attention before it began.
@@ -271,18 +289,21 @@ describe('sitting in on a house\'s teaching without being of the house', () => {
     }, 180_000);
 
     it('is not simply put out when nobody the house has can make them go', async () => {
-        const { harness, world, me, teacher, listener, placeName } = await insideAHouse('too-strong');
+        const { harness, world, me, teacher, listener, roomId, roomName } = await insideAHouse('too-strong');
         // A GUEST AT THE FRONT OF THE ROOM, of no house, standing high enough to
         // have something to give somebody past everybody of the house who is
         // listening. The house's own people beside the intruder are who look,
         // and who would have to put them out. Arranged, because a guest elder
         // lecturing in a compound is a row the world writes and not one a turn
         // reaches.
+        // A guest is not read into the house's rooms by what they are at, so
+        // the row is put in the hall outright, the way somebody sent for is.
         const at = world.npcs.findIndex(npc => npc.id === teacher.id);
         world.npcs[at] = {
             ...world.npcs[at]!,
             factionId: null,
             factionRankIndex: -1,
+            locationId: roomId,
             cultivation: { ...world.npcs[at]!.cultivation, realmOrdinal: 44 }
         };
         harness.game.theWorldMoved();
@@ -290,10 +311,9 @@ describe('sitting in on a house\'s teaching without being of the house', () => {
         // high that the listener beside them does not register the face at all
         // - `presence-recognition.ts` hides somebody that far up, and a stranger
         // nobody registers is a stranger nobody sees. Both read off the engine.
-        const placeId = world.npcs.find(npc => npc.id === listener.id)!.locationId;
         const houseId = listener.factionId!;
-        const strongestOfTheHouseHere = Math.max(...world.npcs
-            .filter(npc => npc.locationId === placeId && npc.status === 'alive' && npc.factionId === houseId)
+        const strongestOfTheHouseHere = Math.max(...npcsStandingIn(world, roomId)
+            .filter(npc => npc.factionId === houseId)
             .map(npc => npc.cultivation.realmOrdinal));
         let ordinal: number | null = null;
         for (let k = strongestOfTheHouseHere + 1; k < 44; k++) {
@@ -307,9 +327,9 @@ describe('sitting in on a house\'s teaching without being of the house', () => {
         const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk`) as Turn;
         const text = everythingSaid(turn);
 
-        expect(text).not.toMatch(/puts you out/);
+        expect(text).not.toMatch(/puts you out|walks you out/);
         expect(text).toMatch(/sent for|asked to leave/);
-        expect(harness.game.currentRun().cultivator.location).toBe(placeName);
+        expect(harness.game.currentRun().cultivator.location).toBe(roomName);
         // Seen is still seen: the row is on the ledger either way.
         expect(ledgerAbout(harness.db, me.id).some(row => row.tags.includes('trespassed'))).toBe(true);
     }, 180_000);

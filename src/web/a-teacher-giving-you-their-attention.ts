@@ -50,6 +50,7 @@ import { rankName } from '../engine/cultivation/realms.js';
 import { setLocation, type NpcActivity, type NpcRecord } from '../engine/world/npc-state.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { yearsToWriteOutACopy } from '../engine/world/manuals.js';
+import { isMakingSomething, withAttentionRecorded } from '../engine/world/who-is-given-attention-this-year.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import {
     CONTRIBUTION_BASE,
@@ -66,6 +67,7 @@ import { factsForRefusal, placeName } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
+import type { ActionName } from './actions.js';
 import type { GameService } from './turn-engine.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { guestPlaceHeldBy } from '../server/consolidated/sect-guest.js';
@@ -82,7 +84,13 @@ import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-
 import { type DatabaseHandle } from './encounters.js';
 import { howTheirPeopleSeeYourFace } from './how-a-houses-people-see-your-face.js';
 import { whetherAFaceIsRemarkable } from '../engine/social/how-a-house-reads-a-face.js';
-import { pathTo } from '../engine/world/architecture.js';
+import {
+    npcsStandingIn,
+    npcsWithin,
+    theSeatOfTheCompound,
+    whereCompoundsAre
+} from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import { whetherYouAreWorthTheTrouble } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whoAnsweredTheShout, type CouldBeCalled } from '../engine/cultivation/unfinished-fight.js';
 import { assessPower, type CombatantInput } from '../engine/cultivation/combat.js';
@@ -142,7 +150,9 @@ export function whatTheyCannotPutDown(
     const doing = npc.activity;
     if (!doing) return null;
     if (doing.untilDay !== null && doing.untilDay !== undefined && doing.untilDay < today) return null;
-    if (whetherTheyWouldLookUp(doing.kind)) return null;
+    // WRITING OUT A COPY is the work of their rank and looks up from a room,
+    // and it is still not put down: the copy is theirs until it lands.
+    if (whetherTheyWouldLookUp(doing.kind) && !isMakingSomething(doing, today)) return null;
     if (doing.kind === 'out_with_a_party' && doing.withIds.includes(studentId)) return null;
     return {
         doing,
@@ -165,6 +175,36 @@ interface WhatTheyWereAt {
     joined: boolean;
     /** Whoever this lesson added, and nobody else. */
     added: readonly string[];
+    /**
+     * Where the teacher's row stood before the lesson put it in the room with
+     * the student, or undefined where it did not have to move.
+     */
+    stoodAt?: string | null;
+    /** The room the lesson put their row in, where it put it anywhere. */
+    putIn?: string | null;
+}
+
+/**
+ * Put a row in the room somebody is being given attention in.
+ *
+ * A room is read off what a house's people are at, and a scene with somebody
+ * who is not one of the world's people is read where the row stands - so a
+ * teacher found in the lecture hall, once the player is in front of them, would
+ * be read back at the seat. Writing the room onto the row keeps them where the
+ * player found them. Only a row standing at the seat of the compound the room
+ * is in is moved: anybody anywhere else was never in that room.
+ */
+export function standThemWhereTheStudentIs(
+    world: WorldState,
+    at: number,
+    placeId: string | null
+): string | null | undefined {
+    const npc = world.npcs[at];
+    if (!npc || placeId === null || npc.locationId === placeId) return undefined;
+    const seat = theSeatOfTheCompound(world, placeId);
+    if (seat === null || npc.locationId !== seat.id) return undefined;
+    world.npcs[at] = { ...npc, locationId: placeId };
+    return npc.locationId;
 }
 
 function unique(ids: readonly string[]): string[] {
@@ -186,7 +226,9 @@ export const attentionVerbs = {
         teacherId: string,
         studentIds: readonly string[],
         forDays: number,
-        note: string
+        note: string,
+        /** Where the student is standing, so the teacher is read in the same room. */
+        placeId: string | null = null
     ): (WhatTheyWereAt & { listeners: number; sinceDay: number; untilDay: number }) | null {
         const world = this.atHand;
         if (!world) return null;
@@ -214,6 +256,7 @@ export const attentionVerbs = {
                 returnTo: null
             }
         };
+        const stoodAt = standThemWhereTheStudentIs(world, at, placeId);
         for (let i = 0; i < world.npcs.length; i++) {
             const npc = world.npcs[i]!;
             if (npc.id === teacherId || !set.includes(npc.id)) continue;
@@ -230,6 +273,8 @@ export const attentionVerbs = {
             previous: was,
             joined,
             added,
+            stoodAt,
+            putIn: stoodAt === undefined ? undefined : placeId,
             listeners: set.length,
             sinceDay: today,
             untilDay: until
@@ -260,6 +305,11 @@ export const attentionVerbs = {
                     : { ...doing, withIds: remaining, untilDay: was.previous.untilDay ?? null }
             };
         }
+        // Back to where the lesson found their row, unless the world moved it.
+        const standing = world.npcs[at]!;
+        if (was.stoodAt !== undefined && standing.locationId === was.putIn) {
+            world.npcs[at] = { ...standing, locationId: was.stoodAt };
+        }
         for (let i = 0; i < world.npcs.length; i++) {
             const npc = world.npcs[i]!;
             const theirs = npc.activity;
@@ -269,6 +319,28 @@ export const attentionVerbs = {
                 ...npc,
                 activity: { ...theirs, withIds: theirs.withIds.filter(id => !was.added.includes(id)) }
             };
+        }
+        this.theWorldMoved();
+    },
+
+    /**
+     * Attention was given, and the tie between the two remembers the day.
+     *
+     * `withAttentionRecorded` on both ends, the world's own writer, so a
+     * master's next ask reads this lesson the way it reads one the world gave.
+     * An end with no world row, or no tie to the other, gets nothing written:
+     * a stranger in a hall is not somebody who gave you time.
+     */
+    theAttentionWasGiven(this: GameService, teacherId: string, studentIds: readonly string[]): void {
+        const world = this.atHand;
+        if (!world) return;
+        const day = Math.floor(world.currentDay);
+        const at = (id: string) => world.npcs.findIndex(npc => npc.id === id);
+        for (const studentId of studentIds) {
+            const t = at(teacherId);
+            if (t >= 0) world.npcs[t] = withAttentionRecorded(world.npcs[t]!, studentId, day);
+            const st = at(studentId);
+            if (st >= 0) world.npcs[st] = withAttentionRecorded(world.npcs[st]!, teacherId, day);
         }
         this.theWorldMoved();
     },
@@ -298,7 +370,8 @@ export const attentionVerbs = {
         const given = row
             ? this.theyGiveTheirAttention(
                 teacher.id, [cultivator.id], span,
-                `watching ${cultivator.name} sit and correcting it`
+                `watching ${cultivator.name} sit and correcting it`,
+                this.worldPlaceOf(cultivator)
             )
             : null;
         if (!row || !given) {
@@ -322,6 +395,7 @@ export const attentionVerbs = {
         }
 
         const lived = execution.timeSkip?.simulatedDays ?? 0;
+        if (lived > 0) this.theAttentionWasGiven(teacher.id, [cultivator.id]);
         const others = given.listeners - 1;
         const line = lived <= 0
             ? `${teacher.name} was ready to watch you sit, and no sitting happened.`
@@ -395,7 +469,8 @@ export const attentionVerbs = {
 
         this.atHand = this.atHand ?? await this.loadWorld();
         const given = this.theyGiveTheirAttention(
-            teacher.id, [cultivator.id], days, `walking ${cultivator.name} down ${art.name}`
+            teacher.id, [cultivator.id], days, `walking ${cultivator.name} down ${art.name}`,
+            this.worldPlaceOf(cultivator)
         );
         let spent: Execution;
         try {
@@ -407,6 +482,7 @@ export const attentionVerbs = {
         }
 
         const lived = spent.timeSkip?.simulatedDays ?? days;
+        if (given && lived > 0) this.theAttentionWasGiven(teacher.id, [cultivator.id]);
         if (lived < days) {
             return {
                 lines: [
@@ -624,6 +700,42 @@ export const attentionVerbs = {
     ): { caught: Execution | null; passed: string | null } {
         const world = this.atHand;
         if (!world) return { caught: null, passed: null };
+        // WHO LOOKS: the house's own people sitting in the same set, and the
+        // person at the front where none of the house is listening.
+        const listening = new Set(whoTheyAreTeaching(teacher, Math.floor(world.currentDay)));
+        const beside = world.npcs.filter(npc => listening.has(npc.id) && npc.status === 'alive');
+        return this.whetherTheySeeYouDoNotBelongAmong(run, cultivator, rawInput, {
+            witnesses: beside,
+            doing: `sitting in on ${teacher.name}'s teaching`,
+            frontOfTheRoom: teacher,
+            action: 'teach'
+        });
+    },
+
+    /**
+     * The same read, for whoever of the house is in the room with them.
+     *
+     * Walking into a room of a house you are not of is the other way to be in
+     * front of its people, and the read is the one above with no lesson in it:
+     * whoever of the house is standing there looks.
+     */
+    whetherTheySeeYouDoNotBelongAmong(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        rawInput: string,
+        scene: {
+            /** Who could look. Anybody not of the house holding the ground is dropped. */
+            witnesses: readonly NpcRecord[];
+            /** What they were found doing, as it reads after "was found". */
+            doing: string;
+            /** The person at the front, where there is a lesson; they look when nobody else of the house does. */
+            frontOfTheRoom: NpcRecord | null;
+            action: ActionName;
+        }
+    ): { caught: Execution | null; passed: string | null } {
+        const world = this.atHand;
+        if (!world) return { caught: null, passed: null };
         const placeId = this.worldPlaceOf(cultivator);
         const holding = whoHoldsTheGround(world.locations, placeId);
         const house = holding.holding === 'held' ? holding.holderFactionId : null;
@@ -634,12 +746,11 @@ export const attentionVerbs = {
             return { caught: null, passed: null };
         }
 
-        // WHO LOOKS
         const today = Math.floor(world.currentDay);
-        const listening = new Set(whoTheyAreTeaching(teacher, today));
-        const beside = world.npcs.filter(npc => listening.has(npc.id) && npc.status === 'alive'
-            && npc.factionId === house);
-        const witnesses = beside.length > 0 ? beside : [teacher];
+        const teacher = scene.frontOfTheRoom;
+        const ofTheHouse = scene.witnesses.filter(npc => npc.factionId === house);
+        const witnesses = ofTheHouse.length > 0 ? ofTheHouse : teacher !== null ? [teacher] : [];
+        if (witnesses.length === 0) return { caught: null, passed: null };
 
         // HOW EACH OF THEM READS THE FACE. `howTheirPeopleSeeYourFace`, which the
         // gate asks too, so a face is read one way wherever it is looked at.
@@ -673,23 +784,28 @@ export const attentionVerbs = {
             severity,
             onDay,
             description:
-                `${cultivator.name} was found sitting in on ${teacher.name}'s teaching inside `
-                + `${houseName}, and is not of the house.`,
+                `${cultivator.name} was found ${scene.doing} inside ${houseName}, and is not of the house.`,
             participants: [house, seenBy.id],
             tags: ['trespassed']
         });
         writeOneObligation(this.db as unknown as DatabaseHandle, row);
 
-        const noticed = seenBy.id === teacher.id
+        const noticed = teacher !== null && seenBy.id === teacher.id
             ? `${teacher.name} stops talking and looks at you, and you are not one of ${houseName}:`
-            : `${seenBy.name}, sitting in front of ${teacher.name} with you, looks at you twice and `
-              + `says so, and you are not one of ${houseName}:`;
+            : teacher !== null
+                ? `${seenBy.name}, sitting in front of ${teacher.name} with you, looks at you twice and `
+                  + `says so, and you are not one of ${houseName}:`
+                : `${seenBy.name} looks at you twice and says so, and you are not one of ${houseName}:`;
         const lines: string[] = [`${noticed} ${seen.reading.because}`];
         const structure: string[] = [`Seen by ${seenBy.name}: ${seen.reading.because}`];
 
         // ── WHO HAS HANDS ON THEM ────────────────────────────────────────
-        const hereNow = world.npcs.filter(npc => npc.locationId === placeId && npc.status === 'alive'
-            && npc.factionId === house);
+        // WHO IS IN THE ROOM, down to the room: a house's people are read into
+        // the room what they are at is done in, so the room is who has hands.
+        const compounds = whereCompoundsAre(world);
+        const hereNow = placeId === null
+            ? []
+            : npcsStandingIn(world, placeId, compounds).filter(npc => npc.factionId === house);
         const strongestHere = hereNow.reduce<NpcRecord | null>(
             (top, npc) => top === null || npc.cultivation.realmOrdinal > top.cultivation.realmOrdinal ? npc : top,
             null
@@ -707,12 +823,11 @@ export const attentionVerbs = {
         if (hands === null) {
             // THEY SEND FOR SOMEBODY: the shout, over the house's people inside
             // the same compound. Answering for the ground is why they come.
-            const seat = pathTo(world.locations, placeId ?? '').find(place => place.kind === 'sect_seat') ?? null;
-            const inside = (locationId: string | null) => seat !== null && locationId !== null
-                && pathTo(world.locations, locationId).some(place => place.id === seat.id);
-            const candidates: CouldBeCalled[] = world.npcs
-                .filter(npc => npc.status === 'alive' && npc.factionId === house
-                    && npc.locationId !== placeId && inside(npc.locationId))
+            // The same compound, every room of it, and nobody already here.
+            const seat = theSeatOfTheCompound(world, placeId, compounds);
+            const here = new Set(hereNow.map(npc => npc.id));
+            const candidates: CouldBeCalled[] = (seat === null ? [] : npcsWithin(world, seat.id, compounds))
+                .filter(npc => npc.factionId === house && !here.has(npc.id))
                 .map(npc => ({
                     id: npc.id,
                     name: npc.name,
@@ -795,15 +910,28 @@ export const attentionVerbs = {
                     this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stonesTaken });
                 }
             }
-            const here = world.locations.find(place => place.id === placeId) ?? null;
-            const outside = here?.parentId
-                ? world.locations.find(place => place.id === here.parentId && place.kind !== 'region') ?? null
-                : null;
+            // OUT THROUGH THE GATE. Inside a compound that is its seat, the
+            // ground the gate opens onto, whichever room they were found in.
+            // Anywhere else it is the place this one is inside of, where that
+            // is somewhere a person stands.
+            const standing = world.locations.find(place => place.id === placeId) ?? null;
+            const seatOfIt = theSeatOfTheCompound(world, placeId, compounds);
+            const outside = seatOfIt !== null
+                ? (seatOfIt.id === placeId ? null : seatOfIt)
+                : standing?.parentId
+                    ? world.locations.find(place => place.id === standing.parentId && place.kind !== 'region') ?? null
+                    : null;
             if (outside) this.repos.cultivators.update(cultivator.id, { location: outside.name });
             lines.push(
-                `${hands.name} puts you out${outside ? `, and you are standing in ${outside.name}` : ''}.`
+                (seatOfIt !== null && outside !== null
+                    ? `${hands.name} walks you out through the gate, and you are standing outside it at `
+                      + `${outside.name}.`
+                    : `${hands.name} puts you out${outside ? `, and you are standing in ${outside.name}` : ''}.`)
                 + (stonesTaken > 0 ? ` ${stonesTaken} spirit stones are taken off you on the way.` : '')
             );
+            structure.push(outside
+                ? `Put out: location ${placeId} to ${outside.id}.`
+                : `Put out: already outside the walls at ${placeId}, location unchanged.`);
         }
 
         const deed = aDeedEntersTheWorld(world, {
@@ -819,22 +947,21 @@ export const attentionVerbs = {
             ],
             factionIds: [house],
             summary:
-                `${cultivator.name}, who is not of ${houseName}, was found sitting in on `
-                + `${teacher.name}'s teaching inside the house`
+                `${cultivator.name}, who is not of ${houseName}, was found ${scene.doing} inside the house`
                 + (hands !== null ? ' and was put out.' : ', and was not put out.'),
             unattributed: `Somebody who was not of ${houseName} was found listening inside it.`,
             data: { putOut: hands !== null }
         });
         this.theWorldMoved();
 
-        const execution = refused('attention.seenInside', 'teach', factsForRefusal(
+        const execution = refused('attention.seenInside', scene.action, factsForRefusal(
             hands !== null ? 'You are put out.' : 'You are seen, and not put out.',
             lines.join(' '),
             `trespassed: ${row.id} (${severity}) held by ${house}. ${structure.join(' ')}`
         ));
         execution.calls.push({
             name: 'engine.whatTheRoomDecides',
-            action: 'teach',
+            action: scene.action,
             summary: `${decidedLine} Deed ${deed.fact.id} written.`,
             ok: true
         });
@@ -903,6 +1030,10 @@ export const attentionVerbs = {
         const days = Math.max(1, Math.trunc(askedDays ?? SHORT_ACTION_DAYS));
         const ids = free.map(npc => npc.id);
         const before = new Map(free.map(npc => [npc.id, npc.activity]));
+        // Where each listener's row stood, for the ones the talk had to put in
+        // the room with the speaker. See `standThemWhereTheStudentIs`.
+        const hereId = this.worldPlaceOf(cultivator);
+        const stoodAt = new Map<string, string | null>();
         for (let i = 0; i < world.npcs.length; i++) {
             const npc = world.npcs[i]!;
             if (!before.has(npc.id)) continue;
@@ -917,6 +1048,8 @@ export const attentionVerbs = {
                     returnTo: null
                 }
             };
+            const was = standThemWhereTheStudentIs(world, i, hereId);
+            if (was !== undefined) stoodAt.set(npc.id, was);
         }
         this.theWorldMoved();
 
@@ -931,7 +1064,8 @@ export const attentionVerbs = {
                 if (!before.has(npc.id)) continue;
                 const doing = npc.activity;
                 if (!doing || doing.kind !== 'teaching' || !doing.withIds.includes(cultivator.id)) continue;
-                world.npcs[i] = { ...npc, activity: before.get(npc.id) ?? null };
+                const back = stoodAt.has(npc.id) && npc.locationId === hereId ? stoodAt.get(npc.id)! : npc.locationId;
+                world.npcs[i] = { ...npc, activity: before.get(npc.id) ?? null, locationId: back };
             }
             this.theWorldMoved();
         }

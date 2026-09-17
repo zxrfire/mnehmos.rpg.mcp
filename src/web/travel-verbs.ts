@@ -98,6 +98,7 @@ import {
     whoWouldWalkYouIn,
     type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
+import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
 import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
 import { abodeLocationId } from '../engine/world/immortal-world.js';
@@ -560,6 +561,13 @@ export const travelVerbs = {
             }
             said = home.name;
         }
+        // ── A ROOM IS WALKED TO FROM INSIDE ITS OWN WALLS ────────────────
+        //
+        // On a house's ground, a sentence naming one of its rooms, or the gate
+        // and the forecourt, is a walk across the compound rather than a road.
+        // See `walking-inside-the-walls.ts` for what decides it.
+        const insideTheWalls = await aWalkInsideTheWalls(this, run, cultivator, said);
+        if (insideTheWalls) return insideTheWalls;
         const named = resolvePlace(destinationNamed(said));
         // ── A HOUSE IS SOMEWHERE YOU CAN GO, AND WHERE YOU GO IS ITS TOWN ──
         //
@@ -578,6 +586,19 @@ export const travelVerbs = {
             ? theHouseThisNameReaches(this.atHand, named.name)
             : null;
         const place = house ? resolvePlace(house.seat.name) ?? named : named;
+        // AND NOT FROM ANYWHERE ELSE. A room's name reached the world's loose
+        // match, which takes an id ending in `-lecture-hall` and so would have
+        // sent somebody down a road into whichever house the world listed first.
+        const aRoomSomewhere = this.atHand && place ? worldLocationFor(this.atHand, place.name) : null;
+        if (aRoomSomewhere?.tags.includes('interior')) {
+            return refused('engine.resolvePlace', 'move', factsForRefusal(
+                'That is a room, and you are not inside the walls it is behind.',
+                `${place!.name} is somewhere inside a house's walls, and a room is walked to from inside `
+                + 'them. You are not on that house\'s ground.',
+                `move: "${place!.name}" resolved to interior row ${aRoomSomewhere.id}, not inside the `
+                + 'compound this cultivator is standing in. Location unchanged, no time passed.'
+            ));
+        }
         if (!place) {
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',

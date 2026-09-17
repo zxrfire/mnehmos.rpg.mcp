@@ -67,7 +67,8 @@ import { forStream } from '../engine/cultivation/rng.js';
 import { circleCandidatesFor } from '../engine/world/gatherings.js';
 import type { Cultivator, SimEvent } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import { npcsAt, type FactionRecord, type WorldState } from '../engine/world/world-state.js';
+import type { FactionRecord, WorldState } from '../engine/world/world-state.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import { dangerDeltaInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { KnowingStage } from '../engine/social/discovery.js';
@@ -239,7 +240,7 @@ export function placeFor(world: WorldState | null, cultivator: Cultivator): Enco
         // boundary and on ground with a season it can be a year stale.
         sealed: isSealedOn(record, world?.currentDay ?? null),
         company: {
-            heads: npcsAt(world!, record.id).length + 1,
+            heads: npcsStandingIn(world!, record.id).length + 1,
             settledShare: settledShareOf(record.kind)
         }
     };

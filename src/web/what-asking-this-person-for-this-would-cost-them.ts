@@ -842,6 +842,14 @@ export interface WhereTheirAttentionIs {
     cannotPutDown: string | null;
     /** Days until what they are in the middle of ends, where it has an end. */
     freeInDays?: number | null;
+    /**
+     * The catalog id of what they are making, where what they are in the middle
+     * of is making a thing: a copy of an art being written out. It lands when
+     * `freeInDays` runs out.
+     */
+    making?: string | null;
+    /** Whether they gave this asker their attention within the last year, read off the tie. */
+    gaveAttentionRecently?: boolean;
     /** Whether they have gathered what their own next rung asks and are about to strike. */
     atTheirWall?: boolean;
     /** How many are already in front of them, not counting the asker. */
@@ -860,12 +868,52 @@ export interface WhereTheirAttentionIs {
  *
  * Being at their own wall is read, through `howCloseTheyStandToTheirWall`.
  *
- * TWO REASONS A MASTER MIGHT GIVE THAT ARE NOT READ HERE, because nothing holds
- * them yet. Having given you time recently: an activity is
- * put back when it ends and no record of a past one is kept. Being in the
- * middle of making something you commissioned, or of writing out a copy: a
- * commission and `applyManualCopying` write no activity on the maker.
+ * Having given you time within the year is read too, off the tie between you
+ * (`gaveAttentionRecently`). It is not a refusal: more of somebody's days so
+ * soon after the last is a heavier ask, and the resolver weighs it as one.
+ *
+ * ONE REASON NOT READ HERE, because nothing holds it: being in the middle of
+ * making something you commissioned. A commission writes no activity on the
+ * maker. Writing out a copy does, and is read above as something they cannot
+ * put down.
  */
+/**
+ * What they are in the middle of, as the refusal a busy person gives.
+ *
+ * Says when it ends where it has an end. Where it is a copy being written out
+ * of the very art the asker wants, says that the copy is readable when it lands,
+ * with nobody's attention needed: that is what a copy is.
+ */
+function whatTheyAreInTheMiddleOf(
+    asked: TheOneBeingAsked,
+    where: WhereTheirAttentionIs,
+    askedForArt: string | null,
+    putDownFor: string
+): { headline: string; prose: string; structure: string } {
+    const days = where.freeInDays;
+    const inDays = days === null || days === undefined
+        ? null
+        : `${days} day${days === 1 ? '' : 's'}`;
+    const free = inDays === null
+        ? 'Nothing says when it ends.'
+        : where.making
+            ? `It is done in ${inDays}, and the same question can be asked then.`
+            : `It ends in ${inDays}, and the same question can be asked then.`;
+    const theCopy = where.making && askedForArt !== null && where.making === askedForArt
+        ? ` What they are writing out is the art you asked for, and ${inDays === null ? 'when it is done' : `in ${inDays}`} `
+          + 'there is a copy of it that can be read without anybody\'s attention.'
+        : '';
+    return {
+        headline: `${asked.name} is in the middle of something.`,
+        prose: `${asked.name} is ${where.cannotPutDown}`
+            + `${where.theirMaster ? ', and took you on all the same' : ''}. That is not put down `
+            + `${putDownFor}. ${free}${theCopy}`,
+        structure: 'Refused before the resolver, so no day was spent: their own activity is one they '
+            + 'cannot put down (whetherTheyWouldLookUp is false for it, or it is making a thing that '
+            + `has not landed${where.making ? `: ${where.making}` : ''}).`
+    };
+}
+
 function costOfGuidance(
     asking: TheOneAsking,
     asked: TheOneBeingAsked,
@@ -914,31 +962,30 @@ function costOfGuidance(
         );
     }
     if (where.cannotPutDown !== null) {
-        const free = where.freeInDays === null || where.freeInDays === undefined
-            ? 'Nothing says when it ends.'
-            : `It ends in ${where.freeInDays} day${where.freeInDays === 1 ? '' : 's'}, and the same `
-              + 'question can be asked then.';
-        return refusal(
-            `${asked.name} is in the middle of something.`,
-            `${asked.name} is ${where.cannotPutDown}`
-            + `${where.theirMaster ? ', and took you on all the same' : ''}. That is turned away `
-            + `from the room and is not put down to watch somebody sit. ${free}`,
-            'Refused before the resolver, so no day was spent: their own activity is one that faces '
-            + 'away from a room (whetherTheyWouldLookUp is false for it).'
-        );
+        const busy = whatTheyAreInTheMiddleOf(asked, where, null, 'to watch somebody sit');
+        return refusal(busy.headline, busy.prose, busy.structure);
     }
 
+    // TIME GIVEN WITHIN THE YEAR. A heavier ask, weighed by the resolver like
+    // any other: their days again, so soon after the last, come out of their
+    // own road. Never a refusal on its own.
+    const soSoon = where.gaveAttentionRecently === true;
+    const ask: AskWeight = soSoon ? 'against_their_interest' : 'a_real_favour';
     const others = where.alreadyTeaching;
     const crowd = others === 0
         ? []
         : [`${asked.name} already has ${others} in front of them. You would be one more, and what `
             + 'each of you gets thins with every one.'];
     return {
-        ask: 'a_real_favour',
+        ask,
         lines: [
             `You are asking for ${days} of somebody else's attention on your sitting. What it costs `
             + 'them is their own practice for as long as it lasts.',
             ...crowd,
+            ...(soSoon
+                ? [`${asked.name} has given you their time within the year already, and more of it now `
+                    + 'comes out of their own road. That is a reason to say no, and it is weighed.']
+                : []),
             where.theirMaster
                 ? `${asked.name} took you on, and what stands between the two of you is on the scale `
                   + 'this is weighed on. A master may still say no.'
@@ -950,9 +997,12 @@ function costOfGuidance(
         ],
         structure: [
             `Being watched is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is priced as `
-            + `${theAskInWords('a_real_favour')} - ${days} of the asked person's days, the same `
-            + 'weight asking them along carries. The ordinary resolver decides, for a master too: '
-            + 'the tie between them is one of its terms.'
+            + `${theAskInWords(ask)} - ${days} of the asked person's days`
+            + (soSoon
+                ? ', one rung heavier than asking them along, because gaveAttentionRecently reads the '
+                  + 'tie between them as attention given within ATTENTION_IS_RECENT_FOR_DAYS. '
+                : ', the same weight asking them along carries. ')
+            + 'The ordinary resolver decides, for a master too: the tie between them is one of its terms.'
         ],
         techniqueId: null,
         refusal: null,
@@ -1189,6 +1239,21 @@ export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
                 request.theyWant ?? null
             );
         case 'teaching':
+            // SOMEBODY WRITING OUT A COPY IS NOT FREE TO TEACH, and where the copy
+            // is of the very art asked for, it will be on a shelf to read.
+            if (request.attention && request.attention.cannotPutDown !== null) {
+                const busy = whatTheyAreInTheMiddleOf(
+                    request.asked, request.attention, request.techniqueId ?? null, 'to teach somebody'
+                );
+                return {
+                    ask: 'a_real_favour',
+                    lines: [],
+                    structure: [busy.structure],
+                    techniqueId: request.techniqueId ?? null,
+                    refusal: busy,
+                    askBack: null
+                };
+            }
             return costOfTeaching(
                 request.asking, request.asked, request.techniqueId ?? null, named,
                 request.theyWant ?? null

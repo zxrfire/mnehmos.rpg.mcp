@@ -7,6 +7,7 @@ import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { isAtLeast, type KnowingStage } from '../social/discovery.js';
 import type { CatalogFaction } from './catalog.js';
+import type { ActivityKind } from './npc-state.js';
 import {
     evaluateAccess,
     linkLocations,
@@ -632,10 +633,13 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // this room past 0.6 would reintroduce that defect exactly.
     mission_hall: { kind: 'hall', depth: 0.3, obviousness: 0.9, qiLift: 0, sealed: false, office: true, capacityPer: 0.25, hazards: [] },
     // NOT AN OFFICE, so `whoIsInChargeOfWhat` deals exactly what it dealt: see
-    // the note on `mission_hall` above for what adding an office costs. Depth
-    // 0.15 puts it in the outermost precinct beside the practice yard, because
-    // a talk is given to the house and the house includes its newest disciple.
-    lecture_hall: { kind: 'hall', depth: 0.15, obviousness: 0.85, qiLift: 0, sealed: false, office: false, capacityPer: 0.5, hazards: [] },
+    // the note on `mission_hall` above for what adding an office costs. Depth 0
+    // puts it in the outermost precinct beside the forecourt, because a talk is
+    // given to the house and the house includes its newest disciple. It was
+    // 0.15, which `precinctAt` rounds into the SECOND precinct of any house with
+    // more than three rungs: behind a wall the bottom rung cannot pass, and past
+    // what a newcomer can find, so the people a talk is for could not walk to it.
+    lecture_hall: { kind: 'hall', depth: 0, obviousness: 0.85, qiLift: 0, sealed: false, office: false, capacityPer: 0.5, hazards: [] },
     audience_hall: { kind: 'hall', depth: 0.55, obviousness: 0.75, qiLift: 0, sealed: false, office: false, capacityPer: 0.3, hazards: [] },
     tribute_room: { kind: 'vault', depth: 0.6, obviousness: 0.3, qiLift: 0, sealed: true, office: true, capacityPer: 0.05, hazards: [] },
     meditation_cell: { kind: 'chamber', depth: 0.5, obviousness: 0.4, qiLift: 8, sealed: false, office: false, capacityPer: 0.12, hazards: [] },
@@ -1190,6 +1194,33 @@ function growNodes(
     }
     return out;
 }
+
+/**
+ * The rooms a thing somebody is at is done in, most fitting first.
+ *
+ * Kept beside `resourcesFor` because it is the same question asked the other
+ * way round: that table says what a room gives, this one says what brings a
+ * person into it. A house that has none of the rooms listed has its people
+ * doing the thing where they already are.
+ *
+ * NOT HERE, ON PURPOSE:
+ *
+ *   the work of their rank   read off the office a person holds, which is a
+ *                            fact about them rather than the activity; see
+ *                            `where-inside-a-house-somebody-is-standing.ts`
+ *   talking, squeezing,      done wherever people meet, which in a compound is
+ *   idle and the rest        the forecourt the gate opens onto, and that is the
+ *                            seat itself
+ */
+export const ROOMS_A_THING_IS_DONE_IN: Readonly<Partial<Record<ActivityKind, readonly RoomPurpose[]>>> = {
+    teaching: ['lecture_hall', 'practice_yard'],
+    at_the_shelves: ['scripture_pavilion', 'archive'],
+    mending: ['infirmary', 'meditation_cell'],
+    comprehending: ['meditation_cell'],
+    their_practice: ['practice_yard'],
+    at_a_table: ['refectory'],
+    mustering: ['mission_hall']
+};
 
 function resourcesFor(purpose: RoomPurpose): string[] {
     switch (purpose) {

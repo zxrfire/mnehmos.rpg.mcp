@@ -82,6 +82,7 @@ import { makeGameInWorld } from './harness';
 import { couldHostAGuest } from '../../src/engine/world/standing-at-the-gate-of-a-house';
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createDebt } from '../../src/engine/social/grudges';
+import { npcsStandingIn } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 
 const WORLD = 'a-house-you-can-walk-to';
 
@@ -103,11 +104,16 @@ function everySeatedHouse(world: { locations: any[]; factions: any[] }) {
     return out;
 }
 
-/** Who of a house is standing at its own gate, alive, on a rung. */
-function onTheGateOf(world: { npcs: any[] }, faction: any, seat: any) {
-    return world.npcs.filter(n =>
+/**
+ * Who of a house is standing at its own gate, alive, on a rung.
+ *
+ * Read the way the gate reads it, down to the room: somebody of the house at a
+ * talk is in the lecture hall and not at the gate, though their row names the
+ * seat. See `where-inside-a-house-somebody-is-standing.ts`.
+ */
+function onTheGateOf(world: any, faction: any, seat: any) {
+    return npcsStandingIn(world, seat.id).filter((n: any) =>
         n.factionId === faction.id
-        && n.locationId === seat.id
         && n.status !== 'physically_dead'
         && typeof n.factionRankIndex === 'number'
         && n.factionRankIndex >= 0);
@@ -137,7 +143,7 @@ function onTheGateOf(world: { npcs: any[] }, faction: any, seat: any) {
  * not this file's subject, and pinning it here would have made the guest road
  * untestable rather than testing the sending.
  */
-function aHouseWhoseGateIsStaffed(world: { locations: any[]; factions: any[]; npcs: any[] }) {
+function aHouseWhoseGateIsStaffed(world: any) {
     for (const { faction, seat } of everySeatedHouse(world)) {
         const atTheGate = onTheGateOf(world, faction, seat);
         const ranks: string[] = faction.ranks;

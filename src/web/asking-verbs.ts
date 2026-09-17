@@ -161,6 +161,7 @@ import {
     whatTheyCannotPutDown,
     whoTheyAreTeaching
 } from './a-teacher-giving-you-their-attention.js';
+import { gaveAttentionRecently } from '../engine/world/who-is-given-attention-this-year.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import {
     type TheOfferHeld,
@@ -1301,7 +1302,9 @@ ${unnamed}`;
         const theirRow = this.atHand?.npcs.find(row => row.id === party.id) ?? null;
         const today = Math.floor(this.atHand?.currentDay ?? 0);
         const busy = theirRow ? whatTheyCannotPutDown(theirRow, cultivator.id, today) : null;
-        const attention = shape === 'guidance'
+        // A lesson is attention too, so somebody who cannot put down what they
+        // are at cannot teach either; the rest of this read is the guidance ask's.
+        const attention = shape === 'guidance' || shape === 'teaching'
             ? {
                 here: this.present(cultivator).some(row => row.id === party.id),
                 place: placeName(cultivator),
@@ -1312,6 +1315,12 @@ ${unnamed}`;
                         .filter((name): name is string => !!name))
                     : null,
                 freeInDays: busy?.freeInDays ?? null,
+                making: busy?.doing.thingId ?? null,
+                // TIME GIVEN WITHIN THE YEAR, off their side of the tie. A heavier
+                // ask, not a refusal: see `costOfGuidance`.
+                gaveAttentionRecently: theirRow !== null && gaveAttentionRecently(
+                    theirRow.relationships.find(tie => tie.targetId === cultivator.id), today
+                ),
                 // AT THEIR OWN WALL: the years the next rung asks of them are
                 // gathered and the strike is theirs to make. The world's own
                 // arithmetic, through the one construction a turn has of it.

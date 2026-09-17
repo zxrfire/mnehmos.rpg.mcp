@@ -64,7 +64,7 @@
 import type { InsightDomain } from '../schema/cultivation.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
-import { npcsAt } from '../engine/world/world-state.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import {
     ARTIFACT_LEGIBLE_WITHIN,
@@ -185,7 +185,7 @@ export function whoCouldPointAtAGround(
     locationId: string
 ): SomebodyWhoKnowsWhereItIs[] {
     const out: SomebodyWhoKnowsWhereItIs[] = [];
-    for (const npc of [...npcsAt(state, locationId)].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+    for (const npc of [...npcsStandingIn(state, locationId)].sort((a, b) => (a.id < b.id ? -1 : 1))) {
         for (const row of daoGroundsAround(state, standingOfNpc(state, npc))) {
             if (!row.standing.knowsWhereItIs) continue;
             out.push({

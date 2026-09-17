@@ -770,7 +770,8 @@ import {
 } from './encounters.js';
 import type { ApproachLeverage } from '../schema/cultivation.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
-import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
+import { npcsInFaction } from '../engine/world/world-state.js';
+import { npcsStandingIn, npcsWithin } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 // The seventh term of the attempt resolver, and the last one no caller here
 // had ever supplied. See `what-they-want-that-you-could-reach.ts` for what it
 // may read and, more importantly, for the one thing it refuses to.
@@ -10084,7 +10085,7 @@ ${line}`;
         // Who was on this ground, and therefore what the holder can say. Read
         // off `NpcRecord.locationId`, which is the one record of who is where.
         const theirPeopleHere = row
-            ? npcsAt(this.atHand, row.id).filter(n => n.factionId === holder!.id)
+            ? npcsStandingIn(this.atHand, row.id).filter(n => n.factionId === holder!.id)
             : [];
         const stages = new Map<string, KnowingStage>();
         stages.set(holder!.id, theirPeopleHere.length > 0 ? 'placed' : 'named');
@@ -12234,7 +12235,7 @@ ${opened.text}` : receipt,
         this.atHand = this.atHand ?? await this.loadWorld();
         const place = this.atHand ? worldLocationFor(this.atHand, cultivator.location) : null;
         const here = this.atHand && place
-            ? npcsAt(this.atHand, place.id).filter(npc => npc.id !== cultivator.id)
+            ? npcsStandingIn(this.atHand, place.id).filter(npc => npc.id !== cultivator.id)
             : [];
         const { stage: houseStage, sawIt } = whoHereCouldSayWhoseItWas(here, ownerFactionId, art.id);
 
@@ -15894,7 +15895,9 @@ ${fit.line}`;
         const record = this.atHand ? worldLocationFor(this.atHand, name) : null;
         if (!record) return { occupants: null, supportedDraw: null };
         return {
-            occupants: npcsAt(this.atHand!, record.id).length,
+            // The whole of the ground, every room behind the gate included: this is
+            // how many draw on a place, not who is in one room of it.
+            occupants: npcsWithin(this.atHand!, record.id).length,
             supportedDraw: carryingCapacityFor(record.environment.spiritualDensity)
         };
     }
@@ -16702,7 +16705,7 @@ ${fit.line}`;
             // its own input type that it wants everyone drawing, the asker
             // included, and this was the count that was wrong.
             occupantOrdinals: everybodyDrawingHere({
-                inTheWorld: npcsAt(this.atHand, record.id),
+                inTheWorld: npcsStandingIn(this.atHand, record.id),
                 onRunSheets: [
                     cultivator,
                     ...this.repos.cultivators.roster().filter(row =>
@@ -16752,7 +16755,7 @@ ${fit.line}`;
         const today = Math.floor(world.currentDay);
         let best = nobody;
         let bestWorth = 1;
-        for (const npc of npcsAt(world, place.id)) {
+        for (const npc of npcsStandingIn(world, place.id)) {
             const listening = whoTheyAreTeaching(npc, today);
             if (!listening.includes(cultivator.id)) continue;
             // AND ATTENTION DIVIDES, by the rate's own rule: of several teachers

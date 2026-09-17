@@ -269,6 +269,33 @@ describe('a master may say no', () => {
         expect(harness.game.rateTermsFor(harness.game.currentRun().cultivator).guideOrdinal).toBeNull();
     }, 180_000);
 
+    /**
+     * TIME GIVEN WITHIN THE YEAR IS A REASON, NOT A REFUSAL. A played span
+     * stamps the tie on both ends the way the world's own attention pass does,
+     * and the next ask reads the stamp as a heavier ask through the ordinary
+     * resolver. The odds are printed.
+     */
+    it('remembers the time it gave, and weighs more of it so soon as a reason to say no', async () => {
+        const { harness, me, teacher } = await somebodyAboveHere('guided-recently', { atLeast: 4 });
+        await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
+        const asked = `could I ask ${teacher.name} to guide my cultivation for 10 days`;
+        const beforeAnyTime = theOddsOf(await harness.game.act(asked) as Turn);
+
+        const span = await harness.game.act('ADMIN request I ask my master to guide my cultivation for 10 days') as Turn;
+        expect(span.toolCalls.map(call => call.name), everythingSaid(span)).toContain('world.theyGiveTheirAttention');
+        const world = (await harness.game.loadWorld())!;
+        const theirs = world.npcs.find(npc => npc.id === teacher.id)?.relationships
+            .find(tie => tie.targetId === me.id);
+        expect(theirs?.lastAttentionOnDay, 'the master\'s side of the tie does not remember the span').toEqual(expect.any(Number));
+
+        const again = await harness.game.act(asked) as Turn;
+        const afterTheTime = theOddsOf(again);
+        console.log(`GUIDANCE ODDS AFTER TIME GIVEN: before ${beforeAnyTime}, after ${afterTheTime}`);
+        expect(everythingSaid(again)).toMatch(/given you their time within the year/);
+        expect(again.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
+        expect(afterTheTime).toBeLessThan(beforeAnyTime);
+    }, 240_000);
+
     it('declines at their own practice, naming it and when they are free', async () => {
         const { harness, world, teacher } = await somebodyAboveHere('guided-busy', { atLeast: 4 });
         await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
@@ -411,6 +438,30 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
         // NOT AN AFTERNOON. The lesson's own days on top of the asking's.
         expect(harness.game.currentRun().run.elapsedDays - before).toBeGreaterThanOrEqual(lesson);
         expect(seen.some(g => g !== null && g > me.realmOrdinal), 'no guidance over the lesson').toBe(true);
+    }, 180_000);
+
+    it('is not given by somebody writing out a copy, who says when the copy of that art can be read', async () => {
+        const { harness, teacher } = await aTeacherHoldingIt('taught-at-a-desk', true);
+        const world = (await harness.game.loadWorld())!;
+        const today = Math.floor(world.currentDay);
+        const at = world.npcs.findIndex(npc => npc.id === teacher.id);
+        world.npcs[at] = {
+            ...world.npcs[at]!,
+            activity: {
+                kind: 'the_work_of_their_rank', note: 'writing out a copy of Swallow-Skimming Step for the shelf',
+                withIds: [], sinceDay: today, untilDay: today + 40, thingId: ART
+            }
+        };
+        harness.game.theWorldMoved();
+        const before = harness.game.currentRun().run.elapsedDays;
+
+        const turn = await harness.game.act(`I ask ${teacher.name} to teach me Swallow-Skimming Step`) as Turn;
+        const text = everythingSaid(turn);
+        expect(text).toMatch(/writing out a copy/);
+        expect(text).toMatch(/done in 40 days/);
+        expect(text).toMatch(/can be read without anybody's attention/);
+        expect(turn.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
+        expect(harness.game.currentRun().run.elapsedDays).toBe(before);
     }, 180_000);
 
     it('leaves nothing when the lesson is cut short', async () => {

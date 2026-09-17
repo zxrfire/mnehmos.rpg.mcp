@@ -2670,7 +2670,9 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // "I go into the village" reached nothing. The site rule takes this
     // sentence first when a site noun is in it, and movement gets it otherwise,
     // which is the correct order for both.
-    ['enter', /\b(?:enter|go into|goes into|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
+    // `walk into` beside `go into`: "I walk into the practice yard" reached
+    // nothing once a compound had rooms anybody could stand in.
+    ['enter', /\b(?:enter|go into|goes into|go inside|walk into|walks into|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
     ['follow', /\b(?:follow|shadow|trail|tail)\b/],
     // `ride` was here, as a LABEL, and the label was the whole of what it
@@ -2693,7 +2695,10 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     //
     // `go to sleep` keeps its veto, and it is why `go` was narrow here in the
     // first place - so the compass words are named rather than a bare `go`.
-    ['travel', /\b(?:travel|go to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b|\b(?:go|goes|going|went|walk|walks|ride|rides|return|returns|returning|returned|head|heads|make|makes|get|gets)\s+(?:back\s+|on\s+|straight\s+)?home\b/]
+    // `go back out to` and `go back to` are the same road as `go to`, and
+    // they are how somebody leaves a room: "I go back out to the forecourt"
+    // reached nothing.
+    ['travel', /\b(?:travel|go (?:back )?(?:out |in )?to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b|\b(?:go|goes|going|went|walk|walks|ride|rides|return|returns|returning|returned|head|heads|make|makes|get|gets)\s+(?:back\s+|on\s+|straight\s+)?home\b/]
 ];
 
 // THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING
@@ -4049,7 +4054,7 @@ const TEACHING_SOMEBODY_ELSE = new RegExp([
  * named in front of the talk ("Elder Hu's lecture"), the second a person named
  * after the verb ("sit in on Elder Hu").
  */
-const A_TALK = String.raw`(?:dao\s+)?(?:lecture|lectures|talk|sermon|discourse|lesson|class|teaching|exposition)`;
+const A_TALK = String.raw`(?:dao\s+)?(?:lecture|lectures|talk|sermon|discourse|lesson|class|teaching|exposition)\b(?!\s+(?:hall|halls|room|rooms|cut|cuts))`;
 const LISTENING_TO_SOMEBODY_TEACH = new RegExp(
     String.raw`\b(?:sit|sits|sitting|go|goes|going)\s+in\s+on\s+(?:the\s+|a\s+)?(?:(.{2,40}?)(?:'s|s'|’s)\s+)?${A_TALK}\b`
     + String.raw`|\b(?:sit|sits|sitting|go|goes|going)\s+in\s+on\s+(?!(?:the|a|an)\s)(.{2,40}?)(?=\s+for\b|\s*[,;.!?]|\s*$)`

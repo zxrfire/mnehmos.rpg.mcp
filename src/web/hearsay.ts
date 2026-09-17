@@ -13,7 +13,8 @@ import { forStream } from '../engine/cultivation/rng.js';
 import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import { npcsAt, type WorldState } from '../engine/world/world-state.js';
+import type { WorldState } from '../engine/world/world-state.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import { worldLocationFor } from './entities.js';
 import {
     whatSomebodyWouldSayAboutAHouse,
@@ -210,7 +211,7 @@ export function othersPresent(
     const place = worldLocationFor(world, cultivator.location);
     if (!place) return oneCrowd(stored, []);
 
-    const inWorld = npcsAt(world, place.id).map(npc => worldRosterRow(npc, world.currentDay, world));
+    const inWorld = npcsStandingIn(world, place.id).map(npc => worldRosterRow(npc, world.currentDay, world));
     return oneCrowd(stored, inWorld);
 }
 
