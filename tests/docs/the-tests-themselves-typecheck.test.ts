@@ -55,30 +55,6 @@ import { describe, expect, it } from 'vitest';
  */
 const CEILING = 0;
 
-/**
- * ONE SLOT, HELD OPEN BY NAME, FOR A SCRIPT THAT CANNOT BE FIXED FROM HERE.
- *
- * `scripts/seed-bastion.ts` seeds the second game in this repo - the one under
- * `docs/bastion/`, which shares the tree and nothing else - and it imports
- * `src/server/consolidated/character-manage.js`, deleted in `ab59a6c4` on 31
- * August. There is no replacement handler: `character-record.ts` exports a
- * record builder of a different shape, not a tool handler. So the script has
- * been unrunnable since that commit - it throws at import resolution, before a
- * line of it executes - and the 1,391 lines behind the import are D&D-shaped
- * throughout (`race`, `class`, `level`, `ac`, `provisionEquipment`), from
- * before the cultivation transformation.
- *
- * Making it typecheck means writing a new integration, which is a meaning
- * change and not a type fix; deleting it is the owner's call, not this test's.
- * So it is EXEMPTED BY NAME rather than absorbed into the ceiling, which is
- * the important part: the count above still has to be zero for everything
- * else, so a new error here cannot hide behind a ceiling of one.
- *
- * The second assertion below fails when this stops being true, which is the
- * signal to delete this constant rather than to keep it.
- */
-const THE_ONE_THING_A_TYPE_FIX_CANNOT_REACH = 'scripts/seed-bastion.ts';
-
 /** How long tsc gets. It is a whole-tree check, not a unit test. */
 const A_GENEROUS_WAIT = 240_000;
 
@@ -121,7 +97,7 @@ describe('the tests and the scripts typecheck', () => {
     const all = typeErrors();
 
     it('holds no type errors in tests/ or scripts/', () => {
-        const found = all.filter(f => f.file !== THE_ONE_THING_A_TYPE_FIX_CANNOT_REACH);
+        const found = all;
         const byFile = found.reduce(
             (acc, f) => acc.set(f.file, (acc.get(f.file) ?? 0) + 1),
             new Map<string, number>()
@@ -139,19 +115,6 @@ describe('the tests and the scripts typecheck', () => {
             + `a wrong test.${worst}`
         ).toBeLessThanOrEqual(CEILING);
     }, A_GENEROUS_WAIT);
-
-    /**
-     * An exemption nobody takes away is indistinguishable from the rot this
-     * file exists to catch, so the slot reports when it is no longer needed.
-     */
-    it('still needs the one exemption it holds open', () => {
-        expect(
-            all.some(f => f.file === THE_ONE_THING_A_TYPE_FIX_CANNOT_REACH),
-            `${THE_ONE_THING_A_TYPE_FIX_CANNOT_REACH} typechecks now. Delete `
-            + 'THE_ONE_THING_A_TYPE_FIX_CANNOT_REACH and the filter that uses it, so the '
-            + 'next error in that file goes red like any other.'
-        ).toBe(true);
-    });
 
     /**
      * The ratchet above is only worth what the config under it is worth. A
