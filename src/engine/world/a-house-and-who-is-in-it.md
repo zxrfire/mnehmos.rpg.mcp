@@ -544,8 +544,9 @@ Rulings from the same night, which the talisman is one link of:
 - **you join where you are recruited**, and you do not get your token, your
   robes or your life lamp until you reach the house - *"so you don't really
   have proof"*. A house has an infinite stock of robes.
-- **the recruiter reports back** to the Internal Affairs Elder, who keeps the
-  life lamps, **and the house expects the recruit by name**. At the gate a new
+- **the recruiter burns a transmission talisman to inform the Internal Affairs
+  Elder**, who keeps the life lamps, **and the house expects the recruit by
+  name**. At the gate a new
   arrival says who recruited them and where, and is let in on that: *"the sect
   verifies because the person that went back talked to the elder managing life
   plates, the sect expects them"*.
