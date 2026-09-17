@@ -51,12 +51,8 @@ import { setLocation, type NpcActivity, type NpcRecord } from '../engine/world/n
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { yearsToWriteOutACopy } from '../engine/world/manuals.js';
 import { isMakingSomething, withAttentionRecorded } from '../engine/world/who-is-given-attention-this-year.js';
+import { whatAttentionIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
-import {
-    CONTRIBUTION_BASE,
-    CONTRIBUTION_PER_ORDINAL,
-    ORDINARY_DUTY_DAYS
-} from '../engine/encounters/duties.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
     handleLearn,
@@ -1111,15 +1107,11 @@ export const attentionVerbs = {
 /**
  * What a talk is worth to the speaker's house, in the ledger it keeps of service.
  *
- * NO NEW RATE. A duty pitched at the speaker's own rung credits
- * `CONTRIBUTION_BASE + ordinal * CONTRIBUTION_PER_ORDINAL` over
- * `ORDINARY_DUTY_DAYS` (`duties.ts`), and that is what one person's days of
- * work for the house are worth to it. A talk is those days, multiplied by how
- * much of a student the house's listeners added up to: each of them got
- * `shareOfTheirAttention` of what a sole student would, so a talk to one
- * disciple for twenty days is one duty, and a talk to forty for a day is a few
- * points - the figure saturating as the room grows, for the same reason what
- * each listener gets thins.
+ * ONE RULE, THE WORLD'S. `whatAttentionIsWorth` prices the attention the world's
+ * own people give, and a talk the player gives is the same thing: a duty's rate
+ * at the speaker's rung over the days, times how much of a student the house's
+ * listeners added up to. This was a second copy of that arithmetic. The ledger
+ * holds whole points, so the figure is rounded here and nowhere else.
  */
 export function whatATalkIsWorthToTheHouse(
     speakerOrdinal: number,
@@ -1127,10 +1119,7 @@ export function whatATalkIsWorthToTheHouse(
     listenersOfTheHouse: number,
     listeners: number
 ): number {
-    if (listenersOfTheHouse <= 0 || days <= 0) return 0;
-    const dutyRate = CONTRIBUTION_BASE + speakerOrdinal * CONTRIBUTION_PER_ORDINAL;
-    const studentsWorth = listenersOfTheHouse * shareOfAttention(listeners);
-    return Math.round(dutyRate * (days / ORDINARY_DUTY_DAYS) * studentsWorth);
+    return Math.round(whatAttentionIsWorth(speakerOrdinal, days, listenersOfTheHouse, listeners));
 }
 
 // Moved to `engine/social/how-a-house-reads-a-face.ts` when the gate needed the same read.

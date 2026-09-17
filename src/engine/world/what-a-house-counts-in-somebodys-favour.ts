@@ -60,9 +60,8 @@ export function whatServiceIsWorth(ordinal: number, days: number): number {
 /**
  * What giving attention for this many days is worth to the teacher's house.
  *
- * The player's talk is priced by the same arithmetic in
- * `whatATalkIsWorthToTheHouse` (`src/web/a-teacher-giving-you-their-attention.ts`),
- * which should become a call to this.
+ * The player's talk is priced by this too: `whatATalkIsWorthToTheHouse`
+ * (`src/web/a-teacher-giving-you-their-attention.ts`) calls it and rounds.
  */
 export function whatAttentionIsWorth(
     teacherOrdinal: number,

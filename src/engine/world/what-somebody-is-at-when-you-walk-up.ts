@@ -56,6 +56,9 @@ import { forStream } from '../cultivation/rng.js';
 import { populationWeightOf, walkingDaysFrom } from './locations.js';
 import { whatSomebodyIsLike } from './what-somebody-is-like-and-where-it-came-from.js';
 import type { ActivityKind, NpcActivity, NpcRecord } from './npc-state.js';
+import type { RoomPurpose } from './architecture.js';
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
+import { whatTheyHold } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import type { WorldState } from './world-state.js';
 
 /**
@@ -138,6 +141,55 @@ export const A_SHARED_ROOM_GIVES = 0.5;
 export function whatASharedRoomGives(occupants: number): number {
     return Math.max(1, Math.round(occupants)) > 1 ? A_SHARED_ROOM_GIVES : 1;
 }
+
+/**
+ * How often somebody who holds an office is at the front of a hall rather than
+ * at their office.
+ *
+ * ONE SPEAKER PER HOUSE, WHICH IS WHAT THE WORLD'S OWN PASS GIVES. Measured on
+ * a seeded world: 128 office holders across 38 houses, so between three and
+ * four to a house, and `giveThisYearsAttention` puts at most one lecturer in
+ * front of a house in a year. A quarter of three or four is about one at a time, so a
+ * house's hall has somebody in it and its offices have somebody behind them.
+ * Before this the top band opened teaching whatever it held, so 121 of the 128
+ * office holders were at the front of a hall, the lecture halls held 129 and the
+ * discipline halls 2.
+ */
+export const AN_OFFICE_HOLDER_IS_TEACHING = 0.25;
+
+/**
+ * How often somebody at the top of a house who holds no office is teaching.
+ *
+ * Half, which is the split the old list of six notes already made: three of
+ * them were teaching and three were the work of a senior rung filed as
+ * teaching. Moving the three to the kind they describe keeps the proportion.
+ */
+export const A_SENIOR_WITHOUT_AN_OFFICE_IS_TEACHING = 0.5;
+
+/** What somebody behind a given office is at, in the words an onlooker would use. */
+const AT_THEIR_OFFICE: Partial<Record<RoomPurpose, readonly string[]>> = {
+    mission_hall: [
+        'handing out a posting nobody wants and waiting for somebody to take it',
+        'reading a mission report back and finding the part that was left out'
+    ],
+    punishment_hall: [
+        'hearing somebody out who was brought in for a breach, and not looking up',
+        'deciding how long somebody stays on the bad ground'
+    ],
+    archive: ['going through the shelves nobody is let near, with a list'],
+    treasury: ['counting what the house holds, line by line, twice'],
+    tribute_room: ['weighing out what is owed and what came'],
+    under_hall: ['down where the house keeps what it does not use, alone']
+};
+
+/** The work of a senior rung that is not an office, in the words an onlooker would use. */
+const THE_WORK_OF_A_SENIOR_RUNG: readonly string[] = [
+    'holding an audience nobody enjoys',
+    'hearing a petition about a resource allocation and having already decided',
+    'refusing somebody a thing the house could easily spare',
+    'taking a book off somebody and not giving it back yet',
+    'looking over a batch of new intake and picking one out'
+];
 
 /** Where on a house's ladder somebody stands, as three bands. */
 export type WhereOnTheLadder = 'the_bottom' | 'the_middle' | 'the_top';
@@ -295,6 +347,12 @@ export function whatTheyOpenAt(input: {
      * has to be uncorrelated with the choice of what they are at.
      */
     words: number;
+    /**
+     * The office they are behind, where they hold one: the shallowest office
+     * they hold that the house has a room for, the same room
+     * `where-inside-a-house-somebody-is-standing.ts` reads them into.
+     */
+    office?: RoomPurpose | null;
 }): NpcActivity {
     const { npc } = input;
     const bare = (kind: ActivityKind, note: string): NpcActivity =>
@@ -338,13 +396,24 @@ export function whatTheyOpenAt(input: {
     if (ground === 'a_house_compound' && npc.factionId !== null) {
         const band = whereOnTheLadder(npc.factionRankIndex, input.rungsInTheirHouse);
         if (band === 'the_top') {
-            return bare('teaching', pick(input.words, [
-                'holding an audience nobody enjoys',
-                'watching somebody run a form and saying nothing, which is worse',
-                'taking a book off somebody and not giving it back yet',
-                'hearing a petition about a resource allocation and having already decided',
-                'looking over a batch of new intake and picking one out',
-                'refusing somebody a thing the house could easily spare'
+            // AT THE FRONT OF A HALL, as a share and not the default. See
+            // `AN_OFFICE_HOLDER_IS_TEACHING`.
+            const office = input.office ?? null;
+            const teachingShare = office !== null
+                ? AN_OFFICE_HOLDER_IS_TEACHING
+                : A_SENIOR_WITHOUT_AN_OFFICE_IS_TEACHING;
+            if (input.roll < teachingShare) {
+                return bare('teaching', pick(input.words, [
+                    'watching somebody run a form and saying nothing, which is worse',
+                    'giving a talk on the breath to whoever came, and noticing who did not',
+                    'stopping a form halfway through and making them start it again'
+                ]));
+            }
+            // AND OTHERWISE AT THE WORK OF THE RUNG, behind their office where
+            // they hold one. These notes used to be filed as teaching.
+            return bare('the_work_of_their_rank', pick(input.words, [
+                ...(office !== null ? AT_THEIR_OFFICE[office] ?? [] : []),
+                ...THE_WORK_OF_A_SENIOR_RUNG
             ]));
         }
         // ── AND THE BOTTOM OF A HOUSE DOES THE HOUSE'S WORK ──────────────
@@ -588,6 +657,24 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
     const kindOf = new Map(state.locations.map(l => [l.id, l.kind as string]));
     const rungsOf = new Map(state.factions.map(f => [f.id, f.ranks.length]));
 
+    // WHO IS BEHIND WHICH OFFICE, dealt the way the rest of the engine deals it
+    // and read as the shallowest office a person holds that the house has a
+    // room for. See `AN_OFFICE_HOLDER_IS_TEACHING`.
+    const officeOf = new Map<string, RoomPurpose>();
+    for (const faction of state.factions) {
+        const roll = state.npcs
+            .filter(n => n.status === 'alive' && n.factionId === faction.id)
+            .map(n => ({ id: n.id, rankIndex: n.factionRankIndex }));
+        if (roll.length === 0) continue;
+        const portfolios = portfoliosIn({
+            locations: state.locations, sectId: faction.id, roll, rankCount: faction.ranks.length
+        });
+        for (const person of roll) {
+            const office = whatTheyHold(portfolios, person.id).at(-1);
+            if (office !== undefined) officeOf.set(person.id, office);
+        }
+    }
+
     // ── WHAT EACH OF THEM OPENS AT ───────────────────────────────────────
     for (let at = 0; at < state.npcs.length; at++) {
         const npc = state.npcs[at]!;
@@ -600,7 +687,8 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
                 rungsInTheirHouse: npc.factionId === null ? 0 : rungsOf.get(npc.factionId) ?? 0,
                 onDay,
                 roll: forStream(state.seed, 'what-they-are-at', npc.id).next(),
-                words: forStream(state.seed, 'in-what-words', npc.id).next()
+                words: forStream(state.seed, 'in-what-words', npc.id).next(),
+                office: officeOf.get(npc.id) ?? null
             })
         };
     }
@@ -643,6 +731,13 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
                 // stays at it. An errand does not stop for a chat.
                 if (a.activity?.kind === 'mustering' || b.activity?.kind === 'mustering') continue;
                 if (a.activity?.kind === 'teaching' || b.activity?.kind === 'teaching') continue;
+                // Nor anybody at the top of the house at the work of it: that was
+                // teaching until the notes were filed as what they describe, and
+                // somebody behind an office is not stopped for a chat.
+                const atTheTop = (n: NpcRecord) => n.activity?.kind === 'the_work_of_their_rank'
+                    && n.factionId !== null
+                    && whereOnTheLadder(n.factionRankIndex, rungsOf.get(n.factionId) ?? 0) === 'the_top';
+                if (atTheTop(a) || atTheTop(b)) continue;
 
                 // ── AND SOME OF THESE ARE NOT CONVERSATIONS ──────────────
                 //
