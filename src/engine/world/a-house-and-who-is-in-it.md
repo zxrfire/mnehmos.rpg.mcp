@@ -520,7 +520,14 @@ strike and a way out, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
 - **but it is counted, not tracked**. The owner: *"these are too common and
 single use, don't bother making them tracked, they're just counted"*. A house
 keeps a stock of them, hands a few to whoever it sends or stations away, and
-burning one takes one off the count; nothing is left in the world.
+burning one takes one off the count; nothing is left in the world. *"You just
+have a fungible stack."*
+
+**And the house comes to them.** *"The house sends people to give you more
+stack, check up on you, every once in a while, if you are out in a posting."*
+The visit is an ordinary sending with that reason, and what it finds - alive,
+hurt, gone, what they have seen - reaches the house the same way a burnt report
+does. It is also how a house learns about somebody who never sent word.
 
 What comes back is a fact the house then holds, through the ordinary knowledge
 and fact path, and not a store of its own:
