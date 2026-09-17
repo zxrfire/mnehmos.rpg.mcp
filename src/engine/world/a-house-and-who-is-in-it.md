@@ -504,6 +504,52 @@ rather than always the patriarch, and **a house can run out of people to cover
 with** - which is a real outcome rather than an error, and means the house is
 failing.
 
+## Word travels back to the house
+
+A house has people out in the world all the time: stationed in a town, posted
+to a watch, out with a party, recruiting in a province. The design owner:
+
+> *"you can imagine people out on a sect have communication talismans"*
+> *"that also gives a way for the people the sect stations out to report back"*
+
+So **a house hears from its people without waiting for them to walk home.**
+The channel is a **transmission talisman**: a slip keyed to where it answers
+(the house's hall, a master, a named person), burnt once, carrying a short
+message the same day. It is the third kind of act a slip holds, beside a
+strike and a way out, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
+- **but it is counted, not tracked**. The owner: *"these are too common and
+single use, don't bother making them tracked, they're just counted"*. A house
+keeps a stock of them, hands a few to whoever it sends or stations away, and
+burning one takes one off the count; nothing is left in the world.
+
+What comes back is a fact the house then holds, through the ordinary knowledge
+and fact path, and not a store of its own:
+
+- **a stationed or posted member reports what they see** where they are posted:
+  a death, a door opening, a threat, a rival moving
+- **a party in the field reports** a death, a find, or a call for help
+- **a recruiter reports a recruit**, and the house then expects them
+
+### A recruit is expected, and arrives
+
+Rulings from the same night, which the talisman is one link of:
+
+- **you join where you are recruited**, and you do not get your token, your
+  robes or your life lamp until you reach the house - *"so you don't really
+  have proof"*. A house has an infinite stock of robes.
+- **the recruiter reports back** to the Internal Affairs Elder, who keeps the
+  life lamps, **and the house expects the recruit by name**. At the gate a new
+  arrival says who recruited them and where, and is let in on that: *"the sect
+  verifies because the person that went back talked to the elder managing life
+  plates, the sect expects them"*.
+- **on arrival they are entered** - robed, a token where their rung carries
+  one, a life lamp lit in the Life Lamp Hall - **and they move into the
+  compound**.
+- after that, a member with no token (the bottom rung carries none) passes the
+  gate **in the house's robes and on a face somebody there knows**; an unknown
+  face in robes is stopped and asked, which is also exactly how a disguise
+  works.
+
 ## Where the rest of this is written down
 
 - `src/engine/world/README.md` - the passes that seed and move a house's people
@@ -513,4 +559,6 @@ failing.
   protector and why a vacancy there means something
 - `src/data/cultivation/sects.ts` - the header rule that `elderRungOf` is the
   top three rungs and must not be re-derived from a fraction
+- `src/engine/world/a-talisman-is-one-act-somebody-already-paid-for.ts` - what a
+  slip holds, including word sent home
 
