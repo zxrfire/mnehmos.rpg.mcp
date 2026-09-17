@@ -56,7 +56,9 @@ describe('the person an offer is made to', () => {
         ['I offer him the manual', 'him'],
         ['I offer Shen Liefeng the manual', 'Shen Liefeng'],
         ['I offer him twenty stones', 'him'],
-        ['I offer him my sword', 'him']
+        ['I offer him my sword', 'him'],
+        // A title is read by its last word: the sword in it is not the thing offered.
+        ['I offer The Grand Sword Elder twenty stones', 'The Grand Sword Elder']
     ])('%j is put to %j', (said, who) => {
         expect(parseIntent(said).target).toBe(who);
     });
@@ -80,7 +82,8 @@ describe('the person an offer is made to', () => {
     it.each([
         'I offer the manual',
         'I offer my sword',
-        'I offer twenty stones'
+        'I offer twenty stones',
+        'I offer Jade Pendant twenty stones'
     ])('%j names nobody, because nobody is named', said => {
         expect(whoIsBeingOfferedSomething(said)).toBeUndefined();
     });

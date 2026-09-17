@@ -6222,10 +6222,16 @@ ${noticed}`;
         const fromTheScreenBefore = quotedLastTurn
             .map(thing => pick(thing.name))
             .filter((found): found is AnOfferStandingHere => found !== undefined);
+        // AND ONE THING QUOTED IS THE THING, EVEN WHERE THIS PERSON DOES NOT
+        // HOLD IT. Since every villager sells what they deal in, the person a
+        // figure is put to nearly always holds exactly one thing, and settling
+        // on it bought a bolt of cloth off a sentence about the book the screen
+        // before had just priced.
+        const quotedSomethingElse = quotedLastTurn.length === 1 && fromTheScreenBefore.length === 0;
         const onlyItCouldBe = fromTheScreenBefore.length > 0
             && fromTheScreenBefore.every(found => found.thingId === fromTheScreenBefore[0].thingId)
             ? fromTheScreenBefore[0]
-            : (candidates.length === 1 ? candidates[0] : undefined);
+            : (candidates.length === 1 && !quotedSomethingElse ? candidates[0] : undefined);
         const offer = bySentence ?? onlyItCouldBe;
         // WHETHER THE PLAYER COULD SEE WHICH THING THEY WERE CLOSING ON.
         // Their own sentence names it; so does a square with one thing in it;

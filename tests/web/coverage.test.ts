@@ -939,6 +939,29 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I beg Elder Fang to raise me a rung',
             'I offer Elder Fang 500 spirit stones to promote me'
         ],
+        // A TEACHER'S ATTENTION, asked for by name or through the tie. What is
+        // asked for is their days beside you, which is why it is a request and
+        // not a lesson: no art changes hands.
+        'request/guidance': [
+            'I ask Elder Fang to guide my cultivation for 10 days',
+            'I ask my master to guide my cultivation',
+            'I beg Elder Fang to watch over my cultivation'
+        ],
+        // THE HALL, FROM BOTH ENDS. Sitting in asks nobody, so it is a `teach`
+        // and not a request; giving the talk is the same activity with the
+        // player at the front of the room.
+        'teach/listen': [
+            "I sit in on Elder Fang's talk",
+            'I go and listen to the lecture',
+            'I attend the dao lecture',
+            'I sit in on Elder Fang for ten days'
+        ],
+        'teach/lecture': [
+            'I give a dao lecture for 2 days',
+            'I give a talk on the dao',
+            'I lecture the outer disciples',
+            'I expound on the dao'
+        ],
         // ONE VERB, AT EVERY SEVERITY. These were four rows - drive_off,
         // subdue, kill, humiliate - and the split is what
         // `how-a-blow-was-thrown.ts` removed: *"just make attacks and drive

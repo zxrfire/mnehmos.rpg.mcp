@@ -717,7 +717,13 @@ export function whoIsBeingOfferedSomething(input: string): string | undefined {
     // repo's own answer to thing-or-person and both readers of it ask the same
     // question, so "I offer Jade the manual" keeps its name and "I offer Jade
     // Pendant" is not a person being offered anything.
-    if (namesTheThingRatherThanThePerson(who)) return undefined;
+    //
+    // A CAPITALISED NAME IS READ BY ITS LAST WORD, which is the word that says
+    // what it is. "Jade Pendant" ends in a thing and "The Grand Sword Elder",
+    // a catalog member standing in a square, ends in a person; testing every
+    // word threw the elder out for the sword in his title and priced a sword.
+    const head = /^[A-Z]/.test(who) ? who.split(/\s+/).pop()! : who;
+    if (namesTheThingRatherThanThePerson(head)) return undefined;
     return who;
 }
 

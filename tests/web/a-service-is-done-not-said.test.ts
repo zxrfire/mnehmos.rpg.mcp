@@ -184,11 +184,18 @@ describe('the ledger holds that you did it', () => {
  * A precondition arranged by hand proves the mechanic and not the road, so this
  * is the sibling that reaches the same state by PLAYING - which is the thing
  * this repo has shipped content without three times over.
+ *
+ * THE PLAYER'S ROWS, NOT THE WHOLE TABLE. The world keeps its own ledger in the
+ * same table while the term is served: on this seed two houses hold a grudge
+ * against a third for shutting a ruin, written on the last day of the 33. The
+ * count is about the player's word to one person, so it reads the rows the
+ * player is a party to. A second service row, open or settled, still fails it.
  */
 describe('a service, played', () => {
-    const rows = (db: ReturnType<typeof makeDb>) => db
-        .prepare('SELECT kind, cause, status, terms, settlement_resolution FROM obligations')
-        .all() as { kind: string; cause: string; status: string; terms: string | null;
+    const rows = (db: ReturnType<typeof makeDb>, playerId: string) => db
+        .prepare(`SELECT kind, cause, status, terms, settlement_resolution FROM obligations
+            WHERE holder_id = ? OR subject_id = ?`)
+        .all(playerId, playerId) as { kind: string; cause: string; status: string; terms: string | null;
             settlement_resolution: string | null }[];
 
     const day = (db: ReturnType<typeof makeDb>) =>
@@ -196,7 +203,7 @@ describe('a service, played', () => {
 
     it('opens a term, spends nothing, then serves it out', async () => {
         const { game, db } = await makeGameInWorld({ worldSeed: 'the-service-road' });
-        await game.newRun('Road Finder');
+        const { cultivator } = await game.newRun('Road Finder');
         // Whoever is standing here. Not named: which people a world puts at the
         // ford is the world's business, and a test naming one pins the seeding
         // rather than the verb.
@@ -209,7 +216,7 @@ describe('a service, played', () => {
         // service is, so spending them at the promise would make it a favour.
         expect(day(db)).toBe(before);
 
-        const open = rows(db);
+        const open = rows(db, cultivator.id);
         expect(open).toHaveLength(1);
         expect(open[0].kind).toBe('oath');
         expect(open[0].cause).toBe('service_term');
@@ -223,7 +230,7 @@ describe('a service, played', () => {
         // ONE ROW, SETTLED. A settlement written against a different day would
         // derive a different id and leave the open one standing for ever, which
         // is a defect this repo has already shipped once on the duty path.
-        const after = rows(db);
+        const after = rows(db, cultivator.id);
         expect(after).toHaveLength(1);
         expect(after[0].status).toBe('settled');
         expect(after[0].settlement_resolution).toBe('oath_fulfilled');
