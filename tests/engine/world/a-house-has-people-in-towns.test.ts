@@ -158,6 +158,15 @@ describe('a house stations people outside itself', () => {
         // roll, were idle in a town or a ruin with nothing bringing them back.
         // Away on the house's business is not idle; standing in a settlement
         // with no errand is.
+        //
+        // NOT SOMEBODY WHO WALKED OUT SINCE. They left on their own account and
+        // live where they went; if a house takes them back on there, joining
+        // where you stand is right and so is going home after being entered
+        // (`a-recruit-is-given-their-plate-at-the-house.ts`). Found on `town-b`
+        // once being held back became a reason to leave at any rung: Ning Ciyan
+        // left the Cold Sword Sect for a dao ground in year 196, was taken back
+        // onto Orchid Court's roll there, and was home by 199. What this pins is
+        // that a posting strands nobody, which a departure is not.
         let kept = 0;
         const idle: string[] = [];
         for (const state of await worldsLived()) {
@@ -167,6 +176,7 @@ describe('a house stations people outside itself', () => {
             for (const who of state.npcs) {
                 const house = atTheirSeatAtOpen.get(state)?.get(who.id);
                 if (house === undefined || who.status !== 'alive' || who.factionId !== house) continue;
+                if (who.tags.some(t => t.startsWith('walked-out:'))) continue;
                 const seat = seatOf.get(house) ?? null;
                 if (seat === null) continue;
                 kept++;

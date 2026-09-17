@@ -241,6 +241,12 @@ export interface Blocked {
     factionId: string;
     atRank: number;
     reason: BlockedReason;
+    /**
+     * The realm bar of the rung they cannot have, which they stand at or past.
+     * How far past it is part of how hard being held back presses on somebody:
+     * `being-held-back-in-a-house.ts`.
+     */
+    bar: number;
 }
 
 interface HouseView {
@@ -310,7 +316,7 @@ export function assessPromotions(state: WorldState): {
             const needed = meritNeededFor(rank);
             for (const m of tall) {
                 if (meritWith(m, house.id) >= needed) continue;
-                blocked.push({ npcId: m.id, factionId: house.id, atRank: rank - 1, reason: 'not_enough_merit' });
+                blocked.push({ npcId: m.id, factionId: house.id, atRank: rank - 1, reason: 'not_enough_merit', bar });
             }
             const candidates = tall
                 .filter(m => meritWith(m, house.id) >= needed)
@@ -369,7 +375,8 @@ export function assessPromotions(state: WorldState): {
                 }
                 blocked.push({
                     npcId: npc.id, factionId: house.id, atRank: rank - 1,
-                    reason: reallyGood ? 'no_room_without_office' : room === 0 ? 'no_seat' : 'outranked'
+                    reason: reallyGood ? 'no_room_without_office' : room === 0 ? 'no_seat' : 'outranked',
+                    bar
                 });
             }
         }

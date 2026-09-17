@@ -151,6 +151,7 @@ import {
 import { houseTeachingCeiling } from '../../data/cultivation/index.js';
 import {
     whereTheyWouldGo,
+    howMuchTheirReasonsWeigh,
     whetherTheyGoThisYear,
     whoWouldGoWithThem,
     whyTheyWouldLeave,
@@ -167,6 +168,11 @@ import { applyWhatThePartyCarriedOut } from './what-a-ruin-has-on-its-shelves.js
 import { giveThisYearsAttention } from './who-is-given-attention-this-year.js';
 import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
+import {
+    howHardBeingHeldBackPresses,
+    noteWhoIsHeldBack,
+    whereTheyAreHeldBack
+} from './being-held-back-in-a-house.js';
 import {
     applyOrdinaryLifeTies,
     applyPassedOver,
@@ -2040,6 +2046,9 @@ function applyFoundRoads(state: WorldState, year: number, day: number): number {
 
 function applyPromotions(state: WorldState, day: number): number {
     const { promotions, blocked } = assessPromotions(state);
+    // WHO THE HOUSE COULD NOT RAISE, AND SINCE WHEN. Before the early return,
+    // because a year with no promotion in it is a year everybody blocked waited.
+    noteWhoIsHeldBack(state, blocked, day, isTheWorldsToMove);
     if (promotions.length === 0) return 0;
     const roster = rosterOf(state);
     const at = roster.at;
@@ -3394,6 +3403,8 @@ function applyPeopleWalkingOut(
             if (was === 'missing' || was === 'physically_dead') didNotComeBack++;
         }
 
+        // Stamped by the promotion pass, which runs before this one each year.
+        const heldBack = howHardBeingHeldBackPresses(whereTheyAreHeldBack(npc), day);
         const why = whyTheyWouldLeave({
             ordinal: npc.cultivation.realmOrdinal,
             houseTeachingCeiling: teachesTo.get(house.id) ?? null,
@@ -3401,10 +3412,12 @@ function applyPeopleWalkingOut(
             peopleTheyKnewWhoDidNotComeBack: didNotComeBack,
             factionRankIndex: npc.factionRankIndex,
             spiritStones: npc.spiritStones,
-            aRoadAProvinceAway: roads.length > 0
+            aRoadAProvinceAway: roads.length > 0,
+            beingHeldBack: heldBack
         });
         if (!whetherTheyGoThisYear(
-            why, forStream(state.seed, 'walks-out', npc.id, year))) continue;
+            why, forStream(state.seed, 'walks-out', npc.id, year),
+            howMuchTheirReasonsWeigh(why, heldBack))) continue;
 
         leaving.push({ at: i, npc, why, to });
     }
@@ -3554,6 +3567,8 @@ function reasonSaidPlainly(why: WhyTheyWentOut | undefined): string {
             return 'Somebody they went in with is still out there.';
         case 'nothing in the hall is theirs':
             return 'They held no room and had nothing put by.';
+        case 'the house has no room for them to rise':
+            return 'They had outgrown their place in that hall, and it had nowhere higher to put them.';
         default:
             return '';
     }

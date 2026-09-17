@@ -290,10 +290,14 @@ fire for the case the comment describes and the owner named: somebody who is
 strong, is worth a chair, and finds every chair taken.
 
 That is one of the genre's commonest departures - the talented disciple who
-leaves because the house has nowhere to put them - and the engine currently
-cannot express it. Whoever takes it should read the reason's comment first: the
-sentence was written for the right rule and the condition was written for a
-different one.
+leaves because the house has nowhere to put them. **It is now built, as a second
+reason rather than a new condition on the first**: `'the house has no room for
+them to rise'` fires for whoever `assessPromotions` names in `blocked`, at any
+rung, and presses harder the longer they have waited and the further past the
+bar they stand (`being-held-back-in-a-house.ts`). The bottom-rung reason is left
+as it was, because it is about something else - a purse, not a chair. Measured
+over four seeds and five hundred years, departures doubled at every rung and the
+elder rungs did not thin further; the figures are in that file.
 
 ## A slice is not a closed population
 
@@ -386,9 +390,9 @@ are the ones that should not be happening at all:
   `probe-does-a-posting-bring-anybody-home.ts` carries the figures
 - **killed.** The world's own passes take people, and the party pass dominates
   the ones that do
-- **walked out.** Which the engine can barely express - see the walk-out gap
-  above, where the one reason that should cover a blocked senior checks the
-  bottom of the ladder instead
+- **walked out.** A blocked senior can now leave for being one - see the
+  walk-out section above. Over five hundred years it doubled departures and did
+  not thin the elder rungs further, so it is a flow rather than a drain
 
 Then the deaths that are supposed to happen - expeditions, ruins, fights, and
 age last - measured as a rate rather than assumed to be small.

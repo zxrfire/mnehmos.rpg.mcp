@@ -31,6 +31,13 @@
  *                            location, so walking there is the whole of the
  *                            fix: no new machinery, and the payoff is already
  *                            wired.
+ *   `blocked`                `assessPromotions`' list of people who have
+ *                            outgrown their rung and cannot be raised. It was
+ *                            computed every year and thrown away, and the only
+ *                            reason here about having no place in a house fired
+ *                            on the bottom rung alone. Now it is its own reason
+ *                            at any rung, weighed by how long and how far
+ *                            (`being-held-back-in-a-house.ts`).
  *
  * ── AND THEY GO FOR SOMETHING ────────────────────────────────────────────
  *
@@ -69,7 +76,13 @@ export type WhyTheyWentOut =
     /** Somebody they knew went out for the house and never came back. */
     | 'somebody they knew did not come back'
     /** No room, no office, and nothing in the purse. */
-    | 'nothing in the hall is theirs';
+    | 'nothing in the hall is theirs'
+    /**
+     * Past the bar of the rung above, and the house cannot raise them - no
+     * seat, somebody ahead, not enough service, or no room for another elder
+     * without an office. At any rung. `being-held-back-in-a-house.ts`.
+     */
+    | 'the house has no room for them to rise';
 
 export interface WhatStayingIsCostingThem {
     ordinal: number;
@@ -88,6 +101,12 @@ export interface WhatStayingIsCostingThem {
     spiritStones: number;
     /** Whether the world holds a road they are short of only by distance. */
     aRoadAProvinceAway: boolean;
+    /**
+     * How many reasons' worth being held back in the house is, or zero where
+     * they are not. `howHardBeingHeldBackPresses`: it grows with how long they
+     * have waited and how far past the bar they stand, and reads no rung.
+     */
+    beingHeldBack?: number;
 }
 
 /**
@@ -113,6 +132,9 @@ export function whyTheyWouldLeave(
     if (them.houseTeachingCeiling !== null && them.houseTeachingCeiling <= them.ordinal) {
         why.push('the house cannot teach them further');
     }
+    // Second, because it is the other one that does not resolve itself: a hall
+    // full of people who will not die for six centuries does not empty.
+    if ((them.beingHeldBack ?? 0) > 0) why.push('the house has no room for them to rise');
     if (them.aRoadAProvinceAway) why.push('a road a province away');
     if (!them.theHousePaidThem) why.push('the house did not pay them');
     if (them.peopleTheyKnewWhoDidNotComeBack > 0) {
@@ -135,13 +157,31 @@ export function whyTheyWouldLeave(
  */
 export const WHAT_ONE_REASON_IS_WORTH_IN_A_YEAR = 0.012;
 
+/**
+ * How many reasons' worth of grievance this is.
+ *
+ * One apiece, except being held back, which weighs what
+ * `howHardBeingHeldBackPresses` says - nothing in the first year it is true and
+ * up to four grievances after long enough - because how long somebody has been
+ * passed over is the whole of how much it costs them.
+ */
+export function howMuchTheirReasonsWeigh(
+    reasons: readonly WhyTheyWentOut[],
+    beingHeldBack = 0
+): number {
+    const others = reasons.filter(r => r !== 'the house has no room for them to rise').length;
+    return others + (reasons.includes('the house has no room for them to rise') ? beingHeldBack : 0);
+}
+
 /** Whether they go this year. Seeded on the person and the year by the caller. */
 export function whetherTheyGoThisYear(
     reasons: readonly WhyTheyWentOut[],
-    rng: CultivationRNG
+    rng: CultivationRNG,
+    /** `howMuchTheirReasonsWeigh`. One per reason where the caller has nothing better. */
+    weight: number = reasons.length
 ): boolean {
     if (reasons.length === 0) return false;
-    return rng.chance(Math.min(1, reasons.length * WHAT_ONE_REASON_IS_WORTH_IN_A_YEAR));
+    return rng.chance(Math.min(1, weight * WHAT_ONE_REASON_IS_WORTH_IN_A_YEAR));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

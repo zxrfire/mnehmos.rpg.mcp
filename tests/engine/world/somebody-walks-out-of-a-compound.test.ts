@@ -316,6 +316,19 @@ describe('a world where people decide for themselves, against one where they do 
         expect(arrived, 'nobody who left ever reached what they left for').toBe(true);
     }, 900_000);
 
+    /**
+     * AND SOME OF THEM WENT BECAUSE THE HOUSE COULD NOT RAISE THEM. The reason
+     * `promotion-inside-a-house.ts` says the setting runs on, and the one that
+     * reaches past the bottom rung: `being-held-back-in-a-house.ts`.
+     */
+    it('walks out people the house could not raise, and says that is why', async () => {
+        const { on } = await arms();
+        const heldBack = on.departures.filter(d => d.why.includes('the house has no room for them to rise'));
+        expect(heldBack.length, 'nobody ever left a house for having outgrown it').toBeGreaterThan(0);
+        expect(heldBack.some(d => d.summary.includes('nowhere higher to put them')),
+            'the departure did not say it').toBe(true);
+    }, 900_000);
+
     it('costs some of them the trip', async () => {
         const { on } = await arms();
         // Nobody underwrote it. A house pitches an errand at what it thinks its
