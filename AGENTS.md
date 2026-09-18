@@ -703,6 +703,32 @@ NPC simulation follows the same economy:
 
 ---
 
+## Measure a world on a cultivator's clock, not a mortal one
+
+**A rate is only wrong if it is wrong over a life, and a life here is centuries.** The design
+owner: *"200 years is not a long time"*, *"cultivators' lives are so, so long"*, *"three years
+is not neglect"*.
+
+So when you measure how often something happens to people, the horizon is thousands of years
+and the unit is a lifetime, not a century:
+
+- **Report per millennium, and per life.** "Zero departures in 200 years" is a quiet couple of
+  centuries, not proof the rate is broken. "The chance a member ever transfers in their life"
+  is the number that settles it.
+- **Any threshold compared against a person is a span of their life.** A window of three years
+  called a master neglectful when a decade of seclusion is ordinary; the write-off for somebody
+  missing is how long they could still be alive, not an administrative wait. Where a constant
+  stands for how long somebody waited, suffered or was absent, express it in the years their
+  own realm gives them.
+- **Calendars are exempt.** An intake every three years, a stipend every thirty days and a
+  duty of twenty days are schedules, not judgements about a life. Leave them alone.
+
+Before raising or lowering a rate on a short run, measure the long one. Overcorrecting from a
+200-year sample is how the world got churn in one direction and stasis in the other in the same
+night.
+
+---
+
 ## Layout
 
 ```
