@@ -729,6 +729,33 @@ export function thisClauseIsAReasonNotAnAct(step: PlanStep): boolean {
 }
 
 /**
+ * A GOING THAT NAMES NOWHERE, BESIDE AN ACT THAT DOES, IS HOW THEY GOT THERE.
+ *
+ * "I go and listen to the lecture" is one act. Bare `I go` reaches the mover
+ * with no destination on purpose - it is how somebody answers being told to get
+ * off this ground - but beside another clause it is the approach to that
+ * clause, exactly as "I go to the ruin and look inside" is one act and sits in
+ * `the-part-of-the-sentence-that-was-not-run`'s ORDINARY corpus.
+ *
+ * Measured the day bare `I go` began to parse: the turn asked which of "I go"
+ * and "listen to the lecture" came first, which is a question about a
+ * destination the sentence never named and the engine could not have spent a
+ * day on either way.
+ *
+ * Only a going with NO destination. "I go to the market and ask what pills are
+ * for sale" names two places to be and is a real question about order.
+ */
+function aGoingThatNamesNowhereIsTheApproach(steps: readonly PlanStep[]): PlanStep[] {
+    const namesNowhere = (step: PlanStep): boolean =>
+        step.action.action === 'move'
+        && (step.action.target ?? '').trim().length === 0
+        && step.action.days === undefined;
+
+    const others = steps.filter(step => !namesNowhere(step) && spendsSomething(step));
+    return others.length > 0 ? steps.filter(step => !namesNowhere(step)) : [...steps];
+}
+
+/**
  * Steps split into the acts and the clauses that merely said why.
  */
 function tellingReasonsFromActs(
@@ -781,8 +808,10 @@ export function whatThisTurnMayRun(
     // question about which of the two comes first has nothing in it to answer.
     const { acts: withoutReasons, reasons: statedReasons } =
         tellingReasonsFromActs(withoutDoubleReadings.acts);
-    const kept = withoutReasons.slice(0, MOST_CALLS_IN_ONE_TURN);
-    const overTheBound = withoutReasons.slice(MOST_CALLS_IN_ONE_TURN);
+    // AND A GOING THAT NAMED NOWHERE IS NOT ONE OF THE TURN'S CALLS EITHER.
+    const withoutEmptyGoings = aGoingThatNamesNowhereIsTheApproach(withoutReasons);
+    const kept = withoutEmptyGoings.slice(0, MOST_CALLS_IN_ONE_TURN);
+    const overTheBound = withoutEmptyGoings.slice(MOST_CALLS_IN_ONE_TURN);
     const secondReadings = withoutDoubleReadings.secondReadings;
 
     const costly = kept.filter(spendsSomething);

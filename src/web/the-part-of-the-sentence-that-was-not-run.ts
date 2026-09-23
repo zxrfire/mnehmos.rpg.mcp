@@ -116,6 +116,7 @@ import {
     type ActionName,
     type PlannedAction
 } from './actions.js';
+import { AN_ASK_FOLLOWS_THE_KNEE } from './fight-answers.js';
 
 /**
  * Where one instruction ends and the next begins.
@@ -214,9 +215,27 @@ export function theClauseThisTurnDidNotRun(input: string, ran: ActionName): Clau
     const itsIndex = read.findIndex(entry => entry.plan.action === ran);
     if (itsIndex === -1) return null;
 
+    // THE KNEE UNDER AN ASK, taken on the whole sentence for the same reason
+    // the mood test above is: "I kneel" read on its own is a submission, and
+    // what it was is the way somebody asked for something. See
+    // `AN_ASK_FOLLOWS_THE_KNEE`, which the table consults before it claims the
+    // yielding at all.
+    const theKneeIsHowTheyAsked = AN_ASK_FOLLOWS_THE_KNEE.test(input);
+
+    // AND A GOING THAT NAMED NOWHERE IS NOT A CLAUSE WORTH REPORTING. "I search
+    // the ruin and then leave" is one act with an obvious end, and `leave` on
+    // its own reaches the mover with no destination - which is the right
+    // reading of the whole sentence "I leave" and carries nothing here that the
+    // clause that ran does not. `aGoingThatNamesNowhereIsTheApproach` is the
+    // same rule where a sentence becomes several calls.
+    const namesNowhere = (plan: PlannedAction): boolean =>
+        plan.action === 'move' && (plan.target ?? '').trim().length === 0;
+
     const worthSaying = (entry: { plan: PlannedAction }): boolean =>
         entry.plan.action !== 'unclear'
         && entry.plan.action !== ran
+        && !(theKneeIsHowTheyAsked && entry.plan.intent === 'give_in')
+        && !namesNowhere(entry.plan)
         && !costsTheAskerNothing(entry.plan);
 
     const said = (entry: { clause: string; plan: PlannedAction }, side: 'before' | 'after') =>

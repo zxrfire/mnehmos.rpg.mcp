@@ -2,7 +2,11 @@
  * A question about an act is not the act.
  */
 
-import { READ_ONLY_ACTIONS, thePlanIsTheReadInsideTheVerb } from './action-set.js';
+import {
+    CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING,
+    READ_ONLY_ACTIONS,
+    thePlanIsTheReadInsideTheVerb
+} from './action-set.js';
 import type { PlannedAction } from './planned-action.js';
 
 /**
@@ -30,7 +34,9 @@ export const PRESSING_SOMEBODY: ReadonlySet<string> = new Set([
  * turn was spent.
  */
 export function costsTheAskerNothing(plan: PlannedAction): boolean {
-    return theVerbIsNothingButARead(plan) || thePlanIsTheReadInsideTheVerb(plan);
+    return theVerbIsNothingButARead(plan)
+        || CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING.includes(plan.action)
+        || thePlanIsTheReadInsideTheVerb(plan);
 }
 
 /**
