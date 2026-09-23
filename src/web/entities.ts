@@ -17,6 +17,7 @@ import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { describeStanding, theRung } from './facts.js';
+import { inTheBoardsOwnWords } from './what-a-vessel-is-also-called.js';
 import type { ObligationDb } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
 import {
@@ -1075,7 +1076,12 @@ export function cheapestInCategory(query: string): Price | null {
 }
 
 export function resolvePrice(query: string): ResolvedEntity | null {
-    const wanted = query.trim();
+    // THE BOARD'S OWN WORDS FIRST. A vessel the owner's ruling renamed is still
+    // asked for by its old name, and a rename that leaves the old name reaching
+    // nothing is the near-synonym defect. See `what-a-vessel-is-also-called.ts`,
+    // which rewrites the phrase and lets the scorer below do the rest - so the
+    // grade in front of it keeps working without this line knowing grades exist.
+    const wanted = inTheBoardsOwnWords(query.trim());
     if (wanted.length < 3) return null;
 
     let winner: Price | null = null;
@@ -1566,7 +1572,13 @@ const WORDS_THAT_NAME_NOTHING = new Set([
 ]);
 
 export function resolvePriceLoosely(query: string): ResolvedEntity | null {
-    const words = query.toLowerCase().split(/[^a-z]+/)
+    // THE SAME REWRITE, AND HERE IT PREVENTS A SALE RATHER THAN ENABLING ONE.
+    // This walks a phrase word by word, longest first, and takes the first row
+    // any single word reaches. Measured: "pill furnace" reached `pill` and
+    // would have sold a Qi Gathering Pill to somebody asking for the vessel to
+    // work it in. With the phrase in the board's own words it says `cauldron`
+    // before either word is looked at alone.
+    const words = inTheBoardsOwnWords(query).toLowerCase().split(/[^a-z]+/)
         .filter(word => word.length >= 3 && !WORDS_THAT_NAME_NOTHING.has(word))
         .sort((a, b) => b.length - a.length);
     for (const word of words) {
