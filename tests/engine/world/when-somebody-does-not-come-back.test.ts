@@ -8,7 +8,7 @@ import {
 } from '../../../src/engine/world/npc-state.js';
 import {
     STOP_WAITING_PER_YEAR,
-    WRITTEN_OFF_GRACE_YEARS,
+    theYearsTheyCouldStillBeAlive,
     applyAbsence,
     beginAbsence,
     fateClaimKey,
@@ -103,6 +103,32 @@ describe('beginAbsence', () => {
         expect(absence.ties.map(t => t.holderId)).toEqual(['enemy', 'her']);
         expect(absence.ties.find(t => t.holderId === 'her')!.waiting).toBe(true);
         expect(absence.ties.find(t => t.holderId === 'enemy')!.waiting).toBe(false);
+    });
+
+    it('waits on the warmest row that waits, and records that row on both ends', () => {
+        // `former_master` sorts ahead of `ally` and is not a kind that waits,
+        // so reading the row the sort put on top said a friend who would sit up
+        // would not. Rows are keyed by the pair AND the kind, and a person can
+        // be both at once.
+        const b = bench('abs-two-kinds');
+        person(b.state, 'friend');
+        tie(b.state, 'friend', 'him', 'former_master', 0.9);
+        tie(b.state, 'friend', 'him', 'ally', 0.9);
+        expect(b.state.npcs.find(n => n.id === 'friend')!.relationships[0]!.kind,
+            'the former bond is the row on top').toBe('former_master');
+
+        const { absence } = beginAbsence(b.state, {
+            absenteeId: 'him', absenteeName: 'him', onDay: b.day, toldIds: ['friend']
+        });
+        const held = absence.ties.find(t => t.holderId === 'friend')!;
+        expect(held.waiting, 'a friend who would sit up').toBe(true);
+        expect(held.kind, 'and the record names the row that waits').toBe('ally');
+
+        // And the homecoming reads the same row back, so what it says the tie
+        // is now cannot contradict the reason it was waiting.
+        const back = homecoming(b.state, absence, b.day + 3650);
+        const onReturn = back.ties.find(t => t.holderId === 'friend')!;
+        expect(onReturn.kindNow, 'the same row, coming home').toBe('ally');
     });
 
     // ── THIS TEST USED TO ASSERT THE OPPOSITE, AND WHY IT CHANGED ────────
@@ -287,15 +313,32 @@ describe('applyAbsence', () => {
         expect(again.consequences.filter(c => c.subjectId === 'her')).toHaveLength(0);
     });
 
-    it('nobody is written off inside the grace period', () => {
+    it('nobody is written off while they could still be alive', () => {
+        // The design owner: a house writes somebody off *"when they die at their
+        // realm they went missing at, or one realm above"*. These are twenty-year
+        // -old mortals, so that is a century and a half away, not three years.
+        const grace = theYearsTheyCouldStillBeAlive({ ordinal: 0, ageInYears: 20 });
+        expect(grace).toBeGreaterThan(100);
         for (let s = 0; s < 40; s++) {
             const { state, day } = withCast(`abs-grace-${s}`);
+            // On the roster, so the rule can read the realm he was lost at.
+            person(state, 'him');
             const { absence } = beginAbsence(state, {
                 absenteeId: 'him', absenteeName: 'him', onDay: day
             });
-            applyAbsence(state, absence, day + WRITTEN_OFF_GRACE_YEARS * YEAR);
+            applyAbsence(state, absence, day + Math.floor(grace) * YEAR);
             expect(absence.writtenOffOnDay).toBeNull();
         }
+    });
+
+    it('and the years they could still be alive are read off the realm they were lost at', () => {
+        // A Foundation cultivator lost at ninety has centuries in hand; the same
+        // age at no realm at all has a mortal's remainder.
+        const mortal = theYearsTheyCouldStillBeAlive({ ordinal: 0, ageInYears: 90 });
+        const founded = theYearsTheyCouldStillBeAlive({ ordinal: 13, ageInYears: 90 });
+        expect(founded).toBeGreaterThan(mortal);
+        // Nobody is owed a wait once the whole of it has gone by.
+        expect(theYearsTheyCouldStillBeAlive({ ordinal: 0, ageInYears: 10_000 })).toBe(0);
     });
 
     it('being written off produces an unresolved fact, a public belief and a register entry', () => {

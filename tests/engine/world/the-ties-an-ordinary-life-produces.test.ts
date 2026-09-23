@@ -69,11 +69,20 @@ describe('the world produces people who matter to each other', () => {
     it('gives most people a few ties rather than everybody twenty', async () => {
         const state = await worldAt120();
         const supply = tieSupply(state, FRIENDSHIP_STANDING);
-        // A few. The old world was at 0.15 live ties per head; a world where
-        // everybody has twenty friends is worse than one with six.
+        // WHAT THIS COUNTS, AND WHAT IT IS SET FROM. Every live tie on a living
+        // person: the household they were born into and the one they made
+        // (`applyHouseholds`), the people they served beside
+        // (`applyServedTogether`), the teaching lines their house put them
+        // through (`teacher`/`student`), the master-disciple bonds somebody
+        // actually knelt for (`the-disciples-a-world-opens-with.ts`) and the
+        // friendships. Measured at 120 years with all of it in: 6.81 on
+        // `absence-audit` and 6.46 on `tie-drift`, the two seeds this file uses.
+        // EIGHT, which is headroom over both and still a ratchet: the figure
+        // this guard first caught was 23.5 live ties per head, from a teaching
+        // pass writing a master bond for every junior it carried through a book.
         expect(supply.perHead).toBeGreaterThan(1.5);
         expect(supply.perHead, `${supply.perHead} live ties per head is inflation`)
-            .toBeLessThan(6);
+            .toBeLessThan(8);
     }, 180_000);
 
     it('still leaves somebody with nobody', async () => {
@@ -181,6 +190,60 @@ describe('the passes themselves', () => {
             onDay: state.currentDay, locationId
         });
     }
+
+    it('refuses a household tie where anything else stands, however the rows sort', () => {
+        // THE GUARD ASKED THE SORT. Rows are keyed by the pair AND the kind, so
+        // a `kin` row and a bond can stand between the same two people, and
+        // `kin` sorts first. Reading one row found the kind it was about to
+        // write, called it harmless, and wrote a household over two people who
+        // were already master and disciple.
+        const state = bareWorld();
+        const day = state.currentDay;
+        state.npcs.push(person(state, 'mother', 60, 'loc-region-0'));
+        state.npcs.push(person(state, 'elder-child', 30, 'loc-region-0'));
+        const first = bindNewbornToHousehold(
+            state, person(state, 'elder-child', 30, 'loc-region-0'), 'mother', day);
+        state.npcs[1] = first.child;
+
+        // The newborn is already this sibling's disciple, and holds the kin row
+        // the household would have written as well.
+        let newborn = person(state, 'newborn', 18, 'loc-region-0');
+        newborn = upsertRelationship(newborn, {
+            targetId: 'elder-child', targetName: 'elder-child', kind: 'kin',
+            standing: 0.5, note: 'Same household.'
+        }, day);
+        newborn = upsertRelationship(newborn, {
+            targetId: 'elder-child', targetName: 'elder-child', kind: 'master',
+            standing: 0.7, note: 'Knelt to them.'
+        }, day);
+        expect(newborn.relationships[0]!.kind, 'kin is the row on top').toBe('kin');
+
+        const second = bindNewbornToHousehold(state, newborn, 'mother', day);
+        expect(second.siblingIds, 'a master is not a sibling to write over').toEqual([]);
+    });
+
+    it('does not refuse a household over how warm the two of them already are', () => {
+        // THE LADDER IS EXEMPT. `acquaintance`, `ally`, `rival` and `enemy` are
+        // one tie at four heats and sit beside every structure by design, so
+        // two siblings who are also friends is not two structures standing
+        // where only one may. The guard is for the second thing.
+        const state = bareWorld();
+        const day = state.currentDay;
+        state.npcs.push(person(state, 'mother', 60, 'loc-region-0'));
+        state.npcs.push(person(state, 'elder-child', 30, 'loc-region-0'));
+        const first = bindNewbornToHousehold(
+            state, person(state, 'elder-child', 30, 'loc-region-0'), 'mother', day);
+        state.npcs[1] = first.child;
+
+        let newborn = person(state, 'newborn', 18, 'loc-region-0');
+        newborn = upsertRelationship(newborn, {
+            targetId: 'elder-child', targetName: 'elder-child', kind: 'ally',
+            standing: 0.6, note: 'Years in the same hall.'
+        }, day);
+
+        const second = bindNewbornToHousehold(state, newborn, 'mother', day);
+        expect(second.siblingIds, 'a friend is still a sibling').toEqual(['elder-child']);
+    });
 
     it('writes both halves of a household when a child is born', () => {
         const state = bareWorld();

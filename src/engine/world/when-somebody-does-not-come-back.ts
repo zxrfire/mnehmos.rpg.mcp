@@ -32,10 +32,14 @@ import {
     theTieBecomes,
     upsertRelationship,
     type NpcRecord,
+    type NpcRelationship,
     type RelationshipKind
 } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { indexById, type WorldState } from './world-state.js';
+import {
+    whenTheyWereLastAccountedFor,
+} from './who-a-house-has-lost-track-of.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RATES
@@ -253,8 +257,27 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
     for (let at = 0; at < state.npcs.length; at++) {
         const npc = state.npcs[at];
         if (npc.id === input.absenteeId) continue;
-        const rel = npc.relationships.find(r => r.targetId === input.absenteeId);
-        if (!rel) continue;
+        // EVERY ROW, AND THE WARMEST ONE THAT WAITS. Rows are keyed by the pair
+        // AND the kind, so a person can hold several things about one other
+        // person at once, sorted with the most defining kind first. Reading one
+        // row asked the sort rather than the world: `former_master` sorts ahead
+        // of `ally` and is not a kind that waits, so somebody who would have sat
+        // up for a friend read as somebody who would not. Waiting is a question
+        // about the warmest real reason to wait, so `waits` is the warmest row
+        // whose kind carries an expectation of return, and `rel` is only the
+        // existence of anything at all between them.
+        let rel: NpcRelationship | null = null;
+        let waits: NpcRelationship | null = null;
+        for (const row of npc.relationships) {
+            if (row.targetId !== input.absenteeId) continue;
+            if (rel === null) rel = row;
+            if (!WAITING_KINDS.has(row.kind)) continue;
+            if (waits === null || row.standing > waits.standing) waits = row;
+        }
+        if (rel === null) continue;
+        // AND THE RECORD IS WRITTEN OFF THE ROW THE DECISION WAS MADE ON, or it
+        // would name one kind and have waited for another.
+        const held = waits ?? rel;
         if (!isActing(npc.status)) continue;
 
         const isInformed = informed.has(npc.id);
@@ -284,8 +307,8 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
         // patience of knowing.
         const waiting =
             (isInformed || unexplained) &&
-            rel.standing >= FRIENDSHIP_STANDING &&
-            WAITING_KINDS.has(rel.kind);
+            waits !== null &&
+            waits.standing >= FRIENDSHIP_STANDING;
 
         let goalId: string | null = null;
         if (waiting) {
@@ -295,7 +318,7 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
                 {
                     kind: 'reunion',
                     text: `Be here when ${input.absenteeName} comes back.`,
-                    priority: Math.min(1, Math.max(0.2, rel.standing)),
+                    priority: Math.min(1, Math.max(0.2, held.standing)),
                     targetId: input.absenteeId,
                     progress: 'Waiting.',
                     obstacles: ['No word.'],
@@ -313,8 +336,8 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
         ties.push({
             holderId: npc.id,
             holderName: npc.name,
-            kind: rel.kind,
-            standing: rel.standing,
+            kind: held.kind,
+            standing: held.standing,
             locationId: npc.locationId,
             factionId: npc.factionId,
             factionRankIndex: npc.factionRankIndex,
@@ -1049,12 +1072,28 @@ export function homecoming(
 
     for (const tie of absence.ties) {
         const holder = state.npcs.find(npc => npc.id === tie.holderId) ?? null;
-        const rel = holder?.relationships.find(r => r.targetId === absence.absenteeId) ?? null;
-        const lost = !holder || !isActing(holder.status);
+        // THE SAME ROW IT WAITED ON. `kindNow` is read against `kindThen`, so it
+        // has to be the row the absence was recorded from: the kind that was
+        // written down, else the warmest row that waits, else whatever stands.
+        // Taking the first row reported the marriage where the waiting was done
+        // by the bond beside it, and the record contradicted its own reason.
+        const rows = holder === null
+            ? []
+            : holder.relationships.filter(r => r.targetId === absence.absenteeId);
+        let rel: NpcRelationship | null = rows.find(r => r.kind === tie.kind) ?? null;
+        if (rel === null) {
+            for (const row of rows) {
+                if (!WAITING_KINDS.has(row.kind)) continue;
+                if (rel === null || row.standing > rel.standing) rel = row;
+            }
+        }
+        if (rel === null) rel = rows[0] ?? null;
+        const goneMissing = holder !== null && isActing(holder.status) && whenTheyWereLastAccountedFor(state, holder) !== null;
+        const lost = !holder || !isActing(holder.status) || goneMissing;
 
         let outcome: TieOutcome;
         if (lost) {
-            outcome = holder && holder.status === 'missing' ? 'gone_missing' : 'dead';
+            outcome = goneMissing ? 'gone_missing' : 'dead';
             if (tie.settledAs === 'died_waiting') diedWaiting.push(tie.holderName);
         } else if (tie.settledAs === 'stopped_waiting') {
             outcome = 'stopped_waiting';

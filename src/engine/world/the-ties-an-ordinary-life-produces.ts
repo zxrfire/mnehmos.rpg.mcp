@@ -21,6 +21,7 @@ import {
 import type { Blocked, Promotion } from './promotion-inside-a-house.js';
 import { recordMasterTaken } from './recording-where-somebody-stands-in-a-house.js';
 import {
+    isATemperature,
     isTheWorldsToMove,
     upsertRelationship,
     type NpcRecord,
@@ -370,12 +371,17 @@ function nothingElseBetween(
     childWouldHold: RelationshipKind,
     theyWouldHold: RelationshipKind
 ): boolean {
-    const forward = child.relationships.find(r => r.targetId === otherId);
-    if (forward && forward.kind !== childWouldHold) return false;
+    for (const row of child.relationships) {
+        if (row.targetId !== otherId || isATemperature(row.kind)) continue;
+        if (row.kind !== childWouldHold) return false;
+    }
     const j = at.get(otherId);
     if (j === undefined) return true;
-    const back = state.npcs[j].relationships.find(r => r.targetId === child.id);
-    return back === undefined || back.kind === theyWouldHold;
+    for (const row of state.npcs[j].relationships) {
+        if (row.targetId !== child.id || isATemperature(row.kind)) continue;
+        if (row.kind !== theyWouldHold) return false;
+    }
+    return true;
 }
 
 /**

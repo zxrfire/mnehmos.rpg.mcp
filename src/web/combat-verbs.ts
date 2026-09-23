@@ -136,6 +136,14 @@ function wouldTheyKneel(
         };
     }
 
+    // EVERY ROW, AND THE PREDICATE IS THE POINT. Rows are keyed by the pair AND
+    // the kind, so several things stand between two people at once and they sort
+    // with the most defining kind first rather than the coldest. This asks
+    // whether ANY of them is cold enough, which is the correct shape and is why
+    // this read never had the defect its neighbours did - a `find` narrowed to
+    // the target alone answers with whatever the sort put on top, and a marriage
+    // on top of a feud says there is no feud. Do not tidy the threshold out of
+    // this predicate and into an `if` on one row.
     const feud = them.relationships.find(
         tie => tie.targetId === coercerId
             && tie.standing <= ANSWERS_RATHER_THAN_YIELDS

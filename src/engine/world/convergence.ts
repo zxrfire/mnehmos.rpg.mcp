@@ -5,7 +5,7 @@
 
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
-import { lifespanForOrdinal, rankName } from '../cultivation/realms.js';
+import { lifespanForOrdinal, rankName, realmIndexOf } from '../cultivation/realms.js';
 import {
     assessCapability,
     isGrantAvailableAt,
@@ -26,7 +26,13 @@ import {
     isOpenOn,
     type LocationRecord
 } from './locations.js';
-import { upsertRelationship, type NpcRecord, type RelationshipKind } from './npc-state.js';
+import {
+    upsertRelationship,
+    type NpcRecord,
+    type NpcRelationship,
+    type RelationshipKind
+} from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { wingsOf, type RuinWing } from './provenance.js';
 import { indexById, type WorldState } from './world-state.js';
 
@@ -334,6 +340,17 @@ export interface RescuePledge {
 
 /**
  * Who, if anybody, would come and get this person out - asked in advance.
+ *
+ * TWO DISTANCES, AND `standingThere` IS THE SHORT ONE. Written for a ruin
+ * closing over somebody, where getting to them is a fold across a province and
+ * the only people who can are the ones who hold the grant for it. The other
+ * case is the one on the duelling ground (`a-challenge-is-answered-on-the-yard.ts`):
+ * everybody is already there, nobody has to travel, and the question is only
+ * whether their tie to the person on the ground is the kind that makes somebody
+ * step in. So `standingThere` drops the fold reach and the grant and reads the
+ * people at the place, and the preconditions, the standing and the odds are the
+ * same ones - which is the whole reason this is a parameter rather than a
+ * second rescue.
  */
 export function rescuersFor(
     state: WorldState,
@@ -342,39 +359,64 @@ export function rescuersFor(
         location: LocationRecord;
         depthDays: number;
         day: number;
+        /**
+         * Everybody is at the place already, and what reaching them takes is
+         * getting a hand between two people fighting - which is being a realm
+         * above the height they are fighting at (`whoCouldHaveStoppedIt`).
+         */
+        standingThere?: { theyMustOutmatchRealm: number };
     }
 ): RescuePledge[] {
     const convergence = convergenceOf(input.location, input.day);
+    const here = input.standingThere !== undefined;
     const out: RescuePledge[] = [];
 
     for (const candidate of state.npcs) {
         if (candidate.id === input.subject.id) continue;
+        if (here && candidate.locationId !== input.location.id) continue;
         if (candidate.status !== 'alive' || !isBelowTheLid(candidate)) continue;
-        if (!isGrantAvailableAt(candidate.cultivation.realmOrdinal, PIERCE_GRANT)) continue;
+        if (!here && !isGrantAvailableAt(candidate.cultivation.realmOrdinal, PIERCE_GRANT)) continue;
 
         // The tie is read from the RESCUER's row toward the subject. Somebody
         // believing they have a master is not the same fact as the master
         // holding a student, and only the second one puts anybody on a road.
-        const tie = candidate.relationships.find(r => r.targetId === input.subject.id);
-        if (!tie) continue;
-
+        //
+        // EVERY ROW AGAINST EVERY RULE, AND THE STRONGEST REASON WINS. Rows are
+        // keyed by the pair AND the kind, so two people hold as many rows as
+        // there are things true between them, sorted with the most defining
+        // kind first. Reading one row asked the sort rather than the world: a
+        // rescuer who was both a spouse and a master was tested as a spouse,
+        // a rule written for masters never saw them, and the person closest to
+        // somebody was the one person who could not come for them. A
+        // precondition asks whether SOMETHING standing between these two is
+        // reason enough, so the warmest row that satisfies any rule is the
+        // answer, and the rules' own order breaks a tie within one row.
         let matched: string | null = null;
-        for (const [name, rule] of Object.entries(RESCUE_PRECONDITIONS)) {
-            if (rule.kinds.includes(tie.kind) && tie.standing >= rule.minStanding) {
-                matched = name;
+        let tie: NpcRelationship | null = null;
+        for (const row of candidate.relationships) {
+            if (row.targetId !== input.subject.id) continue;
+            for (const [name, rule] of Object.entries(RESCUE_PRECONDITIONS)) {
+                if (!rule.kinds.includes(row.kind) || row.standing < rule.minStanding) continue;
+                if (tie === null || row.standing > tie.standing) {
+                    matched = name;
+                    tie = row;
+                }
                 break;
             }
         }
-        if (!matched) continue;
+        if (matched === null || tie === null) continue;
 
         // Somebody at this height holds what their height makes possible; the grant
         // list is potential and this reads it as such, which is the one place in
         // the engine where "could hold it" is the right question - a rescuer is not
         // present to be assessed, and the world does not store acquired grants for
         // NPCs.
-        const reach = Number((
-            foldRangeInWalkingDays(candidate.cultivation.realmOrdinal) * convergence.remaining
-        ).toFixed(2));
+        // Standing there, the reach is the realm they can get a hand in at.
+        const reach = here
+            ? realmIndexOf(candidate.cultivation.realmOrdinal)
+            : Number((
+                foldRangeInWalkingDays(candidate.cultivation.realmOrdinal) * convergence.remaining
+            ).toFixed(2));
         const chance = Math.max(0, Math.min(
             0.85,
             RESCUE_BASE_CHANCE + tie.standing * RESCUE_STANDING_WEIGHT
@@ -388,7 +430,9 @@ export function rescuersFor(
             why: RESCUE_PRECONDITIONS[matched].why,
             standing: tie.standing,
             reach,
-            reachesYou: reach >= input.depthDays,
+            reachesYou: here
+                ? reach > input.standingThere!.theyMustOutmatchRealm
+                : reach >= input.depthDays,
             chance: Number(chance.toFixed(3))
         });
     }
@@ -415,6 +459,8 @@ export function attemptRescue(
         location: LocationRecord;
         depthDays: number;
         day: number;
+        /** Everybody is at the place already. See {@link rescuersFor}. */
+        standingThere?: { theyMustOutmatchRealm: number };
     },
     rng: CultivationRNG
 ): RescueResult {
@@ -454,6 +500,7 @@ export function attemptRescue(
                 standing: 0.5,
                 note
             }, input.day);
+            andTheOtherEnd(state.npcs, input.subject, { targetId: pledge.rescuerId, kind: 'creditor', standing: 0.5 }, input.day, { note });
         }
         return {
             came: true,

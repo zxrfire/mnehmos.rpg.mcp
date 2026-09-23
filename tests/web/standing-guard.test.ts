@@ -182,6 +182,41 @@ describe('standing guard over somebody else\'s crossing', () => {
      * account. This is the assertion that the module is wired rather than
      * merely present.
      */
+    /**
+     * A FAVOUR IS ANSWERED OUT OF THE BEST REASON THEY HAVE TO.
+     *
+     * Rows are keyed by the pair AND the kind, and they sort with the most
+     * defining kind first, so a `former_master` row sits above the `ally` row
+     * beside it. Reading one row asked the sort and answered a request for a
+     * favour out of the coldest thing between them.
+     */
+    it('answers off the warmest row, not the one that sorts first', async () => {
+        const { game } = await makeGameInWorld({ seed: 'guard-warm', worldSeed: 'w-guard-warm' });
+        await game.newRun('Warden');
+        await game.act('I look around');
+
+        const them = await somebodyAtTheirWall(game, 0.95);
+        expect(them, 'nobody standing here was at their wall').not.toBeNull();
+
+        // The bond between them ended years ago, and the friendship did not.
+        const world = (await game.loadWorld())!;
+        const at = world.npcs.findIndex((n: any) => n.id === them!.id);
+        world.npcs[at] = upsertRelationship(world.npcs[at], {
+            targetId: game.state().cultivator.id,
+            targetName: game.state().cultivator.name,
+            kind: 'former_master',
+            standing: -0.3,
+            note: 'It ended badly.'
+        }, Math.floor(world.currentDay));
+        expect(world.npcs[at].relationships.find((r: any) =>
+            r.targetId === game.state().cultivator.id)!.kind,
+            'the ended bond is the row on top').toBe('former_master');
+
+        const stood = await game.act(`I stand guard while ${them!.name} crosses, for a hundred days`);
+        expect(summaries(stood), 'the friendship is the reason they say yes')
+            .toMatch(/willing at standing 0\.95/);
+    }, 180_000);
+
     it('stands the watch, folds it into their odds, and opens the account', async () => {
         const { game, db } = await makeGameInWorld({
             seed: 'guard-yes', worldSeed: 'w-guard-yes'

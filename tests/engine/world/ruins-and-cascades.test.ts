@@ -349,6 +349,30 @@ describe('rescue - a relationship as a survival asset', () => {
         expect(pledges[0].chance).toBeLessThan(1);
     });
 
+    it('tests every kind standing between them, so a master who is also a spouse still comes', () => {
+        // THE PERSON CLOSEST TO SOMEBODY WAS THE ONE WHO COULD NOT COME FOR
+        // THEM. Rows are keyed by the pair AND the kind, and a marriage sorts
+        // ahead of a bond, so reading one row tested the marriage against a
+        // rule written for masters and found nothing. A precondition asks
+        // whether SOMETHING between these two is reason enough.
+        const state = withRescuer(0.5, 30);
+        const at = state.npcs.findIndex(n => n.id === 'npc-master');
+        state.npcs[at] = upsertRelationship(state.npcs[at]!, {
+            targetId: 'npc-inside', targetName: 'npc-inside',
+            kind: 'spouse', standing: 0.1, note: 'Married.'
+        }, 0);
+        expect(state.npcs[at]!.relationships[0]!.kind,
+            'the marriage is the row on top').toBe('spouse');
+
+        const pledges = rescuersFor(state, {
+            subject: state.npcs.find(n => n.id === 'npc-inside')!,
+            location: pavilion, depthDays: 3, day: 1
+        });
+        expect(pledges).toHaveLength(1);
+        expect(pledges[0].precondition, 'the bond is the reason').toBe('master');
+        expect(pledges[0].standing, 'and the odds come off the row that qualified').toBe(0.5);
+    });
+
     it('nobody comes for somebody with nobody', () => {
         const state = withRescuer(0.8, 30);
         // Same world, different person: no tie points at them.

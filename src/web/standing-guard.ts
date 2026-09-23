@@ -80,7 +80,7 @@ import {
 import { BOOKLESS_CEILING, reachableCeilingFor } from '../engine/world/manuals.js';
 import { roadsInReachOf } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
 import { groundRateAt } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
-import { markDead, type NpcRecord } from '../engine/world/npc-state.js';
+import { markDead, type NpcRecord, type NpcRelationship } from '../engine/world/npc-state.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { recordCrossing } from '../engine/world/recording-what-a-crossing-did.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
@@ -91,6 +91,35 @@ import { factsForRefusal, factsForToolResult } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+
+/**
+ * The warmest thing this person holds about that one.
+ *
+ * A REQUEST FOR A FAVOUR IS ANSWERED OUT OF THE BEST REASON THEY HAVE TO.
+ * Rows are keyed by the pair AND the kind, so two people hold as many rows as
+ * there are things true between them, sorted with the most DEFINING kind first
+ * rather than the warmest. Reading one row asked the sort: a `former_master`
+ * row sitting above the `ally` row beside it answered a request for a favour
+ * out of a bond that ended years ago, and a friend who would have stood over
+ * somebody's crossing refused it.
+ *
+ * The opposite question - what stands AGAINST somebody - is `theSlightsBetween`
+ * in `what-a-face-is-worth.ts`, which reads the COLDEST row for the same
+ * reason. Two questions, two reads, each named for what it asks, and neither of
+ * them is the row the sort put on top.
+ */
+function theWarmestTie(
+    npc: NpcRecord | null | undefined,
+    towardId: string
+): NpcRelationship | null {
+    if (!npc) return null;
+    let best: NpcRelationship | null = null;
+    for (const row of npc.relationships) {
+        if (row.targetId !== towardId) continue;
+        if (best === null || row.standing > best.standing) best = row;
+    }
+    return best;
+}
 
 /**
  * How long a watch runs when the player did not say.
@@ -283,7 +312,7 @@ export const guardVerbs = {
         // Somebody with no row at all stands at zero, which is below
         // `TRUST_FLOOR` at every rung - a stranger does not hand you their
         // defence, and no rule anywhere had to say so.
-        const tie = npc.relationships.find(row => row.targetId === cultivator.id) ?? null;
+        const tie = theWarmestTie(npc, cultivator.id);
         const me: Protector = {
             id: cultivator.id,
             name: cultivator.name,
@@ -642,7 +671,7 @@ export const guardVerbs = {
         for (const row of this.present(cultivator)) {
             if (row.id === cultivator.id) continue;
             const npc = this.atHand?.npcs.find(other => other.id === row.id) ?? null;
-            const tie = npc?.relationships.find(t => t.targetId === cultivator.id) ?? null;
+            const tie = theWarmestTie(npc, cultivator.id);
             const answer = wouldStandGuard({
                 id: row.id,
                 name: row.name,
