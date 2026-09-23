@@ -35,7 +35,6 @@ import {
 } from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { theSealStillHolds } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
-import { whatNeglectedDisciplesAskOfTheDaoHeart } from '../cultivation/what-a-crossing-asks-of-the-dao-heart.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import {
     bodyStandingOn,
@@ -52,14 +51,22 @@ import {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Everybody the world has named as this person's master, by id.
+ * Everybody the world has standing over this person, by id: the masters they
+ * knelt to and the people of their house carrying them through a manual.
+ *
+ * Both, because guidance is attention and a lesson is a lesson whoever gives it.
+ * What the two are NOT the same at is the ledger: only a bond somebody took on
+ * writes an oath to teach. See `RelationshipKind`.
  */
 export function masterIdsOf(npc: NpcRecord): string[] {
-    const ids: string[] = [];
+    // People, once each: rows are keyed by the pair and the kind, so somebody
+    // who is both a master and the person carrying them through a book holds
+    // two rows and is still one person standing over them.
+    const ids = new Set<string>();
     for (const tie of npc.relationships) {
-        if (tie.kind === 'master') ids.push(tie.targetId);
+        if (tie.kind === 'master' || tie.kind === 'teacher') ids.add(tie.targetId);
     }
-    return ids;
+    return [...ids];
 }
 
 /**
@@ -491,13 +498,12 @@ export function strikeAtTheWall(
         ...(watch && watch.share > 0
             ? { protection: watch.share, protectionBy: watch.by }
             : {}),
-        // 道心: THE OATH TO TEACH. What their neglected disciples ask of the
-        // crossing, by the rule a player master pays by; a master keeping it
-        // pays nothing. See `whatNeglectedDisciplesAskOfTheDaoHeart`.
-        ...(() => {
-            const heart = whatNeglectedDisciplesAskOfTheDaoHeart({ ties: npc.relationships, onDay: day });
-            return heart.share > 0 ? { daoHeart: heart.share, daoHeartOpen: heart.open } : {};
-        })(),
+        // 道心: NOT THE OATH TO TEACH. A master's disciples used to charge this
+        // crossing once enough years had passed with no lesson given. The design
+        // owner took that rule out - *"either they terminate the relationship or
+        // they don't"* - so a wall asks nothing about a bond that is still
+        // standing, however cold it has gone. Ending one is an act, and acts are
+        // on the ledger the crossing already reads.
         // WHAT THIS CROSSING CAN CHARGE. Without it the toll runs with nothing
         // to take and books `nothing_left` every time, which is how the world
         // came to cross every boundary free while the player paid.

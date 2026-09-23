@@ -19,7 +19,7 @@ import {
     type Manual
 } from './manuals.js';
 import type { Blocked, Promotion } from './promotion-inside-a-house.js';
-import { recordMasterTaken } from './recording-where-somebody-stands-in-a-house.js';
+import { recordATeachingLine } from './recording-where-somebody-stands-in-a-house.js';
 import {
     isATemperature,
     isTheWorldsToMove,
@@ -52,6 +52,16 @@ export const CHILD_STANDING = 0.75;
 export const PARENT_STANDING = 0.7;
 /** Siblings. Real, and routinely not the strongest tie in either life. */
 export const SIBLING_STANDING = 0.5;
+
+/**
+ * What being carried through a manual by somebody of your own house is worth as
+ * a tie, at each end.
+ *
+ * Below the line a friendship is read at (`FRIENDSHIP_STANDING`) on purpose: an
+ * instructor is somebody you know and owe nothing to. A bond somebody took on is
+ * {@link MASTER_STANDING} and {@link DISCIPLE_STANDING}, and this is not one.
+ */
+export const TAUGHT_BY_STANDING = 0.3;
 
 /** What a student thinks of the person carrying them. */
 export const MASTER_STANDING = 0.6;
@@ -732,7 +742,7 @@ export function applyTeachingLines(
         for (const npc of members) {
             let n = 0;
             for (const tie of npc.relationships) {
-                if (tie.kind === 'disciple' && here.has(tie.targetId)) n++;
+                if ((tie.kind === 'student' || tie.kind === 'disciple') && here.has(tie.targetId)) n++;
             }
             load.set(npc.id, n);
         }
@@ -747,7 +757,7 @@ export function applyTeachingLines(
         const guideOf = (n: NpcRecord): number | null => {
             let best: number | null = null;
             for (const tie of n.relationships) {
-                if (tie.kind !== 'master') continue;
+                if (tie.kind !== 'master' && tie.kind !== 'teacher') continue;
                 const i = at.get(tie.targetId);
                 if (i === undefined) continue;
                 const m = state.npcs[i];
@@ -822,7 +832,7 @@ export function applyTeachingLines(
                     // without this the same pair is rebound every year and the
                     // student's slots read as one person three times.
                     if (student.relationships.some(r =>
-                        r.kind === 'master' && r.targetId === candidate.id)) continue;
+                        (r.kind === 'master' || r.kind === 'teacher') && r.targetId === candidate.id)) continue;
                     // The hours, priced by how far down the teacher is reaching.
                     const gap = candidate.cultivation.realmOrdinal - student.cultivation.realmOrdinal;
                     if ((load.get(candidate.id) ?? 0) >= studentsAtOnce(gap)) continue;
@@ -840,19 +850,20 @@ export function applyTeachingLines(
             }
             if (!teacher || !taught) continue;
 
-            bind(state, at, student.id, teacher, 'master', MASTER_STANDING,
+            // A LINE, NOT A BOND. Somebody of the house opens a manual for
+            // somebody junior; nobody knelt and nobody acknowledged anybody. The
+            // design owner: *"a master has to acknowledge the master-disciple
+            // relationship"*, and most outer and inner disciples have no master.
+            // What writes `master` and `disciple` is somebody taking somebody on:
+            // `the-disciples-a-world-opens-with.ts` and the discipleship path.
+            bind(state, at, student.id, teacher, 'teacher', TAUGHT_BY_STANDING,
                 `Teaches them ${taught.name}.`, day);
-            bind(state, at, teacher.id, student, 'disciple', DISCIPLE_STANDING,
+            bind(state, at, teacher.id, student, 'student', TAUGHT_BY_STANDING,
                 `Carrying them through ${taught.name}.`, day);
             load.set(teacher.id, (load.get(teacher.id) ?? 0) + 1);
-            // The tie carried `sinceDay` and the ledger said nothing, so a life
-            // could hold a master and never record having taken one. Taking a
-            // master is a life event at every altitude, and a life now takes at
-            // most MASTERS_AT_ONCE of them, each strictly deeper than the last -
-            // so this is a row that accumulates, three times at the very most,
-            // and the sequence of them is the account of who carried this person
-            // and how far.
-            recordMasterTaken(state, student, teacher, taught.name, day);
+            // The line is a life event: the sequence of them is the account of
+            // who carried this person and how far.
+            recordATeachingLine(state, student, teacher, taught.name, day);
 
             lines.push({
                 studentId: student.id,

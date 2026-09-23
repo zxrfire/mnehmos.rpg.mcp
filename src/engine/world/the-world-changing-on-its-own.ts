@@ -2,6 +2,7 @@
  * Pressure: the world changing on its own.
  */
 
+import { searchingMastersTakeADisciple } from './the-disciples-a-world-opens-with.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
@@ -732,6 +733,8 @@ export function applyPressure(
             state, doorsYear, doorsDay, Math.min(yearEndsOn, toDay));
         // And then the ties an ordinary life produces, on the same yearly line.
         applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
+        // And a master looking for a disciple takes one standing in front of them.
+        searchingMastersTakeADisciple(state, withinSpan(year * 365 + 170, fromDay, toDay));
         applyFactionEconomy(state);
         // And a house that could not pay its people sells what it built, to
         // somebody it would sit down with. AFTER the economy, so the purse it

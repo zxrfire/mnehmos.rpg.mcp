@@ -6,14 +6,19 @@
  * activity is `teaching` with the set in `withIds`. The set is CLOSED - the
  * disciples who hold a master tie to them and are standing where they stand -
  * or OPEN - everybody inside the house's own compound, any rank and any guest,
- * because a lecture is given inside the sect and reaches whoever is there.
+ * because a lecture is given inside the sect and reaches whoever is there. A
+ * closed set is held where the master lives - *"the master calls his disciples
+ * to his cave abode or room"* - which the placement read derives from this row
+ * (`where-a-master-takes-their-own-disciples.ts`); nothing here writes a room.
  *
  * What the attention is worth is read elsewhere and once: `guidanceFor` in
  * `an-npc-striking-at-the-next-wall.ts` takes the listener's best teacher and
  * `guidanceMultiplier` thins it by the set's size. What it costs the teacher is
  * `whatTeachingLeavesOfAMastersRate`, the same whatever the set's size. And an
  * art comes across a shelf's gap only through somebody at this - see
- * `newlyEntitled`.
+ * `newlyEntitled`. The whole rule - both sets, who may give one, what it is worth to the
+ * listener, to the teacher's own year and to the house - is written once, in
+ * `how-far-up-the-world-reaches.md` under *A lecture, open and closed*.
  *
  * NOBODY IS PULLED OFF SOMETHING. A teacher is only somebody at the kind of
  * thing that stops for a lesson; an errand, a posting, a stall, a sickbed or a
@@ -157,6 +162,19 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
             activity: { kind: 'teaching', note, withIds, sinceDay: day, untilDay },
             updatedOnDay: day
         };
+        // STAMPED WHEN IT IS GIVEN, and not only when the set ends. The end is
+        // read off the teacher's activity a year later, and everything else in
+        // the world writes activities too: a master whose row was moved on before
+        // the next pass had given their disciples a year of their time and the
+        // tie said nobody had. Measured on `afford-a`: 60 of 70 bonds seeded at
+        // the opening read as neglected by year five, while the pass had put
+        // their masters in front of them every year.
+        for (const id of withIds) {
+            const j = byId.get(id);
+            if (j === undefined) continue;
+            state.npcs[at] = withAttentionRecorded(state.npcs[at]!, id, day);
+            state.npcs[j] = withAttentionRecorded(state.npcs[j]!, teacher.id, day);
+        }
         teaching.add(teacher.id);
         sets++;
     };
@@ -164,9 +182,13 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
     // ── CLOSED: A MASTER AND THE DISCIPLES STANDING WITH THEM ────────────
     const disciplesOf = new Map<string, string[]>();
     for (const npc of state.npcs) {
-        if (!present(npc)) continue;
+        // Everybody they carry, away or not: who is here decides the lesson, and
+        // who is away decides whether the oath's clock runs. See below.
+        if (npc.status !== 'alive' || !isBelowTheLid(npc)) continue;
         for (const tie of npc.relationships) {
-            if (tie.kind !== 'master') continue;
+            // The people somebody carries: the disciples they took on, and the
+            // juniors the house has them carrying through a manual.
+            if (tie.kind !== 'master' && tie.kind !== 'teacher') continue;
             const list = disciplesOf.get(tie.targetId) ?? [];
             list.push(npc.id);
             disciplesOf.set(tie.targetId, list);
@@ -179,9 +201,27 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         if (!freeToTeach(master, day)) continue;
         const here = disciples.filter(id => {
             const d = state.npcs[byId.get(id)!]!;
-            return d.locationId === master.locationId
-                && d.cultivation.realmOrdinal < master.cultivation.realmOrdinal;
+            if (!present(d)) return false;
+            // THEIR OWN, WHEREVER THEY HAVE GOT TO. A master gives their
+            // disciples their time as a matter of course; it is what the bond is
+            // and what the oath to teach assumes. The rung they have reached is
+            // not the question - a disciple who has caught their master up is
+            // still theirs - so only being somewhere else stops it.
+            return d.locationId === master.locationId;
         });
+        // AND THE ONES THE HOUSE HAS SENT SOMEWHERE. A master free and standing
+        // at home cannot sit with a disciple who is two provinces away on the
+        // house's business, and is not neglecting them: the clock on the oath to
+        // teach does not run while the disciple is away. What it runs on is a
+        // master who is away themselves, or at a desk with a thing half made.
+        for (const id of disciples) {
+            const j = byId.get(id);
+            if (j === undefined || here.includes(id)) continue;
+            const away = state.npcs[j]!.activity;
+            if (away === null || !isAwayOnSomething(away.kind)) continue;
+            state.npcs[at] = withAttentionRecorded(state.npcs[at]!, id, day);
+            state.npcs[j] = withAttentionRecorded(state.npcs[j]!, masterId, day);
+        }
         if (here.length === 0) continue;
         teach(at, here, 'taking their disciples through what they have');
     }

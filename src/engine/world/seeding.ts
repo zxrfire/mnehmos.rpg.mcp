@@ -3,6 +3,7 @@
  * when the player arrives.
  */
 
+import { seedTheDisciplesAWorldOpensWith } from './the-disciples-a-world-opens-with.js';
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
 import { bestReadable } from '../cultivation/manual-quality.js';
 import {
@@ -389,6 +390,9 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
             tags: grant.chosen && !npc.tags.includes('chosen') ? [...npc.tags, 'chosen'] : npc.tags
         };
     }
+    // The master-disciple bonds a world opens with, and an elder's jade for one,
+    // after the grant marks who is `chosen`. See `the-disciples-a-world-opens-with.ts`.
+    seedTheDisciplesAWorldOpensWith(state);
 
     // PLACED AFTER THE GRANT LOOP DELIBERATELY. The pass above is what
     // writes the `chosen` tag, and a house gives its good thing to the
