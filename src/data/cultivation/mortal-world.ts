@@ -176,6 +176,18 @@ export const WhatBuyingItGivesSchema = z.discriminatedUnion('kind', [
     /** Something to put under you. */
     z.object({ kind: z.literal('conveyance'), conveyanceId: z.string().min(3) }),
     /**
+     * A vessel to refine in: a cauldron or a refining furnace, of a grade a counter
+     * sells. Mortal and earth only, because those are the grades money buys; a
+     * heaven-grade vessel is made for somebody and is never on a counter. What it
+     * is worth is `what-you-refine-in.ts`; what buying one hands over is
+     * `src/web/buying-a-vessel-off-the-board.ts`.
+     */
+    z.object({
+        kind: z.literal('a_vessel'),
+        vessel: z.enum(['cauldron', 'refining_furnace']),
+        grade: z.enum(['mortal', 'earth'])
+    }),
+    /**
      * Paid for and gone: a service consumed at the counter that leaves nothing
      * to hold. A letter written, a bell rung, a night on an inn floor. The
      * stones are spent and the fact is stated, because taking the money for
@@ -257,6 +269,14 @@ export const PRICES: readonly Price[] = [
     { id: 'price-placement', name: 'Placement of a foreign cultivator', category: 'information', cash: 7_000, unit: 'assessment', note: 'Seventy stones to have the Ninefold Karma Palace say where inside a realm somebody stands. Cheaper than being wrong once.', gives: { kind: 'spent_at_the_counter', what: 'an assessment, and a number somebody else now knows' } },
     { id: 'price-chisel', name: 'Carver\'s chisel', category: 'tool', cash: 450, unit: 'each', note: 'Lasts about a season at a face. In the Silent Cliffs this is a recurring cost of cultivating, which the Jade Gorge finds absurd.', gives: { kind: 'spent_at_the_counter', what: 'a chisel that will last about a season at a face' } },
     { id: 'price-mortal-sword', name: 'Sword, mortal steel', category: 'tool', cash: 700, unit: 'each', note: 'Ashen Forge work, reforged from ploughed-up fragments. A cultivator\'s blade starts at fifty times this.', gives: { kind: 'spent_at_the_counter', what: 'mortal steel, honest and unremarkable' } },
+    // A VESSEL IS PRICED AS THE WORK OF MAKING ONE: `whatACommissionComesTo` at the
+    // grade's own gate, times a hundred cash a stone. A figure and not an import,
+    // so this catalog stays below the engine; `markets-sell-vessels.test.ts` holds
+    // the two equal.
+    { id: 'price-clay-cauldron', name: 'Fired clay cauldron', category: 'tool', cash: 200, unit: 'each', note: 'Two stones. The clay pot every formula was written against: it adds nothing to the odds and takes nothing from them.', gives: { kind: 'a_vessel', vessel: 'cauldron', grade: 'mortal' } },
+    { id: 'price-iron-refining-furnace', name: 'Iron artifact furnace', category: 'tool', cash: 200, unit: 'each', note: 'Two stones. The plain artifact furnace every forging was written against: it adds nothing to the odds and takes nothing from them.', gives: { kind: 'a_vessel', vessel: 'refining_furnace', grade: 'mortal' } },
+    { id: 'price-earth-grade-cauldron', name: 'Earth-grade cauldron', category: 'tool', cash: 18_300, unit: 'each', note: 'A hundred and eighty-three stones. It adds to the odds for a hand at Core Formation or past it, and to nobody below.', gives: { kind: 'a_vessel', vessel: 'cauldron', grade: 'earth' } },
+    { id: 'price-earth-grade-refining-furnace', name: 'Earth-grade artifact furnace', category: 'tool', cash: 18_300, unit: 'each', note: 'A hundred and eighty-three stones. It adds to the odds of a forging for a hand at Core Formation or past it, and to nobody below.', gives: { kind: 'a_vessel', vessel: 'refining_furnace', grade: 'earth' } },
 
     // the dead, which is the largest unavoidable expense a family has
     { id: 'price-coffin', name: 'Coffin', category: 'service', cash: 1_400, unit: 'each', note: 'The same figure as a mule, which every family notices, and the comparison is made at every funeral in both provinces.', gives: { kind: 'spent_at_the_counter', what: 'a coffin, and somebody to carry it' } },
@@ -390,6 +410,8 @@ export function whereThisIsActuallyDone(price: Pick<Price, 'name'>): string | nu
  */
 export const THE_MORTAL_BOARD: readonly Price[] = PRICES.filter(price =>
     price.gives.kind !== 'quoted_only' && price.gives.kind !== 'pill'
+    // A villager's barrow carries a clay pot and never an earth-grade vessel.
+    && !(price.gives.kind === 'a_vessel' && price.gives.grade !== 'mortal')
     && whoseCounterThisSitsAt(price) === null);
 
 // ─────────────────────────────────────────────────────────────────────────

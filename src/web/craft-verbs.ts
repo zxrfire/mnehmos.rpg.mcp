@@ -59,16 +59,16 @@ import {
     type BuildPlan
 } from './half-built-craft.js';
 import { landTheMaking, planTheMaking } from './making-a-thing-at-your-own-bench.js';
+import { forStream } from '../engine/cultivation/rng.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
 import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
 import { whatIsBeingCut } from './communication-talisman-phrasings.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
+import { BENCH_FOCUS } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 
-/** Days of the world's clock a bench turn spends before it is reported. */
-const BENCH_FOCUS = 0.35;
 
 /**
  * Nobody can be paid to build for you, and that is an absence rather than a
@@ -289,7 +289,10 @@ export const craftVerbs = {
         this.atHand = this.atHand ?? await this.loadWorld();
         const objects = this.atHand?.objects ?? [];
 
-        const plan = planTheMaking({ db: this.db, objects, cultivator, said });
+        const plan = planTheMaking({
+            db: this.db, objects, cultivator, said,
+            houseIds: new Set((this.atHand?.factions ?? []).map(house => house.id))
+        });
         if (plan.kind === 'refused') {
             const answer = refused(
                 'engine.whetherTheirHandsCanDoIt',
@@ -311,7 +314,7 @@ export const craftVerbs = {
         if (wentTo) cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
 
         // ── THE DAYS AT IT ───────────────────────────────────────────────
-        const days = daysAtTheWork(plan.ask!.grade, cultivator.realmOrdinal);
+        const days = daysAtTheWork(plan.ask!.grade, cultivator.realmOrdinal, { aSlip: Boolean(plan.ask!.slip) });
         const spent = await this.shortSkip(
             run, cultivator, this.ambientFor(cultivator, run), BENCH_FOCUS,
             `Making ${plan.ask!.named}`, days
@@ -336,7 +339,10 @@ export const craftVerbs = {
         // holds afterwards.
         this.atHand = this.atHand ?? await this.loadWorld();
         const rowsNow = this.atHand?.objects ?? objects;
-        const made = landTheMaking({ db: this.db, objects: rowsNow, cultivator: after, plan, today: finishedOn });
+        const made = landTheMaking({
+            db: this.db, objects: rowsNow, cultivator: after, plan, today: finishedOn,
+            roll: forStream(run.seed, 'a-bench', cultivator.id, finishedOn, plan.ask!.named).next()
+        });
         // The world is marked moved only where something moved. A take that
         // returns nothing has written nothing, which is what makes this safe.
         if (made.minted) {

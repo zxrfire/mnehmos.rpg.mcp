@@ -48,10 +48,8 @@ import { getPillsByGrade } from '../../data/cultivation/pills.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { SECTS, sectThreat } from '../../data/cultivation/sects.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
-import {
-    howMuchACauldronIsWorthTracking,
-    whatACauldronIsWorthInAFight
-} from '../cultivation/what-you-refine-in.js';
+import { REFINING_VESSELS } from '../cultivation/what-you-refine-in.js';
+import { theVesselsAHouseKeeps } from './what-a-house-refines-in.js';
 import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import {
     everyIngredientThatIs,
@@ -160,74 +158,25 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
             (purpose === null ? null : rooms?.get(purpose)
                 ?? (purpose === 'furnace_room' ? rooms?.get('alchemy_hall') : undefined) ?? null) ?? seat;
 
-        // ── THE COUNTED HALF ─────────────────────────────────────────────
+        // ── WHAT IT REFINES IN ───────────────────────────────────────────
         //
-        // One lot with a number on it. Nobody asks whose the third clay pot
-        // is, which is exactly what `mundane` means.
-        const plain = makeResourceLot({
-            id: `cauldrons-plain-${house.id}`,
-            resource: 'fired clay cauldrons',
-            quantity: howManyPlainCauldrons(acting),
-            source: `the ${name} stores`,
-            acquiredOnDay: house.foundedOnDay ?? 0,
-            holderId: null,
-            holderName: name,
-            how: 'crafted',
-            // The one word that puts it on the counted side of the line.
-            significance: 'mundane'
-        });
-        plain.ownerId = house.id;
-        plain.ownerName = name;
-        plain.locationId = roomFor(whereInTheHouseItSits('other', 'mundane', ['cauldron']));
-        plain.description =
-            'The cauldrons a house hands out without writing anything down. They crack, they '
-            + 'get replaced, and nobody has ever asked which one they were given.';
-        plain.tags = ['cauldron'];
-        out.push(plain);
-
-        // ── AND THE TRACKED HALF ─────────────────────────────────────────
-        //
-        // One row with a history, and only where the house could actually work
-        // it. A house that cannot field anybody past the rung has the clay and
-        // nothing else, which is the honest shape of a poor sect.
-        const grade = bestFurnaceAHouseCouldKeep(acting);
-        if (grade !== 'mortal') {
+        // Both kinds of vessel: a counted cupboard of plain ones in the room the
+        // craft is done in, and one graded vessel of each kind, at what the
+        // house's own best hand can work. See `what-a-house-refines-in.ts`.
+        {
             const sinceThePeak = getFactionCharacter(house.id)?.production.yearsSinceLastPeak ?? 0;
-            out.push(makeObject({
-                id: `furnace-${house.id}`,
-                name: `the ${name} furnace`,
-                kind: 'artifact',
-                significance: howMuchACauldronIsWorthTracking(grade),
-                description:
-                    `The furnace the ${name} halls refine in, which is one furnace and not a `
-                    + 'cupboard of them. Who is standing at it on a given day is a question the '
-                    + 'house answers, and changes its mind about.',
-                // NOBODY HOLDS IT UNTIL SOMEBODY IS LENT IT, and a house is
-                // not somebody: a thing in a store is carried by NULL and is
-                // in a room, which is what `whereThisThingActuallyIs` reports.
-                // A person's id in this field is a thing somebody took out.
-                possessorId: null,
-                ownerId: house.id,
-                ownerName: name,
-                // A CAULDRON IS A TREASURE AND NOT ONLY A TOOL, and it is a
-                // finished artifact, so it stands somewhere on the ladder like
-                // every other one. A house's furnace is exactly the object
-                // people go to war over and hide behind. See
-                // `whatACauldronIsWorthInAFight`.
-                power: whatACauldronIsWorthInAFight(grade),
-                locationId: roomFor(
-                    whereInTheHouseItSits('artifact', howMuchACauldronIsWorthTracking(grade), ['cauldron'])
-                ),
-                tags: ['cauldron', 'defensive', `grade:${grade}`],
-                data: {
-                    grade,
-                    // How long it has been the house's, which is what makes
-                    // losing one worse than the price of another.
-                    heldSinceDay: Math.max(
-                        house.foundedOnDay ?? 0,
-                        today - Math.round(Math.max(0, sinceThePeak) * 365)
-                    )
-                }
+            out.push(...theVesselsAHouseKeeps({
+                state,
+                houseId: house.id,
+                houseName: name,
+                foundedOnDay: house.foundedOnDay ?? 0,
+                plainCount: howManyPlainCauldrons(acting),
+                // How long it has been the house's, which is what makes losing
+                // one worse than the price of another.
+                heldSinceDay: Math.max(house.foundedOnDay ?? 0, today - Math.round(Math.max(0, sinceThePeak) * 365)),
+                roomFor,
+                filedIn: whereInTheHouseItSits,
+                bestItCouldKeep: bestFurnaceAHouseCouldKeep
             }));
         }
 
@@ -692,7 +641,8 @@ export function whereInTheHouseItSits(
     // Otherwise it lives where that kind of thing is USED. *"The counted ones
     // in the armory"*, *"shitty cauldrons in the furnace area"*, *"shitty books
     // in the library."*
-    if (tags.includes('cauldron')) return 'furnace_room';
+    const vessel = Object.values(REFINING_VESSELS).find(one => tags.includes(one.tag));
+    if (vessel !== undefined) return vessel.keptIn;
     switch (kind) {
         case 'pill':
         // Raw stock sits where it is worked, which for a herb and for a core is

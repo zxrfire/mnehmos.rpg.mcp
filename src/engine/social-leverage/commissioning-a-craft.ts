@@ -238,73 +238,105 @@ export function howMuchOfTheirReachItAsksFor(grade: TechniqueGrade, makerOrdinal
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
- * The days one mortal-grade thing takes the rung that can only just make it.
+ * The days cutting one slip takes: a talisman, a strike slip, a way out.
  *
- * THE BOTTOM END IS THE DESIGN OWNER'S. A communication talisman is mortal
+ * THE DESIGN OWNER'S, AND NOT THE GRADE'S. A communication talisman is mortal
  * grade and *"making a few takes little time"*: `CUT_IN_A_SITTING` of them in
- * `DAYS_A_SITTING_TAKES`. So one mortal thing is a third of a day.
+ * `DAYS_A_SITTING_TAKES`, so a third of a day. A slip is the cheap single-use
+ * kind of made thing, and the grade floors below are for making a pill or an
+ * artifact; a slip is exempt from them by what it is.
  */
-export const DAYS_TO_MAKE_A_MORTAL_THING = DAYS_A_SITTING_TAKES / CUT_IN_A_SITTING;
+export const DAYS_TO_CUT_A_SLIP = DAYS_A_SITTING_TAKES / CUT_IN_A_SITTING;
 
 /**
- * The years one heaven-grade thing takes the rung that can only just make it.
+ * The days one pill or artifact of a grade takes the rung that can only just
+ * make it.
  *
- * THE TOP END IS THE LONGEST SINGLE WORK THE WORLD ALREADY STATES. Heaven is
- * the highest grade made below the Lid, and nine years is what
- * `YEARS_TO_COPY_THE_DEEPEST_ROAD` gives the deepest road in the catalog: the
- * one other place a person's own hours are spent on one made thing. Written as
- * a figure rather than imported so this file stays below the world; a test
- * holds the two equal.
+ * Each sits well above its grade's floor, so skill has room to save time:
+ *
+ *   mortal   two weeks, twice the week the floor holds
+ *   earth    two months, as ruled: earth-grade work takes about a month whoever
+ *            does it, and the hand that can only just do it takes about two
+ *   heaven   nine years, the longest single work the world already states - what
+ *            `YEARS_TO_COPY_THE_DEEPEST_ROAD` gives the deepest road in the
+ *            catalog. A figure and not an import, so this file stays below the
+ *            world; a test holds the two equal.
  */
-export const YEARS_TO_MAKE_A_HEAVEN_THING = 9;
-
-/**
- * How little of a day's work a hand far past the grade still spends on it.
- *
- * `howMuchOfTheirReachItAsksFor` is one at the gate and nothing at the top of
- * the ladder, and nothing is not a span: a master still sits down to it. A
- * quarter, so the same thing is four times quicker at the top than at the gate
- * and never free.
- *
- * WHY A QUARTER AND NOT LESS. A maker's day is worth `PRICE_GROWTH_PER_ORDINAL`
- * (1.35) more for every rung past where the wages on offer stop, so a rung may
- * shave no more than about a quarter of the days (1 / 1.35) before the higher
- * hand asks less for the same thing - which the design owner ruled out. The
- * reach falls in a straight line, so the share of the days a rung shaves grows
- * as it nears nothing: it was a tenth, and a heaven-grade commission came out
- * cheaper from a hand at 44 than from a hand at 43. Below a quarter the steepest
- * rung shaves about fifteen percent.
- */
-export const A_HAND_FAR_PAST_IT_STILL_SPENDS = 0.25;
-
-/** Where a grade sits on the making curve. Nothing above heaven is made below the Lid. */
-const MADE_GRADE_STEP: Readonly<Record<TechniqueGrade, number>> = {
-    mortal: 0,
-    earth: 1,
-    heaven: 2,
-    immortal: 2,
-    chaos: 2
+export const DAYS_AT_THE_GATE: Readonly<Record<'mortal' | 'earth' | 'heaven', number>> = {
+    mortal: 14,
+    earth: 60,
+    heaven: 9 * DAYS_PER_YEAR
 };
+
+/** The heaven anchor in years, which is what the test holds equal to the deepest road's copy. */
+export const YEARS_TO_MAKE_A_HEAVEN_THING = DAYS_AT_THE_GATE.heaven / DAYS_PER_YEAR;
+
+/**
+ * The fewest days a pill or an artifact of a grade takes, however strong the hand.
+ *
+ * THE WORK HAS STEPS THAT TAKE THE TIME THEY TAKE: tempering, settling, letting
+ * the qi set. A hand far past the grade does each step better and none of them
+ * sooner. The design owner set the three: *"mortal-grade crafting takes at least
+ * a week"*, earth-grade a month, heaven-grade a year. A slip is exempt, see
+ * {@link DAYS_TO_CUT_A_SLIP}.
+ */
+export const THE_FEWEST_DAYS_THE_WORK_TAKES: Readonly<Record<'mortal' | 'earth' | 'heaven', number>> = {
+    mortal: 7,
+    earth: 30,
+    heaven: DAYS_PER_YEAR
+};
+
+/**
+ * How much of what a higher hand's time is worth goes into doing the work faster.
+ *
+ * HALF. A hand whose day is worth four times the gate maker's does the work in
+ * half the days, and so asks twice as much for it: quicker, and dearer, which is
+ * the design owner's ruling that a stronger maker's day is worth much more than
+ * the days they save. Tying the saving to the worth is what keeps a stronger
+ * maker from ever asking less for the same thing, at any rung.
+ */
+export const HOW_MUCH_OF_A_HANDS_WORTH_GOES_INTO_SPEED = 0.5;
+
+/** The grade a made thing's days are read at. Nothing above heaven is made below the Lid. */
+function theMadeGrade(grade: TechniqueGrade): 'mortal' | 'earth' | 'heaven' {
+    return grade === 'mortal' || grade === 'earth' ? grade : 'heaven';
+}
+
+/**
+ * The days making one thing takes this hand, as a fraction: what its time is
+ * valued on. See {@link daysAtTheWork} for the whole days a span spends.
+ */
+export function daysAtTheWorkExactly(
+    grade: TechniqueGrade,
+    makerOrdinal: number,
+    opts: { aSlip?: boolean } = {}
+): number {
+    if (opts.aSlip) return DAYS_TO_CUT_A_SLIP;
+    const made = theMadeGrade(grade);
+    const gate = refiningOrdinalFor(grade);
+    const worthMore = whatAYearOfAMakersTimeIsWorth(Math.max(gate, makerOrdinal))
+        / whatAYearOfAMakersTimeIsWorth(gate);
+    return Math.max(
+        THE_FEWEST_DAYS_THE_WORK_TAKES[made],
+        DAYS_AT_THE_GATE[made] / Math.pow(worthMore, HOW_MUCH_OF_A_HANDS_WORTH_GOES_INTO_SPEED)
+    );
+}
 
 /**
  * How many days making one thing of this grade takes this hand.
  *
- * ONE CURVE, ANCHORED AT THE TWO ENDS ABOVE: geometric in the grade, because
- * each grade is a different kind of work rather than more of the same, so a
- * third of a day for a mortal slip, about a month for earth-grade work and nine
- * years for heaven at the gate. Then the hand: the share of their reach it asks
- * for, never less than {@link A_HAND_FAR_PAST_IT_STILL_SPENDS}. Whole days, and
- * at least one, because a span is spent in days.
- *
- * The same curve for a pill and a made thing: a grade is one ladder
- * (`howHighTheCommissionCarries`), and refining is making.
+ * The days at the gate for the grade, cut by how much more this hand's time is
+ * worth than the gate maker's, never below the grade's floor; a slip is a third
+ * of a day whatever the grade. Whole days, and at least one, because a span is
+ * spent in days. The same days for a pill and a made thing: a grade is one
+ * ladder (`howHighTheCommissionCarries`), and refining is making.
  */
-export function daysAtTheWork(grade: TechniqueGrade, makerOrdinal: number): number {
-    const bottom = DAYS_TO_MAKE_A_MORTAL_THING;
-    const top = YEARS_TO_MAKE_A_HEAVEN_THING * DAYS_PER_YEAR;
-    const atTheGate = bottom * Math.pow(top / bottom, MADE_GRADE_STEP[grade] / 2);
-    const hand = Math.max(A_HAND_FAR_PAST_IT_STILL_SPENDS, howMuchOfTheirReachItAsksFor(grade, makerOrdinal));
-    return Math.max(1, Math.ceil(atTheGate * hand));
+export function daysAtTheWork(
+    grade: TechniqueGrade,
+    makerOrdinal: number,
+    opts: { aSlip?: boolean } = {}
+): number {
+    return Math.max(1, Math.ceil(daysAtTheWorkExactly(grade, makerOrdinal, opts)));
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -352,8 +384,13 @@ export function whatAYearOfAMakersTimeIsWorth(makerOrdinal: number): number {
  * times `daysAtTheWork`. A higher hand spends fewer days on the thing, and each
  * of their days is worth far more than the days they save.
  */
-export function whatTheMakersTimeComesTo(grade: TechniqueGrade, makerOrdinal: number): number {
-    return (whatAYearOfAMakersTimeIsWorth(makerOrdinal) / DAYS_PER_YEAR) * daysAtTheWork(grade, makerOrdinal);
+export function whatTheMakersTimeComesTo(
+    grade: TechniqueGrade,
+    makerOrdinal: number,
+    opts: { aSlip?: boolean } = {}
+): number {
+    return (whatAYearOfAMakersTimeIsWorth(makerOrdinal) / DAYS_PER_YEAR)
+        * daysAtTheWorkExactly(grade, makerOrdinal, opts);
 }
 
 /**
@@ -387,7 +424,8 @@ export function whatTheMaterialsComeTo(grade: TechniqueGrade): number {
 export function whatACommissionComesTo(
     grade: TechniqueGrade,
     aRing = false,
-    makerOrdinal: number = refiningOrdinalFor(grade)
+    makerOrdinal: number = refiningOrdinalFor(grade),
+    aSlip = false
 ): number | null {
     // A RING IS PRICED AS A FOLD, not as its materials. The design owner: a
     // heaven-grade ring is absurdly expensive, equivalent to a heaven-grade
@@ -395,7 +433,55 @@ export function whatACommissionComesTo(
     // FOLD and not about the ore, and `whatARingCosts` is where it is made.
     if (aRing) return whatARingCosts(grade);
     if (!madeBelowTheLid(grade)) return null;
-    return Math.max(1, Math.round(whatTheMakersTimeComesTo(grade, makerOrdinal) + whatTheMaterialsComeTo(grade)));
+    if (aSlip) return Math.max(1, Math.round(whatASlipIsWorth(makerOrdinal, grade)));
+    return Math.max(1, Math.round(
+        whatTheMakersTimeComesTo(grade, makerOrdinal) + whatTheMaterialsComeTo(grade)
+    ));
+}
+
+/**
+ * What one slip is worth, in spirit stones: the cutter's time share and the
+ * materials, as a fraction.
+ *
+ * THE SAME RULE AS ANY COMMISSION. A slip takes {@link DAYS_TO_CUT_A_SLIP} of the
+ * cutter's day, so it is worth that share of their day's rate plus what its
+ * grade's recipe puts in. A mortal slip asks for no recipe, so a communication
+ * talisman is a third of its cutter's day and nothing else.
+ *
+ * AND NO PATH PAYS MORE. Slips are quick to cut and exempt from the grade floors
+ * on days, so the guard against slips as a mint is the price: a slip sold,
+ * turned in, or paid for off a board comes to this and never more. Nobody cuts a
+ * day's slips and is paid more than their day. A caller paying whole stones
+ * rounds down; a commission, which states a price, still states at least one.
+ */
+export function whatASlipIsWorth(cutterOrdinal: number, grade: TechniqueGrade = 'mortal'): number {
+    return whatTheMakersTimeComesTo(grade, cutterOrdinal, { aSlip: true }) + whatTheMaterialsComeTo(grade);
+}
+
+/**
+ * What a spirit stone put down is worth to this maker, as a share of a stone.
+ *
+ * The design owner: *"at ordinal 29 they want STUFF"*, *"nobody would take 20k
+ * stones"*, and then *"generally, not a hard rule."* So it is not a rung at which
+ * stones stop. It is the gap between what stones buy - the wages on offer,
+ * `earningsPerYear`, which stop climbing at
+ * {@link WHERE_WAGES_ON_OFFER_STOP_CLIMBING} - and what this maker's own year is
+ * worth, {@link whatAYearOfAMakersTimeIsWorth}, which does not. Below that rung
+ * the two are the same figure and a stone is a stone; every rung above it a
+ * stone buys `PRICE_GROWTH_PER_ORDINAL` less of what this person's time is
+ * worth, so by the Beast Change a stone is about a sixth of one to them and a
+ * purse the size of the work's worth falls far short.
+ *
+ * AND THEIR WANTS DECIDE. A maker whose open want is wealth, or a debt to pay,
+ * takes a stone as a stone however high they stand, which is the house short of
+ * stones or the elder who needs a fortune.
+ */
+export function whatStonesAreWorthTo(
+    makerOrdinal: number,
+    whatTheyWant: { kind: string } | null
+): number {
+    if (whatTheyWant !== null && (whatTheyWant.kind === 'wealth' || whatTheyWant.kind === 'debt')) return 1;
+    return clamp(earningsPerYear(makerOrdinal) / whatAYearOfAMakersTimeIsWorth(makerOrdinal), 0, 1);
 }
 
 /**
@@ -475,10 +561,25 @@ export interface AskingSomebodyToMakeYouSomething {
     maker: { id: string; ordinal: number };
     /** What the maker is to the asker. Defaults to a stranger. */
     nearness?: Nearness;
-    /** Spirit stones put down. Worth nothing above the cash line. */
+    /**
+     * Spirit stones put down. Counted at what stones are worth to this maker,
+     * which is less the higher they stand: see {@link whatStonesAreWorthTo}.
+     */
     stonesOffered?: number;
     /** Anything singular put down instead. Priced by `whatItWouldTake`. */
     onTheTable?: readonly OnTheTable[];
+    /**
+     * What this maker wants most, off their own open goals, or null where they
+     * have stated none. The design owner: *"it depends on what a dude wants."*
+     */
+    whatTheyWant?: { text: string; kind: string } | null;
+    /**
+     * Things and favours put down, at their stone-equivalent worth, and whether
+     * each is something this maker wants. Only a wanted thing counts toward the
+     * work's worth: *"nobody would take 20k stones"*, and nobody takes a thing
+     * they have no use for either.
+     */
+    thingsPutDown?: readonly { what: string; worthInStones: number; isWhatTheyWant: boolean }[];
     /**
      * Catalog ids of the material on the bench, from either side. Omitted means
      * nobody asked, which is not the same as an empty bench - see
@@ -501,8 +602,15 @@ export interface AskingSomebodyToMakeYouSomething {
 
 export interface WhetherTheyWillMakeIt {
     hands: WhetherTheirHandsCanDoIt;
-    /** Stones, or null where stones are not the medium for this grade. */
+    /**
+     * What the work is worth, in stone-equivalent, or null where nobody below the
+     * Lid could make it. A measure and not a price the maker must take: what is
+     * put down is judged against it, and stones count at what they are worth to
+     * this maker.
+     */
     priceInStones: number | null;
+    /** What a stone put down is worth to this maker, 0..1. */
+    whatAStoneIsWorthToThem: number;
     /** The barter, priced. Null where the hands refused before it was read. */
     theTable: WhatItWouldTake | null;
     /** How far what was put down reaches, 0..1. */
@@ -550,12 +658,16 @@ export function askingSomebodyToMakeYouSomething(
         input.maker.ordinal,
         input.materialsToHand
     );
-    const priceInStones = whatACommissionComesTo(input.ask.grade, false, input.maker.ordinal);
+    const priceInStones = whatACommissionComesTo(
+        input.ask.grade, false, input.maker.ordinal, Boolean(input.ask.slip)
+    );
+    const stoneWorth = whatStonesAreWorthTo(input.maker.ordinal, input.whatTheyWant ?? null);
 
     if (!hands.theyCan) {
         return {
             hands,
             priceInStones,
+            whatAStoneIsWorthToThem: stoneWorth,
             theTable: null,
             paid: 0,
             reading: null,
@@ -587,8 +699,11 @@ export function askingSomebodyToMakeYouSomething(
     );
     const paid = howFarTheOfferReaches({
         priceInStones,
-        stonesOffered: input.stonesOffered ?? 0,
-        theTable
+        stonesOffered: (input.stonesOffered ?? 0) * stoneWorth,
+        theTable,
+        wantedWorthPutDown: (input.thingsPutDown ?? [])
+            .filter(thing => thing.isWhatTheyWant)
+            .reduce((sum, thing) => sum + Math.max(0, thing.worthInStones), 0)
     });
 
     const moved = whatTheyCarryAbout({
@@ -612,6 +727,7 @@ export function askingSomebodyToMakeYouSomething(
     return {
         hands,
         priceInStones,
+        whatAStoneIsWorthToThem: stoneWorth,
         theTable,
         paid,
         reading,
@@ -625,7 +741,11 @@ export function askingSomebodyToMakeYouSomething(
               + (paid >= 1
                   ? 'The price was met and they still would rather not, which is about them '
                     + 'and not about the figure.'
-                  : whatWouldMeetIt(priceInStones, theTable))
+                  : whatWouldMeetIt(priceInStones, theTable, {
+                      stonesOffered: input.stonesOffered ?? 0,
+                      stoneWorth,
+                      whatTheyWant: input.whatTheyWant ?? null
+                  }))
     };
 }
 
@@ -652,11 +772,15 @@ export function whetherThatIsAYes(reading: number, paid: number): boolean {
  */
 export function howFarTheOfferReaches(input: {
     priceInStones: number | null;
+    /** Stones put down, already counted at what they are worth to the maker. */
     stonesOffered: number;
     theTable: WhatItWouldTake;
+    /** The stone-equivalent worth of things put down that the maker wants. */
+    wantedWorthPutDown?: number;
 }): number {
     const stones = input.priceInStones !== null && input.priceInStones > 0
-        ? clamp(Math.max(0, input.stonesOffered) / input.priceInStones, 0, 1)
+        ? clamp((Math.max(0, input.stonesOffered) + Math.max(0, input.wantedWorthPutDown ?? 0))
+            / input.priceInStones, 0, 1)
         : 0;
     const bar = Math.max(1, input.theTable.theHeightToReach);
     const put = input.theTable.itIsATrade
@@ -665,15 +789,35 @@ export function howFarTheOfferReaches(input: {
     return Math.max(stones, put);
 }
 
-/** What would meet it, for the refusal to name. */
-function whatWouldMeetIt(priceInStones: number | null, theTable: WhatItWouldTake): string {
-    if (priceInStones !== null) {
-        return `Nothing near what it is worth was put down: ${priceInStones} spirit stones is `
-            + 'what a year of the hands that can only just make one comes to, and a favour owed '
-            + 'or something singular reaches where a short purse does not.';
+/**
+ * What would meet it, for the refusal to name.
+ *
+ * Where stones were put down and stones are worth little to this maker, that is
+ * said as the fact it is, and then what they would take instead: the thing they
+ * want where they have stated one, and otherwise something singular worth what
+ * the work is worth. Never a hard rule about a rung.
+ */
+function whatWouldMeetIt(
+    priceInStones: number | null,
+    theTable: WhatItWouldTake,
+    offer: { stonesOffered: number; stoneWorth: number; whatTheyWant: { text: string; kind: string } | null }
+): string {
+    if (priceInStones === null) return theTable.line;
+    const instead = offer.whatTheyWant !== null
+        ? `What they want is ${offer.whatTheyWant.text}, and that, or something toward it worth what `
+          + `${priceInStones} spirit stones would be, is what they would take.`
+        : `What they would take is something singular, or a favour owed, worth what ${priceInStones} `
+          + 'spirit stones would be.';
+    if (offer.stonesOffered > 0 && offer.stoneWorth < A_STONE_COUNTS_IN_FULL) {
+        return `Stones are worth little to a hand at this height against what they want: a stone put `
+            + `down counts for ${Math.round(offer.stoneWorth * 1000) / 10}% of one to them. ${instead}`;
     }
-    return theTable.line;
+    return `Nothing near what it is worth was put down: the work is worth what ${priceInStones} `
+        + `spirit stones would be. ${instead}`;
 }
+
+/** At or above this share a stone counts as a stone. */
+const A_STONE_COUNTS_IN_FULL = 0.999;
 
 /**
  * How heavy a debt an unpaid commission is. The two four-step ladders read at

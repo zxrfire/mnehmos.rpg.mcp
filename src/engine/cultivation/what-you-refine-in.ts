@@ -38,8 +38,8 @@
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import type { RoomPurpose, WhatIsBeingMade } from '../world/architecture.js';
-import { howMuchAGradeIsWorthTracking, type KeptAs } from '../world/possessions.js';
-import { madeBelowTheLid, refiningOrdinalFor } from './who-can-refine-a-grade-of-medicine.js';
+import { howMuchAGradeIsWorthTracking } from '../world/possessions.js';
+import { refiningOrdinalFor } from './who-can-refine-a-grade-of-medicine.js';
 
 /** The kinds of vessel a thing is refined in. */
 export type RefiningVesselKind = 'cauldron' | 'refining_furnace';
@@ -68,7 +68,7 @@ export const REFINING_VESSELS: Readonly<Record<RefiningVesselKind, ARefiningVess
         kind: 'cauldron', makes: 'medicine', plainName: 'fired clay cauldrons', tag: 'cauldron', keptIn: 'furnace_room'
     },
     refining_furnace: {
-        kind: 'refining_furnace', makes: 'an_artifact', plainName: 'iron refining furnaces',
+        kind: 'refining_furnace', makes: 'an_artifact', plainName: 'iron artifact furnaces',
         tag: 'refining_furnace', keptIn: 'artifact_refining_hall'
     }
 };
@@ -128,14 +128,6 @@ export const WHAT_A_CAULDRON_ADDS: Readonly<Record<TechniqueGrade, number>> = {
 };
 
 /**
- * The best a cauldron can ever be worth, held where it is checkable.
- *
- * Equal to the top of the table on purpose: a reader who wants to know the
- * ceiling should not have to scan a record for the largest number in it.
- */
-export const WHAT_THE_BEST_CAULDRON_ADDS = 0.18;
-
-/**
  * A cauldron cannot be worked above the hand holding it either.
  *
  * The same wall as the materials and for the same reason - a cauldron of a
@@ -176,12 +168,3 @@ export function whatACauldronIsWorthInAFight(grade: TechniqueGrade): number {
  */
 export const WHAT_A_POT_IS_WORTH_TO_HIDE_BEHIND = 0.4;
 
-/** Whether a cauldron of this grade is one anybody down here could have made. */
-export function couldBeMadeHere(grade: TechniqueGrade): boolean {
-    return madeBelowTheLid(grade);
-}
-
-/** The counted/tracked answer, for callers that only want the one word. */
-export function howACauldronIsKept(grade: TechniqueGrade): KeptAs {
-    return howMuchACauldronIsWorthTracking(grade) === 'mundane' ? 'counted' : 'tracked';
-}

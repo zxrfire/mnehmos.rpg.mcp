@@ -55,6 +55,7 @@ import {
 import { RECIPES, getRecipe } from '../../data/cultivation/recipes.js';
 import { getHerb } from '../../data/cultivation/herbs.js';
 import { whatThisCauldronAddsFor } from '../../engine/cultivation/what-you-refine-in.js';
+import { theBestVesselToHand } from '../../engine/world/the-vessel-somebody-works-at.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import {
     howYouWouldComeByIt,
@@ -410,12 +411,20 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
     }
     supplementBonus = Math.min(REFINE_SUPPLEMENT_CAP, supplementBonus);
 
+    // THE CAULDRON THEY ARE CARRYING, bought or lent, read off the world the way
+    // a pill's effect reads it. No world is the clay pot everybody has.
+    const worldHere = await worldForRun(run).catch(() => null);
+    const cauldron = worldHere === null
+        ? null
+        : theBestVesselToHand(worldHere.objects, cultivator.id, 'cauldron', cultivator.realmOrdinal);
+
     const odds = refineChance(
         recipe.baseSuccessRate,
         cultivator.realmOrdinal,
         recipe.requiredOrdinal,
         cultivator.attributes.insight,
-        supplementBonus
+        supplementBonus,
+        cauldron?.grade ?? null
     );
 
     const rng = forStream(run.seed, 'alchemy', run.turn, recipe.id);
@@ -465,9 +474,14 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
         produced: succeeded && pill
             ? { id: pill.id, name: pill.name, grade: pill.grade, effect: pill.effect, potency: pill.potency }
             : null,
-        narrationHint: succeeded && pill
+        cauldron: cauldron === null
+            ? null
+            : { objectId: cauldron.objectId, name: cauldron.name, grade: cauldron.grade, adds: round4(cauldron.adds) },
+        narrationHint: (succeeded && pill
             ? `The cauldron held. One ${pill.name} at ${round2(odds.chance * 100)}% odds.`
-            : `The cauldron did not hold. The ingredients are slag, at ${round2(odds.chance * 100)}% odds.`,
+            : `The cauldron did not hold. The ingredients are slag, at ${round2(odds.chance * 100)}% odds.`)
+            + (cauldron === null ? '' : ` Worked in ${cauldron.name}, ${cauldron.grade} grade`
+                + (cauldron.adds > 0 ? `, which added ${round2(cauldron.adds * 100)} to the odds.` : ', which does not answer a hand at this rung.')),
         pouch: projectPouch(repos.db, cultivator.id)
     };
 }

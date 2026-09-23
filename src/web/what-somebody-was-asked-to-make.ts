@@ -21,6 +21,7 @@
 import type { TechniqueGrade } from '../schema/cultivation.js';
 import type { WhatIsInTheSlip } from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
 import type { WhatYouAskedThemToMake } from '../engine/social-leverage/index.js';
+import { THE_PAIRED_COMMUNICATION_JADE } from '../data/cultivation/communication-talismans.js';
 
 /**
  * The grade named, or the bottom of the ladder.
@@ -78,8 +79,26 @@ export function aBenchCouldMakeThat(named: string): boolean {
     return A_SLIP.test(named) || A_RING.test(named) || A_WORKED_THING.test(named);
 }
 
+/**
+ * Communication jade, which is made as a PAIR: two linked halves, not one thing.
+ * See `a-pair-of-communication-jade.ts`; a commission for one is placed and made
+ * as a pair (`a-commission-placed-with-a-maker.ts`).
+ */
+const A_JADE = /\bjades?\b/i;
+
+/** Whether these words ask for a pair of communication jade. */
+export function asksForAPairOfJade(named: string): boolean {
+    return A_JADE.test(named);
+}
+
+/** Whether the words name a grade at all, rather than leaving it to what the thing is. */
+const A_GRADE_WORD = /\b(?:immortal|heaven(?:ly)?|earth(?:ly)?|mortal)\b/i;
+
 export function whatTheyWereAskedToMake(named: string): WhatYouAskedThemToMake {
-    const grade = gradeAskedFor(named);
+    // A JADE IS THE GRADE THE CATALOG MAKES IT AT, where nobody said another.
+    const grade = asksForAPairOfJade(named) && !A_GRADE_WORD.test(named)
+        ? THE_PAIRED_COMMUNICATION_JADE.grade
+        : gradeAskedFor(named);
     const slip: WhatIsInTheSlip | null = A_SLIP.test(named)
         ? (A_TELEPORTATION.test(named) ? 'a_teleportation' : 'a_strike')
         : null;

@@ -346,6 +346,7 @@ import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     theMakerThisIs,
     whatCuttingForTheHouseLands,
+    whatCuttingPays,
     wordFromThePeopleAway
 } from './what-a-house-hears-from-its-people-away.js';
 import {
@@ -4145,10 +4146,12 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         const served = doing.kind === 'travelling' ? npc
             : whatFinishingBoardWorkPays(npc, doing)
                 ?? creditMerit(npc, whatServiceIsWorth(npc.cultivation.realmOrdinal, doing.untilDay - doing.sinceDay));
-        // And what the work made, where it made something.
-        whatCuttingForTheHouseLands(state, theMakerThisIs(npc), doing);
+        // And what the work made, where it made something, paid for what landed.
+        const landed = whatCuttingForTheHouseLands(state, theMakerThisIs(npc), doing);
+        const paid = whatCuttingPays(landed, npc.cultivation.realmOrdinal);
+        const paidFor = paid > 0 ? { ...served, spiritStones: (served.spiritStones ?? 0) + paid } : served;
         state.npcs[i] = {
-            ...(back !== null && standing.has(back) ? setLocation(served, back, day) : served),
+            ...(back !== null && standing.has(back) ? setLocation(paidFor, back, day) : paidFor),
             activity: null
         };
         home++;

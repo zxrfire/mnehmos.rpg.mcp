@@ -496,6 +496,9 @@ import { getHerb, type Herb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
 import { getRecipe } from '../data/cultivation/recipes.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
+import { buyAVesselOffTheBoard } from './buying-a-vessel-off-the-board.js';
+import { whetherTheHousesCounterIsHere } from './a-house-counter-is-where-the-house-is.js';
+import { settleWhatWasPlacedWithAMaker } from './a-commission-placed-with-a-maker.js';
 import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 // Above a certain grade a pill has a value and no price. The refusal that says
 // so already existed and nothing asked it.
@@ -11363,6 +11366,12 @@ ${opened.text}` : receipt,
             };
         }
         if (gives.kind === 'rations') return this.provision(run, cultivator, undefined, 1);
+        // A VESSEL TO REFINE IN, handed over as a row the vessel read can find.
+        if (gives.kind === 'a_vessel') {
+            return buyAVesselOffTheBoard(
+                this, run, cultivator, price, stones, this.whatThisCostsAndWhy(price, cash, stones, groundHere)
+            );
+        }
 
         // PAID FOR AND GONE. A letter written, a bell rung, a night on an inn
         // floor: consumed at the counter, leaving nothing to hold. This used to
@@ -11370,6 +11379,18 @@ ${opened.text}` : receipt,
         // which is true of the ENGINE and false of the world - a scribe will
         // write your letter. The stones are spent and the fact is stated.
         if (gives.kind === 'spent_at_the_counter') {
+            // A HOUSE'S OWN COUNTER IS WHERE THE HOUSE IS. See
+            // `a-house-counter-is-where-the-house-is.ts`.
+            this.atHand = this.atHand ?? await this.loadWorld();
+            const counter = whetherTheHousesCounterIsHere(this, cultivator, price);
+            if (!counter.here) {
+                return refused('engine.whoseCounterThisSitsAt', 'buy', factsForRefusal(
+                    `Not done here.`,
+                    counter.line,
+                    `${price.id} sits at ${counter.houseName}'s counter, and the player is at neither `
+                    + 'its compound nor in front of one of its people. Nothing bought, nothing spent, no time passed.'
+                ));
+            }
             if (cultivator.spiritStones < stones) {
                 return refused('engine.localPrice', 'buy', factsForRefusal(
                     'Not for what you are carrying.',

@@ -41,12 +41,10 @@
  * years for heaven-grade work at the gate. The yard is its own shape and
  * spends what the catalog gives a hull.
  *
- * NO ROLL EITHER, and that is a stated absence rather than an oversight. The
- * rung and the bench ARE the difficulty here - `whetherTheirHandsCanDoIt` is two
- * gates and both of them can refuse - and whether a hand that clears both should
- * also be able to waste the materials is a design question, not a tuning
- * constant. `building-a-conveyance...` rolls one because somebody ruled that a
- * hull can fail on the slipway. Nobody has ruled on paper.
+ * AND A ROLL FOR A WORKED THING, which the refining furnace adds to. The odds
+ * are the yard's own for a hull of the same grade, and a failed piece of work
+ * has spent its materials as a failed pill has: `whether-the-work-holds.ts`.
+ * A slip is not rolled, because nobody has ruled that paper can fail.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * WHERE THE FINISHED THING LANDS, AND THE GAP IN IT
@@ -67,17 +65,16 @@ import type Database from 'better-sqlite3';
 
 import { whetherTheirHandsCanDoIt } from '../engine/social-leverage/commissioning-a-craft.js';
 import type { WhatYouAskedThemToMake } from '../engine/social-leverage/index.js';
-import {
-    cutATalisman,
-    whatWasFoldedIn
-} from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
+import { whatWasFoldedIn } from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
 import { isAWorkedGrade } from '../data/cultivation/what-an-artifact-is-made-of.js';
+import { transferPossession, type ObjectRecord } from '../engine/world/possessions.js';
 import {
-    howMuchAGradeIsWorthTracking,
-    makeObject,
-    transferPossession,
-    type ObjectRecord
-} from '../engine/world/possessions.js';
+    mintAMadeThing,
+    theOddsTheWorkHolds,
+    type TheOddsOfTheWork
+} from '../engine/social-leverage/whether-the-work-holds.js';
+import { theBestVesselToHand, type AVesselToHand } from '../engine/world/the-vessel-somebody-works-at.js';
+import { whatHoldingItMeans, whoseThisIs } from '../engine/world/a-house-holds-its-own.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import { takeWhatTheRecipeNames } from './taking-the-materials-off-the-bench.js';
@@ -127,6 +124,10 @@ export interface MakingPlan {
      */
     ask?: WhatYouAskedThemToMake;
     bench?: readonly AUnitOnTheBench[];
+    /** The refining furnace they are carrying, where they carry one. Null for a slip. */
+    vessel?: AVesselToHand | null;
+    /** The odds the work comes off whole, read before anything is taken. */
+    odds?: TheOddsOfTheWork;
 }
 
 export interface PlanTheMaking {
@@ -135,6 +136,11 @@ export interface PlanTheMaking {
     cultivator: Cultivator;
     /** What they said after the verb. */
     said: string;
+    /**
+     * Which ids are houses, for saying what holding a lent vessel means. Omitted,
+     * nothing is said about whose it is.
+     */
+    houseIds?: ReadonlySet<string>;
 }
 
 /**
@@ -213,17 +219,44 @@ export function planTheMaking(input: PlanTheMaking): MakingPlan {
         };
     }
 
+    // THE FURNACE THEY ARE CARRYING, bought or lent. A slip is cut wherever the
+    // cutter sits and is not worked at one.
+    const vessel = ask.slip
+        ? null
+        : theBestVesselToHand(input.objects, cultivator.id, 'refining_furnace', cultivator.realmOrdinal);
+    const odds = theOddsTheWorkHolds(ask, cultivator.realmOrdinal, vessel?.grade ?? null);
+
     return {
         kind: 'make',
         headline: `You set to work on ${theThing(ask.named)}.`,
-        lines: [],
+        lines: vessel === null ? [] : [
+            `You work at ${vessel.name}, ${vessel.grade} grade`
+            + (vessel.adds > 0 ? '.' : ', and it does not answer a hand at your rung.'),
+            // AND WHOSE IT IS, where it is somebody else's: a house's furnace in
+            // your hands is the house's, which `whatHoldingItMeans` says.
+            ...(() => {
+                const row = input.objects.find(one => one.id === vessel.objectId);
+                if (!row || input.houseIds === undefined) return [];
+                const said = whatHoldingItMeans(whoseThisIs({
+                    ownerId: row.ownerId, possessorId: row.possessorId, houseIds: input.houseIds, provenance: row.provenance
+                }));
+                return said === null ? [] : [said];
+            })()
+        ],
         structure: [
             `craft at a bench: ${ask.grade} grade, ${ask.slip ?? 'a made thing'}, at ordinal `
             + `${cultivator.realmOrdinal}. Bench held ${bench.length} piece(s)`
-            + (isAWorkedGrade(ask.grade) ? ' and the recipe is whole.' : '; the grade asks for no recipe.')
+            + (isAWorkedGrade(ask.grade) ? ' and the recipe is whole.' : '; the grade asks for no recipe.'),
+            odds.rolled
+                ? `theOddsTheWorkHolds: ${Math.round(odds.chance * 1000) / 10}% (the yard's base `
+                  + `${Math.round(odds.base * 1000) / 10}%, furnace +${Math.round(odds.fromTheVessel * 1000) / 10}`
+                  + `${vessel === null ? ', none carried' : ` from ${vessel.objectId} at ${vessel.grade} grade`}).`
+                : 'theOddsTheWorkHolds: a slip is not rolled.'
         ],
         ask,
-        bench
+        bench,
+        vessel,
+        odds
     };
 }
 
@@ -242,6 +275,11 @@ export interface LandTheMaking {
     cultivator: Cultivator;
     plan: MakingPlan;
     today: number;
+    /**
+     * The draw the work is judged on, 0..1, off a seeded stream the caller
+     * owns. Read only where the plan's odds are rolled.
+     */
+    roll: number;
 }
 
 /**
@@ -286,32 +324,34 @@ export function landTheMaking(input: LandTheMaking): MadeAtTheBench {
         };
     }
 
+    // THE MATERIALS ARE IN THE WORK EITHER WAY, as a pill's ingredients are.
+    const odds = plan.odds ?? theOddsTheWorkHolds(ask, cultivator.realmOrdinal, null);
+    if (odds.rolled && !(input.roll < odds.chance)) {
+        return {
+            lines: [
+                ...paid.lines,
+                `${theThing(ask.named).slice(0, 1).toUpperCase()}${theThing(ask.named).slice(1)} did not come `
+                + `off whole. What went into it is slag, at ${Math.round(odds.chance * 100)}% odds.`
+            ],
+            structure: [
+                ...paid.structure,
+                `craft at a bench: rolled ${input.roll.toFixed(4)} against ${odds.chance.toFixed(4)}; `
+                + 'the work failed and nothing was made. The materials were spent.'
+            ],
+            calls: paid.calls,
+            minted: null
+        };
+    }
+
     const standsAt = whatWasFoldedIn(cultivator.realmOrdinal);
-    const blank = ask.slip
-        ? cutATalisman({
-            id: `obj-made-${cultivator.id}-${today}`,
-            name: ask.named,
-            grade: ask.grade,
-            what: ask.slip,
-            crafterId: cultivator.id,
-            crafterName: cultivator.name,
-            crafterOrdinal: cultivator.realmOrdinal,
-            onDay: today
-        })
-        // NOT A SECOND CATALOG. The same factory the artifact table itself is
-        // built with, at the significance its grade earns, standing at the rung
-        // of the hand that made it - which is `possessions.ts`'s own rule that a
-        // finished thing carries an ordinal and the stuff it came from carries a
-        // grade.
-        : makeObject({
-            id: `obj-made-${cultivator.id}-${today}`,
-            name: ask.named,
-            kind: 'artifact',
-            significance: howMuchAGradeIsWorthTracking(ask.grade),
-            description: `${ask.grade}-grade work, made by ${cultivator.name}.`,
-            power: standsAt,
-            tags: ['made', `grade:${ask.grade}`]
-        });
+    // NOT A SECOND CATALOG, AND ONE PATH FOR EVERY HAND: the same mint a maker
+    // finishing somebody's commission uses. See `whether-the-work-holds.ts`.
+    const blank = mintAMadeThing({
+        id: `obj-made-${cultivator.id}-${today}`,
+        ask,
+        maker: { id: cultivator.id, name: cultivator.name, ordinal: cultivator.realmOrdinal },
+        onDay: today
+    });
 
     const minted = transferPossession(blank, {
         onDay: today,

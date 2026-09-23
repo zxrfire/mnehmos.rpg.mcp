@@ -34,6 +34,12 @@ import {
 } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine';
 import type { TechniqueGrade } from '../../../src/schema/cultivation';
 
+/**
+ * The rung every ask here is put to unless it says otherwise. A commission costs
+ * what its maker asks, so a price read for these asks is read at this rung.
+ */
+const THE_USUAL_MAKER = 20;
+
 /** Enough people that a rate is a rate. */
 const PEOPLE = 400;
 
@@ -64,7 +70,7 @@ function askOnce(n: number, c: Case) {
     return askingSomebodyToMakeYouSomething({
         ask,
         askerId,
-        maker: { id: makerId, ordinal: c.ordinal ?? 20 },
+        maker: { id: makerId, ordinal: c.ordinal ?? THE_USUAL_MAKER },
         nearness: c.nearness ?? 'distant',
         stonesOffered: c.stones ?? 0,
         onTheTable: c.onTheTable ?? [],
@@ -284,27 +290,33 @@ describe('the answer belongs to the person, not to the craft', () => {
 // ═════════════════════════════════════════════════════════════════════════
 
 describe('paying for it', () => {
-    it('the grades that carry a price are exactly the grades stones can move', () => {
-        for (const grade of GRADES) {
-            const price = whatACommissionComesTo(grade);
-            const gate = refiningOrdinalFor(grade);
-            if (gate > MAX_ORDINAL) continue;
-            const nothing = howOften({ grade, ordinal: MAX_ORDINAL, nearness: 'nearby' });
-            const aFortune = howOften({
-                grade, ordinal: MAX_ORDINAL, nearness: 'nearby', stones: 1_000_000
-            });
-            if (price === null) {
-                // "Not 'expensive' - not for sale." A purse of any size is the
-                // same offer as an empty hand.
-                expect(aFortune).toBe(nothing);
-            } else {
-                expect(aFortune).toBeGreaterThan(nothing);
-            }
+    /**
+     * WHAT STONES ARE WORTH IS THE MAKER'S, NOT THE GRADE'S. The design owner:
+     * *"at ordinal 29 they want STUFF"*, *"nobody would take 20k stones"*, and
+     * *"generally, not a hard rule."* A purse the size of the work's worth moves
+     * a maker whose day is still what the wages on offer pay, and falls far
+     * short with a maker whose day is worth vastly more - and nothing below the
+     * Lid makes an immortal or chaos thing, so there a purse is nothing at all.
+     */
+    it('moves a maker whose day is still a wage, and falls short with one far above it', () => {
+        const low = refiningOrdinalFor('earth');
+        const lowPrice = whatACommissionComesTo('earth', false, low) as number;
+        expect(howOften({ grade: 'earth', ordinal: low, nearness: 'nearby', stones: lowPrice }))
+            .toBeGreaterThan(howOften({ grade: 'earth', ordinal: low, nearness: 'nearby' }));
+
+        const high = MAX_ORDINAL;
+        const highPrice = whatACommissionComesTo('earth', false, high) as number;
+        const said = askOnce(0, { grade: 'earth', ordinal: high, nearness: 'nearby', stones: highPrice });
+        expect(said.whatAStoneIsWorthToThem).toBeLessThan(0.01);
+        expect(said.paid).toBeLessThan(0.01);
+
+        for (const grade of ['immortal', 'chaos'] as const) {
+            expect(whatACommissionComesTo(grade)).toBeNull();
         }
     });
 
     it('rises with what is put down and stops rising once the price is met', () => {
-        const price = whatACommissionComesTo('mortal') as number;
+        const price = whatACommissionComesTo('mortal', false, THE_USUAL_MAKER) as number;
         const rates = [0, 0.25, 0.5, 0.75, 1]
             .map(share => howOften({ nearness: 'distant', stones: Math.round(price * share) }));
         for (let i = 1; i < rates.length; i++) {
@@ -317,12 +329,12 @@ describe('paying for it', () => {
     });
 
     it('and a stranger who pays what it is worth is usually taken up on it', () => {
-        const price = whatACommissionComesTo('mortal') as number;
+        const price = whatACommissionComesTo('mortal', false, THE_USUAL_MAKER) as number;
         expect(howOften({ nearness: 'distant', stones: price })).toBeGreaterThan(0.5);
     });
 
     it('but paying does not buy somebody who has a real reason to refuse', () => {
-        const price = whatACommissionComesTo('mortal') as number;
+        const price = whatACommissionComesTo('mortal', false, THE_USUAL_MAKER) as number;
         const said = askingSomebodyToMakeYouSomething({
             ask: { named: 'a slip', grade: 'mortal' },
             askerId: 'asker',
@@ -394,6 +406,78 @@ describe('a stronger maker asks more for the same thing', () => {
     it('keeps a maker\'s year climbing past where the wages on offer stop', () => {
         const flat = Math.ceil(WHERE_WAGES_ON_OFFER_STOP_CLIMBING);
         expect(whatAYearOfAMakersTimeIsWorth(flat + 10)).toBeGreaterThan(whatAYearOfAMakersTimeIsWorth(flat) * 10);
+    });
+});
+
+/**
+ * WHAT A MAKER TAKES IS WHAT THEY WANT. The design owner: *"it depends on what a
+ * dude wants"*, *"at ordinal 29 they want STUFF"*, *"you can still track in
+ * stone-equivalent value, but nobody would take 20k stones"*, and *"generally,
+ * not a hard rule."* The work is measured in stone-equivalent; stones count at
+ * what they are worth to this maker; a thing put down counts when it is
+ * something they want and its worth meets the work's.
+ */
+describe('a maker is paid in what they want', () => {
+    const aCore = { text: 'a heaven-grade beast core', kind: 'cultivation' };
+    const ask = (ordinal: number, over: Partial<Parameters<typeof askingSomebodyToMakeYouSomething>[0]> = {}) =>
+        askingSomebodyToMakeYouSomething({
+            ask: { named: 'an earth-grade blade', grade: 'earth' },
+            askerId: 'asker',
+            maker: { id: 'maker', ordinal },
+            nearness: 'distant',
+            onDay: 100,
+            ...over
+        });
+
+    it('lets a maker still paid in wages take stones for earth work', () => {
+        const ordinal = refiningOrdinalFor('earth');
+        const price = whatACommissionComesTo('earth', false, ordinal) as number;
+        expect(ask(ordinal, { stonesOffered: price }).paid).toBe(1);
+    });
+
+    it('has a maker far past that turn the same purse down, and name what they want instead', () => {
+        const ordinal = 35;
+        const price = whatACommissionComesTo('earth', false, ordinal) as number;
+        const said = ask(ordinal, { stonesOffered: price, whatTheyWant: aCore });
+        expect(said.paid).toBeLessThan(0.1);
+        expect(said.agreed).toBe(false);
+        expect(said.line).toMatch(/stones are worth little/i);
+        expect(said.line).toContain(aCore.text);
+    });
+
+    it('takes the thing they want, worth what the work is worth, and not a thing they do not', () => {
+        const ordinal = 35;
+        const price = whatACommissionComesTo('earth', false, ordinal) as number;
+        const wanted = ask(ordinal, {
+            whatTheyWant: aCore,
+            thingsPutDown: [{ what: aCore.text, worthInStones: price, isWhatTheyWant: true }]
+        });
+        const unwanted = ask(ordinal, {
+            whatTheyWant: aCore,
+            thingsPutDown: [{ what: 'a bolt of silk', worthInStones: price, isWhatTheyWant: false }]
+        });
+        expect(wanted.paid).toBe(1);
+        expect(unwanted.paid).toBeLessThan(1);
+    });
+
+    it('is not a hard rule: a high maker who wants wealth takes a stone as a stone', () => {
+        const ordinal = 35;
+        const price = whatACommissionComesTo('earth', false, ordinal) as number;
+        const said = ask(ordinal, { stonesOffered: price, whatTheyWant: { text: 'a fortune', kind: 'wealth' } });
+        expect(said.whatAStoneIsWorthToThem).toBe(1);
+        expect(said.paid).toBe(1);
+    });
+
+    it('turns a purse down for heaven work, and takes a wanted thing of the work\'s worth', () => {
+        const ordinal = refiningOrdinalFor('heaven');
+        const price = whatACommissionComesTo('heaven', false, ordinal) as number;
+        const heaven = { named: 'a heaven-grade blade', grade: 'heaven' as const };
+        expect(ask(ordinal, { ask: heaven, stonesOffered: price, whatTheyWant: aCore }).paid).toBeLessThan(1);
+        expect(ask(ordinal, {
+            ask: heaven,
+            whatTheyWant: aCore,
+            thingsPutDown: [{ what: aCore.text, worthInStones: price, isWhatTheyWant: true }]
+        }).paid).toBe(1);
     });
 });
 
@@ -473,7 +557,7 @@ describe('work done for nothing is a debt', () => {
     });
 
     it('and opens none where it was paid for', () => {
-        const price = whatACommissionComesTo('mortal') as number;
+        const price = whatACommissionComesTo('mortal', false, THE_USUAL_MAKER) as number;
         expect(firstAgreement({ nearness: 'household', stones: price }).owed).toBeNull();
     });
 
@@ -621,7 +705,7 @@ function somebodyAsksThePlayer(n: number, c: Case & { playerOrdinal?: number }) 
     return askingSomebodyToMakeYouSomething({
         ask,
         askerId,
-        maker: { id: player, ordinal: c.playerOrdinal ?? 20 },
+        maker: { id: player, ordinal: c.playerOrdinal ?? THE_USUAL_MAKER },
         nearness: c.nearness ?? 'distant',
         stonesOffered: c.stones ?? 0,
         onTheTable: c.onTheTable ?? [],
@@ -711,7 +795,7 @@ describe('the player taking a commission', () => {
 
     it('says yes far more often once the money is on the table', () => {
         const grade: TechniqueGrade = 'mortal';
-        const price = whatACommissionComesTo(grade)!;
+        const price = whatACommissionComesTo(grade, false, THE_USUAL_MAKER)!;
         const nothing = howOftenThePlayerAgrees({ grade, stones: 0 });
         const paid = howOftenThePlayerAgrees({ grade, stones: price });
         expect(paid).toBeGreaterThan(nothing);

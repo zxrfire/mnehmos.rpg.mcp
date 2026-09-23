@@ -148,6 +148,7 @@ import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-abou
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-result-prose.js';
 import { whatTheyWereAskedToMake } from './what-somebody-was-asked-to-make.js';
+import { placeTheCommission, whatTheMakerIsAlreadyMaking } from './a-commission-placed-with-a-maker.js';
 import { materialBeingCarriedBy, materialInThePouch } from './what-is-on-the-bench.js';
 import { askingSomebodyToMakeYouSomething } from '../engine/social-leverage/index.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
@@ -1970,12 +1971,11 @@ ${done.span.facts.prose}`;
      * requisition against a HOUSE and the player was handed a list of sect
      * names.
      *
-     * THIS ASKS AND ANSWERS. It does not hand over the thing: a commissioned
-     * talisman is a tracked world object rather than a counted pouch row, and
-     * bridging those is its own piece of work. What the player gets is the
-     * answer the module gives - whether those hands can, what it comes to, and
-     * how far what they put down reaches - which is what a person asking
-     * actually wants to know first.
+     * A YES IS PLACED: paid, the materials handed over, and the maker set to the
+     * work until its day, when it is made and handed over. See
+     * `a-commission-placed-with-a-maker.ts`. A no is the answer the module gives -
+     * whether those hands can, what it comes to, and how far what was put down
+     * reaches.
      */
     whetherTheyWouldMakeIt(
         this: GameService,
@@ -1995,6 +1995,23 @@ ${done.span.facts.prose}`;
         }
 
         const asked = whatTheyWereAskedToMake(named);
+
+        // A MAKER ALREADY AT WORK TAKES NOTHING ELSE ON until it is done, which is
+        // the same activity every other busy refusal reads.
+        const makerRow = this.atHand?.npcs.find(row => row.id === party.id) ?? null;
+        const alreadyMaking = makerRow === null || !this.atHand
+            ? null
+            : whatTheMakerIsAlreadyMaking(makerRow, Math.floor(this.atHand.currentDay));
+        if (alreadyMaking !== null) {
+            return refused('engine.whatTheMakerIsAlreadyMaking', 'request', factsForRefusal(
+                `${party.name} is already at work.`,
+                alreadyMaking,
+                `${party.id} has a made thing under way on their activity. Nothing placed, nothing spent.`
+            ));
+        }
+        // WHAT IS PUT DOWN IS WHAT THEY ARE CARRYING. A figure past the purse is
+        // not on the table.
+        const stonesOffered = Math.min(stonesNamedIn(rawInput) ?? 0, cultivator.spiritStones);
         const answer = askingSomebodyToMakeYouSomething({
             ask: asked,
             askerId: cultivator.id,
@@ -2007,7 +2024,13 @@ ${done.span.facts.prose}`;
             ...(cultivator.sectId !== null && cultivator.sectId === party.party.factionId
                 ? { nearness: 'house' as const }
                 : {}),
-            stonesOffered: stonesNamedIn(rawInput) ?? 0,
+            stonesOffered,
+            // WHAT THIS MAKER WANTS MOST, off their own open goals: what they take
+            // instead of stones, and whether stones are worth much to them at all.
+            whatTheyWant: (() => {
+                const goal = this.theirOpenBusiness(party.id)?.goals[0];
+                return goal ? { text: goal.text, kind: goal.kind } : null;
+            })(),
             // WHAT IS ACTUALLY ON THE BENCH. Without this the material economy
             // was authored and unenforced: hands at the right rung turned out
             // earth- and heaven-grade work out of an empty room. Mortal grade
@@ -2022,11 +2045,21 @@ ${done.span.facts.prose}`;
         const answered = this.freeAction(run, 'request', factsForACommission(
             party.name, cultivator.name, asked, answer
         ));
+        // AGREED IS PLACED: paid, the stuff handed over, and their days set to it.
+        // See `a-commission-placed-with-a-maker.ts`.
+        const placed = placeTheCommission({
+            game: this, cultivator, makerId: party.id, ask: asked, answer, stonesOffered, said: rawInput
+        });
+        if (placed !== null) {
+            answered.facts.lines.push(...placed.lines);
+            answered.facts.prose = [answered.facts.prose, ...placed.lines].join('\n\n');
+            answered.facts.structure.push(...placed.structure);
+            return answered;
+        }
         // HOW LONG IT WOULD TAKE THEM, off the one curve a bench and a cauldron
-        // read. Said and not spent: this asks and answers, and nothing is placed
-        // with them, so nothing is written on their activity either.
+        // read. Said and not spent where nothing was placed.
         if (answer.hands.theyCan) {
-            const days = daysAtTheWork(asked.grade, party.party.realmOrdinal);
+            const days = daysAtTheWork(asked.grade, party.party.realmOrdinal, { aSlip: Boolean(asked.slip) });
             const line = `It would take ${party.name} ${days} day${days === 1 ? '' : 's'} at the work.`;
             answered.facts.lines.push(line);
             answered.facts.prose = `${answered.facts.prose}\n\n${line}`;
