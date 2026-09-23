@@ -299,6 +299,7 @@ import {
 import type { SectIntent } from './sect-phrasings.js';
 import { theThingBeingHandedIn } from './handing-in-phrasings.js';
 import { aThingWornOrHeld } from './what-is-on-you-phrasings.js';
+import { whatIsBeingKeptOutOfSight } from './keeping-out-of-sight-phrasings.js';
 import { aBondBeingEnded } from './ending-a-bond-phrasings.js';
 import { stonesNamedIn } from './tool-result-prose.js';
 

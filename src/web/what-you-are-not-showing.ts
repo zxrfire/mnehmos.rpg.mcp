@@ -130,3 +130,24 @@ export function theFragmentIsOnlyTheDeclaration(part: string): boolean {
         .trim();
     return left.length === 0;
 }
+
+/**
+ * Whether this cultivator is not showing what they are, said either way.
+ *
+ * THE ONE PREDICATE. A concealment now reaches the engine by two roads - the
+ * clause a sentence carries while it does something else, which is what this
+ * file was written for, and the standing declaration a player makes on its own
+ * (`conceal/cultivation`, `FLAG_WEIGHT_PUT_AWAY`). Two roads to one fact is
+ * fine; two ways of ASKING about it is how the same question gets answered
+ * differently in two places, so every caller reads this and nothing reads
+ * either half alone.
+ *
+ * Kept here rather than beside the flag because this is where the question
+ * already lived and where anybody looking for it will look.
+ */
+export function theyAreNotShowingWhatTheyAre(
+    weightIsPutAway: boolean,
+    rawInput: string
+): boolean {
+    return weightIsPutAway || whatYouAreNotShowing(rawInput) !== null;
+}

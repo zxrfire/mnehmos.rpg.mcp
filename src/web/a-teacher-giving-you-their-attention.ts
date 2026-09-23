@@ -67,7 +67,8 @@ import type { ActionName } from './actions.js';
 import type { GameService } from './turn-engine.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { guestPlaceHeldBy } from '../server/consolidated/sect-guest.js';
-import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
+import { theyAreNotShowingWhatTheyAre } from './what-you-are-not-showing.js';
+import { theirWeightIsPutAway } from './keeping-yourself-out-of-sight.js';
 import {
     severityOfTheWrong,
     shapeOf
@@ -755,7 +756,11 @@ export const attentionVerbs = {
             witnesses: witnesses.map(npc => ({
                 id: npc.id, name: npc.name, realmOrdinal: npc.cultivation.realmOrdinal, npc
             })),
-            keepingItToThemselves: whatYouAreNotShowing(rawInput) !== null
+            // Either road, asked once: the clause in this sentence, or the
+            // standing declaration. See `theyAreNotShowingWhatTheyAre`.
+            keepingItToThemselves: theyAreNotShowingWhatTheyAre(
+                theirWeightIsPutAway(this.db, cultivator.id), rawInput
+            )
         }).map(({ witness, face }) => ({ witness: witness.npc, reading: whetherAFaceIsRemarkable(face) }));
         const seen = readings.find(one => one.reading.remarkable) ?? null;
         if (seen === null) {

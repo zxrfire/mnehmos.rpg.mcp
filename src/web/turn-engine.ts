@@ -1127,6 +1127,11 @@ import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
 import { theyGiveInWithNoFightStanding } from './giving-in-with-no-fight-standing.js';
 import {
+    theyPutTheirWeightAway,
+    theyShowWhatTheyAre,
+    whoWouldStillFindYou
+} from './keeping-yourself-out-of-sight.js';
+import {
     theyTakeTheRobesOff,
     whatTheirHandsDo,
     whatTheirTokenProves,
@@ -4474,6 +4479,38 @@ ${noticedWaiting}`;
                 // the words and not of a field a model filled in. Same rule
                 // `legacyAct` keeps for the form of words.
                 return this.inventory(run, cultivator, rawInput);
+
+            case 'conceal':
+                // Getting out of sight. An unrecognised label falls to `self`,
+                // which is the read - see the note on `conceal` in
+                // `INTENT_ACTIONS`.
+                switch (action.intent) {
+                    case 'cultivation':
+                        return theyPutTheirWeightAway(this, cultivator);
+                    case 'show':
+                        return theyShowWhatTheyAre(this, cultivator);
+                    default:
+                        return whoWouldStillFindYou(this, cultivator);
+                }
+
+            case 'carry':
+                // What is on the body and in the hands. An unrecognised label
+                // falls to `wear`, which is the read - see the note on `carry`
+                // in `INTENT_ACTIONS`.
+                switch (action.intent) {
+                    case 'take_off':
+                        return theyTakeTheRobesOff(this, cultivator, action.target);
+                    case 'show':
+                        return whatTheirTokenProves(this, cultivator);
+                    case 'draw':
+                    case 'put_away':
+                    case 'drop':
+                        return whatTheirHandsDo(
+                            this, run, cultivator, action.intent, action.target
+                        );
+                    default:
+                        return whatWearingThemBuys(this, cultivator, action.target);
+                }
 
             case 'propose':
                 // `topic` is what is being put on the table, in the player's

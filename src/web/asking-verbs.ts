@@ -143,7 +143,8 @@ import {
     whatStandsInTheWay
 } from './making-somebody-tell-you.js';
 import { whatAThreatPromises } from './what-a-threat-promises.js';
-import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
+import { theyAreNotShowingWhatTheyAre } from './what-you-are-not-showing.js';
+import { theirWeightIsPutAway } from './keeping-yourself-out-of-sight.js';
 import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-about-you.js';
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-result-prose.js';
@@ -452,12 +453,18 @@ export const askingVerbs = {
         // somebody who owes you has by construction dealt with you, and a robe
         // that hid you from your own creditor would drop the one piece of
         // leverage that is about the two of you and nothing else.
-        const notShowing = whatYouAreNotShowing(rawInput);
+        // EITHER ROAD, ASKED ONCE. The clause in this sentence, or the standing
+        // declaration a player made on a turn of its own - see
+        // `theyAreNotShowingWhatTheyAre`, which is the only place the two are
+        // put together.
+        const putAway = theyAreNotShowingWhatTheyAre(
+            theirWeightIsPutAway(this.db, cultivator.id), rawInput
+        );
         const theirTie = tieFrom(this.repos, party.id, cultivator.id);
         const asTheyReadYou = whatTheyCanPlaceAbout({
             theirOrdinal: cultivator.realmOrdinal,
             readerOrdinal: them.realmOrdinal,
-            keepingItToThemselves: notShowing !== null,
+            keepingItToThemselves: putAway,
             hasDealtWithThemBefore: theirTie !== null || ledger.length > 0
         });
 
