@@ -130,6 +130,7 @@ const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     teaching: true,
     guidance: true,
     discipleship: true,
+    ending_a_bond: true,
     introduction: true,
     telling: true,
     a_thing: true,
@@ -172,11 +173,36 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         says: `examine a place, a person, a record, an inscription, an object; search a ruin.
             "target" names what is being examined.`
     },
+    conceal: {
+        takes: ['intent'],
+        intents: ['self', 'cultivation', 'show'],
+        says: `getting out of sight. "intent" says which sense: "self" is the body somewhere it
+            is not seen, and the answer names who here would still place you and why; "cultivation"
+            is carrying nothing that says what you are - the hidden expert in the plain robe - and
+            it STANDS until the player says otherwise; "show" puts the weight back on. No day
+            passes. A concealment said as part of another sentence ("hiding my cultivation, I ask
+            him where the elder is") is NOT this verb - it is a manner on that act and is already
+            read there.`
+    },
+    carry: {
+        takes: ['target', 'intent'],
+        intents: ['wear', 'take_off', 'draw', 'put_away', 'drop', 'show'],
+        says: `what is on this body and what is in its hands. "intent" says which: "wear" puts
+            robes on (and says whose they are and what a house's people make of somebody in
+            them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away"
+            returns it, "drop" lets it go on the ground, "show" offers the house token as proof of
+            what you are - which is what a robe is not. "target" is what was named, in the
+            player's own words. No day passes and nothing is rolled. NOT for attacking: "I
+            draw my sword on him" is attack. Inside a fight none of this applies - dropping a
+            sword there is a surrender, and the fight reads it.`
+    },
     move: {
         takes: ['target', 'intent'],
         intents: ['travel', 'flee', 'approach', 'enter', 'follow'],
         says: `go somewhere on foot. "target" is the destination; "intent" is how - travel,
-            flee, approach, enter, follow.`
+            flee, approach, enter, follow. "flee" is leaving the scene rather than naming
+            somewhere to go - "I leave", "I back off" - which is also how somebody answers being
+            told to get off ground other people are working.`
     },
     ride: {
         takes: ['target', 'topic'],
@@ -294,7 +320,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     refine: {
         takes: ['target'],
-        says: `work the cauldron. "target" names the formula or the pill wanted.`
+        says: `work the cauldron. "target" names the formula or the pill wanted. A player may
+            call it a pill furnace and mean the same thing. NOT an artifact furnace, which is
+            the forging vessel and belongs to craft, and NOT a cultivation furnace, which is a
+            person another cultivator draws off and belongs to coerce.`
     },
     craft: {
         takes: ['target', 'days'],
@@ -530,21 +559,31 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // up with. `SectIntent` is a union type, so nothing compared them
             // against anything: the tables prove an intent exists and the
             // officer intents do not come from a table at all.
-            'take', 'authority', 'decree'
+            'take', 'authority', 'decree',
+            // Handing a THING in, which the house credits where it wants it.
+            'hand_in'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
             to take something off the mission board, "donate" to pay money into the house's
-            coffers, which buys no rung and no contribution, "guest"
+            coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are
+            holding in to their own house - "target" names it - which the house credits as
+            contribution where it wants the thing and says why where it does not, "guest"
             to sit in at a house that has not taken you, "leave" to resign, "summons" to ask
             what the house has asked of you, "accept" to answer it yes and go, "refuse" to
-            answer it no and "ignore" to answer it not at all, "complaints" to read what the
+            answer it no - which also answers people already working ground the player has
+            walked onto, and hands off to the confrontation - and "ignore" to answer it not at
+            all, "complaints" to read what the
             house is holding against its own and decide one where the room is theirs, "plead"
             to speak for somebody it is holding something against - "target" names them - and
             "siphon",
             "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
-            a disciple buy.
+            a disciple buy. "expel" is a house putting somebody off its roll - said as doing it
+            or as having it done, which are the same act - and what the power actually reaches is
+            an ELDER's dismissal, at the top of the ladder: the answer names who holds it where
+            the player does not, and says that nobody puts an ordinary member off a roll by
+            saying so.
 
             Three more belong to somebody who holds a room. "authority" READS which rooms of the
             house are the player's to speak for, and it is free - it is the sentence before the
@@ -766,7 +805,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             nearby who is not asked teaches nothing; anybody, a master included, is asked like
             any favour and may say no, and somebody at their own practice or at their own wall
             declines and says when they will be free), discipleship (be
-            taken on), introduction (be put in front of somebody), telling (be told something
+            taken on), ending_a_bond (PUT A MASTER-DISCIPLE BOND DOWN, from either end - a
+            master casting a disciple out, a disciple walking out on a master. Nothing is being
+            asked for and nobody may refuse it; what it costs is stated rather than weighed:
+            each of them keeps a former tie to the other, and the end that did not do it holds
+            a broken oath against the end that did, the heavier the longer the bond had stood.
+            "target" is who it is with, and "my master" with more than one is answered by naming
+            them and asking which), introduction (be put in front of somebody), telling (be told something
             they know), a_thing (be given, lent or sold an object), terms (what would it take -
             the price asked before it is paid), a_trade (something put down for it that is not
             money), advancement (be raised a rung in your own house - it only moves if the person

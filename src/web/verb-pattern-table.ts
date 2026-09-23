@@ -288,10 +288,12 @@ import {
     SECT_ERRAND_PATTERNS,
     DEFAULT_ERRAND,
     CLAIMING_THE_HOUSES_AUTHORITY,
-    aTakingOffTheHousesShelf
+    aTakingOffTheHousesShelf,
+    somebodyIsPutOffTheRoll
 } from './sect-phrasings.js';
 import type { SectIntent } from './sect-phrasings.js';
 import { theThingBeingHandedIn } from './handing-in-phrasings.js';
+import { aBondBeingEnded } from './ending-a-bond-phrasings.js';
 import { stonesNamedIn } from './tool-result-prose.js';
 
 // Institutions acting on each other, and on the dead. By name, so
@@ -4727,7 +4729,13 @@ function planIntent(input: string): PlannedAction {
         // the oath: what follows *or I will* has not happened, and running it
         // here kills somebody the player was leaning on. See
         // {@link aDemandWithAnActPromisedBehindIt}.
-        && aDemandWithAnActPromisedBehindIt(input) === null) {
+        && aDemandWithAnActPromisedBehindIt(input) === null
+        // NOR SOMEBODY BEING PUT OFF A ROLL. "I strike his name off the roll"
+        // and "I kick her out of the sect" are the house's business said with
+        // words this row owns, and both were answered as blows - a name struck
+        // off a register read as a sword swung at a man called `his name off
+        // the roll`. See `somebodyIsPutOffTheRoll`.
+        && somebodyIsPutOffTheRoll(input) === null) {
         return {
             action: 'attack',
             // The manner clause is cut off the name. "I attack him from behind"
@@ -5021,6 +5029,22 @@ function planIntent(input: string): PlannedAction {
                 ...(asked.object ? { topic: asked.object } : {}),
                 ...(term ? { days: term } : {}),
                 ...(leverage ? { leverage } : {})
+            };
+        }
+    }
+
+    // PUTTING A BOND DOWN, SAID RATHER THAN ASKED FOR. Under the ask above,
+    // which owns "I ask X to end our bond" and names X by having been put to
+    // them; over the move and interact rows, which read walking out on somebody
+    // as fleeing and telling a master you are leaving as conversation. See
+    // `ending-a-bond-phrasings.ts`.
+    {
+        const ending = aBondBeingEnded(input);
+        if (ending) {
+            return {
+                action: 'request',
+                intent: 'ending_a_bond',
+                ...(ending.person ? { target: ending.person } : {})
             };
         }
     }

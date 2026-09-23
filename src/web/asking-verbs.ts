@@ -204,6 +204,7 @@ import {
 } from './what-somebody-is-after.js';
 import { A_SEASON_ON_THE_ROAD } from '../engine/world/who-is-on-the-road-with-you.js';
 import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { endTheBond } from './ending-a-bond-you-are-in.js';
 import type { GameService } from './turn-engine.js';
 
 /**
@@ -245,7 +246,13 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     // because the ordinary path ends at `interact` for anything that is not an
     // art - which is where every barter-tier object in the catalog used to
     // stop.
-    'terms', 'a_trade'
+    'terms', 'a_trade',
+    // Putting a bond down, which is the one kind here that asks for nothing.
+    // It reaches this list because a sentence that ends a bond plainly - "I
+    // cast Yun Zhi out" - carries no request verb for `requestPutToSomebody` to
+    // re-read, so the plan's own label is all there is; without it the kind fell
+    // back to `a_thing` and a casting out was answered as a favour asked.
+    'ending_a_bond'
 ]);
 
 /**
@@ -1194,6 +1201,47 @@ ${unnamed}`;
                 run, cultivator, ambient, query, 'negotiate',
                 named.length >= 2 ? named : undefined, leverage, rawInput
             );
+        }
+
+        // ── ENDING A BOND, WHICH ASKS FOR NOTHING ────────────────────────
+        //
+        // Before the costing and the roll, because there is nothing to price
+        // and nobody to say no: a bond runs for life, so ending one is a
+        // decision and what it costs is the record it leaves
+        // (`ending-a-bond-you-are-in.ts`). It was wired past the roll, where
+        // `whatItWouldCostThem` has no arm for a kind that asks for nothing -
+        // and could not be reached at all, because the label never survived
+        // this far. Both are fixed here.
+        if (kind === 'ending_a_bond') {
+            const ended = endTheBond({
+                world: this.atHand,
+                repos: this.repos,
+                player: { id: cultivator.id, name: cultivator.name, ordinal: cultivator.realmOrdinal },
+                other: { id: party.id, name: party.name, ordinal: party.party.realmOrdinal },
+                onDay: Math.floor(run.elapsedDays),
+                ...(this.atHand ? { worldDay: Math.floor(this.atHand.currentDay) } : {})
+            });
+            if (!ended) {
+                return this.freeAction(run, 'request', factsForRefusal(
+                    `Nothing stands between you and ${party.name} to put down.`,
+                    `Neither of you knelt to the other, so there is no bond to end and nothing `
+                    + 'to be held against anybody for ending it.',
+                    `endTheBond: no master or disciple tie between ${cultivator.id} and ${party.id} `
+                    + 'in either store. Nothing written.'
+                ));
+            }
+            if (this.atHand) this.theWorldMoved();
+            const facts = factsForToolResult(
+                ended.endedBy === 'master' ? `${party.name} is cast out.` : `You are ${party.name}'s no longer.`,
+                ended.lines
+            );
+            facts.required = ended.lines.slice();
+            facts.structure.push(ended.structure);
+            const execution = this.freeAction(run, 'request', facts);
+            execution.calls = [{
+                name: 'social.endTheBond', action: 'request', summary: ended.structure, ok: true
+            }];
+            return execution;
         }
 
         // WHAT THEY ARE AFTER, WHICH IS A READ AND NOT A REQUEST

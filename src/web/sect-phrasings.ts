@@ -37,6 +37,11 @@ export type SectIntent =
      */
     | 'donate'
     /**
+     * Handing a THING in to the house, which it credits where it wants it. See
+     * `handing-in-phrasings.ts` for what separates it from paying money in.
+     */
+    | 'hand_in'
+    /**
      * Being let to sit in at a house that has not taken you.
      */
     | 'guest'
@@ -167,6 +172,31 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
         + String.raw`(?:it|that|this|(?:the|his|her|their|my|our)\s+(?:\w+(?:'s|’s)?\s+){0,2}`
         + String.raw`(?:summons|call|order|orders|errand|task|assignment|posting|sending|`
         + String.raw`instruction|instructions))\b`
+        // TAKING IT IS ACCEPTING IT, for the things that can only have been put
+        // TO you.
+        //
+        // `posting` AND `post` ARE THE BOARD'S, AND THEY STAY THE BOARD'S. They
+        // were on this row for one sweep. The sweep measured "I take the post"
+        // reaching `work` and read that as a defect, which it is not: a line on
+        // a wall is a posting, taking one is work, and
+        // `a-board-you-can-read-and-cannot-answer` has pinned "i take the
+        // posting" to `work` since before any of this. The word carries both
+        // senses in this genre and the board had it first. A summons put to you
+        // by name is said with the words below, none of which a wall can wear.
+        //
+        // The noun list here is deliberately SHORTER than the one above.
+        // `task` and `assignment` are the board's words - the comment above
+        // says why `duty` is not on this row at all - and taking one off a
+        // wall is `sect/duty`, a different act with a different answer.
+        //
+        // AND THE NOUN HAS TO BE THERE. `it|that|this` are deliberately absent
+        // from this arm although the arm above has them: with them, "I take
+        // that sword" was a summons accepted. The bare pronoun forms of the
+        // ACCEPT verb are safe because accepting names no object of its own;
+        // taking names one in every sentence it appears in.
+        + String.raw`|\b(?:take|takes|taking|took)\s+(?:on\s+)?`
+        + String.raw`(?:the|his|her|their|my|our|that|this)\s+(?:\w+(?:'s|’s)?\s+){0,2}`
+        + String.raw`(?:summons|errand|sending|call)\b`
         + String.raw`|\bi\s+(?:accept|agree|consent)\b\s*(?:and\s+(?:go|do it|set out|leave))?\s*[.!?]?$`
         + String.raw`|\b(?:obey|obeys|obeying|comply|complies|complying)\b`
         + String.raw`|\bdo\s+(?:as|what)\s+(?:i\s+(?:am|was)\s+)?(?:told|bid|asked|instructed|ordered)\b`
@@ -213,7 +243,18 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // refuses" is a threat with a condition in it, and it reached a summons
     // because the word was there. A third-person subject in front of the verb
     // is somebody else's refusal, and a summons is only ever the player's own.
-    ['refuse', /(?<!cannot )(?<!can not )(?<!can't )(?<!could not )(?<!couldn't )(?<!unable to )(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|do not answer|don'?t answer|no answer)\b/],
+    // AND STANDING WHERE YOU ARE IS A NO. What is being answered is not always
+    // the house: somebody already working a ruin tells an arrival to get off it,
+    // and the answer to that is the same word. Which ask is being refused is a
+    // question about the situation and not about the sentence, so it is settled
+    // where the situation is - see `somebody-tells-you-to-get-off-this-ground.ts`.
+    // AND STANDING YOUR GROUND WHERE IT IS SEEN IS A STANCE, NOT A NO. `posture`
+    // already owns "I stand my ground where they can see it" in the corpus, and
+    // the bare arm took it: what the corpus phrasing is about is the SHOWING,
+    // which is what a stance between houses is. The tail is the whole
+    // difference, so the guard is on the tail and nothing else - "I stand my
+    // ground" and "I stand my ground against him" are still a refusal.
+    ['refuse', /(?<!cannot )(?<!can not )(?<!can't )(?<!could not )(?<!couldn't )(?<!unable to )(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|do not answer|don'?t answer|no answer|(?:stand|stands|standing|hold|holds|holding) my ground\b(?!\s+(?:where|so|openly|plainly|publicly|in front of|in the open))|stay(?:ing)? (?:right )?where i am|not moving|i do not move|i don'?t move)\b/],
     // ── AND SAYING NOTHING, WHICH IS NOT SAYING NO ───────────────────────
     //
     // `I ignore it`, typed straight after the house had sent for somebody, came
@@ -581,6 +622,62 @@ export const SECT_EXPEL_VERBS =
  */
 export const SECT_ELDER_NOUN = /\b(?:elders?)\b/;
 
+/** The house somebody is being put out of, said as the house. */
+const OUT_OF_THE_HOUSE =
+    `(?:the|my|our|this|his|her|their)\\s+(?:${A_HOUSE_WORD}|roll|ranks)`;
+
+/**
+ * Somebody being put off a house's roll, however the sentence says it: thrown
+ * out, removed, struck off, or expelled outright.
+ *
+ * Two shapes rather than one, because they are two different sentences: DOING
+ * it - "I throw him out of the sect" - and HAVING it done - "I have her removed
+ * from the house", "I want him expelled". Both name the same act, because the
+ * difference between them is who does it, and who may is the house's own rule
+ * rather than a fact about the words. The engine answers that and names whoever
+ * holds it.
+ */
+const PUT_OFF_THE_ROLL: readonly RegExp[] = [
+    // Had done: "I have her removed", "I want him expelled", "I have him thrown out".
+    new RegExp(
+        '\\b(?:want|wants|have|has|had|get|gets|got)\\s+(.+?)\\s+'
+        + '(?:expelled|removed|dismissed|thrown out|cast out|put out|struck off|kicked out|turned out)\\b',
+        'i'
+    ),
+    // Done: out of the house by name of the house.
+    new RegExp(
+        '\\b(?:throw|throws|kick|kicks|turn|turns|put|puts|drive|drives|force|forces)\\s+(.+?)\\s+'
+        + `out\\s+of\\s+${OUT_OF_THE_HOUSE}\\b`,
+        'i'
+    ),
+    new RegExp(
+        '\\b(?:expel|expels|expelling|dismiss|dismisses|remove|removes|oust|ousts|purge|purges)\\s+(.+?)\\s+'
+        + `(?:from|off)\\s+${OUT_OF_THE_HOUSE}\\b`,
+        'i'
+    ),
+    // Struck off the roll, which names the roll rather than the house.
+    /\bstrike\s+(.+?)(?:'s)?(?:\s+name)?\s+(?:off|from)\s+(?:the\s+)?(?:roll|register|rolls)\b/i,
+    // And the bare word, which belongs to no other act in this world.
+    /\b(?:expel|expels|expelling)\s+(.+?)\s*$/i
+];
+
+/** A word that names nobody the house could look up. */
+const NAMES_NOBODY_ON_THE_ROLL =
+    /^(?:him|her|them|he|she|they|it|me|us|his|hers|their|theirs|its|somebody|someone|anybody|anyone|people)$/i;
+
+export function somebodyIsPutOffTheRoll(input: string): { person?: string } | null {
+    const text = input.trim();
+    if (/\b(?:expel|dismiss|remove|throw out|get rid of|turn out|kick out)\s+me\b/i.test(text)) return null;
+    for (const pattern of PUT_OFF_THE_ROLL) {
+        const hit = pattern.exec(text);
+        const said = hit?.[1]?.replace(/[.!?,]+\s*$/, '').trim();
+        if (!said) continue;
+        const bare = said.replace(/^(?:the|a|an|that|this)\s+/i, '').trim();
+        return NAMES_NOBODY_ON_THE_ROLL.test(bare) ? {} : { person: bare };
+    }
+    return null;
+}
+
 /**
  * Where the house sets its bar.
  */
@@ -724,14 +821,26 @@ export function leadershipIntent(text: string, input: string): PlannedAction | n
         return { action: 'sect', intent: 'take', ...(what ? { target: what } : {}) };
     }
 
-    // Dismissal. The noun is the gate: this power reaches elders and nothing
-    // else, so "I remove the seal" and "I throw the disciple out" are
-    // deliberately not this rather than being answered with the wrong price.
+    // Dismissal, where the sentence says an elder: this row keeps the name
+    // extraction the power was written with.
     if (usedAsVerb(text, SECT_EXPEL_VERBS)
         && SECT_ELDER_NOUN.test(text)
         && !/\b(?:expel|dismiss|remove|throw out|get rid of|turn out) me\b/.test(text)) {
         const who = namedAfter(input, SECT_EXPEL_VERBS);
         return { action: 'sect', intent: 'expel', ...(who ? { target: who } : {}) };
+    }
+
+    // AND WHERE IT SAYS THE HOUSE INSTEAD OF AN ELDER. The elder noun used to
+    // be the whole gate, on the grounds that the power reaches elders and
+    // nothing else - which is the ENGINE's answer, and the parser was giving it
+    // by shrugging. Measured: "I throw him out of the sect", "I have her
+    // removed from the house", "I expel Yun Zhi from the sect" and "I want him
+    // expelled" were four blank looks, and two of them are the corpus's own
+    // exemplars for this intent. The act is named here and the house says who
+    // may: see `who-could-put-somebody-off-the-roll.ts`.
+    {
+        const put = somebodyIsPutOffTheRoll(input);
+        if (put) return { action: 'sect', intent: 'expel', ...(put.person ? { target: put.person } : {}) };
     }
 
     // Intake. Which rung is being taken in decides which power is being used

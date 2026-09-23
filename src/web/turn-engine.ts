@@ -1126,6 +1126,9 @@ import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
 import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
+import { settleWhetherYourMasterHasCalledYou } from './a-master-calls-their-disciples-in.js';
+import { whoCouldPutSomebodyOffTheRoll } from './who-could-put-somebody-off-the-roll.js';
+import { settleWhoIsAlreadyOnThisGround, theyAreToldNo } from './somebody-tells-you-to-get-off-this-ground.js';
 import {
     communicationTalismanVerbs,
     theCommunicationTalismansOnYou,
@@ -7074,8 +7077,17 @@ ${noticed}`;
             case 'accept':
                 return this.goWhereTheHouseSentYou(run, cultivator, ambient);
 
-            case 'refuse':
+            case 'refuse': {
+                // WHAT IS BEING REFUSED IS A QUESTION ABOUT THE SITUATION, not
+                // about the sentence. With nothing standing from the house, a
+                // no is an answer to whoever is telling the player to get off
+                // this ground, and it hands off to the ordinary confrontation.
+                if (readPendingSummons(this.repos, cultivator.id) === null) {
+                    const stood = await theyAreToldNo(this, run, cultivator, ambient);
+                    if (stood) return stood;
+                }
                 return this.refuseWhatTheHouseAsked(run, cultivator, 'refusing');
+            }
 
             case 'ignore':
                 return this.refuseWhatTheHouseAsked(run, cultivator, 'ignoring');
@@ -16447,6 +16459,11 @@ ${fit.line}`;
             return { lines, calls };
         }
 
+        // ENDING ONE IS THE OTHER HALF OF TAKING ONE, and it is NOT here: this
+        // runs after the ask has been priced and rolled, and nobody prices or
+        // refuses a casting out. It is answered in `request` before the costing
+        // - `asking-verbs.ts`, the `ending_a_bond` arm - which is also the only
+        // place the label survives to, so this branch never ran.
         if (kind === 'discipleship') {
             const theirOrdinal = party.party?.realmOrdinal ?? 0;
             const master = { id: party.id, name: party.name, ordinal: theirOrdinal };

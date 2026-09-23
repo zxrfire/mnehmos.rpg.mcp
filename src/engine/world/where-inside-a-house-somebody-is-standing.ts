@@ -19,6 +19,9 @@
  *                               there, whatever they are at
  *   not of this house           a guest or a passer-by is in the forecourt,
  *                               which is the seat
+ *   a closed lesson             the master and the disciples they called are
+ *                               where the master lives, inside these walls
+ *                               (`where-a-master-takes-their-own-disciples.ts`)
  *   a scene with the player     where it was set. Attention given to somebody
  *                               who is not one of the world's people is given
  *                               where that person was standing, and the writer
@@ -49,6 +52,7 @@ import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication
 import type { LocationRecord } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
+import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
 
 /** One compound, as much of it as a placement read needs. */
 export interface ACompound {
@@ -60,6 +64,8 @@ export interface ACompound {
     rooms: Map<RoomPurpose, LocationRecord>;
     /** Who holds which office, read once and only when somebody needs it. */
     offices: APortfolio[] | null;
+    /** Who is at a closed lesson here, to its room, read once a day when asked. */
+    lessons?: { day: number; at: Map<string, string> } | null;
 }
 
 /** The compounds of a world, keyed by seat and by every room inside one. */
@@ -131,6 +137,15 @@ export function whereTheyAreStanding(
     if (npc.factionId !== compound.houseId) return stored;
 
     const day = Math.floor(state.currentDay);
+    // A CLOSED LESSON IS WHERE THE MASTER LIVES, for the master and for every
+    // disciple they called, whatever the disciple was at. Ahead of the activity
+    // gate for that reason. See `where-a-master-takes-their-own-disciples.ts`.
+    if (!compound.lessons || compound.lessons.day !== day) {
+        compound.lessons = { day, at: whoIsAtAClosedLesson(state, { seatId: compound.seat.id, inside: compound.inside, day }) };
+    }
+    const lesson = compound.lessons.at.get(npc.id);
+    if (lesson !== undefined) return lesson;
+
     if (!stillAtIt(npc, day)) return stored;
     const doing = npc.activity!;
     if (doing.withIds.some(id => !people.has(id))) return stored;
@@ -198,8 +213,13 @@ export function whatIsBeingMade(thingId: string | null): WhatIsBeingMade | null 
     if (getPill(thingId) !== undefined) return 'medicine';
     if (getTechnique(thingId) !== undefined) return null;
     if (thingId === THE_COMMUNICATION_TALISMAN.id) return null;
+    // A slip cut to somebody's order is cut wherever the cutter sits too.
+    if (thingId.startsWith(A_SLIP_CUT_TO_ORDER)) return null;
     return 'an_artifact';
 }
+
+/** The prefix a commissioned slip's thing id carries while it is being cut. */
+export const A_SLIP_CUT_TO_ORDER = 'commission-slip-';
 
 /**
  * Everybody standing in this place, down to the room.
