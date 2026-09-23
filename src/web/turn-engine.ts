@@ -1824,6 +1824,22 @@ export function thisPlaceAndWhatContainsIt(world: WorldState, locationId: string
     return chain;
 }
 
+/**
+ * A name with its articles and punctuation off, for comparing what somebody
+ * said against what a thing is called.
+ *
+ * Not a resolver and deliberately not tolerant: the resolvers already own
+ * fuzziness, and this exists for the one question they answer badly - whether
+ * the words somebody used ARE the name of the thing, rather than words a name
+ * happens to sit inside.
+ */
+function bareName(said: string): string {
+    return said.toLowerCase()
+        .replace(/^\s*(?:the|a|an)\s+/, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+}
+
 export class GameService {
     readonly db: Database.Database;
     /**
@@ -3915,7 +3931,46 @@ export class GameService {
         // WHAT THEY NAMED, AND ONLY WHERE THE WORLD HAS IT. A house, or
         // somebody standing here - the two things a sentence in this game can
         // be about. Neither, and there is nothing for the room to repeat.
-        const house = this.factionMeant(named, cultivator);
+        // AND THEY HAVE TO HAVE NAMED IT, NOT SAID SOMETHING WITH ITS NAME
+        // INSIDE. `factionMeant` is a routing read - its own header says it
+        // decides a shape rather than an answer - so it answers for any phrase
+        // a house's name sits in. That is right for routing and wrong here,
+        // because what goes into the record is what somebody ANNOUNCED.
+        //
+        // Measured: a player already standing inside a compound typed "I travel
+        // to the Azure Cloud Pavilion grounds", the mover refused it because no
+        // ROOM of that name is placed for them, and the world wrote that they
+        // had said in front of eight people that they would move the sect. They
+        // announced nothing. They typed a destination the engine could not
+        // place, and a refusal about a name that did not resolve is a misparse
+        // rather than a declaration.
+        //
+        // The line between the two is what the refusal was ABOUT: being turned
+        // away at a gate is an announcement and belongs in the record; naming a
+        // place that is not there is a sentence the room did not hear as a
+        // claim.
+        //
+        // THE TEST IS THE NAME ITSELF AND NOT A SCORE, and the first cut of this
+        // got that wrong. `matchScore` is the resolvers' tolerance and it is
+        // deliberately generous: measured, "azure cloud pavilion grounds" scores
+        // ABOVE the threshold against "Azure Cloud Pavilion", which is right for
+        // routing somebody to the house they meant and useless for deciding what
+        // they announced. So this compares the words - articles off both sides,
+        // punctuation flattened - and what is left has to be the house's own
+        // name and nothing more. "the Azure Cloud Pavilion" counts; "the Azure
+        // Cloud Pavilion grounds" does not.
+        const meant = this.factionMeant(named, cultivator);
+        const house = meant !== null && bareName(named) === bareName(meant.name)
+            ? meant
+            : null;
+        // AND THE PERSON BRANCH BELOW IS ALREADY STRICT, which is why it is not
+        // guarded and must not be "unified" onto the read above. It compares the
+        // name outright against somebody standing here, so the failure the house
+        // branch had cannot happen to it: there is no tolerance in it to be
+        // generous with, and a phrase that merely contains a person's name does
+        // not match. Two branches doing one job by different means, and the
+        // different means are the point - the loose one needed a guard and the
+        // exact one is the guard.
         const person = house
             ? null
             : this.present(cultivator).find(row =>
