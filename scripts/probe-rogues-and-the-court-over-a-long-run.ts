@@ -34,7 +34,9 @@ import {
     REMOVED_FROM_OFFICE,
     theDayTheyLostTheOffice,
     theRemovalTheyCarry,
-    theRoomWouldDealToThemAgain
+    theRoomWouldDealToThemAgain,
+    whatServiceIsWorthBesideAWin,
+    whatTheyAreWorthToTheirHouseNow
 } from '../src/engine/world/bringing-what-you-know-about-somebody-to-the-room.js';
 
 const PLAN = (process.env.PROBE_PLAN ?? 'afford-a:150,500,1000,2500,5000;demography:150,500,1000,2500,5000').split(';').map(part => {
@@ -218,6 +220,38 @@ async function main(): Promise<void> {
                 wouldBeDealtAgain.push(when === null ? 0 : Math.round((state.currentDay - when) / 365));
             }
             wouldBeDealtAgain.sort((a, b) => a - b);
+            // WHICH TERM CLEARS THE BAR. Taking the rung out of the influence
+            // read moved neither the count nor the median, so the bar is being
+            // cleared by something else and the fix belongs wherever that is.
+            // Face, service and who speaks for them, summed over the carriers.
+            let face = 0, service = 0, spokenFor = 0, worthTotal = 0;
+            for (const n of lostAnOffice) {
+                const house = state.factions.find(f => f.id === n.factionId);
+                if (house === undefined) continue;
+                face += Math.max(0, Number(n.face ?? 0));
+                service += (n.merit?.houseId === house.id ? n.merit.points : 0)
+                    / whatServiceIsWorthBesideAWin(house);
+                let speaks = 0;
+                for (const other of state.npcs) {
+                    if (other.id === n.id || other.factionId !== house.id || other.status !== 'alive') continue;
+                    const tie = other.relationships.find(r => r.targetId === n.id);
+                    if (tie && tie.standing >= 0.4) speaks += 0.5;
+                }
+                spokenFor += Math.min(2, speaks);
+                worthTotal += whatTheyAreWorthToTheirHouseNow(state, n, house);
+            }
+            const per = (x: number) => lostAnOffice.length === 0
+                ? null : Number((x / lostAnOffice.length).toFixed(2));
+            // IS FACE A CURRENCY YET. It was minted only by violence: mean zero
+            // over the carriers, because none of them had ever been in a duel.
+            // If it is still near zero for ordinary members, the writers fire
+            // for a handful of people and it is still not a currency.
+            let anyFace = 0, faceTotal = 0;
+            for (const n of living) {
+                const f = Number(n.face ?? 0);
+                if (f !== 0) anyFace++;
+                faceTotal += f;
+            }
             // HOW PEOPLE DIED, BY WHAT KILLED THEM AND WHERE THEY STOOD.
             //
             // Off `endNote` and `diedOnDay` on the row, which every path that

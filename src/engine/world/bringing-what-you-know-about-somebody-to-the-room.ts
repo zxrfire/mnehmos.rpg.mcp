@@ -51,6 +51,7 @@ import { lifespanForOrdinal } from '../cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { faceOf } from './what-a-face-is-worth.js';
 import { meritWith } from './what-a-house-counts-in-somebodys-favour.js';
+import { requiredContributionForRank } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import { A_FRIEND, HOSTILE_STANDING } from './why-one-cultivator-kills-another.js';
 import { ROGUE_EXPELLED, offTheRoll, whereTheyRunTo } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -165,11 +166,29 @@ export function howHeavyTheirRemovalStillIs(npc: NpcRecord, day: number): number
     return WHAT_A_REMOVAL_WEIGHS * Math.pow(0.5, years / halfLife);
 }
 
-/** What a hundred points of contribution is worth beside one public win. */
-export const WHAT_SERVICE_IS_WORTH_BESIDE_A_WIN = 100;
-
-/** What standing at the top of a house's ladder is worth as influence. */
-export const WHAT_STANDING_AT_THE_TOP_IS_WORTH = 2;
+/**
+ * What one public win is worth in contribution: as much as the last rung of
+ * this house's own ladder asks for.
+ *
+ * READ OFF THE LADDER, NOT COPIED. A win in front of everybody is worth what a
+ * career of service buys at the hardest step, so the two move together and
+ * nobody has to remember they are related.
+ *
+ * It was a flat hundred, and that was the whole defect. Measured on `afford-a`
+ * at a thousand years, over the twelve people carrying a removal: face 0,
+ * people who would speak for them 1.29, and **service 505.79** against a weight
+ * of four. The bar was not a bar - a carrier cleared it by a hundred and
+ * twenty-six times on the day the room ruled against them, which is why taking
+ * the rung out of this read moved neither the count nor the median. Real house
+ * merit runs to tens of thousands; a hundred was two orders of magnitude out.
+ *
+ * NOTE WHAT IS NOT READ HERE: the rung they stand on. That is the thing the
+ * disgrace deliberately left them, and only the LENGTH of the ladder is taken,
+ * never their place on it.
+ */
+export function whatServiceIsWorthBesideAWin(house: Pick<FactionRecord, 'ranks'>): number {
+    return Math.max(1, requiredContributionForRank(Math.max(1, house.ranks.length - 1)));
+}
 
 /** The most the people who would speak for somebody can be worth. */
 export const THE_MOST_BEING_SPOKEN_FOR_IS_WORTH = 2;
@@ -177,25 +196,36 @@ export const THE_MOST_BEING_SPOKEN_FOR_IS_WORTH = 2;
 /**
  * What somebody is worth to their own house today, in the same units.
  *
- * Every material the ruling named and not one new one: face, contribution,
- * where they stand on the ladder, and who on the roll would speak for them.
+ * WHAT THE DISGRACE LEFT THEM CANNOT BE WHAT BUYS BACK WHAT IT TOOK. The rung
+ * was in this read and was worth half the bar on its own, so somebody kept their
+ * title through a removal - the owner's ruling is that a house takes *"the room,
+ * not the rank"*, title kept - and then spent that same title to undo it. Close
+ * to the disgrace paying for its own removal, and backwards in the genre's
+ * terms: it made a SENIOR's disgrace the cheapest to outgrow, when a senior's is
+ * the one everybody saw and the one that cost the house most.
+ *
+ * So influence here is what they have REBUILT SINCE: face won in front of
+ * people, contribution their own house counted, and who on the roll would speak
+ * for them. Not the rung they were already standing on.
+ *
+ * Measured before the rung came out, on `afford-a` at a thousand years: twelve
+ * people carried a removal and all twelve could hold a room again, at a median
+ * of fifty-two years - and only one of the twelve had changed house, so the
+ * lookup this file also fixed was never the reason.
  */
 export function whatTheyAreWorthToTheirHouseNow(
     state: WorldState,
     npc: NpcRecord,
     house: Pick<FactionRecord, 'id' | 'ranks'>
 ): number {
-    const top = Math.max(1, house.ranks.length - 1);
-    const rank = WHAT_STANDING_AT_THE_TOP_IS_WORTH
-        * Math.max(0, Math.min(1, npc.factionRankIndex / top));
-    const service = meritWith(npc, house.id) / WHAT_SERVICE_IS_WORTH_BESIDE_A_WIN;
+    const service = meritWith(npc, house.id) / whatServiceIsWorthBesideAWin(house);
     let speakingForThem = 0;
     for (const other of state.npcs) {
         if (other.id === npc.id || other.factionId !== house.id || other.status !== 'alive') continue;
         const tie = relationshipWith(other, npc.id);
         if (tie !== null && tie.standing >= A_FRIEND) speakingForThem += 0.5;
     }
-    return Math.max(0, faceOf(npc)) + rank + service
+    return Math.max(0, faceOf(npc)) + service
         + Math.min(THE_MOST_BEING_SPOKEN_FOR_IS_WORTH, speakingForThem);
 }
 
