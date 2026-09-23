@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { whenTheWorldLostSightOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import Database from 'better-sqlite3';
 
 import { migrate } from '../../../src/storage/migrations.js';
@@ -27,8 +28,11 @@ import {
     npcBrief,
     setExistence,
     setRealm,
+    relationshipWith,
+    theTieBecomes,
     updateGoal,
-    upsertRelationship
+    upsertRelationship,
+    whatStandsBetween
 } from '../../../src/engine/world/npc-state.js';
 import {
     addLineageEdge,
@@ -483,13 +487,19 @@ describe('time: advancing the clock', () => {
         expect(queryFacts(out.state.history, { kinds: ['death'] })).toHaveLength(1);
     });
 
-    it('does not adjudicate a missing cultivator', () => {
+    /**
+     * The design owner: *"they still die of old age unless they advance ...
+     * missing people are still somewhere physical, just the sect doesn't know."*
+     * This used to assert the opposite, that the clock never adjudicates somebody
+     * missing, and that is what froze 103 people past their lifespans.
+     */
+    it('lets the clock end a cultivator the world has lost sight of, like anybody', () => {
         let world = seclusionWorld();
         const npc = markMissing(createNpc('time-1', { id: 'npc-gone', bornOnDay: -90 * YEAR, onDay: 0 }), 0);
         world = upsertNpc(world, npc);
-        const out = advanceYears(world, 400);
-        expect(getNpc(out.state, 'npc-gone')!.status).toBe('missing');
-        expect(out.deaths).toHaveLength(0);
+        const out = advanceYears(world, 20);
+        expect(getNpc(out.state, 'npc-gone')!.status).toBe('physically_dead');
+        expect(out.deaths.map(d => d.npcId)).toContain('npc-gone');
     });
 
     it('reports what an observer missed while they were elsewhere', () => {
@@ -615,10 +625,13 @@ describe('time: a five-hundred-year run stays affordable', () => {
         expect(out.state.currentDay).toBe(1500 * YEAR);
         // The world is recognisably descended from the one it started as.
         expect(out.deaths.length).toBeGreaterThan(300);
-        // 199, not 200: the effect due on the day the advance starts is behind
-        // it. The window is (fromDay, toDay], so no effect can fire twice
-        // across two consecutive advances.
-        expect(out.fired.length).toBe(199);
+        // ALL 200. The window is (fromDay, toDay], so no effect can fire twice
+        // across two consecutive advances - and `schedule` now dates an effect
+        // booked for today or earlier to tomorrow (`world-state.ts`: an effect
+        // dated today would never fire), so the one booked for the day the
+        // advance starts is inside the window rather than behind it. It was 199
+        // while that booking kept its own date.
+        expect(out.fired.length).toBe(200);
         expect(out.concurrentEvents.length).toBeGreaterThan(50);
         // Capped per opportunity by design: a five-century advance over an
         // eighty-year cycle wants the last few windows, not a list of them all.
@@ -882,13 +895,35 @@ describe('npc records: durable, not simulated', () => {
         npc = upsertRelationship(npc, {
             targetId: 'npc-2', targetName: 'Bai Shuqing', kind: 'ally', standing: 0.8
         }, 10 * YEAR);
+        // A tie that TURNS is one kind becoming another, which is what
+        // `theTieBecomes` is for: rows are keyed by the pair and the kind, so
+        // writing `enemy` on its own would stand the two side by side.
+        npc = theTieBecomes(npc, 'npc-2', 'ally', 'enemy', 50 * YEAR, {
+            standing: -0.9, note: 'Opened the gate.'
+        });
+        const turned = relationshipWith(npc, 'npc-2', 'enemy')!;
+        expect(turned.sinceDay, 'a forty-year friendship is forty years old when it ends')
+            .toBe(10 * YEAR);
+        expect(turned.lastChangedDay).toBe(50 * YEAR);
+        expect(turned.standing).toBe(-0.9);
+        expect(relationshipWith(npc, 'npc-2', 'ally'), 'the ally row turned, it did not stay')
+            .toBeNull();
+    });
+
+    it('and holds more than one kind between the same two people', () => {
+        // The design owner: *"marriages and master relationships ought to be
+        // separately tracked, they aren't the same thing."*
+        let npc = createNpc('s', { id: 'npc-1', bornOnDay: 0, onDay: 0 });
         npc = upsertRelationship(npc, {
-            targetId: 'npc-2', targetName: 'Bai Shuqing', kind: 'enemy', standing: -0.9,
-            note: 'Opened the gate.'
-        }, 50 * YEAR);
-        expect(npc.relationships[0].sinceDay).toBe(10 * YEAR);
-        expect(npc.relationships[0].lastChangedDay).toBe(50 * YEAR);
-        expect(npc.relationships[0].standing).toBe(-0.9);
+            targetId: 'npc-2', targetName: 'Bai Shuqing', kind: 'spouse', standing: 0.9,
+            note: 'Their household.'
+        }, 10 * YEAR);
+        npc = upsertRelationship(npc, {
+            targetId: 'npc-2', targetName: 'Bai Shuqing', kind: 'disciple', standing: 0.5
+        }, 20 * YEAR);
+        expect(whatStandsBetween(npc, 'npc-2').map(tie => tie.kind)).toEqual(['spouse', 'disciple']);
+        expect(relationshipWith(npc, 'npc-2', 'spouse')!.note, 'the marriage was not written over')
+            .toBe('Their household.');
     });
 
     it('treats missing and unknown as answers, not placeholders', () => {
@@ -896,7 +931,11 @@ describe('npc records: durable, not simulated', () => {
         npc = addGoal(npc, { kind: 'discovery', text: 'Find the sealed hall.', priority: 0.8 }, 0);
         npc = markMissing(npc, 50 * YEAR, 'Went into a ruin at Coldfall and did not come out.');
 
-        expect(isUnadjudicated(npc.status)).toBe(true);
+        // Missing is what the world lost sight of, not a state of the person:
+        // they are still alive somewhere (`who-a-house-has-lost-track-of.ts`).
+        expect(npc.status).toBe('alive');
+        expect(whenTheWorldLostSightOf(npc)).toBe(50 * YEAR);
+        expect(isUnadjudicated('missing')).toBe(true);
         // A missing person's goals are not known to have stopped.
         expect(activeGoals(npc)).toHaveLength(1);
 

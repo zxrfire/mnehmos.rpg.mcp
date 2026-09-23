@@ -38,6 +38,7 @@
 import { yearOfDay } from './history.js';
 import type { NpcRecord, NpcRelationship } from './npc-state.js';
 import type { WorldState } from './world-state.js';
+import { whenTheyWereLastAccountedFor } from './who-a-house-has-lost-track-of.js';
 
 /**
  * What became of the person on the other end.
@@ -73,7 +74,16 @@ const BODILESS = new Set(['soul_preserved', 'remnant', 'sealed', 'possessing', '
  * whole world - can still say the true thing. `npcBrief` is the case: it takes
  * a person and a day, not a state.
  */
-export function whoTheyAreNow(target: NpcRecord | null, storedName: string): {
+export function whoTheyAreNow(
+    target: NpcRecord | null,
+    storedName: string,
+    /**
+     * The day anybody lost track of them, where the caller holds a world to ask
+     * (`whenTheyWereLastAccountedFor`). Missing is what their house does not
+     * know, not a state of the person, so a living person can read as unaccounted.
+     */
+    lostTrackOn: number | null = null
+): {
     standing: TieStanding;
     year: number | null;
     description: string;
@@ -87,6 +97,11 @@ export function whoTheyAreNow(target: NpcRecord | null, storedName: string): {
             standing: 'unrecorded', year: null,
             description: `${name}, whom the world holds no record of`
         };
+    }
+
+    if (target.status === 'alive' && lostTrackOn !== null) {
+        const year = yearOfDay(lostTrackOn);
+        return { standing: 'unaccounted', year, description: `${name}, not accounted for since year ${year}` };
     }
 
     if (target.status === 'alive') {
@@ -126,7 +141,8 @@ export function whoTheyAreNow(target: NpcRecord | null, storedName: string): {
 
 export function readTie(state: WorldState, tie: NpcRelationship): ResolvedTie {
     const target = state.npcs.find(n => n.id === tie.targetId) ?? null;
-    return { tie, target, ...whoTheyAreNow(target, tie.targetName) };
+    const lostTrackOn = target === null ? null : whenTheyWereLastAccountedFor(state, target);
+    return { tie, target, ...whoTheyAreNow(target, tie.targetName, lostTrackOn) };
 }
 
 /** Every tie this person holds, each read against the roster. */

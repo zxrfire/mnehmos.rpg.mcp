@@ -162,6 +162,7 @@ import {
     whoTheyAreTeaching
 } from './a-teacher-giving-you-their-attention.js';
 import { gaveAttentionRecently } from '../engine/world/who-is-given-attention-this-year.js';
+import { A_REPEAT_ASK_IS_WITHIN_DAYS } from './what-asking-this-person-for-this-would-cost-them.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import {
@@ -1320,9 +1321,12 @@ ${unnamed}`;
                 making: busy?.doing.thingId ?? null,
                 // TIME GIVEN WITHIN THE YEAR, off their side of the tie. A heavier
                 // ask, not a refusal: see `costOfGuidance`.
-                gaveAttentionRecently: theirRow !== null && gaveAttentionRecently(
-                    theirRow.relationships.find(tie => tie.targetId === cultivator.id), today
-                ),
+                // Whichever of the kinds standing between them was tended last:
+                // a master who is also an uncle may have given their time on
+                // either row.
+                gaveAttentionRecently: theirRow !== null && theirRow.relationships
+                    .filter(tie => tie.targetId === cultivator.id)
+                    .some(tie => gaveAttentionRecently(tie, today, A_REPEAT_ASK_IS_WITHIN_DAYS)),
                 // AT THEIR OWN WALL: the years the next rung asks of them are
                 // gathered and the strike is theirs to make. The world's own
                 // arithmetic, through the one construction a turn has of it.

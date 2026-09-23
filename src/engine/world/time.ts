@@ -28,11 +28,13 @@ import {
     isTheWorldsToMove,
     legacyGoals,
     theWorldEnds,
+    theTieBecomes,
     upsertRelationship,
     type NpcGoal,
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { heirsOf, type HeirRef } from './lineage.js';
 import {
     isOpportunityOpen,
@@ -781,6 +783,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
                     factIds: account.factIds,
                     inheritedFromId: deceased.id
                 }, onDay);
+                andTheOtherEnd(state.npcs, state.npcs[at], { targetId: account.targetId, kind: inheritedKind(account.kind, account.standing), standing: 0 }, onDay);
             }
         }
     }
@@ -886,6 +889,28 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     {
         const at = indexById(state.npcs, deceased.id);
         if (at >= 0) state.npcs[at] = { ...state.npcs[at], spiritStones: 0, updatedOnDay: onDay };
+    }
+
+    // AND THE BONDS THEY HELD ARE BONDS THAT ENDED. `former_master` and
+    // `former_disciple` are the ledger's own words for a bond that is over, and
+    // death ends one: without this the master of somebody who died went on
+    // reading as their master for the rest of their own life.
+    //
+    // `theTieBecomes` and not a write, because rows are keyed by the pair AND
+    // the kind: writing `former_master` beside a live `master` row would leave
+    // both standing, and everything else between the two - a marriage, a blood
+    // tie - is untouched either way.
+    const ENDED_BY_DEATH: Readonly<Partial<Record<string, 'former_master' | 'former_disciple'>>> = {
+        master: 'former_master', disciple: 'former_disciple'
+    };
+    for (let i = 0; i < state.npcs.length; i++) {
+        const other = state.npcs[i]!;
+        if (other.id === deceased.id) continue;
+        for (const held of other.relationships.filter(r => r.targetId === deceased.id)) {
+            const ended = ENDED_BY_DEATH[held.kind];
+            if (ended === undefined) continue;
+            state.npcs[i] = theTieBecomes(state.npcs[i]!, deceased.id, held.kind, ended, onDay);
+        }
     }
 
     // A teaching line that ended today.

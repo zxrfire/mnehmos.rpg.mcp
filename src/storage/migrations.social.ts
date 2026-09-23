@@ -98,9 +98,16 @@ export function migrateSocial(db: Database.Database): void {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    -- One row per direction per pair, enforced rather than assumed.
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_relationships_pair
-      ON relationships(from_character_id, to_character_id);
+    -- One row per direction per pair PER KIND, enforced rather than assumed.
+    -- The design owner: "marriages and master relationships ought to be
+    -- separately tracked, they aren't the same thing." On the pair alone a
+    -- second kind could not be written at all: swearing a bond to somebody you
+    -- were already kin to rewrote the kinship into it.
+    -- And the pair-only index it replaces, dropped where a database still has
+    -- it: a unique index is not widened by creating another one beside it.
+    DROP INDEX IF EXISTS idx_relationships_pair;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_relationships_pair_kind
+      ON relationships(from_character_id, to_character_id, type);
     -- "Who is in this person's life" and "who counts them as part of theirs"
     -- are both asked whenever a character walks on stage.
     CREATE INDEX IF NOT EXISTS idx_relationships_from ON relationships(from_character_id);

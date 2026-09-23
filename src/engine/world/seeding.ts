@@ -73,6 +73,7 @@ import {
     addGoal, createNpc, setRealm, upsertRelationship, whatACatalogStatesAsTags, type NpcRecord
 } from './npc-state.js';
 import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -2141,6 +2142,8 @@ function assignFactionRoles(
                 standing: i === 1 ? -0.25 : 0.3,
                 note: i === 1 ? 'Was the other candidate.' : 'Serves under.'
             }, presentDay);
+            andTheOtherEnd(state.npcs, members[i], { targetId: leader.id, kind: i === 1 ? 'rival' : 'ally', standing: 0 }, presentDay,
+                i === 1 ? { standing: -0.25, note: 'Was the other candidate.' } : { standing: 0.3, note: 'Under them in the house.' });
         }
     }
 }

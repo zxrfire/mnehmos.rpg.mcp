@@ -5,6 +5,7 @@
 import { forStream } from '../cultivation/rng.js';
 import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
 import { whoTheyAreNow } from './reading-a-tie-against-the-roster.js';
+import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from './who-a-house-has-lost-track-of.js';
 import {
     carriedAcross,
     clampOrdinal,
@@ -107,6 +108,32 @@ export type RelationshipKind =
     | 'child'
     | 'master'
     | 'disciple'
+    /**
+     * Taught by, and teaching: the line a house's own instruction draws between
+     * two people, which is not a bond either of them swore.
+     *
+     * The design owner: *"a master has to acknowledge the master-disciple
+     * relationship"*, and *"most outer and inner disciples don't"* have a master.
+     * Being carried through a manual by whoever in the house can open it is the
+     * ordinary way a disciple learns; `master` and `disciple` are kept for the
+     * bond somebody took on (`taking-somebody-as-your-own.ts`, the seeding and
+     * the search in `the-disciples-a-world-opens-with.ts`).
+     */
+    | 'teacher'
+    | 'student'
+    /**
+     * Taught by, and teaching: the line a house's own instruction draws between
+     * two people, which is not a bond either of them swore.
+     *
+     * The design owner: *"a master has to acknowledge the master-disciple
+     * relationship"*, and *"most outer and inner disciples don't"* have a master.
+     * Being carried through a manual by whoever in the house can open it is the
+     * ordinary way a disciple learns; `master` and `disciple` are kept for the
+     * bond somebody took on (`taking-somebody-as-your-own.ts`, the seeding and
+     * the search in `the-disciples-a-world-opens-with.ts`).
+     */
+    | 'teacher'
+    | 'student'
     /**
      * A bond somebody ended, which is not the same fact as no bond. The kind
      * changes and the row stays, because a disciple who left eleven years ago is
@@ -1181,15 +1208,20 @@ export function upsertRelationship(
     input: RelationshipInput,
     onDay: number
 ): NpcRecord {
-    const at = npc.relationships.findIndex(r => r.targetId === input.targetId);
+    // The kind, or where this is a temperature, whatever temperature already
+    // stands: see THE_SAME_TIE_AT_A_DIFFERENT_TEMPERATURE.
+    let at = npc.relationships.findIndex(r => r.targetId === input.targetId && r.kind === input.kind);
+    if (at < 0 && isATemperature(input.kind)) {
+        at = npc.relationships.findIndex(r => r.targetId === input.targetId && isATemperature(r.kind));
+    }
     const next = npc.relationships.slice();
     if (at >= 0) {
-        const prev = next[at];
+        const prev = next[at]!;
         next[at] = {
             ...prev,
             kind: input.kind,
             standing: clampStanding(input.standing),
-            note: input.note ?? (input.kind === prev.kind ? prev.note : ''),
+            note: input.note ?? (prev.kind === input.kind ? prev.note : ''),
             lastChangedDay: onDay,
             factIds: mergeIds(prev.factIds, input.factIds ?? []),
             inheritedFromId: input.inheritedFromId ?? prev.inheritedFromId
@@ -1207,12 +1239,135 @@ export function upsertRelationship(
             inheritedFromId: input.inheritedFromId ?? null
         });
     }
-    next.sort((a, b) => (a.targetId < b.targetId ? -1 : a.targetId > b.targetId ? 1 : 0));
+    next.sort((a, b) => (a.targetId < b.targetId ? -1 : a.targetId > b.targetId ? 1 : 0)
+        || (WHAT_STANDS_FIRST.indexOf(a.kind) - WHAT_STANDS_FIRST.indexOf(b.kind)));
     return { ...npc, relationships: next, updatedOnDay: onDay };
 }
 
-export function relationshipWith(npc: NpcRecord, targetId: string): NpcRelationship | null {
-    return npc.relationships.find(r => r.targetId === targetId) ?? null;
+/**
+ * The order the kinds standing between two people are read in: the ones that are
+ * a fact about their lives first, then the roads they walk, then what they feel.
+ *
+ * Only for reading. Nothing decides anything by position, and a kind missing
+ * from this list simply sorts last.
+ */
+/**
+ * THE SAME TIE AT A DIFFERENT TEMPERATURE.
+ *
+ * `acquaintance`, `ally`, `rival` and `enemy` are not four things standing
+ * between two people. They are one thing at four temperatures, and the passes
+ * that move it write whichever one the standing now reads as: the hall pass
+ * promotes an acquaintance to an ally at the friendship line, the grudge pass
+ * writes `enemy` below -0.4 and `rival` above it, and a life is long enough for
+ * a pair to cross both lines more than once.
+ *
+ * Keyed by kind alone they accumulated. Measured at 120 years after the
+ * re-keying, `acquaintance`+`ally` and `enemy`+`rival` were the two commonest
+ * pairs of kinds in the world, which is not two things standing between two
+ * people; it is the same one written twice, and over a long soak the list only
+ * grows. So a write on this ladder moves the row that is already there.
+ *
+ * A marriage and a bond are not on the ladder, which is the point of the
+ * keying: those stand alongside whatever the two of them feel about each other.
+ */
+const THE_SAME_TIE_AT_A_DIFFERENT_TEMPERATURE: readonly RelationshipKind[] = [
+    'acquaintance', 'ally', 'rival', 'enemy'
+];
+
+/** Whether a kind is one of those four, rather than something that stands. */
+export function isATemperature(kind: RelationshipKind): boolean {
+    return THE_SAME_TIE_AT_A_DIFFERENT_TEMPERATURE.includes(kind);
+}
+
+export const WHAT_STANDS_FIRST: readonly RelationshipKind[] = [
+    'spouse', 'parent', 'child', 'kin',
+    'master', 'disciple', 'teacher', 'student', 'former_master', 'former_disciple',
+    'patron', 'client', 'creditor', 'debtor',
+    'ally', 'rival', 'enemy', 'acquaintance'
+];
+
+/**
+ * EVERYTHING STANDING BETWEEN THESE TWO, most defining first.
+ *
+ * The design owner: *"marriages and master relationships ought to be separately
+ * tracked, they aren't the same thing."* Two people hold as many rows as there
+ * are things true between them - a master who is also an uncle, a wife who is
+ * also a fellow disciple, a friend who became a rival - and a row is keyed by
+ * the pair AND the kind, so writing one never silently replaces another. Before
+ * this a bond written between two people who were married deleted the marriage:
+ * measured on `fam-d`, a catalog marriage came back reading `master`.
+ */
+export function whatStandsBetween(npc: NpcRecord, targetId: string): NpcRelationship[] {
+    return npc.relationships
+        .filter(r => r.targetId === targetId)
+        .sort((a, b) => WHAT_STANDS_FIRST.indexOf(a.kind) - WHAT_STANDS_FIRST.indexOf(b.kind));
+}
+
+/**
+ * One tie: the named kind where a caller asks for one, and otherwise the most
+ * defining of however many stand between them ({@link whatStandsBetween}).
+ */
+export function relationshipWith(
+    npc: NpcRecord,
+    targetId: string,
+    kind?: RelationshipKind
+): NpcRelationship | null {
+    if (kind !== undefined) {
+        return npc.relationships.find(r => r.targetId === targetId && r.kind === kind) ?? null;
+    }
+    // ONE PASS, NO ALLOCATION. This is called inside the world's hot loops - the
+    // kill read, gatherings, every ask - and building and sorting a list on each
+    // call turned a 380-year run from minutes into hours.
+    let best: NpcRelationship | null = null;
+    let bestAt = Number.MAX_SAFE_INTEGER;
+    for (const tie of npc.relationships) {
+        if (tie.targetId !== targetId) continue;
+        const at = WHAT_STANDS_FIRST.indexOf(tie.kind);
+        const rank = at < 0 ? WHAT_STANDS_FIRST.length : at;
+        if (best === null || rank < bestAt) {
+            best = tie;
+            bestAt = rank;
+        }
+    }
+    return best;
+}
+
+/**
+ * One kind of tie becomes another, in place: the row keeps the day it began and
+ * its words, and nothing else standing between the two is touched.
+ *
+ * What a bond ending and a death do. With rows keyed by kind, writing
+ * `former_master` beside a live `master` row would leave somebody answering to a
+ * master they walked out on, so a conversion has to say it is one.
+ */
+export function theTieBecomes(
+    npc: NpcRecord,
+    targetId: string,
+    from: RelationshipKind,
+    to: RelationshipKind,
+    onDay: number,
+    over: { standing?: number; note?: string; factIds?: string[] } = {}
+): NpcRecord {
+    const at = npc.relationships.findIndex(r => r.targetId === targetId && r.kind === from);
+    if (at < 0) return npc;
+    const prev = npc.relationships[at]!;
+    const next = npc.relationships.slice();
+    // Where the far kind is already held, the two collapse into it rather than
+    // standing twice.
+    const already = next.findIndex(r => r.targetId === targetId && r.kind === to);
+    next[at] = {
+        ...prev,
+        kind: to,
+        standing: clampStanding(over.standing ?? prev.standing),
+        note: over.note ?? prev.note,
+        lastChangedDay: onDay,
+        // The fact that did it, on the row it did it to.
+        factIds: mergeIds(prev.factIds, over.factIds ?? [])
+    };
+    const relationships = already >= 0 && already !== at
+        ? next.filter((_, i) => i !== already)
+        : next;
+    return { ...npc, relationships, updatedOnDay: onDay };
 }
 
 /** Everyone this person has an active account with, worst first. */
@@ -1257,12 +1412,22 @@ export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRec
 }
 
 /**
- * Nobody has seen them.
+ * Nobody has seen them: the world has lost sight of them, and they are still a
+ * living person somewhere.
+ *
+ * NOT A STATUS. The design owner: *"missing people are still somewhere physical,
+ * just the sect doesn't know."* This used to set `status: 'missing'`, and every
+ * pass that asks for the living skipped them from then on: measured on
+ * `afford-a` over five hundred years, 103 people frozen where they were lost,
+ * none of whom climbed, moved, came back or died, 17,997 person-years of them
+ * past the end of their lifespan. What is marked now is what their house does
+ * not know, and the absence pass writes it onto the house the same slice
+ * (`who-a-house-has-lost-track-of.ts`).
  */
 export function markMissing(npc: NpcRecord, onDay: number, endNote = ''): NpcRecord {
     return {
         ...npc,
-        status: 'missing',
+        tags: [...npc.tags.filter(t => !t.startsWith(THE_WORLD_LOST_SIGHT_OF)), lostSightOnDay(onDay)],
         endNote: endNote || npc.endNote,
         updatedOnDay: onDay
     };

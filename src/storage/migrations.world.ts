@@ -446,7 +446,13 @@ export function migrateWorld(db: Database.Database): void {
       last_changed_day INTEGER NOT NULL DEFAULT 0,
       fact_ids TEXT NOT NULL DEFAULT '[]',           -- JSON: the causal chain
       inherited_from_id TEXT,                        -- grudges outlive their owners
-      PRIMARY KEY (world_id, owner_id, target_id),
+      -- KEYED BY THE PAIR AND THE KIND. The design owner: "marriages and master
+      -- relationships ought to be separately tracked, they aren't the same
+      -- thing." Two people hold as many rows as there are things true between
+      -- them - a master who is also an uncle, a wife who is also a fellow
+      -- disciple - and on the pair alone INSERT OR REPLACE silently dropped
+      -- whichever was written first.
+      PRIMARY KEY (world_id, owner_id, target_id, kind),
       FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
@@ -893,6 +899,49 @@ export function migrateWorld(db: Database.Database): void {
       ON world_absences(world_id, written_off_on_day);
     CREATE INDEX IF NOT EXISTS idx_world_absences_claim
       ON world_absences(world_id, claim_key);
+
+    -- What the world's own people have given their word about.
+    --
+    -- The same record as the played ledger's obligations table, column for
+    -- column, because it IS the same record: an NPC's oath and a cultivator's
+    -- oath are one type made by one set of makers. It is a second table and not
+    -- a second shape - the played ledger has no world to belong to and this one
+    -- has to die with its world, which is the whole of the difference. See
+    -- the-word-an-npc-gave.ts.
+    CREATE TABLE IF NOT EXISTS world_obligations (
+      world_id TEXT NOT NULL,
+      id TEXT NOT NULL,
+      kind TEXT NOT NULL,                            -- grudge | debt | favor | oath | ...
+      holder_id TEXT NOT NULL,                       -- an npc id, or a faction id
+      subject_id TEXT,
+      cause TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      incurred_on_day INTEGER NOT NULL,
+      triggering_event_id TEXT,
+      description TEXT NOT NULL DEFAULT '',
+      participants TEXT NOT NULL DEFAULT '[]',       -- JSON
+      tags TEXT NOT NULL DEFAULT '[]',               -- JSON
+      terms TEXT,
+      due_on_day INTEGER,
+      status TEXT NOT NULL DEFAULT 'open',
+      settlement_resolution TEXT,                    -- ... | broken, for a word not kept
+      settled_on_day INTEGER,
+      settled_by_id TEXT,
+      settlement_note TEXT,
+      inheritance TEXT NOT NULL DEFAULT '[]',        -- JSON
+      generation INTEGER NOT NULL DEFAULT 0,
+      origin_holder_id TEXT NOT NULL,
+      from_belief INTEGER NOT NULL DEFAULT 0,
+      recorded_on_day INTEGER NOT NULL,
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
+    );
+
+    -- "What is open against this person", from either end.
+    CREATE INDEX IF NOT EXISTS idx_world_obligations_holder
+      ON world_obligations(world_id, holder_id, status);
+    CREATE INDEX IF NOT EXISTS idx_world_obligations_subject
+      ON world_obligations(world_id, subject_id, status);
   `);
 
     addWorldColumns(db);
@@ -990,6 +1039,13 @@ function addWorldColumns(db: Database.Database): void {
         if (!columns.includes('merit')) {
             console.error(`[Migration] Adding merit column to ${table} table`);
             db.exec(`ALTER TABLE ${table} ADD COLUMN merit TEXT;`);
+        }
+        // What somebody is worth in front of people (`what-a-face-is-worth.ts`).
+        // NULL is nought, which is the honest reading of every row written
+        // before anybody was watching: nothing has been won or lost in public.
+        if (!columns.includes('face')) {
+            console.error(`[Migration] Adding face column to ${table} table`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN face REAL;`);
         }
     }
 
@@ -1090,5 +1146,37 @@ function addWorldColumns(db: Database.Database): void {
     if (!columnsOf('world_area_statuses').includes('price_multiplier_by_category')) {
         console.error('[Migration] Adding price_multiplier_by_category column to world_area_statuses table');
         db.exec("ALTER TABLE world_area_statuses ADD COLUMN price_multiplier_by_category TEXT NOT NULL DEFAULT '{}';");
+    }
+
+    // ── A PAIR MAY HOLD MORE THAN ONE KIND OF TIE ────────────────────────
+    //
+    // The table was keyed on (world, owner, target), so saving a world wrote
+    // one row per pair however many kinds stood between the two, and the save
+    // itself deleted the rest. A key cannot be altered in place in SQLite, so
+    // the table is rebuilt with the kind in it, column for column as it stands
+    // after the ALTERs above. Nothing is dropped: a saved world's rows carry
+    // over exactly as they were, one per pair, and the world writes the rest as
+    // they happen.
+    {
+        const key = (db.prepare('PRAGMA table_info(world_relationships)').all() as
+            { name: string; pk: number }[]).filter(column => column.pk > 0).map(column => column.name);
+        if (key.length > 0 && !key.includes('kind')) {
+            console.error('[Migration] Re-keying world_relationships on (owner, target, kind)');
+            const columns = columnsOf('world_relationships');
+            const named = columns.join(', ');
+            const typeOf = (column: string): string =>
+                column === 'standing' ? 'REAL' : column.endsWith('_day') ? 'INTEGER' : 'TEXT';
+            const declared = columns.map(column => `${column} ${typeOf(column)}`).join(', ');
+            db.exec(
+                `CREATE TABLE world_relationships_rekeyed (${declared}, `
+                + 'PRIMARY KEY (world_id, owner_id, target_id, kind), '
+                + 'FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE);'
+                + `INSERT INTO world_relationships_rekeyed (${named}) SELECT ${named} FROM world_relationships;`
+                + 'DROP TABLE world_relationships;'
+                + 'ALTER TABLE world_relationships_rekeyed RENAME TO world_relationships;'
+                + 'CREATE INDEX IF NOT EXISTS idx_world_relationships_target'
+                + ' ON world_relationships(world_id, target_id);'
+            );
+        }
     }
 }

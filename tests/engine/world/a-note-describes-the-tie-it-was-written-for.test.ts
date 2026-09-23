@@ -20,20 +20,34 @@
  * pass moving somebody from `kin` to `enemy` has no business inventing a
  * sentence about it. What it must not do is INHERIT one.
  *
+ * ── AND THEN THE ROWS WERE KEYED BY KIND ─────────────────────────────────
+ *
+ * The design owner: *"marriages and master relationships ought to be separately
+ * tracked, they aren't the same thing."* A row is now keyed by the pair AND the
+ * kind, so most of this defect is structural rather than guarded: writing an
+ * `ally` row does not touch the `child` row standing beside it, and a note can
+ * only ever describe the kind it was written on. What is left to pin is the one
+ * place a kind still changes on a row somebody already holds - a bond ending, a
+ * death - which is `theTieBecomes`.
+ *
  * ── WHAT IS PINNED ───────────────────────────────────────────────────────
  *
- *   1. The note survives an update that leaves the kind alone - which is the
- *      ordinary case, and the reason the fallback existed at all.
- *   2. The note does NOT survive a change of kind with no words supplied.
- *   3. A caller that does supply words gets them, whichever way the kind went.
+ *   1. The note survives an update that leaves the kind alone.
+ *   2. A second kind stands BESIDE the first, with its own words, and neither
+ *      note reaches the other row.
+ *   3. A caller that supplies words gets them.
+ *   4. `theTieBecomes` drops words that would describe a tie the row no longer
+ *      is, and takes the words it is given.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import {
     createNpc,
-    upsertRelationship,
     relationshipWith,
+    theTieBecomes,
+    upsertRelationship,
+    whatStandsBetween,
     type NpcRecord
 } from '../../../src/engine/world/npc-state.js';
 
@@ -69,7 +83,7 @@ describe('a note describes the tie it was written for', () => {
             standing: 0.9
         }, DAY + 365);
 
-        const row = relationshipWith(moved, 'other')!;
+        const row = relationshipWith(moved, 'other', 'child')!;
         expect(row.kind).toBe('child');
         expect(row.standing).toBeCloseTo(0.9);
         expect(row.note, 'the words were dropped from a tie that did not change').toBe(
@@ -77,27 +91,27 @@ describe('a note describes the tie it was written for', () => {
         );
     });
 
-    it('drops words that would describe a tie this row no longer is', () => {
-        // THE DEFECT. `ally` carrying `Their child.` is the exact shape the
-        // world sweep found, thirteen times over four worlds.
-        const fallenOut = upsertRelationship(holdingAChild(), {
+    it('puts a second kind beside the first, and neither note reaches the other', () => {
+        // THE DEFECT, GONE BY CONSTRUCTION. `ally` carrying `Their child.` was
+        // the shape the world sweep found thirteen times; an ally row is now a
+        // row of its own, and the child row is still there under it.
+        const both = upsertRelationship(holdingAChild(), {
             targetId: 'other',
             targetName: 'The Other',
             kind: 'ally',
             standing: 0.4
         }, DAY + 365);
 
-        const row = relationshipWith(fallenOut, 'other')!;
-        expect(row.kind).toBe('ally');
-        expect(row.note, 'an ally row is still calling them their child').not.toBe(
-            'Their child.'
-        );
-        expect(row.note).toBe('');
+        const stands = whatStandsBetween(both, 'other');
+        expect(stands.map(row => row.kind).sort()).toEqual(['ally', 'child']);
+        expect(relationshipWith(both, 'other', 'ally')!.note).toBe('');
+        expect(relationshipWith(both, 'other', 'child')!.note, 'the child row was not touched')
+            .toBe('Their child.');
+        // And the most defining of the two is what a caller asking for one gets.
+        expect(relationshipWith(both, 'other')!.kind).toBe('child');
     });
 
-    it('takes the words it is given, whichever way the kind went', () => {
-        // A caller that HAS something to say is never overruled - the rule is
-        // about inheritance, not about silencing.
+    it('takes the words it is given', () => {
         const said = upsertRelationship(holdingAChild(), {
             targetId: 'other',
             targetName: 'The Other',
@@ -106,8 +120,29 @@ describe('a note describes the tie it was written for', () => {
             note: 'Turned on them at the gate.'
         }, DAY + 365);
 
-        const row = relationshipWith(said, 'other')!;
-        expect(row.kind).toBe('enemy');
+        expect(relationshipWith(said, 'other', 'enemy')!.note).toBe('Turned on them at the gate.');
+    });
+});
+
+describe('and a kind that becomes another kind', () => {
+    it('drops words that would describe a tie the row no longer is', () => {
+        // The one place a kind still changes under somebody: a bond ending, a
+        // death. The row keeps the day it began, which is what makes a bond of
+        // eighty years read as eighty years old after it ends.
+        const held = holdingAChild();
+        const ended = theTieBecomes(held, 'other', 'child', 'former_disciple', DAY + 365, { note: '' });
+        const row = relationshipWith(ended, 'other', 'former_disciple')!;
+        expect(row.note, 'a former tie is still calling them their child').toBe('');
+        expect(row.sinceDay, 'the day it began is kept').toBe(DAY);
+        expect(relationshipWith(ended, 'other', 'child'), 'the old kind is gone').toBeNull();
+    });
+
+    it('and takes the words it is given', () => {
+        const said = theTieBecomes(holdingAChild(), 'other', 'child', 'enemy', DAY + 365, {
+            standing: -0.8, note: 'Turned on them at the gate.'
+        });
+        const row = relationshipWith(said, 'other', 'enemy')!;
         expect(row.note).toBe('Turned on them at the gate.');
+        expect(row.standing).toBeCloseTo(-0.8);
     });
 });

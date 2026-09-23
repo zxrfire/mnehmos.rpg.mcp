@@ -62,7 +62,8 @@ import {
 } from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import {
     itsCommunicationTalismansRunLow,
-    whatCuttingForTheHouseLands
+    whatCuttingForTheHouseLands,
+    whatCuttingPays
 } from '../engine/world/what-a-house-hears-from-its-people-away.js';
 import type { SendingReason } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { forStream } from '../engine/cultivation/rng.js';
@@ -81,7 +82,9 @@ import type { KnowledgeGate } from './knowledge.js';
 import { createGrudge, createOath, settleObligation } from '../engine/social/grudges.js';
 import {
     createRelationship,
+    endRelationship,
     recordRelationshipEvent,
+    theOtherHalfOf,
     updateRelationship,
     type Relationship,
     type RelationshipType
@@ -1548,6 +1551,13 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
             ordinal: cultivator.realmOrdinal
         }, { thingId: makes, sinceDay: acceptedOn, untilDay: input.onDay })
         : 0;
+    // PAID FOR WHAT LANDED. A notice that makes something pays no stones up
+    // front (`dutyTermsFor`), and what it made is paid at its worth.
+    const paidForWhatLanded = whatCuttingPays(landed, cultivator.realmOrdinal);
+    if (paidForWhatLanded > 0) {
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paidForWhatLanded });
+    }
+    const stones = duty.stones + paidForWhatLanded;
 
     // THE EYEBROW IS NOT STATED HERE ANY MORE, and where it moved to is the
     // point. This line rode the settlement, which put "posted eleven rungs
@@ -1559,12 +1569,12 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
     return {
         obligation: settled,
         contribution: credited,
-        stones: duty.stones,
+        stones,
         landed,
         line: (credited > 0
             ? `Completed. ${credited} contribution credited with `
-              + `${duty.factionName ?? 'the house'}, and ${duty.stones} spirit stones paid.`
-            : `Completed. ${duty.stones} spirit stones paid, and nothing on anybody's ledger.`)
+              + `${duty.factionName ?? 'the house'}, and ${stones} spirit stones paid.`
+            : `Completed. ${stones} spirit stones paid, and nothing on anybody's ledger.`)
             + (landed > 0 ? ` ${landed} went into the house's stores.` : '')
     };
 }
@@ -1665,12 +1675,21 @@ function standingsFor(
         WHERE r.from_character_id = ? AND r.active = 1
     `).all(cultivatorId) as StandingRow[];
 
+    // ONE STANDING PER PERSON, out of however many kinds stand between them.
+    // The strongest row names the tie - a master who is also an uncle shows as
+    // whichever of the two this person actually carries - and the occasions are
+    // summed, because they all happened.
     const out = new Map<string, { type: string; strength: number; times: number }>();
     for (const row of rows) {
+        const held = out.get(row.to_character_id);
+        if (held === undefined) {
+            out.set(row.to_character_id, { type: row.type, strength: row.strength, times: row.times });
+            continue;
+        }
         out.set(row.to_character_id, {
-            type: row.type,
-            strength: row.strength,
-            times: row.times
+            type: Math.abs(row.strength) > Math.abs(held.strength) ? row.type : held.type,
+            strength: Math.abs(row.strength) > Math.abs(held.strength) ? row.strength : held.strength,
+            times: held.times + row.times
         });
     }
     return out;
@@ -1686,7 +1705,9 @@ export function recordContact(
     contact: Contact
 ): Relationship {
     const db = repos.db as unknown as DatabaseHandle;
-    const existing = readRelationship(db, cultivator.id, contact.person.id);
+    // The row OF THIS KIND. Several kinds can stand between two people, so a
+    // contact moves the one it is about and leaves the rest where they are.
+    const existing = readRelationship(db, cultivator.id, contact.person.id, contact.tie.type as RelationshipType);
 
     const base = existing ?? createRelationship({
         fromId: cultivator.id,
@@ -1715,10 +1736,40 @@ export function recordContact(
         significance: contact.tie.significance === 'defining' ? 'defining' : 'notable'
     });
 
+    // AND THE OTHER END. Every relationship runs both ways: they were in the
+    // same room too, and hold the other half of the type (`theOtherHalfOf`),
+    // moved by the same contact, on their own row.
+    const theirType = theOtherHalfOf(contact.tie.type as RelationshipType);
+    const theirs = readRelationship(db, contact.person.id, cultivator.id, theirType);
+    const theirBase = theirs ?? createRelationship({
+        fromId: contact.person.id,
+        toId: cultivator.id,
+        type: theirType,
+        onDay,
+        strength: 0,
+        significance: contact.tie.significance,
+        attitude: contact.tie.attitude
+    });
+    const theirSide = recordRelationshipEvent(updateRelationship(theirBase, {
+        onDay,
+        type: theirType,
+        strength: theirBase.strength + contact.tie.strengthDelta,
+        significance: contact.tie.significance,
+        attitude: contact.tie.attitude,
+        appendHistory: contact.tie.eventSummary
+    }), {
+        onDay,
+        kind: contact.tie.eventKind,
+        summary: contact.tie.eventSummary,
+        significance: contact.tie.significance === 'defining' ? 'defining' : 'notable'
+    });
+
     repos.db.transaction(() => {
-        writeRelationship(db, withEvent);
-        const event = withEvent.events[withEvent.events.length - 1];
-        if (event) writeRelationshipEvent(db, withEvent.id, event);
+        for (const side of [withEvent, theirSide]) {
+            writeRelationship(db, side);
+            const event = side.events[side.events.length - 1];
+            if (event) writeRelationshipEvent(db, side.id, event);
+        }
     })();
 
     return withEvent;
@@ -1870,6 +1921,30 @@ export function theChildrenTheyRaised(
  * what was sworn, never lowered: kneeling does not undo a tie that was already
  * deeper than a new bond starts.
  */
+/**
+ * A tie of one kind between these two, ended: kept on the row, marked inactive,
+ * with the day and the reason on it.
+ *
+ * Ended ties are never deleted here - *"a dead master is still a master"* - and
+ * with rows keyed by the pair AND the kind, ending one says which one ended:
+ * a disciple who walks out stops being a disciple and does not stop being a
+ * nephew.
+ */
+export function endTheTieOfAKind(
+    repos: CultivationRepos,
+    fromId: string,
+    toId: string,
+    type: RelationshipType,
+    reason: string,
+    onDay: number
+): boolean {
+    const db = repos.db as unknown as DatabaseHandle;
+    const held = readRelationship(db, fromId, toId, type);
+    if (held === null || !held.active) return false;
+    writeRelationship(db, endRelationship(held, reason, onDay));
+    return true;
+}
+
 export function recordABondBothWays(
     repos: CultivationRepos,
     sides: readonly { fromId: string; toId: string; type: RelationshipType; strength: number }[],
@@ -1879,7 +1954,7 @@ export function recordABondBothWays(
     const db = repos.db as unknown as DatabaseHandle;
     repos.db.transaction(() => {
         for (const side of sides) {
-            const existing = readRelationship(db, side.fromId, side.toId);
+            const existing = readRelationship(db, side.fromId, side.toId, side.type);
             const base = existing ?? createRelationship({
                 fromId: side.fromId,
                 toId: side.toId,
@@ -1915,6 +1990,21 @@ export function recordABondBothWays(
  * beside the tie. Most recent active bond first, so a second master taken after
  * the first is the one answered.
  */
+export function theMastersTheyKneltTo(repos: CultivationRepos, cultivatorId: string): string[] {
+    const rows = (repos.db as unknown as DatabaseHandle).prepare(
+        'SELECT to_character_id AS id FROM relationships '
+        + "WHERE from_character_id = ? AND type = 'master' AND active = 1 "
+        + 'ORDER BY established_on_day DESC'
+    ).all(cultivatorId) as { id: string }[];
+    return rows.map(row => row.id);
+}
+
+/**
+ * The most recent master, for callers that want one. The design owner: *"you
+ * often have more than one master, and that's okay"* - so this is the latest of
+ * however many, never the only one. Anything that names them to the player, or
+ * decides which one an ask is put to, should read `theMastersTheyKneltTo`.
+ */
 export function theMasterTheyKneltTo(repos: CultivationRepos, cultivatorId: string): string | null {
     const row = (repos.db as unknown as DatabaseHandle).prepare(
         'SELECT to_character_id AS id FROM relationships '
@@ -1945,7 +2035,7 @@ export function recordTheTieAnAttemptLeft(
     ];
     repos.db.transaction(() => {
         for (const [fromId, toId, side] of sides) {
-            const existing = readRelationship(db, fromId, toId);
+            const existing = readRelationship(db, fromId, toId, side.type as RelationshipType);
             const base = existing ?? createRelationship({
                 fromId,
                 toId,
@@ -1993,10 +2083,29 @@ interface RelationshipRow {
     ended_on_day: number | null;
 }
 
-function readRelationship(db: DatabaseHandle, fromId: string, toId: string): Relationship | null {
-    const row = db.prepare(
-        'SELECT * FROM relationships WHERE from_character_id = ? AND to_character_id = ?'
-    ).get(fromId, toId) as RelationshipRow | undefined;
+/**
+ * One of the rows standing between these two: the named kind where the caller
+ * asks for one, and otherwise the most recently written.
+ *
+ * The design owner: *"marriages and master relationships ought to be separately
+ * tracked, they aren't the same thing."* Rows here are keyed by the pair AND the
+ * type (`idx_relationships_pair_kind`), so a wife who is also a fellow disciple
+ * holds two and writing one never rewrites the other.
+ */
+function readRelationship(
+    db: DatabaseHandle,
+    fromId: string,
+    toId: string,
+    type?: RelationshipType
+): Relationship | null {
+    const row = (type === undefined
+        ? db.prepare(
+            'SELECT * FROM relationships WHERE from_character_id = ? AND to_character_id = ? '
+            + 'ORDER BY last_updated_on_day DESC, rowid DESC'
+        ).get(fromId, toId)
+        : db.prepare(
+            'SELECT * FROM relationships WHERE from_character_id = ? AND to_character_id = ? AND type = ?'
+        ).get(fromId, toId, type)) as RelationshipRow | undefined;
     if (!row) return null;
 
     return {

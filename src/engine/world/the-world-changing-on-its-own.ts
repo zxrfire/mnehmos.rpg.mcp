@@ -2,6 +2,7 @@
  * Pressure: the world changing on its own.
  */
 
+import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
@@ -105,9 +106,11 @@ import {
     setLocation,
     whereTheyGoBackTo,
     setRealm,
+    theTieBecomes,
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
+import { andLetGoAtTheOtherEnd, andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { enterWhoeverHasReachedTheHouse } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { aRecruiterOwesTheHouseAReport } from './a-house-expects-somebody-it-took-on.js';
 import {
@@ -1205,6 +1208,8 @@ function placeAChildTheirHouseWillNotKeep(
         },
         day
     );
+    andTheOtherEnd(state.npcs, holder, { targetId: taker.id, kind: 'client', standing: 0.5 }, day,
+        { note: 'Was asked, and did not refuse.' });
 
     // Secret, because the people who hold it are the people on it. Nobody else
     // in the world has a record, which is what `unaware` means for the child.
@@ -1552,6 +1557,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
             continue;
         }
         state.npcs[at] = strike.npc;
+        andLetGoAtTheOtherEnd(state.npcs, npc, strike.npc);
         recordCrossing(state, state.npcs[at], strike.result, day);
         if (strike.result.outcome === 'success') advanced.push(state.npcs[at]);
     }
@@ -3456,7 +3462,7 @@ function applyPeopleWalkingOut(
         for (const tie of npc.relationships) {
             const other = indexById(state.npcs, tie.targetId);
             const was = other < 0 ? null : state.npcs[other]!.status;
-            if (was === 'missing' || was === 'physically_dead') didNotComeBack++;
+            if (was === 'physically_dead' || (other >= 0 && isLostTrackOf(state, state.npcs[other]!))) didNotComeBack++;
         }
 
         // Stamped by the promotion pass, which runs before this one each year.
@@ -5028,6 +5034,7 @@ function openPersonalAccount(
         standing: -0.75,
         note
     }, day);
+    andTheOtherEnd(state.npcs, aggrieved, { targetId: taker.id, kind: 'enemy', standing: -0.75 }, day);
     return [aggrieved.id, taker.id];
 }
 
@@ -6547,7 +6554,9 @@ const TEMPLATES: Template[] = [
                     // transaction and finishes when it is paid; an attachment
                     // is the one that is built over visits, and it is the only
                     // one there is anything to work out about later.
-                    if (relationshipWith(other ?? person, person.id)?.kind !== 'ally') continue;
+                    // The `ally` row itself, not whatever else stands between
+                    // them: ties are keyed by the pair AND the kind.
+                    if (relationshipWith(other ?? person, person.id, 'ally') === null) continue;
                     if (!other) continue;
                     continuations.push({ actor: person, subjectId: tie.targetId });
                 }
@@ -6765,6 +6774,7 @@ const TEMPLATES: Template[] = [
                     note: 'Asked for something they had no business asking for.',
                     factIds: [fact.fact.id]
                 }, day);
+                andTheOtherEnd(state.npcs, subject, { targetId: actor.id, kind: 'rival', standing: -0.3, factIds: [fact.fact.id] }, day);
             }
 
             return fact;
@@ -6846,18 +6856,30 @@ const TEMPLATES: Template[] = [
 
             const at = indexById(state.npcs, subject.id);
             if (at < 0) return null;
-            // The tie is rewritten rather than removed. `upsertRelationship`
-            // keeps `sinceDay`, so an eleven-year attachment that turns hostile
-            // is still eleven years old - which is what makes it read as
-            // betrayal rather than as dislike.
-            state.npcs[at] = upsertRelationship(state.npcs[at], {
-                targetId: actor.id,
-                targetName: actor.name,
-                kind: 'enemy',
-                standing: outcome.grudge.severity === 'unforgivable' ? -1
-                    : outcome.grudge.severity === 'grave' ? -0.85 : -0.6,
-                note: outcome.grudge.description
-            }, day);
+            // The attachment BECOMES enmity rather than standing beside it.
+            // `theTieBecomes` keeps `sinceDay`, so an eleven-year attachment
+            // that turns hostile is still eleven years old - which is what makes
+            // it read as betrayal rather than as dislike - and everything else
+            // between the two (kin, a bond) is left where it is.
+            const held = relationshipWith(state.npcs[at], actor.id, 'ally')
+                ?? relationshipWith(state.npcs[at], actor.id, 'acquaintance');
+            if (held !== null) {
+                state.npcs[at] = theTieBecomes(state.npcs[at], actor.id, held.kind, 'enemy', day, {
+                    standing: outcome.grudge.severity === 'unforgivable' ? -1
+                        : outcome.grudge.severity === 'grave' ? -0.85 : -0.6,
+                    note: outcome.grudge.description
+                });
+            } else {
+                state.npcs[at] = upsertRelationship(state.npcs[at], {
+                    targetId: actor.id,
+                    targetName: actor.name,
+                    kind: 'enemy',
+                    standing: outcome.grudge.severity === 'unforgivable' ? -1
+                        : outcome.grudge.severity === 'grave' ? -0.85 : -0.6,
+                    note: outcome.grudge.description
+                }, day);
+            }
+            andTheOtherEnd(state.npcs, subject, { targetId: actor.id, kind: 'enemy', standing: -0.6 }, day);
 
             // A righteous house takes it up, which is what turns one person's
             // account into a house's. A demonic one does not, and prices the

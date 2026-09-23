@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from '../../engine/world/who-a-house-has-lost-track-of.js';
 import type {
     FactionRecord,
     ScheduledEffect,
@@ -24,6 +25,7 @@ import {
     type ProvenanceEntry
 } from '../../engine/world/possessions.js';
 import type { Absence, TieAtDeparture } from '../../engine/world/when-somebody-does-not-come-back.js';
+import { obligationFromRow, type ObligationRow } from './obligation.repo.js';
 import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
 import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../engine/world/layers.js';
@@ -83,6 +85,7 @@ export class WorldStateRepository {
     private readonly insertClaimStmt: Database.Statement;
     private readonly insertProvenanceStmt: Database.Statement;
     private readonly insertAbsenceStmt: Database.Statement;
+    private readonly insertObligationStmt: Database.Statement;
 
     private readonly selectErasStmt: Database.Statement;
     private readonly selectFactsStmt: Database.Statement;
@@ -98,6 +101,7 @@ export class WorldStateRepository {
     private readonly selectLineageEdgesStmt: Database.Statement;
     private readonly selectRunsStmt: Database.Statement;
     private readonly selectAscensionsStmt: Database.Statement;
+    private readonly selectObligationsStmt: Database.Statement;
     private readonly selectOpportunitiesStmt: Database.Statement;
     private readonly selectAreaStatusesStmt: Database.Statement;
     private readonly selectObjectsStmt: Database.Statement;
@@ -226,7 +230,7 @@ export class WorldStateRepository {
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
-                history_fact_ids, memory_ids, activity, merit
+                history_fact_ids, memory_ids, activity, merit, face
             ) VALUES (
                 @id, @worldId, @name,
                 @bornOnDay, @origin, @sex, @physique, @bloodlineSpecies, @bloodlineTier,
@@ -237,7 +241,7 @@ export class WorldStateRepository {
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
-                @historyFactIds, @memoryIds, @activity, @merit
+                @historyFactIds, @memoryIds, @activity, @merit, @face
             )
         `);
 
@@ -420,6 +424,22 @@ export class WorldStateRepository {
             )
         `);
 
+        // The world's own ledger. The same twenty-three columns as the played
+        // one, because it is the same record: see `the-word-an-npc-gave.ts`.
+        this.insertObligationStmt = db.prepare(`
+            INSERT OR REPLACE INTO world_obligations (
+                world_id, id, kind, holder_id, subject_id, cause, severity, incurred_on_day,
+                triggering_event_id, description, participants, tags, terms, due_on_day,
+                status, settlement_resolution, settled_on_day, settled_by_id, settlement_note,
+                inheritance, generation, origin_holder_id, from_belief, recorded_on_day
+            ) VALUES (
+                @worldId, @id, @kind, @holderId, @subjectId, @cause, @severity, @incurredOnDay,
+                @triggeringEventId, @description, @participants, @tags, @terms, @dueOnDay,
+                @status, @settlementResolution, @settledOnDay, @settledById, @settlementNote,
+                @inheritance, @generation, @originHolderId, @fromBelief, @recordedOnDay
+            )
+        `);
+
         // Reads. Ordering is explicit everywhere a list round-trips, because
         // "identical after reload" is a test this repo has to pass and SQLite
         // makes no promise about unordered row order.
@@ -449,6 +469,9 @@ export class WorldStateRepository {
         this.selectClaimsStmt = db.prepare('SELECT * FROM world_object_claims WHERE world_id = ? ORDER BY rowid ASC');
         this.selectProvenanceStmt = db.prepare(
             'SELECT * FROM world_object_provenance WHERE world_id = ? ORDER BY object_id ASC, seq ASC'
+        );
+        this.selectObligationsStmt = db.prepare(
+            'SELECT * FROM world_obligations WHERE world_id = ? ORDER BY rowid ASC'
         );
         this.selectAbsencesStmt = db.prepare(
             // ROWID, like every other array-backed collection here. `saveWorld` clears
@@ -529,6 +552,9 @@ export class WorldStateRepository {
             // and a tick that did not write them would replay the same decade
             // of giving-up after a restart.
             this.writeAbsences(s);
+            // Same reason as the absences above: a word settled this year is an
+            // upsert over the row that was open last year.
+            this.writeObligations(s);
         });
         write(state);
     }
@@ -601,6 +627,7 @@ export class WorldStateRepository {
             runs: (this.selectRunsStmt.all(worldId) as RunRow[]).map(rowToRun),
             ascensions: (this.selectAscensionsStmt.all(worldId) as AscensionRow[]).map(rowToAscension),
             absences: (this.selectAbsencesStmt.all(worldId) as AbsenceRow[]).map(rowToAbsence),
+            obligations: (this.selectObligationsStmt.all(worldId) as ObligationRow[]).map(obligationFromRow),
             history,
             memories,
             populationTarget: runtime.population_target,
@@ -676,7 +703,8 @@ export class WorldStateRepository {
             'world_lineage_edges', 'world_lineages',
             'world_opportunities', 'world_area_statuses',
             'world_object_claims', 'world_object_provenance', 'world_objects',
-            'world_factions', 'world_runs', 'world_ascensions', 'world_absences'
+            'world_factions', 'world_runs', 'world_ascensions', 'world_absences',
+            'world_obligations'
         ]) {
             this.db.prepare(`DELETE FROM ${table} WHERE world_id = ?`).run(worldId);
         }
@@ -697,6 +725,7 @@ export class WorldStateRepository {
         this.writeAreaStatuses(s);
         this.writeObjects(s);
         this.writeAbsences(s);
+        this.writeObligations(s);
     }
 
     private writeEras(s: WorldState): void {
@@ -929,7 +958,8 @@ export class WorldStateRepository {
                 historyFactIds: JSON.stringify(npc.historyFactIds),
                 memoryIds: JSON.stringify(npc.memoryIds),
                 activity: npc.activity === null ? null : JSON.stringify(npc.activity),
-                merit: npc.merit ? JSON.stringify(npc.merit) : null
+                merit: npc.merit ? JSON.stringify(npc.merit) : null,
+                face: typeof npc.face === 'number' && Number.isFinite(npc.face) ? npc.face : null
             });
 
             for (const goal of npc.goals) {
@@ -1129,6 +1159,37 @@ export class WorldStateRepository {
                     factId: entry.factId,
                     note: entry.note
                 });
+            });
+        }
+    }
+
+    private writeObligations(s: WorldState): void {
+        for (const record of s.obligations ?? []) {
+            this.insertObligationStmt.run({
+                worldId: s.id,
+                id: record.id,
+                kind: record.kind,
+                holderId: record.holderId,
+                subjectId: record.subjectId,
+                cause: record.cause,
+                severity: record.severity,
+                incurredOnDay: record.incurredOnDay,
+                triggeringEventId: record.triggeringEventId,
+                description: record.description,
+                participants: JSON.stringify(record.participants),
+                tags: JSON.stringify(record.tags),
+                terms: record.terms,
+                dueOnDay: record.dueOnDay,
+                status: record.status,
+                settlementResolution: record.settlement?.resolution ?? null,
+                settledOnDay: record.settlement?.onDay ?? null,
+                settledById: record.settlement?.byId ?? null,
+                settlementNote: record.settlement?.note ?? null,
+                inheritance: JSON.stringify(record.inheritance),
+                generation: record.generation,
+                originHolderId: record.originHolderId,
+                fromBelief: record.fromBelief ? 1 : 0,
+                recordedOnDay: record.recordedOnDay
             });
         }
     }
@@ -1551,7 +1612,14 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         memoryIds: parseArray(row.memory_ids),
         activity: parseActivity(row.activity),
         merit: parseMerit(row.merit),
-        status: row.status as NpcRecord['status'],
+        // WHAT THEY ARE WORTH IN FRONT OF PEOPLE. Undefined for a row that has
+        // never been in front of anybody, so a world round-trips equal to itself.
+        ...(row.face === null || row.face === undefined ? {} : { face: Number(row.face) }),
+        // A SAVE FROM BEFORE MISSING WAS WHAT A HOUSE DOES NOT KNOW. `missing` was a
+        // status that froze the person; they load as a living person the world has
+        // lost sight of, and the next slice writes the house's mark
+        // (`whatHousesLearnOfTheirOwn`).
+        status: (row.status === 'missing' ? 'alive' : row.status) as NpcRecord['status'],
         bodyId: row.body_id,
         soulState: row.soul_state as NpcRecord['soulState'],
         identityContinuity: row.identity_continuity,
@@ -1559,7 +1627,9 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         endNote: row.end_note,
         lastConfirmedOnDay: row.last_confirmed_on_day,
         updatedOnDay: row.updated_on_day,
-        tags: parseArray(row.tags),
+        tags: row.status === 'missing' && !parseArray<string>(row.tags).some(t => t.startsWith(THE_WORLD_LOST_SIGHT_OF))
+            ? [...parseArray<string>(row.tags), lostSightOnDay(row.updated_on_day)]
+            : parseArray(row.tags),
         nextGoalSeq: row.next_goal_seq
     };
 }
@@ -2126,6 +2196,7 @@ interface NpcRow {
     memory_ids: string;
     activity: string | null;
     merit: string | null;
+    face: number | null;
 }
 
 /**

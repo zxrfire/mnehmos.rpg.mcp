@@ -29,10 +29,12 @@ import {
     isActing,
     isUnadjudicated,
     setFaction,
+    theTieBecomes,
     upsertRelationship,
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { indexById, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -613,18 +615,23 @@ function stepTies(
         // written onto the row. It does not become hostile - being let go is
         // not the same as being hated - it becomes what a tie is when the
         // person has been gone longer than the relationship was alive.
-        state.npcs[at] = upsertRelationship(
+        // BECOMES, and is not written beside. Rows are keyed by the pair and
+        // the kind, so adding an acquaintance row would leave them still holding
+        // a husband who has been gone forty years. The tie that was waiting is
+        // the one that stops.
+        state.npcs[at] = theTieBecomes(
             state.npcs[at],
+            absence.absenteeId,
+            tie.kind,
+            'acquaintance',
+            day,
             {
-                targetId: absence.absenteeId,
-                targetName: absence.absenteeName,
-                kind: 'acquaintance',
                 standing: Math.round(tie.standing * 0.35 * 1e4) / 1e4,
                 note: `Waited ${n} years for them and stopped.`,
                 factIds: [fact.id]
-            },
-            day
+            }
         );
+        andTheOtherEnd(state.npcs, state.npcs[at], { targetId: absence.absenteeId, kind: 'acquaintance', standing: 0 }, day);
 
         const belief = account({
             holderId: tie.holderId,

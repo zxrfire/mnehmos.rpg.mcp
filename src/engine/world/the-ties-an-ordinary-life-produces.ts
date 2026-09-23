@@ -26,6 +26,7 @@ import {
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -331,6 +332,35 @@ export function couldParent(candidates: readonly NpcRecord[], childAge: number, 
  * married couple who were both children of one household became each other's
  * `kin` at the spouse's own standing. A tie of the kind being written is fine;
  * anything else is somebody else's.
+ *
+ * EVERY ROW, AND ANY OTHER KIND REFUSES. Rows are keyed by the pair AND the
+ * kind, so several things stand between two people at once and they sort with
+ * the most defining first. Reading one row asked the sort: where the row on top
+ * happened to BE the kind about to be written, the guard called the pair clear
+ * and never saw the bond underneath - a household written over two people who
+ * were already master and disciple. The store holding both is not permission
+ * for both; this is a rule about what may stand between two people, not about
+ * what an upsert would flatten.
+ *
+ * AND IT REFUSES RATHER THAN REASONS. A guard is the one place to be
+ * conservative, because the costs are not symmetrical: a wrong pass writes an
+ * incest or a household over a bond, and a wrong refusal is one sibling tie
+ * that does not form in a world that makes thousands.
+ *
+ * THE TEMPERATURES ARE EXEMPT, AND THIS IS NOT A LOOSENING.
+ *
+ * `acquaintance`, `ally`, `rival` and `enemy` are one tie at four heats
+ * (`isATemperature`), not four things standing between two people, and they sit
+ * beside every structure by design - that is the whole reason they are keyed as
+ * their own family. So what this guard is for is two STRUCTURES standing where
+ * only one may: a master who is also a husband, a household written over a
+ * bond. Two siblings who are also friends is not that, and refusing it is the
+ * guard answering a question nobody asked.
+ *
+ * Do not restore a bare "any other kind refuses" here. It reads like the
+ * careful choice and it is not one: it declines ordinary households on the
+ * strength of how warm two people happen to be, which is a fact about their
+ * feelings and never about what may stand between them.
  */
 function nothingElseBetween(
     state: WorldState,
@@ -975,6 +1005,7 @@ export function applyPassedOver(
                 standing: PASSED_OVER_STANDING,
                 note: PASSED_OVER_NOTE
             }, day);
+            andTheOtherEnd(state.npcs, holder, { targetId: winner.id, kind: 'rival', standing: PASSED_OVER_STANDING }, day);
             opened++;
             // One grievance per passing-over. The queue is not a list of
             // enemies; the person who got the seat is.
