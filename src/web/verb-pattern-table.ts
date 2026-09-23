@@ -1149,7 +1149,11 @@ export const DUTY_TAKING_VERBS =
     + 'sign up|signs up|put my name';
 
 /** The nouns that make a taking verb a duty rather than a purchase. */
-export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?)\b/;
+// `tasks?` joined the list on the mechanics sweep. "I take THE task" already
+// reached the board through `SECT_DUTY_PATTERN` and "I take THAT task" reached
+// nothing, which is the near-synonym rule at one word's distance: the failing
+// half is the sentence somebody types after the board has just named one.
+export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?|tasks?)\b/;
 
 /**
  * Swallowing, which is not buying and is not eating.
@@ -3267,6 +3271,13 @@ const AIMED_AT_THE_LADDER =
 const TAKEN_ON_AS_SOMETHING = /\b(?:as|into) (?:a |an |my |his |her |their |our )?(?:disciple|apprentice|student|follower|junior|servant|retainer|ward)\b/i;
 
 /**
+ * The sentence says instruction outright, rather than implying it by taking
+ * somebody on. Read beside {@link TAKEN_ON_AS_SOMETHING}, never alone.
+ */
+const SAYS_TEACHING_OUTRIGHT =
+    /\b(?:teach|teaches|teaching|taught|instruct|instructs|instructing|tutor|tutors|train|trains|training|show (?:him|her|them)|drill)\b/i;
+
+/**
  * The verbs a person can be extracted from the far side of.
  *
  * The second line is the assault half, added with `LAYING_HANDS_ON_SOMEBODY`.
@@ -4127,12 +4138,85 @@ const TEACHING_SOMEBODY_ELSE = new RegExp([
  * after the verb ("sit in on Elder Hu").
  */
 const A_TALK = String.raw`(?:dao\s+)?(?:lecture|lectures|talk|sermon|discourse|lesson|class|teaching|exposition)\b(?!\s+(?:hall|halls|room|rooms|cut|cuts))`;
+
+/**
+ * Placing a commission for a thing, with nobody named.
+ *
+ * The object is the whole of the test. A posting noun after the verb is the
+ * BOARD's sense of the word and is excluded by name, so "I take the commission"
+ * and "I accept the commission" are untouched and still reach the board. What
+ * is left is a thing being ordered made, which is a request put to hands the
+ * sentence has not chosen yet.
+ */
+const A_COMMISSION_PLACED = new RegExp(
+    String.raw`^\s*(?:i\s+)?(?:commission|commissions|commissioning|order|orders|ordering)\s+`
+    + String.raw`(?:me\s+|myself\s+|us\s+)?(?:a|an|one|some|two|three)?\s*`
+    + String.raw`(?!(?:job|jobs|posting|postings|post|task|tasks|duty|duties|errand|errands|`
+    + String.raw`notice|notices|listing|listings|assignment|assignments|commission|commissions)\b)`
+    + String.raw`([\w' -]{2,40}?)\s*[.!?]*$`,
+    'i'
+);
+
+/**
+ * And the same commission with the hands named: *placed WITH somebody*.
+ *
+ * Read BEFORE the form above, because the trailing capture there is happy to
+ * swallow "sword from the smith" whole and hand the maker to the engine as part
+ * of the thing's name. Same sentence, one preposition, and the difference is
+ * whether the player has chosen whose hands - which is the only thing the other
+ * form leaves open.
+ */
+const A_COMMISSION_PLACED_WITH = new RegExp(
+    String.raw`^\s*(?:i\s+)?(?:commission|commissions|commissioning|order|orders|ordering)\s+`
+    + String.raw`(?:me\s+|myself\s+|us\s+)?(?:a|an|one|some|two|three)?\s*`
+    // `from` and `with` ONLY. `of` was tried and took "I order a cup OF tea",
+    // which named a maker called tea: the preposition that places a commission
+    // is not the one that joins two nouns.
+    + String.raw`([\w' -]{2,40}?)\s+(?:from|with)\s+(?:the\s+)?([\w' -]{2,40}?)\s*[.!?]*$`,
+    'i'
+);
+
+/**
+ * Saying no to a bout rather than asking for one.
+ *
+ * The guard on the duel row. Every word here is the speaker declining; a
+ * third-person subject in front of the verb is somebody ELSE refusing, which is
+ * a thing said about a scene rather than an answer to one, and the same split
+ * `sect/refuse` makes over the same words.
+ */
+const TURNING_A_BOUT_DOWN =
+    /(?<!he )(?<!she )(?<!they )(?<!it )\b(?:refuse|refuses|refusing|decline|declines|declining|turn(?:s|ing)?\s+(?:it|him|her|them)?\s*down|say no to|says no to|will not|won'?t|wont|do not want|don'?t want|no thank you)\b[^.?!]{0,40}\b(?:duel|spar|sparring|challenge|bout|match|fight)\b|\b(?:duel|spar|sparring|challenge|bout|match|fight)\b[^.?!]{0,30}\b(?:refuse|refused|declined|turned down)\b/i;
 const LISTENING_TO_SOMEBODY_TEACH = new RegExp(
     String.raw`\b(?:sit|sits|sitting|go|goes|going)\s+in\s+on\s+(?:the\s+|a\s+)?(?:(.{2,40}?)(?:'s|s'|’s)\s+)?${A_TALK}\b`
     + String.raw`|\b(?:sit|sits|sitting|go|goes|going)\s+in\s+on\s+(?!(?:the|a|an)\s)(.{2,40}?)(?=\s+for\b|\s*[,;.!?]|\s*$)`
-    + String.raw`|\b(?:listen|listens|listening|attend|attends|attending|hear|hears|go\s+to|goes\s+to|join|joins)\s+(?:to\s+)?(?:the\s+|a\s+)?(?:(.{2,40}?)(?:'s|s'|’s)\s+)?${A_TALK}\b`,
+    + String.raw`|\b(?:listen|listens|listening|attend|attends|attending|hear|hears|go\s+to|goes\s+to|join|joins)\s+(?:to\s+)?(?:the\s+|a\s+)?(?:(.{2,40}?)(?:'s|s'|’s)\s+)?${A_TALK}\b`
+    // LISTENING TO A PERSON, which is what somebody says when the screen has
+    // just told them an elder is teaching. Measured: "I listen to the elder"
+    // reached `wait` and sat the player down for a stretch of days, while "I
+    // listen to the lecture" reached this. The word after `to` is the whole
+    // difference and it was doing nothing.
+    //
+    // Only a person, and only by a word that can only be one: an honorific or a
+    // pointer. A bare noun after `listen to` is a thing being listened to -
+    // measured, "I listen to the rumours" - and belongs wherever it already
+    // goes. A NAME is the other half and cannot live in this pattern, because
+    // the whole of it is case-insensitive and a capital is the only thing that
+    // makes a name a name: see {@link LISTENING_TO_A_NAMED_PERSON}.
+    + String.raw`|\b(?:listen|listens|listening)\s+to\s+(?:the\s+|my\s+|his\s+|her\s+|their\s+)?`
+    + String.raw`((?:him|her|them|elder|elders|master|teacher|patriarch|matriarch|abbot|`
+    + String.raw`headmaster|sect\s+master|old\s+man|old\s+woman))\b`,
     'i'
 );
+
+/**
+ * Listening to somebody the sentence NAMES, read case-sensitively.
+ *
+ * The capital is the whole signal, so this cannot be folded into the pattern
+ * above - that one carries `i`, under which `[A-Z]` matches anything and "I
+ * listen to the rumours" became a person called rumours.
+ */
+const LISTENING_TO_A_NAMED_PERSON =
+    /\b(?:listen|listens|listening)\s+to\s+([A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?)\b/;
 
 /** Giving a talk to whoever is in the room. */
 const GIVING_A_TALK = new RegExp(
@@ -4565,6 +4649,45 @@ function planIntent(input: string): PlannedAction {
     // owns "burn" beside "talisman". See `sending-word-on-a-communication-talisman.ts`.
     const word = whatWordIsBeingSent(input);
     if (word) return { action: 'tell', intent: 'send_word', target: word.to, topic: word.says };
+    // ── A COMMISSION PLACED, WITH NOBODY NAMED ───────────────────────────
+    //
+    // `commission` is two words in this game, and the object separates them:
+    // you commission a THING and you take a POSTING. The board's sense is read
+    // below and keeps every sentence with a posting noun in it; this is the
+    // other one, which reached nothing at all.
+    //
+    // No target, deliberately. Whose hands is the one thing the sentence left
+    // open, and `whoHereCouldMakeThat` answers it with the people standing here
+    // and the grade each reaches rather than picking somebody.
+    {
+        const withSomebody = A_COMMISSION_PLACED_WITH.exec(input);
+        if (withSomebody) {
+            return {
+                action: 'request',
+                target: withSomebody[2]!.trim(),
+                intent: 'a_making',
+                topic: withSomebody[1]!.trim()
+            };
+        }
+        const ordered = A_COMMISSION_PLACED.exec(input);
+        // AND `order` IS ALSO THE WORD FOR A COMMAND. Caught by two existing
+        // tests before this shipped: "I order the outer disciples to gather"
+        // came back as a commission for a thing called *the outer disciples to
+        // gather*, and "I order the disciples about" for one called *the
+        // disciples about*. Two differences and both are needed, because the
+        // second sentence has no infinitive in it at all:
+        //
+        //   THE INFINITIVE. You order a THING, and you order somebody TO DO
+        //   something.
+        //   AND WHO THE OBJECT IS. Ordering the people a house may order is
+        //   `sect/order`, and the list of who those are is that verb's own -
+        //   `SECT_SUBORDINATE_NOUNS` - rather than a second opinion here.
+        if (ordered
+            && !/\sto\s/i.test(ordered[1]!)
+            && !SECT_SUBORDINATE_NOUNS.test(ordered[1]!.toLowerCase())) {
+            return { action: 'request', intent: 'a_making', topic: ordered[1]!.trim() };
+        }
+    }
     const cutting = communicationTalismansBeingCutIn(input);
     if (cutting) return { action: 'craft', target: cutting };
     // And taking the house's notice for the work, whose name has "cutting" and
@@ -4597,10 +4720,15 @@ function planIntent(input: string): PlannedAction {
     // person, and attention rather than an art. See
     // `a-teacher-giving-you-their-attention.ts`, where all three are one row.
     {
-        const listening = LISTENING_TO_SOMEBODY_TEACH.exec(input);
+        const listening = LISTENING_TO_SOMEBODY_TEACH.exec(input)
+            ?? LISTENING_TO_A_NAMED_PERSON.exec(input);
         if (listening) {
             const days = parseDuration(text);
-            const who = cleanPlace((listening[1] ?? listening[2] ?? listening[3] ?? '').trim());
+            // Group 4 is the person in "I listen to the elder", which is the
+            // arm that names somebody rather than a talk.
+            const who = cleanPlace(
+                (listening[1] ?? listening[2] ?? listening[3] ?? listening[4] ?? '').trim()
+            );
             return {
                 action: 'teach',
                 intent: 'listen',
@@ -4616,7 +4744,23 @@ function planIntent(input: string): PlannedAction {
 
     // HANDING AN ART ON. Beside the watch because the two are the giving pair,
     // and both need somebody standing here before anything is spent.
+    //
+    // TAKING SOMEBODY ON IS NOT INSTRUCTING THEM. "I take him as my disciple"
+    // reached `teach`, which is a different act with a different cost: teaching
+    // hands over an art, and taking somebody on puts them on a roll and opens a
+    // bond. `sect-phrasings.ts` has owned every phrasing of the intake since it
+    // was written - its own comment names this exact sentence - and lost all of
+    // them to ordering, because `take` reads as a teaching verb and this row is
+    // above the sect row. The guard is the one the swing already uses for the
+    // same reason, one file over: `TAKEN_ON_AS_SOMETHING`.
+    //
+    // AND ONLY WHERE THE SENTENCE SAYS NOTHING ELSE ABOUT TEACHING. The
+    // corpus's own exemplar for this verb is "I take her as a student AND TEACH
+    // HER", which is both acts and was written down as this one. A sentence
+    // carrying the word is not relying on the intake phrasing to be about
+    // instruction, so the diversion is for the intake phrasing ALONE.
     if (TEACHING_SOMEBODY_ELSE.test(text)
+        && !(TAKEN_ON_AS_SOMETHING.test(text) && !SAYS_TEACHING_OUTRIGHT.test(text))
         && !SOMEBODY_ELSE_IS_THE_TEACHER.test(text)
         && !THE_GROUND_IS_DOING_THE_TEACHING.test(text)
         && !ROADS_QUESTION.test(text)) {
@@ -4870,7 +5014,14 @@ function planIntent(input: string): PlannedAction {
     }
 
     // A FIGHT SOMEBODY WOULD CHOOSE TO HAVE
+    //
+    // AND NOT ONE SOMEBODY IS SAYING NO TO. Measured on the mechanics sweep,
+    // and it is the worst reading in this file: "I refuse the duel" opened one,
+    // with terms agreed, against the person the player had just declined to
+    // fight. The word `duel` was in the sentence and nothing looked at what was
+    // being done about it. A refusal goes where every other refusal goes.
     if (/\b(?:duel|spar|sparring|challenge)\b/.test(text)
+        && !TURNING_A_BOUT_DOWN.test(text)
         && /\b(?:with|against|to a duel|him|her|them|someone|somebody|anyone|anybody|a |the )\b/.test(text)) {
         // "I challenge him TO A DUEL" puts the challenge word after the person,
         // so the extracted subject came out as "him to a duel" and resolved to
@@ -4902,8 +5053,18 @@ function planIntent(input: string): PlannedAction {
     // `sect/take` - one act, and which answer you got depended on a word the
     // player had no reason to type. The yield reads the sect step's own
     // predicate rather than restating its condition, so the two cannot drift.
+    //
+    // AND TAKING SOMEBODY ON IS NOT TAKING A THING. Measured on the mechanics
+    // sweep, and it is the sharpest kind of miss because one word moved it: "I
+    // take HIM as my disciple" reached `sect/recruit` and "I take HER as my
+    // disciple" reached a theft with the topic *her as my disciple*. `her` is
+    // also a possessive, so the taking reader saw a thing belonging to her
+    // where the other pronoun gave it nothing to hold. The guard is the one the
+    // teach row and the swing both use: `TAKEN_ON_AS_SOMETHING`.
     {
-        const taken = aTakingOffTheHousesShelf(text) ? null : whatATakingNames(text, input);
+        const taken = aTakingOffTheHousesShelf(text) || TAKEN_ON_AS_SOMETHING.test(text)
+            ? null
+            : whatATakingNames(text, input);
         if (taken !== null) {
             const owner = whoATheftIsAimedAt(input);
             return {
@@ -5325,7 +5486,13 @@ function planIntent(input: string): PlannedAction {
     }
 
     // HOW MUCH CONTRIBUTION DO I HAVE
-    if (/\b(?:contribution|contributions)\b/.test(text)
+    //
+    // `merit` IS THE WORD THE GAME PRINTS. The house's ledger is contribution
+    // in the schema and merit on the screen, and only the schema's word was
+    // readable: measured on the mechanics sweep, "I check my merit" reached
+    // nothing while "I ask what I am owed" reached this. A player answers with
+    // the word they were shown.
+    if (/\b(?:contribution|contributions|merit|merits)\b/.test(text)
         && /\b(?:how much|how many|what(?:'s| is)?|do i have|have i|my|balance|standing)\b/.test(text)
         && !usedAsVerb(text, DUTY_TAKING_VERBS)) {
         return { action: 'sect', intent: 'standing' };

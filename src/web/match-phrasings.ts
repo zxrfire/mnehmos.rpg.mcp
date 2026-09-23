@@ -37,7 +37,16 @@ import { cleanPlace, extractSubject } from './sentence-parts.js';
 
 /** The nouns that make a sentence about a match rather than about anything else. */
 export const A_MATCH_NOUN =
-    /\b(?:marriages?|marriage|match|matches|betrothals?|betrothed|engagements?|engaged|proposals?|unions?|weddings?|suitors?|in-?laws?)\b/;
+    // WHAT THE MATCH MAKES SOMEBODY IS A MATCH NOUN. Measured on the mechanics
+    // sweep: "I take her as a wife" reached `interact/take` - a THEFT, with the
+    // topic *her as a wife* - because the noun list had every word for the
+    // arrangement and no word for what it makes of the two people. `take` was
+    // already a proposing verb and had nothing to pair with.
+    //
+    // `dao companion` is the genre's own word for it and belongs beside the
+    // ordinary ones for the reason the header of this file gives about `son`
+    // and `daughter`: a player says the word they say.
+    /\b(?:marriages?|marriage|match|matches|betrothals?|betrothed|engagements?|engaged|proposals?|unions?|weddings?|suitors?|in-?laws?|wife|wives|husbands?|bride|grooms?|spouses?|consorts?|dao\s+companions?|dao\s+partners?)\b/;
 
 /** Saying it as a verb rather than as a noun. */
 export const MARRYING_VERBS =
@@ -114,6 +123,13 @@ export const WHAT_IS_BEING_OFFERED =
  * natural one a person types, so it gets its own read rather than being lost.
  */
 export function whoTheMatchIsWith(input: string): string | undefined {
+    // TAKING SOMEBODY AS SOMETHING puts the name in the middle too, and the
+    // trailing extractor answered "her as a wife". Read first, because every
+    // word after the person belongs to what is being proposed and not to who.
+    const takenAs =
+        /\b(?:take|takes|taking|took)\s+(.{2,40}?)\s+(?:as|to\s+be|for)\s+(?:a|an|my|his|her|their|the)\s+(?:wife|husband|bride|groom|spouse|consort|dao\s+companion|dao\s+partner)\b/i
+            .exec(input);
+    if (takenAs) return cleanPlace(takenAs[1]);
     const inTheMiddle =
         /\b(?:ask|asks|asking|beg|begs|begging|approach|approaches|approaching|want|wants|wanted)\s+(.{2,60}?)\s+(?:to marry|to wed|to be my|for (?:a |their |the )?(?:match|marriage|hand))/i
             .exec(input);
@@ -182,7 +198,12 @@ export function familyStep(text: string, input: string): PlannedAction | null {
     }
 
     // ── PROPOSING, AND AGREEING, WHICH ARE ONE NEGOTIATION ───────────────
+    // `propose TO somebody` carries no noun at all and is the plainest way
+    // anybody says this - measured reaching nothing. The preposition is what
+    // makes it a proposal rather than proposing a plan, so it is read as a verb
+    // form here instead of being added to the noun list.
     const proposing = MARRYING_VERBS.test(text)
+        || /\bpropos(?:e|es|ing)\s+to\s+(?:him|her|them|the\s+\w+|[a-z]\w+)/i.test(text)
         || (PROPOSING_VERBS.test(text) && A_MATCH_NOUN.test(text));
     if (proposing && !merelyAsking) {
         const offered = WHAT_IS_BEING_OFFERED.exec(input);

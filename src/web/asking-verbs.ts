@@ -144,6 +144,7 @@ import {
 } from './making-somebody-tell-you.js';
 import { whatAThreatPromises } from './what-a-threat-promises.js';
 import { theyAreNotShowingWhatTheyAre } from './what-you-are-not-showing.js';
+import { whoHereCouldMakeThat } from './who-here-could-make-that.js';
 import { theirWeightIsPutAway } from './keeping-yourself-out-of-sight.js';
 import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-about-you.js';
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
@@ -1127,6 +1128,19 @@ ${unnamed}`;
         const named = namesAKindRatherThanAThing(said) ? '' : said;
 
         if (query.length < 2) {
+            // ── A COMMISSION NAMES A THING AND NEED NOT NAME A MAKER ─────
+            //
+            // "I commission a sword" reached nothing. What separates it from a
+            // job taken off a board is what follows the verb - you commission a
+            // THING and you take a POSTING - and the thing is in the sentence,
+            // so the only question left is whose hands. That is not a question
+            // to guess at and it is not one to hedge at either: the engine
+            // holds what every pair of hands standing here could reach, and
+            // `highestGradeRefinableAt` is the fact. So the answer names them
+            // and their grade, and the player names one.
+            if (intent === 'a_making' && (topic ?? '').trim().length >= 2) {
+                return whoHereCouldMakeThat(this, cultivator, (topic ?? '').trim());
+            }
             return refused('engine.resolveParty', 'request', factsForRefusal(
                 'Asked of whom?',
                 'A request is put to somebody. You have not said who, and there is nobody the '

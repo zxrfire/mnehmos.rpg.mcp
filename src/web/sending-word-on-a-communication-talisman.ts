@@ -68,7 +68,7 @@ import {
 } from '../engine/world/a-communication-talisman-carries-word-home.js';
 import { THE_INTERNAL_AFFAIRS_ELDER } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whereThisHouseBurnsItsLamps } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
-import { whoTheirJadeReaches } from '../engine/world/a-pair-of-communication-jade.js';
+import { sendWordOnJade, whoTheirJadeReaches } from '../engine/world/a-pair-of-communication-jade.js';
 import { theMasterTheyKneltTo } from './encounters.js';
 import { whatServiceIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { whatCuttingPays } from '../engine/world/what-a-house-hears-from-its-people-away.js';
@@ -242,9 +242,72 @@ export const communicationTalismanVerbs = {
         const refuse = (headline: string, line: string, note: string): Execution =>
             refused('engine.burnACommunicationTalisman', 'tell', factsForRefusal(headline, line, note));
         if (!world) return refuse('There is no world for word to cross.', 'Nothing is loaded to carry it.', 'send word: no world.');
+        // ── HOLDING ONE HALF NAMES THE OTHER ─────────────────────────────
+        //
+        // The owner's ruling, and it is the whole difference between a jade and
+        // a house slip: a pair has exactly one other half by construction, so a
+        // player who says "I use the jade" and names nobody has not left
+        // anything open. Asking them which jade would be the engine pretending
+        // not to know something it knows.
+        //
+        // Only where the sentence named nobody, and only where there is exactly
+        // one. Somebody holding two pairs has made a real choice and is asked
+        // which, with both named - that is a question, not a hedge.
+        const reaches = (target ?? '').trim().length === 0
+            ? whoTheirJadeReaches(world, cultivator.id)
+            : [];
+        if (reaches.length > 1) {
+            const names = reaches
+                .map(id => world.npcs.find(n => n.id === id)?.name ?? id)
+                .join(', ');
+            return refuse(
+                'You hold more than one half.',
+                `Your jade answers to ${reaches.length} people: ${names}. Say which of them you `
+                + 'are speaking to.',
+                `send word: ${reaches.length} jade partners for ${cultivator.id}; none named.`
+            );
+        }
+        const named = reaches.length === 1
+            ? world.npcs.find(n => n.id === reaches[0])?.name ?? reaches[0]!
+            : (target ?? '');
 
-        const who = whoTheWordIsFor(this, world, cultivator, target ?? '');
-        if ('refusal' in who) return refuse('Word to whom?', who.refusal, `send word: no addressee for "${target ?? ''}".`);
+        // ON A JADE, WHERE THEY SHARE ONE. Nothing is spent, and the word reaches
+        // the person holding the other half wherever they are.
+        const person = thePersonNamed(this, world, cultivator, named);
+        if (person) {
+            const spoken = (topic ?? '').trim().slice(0, 240);
+            if (spoken.length > 0) {
+                const here = worldLocationFor(world, cultivator.location ?? null);
+                const onJade = sendWordOnJade(world, {
+                    senderId: cultivator.id, senderName: cultivator.name,
+                    toId: person.id, toName: person.name, says: spoken,
+                    onDay: Math.floor(world.currentDay), fromLocationId: here?.id ?? null,
+                    lampBurnsFor: id => id !== cultivator.id || cultivator.alive
+                });
+                if (onJade.sent) {
+                    this.theWorldMoved();
+                    const lines = [
+                        `You speak into your half of the communication jade, and ${person.name} hears it: ${spoken}`,
+                        'Nothing is spent. The jade answers to its other half for as long as you both live.'
+                    ];
+                    const facts = factsForToolResult('The jade carries it.', lines);
+                    facts.structure.push(`send word: ${onJade.fact.id} on jade ${String(onJade.half.data.pairId)} to ${person.id}.`);
+                    facts.required = lines.slice(0, 1);
+                    const answer = this.freeAction(run, 'tell', facts);
+                    answer.calls = [{
+                        name: 'world.sendWordOnJade',
+                        action: 'tell',
+                        summary: `${cultivator.id} spoke to ${person.id} on a communication jade as ${onJade.fact.id}.`,
+                        ok: true
+                    }];
+                    return answer;
+                }
+            }
+        }
+
+        const held = theCommunicationTalismansOnYou(this.db, cultivator.id);
+        const who = whoTheWordIsFor(world, cultivator, target ?? '', held);
+        if ('refusal' in who) return refuse('Word to whom?', who.refusal, `send word: no hall for "${target ?? ''}".`);
         const says = (topic ?? '').trim().slice(0, 240);
         if (says.length === 0) {
             return refuse('Send word of what?', 'A communication talisman carries a short message, and there is nothing to put in it. '

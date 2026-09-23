@@ -25,6 +25,17 @@ export type RequestKind =
      */
     | 'guidance'
     | 'discipleship'
+    /**
+     * ENDING A BOND, which is an act and not a request.
+     *
+     * The design owner, on there being no such thing as a neglected master any
+     * more: *"either they terminate the relationship or they don't."* Both
+     * directions are the same kind - a master casting a disciple out and a
+     * disciple walking out are one act with two ends - and what it leaves is
+     * `whatEndingABondLeaves`: a `former_` tie at each end and a broken oath
+     * against whoever ended it.
+     */
+    | 'ending_a_bond'
     | 'introduction'
     | 'telling'
     | 'a_thing'
@@ -104,6 +115,9 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         // A master is asked at this weight too; the tie is a term of the roll.
         case 'guidance':
         case 'discipleship':
+        // Ending one is not asking for anything, and the resolver never rolls
+        // it: it is weighed here only so no switch is left without an arm.
+        case 'ending_a_bond':
         case 'a_thing':
         case 'a_trade':
         // Their hands for a season. Nothing in this world costs the person
@@ -609,10 +623,49 @@ export function puttingSomethingDownFor(input: string): DirectedRequest | null {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * Putting a bond down, from either end. The words a master uses to cast somebody
+ * out and the words a disciple uses to walk out, in one pattern, because the act
+ * is one act: see `RequestKind`'s `ending_a_bond`.
+ *
+ * Exported because the same words reach the same act without anybody being
+ * ASKED for it - "I cast Yun Zhi out" is not a request put to Yun Zhi - and the
+ * row that reads those (`ending-a-bond-phrasings.ts`) asks this rather than
+ * carrying a second list of the words for ending a bond.
+ */
+export const ENDING_A_BOND =
+    // Measured against the sentences a player types, and four of them fell
+    // outside the first cut of this: a name between "cast" and "out" ("I cast
+    // Yun Zhi out") and the other order ("I cast out Yun Zhi"); a name where
+    // the pattern had only pronouns ("I am no longer Elder Fang's disciple");
+    // whose service is being left ("I leave my master's service"); and walking
+    // out on somebody, which the move row was reading as fleeing.
+    new RegExp(
+        '\\b(?:'
+        // "I cast Yun Zhi out" and "I cast out Yun Zhi". Not a net or a line
+        // cast out ONTO something, which is the only other thing anybody casts.
+        + 'cast\\s+(?:[\\w\']+\\s+){0,3}out\\b(?!\\s+(?:over|into|onto|on to|across|at|to|toward|towards|upon|in)\\b)'
+        + '|(?:i )?(?:renounce|disown|expel)\\b'
+        + '|(?:sever|cut|break|end)(?:s|ing)? (?:my |our |the |all )?(?:ties?|bonds?|relationship)'
+        // Whose disciple they are no longer, by name as well as by pronoun.
+        + '|no longer\\s+(?:my|your|his|her|their|(?:[\\w\']+\\s+){0,3}[\\w\']+(?:\'s|s\'))\\s+(?:master|disciple|student)'
+        + '|leave\\s+(?:my|your|his|her|their|(?:[\\w\']+\\s+){0,3}[\\w\']+(?:\'s|s\'))\\s+(?:service|side|tutelage)'
+        + '|walk(?:s|ing)? out on\\b'
+        + '|(?:i )?(?:am|\'m) (?:leaving|done)(?: with)? (?:your|his|her|their|my|(?:[\\w\']+\\s+){0,3}[\\w\']+(?:\'s|s\'))\\s+(?:service|tutelage)'
+        + ')\\b',
+        'i'
+    );
+
+/**
  * Being taken on, which is a request about the PERSON and not about an art.
  */
 const ASKING_TO_BE_TAKEN_ON =
-    /\b(?:take me (?:on\b|as (?:a|your|his|her|their) (?:disciple|student|pupil|apprentice))|take me under|accept me as (?:a |your |his |her |their )?(?:disciple|student|pupil|apprentice)|make me (?:your|his|her|their|a) (?:disciple|student|pupil|apprentice)|be my (?:master|teacher|mentor|shifu|sifu)|become my (?:master|teacher|mentor)|(?:disciple|student|apprentice)ship|have me as (?:a|your|his|her|their) (?:disciple|student|pupil|apprentice))\b/i;
+    // SAID FROM THE ASKER'S SIDE TOO. Measured on the mechanics sweep: "I ask
+    // him to take me as a disciple" reached this and "I ask to be his disciple"
+    // reached a conversation with somebody called *to be his disciple*. The
+    // second is the shorter sentence and the one a player types when the person
+    // is already in front of them; every word of the act is in it, and only the
+    // grammar moved.
+    /\b(?:take me (?:on\b|as (?:a|your|his|her|their) (?:disciple|student|pupil|apprentice))|take me under|accept me as (?:a |your |his |her |their )?(?:disciple|student|pupil|apprentice)|make me (?:your|his|her|their|a) (?:disciple|student|pupil|apprentice)|be my (?:master|teacher|mentor|shifu|sifu)|become my (?:master|teacher|mentor)|(?:disciple|student|apprentice)ship|have me as (?:a|your|his|her|their) (?:disciple|student|pupil|apprentice)|(?:be|become) (?:his|her|their|your) (?:disciple|student|pupil|apprentice))\b/i;
 
 /**
  * Being watched while you sit, which is attention and not an art.
@@ -785,6 +838,9 @@ export function whatIsBeingAskedToBeTold(clause: string): string | null {
 function classify(clause: string): { kind: RequestKind; object?: string } {
     if (clause.trim().length === 0) return { kind: 'unstated' };
 
+    // BEFORE being taken on: "I am no longer your disciple" holds the words of
+    // both, and the one that ends it wins.
+    if (ENDING_A_BOND.test(clause)) return { kind: 'ending_a_bond' };
     if (ASKING_TO_BE_TAKEN_ON.test(clause)) return { kind: 'discipleship' };
     if (ASKING_FOR_GUIDANCE.test(clause)) return { kind: 'guidance' };
     if (ASKING_TO_BE_TAUGHT.test(clause)) {
@@ -823,6 +879,38 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * The possessive as the person, where the sentence names nobody else.
+ *
+ * ── THE RULING, AND THE GUARD ON IT ──────────────────────────────────────
+ *
+ * "I ask to be his disciple" reached a conversation with somebody called *to be
+ * his disciple*. The owner's ruling is that `his`, `her` and `their` in that
+ * slot name whoever was last spoken of: a player who has been talking to an
+ * elder and says this means that elder, and the downstream resolver already
+ * turns a pointer into a person (`somebodyAtHand`, and the last-addressed row
+ * the request path reads before anything else).
+ *
+ * WHAT IT MUST NOT DO is turn an ask ABOUT a thing into an ask OF the thing, so
+ * it is not a general rule about possessives. Two conditions, both required:
+ *
+ *   THE POSSESSIVE OWNS A ROLE, and the roles are the closed set of what one
+ *   person can be to another - a disciple, a student, a master. "I ask to see
+ *   his manual" owns a manual, which is a thing, and is untouched.
+ *
+ *   THE POSSESSIVE IS A PERSON'S. `its` is excluded by name: a house, a sect
+ *   and a mountain all take it, and none of them is somebody an ask is put to.
+ *
+ * Returns the pointer itself rather than a name. Resolving a pointer is not
+ * this file's work and never was.
+ */
+function thePossessiveNamesThem(rest: string): string {
+    const said =
+        /\b(his|her|their)\s+(?:disciple|student|pupil|apprentice|follower|junior|master|teacher|mentor|shifu|sifu)\b/i
+            .exec(rest);
+    return said ? said[1]!.toLowerCase() : '';
+}
+
+/**
  * One request put to one person, or null when the sentence is not one.
  */
 export function requestPutToSomebody(input: string): DirectedRequest | null {
@@ -848,10 +936,18 @@ export function requestPutToSomebody(input: string): DirectedRequest | null {
         .trim();
     if (rest.length < 2) return null;
 
-    const pivot = WHERE_THE_ASK_STARTS.exec(rest);
+    // THE ASK CAN START AT THE FIRST WORD, and until this it could not.
+    // `WHERE_THE_ASK_STARTS` wants whitespace in front of the pivot, which is
+    // right when a person stands between the verb and it - "ask HIM to teach
+    // me" - and wrong for the sentence that names nobody there: "I ask to be
+    // his disciple" left `to` at position zero, matched nothing, and the whole
+    // read gave up before the person was looked for at all. An index of zero is
+    // an empty person phrase, which is exactly what it is.
+    const pivot = WHERE_THE_ASK_STARTS.exec(rest)
+        ?? (/^(?:to|for|with|about)\s/i.test(rest) ? { index: 0 } : null);
     if (!pivot) return null;
 
-    const person = cleanPerson(rest.slice(0, pivot.index));
+    const person = cleanPerson(rest.slice(0, pivot.index)) || thePossessiveNamesThem(rest);
     if (!person || NAMES_NOBODY.test(person)) return null;
 
     // Everything from the pivot on, INCLUDING the pivot word, because "for the

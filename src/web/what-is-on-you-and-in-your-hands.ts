@@ -292,3 +292,77 @@ export function whatTheirHandsDo(
     );
 }
 
+/**
+ * Offering proof of what you are, which is the token and never the robe.
+ *
+ * ── WHY THIS ONE MATTERS MORE THAN IT LOOKS ──────────────────────────────
+ *
+ * The owner's ruling about walking into a house you do not belong to turns on
+ * exactly this: you break in, and either you blend in as a disciple or you are
+ * thrown out. The robe does the blending - it reads at a distance - and the
+ * TOKEN is what a robe is not, which is the proof. `a-recruit-is-given-their-
+ * lamp-at-the-house.ts` says it outright: *"Proof of nothing: a robe can be
+ * taken off a line. The token is the proof."*
+ *
+ * So a player who says this at a gate is doing the one thing that settles the
+ * question, and the gate already reads `holdsTheTokenOf`. Nothing new is
+ * decided here - this is the sentence that reaches that read.
+ *
+ * ── AND THE HALF WITH NO TOKEN IN IT ─────────────────────────────────────
+ *
+ * The interesting one. Somebody with nothing to show is told what that means
+ * rather than that their sentence failed: whose robes they are standing in, if
+ * any, and that the robes hold until the first person asks - which is the whole
+ * shape of the intruder ruling, said to the player at the moment they were
+ * about to find out the hard way.
+ */
+export function whatTheirTokenProves(
+    game: GameService,
+    cultivator: Cultivator
+): Execution {
+    const world = game.atHand;
+    const held = world === null || world === undefined
+        ? []
+        : world.objects.filter(o =>
+            o.possessorId === cultivator.id
+            && o.id === tokenIdFor(cultivator.id)
+            && o.ownerId !== null);
+    const robes = world === null || world === undefined
+        ? []
+        : theRobesOnThem(world, cultivator.id);
+
+    if (held.length === 0) {
+        // AND THE RUNG, WHICH IS THE NUMBER THIS REFUSAL WAS MISSING.
+        // `THE_RUNG_A_HOUSE_ISSUES_AT` is where a house starts putting its name
+        // on somebody, and it is the whole answer to "why have I not got one" -
+        // a refusal that says a token would settle this and does not say what
+        // it takes to carry one is half an answer.
+        const rung = `A house cuts one at rank ${THE_RUNG_A_HOUSE_ISSUES_AT} and above, the first `
+            + 'rung that is a disciple rather than a hanger-on, and only where somebody in it '
+            + 'stands high enough to light the lamp that goes with it.';
+        const line = robes.length === 0
+            ? 'You have nothing to show. No house has cut you a token, and you are in nobody\'s '
+                + `robes, so there is nothing about you that says what you are. ${rung}`
+            : `You have nothing to show. You are in the robes of ${robes[0]!.houseName} and `
+                + 'carry no token of it: the robes hold at a distance and do not survive being '
+                + `asked, and being asked is what this was. ${rung}`;
+        return refused('engine.showToken', 'carry', factsForRefusal(
+            'You carry no token.',
+            line,
+            `carry/show: no object ${tokenIdFor(cultivator.id)} possessed by this cultivator. `
+            + `Robes on: ${robes.map(r => r.houseId).join(', ') || 'none'}. `
+            + 'holdsTheTokenOf would answer false for every house. Nothing written, no day passed.'
+        ));
+    }
+
+    const lines = held.map(token =>
+        `You show the token of ${token.ownerName}. It was cut for you and it answers for you: `
+        + 'anybody of that house who reads it knows what you are without being told.');
+    return done(
+        'engine.showToken',
+        saidAndNoted(lines,
+            `carry/show: ${held.map(t => `${t.id} owned by ${t.ownerId}`).join('; ')}. `
+            + 'This is what `holdsTheTokenOf` reads at a gate. Nothing written, no day passed.'),
+        `${cultivator.id} showed ${held.length} token(s).`
+    );
+}
