@@ -3,7 +3,10 @@
  *
  * The player joins a house the way anybody does - where they stand - and is
  * given nothing for it until they are at its seat: robes, and a token with a
- * lamp lit for them where their rung carries one. Leaving hands both back.
+ * lamp lit for them where their rung carries one. Leaving hands both back, and
+ * the house's communication talismans break with the token: they are keyed to
+ * the player, so both halves of every pair marked with a house they are no longer
+ * of break (`theirSlipsBreak`).
  *
  * ── THE SAME RULES AS EVERYBODY ELSE ─────────────────────────────────────
  *
@@ -41,6 +44,12 @@ import {
     whereThisHouseBurnsItsLamps
 } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { theyAreEntered } from '../engine/world/a-house-expects-somebody-it-took-on.js';
+import { theirSlipsBreak } from '../engine/world/a-communication-talisman-carries-word-home.js';
+import { removeFromPouch } from '../server/consolidated/cultivation-support.js';
+import {
+    pouchIdForCommunicationTalismans,
+    theCommunicationTalismansOnYou
+} from './sending-word-on-a-communication-talisman.js';
 import { upsertObject } from '../engine/world/world-state.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
@@ -87,6 +96,15 @@ export function settleWhatYourHouseHasIssuedYou(
                 + `went back to it.`);
         }
         structure.push(`handBackWhatTheyNoLongerBelongTo: ${leaving.map(o => o.id).join(', ')}.`);
+    }
+    for (const slips of theCommunicationTalismansOnYou(game.db, cultivator.id)) {
+        if (slips.houseId === houseId) continue;
+        if (!removeFromPouch(game.db, cultivator.id, pouchIdForCommunicationTalismans(slips.houseId), slips.count)) continue;
+        theirSlipsBreak(world.objects, cultivator.id, slips.houseId);
+        const name = world.factions.find(f => f.id === slips.houseId)?.name ?? 'a house that has ended';
+        lines.push(`${slips.count} communication talisman${slips.count === 1 ? '' : 's'} marked with ${name} `
+            + 'broke with its token: they were keyed to you as one of it.');
+        structure.push(`communication talismans broken on leaving: ${slips.count} marked ${slips.houseId}.`);
     }
 
     // ── AND ENTERED, AT THE HOUSE ────────────────────────────────────────

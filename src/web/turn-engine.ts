@@ -616,6 +616,7 @@ import {
 // ── AND A WORD GIVEN, CARRIED, OR NOT KEPT ───────────────────────────────
 import { openOathsHeldBy, recordABondBothWays, theMasterTheyKneltTo } from './encounters.js';
 import { whatABondOpens, whetherYouMayTake } from '../engine/social-leverage/taking-somebody-as-your-own.js';
+import { aMasterWhoValuesThemGivesAHalf } from '../engine/world/a-pair-of-communication-jade.js';
 import type { RelationshipType } from '../engine/social/relationships.js';
 import {
     whatWalkingOutOfItCosts,
@@ -16458,8 +16459,25 @@ ${fit.line}`;
             const runDay = Math.floor(run.elapsedDays);
             const opened = whatABondOpens({ master, student, onDay: runDay });
             const world = this.atHand;
+            let jadeGiven = false;
             if (world) {
                 const worldDay = Math.floor(world.currentDay);
+                // A master who already values them gives them a half of a
+                // communication jade and keeps the twin. Read off what the master
+                // held them at before the bond, since the bond itself starts where
+                // every bond does. See `wouldGiveThemAHalf`.
+                const theMaster = world.npcs.find(npc => npc.id === party.id);
+                jadeGiven = aMasterWhoValuesThemGivesAHalf(world, {
+                    masterId: party.id,
+                    student: { id: cultivator.id, name: cultivator.name },
+                    heldAt: Math.max(
+                        // The warmest of whatever stands between them.
+                        ...(theMaster?.relationships.filter(r => r.targetId === cultivator.id)
+                            .map(r => r.standing) ?? [0]),
+                        opened.ties.find(t => t.holderId === party.id)?.standing ?? 0
+                    ),
+                    onDay: worldDay
+                });
                 for (const tie of opened.ties) {
                     const at = world.npcs.findIndex(npc => npc.id === tie.holderId);
                     if (at < 0) continue;

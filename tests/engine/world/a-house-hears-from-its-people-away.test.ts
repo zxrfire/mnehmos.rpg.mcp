@@ -32,6 +32,10 @@
  *   is short, what the work cuts lands at the close, and the pass cuts nothing
  *   short work at home is taken by somebody at the seat who is teaching or at the
  *   work of their rank, without taking them off it
+ *   a slip is worth a third of its cutter's day, and cutting pays that for what
+ *   lands and nothing up front; an ended house's slips go, a house's own slips
+ *   come back from somebody who left it, and a slip burnt by somebody not of the
+ *   house opens its suspicion of them
  *
  * ── MEASURED ─────────────────────────────────────────────────────────────
  *
@@ -55,21 +59,50 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { theHouseLosesTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 
 import {
+    CUT_IN_A_SITTING,
+    DAYS_A_SITTING_TAKES,
     THE_COMMUNICATION_TALISMAN,
     WHO_CAN_CUT_A_COMMUNICATION_TALISMAN,
     couldCutACommunicationTalisman
 } from '../../../src/data/cultivation/communication-talismans.js';
+import { getSendingReason } from '../../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
+import { dutyTermsFor } from '../../../src/engine/encounters/duties.js';
+import {
+    whatASlipIsWorth,
+    whatAYearOfAMakersTimeIsWorth
+} from '../../../src/engine/social-leverage/commissioning-a-craft.js';
 import { SECTS, sectThreat } from '../../../src/data/cultivation/sects.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
+    THE_ONE_WHO_RECEIVED_IT,
     addToTheStack,
     burnACommunicationTalisman,
     howFarFromTheSeat,
     howManyTheHouseHas,
-    howManyTheyCarry
+    howManyTheyCarry,
+    howManyTwinsTheHallKeeps,
+    keepTheTwins
 } from '../../../src/engine/world/a-communication-talisman-carries-word-home.js';
+import { DISCIPLE_STANDING } from '../../../src/engine/world/the-ties-an-ordinary-life-produces.js';
+import {
+    A_DISCIPLE_THEY_VALUE,
+    aMasterWhoValuesThemGivesAHalf,
+    theInternalAffairsElderMakesJadeForElders,
+    whoMakesJadeForTheElders,
+    isAJadeHalf,
+    mastersGiveJadeToDisciplesTheyValue,
+    sendWordOnJade,
+    theJadeBetween,
+    whatAPairOfJadeIsWorth
+} from '../../../src/engine/world/a-pair-of-communication-jade.js';
+import { settleNpcDeath } from '../../../src/engine/world/time.js';
+import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+import { whatACommissionComesTo } from '../../../src/engine/social-leverage/commissioning-a-craft.js';
+import { handBackWhatTheyNoLongerBelongTo } from '../../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import {
@@ -93,9 +126,10 @@ import {
     theMakerThisIs,
     whatAHouseKeepsInStock,
     whatCuttingForTheHouseLands,
+    whatCuttingPays,
     wordFromThePeopleAway
 } from '../../../src/engine/world/what-a-house-hears-from-its-people-away.js';
-import { whatAHouseHasOnItsBoard } from '../../../src/engine/encounters/what-a-house-has-on-its-board.js';
+import { aPostingAsAnOffer, whatAHouseHasOnItsBoard } from '../../../src/engine/encounters/what-a-house-has-on-its-board.js';
 import { peopleTakeWorkOffTheirHousesBoard } from '../../../src/engine/world/a-disciple-takes-work-off-the-board.js';
 import { whatAHousesOwnErrandsBringBack } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
@@ -191,12 +225,12 @@ describe('a house keeps communication talismans, marked with it', () => {
         expect(stock[0]!.tags).not.toContain('talisman');
     });
 
-    it('and hands a stack to somebody it has just posted away', () => {
+    it('and cuts pairs out of it for somebody it has just posted away', () => {
         const state = build();
         const before = howManyTheHouseHas(state.objects, HOUSE);
         wordFromThePeopleAway(state, { day: DAY + 10 });
         expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(A_STACK_A_HOUSE_HANDS_OUT);
-        expect(howManyTheHouseHas(state.objects, HOUSE)).toBe(before - A_STACK_A_HOUSE_HANDS_OUT);
+        expect(howManyTheHouseHas(state.objects, HOUSE)).toBe(before - 2 * A_STACK_A_HOUSE_HANDS_OUT);
     });
 });
 
@@ -227,8 +261,9 @@ describe('a posted member sends word home', () => {
         const rows = state.objects.length;
         wordFromThePeopleAway(state, { day: DAY + 30 });
         expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(A_STACK_A_HOUSE_HANDS_OUT - 1);
-        // One stack row for the posted member, added when it was handed over.
-        expect(state.objects.length).toBe(rows + 1);
+        expect(howManyTwinsTheHallKeeps(state.objects, HOUSE, 'posted'), 'and its twin').toBe(A_STACK_A_HOUSE_HANDS_OUT - 1);
+        // Two rows for the posted member, their half and the hall's twins, added when they were cut.
+        expect(state.objects.length).toBe(rows + 2);
         expect(state.objects.some(o => o.data.spent === true)).toBe(false);
     });
 
@@ -258,6 +293,7 @@ describe('a slip is a count and a distance', () => {
     it(`carries ${THE_COMMUNICATION_TALISMAN.reachWalkingDays} walking days and no further, and says the distance`, () => {
         const state = build();
         addToTheStack(state.objects, { houseId: HOUSE, houseName: HOUSE_NAME, holderId: 'posted', count: 2 });
+        keepTheTwins(state.objects, { houseId: HOUSE, houseName: HOUSE_NAME, senderId: 'posted', count: 2, hallLocationId: SEAT });
 
         const far = send(state, FAR);
         expect(far).toMatchObject({ sent: false, why: 'out_of_reach', walkingDays: 20 });
@@ -366,7 +402,7 @@ describe('who cuts them', () => {
         const stock = howManyTheHouseHas(state.objects, HOUSE);
         wordFromThePeopleAway(state, { day: DAY + 10 });
         wordFromThePeopleAway(state, { day: DAY + 10 + YEAR });
-        expect(howManyTheHouseHas(state.objects, HOUSE)).toBe(stock - A_STACK_A_HOUSE_HANDS_OUT);
+        expect(howManyTheHouseHas(state.objects, HOUSE)).toBe(stock - 2 * A_STACK_A_HOUSE_HANDS_OUT);
         expect(itsCommunicationTalismansRunLow(state, HOUSE, 4)).toBe(true);
     });
 
@@ -476,6 +512,23 @@ describe('a sitting between other work', () => {
         expect(elder.merit?.points ?? 0).toBeGreaterThan(0);
     });
 
+    it('and is paid for what landed, at what the slips are worth', () => {
+        const state = build();
+        short(state);
+        doing(state, 'elder', teaching);
+        const stonesBefore = state.npcs[at(state, 'elder')]!.spiritStones ?? 0;
+        const house = { id: HOUSE, name: HOUSE_NAME, holdsGround: false, standing: {}, hasAFind: false,
+            itsCommunicationTalismansRunLow: true };
+        const roll = state.npcs.map((n, i) => (n.factionId === HOUSE ? i : -1)).filter(i => i >= 0);
+        aSittingAtHomeIsTaken(state, {
+            house, seatLocationId: SEAT, roll, reach: FOUNDATION_ORDINAL + 2, day: DAY + 10, alreadyTaken: () => 0
+        });
+        const landed = howManyTheHouseHas(state.objects, HOUSE);
+        expect(landed).toBeGreaterThan(0);
+        expect((state.npcs[at(state, 'elder')]!.spiritStones ?? 0) - stonesBefore)
+            .toBe(whatCuttingPays(landed, FOUNDATION_ORDINAL + 2));
+    });
+
     it('not a notice the wholly free have already filled, and not under the floor', () => {
         const state = build();
         short(state);
@@ -518,4 +571,252 @@ describe('how far a slip has to carry', () => {
         }
         expect(compared).toBeGreaterThan(1000);
     }, 120_000);
+});
+
+/**
+ * WHAT A SLIP IS WORTH, AND THAT NOTHING PAYS MORE. Slips are exempt from the
+ * grade floors on days, so the guard against them as a mint is the price: a
+ * third of the cutter's day and the materials, whether sold, turned in, or paid
+ * for off a board. Measured on `afford-a` over five hundred years before this:
+ * 804 cutting terms paid 39,375 stones for about 7,950 slips, five stones a slip.
+ */
+describe("a slip is worth a third of its cutter's day", () => {
+    it("which is its cutter's day rate over a sitting, and a mortal slip puts in no materials", () => {
+        for (const ordinal of [FOUNDATION_ORDINAL, 20, 30]) {
+            const aDay = whatAYearOfAMakersTimeIsWorth(ordinal) / DAYS_PER_YEAR;
+            expect(whatASlipIsWorth(ordinal)).toBeCloseTo(aDay * DAYS_A_SITTING_TAKES / CUT_IN_A_SITTING, 9);
+        }
+    });
+
+    it('and cutting pays what landed at that worth, rounded down, so never more than a day for a sitting', () => {
+        for (const ordinal of [FOUNDATION_ORDINAL, 20, 30]) {
+            for (const count of [0, 1, 3, 17, 90]) {
+                const paid = whatCuttingPays(count, ordinal);
+                expect(Number.isInteger(paid)).toBe(true);
+                expect(paid).toBeLessThanOrEqual(count * whatASlipIsWorth(ordinal));
+                expect(paid).toBeGreaterThan(count * whatASlipIsWorth(ordinal) - 1);
+            }
+            expect(whatCuttingPays(CUT_IN_A_SITTING, ordinal))
+                .toBeLessThanOrEqual(whatAYearOfAMakersTimeIsWorth(ordinal) / DAYS_PER_YEAR * DAYS_A_SITTING_TAKES);
+        }
+    });
+
+    it('so a notice that cuts slips pays no stones up front, and a notice that makes nothing still does', () => {
+        const house = { id: HOUSE, name: HOUSE_NAME };
+        const membership = { factionId: HOUSE, factionName: HOUSE_NAME, rankIndex: 1, rankCount: 5, contribution: 0 };
+        const terms = (id: string) => dutyTermsFor(
+            aPostingAsAnOffer({ reason: getSendingReason(id)!, house, pitchOrdinal: FOUNDATION_ORDINAL }),
+            FOUNDATION_ORDINAL, membership, 'commission'
+        );
+        const cutting = terms('sending-to-cut-communication-talismans');
+        expect(cutting.stones).toBe(0);
+        expect(cutting.contribution, 'still counted as service').toBeGreaterThan(0);
+        expect(terms('sending-to-look-in-on-a-posting').stones).toBeGreaterThan(0);
+    });
+});
+
+/**
+ * A SLIP IS HALF OF A PAIR, KEYED TO ITS HOLDER. The design owner: *"slips are
+ * coded to your name"*, *"every slip has a duplicate"*, the Internal Affairs
+ * bureau keeps *"their end of the slips, SOMEWHERE"*, *"they break when your ID
+ * and life lamp break"*, and *"a 'house' can't receive messages."* A looter takes
+ * nothing; the dead's slips are gone with them; only the person a slip is keyed
+ * to can burn it; leaving a house breaks both halves; an ended house's treasury
+ * goes; and word is read by a person.
+ *
+ * Measured on `afford-a` over five hundred years: 6,592 slips held at fifty
+ * years and 7,305 at five hundred, of which about 3,900 are treasury blanks and
+ * the rest halves and twins tracking the 320 to 360 people out.
+ */
+describe('a slip is half of a pair, keyed to its holder', () => {
+    const ENDED = 'an-ended-house';
+
+    it('cuts a pair for somebody sent out: their half, and its twin kept in the hall', () => {
+        const state = build();
+        const before = howManyTheHouseHas(state.objects, HOUSE);
+        wordFromThePeopleAway(state, { day: DAY + 10 });
+        expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(A_STACK_A_HOUSE_HANDS_OUT);
+        expect(howManyTwinsTheHallKeeps(state.objects, HOUSE, 'posted')).toBe(A_STACK_A_HOUSE_HANDS_OUT);
+        expect(howManyTheHouseHas(state.objects, HOUSE), 'two blanks a pair').toBe(before - 2 * A_STACK_A_HOUSE_HANDS_OUT);
+    });
+
+    it('can be burnt only by the person it is keyed to, and arrives at its twin, read by a person', () => {
+        const state = build();
+        addToTheStack(state.objects, { houseId: HOUSE, houseName: HOUSE_NAME, holderId: 'posted', count: 1 });
+        keepTheTwins(state.objects, { houseId: HOUSE, houseName: HOUSE_NAME, senderId: 'posted', count: 1, hallLocationId: SEAT });
+        // Somebody else holding the same half cannot burn it.
+        const half = state.objects.find(o => o.possessorId === 'posted' && o.tags.includes('communication-talismans'))!;
+        state.objects.push({ ...half, id: 'in-the-wrong-hands', possessorId: 'inner-one' });
+        const send = (senderId: string) => burnACommunicationTalisman(state, {
+            senderId, senderName: senderId, houseId: HOUSE, fromLocationId: TOWN,
+            onDay: DAY + 1, to: { kind: 'an_office', title: 'Internal Affairs Elder', holderId: null }, says: 'word.'
+        });
+        expect(send('inner-one')).toMatchObject({ sent: false, why: 'no_slip' });
+        const sent = send('posted');
+        expect(sent.sent).toBe(true);
+        if (!sent.sent) return;
+        expect(sent.fact.actors.find(a => a.role === THE_ONE_WHO_RECEIVED_IT)?.id, 'the most senior of the house at its seat').toBe('elder');
+        expect(howManyTwinsTheHallKeeps(state.objects, HOUSE, 'posted'), 'the twin is spent with it').toBe(0);
+    });
+
+    it('with no twin in the hall there is nowhere for it to arrive', () => {
+        const state = build();
+        addToTheStack(state.objects, { houseId: HOUSE, houseName: HOUSE_NAME, holderId: 'posted', count: 1 });
+        const burnt = burnACommunicationTalisman(state, {
+            senderId: 'posted', senderName: 'posted', houseId: HOUSE, fromLocationId: TOWN,
+            onDay: DAY + 1, to: { kind: 'the_hall' }, says: 'word.'
+        });
+        expect(burnt).toMatchObject({ sent: false, why: 'no_twin' });
+        expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(1);
+    });
+
+    it('breaks with the holder where the death is settled, so a looter standing over the body takes none', () => {
+        const state = build();
+        wordFromThePeopleAway(state, { day: DAY + 10 });
+        // Somebody standing over the body, where it fell.
+        const at = state.npcs.findIndex(n => n.id === 'inner-two');
+        state.npcs[at] = { ...state.npcs[at]!, locationId: TOWN };
+        const posted = state.npcs.find(n => n.id === 'posted')!;
+        const dead = { ...posted, status: 'physically_dead' as const, diedOnDay: DAY + 20 };
+        state.npcs[state.npcs.findIndex(n => n.id === 'posted')] = dead;
+        settleNpcDeath(state, dead, DAY + 20);
+        expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(0);
+        expect(howManyTwinsTheHallKeeps(state.objects, HOUSE, 'posted')).toBe(0);
+        expect(state.objects.some(o => o.tags.includes('communication-talismans') && o.possessorId === 'inner-two'
+            && Number(o.data.quantity) > 0), 'the looter took none').toBe(false);
+    });
+
+    it('and a missing person keeps theirs', () => {
+        const state = build();
+        wordFromThePeopleAway(state, { day: DAY + 10 });
+        // Missing is what the house does not know, not a status on them.
+        state.factions[0] = theHouseLosesTrackOf(state.factions[0]!, 'posted', DAY + 20);
+        wordFromThePeopleAway(state, { day: DAY + 10 + YEAR });
+        expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(A_STACK_A_HOUSE_HANDS_OUT);
+    });
+
+    it('leaving the house breaks both halves, as its token goes back', () => {
+        const state = build();
+        wordFromThePeopleAway(state, { day: DAY + 10 });
+        const treasury = howManyTheHouseHas(state.objects, HOUSE);
+        const at = state.npcs.findIndex(n => n.id === 'posted');
+        state.npcs[at] = { ...state.npcs[at]!, factionId: null };
+        const rollOf = (id: string) => state.npcs.find(n => n.id === id && n.status === 'alive')?.factionId;
+        handBackWhatTheyNoLongerBelongTo(state.objects, rollOf);
+        expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(0);
+        expect(howManyTwinsTheHallKeeps(state.objects, HOUSE, 'posted')).toBe(0);
+        expect(howManyTheHouseHas(state.objects, HOUSE), 'nothing keyed goes back as a blank').toBe(treasury);
+    });
+
+    it("an ended house's treasury goes, since nobody is left to cut it into pairs", () => {
+        const state = build();
+        state.factions.push({ ...makeFaction({ id: ENDED, name: 'The Ended House', seatLocationId: null, foundedOnDay: 0, ranks: ['One'] }), dissolvedOnDay: DAY - 1 });
+        addToTheStack(state.objects, { houseId: ENDED, houseName: 'The Ended House', holderId: null, count: 12 });
+        wordFromThePeopleAway(state, { day: DAY + 10 });
+        expect(howManyTheHouseHas(state.objects, ENDED)).toBe(0);
+    });
+});
+
+/**
+ * A PAIRED COMMUNICATION JADE. The design owner: two halves of one earth-grade
+ * object, each keyed to its holder; either sends to the other as many times as
+ * wanted and nothing is spent; it breaks when its holder's token and lamp do;
+ * and a master gives one half to a disciple they value and keeps the twin.
+ */
+describe('a paired communication jade', () => {
+    function aMasterAndADisciple(standing: number) {
+        const state = build();
+        const at = (id: string) => state.npcs.findIndex(n => n.id === id);
+        const master = state.npcs[at('elder')]!;
+        state.npcs[at('elder')] = {
+            ...master,
+            cultivation: { ...master.cultivation, realmOrdinal: refiningOrdinalFor('earth') },
+            relationships: [...master.relationships, {
+                targetId: 'posted', targetName: 'posted', kind: 'disciple', standing, note: 'Took them on.',
+                sinceDay: DAY, lastChangedDay: DAY, factIds: [], inheritedFromId: null
+            }]
+        };
+        return state;
+    }
+
+    it('is given by a master to a disciple they value, the twin kept, and not to one they do not', () => {
+        const valued = aMasterAndADisciple(A_DISCIPLE_THEY_VALUE);
+        expect(mastersGiveJadeToDisciplesTheyValue(valued, { day: DAY })).toBe(1);
+        expect(theJadeBetween(valued, 'posted', 'elder')).not.toBeNull();
+        expect(theJadeBetween(valued, 'elder', 'posted')).not.toBeNull();
+        const halves = valued.objects.filter(isAJadeHalf);
+        expect(halves).toHaveLength(2);
+        expect(halves.every(h => h.significance !== 'mundane'), 'tracked, a row with a history').toBe(true);
+
+        const lukewarm = aMasterAndADisciple(A_DISCIPLE_THEY_VALUE - 0.2);
+        expect(mastersGiveJadeToDisciplesTheyValue(lukewarm, { day: DAY })).toBe(0);
+    });
+
+    it('sends word to the other half as often as it is used, and nothing is spent', () => {
+        const state = aMasterAndADisciple(A_DISCIPLE_THEY_VALUE);
+        mastersGiveJadeToDisciplesTheyValue(state, { day: DAY });
+        const rows = state.objects.length;
+        for (let i = 0; i < 5; i++) {
+            const sent = sendWordOnJade(state, {
+                senderId: 'posted', senderName: 'posted', toId: 'elder', toName: 'elder',
+                says: `word ${i}.`, onDay: DAY + i, fromLocationId: TOWN
+            });
+            expect(sent.sent).toBe(true);
+        }
+        expect(state.objects.length).toBe(rows);
+        expect(state.objects.filter(isAJadeHalf).every(h => h.data.broken !== true)).toBe(true);
+    });
+
+    it("breaks with its holder's lamp, and its twin then answers to nothing", () => {
+        const state = aMasterAndADisciple(A_DISCIPLE_THEY_VALUE);
+        mastersGiveJadeToDisciplesTheyValue(state, { day: DAY });
+        const posted = state.npcs.find(n => n.id === 'posted')!;
+        const pairId = state.objects.find(o => isAJadeHalf(o) && o.data.keyedTo === 'posted')!.data.pairId;
+        const dead = { ...posted, status: 'physically_dead' as const, diedOnDay: DAY + 5 };
+        state.npcs[state.npcs.findIndex(n => n.id === 'posted')] = dead;
+        settleNpcDeath(state, dead, DAY + 5);
+        // COLLECTED RATHER THAN KEPT. A pair answers to nothing once one end of
+        // it is gone, and a marked half left in the world was a row that grew
+        // with everybody who had ever held one. The design owner on the
+        // parallel case: destroy them or leave them, "honestly for simplicity".
+        expect(state.objects.filter(o => isAJadeHalf(o) && o.data.pairId === pairId),
+            'both halves go, not just the dead end of it').toHaveLength(0);
+        expect(sendWordOnJade(state, {
+            senderId: 'elder', senderName: 'elder', toId: 'posted', toName: 'posted',
+            says: 'are you there?', onDay: DAY + 6, fromLocationId: SEAT
+        })).toMatchObject({ sent: false, why: 'no_jade' });
+    });
+
+    it('is given to the player when a master who values them takes them on, the twin kept', () => {
+        const state = aMasterAndADisciple(A_DISCIPLE_THEY_VALUE);
+        const player = { id: 'the-player', name: 'The Player' };
+        expect(aMasterWhoValuesThemGivesAHalf(state, { masterId: 'elder', student: player, heldAt: DISCIPLE_STANDING, onDay: DAY }),
+            'not at the standing every bond starts at').toBe(false);
+        expect(aMasterWhoValuesThemGivesAHalf(state, { masterId: 'elder', student: player, heldAt: A_DISCIPLE_THEY_VALUE, onDay: DAY })).toBe(true);
+        expect(theJadeBetween(state, player.id, 'elder')).not.toBeNull();
+        expect(sendWordOnJade(state, {
+            senderId: player.id, senderName: player.name, toId: 'elder', toName: 'elder',
+            says: 'I am on the road.', onDay: DAY + 1, fromLocationId: TOWN
+        }).sent).toBe(true);
+    });
+
+    it('is made by the Internal Affairs Elder for the house\'s elders, or with nobody in that office by the most senior at the seat', () => {
+        const state = build();
+        const at = (id: string) => state.npcs.findIndex(n => n.id === id);
+        state.npcs[at('elder')] = { ...state.npcs[at('elder')]!, cultivation: { ...state.npcs[at('elder')]!.cultivation, realmOrdinal: refiningOrdinalFor('earth') } };
+        state.npcs.push({ ...person(state, 'second-elder', SEAT, 4, 12) });
+        const house = state.factions.find(f => f.id === HOUSE)!;
+        expect(whoMakesJadeForTheElders(state, house)?.id).toBe('elder');
+        expect(theInternalAffairsElderMakesJadeForElders(state, DAY)).toBe(1);
+        expect(theJadeBetween(state, 'second-elder', 'elder')).not.toBeNull();
+        theInternalAffairsElderMakesJadeForElders(state, DAY + YEAR);
+        const between = (x: string, y: string) => state.objects.filter(o => isAJadeHalf(o) && o.possessorId === x
+            && state.objects.some(t => t.id === o.data.twinId && t.possessorId === y)).length;
+        expect(between('second-elder', 'elder'), 'one pair an elder').toBe(1);
+    });
+
+    it('is worth what its maker\'s time and materials come to', () => {
+        const ordinal = refiningOrdinalFor('earth');
+        expect(whatAPairOfJadeIsWorth(ordinal)).toBe(whatACommissionComesTo('earth', false, ordinal));
+    });
 });

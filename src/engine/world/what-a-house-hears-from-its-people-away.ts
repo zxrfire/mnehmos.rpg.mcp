@@ -12,16 +12,20 @@
  *
  * ── ONE PASS A YEAR, IN FOUR STEPS, EACH OFF SOMETHING ALREADY HERE ──────
  *
- *   (cut)        not here. A house below what it keeps posts the cutting on
- *                its board (`itsCommunicationTalismansRunLow`, and the reason's
- *                floor keeps it to Foundation or above). Somebody wholly free
- *                takes it as any notice and it lands when the term closes; and
- *                because it is a few days at home, somebody at the seat who is
- *                teaching or at the work of their rank can sit down to it too
- *                ({@link aSittingAtHomeIsTaken}). Either way what is cut lands
+ *   (cut)        not here. A house whose treasury is below what it keeps posts
+ *                cutting blanks on its board (`itsCommunicationTalismansRunLow`,
+ *                and the reason's floor keeps it to Foundation or above).
+ *                Somebody wholly free takes it as any notice and it lands when
+ *                the term closes; and because it is a few days at home, somebody
+ *                at the seat who is teaching or at the work of their rank can sit
+ *                down to it too ({@link aSittingAtHomeIsTaken}), Internal Affairs
+ *                disciples first. Either way the blanks land in the treasury
  *                through {@link whatCuttingForTheHouseLands}
- *   handed out   whoever set out this year on a posting or with a party is
- *                handed a stack. `theHouseHandsThemSlips`
+ *   issued       whoever set out this year on a posting or with a party is cut
+ *                pairs out of the treasury's blanks by somebody of the house at
+ *                its seat who can cut: a half keyed to them, its twin to the hall
+ *                where the lamps burn. With no blanks or nobody to cut them,
+ *                somebody at Foundation or above cuts their own
  *   looked in on somebody on a posting, every
  *                {@link A_POSTING_IS_LOOKED_IN_ON_EVERY_YEARS} years from the
  *                day they were posted. One person the house can spare
@@ -54,8 +58,9 @@
  * A party's own dead are not reported early. `resolveSending` says who did not
  * come back and dates it the day the party is due, so there is no earlier day a
  * slip could carry. A call for help has nothing to answer it: `attemptRescue` in
- * `convergence.ts` exists and no pass calls it. The player is never looked in on,
- * because nothing puts the player on a posting.
+ * `convergence.ts` exists and no pass calls it. The player is not looked in on by
+ * this pass: their row stands nowhere, so their posting and its look-ins are read
+ * after each turn instead (`a-house-posts-the-one-being-played.ts`).
  */
 
 import {
@@ -72,9 +77,17 @@ import {
     howFarFromTheSeat,
     howManyTheHouseHas,
     isWordSentHome,
+    takeAwayWhatAnswersToNobody,
     theStacksInHand,
+    whoReadsTheHall,
     type TheStacksInHand
 } from './a-communication-talisman-carries-word-home.js';
+import { whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import {
+    mastersGiveJadeToDisciplesTheyValue,
+    theInternalAffairsElderMakesJadeForElders
+} from './a-pair-of-communication-jade.js';
+import { whatASlipIsWorth } from '../social-leverage/commissioning-a-craft.js';
 import { THE_INTERNAL_AFFAIRS_ELDER } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { theHouseExpects, theReportsTheyOwe } from './a-house-expects-somebody-it-took-on.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -111,7 +124,7 @@ import {
 import type { FactionRecord, WorldState } from './world-state.js';
 
 /**
- * How many a house puts in somebody's hand when it sends them out.
+ * How many slips a house cuts for somebody when it sends them out, each a pair.
  *
  * Three: enough to send word more than once and not so many that a posting of
  * twelve years needs nobody to come and see them. What they run out of is what
@@ -133,17 +146,66 @@ export const A_STACK_A_HOUSE_HANDS_OUT = 3;
 export const A_POSTING_IS_LOOKED_IN_ON_EVERY_YEARS = 3;
 
 /**
- * What a house keeps in stock: a stack for everybody on its roll.
+ * How many blanks a house keeps in its treasury: the pairs of a stack for
+ * everybody on its roll, two blanks a slip.
  *
  * Off the roll rather than off standing, because what the stock is FOR is
- * handing a stack to whoever goes out, and a house has as many people who might
+ * cutting pairs for whoever goes out, and a house has as many people who might
  * go as it has people.
  */
 export function whatAHouseKeepsInStock(onTheRoll: number): number {
-    return A_STACK_A_HOUSE_HANDS_OUT * Math.max(1, Math.floor(onTheRoll));
+    return 2 * A_STACK_A_HOUSE_HANDS_OUT * Math.max(1, Math.floor(onTheRoll));
 }
 
-/** Whether a house's stock is below what it keeps. The column a board would read. */
+/**
+ * The disciples posted to a house's Internal Affairs office, who cut its slips.
+ *
+ * The design owner: *"Internal Affairs disciples cut them, for everyone including
+ * elders."*
+ *
+ * READ OFF THE POSTING, which is what a posting is: somebody stationed
+ * somewhere, and the somewhere is the room the roll is kept in rather than a
+ * town. This returned an empty list and said in its own header that nothing
+ * posts a disciple to an office; the list is now the stationed rows, so the day
+ * anything posts one - the player's own road is
+ * `src/web/holding-a-posting.ts` - they are here without this moving. The
+ * world's own `applyPostings` stations people in TOWNS and never in a room, so
+ * this is still empty for everybody the world posts, which is why nothing the
+ * world does changes shape today.
+ */
+export function theDisciplesPostedToInternalAffairs(
+    state: Pick<WorldState, 'npcs' | 'locations'>,
+    houseId: string
+): string[] {
+    const hall = whereThisHouseBurnsItsLamps(state.locations, houseId);
+    if (hall === null) return [];
+    return state.npcs
+        .filter(npc => npc.status === 'alive' && npc.factionId === houseId)
+        .filter(npc => npc.activity?.kind === 'stationed' && npc.locationId === hall)
+        .map(npc => npc.id)
+        .sort();
+}
+
+/**
+ * Who of a house at its seat cuts pairs for somebody it sends out: a disciple
+ * posted to Internal Affairs, and with none posted, the most junior of its
+ * people standing there who can cut at all. Null where nobody there can.
+ */
+export function whoCutsPairsAtTheSeat(
+    state: Pick<WorldState, 'npcs' | 'locations'>,
+    members: readonly NpcRecord[],
+    seatLocationId: string
+): NpcRecord | null {
+    const able = members.filter(n => n.status === 'alive' && n.locationId === seatLocationId
+        && couldCutACommunicationTalisman(n.cultivation.realmOrdinal));
+    const posted = new Set(theDisciplesPostedToInternalAffairs(state, members[0]?.factionId ?? ''));
+    const pool = able.some(n => posted.has(n.id)) ? able.filter(n => posted.has(n.id)) : able;
+    return [...pool].sort((a, b) => a.factionRankIndex - b.factionRankIndex
+        || a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
+        || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0] ?? null;
+}
+
+/** Whether a house's treasury is below the blanks it keeps. The column a board reads. */
 export function itsCommunicationTalismansRunLow(
     state: Pick<WorldState, 'objects'>,
     houseId: string,
@@ -210,6 +272,10 @@ export function wordFromThePeopleAway(
     };
     const lookIn = requireReason('sending-to-look-in-on-a-posting');
     const howFar = howFarFromTheSeat(state.locations);
+    // An ended house's slips go first, so the index below never holds them.
+    takeAwayWhatAnswersToNobody(
+        state.objects, new Set(state.factions.filter(h => h.dissolvedOnDay === null).map(h => h.id))
+    );
     // Opened once, and closed once at the end. See `theStacksInHand`.
     const stacks = theStacksInHand(state.objects);
 
@@ -223,28 +289,46 @@ export function wordFromThePeopleAway(
         if (roll) roll.push(i); else rolls.set(npc.factionId, [i]);
     }
 
-    // Who got a fresh stack this pass, and on what day, so what they saw before
+    // Who got fresh slips this pass, and on what day, so what they saw before
     // they had one is reported on the day they had one.
     const toppedUpOn = new Map<string, number>();
     const sentOut = new Set<string>();
+    // Who reads each house's hall, asked once a house.
+    const readers = new Map<string, { id: string; name: string } | null>();
+    const readerOf = (houseId: string) => {
+        if (!readers.has(houseId)) readers.set(houseId, whoReadsTheHall(state, houseId));
+        return readers.get(houseId)!;
+    };
 
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house) || house.seatLocationId === null) continue;
         const seat = house.seatLocationId;
+        const hall = whereThisHouseBurnsItsLamps(state.locations, house.id) ?? seat;
         const members = (rolls.get(house.id) ?? []).map(i => state.npcs[i]!);
         const alive = members.filter(n => n.status === 'alive');
+        const cutter = whoCutsPairsAtTheSeat(state, members, seat);
+        const cutPairsFor = (npc: NpcRecord, onDay: number): number => {
+            const fromTheTreasury = cutter === null ? 0 : stacks.cutPairsFor({
+                houseId: house.id, houseName: house.name, toId: npc.id, toName: npc.name,
+                upTo: A_STACK_A_HOUSE_HANDS_OUT, hallLocationId: hall, fromTheTreasury: true, onDay
+            });
+            if (fromTheTreasury > 0 || !couldCutACommunicationTalisman(npc.cultivation.realmOrdinal)) return fromTheTreasury;
+            // Nobody to cut them or nothing to cut them from, and they can cut:
+            // they cut their own before they go.
+            return stacks.cutPairsFor({
+                houseId: house.id, houseName: house.name, toId: npc.id, toName: npc.name,
+                upTo: A_STACK_A_HOUSE_HANDS_OUT, hallLocationId: hall, fromTheTreasury: false, onDay
+            });
+        };
 
-        // ── HANDED OUT, TO WHOEVER SET OUT THIS YEAR ─────────────────────
+        // ── ISSUED, TO WHOEVER SET OUT THIS YEAR ─────────────────────────
         for (const npc of alive) {
             const doing = npc.activity;
             if (!doing || !isTheWorldsToMove(npc)) continue;
             if (doing.kind !== 'stationed' && doing.kind !== 'out_with_a_party') continue;
             if (doing.sinceDay < from || doing.sinceDay > day) continue;
             if (stacks.carriedAtFirst(npc.id, house.id) > 0) continue;
-            const given = stacks.handOut({
-                houseId: house.id, houseName: house.name, toId: npc.id, toName: npc.name,
-                upTo: A_STACK_A_HOUSE_HANDS_OUT
-            });
+            const given = cutPairsFor(npc, doing.sinceDay);
             out.handedOut += given;
             if (given > 0) toppedUpOn.set(npc.id, doing.sinceDay);
         }
@@ -343,10 +427,11 @@ export function wordFromThePeopleAway(
                 data: { lookedInOn: posted.id, status: posted.status }
             }), { bystanders: false, recur: false });
 
-            if (!gone) {
-                const given = stacks.handOut({
+            // The visitor carries pairs cut for them at the seat.
+            if (!gone && cutter !== null) {
+                const given = stacks.cutPairsFor({
                     houseId: house.id, houseName: house.name, toId: posted.id, toName: posted.name,
-                    upTo: A_STACK_A_HOUSE_HANDS_OUT
+                    upTo: A_STACK_A_HOUSE_HANDS_OUT, hallLocationId: hall, fromTheTreasury: true, onDay: arrives
                 });
                 out.handedOut += given;
                 if (given > 0) toppedUpOn.set(posted.id, arrives);
@@ -354,7 +439,7 @@ export function wordFromThePeopleAway(
         }
     }
 
-    out.reports.push(...whatThePeopleAwaySendWordOf(state, { day, from, toppedUpOn, howFar, rolls, stacks }));
+    out.reports.push(...whatThePeopleAwaySendWordOf(state, { day, from, toppedUpOn, howFar, rolls, stacks, readerOf }));
 
     // ── RECRUITS ─────────────────────────────────────────────────────────
     for (const npc of [...state.npcs]) {
@@ -378,7 +463,8 @@ export function wordFromThePeopleAway(
                 houseId: house.id,
                 fromLocationId: npc.locationId,
                 onDay,
-                to: { kind: 'an_office', title: THE_INTERNAL_AFFAIRS_ELDER, holderId: null },
+                to: { kind: 'an_office', title: THE_INTERNAL_AFFAIRS_ELDER, holderId: readerOf(house.id)?.id ?? null },
+                receivedBy: readerOf(house.id),
                 says: `${report.personName} was taken on`
                     + (report.whereName ? ` at ${report.whereName}.` : '.'),
                 aboutLocationId: house.seatLocationId,
@@ -404,6 +490,13 @@ export function wordFromThePeopleAway(
     }
 
     stacks.close();
+
+    // ── AND THE MASTERS WHO HAVE COME TO VALUE A DISCIPLE ────────────────
+    // A half of a communication jade, the twin kept. See
+    // `mastersGiveJadeToDisciplesTheyValue`.
+    mastersGiveJadeToDisciplesTheyValue(state, { day });
+    // And the Internal Affairs Elder's for the house's elders.
+    theInternalAffairsElderMakesJadeForElders(state, day);
     return out;
 }
 
@@ -505,9 +598,10 @@ export function freeForASittingAtHome(
  *
  * NOTHING THEY ARE AT IS INTERRUPTED. The sitting is recorded against them and
  * their activity is left as it was: service for the days of it, priced as a term
- * served is (`whatServiceIsWorth`), and what the work makes lands at once
- * ({@link whatCuttingForTheHouseLands}). Lowest rung first, as the wall is read,
- * and one sitting each.
+ * served is (`whatServiceIsWorth`), what the work makes lands at once
+ * ({@link whatCuttingForTheHouseLands}), and they are paid for what landed
+ * ({@link whatCuttingPays}). Lowest rung first, as the wall is read, and one
+ * sitting each.
  */
 export function aSittingAtHomeIsTaken(
     state: WorldState,
@@ -524,8 +618,11 @@ export function aSittingAtHomeIsTaken(
     }
 ): number {
     if (!reasonsOpenTo(input.house).some(isShortWorkAtHome)) return 0;
-    const sitters = input.roll
-        .filter(i => freeForASittingAtHome(state.npcs[i]!, input.seatLocationId))
+    // Internal Affairs disciples first, and the house's Foundation members only
+    // where none is posted.
+    const posted = new Set(theDisciplesPostedToInternalAffairs(state, input.house.id));
+    const free = input.roll.filter(i => freeForASittingAtHome(state.npcs[i]!, input.seatLocationId));
+    const sitters = (free.some(i => posted.has(state.npcs[i]!.id)) ? free.filter(i => posted.has(state.npcs[i]!.id)) : free)
         .sort((a, b) => {
             const x = state.npcs[a]!, y = state.npcs[b]!;
             return x.factionRankIndex - y.factionRankIndex
@@ -545,12 +642,15 @@ export function aSittingAtHomeIsTaken(
             const had = input.alreadyTaken(entry.id) + (takenNow.get(entry.id) ?? 0);
             if (had >= reason.hands) continue;
             takenNow.set(entry.id, (takenNow.get(entry.id) ?? 0) + 1);
-            state.npcs[at] = { ...creditMerit(npc, whatServiceIsWorth(ordinal, reason.days)), updatedOnDay: input.day };
-            if (reason.makes !== null) {
-                whatCuttingForTheHouseLands(state, theMakerThisIs(npc), {
-                    thingId: reason.makes, sinceDay: input.day, untilDay: input.day + reason.days
-                });
-            }
+            const landed = reason.makes === null ? 0 : whatCuttingForTheHouseLands(state, theMakerThisIs(npc), {
+                thingId: reason.makes, sinceDay: input.day, untilDay: input.day + reason.days
+            });
+            const credited = creditMerit(npc, whatServiceIsWorth(ordinal, reason.days));
+            state.npcs[at] = {
+                ...credited,
+                spiritStones: (credited.spiritStones ?? 0) + whatCuttingPays(landed, ordinal),
+                updatedOnDay: input.day
+            };
             sat++;
             break;
         }
@@ -559,12 +659,30 @@ export function aSittingAtHomeIsTaken(
 }
 
 /**
- * What a term cutting communication talismans for the house lands as, when it
- * closes. Mutates `state.objects`. Returns how many went into the stock.
+ * What cutting this many slips pays whoever cut them, in whole spirit stones.
+ *
+ * WHAT THEY ARE WORTH, AND NOT A STONE MORE. Each is its cutter's time share and
+ * its materials (`whatASlipIsWorth`), rounded down, and it is paid for what
+ * landed rather than for the term. A cutting notice used to pay the board's rate
+ * for a term, whatever it cut: measured on `afford-a` over five hundred years,
+ * 804 terms paid 39,375 stones, about five stones a slip against a worth of a
+ * third of one, and the same for a term that landed one slip into a nearly full
+ * drawer as for one that filled an empty one.
+ */
+export function whatCuttingPays(count: number, cutterOrdinal: number): number {
+    const many = Math.max(0, Math.floor(count));
+    if (many === 0) return 0;
+    return Math.floor(many * whatASlipIsWorth(cutterOrdinal));
+}
+
+/**
+ * What a term cutting blank communication talismans for the house lands as, when
+ * it closes. Mutates `state.objects`. Returns how many went into the treasury.
  *
  * THE WORK IS THE BOARD'S, AND THIS IS ONLY WHAT IT MAKES. The notice is posted
- * while the house is short (`itsCommunicationTalismansRunLow`), taken and paid
- * like any other (`a-disciple-takes-work-off-the-board.ts`), and carries what it
+ * while the house is short (`itsCommunicationTalismansRunLow`), taken like any
+ * other (`a-disciple-takes-work-off-the-board.ts`) and paid in stones for what
+ * lands ({@link whatCuttingPays}) rather than for the term, and carries what it
  * makes onto the worker as `thingId`. The close asks this. A cut sitting makes
  * `CUT_IN_A_SITTING` in `DAYS_A_SITTING_TAKES`, the term decides how many
  * sittings, and the house takes no more than it is short: nobody cuts paper
@@ -649,6 +767,8 @@ function whatThePeopleAwaySendWordOf(
         rolls: ReadonlyMap<string, readonly number[]>;
         /** Opened before the hand-outs; whoever was handed a stack since is in `toppedUpOn`. */
         stacks: TheStacksInHand;
+        /** Who reads each house's hall. */
+        readerOf: (houseId: string) => { id: string; name: string } | null;
     }
 ): AReportCameHome[] {
     const { day, from } = input;
@@ -749,7 +869,8 @@ function whatThePeopleAwaySendWordOf(
                     houseId: house.id,
                     fromLocationId: npc.locationId,
                     onDay: one.reportOn,
-                    to: { kind: 'the_hall' },
+                    to: { kind: 'an_office', title: THE_INTERNAL_AFFAIRS_ELDER, holderId: input.readerOf(house.id)?.id ?? null },
+                    receivedBy: input.readerOf(house.id),
                     says: `word of what happened at ${place}.`,
                     aboutFactId: one.fact.id,
                     aboutLocationId: one.fact.locationId,

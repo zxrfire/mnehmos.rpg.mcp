@@ -46,6 +46,13 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import {
+    aPairOfCommunicationJade,
+    theJadeBetween,
+    whoMakesJadeForTheElders
+} from './a-pair-of-communication-jade.js';
+import type { ObjectRecord } from './possessions.js';
+import type { WorldState } from './world-state.js';
 
 /** How many of a world's houses have ever given something away outright. */
 export const HOUSES_THAT_HAVE_GIVEN_SOMETHING_AWAY = 0.3;
@@ -74,6 +81,22 @@ interface SomebodyOnARoll {
     status: string;
     tags: readonly string[];
     cultivation: { realmOrdinal: number };
+    /** Where they are, where the caller knows: read by {@link awayFromTheHouse}. */
+    locationId?: string | null;
+}
+
+/**
+ * Whether the person a house marked is away from its seat, which is what makes
+ * its gift a pair of jade rather than a thing out of its stores: a line kept open
+ * to somebody it is not standing beside. Unknown where the caller carries no
+ * places, which leaves the ordinary gift.
+ */
+export function awayFromTheHouse(
+    house: { seatLocationId?: string | null },
+    person: { locationId?: string | null }
+): boolean {
+    return house.seatLocationId !== undefined && house.seatLocationId !== null
+        && person.locationId !== undefined && person.locationId !== house.seatLocationId;
 }
 
 /**
@@ -86,7 +109,7 @@ interface SomebodyOnARoll {
  * seeding. A house with nobody marked gives nothing, which is most of them.
  */
 export function whatEachHouseHasGivenAway(state: {
-    factions: readonly { id: string; name?: string; dissolvedOnDay: number | null }[];
+    factions: readonly { id: string; name?: string; dissolvedOnDay: number | null; seatLocationId?: string | null }[];
     npcs: readonly SomebodyOnARoll[];
     objects: readonly AThingAHouseOwns[];
 }): AThingGivenAway[] {
@@ -127,6 +150,75 @@ export function whatEachHouseHasGivenAway(state: {
         });
     }
     return given;
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// AND A PAIR OF JADE, WHICH IS TWO THINGS AND NOT ONE
+// ═════════════════════════════════════════════════════════════════════════
+
+/** A pair of communication jade a house had made for the person it marked. */
+export interface APairOfJadeBestowed {
+    /** Both halves, as the jade module makes them: the marked person's and the maker's twin. */
+    halves: [ObjectRecord, ObjectRecord];
+    toNpcId: string;
+    toName: string;
+    fromName: string;
+}
+
+/**
+ * WHAT A HOUSE GIVES AS A PAIR OF JADE: to the person it marked where they are
+ * away from its seat, or where its stores hold nothing tracked to hand over, and
+ * its hands can make a pair.
+ *
+ * The same house, the same marked person and the same draw as
+ * {@link whatEachHouseHasGivenAway}, so a house decides once whether it has ever
+ * given anything; this is only what the gift is. Measured over three seeded
+ * worlds before the away rule: every house with a marked person had something
+ * tracked in its stores, so a jade was never the gift - which is why the person
+ * being away is what decides it. AND IT IS STILL RARE: over five seeded worlds,
+ * one to four houses a world had their marked person away, the draw passed for at
+ * most one, and none of those had a hand at their seat that could work earth
+ * grade, so no pair was bestowed at world open in any of the five. A jade is a pair, so it cannot be a row moved out of a
+ * treasury: it is made, through the jade module's own maker
+ * (`aPairOfCommunicationJade`), by whoever makes the house's jade
+ * (`whoMakesJadeForTheElders`), who keeps the twin as they do for an elder.
+ * Pure: the caller pushes the halves.
+ */
+export function whatEachHouseGivesAsAPairOfJade(
+    state: Pick<WorldState, 'factions' | 'npcs' | 'objects' | 'locations'>,
+    /** What each house's stores hold, which is what decides that it had nothing else to give. */
+    stores: readonly AThingAHouseOwns[],
+    onDay: number
+): APairOfJadeBestowed[] {
+    const out: APairOfJadeBestowed[] = [];
+    for (const house of [...state.factions].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+        if (house.dissolvedOnDay !== null) continue;
+        const marked = state.npcs
+            .filter(npc => npc.status === 'alive' && npc.factionId === house.id && npc.tags.includes('chosen'))
+            .sort((a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal || (a.id < b.id ? -1 : 1))[0];
+        if (!marked) continue;
+        const somethingElse = stores.some(thing => thing.ownerId === house.id && thing.possessorId === null
+            && thing.kind !== 'token' && thing.significance !== 'mundane');
+        if (somethingElse && !awayFromTheHouse(house, marked)) continue;
+        const draw = forStream(house.id, 'a-house-bestows-what-it-owns');
+        if (draw.next() > HOUSES_THAT_HAVE_GIVEN_SOMETHING_AWAY) continue;
+        const maker = whoMakesJadeForTheElders(state, house);
+        if (maker === null || maker.id === marked.id) continue;
+        if (theJadeBetween(state, maker.id, marked.id) !== null) continue;
+        out.push({
+            halves: aPairOfCommunicationJade({
+                maker: { id: maker.id, name: maker.name, ordinal: maker.cultivation.realmOrdinal },
+                keeps: { id: maker.id, name: maker.name },
+                gives: { id: marked.id, name: marked.name },
+                onDay,
+                locationId: house.seatLocationId
+            }),
+            toNpcId: marked.id,
+            toName: marked.name,
+            fromName: house.name ?? 'their house'
+        });
+    }
+    return out;
 }
 
 /** The note a bestowal leaves on the chain. */

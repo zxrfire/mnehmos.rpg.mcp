@@ -93,6 +93,7 @@ import {
     whyTheyHaveIt
 } from './what-is-out-on-loan-and-who-lent-it.js';
 import {
+    whatEachHouseGivesAsAPairOfJade,
     whatEachHouseHasGivenAway,
     whyItIsTheirs
 } from './a-house-bestows-a-thing-on-somebody-who-earned-it.js';
@@ -423,7 +424,12 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
         // the catalog had placed on purpose - the same defect
         // `objects-in-hands.test.ts` caught on the lending side, and it
         // caught this one too. A house gives what is in its stores.
-        const given = whatEachHouseHasGivenAway({ ...state, objects: treasury });
+        // A HOUSE THAT GIVES A PAIR OF JADE gives that and not a thing out of its
+        // stores: decided first, so the one gift a house makes is one gift.
+        const jadeGiven = whatEachHouseGivesAsAPairOfJade(state, treasury, today);
+        const givenJade = new Set(jadeGiven.map(gift => gift.toNpcId));
+        const given = whatEachHouseHasGivenAway({ ...state, objects: treasury })
+            .filter(gift => !givenJade.has(gift.toNpcId));
         const alreadyGone = new Set(given.map(gift => gift.objectId));
         const givenBy = new Map(given.map(gift => [gift.objectId, gift]));
         if (givenBy.size > 0) {
@@ -442,6 +448,8 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
                 });
             });
         }
+        // The pairs of jade decided above: made, not moved, and kept in twin.
+        for (const gift of jadeGiven) state.objects.push(...gift.halves);
 
         // Both loans are decided against the state as it stands after the
         // giving, and applied together, so one object can never be lent twice.

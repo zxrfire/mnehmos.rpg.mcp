@@ -97,3 +97,40 @@ export function daysToCut(count: number): number {
     if (many === 0) return 0;
     return Math.ceil(many / CUT_IN_A_SITTING) * DAYS_A_SITTING_TAKES;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE PAIRED COMMUNICATION JADE
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A pair of jade halves, each of which sends word to the other. */
+export interface APairedCommunicationJade {
+    id: string;
+    name: string;
+    /** Tracked: a row with a history for each half, per `howMuchAGradeIsWorthTracking`. */
+    grade: TechniqueGrade;
+    what: string;
+}
+
+/**
+ * The reusable channel. The design owner: two halves of one earth-grade object,
+ * each keyed to its holder like a slip; either half sends to the other as many
+ * times as wanted, and nothing is spent. Masters and elders carry them, and a
+ * master gives one half to a disciple they value and keeps the twin.
+ *
+ * Earth grade, so it is made on the crafting curve by a hand that can work that
+ * grade (`canRefineGrade('earth', ...)`) and priced on the maker's time
+ * (`whatACommissionComesTo`). No reach: a jade answers to its twin, not to a map.
+ */
+export const THE_PAIRED_COMMUNICATION_JADE: APairedCommunicationJade = {
+    id: 'paired-communication-jade',
+    name: 'communication jade',
+    grade: 'earth',
+    // THE NOUN IS THE ONE ON THE LINE ABOVE. This read "one half of a pair of
+    // jade TABLETS", which is a third word for a thing the design owner has
+    // already named twice - communication jade, and jade pair. It also collides
+    // with the settled sense of `tablet` in this world, which is a thing
+    // written on and kept in a hall: a name on a tablet, a wax tablet, the
+    // Pavilion's tablet hall.
+    what: 'One half of a communication jade, keyed to its holder. Word spoken into it reaches whoever '
+        + 'holds the other half, as often as it is used, until one of the two holders is dead.'
+};

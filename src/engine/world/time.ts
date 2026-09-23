@@ -37,6 +37,11 @@ import {
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { heirsOf, type HeirRef } from './lineage.js';
 import {
+    isAStackOfCommunicationTalismans,
+    theirSlipsBreak
+} from './a-communication-talisman-carries-word-home.js';
+import { theirJadeBreaks } from './a-pair-of-communication-jade.js';
+import {
     isOpportunityOpen,
     missedWindowsFor,
     nextWindow,
@@ -833,6 +838,17 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
             || a.draw - b.draw)
         .map(row => ({ id: row.npc.id, name: row.npc.name }));
 
+    // THEIR SLIPS BREAK WITH THEIR LAMP. A communication talisman sends word as
+    // the person it is keyed to, so both halves of their pairs go when they do,
+    // here and before anybody goes through the body: there is nothing for a
+    // looter to take. See `theirSlipsBreak`.
+    theirSlipsBreak(state.objects, deceased.id);
+    // And any pair of communication jade they were half of, both halves, which
+    // answer to nothing once one end of them is gone and are collected rather
+    // than left in the world's things. Before the estate, so nobody inherits
+    // half of a pair that cannot be spoken into.
+    theirJadeBreaks(state.objects, deceased.id, onDay);
+
     const estate = settleEstate({
         dead: { id: deceased.id, name: deceased.name },
         onDay,
@@ -849,7 +865,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
         // nothing else in the world reads or writes.
         counted: { spiritStones: deceased.spiritStones, stock: [] },
         tracked: state.objects
-            .filter(o => o.possessorId === deceased.id)
+            .filter(o => o.possessorId === deceased.id && !isAStackOfCommunicationTalismans(o))
             .map(o => ({
                 itemId: o.id,
                 name: o.name,

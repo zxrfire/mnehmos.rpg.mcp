@@ -6,69 +6,90 @@
  * is the player's end of both: a pouch stack, the sentence that burns one, and
  * the sentence that cuts more.
  *
- * ── THE PLAYER'S STACK IS A POUCH ROW ────────────────────────────────────
+ * ── THE PLAYER'S HALF IS A POUCH ROW ─────────────────────────────────────
  *
  * Counted stock in a pouch is a catalog id and a number, and a communication
  * talisman is marked with a house, so the id carries the mark:
- * `communication-talisman:<house id>`, kind `talisman`. One stack per mark, the
- * same one-per-holder-per-mark the world's own stacks keep.
+ * `communication-talisman:<house id>`, kind `talisman`. The pouch is the
+ * player's, so every slip in it is keyed to them; its twins are world rows in
+ * the house's hall, the same as anybody's (`keepTheTwins`).
  *
  * ── SENDING WORD ─────────────────────────────────────────────────────────
  *
- * "I burn a communication talisman to tell my master that...", "I send word to
- * the sect that...". The slip answers to the house its mark names and nobody
- * else, so word to a person goes to that person's house, addressed to them.
- * What refuses is a count or a distance and the refusal says which: no slip of
- * that mark, or a hall further than a slip carries. What it writes is one fact
- * the house holds (`theWordArrives`), and no time passes.
+ * "I send word to the sect that...". A slip arrives at its twin, and a house's
+ * twins are kept in its hall, so word goes to the hall of the house that keyed
+ * the slip and is read there by a person (`whoReadsTheHall`). A person is not an
+ * address: the refusal says where the player's slips do reach. What refuses is a
+ * count or a distance and the refusal says which: no slip of that mark, no twin
+ * kept, or a hall further than a slip carries. What it writes is one fact, with
+ * the reader on it (`theWordArrives`), and no time passes.
  *
- * NOTHING COMES BACK ON IT. A slip answers to a house, not to a person, so an
- * answer reaches the player when they are at the house or somebody walks it to
- * them. That is said, because the player would otherwise wait for a reply.
+ * NOTHING COMES BACK ON IT. An answer reaches the player when they are at the
+ * house or somebody walks it to them. That is said, because the player would
+ * otherwise wait for a reply.
  *
  * ── CUTTING THEM ─────────────────────────────────────────────────────────
  *
  * "I make some communication talismans", "I cut five communication talismans
  * for the sect". At Foundation or above, and marked with the player's own house,
- * so somebody with no house cuts none: a mark is whose it is. For themselves, into
- * the pouch; for the house, into the house's stock and credited as contribution
- * at the price the house's own notice for the work carries (`dutyTermsFor`),
- * which is what the house's own people are credited for the same work.
+ * so somebody with no house cuts none: a mark is whose it is. For themselves,
+ * pairs, two slips each: the half into the pouch and the twin to the hall - no
+ * permission and no merit, which is the whole of what that half asks. For
+ * the house, blanks into its treasury, credited as contribution for the days it
+ * took (`whatServiceIsWorth`) and paid for what went in (`whatCuttingPays`),
+ * which is what somebody of the house sitting down to the same work between other
+ * work is credited and paid - and THAT half is an office's work. Internal
+ * Affairs cuts the house's own blanks, so a member who has not been handed the
+ * seal is told so and told who has: `who-cuts-the-houses-slips.ts`.
+ *
+ * IT WAS THE NOTICE'S PRICE, and a notice is a month: a player cutting one slip in
+ * a day was credited the month's contribution for it, again and again.
  */
 
 import type Database from 'better-sqlite3';
 
 import {
     CUT_IN_A_SITTING,
+    DAYS_A_SITTING_TAKES,
     THE_COMMUNICATION_TALISMAN,
     WHO_CAN_CUT_A_COMMUNICATION_TALISMAN,
     couldCutACommunicationTalisman,
     daysToCut
 } from '../data/cultivation/communication-talismans.js';
-import { getSendingReason } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { rankName } from '../engine/cultivation/realms.js';
-import { dutyTermsFor } from '../engine/encounters/duties.js';
-import { aPostingAsAnOffer } from '../engine/encounters/what-a-house-has-on-its-board.js';
 import {
     addToTheStack,
+    howManyTwinsTheHallKeeps,
+    keepTheTwins,
+    takeOneTwin,
     theWordArrives,
     whetherWordReachesTheHouse,
-    type WhoTheWordIsFor
+    whoReadsTheHall
 } from '../engine/world/a-communication-talisman-carries-word-home.js';
 import { THE_INTERNAL_AFFAIRS_ELDER } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
+import { whereThisHouseBurnsItsLamps } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
+import { whoTheirJadeReaches } from '../engine/world/a-pair-of-communication-jade.js';
+import { theMasterTheyKneltTo } from './encounters.js';
+import { whatServiceIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
+import { whatCuttingPays } from '../engine/world/what-a-house-hears-from-its-people-away.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
     addToPouch,
     removeFromPouch
 } from '../server/consolidated/cultivation-support.js';
-import { theMasterTheyKneltTo } from './encounters.js';
 import { worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
+import { BENCH_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { whatIsBeingCut } from './communication-talisman-phrasings.js';
+import { positionIn } from './standing.js';
+import {
+    whetherTheyMayCutForTheHouse,
+    whyTheHousesSlipsAreNotTheirsToCut
+} from './who-cuts-the-houses-slips.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE POUCH STACK
@@ -79,6 +100,11 @@ const A_MARKED_SLIP = `${THE_COMMUNICATION_TALISMAN.id}:`;
 /** The pouch id of a stack of one house's communication talismans. */
 export function pouchIdForCommunicationTalismans(houseId: string): string {
     return `${A_MARKED_SLIP}${houseId}`;
+}
+
+/** Whether a pouch row is a stack of communication talismans. */
+export function isACommunicationTalismanInAPouch(itemId: string): boolean {
+    return itemId.startsWith(A_MARKED_SLIP);
 }
 
 /** Every mark in this pouch, with how many. */
@@ -106,7 +132,7 @@ export function theLineForCommunicationTalismans(
     return [
         'Communication talismans: '
         + held.map(h => `${h.count} marked with ${nameOf(h.houseId)}`).join(', ')
-        + `. Each carries word to the house it is marked with, as far as `
+        + `, keyed to you. Each carries word to its twin in that house's hall, as far as `
         + `${THE_COMMUNICATION_TALISMAN.reachWalkingDays} walking days.`
     ];
 }
@@ -116,51 +142,82 @@ export function theLineForCommunicationTalismans(
 // ─────────────────────────────────────────────────────────────────────────
 
 interface Addressee {
+    /** The house whose hall the slip's twin is kept in. */
     houseId: string;
-    to: WhoTheWordIsFor;
     /** How the player named them, for the lines. */
     called: string;
 }
 
-function whoTheWordIsFor(
+/**
+ * The person a sentence names, where it names one: "my master", or somebody the
+ * world holds by name. Null where it names a house, a hall, or nobody.
+ */
+function thePersonNamed(
     game: GameService,
     world: WorldState,
     cultivator: Cultivator,
     named: string
+): { id: string; name: string } | null {
+    const said = named.toLowerCase().replace(/^(?:to\s+)/, '').trim();
+    if (/^(?:my|our)\s+(?:master|teacher|shifu|shizun)\b/.test(said)) {
+        const masterId = theMasterTheyKneltTo(game.repos, cultivator.id);
+        if (masterId === null) return null;
+        const row = world.npcs.find(n => n.id === masterId);
+        return { id: masterId, name: row?.name ?? game.repos.cultivators.getById(masterId)?.name ?? 'your master' };
+    }
+    const person = world.npcs.find(n => n.status === 'alive' && n.name.toLowerCase() === said);
+    return person ? { id: person.id, name: person.name } : null;
+}
+
+/** The names, said the way a person says a short list of them. */
+function saidAsAList(names: readonly string[]): string {
+    if (names.length <= 2) return names.join(' and ');
+    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/**
+ * Whose hall the word goes to. A slip arrives at its twin, and the twins of a
+ * house's slips are kept in its hall, so the only place a slip can reach is the
+ * hall of the house that keyed it. A person is reached there or not at all.
+ *
+ * AND WHO THEY CAN REACH ON A JADE. Asking for a person by name is the moment a
+ * player is told a slip is not an address, and it is the moment they would ask
+ * the obvious next thing: who CAN I reach. A cultivator knows whose half answers
+ * to a half in their own pouch (`whoTheirJadeReaches`), so the refusal says it
+ * rather than making them try one name at a time. WHO, AND NOT WHERE: a jade
+ * pair carries word and not position, and nothing here reads a location.
+ */
+function whoTheWordIsFor(
+    world: WorldState,
+    cultivator: Cultivator,
+    named: string,
+    held: readonly { houseId: string; count: number }[]
 ): Addressee | { refusal: string } {
     const said = named.toLowerCase().replace(/^(?:to\s+)/, '').trim();
     const own = cultivator.sectId ?? null;
-    const noHouse = 'You have no house. A communication talisman answers to the house it is marked with, '
-        + 'and there is no house for word from you to go to.';
+    const nameOf = (id: string) => world.factions.find(f => f.id === id)?.name ?? id;
+    const whereTheyAnswer = held.length === 0
+        ? 'You carry no communication talisman.'
+        : `The communication talismans you carry are keyed to you, and their twins are kept in the hall of `
+          + `${held.map(h => nameOf(h.houseId)).join(' and ')}, which is the only place they reach.`;
 
-    if (/^(?:my|our)\s+(?:master|teacher|shifu|shizun)\b/.test(said)) {
-        const masterId = theMasterTheyKneltTo(game.repos, cultivator.id);
-        if (masterId === null) return { refusal: 'You have no master to send word to.' };
-        const row = world.npcs.find(n => n.id === masterId);
-        const name = row?.name ?? game.repos.cultivators.getById(masterId)?.name ?? 'your master';
-        const houseId = row?.factionId ?? own;
-        if (houseId === null) return { refusal: `${name} has no house for word to go to.` };
-        return { houseId, to: { kind: 'a_person', id: masterId, name }, called: name };
-    }
-    if (/\binternal\s+affairs\b/.test(said)) {
-        if (own === null) return { refusal: noHouse };
-        return { houseId: own, to: { kind: 'an_office', title: THE_INTERNAL_AFFAIRS_ELDER, holderId: null }, called: `the ${THE_INTERNAL_AFFAIRS_ELDER}` };
-    }
-    if (/^(?:(?:my|our|the)\s+(?:sect|house|hall|clan|family|elders?|patriarch|matriarch|sect\s+master)|home)\b/.test(said)) {
-        if (own === null) return { refusal: noHouse };
-        const house = world.factions.find(f => f.id === own);
-        return { houseId: own, to: { kind: 'the_hall' }, called: house?.name ?? 'your house' };
+    if (/\binternal\s+affairs\b/.test(said)
+        || /^(?:(?:my|our|the)\s+(?:sect|house|hall|clan|family|elders?|patriarch|matriarch|sect\s+master)|home)\b/.test(said)) {
+        if (own === null) return { refusal: `You have no house for word to go to. ${whereTheyAnswer}` };
+        return { houseId: own, called: `the hall of ${nameOf(own)}` };
     }
     const house = world.factions.find(f => f.dissolvedOnDay === null
         && (f.name.toLowerCase() === said || f.name.toLowerCase().replace(/^the\s+/, '') === said.replace(/^the\s+/, '')));
-    if (house) return { houseId: house.id, to: { kind: 'the_hall' }, called: house.name };
-    const person = world.npcs.find(n => n.status === 'alive' && n.name.toLowerCase() === said);
-    if (person) {
-        if (person.factionId === null) {
-            return { refusal: `${person.name} is of no house, and a communication talisman answers to a house.` };
-        }
-        return { houseId: person.factionId, to: { kind: 'a_person', id: person.id, name: person.name }, called: person.name };
-    }
+    if (house) return { houseId: house.id, called: `the hall of ${house.name}` };
+    const reaches = [...new Set(whoTheirJadeReaches(world, cultivator.id))]
+        .filter(id => id !== cultivator.id)
+        .map(id => world.npcs.find(n => n.id === id)?.name ?? '')
+        .filter(name => name.length > 0)
+        .sort();
+    const onJade = reaches.length === 0
+        ? `Word to somebody in particular goes by hand, or on a jade whose other half they hold.`
+        : `Word to somebody in particular goes by hand, or on a jade whose other half they hold: `
+          + `yours answers to ${saidAsAList(reaches)}.`;
     return {
         refusal: `Nobody the world knows answers to "${named}". Word on a communication talisman goes to `
             + 'a house, or to somebody of one: "I send word to my master that...", "I send word to the sect that...".'
@@ -191,23 +248,30 @@ export const communicationTalismanVerbs = {
         const says = (topic ?? '').trim().slice(0, 240);
         if (says.length === 0) {
             return refuse('Send word of what?', 'A communication talisman carries a short message, and there is nothing to put in it. '
-                + `Say it: "I send word to ${who.called} that...".`, 'send word: no message.');
+                + 'Say it: "I send word to the sect that...".', 'send word: no message.');
         }
 
         const house = world.factions.find(f => f.id === who.houseId);
         const houseName = house?.name ?? 'that house';
-        const held = theCommunicationTalismansOnYou(this.db, cultivator.id);
         const ofThisMark = held.find(h => h.houseId === who.houseId)?.count ?? 0;
         if (ofThisMark === 0) {
             const others = held.map(h => world.factions.find(f => f.id === h.houseId)?.name ?? h.houseId);
             return refuse(
                 'You have no slip for it.',
                 (others.length > 0
-                    ? `The communication talismans you carry are marked with ${others.join(' and ')}, and a slip `
-                      + `answers to the house it is marked with. None of them reaches ${houseName}.`
+                    ? `The communication talismans you carry are keyed to you with their twins in the hall of `
+                      + `${others.join(' and ')}. None of them reaches ${houseName}.`
                     : 'You carry no communication talisman.')
-                + ` Word to ${who.called} goes on one marked with ${houseName}, or on foot.`,
+                + ` Word to ${houseName} goes on one of its slips cut for you, or on foot.`,
                 `send word: 0 slips marked ${who.houseId}; carrying ${held.map(h => `${h.count} of ${h.houseId}`).join(', ') || 'none'}.`
+            );
+        }
+        if (howManyTwinsTheHallKeeps(world.objects, who.houseId, cultivator.id) === 0) {
+            return refuse(
+                'Its twin is gone.',
+                `The hall of ${houseName} keeps no twin of the slips you carry, so a slip you burnt would arrive nowhere. `
+                + 'Nothing burnt.',
+                `send word: ${ofThisMark} slip(s) of ${who.houseId} and no twins kept for ${cultivator.id}.`
             );
         }
 
@@ -230,13 +294,16 @@ export const communicationTalismanVerbs = {
         }
 
         removeFromPouch(this.db, cultivator.id, pouchIdForCommunicationTalismans(who.houseId), 1);
+        takeOneTwin(world.objects, who.houseId, cultivator.id);
+        const reader = whoReadsTheHall(world, who.houseId);
         const fact = theWordArrives(world, {
             senderId: cultivator.id,
             senderName: cultivator.name,
             houseId: who.houseId,
             fromLocationId: here?.id ?? null,
             onDay: Math.floor(world.currentDay),
-            to: who.to,
+            to: { kind: 'an_office', title: THE_INTERNAL_AFFAIRS_ELDER, holderId: reader?.id ?? null },
+            receivedBy: reader,
             says,
             walkingDays: reach.walkingDays
         });
@@ -244,29 +311,31 @@ export const communicationTalismanVerbs = {
 
         const left = ofThisMark - 1;
         const lines = [
-            `You burn a communication talisman marked with ${houseName}, and the word goes to `
-            + `${who.to.kind === 'the_hall' ? `its hall` : who.called}: ${says}`,
+            `You burn a communication talisman keyed to you, and the word arrives at its twin in the hall of `
+            + `${houseName}: ${says}`,
+            reader === null
+                ? `Nobody of ${houseName} is at its hall to read it.`
+                : `${reader.name} reads it there.`,
             `${left} marked with ${houseName} left.`,
-            'Nothing comes back on it. A communication talisman answers to a house and not to you, so an '
-            + 'answer reaches you at the house, or on somebody who walks it out to you.'
+            'Nothing comes back on it. An answer reaches you at the house, or on somebody who walks it out to you.'
         ];
         const facts = factsForToolResult('The slip burns and the word is gone.', lines);
         facts.structure.push(
-            `send word: ${fact?.id ?? 'no fact'} to ${who.houseId} (${who.to.kind}), ${reach.walkingDays} walking days, `
-            + `1 slip burnt, ${left} left of that mark.`
+            `send word: ${fact?.id ?? 'no fact'} to the hall of ${who.houseId}, read by ${reader?.id ?? 'nobody'}, `
+            + `${reach.walkingDays} walking days, 1 slip and its twin burnt, ${left} left of that mark.`
         );
-        facts.required = lines.slice(0, 1);
+        facts.required = lines.slice(0, 2);
         const answer = this.freeAction(run, 'tell', facts);
         answer.calls = [{
             name: 'world.theWordArrives',
             action: 'tell',
-            summary: `${cultivator.id} sent word to ${who.houseId}${fact ? ` as ${fact.id}` : ''}.`,
+            summary: `${cultivator.id} sent word to the hall of ${who.houseId}${fact ? ` as ${fact.id}` : ''}.`,
             ok: true
         }];
         return answer;
     },
 
-    /** Cut communication talismans, for yourself or for the house. */
+    /** Cut communication talismans: pairs keyed to yourself, or blanks for the house's treasury. */
     async cutCommunicationTalismans(
         this: GameService,
         run: Run,
@@ -292,71 +361,105 @@ export const communicationTalismanVerbs = {
         if (houseId === null) {
             return refuse(
                 'There is no house to mark them with.',
-                'A communication talisman is marked with a house and carries word to it. You have no house, '
+                'A communication talisman is marked with a house and arrives at its hall. You have no house, '
                 + 'so there is nothing for a slip you cut to answer to.',
                 'cut communication talismans: no house. Nothing spent.'
             );
         }
 
-        const days = daysToCut(ask.count);
-        const spent = await this.shortSkip(run, cultivator, ambient, 0.35, 'Cutting communication talismans', days);
+        // ── AND THE HOUSE'S OWN BLANKS ARE AN OFFICE'S WORK ──────────────
+        //
+        // The meritorious half is Internal Affairs': *"the internal affairs
+        // elder crafts them, or his disciples who work in internal affairs."*
+        // Anybody at Foundation cutting a PAIR FOR THEMSELVES is untouched by
+        // this - no permission and no merit - and the refusal below is the
+        // house's rather than the verb's: nobody has handed them the seal.
+        // Before the days, because a refusal must not cost any. See
+        // `who-cuts-the-houses-slips.ts`.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        if (ask.forTheHouse && this.atHand) {
+            const stands = positionIn(this.repos, cultivator.id);
+            const theirs = whetherTheyMayCutForTheHouse(
+                this.atHand, this.repos, cultivator.id, houseId, stands?.rankIndex ?? 0
+            );
+            if (theirs.may === null) {
+                const name = this.atHand.factions.find(f => f.id === houseId)?.name
+                    ?? this.repos.sects.getById(houseId)?.name ?? 'your house';
+                const said = whyTheHousesSlipsAreNotTheirsToCut(name, theirs.whoDoes);
+                const facts = factsForRefusal('Not yours to cut.', said.join(' '), theirs.structure);
+                facts.lines = said.slice();
+                facts.required = said.slice(0, 1);
+                return refused('engine.whetherTheyMayCutForTheHouse', 'craft', facts);
+            }
+        }
+
+        // A PAIR IS TWO SLIPS. For yourself each is a pair, the half you carry and
+        // the twin the hall keeps; for the house each is one blank.
+        const slipsEach = ask.forTheHouse ? 1 : 2;
+        const days = daysToCut(ask.count * slipsEach);
+        const spent = await this.shortSkip(run, cultivator, ambient, BENCH_FOCUS, 'Cutting communication talismans', days);
         const after = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
         if (!after.alive) return spent;
+
+        // WHAT THE DAYS SPENT CUT, NOT WHAT WAS ASKED. A span can be broken off
+        // (somebody arrives, the world cuts in), and thirty slips were landing in
+        // the pouch after one day of a ten-day sitting, which made the drawerful
+        // cost a day of cultivation instead of ten.
+        const lived = Math.min(days, spent.timeSkip?.simulatedDays ?? days);
+        const slipsCut = Math.floor(lived / DAYS_A_SITTING_TAKES) * CUT_IN_A_SITTING;
+        const cut = Math.min(ask.count, Math.floor(slipsCut / slipsEach));
+        const ofWhatWasAsked = cut < ask.count ? ` of the ${ask.count} you sat down to` : '';
 
         this.atHand = this.atHand ?? await this.loadWorld();
         const world = this.atHand;
         const houseName = world?.factions.find(f => f.id === houseId)?.name
             ?? this.repos.sects.getById(houseId)?.name ?? 'your house';
+        const seat = world?.factions.find(f => f.id === houseId)?.seatLocationId ?? null;
 
         const lines = [...spent.facts.lines];
-        if (ask.forTheHouse && world) {
-            const seat = world.factions.find(f => f.id === houseId)?.seatLocationId ?? null;
+        if (cut === 0) {
+            lines.push(`Nothing cut: the sitting was broken off after ${lived} day${lived === 1 ? '' : 's'}, short of a whole one.`);
+        } else if (ask.forTheHouse && world) {
             const now = addToTheStack(world.objects, {
-                houseId, houseName, holderId: null, count: ask.count, locationId: seat,
+                houseId, houseName, holderId: null, count: cut, locationId: seat,
                 onDay: Math.floor(world.currentDay)
             });
             this.theWorldMoved();
             const membership = this.repos.sects.getMembership(cultivator.id);
-            const reason = getSendingReason('sending-to-cut-communication-talismans');
-            const credit = membership && reason
-                ? dutyTermsFor(
-                    aPostingAsAnOffer({
-                        reason,
-                        house: { id: houseId, name: houseName },
-                        pitchOrdinal: after.realmOrdinal
-                    }),
-                    after.realmOrdinal,
-                    {
-                        factionId: houseId,
-                        factionName: houseName,
-                        rankIndex: membership.rankIndex,
-                        rankCount: this.repos.sects.getById(houseId)?.ranks.length ?? 1,
-                        contribution: membership.contribution
-                    },
-                    'commission'
-                ).contribution
-                : 0;
-            if (membership && credit > 0) this.repos.sects.addContribution(houseId, cultivator.id, credit);
+            const credit = membership ? Math.max(1, Math.round(whatServiceIsWorth(after.realmOrdinal, lived))) : 0;
+            const paid = membership ? whatCuttingPays(cut, after.realmOrdinal) : 0;
+            if (credit > 0) this.repos.sects.addContribution(houseId, cultivator.id, credit);
+            if (paid > 0) this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paid });
             lines.push(
-                `You cut ${ask.count} communication talisman${ask.count === 1 ? '' : 's'} marked with `
-                + `${houseName} and they go into its stores, which now hold ${now}.`,
-                credit > 0 ? `${houseName} counts it as work for the house: ${credit} contribution.` :
-                    `${houseName} does not count work from somebody not on its roll.`
+                `You cut ${cut} blank communication talisman${cut === 1 ? '' : 's'}${ofWhatWasAsked} marked with `
+                + `${houseName} and they go into its treasury, keyed to nobody, which now holds ${now}.`,
+                credit > 0
+                    ? `${houseName} counts it as work for the house: ${credit} contribution`
+                      + (paid > 0 ? `, and ${paid} spirit stone${paid === 1 ? '' : 's'} for what went in.` : '.')
+                    : `${houseName} does not count work from somebody not on its roll.`
             );
         } else {
-            addToPouch(this.db, cultivator.id, pouchIdForCommunicationTalismans(houseId), 'talisman', ask.count);
+            addToPouch(this.db, cultivator.id, pouchIdForCommunicationTalismans(houseId), 'talisman', cut);
+            if (world) {
+                keepTheTwins(world.objects, {
+                    houseId, houseName, senderId: cultivator.id, senderName: cultivator.name, count: cut,
+                    hallLocationId: whereThisHouseBurnsItsLamps(world.locations, houseId) ?? seat,
+                    onDay: Math.floor(world.currentDay)
+                });
+                this.theWorldMoved();
+            }
             lines.push(
-                `You cut ${ask.count} communication talisman${ask.count === 1 ? '' : 's'} marked with ${houseName}. `
-                + `Each carries word to ${houseName} once, as far as `
+                `You cut ${cut} communication talisman${cut === 1 ? '' : 's'}${ofWhatWasAsked} keyed to you and marked `
+                + `with ${houseName}, and their twins go to its hall. Each carries word there once, as far as `
                 + `${THE_COMMUNICATION_TALISMAN.reachWalkingDays} walking days.`
             );
         }
 
-        const facts = factsForToolResult(`${days} day${days === 1 ? '' : 's'} at the paper.`, lines);
+        const facts = factsForToolResult(`${lived} day${lived === 1 ? '' : 's'} at the paper.`, lines);
         facts.structure.push(
             ...spent.facts.structure,
-            `cut communication talismans: ${ask.count} marked ${houseId}, ${days} day(s), `
-            + (ask.forTheHouse ? 'into the house stock.' : 'into the pouch.')
+            `cut communication talismans: ${cut} of ${ask.count} asked, marked ${houseId}, ${lived} of ${days} day(s), `
+            + (ask.forTheHouse ? 'blanks into the treasury.' : 'pairs, keyed halves into the pouch and twins to the hall.')
         );
         facts.required = lines.slice(-2);
         return { ...spent, facts, outcome: 'executed' };
