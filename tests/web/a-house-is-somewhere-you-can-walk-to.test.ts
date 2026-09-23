@@ -290,29 +290,20 @@ describe('a house is somewhere you can walk to', () => {
             ).toBe(false);
         }
 
-        // ── LEFT RED ON PURPOSE, AND HERE IS THE QUESTION ────────────────
-        //
-        // This assertion fails as the world now stands, and it is not a
-        // regression that can be repaired without deciding something. Measured
-        // by printing the turn: after the control travel above, the player is
-        // ALREADY inside the grounds, so the second `I travel to the <house>
-        // grounds` is read as naming a ROOM inside the compound rather than as
-        // arriving at the gate. The engine's own account of it:
-        //
-        //     walkInsideTheWalls: "azure cloud pavilion grounds" names no room
-        //     of sect-azure-cloud-pavilion placed for this viewer.
-        //
-        // So the gate is never reached and no host can walk anybody through.
-        // The assertion pins a world in which arriving at a house you are
-        // already standing in re-runs its gate; the doors work made arriving
-        // place you there. Which of those is right is a design question, not a
-        // defect: it decides whether a debt owed by a host is read at the gate
-        // only, or whenever an outsider asks to go further in.
-        //
-        // NOT skipped, and not weakened. A skipped test is indistinguishable
-        // from one somebody gave up on. See the plan's "Left red and named".
-        //
         // ── AND THE ROAD ITSELF. A host who owes you brings you in.
+        //
+        // THIS WAS RED FOR A NIGHT AND THE WORLD WAS WRONG, NOT THE TEST. It
+        // failed because the second `I travel to the <house> grounds` never
+        // reached the gate at all: `walking-inside-the-walls.ts` claimed the
+        // sentence as a walk to a ROOM, on a room-word list that contains
+        // `pavilion` - which is in this house's own name. The answer was
+        // "nobody has shown you anywhere called Azure Cloud Pavilion grounds
+        // inside Azure Cloud Pavilion grounds", which is the engine telling
+        // somebody standing at a door that the door is not there.
+        //
+        // The design owner's ruling settled it: saying you go to the sect lands
+        // you at its gate, and getting past the people at the door is its own
+        // act - which is what the assertion below has always said.
         writeOneObligation(repos.db as any, createDebt({
             holderId: host!.id,
             subjectId: cultivator.id,

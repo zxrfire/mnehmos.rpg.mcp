@@ -52,6 +52,11 @@ import { howThisCultivatorStandsInTheHouseHolding } from './how-this-cultivator-
 import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import {
+    A_MASTERS_DWELLING,
+    theLessonYourMasterCalledYouTo,
+    whereYourMasterLives
+} from './a-master-calls-their-disciples-in.js';
 
 /** The words for going back to the seat: the gate, and the court it opens on. */
 const BACK_TO_THE_GATE =
@@ -60,6 +65,24 @@ const BACK_TO_THE_GATE =
 /** A name that is about a room, whether or not this house has that room. */
 const A_ROOM_WORD =
     /\b(?:hall|halls|yard|pavilion|archive|quarters|dormitory|refectory|infirmary|workshop|cell|cells|chamber|room|treasury|residence|precinct|court|gatehouse|forecourt|cut|cuts|floor)\b/;
+
+/** The words a compound's own ground is called by, after its name. */
+const A_GROUND_WORD = /\s+(?:grounds?|compound|seat|estate|ground)$/;
+
+/**
+ * Whether what they said is the house's own name rather than a room in it.
+ *
+ * The seat row is named `<house> grounds`, so both the bare name and the name
+ * with a ground word after it are the same place. Compared whole rather than
+ * contained: a room called the Azure Hall inside the Azure Cloud Pavilion is
+ * still a room.
+ */
+function namesTheHouseItself(seat: LocationRecord, wanted: string): boolean {
+    const bare = (said: string): string =>
+        said.toLowerCase().replace(A_GROUND_WORD, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const asked = bare(wanted);
+    return asked.length > 0 && asked === bare(seat.name);
+}
 
 /** What a player typed, as a room would be named. */
 function asARoomIsNamed(said: string): string {
@@ -156,12 +179,39 @@ export async function aWalkInsideTheWalls(
     // ── WHICH ROOM ───────────────────────────────────────────────────────
     const inside = world.locations.filter(row => compound.inside.has(row.id)
         && purposeOf(row) !== 'formation_node');
+    // Where the player's master lives, named as that, and whether the master
+    // has called them there. See `a-master-calls-their-disciples-in.ts`.
+    const called = theLessonYourMasterCalledYouTo(game, world, cultivator);
     const named = BACK_TO_THE_GATE.test(wanted)
         ? seat
-        : inside.find(row => namesThisRoom(row, wanted)) ?? null;
+        : A_MASTERS_DWELLING.test(wanted)
+            ? whereYourMasterLives(game, world, cultivator)?.dwelling ?? null
+            : inside.find(row => namesThisRoom(row, wanted)) ?? null;
     const destination = named !== null && ['gatehouse', 'forecourt'].includes(purposeOf(named) ?? '')
         ? seat
         : named;
+
+    // ── NAMING THE HOUSE IS NOT NAMING A ROOM IN IT ──────────────────────
+    //
+    // The design owner's ruling on arriving: *"Saying you go to the sect lands
+    // you at the gate. you have to cash in that favor with the host, right? you
+    // have to get waved past the people at the door."* So a sentence that names
+    // the HOUSE is about its gate, and it belongs to the road rather than to
+    // this walk across a compound - handed back as null so the travel verb
+    // answers it with the gate read, where a host who owes you can walk you in.
+    //
+    // Measured, and it is the third time tonight a word has matched inside a
+    // name rather than as the thing named: a player standing at the gate of the
+    // Azure Cloud Pavilion typed "I travel to the Azure Cloud Pavilion grounds"
+    // and this refused it, because `A_ROOM_WORD` lists `pavilion` - which is in
+    // the HOUSE'S OWN NAME. The answer was "nobody has shown you anywhere
+    // called Azure Cloud Pavilion grounds inside Azure Cloud Pavilion grounds",
+    // which is the engine telling somebody standing at a door that the door is
+    // not there.
+    //
+    // Only the house's own name, with a ground word after it if they said one.
+    // A room whose name merely contains the house's is still a room.
+    if (namesTheHouseItself(seat, wanted)) return null;
 
     const membership = game.repos.sects.getMembership(cultivator.id);
     const house = membership ? game.repos.sects.getById(membership.sectId) : null;
@@ -177,8 +227,11 @@ export async function aWalkInsideTheWalls(
     // NOT A ROOM THIS PERSON COULD SET OUT FOR. The same answer whether the
     // house has no such room or has one they have not been shown, so asking is
     // not a way to find out what is inside.
+    // Being called somewhere is being told where it is.
+    const invited = destination !== null && called?.dwelling.id === destination.id;
     const known = destination !== null
-        && (destination.id === seat.id || isAtLeast(roomStageFor(destination, standingIn(destination).viewer), 'placed'));
+        && (destination.id === seat.id || invited
+            || isAtLeast(roomStageFor(destination, standingIn(destination).viewer), 'placed'));
     if (!known) {
         const elsewhere = worldLocationFor(world, said);
         if (!A_ROOM_WORD.test(wanted) && !(elsewhere?.tags.includes('interior'))) return null;
@@ -201,8 +254,9 @@ export async function aWalkInsideTheWalls(
     }
 
     // ── WHETHER THEY GET THERE ───────────────────────────────────────────
-    // Out is always open: nothing stops anybody leaving a building.
-    if (destination.id !== seat.id) {
+    // Out is always open: nothing stops anybody leaving a building. And a
+    // disciple called to their master's room is let through to it; nobody else is.
+    if (destination.id !== seat.id && !invited) {
         const reach = reachThrough(
             pathTo(world.locations, destination.id), standingIn(destination).access, { enteredAt: seat.id }
         );
