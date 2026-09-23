@@ -117,6 +117,7 @@ import {
     indexById,
     createWorld,
     makeFaction,
+    schedule,
     theWorldForgetsTheMortalDead,
     type FactionRecord,
     type ScheduledEffect,
@@ -2362,34 +2363,29 @@ function seedGrantSchedule(
     presentDay: number
 ): ScheduledEffect[] {
     const out: ScheduledEffect[] = [];
-    let seq = state.nextEffectSeq;
 
     for (const cf of catalog.factions) {
         if (cf.governance !== 'federated' || cf.renewalYears <= 0) continue;
         const rng = forStream(state.seed, 'seed-grant', cf.id);
         const first = presentDay + rng.int(0, years(cf.renewalYears));
-        const effect: ScheduledEffect = {
-            id: `e${seq++}`,
+        // Booked through `schedule()`, whose contract this is: a first renewal
+        // drawn for the opening day itself is due the day after, which is the
+        // first day the clock can fire it on.
+        const booked = schedule(state, {
             kind: 'assessment',
             dueOnDay: first,
             summary: `The ${cf.name}'s grant on its vein comes up for renewal.`,
-            actorIds: [],
-            locationId: null,
             factionId: cf.id,
             repeatDays: years(cf.renewalYears),
-            interrupts: false,
             // Renewal is close to automatic, and the rare failure is the whole
             // point of holding a vein on somebody else's terms.
             chance: 1,
-            fired: false,
-            firedOnDay: null,
             data: { kind: 'grant_renewal', factionId: cf.id, magnitude: 0.4 }
-        };
-        state.schedule.push(effect);
-        out.push(effect);
+        });
+        Object.assign(state, booked.state);
+        out.push(booked.effect);
     }
 
-    state.nextEffectSeq = seq;
     return out;
 }
 

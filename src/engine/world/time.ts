@@ -53,6 +53,7 @@ import {
     indexById,
     cloneWorld,
     lineageOf,
+    schedule,
     upsertNpc,
     type ScheduledEffect,
     type ScheduledEffectKind,
@@ -1027,32 +1028,21 @@ export function scheduleConcurrentEvent(
     state: WorldState,
     input: ConcurrentEventInput
 ): { state: WorldState; effectId: string } {
-    const effect: ScheduledEffect = {
-        id: `e${state.nextEffectSeq}`,
+    // Booked through `schedule()`, whose contract this is.
+    const booked = schedule(state, {
         kind: 'concurrent_event',
         dueOnDay: input.onDay,
         summary: input.summary,
         actorIds: input.actorIds ?? [],
         locationId: input.locationId ?? null,
         factionId: input.factionId ?? null,
-        repeatDays: null,
-        interrupts: false,
         chance: input.chance ?? 1,
-        fired: false,
-        firedOnDay: null,
         data: {
             scale: input.scale ?? 'regional',
             magnitude: input.magnitude ?? 0.6
         }
-    };
-    return {
-        state: {
-            ...state,
-            schedule: state.schedule.concat(effect),
-            nextEffectSeq: state.nextEffectSeq + 1
-        },
-        effectId: effect.id
-    };
+    });
+    return { state: booked.state, effectId: booked.effect.id };
 }
 
 /**

@@ -330,9 +330,8 @@ import {
     indexById,
     getLocation,
     makeFaction,
-    makeScheduledEffect,
+    schedule,
     type FactionRecord,
-    type ScheduledEffect,
     type WorldState
 } from './world-state.js';
 
@@ -6274,16 +6273,9 @@ const TEMPLATES: Template[] = [
             adjustStandingBetween(a, b, -0.3);
 
             const resolvesIn = years(rng.int(2, 25));
-            // Through the world's own constructor, so the defaults on a
-            // scheduled effect are stated in one place. NOT through `schedule()`,
-            // which is the other half of the same duplication and cannot be used
-            // here: it is copy-on-write and returns a new `WorldState`, and every
-            // template in this table mutates the one it was handed. So the id is
-            // still minted twice in the tree. Reconciling that is a change to
-            // `schedule()`'s contract, which has callers in two test files and
-            // none in `src/`, and it is not this change.
-            const effect: ScheduledEffect = makeScheduledEffect({
-                id: `e${state.nextEffectSeq++}`,
+            // Booked through `schedule()`, whose contract this is, and written
+            // back onto the world this template was handed.
+            Object.assign(state, schedule(state, {
                 kind: 'war_resolves',
                 dueOnDay: day + resolvesIn,
                 summary: `The war between the ${houseName(a.name)} and the ${houseName(b.name)} came to an end.`,
@@ -6322,8 +6314,7 @@ const TEMPLATES: Template[] = [
                     ledA: highestRankAlive(state, a.id),
                     ledB: highestRankAlive(state, b.id)
                 }
-            });
-            state.schedule.push(effect);
+            }).state);
 
             return emit(state, 'war_opened', day, {
                 day,
