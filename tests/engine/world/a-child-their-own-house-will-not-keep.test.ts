@@ -285,9 +285,34 @@ describe('the assessment, on the sending house\'s own terms', () => {
 // AND NOW THE ONLY PART THAT PROVES ANYTHING
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The four soaked worlds, shared by the assertions below.
+ *
+ * Sixteen hundred simulated years is the expensive thing in this file, and both
+ * assertions below were paying for it separately: each seeded `a` to `d` and
+ * walked each of them four hundred years, which is the same four worlds derived
+ * twice. Seeding and advancing are a pure function of the seed, so the second
+ * derivation could not have produced anything the first did not.
+ *
+ * No horizon is shortened and no seed is dropped: `SEEDS` and `HORIZON` are
+ * what they were. See `the-world-produces-its-own.test.ts:280`, which shares
+ * its soaks the same way and says why.
+ */
+let soakedWorlds: Promise<WorldState[]> | null = null;
+function soaked(): Promise<WorldState[]> {
+    soakedWorlds ??= (async () => {
+        const catalog = await loadCultivationCatalog();
+        return SEEDS.map(seed => {
+            const { state } = seedWorld({ seed, catalog }) as { state: WorldState };
+            advanceWorldYears(state, HORIZON, { stopOnInterrupt: false });
+            return state;
+        });
+    })();
+    return soakedWorlds;
+}
+
 describe('somebody in a running world does this', () => {
     it('places children, pooled across seeds, without a hardcoded destination', async () => {
-        const catalog = await loadCultivationCatalog();
         let fostered = 0;
         let skippedABar = 0;
         let shamed = 0;
@@ -295,9 +320,7 @@ describe('somebody in a running world does this', () => {
         const receiving = new Set<string>();
         const sending = new Set<string>();
 
-        for (const seed of SEEDS) {
-            const { state } = seedWorld({ seed, catalog });
-            advanceWorldYears(state, HORIZON, { stopOnInterrupt: false });
+        for (const state of await soaked()) {
             for (const npc of state.npcs) {
                 if (!npc.tags.includes('fostered')) continue;
                 fostered++;
@@ -336,11 +359,8 @@ describe('somebody in a running world does this', () => {
     }, 240_000);
 
     it('leaves the child on the bloodline and off the parent\'s roll of children', async () => {
-        const catalog = await loadCultivationCatalog();
         let checked = 0;
-        for (const seed of SEEDS) {
-            const { state } = seedWorld({ seed, catalog });
-            advanceWorldYears(state, HORIZON, { stopOnInterrupt: false });
+        for (const state of await soaked()) {
             for (const fact of state.history.facts) {
                 if (typeof fact.data.fostering !== 'string') continue;
                 const childId = fact.actors.find(a => a.role === 'child')?.id;

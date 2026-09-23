@@ -41,7 +41,36 @@ function livingCount(state: WorldState): number {
     return state.npcs.filter(n => n.status === 'alive').length;
 }
 
-async function advancedWorld(years: number) {
+/**
+ * The worlds, shared by every assertion that asks for the same horizon.
+ *
+ * Running one soak twice measures the same world twice. Seeding and advancing
+ * are a pure function of the seed - `forStream` derives every roll from
+ * (seed, stream, year, id), and nothing under `src/engine/world` calls
+ * `Math.random`, `randomUUID` or the clock - so two calls at eighty years
+ * produce the same world, at the price of simulating it again. Five of the
+ * assertions below ask for eighty years and three ask for five hundred, which
+ * was two thousand and seventy simulated years spent re-deriving worlds this
+ * file already had.
+ *
+ * Nothing is shortened and no assertion is weakened: every horizon below is the
+ * horizon it always was. See `the-world-produces-its-own.test.ts:280`, which
+ * shares its soaks for the same reason and says so.
+ */
+const theWorldAt = new Map<number, Promise<AdvancedWorld>>();
+
+function advancedWorld(years: number): Promise<AdvancedWorld> {
+    let run = theWorldAt.get(years);
+    if (!run) {
+        run = buildTheWorld(years);
+        theWorldAt.set(years, run);
+    }
+    return run;
+}
+
+type AdvancedWorld = Awaited<ReturnType<typeof buildTheWorld>>;
+
+async function buildTheWorld(years: number) {
     const catalog = await loadCultivationCatalog();
     const { state } = seedWorld({ seed: 'demography', catalog });
     const before = {
@@ -133,10 +162,23 @@ describe('a newborn is born somewhere somebody can stand', () => {
         //
         // Now it walks the clock and demands monotonic decline, which is the
         // thing the comment always claimed to be checking.
+        //
+        // AND IT WALKS ONE CLOCK RATHER THAN FOUR. This read four worlds - a
+        // fresh seed advanced from year zero to each mark in turn, thirteen
+        // hundred and fifty simulated years to put four points on one line.
+        // Advancing is decomposable by construction: `advanceWorldForPlay`
+        // moves a year at a time precisely so that "ten years then thirty"
+        // equals forty, which its own note calls the property the whole layer
+        // is built on. So one world walked to each mark reads the same four
+        // numbers for six hundred years of simulation.
         const marks = [100, 250, 400, 600];
         const counts: number[] = [];
+        const catalog = await loadCultivationCatalog();
+        const { state } = seedWorld({ seed: 'demography', catalog });
+        let walked = 0;
         for (const years of marks) {
-            const { state } = await advancedWorld(years);
+            advanceWorldForPlay(state, { days: YEAR * (years - walked), stopOnInterrupt: false });
+            walked = years;
             counts.push(headcount(state, 'region'));
         }
         for (let i = 1; i < counts.length; i++) {
@@ -190,10 +232,28 @@ describe('who lives where is decided by a weight, not by a coin flip', () => {
         // There are far more houses in the catalog than there are towns, so an
         // unweighted draw over habitable ground put 61% of the living world
         // inside a compound within 150 years. A sect is a thing you join.
+        //
+        // AND A RECRUIT MOVES IN, on the design owner's ruling "move into the
+        // compound", so the share on sect ground is higher than it was and the
+        // bound below was 35%. Measured on four seeds at 150 years, share of
+        // the living standing on a seat, with the move-in and with a temporary
+        // arm (since removed) that sent a recruit there and back instead:
+        //
+        //                  move-in    there and back
+        //   demography      36.9%        27.0%
+        //   afford-a        33.1%        32.9%
+        //   afford-b        31.1%        19.9%
+        //   roster-d        37.6%        29.0%
+        //
+        // It does not climb: at 300 years the same four read 29.2, 31.2, 25.3
+        // and 34.6%, and the world opens at 52% before the seeded cohort
+        // spreads out. The claim is that most of the world is not inside a
+        // compound, so the bound sits under half with room over the highest
+        // reading rather than at it.
         const { after } = await advancedWorld(150);
         const share = after.sectGround / Math.max(1, after.alive);
         expect(share, `${Math.round(share * 100)}% of the world lives on sect ground`)
-            .toBeLessThan(0.35);
+            .toBeLessThan(0.42);
         // But not zero: sect grounds are inhabited places, not scenery.
         expect(after.sectGround).toBeGreaterThan(0);
     }, 240_000);
@@ -264,12 +324,21 @@ describe('the top of the world survives its own clock', () => {
     // The real catalog, as the rest of this file uses, because the shape being
     // pinned only exists in the world that ships: the fixture has no apex tier
     // to lose.
-    async function soaked() {
-        const catalog = await loadCultivationCatalog();
-        const { state } = seedWorld({ seed: 'drift-guard', catalog });
-        const before = topOrdinals(state);
-        advanceWorldForPlay(state, { days: 365 * HORIZON_YEARS, stopOnInterrupt: false });
-        return { state, before, after: topOrdinals(state) };
+    //
+    // ONE SOAK, SHARED BY THE THREE ASSERTIONS BELOW. Each of them used to call
+    // this, and each call seeded `drift-guard` and walked it five hundred years
+    // again - fifteen hundred simulated years to read three properties of one
+    // world. The horizon is untouched; only the repetition is gone.
+    let run: Promise<{ state: WorldState; before: number[]; after: number[] }> | null = null;
+    function soaked() {
+        run ??= (async () => {
+            const catalog = await loadCultivationCatalog();
+            const { state } = seedWorld({ seed: 'drift-guard', catalog });
+            const before = topOrdinals(state);
+            advanceWorldForPlay(state, { days: 365 * HORIZON_YEARS, stopOnInterrupt: false });
+            return { state, before, after: topOrdinals(state) };
+        })();
+        return run;
     }
 
     // Counts everybody the ENGINE knows is out there, not everybody the world
@@ -339,20 +408,26 @@ describe('the top of the world survives its own clock', () => {
         // names that are not unique are skipped rather than guessed at. A
         // newborn inheriting a parent's surname can collide, and a guess there
         // would report a killing that never happened.
-        const counts = new Map<string, number>();
-        for (const n of state.npcs) counts.set(n.name, (counts.get(n.name) ?? 0) + 1);
-        const byName = new Map(state.npcs.map(n => [n.name, n]));
-        for (const npc of state.npcs) {
-            const match = /^Killed by (.+)\.$/.exec(npc.endNote ?? '');
-            if (!match) continue;
-            if ((counts.get(match[1]) ?? 0) !== 1) continue;
-            const killer = byName.get(match[1]);
-            if (!killer) continue;
+        // READ OFF THE WORLD'S OWN KILLINGS, not off every end note. Two other
+        // things write one: a bout somebody won against the odds, which is
+        // `nobody-is-invincible.ts` doing exactly what it exists for, and a
+        // group - `why-one-cultivator-kills-another.ts` lets several people who
+        // are together go after one, which is the owner's *"a disciple of a
+        // rival house ganging up on one disciple"*, and the row says how many
+        // came. What is refused is one person reaching further than the resolver
+        // would let them.
+        const byId = new Map(state.npcs.map(n => [n.id, n]));
+        for (const fact of state.history.facts) {
+            if (fact.data?.pressure !== 'killing') continue;
+            if (Number(fact.data?.attackers ?? 1) > 1) continue;
+            const killer = byId.get(fact.actors.find(a => a.role === 'killer')?.id ?? '');
+            const victim = byId.get(fact.actors.find(a => a.role === 'victim')?.id ?? '');
+            if (!killer || !victim) continue;
             expect(
                 killer.cultivation.realmOrdinal,
                 `${killer.name} (${killer.cultivation.realmOrdinal}) killed `
-                + `${npc.name} (${npc.cultivation.realmOrdinal})`
-            ).toBeGreaterThanOrEqual(npc.cultivation.realmOrdinal - 3);
+                + `${victim.name} (${victim.cultivation.realmOrdinal})`
+            ).toBeGreaterThanOrEqual(victim.cultivation.realmOrdinal - 3);
         }
     }, 600_000);
 });
