@@ -4499,6 +4499,14 @@ function applyFactionEconomy(state: WorldState): void {
         if (each >= 1) {
             const kept = Math.round(each);
             for (const at of roll) {
+                // AND NOT INTO THE PLAYER'S PURSE, which is the sheet's and not
+                // this row's. The row is a projection refreshed off the sheet
+                // every turn (`the-player-as-a-row-the-world-can-invite.ts`), so
+                // stones paid here are wiped before anybody could spend them -
+                // measured at 1,080 stones written and thrown away over 120
+                // years. What the player is owed they draw, through
+                // `sect_manage.stipend`, which pays the sheet.
+                if (!isTheWorldsToMove(state.npcs[at]!)) continue;
                 state.npcs[at] = {
                     ...state.npcs[at],
                     spiritStones: state.npcs[at].spiritStones + kept

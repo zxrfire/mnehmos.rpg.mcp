@@ -36,14 +36,50 @@
  *   structurally impossible. The character sheet is the source and the row is
  *   a projection of it, in that order, always.
  *
- *   THE FOUR GUARDS, on the passes that decide something FOR a cultivator, each
- *   of which skips a row carrying {@link PLAYER_ROW_TAG}:
+ *   THE FIVE GUARDS, on the passes that decide something FOR a cultivator, each
+ *   of which skips a row carrying {@link PLAYER_ROW_TAG} - asked through
+ *   `isTheWorldsToMove`, which is the one predicate for it:
  *
  *       applyAdvancement       a second climb, and a chronicled breakthrough
  *                              that never happened
  *       the lifespan pass      the player's death, declared by the world clock
  *       applyRecruitment       enrolment in a house they never walked into
  *       applyBookAcquisition   a manual they never earned
+ *       the house payroll      a stipend paid into a purse that is not the one
+ *                              the player spends out of
+ *       creditMerit            service counted onto a row whose count is the
+ *                              membership's, and is overwritten from it
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * WHICH FIELDS THE SHEET OWNS, AND WHAT A WRITE TO ONE OF THEM COSTS
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * The refresh below writes these off the `Cultivator` every turn, so they are
+ * the sheet's and a world write to any of them is thrown away unread:
+ *
+ *     the purse         `spiritStones`
+ *     the body          rung, root, attributes, foundation, hp, wounds (both
+ *                       the count and the rows), lifespan
+ *     the arts          `techniqueIds`
+ *     the standing      `factionId`, `factionRankIndex` and `merit`, off the
+ *                       sect repository's membership - its `contribution` IS
+ *                       the player's merit, in the same units
+ *     the ending        `status`, `diedOnDay`, `endNote`, where the sheet says
+ *                       they are dead
+ *
+ * MEASURED, which is why the fifth guard exists: with the player on a roll and
+ * nothing else touching them, the world's economy pass paid their row 540
+ * stones over sixty years and 1,080 over a hundred and twenty, in two pinned
+ * worlds. Every one of them was written and wiped, and the one field that
+ * drifted was the purse - rung, wounds, arts, house and rank all held.
+ *
+ * So the rule for the world layer is one line: a pass may read any of these and
+ * may write NONE of them on this row. What the player is owed reaches them
+ * through the play layer, which writes the sheet - the stipend through
+ * `sect_manage.stipend`, a lift through `whatALiftTook`, a sale through the
+ * counter. Everything the row carries that is NOT on the list above - who knows
+ * them, what is owed them, what they are at, what a house has decided about
+ * them - is the world's, and is left alone.
  *
  *   The refresh alone would undo every RECORD those write. Two of them append a
  *   FACT on the way, which a refresh cannot take back, and the other two draw a
@@ -113,6 +149,13 @@ export interface StandingInAHouse {
     factionId: string | null;
     /** Index into the house's rank ladder. -1 when unaffiliated. */
     rankIndex: number;
+    /**
+     * What the house counts in their favour, off the membership: the one store
+     * of it for the player. The row's `merit` is written from this, in the same
+     * units the world's own people carry
+     * (`what-a-house-counts-in-somebodys-favour.ts`).
+     */
+    contribution?: number;
 }
 
 /**
@@ -200,12 +243,31 @@ export function standInTheWorld(
         // shape grows later, belong to the world layer and are not on the
         // sheet. What the sheet owns, the sheet wins.
         cultivation: { ...base.cultivation, ...cultivation },
-        // Nowhere, always. See THE ROW STANDS NOWHERE above: presence is the
-        // play layer's and a second copy of it here costs more than it buys.
-        locationId: null,
+        // Nowhere, except while the house has them standing at a post. See THE
+        // ROW STANDS NOWHERE above: presence is the play layer's, and the one
+        // thing the WORLD has to know is which of its posts are held - it fills
+        // the empty ones (`applyPostings`), reading who is `stationed` and
+        // where, and a post the player holds read as empty is the house paying
+        // for two people to watch one town. So the stamp a posting writes
+        // (`theOneBeingPlayedStandsAtThisPost`) survives the refresh, and
+        // nothing else does: the moment the tour ends or they walk off it, the
+        // activity is cleared and this is null again.
+        //
+        // Of the four defects a location on this row caused, three are already
+        // answered where they were caused - `everybodyDrawingHere` dedupes by
+        // id, so crowding counts one person once - and the fourth is answered
+        // in `othersPresent`, which no longer hands the player their own row
+        // back as somebody else standing here.
+        locationId: base.activity?.kind === 'stationed' ? base.locationId : null,
         layer: MORTAL_LAYER,
         factionId: house.factionId,
         factionRankIndex: house.factionId === null ? -1 : Math.max(0, house.rankIndex),
+        // What their house counts for them, projected like everything else the
+        // sheet owns. A count for a house they are not on the roll of reads as
+        // none, which is what the world's own rows do when somebody moves.
+        merit: house.factionId === null
+            ? null
+            : { houseId: house.factionId, points: Math.max(0, Math.round(house.contribution ?? 0)) },
         spiritStones: Math.max(0, Math.round(cultivator.spiritStones)),
         // Death is the cultivation engine's to declare and it declares it on
         // the sheet - so the sheet is read here in this direction as in every

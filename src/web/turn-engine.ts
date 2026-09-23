@@ -1124,6 +1124,7 @@ import {
 } from '../engine/social-leverage/a-service-is-something-done.js';
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
+import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
 import {
     communicationTalismanVerbs,
     theCommunicationTalismansOnYou,
@@ -18461,10 +18462,15 @@ ${fit.line}`;
         const before = getNpc(this.atHand, cultivator.id);
         const wasIn = before?.factionId ?? null;
         const wasAt = before?.factionRankIndex ?? -1;
+        // What the house counted last time this row was written. The projection
+        // carries the membership's `contribution`, and a promotion pass reads it
+        // off the row, so a count that moved has to reach disk like a rung.
+        const wasWorth = before?.merit?.points ?? 0;
 
         const row = standInTheWorld(this.atHand, cultivator, {
             factionId: membership?.sectId ?? null,
-            rankIndex: membership?.rankIndex ?? -1
+            rankIndex: membership?.rankIndex ?? -1,
+            contribution: membership?.contribution ?? 0
         }, this.atHand.currentDay);
 
         // AND IT IS WRITTEN, which it was not.
@@ -18477,7 +18483,8 @@ ${fit.line}`;
         // Only when it moved: the row is refreshed on every turn and most turns
         // do not change anybody's house.
         if (row === null) return;
-        if (row.factionId !== wasIn || row.factionRankIndex !== wasAt || before === null) {
+        if (row.factionId !== wasIn || row.factionRankIndex !== wasAt
+            || (row.merit?.points ?? 0) !== wasWorth || before === null) {
             this.theWorldMoved();
         }
     }

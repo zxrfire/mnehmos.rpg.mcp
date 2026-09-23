@@ -18,10 +18,37 @@ the title is the house's verdict on whether you are finished, and an elder may s
 anyway, out of luck.
 
 **What an elder holds is a room.** Not a word on a ladder - every house names its tiers in its
-own idiom and none of those names is a domain. An office is a room with a bar on it: the
-sealed ones, the archive and the treasury and the tribute room and the under hall. A room not
-everybody can walk into is a room somebody is in charge of, and whoever holds it answers first
-about anything inside it.
+own idiom and none of those names is a domain. An office is a room somebody is in charge of:
+the sealed ones, the archive and the treasury and the tribute room and the under hall, and
+also the two that are offices without locks - the mission hall, which disciples walk into to
+take work, and the life lamp hall, where the roll is kept and the Internal Affairs Elder
+answers. `architecture.ts` carries `office` and `sealed` as two columns for exactly that
+reason. Whoever holds a room answers first about anything inside it.
+
+**An office is dealt in the round it was added, so adding one moves nobody.** The deal hands
+rooms out round-robin among the people who decide (`whoIsInChargeOfWhat`), which used to sort
+by depth alone - so a room inserted above the others shifted every holder, and the first
+attempt at making the ancestral hall an office moved discipline permanently out of the reach
+of the rung that held it. Offices now carry the round they were added in
+(`officeAddedInRound`), every earlier round is dealt before any later one, and the Internal
+Affairs office was added in the second round.
+
+**A room dealt a second time round is COVERED, not held.** A house seats one elder with an
+office per office, so where there are more rooms than people who decide, somebody who already
+runs one answers for another: the portfolio says who (`APortfolio.actingId`), which is the
+middle step of the vacancy this document describes - the holder dies, somebody senior covers
+visibly, and the ordinary promotion fills the chair. Where nobody inside clears the bar, the
+chair is filled from outside instead, at the higher bar an outsider owes
+(`a-house-takes-in-an-elder-from-outside.ts`), and the treasury pays for it.
+
+**Which of the people who clear it gets the chair** is settled in one place and not restated
+here: realm first, and a whole realm up wins over everything else; then merit; then loyalty;
+then the rung they already stand at. The house is not choosing the most deserving, it is
+choosing the strongest of those who qualify, and the loyalty term never lifts anybody over a
+whole realm. The order, the minimums and how much further past the bar an outsider has to
+stand are all in `src/engine/world/promotion-inside-a-house.ts`. An outside elder and an elder
+with no office are the same offer read twice - a seat with no room attached - which is why the
+bar is the thing that differs and not the offer.
 
 **And there are not enough of them.** Measured across the catalog: **2.06 sealed rooms per
 house against 2.3 deciders.** Slightly more people who could hold an office than offices to
@@ -157,6 +184,21 @@ line of a house, and it is what makes the ranks below it a filter and the ranks 
 contest. Everything above inner can be lost by somebody else being better; inner itself cannot.
 Nothing in the tournament may take anybody past it: a beaten conclave disciple lands at inner
 and stops there.
+
+**An office is held the same way: until somebody takes it away.** There is no term on one and
+nothing falls due, so a holder keeps their chair until they die, leave, or are removed - and
+removal is a thing somebody does, in the open, by putting what they know about the holder in
+front of the room (`REMOVED_FROM_OFFICE` in
+`src/engine/world/bringing-what-you-know-about-somebody-to-the-room.ts`, which is where that
+act lives because the act is an expose rather than a rule of tenure).
+
+**And what is taken is the room, not the rank.** The design owner, on what a righteous or
+neutral house does to somebody it has ruled against: they are *"demoted, removed from office
+(title kept) or expelled"*, and *"when i say demoted i mean removed from office."* So the
+three outcomes are one ladder and the middle rung is exactly this: the house takes the seat
+and the work back, and the person keeps the rank they climbed to and the title that goes with
+it. Somebody who was an elder yesterday is an elder today with nothing to run - which is the
+elder with no office of the section above, arrived at from the other direction.
 
 **And what decides whether the room ever comes back is influence, not time.** The design
 owner, asked whether a removal is permanent: *"depends on your influence so not permanent."*

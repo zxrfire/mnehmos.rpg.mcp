@@ -211,7 +211,15 @@ export function othersPresent(
     const place = worldLocationFor(world, cultivator.location);
     if (!place) return oneCrowd(stored, []);
 
-    const inWorld = npcsStandingIn(world, place.id).map(npc => worldRosterRow(npc, world.currentDay, world));
+    // NEVER YOUR OWN ROW. The player has a world row of their own, and while
+    // their house has them standing at a post it carries that post's location -
+    // so the square they are posted in would hand them back to themselves as
+    // another person standing in it. One person is one person whichever store
+    // holds them, which is what `everybodyDrawingHere` already says about the
+    // same two stores a few lines away.
+    const inWorld = npcsStandingIn(world, place.id)
+        .filter(npc => npc.id !== cultivator.id)
+        .map(npc => worldRosterRow(npc, world.currentDay, world));
     return oneCrowd(stored, inWorld);
 }
 
