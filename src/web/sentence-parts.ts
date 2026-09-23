@@ -270,7 +270,14 @@ export function extractDestination(input: string): string | undefined {
     if (prepositional) return cleanPlace(prepositional[1]);
 
     // "travel Clear River Ford" - a bare destination straight after the verb.
-    const bare = /^\s*(?:i\s+)?(?:travel|go|walk|head|journey|move|depart|leave|set out)\s+(.{2,80}?)\s*[.!?]?$/i
+    //
+    // AND NOT A PARTICLE, which is the other half of the fix written up at
+    // `THE_PARTICLE_AND_NOT_THE_NAME`. Without the lookahead this arm read "I
+    // go after him" as a journey to a place called "after him" and "I walk
+    // away" as a journey to one called "away". Neither names anywhere, and a
+    // caller handed `undefined` asks where - which for the first of those is
+    // what turns it back into following a person.
+    const bare = /^\s*(?:i\s+)?(?:travel|go|walk|head|journey|move|depart|leave|set out)\s+(?!(?:after|away|from|off|out|back|around|about|on)\b)(.{2,80}?)\s*[.!?]?$/i
         .exec(said);
     return bare ? cleanPlace(bare[1]) : undefined;
 }
@@ -325,9 +332,29 @@ const NOTHING_BUT_A_LENGTH_OF_TIME =
     // season" arrives as "next season".
     /^(?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several|some|many|a few|next|last|coming|following|\d+)?\s*(?:while|bit|spell|stretch|day|days|week|weeks|month|months|season|seasons|year|years|decade|decades|lifetime|age|ages)$/i;
 
+/**
+ * A phrase that is nothing but the particle a verb was carrying.
+ *
+ * The companion to {@link NOTHING_BUT_A_LENGTH_OF_TIME}, and the same shape of
+ * defect: "I walk away" named nobody and nowhere, and the reader handed back
+ * `away` as the place the player was walking to. None of these is ever a name.
+ *
+ * BARE `here` AND `there` ARE NOT ON THIS LIST, and were for one sweep. They
+ * name nowhere the way the rest do, but the engine answers them: `assess` has
+ * `THE_GROUND_UNDER_THEIR_FEET`, which reads `here` as the place the asker is
+ * standing in and names it. Dropped as a particle, "assess here" arrived with no
+ * subject at all, and an assessment with no subject is a master reading a
+ * student - so a player asking about the ground under their feet was told that
+ * nobody in the house was qualified to say where they stood. The compound forms
+ * stay: "out of here" is a direction away, and nothing calls it a place.
+ */
+const NOTHING_BUT_A_PARTICLE =
+    /^(?:away|off|out|back|on|about|around|from here|from there|out of here|out of there)$/i;
+
 export function cleanPlace(raw: string): string | undefined {
     const cleaned = theNounPhrase(raw).replace(/^\s*the\s+/i, '').trim();
     if (NOTHING_BUT_A_LENGTH_OF_TIME.test(cleaned)) return undefined;
+    if (NOTHING_BUT_A_PARTICLE.test(cleaned)) return undefined;
     return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
 }
 
@@ -447,9 +474,34 @@ export function matchIntent(text: string, table: ReadonlyArray<[string, RegExp]>
  *
  * Strictly a widening: it runs only where this returned `undefined`.
  */
+/**
+ * The particles a verb takes before its object, which are not part of the name.
+ *
+ * ── THE FOUR THAT WERE MISSING, AND WHAT IT COST ─────────────────────────
+ *
+ * Measured, three live sentences, one cause: "I hide from them" gave the flight
+ * a target of `"from them"`, "I run away from him" gave `"away from him"`, and
+ * "I go after him" gave a journey to a place called `"after him"`. A preposition
+ * left on the front of a name is a person read as a place, and the place is one
+ * no world will ever hold - so the answer was a refusal naming the roads out of
+ * a room, for a sentence that had named a person standing in it.
+ *
+ * LONGEST FIRST, because alternation takes the first arm that matches: `away
+ * from` has to be tried before `from`, or "away" is left on the front instead.
+ *
+ * It only ever reads a particle sitting IMMEDIATELY after the verb, which is
+ * what keeps it from reaching into a name: "I buy a sword from the smith" has
+ * `a` after the verb and is untouched.
+ */
+const THE_PARTICLE_AND_NOT_THE_NAME =
+    // `in behind` and `in through` finish the same defect one shape further
+    // out: "I sneak in behind him" came back naming a person called *in behind
+    // him*. Both are a particle pair and neither is ever part of a name.
+    '(?:in behind|in through|away from|out of|back to|over to|the|a|an|for|from|after|into|at|with|about|to|on|through|around|behind)';
+
 export function extractSubject(input: string, verbs: RegExp): string | undefined {
     const afterVerb = new RegExp(
-        `\\b(?:${verbs.source})\\b\\s*(?:the|a|an|for|into|at|with|about|to|on|through|around)?\\s+(.{2,80}?)\\s*[.!?]?$`,
+        `\\b(?:${verbs.source})\\b\\s*${THE_PARTICLE_AND_NOT_THE_NAME}?\\s+(.{2,80}?)\\s*[.!?]?$`,
         'i'
     ).exec(input);
     if (afterVerb) {

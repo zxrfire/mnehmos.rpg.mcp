@@ -148,6 +148,7 @@ import {
     parseCount,
     extractDestination,
     cleanPlace,
+    ANYBODY,
     ASKING_GENERALLY,
     parseAsk,
     matchIntent,
@@ -2657,6 +2658,22 @@ const THE_SCENE_ITSELF =
     /^(?:the\s+)?(?:sky|skies|stars?|moon|sun|clouds?|weather|horizon|view|scenery|landscape|surroundings|ground|earth|it all|everything|this place|the place|my surroundings)$/i;
 
 /**
+ * A going that names nowhere, and nothing else in the sentence.
+ *
+ * How somebody answers being told to get off ground they have just walked onto:
+ * "I leave", "I go", "I back off". All of them reached nothing, and going is one
+ * of the three answers that scene has.
+ *
+ * READ AGAINST THE SENTENCE AS TYPED, never against `bare`. `bare` is the
+ * sentence with its proper names removed, so "I leave Verdant Spring Valley"
+ * reaches an anchor as "i leave" - and the resignation became a flight. The
+ * anchor is the whole point of the rule: "I leave the sect" is a resignation and
+ * "I go to Barrow Hand" is a journey, and only a sentence with nothing after the
+ * verb is this.
+ */
+const NOTHING_BUT_A_GOING = /^\s*(?:i\s+)?(?:runs?|leaves?|go(?:es)?)\s*[.!?]*$/i;
+
+/**
  * Intent tables for the deterministic parser.
  */
 const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
@@ -2670,16 +2687,39 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // away" - and it reached nothing. It is leaving the scene rather than naming a
     // destination, which is what this intent is for, and `move` says honestly that
     // it does not know where to.
-    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from|run for it|get out of (?:here|there)|leg it|walks? away|walked away|walks? off|walk out on)\b|^\s*(?:i\s+)?runs?\s*[.!?]*$/],
+    // The bare ones - "I leave", "I go", "I run" - are NOT here. They are
+    // anchored on the whole sentence, and this table is read against `bare`,
+    // which is the sentence with its proper names taken out. "I leave Verdant
+    // Spring Valley" arrives here as "i leave" and an anchor cannot tell it
+    // from somebody leaving the scene, so a resignation from a house whose name
+    // does not contain the word `sect` was read as a flight. See
+    // `NOTHING_BUT_A_GOING`, which is tested against the sentence as typed.
+    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from|run for it|get out of (?:here|there)|leg it|walks? away|walked away|walks? off|walk out on|backs? off|backs? away)\b/],
     // `go into` was absent while `go inside` and `step into` were present, so
     // "I go into the village" reached nothing. The site rule takes this
     // sentence first when a site noun is in it, and movement gets it otherwise,
     // which is the correct order for both.
     // `walk into` beside `go into`: "I walk into the practice yard" reached
     // nothing once a compound had rooms anybody could stand in.
-    ['enter', /\b(?:enter|go into|goes into|go inside|walk into|walks into|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
+    // `sneak in` and `slip in` with nothing after them are the sentence
+    // somebody types at a wall they are not welcome inside, and the owner's
+    // ruling for that is that you break in and either blend in or are thrown
+    // out. Measured on the mechanics sweep: "I sneak in" reached
+    // `interact/talk` with a person called `in`, and "I slip in" reached
+    // nothing, while "I sneak INTO the compound" has always worked. The bare
+    // forms are anchored so they cannot eat "I sneak in behind him" - which
+    // names somebody, and is read where following is read.
+    ['enter', /\b(?:enter|go into|goes into|go inside|walk into|walks into|step into|climb into|breach|infiltrate|sneak into|slip into)\b|^\s*(?:i\s+)?(?:sneaks?|slips?|steals?|creeps?)\s+in(?:side)?(?:\s+(?:through|past|by|under|over)\s+[\w' -]{2,40})?\s*[.!?]*$/],
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
-    ['follow', /\b(?:follow|shadow|trail|tail)\b/],
+    // Going after somebody. `chase`, `pursue` and `run after` were missing and
+    // are how anybody says it when the person is already walking away; all
+    // three are the same act as following, which is what this intent is. Not
+    // where they are being driven OFF, which is a blow and belongs to the row
+    // that owns those. `go after` was held out of this row for one release
+    // because the destination reader took "after him" for a place; the
+    // preposition is stripped where every verb reads its object now, so it is
+    // back - see `THE_PARTICLE_AND_NOT_THE_NAME` in `sentence-parts.ts`.
+    ['follow', /\b(?:follow|shadow|trail|tail)\b|\b(?:chase|chases|chasing|pursue|pursues|pursuing|runs? after|go(?:es)? after|went after)\b(?![^.?!]*\b(?:off|away|out)\b)/],
     // `ride` was here, as a LABEL, and the label was the whole of what it
     // bought: every `move` resolves through one flat one-day journey whichever
     // intent matched, so "I ride to Nine Peaks" and "I walk to Nine Peaks" were
@@ -3710,7 +3750,10 @@ const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
 const WHAT_THEY_WERE_MADE_TO_TAKE =
     /\b(?:swallow|swallows|swallowing|drink|drinks|drinking|eat|eats|eating|take|takes|taking)\s+(.{2,60}?)(?:\s+(?:down|whether|against|before|after|because)\b|[.!?]|$)/i;
 
-const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
+// `chase` and `go after` are how somebody says following when the other person
+// is already walking away, and the name has to come off them too or the verb
+// resolves against nobody.
+const MOVE_SUBJECT_VERBS = /flee|escape|run after|runs after|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|chase after|chases after|chase|chases|pursue|pursues|go after|goes after|travel|go|head|walk|journey|depart|move|ride/;
 
 /**
  * Which of the interact intents a sentence is, read off the sentence without
@@ -5029,6 +5072,15 @@ function planIntent(input: string): PlannedAction {
         && !ABOUT_THE_GROUND_HERE.test(text)) {
         return { action: 'news' };
     }
+    // ASKING AROUND IS THE SQUARE, AND ONLY WHEN IT NAMES NOTHING ELSE.
+    // Measured: "I ask around" - the plainest phrasing of this read there is -
+    // reached `interact/talk`, so the answer was one person rather than what the
+    // place has heard. Anchored, because "I ask around about the sect" names a
+    // subject and a subject put to the people here is the asking read, which
+    // already answers it.
+    if (/^\s*(?:i\s+)?asks?\s+around\s*[.!?]*$/.test(text)) {
+        return { action: 'news' };
+    }
     // whose art that was
     if (WHOSE_ART_IS_THAT.test(text)
         || IS_THIS_THEIR_ART.test(text)
@@ -5079,6 +5131,11 @@ function planIntent(input: string): PlannedAction {
         || /\b(?:advance|advances|rise|rises|climb|climbs|move up|step up)\b[^.?!]{0,16}\b(?:to |into |for )?(?:the )?(?:next|another)\s+(?:realm|rank|rung|layer|stage|level)\b/.test(text)
         || /\b(?:try|tries|attempt|attempts|make|makes|go for|goes for|push|pushes)\b[^.?!]{0,20}\b(?:the |my |a |another )?(?:crossing|next rung|next layer|next realm|next stage)\b/.test(text)
         || /\b(?:break|breaks|breaking|force|forces|crack|cracks|shatter|shatters)\b[^.?!]{0,12}\b(?:the |my |this )(?:bottleneck|barrier)\b/.test(text)
+        // AND THE BARE ONE. "I push through" with no noun after it is how
+        // somebody says this when they are not thinking about the parser, and
+        // the arms above all want the barrier named. Anchored, because "I push
+        // through the crowd" is a walk and "I push through the door" is a door.
+        || /^\s*(?:i\s+)?push(?:es)?\s+through\s*[.!?]*$/.test(text)
         // ── AND THE CROSSING CALLED BY THE NAME OF THE RUNG IT REACHES ────
         //
         // The genre names each crossing after what it makes, and a player uses
@@ -5108,6 +5165,11 @@ function planIntent(input: string): PlannedAction {
     // withdrawal - so the phrasing that means seclusion has to name the world it is
     // retreating from. "I retreat from the world entirely for a stretch" is the
     // corpus's own phrasing and it was answered by a journey.
+    // `sit in seclusion` is NOT here, and was tried and taken out again. The
+    // ruling is already written down one file over: misparse.test.ts asserts
+    // "I sit in seclusion for ten years" is `cultivate` and "I seal the cave
+    // for ten years" is `seclude`. Sitting for a span is cultivating; what
+    // makes it this verb is the door being shut.
     if (/\b(?:closed[- ]?door|seclude|secludes|secluding|seal (?:myself|the (?:cave|door))|sealed seclusion|enter seclusion|go into seclusion|shut myself)\b/.test(text)
         || /\b(?:retreat|retreats|retreating|withdraw|withdraws|withdrawing|cut myself off) (?:from|out of) (?:the world|everything|everyone|society|all of it)\b/.test(text)) {
         return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
@@ -5995,7 +6057,18 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── move: one action, several ways of going ──
-    const moveIntent = matchIntent(bare, MOVE_INTENT_PATTERNS);
+    //
+    // WHO YOU ARE RUNNING FROM IS NOT WHERE YOU ARE RUNNING TO. Once the
+    // preposition came off ("I hide from them" used to hand back the whole of
+    // `from them`), what was left was `them` - a pointer at a person, sitting
+    // in the slot the mover reads as a place. It would be looked up against
+    // the roads out of the room and refused for naming nowhere, which is the
+    // same wrong answer one word shorter. A flight that names nowhere is a
+    // flight, and the engine already knows what to do with one.
+    const aPlaceAndNotAPerson = (said: string | undefined): string | undefined =>
+        said !== undefined && ANYBODY.test(said) ? undefined : said;
+    const moveIntent = matchIntent(bare, MOVE_INTENT_PATTERNS)
+        ?? (NOTHING_BUT_A_GOING.test(text) ? 'flee' : undefined);
     if (moveIntent) {
         const destination = extractDestination(input);
 
@@ -6025,7 +6098,7 @@ function planIntent(input: string): PlannedAction {
             // the abode are.
             target: GOING_HOME.test(text)
                 ? 'home'
-                : destination ?? extractSubject(input, MOVE_SUBJECT_VERBS),
+                : destination ?? aPlaceAndNotAPerson(extractSubject(input, MOVE_SUBJECT_VERBS)),
             intent: moveIntent
         };
     }

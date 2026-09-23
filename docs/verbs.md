@@ -74,7 +74,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**61 verbs.** 17 of them take nothing from the player,
+**63 verbs.** 17 of them take nothing from the player,
 28 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
@@ -123,7 +123,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`wait`](#wait) | `days` `target` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
-| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [23](#sect) |
+| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [24](#sect) |
 | [`site`](#site) | `target` `intent` | time | yes | - | [4](#site) |
 | [`legacy`](#legacy) | `intent` `target` `days` | time | yes | - | [5](#legacy) |
 | [`petition`](#petition) | `target` `intent` `topic` | nothing | yes | yes | [3](#petition) |
@@ -138,12 +138,14 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` `intent` | varies | yes | - | [1](#tell) |
-| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [13](#request) |
+| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [14](#request) |
 | [`challenge`](#challenge) | `target` | varies | yes | - | - |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
 | [`child`](#child) | `days` `target` `intent` | time | yes | - | [2](#child) |
+| [`carry`](#carry) | `target` `intent` | varies | yes | - | [6](#carry) |
+| [`conceal`](#conceal) | `intent` | varies | yes | - | [3](#conceal) |
 | [`unclear`](#unclear) | - | nothing | fallback | - | - |
 
 `Plain English` is whether the deterministic parser has any branch that produces this
@@ -185,7 +187,7 @@ Takes `target`.
 
 ### `move`
 
-go somewhere on foot. "target" is the destination; "intent" is how - travel, flee, approach, enter, follow.
+go somewhere on foot. "target" is the destination; "intent" is how - travel, flee, approach, enter, follow. "flee" is leaving the scene rather than naming somewhere to go - "I leave", "I back off" - which is also how somebody answers being told to get off ground other people are working.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'move'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.move` · the deterministic parser reaches it · spends in-world time.
 
@@ -279,7 +281,7 @@ Takes `target`.
 
 ### `refine`
 
-work the cauldron. "target" names the formula or the pill wanted.
+work the cauldron. "target" names the formula or the pill wanted. A player may call it a pill furnace and mean the same thing. NOT an artifact furnace, which is the forging vessel and belongs to craft, and NOT a cultivation furnace, which is a person another cultivator draws off and belongs to coerce.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'refine'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.refine` · the deterministic parser reaches it · spends in-world time.
 
@@ -473,13 +475,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `sect`
 
-anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Three more belong to somebody who holds a room. "authority" READS which rooms of the house are the player's to speak for, and it is free - it is the sentence before the one that claims, because an order given in the house's name is only a decision if they could have found out whether it was true. "decree" gives that same order in the house's name rather than in their own, and somebody may be watching who knows what the player actually runs. "take" is putting a hand on a thing the house owns - "target" names it - which is not stow, where the room is the player's own and nothing is being taken from anybody. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
+anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are holding in to their own house - "target" names it - which the house credits as contribution where it wants the thing and says why where it does not, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no - which also answers people already working ground the player has walked onto, and hands off to the confrontation - and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. "expel" is a house putting somebody off its roll - said as doing it or as having it done, which are the same act - and what the power actually reaches is an ELDER's dismissal, at the top of the ladder: the answer names who holds it where the player does not, and says that nobody puts an ordinary member off a roll by saying so. Three more belong to somebody who holds a room. "authority" READS which rooms of the house are the player's to speak for, and it is free - it is the sentence before the one that claims, because an order given in the house's name is only a decision if they could have found out whether it was true. "decree" gives that same order in the house's name rather than in their own, and somebody may be watching who knows what the player actually runs. "take" is putting a hand on a thing the house owns - "target" names it - which is not stow, where the room is the player's own and nothing is being taken from anybody. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'sect'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.sect` · the deterministic parser reaches it.
 
 Takes `intent`, `target`, `topic`.
 
-Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`, `take`, `authority`, `decree`.
+Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`, `take`, `authority`, `decree`, `hand_in`.
 
 ### `site`
 
@@ -609,13 +611,13 @@ Intents: `send_word`.
 
 ### `request`
 
-ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must not be routed there. "target" is who it is put to; "intent" is what kind of thing is being asked for - teaching (be taught an art: it takes the months or years the art is worth at their elbow, and an interrupted lesson leaves nothing), guidance (be watched and corrected while you cultivate - "I ask my master to guide my cultivation for a month", "I cultivate under Elder Hu's guidance for a year", "will you watch me run the form"; "days" is how long; the span is spent sitting with the guided rate, and it is their attention and not their presence that counts, so a master standing nearby who is not asked teaches nothing; anybody, a master included, is asked like any favour and may say no, and somebody at their own practice or at their own wall declines and says when they will be free), discipleship (be taken on), introduction (be put in front of somebody), telling (be told something they know), a_thing (be given, lent or sold an object), terms (what would it take - the price asked before it is paid), a_trade (something put down for it that is not money), advancement (be raised a rung in your own house - it only moves if the person asked is the one whose call it is, and money alone will not buy it), company (ask them to come with you - "topic" is where the party is bound when the sentence said, and "days" is how long they were asked for; they travel with the player until the term runs out, and most people have no reason to follow a stranger), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do them a small favour; costs a day and no stones, and it is the only thing that makes a stranger somebody who will do you a favour later); "topic" is what was named - the art, the person, the thing. This is the ONLY route to being taught by a person, which the engine says repeatedly is one of the two ways past a manual's ceiling. It spends days and can spend the purse, so choose it only when the player is actually asking somebody for something rather than asking about them.
+ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must not be routed there. "target" is who it is put to; "intent" is what kind of thing is being asked for - teaching (be taught an art: it takes the months or years the art is worth at their elbow, and an interrupted lesson leaves nothing), guidance (be watched and corrected while you cultivate - "I ask my master to guide my cultivation for a month", "I cultivate under Elder Hu's guidance for a year", "will you watch me run the form"; "days" is how long; the span is spent sitting with the guided rate, and it is their attention and not their presence that counts, so a master standing nearby who is not asked teaches nothing; anybody, a master included, is asked like any favour and may say no, and somebody at their own practice or at their own wall declines and says when they will be free), discipleship (be taken on), ending_a_bond (PUT A MASTER-DISCIPLE BOND DOWN, from either end - a master casting a disciple out, a disciple walking out on a master. Nothing is being asked for and nobody may refuse it; what it costs is stated rather than weighed: each of them keeps a former tie to the other, and the end that did not do it holds a broken oath against the end that did, the heavier the longer the bond had stood. "target" is who it is with, and "my master" with more than one is answered by naming them and asking which), introduction (be put in front of somebody), telling (be told something they know), a_thing (be given, lent or sold an object), terms (what would it take - the price asked before it is paid), a_trade (something put down for it that is not money), advancement (be raised a rung in your own house - it only moves if the person asked is the one whose call it is, and money alone will not buy it), company (ask them to come with you - "topic" is where the party is bound when the sentence said, and "days" is how long they were asked for; they travel with the player until the term runs out, and most people have no reason to follow a stranger), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do them a small favour; costs a day and no stones, and it is the only thing that makes a stranger somebody who will do you a favour later); "topic" is what was named - the art, the person, the thing. This is the ONLY route to being taught by a person, which the engine says repeatedly is one of the two ways past a manual's ceiling. It spends days and can spend the purse, so choose it only when the player is actually asking somebody for something rather than asking about them.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'request'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.request` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`, `topic`, `days`.
 
-Intents: `teaching`, `guidance`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
+Intents: `teaching`, `guidance`, `discipleship`, `ending_a_bond`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
 
 ### `challenge`
 
@@ -662,6 +664,26 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 Takes `days`, `target`, `intent`.
 
 Intents: `have`, `place`.
+
+### `carry`
+
+what is on this body and what is in its hands. "intent" says which: "wear" puts robes on (and says whose they are and what a house's people make of somebody in them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away" returns it, "drop" lets it go on the ground, "show" offers the house token as proof of what you are - which is what a robe is not. "target" is what was named, in the player's own words. No day passes and nothing is rolled. NOT for attacking: "I draw my sword on him" is attack. Inside a fight none of this applies - dropping a sword there is a surrender, and the fight reads it.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'carry'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
+
+Takes `target`, `intent`.
+
+Intents: `wear`, `take_off`, `draw`, `put_away`, `drop`, `show`.
+
+### `conceal`
+
+getting out of sight. "intent" says which sense: "self" is the body somewhere it is not seen, and the answer names who here would still place you and why; "cultivation" is carrying nothing that says what you are - the hidden expert in the plain robe - and it STANDS until the player says otherwise; "show" puts the weight back on. No day passes. A concealment said as part of another sentence ("hiding my cultivation, I ask him where the elder is") is NOT this verb - it is a manner on that act and is already read there.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'conceal'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
+
+Takes `intent`.
+
+Intents: `self`, `cultivation`, `show`.
 
 ### `unclear`
 
