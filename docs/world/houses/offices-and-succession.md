@@ -128,9 +128,36 @@ somebody to step aside and go back to inner. That is not a punishment and it is 
 disgrace - it is the count. Five worth watching, three places, and the three are not the same
 three forever.
 
+**And it is settled with a tournament, on the house's own cycle.** The design owner:
+*"the thing that rotates is the conclave. They settle it with a tournament on a fixed
+schedule, different per sect, depending on the cultivation level of their conclave
+disciples."* So the comparison above is not a meeting that reaches a view - the house puts
+the holders and everybody at the rung below who can stand on the board into one field, ranks
+it the way it ranks every other field (`rankAField`, the same ranking a gathering and a door
+conclave use), and the top of the board takes the places. A holder who is beaten goes back to
+inner, which is the count and not a disgrace, and the board pays everybody who stood on it
+what standing on it taught them.
+
+**The schedule is the height it is held at, and that is why it differs per sect.** A contest
+every few years means nothing where the people in it take two centuries to move, so the
+interval is a quarter of the years the ladder credits at that rung before it reads somebody as
+finished (`stagnationYearsForOrdinal` at the middle of the conclave rung's realm band) - four
+contests inside a career at that height. On the shipped catalog that is **13 years** for the
+thirty-odd houses whose conclave rung stands in Qi Condensation or Foundation, **25** for the
+six in Core Formation, and **500** for the Hollow Court, whose Inner Disciples stand at Body
+Integration and above. Each house's own year is drawn once off the seed, so a province does
+not hold them all in one spring. Measured over 500 years on two seeds: 622 and
+673 places won, 333 and 339 holders beaten for one, so a place changes hands
+about nine times a house a century and the rest of the wins are places that were
+standing empty. Built in
+`src/engine/world/a-conclave-seat-is-won-in-a-tournament.ts`.
+
 **Inner is where it stops. Once somebody is inner, they are in for life.** That is the tenure
 line of a house, and it is what makes the ranks below it a filter and the ranks above it a
 contest. Everything above inner can be lost by somebody else being better; inner itself cannot.
+Nothing in the tournament may take anybody past it: a beaten conclave disciple lands at inner
+and stops there.
+
 
 So the scarcity at the top is sharper than the scarcity at the elder rung, and it is the same
 shape: **more people who could than places to be.** A conclave disciple passed over for

@@ -140,6 +140,7 @@ import {
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn } from './a-house-takes-in-one-of-its-own.js';
 import { theHousesAreCounted } from './how-many-people-a-house-has.js';
+import { theConclavesAreContested } from './a-conclave-seat-is-won-in-a-tournament.js';
 import { theChallengesThisYear } from './a-challenge-is-answered-on-the-yard.js';
 import { getOrigin } from '../cultivation/origin.js';
 import {
@@ -649,6 +650,9 @@ export function applyPressure(
         applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
+        // And the one rung that rotates settles itself, on the house's own
+        // cycle. See `a-conclave-seat-is-won-in-a-tournament.ts`.
+        theConclavesAreContested(state, year, withinSpan(year * 365 + 92, fromDay, toDay));
         // Somebody who mastered an art writes it out for the people coming up
         // behind them. BEFORE the handout, so a copy written this year is a copy
         // somebody can be given this year - and before advancement, so the ceiling
