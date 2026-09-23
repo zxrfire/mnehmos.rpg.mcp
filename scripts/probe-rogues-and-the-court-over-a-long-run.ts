@@ -338,6 +338,15 @@ async function main(): Promise<void> {
                 lostAnOffice: lostAnOffice.length,
                 lostItAtAHouseTheyHaveSinceLeft: carriedFromElsewhere,
                 andCouldHoldOneAgain: wouldBeDealtAgain.length,
+                faceInTheWorld: {
+                    anybodyWithAny: anyFace,
+                    shareOfTheLiving: Number((anyFace / Math.max(1, living.length)).toFixed(3)),
+                    mean: Number((faceTotal / Math.max(1, living.length)).toFixed(2))
+                },
+                whatClearsTheBar: {
+                    face: per(face), service: per(service),
+                    spokenFor: per(spokenFor), worth: per(worthTotal)
+                },
                 yearsToOutgrowIt: wouldBeDealtAgain.length === 0
                     ? null
                     : wouldBeDealtAgain[Math.floor(wouldBeDealtAgain.length / 2)],

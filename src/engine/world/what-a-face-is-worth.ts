@@ -23,6 +23,58 @@
  * slight writes there, weighted by who saw it, and `theSlightsBetween` reads
  * the pile back out of the rows that are already being written.
  *
+ * ── WHAT ACTUALLY WRITES FACE TODAY, WHICH IS TWO THINGS ─────────────────
+ *
+ * MEASURED, not read off the design: on `afford-a` at a thousand years, over
+ * the twelve people carrying a removal from office - seniors, long-serving, the
+ * kind of people a house's opinion is made of - **the mean face was zero.** Not
+ * low. Zero, for every one of them.
+ *
+ * The cause is that `theirFaceMoves` and `withFace` are called from exactly two
+ * places: `a-challenge-is-answered-on-the-yard.ts`, and the killing pass, where
+ * somebody pays for being seen to kill beneath themselves. **Face is a currency
+ * only violence mints.** Nobody in this world has ever gained or lost face by
+ * doing their job well or badly, and the header above this one lists roads that
+ * are not wired to anything:
+ *
+ *   *"deeds people saw"*        no deed writes face. `aDeedEntersTheWorld` knows
+ *                               its own witnesses and its weight and writes
+ *                               neither into this field.
+ *   *"public defeats"*          only a duel on the yard counts. Losing a war,
+ *                               being driven off ground, having a house's demand
+ *                               refused in front of its own people: none of it.
+ *   *"being exposed"*           the expose route is the owner's stated normal way
+ *                               a seat changes hands, running at 31 to 32 cases
+ *                               a century, and a holder turned out of an office
+ *                               in front of the room loses NO face by it.
+ *
+ * ── THE WRITERS THIS WANTS, NAMED RATHER THAN BUILT ──────────────────────
+ *
+ * Deliberately not built: a currency is worth more designed once than wired in
+ * a hurry at the end of a night. The natural writers, each already an event
+ * somebody witnesses, with the machinery that already knows the witnesses:
+ *
+ *   a lecture that lands        `theWanderersGoAbout` and the attention pass
+ *                               already count listeners.
+ *   a promotion, and a removal  `assessPromotions` and `whatASentenceDoesToTheirPlace`
+ *                               both move somebody in front of their house.
+ *   a commission finished       the crafting path knows the grade asked for and
+ *                               the grade delivered.
+ *   a seat won or lost          the conclave already resolves in public.
+ *   an acknowledgement          somebody senior naming somebody junior in front
+ *                               of others, which the attention pass could write.
+ *
+ * Each is one call to {@link theirFaceMoves} scaled by
+ * {@link whatBeingWatchedIsWorth}, which is the point: the scale below already
+ * takes witnesses and the gap, so a writer only has to say what happened and
+ * who saw it.
+ *
+ * UNTIL THEN, READ THIS FIELD KNOWING WHAT IT HOLDS. Anything weighing face
+ * against another quantity is weighing a number that is zero for everybody who
+ * has never been in a duel or killed somebody far beneath them. The removal
+ * weight in `bringing-what-you-know-about-somebody-to-the-room.ts` reads it and
+ * gets nothing from it, which is how this was found.
+ *
  * ── THE SCALE ────────────────────────────────────────────────────────────
  *
  * One public win over an equal is {@link A_PUBLIC_WIN} and everything else is

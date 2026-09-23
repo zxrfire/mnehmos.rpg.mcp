@@ -52,6 +52,7 @@ import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { faceOf } from './what-a-face-is-worth.js';
 import { meritWith } from './what-a-house-counts-in-somebodys-favour.js';
 import { requiredContributionForRank } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
+import { theRoomTurnedThemOut } from './what-being-seen-to-do-well-is-worth.js';
 import { A_FRIEND, HOSTILE_STANDING } from './why-one-cultivator-kills-another.js';
 import { ROGUE_EXPELLED, offTheRoll, whereTheyRunTo } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -415,6 +416,13 @@ export function aRoomHearsIt(
     const place = whatASentenceDoesToTheirPlace(decided.sentence);
 
     const at = indexById(state.npcs, holder.id);
+    // AND IT COSTS THEM IN FRONT OF THE ROOM. The expose route is how a seat
+    // changes hands in a righteous or neutral house, and until this call the
+    // holder turned out of an office lost nothing anybody could read. See
+    // `what-being-seen-to-do-well-is-worth.ts`.
+    if (place !== 'nothing' && at >= 0) {
+        theRoomTurnedThemOut(state, holder.id, day, place === 'expelled');
+    }
     if (place === 'expelled') {
         state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
     } else if (place === 'removed from office') {

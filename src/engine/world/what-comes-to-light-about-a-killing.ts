@@ -54,6 +54,7 @@ import {
 } from './bringing-what-you-know-about-somebody-to-the-room.js';
 import { ROGUE_EXPELLED, offTheRoll, whereTheyRunTo } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { theRoomTurnedThemOut } from './what-being-seen-to-do-well-is-worth.js';
 import { isGroundAwayFromEverybody } from './why-one-cultivator-kills-another.js';
 import { indexById, type WorldState } from './world-state.js';
 
@@ -234,6 +235,11 @@ function theRoomHearsOfIt(state: WorldState, killer: NpcRecord, fact: Historical
     });
     const place = whatASentenceDoesToTheirPlace(decided.sentence);
     const at = indexById(state.npcs, killer.id);
+    // What the room's ruling costs them in front of it. See
+    // `what-being-seen-to-do-well-is-worth.ts`.
+    if (at >= 0 && place !== 'nothing') {
+        theRoomTurnedThemOut(state, killer.id, day, place === 'expelled');
+    }
     if (at >= 0 && place === 'expelled') {
         state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
     } else if (at >= 0 && place === 'removed from office') {

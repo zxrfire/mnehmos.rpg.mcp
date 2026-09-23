@@ -199,6 +199,11 @@ import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior
 import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
+import {
+    A_ROOM_SAW_IT,
+    theHouseWasSeenToWin,
+    theirDiscipleCrossed
+} from './what-being-seen-to-do-well-is-worth.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
 import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
 import { peopleBringWhatTheyKnowToTheRoom, theRoomWouldDealToThemAgain } from './bringing-what-you-know-about-somebody-to-the-room.js';
@@ -707,7 +712,16 @@ export function applyPressure(
         theHousesTakeInEldersFromOutside(state, withinSpan(year * 365 + 91, fromDay, toDay));
         // And the one rung that rotates settles itself, on the house's own
         // cycle. See `a-conclave-seat-is-won-in-a-tournament.ts`.
-        theConclavesAreContested(state, year, withinSpan(year * 365 + 92, fromDay, toDay));
+        // AND A HOUSE THAT WON ITS OWN CONTEST IS SEEN TO HAVE WON IT. The
+        // owner: *"having your sect win a tournament"* - the house, not only
+        // whoever took the seat. See `what-being-seen-to-do-well-is-worth.ts`.
+        for (const settled of theConclavesAreContested(
+            state, year, withinSpan(year * 365 + 92, fromDay, toDay))
+        ) {
+            if (settled.raised.length === 0) continue;
+            theHouseWasSeenToWin(state, settled.houseId, settled.entrants,
+                withinSpan(year * 365 + 92, fromDay, toDay));
+        }
         // Somebody who mastered an art writes it out for the people coming up
         // behind them. BEFORE the handout, so a copy written this year is a copy
         // somebody can be given this year - and before advancement, so the ceiling
@@ -1669,7 +1683,19 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         state.npcs[at] = strike.npc;
         andLetGoAtTheOtherEnd(state.npcs, npc, strike.npc);
         recordCrossing(state, state.npcs[at], strike.result, day);
-        if (strike.result.outcome === 'success') advanced.push(state.npcs[at]);
+        if (strike.result.outcome === 'success') {
+            advanced.push(state.npcs[at]);
+            // AND WHOEVER TAUGHT THEM IS SEEN TO HAVE TAUGHT THEM. The owner's
+            // own example of face away from a fight: *"teaching someone"*. Read
+            // off the tie the student holds, so it is the master they actually
+            // answer to rather than anybody senior nearby.
+            for (const tie of state.npcs[at]!.relationships) {
+                if (tie.kind !== 'master' && tie.kind !== 'teacher') continue;
+                const teacher = byId.get(tie.targetId);
+                if (teacher === undefined || teacher.status !== 'alive') continue;
+                theirDiscipleCrossed(state, teacher, state.npcs[at]!, A_ROOM_SAW_IT, day);
+            }
+        }
     }
     return advanced;
 }
