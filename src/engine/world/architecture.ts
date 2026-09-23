@@ -696,7 +696,7 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     life_lamp_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: true, officeAddedInRound: 1, capacityPer: 0.05, hazards: [] },
     // NOT AN OFFICE, so the deal is untouched. Beside the alchemy hall in depth,
     // because the two are the house's two crafts, and the same heat hazard the
-    // furnace floor carries, because what it burns is fire.
+    // cauldron room carries, because what it burns is fire.
     artifact_refining_hall: { kind: 'hall', depth: 0.4, obviousness: 0.6, qiLift: 0, sealed: false, office: false, capacityPer: 0.2, hazards: ['heat'] },
     audience_hall: { kind: 'hall', depth: 0.55, obviousness: 0.75, qiLift: 0, sealed: false, office: false, capacityPer: 0.3, hazards: [] },
     tribute_room: { kind: 'vault', depth: 0.6, obviousness: 0.3, qiLift: 0, sealed: true, office: true, capacityPer: 0.05, hazards: [] },
@@ -784,7 +784,7 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
         case 'scripture_pavilion': return inward ? 'the reading cut' : 'the scripture pavilion';
         case 'archive': return `the ${position} archive`;
         case 'alchemy_hall': return 'the alchemy hall';
-        case 'furnace_room': return 'the furnace floor';
+        case 'furnace_room': return 'the cauldron room';
         case 'infirmary': return 'the infirmary';
         case 'workshop': return 'the workshop';
         case 'mission_hall': return inward ? 'the posting cut' : 'the mission hall';
@@ -1360,7 +1360,7 @@ export type WhatIsBeingMade = 'medicine' | 'an_artifact';
  * Beside {@link ROOMS_A_THING_IS_DONE_IN} and read the same way: somebody at the
  * work of their rank whose activity names the thing being made is in the room
  * that thing is made in, where the house has one. Medicine is made at a
- * cauldron, which the alchemy hall and the furnace floor are for. A made thing
+ * cauldron, which the alchemy hall and the cauldron room are for. A made thing
  * that is not medicine is worked where ore is worked. A communication talisman
  * is neither: it is cut wherever the cutter is sitting, and is not in the table.
  */

@@ -514,7 +514,7 @@ describe('nothing in the lore is bespoke', () => {
  * The design owner: *"same as the pill houses, every house makes artifacts,
  * some are focused on artifacts."* Every compound has a room to refine pills in
  * and a room to forge artifacts in, and a focus on the craft is a difference of
- * degree: a larger room, and for medicine the furnace floor besides.
+ * degree: a larger room, and for medicine the cauldron room besides.
  *
  * The forge focus is given to no house yet: it waits on a field in the catalog
  * code can read, and a house's name is not one.
@@ -535,7 +535,7 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
         expect(rooms).not.toContain('furnace_room');
     });
 
-    it('cuts the room of the craft a house is focused on larger, and gives medicine its furnace floor', () => {
+    it('cuts the room of the craft a house is focused on larger, and gives medicine its cauldron room', () => {
         const plain = broadHouse();
         const pills = broadHouse({ specialities: ['alchemy'] });
         expect(roomsFor(pills)).toContain('furnace_room');

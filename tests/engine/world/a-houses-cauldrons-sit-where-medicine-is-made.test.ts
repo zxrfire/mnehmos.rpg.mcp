@@ -2,10 +2,10 @@
  * A house's clay cauldrons sit where the house makes medicine.
  *
  * The design owner: every house makes pills and a few focus on them. Only a house
- * focused on medicine has a furnace floor - the Cinnabar Crucible Sect - and the
- * cupboard of clay cauldrons a house keeps was put on the furnace floor, so in
+ * focused on medicine has a cauldron room - the Cinnabar Crucible Sect - and the
+ * cupboard of clay cauldrons a house keeps was put on the cauldron room, so in
  * every other house it fell back to the seat. It now sits on the Crucible's
- * furnace floor and in the alchemy hall everywhere else, which every compound
+ * cauldron room and in the alchemy hall everywhere else, which every compound
  * has.
  *
  * Red-checked: dropping the alchemy-hall fallback from the treasury's room choice
@@ -21,7 +21,7 @@ let catalog: WorldCatalog;
 beforeAll(async () => { catalog = await loadCultivationCatalog(); });
 
 describe('a house\'s clay cauldrons', () => {
-    it('sit on the medicine house\'s furnace floor, and in the alchemy hall of every other house', () => {
+    it('sit on the medicine house\'s cauldron room, and in the alchemy hall of every other house', () => {
         const { state } = seedWorld({ seed: 'cauldrons-in-their-room', catalog });
         const byId = new Map(state.locations.map(row => [row.id, row]));
         const lots = state.objects.filter(row => row.id.startsWith('cauldrons-plain-'));

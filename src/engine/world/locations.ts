@@ -226,7 +226,7 @@ export type LocationKind =
     | 'hall'
     /**
      * An interior room that CONCENTRATES qi above the ground it sits on. A vein
-     * chamber, a furnace floor, a meditation cell. A `hall` and a `precinct` never
+     * chamber, a cauldron room, a meditation cell. A `hall` and a `precinct` never
      * are - they sit on the ground the compound sits on - so a chamber is the only
      * OPEN room being crowded out of costs anything. (A `vault` may also run high,
      * but a sealed pocket offers nobody any of it until the seal is off: that is

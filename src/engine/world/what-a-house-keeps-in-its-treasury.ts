@@ -152,8 +152,8 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         const rooms = seat === null ? undefined : roomsOf.get(seat);
         // The room where there is one, and the compound where the house has no
         // room of that purpose - a hill sect with no archive still owns books.
-        // A furnace floor is a house focused on medicine's, and every house has
-        // an alchemy hall, so what goes on a furnace floor goes there instead.
+        // A cauldron room is a house focused on medicine's, and every house has
+        // an alchemy hall, so what goes in a cauldron room goes there instead.
         const roomFor = (purpose: RoomPurpose | null): string | null =>
             (purpose === null ? null : rooms?.get(purpose)
                 ?? (purpose === 'furnace_room' ? rooms?.get('alchemy_hall') : undefined) ?? null) ?? seat;
