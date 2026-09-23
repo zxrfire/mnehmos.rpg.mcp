@@ -1,5 +1,8 @@
 /**
  * Wandering figures: people who belong to nothing and are therefore worth asking.
+ *
+ * Each is seeded as a person in the world by
+ * `src/engine/world/the-wanderer-the-catalog-names-is-somebody.ts`.
  */
 
 import { z } from 'zod';
@@ -181,6 +184,9 @@ export type PettyDislike = z.infer<typeof PettyDislikeSchema>;
 
 export const WandererSchema = z.object({
     id: z.string(),
+    /** What the catalog states about him, which the world may not make false. See `WhatACatalogStates`. */
+    theCatalogStatesTheyAreStanding: z.boolean().optional(),
+    theCatalogStatesGoodsDoNotRegister: z.boolean().optional(),
     /** The name in the one record that has it right. Rarely used aloud. */
     recordName: z.string().min(1),
     /** What most people who know anything call him. */
@@ -216,8 +222,10 @@ export const WandererSchema = z.object({
     }),
     /** Never explained anywhere, by him or by the catalog. */
     incompleteIsUnexplained: z.literal(true),
-    /** Vast, finite, and he knows the figure. */
-    lifespanYearsRemaining: z.number().int().min(1),
+    /**
+     * Vast, finite, and he knows the figure. The figure is not stated here: it
+     * is the rung's own, less his age, which is what the world row carries.
+     */
     lifespanNote: z.string().min(100),
     /** The affiliation, and what it actually amounts to, which is nothing. */
     affiliation: z.object({
@@ -376,6 +384,12 @@ export type Wanderer = z.infer<typeof WandererSchema>;
 export const WANDERERS: readonly Wanderer[] = [
     {
         id: 'wanderer-lu-sheng',
+        // "The only carvings in this file by somebody who is still walking
+        // around" (`false-immortals.ts`): the catalog states him alive. And
+        // `estate.whyObjectsDoNotRegister` below: "nothing in that category has
+        // cost him anything since before their province was surveyed."
+        theCatalogStatesTheyAreStanding: true,
+        theCatalogStatesGoodsDoNotRegister: true,
         recordName: 'Lu Sheng',
         commonName: 'the Guest',
         lastOrdinal: FALSE_IMMORTAL_ORDINAL,
@@ -398,7 +412,6 @@ export const WANDERERS: readonly Wanderer[] = [
             whoCouldTell:
                 'His inheritors, because they know him rather than his face - the way he asks a second question, what he finds funny, the specific quality of not being in a hurry. It is one more reason he would rather they did not gossip, and it has never been the reason he gave.'
         },
-        lifespanYearsRemaining: 11_000,
         lifespanNote:
             'Vast and finite, and he knows the number to the year. He will give the figure to anybody who asks, without ceremony, and the figure is smaller every time somebody asks it. That arithmetic is the entire reason he is walking around rather than sitting still.',
         affiliation: {
@@ -430,7 +443,7 @@ export const WANDERERS: readonly Wanderer[] = [
         couldStandProtector:
             'He could stand protector at a crossing, which is the single most valuable thing anybody in this world could offer and which almost nobody can supply: strong enough to matter against whatever arrives, available in a way nobody holding a sect or a crossing of their own ever is, and entirely indifferent to what it would cost him. Whether he would is not recorded, has never been asked, and should not be resolved here. What is worth knowing is that it is legible to anybody who understands what he is - and that it means an inheritor of his has something to hope for that nobody else in the world can hope for at all.',
         attentionConsequence:
-            'He will not hurt anybody and has not in six hundred years. The damage is structural: a sentence from him lands in a room where he has no standing to lose and everyone else has, and it reorganises somebody. A remark taken as endorsement makes a junior disciple suddenly political. A correction offered idly makes an elder wrong in front of people who will remember. A question he asks in passing becomes, within a season, the thing a sect believes he is interested in - and sects act on that. He does not intend any of it, does not track it, and is not there when it arrives. Being noticed by him is closer to weather than to patronage.',
+            'He has not hurt anybody in six hundred years, and it is not a vow: almost nothing anybody below him does is worth his bothering to act on. The damage is structural: a sentence from him lands in a room where he has no standing to lose and everyone else has, and it reorganises somebody. A remark taken as endorsement makes a junior disciple suddenly political. A correction offered idly makes an elder wrong in front of people who will remember. A question he asks in passing becomes, within a season, the thing a sect believes he is interested in - and sects act on that. He does not intend any of it, does not track it, and is not there when it arrives. Being noticed by him is closer to weather than to patronage.',
         estate: {
             divestedYearsAgo: 641,
             whatHeDid:

@@ -75,6 +75,7 @@ import {
 } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
+import { seedTheWanderers } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { seedTheRogues } from './the-rogues-a-world-opens-with.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -1573,6 +1574,9 @@ function seedPopulation(
     // Instantiate them before roles are handed out, so a faction's curated
     // seniors are in the room when the pyramid is built.
     created.push(...seedNamedFigures(state, catalog, presentDay));
+    // And the wanderer the catalog names, who is on nobody's roll.
+    // See `the-wanderer-the-catalog-names-is-somebody.ts`.
+    created.push(...seedTheWanderers(state, presentDay));
     created.push(...seedWhatAHouseActuallyHolds(state, catalog, presentDay, taken));
     // AND THE RANK AND FILE AROUND THEM. Last of the three, so what the catalog
     // states is on the roll first and is counted before anything is raised -

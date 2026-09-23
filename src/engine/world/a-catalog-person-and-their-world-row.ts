@@ -27,10 +27,12 @@
  *
  * ── Why the catalog id is the canonical one ──────────────────────────────
  *
- * It exists for all of them. The world id exists for 185: the guest elders,
- * the wanderers, the sealed ancestors and the bodies on the immortal channels
- * are named in the catalogs and instantiated nowhere, so there is no world row
- * to key them under and never will be for some of them. Canonicalising the
+ * It exists for all of them. The world id is this rule's for 185: the guest
+ * elders, the sealed ancestors and the bodies on the immortal channels are named
+ * in the catalogs and instantiated nowhere, so there is no world row to key them
+ * under and never will be for some of them. The wanderers belong to no house,
+ * like any rogue, and are people in the world under their own ids
+ * (`the-wanderer-the-catalog-names-is-somebody.ts`). Canonicalising the
  * other way would mean minting an id for a person who has no row - a key that
  * nothing writes, which is its own well-documented defect.
  *
