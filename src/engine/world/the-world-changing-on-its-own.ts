@@ -93,6 +93,14 @@ import {
     type GroundThatPays
 } from './what-a-house-does-when-it-cannot-pay.js';
 import { ruinFromFallenSeat } from './provenance.js';
+import {
+    WHEN_IT_IS_AN_OLD_WOUND,
+    WHERE_THE_OLD_MONSTERS_BEGIN,
+    theWakeOfADeath,
+    theirDeathWouldRearrangeTheWorld,
+    whatADeathIsWorth,
+    whatTheyHeldUp
+} from './what-a-death-at-this-height-is-worth.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
 import {
     activeGoals,
@@ -282,6 +290,7 @@ import {
     type HouseAsItStands
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { regardFor } from '../cultivation/regard.js';
+import { wellBeneathYou } from '../encounters/duties.js';
 import {
     WHAT_A_MEAL_IS_WORTH,
     aPieceOfABodyNobodyHasTaken,
@@ -1732,6 +1741,19 @@ function oneOfTheseFoughtOnItsOwnGround(
 
     const theirRung = challenger.cultivation.realmOrdinal;
     const regard = regardFor(itsRung, theirRung);
+
+    // AND SOMEBODY AT HEIGHT DOES NOT TAKE A FIGHT THEY MIGHT LOSE. Nobody
+    // chose this one: it is whoever was standing on the ledge, within
+    // `CASUAL_KILL_MAX_GAP`, and the regard band decides it. That is a
+    // background rate, and at `WHERE_THE_OLD_MONSTERS_BEGIN` there is not
+    // supposed to be one - *"these old monsters value their lives"*. Caution is
+    // a trait at that height rather than an exception to a rule, so unless the
+    // odds are decisively theirs they are simply not there for it, and nothing
+    // is written. The same posture as "why would they" one file over.
+    if ((theirRung >= WHERE_THE_OLD_MONSTERS_BEGIN
+        || theirDeathWouldRearrangeTheWorld(state, challenger))
+        && !wellBeneathYou(regardFor(theirRung, itsRung).band)) return;
+
     const roll = rng.next();
     const itLived = roll < notFinishedChance(regard);
     const theyDied = roll < lostChance(regard);
@@ -5545,21 +5567,58 @@ const TEMPLATES: Template[] = [
         kind: 'elder_died',
         weight: 16,
         apply(state, day, rng) {
-            const seniors = theWorldsPeople(state).filter(
+            // A DEATH IS AN OUTCOME, NOT A RATE. The owner: *"people don't
+            // randomly die at 5% at a uniform rate, we simulate what happened
+            // in x years based on their current traits, whether they chose to
+            // advance or what. and if they died in a war."*
+            //
+            // This drew somebody by how much of their span they had spent and
+            // then invented one of three reasons for them. Both halves were
+            // wrong. The cause has to exist before the person is chosen - and
+            // AGE IS NOT THIS PASS'S TO GIVE: `time.ts` already ends everybody
+            // on the exact day `lifespanEndsOnDay` passes, so drawing on the
+            // share of a span spent was a rate that killed people BEFORE their
+            // span ran out, a second earlier copy of a death the world already
+            // does properly. It is gone, and so is the breakthrough that did
+            // not hold, which `applyAdvancement` does for real.
+            //
+            // What is left is a wound somebody was already carrying - and not
+            // for anybody whose dying would rearrange the world. The owner:
+            // *"patriarchs obviously don't have a 5% chance of dying every
+            // year"*, and a patriarch is not necessarily high-ordinal, so the
+            // guard is the same property the wake reads rather than a second
+            // threshold beside it: how high they stood, what they held, who
+            // leaned on them, what only they carried. An untreated wound is
+            // also not something those people carry about for centuries; it is
+            // the thing they would spend anything to have treated. Everybody
+            // else may keep a rate, and should, because the world has to stay
+            // dangerous. `theWorldMayEnd` is asked FIRST, so a stated row is
+            // not a wasted event, and the property is read last because it is
+            // the only expensive question here.
+            //
+            // AND THE LINE AND THE PROPERTY ARE BOTH GUARDS, NOT ONE INSTEAD OF
+            // THE OTHER. Measured on `afford-a` at a thousand years with only
+            // the property here: half a wound-death a century in the 29-40
+            // band. The property's height road reads `whatArrivingInIsWorth`,
+            // which does not reach the institutional band until Grand
+            // Ascension, so ordinals 29 to 36 sat outside both guards at a
+            // height the owner says has no background rate at all. The line
+            // catches the old monsters by their rung; the property catches the
+            // patriarch of a modest house who never gets near it.
+            const wounded = theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.factionId != null && n.factionRankIndex >= 3 &&
-                    // Not somebody on the last project. Dying of age at a
-                    // quarter of a hundred thousand years is not a thing that
-                    // happens, and this event is where it was happening.
-                    !isOnTheLastProject(n)
-            );
-            const npc = pickByMortality(rng, seniors, day);
+                    theWorldMayEnd(n) && !isOnTheLastProject(n) &&
+                    n.cultivation.realmOrdinal < WHERE_THE_OLD_MONSTERS_BEGIN &&
+                    n.cultivation.untreatedInjuries > 0
+            ).filter(n => !theirDeathWouldRearrangeTheWorld(state, n));
+            const npc = wounded.length > 0 && rng.chance(WHEN_IT_IS_AN_OLD_WOUND)
+                ? wounded[rng.int(0, wounded.length - 1)] ?? null
+                : null;
             if (!npc) return null;
             const faction = state.factions.find(f => f.id === npc.factionId) ?? null;
 
-            const cause = rng.chance(0.25)
-                ? 'a breakthrough that did not hold'
-                : rng.chance(0.4) ? 'an old wound' : 'age';
+            const cause = 'an old wound';
             const dead = theWorldEnds(npc, day, `Died of ${cause}.`);
             // A draw that came up with somebody the world may not end is a draw
             // that produced nothing, exactly like an empty candidate pool two
@@ -5568,29 +5627,42 @@ const TEMPLATES: Template[] = [
             replaceNpc(state, dead);
             const handoff = settleNpcDeath(state, npc, day);
 
+            // HOW BIG A DEATH IS READS WHO DIED. A constant here made an outer
+            // hall's elder and the ceiling of the world the same event. See
+            // `what-a-death-at-this-height-is-worth.ts`, which also moves the
+            // things that stood in their shadow.
+            const worth = whatADeathIsWorth(npc, faction, whatTheyHeldUp(state, npc));
+            const wake = theWakeOfADeath(state, state.npcs[indexById(state.npcs, npc.id)] ?? npc,
+                day, `They died of ${cause}.`);
+
             return emit(state, 'elder_died', day, {
                 day,
                 kind: 'death',
-                scale: 'local',
+                scale: worth.scale,
                 summary:
                     `${npc.name}, ${rankName(npc.cultivation.realmOrdinal)}` +
                     (faction ? ` of the ${houseName(faction.name)}` : '') + `, died of ${cause}.`,
                 actors: [{ id: npc.id, name: npc.name, role: 'deceased' }],
                 locationId: npc.locationId,
                 factionIds: faction ? [faction.id] : [],
-                visibility: 'faction',
-                magnitude: 0.4 + Math.min(0.4, npc.cultivation.realmOrdinal * 0.02),
+                visibility: worth.visibility,
+                magnitude: worth.magnitude,
                 unattributed:
                     'A compound on the ridge has been in white for a month, and nobody there ' +
                     'is taking visitors.',
                 consequences: {
-                    immediate: `The seat ${npc.name} held is empty.`,
+                    immediate: wake?.seatEmptied === true
+                        ? `The chair ${npc.name} held is empty, and the house stands lower than it did.`
+                        : `The seat ${npc.name} held is empty.`,
                     physical: '',
                     losers: handoff.primaryHeirId
                         ? [{ id: handoff.primaryHeirId, name: handoff.primaryHeirId, role: 'heir' }] : [],
-                    tenYearsLater: handoff.goalsInherited.length > 0
-                        ? 'What they were owed, and what they were owed for, is somebody else\'s now.'
-                        : 'The account closed with them.'
+                    tenYearsLater: wake !== null && wake.housesThatMoved > 0
+                        ? 'The houses that stood with them and the houses that stood against them '
+                            + 'have both had to decide what this one is worth now.'
+                        : handoff.goalsInherited.length > 0
+                            ? 'What they were owed, and what they were owed for, is somebody else\'s now.'
+                            : 'The account closed with them.'
                 }
             }, {
                 factions: faction ? [faction.id] : [],

@@ -56,11 +56,14 @@ import { whatAKillingLeaves } from './the-wrongs-a-world-opens-holding.js';
 import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact, type HistoricalFact } from './history.js';
+import { theWakeOfADeath, whatADeathIsWorth, whatTheyHeldUp } from './what-a-death-at-this-height-is-worth.js';
+import { theirFaceMoves } from './what-a-face-is-worth.js';
 import {
     drawTheOutcome,
     everybodyWithAReasonThisYear,
     isGroundAwayFromEverybody,
     theirHeight,
+    whatPunchingDownCostsInFace,
     whatTheFightComesTo,
     type AReasonThisYear,
     type Motive
@@ -295,6 +298,10 @@ function writeIt(
                 { note: `Killed them at ${where}.` });
         }
         const dying = state.npcs[victimAt]!;
+        const victimsHouse = victim.factionId === null
+            ? null
+            : state.factions.find(f => f.id === victim.factionId) ?? null;
+        const dead = theWorldEnds(dying, day, hidden ? whatItWasMadeToLookLike(r.place) : `Killed by ${byName}.`);
         if (!dead) return;
         state.npcs[victimAt] = dead;
         const handoff = settleNpcDeath(state, dying, day);
@@ -302,6 +309,9 @@ function writeIt(
         // THE WAKE HAPPENS EITHER WAY. A killing nobody has worked out is still
         // a chair standing empty and a house standing lower: what the cover
         // story hides is who did it, not that they are gone.
+        const wake = theWakeOfADeath(state, state.npcs[victimAt] ?? dying, day,
+            hidden ? whatItWasMadeToLookLike(r.place) : `${byName} killed them.`);
+        if (hidden) {
             const held = aDeedEntersTheWorld(state, {
                 kind: 'grudge_opened', day, locationId: r.place?.id ?? null, actors, factionIds: houseIds,
                 summary: `${summary} It was made to look like something else.`,
@@ -324,6 +334,22 @@ function writeIt(
         // were the same three numbers whether the dead was an outer disciple or
         // a Seat of the Hollow Court, and the world afterwards was the world
         // before it. See `what-a-death-at-this-height-is-worth.ts`.
+        const worth = whatADeathIsWorth(dying, victimsHouse, whatTheyHeldUp(state, dying));
+        // AND THEY PAY FOR IT IN FRONT OF EVERYBODY. Killing somebody a realm
+        // or more beneath you says you were threatened by somebody who could
+        // not threaten you. Only for a killing that is known to be theirs: a
+        // hidden one costs nothing, which is one more reason they are hidden.
+        const faceCost = whatPunchingDownCostsInFace(
+            killer.cultivation.realmOrdinal, victim.cultivation.realmOrdinal);
+        if (faceCost > 0) theirFaceMoves(state, killer.id, -faceCost, day);
+        const fact = appendWorldFact(state, makeFact({
+            day, kind: 'grudge_opened', scale: worth.scale, summary, actors,
+            locationId: r.place?.id ?? null, factionIds: victim.factionId ? [victim.factionId] : [],
+            visibility: worth.visibility, magnitude: worth.magnitude,
+            data: {
+                ...(wake === null ? {} : {
+                    powerWas: wake.powerWas, powerNow: wake.powerNow,
+                    seatEmptied: wake.seatEmptied, housesThatMoved: wake.housesThatMoved
                 }),
                 ...(leaves ? aPricedDeed(leaves.weight) : {}),
                 pressure: 'killing', motive: r.stakes.motive, relation: r.relation.why, evil: r.stakes.evil,

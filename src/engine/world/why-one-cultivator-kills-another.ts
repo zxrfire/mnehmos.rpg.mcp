@@ -68,6 +68,7 @@
 import { FOUNDATION_ORDINAL, realmForOrdinal, REALM_TIERS } from '../cultivation/realms.js';
 import { openHandednessOf } from '../social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import { PROTECTOR_HELPLESS_REALM_GAP } from '../cultivation/standing-guard-over-somebody-elses-crossing.js';
+import { A_PUBLIC_WIN, faceOf } from './what-a-face-is-worth.js';
 import { theSpeciesItIs } from './a-beast-with-a-core-is-somebody-in-particular.js';
 import { isBelowTheLid } from './layers.js';
 import { DAO_GROUND_TAG } from './how-a-cultivator-comes-by-a-road.js';
@@ -219,6 +220,32 @@ export interface TheStakes {
 
 /** A purse worth stopping somebody for, in stones. */
 export const A_PURSE_WORTH_TAKING = 200;
+
+/**
+ * What a stake has to be worth before somebody a realm further up has any
+ * reason to look at it at all.
+ *
+ * MOTIVE FIRST, COST SECOND. The design owner, asked why a Tribulation
+ * Transcender does not go about killing people: *"and again why would they?"*
+ * The first question is not what acting would cost them, it is whether there is
+ * anything there. What occupies somebody at that height is other cultivators
+ * near it, a thing that could carry them past their own wall, their own
+ * tribulation, their house, and the handful of people they actually care about.
+ * A disciple three realms down who annoyed somebody is not in that world.
+ *
+ * So a stake is read against the distance it is being reached across: the bar
+ * rises one of these per realm, and past two realms nothing ordinary clears it.
+ * A ruin (0.06) and a purse worth taking (up to 0.6) both fall out at the first
+ * realm; a grievance has to be near total to cross one; nothing at all crosses
+ * three. What survives is the rare pairing the genre is made of, and the face
+ * cost below is charged on that.
+ *
+ * A SEAT IS EXEMPT, because it is not reached across anything: it is the rung
+ * directly above somebody in their own house, which is as close as two people
+ * in this world stand.
+ */
+export const WHAT_IT_TAKES_TO_INTEREST_SOMEBODY_A_REALM_UP = 0.5;
+
 /** What being first on a piece of open ground is worth fighting over. */
 export const WHAT_BEING_FIRST_ON_A_PIECE_OF_GROUND_IS_WORTH = 0.06;
 
@@ -345,6 +372,36 @@ export function whatTheyWouldFightOver(input: {
     if (input.standsInTheirSeat) {
         options.push({ motive: 'a seat', weight: 0.6, evil: true, objectIds: [] });
     }
+
+    // AND IS ANY OF IT WORTH THEIR WHILE. Reaching down costs nothing to
+    // consider today: a Seat could hold a full-weight motive over a mortal's
+    // purse. The bar rises with every realm between them, and a seat is the one
+    // stake that is not reached across a gap at all.
+    const reach = Math.max(0, realmsApart(killer.cultivation.realmOrdinal, victim.cultivation.realmOrdinal));
+    const worthTheirWhile = options.filter(o =>
+        o.motive === 'a seat'
+        || o.weight >= WHAT_IT_TAKES_TO_INTEREST_SOMEBODY_A_REALM_UP * reach);
+
+    if (worthTheirWhile.length === 0) return null;
+    return worthTheirWhile.sort((a, b) => b.weight - a.weight)[0]!;
+}
+
+/**
+ * What killing somebody beneath you costs in face, in public wins.
+ *
+ * The owner: somebody at that height killing a nobody LOSES face - it is
+ * beneath them, it says they were threatened by somebody who could not threaten
+ * them, and the whole world hears about it. The unit is `A_PUBLIC_WIN`, the
+ * same one `what-a-face-is-worth.ts` prices a win over an equal in, and the
+ * shape is that file's own: realms, not rungs.
+ *
+ * Nought where they are level or below - killing upward is not shameful, it is
+ * the story - and nought for a killing nobody works out, which is one more
+ * reason the genre hides them.
+ */
+export function whatPunchingDownCostsInFace(killerOrdinal: number, victimOrdinal: number): number {
+    const reach = realmsApart(killerOrdinal, victimOrdinal);
+    return reach <= 0 ? 0 : Number((A_PUBLIC_WIN * reach).toFixed(2));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -439,6 +496,15 @@ export function whetherItComesToBlows(input: {
     // Somebody who thinks they will lose mostly does not start.
     const confidence = 1 / (1 + Math.exp(-(gap + 1) / 1.5));
     const meet = isInsideACompound(place) ? INSIDE_A_COMPOUND_IT_IS_SEEN : TWO_PEOPLE_ON_ONE_PIECE_OF_GROUND_MEET;
+    // AND WHAT IT WOULD COST THEM TO BE SEEN DOING IT, which is the second
+    // filter and not the first: the stake read has already returned nothing for
+    // most of these pairings. Somebody with face to lose is held back hardest,
+    // because face is what is being spent.
+    const cost = whatPunchingDownCostsInFace(killer.cultivation.realmOrdinal, victim.cultivation.realmOrdinal);
+    const beneathThem = 1 / (1 + cost * (1 + Math.max(0, faceOf(killer))));
+    return Math.max(0, Math.min(1,
+        A_YEAR_AT_THE_WORST * relation.value * stakes.weight * conscience * disposition * risk
+        * confidence * meet * beneathThem));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

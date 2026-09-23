@@ -16,6 +16,7 @@ import {
     type Observer
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { theWakeOfADeath, whatADeathIsWorth, whatTheyHeldUp } from './what-a-death-at-this-height-is-worth.js';
 import { recordMasterLost } from './recording-where-somebody-stands-in-a-house.js';
 import { openingsBetween, type LocationRecord } from './locations.js';
 // The two standings at which the world calls a tie something. Imported from
@@ -383,17 +384,32 @@ export function advanceTime(
         // the span is the whole of what it says the ancestor carries.
         if (!dead) continue;
         state.npcs[i] = dead;
+        // HOW FAR IT CARRIES IS NOT DECIDED HERE, AND THE WORLD MOVES.
+        //
+        // This is the commonest death in the world and, once the `elder_died`
+        // pass stopped inventing an earlier version of it, the one most people
+        // at height will ever have. It was also the one death that dropped
+        // nothing: the house went on being read at the strength of somebody who
+        // is not on it any more, the oaths they swore stood with nobody to keep
+        // them, and a chair at the top of a house emptied in silence. Two calls,
+        // both of them the ones `elder_died` already makes - one authority on
+        // what a death at this rung is worth, and one on what the world does
+        // about it. See `what-a-death-at-this-height-is-worth.ts`.
+        const worth = whatADeathIsWorth(
+            npc, state.factions.find(f => f.id === npc.factionId) ?? null,
+            whatTheyHeldUp(state, npc));
         appendWorldFact(state, makeFact({
             day: onDay,
             kind: 'death',
-            scale: 'personal',
+            scale: worth.scale,
             actors: [{ id: npc.id, name: npc.name, role: 'deceased' }],
             locationId: npc.locationId,
             factionIds: npc.factionId ? [npc.factionId] : [],
             summary: `${npc.name}, ${rank}, reached the end of their lifespan and died of old age.`,
-            visibility: npc.cultivation.realmOrdinal >= 13 ? 'regional' : 'faction',
-            magnitude: Math.min(1, 0.15 + npc.cultivation.realmOrdinal * 0.025)
+            visibility: worth.visibility,
+            magnitude: worth.magnitude
         }));
+        theWakeOfADeath(state, state.npcs[i]!, onDay, 'Their span ran out.');
         // The back-link used to be written here, unguarded, and `appendWorldFact`
         // now does it - the deceased is an actor on their own death. Two writes
         // was harmless only while every fact had a fresh id; once a recurring
