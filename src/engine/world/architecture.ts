@@ -546,8 +546,22 @@ export type RoomPurpose =
      * room in its `withIds` - see `a-teacher-giving-you-their-attention.ts` - so
      * the room adds no rule of its own about who may listen. Who can reach it is
      * the access chain's answer, the same as for every other room.
+     *
+     * The whole rule, open and closed, is written once in
+     * `how-far-up-the-world-reaches.md` under *A lecture, open and closed*.
      */
     | 'lecture_hall'
+    /**
+     * Where two people who have declared terms fight in front of the house.
+     *
+     * The genre room this table was missing, added the way the lecture hall
+     * was: a challenge is answered at the challenged person's own house
+     * (`a-challenge-is-answered-on-the-yard.ts`), and a house that has cut
+     * ground for it holds the duel there rather than on the practice yard
+     * between everybody's morning forms. Open, shallow and obvious, because the
+     * whole point of a duel is that people watch it.
+     */
+    | 'duelling_ground'
     | 'residence'
     | 'formation_node'
     /**
@@ -603,6 +617,13 @@ interface PurposeSpec {
      * `whoIsInChargeOfWhat` deals exactly what it dealt.
      */
     office: boolean;
+    /**
+     * Which round of offices this one was added in, 0 for the offices the deal
+     * started with. `whoIsInChargeOfWhat` deals every earlier round before a
+     * later one, so an office added later is dealt after every office already
+     * held and moves nobody off one. Absent reads as 0.
+     */
+    officeAddedInRound?: number;
     /** Heads the room was cut for, per unit of the compound's scale. */
     capacityPer: number;
     hazards: string[];
@@ -661,10 +682,18 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // more than three rungs: behind a wall the bottom rung cannot pass, and past
     // what a newcomer can find, so the people a talk is for could not walk to it.
     lecture_hall: { kind: 'hall', depth: 0, obviousness: 0.85, qiLift: 0, sealed: false, office: false, capacityPer: 0.5, hazards: [] },
-    // NOT AN OFFICE, for the reason the ancestral hall is not one - see its
-    // note below. Deep, beside the ancestral hall: what it holds is the house's
-    // own record of who is alive, and nobody from outside is walked past it.
-    life_lamp_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: false, capacityPer: 0.05, hazards: [] },
+    // NOT AN OFFICE and not sealed: a duel is watched. Beside the practice yard
+    // in depth, because it is the same ground put to a use the house has rules
+    // about, and it sleeps nobody - `capacityPer` is what STANDS there.
+    duelling_ground: { kind: 'hall', depth: 0.15, obviousness: 0.95, qiLift: 0, sealed: false, office: false, capacityPer: 0.4, hazards: [] },
+    // THE INTERNAL AFFAIRS OFFICE (`THE_ROOM_THE_ROLL_IS_KEPT_IN`). Deep, beside
+    // the ancestral hall: what it holds is the house's own record of who is
+    // alive, and nobody from outside is walked past it. An office in the SECOND
+    // round, which is what let it become one: it is dealt after every office
+    // the deal started with, so no holder of discipline, the archive or the
+    // treasury moved. See the note on the ancestral hall for what adding it in
+    // the first round did.
+    life_lamp_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: true, officeAddedInRound: 1, capacityPer: 0.05, hazards: [] },
     // NOT AN OFFICE, so the deal is untouched. Beside the alchemy hall in depth,
     // because the two are the house's two crafts, and the same heat hazard the
     // furnace floor carries, because what it burns is fire.
@@ -695,9 +724,9 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     //
     // That is a fact about the DEAL and not about this room: an office ladder
     // where the number of rooms silently reassigns who runs discipline is going
-    // to keep doing this. The office wants that fixed first - portfolios keyed
-    // to a room rather than to a position in a list - and then this line is one
-    // word.
+    // to keep doing this. The deal now takes offices in the round they were
+    // added (`officeAddedInRound`), and the Internal Affairs office went to the
+    // life lamp hall in the second round, where the roll is kept.
     ancestral_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: false, capacityPer: 0.1, hazards: [] },
     under_hall: { kind: 'vault', depth: 1, obviousness: 0.05, qiLift: 20, sealed: true, office: true, capacityPer: 0.01, hazards: ['sealed_qi', 'formation'] },
     // THE ONE ROOM CUT TO BE BAD GROUND, and the negative lift is the whole
@@ -728,9 +757,9 @@ export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
  */
 export function roomAuthorityOf(
     purpose: RoomPurpose
-): { sealed: boolean; office: boolean; depth: number } {
+): { sealed: boolean; office: boolean; depth: number; officeAddedInRound: number } {
     const spec = PURPOSE[purpose];
-    return { sealed: spec.sealed, office: spec.office, depth: spec.depth };
+    return { sealed: spec.sealed, office: spec.office, depth: spec.depth, officeAddedInRound: spec.officeAddedInRound ?? 0 };
 }
 
 /** The purpose a location was built for, or null when it was not built by us. */
@@ -760,6 +789,7 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
         case 'workshop': return 'the workshop';
         case 'mission_hall': return inward ? 'the posting cut' : 'the mission hall';
         case 'lecture_hall': return inward ? 'the speaking cut' : 'the lecture hall';
+        case 'duelling_ground': return inward ? 'the marked ground' : 'the duelling ground';
         case 'life_lamp_hall': return 'the Life Lamp Hall';
         case 'artifact_refining_hall': return inward ? 'the forge cut' : 'the Artifact Refining Hall';
         case 'audience_hall': return 'the audience hall';
@@ -817,7 +847,9 @@ export interface CompoundResult {
 /**
  * How many heads the compound was cut for, per unit of `capacityPer`.
  */
-export function compoundCapacityUnit(input: CompoundInput): number {
+export function compoundCapacityUnit(
+    input: Pick<CompoundInput, 'inherited' | 'powerOrdinal' | 'admissionOrdinal'>
+): number {
     const built = input.inherited ? Math.max(input.powerOrdinal, 12) : input.admissionOrdinal + 8;
     return Math.max(20, Math.round(built * 14));
 }
@@ -1068,6 +1100,10 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // dormitory and the mission hall read. APPENDED LAST so every room that
     // existed before keeps its place in the list.
     if (input.recruits) out.push('lecture_hall');
+    // AND GROUND TO SETTLE SOMETHING ON, for a house with people to settle
+    // things between. APPENDED LAST for the same reason as the lecture hall:
+    // every room that existed before keeps its place in the draw.
+    if (input.recruits) out.push('duelling_ground');
     // Every house keeps the lamps of its own, whether or not anybody in it can
     // light one today. APPENDED LAST for the same reason as the lecture hall.
     out.push('life_lamp_hall');
@@ -1593,6 +1629,7 @@ function purposeLine(purpose: RoomPurpose, capacity: number): string {
         case 'workshop': return `Where the house makes what it can still make.${held}`;
         case 'audience_hall': return `Where the house is answered, and answers.${held}`;
         case 'lecture_hall': return `Mats in rows facing one seat, and whoever is in the seat is talking.${held}`;
+        case 'duelling_ground': return `Flagged ground with a line cut round it, swept, and standing room on three sides.${held}`;
         case 'life_lamp_hall': return 'Lamps in rows, one for each of the house\'s own. Every one still burning is somebody alive.';
         case 'artifact_refining_hall': return `A forge over earth fire, and the work laid out on the stones around it.${held}`;
         case 'tribute_room': return 'Where what is owed is counted before it leaves.';

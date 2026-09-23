@@ -533,6 +533,14 @@ export interface NpcRecord {
      */
     merit?: HouseMerit | null;
 
+    /**
+     * What they are worth in front of people, raised by public wins and deeds
+     * anybody saw and lowered by public defeats, refusals and being driven off.
+     * Read and moved only through `what-a-face-is-worth.ts`. Absent is nought,
+     * which is where everybody starts.
+     */
+    face?: number | null;
+
     goals: NpcGoal[];
     relationships: NpcRelationship[];
 

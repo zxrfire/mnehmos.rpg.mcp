@@ -139,6 +139,7 @@ import {
 } from './an-npc-striking-at-the-next-wall.js';
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn } from './a-house-takes-in-one-of-its-own.js';
+import { theChallengesThisYear } from './a-challenge-is-answered-on-the-yard.js';
 import { getOrigin } from '../cultivation/origin.js';
 import {
     groundRateAt, groundTimeShares, houseFallbackRate, rateOverTheYear, roomsHeldBy,
@@ -780,6 +781,9 @@ export function applyPressure(
         // And what anybody on a roll carries that their house wants, handed in.
         // See `what-a-house-gives-merit-for.ts`.
         peopleTurnInWhatTheirHouseWants(state, withinSpan(year * 365 + 202, fromDay, toDay));
+        // And what two of them could not carry any further gets taken to the
+        // ground in front of the house. See `a-challenge-is-answered-on-the-yard.ts`.
+        theChallengesThisYear(state, year, withinSpan(year * 365 + 203, fromDay, toDay));
     }
 
     return { events, yearsStepped, born };
