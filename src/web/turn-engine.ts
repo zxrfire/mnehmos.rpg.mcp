@@ -4879,6 +4879,40 @@ ${noticedWaiting}`;
                             ? factsForCompany(cultivator, company, standing)
                             : factsForLook(cultivator, ambient, company, standing, groundIsQuiet))
                 );
+                // ── AND LOOKING AT A SQUARE IS HOW YOU COME TO KNOW WHO IS
+                //    STANDING IN IT ────────────────────────────────────────
+                //
+                // This read already introduced the player to the HOUSE that
+                // holds the ground, a few lines down, and to nobody standing on
+                // it. Measured on `tells-world`: a player who had looked at a
+                // square with three people in it was aware of the two the next
+                // sentence happened to name as parties and not of the third, so
+                // "I tell him that X killed his brother" came back with the
+                // engine's honest refusal - news carries as far as you can
+                // point at what was done - about a man standing in front of
+                // them.
+                //
+                // Perception and nothing else. Being aware that somebody exists
+                // is not knowing what was done to them: the gate that asks
+                // whether a deed can be pointed at is untouched, and a name
+                // heard at a distance or read in an archive still arrives by
+                // its own road. `learnIfNew` means looking at the same square
+                // every day writes nothing after the first time.
+                {
+                    const inFrontOfThem = this.present(cultivator);
+                    if (inFrontOfThem.length > 0) {
+                        (looking.perceived ??= []).push({
+                            names: inFrontOfThem.map(row => ({
+                                kind: 'cultivator' as const,
+                                id: row.id,
+                                name: row.name,
+                                stage: 'named' as const
+                            })),
+                            note: 'Standing in the same place, in plain sight.',
+                            sourceKind: 'witnessed'
+                        });
+                    }
+                }
                 if (wrong) {
                     for (const line of wrong.lines) {
                         looking.facts.lines.push(line);
