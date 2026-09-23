@@ -72,7 +72,13 @@ describe('a model may read a sentence differently', () => {
         // De-escalation is free and is often the better reading. `AGENTS.md`:
         // drawing a sword is a threat in a negotiation, an opening in a duel,
         // and a courtesy at a weapon-house gate.
-        const said = 'I draw my blade';
+        //
+        // SAID AT SOMEBODY, because the bare sentence stopped being an example
+        // of this rule the day `carry` landed: "I draw my blade" with nobody
+        // named is what is in the hand, which is free, and a model cannot be
+        // cheaper than free. Named at a person it is still the swing it always
+        // was, which is the reading this rule exists to undercut.
+        const said = 'I draw my blade on him';
         const plan = await modelSaying('{"action":"interact","intent":"threaten"}').plan(said, '');
         expect(plan.action.action).toBe('interact');
         expect(plan.source).toBe('model');
