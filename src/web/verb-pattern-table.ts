@@ -291,6 +291,7 @@ import {
     aTakingOffTheHousesShelf
 } from './sect-phrasings.js';
 import type { SectIntent } from './sect-phrasings.js';
+import { theThingBeingHandedIn } from './handing-in-phrasings.js';
 import { stonesNamedIn } from './tool-result-prose.js';
 
 // Institutions acting on each other, and on the dead. By name, so
@@ -6040,6 +6041,13 @@ function planIntent(input: string): PlannedAction {
                 ?? extractSubject(withoutTheMount, MOVE_SUBJECT_VERBS),
             ...(mount ? { topic: mount[1].trim().toLowerCase() } : {})
         };
+    }
+
+    // HANDING A THING IN TO YOUR HOUSE, ahead of handing it to a person and of
+    // paying money in. See `handing-in-phrasings.ts`.
+    const handedIn = theThingBeingHandedIn(input);
+    if (handedIn !== undefined) {
+        return { action: 'sect', intent: 'hand_in', target: handedIn };
     }
 
     // HANDING SOMEBODY A THING

@@ -204,6 +204,12 @@ export const ACTION_NAMES = [
     /**
      * ASKING A PERSON FOR SOMETHING, which is the verb the design rests on and
      * which did not exist.
+     *
+     * And one of its intents asks for nothing: `ending_a_bond` is a master
+     * casting a disciple out or a disciple walking out on a master, which is an
+     * ACT put to a person rather than a favour asked of them. It is under this
+     * verb because who it is done to is the whole of it, and because both ends
+     * are one act - see `RequestKind` and `ending-a-bond-you-are-in.ts`.
      */
     'request',
     /**
@@ -230,6 +236,33 @@ export const ACTION_NAMES = [
      * Having a child, and spending the years.
      */
     'child',
+    /**
+     * What is on your body and what is in your hands.
+     *
+     * Robes on and robes off, a blade drawn, put away or let go. One verb
+     * because it is one question - what a person standing in front of you can
+     * see about this one - and because both halves are read by something that
+     * was already there: the robes by the face a house's people read
+     * (`inTheRobes`), the blade by an attack's opening, which cannot be a
+     * concealed one when the sword is already out.
+     *
+     * Costs no day and rolls nothing. Putting robes on is a read, because
+     * possession already IS wearing everywhere else in the engine; the other
+     * four write.
+     */
+    'carry',
+    /**
+     * Getting out of sight, in the two senses this genre has.
+     *
+     * `self` is the body: somewhere it is not seen, answered by reading who
+     * here would place you anyway. `cultivation` is the weight: carrying
+     * nothing that says what you are, which is what the hidden expert in the
+     * nondescript robe is doing. `show` puts it back.
+     *
+     * Neither half stores what anybody is taken for. The rung a looker reads
+     * is `apparentOrdinal`'s answer at the moment they look.
+     */
+    'conceal',
     /**
      * The parser did not understand, and nothing happens.
      */
@@ -280,6 +313,25 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
  * is `interact`, which is the sixth and the one that had to be found by playing -
  * the note under {@link TIME_CONSUMING_ACTIONS} carries it.
  */
+
+/**
+ * WHAT IS ON YOU, WHICH IS NOT A READ AND STILL COSTS NOBODY ANYTHING.
+ *
+ * Both of these write: a blade is in the hand afterwards, or the weight is off
+ * the shoulders. So neither belongs on {@link READ_ONLY_ACTIONS}, which says a
+ * verb changes nothing at all. But no day passes, nothing is rolled and no
+ * purse moves, and every layer that asks "did this cost the asker anything"
+ * wants the answer no.
+ *
+ * Measured, the day the verbs landed: `I draw my sword and attack him` was
+ * reported to the player as a sentence the turn had only half run, because the
+ * drawing was priced as an act competing with the swing. It is in
+ * `the-part-of-the-sentence-that-was-not-run`'s ORDINARY corpus precisely
+ * because drawing before striking is one act said in full.
+ */
+export const CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING: readonly ActionName[] = [
+    'carry', 'conceal'
+] as const;
 
 // A VERB THAT COSTS STILL HAS A READ INSIDE IT
 
@@ -565,6 +617,12 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
     /**
+     * WHAT is being put on, drawn or let go, in the player's own words. Used to
+     * say it back ("your sword is in your hand") and for nothing else: which
+     * robes are on somebody is read off the possessions, never off the word.
+     */
+    'carry',
+    /**
      * WHO IS BEING MADE TO DO IT. Absent from this list until it was measured, and
      * the consequence was total: `validatePlan` keeps a field only for the actions
      * that own it, so every model-planned coercion arrived with its target deleted
@@ -827,7 +885,21 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      * `TEACH_INTENTS`. An unrecognised label falls to handing an art on, which
      * refuses before anything is spent when nobody is named.
      */
-    'teach'
+    'teach',
+    /**
+     * `conceal` picks which of the three, and the fall-through is the safe one
+     * for the same reason `carry`'s is: an unrecognised label lands on `self`,
+     * which writes nothing at all.
+     */
+    'conceal',
+    /**
+     * `carry` picks which of the five: robes on or off, a blade drawn, put away
+     * or let go. Safe on the same argument as `look` - the label selects which
+     * read or which one-bit write runs, none of them spends a day or rolls
+     * anything, and an unrecognised label falls through to `wear`, which is the
+     * read.
+     */
+    'carry'
     /**
      * ── AND `coerce` IS DELIBERATELY NOT HERE ────────────────────────────
      */
@@ -883,6 +955,15 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      */
     interact: ['a_span_of_days'],
     investigate: [],
+    /**
+     * A hand moving. No span, no roll, no other body: the most it changes is a
+     * flag and which object a possessor column points at.
+     */
+    carry: [],
+    /**
+     * Being looked at, or not. One bit, and two reads of the room.
+     */
+    conceal: [],
     move: ['a_span_of_days'],
     ride: ['a_span_of_days'],
     fold: ['a_span_of_days'],

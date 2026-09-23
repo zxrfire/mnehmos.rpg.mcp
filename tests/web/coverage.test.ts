@@ -47,6 +47,25 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I greet the man at the gate',
         'I introduce myself to the guard'
     ],
+    conceal: [
+        // `I hide` reached nothing and `I hide my cultivation` reached a
+        // character sheet, which is the softening rather than the gap.
+        'I hide',
+        'I keep out of sight',
+        'I hide my cultivation',
+        'I conceal my aura',
+        'I stop hiding my cultivation'
+    ],
+    carry: [
+        // The four the sweep found reaching nothing, and the two that say the
+        // same acts the other way round.
+        'I put on the robes',
+        'I take off the robes',
+        'I draw my sword',
+        'I drop the sword',
+        'I sheathe my blade',
+        'I put the robes on'
+    ],
     investigate: [
         // Was "I explore the ruins", for the same reason the line below was
         // swapped and with the same answer. Routed here it produced *unresolved
@@ -708,7 +727,10 @@ describe('every intent behind a door is reachable from plain English too', () =>
 
     const MOVE_PHRASINGS: Record<string, readonly string[]> = {
         travel: ['I travel to Nine Peaks', 'I set out for Clear River Ford'],
-        flee: ['I flee', 'I run away from the fight'],
+        // Leaving the scene rather than naming a destination. The bare ones are
+        // how somebody answers being told to get off ground they have walked
+        // onto, and all three reached nothing before that scene was wired.
+        flee: ['I flee', 'I run away from the fight', 'I leave', 'I back off'],
         approach: ['I approach the elder', 'I walk up to the gate warden'],
         enter: ['I enter the village', 'I go into the courtyard'],
         follow: ['I follow the merchant', 'I shadow the courier']
@@ -866,6 +888,54 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // recorded gaps, which is the only legal direction for that list. Each
         // needs a possessed room noun and its own verb, and the two that move
         // something need a thing named between the two.
+        // WHAT IS ON THE BODY AND IN THE HANDS. Phrasings rather than recorded
+        // gaps, which is the only legal direction for that list: every one of
+        // these reached NOTHING before the verb existed, and each intent is a
+        // separate door - putting robes on is a read, taking them off is a
+        // write, and the three hand labels write the same flag in two
+        // directions.
+        'conceal/self': [
+            'I hide',
+            'I keep out of sight',
+            'I lie low'
+        ],
+        'conceal/cultivation': [
+            'I hide my cultivation',
+            'I conceal my aura',
+            'I mask my realm'
+        ],
+        'conceal/show': [
+            'I stop hiding my cultivation',
+            'I let my aura out'
+        ],
+        'carry/wear': [
+            'I put on the robes',
+            'I put the robes on',
+            'I wear the sect robes'
+        ],
+        'carry/take_off': [
+            'I take off the robes',
+            'I take the robes off'
+        ],
+        'carry/draw': [
+            'I draw my sword',
+            'I unsheathe my blade'
+        ],
+        'carry/put_away': [
+            'I sheathe my blade',
+            'I put my sword away'
+        ],
+        'carry/show': [
+            // The token, which is what the robe is not. The owner's intruder
+            // ruling turns on the difference.
+            'I show my token',
+            'I show them my token',
+            'I produce my sect token'
+        ],
+        'carry/drop': [
+            'I drop the sword',
+            'I throw down my weapon'
+        ],
         'stow/leave': [
             'I put my sword in my room',
             'I leave the pills in my quarters',
@@ -905,6 +975,18 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // `give` beside a named house is how somebody pays in. Off the recorded
         // gaps and into a phrasing, which is the only legal direction for that
         // list.
+        // PUTTING SOMEBODY OFF A ROLL, doing it and having it done. The parser
+        // used to want the word "elder" in the sentence, which is the engine's
+        // answer given by shrugging: two of these are the intent corpus's own
+        // exemplars and both were blank looks, and two more were read as blows.
+        // Who may is the house's, and the refusal names them.
+        'sect/expel': [
+            'I throw him out of the sect',
+            'I have her removed from the house',
+            'I expel Yun Zhi from the sect',
+            'I strike his name off the roll',
+            'I want him expelled'
+        ],
         'sect/order': [
             'I order the outer disciples to gather',
             'I give an order to the outer disciples'
@@ -923,6 +1005,29 @@ describe('every intent DECLARED is a door somebody can find', () => {
         'sect/donate': [
             'I donate 500 stones to the sect',
             'I give the sect 500 stones'
+        ],
+        // A THING rather than money. Three were blank looks and three were
+        // answered as paying money in before the door existed; the figure and
+        // the stones above are what keep a donation a donation.
+        'sect/hand_in': [
+            'I hand this core in to the sect',
+            'I turn in the manual',
+            'I give the treasury the jade',
+            'I turn the core in to my sect',
+            'I give the core to the sect'
+        ],
+        // PUTTING A BOND DOWN, from either end, said rather than asked for.
+        // Nine of these were blank looks and "I walk out on Elder Fang" was
+        // read as fleeing, while the only shape that worked - "I ask X to end
+        // our bond" - is the one nobody types: nobody ASKS to be cast out.
+        'request/ending_a_bond': [
+            'I cast Yun Zhi out',
+            'I disown my disciple',
+            'I sever my ties with Elder Fang',
+            'I renounce my master',
+            'I walk out on Elder Fang',
+            'I am no longer Elder Fang\'s disciple',
+            'I end our bond'
         ],
         'request/a_making': [
             'I ask my master to cut me a talisman',
@@ -1028,10 +1133,16 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'what does the sect want of me',
             'who sent for me'
         ],
+        // Saying no to whatever has been put to you. The house's ask is one of
+        // them and the people telling you to get off ground they are working is
+        // another; which is being answered is a question about the situation,
+        // and standing where you are is a no in either.
         'sect/refuse': [
             'I refuse the summons',
             'I turn them down',
-            'I will not go'
+            'I will not go',
+            'I stand my ground',
+            'I am not going anywhere'
         ],
         // AND SAYING YES, WHICH THE GAME HAD NO WORD FOR AT ALL. `acceptDuty`
         // had one caller - the noticeboard - so a house could send for somebody
@@ -1155,7 +1266,7 @@ describe('every intent DECLARED is a door somebody can find', () => {
         'oath/read', 'oath/swear', 'oath/break',
         'sect/leave', 'sect/promote', 'sect/stipend', 'sect/standing', 'sect/join',
         'sect/siphon', 'sect/recruit', 'sect/admission', 'sect/curriculum',
-        'sect/expel', 'sect/duty', 'sect/guest',
+        'sect/duty', 'sect/guest',
         'site/approach', 'site/outside', 'site/enter', 'site/take',
         'legacy/counters', 'legacy/bury', 'legacy/dig', 'legacy/lodge', 'legacy/claim',
         'petition/grant', 'petition/stock', 'petition/descent',
@@ -1326,7 +1437,18 @@ describe('every verb is priced as well as reachable', () => {
         // makes it safe is that both ends of the move are the player's own and
         // nothing about it is permanent: a thing put in the wrong place is
         // taken out again on the next turn for nothing.
-        'stow'
+        'stow',
+        // Getting out of sight. Three intents, no clock, default `self` - the
+        // read. The one write is a single bit that the player sets and clears
+        // by saying so, and nothing about it is in anybody else's name.
+        'conceal',
+        // And what is on the body, which is `stow`'s case one layer closer in.
+        // Five intents, none of them on the clock, default `wear` - the READ,
+        // which is the protection this state is documented as wanting. Off the
+        // read-only list because two of the five write: a flag, and which
+        // object a possessor column points at. Both undo themselves on the next
+        // turn for nothing, and neither is written in anybody else's name.
+        'carry'
     ];
 
     it('puts every verb on a list, or names it as priced at execution', () => {
@@ -1383,7 +1505,16 @@ describe('every verb is priced as well as reachable', () => {
         // the read-only list is that it writes rows, and what keeps it safe is
         // that both holders are the player's own and the move undoes itself on
         // request.
-        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(16);
+        //
+        // 16 -> 17 for `carry`, which is `stow`'s case again and the second
+        // impermanent member: what is on a body and in its hands, five intents,
+        // no clock, default `wear`. Robes come off onto the ground where they
+        // can be picked up, and a drawn blade goes away again by saying so.
+        //
+        // 17 -> 18 for `conceal`, on `carry`'s reasoning: three intents, no
+        // clock, default `self`, and the one bit it writes is turned off by
+        // saying so.
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(18);
         expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
     });
 

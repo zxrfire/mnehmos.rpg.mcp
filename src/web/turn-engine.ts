@@ -1124,6 +1124,7 @@ import {
 } from '../engine/social-leverage/a-service-is-something-done.js';
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
+import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
 import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
 import {
     communicationTalismanVerbs,
@@ -7317,6 +7318,10 @@ ${noticed}`;
 
             case 'donate':
                 return this.donate(run, cultivator, days);
+
+            // A THING rather than money. See `handing-a-thing-in-to-your-house.ts`.
+            case 'hand_in':
+                return this.handItInToTheHouse(run, cultivator, target);
 
             case 'standing': {
                 // ── A HOUSE THAT IS NOT YOURS IS A QUESTION ABOUT THE HOUSE ──
@@ -19451,3 +19456,11 @@ Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destr
 export interface GameService extends CommunicationTalismanVerbs {}
 type CommunicationTalismanVerbs = typeof communicationTalismanVerbs;
 Object.assign(GameService.prototype, communicationTalismanVerbs);
+// Handing a thing in to your house, merged on its own line for the same reason.
+export interface GameService extends HandingInVerbs {}
+type HandingInVerbs = typeof handingInVerbs;
+Object.assign(GameService.prototype, handingInVerbs);
+// And holding a posting.
+export interface GameService extends PostingVerbs {}
+type PostingVerbs = typeof postingVerbs;
+Object.assign(GameService.prototype, postingVerbs);
