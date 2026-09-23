@@ -78,7 +78,7 @@ import {
     isImpossibleTier,
     postingFor,
     tierFor,
-    whoTheHouseCanSend,
+    whoThisErrandIsPitchedFor,
     type Candidate,
     type Posting
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
@@ -220,12 +220,17 @@ export function whoSendsWhenADoorOpens(input: {
             purse,
             // What this house has for it, through the eligibility filter the
             // party itself is drawn with two lines below.
-            available: whoTheHouseCanSend(
-                { ceilingOrdinal: term.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER },
+            available: whoThisErrandIsPitchedFor(
+                {
+                    ceilingOrdinal: term.ceilingOrdinal,
+                    hands: Number.MAX_SAFE_INTEGER,
+                    pitchOrdinal: input.door.thresholds.survival
+                },
                 house.roster
             ).length
         });
-        const party = whoTheHouseCanSend(posting, house.roster);
+        // Whom the door is pitched for, and nobody it is beneath.
+        const party = whoThisErrandIsPitchedFor(posting, house.roster);
         if (party.length === 0) continue;
         // A HOUSE DOES NOT SEND PEOPLE AT SOMETHING IT EXPECTS TO LOSE THEM TO.
         // The module's own predicate, not a bar invented here, and it is what

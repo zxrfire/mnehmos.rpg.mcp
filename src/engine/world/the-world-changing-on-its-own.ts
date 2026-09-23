@@ -265,6 +265,7 @@ import {
     tierFor,
     whatTheHouseCanSpare,
     whoTheHouseCanSend,
+    whoThisErrandIsPitchedFor,
     type OnTheRollForAnErrand,
     type Candidate,
     type HouseAsItStands
@@ -2835,12 +2836,13 @@ function applySendings(
         const reason = weighted(rng, reasons, r => r.weight);
         if (!reason) continue;
 
-        // What the errand is pitched at. AT OR BELOW THE HOUSE'S OWN BEST, mostly,
-        // and that skew is the whole of `summonable`'s ruling applied to a pitch
-        // instead of to an offer: a house sends people at work it expects them to
-        // come back from. The draw still reaches a rung above them now and again,
-        // which is where a sending becomes a story.
-        const best = spare.free.reduce((n, c) => Math.max(n, c.ordinal), 0);
+        // What the errand is pitched at, where the ground does not say. AROUND THE
+        // HOUSE'S OWN MIDDLE, and not its best: pitched off the best, every
+        // errand a house had was work for its apex, and the Court's Seats went
+        // looking for disciples "at ordinal 45". The draw still reaches a rung
+        // above the middle now and again, which is where a sending becomes a
+        // story.
+        const middle = [...spare.free].sort((a, b) => a.ordinal - b.ordinal)[Math.floor(spare.free.length / 2)]?.ordinal ?? 0;
 
         // ── WHERE THEY GO, AND IT IS DECIDED BEFORE THE POSTING IS WRITTEN ───
         //
@@ -2896,7 +2898,16 @@ function applySendings(
             pick: count => rng.int(0, Math.max(0, count - 1))
         });
         const goingTo = named?.locationId ?? drawn;
-        const pitchDrawn = best + rng.int(-5, 1);
+        // AND WHERE THE GROUND DOES SAY, IT IS THE GROUND. What a place asks of
+        // somebody who means to live through it, which is the pitch a door's
+        // race already reads: Fallen Wall asks 12 of anybody, whoever the house
+        // has. The rung is drawn whatever the ground, so the stream does not
+        // depend on where the party is going.
+        const drawnOffTheMiddle = middle + rng.int(-5, 1);
+        const groundAsks = goingTo === null
+            ? 0
+            : state.locations.find(l => l.id === goingTo)?.thresholds.survival ?? 0;
+        const pitchDrawn = groundAsks > 0 ? groundAsks : drawnOffTheMiddle;
 
         // WHAT SUITS THIS ROAD AND THIS CHEST. Asked with the WORK's own head
         // count rather than with the party, because the party is not decided
@@ -2943,10 +2954,15 @@ function applySendings(
             purse: inTheChest,
             // Whom this house actually has for this errand, read through the
             // module's own eligibility filter rather than a second copy of it.
-            available: whoTheHouseCanSend(
-                { ceilingOrdinal: reason.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER },
-                spare.free
-            ).length
+            available: named === null
+                ? whoThisErrandIsPitchedFor(
+                    { ceilingOrdinal: reason.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER, pitchOrdinal: pitchDrawn },
+                    spare.free
+                ).length
+                : whoTheHouseCanSend(
+                    { ceilingOrdinal: reason.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER },
+                    spare.free
+                ).length
         });
         // AND THE CHEST PAYS FOR THE GROUND THAT IS NOT THERE. One debit, off
         // the figure the posting itself carries, so what a house is charged and
@@ -2957,7 +2973,12 @@ function applySendings(
                 0, Number(faction.resources.spirit_stones ?? 0) - posting.stonesBurned
             );
         }
-        const party = whoTheHouseCanSend(posting, spare.free);
+        // Whom it is pitched for, and nobody it is beneath. The one exception is
+        // the ground that would pay: that is the elders reaching past the
+        // house's weight with whoever it has, decided just below.
+        const party = named === null
+            ? whoThisErrandIsPitchedFor(posting, spare.free)
+            : whoTheHouseCanSend(posting, spare.free);
         if (party.length === 0) continue;
 
         // WALKING ONTO SOMEBODY'S GROUND IS A DECISION, and it is the elders'.

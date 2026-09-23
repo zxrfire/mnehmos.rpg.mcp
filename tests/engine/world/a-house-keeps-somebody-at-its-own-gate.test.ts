@@ -62,7 +62,8 @@
  *
  * Red-checked: every assertion below was confirmed to fail with the keep
  * dropped (returning `free` unfiltered) or the term check dropped (ignoring
- * `committedUntilDay`).
+ * `committedUntilDay`). The head's own keep is the second bound and is pinned
+ * the same way: dropping it puts `elder-high` back on the roll.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -113,11 +114,18 @@ const spare = (roster: readonly OnTheRollForAnErrand[], onDay = 100) =>
     whatTheHouseCanSpare({ roster, rankCount: RANKS.length, seatLocationId: SEAT, onDay });
 
 describe('a house keeps somebody at its own gate', () => {
-    it('holds back one who could host, and only one', () => {
+    it('holds back one who could host, and only one, on top of its head', () => {
         const roster = aHouseAtHome();
         const answer = spare(roster);
         expect(answer.keptAtTheGate).not.toBeNull();
-        expect(answer.free).toHaveLength(roster.length - 1);
+        // TWO OFF THE ROLL, AND THEY ARE DIFFERENT PEOPLE. The head is not spare
+        // for an errand at all - a patriarch going out is rarer than an elder
+        // going out, which is rarer than a disciple - and one host is kept at
+        // the gate beside them.
+        expect(answer.theHead!.id).toBe('elder-high');
+        expect(answer.keptAtTheGate!.id).not.toBe(answer.theHead!.id);
+        expect(answer.free).toHaveLength(roster.length - 2);
+        expect(answer.free.map(p => p.id)).not.toContain('elder-high');
         expect(couldHostAGuest(
             roster.find(p => p.id === answer.keptAtTheGate!.id)!.rankIndex,
             RANKS.length
@@ -131,17 +139,19 @@ describe('a house keeps somebody at its own gate', () => {
         expect(answer.keptAtTheGate!.id).toBe('core');
     });
 
-    it('keeps nobody where nobody who could host was standing there', () => {
+    it('keeps nobody at the gate where nobody who could host was standing there, and still keeps its head', () => {
         const roster = aHouseAtHome().map(p => ({ ...p, locationId: 'loc-elsewhere' }));
         const answer = spare(roster);
         expect(answer.keptAtTheGate).toBeNull();
-        expect(answer.free).toHaveLength(roster.length);
+        expect(answer.free).toHaveLength(roster.length - 1);
+        expect(answer.free.map(p => p.id)).not.toContain('elder-high');
     });
 
     it('will not send its only host, whatever the errand asks for', () => {
+        // Who is also its head here, and is off the roll for that reason first.
         const roster = [person('the-only-elder', 4, 30), person('outer', 0, 8)];
         const answer = spare(roster);
-        expect(answer.keptAtTheGate!.id).toBe('the-only-elder');
+        expect(answer.theHead!.id).toBe('the-only-elder');
         expect(answer.free.map(p => p.id)).toEqual(['outer']);
     });
 
@@ -235,14 +245,17 @@ describe('a house keeps somebody at its own gate', () => {
         });
     });
 
-    it('holds nobody for a house with no hall', () => {
+    it('holds nobody at a gate for a house with no hall, and still keeps its head', () => {
         const answer = whatTheHouseCanSpare({
             roster: aHouseAtHome(),
             rankCount: RANKS.length,
             seatLocationId: null,
             onDay: 100
         });
+        // There is no gate to answer, so nobody is held at one. The head is not
+        // held for the gate's sake and is not spare either way.
         expect(answer.keptAtTheGate).toBeNull();
-        expect(answer.free).toHaveLength(6);
+        expect(answer.theHead!.id).toBe('elder-high');
+        expect(answer.free).toHaveLength(5);
     });
 });
