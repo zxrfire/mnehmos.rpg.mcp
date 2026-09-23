@@ -117,6 +117,12 @@ export function seedTheWanderers(state: WorldState, presentDay: number): NpcReco
             name: wanderer.recordName,
             factionId: null,
             factionRankIndex: -1,
+            // THE YEARS HE HAS are the rung's figure less his age, which is what
+            // the row already carries off `setRealm`.
+            cultivation: {
+                ...npc.cultivation,
+                foundation: 'stable'
+            },
             activity: null
         };
         state.npcs.push(npc);

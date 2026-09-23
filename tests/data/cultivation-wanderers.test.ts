@@ -70,7 +70,6 @@ describe('wandering figures', () => {
         expect(rankName(w.lastOrdinal)).toBe('False Immortal');
         expect(w.crossingYearsAgo).toBeGreaterThan(100);
         // Vast, finite, and he knows the number.
-        expect(w.lifespanYearsRemaining).toBeGreaterThan(1_000);
         expect(w.lifespanNote).toMatch(/finite|knows the number|to the year/i);
         // Incomplete in one specific way, and never explained.
         expect(w.incompleteIsUnexplained).toBe(true);

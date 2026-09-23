@@ -28,6 +28,7 @@ import {
 import { APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy.js';
 import { getTechnique } from '../../src/data/cultivation/techniques.js';
 import { getWanderer } from '../../src/data/cultivation/wanderers.js';
+import { HOLLOW_COURT_ROSTER } from '../../src/data/cultivation/hollow-court-roster.js';
 import {
     FALSE_IMMORTALS,
     FalseImmortalRecordSchema,
@@ -933,17 +934,16 @@ describe('the present count', () => {
         for (const f of FALSE_IMMORTALS) expect(f.servingNow, f.id).toBe(false);
     });
 
-    it('puts Lu Sheng early on the curve and out of reach of the far end', () => {
+    it('puts Lu Sheng early on the curve, with the whole of it ahead of him', () => {
         const lu = getWanderer('wanderer-lu-sheng')!;
         const stage = madnessStageAt(lu.crossingYearsAgo);
         expect(stage.id, 'Lu Sheng should be in the first stage').toBe(MADNESS_STAGES[0].id);
-        // His whole remaining existence ends inside the first band.
-        const atDeath = lu.crossingYearsAgo + lu.lifespanYearsRemaining;
-        expect(stageIndex(madnessStageAt(atDeath).id)).toBeLessThanOrEqual(1);
-        // And he can never reach the third, on the arithmetic rather than by fiat.
-        expect(canEverReach(atDeath, MADNESS_STAGES[2].id)).toBe(false);
-        expect(THE_REMAINDER.theWandererIsTheWorkedCase).toMatch(/five per cent/i);
-        expect(THE_REMAINDER.theWandererIsTheWorkedCase).toMatch(/price of his crossing/i);
+        // He holds the rung's figure less his age, so the far end is on his road
+        // on the arithmetic rather than by fiat.
+        const age = HOLLOW_COURT_ROSTER.find(m => m.name === lu.recordName)!.ageYears;
+        const atDeath = lu.crossingYearsAgo + FALSE_IMMORTAL_LIFESPAN_YEARS - age;
+        expect(canEverReach(atDeath, MADNESS_STAGES[2].id)).toBe(true);
+        expect(THE_REMAINDER.theWandererIsTheWorkedCase).toMatch(/charged him nothing in years/i);
     });
 
     it('explains why the one eligible person holds no post, without resolving the rest', () => {

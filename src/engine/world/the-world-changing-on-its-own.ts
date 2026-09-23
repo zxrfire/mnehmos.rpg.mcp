@@ -145,6 +145,7 @@ import {
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn } from './a-house-takes-in-one-of-its-own.js';
 import { theHousesAreCounted } from './how-many-people-a-house-has.js';
+import { theHousesTakeInEldersFromOutside } from './a-house-takes-in-an-elder-from-outside.js';
 import { theConclavesAreContested } from './a-conclave-seat-is-won-in-a-tournament.js';
 import { theChallengesThisYear } from './a-challenge-is-answered-on-the-yard.js';
 import { aChildTakesTheirParentsLine } from './a-child-takes-their-parents-line.js';
@@ -195,6 +196,7 @@ import {
 } from './being-held-back-in-a-house.js';
 import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js';
 import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
+import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
 import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
@@ -699,6 +701,9 @@ export function applyPressure(
         applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
+        // And an office whose chair the year's promotions left empty is filled
+        // from outside. See `a-house-takes-in-an-elder-from-outside.ts`.
+        theHousesTakeInEldersFromOutside(state, withinSpan(year * 365 + 91, fromDay, toDay));
         // And the one rung that rotates settles itself, on the house's own
         // cycle. See `a-conclave-seat-is-won-in-a-tournament.ts`.
         theConclavesAreContested(state, year, withinSpan(year * 365 + 92, fromDay, toDay));
@@ -713,6 +718,10 @@ export function applyPressure(
         // Who teaches whom this year: masters their present disciples, and a
         // lecture in the compound. BEFORE the handout and the review, which are
         // the two things that read it.
+        // The catalog's wanderers first, so a lecture at the Court or a look in
+        // on one of theirs is attention this year's reads find.
+        // See `the-wanderer-the-catalog-names-is-somebody.ts`.
+        theWanderersGoAbout(state, year, withinSpan(year * 365 + 96, fromDay, toDay));
         giveThisYearsAttention(state, year, withinSpan(year * 365 + 97, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         // Ground gets dug open, a material comes out of a hole, and a house

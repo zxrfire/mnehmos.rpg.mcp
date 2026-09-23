@@ -282,9 +282,10 @@ but going where the answer is.** Write it that way.
 `FALSE_IMMORTAL_LIFESPAN_YEARS` is 300,000 and that is the **rung's grant**, not what
 anybody walks away with. The crossing takes a share, the share is enormous, and it is not
 the same twice - so what an individual holds is the grant minus whatever did not come back
-with them. Lu Sheng crossed 640 years ago and holds 11,000 years, about four per cent of the
-figure. **That is the price of his crossing, charged once, and settled.** It is not a
-decline, it does not get worse, and it must never be written as a wasting.
+with them. A short remainder is **the price of a crossing, charged once, and settled.** It is
+not a decline, it does not get worse, and it must never be written as a wasting. Lu Sheng is
+the other case: he crossed 640 years ago and holds the rung's figure less his age, about
+298,000 years. His crossing charged him nothing in years.
 
 It also decides a great deal. Most False Immortals come out with a few thousand years, spend
 them, and die having never gone near the far end of anything.
@@ -312,8 +313,9 @@ failed legacy advances the trajectory by one band, which is
 
 Two things this must not become. It is **not a monster generator** - see
 `AGE_IS_NOT_MENACE` in the sealed-ancestor catalog, which applies here in full. And it is
-**not on Lu Sheng's road**: 640 years in with 11,000 remaining, his whole existence ends
-inside the first band. He is young, he is entirely sane, and he stays that way.
+**not close for Lu Sheng**: 640 years in with about 298,000 remaining, the whole curve is on his
+road, and the second band is nineteen thousand years off. He is young and entirely sane, and he
+is for every century anybody alive will see.
 
 ## The Protector
 
@@ -461,7 +463,7 @@ three rungs beneath him, purely because they were given something and he was not
 asymmetry is the character. Nothing should fix it.
 
 He is **eligible** for the Hollow Court's reserved post and does not hold it. Nobody found
-him wanting; he does not care for titles, having 11,000 years and no rank left to gain, so
+him wanting; he does not care for titles, having nearly 300,000 years and no rank left to gain, so
 the question has never become interesting enough to answer. The Court cannot seat him
 anyway - seats go by ordinal then remaining years, and a man with no attempts left cannot be
 ordered by a queue for the crossing - and he held First Seat before the crossing and no

@@ -53,6 +53,8 @@ import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
 import { lifespanForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { createNpc, isTheWorldsToMove, setRealm, theWorldMayEnd, type NpcRecord } from '../../../src/engine/world/npc-state.js';
+import { FALSE_IMMORTAL_LIFESPAN_YEARS } from '../../../src/engine/cultivation/realms.js';
+import { HOLLOW_COURT_ROSTER } from '../../../src/data/cultivation/hollow-court-roster.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
 import type { Blocked } from '../../../src/engine/world/promotion-inside-a-house.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
@@ -63,6 +65,7 @@ import { howLoudALeavingIs, whatTheirLeavingStirs } from '../../../src/engine/wo
 import { WORTH_REPEATING } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { theOathAHouseOffersAtItsDoor } from '../../../src/engine/social/the-oath-a-house-offers-at-its-door.js';
 import { peopleWithNoHouseMoveOn } from '../../../src/engine/world/where-somebody-with-no-house-goes.js';
+import { theWanderersGoAbout, whoseGuestTheyAre } from '../../../src/engine/world/the-wanderer-the-catalog-names-is-somebody.js';
 import { regionOf as regionOfLocation } from '../../../src/engine/world/what-people-are-saying.js';
 
 const YEAR = DAYS_PER_YEAR;
@@ -251,3 +254,39 @@ describe('somebody on no roll moves on', () => {
     }, 300_000);
 });
 
+describe('the wanderer the catalog names', () => {
+    it('is somebody in the world at his catalog ordinal, a guest of the Court on no rung, and on no roll after the years pass', async () => {
+        const { state } = seedWorld({ seed: 'shape-a', catalog: await loadCultivationCatalog() });
+        const lu = () => state.npcs.find(n => n.name === 'Lu Sheng');
+        expect(lu()).toBeDefined();
+        expect(lu()!.cultivation.realmOrdinal).toBe(45);
+        expect(lu()!.factionId).toBeNull();
+        expect(whoseGuestTheyAre(lu()!)).toBe('sect-hollow-court');
+        expect(lu()!.locationId).not.toBeNull();
+        // The rung's figure less his age: the crossing charged him nothing in years.
+        const age = HOLLOW_COURT_ROSTER.find(m => m.name === 'Lu Sheng')!.ageYears;
+        expect(Math.round((lu()!.cultivation.lifespanEndsOnDay - state.currentDay) / 365)).toBe(FALSE_IMMORTAL_LIFESPAN_YEARS - age);
+        expect(theWorldMayEnd(lu()!)).toBe(false);
+        advanceWorldYears(state, 10, { stopOnInterrupt: false });
+        expect(lu()!.factionId).toBeNull();
+    }, 300_000);
+
+
+    it('lectures the Seats standing at the Court when he goes back, as attention from his rung', async () => {
+        const { state } = seedWorld({ seed: 'shape-a', catalog: await loadCultivationCatalog() });
+        const court = state.factions.find(f => f.id === 'sect-hollow-court')!;
+        for (let i = 0; i < state.npcs.length; i++) {
+            if (/^npc-hollow-court-(first|second|third|fourth)-seat$/.test(state.npcs[i]!.id)) {
+                state.npcs[i] = { ...state.npcs[i]!, locationId: court.seatLocationId, activity: null };
+            }
+        }
+        let lectured: NpcRecord | null = null;
+        for (let year = 1; year < 100 && lectured === null; year++) {
+            if (theWanderersGoAbout(state, year, year * 365).lectures > 0) lectured = state.npcs.find(n => n.name === 'Lu Sheng')!;
+        }
+        expect(lectured).not.toBeNull();
+        expect(lectured!.activity!.kind).toBe('teaching');
+        expect(lectured!.locationId).toBe(court.seatLocationId);
+        expect(lectured!.activity!.withIds.length).toBe(4);
+    }, 300_000);
+});

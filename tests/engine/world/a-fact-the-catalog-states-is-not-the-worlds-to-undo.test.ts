@@ -53,6 +53,7 @@
  * naming the file.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
+import { whenTheWorldLostSightOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -74,6 +75,7 @@ import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { THE_LINE_AT_OLD_RIVER } from '../../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { MEMBERS } from '../../../src/data/cultivation/members.js';
+import { WANDERERS } from '../../../src/data/cultivation/wanderers.js';
 
 function somebody(id: string, tags: string[]): NpcRecord {
     return createNpc('a-stated-fact', { id, bornOnDay: 0, onDay: 1000, tags });
@@ -91,8 +93,11 @@ describe('the world may not end somebody a catalog states is standing', () => {
         expect(theWorldMayEnd(ordinary)).toBe(true);
         expect(theWorldEnds(ordinary, 1000, 'The world came for them.')?.status)
             .toBe('physically_dead');
-        expect(theWorldLoses(ordinary, 1000, 'Walked into the hills.')?.status)
-            .toBe('missing');
+        // Losing somebody is not a status: they are still alive, and the world has
+        // lost sight of them (`who-a-house-has-lost-track-of.ts`).
+        const lost = theWorldLoses(ordinary, 1000, 'Walked into the hills.');
+        expect(lost?.status).toBe('alive');
+        expect(lost === null ? null : whenTheWorldLostSightOf(lost)).toBe(1000);
     });
 
     it('withholds the same two endings from the player row, which is the same rule', () => {
@@ -136,14 +141,16 @@ describe('a catalog states it and a seeder carries it', () => {
         // third subject moves both sides of this at once.
         const declared = [
             ...THE_LINE_AT_OLD_RIVER.people,
-            ...MEMBERS
+            ...MEMBERS,
+            ...WANDERERS
         ].filter(row => row.theCatalogStatesTheyAreStanding).length;
 
-        // TWO CATALOGS AND TWO SUBJECTS, which is the whole claim that this is a
-        // rule rather than a rule about one man. The second is a member row
+        // THREE CATALOGS AND THREE SUBJECTS, which is the whole claim that this
+        // is a rule rather than a rule about one man. The second is a member row
         // whose being alive is the stated cause of a measurable world
-        // mechanism, and she is reached by the same predicate through a
-        // different seeder.
+        // mechanism, and the third is the wanderer `false-immortals.ts` calls
+        // the one of his kind still walking around; each is reached by the same
+        // predicate through a different seeder.
         expect(declared).toBeGreaterThan(1);
         expect(stated.length).toBe(declared);
         expect(new Set(stated.map(n => n.tags.find(t => t.startsWith('catalog:')) ?? 'npc-line')).size)
