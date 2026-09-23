@@ -22,6 +22,7 @@ import {
 import { whatAChangeOfHandsLeaves } from './what-a-change-of-hands-leaves.js';
 import type { ObligationInput } from '../social/grudges.js';
 import { whatIsBehindIt, type WhatIsBehindIt } from './sheltering.js';
+import { ROGUE_HOUSE_FELL, releaseTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -287,9 +288,9 @@ export function settleTheSpoils(
         const row = state.factions.find(f => f.id === input.loser.id);
         if (row && row.dissolvedOnDay === null) {
             row.dissolvedOnDay = input.onDay;
-            for (const npc of state.npcs) {
-                if (npc.factionId === input.loser.id) npc.factionId = null;
-            }
+            // The next house takes some, and the rest are rogues. This cleared
+            // the house and left the rung behind.
+            releaseTheRoll(state, row, input.onDay, ROGUE_HOUSE_FELL);
             // AND WHATEVER THE VICTOR DID NOT TAKE STOPS BEING THEIRS.
             //
             // The spoils pass above moves the things somebody carried off. It

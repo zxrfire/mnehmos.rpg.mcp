@@ -28,11 +28,15 @@ function twoHouses(opts: { loserHasPeople?: boolean } = {}): WorldState {
             { id: 'loser', name: 'Kiln Clan', seatLocationId: 'loc-kiln', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' },
             { id: 'winner', name: 'Storm Court', seatLocationId: 'loc-storm', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' }
         ],
+        // A MAP, EVEN AN EMPTY ONE. A loser that does not hold together lets its
+        // people go, and where they go is read off the province its seat is in
+        // (`what-becomes-of-a-houses-people-when-it-is-gone.ts`).
+        locations: [],
         npcs: [
-            { id: 'npc-w', name: 'The Storm Tyrant', status: 'alive', factionId: 'winner', cultivation: { realmOrdinal: 38 } },
+            { id: 'npc-w', name: 'The Storm Tyrant', status: 'alive', tags: [], factionId: 'winner', cultivation: { realmOrdinal: 38 } },
             ...(opts.loserHasPeople === false ? [] : [
-                { id: 'npc-l1', name: 'Kiln Elder', status: 'alive', factionId: 'loser', cultivation: { realmOrdinal: 22 } },
-                { id: 'npc-l2', name: 'Kiln Junior', status: 'alive', factionId: 'loser', cultivation: { realmOrdinal: 8 } }
+                { id: 'npc-l1', name: 'Kiln Elder', status: 'alive', tags: [], factionId: 'loser', cultivation: { realmOrdinal: 22 } },
+                { id: 'npc-l2', name: 'Kiln Junior', status: 'alive', tags: [], factionId: 'loser', cultivation: { realmOrdinal: 8 } }
             ])
         ],
         objects: [

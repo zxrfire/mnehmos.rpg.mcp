@@ -301,10 +301,13 @@ function twoHouses(loserPeople: number): WorldState {
             { id: 'loser', name: 'Kiln Clan', seatLocationId: 'loc-kiln', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' },
             { id: 'winner', name: 'Storm Court', seatLocationId: 'loc-storm', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' }
         ],
+        // A map, even an empty one: a loser that does not hold together lets its
+        // people go, and where they go is read off its seat's province.
+        locations: [],
         npcs: [
-            { id: 'npc-w', name: 'The Storm Tyrant', status: 'alive', factionId: 'winner', cultivation: { realmOrdinal: 38 } },
+            { id: 'npc-w', name: 'The Storm Tyrant', status: 'alive', tags: [], factionId: 'winner', cultivation: { realmOrdinal: 38 } },
             ...Array.from({ length: loserPeople }, (_, i) => ({
-                id: `npc-l${i}`, name: `Kiln ${i}`, status: 'alive', factionId: 'loser',
+                id: `npc-l${i}`, name: `Kiln ${i}`, status: 'alive', tags: [], factionId: 'loser',
                 cultivation: { realmOrdinal: 8 + i }
             }))
         ],

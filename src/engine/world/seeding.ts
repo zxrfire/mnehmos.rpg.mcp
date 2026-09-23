@@ -76,6 +76,7 @@ import {
 import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
+import { seedTheRogues } from './the-rogues-a-world-opens-with.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
@@ -1574,6 +1575,9 @@ function seedPopulation(
     // roll rather than off somebody its ground happened to carry.
     created.push(
         ...seedThePeopleAHouseRaised(state, catalog, presentDay, taken, rollWorthModelling));
+    // AND THE ROGUES, off the rolls as they now stand. See
+    // `the-rogues-a-world-opens-with.ts`.
+    created.push(...seedTheRogues(state, catalog, presentDay, taken));
 
     assignFactionRoles(state, catalogById, presentDay);
     return created;

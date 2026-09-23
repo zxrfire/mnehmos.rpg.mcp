@@ -382,6 +382,25 @@ export function newlyEntitled(
     // that test would refuse every wanderer in the world a book forever. What it
     // was for survives as a comparison: buy what reaches past what you hold.
     const ceiling = manualCeilingOf(npc);
+    // AND WHOEVER IS TEACHING THEM, house or no house. `rogues.ts`: what is
+    // scarce outside a house is the teacher, not the permission, and nothing
+    // stops somebody on no roll teaching whoever they like. The same gate a
+    // house's master passes - standing where the student stands, attending to
+    // them, and having taken the art to its end - and the same lesson odds, so a
+    // wanderer's inheritor comes by an art the way a disciple does and not
+    // faster. Only an art that carries them past what they hold.
+    for (const other of state.npcs) {
+        if (other.id === npc.id || !isTeachingSomebody(other, day)) continue;
+        if (!other.activity!.withIds.includes(npc.id)) continue;
+        if (other.locationId === null || other.locationId !== npc.locationId) continue;
+        for (const id of other.cultivation.techniqueIds) {
+            if (held.has(id) || !canReproduce(other, id)) continue;
+            const art = getTechnique(id);
+            if (!art || !suitsRoot(npc.cultivation.spiritRoot, art.element)) continue;
+            if (art.cap == null || Number(art.cap) <= Math.max(ordinal, ceiling)) continue;
+            return [{ techniqueId: id, teacherId: other.id, book: null }];
+        }
+    }
     const stock = commonManuals()
         .filter(m => m.cap > Math.max(ordinal, ceiling)
             && m.requiredOrdinal <= ordinal

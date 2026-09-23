@@ -192,6 +192,15 @@ import {
 import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js';
 import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
+import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
+import {
+    ROGUE_FLED,
+    ROGUE_HOUSE_FELL,
+    offTheRoll,
+    releaseTheRoll,
+    whereTheyRunTo,
+    whetherTheyFall
+} from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { theOathOnTheWayOut } from './the-word-an-npc-gave.js';
 import {
     applyOrdinaryLifeTies,
@@ -2342,10 +2351,30 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         // which only looks at people with a house and a rank. The row's own
         // file already states the rule - it takes no orders and holds no purse,
         // and a house that has an arrangement with one did not buy it.
+        // AND NOT SOMEBODY A GATE HAS ALREADY TURNED AWAY. What they were
+        // refused for does not change, and the intake does not come back to
+        // them: see `the-rogues-a-world-opens-with.ts`.
         if (npc.status === 'alive' && isBelowTheLid(npc) && npc.factionId === null
-            && isTheWorldsToMove(npc) && theSpeciesItIs(npc) === null) free.push(i);
+            && isTheWorldsToMove(npc) && theSpeciesItIs(npc) === null
+            // A RECORD IS NOT READ HERE ANY MORE. It used to strike anybody a
+            // house had expelled off every intake in the world for ever, with
+            // no read of which house was looking. It is an opinion, and the
+            // house doing the looking is the one who holds it: see
+            // `aHouseWouldTakeThemAnyway` below.
+            && !wasTurnedAwayAtAGate(npc)) free.push(i);
     }
     if (free.length === 0) return 0;
+
+    // THE STRONGEST ON EACH ROLL. A house does not take in at its bottom rung
+    // somebody who stands above everybody on it: there is nothing it could tell
+    // them and no rung it could hold them on. Measured on `shape-a`: the world's
+    // one False Immortal was enrolled as an outer disciple in his first year,
+    // and a Hollow Court Seat who had walked out joined a splinter at rung zero.
+    const strongest = new Map<string, number>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || npc.factionId === null) continue;
+        strongest.set(npc.factionId, Math.max(strongest.get(npc.factionId) ?? -1, npc.cultivation.realmOrdinal));
+    }
 
     const roads = theRoadsOntoARollThisYear(state, year);
     const looks = Math.max(1, Math.round(free.length / 12));
@@ -2368,6 +2397,13 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
             // to be bound by it or the rule binds the player and nobody else -
             // which is this repository's signature defect, inverted.
             (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex &&
+            // AND A HOUSE WITH NOBODY MODELLED ON IT IS JUDGED BY WHAT IT CLAIMS.
+            // This read an empty roll as no ceiling at all, so a house the year
+            // had emptied would take anybody: the world's False Immortal was
+            // enrolled by the Sweptground Temple within ten years of a pass that
+            // scattered it.
+            npc.cultivation.realmOrdinal
+                <= (strongest.get(f.id) ?? Number(f.resources.power_ordinal ?? 0)) &&
             (f.seatLocationId === null ||
                 (home !== null && regionOf(state, f.seatLocationId) === home))
         );
@@ -2382,6 +2418,19 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
             .filter(row => row.road !== null);
         if (withARoad.length === 0) continue;
         if (!rng.chance(0.35)) {
+            // AND A HOUSE THAT LOOKED AND PASSED DOES NOT COME BACK. `rogues.ts`
+            // on where the unaffiliated come from: refused at admission is *"the
+            // commonest origin by a wide margin"*, *"usually for root quality"* -
+            // which does not change, so neither does the answer. Without this,
+            // everybody who reached Foundation was eventually taken by somebody
+            // and the world held no rogues to speak of.
+            if (rng.chance(WHAT_A_GATE_REFUSES_FOR_GOOD)) {
+                state.npcs[at] = {
+                    ...npc,
+                    tags: Array.from(new Set([...npc.tags, TURNED_AWAY_AT_A_GATE])),
+                    updatedOnDay: day
+                };
+            }
             continue;
         }
 
@@ -5286,10 +5335,23 @@ const TEMPLATES: Template[] = [
             // What was actually taken. Read off the roster and the treasury
             // rather than declared: severity is how much of the house is gone.
             const before = membersOf(state, victim.id);
-            const losses = before.filter(n =>
-                n.cultivation.realmOrdinal
-                    < Number(aggressor.resources.power_ordinal ?? 0) - CASUAL_KILL_MAX_GAP
+            const attackerOrdinal = Number(aggressor.resources.power_ordinal ?? 0);
+            const below = before.filter(n =>
+                n.cultivation.realmOrdinal < attackerOrdinal - CASUAL_KILL_MAX_GAP
             );
+            // SOME FALL AND THE REST RUN. Everybody below the line died, and a
+            // house destroyed left nobody to scatter: Nine Peaks ended with
+            // nobody. Each person's own rung against the height that came decides
+            // whether they fall, and whoever gets out is on no roll. See
+            // `what-becomes-of-a-houses-people-when-it-is-gone.ts`.
+            const losses = below.filter(n => whetherTheyFall(state, n, attackerOrdinal, day));
+            const fled = below.filter(n => !losses.includes(n));
+            const runTo = whereTheyRunTo(state, victim);
+            for (const npc of fled) {
+                const at = indexById(state.npcs, npc.id);
+                if (at < 0 || !isTheWorldsToMove(state.npcs[at]!)) continue;
+                state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_FLED}${victim.id}`, runTo);
+            }
             const deaths: DeathHandoff[] = [];
             // READ THE ROW BACK BEFORE WRITING IT. `losses` is a snapshot taken
             // before any of them died, and `settleNpcDeath` writes onto the
@@ -5314,7 +5376,7 @@ const TEMPLATES: Template[] = [
                     state, at >= 0 ? state.npcs[at] : fresh, day));
             }
             const severity = before.length === 0
-                ? 1 : Math.min(1, losses.length / before.length);
+                ? 1 : Math.min(1, (losses.length + fled.length) / before.length);
 
             victim.resources.spirit_stones = Math.round(
                 Number(victim.resources.spirit_stones ?? 0) * (1 - severity)
@@ -5346,7 +5408,8 @@ const TEMPLATES: Template[] = [
                 scale: 'regional',
                 summary:
                     `The ${houseName(aggressor.name)} came for the ${houseName(victim.name)}. `
-                    + `${losses.length} of ${before.length} dead.`
+                    + `${losses.length} of ${before.length} dead`
+                    + (fled.length > 0 ? `, and ${fled.length} fled.` : '.')
                     + (changeIds.length > 0 ? ` The compound is a ruin.` : ''),
                 locationId: seat?.id ?? null,
                 factionIds: [victim.id, aggressor.id],
@@ -5357,7 +5420,7 @@ const TEMPLATES: Template[] = [
                     'The valley road is full of people going the other way, and none of '
                     + 'them are stopping to explain.',
                 consequences: {
-                    immediate: `The ${victim.name} has ${before.length - losses.length} people left.`,
+                    immediate: `The ${victim.name} has ${before.length - losses.length - fled.length} people left.`,
                     physical: changeIds.length > 0 ? 'The compound is standing and empty.' : '',
                     beneficiaries: [{ id: aggressor.id, name: aggressor.name, role: 'aggressor' }],
                     losers: [{ id: victim.id, name: victim.name, role: 'stricken' }],
@@ -5367,7 +5430,7 @@ const TEMPLATES: Template[] = [
             }, {
                 factions: [victim.id, aggressor.id],
                 locations: seat ? [seat.id] : [],
-                npcs: losses.map(n => n.id)
+                npcs: [...losses, ...fled].map(n => n.id)
             }, deaths);
 
             // And now the survivors choose. Everything past this point is the
@@ -6028,9 +6091,9 @@ const TEMPLATES: Template[] = [
 
             faction.dissolvedOnDay = day;
             const orphans = membersOf(state, faction.id);
-            for (const npc of orphans) {
-                replaceNpc(state, { ...npc, factionId: null, factionRankIndex: -1, updatedOnDay: day });
-            }
+            // THE NEXT HOUSE TAKES SOME, AND THE REST ARE ROGUES. See
+            // `what-becomes-of-a-houses-people-when-it-is-gone.ts`.
+            const went = releaseTheRoll(state, faction, day, ROGUE_HOUSE_FELL);
 
             // AND WHAT IT OWNED STOPS BEING ITS.
             //
@@ -6082,7 +6145,8 @@ const TEMPLATES: Template[] = [
                 summary:
                     `The ${faction.name} ended after ` +
                     `${Math.max(0, yearOfDay(day) - yearOfDay(faction.foundedOnDay ?? day))} years. ` +
-                    `${orphans.length} people are suddenly nobody's disciples.`,
+                    `${went.rogues.length} people are nobody's disciples`
+                    + (went.takenIn.length > 0 ? `, and ${went.takenIn.length} were taken in elsewhere.` : '.'),
                 locationId: seat?.id ?? null,
                 factionIds: [faction.id],
                 locationChangeIds: changeIds,

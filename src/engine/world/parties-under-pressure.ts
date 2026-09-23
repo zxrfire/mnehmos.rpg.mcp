@@ -70,6 +70,7 @@ import {
     createNpc, setRealm, theWorldEnds, theWorldLoses, type NpcRecord
 } from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
+import { ROGUE_FLED, ROGUE_HOUSE_FELL, offTheRoll, releaseTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { indexById, type FactionRecord, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -345,13 +346,9 @@ function applyScatter(
     cause: string | null,
     depth: number
 ): CascadeStep {
+    // Nobody dissolved it, so nobody took them in: they are on the road.
     for (const npc of members) {
-        replaceNpc(state, {
-            ...npc,
-            factionId: null,
-            factionRankIndex: -1,
-            updatedOnDay: precipitant.day
-        });
+        replaceNpc(state, offTheRoll(npc, precipitant.day, `${ROGUE_FLED}${house.id}`));
     }
     house.tags = Array.from(new Set(house.tags.concat('scattered')));
     house.resources.members = 0;
@@ -807,11 +804,8 @@ function applyExpend(
         aggressor.tags = Array.from(new Set(aggressor.tags.concat('reduced_to_its_head')));
     } else {
         aggressor.dissolvedOnDay = day;
-        for (const npc of membersOf(state, aggressor.id)) {
-            replaceNpc(state, {
-                ...npc, factionId: null, factionRankIndex: -1, updatedOnDay: day
-            });
-        }
+        // The next house takes some, and the rest are rogues.
+        releaseTheRoll(state, aggressor, day, ROGUE_HOUSE_FELL);
         // AND THEIR THINGS STOP BEING THEIRS. Third of the three places a
         // house stops existing, and the second that was not running this. A
         // row naming an institution that no longer exists is the one state
