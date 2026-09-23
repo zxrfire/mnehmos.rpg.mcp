@@ -113,7 +113,9 @@ import {
 } from './npc-state.js';
 import { andLetGoAtTheOtherEnd, andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { enterWhoeverHasReachedTheHouse } from './a-recruit-is-given-their-lamp-at-the-house.js';
-import { aRecruiterOwesTheHouseAReport } from './a-house-expects-somebody-it-took-on.js';
+import { theyOweTheHouseAReport } from './a-house-expects-somebody-it-took-on.js';
+import { theRoadsOntoARollThisYear } from './the-world-joins-a-house-the-way-a-player-does.js';
+import { FACTION_PARENTAGE } from '../../data/cultivation/governance-and-water-rights.js';
 import {
     haveTheyWorkedItOut,
     resolveAttempt,
@@ -891,6 +893,9 @@ function applyDemography(
     const count = Math.min(24, Math.max(1, Math.round(deficit * 0.08)));
     const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
     if (regions.length === 0) return [];
+    // Who took each of the year's children on, where anybody did.
+    const roads = theRoadsOntoARollThisYear(state, year);
+    const tookOn = new Map<string, string>();
 
     // One walk of the roster for the whole cohort. Without it every birth in
     // the year re-scanned `state.npcs`, which holds the dead as well and is
@@ -1009,18 +1014,47 @@ function applyDemography(
         // nobody replaces them, and the institutions fold for a reason that is
         // arithmetic rather than history. Seats moved, and this did not follow
         // them.
-        const admitting = state.factions.filter(
-            f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
-                f.tags.includes('recruits') &&
-                f.seatLocationId !== null && under.has(f.seatLocationId) &&
-                ordinal >= Number(f.resources.admission_ordinal ?? 0) &&
-                // Same door, same rule. A house that takes one sex does not
-                // take the local children of the other one either.
-                (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex
-        );
-        if (admitting.length > 0 && own.chance(0.45)) {
-            const joined = admitting[own.int(0, admitting.length - 1)];
-            npc = { ...npc, factionId: joined.id, factionRankIndex: 0 };
+        //
+        // AND THROUGH A DOOR, the way a player joins: the design owner, *"NPCs
+        // join the same way you do."* A house takes a local child only where it
+        // has a road to them this year - somebody of it out looking for
+        // disciples where they are, its grounds open for a selection, or the
+        // intake its notice named held where they live
+        // (`the-world-joins-a-house-the-way-a-player-does.ts`).
+        //
+        // EXCEPT A FAMILY'S OWN CHILD. `governance-and-water-rights.ts`: "the seven
+        // family houses, whose intake is kinship and whose name is the family's,
+        // are `bloodline`", against "a sect with an admission day". A child born
+        // to a member of a `bloodline` house is of it by kinship, with the parent
+        // as the one who took them on and no bar to meet; a child born to a member
+        // of a sect goes through the sect's door like anybody else, and fostering
+        // below still applies where the catalog states terms.
+        const parentsFamily = parent?.factionId
+            ? state.factions.find(f => f.id === parent.factionId && f.dissolvedOnDay === null
+                && isBelowTheLid(f) && FACTION_PARENTAGE[f.id]?.governance === 'bloodline'
+                && (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex) ?? null
+            : null;
+        if (parentsFamily !== null && parent) {
+            npc = { ...npc, factionId: parentsFamily.id, factionRankIndex: 0 };
+            tookOn.set(npc.id, parent.id);
+        } else {
+            const admitting = state.factions.filter(
+                f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
+                    f.tags.includes('recruits') &&
+                    f.seatLocationId !== null && under.has(f.seatLocationId) &&
+                    ordinal >= Number(f.resources.admission_ordinal ?? 0) &&
+                    // Same door, same rule. A house that takes one sex does not
+                    // take the local children of the other one either.
+                    (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex
+            );
+            const withARoad = admitting
+                .map(f => ({ house: f, road: roads.roadFor(f, { id: npc.id, locationId: home.id }) }))
+                .filter(row => row.road !== null);
+            if (withARoad.length > 0 && own.chance(0.45)) {
+                const joined = withARoad[own.int(0, withARoad.length - 1)]!;
+                npc = { ...npc, factionId: joined.house.id, factionRankIndex: 0 };
+                tookOn.set(npc.id, joined.road!.recruiterId);
+            }
         }
 
         // FOSTERING, before the household is written and after the lineage edge is.
@@ -1032,7 +1066,12 @@ function applyDemography(
             ? placeAChildTheirHouseWillNotKeep(
                 state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster)
             : null;
-        if (fostered) npc = fostered;
+        if (fostered) {
+            npc = fostered;
+            // Taken in on a word, by the person who took them in.
+            const taker = fostered.relationships.find(r => r.kind === 'client')?.targetId;
+            if (taker) tookOn.set(npc.id, taker); else tookOn.delete(npc.id);
+        }
 
         // The household the birth actually created, written last so the child's own
         // record is finished before anybody is bound to it. The parent's half and
@@ -1051,14 +1090,13 @@ function applyDemography(
     // it a report. See `a-house-expects-somebody-it-took-on.ts`. After the loop,
     // so no row is written while the roster above still holds it.
     for (const child of born) {
-        if (child.factionId === null) continue;
-        const region = regionOf(state, child.locationId);
-        aRecruiterOwesTheHouseAReport(state, {
+        const recruiterId = tookOn.get(child.id);
+        if (child.factionId === null || recruiterId === undefined) continue;
+        theyOweTheHouseAReport(state, recruiterId, {
             houseId: child.factionId,
             person: { id: child.id, name: child.name },
             placeId: child.locationId,
-            onDay: day,
-            inReach: id => id !== null && region !== null && regionOf(state, id) === region
+            onDay: day
         });
     }
     void rng;
@@ -1278,6 +1316,7 @@ function placeAChildTheirHouseWillNotKeep(
  */
 function applyFosterageReturns(state: WorldState, day: number): number {
     let assessed = 0;
+    let roads: ReturnType<typeof theRoadsOntoARollThisYear> | undefined;
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
         if (npc.status !== 'alive') continue;
@@ -1292,6 +1331,16 @@ function applyFosterageReturns(state: WorldState, day: number): number {
         if (ordinal < terms.returnOrdinal && age < terms.returnByAge) continue;
 
         const answer = assessTheReturn(terms, ordinal, age);
+        // TAKEN BACK THROUGH THE DOOR. The Hollow Court's children "may come back
+        // only on a stranger's terms", and a stranger comes in through the house's
+        // intake: somebody of it where they are, its grounds open, or its intake.
+        // No road this year and the assessment waits; the terms still run out.
+        const house = answer.returns
+            ? state.factions.find(f => f.id === terms.factionId && f.dissolvedOnDay === null) ?? null
+            : null;
+        const road = house === null ? null : (roads ??= theRoadsOntoARollThisYear(state, Math.floor(day / DAYS_PER_YEAR)))
+            .roadFor(house, npc);
+        if (answer.returns && road === null) continue;
         assessed++;
         const outcome = answer.returns ? 'returned' : 'stayed';
         let updated: NpcRecord = { ...npc, tags: [...npc.tags, `${ASSESSED}${outcome}`] };
@@ -1301,15 +1350,13 @@ function applyFosterageReturns(state: WorldState, day: number): number {
             updated = { ...updated, factionId: terms.factionId, factionRankIndex: 0 };
         }
         state.npcs[i] = updated;
-        if (answer.returns) {
+        if (answer.returns && road !== null) {
             // Taken back on, and whoever of the house did it owes it a report.
-            const region = regionOf(state, updated.locationId);
-            aRecruiterOwesTheHouseAReport(state, {
+            theyOweTheHouseAReport(state, road.recruiterId, {
                 houseId: terms.factionId,
                 person: { id: updated.id, name: updated.name },
                 placeId: updated.locationId,
-                onDay: day,
-                inReach: id => id !== null && region !== null && regionOf(state, id) === region
+                onDay: day
             });
         }
 
@@ -2293,6 +2340,7 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
     }
     if (free.length === 0) return 0;
 
+    const roads = theRoadsOntoARollThisYear(state, year);
     const looks = Math.max(1, Math.round(free.length / 12));
     for (let s = 0; s < looks; s++) {
         const at = free[rng.int(0, free.length - 1)];
@@ -2316,19 +2364,29 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
             (f.seatLocationId === null ||
                 (home !== null && regionOf(state, f.seatLocationId) === home))
         );
-        if (options.length === 0) continue;
-        if (!rng.chance(0.35)) continue;
+        // AND ONLY THROUGH A DOOR. The design owner: *"NPCs join the same way
+        // you do."* A house in reach takes somebody only where it has a road to
+        // them this year - somebody of it out looking for disciples where they
+        // stand, its grounds open for a selection, or the intake its notice named
+        // held where they live - and whoever that is took them on. See
+        // `the-world-joins-a-house-the-way-a-player-does.ts`.
+        const withARoad = options
+            .map(f => ({ house: f, road: roads.roadFor(f, npc) }))
+            .filter(row => row.road !== null);
+        if (withARoad.length === 0) continue;
+        if (!rng.chance(0.35)) {
+            continue;
+        }
 
-        const faction = options[rng.int(0, options.length - 1)];
-        state.npcs[at] = { ...npc, factionId: faction.id, factionRankIndex: 0, updatedOnDay: day };
+        const chosen = withARoad[rng.int(0, withARoad.length - 1)]!;
+        state.npcs[at] = { ...npc, factionId: chosen.house.id, factionRankIndex: 0, updatedOnDay: day };
         // Whoever of the house took them on owes it a report, which is what
         // lets them in at the gate. See `a-house-expects-somebody-it-took-on.ts`.
-        aRecruiterOwesTheHouseAReport(state, {
-            houseId: faction.id,
+        theyOweTheHouseAReport(state, chosen.road!.recruiterId, {
+            houseId: chosen.house.id,
             person: { id: npc.id, name: npc.name },
             placeId: npc.locationId,
-            onDay: day,
-            inReach: id => id !== null && home !== null && regionOf(state, id) === home
+            onDay: day
         });
         joined++;
     }

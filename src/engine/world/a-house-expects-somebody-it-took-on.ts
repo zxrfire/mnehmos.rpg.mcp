@@ -53,8 +53,18 @@ import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-hou
 import { isOutLookingForDisciples } from './when-a-house-takes-people-on.js';
 
 /**
- * Whoever holds the Internal Affairs office: the room the roll is kept in. Null
- * in every house today, because `ancestral_hall` is not an office.
+ * Whoever holds the Internal Affairs office: the room the roll is kept in.
+ *
+ * THIS SAID IT WAS NULL IN EVERY HOUSE, on the grounds that `ancestral_hall` is
+ * not an office, and the room moved to the life lamp hall without the sentence
+ * following it. Measured over two seeds
+ * (`scripts/probe-who-runs-internal-affairs.ts`): every seated house that has
+ * the hall has a holder - 38 of 38 at world open, 32 of 32 at 500 years - so
+ * anything written on the strength of the old sentence was written against a
+ * world that does not exist.
+ *
+ * Null still means something, and it is narrower: a house whose compound has no
+ * life lamp hall cut for it at all.
  */
 export function theInternalAffairsElderIn(
     locations: readonly LocationRecord[],
