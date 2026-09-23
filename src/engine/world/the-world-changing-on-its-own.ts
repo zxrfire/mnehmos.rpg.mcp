@@ -164,6 +164,7 @@ import {
     whereTheyWouldGo,
     howMuchTheirReasonsWeigh,
     whetherTheyGoThisYear,
+    whatLeavingTheirHouseCosts,
     whoWouldGoWithThem,
     whyTheyWouldLeave,
     type SomewhereWorthGoing,
@@ -188,6 +189,9 @@ import {
     noteWhoIsHeldBack,
     whereTheyAreHeldBack
 } from './being-held-back-in-a-house.js';
+import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js';
+import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
+import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { theOathOnTheWayOut } from './the-word-an-npc-gave.js';
 import {
     applyOrdinaryLifeTies,
@@ -771,6 +775,9 @@ export function applyPressure(
         // year's work can go into - a hull is a schedule, and a house hunts
         // for it the whole time it is building it.
         applyConveyanceBuilding(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
+        // And whoever is on no roll moves on, to a road, a ruin or a market.
+        // See `where-somebody-with-no-house-goes.ts`.
+        peopleWithNoHouseMoveOn(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
         // AND THE PEOPLE WHO DECIDED FOR THEMSELVES. After the economy, so the
         // stipend they did or did not get is this year's, and after the house's
         // own sendings, so somebody the house put on the road this year is out
@@ -3521,7 +3528,10 @@ function applyPeopleWalkingOut(
         const province = regionOf(state, npc.locationId);
         const ruins: SomewhereWorthGoing[] = (
             province === null ? [] : ruinsByProvince.get(province) ?? []
-        ).map(place => ({
+        // NOT FOR SOMETHING BENEATH THEM. Ground calibrated at or under where
+        // they stand holds nothing past it, and nobody leaves a house for that.
+        ).filter(place => place.thresholds.mastery > npc.cultivation.realmOrdinal)
+        .map(place => ({
             locationId: place.id,
             name: place.name,
             why: `${place.name} is standing open a few days from here.`,
@@ -3538,8 +3548,10 @@ function applyPeopleWalkingOut(
             if (was === 'physically_dead' || (other >= 0 && isLostTrackOf(state, state.npcs[other]!))) didNotComeBack++;
         }
 
-        // Stamped by the promotion pass, which runs before this one each year.
-        const heldBack = howHardBeingHeldBackPresses(whereTheyAreHeldBack(npc), day);
+        // Stamped by the promotion pass, which runs before this one each year,
+        // and read against the life they have: `being-held-back-in-a-house.ts`.
+        const lifespan = lifespanForOrdinal(npc.cultivation.realmOrdinal);
+        const heldBack = howHardBeingHeldBackPresses(whereTheyAreHeldBack(npc), day, lifespan);
         const why = whyTheyWouldLeave({
             ordinal: npc.cultivation.realmOrdinal,
             houseTeachingCeiling: teachesTo.get(house.id) ?? null,
@@ -3552,7 +3564,17 @@ function applyPeopleWalkingOut(
         });
         if (!whetherTheyGoThisYear(
             why, forStream(state.seed, 'walks-out', npc.id, year),
-            howMuchTheirReasonsWeigh(why, heldBack))) continue;
+            howMuchTheirReasonsWeigh(why, heldBack),
+            lifespan,
+            // AND WHAT GOING WOULD COST THEM: their house's arts and the years
+            // of taking up another road. `whatLeavingTheirHouseCosts`.
+            whatLeavingTheirHouseCosts({
+                npc, house, lifespanYears: lifespan, day,
+                onTheRoll: id => {
+                    const j = indexById(state.npcs, id);
+                    return j >= 0 && state.npcs[j]!.status === 'alive' && state.npcs[j]!.factionId === house.id;
+                }
+            }))) continue;
 
         leaving.push({ at: i, npc, why, to });
     }
@@ -3588,6 +3610,19 @@ function applyPeopleWalkingOut(
         const houseRow = houseId === null
             ? null : state.factions.find(f => f.id === houseId) ?? null;
 
+        // AND WHAT THEIR GOING STIRS, as big as how high they stood. Read off
+        // the rows as they were, before anybody is off the roll.
+        // See `what-somebody-senior-leaving-stirs.ts`.
+        let tiesCooled = 0;
+        let loudest = 0;
+        if (houseRow !== null) {
+            const going = new Set(partyIds);
+            for (const member of party) {
+                tiesCooled += whatTheirLeavingStirs(state, member.npc, houseRow, day, going);
+                loudest = Math.max(loudest, howLoudALeavingIs(member.npc.factionRankIndex, houseRow.ranks.length));
+            }
+        }
+
         for (const member of party) {
             // THE OATH AT THE DOOR, before the roll forgets them. A house asks
             // for silence about its arts on the way out and the answer is the
@@ -3599,7 +3634,9 @@ function applyPeopleWalkingOut(
                 theOathOnTheWayOut(state, member.npc, houseAtTheDoor, day);
             }
             const gone: NpcRecord = {
-                ...setLocation(member.npc, who.to.locationId, day),
+                // The row as it now stands: what their going stirred wrote the other
+                // end of a tie onto it, and the snapshot would put that back.
+                ...setLocation(state.npcs[member.at]!, who.to.locationId, day),
                 // Off the roll. Nobody released them; they are simply not there
                 // any more, and `WHY_UNAFFILIATED` in `rogues.ts` has said since
                 // it was written that this is how most of that population
@@ -3678,10 +3715,11 @@ function applyPeopleWalkingOut(
             actors: party.map(m => ({ id: m.npc.id, name: m.npc.name, role: 'left' })),
             locationId: who.to.locationId,
             factionIds: houseId ? [houseId] : [],
-            visibility: 'faction',
-            magnitude: 0.3 + Math.min(0.3, party.length * 0.1),
+            visibility: loudest > WORTH_REPEATING ? 'regional' : 'faction',
+            magnitude: loudest,
             data: {
                 walkedOut: true,
+                tiesCooled,
                 why: who.why.join('; '),
                 party: party.length,
                 fellInOnTheRoad: onTheRoad.size,
@@ -6054,16 +6092,11 @@ const TEMPLATES: Template[] = [
         kind: 'faction_founded',
         weight: 3,
         apply(state, day, rng) {
-            const large = liveFactions(state).filter(f => membersOf(state, f.id).length >= 12);
-            const parent = pick(rng, large);
-            if (!parent) return null;
-            const members = membersOf(state, parent.id)
-                .sort((a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal || (a.id < b.id ? -1 : 1));
-            // Not the leader: the one under them, which is where splits come from.
-            const founder = members[1];
-            if (!founder) return null;
-
-            const leavers = members.filter((_, i) => i > 0 && i % 3 === 1).slice(0, 6);
+            // Somebody decides it, and the people tied to them go too. See
+            // `who-splits-a-house-and-who-goes-with-them.ts`.
+            const split = whoSplitsAHouse(state, day, rng);
+            if (!split) return null;
+            const { parent, founder, leavers } = split;
             const id = `sect-splinter-${founder.id}`;
             if (state.factions.some(f => f.id === id)) return null;
 
@@ -6110,9 +6143,15 @@ const TEMPLATES: Template[] = [
             // NOT A BUILDING.
             librariesCarriedOutBy(state, splinter, [founder, ...leavers], day);
 
+            // What their going stirs in the house they split from, read off the
+            // rows as they stood. See `what-somebody-senior-leaving-stirs.ts`.
+            const going = new Set([founder.id, ...leavers.map(n => n.id)]);
+            for (const npc of [founder, ...leavers]) whatTheirLeavingStirs(state, npc, parent, day, going);
+
             for (const npc of [founder, ...leavers]) {
                 replaceNpc(state, {
-                    ...npc,
+                    // As it now stands, for the reason the walk-out above gives.
+                    ...(state.npcs.find(row => row.id === npc.id) ?? npc),
                     factionId: splinter.id,
                     factionRankIndex: npc.id === founder.id ? splinter.ranks.length - 1 : 1,
                     updatedOnDay: day

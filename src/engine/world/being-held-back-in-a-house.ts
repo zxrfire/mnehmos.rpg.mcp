@@ -99,6 +99,21 @@ export function whereTheyAreHeldBack(
 }
 
 /**
+ * Whether the only rung above somebody is their house's head.
+ *
+ * NOT BEING HELD BACK. The head's chair is one seat, filled when it stands empty
+ * (`seatsAtRank`), which is a succession and not a promotion anybody is denied.
+ * Measured on `shape-a`: the Hollow Court's Second, Third and Fourth Seats stand
+ * on the rung under the one chair, were stamped held back `no_seat` from the
+ * first year, and all three had walked out within ninety years - "they had
+ * outgrown their place in that hall" - the top of the world scattered into
+ * splinters because a living First Seat was read as a house with no room.
+ */
+export function waitingOnASuccession(blocked: Pick<Blocked, 'atRank'>, rankCount: number): boolean {
+    return rankCount > 0 && blocked.atRank + 1 >= rankCount - 1;
+}
+
+/**
  * Write this year's assessment onto the people it is about.
  *
  * Kept where it still holds, started where it is new, and dropped from anybody
@@ -112,7 +127,10 @@ export function noteWhoIsHeldBack(
     day: number,
     isTheWorldsToMove: (npc: NpcRecord) => boolean
 ): void {
-    const byId = new Map(blocked.map(b => [b.npcId, b]));
+    const rungsOf = new Map(state.factions.map(f => [f.id, f.ranks.length] as const));
+    const byId = new Map(blocked
+        .filter(b => !waitingOnASuccession(b, rungsOf.get(b.factionId) ?? 0))
+        .map(b => [b.npcId, b]));
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i]!;
         const had = npc.tags.find(t => t.startsWith(HELD_BACK)) ?? null;
@@ -140,21 +158,41 @@ export function noteWhoIsHeldBack(
 
 /**
  * Years held back before it presses as hard as any one other reason, for somebody
- * standing just at the bar. Every whole realm past the bar shortens it: a house
- * that cannot find room for somebody a realm above what the room asks is failing
- * them faster.
+ * standing just at the bar, in a life of {@link A_LIFE_THE_YEARS_ARE_COUNTED_IN}.
+ * Every whole realm past the bar shortens it: a house that cannot find room for
+ * somebody a realm above what the room asks is failing them faster.
+ *
+ * AND A YEAR IS A SHARE OF A LIFE. The design owner: *"people can leave but they
+ * don't leave easily. Cultivators live a long time."* Twenty years is a fifth of
+ * a mortal's hundred and a thousandth of a Tribulation Transcender's hundred
+ * thousand, so the wait is read against the span the person actually has
+ * (`lifespanForOrdinal`): a fifth of it, whatever it is.
  */
 export const YEARS_BEFORE_IT_WEIGHS_LIKE_A_REASON = 20;
+
+/** The life the figures above are stated in: a mortal's, `lifespanForOrdinal(0)`. */
+export const A_LIFE_THE_YEARS_ARE_COUNTED_IN = 100;
 
 /** As much as four separate grievances, and no more. */
 export const BEING_HELD_BACK_WEIGHS_AT_MOST = 4;
 
-/** How many reasons' worth being held back is, today. Zero for somebody who is not. */
-export function howHardBeingHeldBackPresses(held: HeldBack | null, day: number): number {
+/**
+ * How many reasons' worth being held back is, today. Zero for somebody who is not.
+ *
+ * `lifespanYears` is the span of the person held back; omitted, the years are
+ * a mortal's.
+ */
+export function howHardBeingHeldBackPresses(
+    held: HeldBack | null,
+    day: number,
+    lifespanYears: number = A_LIFE_THE_YEARS_ARE_COUNTED_IN
+): number {
     if (held === null) return 0;
     const years = Math.max(0, (day - held.sinceDay) / DAYS_PER_YEAR);
+    const ofALife = A_LIFE_THE_YEARS_ARE_COUNTED_IN
+        / Math.max(A_LIFE_THE_YEARS_ARE_COUNTED_IN, lifespanYears);
     return Math.min(
         BEING_HELD_BACK_WEIGHS_AT_MOST,
-        (years / YEARS_BEFORE_IT_WEIGHS_LIKE_A_REASON) * (1 + held.realmsPastTheBar)
+        (years * ofALife / YEARS_BEFORE_IT_WEIGHS_LIKE_A_REASON) * (1 + held.realmsPastTheBar)
     );
 }

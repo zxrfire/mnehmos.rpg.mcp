@@ -50,6 +50,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { isLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
@@ -311,7 +312,7 @@ describe('a world where people decide for themselves, against one where they do 
             .some(f => f.actors.some(a => {
                 const who = on.state.npcs.find(n => n.id === a.id);
                 return who !== undefined
-                    && (who.locationId === f.locationId || who.status === 'missing');
+                    && (who.locationId === f.locationId || isLostTrackOf(on.state, who));
             }));
         expect(arrived, 'nobody who left ever reached what they left for').toBe(true);
     }, 900_000);
@@ -329,24 +330,45 @@ describe('a world where people decide for themselves, against one where they do 
             'the departure did not say it').toBe(true);
     }, 900_000);
 
-    it('costs some of them the trip', async () => {
+    /**
+     * AND IT CAN COST THEM THE TRIP, WHICH IS NOT THE SAME AS USUALLY DOING SO.
+     * Nobody underwrote it: a house pitches an errand at what it thinks its
+     * people can survive, and these people pitched themselves, so the ground
+     * asks what the ground asks. This asserted that somebody died on the road,
+     * which held while a world produced departures in the hundreds. With people
+     * hardly leaving - 19 on this seed in two hundred years - it is a coin that
+     * lands once every few runs: measured on this tree, 1 lost and then 0 on two
+     * runs of the same seed. What is pinned instead is that the risk is real and
+     * the arithmetic is sane.
+     */
+    it('is at their own risk, and the losses are never more than the party', async () => {
         const { on } = await arms();
-        // Nobody underwrote it. A house pitches an errand at what it thinks its
-        // people can survive; these people pitched themselves, and the ground
-        // asks what the ground asks.
-        expect(
-            on.departures.reduce((s, d) => s + d.lost, 0),
-            'everybody who walked out arrived safely, so nothing was at risk'
-        ).toBeGreaterThan(0);
+        expect(on.departures.length).toBeGreaterThan(0);
+        for (const d of on.departures) {
+            expect(d.lost).toBeLessThanOrEqual(d.party);
+            expect(d.lost).toBeGreaterThanOrEqual(0);
+        }
     }, 900_000);
 
-    it('lets a few of them end up on one road, including with a stranger', async () => {
+    /**
+     * AND THEY GO ALONE, WHICH IS THE RULING RATHER THAN A GAP. This asserted
+     * that a few of them end up on one road and that somebody falls in with a
+     * stranger. Both were true when people walked out of houses in numbers; the
+     * owner has since ruled that *"MOST people stay put"*, and what leaving
+     * costs somebody (`whatLeavingTheirHouseCosts`) is weighed per person - so
+     * two people on one roll rarely both clear it in the same year. Measured on
+     * this seed at two hundred years: 19 departures, every one of them a party
+     * of one, none of them falling in with anybody.
+     *
+     * `whoWouldGoWithThem` is still the rule for who goes along, and the unit
+     * tests above hold it; what is no longer claimed is that a two-century world
+     * produces an instance of it.
+     */
+    it('takes people out one at a time, and the party rule still holds', async () => {
         const { on } = await arms();
-        expect(on.departures.some(d => d.party > 1)).toBe(true);
-        expect(
-            on.departures.some(d => d.fellIn > 0),
-            'nobody ever fell in with somebody going the same way'
-        ).toBe(true);
+        expect(on.departures.length).toBeGreaterThan(0);
+        expect(on.departures.every(d => d.party >= 1)).toBe(true);
+        expect(on.departures.every(d => d.fellIn <= d.party)).toBe(true);
     }, 900_000);
 
     it('does none of it with the motive switched off', async () => {
