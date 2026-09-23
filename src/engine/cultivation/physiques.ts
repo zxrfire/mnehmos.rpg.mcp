@@ -53,7 +53,7 @@ export const PHYSIQUES: readonly Physique[] = [
         tell: 'cold to the touch, in any weather, and always has been',
         description:
             'A body that takes qi in faster than it can hold and is worn through by doing it. '
-            + 'It is the best furnace anybody will ever find, and it does not last.'
+            + 'It is the best cultivation furnace anybody will ever find, and it does not last.'
     },
     {
         // The same three numbers as the row above, deliberately and permanently.
@@ -69,7 +69,7 @@ export const PHYSIQUES: readonly Physique[] = [
         tell: 'hot to the touch, in any weather, and always has been',
         description:
             'A body that takes qi in faster than it can hold and is worn through by doing it. '
-            + 'It is the best furnace anybody will ever find, and it does not last.'
+            + 'It is the best cultivation furnace anybody will ever find, and it does not last.'
     },
     {
         key: 'hollow_marrow',

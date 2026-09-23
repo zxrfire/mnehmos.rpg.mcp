@@ -271,6 +271,7 @@ import {
 // `GameService` as a type and imports nothing from here at runtime.
 import { theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
+import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
 import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
 import { theHouseExpects } from '../engine/world/a-house-expects-somebody-it-took-on.js';
 import { THE_INTERNAL_AFFAIRS_ELDER } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
@@ -3018,6 +3019,70 @@ export class GameService {
                 ok: true
             });
             for (const line of issued.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+
+        // AND WHO HAS NOTICED THEM, where their talent is the kind masters
+        // compete over. An offer and not a bond: see the module's own header.
+        const noticed = mastersNoticeAHeavenlySeedling(this, this.currentRun().cultivator);
+        if (noticed) {
+            execution.calls.push({
+                name: 'world.mastersNoticeAHeavenlySeedling',
+                action: 'roll',
+                summary: noticed.structure,
+                ok: true
+            });
+            for (const line of noticed.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+
+        // AND WHAT THEY HAVE PLACED WITH A MAKER, made, handed over or set down.
+        const commissioned = settleWhatWasPlacedWithAMaker(this, this.currentRun().cultivator);
+        if (commissioned) {
+            execution.calls.push({
+                name: 'world.settleWhatWasPlacedWithAMaker',
+                action: 'request',
+                summary: commissioned.structure.join(' '),
+                ok: true
+            });
+            for (const line of commissioned.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+
+        // AND WHERE THEIR HOUSE HAS POSTED THEM: put to them, reached, left,
+        // looked in on, or served. See `holding-a-posting.ts`.
+        const posted = settleWhereYourHouseHasPostedYou(this, this.currentRun().cultivator, clockOnEntry);
+        if (posted) {
+            execution.calls.push({
+                name: 'world.settleWhereYourHouseHasPostedYou',
+                action: 'sect',
+                summary: posted.structure.join(' '),
+                ok: true
+            });
+            for (const line of posted.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+
+        // AND WHETHER THEIR MASTER HAS CALLED THEM IN. See `a-master-calls-their-disciples-in.ts`.
+        const calledIn = settleWhetherYourMasterHasCalledYou(this, cultivator, this.currentRun().cultivator, clockOnEntry);
+        if (calledIn) {
+            execution.calls.push({
+                name: 'world.theLessonYourMasterCalledYouTo',
+                action: 'teach',
+                summary: calledIn.structure,
+                ok: true
+            });
+            for (const line of calledIn.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+
+        // AND WHO IS ALREADY ON THE GROUND THEY HAVE JUST WALKED ONTO, and the
+        // slight left behind by walking off it again. See
+        // `somebody-tells-you-to-get-off-this-ground.ts`.
+        const toldToLeave = settleWhoIsAlreadyOnThisGround(this, cultivator, this.currentRun().cultivator);
+        if (toldToLeave) {
+            execution.calls.push({
+                name: 'encounters.theyTellYouToLeave',
+                action: 'move',
+                summary: toldToLeave.structure,
+                ok: true
+            });
+            for (const line of toldToLeave.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
         }
 
         // AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD

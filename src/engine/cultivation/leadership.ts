@@ -3,6 +3,8 @@
  * with the people it does it to.
  */
 
+import { A_ROLL_A_PLAYER_COULD_KNOW } from '../world/a-house-raises-its-own.js';
+
 // AUTHORITY
 
 /**
@@ -261,8 +263,22 @@ export function impliedHouseSize(rankCount: number): number {
 }
 
 /**
- * Share of a rung one giver can actually call on, per rung of seniority between
- * them.
+ * Share of the people one person can keep track of that each rung of seniority
+ * buys them, and it is a share of THAT rather than of the rung.
+ *
+ * RETUNED WHEN `houseSize` STOPPED MEANING THE SLICE. It was a share of the
+ * rung below, which is a fraction of a person while the house is the dozen the
+ * world models and a crowd once the house is its real size: measured on the
+ * Azure Cloud Pavilion, one rung of seniority bought 1 person at a house of 19
+ * and 46 at its real 574, and its head 5 against 187. Neither is an order
+ * somebody gives - the first is nobody and the second is a small army.
+ *
+ * What actually bounds it is the giver, not the house: you can send people you
+ * know, and `A_ROLL_A_PLAYER_COULD_KNOW` is this world's own figure for how
+ * many that is - *"even if it's huge, you only know like 10-20 people tops"*.
+ * So seniority buys a share of that, and the rung's own population is the cap,
+ * which is what keeps a small house small. Four rungs of gap reaches everybody
+ * you know; at the Pavilion's real size one rung now buys 3 and its head 15.
  */
 export const CALL_FRACTION_PER_RUNG = 0.25;
 
@@ -277,7 +293,7 @@ export function commandableHands(
     const onTheRung = rosterAtRung(houseSize, toRankIndex, rankCount);
     const gap = giverRankIndex - toRankIndex;
     const share = Math.min(1, CALL_FRACTION_PER_RUNG * gap);
-    return Math.max(0, Math.floor(onTheRung * share));
+    return Math.max(0, Math.min(onTheRung, Math.floor(A_ROLL_A_PLAYER_COULD_KNOW * share)));
 }
 
 // ERRANDS
