@@ -202,12 +202,14 @@ import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
 import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
-import { peopleBringWhatTheyKnowToTheRoom } from './bringing-what-you-know-about-somebody-to-the-room.js';
+import { peopleBringWhatTheyKnowToTheRoom, theRoomWouldDealToThemAgain } from './bringing-what-you-know-about-somebody-to-the-room.js';
 import { whatComesToLightThisYear } from './what-comes-to-light-about-a-killing.js';
 import {
     ROGUE_FLED,
     ROGUE_HOUSE_FELL,
+    aHouseWouldTakeThemAnyway,
     CAME_OFF_A_ROLL_AT,
+    whatTakingInSomebodysCastOffStirs,
     offTheRoll,
     releaseTheRoll,
     whereTheyRunTo,
@@ -2498,7 +2500,10 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         }
 
         const chosen = withARoad[rng.int(0, withARoad.length - 1)]!;
+        // AND WHAT THIS HOUSE MAKES OF WHAT IT HAS HEARD ABOUT THEM.
+        if (!aHouseWouldTakeThemAnyway(state, npc, chosen.house, rng)) continue;
         state.npcs[at] = { ...npc, factionId: chosen.house.id, factionRankIndex: 0, updatedOnDay: day };
+        whatTakingInSomebodysCastOffStirs(state, npc, chosen.house, day);
         // Whoever of the house took them on owes it a report, which is what
         // lets them in at the gate. See `a-house-expects-somebody-it-took-on.ts`.
         theyOweTheHouseAReport(state, chosen.road!.recruiterId, {
@@ -4076,7 +4081,13 @@ function applyPostings(state: WorldState, year: number, day: number): number {
 
         const rooms = whoIsInChargeOfWhat({
             rooms: theRoomsThisHouseHas(state.locations, faction.id),
-            roll: members.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
+            // A ROOM TAKEN OFF SOMEBODY IS A WEIGHT AGAINST THEM, NOT A DOOR
+            // BRICKED UP. The owner, asked whether a removal is permanent:
+            // *"depends on your influence so not permanent"*. This filtered
+            // them out for ever; now it asks every year whether what they are
+            // worth to the house today outweighs what the disgrace still does.
+            roll: members.filter(n => theRoomWouldDealToThemAgain(state, n, faction, day))
+                .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
             rankCount: ranks
         });
         const holdingARoom = new Set(

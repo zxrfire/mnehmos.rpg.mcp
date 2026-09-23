@@ -50,6 +50,10 @@ import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { WHAT_A_HOUSE_WILL_STOMACH } from './why-one-cultivator-kills-another.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { regardFor } from '../cultivation/regard.js';
+import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
+import { isBelowTheLid } from './layers.js';
+import { setLocation, type NpcRecord } from './npc-state.js';
 import { theSpeciesItIs } from './a-beast-with-a-core-is-somebody-in-particular.js';
 import { theMarketOf } from './where-somebody-with-no-house-goes.js';
 import { regionOf } from './what-people-are-saying.js';
@@ -84,6 +88,107 @@ export const ROGUE_EXPELLED = `${ROGUE}expelled:`;
  * Read by the probe, and by nothing that decides anything.
  */
 export const CAME_OFF_A_ROLL_AT = 'came-off-a-roll-at:';
+
+/**
+ * A RECORD IS AN OPINION, NOT A WALL.
+ *
+ * `aRecordFollowsThem` was read once, in the recruitment pass, as a filter on
+ * the candidate pool: anybody a house had ever expelled was struck off every
+ * intake in the world, for ever, with no read of WHO was looking or why. Put
+ * beside the outside-elder door, which could not reach anybody stronger than
+ * the house doing the hiring, that left a person a house turned out with no way
+ * back onto any roll for a life that runs tens of thousands of years.
+ *
+ * It is also a player-facing dead end: the punishment room can expel the one
+ * being played, and the expose route the owner called the normal way a seat
+ * changes hands has expulsion as one of its three outcomes. A filter with no
+ * opinion in it would end that character's institutional life on the spot.
+ *
+ * So the record is read the way a house reads anything else about a stranger:
+ *
+ *   is it even known here   somebody on this roll has to hold the row about it.
+ *                           A record is a thing people know, not a mark on a
+ *                           forehead, and a house four provinces away has not
+ *                           heard. {@link theRecordIsKnownHere}.
+ *   what the house makes    `WHAT_A_HOUSE_WILL_STOMACH`, the same table that
+ *   of it                   decides how far a house's people will go for a deed
+ *                           - righteous almost never, neutral sometimes,
+ *                           demonic without blinking. A demonic house reading an
+ *                           expulsion from a righteous one as a recommendation
+ *                           falls out of that table rather than being written
+ *                           in as a special case.
+ *
+ * And it is a story on both sides: {@link whatTakingInSomebodysCastOffStirs}.
+ */
+export const A_RECORD_IS_STILL_TALKED_ABOUT = 8;
+
+/** Whether anybody on this roll holds a row about what this person did. */
+export function theRecordIsKnownHere(
+    state: WorldState,
+    npc: Pick<NpcRecord, 'id' | 'historyFactIds'>,
+    houseId: string
+): boolean {
+    const theirs = new Set(npc.historyFactIds.slice(-A_RECORD_IS_STILL_TALKED_ABOUT));
+    if (theirs.size === 0) return false;
+    for (const other of state.npcs) {
+        if (other.id === npc.id || other.factionId !== houseId || other.status !== 'alive') continue;
+        if (other.historyFactIds.some(id => theirs.has(id))) return true;
+    }
+    return false;
+}
+
+/** The house that turned them out, or null. */
+export function whichHouseTurnedThemOut(npc: Pick<NpcRecord, 'tags'>): string | null {
+    const tag = npc.tags.find(t => t.startsWith(ROGUE_EXPELLED));
+    return tag === undefined ? null : tag.slice(ROGUE_EXPELLED.length) || null;
+}
+
+/**
+ * Whether this house would take somebody a record follows, having heard of it.
+ *
+ * True for everybody nothing is known about, which is nearly everybody.
+ */
+export function aHouseWouldTakeThemAnyway(
+    state: WorldState,
+    npc: NpcRecord,
+    house: Pick<FactionRecord, 'id' | 'alignment'>,
+    rng: CultivationRNG
+): boolean {
+    if (!aRecordFollowsThem(npc)) return true;
+    if (!theRecordIsKnownHere(state, npc, house.id)) return true;
+    const stomach = WHAT_A_HOUSE_WILL_STOMACH[String(house.alignment ?? 'none')]
+        ?? WHAT_A_HOUSE_WILL_STOMACH.none!;
+    return rng.chance(stomach.ordinary);
+}
+
+/** What one house taking in what another threw out moves, by how far apart they stand. */
+export const WHAT_TAKING_IN_A_CAST_OFF_COSTS = 0.12;
+
+/**
+ * A house takes in somebody another house turned out, and the two of them feel
+ * it. Not a transfer: the genre treats this as a story, and the house that did
+ * the expelling reads it as a house siding with somebody it condemned.
+ */
+export function whatTakingInSomebodysCastOffStirs(
+    state: WorldState,
+    npc: Pick<NpcRecord, 'id' | 'name' | 'tags'>,
+    house: Pick<FactionRecord, 'id' | 'name' | 'alignment'>,
+    day: number
+): void {
+    const turnedOut = whichHouseTurnedThemOut(npc);
+    if (turnedOut === null || turnedOut === house.id) return;
+    const them = state.factions.find(f => f.id === turnedOut && f.dissolvedOnDay === null);
+    if (them === undefined) return;
+    // Further apart, harder felt: a demonic house taking in what a righteous one
+    // condemned is the case the genre is made of.
+    const apart = String(them.alignment ?? 'none') === String(house.alignment ?? 'none') ? 0.5 : 1;
+    const move = WHAT_TAKING_IN_A_CAST_OFF_COSTS * apart;
+    them.standing[house.id] = Number(
+        Math.max(-1, (them.standing[house.id] ?? 0) - move).toFixed(3));
+    appendWorldFact(state, makeFact({
+        day,
+        kind: 'grudge_opened',
+        scale: 'local',
         summary: `The ${house.name} took in ${npc.name}, whom the ${them.name} had put off its roll.`,
         actors: [{ id: npc.id, name: npc.name, role: 'taken in' }],
         locationId: null,

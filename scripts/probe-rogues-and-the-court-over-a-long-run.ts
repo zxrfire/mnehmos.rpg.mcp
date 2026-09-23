@@ -1,3 +1,9 @@
+import {
+    REMOVED_FROM_OFFICE,
+    theDayTheyLostTheOffice,
+    theRemovalTheyCarry,
+    theRoomWouldDealToThemAgain
+} from '../src/engine/world/bringing-what-you-know-about-somebody-to-the-room.js';
             const highRogues: Record<string, number> = {};
             for (const n of rogues) {
                 if (n.cultivation.realmOrdinal <= 29) continue;
@@ -16,6 +22,33 @@
             // owner ruled the removal is not permanent and that influence is
             // what decides, so what has to be read is whether anybody ever
             // outgrows it: nobody ever means the weight is a gate in different
+            // clothes, most of them inside a century means it costs nothing.
+            const lostAnOffice = living.filter(n => n.tags.some(t => t.startsWith(REMOVED_FROM_OFFICE)));
+            // AND HOW MANY OF THEM ARE STANDING SOMEWHERE ELSE NOW. The lookup
+            // used to be keyed on the current house, so a person who lost an
+            // office at one house and joined another carried a tag nobody could
+            // find and the weight evaluated to zero. This is the count that says
+            // whether that population exists at all, which it did not before the
+            // doors opened.
+            const carriedFromElsewhere = lostAnOffice.filter(n => {
+                const carried = theRemovalTheyCarry(n);
+                return carried !== null && carried.houseId !== n.factionId;
+            }).length;
+            const wouldBeDealtAgain: number[] = [];
+            for (const n of lostAnOffice) {
+                const house = state.factions.find(f => f.id === n.factionId);
+                if (house === undefined) continue;
+                if (!theRoomWouldDealToThemAgain(state, n, house, state.currentDay)) continue;
+                const when = theDayTheyLostTheOffice(n);
+                wouldBeDealtAgain.push(when === null ? 0 : Math.round((state.currentDay - when) / 365));
+            }
+            wouldBeDealtAgain.sort((a, b) => a - b);
+            // HOW PEOPLE DIED, BY WHAT KILLED THEM AND WHERE THEY STOOD.
+            //
+            // Off `endNote` and `diedOnDay` on the row, which every path that
+            // ends anybody writes through `markDead`, so nothing is counted
+            // twice and nothing is missed by reading one template's facts. The
+            // question this answers: did tonight's work shift death from
             // unmotivated to motivated, or did it just make the world safe.
             const bandOf = (o: number) => o < 13 ? 'a: mortal-ish <13'
                 : o < 29 ? 'b: middle 13-28'
@@ -86,3 +119,9 @@
                 deathFactsByScale: byScale,
                 earthShakingShare: deathFacts.length === 0
                     ? null : Number((shook / deathFacts.length).toFixed(3)),
+                lostAnOffice: lostAnOffice.length,
+                lostItAtAHouseTheyHaveSinceLeft: carriedFromElsewhere,
+                andCouldHoldOneAgain: wouldBeDealtAgain.length,
+                yearsToOutgrowIt: wouldBeDealtAgain.length === 0
+                    ? null
+                    : wouldBeDealtAgain[Math.floor(wouldBeDealtAgain.length / 2)],

@@ -240,6 +240,7 @@ function theRoomHearsOfIt(state: WorldState, killer: NpcRecord, fact: Historical
         const row = state.npcs[at]!;
         state.npcs[at] = {
             ...row,
+            tags: Array.from(new Set([...row.tags, `${REMOVED_FROM_OFFICE}${house.id}:${day}`])),
             updatedOnDay: day
         };
     }

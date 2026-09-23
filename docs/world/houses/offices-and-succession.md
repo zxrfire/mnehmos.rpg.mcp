@@ -158,6 +158,27 @@ contest. Everything above inner can be lost by somebody else being better; inner
 Nothing in the tournament may take anybody past it: a beaten conclave disciple lands at inner
 and stops there.
 
+**And what decides whether the room ever comes back is influence, not time.** The design
+owner, asked whether a removal is permanent: *"depends on your influence so not permanent."*
+A door closing is not a door bricked up. So the removal is a **weight against them in the
+dealing** rather than a gate in front of it, and a weight can be outgrown while a gate cannot:
+every year the house asks whether what this person is worth to it now outweighs what the
+disgrace still costs it to keep them. The materials are the ones the house already reads -
+face, contribution, the rung they stand on, and who on the roll would speak for them
+(`theRoomWouldDealToThemAgain`, `whatTheyAreWorthToTheirHouseNow`).
+
+It is meant to hurt. `WHAT_A_REMOVAL_WEIGHS` is four public wins' worth, so somebody disgraced
+has to rebuild real standing before a room is dealt to them again, and the memory of it fades
+on a cultivator's clock rather than a mortal one - `WHAT_A_ROOM_REMEMBERS_OF_A_LIFE`, a
+fiftieth of their own span, which is a couple of hundred years for an elder of a great house.
+An expose that cost a decade and nothing else would make the expose route worthless, and that
+route is how a seat changes hands in a righteous or neutral house: 31 and 32 cases a century
+against killing for a seat at 0.4.
+
+**Unmeasured, and the number that will settle it:** over a long run, how many people who lost
+an office ever hold one again, and how long it took them. If the answer is nobody, the weight
+is a gate wearing different clothes. If it is most of them inside a century, it costs
+nothing.
 
 So the scarcity at the top is sharper than the scarcity at the elder rung, and it is the same
 shape: **more people who could than places to be.** A conclave disciple passed over for

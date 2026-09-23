@@ -47,10 +47,202 @@ import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-char
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { relationshipWith, type NpcRecord } from './npc-state.js';
+import { lifespanForOrdinal } from '../cultivation/realms.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { faceOf } from './what-a-face-is-worth.js';
+import { meritWith } from './what-a-house-counts-in-somebodys-favour.js';
+import { A_FRIEND, HOSTILE_STANDING } from './why-one-cultivator-kills-another.js';
 import { ROGUE_EXPELLED, offTheRoll, whereTheyRunTo } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { WHAT_A_HOUSE_WILL_STOMACH } from './why-one-cultivator-kills-another.js';
 import { indexById, type FactionRecord, type WorldState } from './world-state.js';
+
+/**
+ * Removed from an office by the house's room, the title kept. Followed by the
+ * house id and the day it was done: `removed-from-office:<houseId>:<day>`.
+ */
+export const REMOVED_FROM_OFFICE = 'removed-from-office:';
+
+/** A room taken off somebody: which house did it, and on what day. */
+export interface TheRemovalTheyCarry {
+    houseId: string;
+    day: number;
+}
+
+/**
+ * The removal this person carries, whoever they are standing with now.
+ *
+ * A DISGRACE FOLLOWS THE PERSON, NOT THE HOUSE. This read the tag keyed on the
+ * npc's CURRENT `factionId`, which was harmless while nobody could move: a
+ * person a house had taken an office off stayed where they were or stayed off
+ * every roll. Once the doors opened - a strong outsider taken in as a guest
+ * elder, a record read as an opinion rather than a wall - somebody could lose an
+ * office at one house and turn up on another's roll, and then the tag named a
+ * house the lookup was not asking about, the weight silently evaluated to zero,
+ * and the disgrace cost them nothing at all.
+ *
+ * Measured across the change that caused it: with the doors shut, 7 people
+ * carried a removal and the median time since was 334 years; with them open, 11
+ * carried one, ALL of them read as freely eligible, and the median fell to 3.
+ * One change dissolving another, and nothing failed.
+ */
+export function theRemovalTheyCarry(npc: Pick<NpcRecord, 'tags'>): TheRemovalTheyCarry | null {
+    for (const tag of npc.tags) {
+        if (!tag.startsWith(REMOVED_FROM_OFFICE)) continue;
+        const rest = tag.slice(REMOVED_FROM_OFFICE.length);
+        const at = rest.lastIndexOf(':');
+        if (at <= 0) continue;
+        const when = Number(rest.slice(at + 1));
+        if (!Number.isFinite(when)) continue;
+        return { houseId: rest.slice(0, at), day: when };
+    }
+    return null;
+}
+
+/** The day a house took an office off them, or null. */
+export function theDayTheyLostTheOffice(npc: Pick<NpcRecord, 'tags'>): number | null {
+    return theRemovalTheyCarry(npc)?.day ?? null;
+}
+
+// AND WHETHER THE ROOM EVER COMES BACK TO THEM
+
+/**
+ * What a removal weighs against somebody, in the units `what-a-face-is-worth.ts`
+ * prices a public win over an equal in.
+ *
+ * THE OWNER'S RULING, asked whether a removal is permanent: *"depends on your
+ * influence so not permanent"*. What stood was the sentence ladder - demoted,
+ * removed from office with the title kept, expelled. What fell was this being a
+ * gate: a predicate on the tag filtered somebody out of the dealing for ever,
+ * and a door closing is not a door bricked up.
+ *
+ * So it is a weight and not a gate, and what is weighed against it is what they
+ * are worth to the house NOW - not time served and not a counter. Four public
+ * wins is heavy: somebody a room took an office off has to be visibly worth
+ * more to the house than the disgrace costs it to keep them. An exposé that
+ * cost a room for a decade and nothing else would make that route worthless,
+ * and it is how a seat changes hands in a righteous or neutral house - measured
+ * at 31 and 32 cases a century against killing for a seat at 0.4.
+ *
+ * UNMEASURED. What has to be read afterwards: how many people who lost an
+ * office ever hold one again, and how long it took. Nobody ever, and this is a
+ * gate in different clothes; most of them inside a century, and it costs
+ * nothing.
+ */
+export const WHAT_A_REMOVAL_WEIGHS = 4;
+
+/**
+ * The share of somebody's own life over which a room's memory of a disgrace
+ * halves.
+ *
+ * Slow, and on a cultivator's clock rather than a mortal's: a fiftieth of a
+ * span is two years to a villager, a couple of hundred to an elder of a great
+ * house and two thousand at the top of the ladder. The fade is the lesser half
+ * of this rule - influence is the half that decides - and it exists so that a
+ * disgrace nobody alive remembers is not still being enforced.
+ */
+export const WHAT_A_ROOM_REMEMBERS_OF_A_LIFE = 0.02;
+
+/**
+ * And the least a room remembers, whoever it was about.
+ *
+ * A fiftieth of a life is two years to somebody with a mortal's span, and a
+ * disgrace that has evaporated within a decade is not a disgrace - the expose
+ * route would cost an outer hall's elder nothing at all. Found by the test
+ * rather than by reading: a low-rung row came out at effectively nought after a
+ * century. The room is a house, and a house of cultivators remembers longer
+ * than the shortest-lived person in it.
+ */
+export const THE_LEAST_A_ROOM_REMEMBERS = 50;
+
+/** How heavy their removal still is, at this day. */
+export function howHeavyTheirRemovalStillIs(npc: NpcRecord, day: number): number {
+    const when = theDayTheyLostTheOffice(npc);
+    if (when === null) return 0;
+    const span = Math.max(1, lifespanForOrdinal(npc.cultivation.realmOrdinal));
+    const halfLife = Math.max(THE_LEAST_A_ROOM_REMEMBERS, WHAT_A_ROOM_REMEMBERS_OF_A_LIFE * span);
+    const years = Math.max(0, (day - when) / DAYS_PER_YEAR);
+    return WHAT_A_REMOVAL_WEIGHS * Math.pow(0.5, years / halfLife);
+}
+
+/** What a hundred points of contribution is worth beside one public win. */
+export const WHAT_SERVICE_IS_WORTH_BESIDE_A_WIN = 100;
+
+/** What standing at the top of a house's ladder is worth as influence. */
+export const WHAT_STANDING_AT_THE_TOP_IS_WORTH = 2;
+
+/** The most the people who would speak for somebody can be worth. */
+export const THE_MOST_BEING_SPOKEN_FOR_IS_WORTH = 2;
+
+/**
+ * What somebody is worth to their own house today, in the same units.
+ *
+ * Every material the ruling named and not one new one: face, contribution,
+ * where they stand on the ladder, and who on the roll would speak for them.
+ */
+export function whatTheyAreWorthToTheirHouseNow(
+    state: WorldState,
+    npc: NpcRecord,
+    house: Pick<FactionRecord, 'id' | 'ranks'>
+): number {
+    const top = Math.max(1, house.ranks.length - 1);
+    const rank = WHAT_STANDING_AT_THE_TOP_IS_WORTH
+        * Math.max(0, Math.min(1, npc.factionRankIndex / top));
+    const service = meritWith(npc, house.id) / WHAT_SERVICE_IS_WORTH_BESIDE_A_WIN;
+    let speakingForThem = 0;
+    for (const other of state.npcs) {
+        if (other.id === npc.id || other.factionId !== house.id || other.status !== 'alive') continue;
+        const tie = relationshipWith(other, npc.id);
+        if (tie !== null && tie.standing >= A_FRIEND) speakingForThem += 0.5;
+    }
+    return Math.max(0, faceOf(npc)) + rank + service
+        + Math.min(THE_MOST_BEING_SPOKEN_FOR_IS_WORTH, speakingForThem);
+}
+
+/**
+ * What THIS house makes of a disgrace earned somewhere else, 0..1.
+ *
+ * A disgrace earned at another house does not weigh what one earned here does,
+ * and the lens is the one the record at the door already uses rather than a
+ * second opinion: `WHAT_A_HOUSE_WILL_STOMACH` by alignment. A demonic house
+ * makes nothing of it at all - being thrown out of a righteous hall is closer to
+ * a recommendation - a neutral house discounts it, and a righteous house holds
+ * most of it against them. And a condemnation from a house this one is hostile
+ * to is worth half again less: a rival's judgement is not evidence here.
+ */
+export function whatThisHouseMakesOfADisgraceElsewhere(
+    removedAt: string,
+    house: Pick<FactionRecord, 'id' | 'alignment' | 'standing'>
+): number {
+    if (removedAt === house.id) return 1;
+    const stomach = WHAT_A_HOUSE_WILL_STOMACH[String(house.alignment ?? 'none')]
+        ?? WHAT_A_HOUSE_WILL_STOMACH.none!;
+    // How much this house cares about somebody else's ruling: the inverse of
+    // how far its own people will go for an ordinary deed.
+    const cares = Math.max(0, 1 - stomach.ordinary);
+    const theirs = house.standing[removedAt] ?? 0;
+    return theirs <= HOSTILE_STANDING ? cares / 2 : cares;
+}
+
+/**
+ * Whether the house's room would deal to this person again.
+ *
+ * True for everybody it never took anything off, which is nearly everybody.
+ */
+export function theRoomWouldDealToThemAgain(
+    state: WorldState,
+    npc: NpcRecord,
+    house: Pick<FactionRecord, 'id' | 'ranks' | 'alignment' | 'standing'>,
+    day: number
+): boolean {
+    const carried = theRemovalTheyCarry(npc);
+    if (carried === null) return true;
+    const weighs = howHeavyTheirRemovalStillIs(npc, day)
+        * whatThisHouseMakesOfADisgraceElsewhere(carried.houseId, house);
+    if (weighs <= 0) return true;
+    return whatTheyAreWorthToTheirHouseNow(state, npc, house) >= weighs;
+}
+
 /** How often, in a year, somebody held back with something on the holder brings it. */
 export const BRINGING_IT_A_YEAR = 0.02;
 
@@ -197,6 +389,7 @@ export function aRoomHearsIt(
         state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
     } else if (place === 'removed from office') {
         const row = state.npcs[at]!;
+        state.npcs[at] = { ...row, tags: Array.from(new Set([...row.tags, `${REMOVED_FROM_OFFICE}${house.id}:${day}`])), updatedOnDay: day };
     }
     // AND ONLY WHAT MOVED SOMEBODY IS WRITTEN DOWN. A room that read it and
     // handed down a rebuke is the house's own business, and a fact for every one
