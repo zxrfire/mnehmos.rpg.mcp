@@ -199,7 +199,19 @@ function mechanicalPerson(person: SomebodyAbove, playerOrdinal: number): string 
         + (person.carriesYouTo === null
             ? 'Nothing they are carrying goes past where the asker already stands, so what '
               + 'they could hand over is an art and not a road further up. '
-            : `carriesTo puts their reach at ${theRung(person.carriesYouTo)}, being the `
+            // THE FACT, NOT THE FIELD THAT HOLDS IT. This opened with the
+            // identifier `carriesTo` as the subject of an English sentence, and
+            // the engine log sits on the same screen as the prose and is
+            // rewritten by nobody - so a player asking `who would teach me` or
+            // `I look at <somebody>` was shown the name of a property. Caught
+            // by `no-source-in-the-players-face.test.ts`, which is the guard
+            // for exactly this and had been red on four of the most ordinary
+            // sentences in the game.
+            //
+            // One site, three sentences, one line per candidate teacher: the
+            // same string is built for everybody above the asker, so the symbol
+            // appeared once per person in the room.
+            : `What they practise reaches ${theRung(person.carriesYouTo)}, being the `
               + `lower of their own rung and the teachable end of the deepest thing they hold. `)
         + (person.here
             ? 'They are standing here, so they can be approached today.'

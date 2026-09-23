@@ -219,8 +219,8 @@ function whoTheWordIsFor(
         : `Word to somebody in particular goes by hand, or on a jade whose other half they hold: `
           + `yours answers to ${saidAsAList(reaches)}.`;
     return {
-        refusal: `Nobody the world knows answers to "${named}". Word on a communication talisman goes to `
-            + 'a house, or to somebody of one: "I send word to my master that...", "I send word to the sect that...".'
+        refusal: `A communication talisman goes to the hall where its twin is kept, and not to a person. `
+            + `${whereTheyAnswer} ${onJade}`
     };
 }
 
@@ -241,7 +241,22 @@ export const communicationTalismanVerbs = {
         const world = this.atHand;
         const refuse = (headline: string, line: string, note: string): Execution =>
             refused('engine.burnACommunicationTalisman', 'tell', factsForRefusal(headline, line, note));
-        if (!world) return refuse('There is no world for word to cross.', 'Nothing is loaded to carry it.', 'send word: no world.');
+        // A SUBJECT, BECAUSE THE LINE HAD NONE. "Nothing is loaded to carry it"
+        // names no talisman, no recipient and no road, and reads like a system
+        // error to the one reader it can reach. It is a harness state rather
+        // than a world state - a player in a live session never sees it - so
+        // this says what would carry the word and stops there, which costs a
+        // sentence and builds nothing.
+        if (!world) {
+            return refuse(
+                'There is no world for word to cross.',
+                'A slip burns and a jade speaks, and both of them reach somebody standing '
+                + 'somewhere. There is no world open for them to cross, so nothing was sent and '
+                + 'nothing was spent.',
+                'send word: no world.'
+            );
+        }
+
         // ── HOLDING ONE HALF NAMES THE OTHER ─────────────────────────────
         //
         // The owner's ruling, and it is the whole difference between a jade and

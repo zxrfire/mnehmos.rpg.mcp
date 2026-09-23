@@ -7312,9 +7312,35 @@ ${noticed}`;
                 // resolved and the right thing to show a player who named
                 // nobody the house recognises.
                 const roll = await handleExpel({ action: 'expel', cultivatorId: cultivator.id });
+                // AND A REFUSAL NAMES WHO COULD. The tool answers with the rung
+                // the power opens at, which leaves a player who cannot do it
+                // with nowhere to go. See `who-could-put-somebody-off-the-roll.ts`.
+                const stands = positionIn(this.repos, cultivator.id);
+                if (isGuidingErrorBody(roll) && stands) {
+                    const who = whoCouldPutSomebodyOffTheRoll(this, cultivator, stands);
+                    const facts = factsForRefusal(
+                        'That is not yours to do.', who.lines.join(' '), who.structure
+                    );
+                    facts.lines = who.lines.slice();
+                    facts.required = who.lines.slice(0, 2);
+                    return refused('sect_manage.expel', 'sect', facts);
+                }
                 const elderId = isGuidingErrorBody(roll) ? null : elderNamed(roll, target);
                 if (elderId === null) {
-                    return this.fromToolResult('sect_manage.expel', 'sect', roll, 'The elders');
+                    const listing = this.fromToolResult('sect_manage.expel', 'sect', roll, 'The elders');
+                    // A NAME THAT IS NOT AN ELDER'S IS NOT A SHORTER LIST. What
+                    // the power reaches is said, rather than answering somebody
+                    // who named a disciple with a price list for elders.
+                    if ((target ?? '').trim().length >= 2 && !isGuidingErrorBody(roll)) {
+                        sayThisWhateverTheNarratorDoes(
+                            listing.facts,
+                            `${target} is not an elder of the house, and this is the dismissal of an `
+                            + 'elder. Nobody puts an ordinary member off a roll by saying so: they '
+                            + 'walk out, or they fall so far in the house\'s regard that it stops '
+                            + 'keeping them.'
+                        );
+                    }
+                    return listing;
                 }
                 return this.fromToolResult(
                     'sect_manage.expel', 'sect',
@@ -10832,7 +10858,26 @@ ${opened.text}` : receipt,
             timeSkip: null,
             breakthrough: null,
             outcome: 'executed',
-            calls: [{ name, action, summary: hint ?? lines.join(' '), ok: true }]
+            // ── THE OPERATOR'S LINE IS NOT THE PLAYER'S LINE ─────────────
+            //
+            // This was `hint ?? lines.join(' ')`, and `hint` is the handler's
+            // `narrationHint` - which is also `lines[0]`, which is the prose the
+            // player reads. So for EVERY tool-backed verb in the game the
+            // inspector's summary was the player's first sentence, word for
+            // word, and the operator's channel added nothing to the screen it
+            // sits on.
+            //
+            // `summariseToolBody` is the mechanical account and is what an
+            // operator is there for: what the handler actually returned. Where a
+            // body summarises to nothing there is no second thing to say, and
+            // the hint is better than an empty row - so it stays as the
+            // fallback rather than as the first choice.
+            calls: [{
+                name,
+                action,
+                summary: detail.length > 0 ? detail.join(' ') : (hint ?? lines.join(' ')),
+                ok: true
+            }]
         };
     }
 
@@ -15049,9 +15094,17 @@ ${fit.line}`;
                     ? `Nothing is outstanding. ${held.sectName} has not sent for you, and a `
                       + 'refusal is an answer to somebody who asked - you cannot get out in '
                       + 'front of it.'
+                    // AND THE ROAD. The sentence below is true and complete about
+                    // what is missing, and says nothing about how to stop it
+                    // being missing - so a player who typed "I take the post"
+                    // or "I refuse the duel" is told they belong to nothing and
+                    // left there. The two roads onto a roll are the ones the
+                    // stuck-player read names, in the words it names them with.
                     : 'You belong to nothing. Nobody sends for somebody they have no claim on, '
                       + 'which is the other half of what a house is: being findable is the cost '
-                      + 'and being worth sending for is the benefit.',
+                      + 'and being worth sending for is the benefit. "what sects are there" '
+                      + 'names the houses, and "what is posted here" reads the intakes nailed '
+                      + 'up on this ground, with the bar and the date on each.',
                 `No ${'summons'} flag for ${cultivator.id}`
                 + `${held ? ` at ${held.sectId}` : '; no membership'}. `
                 + 'Read only, nothing written, no turn spent.'
@@ -15291,12 +15344,19 @@ ${fit.line}`;
                     ? `${held.sectName} has not sent for you, so there is nothing to agree to. `
                       + 'What is going is on the wall, and taking a line off it is a different '
                       + 'act: you sign for that one.'
-                    : 'You belong to nothing. Nobody sends for somebody they have no claim on.',
+                    // The same road as the refusal one screen up, for the same
+                    // reason and in the same words.
+                    : 'You belong to nothing. Nobody sends for somebody they have no claim on. '
+                      + '"what sects are there" names the houses, and "what is posted here" '
+                      + 'reads the intakes nailed up on this ground.',
                 `No summons flag for ${cultivator.id}`
                 + `${held ? ` at ${held.sectId}` : '; no membership'}. `
                 + 'Read only, nothing written, no turn spent.'
             ));
         }
+
+        // A POSTING IS YEARS IN A TOWN, not a span spent now. See `holding-a-posting.ts`.
+        if (isAPosting(pending.entryId)) return this.takeUpAPosting(run, cultivator, pending);
 
         const duty = pending.duty;
         const asking = whoIsAsking(duty);

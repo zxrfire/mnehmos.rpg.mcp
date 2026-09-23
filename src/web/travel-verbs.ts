@@ -600,6 +600,29 @@ export const travelVerbs = {
             ));
         }
         if (!place) {
+            // ── GETTING INSIDE IS NOT A JOURNEY, AND WAS ANSWERED AS ONE ──
+            //
+            // Measured: "I sneak in" was answered with the roads OUT of the
+            // square and six province names. Somebody sneaking in is not
+            // choosing a destination, they are trying to get through a wall
+            // where they already stand, and a list of roads is a read answering
+            // a question it was not asked.
+            //
+            // The intent is the whole of the difference and it was already in
+            // hand. What is behind a wall here is `site` and the compound reads;
+            // this says which sentence reaches them rather than guessing which
+            // one the player meant.
+            if (intent === 'enter') {
+                return refused('engine.resolvePlace', 'move', factsForRefusal(
+                    'Into what?',
+                    `You are standing in the open at ${placeName(cultivator)} and there is no `
+                    + 'wall, gate or mouth in front of you to get through. Getting inside needs '
+                    + 'something to be inside of: "what is around here" names the grounds within '
+                    + 'reach, and a house is walked up to by name before it can be got past.',
+                    'move/enter with no place named: nothing to enter from where this cultivator '
+                    + 'stands. Location unchanged and no time passed.'
+                ));
+            }
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',
                 `You get as far as the edge of ${placeName(cultivator)} before it occurs to you ` +
