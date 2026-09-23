@@ -37,13 +37,13 @@
  * to"*. A master is somebody the climb is assured for. Take the band table away
  * and there is no bar left over.
  *
- * ── AND POACHING IS AVAILABLE, PRICED, AND NOT REFUSED ───────────────────
+ * ── AND A SECOND MASTER IS ORDINARY ──────────────────────────────────────
  *
- * AGENTS.md: a vocabulary that can only say the polite version of an act has
- * taken a side. Taking somebody who already answers to a master is the ordinary
- * furniture of this genre and it is the version somebody uses to get ahead at
- * another person's expense, so it resolves rather than refusing - and the person
- * it was taken from gets a row in the ledger.
+ * Taking somebody who already answers to a master resolves rather than refusing.
+ * It used to open a `betrayal` grudge in the master they already had; the design
+ * owner: *"you often have more than one master, and that's okay."* So it opens
+ * nothing against anybody, and the fact that it happened over another master's
+ * head is carried on the sealing for whoever wants to make something of it.
  *
  * ── WHAT WENT RED FIRST ──────────────────────────────────────────────────
  *
@@ -57,7 +57,7 @@
  *       -> whatABondOpens is not a function
  *   x a bond that ends leaves a former tie rather than no tie
  *       -> whatEndingABondLeaves is not a function
- *   x walking out on an unserved term is a broken oath, and serving it out is not
+ *   x ending a bond is a broken oath against whoever ended it
  *       -> whatEndingABondLeaves is not a function
  *   x teaching your own discharges what you promised; teaching a stranger opens a favour
  *       -> whatTeachingYourOwnSettles is not a function
@@ -66,6 +66,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    A_BOND_THAT_STOOD_A_LONG_TIME_YEARS,
     A_MASTER_STANDS_THIS_FAR_ABOVE,
     whatABondOpens,
     whatEndingABondLeaves,
@@ -156,23 +157,28 @@ describe('what the bond carries, at both ends', () => {
         expect(owedByTheMaster?.cause).toBe('teaching_term');
         expect(owedByTheMaster?.subjectId).toBe(student.id);
 
-        // A term with no end is a mood. Both ends come due on the same day.
-        expect(owedByTheDisciple?.dueOnDay).toBe(owedByTheMaster?.dueOnDay);
-        expect(owedByTheDisciple?.dueOnDay).toBeGreaterThan(400);
+        // NO DAY EITHER COMES DUE. The design owner: *"a master-disciple bond is
+        // for life."* Both oaths run until somebody ends the relationship.
+        expect(owedByTheDisciple?.dueOnDay).toBeNull();
+        expect(owedByTheMaster?.dueOnDay).toBeNull();
     });
 
-    it('opens a grudge for the master they were taken from, and none where there was nobody', () => {
-        const poached = whatABondOpens({
+    it('opens nothing against the master they already had, because several is ordinary', () => {
+        // The design owner: *"you often have more than one master, and that's
+        // okay."* Kneeling to a second one is not a betrayal of the first; it is
+        // still recorded as having happened over their head, for anybody who
+        // wants to make something of it.
+        const second = whatABondOpens({
             master,
             student: person('student', 6, { masterId: 'the-other-one' }),
             onDay: 400
         });
-        const taken = poached.grudges.find(g => g.holderId === 'the-other-one');
-        expect(taken).toBeDefined();
-        expect(taken?.subjectId).toBe(master.id);
+        expect(second.grudges).toHaveLength(0);
+        expect(second.sealing.overAnotherMastersHead).toBe(true);
 
         const clean = whatABondOpens({ master, student, onDay: 400 });
         expect(clean.grudges).toHaveLength(0);
+        expect(clean.sealing.overAnotherMastersHead).toBe(false);
     });
 });
 
@@ -182,45 +188,42 @@ describe('what it means when it ends', () => {
 
     it('leaves a former tie at both ends rather than deleting the tie', () => {
         const ended = whatEndingABondLeaves({
-            master, student, onDay: 900, walkedAway: 'disciple', termLeft: 0
+            master, student, onDay: 900, walkedAway: 'disciple', stoodForDays: 900
         });
         expect(ended.ties.find(t => t.holderId === master.id)?.kind).toBe('former_disciple');
         expect(ended.ties.find(t => t.holderId === student.id)?.kind).toBe('former_master');
     });
 
-    it('writes nothing against anybody when the term was served out', () => {
-        const ended = whatEndingABondLeaves({
-            master, student, onDay: 900, walkedAway: 'disciple', termLeft: 0
-        });
-        expect(ended.grudges).toHaveLength(0);
-    });
-
-    it('is a broken oath against whichever end walked out on an unserved term', () => {
+    it('is a broken oath against whichever end ended it, because a bond has no term to serve out', () => {
+        // The design owner: *"a master-disciple bond is for life"*, so there is
+        // no such thing as having seen it through. Somebody ended it, and that
+        // is what is held against them.
         const left = whatEndingABondLeaves({
-            master, student, onDay: 900, walkedAway: 'disciple', termLeft: 2000
+            master, student, onDay: 900, walkedAway: 'disciple', stoodForDays: 2000
         });
         const held = left.grudges.find(g => g.holderId === master.id);
         expect(held?.cause).toBe('broken_oath');
         expect(held?.subjectId).toBe(student.id);
 
         const castOut = whatEndingABondLeaves({
-            master, student, onDay: 900, walkedAway: 'master', termLeft: 2000
+            master, student, onDay: 900, walkedAway: 'master', stoodForDays: 2000
         });
         const theirs = castOut.grudges.find(g => g.holderId === student.id);
         expect(theirs?.cause).toBe('broken_oath');
         expect(theirs?.subjectId).toBe(master.id);
     });
 
-    it('weighs the walk by how much of the term was left', () => {
-        const early = whatEndingABondLeaves({
-            master, student, onDay: 900, walkedAway: 'disciple', termLeft: 3000
+    it('weighs the ending by how long the bond had stood', () => {
+        const aLifetime = whatEndingABondLeaves({
+            master, student, onDay: 900, walkedAway: 'disciple',
+            stoodForDays: A_BOND_THAT_STOOD_A_LONG_TIME_YEARS * 365 + 1
         });
-        const late = whatEndingABondLeaves({
-            master, student, onDay: 900, walkedAway: 'disciple', termLeft: 40
+        const barelyBegun = whatEndingABondLeaves({
+            master, student, onDay: 900, walkedAway: 'disciple', stoodForDays: 40
         });
         const order = ['slight', 'serious', 'grave', 'unforgivable'];
-        expect(order.indexOf(early.grudges[0].severity))
-            .toBeGreaterThan(order.indexOf(late.grudges[0].severity));
+        expect(order.indexOf(aLifetime.grudges[0].severity))
+            .toBeGreaterThan(order.indexOf(barelyBegun.grudges[0].severity));
     });
 });
 

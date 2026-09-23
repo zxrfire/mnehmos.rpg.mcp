@@ -78,10 +78,23 @@ import { DISCIPLE_STANDING, MASTER_STANDING } from '../world/the-ties-an-ordinar
 export const A_MASTER_STANDS_THIS_FAR_ABOVE = 4;
 
 /**
- * The term, in years. A disciple's service and a master's teaching come due on
- * the same day, because they are two halves of one thing sworn once.
+ * How long a bond that has stood a long time has stood, in years.
+ *
+ * There used to be a TERM here - ten years of service and ten of teaching,
+ * coming due on the same day - and the design owner took it out: *"a
+ * master-disciple bond is for life."* The oaths it opens have no day they come
+ * due; they run until somebody ends the relationship. So the only duration left
+ * is backwards-looking, and it is read for one thing: how heavily an ending is
+ * held. Fifty years, because a bond that has stood half a century is a life
+ * arranged around it, and walking out of that is not walking out of a
+ * three-year arrangement.
+ *
+ * The four rulings this belongs to - no term, several masters, either end can
+ * end it, and what they feel about each other being counted regardless - are
+ * written once in
+ * `src/engine/world/what-stands-between-a-master-and-a-disciple.md`.
  */
-export const A_TERM_RUNS_THIS_MANY_YEARS = 10;
+export const A_BOND_THAT_STOOD_A_LONG_TIME_YEARS = 50;
 
 /** Either end of the bond. */
 export type BondEnd = 'master' | 'disciple';
@@ -198,8 +211,6 @@ export interface WhatABondOpens {
     /** One row for the master they were taken from. Empty where there was none. */
     grudges: ObligationRecord[];
     sealing: TheSealing;
-    /** Absolute day both ends come due. */
-    dueOnDay: number;
 }
 
 /**
@@ -215,12 +226,8 @@ export function whatABondOpens(input: {
     onDay: number;
     /** How many were standing there. Weight, not permission. */
     witnesses?: number;
-    /** Years, where a caller has a reason for something other than the term. */
-    years?: number;
 }): WhatABondOpens {
     const { master, student, onDay } = input;
-    const years = input.years ?? A_TERM_RUNS_THIS_MANY_YEARS;
-    const dueOnDay = onDay + Math.round(years * DAYS_PER_YEAR);
     const takenFrom = student.masterId && student.masterId !== master.id
         ? student.masterId
         : null;
@@ -253,8 +260,10 @@ export function whatABondOpens(input: {
             cause: 'service_term',
             severity: 'serious',
             onDay,
-            dueOnDay,
-            terms: `${years} years of service to ${master.name}.`,
+            // NO DAY IT COMES DUE. *"A master-disciple bond is for life."* It is
+            // discharged by the relationship ending, not by a date arriving.
+            dueOnDay: null,
+            terms: `Service to ${master.name}, for as long as the bond stands.`,
             description:
                 `${student.name} knelt to ${master.name} and was taken as their disciple.`,
             participants: [master.id]
@@ -265,43 +274,37 @@ export function whatABondOpens(input: {
             cause: 'teaching_term',
             severity: 'serious',
             onDay,
-            dueOnDay,
-            terms: `${years} years of teaching owed to ${student.name}.`,
+            dueOnDay: null,
+            terms: `The road owed to ${student.name}, for as long as the bond stands.`,
             description:
                 `${master.name} took ${student.name} as their own and owes them the road.`,
             participants: [student.id]
         })
     ];
 
-    const grudges: ObligationRecord[] = takenFrom
-        ? [
-            createGrudge({
-                holderId: takenFrom,
-                subjectId: master.id,
-                cause: 'betrayal',
-                severity: 'serious',
-                onDay,
-                description:
-                    `${student.name} knelt to ${master.name} while still owing a term `
-                    + 'elsewhere. Somebody else is teaching them now.',
-                participants: [student.id]
-            })
-        ]
-        : [];
+    // NOBODY IS BETRAYED BY A SECOND MASTER. Kneeling to somebody while another
+    // master already stands over you used to open a `betrayal` grudge in the
+    // first master. The design owner: *"you often have more than one master, and
+    // that's okay."* A second road is a second road. The fact is still carried
+    // on the sealing (`overAnotherMastersHead`) for anybody who wants to make
+    // something of it, and casting somebody out or walking away is still an act
+    // with a grudge in it - see `whatEndingABondLeaves`.
+    const grudges: ObligationRecord[] = [];
 
     return {
         ties,
         oaths,
         grudges,
-        dueOnDay,
         sealing: {
             summary: `${student.name} knelt to ${master.name} and was taken as their disciple.`,
             unattributed:
                 'Somebody knelt in front of somebody else, in the open, and got back up as '
                 + 'their disciple.',
-            // A term of a life, capped the way `teaching-somebody-what-you-hold.ts`
-            // caps the months it spends.
-            cost: Math.min(1, (years * DAYS_PER_YEAR) / (DAYS_PER_YEAR * 100)),
+            // What it costs the master to swear: a life's worth of somebody
+            // else's road, capped the way `teaching-somebody-what-you-hold.ts`
+            // caps the months it spends. A bond with no end date is the whole
+            // of that cap and not a tenth of it.
+            cost: 1,
             overAnotherMastersHead: takenFrom !== null
         }
     };
@@ -322,19 +325,21 @@ export interface WhatEndingLeaves {
  * knows what they saw"* - so what changes is the kind and the note, and both
  * rows say who ended it.
  *
- * A term served out leaves nothing against anybody. Walking out on one that was
- * still running is `broken_oath`, held by the end that did not walk, and how
- * heavily it is held is how much of the term was left.
+ * ENDING IT IS THE ACT. There is no term to serve out any more: a bond runs for
+ * life, so every ending is somebody deciding to end it, and every ending leaves
+ * a `broken_oath` against whoever did, held by the end that did not. How heavily
+ * it is held is how long the bond had stood - a life arranged around somebody
+ * for fifty years, put down, is grave; a year in, it is slight.
  */
 export function whatEndingABondLeaves(input: {
     master: AsTheyStand;
     student: AsTheyStand;
     onDay: number;
     walkedAway: BondEnd;
-    /** Days still owed when it ended. Zero or less when it was served out. */
-    termLeft: number;
+    /** Days the bond had stood when it ended. */
+    stoodForDays: number;
 }): WhatEndingLeaves {
-    const { master, student, onDay, walkedAway, termLeft } = input;
+    const { master, student, onDay, walkedAway, stoodForDays } = input;
     const byTheMaster = walkedAway === 'master';
     const how = byTheMaster
         ? `${master.name} cast them out on day ${onDay}.`
@@ -359,10 +364,6 @@ export function whatEndingABondLeaves(input: {
         }
     ];
 
-    if (termLeft <= 0) {
-        return { ties, grudges: [], severedBy: walkedAway };
-    }
-
     const held = byTheMaster ? student : master;
     const against = byTheMaster ? master : student;
     return {
@@ -372,12 +373,11 @@ export function whatEndingABondLeaves(input: {
                 holderId: held.id,
                 subjectId: against.id,
                 cause: 'broken_oath',
-                severity: howHeavilyAWalkIsHeld(termLeft),
+                severity: howHeavilyAnEndingIsHeld(stoodForDays),
                 onDay,
                 description:
-                    `${how} ${Math.round(termLeft / DAYS_PER_YEAR)} year`
-                    + `${Math.round(termLeft / DAYS_PER_YEAR) === 1 ? '' : 's'} of the term was `
-                    + 'still owed.',
+                    `${how} It had stood ${Math.round(stoodForDays / DAYS_PER_YEAR)} year`
+                    + `${Math.round(stoodForDays / DAYS_PER_YEAR) === 1 ? '' : 's'}.`,
                 participants: []
             })
         ],
@@ -386,16 +386,18 @@ export function whatEndingABondLeaves(input: {
 }
 
 /**
- * How badly a walk is taken, off how much of the term was left.
+ * How badly an ending is taken, off how long the bond had stood.
  *
  * Words rather than a float, on the ledger's own four-value scale, so nothing
- * downstream can do arithmetic on it. The last year of a term is nearly served;
- * the first is the whole of what was promised.
+ * downstream can do arithmetic on it. It used to be read off how much of a
+ * ten-year term was left; with the term gone
+ * ({@link A_BOND_THAT_STOOD_A_LONG_TIME_YEARS}) what is left to read is the
+ * thing that was actually thrown away.
  */
-function howHeavilyAWalkIsHeld(termLeft: number): Severity {
-    const yearsLeft = termLeft / DAYS_PER_YEAR;
-    if (yearsLeft >= A_TERM_RUNS_THIS_MANY_YEARS * 0.75) return 'grave';
-    if (yearsLeft >= 1) return 'serious';
+function howHeavilyAnEndingIsHeld(stoodForDays: number): Severity {
+    const years = stoodForDays / DAYS_PER_YEAR;
+    if (years >= A_BOND_THAT_STOOD_A_LONG_TIME_YEARS) return 'grave';
+    if (years >= 1) return 'serious';
     return 'slight';
 }
 

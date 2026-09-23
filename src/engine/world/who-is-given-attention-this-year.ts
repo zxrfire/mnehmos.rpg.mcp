@@ -34,6 +34,7 @@ import {
     isTheWorldsToMove,
     type NpcActivity,
     type NpcRecord,
+    whatStandsBetween,
     type NpcRelationship
 } from './npc-state.js';
 import type { WorldState } from './world-state.js';
@@ -66,44 +67,141 @@ function freeToTeach(npc: NpcRecord, day: number): boolean {
     return SETS_DOWN_FOR_A_LESSON.has(a.kind);
 }
 
+/**
+ * Whether a master is free for their OWN, which is a lower bar than a lecture.
+ *
+ * The design owner: a master with personal disciples gives them their attention
+ * as a matter of course - it is what the bond is, and what the oath to teach
+ * assumes - and *"masters away or at a desk genuinely neglect them"*. So the work
+ * of a rung, a conversation, a table of people: all of it is set down for their
+ * own. Being away, or in the middle of making a thing, is not.
+ */
+function freeForTheirOwn(npc: NpcRecord, day: number): boolean {
+    if (npc.status !== 'alive' || !isBelowTheLid(npc) || !isTheWorldsToMove(npc)) return false;
+    if (npc.locationId === null) return false;
+    const a = npc.activity;
+    if (a === null) return true;
+    return !isAwayOnSomething(a.kind) && !isMakingSomething(a, day);
+}
+
 function present(npc: NpcRecord): boolean {
     return npc.status === 'alive' && isBelowTheLid(npc) && npc.locationId !== null
         && !(npc.activity !== null && isAwayOnSomething(npc.activity.kind));
 }
 
 /**
- * How long attention counts as recent: one turn of this pass.
+ * How long attention counts as recent: a decade.
  *
- * Attention is given in sets that run to the end of a year, and the next year's
- * pass stamps the ties they ran along. So a tie stamped within the last year is
- * one the last set passed along, and one stamped before that is a set ago - a
- * master who gave you their time last year has, and one who gave it two years
- * ago has since given it to somebody else.
+ * It was one turn of this pass, a year, which is how long a set of lessons runs.
+ * The design owner, on the neglect window and on this: *"cultivators' lives are
+ * so, so long."* A year is a blink to somebody with three centuries left, and
+ * the thing this measures is not the bookkeeping of a set but whether a person
+ * feels they have lately given you their time: a master who spent a season on
+ * you eight years ago remembers it, and it is still a reason to say the next ask
+ * comes out of their own road. Read by what an ask costs somebody
+ * (`gaveAttentionRecently`) and by {@link theStandingOfALongSilence}, which is
+ * what a bond nobody tends now loses instead of the neglect charge that was
+ * taken out; the world's own teaching pass runs on the year and does not read
+ * this.
  */
-export const ATTENTION_IS_RECENT_FOR_DAYS = 365;
+export const ATTENTION_IS_RECENT_FOR_DAYS = 10 * 365;
 
-/** Whether attention passed along this tie, either way, recently enough to count. */
+/**
+ * Whether attention passed along this tie, either way, recently enough to count.
+ *
+ * `within` for a caller measuring something else on its own clock: what a fresh
+ * ask costs somebody is a question about this year, not about the decade this
+ * constant measures. See `A_REPEAT_ASK_IS_WITHIN_DAYS`.
+ */
 export function gaveAttentionRecently(
     tie: Pick<NpcRelationship, 'lastAttentionOnDay'> | null | undefined,
-    day: number
+    day: number,
+    within: number = ATTENTION_IS_RECENT_FOR_DAYS
 ): boolean {
     const last = tie?.lastAttentionOnDay;
-    return last !== null && last !== undefined && day - last <= ATTENTION_IS_RECENT_FOR_DAYS;
+    return last !== null && last !== undefined && day - last <= within;
 }
 
 /**
+ * How much a year of somebody's attention warms the tie it ran along, and how
+ * much a decade of silence cools it.
+ *
+ * The design owner, on taking the neglect penalty out: *"how they feel about you
+ * is still counted, however."* There is no mechanical charge for a master who
+ * never teaches any more; what there is instead is the ordinary standing the
+ * resolver already reads on every ask. A master who sat with you for two
+ * centuries is warm and says yes; one who has not looked at you since the day
+ * they took you on goes cold, and you ask from there. Small, because a bond is
+ * made of decades of these and neither end should swing on one year.
+ */
+export const ATTENTION_WARMS_A_TIE_BY = 0.02;
+export const A_LONG_SILENCE_COOLS_A_TIE_BY = 0.01;
+
+/** How cold a bond nobody tends can get. Cold, never an enemy: silence is not a wrong. */
+export const A_TIE_GONE_COLD_STOPS_AT = 0;
+
+/**
  * The same person with attention recorded as passing between them and somebody
- * they hold a tie to, on this day. A person they hold no tie to gets nothing
- * written: a hall of strangers is not somebody who gave you time.
+ * they hold a tie to, on this day, and the tie a little warmer for it. A person
+ * they hold no tie to gets nothing written: a hall of strangers is not somebody
+ * who gave you time.
  */
 export function withAttentionRecorded(npc: NpcRecord, otherId: string, day: number): NpcRecord {
-    const at = npc.relationships.findIndex(r => r.targetId === otherId);
-    if (at < 0) return npc;
-    const prev = npc.relationships[at]!;
-    if ((prev.lastAttentionOnDay ?? -Infinity) >= day) return npc;
-    const relationships = npc.relationships.slice();
-    relationships[at] = { ...prev, lastAttentionOnDay: day };
-    return { ...npc, relationships };
+    // WHICH ROW IT LANDS ON. Rows are keyed by the pair and the kind, so a
+    // master who is also this person's uncle holds two: the hours go on the one
+    // the hours are about. Where nothing between them is a road, the most
+    // defining row takes it, which is what a lecture to a hall writes.
+    const theRoad = npc.relationships.filter(tie => tie.targetId === otherId
+        && (tie.kind === 'master' || tie.kind === 'disciple'
+            || tie.kind === 'teacher' || tie.kind === 'student'));
+    const stamped = theRoad.length > 0 ? theRoad : whatStandsBetween(npc, otherId).slice(0, 1);
+    if (stamped.length === 0) return npc;
+    if (stamped.every(tie => (tie.lastAttentionOnDay ?? -Infinity) >= day)) return npc;
+    const take = new Set(stamped.map(tie => tie.kind));
+    return {
+        ...npc,
+        relationships: npc.relationships.map(tie =>
+            tie.targetId === otherId && take.has(tie.kind)
+                ? {
+                    ...tie,
+                    lastAttentionOnDay: day,
+                    standing: Math.min(1, tie.standing + ATTENTION_WARMS_A_TIE_BY)
+                }
+                : tie)
+    };
+}
+
+/**
+ * The ties nobody has tended in a decade, gone one step colder. Mutates `state`.
+ * Returns how many cooled.
+ *
+ * Only ties that carry an expectation of time: a master and their disciple, a
+ * teacher and the junior they were handed. A friendship is not owed hours, and
+ * an acquaintance you have not seen in a decade is exactly what an acquaintance
+ * is.
+ */
+export function theStandingOfALongSilence(state: WorldState, day: number): number {
+    let cooled = 0;
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i]!;
+        if (npc.status !== 'alive') continue;
+        let touched = false;
+        const relationships = npc.relationships.map(tie => {
+            if (tie.kind !== 'master' && tie.kind !== 'disciple'
+                && tie.kind !== 'teacher' && tie.kind !== 'student') return tie;
+            const last = tie.lastAttentionOnDay ?? tie.sinceDay;
+            if (day - last <= ATTENTION_IS_RECENT_FOR_DAYS) return tie;
+            if (tie.standing <= A_TIE_GONE_COLD_STOPS_AT) return tie;
+            touched = true;
+            cooled++;
+            return {
+                ...tie,
+                standing: Math.max(A_TIE_GONE_COLD_STOPS_AT, tie.standing - A_LONG_SILENCE_COOLS_A_TIE_BY)
+            };
+        });
+        if (touched) state.npcs[i] = { ...npc, relationships, updatedOnDay: day };
+    }
+    return cooled;
 }
 
 /** Whether this activity is work that makes a thing, still under way on this day. */
@@ -198,7 +296,7 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         const at = byId.get(masterId);
         if (at === undefined) continue;
         const master = state.npcs[at]!;
-        if (!freeToTeach(master, day)) continue;
+        if (!freeForTheirOwn(master, day)) continue;
         const here = disciples.filter(id => {
             const d = state.npcs[byId.get(id)!]!;
             if (!present(d)) return false;
@@ -249,5 +347,9 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         if (hall.length === 0) continue;
         teach(lecturerAt, hall, 'giving a lecture to whoever in the compound came to hear it');
     }
+
+    // And the ties nobody tended this year, or in the ten before it, gone a step
+    // colder. What used to be a charge on a master's dao heart is this now.
+    theStandingOfALongSilence(state, day);
     return sets;
 }

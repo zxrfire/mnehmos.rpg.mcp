@@ -797,9 +797,12 @@ export function applyTeachingLines(
                 // else. A master handed over at a review is the road the game
                 // is about, taken away in a pass nobody watched.
                 if (!isTheWorldsToMove(n)) return false;
-                if (n.relationships.filter(r => r.kind === 'master').length >= MASTERS_AT_ONCE) {
-                    return false;
-                }
+                // How many PEOPLE stand over them, not how many rows: a master
+                // who is also carrying them through a book is one person.
+                const standingOver = new Set(n.relationships
+                    .filter(r => r.kind === 'master' || r.kind === 'teacher')
+                    .map(r => r.targetId));
+                if (standingOver.size >= MASTERS_AT_ONCE) return false;
                 const guide = guideOf(n);
                 return guide === null || guide - n.cultivation.realmOrdinal < GUIDANCE_FULL_GAP;
             })

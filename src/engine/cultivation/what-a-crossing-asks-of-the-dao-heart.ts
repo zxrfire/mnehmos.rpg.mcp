@@ -18,76 +18,22 @@ export const A_LIFE_THAT_IS_ALL_LOOSE_ENDS = 4;
  */
 export const MAX_DAO_HEART_STRAIN = 0.12;
 
-// THE OATH TO TEACH
-
-/**
- * How long a master may go without giving a disciple their attention before the
- * oath to teach reads as neglected.
- *
- * The design owner: *"the oath to teach counts as a debt. It affects the
- * master's breakthroughs and his dao heart."* A master who honours it pays
- * nothing; one who neglects it pays. Neglect is read off time, because refusing
- * and simply never getting round to it leave the same thing behind: no
- * attention given.
- *
- * THREE TURNS OF THE WORLD'S OWN ATTENTION PASS. `giveThisYearsAttention` sets a
- * master in front of their disciples once a year where they are free and in the
- * same place, and calls attention recent for `ATTENTION_IS_RECENT_FOR_DAYS`
- * (365). A year missed is a busy year: a copy on the desk, an errand. Three
- * running is a master who is not teaching. The figure is `3 x 365` rather than
- * an import so this file stays below the world; a test holds the two equal.
- */
-export const THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS = 3 * 365;
-
-/**
- * Whether a master is keeping their oath to teach one disciple, as of a day.
- *
- * Kept while the last attention given, or the day the oath was sworn where none
- * has been, is within {@link THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS}.
- */
-export function whetherTheOathToTeachIsKept(input: {
-    onDay: number;
-    swornOnDay: number;
-    lastAttentionOnDay?: number | null;
-}): boolean {
-    const last = Math.max(input.swornOnDay, input.lastAttentionOnDay ?? -Infinity);
-    return input.onDay - last <= THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS;
-}
-
-/** What one neglected oath to teach weighs: the oath's own severity when it is sworn. */
-const A_NEGLECTED_OATH_TO_TEACH_WEIGHS: Severity = 'serious';
-
-/**
- * What a master's neglected disciples ask of a crossing, read off the ties.
- *
- * For somebody the world holds, whose bond is a pair of ties rather than a pair
- * of ledger rows: a `disciple` tie on the master's side, with the day it was
- * made and the last day attention passed along it. The same rule and the same
- * scale as the ledger read below, so a master in the world and a master at the
- * player's table pay the same for the same neglect.
- */
-export function whatNeglectedDisciplesAskOfTheDaoHeart(input: {
-    ties: readonly { kind: string; sinceDay: number; lastAttentionOnDay?: number | null }[];
-    onDay: number;
-}): WhatTheCrossingAsks {
-    let open = 0;
-    for (const tie of input.ties) {
-        if (tie.kind !== 'disciple') continue;
-        if (whetherTheOathToTeachIsKept({
-            onDay: input.onDay, swornOnDay: tie.sinceDay, lastAttentionOnDay: tie.lastAttentionOnDay
-        })) continue;
-        open++;
-    }
-    const weight = Math.round(open * WHAT_A_RECORD_COUNTS_FOR[A_NEGLECTED_OATH_TO_TEACH_WEIGHS] * 100) / 100;
-    const heaviest = open > 0 ? A_NEGLECTED_OATH_TO_TEACH_WEIGHS : null;
-    return {
-        open,
-        weight,
-        heaviest,
-        share: Math.min(1, weight / A_LIFE_THAT_IS_ALL_LOOSE_ENDS),
-        line: lineFor(open, weight, heaviest)
-    };
-}
+// THE OATH TO TEACH IS NOT READ HERE ANY MORE
+//
+// There was a rule that counted a master's oath to teach as breached once enough
+// time had passed with no attention given, and charged their dao heart for it.
+// The design owner took it out: *"the master neglect thing, get rid of it.
+// Either they terminate the relationship or they don't."* A master who never
+// teaches is a master who never teaches; time passing is not an act and costs
+// them nothing mechanically. What costs something is ENDING the bond, which
+// somebody does on purpose - a master casts a disciple out, a disciple severs
+// the tie - and that already opens a grudge and breaks an oath where it should
+// (`endingABond` in `taking-somebody-as-your-own.ts`).
+//
+// What did not go with it: *"how they feel about you is still counted, however."*
+// The tie's own standing carries it. Attention given warms it and long silence
+// cools it (`giveThisYearsAttention`, `theStandingOfALongSilence`), so a
+// neglected disciple has a cold master and asks from there.
 
 // THE READ
 
@@ -129,15 +75,13 @@ export function whatACrossingAsksOfTheDaoHeart(input: {
         // them at all - never to decide which of the two it is.
         if (record.holderId !== input.personId && record.subjectId !== input.personId) continue;
 
-        // THE OATH TO TEACH IS THE MASTER'S, AND ONLY WHEN IT IS NEGLECTED. Not
-        // direction-blind, on the design owner's ruling that it weighs on the
-        // master: the disciple it is sworn about carries nothing for it, and a
-        // master keeping it carries nothing either. With no day to read against
-        // nothing can be shown to be neglected, so it weighs nothing.
-        if (record.kind === 'oath' && record.cause === 'teaching_term') {
-            if (record.holderId !== input.personId || input.asOfDay === undefined) continue;
-            if (whetherTheOathToTeachIsKept({ onDay: input.asOfDay, swornOnDay: record.incurredOnDay })) continue;
-        }
+        // THE OATH TO TEACH IS AN OPEN OATH AND NOT AN UNFINISHED ACCOUNT. It
+        // runs for as long as the bond does and has no day it was supposed to be
+        // done by, so a crossing is not asking about it: a master standing at a
+        // wall with a disciple still under them is a master mid-oath, not one
+        // with a loose end. It weighs when it is BROKEN, which ending the bond
+        // does and time does not.
+        if (record.kind === 'oath' && record.cause === 'teaching_term') continue;
 
         const key = record.triggeringEventId
             ?? `${record.originHolderId}|${record.incurredOnDay}|${record.cause}`;

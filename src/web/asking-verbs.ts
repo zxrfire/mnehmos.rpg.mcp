@@ -109,7 +109,7 @@ import { askedAbout, whetherTheyHoldIt } from './asked.js';
 import {
     type DatabaseHandle,
     openLedgerBetween,
-    theMasterTheyKneltTo,
+    theMastersTheyKneltTo,
     tieFrom
 } from './encounters.js';
 import {
@@ -1154,12 +1154,33 @@ ${unnamed}`;
         // which taking somebody on now writes. Standing anywhere else nobody is
         // there to be described, so the player's own side of the bond names them
         // and the refusal can say they are not here.
-        const masterId = theMasterTheyKneltTo(this.repos, cultivator.id);
-        const masterName = masterId && theDescriptionThisIs(query)?.tie === 'master'
-            ? this.atHand?.npcs.find(row => row.id === masterId)?.name
-                ?? this.repos.cultivators.getById(masterId)?.name
-                ?? null
-            : null;
+        // SEVERAL MASTERS IS ORDINARY. The design owner: *"you often have more
+        // than one master, and that's okay."* So "my master" with two standing
+        // over you is not a lookup, it is a question: they are named and the
+        // player says which. One master resolves as it always did.
+        const masters = theMastersTheyKneltTo(this.repos, cultivator.id);
+        const nameOf = (id: string): string | null =>
+            this.atHand?.npcs.find(row => row.id === id)?.name
+            ?? this.repos.cultivators.getById(id)?.name
+            ?? null;
+        const askingAMaster = theDescriptionThisIs(query)?.tie === 'master';
+        if (askingAMaster && masters.length > 1 && !this.partyPutTo(cultivator, query, scope)) {
+            const named = masters.map(nameOf).filter((n): n is string => n !== null);
+            if (named.length > 1) {
+                const say = `You have knelt to ${named.length}: ${named.join(', ')}. Say which of `
+                    + 'them you mean.';
+                return this.freeAction(run, 'request', {
+                    headline: 'You have more than one master.',
+                    lines: [say],
+                    structure: [`${cultivator.name} holds ${named.length} master ties `
+                        + `(${masters.join(', ')}). Nothing was put to anybody: "my master" names more `
+                        + 'than one person, which is ordinary.'],
+                    prose: say
+                });
+            }
+        }
+        const masterId = masters[0] ?? null;
+        const masterName = masterId && askingAMaster ? nameOf(masterId) : null;
         const party = this.partyPutTo(cultivator, query, scope)
             ?? (masterName
                 ? resolveCultivator(this.repos, masterName, cultivator.id, scope, cultivator.realmOrdinal)

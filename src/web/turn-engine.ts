@@ -16509,9 +16509,14 @@ ${fit.line}`;
             lines.push(
                 `${party.name} takes you on. What that is worth is not a title: somebody who `
                 + 'has stood further up than you can tell you what you are doing wrong while you '
-                + `are still doing it, when they are watching. You owe them ${Math.round((opened.dueOnDay - runDay) / DAYS_PER_YEAR)} `
-                + 'years of service, and they owe you as long of teaching.'
+                + 'are still doing it, when they are watching. You owe them your service and they '
+                + 'owe you the road, for as long as the bond stands: it has no term, and it ends '
+                + 'only if one of you ends it.'
             );
+            if (jadeGiven) {
+                lines.push(`${party.name} gives you one half of a communication jade and keeps the other: word spoken `
+                    + 'into it reaches them, as often as you speak.');
+            }
             calls.push({
                 name: 'engine.takeAMaster',
                 action: 'request',
@@ -16519,8 +16524,8 @@ ${fit.line}`;
                     `${party.name}, standing at ${theRung(theirOrdinal)}, took ${cultivator.name} `
                     + `on. Written both ways: a 'disciple' tie on ${party.name}'s side and a 'master' `
                     + `tie on ${cultivator.name}'s, at the world's own standings, on the world rows and `
-                    + `the relationship rows; ${opened.oaths.length} oaths, due on day `
-                    + `${opened.dueOnDay}; ${opened.grudges.length} grudge(s) from a master left `
+                    + `the relationship rows; ${opened.oaths.length} oaths with no day they come `
+                    + `due, a bond being for life; ${opened.grudges.length} grudge(s) from a master left `
                     + 'behind. The resolver reads the tie on every later ask; the rate reads '
                     + 'attention and not the title.',
                 ok: true

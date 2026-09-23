@@ -7,29 +7,22 @@
  *   A DEBT      an open `teaching_term` oath the asked person swore about the
  *               asker counts in the resolver's `owed` term the way a debt does,
  *               and no other oath does.
- *   KEPT        a master who has given attention within
- *               `THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS` carries nothing for
- *               the oath at a crossing, from the ledger or from the ties.
- *   NEGLECTED   past it, the oath is an unfinished account on the master's dao
- *               heart, by the same rule for a ledger row and for a world tie.
- *   THE MASTER  the disciple the oath is about carries nothing for it.
+ *   NO CLOCK    the design owner: *"the master neglect thing, get rid of it.
+ *               Either they terminate the relationship or they don't."* A bond
+ *               that is still standing weighs NOTHING at a crossing, however
+ *               many centuries have passed with no lesson given. What weighs is
+ *               ending it, which is an act on the ledger.
  *
  * Red-checked: dropping `theySworeToTeachYou` from `owedYourWay` fails the debt
- * block, and dropping the teaching-term branch from the ledger read fails the
- * kept and disciple arms, because the oath is then counted either way round.
+ * block, and counting a standing teaching oath as an unfinished account fails
+ * the no-clock block.
  */
 
 import { describe, expect, it } from 'vitest';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { oddsOf, type AttemptInput, type Party } from '../../../src/engine/social-leverage/index.js';
 import { createDebt, createOath } from '../../../src/engine/social/grudges.js';
-import {
-    THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS,
-    whatACrossingAsksOfTheDaoHeart,
-    whatNeglectedDisciplesAskOfTheDaoHeart,
-    whetherTheOathToTeachIsKept
-} from '../../../src/engine/cultivation/what-a-crossing-asks-of-the-dao-heart.js';
-import { ATTENTION_IS_RECENT_FOR_DAYS } from '../../../src/engine/world/who-is-given-attention-this-year.js';
+import { whatACrossingAsksOfTheDaoHeart } from '../../../src/engine/cultivation/what-a-crossing-asks-of-the-dao-heart.js';
 
 const party = (id: string, ordinal: number): Party =>
     ({ id, name: id, ordinal, charm: 2, factionId: null, alignment: null });
@@ -77,39 +70,30 @@ describe('the oath to teach is a debt the master owes', () => {
     });
 });
 
-describe('and it weighs on the master\'s dao heart only when it is neglected', () => {
-    it('holds neglect at three turns of the world\'s attention pass', () => {
-        expect(THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS).toBe(3 * ATTENTION_IS_RECENT_FOR_DAYS);
-        expect(whetherTheOathToTeachIsKept({ onDay: 1000, swornOnDay: 0, lastAttentionOnDay: 900 })).toBe(true);
-        expect(whetherTheOathToTeachIsKept({ onDay: 5000, swornOnDay: 0, lastAttentionOnDay: 900 })).toBe(false);
-    });
-
-    it('charges a master neglecting it, spares one keeping it, and never charges the disciple', () => {
+describe('and a bond that is still standing weighs nothing at a crossing', () => {
+    it('charges a master nothing for an oath to teach, however many centuries have passed', () => {
+        // The neglect clock is gone. A master who has taught nobody for three
+        // hundred years still has an OPEN oath, not a broken one, and a wall
+        // asks about what was left unfinished, not about what is under way.
         const oath = theOath(0);
-        const kept = whatACrossingAsksOfTheDaoHeart({ personId: 'master', ledger: [oath], asOfDay: 300 });
-        const neglected = whatACrossingAsksOfTheDaoHeart({
-            personId: 'master', ledger: [oath], asOfDay: THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS + 1
-        });
-        const disciple = whatACrossingAsksOfTheDaoHeart({
-            personId: 'disciple', ledger: [oath], asOfDay: THE_OATH_TO_TEACH_IS_NEGLECTED_AFTER_DAYS + 1
-        });
-        expect(kept.share).toBe(0);
-        expect(neglected.share).toBeGreaterThan(0);
-        expect(neglected.open).toBe(1);
-        expect(disciple.share).toBe(0);
+        for (const asOfDay of [300, 30 * 365 + 1, 300 * 365]) {
+            const master = whatACrossingAsksOfTheDaoHeart({ personId: 'master', ledger: [oath], asOfDay });
+            expect(master.share, `charged at day ${asOfDay}`).toBe(0);
+            expect(master.open).toBe(0);
+        }
+        expect(whatACrossingAsksOfTheDaoHeart({ personId: 'disciple', ledger: [oath], asOfDay: 300 * 365 }).share).toBe(0);
     });
 
-    it('reads a world master\'s ties by the same rule and on the same scale', () => {
-        const onDay = 10_000;
-        const ties = [
-            { kind: 'disciple', sinceDay: 0, lastAttentionOnDay: onDay - 100 },
-            { kind: 'disciple', sinceDay: 0, lastAttentionOnDay: null },
-            { kind: 'friend', sinceDay: 0, lastAttentionOnDay: null }
-        ];
-        const read = whatNeglectedDisciplesAskOfTheDaoHeart({ ties, onDay });
-        const ledgerRead = whatACrossingAsksOfTheDaoHeart({ personId: 'master', ledger: [theOath(0)], asOfDay: onDay });
+    it('and still charges the master for an ordinary open account', () => {
+        // The teaching oath is skipped by cause, not by person: everything else
+        // on the same master's ledger still reads.
+        const debt = createDebt({
+            holderId: 'master', subjectId: 'disciple', cause: 'saved_life', severity: 'serious',
+            onDay: 0, description: 'a debt'
+        });
+        const read = whatACrossingAsksOfTheDaoHeart({ personId: 'master', ledger: [theOath(0), debt], asOfDay: 300 * 365 });
         expect(read.open).toBe(1);
-        expect(read.share).toBe(ledgerRead.share);
-        expect(whatNeglectedDisciplesAskOfTheDaoHeart({ ties: ties.slice(0, 1), onDay }).share).toBe(0);
+        expect(read.share).toBeGreaterThan(0);
     });
 });
+
