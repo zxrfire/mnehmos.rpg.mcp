@@ -72,6 +72,7 @@ import type { LineageRecord } from './lineage.js';
 import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
 import type { ObjectRecord } from './possessions.js';
+import type { ObligationRecord } from '../social/grudges.js';
 import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
 import type { Absence } from './when-somebody-does-not-come-back.js';
 
@@ -264,6 +265,20 @@ export interface WorldState {
      */
     absences: Absence[];
 
+    /**
+     * What the world's own people have given their word about, and what is
+     * held against them.
+     *
+     * The played ledger is a SQL table `encounters.ts` writes and only a
+     * cultivator's rows ever reached it, so a world pass could produce an oath
+     * and had nowhere to put it: `the-oath-a-house-offers-at-its-door.ts`
+     * returned a record that was dropped on the floor. These are the same
+     * `ObligationRecord`s, written by the same makers and settled by the same
+     * `settleObligation`, held where the world can carry them across a save.
+     * See `the-word-an-npc-gave.ts`, which is the only writer.
+     */
+    obligations: ObligationRecord[];
+
     history: HistoryLedger;
     memories: MemoryStore;
 
@@ -365,6 +380,7 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         runs: [],
         ascensions: [],
         absences: [],
+        obligations: [],
         populationTarget: 0,
         history,
         memories: createMemoryStore(),
@@ -581,12 +597,32 @@ export interface ScheduleInput {
     data?: Record<string, string | number | boolean | null>;
 }
 
-/** Put a dated consequence on the books. */
+/**
+ * Put a dated consequence on the books. THE ONE WAY TO: every effect in a world
+ * is booked through here, and this is its whole contract.
+ *
+ *   THE ID        `e<seq>` off `nextEffectSeq`, which moves by one. Nothing else
+ *                 mints an effect id.
+ *   THE DEFAULTS  `makeScheduledEffect`'s, so what an unsaid field means is
+ *                 stated once.
+ *   THE DATE      strictly ahead of the day the world stands on. The clock fires
+ *                 an effect when it passes `dueOnDay` and never on the day it is
+ *                 read from (`pendingEffects` and `advanceTime` both read
+ *                 `dueOnDay > fromDay`), so an effect dated today or earlier would
+ *                 be a consequence that never lands. One asked for then is booked
+ *                 for the next day, and the effect returned says so.
+ *   WHAT FIRES    once, on its day, landing with `chance` off the `schedule`
+ *                 stream; an effect with `repeatDays` is booked again that many
+ *                 days on rather than retired. That half is `advanceTime`'s.
+ *   THE STATE     not mutated: the booked world is returned. A pass that works on
+ *                 the world it was handed in place writes it back with
+ *                 `Object.assign(state, schedule(state, ...).state)`.
+ */
 export function schedule(state: WorldState, input: ScheduleInput): { state: WorldState; effect: ScheduledEffect } {
     const effect = makeScheduledEffect({
         id: `e${state.nextEffectSeq}`,
         kind: input.kind,
-        dueOnDay: input.dueOnDay,
+        dueOnDay: Math.max(input.dueOnDay, Math.floor(state.currentDay) + 1),
         summary: input.summary,
         actorIds: input.actorIds ?? [],
         locationId: input.locationId ?? null,
@@ -1006,6 +1042,13 @@ export function cloneWorld(state: WorldState): WorldState {
         })),
         runs: state.runs.map(r => ({ ...r })),
         ascensions: state.ascensions.map(a => ({ ...a })),
+        obligations: (state.obligations ?? []).map(o => ({
+            ...o,
+            participants: o.participants.slice(),
+            tags: o.tags.slice(),
+            settlement: o.settlement === null ? null : { ...o.settlement },
+            inheritance: o.inheritance.map(i => ({ ...i }))
+        })),
         absences: (state.absences ?? []).map(a => ({
             ...a,
             witnessIds: a.witnessIds.slice(),
