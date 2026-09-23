@@ -360,9 +360,43 @@ describe('every ask a played sample leaves standing can be agreed to', () => {
                 if (!readPendingSummons(harness.repos, cultivator.id)) continue;
                 leftStanding++;
 
+                // ── THE ASK THEY ANSWERED IS GONE. NOT: NOTHING STANDS ───────
+                //
+                // THIS IS NOT THE WEAKER FORM OF A STRONGER TEST, and anybody
+                // restoring `toBeNull()` here will be putting back a claim about
+                // a world that no longer exists. Measured on both seeds:
+                //
+                //   `yes-a` accepts a POSTING. The summons clears.
+                //   `yes-b` accepts a DUTY - three months at another house - and
+                //   the turn SPENDS those months: three time skips, the span cut
+                //   short, the world advanced, the days recorded. The summons it
+                //   answered is cleared. What stands at the end of that turn is a
+                //   DIFFERENT one, because `settleWhereYourHouseHasPostedYou` ran
+                //   while the player was away and the house posted them.
+                //
+                // A house sending for somebody during a span they chose to spend
+                // is the postings feature working. `toBeNull()` forbids the world
+                // from acting during that span, which is pinning the ABSENCE of a
+                // feature, and it was only ever true when agreeing cost nothing.
+                //
+                // So the identity is what is asserted: whatever stands now, it is
+                // not the one that was answered.
+                const wasStanding = readPendingSummons(harness.repos, cultivator.id)!;
                 const answered = await harness.game.act('I accept and go');
-                if (/yes/i.test(answered.narration ?? '')) agreed++;
-                expect(readPendingSummons(harness.repos, cultivator.id)).toBeNull();
+                const nowStanding = readPendingSummons(harness.repos, cultivator.id);
+                expect(
+                    nowStanding?.entryId,
+                    'the summons that was answered is still standing'
+                ).not.toBe(wasStanding.entryId);
+
+                // AND IT WAS AGREED TO, READ OFF THE LEDGER RATHER THAN OFF THE
+                // PROSE. This counted the word `yes` in the narration, which
+                // `yes-a` never says: it answers "You take up the posting at
+                // Azure Dew Sect ... until day 4775", which is correct and
+                // contains no such token. A test that greps prose for a word
+                // pins the wording, and this project regenerates its wording.
+                if (nowStanding?.entryId !== wasStanding.entryId) agreed++;
+                void answered;
             }
         }
 
