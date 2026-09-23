@@ -23,6 +23,7 @@
  *                     their families outlive them are the world's business.
  */
 import { describe, it, expect } from 'vitest';
+import { isLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { createWorld, cloneWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import {
     createNpc,
@@ -314,9 +315,15 @@ describe('the rate people give up at, and the accounts it leaves', () => {
             // snapshots - see the header.
             gaveUp += out.absenceConsequences.filter(c => c.kind === 'stopped_waiting').length;
             // Every person the world cannot account for has exactly one, which
-            // is the sweep doing its job rather than a sample.
-            const missing = state.npcs.filter(n => n.status === 'missing').length;
-            expect(state.absences.filter(a => a.absenteeId).length).toBe(missing);
+            // is the sweep doing its job rather than a sample. Somebody nobody can
+            // account for is somebody their house has lost track of, not a status;
+            // somebody with no house has no house to hold that, and is still swept.
+            const open = new Map<string, number>();
+            for (const a of state.absences) open.set(a.absenteeId, (open.get(a.absenteeId) ?? 0) + 1);
+            expect([...open.values()].every(n => n === 1), 'never twice').toBe(true);
+            for (const n of state.npcs.filter(n => isLostTrackOf(state, n) || n.status === 'unknown')) {
+                expect(open.get(n.id), n.id).toBe(1);
+            }
         }
 
         expect(absences).toBeGreaterThan(40);

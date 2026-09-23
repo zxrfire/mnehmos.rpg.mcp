@@ -1,5 +1,19 @@
 /**
  * Who goes out for a house, and what comes back.
+ *
+ * ── WHAT THE TWO RULINGS IN HERE PRODUCE ─────────────────────────────────
+ *
+ * WHO IS LOST IS PER PERSON (`resolveSending`). On `afford-a` at 5,000 years,
+ * the share of people sent out who did not come back, by the rung they stood
+ * at: r0 3.5%, r1 3.6%, r2 3.3%, r3 1.4%, r4 0.6%, r5+ 0.5%. Against the pitch
+ * rather than the rung, at 2,500 years: nobody at or above it was lost in 17
+ * goings, 5.8% one to five rungs below it, and 45% six or more below.
+ *
+ * AND THE HEAD IS NOT SPARE (`whatTheHouseCanSpare`). The share of the year
+ * spent away from the seat, `afford-a` at 800 years: r0 0.90, r1 0.72, r2 0.53,
+ * r3 0.57, elder 0.24, head 0.08 - and 0.04 measured at 300 years. Before it, at
+ * 5,000 years, the head was 0.42 against the elders' 0.39: the top of a house
+ * was the part of it most often on a road.
  */
 
 import {
@@ -12,6 +26,7 @@ import {
 import { getParentage, getSubsidiariesOf } from '../../data/cultivation/governance-and-water-rights.js';
 import { containmentHeldBy } from '../../data/cultivation/artifacts.js';
 import { regardFor, type Regard } from '../cultivation/regard.js';
+import { summonable } from '../encounters/duties.js';
 import { clampOrdinal } from '../cultivation/realms.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import type { RegardBand } from '../../schema/cultivation.js';
@@ -813,6 +828,11 @@ export interface WhatTheHouseCanSpare {
     /** The roster an errand may actually be drawn out of. */
     free: readonly Candidate[];
     /**
+     * The head, who is not on it. Null for a house whose roll has nobody at the
+     * top rung - a splinter of two, say - which is a fact about the house.
+     */
+    theHead: Candidate | null;
+    /**
      * Who is held at the gate, where anybody could be. Null where nobody who
      * could host was standing there to begin with, which is a fact about the
      * house rather than a decision taken here.
@@ -899,7 +919,30 @@ export function whatTheHouseCanSpare(input: {
         p => p.committedUntilDay === null || p.committedUntilDay <= input.onDay);
     const alreadySpent = input.roster.length - free.length;
 
-    const atTheGate = input.seatLocationId === null ? [] : free.filter(
+    // ── AND THE HEAD IS NOT SPARE ────────────────────────────────────────
+    //
+    // The design owner, on who leaves a compound: a patriarch going out is *"a
+    // lot rarer than an elder, which is rarer than an inner disciple"*, and the
+    // list of what gets one out is short and existential - an ally's crisis,
+    // something that would carry them past their own wall, a once-in-an-age
+    // opening, their own tribulation. None of those is an errand.
+    //
+    // Measured before this, on `afford-a` at five thousand years: the share of
+    // the year spent away from the seat ran r0 0.82, r1 0.66, r2 0.47, elder
+    // 0.39 - and HEAD 0.42, above the elders it is supposed to sit far below.
+    // The fix is here rather than in what reads it, because this is the one
+    // question every pass that sends anybody asks: the sendings, the board, the
+    // look-ins and the postings all narrow to what a house can spare.
+    const top = input.rankCount - 1;
+    const head = input.roster.reduce<OnTheRollForAnErrand | null>(
+        (best, p) => p.rankIndex < top ? best
+            : best === null || p.ordinal > best.ordinal
+                || (p.ordinal === best.ordinal && p.id < best.id) ? p : best,
+        null
+    );
+    const spare = head === null ? free : free.filter(p => p.id !== head.id);
+
+    const atTheGate = input.seatLocationId === null ? [] : spare.filter(
         p => p.locationId === input.seatLocationId
             && couldHostAGuest(p.rankIndex, input.rankCount));
     const kept = atTheGate.reduce<OnTheRollForAnErrand | null>(
@@ -912,7 +955,8 @@ export function whatTheHouseCanSpare(input: {
     );
 
     return {
-        free: kept === null ? free : free.filter(p => p.id !== kept.id),
+        free: kept === null ? spare : spare.filter(p => p.id !== kept.id),
+        theHead: head === null ? null : { id: head.id, name: head.name, ordinal: head.ordinal },
         keptAtTheGate: kept === null
             ? null
             : { id: kept.id, name: kept.name, ordinal: kept.ordinal },
@@ -935,6 +979,37 @@ export function whoTheHouseCanSend(
         : roster.filter(c => c.ordinal <= ceiling);
     eligible.sort((a, b) => b.ordinal - a.ordinal || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return eligible.slice(0, posting.hands);
+}
+
+/**
+ * Who this errand is pitched for: the people the house would think of for it.
+ *
+ * `whoTheHouseCanSend` takes the strongest first, so a house's apex went on
+ * every errand it had. Measured on one seed over three hundred years, the
+ * Hollow Court's First and Fourth Seats (44 and 42) went on looking for
+ * disciples, an escort and a visit, and two of the Court's Seats were lost
+ * together in Fallen Wall, a ruin whose own survival ask is 12.
+ *
+ * The design says the strong have better to do (`normal-in-the-cultivation-
+ * world.md`), and `summonable` in `duties.ts` is the ruling already written for
+ * it: the bands in which a house considers somebody the right answer to a
+ * problem. Only those go. Among them, whoever the work is pitched at goes first -
+ * the lowest standing at or above the pitch, then the nearest below it - so a
+ * party of three for a rung-20 errand is three people near 20 and not the
+ * three strongest in the hall. Somebody the work is beneath stays home, and an
+ * errand nobody is pitched for is not sent.
+ */
+export function whoThisErrandIsPitchedFor(
+    posting: Pick<Posting, 'ceilingOrdinal' | 'hands' | 'pitchOrdinal'>,
+    roster: readonly Candidate[]
+): readonly Candidate[] {
+    const pitch = posting.pitchOrdinal;
+    const fits = whoTheHouseCanSend({ ceilingOrdinal: posting.ceilingOrdinal, hands: Number.MAX_SAFE_INTEGER }, roster)
+        .filter(c => summonable(regardFor(pitch, c.ordinal).band));
+    const byId = (a: Candidate, b: Candidate) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    const atOrAbove = fits.filter(c => c.ordinal >= pitch).sort((a, b) => a.ordinal - b.ordinal || byId(a, b));
+    const below = fits.filter(c => c.ordinal < pitch).sort((a, b) => b.ordinal - a.ordinal || byId(a, b));
+    return [...atOrAbove, ...below].slice(0, posting.hands);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -972,7 +1047,8 @@ export function notFinishedChance(regard: Regard): number {
 }
 
 /**
- * The share of an unfinished party that does not come back.
+ * The chance that one member of an unfinished party does not come back, read
+ * off that member's own regard against the pitch.
  */
 export function lostChance(regard: Regard): number {
     const notFinished = notFinishedChance(regard);
@@ -1109,24 +1185,21 @@ export function resolveSending(input: {
         return { posting, party, tier, outcome: 'finished', sighted: null, lost: [], returnsOnDay };
     }
 
-    // Nobody went, so nobody came back. Not a special case: an empty party
-    // cannot produce a witness and the arithmetic below would say so anyway.
-    const anybodyBack = party.length > 0 && rng.chance(1 - Math.pow(0.5, party.length));
-    if (!anybodyBack) {
+    // WHO IS LOST IS PER PERSON. Whether the job got done is the party's, and
+    // the strongest carries it; whether somebody walks out of it is their own
+    // rung against the pitch. One party-wide draw lost a Tribulation
+    // Transcendence Seat at the rate of the disciple beside them, and let the
+    // disciple hide behind the Seat. Nobody went, so nobody came back: an empty
+    // party is the same arithmetic and not a special case.
+    const lost = party.filter(member =>
+        rng.chance(lostChance(regardFor(posting.pitchOrdinal, member.ordinal))));
+    const returned = party.filter(member => !lost.includes(member));
+    if (returned.length === 0) {
         return {
             posting, party, tier, outcome: 'did_not_come_back',
             sighted: null, lost: party, returnsOnDay
         };
     }
-
-    // Somebody is back. Who is lost is the same draw read differently: the
-    // deeper the gap, the more of the party stays out there.
-    const lostCount = Math.min(
-        Math.max(0, party.length - 1),
-        Math.round(party.length * lostChance(tier))
-    );
-    const lost = party.slice(party.length - lostCount);
-    const returned = party.slice(0, party.length - lostCount);
 
     return {
         posting, party, tier, outcome: 'came_back_short',
