@@ -193,6 +193,8 @@ import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js'
 import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
+import { seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
+import { peopleBringWhatTheyKnowToTheRoom } from './bringing-what-you-know-about-somebody-to-the-room.js';
 import {
     ROGUE_FLED,
     ROGUE_HOUSE_FELL,
@@ -578,6 +580,12 @@ export function applyPressure(
         // of it: it decides nothing and only puts the two rosters in front of
         // `resolveMelee`. On its own seeded stream so no existing draw anywhere
         // moves.
+        // THE ROOM FIRST: somebody held back for a seat goes after the holder's
+        // record before anybody goes after their life. See
+        // `bringing-what-you-know-about-somebody-to-the-room.ts`.
+        const seatsWanted = seatsThePeopleHeldBackWant(state);
+        peopleBringWhatTheyKnowToTheRoom(
+            state, year, withinSpan(year * 365 + 89, fromDay, toDay), seatsWanted);
         const war = fightTheWarsThisYear(
             state,
             withinSpan(year * 365 + 61, fromDay, toDay),
