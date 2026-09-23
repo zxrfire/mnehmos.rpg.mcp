@@ -51,11 +51,44 @@ function sourceFilesUnder(dir: string): string[] {
     return out;
 }
 
+/**
+ * The files at the top of the repository, which this test did not read for its
+ * whole life until now.
+ *
+ * ── THE HOLE, AND WHERE IT WAS ───────────────────────────────────────────
+ *
+ * The walk below took four directories and never the root, so `AGENTS.md`,
+ * `README.md`, `package.json` and fifteen other files at the top of the tree
+ * were unchecked from the day this test was written. It was found the fifth
+ * time this defect bit, by a whole-tree scan run to answer a different
+ * question - which is to say it was found by accident and not by the guard.
+ *
+ * It is the worst place in the repository to have had a hole: `AGENTS.md` is
+ * where the process rules live, including the one that tells everybody to run
+ * this check after editing a pattern. A rule written in a file the guard cannot
+ * read is a rule that can be corrupted by the exact fault it warns about.
+ *
+ * Not recursive on purpose. Every directory worth walking is either walked
+ * below or is build output, and a recursive root walk would read `node_modules`
+ * and `dist-bundle` on every run.
+ */
+function sourceFilesAtTheRoot(): string[] {
+    return readdirSync('.')
+        .filter(entry => /\.(ts|tsx|mjs|cjs|js|md|json)$/.test(entry))
+        .filter(entry => statSync(entry).isFile());
+}
+
 describe('a control character is never what was meant', () => {
-    it('appears in no source file under src, tests, scripts or docs', () => {
+    it('appears in no source file under src, tests, scripts, docs or the root', () => {
         const found: string[] = [];
-        for (const dir of ['src', 'tests', 'scripts', 'docs']) {
-            for (const path of sourceFilesUnder(dir)) {
+        const everywhere = [
+            ...['src', 'tests', 'scripts', 'docs'].flatMap(sourceFilesUnder),
+            // The top of the tree, which was outside this walk until the fifth
+            // time the defect bit. See `sourceFilesAtTheRoot`.
+            ...sourceFilesAtTheRoot()
+        ];
+        {
+            for (const path of everywhere) {
                 const text = readFileSync(path, 'utf-8');
                 // Counted as we go rather than recomputed per hit. The line
                 // number was being interpolated from a name that was never

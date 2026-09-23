@@ -902,6 +902,54 @@ different files. See
 The fork pool is capped so concurrent runs do not fight (`VITEST_MAX_FORKS`, default 4).
 Raise it only when the machine is yours alone.
 
+**And whose turn it is, is the coordinator's to say, not yours to infer.** The machine is
+handed over; it is never taken because the box looks idle. If you need it, ask and wait -
+another agent's long run is invisible to you until you have killed it.
+
+### Handing a shared machine back: kill your own pids, and nothing else
+
+**Kill what you started, by pid.** Note the pid when you start a run and end that tree when
+you are done - `taskkill /F /T /PID <pid>` on Windows, `kill -- -<pgid>` elsewhere. If a
+stop did not take, find that run's pid and kill *that*; the pid is always in front of you.
+
+**Never by image name.** `taskkill /F /IM node.exe`, `killall node` and `pkill -f vitest`
+are not cleanup, they are a broadcast. **Somebody else's run looks exactly like your own
+stale fork**, and the only thing that tells them apart is which pid you started.
+
+**The cost, on the night the rule was written: two runs lost.** A suite was restarted
+without the first one dying, so two full suites shared the box for forty-five minutes; then
+a sweep meant to hand back a *quiet* machine killed a five-thousand-year measurement that
+was hours in and belonged to another agent. The second one is the lesson, because the
+intention was courtesy.
+
+**A stray fork of yours costs a few hundred megabytes. A sweep costs somebody their
+afternoon.** If you cannot tell your processes from somebody else's, say so and ask rather
+than sweeping - an unanswered question is cheaper than either.
+
+### After editing any pattern, run the control-character check
+
+```bash
+npx vitest run tests/a-control-character-is-never-what-was-meant.test.ts
+```
+
+**A regex written through a shell heredoc or a script layer can lose its escape to that
+layer.** `\b` arrives as the literal byte U+0008. The file parses, the typecheck passes,
+the suite is green - and the pattern matches **nothing**, because a backspace appears in
+no sentence anybody types. It is the same defect as `\bcultivat\b` never matching
+"cultivate", with nothing on screen to see.
+
+**No other check can tell you.** A typecheck cannot see inside a string; a test catches it
+only where somebody thought to assert that exact sentence. This one reads bytes, which is
+the one place the fault is visible, and it costs about two seconds over the whole tree.
+
+Five times now, twice in one night, and once it had already landed in the working tree -
+a verb pattern that lost both boundaries, so the verb it gated was unreachable and no test
+said a word. It is step 0 of `scripts/verify-before-a-commit.mjs` for the same reason.
+
+**Fix the escape at its source. Do not delete the character and leave the boundary
+missing** - that turns a pattern that matches nothing into one that matches too much, which
+is the harder defect to find.
+
 ---
 
 ## Conventions
