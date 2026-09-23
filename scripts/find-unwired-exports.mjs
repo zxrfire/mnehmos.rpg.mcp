@@ -27,6 +27,16 @@
  *     node scripts/find-unwired-exports.mjs --count    # just the number
  *     node scripts/find-unwired-exports.mjs --json     # for a test to read
  *
+ * THIS ANSWERS "DOES ANYTHING READ IT", WHICH IS NOT "DOES IT EVER DO
+ * ANYTHING". A pass can be imported by the year, called every year, and still
+ * never act, because the guard inside it waits on a state no world reaches -
+ * and every name in it reads as live here. That is the other half of the same
+ * worry and it needs a run rather than a search:
+ * `scripts/probe-which-passes-ever-fire.probe.ts` counts, per pass, how many
+ * times the board called it and how many of those calls left anything behind.
+ * Search first, because it is free; run the probe when the search comes back
+ * clean and the rule still looks like it has never happened.
+ *
  * READ THE OUTPUT AS A QUESTION, NOT A TASK LIST. An unwired export is one of
  * three things and only the first is a defect:
  *

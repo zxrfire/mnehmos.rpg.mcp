@@ -72,6 +72,8 @@ labour on paper, and `manuals.ts` says why the two must not be merged.
 
 ## Attention, in the world's own passes
 
+<!-- tier: 2 trigger="a master gives or withholds attention, or somebody asks what guidance is worth and what it costs the teacher" -->
+
 Guidance is attention given to a set, and a master with disciples and a hall
 lecture are one mechanic: a person whose activity is `teaching` with the set in
 `withIds`. `who-is-given-attention-this-year.ts` writes it each year - masters
@@ -99,6 +101,62 @@ written out equal on one seed and 9% fewer on the other; masters' closed
 sets of attention roughly half. The attention a tie carried is stamped on
 both ends (`lastAttentionOnDay`) and read as recent within
 `ATTENTION_IS_RECENT_FOR_DAYS`.
+
+## A lecture, open and closed
+
+<!-- tier: 2 trigger="somebody gives or sits in a lecture, a master calls their own disciples in, or a house asks what teaching is worth" -->
+
+A lecture is not a thing of its own. It is the attention above with a different
+set in it - one `teaching` activity, the people in `withIds` - and everything
+else is derived from that row rather than stored beside it. There are two
+shapes and the set is the whole of the difference.
+
+**Open: the house holds one, and whoever is inside hears it.** Routinely rather
+than rarely, and not every year, because the most advanced person free in a
+compound has their own cultivation to see to: the share is
+`A_HOUSE_LECTURES_THIS_SHARE_OF_YEARS`. The speaker is the most advanced of the
+house who is free that year, and it reaches whoever of the house is inside the
+compound - any rank, and a guest. The lecture hall adds no rule of its own about
+who may listen; who can reach the room is the access chain's answer, the same as
+for every other room.
+
+**Closed: the master calls their own to where they live.** The design owner:
+*"closed lectures fall out because the master calls his disciples to his cave
+abode or room."* So a closed lesson is not held in the hall. It is held on
+ground of the master's own, or else in the room their rung is lodged in, and a
+set is closed when every one of the world's people in it holds a master tie to
+the teacher. Neither fact is stored: both are read back off the one row, so no
+pass has to remember to write a room. The player holds no ties the world writes,
+so somebody the player sits in on a lesson with is left out of the question of
+whether the set is closed.
+
+**What a listener gets, and what the speaker spends.** A listener is paid only
+for attention given where they are standing, thinned by the size of the set
+(`guidanceFor`, `guidanceMultiplier`). The speaker pays the same share of their
+year whatever the size, so a hall of two hundred costs what one disciple costs -
+which is why an open lecture is the cheap way for a house to raise everybody at
+once, and why it is still worth a master's while to teach three people in a
+room. And a master's year is a desk or a lesson, not both: see the section
+above.
+
+**What it is worth to the house.** Giving attention is service and the house
+counts it as merit: the errand rate for the days given, times the house's OWN
+people in the set, thinned by the same share the listener's side is thinned by.
+So a lecture with strangers in the room is paid for the members in it and not
+for the strangers, and a master teaching their own disciples is paid the same
+way a player giving a talk is.
+
+Where each half of this is applied:
+
+- `who-is-given-attention-this-year.ts` - the yearly pass that writes both sets,
+  and the bar for being free to give a lecture against the lower bar for being
+  free for your own
+- `an-npc-striking-at-the-next-wall.ts` - what the attention is worth to the
+  person given it, and what it leaves of the teacher's own year
+- `where-a-master-takes-their-own-disciples.ts` - whether a set is closed, and
+  where a closed lesson is found
+- `architecture.ts` - the lecture hall itself
+- `what-a-house-counts-in-somebodys-favour.ts` - what the house credits for it
 
 ## Where the code does not match this yet
 

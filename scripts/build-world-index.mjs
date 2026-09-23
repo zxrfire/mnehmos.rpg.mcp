@@ -15,6 +15,8 @@
  * The fix already existed and nothing surfaced it. Every section in
  * `docs/world/` carries a `<!-- tier: N trigger="..." -->` marker, and the
  * trigger is a plain-English description of the situation the section answers.
+ * A file under `src/` carrying the same marker is carried too, as a row that
+ * points out of the folder - see the walk below.
  * `items.md`'s reads "somebody is seen with, or practising, something that is
  * not theirs", which is exactly the sentence the agent could not find a file
  * for. There are around two hundred of them and they were readable only by
@@ -68,8 +70,8 @@ export function readTriggers() {
     };
     walk(DOCS, '');
 
-    for (const file of docFiles) {
-        const lines = fs.readFileSync(path.join(DOCS, file), 'utf8').split(/\r?\n/);
+    const collect = (absolute, shownAs) => {
+        const lines = fs.readFileSync(absolute, 'utf8').split(/\r?\n/);
         let heading = null;
         let headingLine = 0;
         for (let i = 0; i < lines.length; i++) {
@@ -80,15 +82,48 @@ export function readTriggers() {
             const trigger = m[2];
             if (!trigger) continue;            // tier 1 and tier 3 carry no trigger
             rows.push({
-                file,
+                file: shownAs,
                 tier: Number(m[1]),
                 trigger,
                 heading: heading ?? '(top of file)',
                 line: headingLine || i + 1,
             });
         }
-    }
+    };
+
+    for (const file of docFiles) collect(path.join(DOCS, file), file);
+
+    // AND THE RULES THAT LIVE BESIDE THE CODE.
+    //
+    // The design owner's ruling, when eleven of this session's rulings turned
+    // out to be written in engine-side files this table could not see: a rule
+    // written next to the pass that applies it is a rule the next person
+    // changing that pass will see, and moving it into `docs/world/` would trade
+    // that for findability and lose more than it gains. So the rule stays where
+    // it is and the INDEX carries a row that points out of the folder.
+    //
+    // A file anywhere under `src/` joins this table by carrying the SAME marker
+    // it would carry inside `docs/world/`, and nothing is copied in: the row is
+    // a trigger and a path. Files with no marker - which is nearly all of them -
+    // are not touched.
+    for (const file of sourceDocs()) collect(path.join(ROOT, 'src', file), `../../src/${file}`);
+
     return rows;
+}
+
+/** Every `.md` under `src/`, as a path relative to `src/`. */
+function sourceDocs() {
+    const out = [];
+    const walk = (dir, prefix) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+            const rel = prefix ? `${prefix}/${e.name}` : e.name;
+            if (e.isDirectory()) {
+                if (!/node_modules|dist/.test(e.name)) walk(path.join(dir, e.name), rel);
+            } else if (e.name.endsWith('.md')) out.push(rel);
+        }
+    };
+    walk(path.join(ROOT, 'src'), '');
+    return out;
 }
 
 /** GitHub's heading anchor, near enough for a relative link. */

@@ -130,6 +130,14 @@ and none of which is one:
    guest-holding-a-post. Being a guest was only ever the state of having no
    posting, so taking one ends it and nothing converts.
 
+   **And the bar to be taken in is higher than the bar to be promoted.** The
+   owner: *"the bar for hiring an external elder is higher than an internal
+   promotion."* Somebody from outside has no merit with this house, so height
+   stands in for it: `AN_OUTSIDER_STANDS_PAST_THE_BAR_BY` ordinals past the
+   rung's insider bar (`whatAnOutsiderMustStandAt`, beside `barFor` in
+   `promotion-inside-a-house.ts`), at every rung above the bottom. A house's
+   door offer (`entry-offer.ts`) is capped at it.
+
    **But joining is gated, and the gate is the arts.** A sect has arts it
    prefers - `teaches` on its catalog row - and an elder teaches juniors, so
    somebody who cannot teach the house's shelf cannot hold a posting in it. The
@@ -444,10 +452,27 @@ has one of its own outer disciples come forward each year, at rank 0
 (`a-house-takes-in-one-of-its-own.ts`). Everything above rank 0 is still
 climbed. And a house is judged, not its slice: it falls when it cannot pay, or
 when its roll is empty and it has nobody else - no compound, or a compound a
-conquest made a ruin (`whetherAHouseHasFailed`). The real size used is the
-dormitory the compound was built with (`howManyAHouseReallyHas`), which does
-not yet move with the house's fortunes; the tracked number below is still to
-build.
+conquest made a ruin (`whetherAHouseHasFailed`). The real size is tracked
+(`how-many-people-a-house-has.ts`) as what it is, a count of people: the ones
+nobody models, seeded from whoever the dormitory sleeps beyond the roll, moved
+once a year by the share the roll grew or shrank, and one fewer whenever one of
+them steps onto the roll.
+
+**And a rung is seated against whichever count it is a complete reading of**,
+which is the section above this one made mechanical: the bands are SAMPLED and
+the top is COMPLETE. So the sampled rungs - outer, inner, core - keep their
+seats against the ROLL, because a seat count for a house of hundreds binds
+nobody in a slice of fifteen: measured with every rung reading the real size,
+three seeds over 500 years, people on the bottom rung fell from 469 to 176 and
+on rung 5 rose from 105 to 452, and the wait before promotion fell from 25 years
+to 4 - the pyramid turned over, because only realm and merit were left holding
+it. The elder band and above read the REAL SIZE, which is what a house of
+hundreds carrying nine elders actually looks like, and are bound by the house's
+offices in practice anyway. The head is one chair and the grand elder is one
+chair, as `rosterByRung` has always said. In `seatsAtRank`.
+
+The odds of somebody rising into a chair from the count, described below, do not
+read it yet.
 
 ### Track the house's real size, and let the odds fall out
 
@@ -526,21 +551,43 @@ to a watch, out with a party, recruiting in a province. The design owner:
 > *"that also gives a way for the people the sect stations out to report back"*
 
 So **a house hears from its people without waiting for them to walk home.**
-The channel is a **communication talisman**: a slip keyed to where it answers
-(the house's hall, a master, a named person), burnt once, carrying a short
-message the same day. It is the third kind of act a slip holds, beside a
-strike and a teleportation talisman, see `a-talisman-is-one-act-somebody-already-paid-for.ts`
-- **but it is counted, not tracked**. The owner: *"these are too common and
-single use, don't bother making them tracked, they're just counted"*. A house
-keeps a stock of them, hands a few to whoever it sends or stations away, and
-burning one takes one off the count; nothing is left in the world. *"You just
-have a fungible stack."* Each slip is **marked with a house** and answers to it, so a stack
-is fungible within one house's mark. **Anyone at Foundation or above can make
-them**, and **making them for the house is service that earns merit**, the same
-as any other task off the board.
+The channel is a **communication talisman**, the third kind of act a slip holds
+beside a strike and a teleportation talisman (see
+`a-talisman-is-one-act-somebody-already-paid-for.ts`). The rulings, in the order
+they were made and as they now stand:
+
+- **Counted, not tracked.** *"These are too common and single use, don't bother
+  making them tracked, they're just counted."* A person holds a fungible stack.
+- **Keyed to the person who holds them.** *"Slips are coded to your name, cuz
+  they send messages as you."* Only the holder can burn one; a looter gets
+  nothing. *"They break when your ID and life lamp break"*, in the same event.
+  A missing person's lamp still burns, so theirs still work. Somebody who leaves
+  a house gives back what it issued.
+- **Blank slips are treasury stock; a message is never the house's.** A house
+  keeps unkeyed slips in its treasury like any other goods. The people of the
+  Internal Affairs office cut blanks into it and key them to somebody when that
+  person is sent out. *"A 'house' can't receive messages."*
+- **The Internal Affairs office makes them.** *"The Internal Affairs Elder
+  crafts them, or his disciples who work in internal affairs"*: the disciples
+  cut them for disciples, the Elder for elders. Cutting them for the house's
+  people is service that earns merit. Anybody at Foundation or above can cut
+  their own.
+- **Every slip has a twin, and word arrives at whoever holds it.** Slips are
+  cut in pairs: one half keyed to the sender, the other held by the person
+  meant to receive. The twins of slips Internal Affairs issues are kept in the
+  Internal Affairs hall, a rack of them beside the life lamps, and whoever of
+  Internal Affairs is there reads what arrives. That is why a recruiter's report
+  reaches Internal Affairs. A master can give a disciple a pair and keep the
+  twin. The messages go to people, never to "the house".
+
+**A sect is not a sect, it is the people in it.** That is the rule under all of
+the above: nothing here is held or done by "the house" in the abstract. A slip
+is in somebody's hand, made by somebody in an office, and read by whoever holds
+that office.
 
 **And the house comes to them.** *"The house sends people to give you more
 stack, check up on you, every once in a while, if you are out in a posting."*
+The visitor cuts slips keyed to them.
 The visit is an ordinary sending with that reason, and what it finds - alive,
 hurt, gone, what they have seen - reaches the house the same way a burnt report
 does. It is also how a house learns about somebody who never sent word.
@@ -554,6 +601,8 @@ and fact path, and not a store of its own:
 - **a recruiter reports a recruit**, and the house then expects them
 
 ### A recruit is expected, and arrives
+
+<!-- tier: 2 trigger="somebody is recruited, arrives at a house to be entered, or turns up at a gate saying who sent them" -->
 
 Rulings from the same night, which the talisman is one link of:
 
@@ -585,6 +634,12 @@ Rulings from the same night, which the talisman is one link of:
   player is taken on by somebody out looking for disciples, at a selection at the
   house's grounds, or at the intake its paper names, and whoever did it is their
   recruiter. See `when-a-house-takes-people-on.ts` and `src/web/who-takes-you-on.ts`.
+- **and the world's own people join the same way**: *"Yes, unless they were
+  already seeded. NPCs join the same way you do."* The world's intake reads the
+  same rule a year and a province at a time
+  (`the-world-joins-a-house-the-way-a-player-does.ts`). A child born to a member
+  of a `bloodline` house is of it by kinship; a child born to a member of a sect
+  goes through the sect's door like anybody else.
 
 ## Where the rest of this is written down
 

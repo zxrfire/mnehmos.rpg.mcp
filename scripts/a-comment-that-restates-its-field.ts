@@ -96,6 +96,7 @@ function restatesTheName(comment: string, name: string): boolean {
 const REVIEWED_AND_KEPT: readonly string[] = [
     'What they take it to be. Never what it is.',
     'What is left of the body, 0..1.',
+    '0..1.',
     'Their own member, who did it.',
     'River map (1 = river, 0 = no river)',
     'Set for `theirs`, and only then.',
