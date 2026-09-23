@@ -198,6 +198,7 @@ import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js'
 import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
 import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
+import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
 import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
 import { peopleBringWhatTheyKnowToTheRoom, theRoomWouldDealToThemAgain } from './bringing-what-you-know-about-somebody-to-the-room.js';
@@ -830,6 +831,13 @@ export function applyPressure(
         // And whoever is on no roll moves on, to a road, a ruin or a market.
         // See `where-somebody-with-no-house-goes.ts`.
         peopleWithNoHouseMoveOn(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
+        // AND WOUNDS CLOSE. A house sees to its own out of the purse, time takes
+        // the small ones for everybody, and the permanent family is never picked
+        // up at all - so who is still carrying a wound is a statement about who
+        // is standing behind them. AFTER the economy, because the stones a house
+        // spends on its people are this year's stones. See
+        // `what-a-house-does-about-its-people-being-hurt.ts`.
+        woundsCloseThisYear(state, year, withinSpan(year * 365 + 179, fromDay, toDay));
         // AND THE PEOPLE WHO DECIDED FOR THEMSELVES. After the economy, so the
         // stipend they did or did not get is this year's, and after the house's
         // own sendings, so somebody the house put on the road this year is out
