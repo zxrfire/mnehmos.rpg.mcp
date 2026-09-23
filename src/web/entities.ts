@@ -1581,6 +1581,28 @@ export function resolvePriceLoosely(query: string): ResolvedEntity | null {
     const words = inTheBoardsOwnWords(query).toLowerCase().split(/[^a-z]+/)
         .filter(word => word.length >= 3 && !WORDS_THAT_NAME_NOTHING.has(word))
         .sort((a, b) => b.length - a.length);
+
+    // ── AND WORDS THAT DISAGREE ARE NOT AN ANSWER ────────────────────────
+    //
+    // Taking the first row any single word reaches is a coin toss dressed as
+    // an answer whenever the words of one phrase reach DIFFERENT rows: which
+    // one wins is decided by which word happens to be longer. Measured on the
+    // furnace family, before the rewrite above existed: "pill furnace" had
+    // `pill` reaching a Qi Gathering Pill and `furnace` reaching nothing, and
+    // the sale went through - the player asked for the vessel and bought the
+    // thing you put in it.
+    //
+    // So a disagreement is a refusal. The caller already has a refusal that
+    // names what is on the board, which is a better answer than a row nobody
+    // asked for, and this costs nothing where a phrase is about one thing:
+    // "a month of rations" has one word that reaches anything.
+    const reached = new Set<string>();
+    for (const word of words) {
+        const found = resolvePrice(word);
+        if (found !== null) reached.add(found.id);
+        if (reached.size > 1) return null;
+    }
+
     for (const word of words) {
         const found = resolvePrice(word);
         if (found !== null) return found;
