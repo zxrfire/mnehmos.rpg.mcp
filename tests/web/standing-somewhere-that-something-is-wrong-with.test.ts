@@ -128,9 +128,26 @@ describe('standing somewhere that something is wrong with', () => {
         // passes every floor ever written.
         expect(pooled, detail).toBeGreaterThanOrEqual(8);
         expect(pooled, detail).toBeLessThanOrEqual(48);
-        // And the tail, because an average hides shape: most worlds have one,
-        // rather than one world having them all. Measured ten of twelve.
-        expect(withAny, detail).toBeGreaterThanOrEqual(6);
+        // And the tail, because an average hides shape.
+        //
+        // RE-PINNED FROM SIX TO THREE ON 2026-09-23, BY A RULING RATHER THAN BY
+        // A FAILURE MESSAGE. Measured on this tree across these twelve worlds:
+        // FOUR have a wrong within reach - a-world-that-has-lived 2, pyr-c 2,
+        // st-f 2, st-k 3 - and eight have none. The seeding half is healthy and
+        // was checked separately: every world still opens with six killings,
+        // all six leaving somebody to carry them, all six priced.
+        //
+        // What changed is how many are RECENT and NEAR somebody, which fell
+        // because a season of work made the world's killings motive-driven: a
+        // stake three realms down is no reason at all, face is charged for
+        // reaching beneath yourself, and turf quarrels went from 298 a century
+        // to 0.1. The design owner, shown four of twelve: *"i think that's
+        // fine, you're expected to travel."*
+        //
+        // So the floor is three rather than six, and it is a floor against the
+        // layer breaking - a world where nobody anywhere stands near an open
+        // wrong is still a defect - not a claim that most worlds have one.
+        expect(withAny, detail).toBeGreaterThanOrEqual(3);
 
         // The world the two cases below stand in has one. Asserted here so a
         // draw that empties it fails loudly instead of skipping them.
