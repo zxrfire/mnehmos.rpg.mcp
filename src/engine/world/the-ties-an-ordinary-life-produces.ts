@@ -16,8 +16,10 @@ import {
     shelfOf,
     shelfReach,
     suitsRoot,
+    whoseArt,
     type Manual
 } from './manuals.js';
+import { theyTaughtWhatTheySworeNotTo } from './the-word-an-npc-gave.js';
 import type { Blocked, Promotion } from './promotion-inside-a-house.js';
 import { recordATeachingLine } from './recording-where-somebody-stands-in-a-house.js';
 import {
@@ -867,6 +869,21 @@ export function applyTeachingLines(
             // The line is a life event: the sequence of them is the account of
             // who carried this person and how far.
             recordATeachingLine(state, student, teacher, taught.name, day);
+
+            // AND WHETHER THEY SWORE NOT TO. Somebody who left a house gave it
+            // a `silence` oath on the way out (`the-word-an-npc-gave.ts`), and
+            // it forbids transmission and nothing else. An art can belong to
+            // more than one house, so teaching on this shelf can still be the
+            // thing they swore off - it is the art that is sworn about, not the
+            // room it is taught in. Breaking it settles the oath and opens a
+            // `broken_oath` for the house that was owed it.
+            for (const owner of whoseArt(taught.id)) {
+                if (owner === factionId) continue;
+                const owed = state.factions.find(f => f.id === owner);
+                theyTaughtWhatTheySworeNotTo(
+                    state, teacher, owner, owed?.name ?? owner, day, taught.name
+                );
+            }
 
             lines.push({
                 studentId: student.id,

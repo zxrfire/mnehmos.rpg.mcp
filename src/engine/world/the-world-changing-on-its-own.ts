@@ -186,6 +186,7 @@ import {
     noteWhoIsHeldBack,
     whereTheyAreHeldBack
 } from './being-held-back-in-a-house.js';
+import { theOathOnTheWayOut } from './the-word-an-npc-gave.js';
 import {
     applyOrdinaryLifeTies,
     applyPassedOver,
@@ -3531,6 +3532,15 @@ function applyPeopleWalkingOut(
             ? null : state.factions.find(f => f.id === houseId) ?? null;
 
         for (const member of party) {
+            // THE OATH AT THE DOOR, before the roll forgets them. A house asks
+            // for silence about its arts on the way out and the answer is the
+            // person's own: `the-word-an-npc-gave.ts` writes either the oath or
+            // the grudge a refusal leaves, onto the world's own ledger.
+            const houseAtTheDoor = member.npc.factionId === null
+                ? null : state.factions.find(f => f.id === member.npc.factionId) ?? null;
+            if (houseAtTheDoor !== null) {
+                theOathOnTheWayOut(state, member.npc, houseAtTheDoor, day);
+            }
             const gone: NpcRecord = {
                 ...setLocation(member.npc, who.to.locationId, day),
                 // Off the roll. Nobody released them; they are simply not there
