@@ -67,6 +67,45 @@ export const ROGUE_FLED = `${ROGUE}fled:`;
 export const ROGUE_HOUSE_FELL = `${ROGUE}house-fell:`;
 /** Thrown out by their house's punishment room. Followed by the house id. */
 export const ROGUE_EXPELLED = `${ROGUE}expelled:`;
+
+/**
+ * The rung somebody stood on the day they came off a roll, written beside the
+ * tag that says why.
+ *
+ * WHAT IT IS FOR: telling a rogue who was MINTED at height from one who CLIMBED
+ * there afterwards. The design owner, on the count of people above the Beast
+ * Change with no house: *"figure out how rogues are getting there and if it
+ * makes sense"* - and the two roads deserve opposite answers. A fallen house's
+ * elder standing at thirty-five is the genre working; somebody who climbed from
+ * nothing to thirty-five with no house behind them probably should not exist.
+ * The tags said which road, and nothing said where they were standing when they
+ * took it.
+ *
+ * Read by the probe, and by nothing that decides anything.
+ */
+export const CAME_OFF_A_ROLL_AT = 'came-off-a-roll-at:';
+        summary: `The ${house.name} took in ${npc.name}, whom the ${them.name} had put off its roll.`,
+        actors: [{ id: npc.id, name: npc.name, role: 'taken in' }],
+        locationId: null,
+        factionIds: [house.id, them.id],
+        visibility: 'regional',
+        magnitude: 0.3,
+        data: {
+            unattributed: 'A hall that turned somebody out has heard where they went, and it is not pleased.'
+        }
+    }));
+}
+
+/** The rung they stood on when they came off a roll, or null where nothing says. */
+export function whereTheyStoodWhenTheyCameOff(npc: Pick<NpcRecord, 'tags'>): number | null {
+    const tag = npc.tags.find(t => t.startsWith(CAME_OFF_A_ROLL_AT));
+    if (tag === undefined) return null;
+    const at = Number(tag.slice(CAME_OFF_A_ROLL_AT.length));
+    return Number.isFinite(at) ? at : null;
+}
+
+/**
+ * Whether a register would show a house why not to take this person on.
  *
  * `WHY_UNAFFILIATED` in `rogues.ts`: *"A record that follows them ... Gates are
  * where registers are read, so a bad register means no gate."* Being thrown out

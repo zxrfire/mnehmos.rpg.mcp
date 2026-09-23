@@ -1,3 +1,21 @@
+            const highRogues: Record<string, number> = {};
+            for (const n of rogues) {
+                if (n.cultivation.realmOrdinal <= 29) continue;
+                const src = n.tags.find(t => t.startsWith('rogue:'))?.split(':').slice(0, 2).join(':')
+                    ?? (n.tags.some(t => t.startsWith('walked-out:')) ? 'walked-out'
+                        : housesEver.has(n.id) ? 'left a roll' : 'never on a roll');
+                const cameOffAt = n.tags.find(t => t.startsWith('came-off-a-roll-at:'));
+                const stood = cameOffAt === undefined
+                    ? null : Number(cameOffAt.slice('came-off-a-roll-at:'.length));
+                const road = stood === null ? 'no roll to come off'
+                    : stood > 29 ? 'minted at height' : `climbed from ${stood}`;
+                const key = `${src} | ${road}`;
+                highRogues[key] = (highRogues[key] ?? 0) + 1;
+            }
+            // DOES A ROOM EVER COME BACK TO SOMEBODY IT WAS TAKEN FROM. The
+            // owner ruled the removal is not permanent and that influence is
+            // what decides, so what has to be read is whether anybody ever
+            // outgrows it: nobody ever means the weight is a gate in different
             // unmotivated to motivated, or did it just make the world safe.
             const bandOf = (o: number) => o < 13 ? 'a: mortal-ish <13'
                 : o < 29 ? 'b: middle 13-28'
@@ -57,6 +75,7 @@
             const alive = state.npcs.filter(n => n.status === 'alive').length;
             const rate = (w: Record<string, number>, l: Record<string, number>) => Object.fromEntries(
                 Object.keys(w).sort().map(k => [k, `${l[k] ?? 0}/${w[k]}`]));
+                pyramid,
                 deadInRun,
                 deathsPerLivingHeadPerCentury: Number(
                     (deadInRun / Math.max(1, living.length) / Math.max(1, horizon / 100)).toFixed(3)),

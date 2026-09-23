@@ -207,6 +207,7 @@ import { whatComesToLightThisYear } from './what-comes-to-light-about-a-killing.
 import {
     ROGUE_FLED,
     ROGUE_HOUSE_FELL,
+    CAME_OFF_A_ROLL_AT,
     offTheRoll,
     releaseTheRoll,
     whereTheyRunTo,
@@ -1569,11 +1570,27 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
                 : npc.factionRankIndex >= 1 ? 'established_clan'
                     : 'sect_retainer';
 
-        // AND THE BETTER OF THAT AND WHAT THEY WERE BORN WITH.
+        // AND THE BETTER OF THAT AND WHAT THEY WERE BORN WITH - WHILE SOMEBODY
+        // IS ON A ROLL.
+        //
+        // A shelf is a road being opened to somebody now: the arts, the pills,
+        // the vein time, a master's attention. Being born into a dao house six
+        // hundred years ago is not a road anybody is still opening, and taking
+        // the better of the two let a rogue keep drawing on a birth for the
+        // whole of a very long life. The design owner, on why a sect cultivator
+        // climbs further: *"it's easier to rank up to 41 in a sect"* - and on
+        // what leaving must not do: *"a rogue who was a sect cultivator keeps
+        // what they already have"*, which is the rung they stand on and the
+        // arts they learned, neither of which this touches. It changes only
+        // what they can still gain.
+        //
+        // UNMEASURED. Queued: rogues above 29 against house people above 29, on
+        // the seed that produced 15 of 66.
         const born = npc.identity.origin;
         const shelf: OriginTierKey =
-            manualQualityRank(getOrigin(born).roadQuality)
-                > manualQualityRank(getOrigin(membership).roadQuality)
+            npc.factionId !== null
+                && manualQualityRank(getOrigin(born).roadQuality)
+                    > manualQualityRank(getOrigin(membership).roadQuality)
                 ? born
                 : membership;
 
@@ -3759,7 +3776,8 @@ function applyPeopleWalkingOut(
                 // arrives.
                 factionId: null,
                 factionRankIndex: -1,
-                tags: [...member.npc.tags, `${WALKED_OUT}${member.why[0]}`],
+                tags: [...member.npc.tags, `${WALKED_OUT}${member.why[0]}`,
+                    `${CAME_OFF_A_ROLL_AT}${member.npc.cultivation.realmOrdinal}`],
                 activity: {
                     // Chasing a thing they need, which is the kind's own words.
                     // NOT `out_with_a_party`: that has a term and a place to
