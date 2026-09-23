@@ -66,6 +66,7 @@ import {
 } from '../../engine/world/what-a-place-still-has-in-the-ground.js';
 import { saveWorldForRun, worldForRun } from '../state/cultivation-world.js';
 import { worldLocationFor } from '../../web/entities.js';
+import { whatTheCatalogCutItsQuartersFor } from '../../engine/world/how-many-people-a-house-has.js';
 import type { LocationRecord } from '../../engine/world/locations.js';
 import {
     addToPouch,
@@ -233,9 +234,18 @@ function loadHouse(
     const { run, cultivator } = resolved;
     const membership = repos.sects.getMembership(cultivator.id);
     if (!membership) {
+        // AND THE ROAD IN THE PLAYER'S OWN WORDS, not only in the tool's.
+        // Measured: "I take her as my disciple" came back with this line and a
+        // hint written as an MCP call, so somebody at a keyboard was told what
+        // was missing and then handed a sentence they cannot type. Authority
+        // over anybody is a rung on a house's ladder, and getting onto one is
+        // the road - said here the way the stuck-player read says it.
         return guidingError(
             'not_a_member',
-            `${cultivator.name} serves no house and has nobody to give an order to.`,
+            `${cultivator.name} serves no house and has nobody to give an order to. `
+            + 'Taking somebody on, giving an order and speaking for anybody are all a rung on a '
+            + 'house\'s ladder; being on one comes first. "what sects are there" names the houses '
+            + 'and "what is posted here" reads the intakes nailed up on this ground.',
             { hint: 'sect_manage({ action: "join", sectId }) first. Authority is the rank.' }
         );
     }
@@ -258,7 +268,15 @@ function loadHouse(
     }
 
     const rankCount = sect.ranks.length;
-    const baseHouseSize = impliedHouseSize(rankCount);
+    // THE HOUSE, NOT THE SLICE. `impliedHouseSize` sizes the roll the world
+    // models - a dozen or two - and everything priced against it (a roster, the
+    // hands a rank can call on, what expelling somebody costs) was reading the
+    // sample as the whole body. The world's own figure for how many people a
+    // house has is `how-many-people-a-house-has.ts`, seeded from the quarters
+    // its compound was cut with, and the catalog states that without a world
+    // open. `impliedHouseSize` stays the fallback for a house the catalog does
+    // not know, which is where it was always right.
+    const baseHouseSize = whatTheCatalogCutItsQuartersFor(sect.id) ?? impliedHouseSize(rankCount);
     const houseSize = Math.max(
         1,
         baseHouseSize + ledger.membersAdded - ledger.membersLost

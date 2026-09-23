@@ -16,7 +16,7 @@
  */
 
 import { rankName } from '../cultivation/realms.js';
-import { purposeOf } from '../world/architecture.js';
+import { howManyPeopleAHouseHas } from '../world/how-many-people-a-house-has.js';
 import { A_ROLL_A_PLAYER_COULD_KNOW } from '../world/a-house-raises-its-own.js';
 import type { WorldState } from '../world/world-state.js';
 import { noticesThatTheyAreThere } from './presence-recognition.js';
@@ -26,21 +26,16 @@ import { whatTheyCanPlaceAbout } from './what-they-can-place-about-you.js';
  * How many people a house really has, which is not how many are on its roll.
  *
  * `a-house-and-who-is-in-it.md`: the roll is who a player could come to know,
- * and a sect has hundreds of outer disciples nobody models. The one figure the
- * world holds for the rest is the room the house sleeps them in - the
- * dormitory, cut by `architecture.ts` for the heads the compound was built for.
- * A house that takes nobody in has no dormitory and no unmodelled hundreds, and
- * for that house the roll IS the house.
+ * and a sect has hundreds of outer disciples nobody models. The count is kept
+ * by `how-many-people-a-house-has.ts`, seeded from the dormitory and moved by
+ * the roll; a house that takes nobody in has no dormitory and no unmodelled
+ * hundreds, and for that house the roll IS the house.
  */
 export function howManyAHouseReallyHas(
-    world: Pick<WorldState, 'locations' | 'npcs'>,
+    world: Pick<WorldState, 'locations' | 'npcs'> & { factions?: WorldState['factions'] },
     houseId: string
 ): number {
-    const slept = world.locations
-        .filter(place => place.data?.factionId === houseId && purposeOf(place) === 'dormitory')
-        .reduce((sum, place) => sum + Math.max(0, Number(place.data?.capacity ?? 0)), 0);
-    if (slept > 0) return slept;
-    return world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === houseId).length;
+    return howManyPeopleAHouseHas(world, houseId);
 }
 
 export interface AFaceBeingLookedAt {
@@ -50,6 +45,18 @@ export interface AFaceBeingLookedAt {
     knowsThem: boolean;
     /** Whether they wear this house's robes. */
     inTheRobes: boolean;
+    /**
+     * Whether they are standing there with a blade out of its sheath.
+     *
+     * The same KIND of fact as the robes, which is why it sits beside them: a
+     * thing a stranger can see without being told, and without asking. The
+     * robes are what somebody blends in with; a drawn blade is what no amount
+     * of blending survives.
+     *
+     * Optional so that no existing caller changes. Absent reads as sheathed,
+     * which is what everybody in this world is unless they have said otherwise.
+     */
+    bladeInHand?: boolean;
     /** The rung the witness takes them for, which a concealment can lower. */
     takenForRung: number;
     /** The strongest living person of the house, or null for a house of nobody. */
@@ -64,6 +71,7 @@ export interface AFaceBeingLookedAt {
 export type WhatAFaceTurnedOn =
     | 'does_not_register'
     | 'known'
+    | 'a_blade_in_the_hand'
     | 'not_in_the_robes'
     | 'above_the_house'
     | 'a_small_house'
@@ -82,6 +90,8 @@ export function aFaceAsOneOfTheHouseSeesIt(input: {
     /** A declared concealment. `whatYouAreNotShowing`, where a sentence said one. */
     keepingItToThemselves: boolean;
     inTheRobes: boolean;
+    /** Whether a blade is out of its sheath. Absent reads as sheathed. */
+    bladeInHand?: boolean;
     strongestOfTheHouse: number | null;
     houseSize: number;
     groundUnderDuress: boolean;
@@ -94,6 +104,7 @@ export function aFaceAsOneOfTheHouseSeesIt(input: {
         }),
         knowsThem: input.knowsThem,
         inTheRobes: input.inTheRobes,
+        ...(input.bladeInHand === true ? { bladeInHand: true } : {}),
         takenForRung: whatTheyCanPlaceAbout({
             theirOrdinal: input.theirOrdinal,
             readerOrdinal: input.witnessOrdinal,
@@ -115,6 +126,7 @@ export function aFaceAsOneOfTheHouseSeesIt(input: {
  *
  *   no register      a face the witness does not register cannot stand out
  *   known            somebody who has dealt with you knows you are not of it
+ *   a drawn blade    what no amount of blending in survives
  *   no robes         the house's people dress as the house; a stranger in
  *                    their own clothes is the first thing anybody sees
  *   above the house  a face taken for a rung nobody of the house stands at
@@ -122,7 +134,7 @@ export function aFaceAsOneOfTheHouseSeesIt(input: {
  *                    holds; a house no bigger than that knows all of its own
  *   a bad year       a house in trouble looks twice at every face
  *
- * Past all six an unfamiliar face in the right robes is ordinary.
+ * Past all seven an unfamiliar face in the right robes is ordinary.
  */
 export function whetherAFaceIsRemarkable(
     face: AFaceBeingLookedAt
@@ -137,6 +149,24 @@ export function whetherAFaceIsRemarkable(
         return {
             remarkable: true, turnedOn: 'known',
             because: 'they have dealt with you and know you are not of the house.'
+        };
+    }
+    // ── AND A BLADE IN THE HAND, WHICH THE ROBES DO NOT COVER ────────────
+    //
+    // Above the robes and below a known face, and the order is the whole rule.
+    // The owner's ruling about walking into a house you do not belong to turns
+    // on blending in; the robes are what somebody blends in WITH, and a sword
+    // already drawn is the one thing no amount of blending survives. Somebody
+    // the house already knows is still better answered with "they know you",
+    // which is why that clause keeps its place above this one.
+    //
+    // Read off `FLAG_BLADE_IN_HAND`, which the player sets by saying so and
+    // clears by saying so. Nothing here decides what a drawn blade is worth -
+    // it decides only that it is seen, which is what this whole function is.
+    if (face.bladeInHand === true) {
+        return {
+            remarkable: true, turnedOn: 'a_blade_in_the_hand',
+            because: 'you are standing there with a blade out, and nobody of the house is.'
         };
     }
     if (!face.inTheRobes) {
