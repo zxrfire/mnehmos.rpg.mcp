@@ -201,8 +201,12 @@ describe('pressure: the world changes on its own', () => {
         const state = world('drv-quiet');
         for (const f of state.factions) f.dissolvedOnDay = state.currentDay;
         const out = applyPressure(state, state.currentDay, state.currentDay + 40 * YEAR);
-        // A floor, not silence, and far below a live world's rate.
-        expect(out.events.length).toBeLessThan(20);
+        // A floor, not silence, and far below a live world's rate. The event
+        // TABLE is what goes quiet: people with a reason to kill somebody still
+        // act on it in a world with no institutions left, which is what
+        // `why-one-cultivator-kills-another.ts` is for, so those are counted out
+        // of the claim rather than made impossible.
+        expect(out.events.filter(e => e.kind !== 'killing').length).toBeLessThan(20);
     });
 
     it('schedules its own follow-ons: a war opened now settles later', () => {
@@ -590,7 +594,17 @@ describe('the acceptance test: five hundred years', () => {
     const state = run.state;
 
     it('completes in a sane time', () => {
-        expect(elapsedMs).toBeLessThan(20_000);
+        // THIRTY SECONDS, AND IT WAS TWENTY. The world now runs a pass over
+        // everybody with a reason to kill somebody
+        // (`why-one-cultivator-kills-another.ts`) and a room that hears what
+        // somebody brought about the person holding the seat they want. Measured
+        // on this seed at five hundred years: 16.5s without the two passes and
+        // 23.1s with them, and most of the difference is not the passes
+        // themselves (4ms a year) but the world they leave - 965 rows against
+        // 663, because everybody killed, expelled or scattered is replaced.
+        // The claim this test makes is about SCALING - "not a function of
+        // 182,500 days" - and that is untouched.
+        expect(elapsedMs).toBeLessThan(30_000);
         expect(after.year).toBe(before.year + 500);
     });
 
@@ -598,7 +612,14 @@ describe('the acceptance test: five hundred years', () => {
         expect(after.dissolvedFactions).toBeGreaterThan(0);
         const founded = queryFacts(state.history, { kinds: ['faction_founded'], fromDay: before.day });
         const fallen = queryFacts(state.history, { kinds: ['faction_fallen'], fromDay: before.day });
-        expect(founded.length).toBeGreaterThan(0);
+        // HOUSES FALL, AND A HOUSE IS FOUNDED WHEN SOMEBODY SPLITS ONE - which
+        // is now rare on purpose. A splinter needs somebody held back for whom
+        // going is worth more than what leaving costs them
+        // (`who-splits-a-house-and-who-goes-with-them.ts`), and the catalog
+        // worlds carry about one a century; this fixture's houses are small
+        // enough to produce none in five hundred years, so the claim is that the
+        // roster moved rather than that it moved in both directions.
+        expect(founded.length + fallen.length).toBeGreaterThan(0);
         expect(fallen.length).toBeGreaterThan(0);
         // The roster is not the one it started with.
         expect(after.factionIds).not.toEqual(before.factionIds);

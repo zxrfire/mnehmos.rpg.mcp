@@ -201,8 +201,9 @@ import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js'
 import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
-import { seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
+import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
 import { peopleBringWhatTheyKnowToTheRoom } from './bringing-what-you-know-about-somebody-to-the-room.js';
+import { whatComesToLightThisYear } from './what-comes-to-light-about-a-killing.js';
 import {
     ROGUE_FLED,
     ROGUE_HOUSE_FELL,
@@ -343,9 +344,6 @@ import {
     type AreaStatus
 } from './what-is-true-of-a-place-right-now.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
-import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
-import { aPricedDeed } from './a-deed-enters-the-world-as-a-fact.js';
-import { whatAKillingLeaves } from './the-wrongs-a-world-opens-holding.js';
 import {
     theMakerThisIs,
     whatCuttingForTheHouseLands,
@@ -589,12 +587,30 @@ export function applyPressure(
         // of it: it decides nothing and only puts the two rosters in front of
         // `resolveMelee`. On its own seeded stream so no existing draw anywhere
         // moves.
+        // AND THE PEOPLE WITH A REASON TO KILL SOMEBODY, acting on it. Not a
+        // template drawn over the population: see
+        // `why-one-cultivator-kills-another.ts`. On its own streams.
         // THE ROOM FIRST: somebody held back for a seat goes after the holder's
         // record before anybody goes after their life. See
         // `bringing-what-you-know-about-somebody-to-the-room.ts`.
+        // AND WHAT COMES OUT ABOUT AN OLD ONE. A killing somebody hid is a deed
+        // the world holds and nobody has worked out; this is the year asking
+        // whether anybody did. See `what-comes-to-light-about-a-killing.ts`.
+        whatComesToLightThisYear(state, year, withinSpan(year * 365 + 88, fromDay, toDay));
         const seatsWanted = seatsThePeopleHeldBackWant(state);
         peopleBringWhatTheyKnowToTheRoom(
             state, year, withinSpan(year * 365 + 89, fromDay, toDay), seatsWanted);
+        for (const written of peopleActOnWhyTheyWouldKill(
+            state, year, withinSpan(year * 365 + 90, fromDay, toDay), seatsWanted
+        ).written) {
+            events.push({
+                kind: 'killing',
+                onDay: written.fact.day,
+                fact: written.fact,
+                touched: { factions: [...written.fact.factionIds], locations: written.fact.locationId ? [written.fact.locationId] : [], npcs: written.npcs },
+                deaths: written.deaths
+            });
+        }
         const war = fightTheWarsThisYear(
             state,
             withinSpan(year * 365 + 61, fromDay, toDay),
@@ -4520,6 +4536,11 @@ interface Template {
     apply(state: WorldState, day: number, rng: CultivationRNG): PressureEvent | null;
 }
 
+/** One event template by kind, for a test that has to fire it on a world it arranged. */
+export function aPressureTemplate(kind: PressureKind): Pick<Template, 'apply'> | undefined {
+    return TEMPLATES.find(t => t.kind === kind);
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────
@@ -4539,11 +4560,6 @@ const CASUAL_KILL_MAX_GAP = 3;
  * The advantage at which one house can simply end another.
  */
 const DECISIVE_MARGIN = CASUAL_KILL_MAX_GAP + 1;
-
-/** Whether this person could actually kill that one, on the ordinary ladder. */
-function couldKill(killer: NpcRecord, victim: NpcRecord): boolean {
-    return killer.cultivation.realmOrdinal >= victim.cultivation.realmOrdinal - CASUAL_KILL_MAX_GAP;
-}
 
 // THE LONGEST PROJECT IN THE WORLD
 
@@ -5671,113 +5687,9 @@ const TEMPLATES: Template[] = [
         }
     },
 
-    // Somebody killed somebody.
-    {
-        kind: 'killing',
-        weight: 11,
-        apply(state, day, rng) {
-            const living = theWorldsPeople(state).filter(n => n.status === 'alive' && isBelowTheLid(n));
-
-            // THE KILLER IS DRAWN FIRST, AND THAT IS THE WHOLE FIX.
-            const killer = pick(rng, living);
-            if (!killer) return null;
-
-            // Preferably somebody with a reason: a member of a faction the
-            // killer's own is at odds with. Failing that, anyone in the same
-            // place, because most killings are local and petty.
-            const killerFaction = killer.factionId
-                ? state.factions.find(f => f.id === killer.factionId) ?? null : null;
-            const hostileIds = killerFaction
-                ? Object.entries(killerFaction.standing)
-                    .filter(([, v]) => v <= -0.3).map(([k]) => k)
-                : [];
-            const pool = living.filter(n =>
-                n.id !== killer.id &&
-                (hostileIds.includes(n.factionId ?? '') || n.locationId === killer.locationId) &&
-                couldKill(killer, n)
-            );
-            const victim = pick(rng, pool);
-            if (!victim) return null;
-            const victimFaction = victim.factionId
-                ? state.factions.find(f => f.id === victim.factionId) ?? null : null;
-
-            // The dead keep their account open. It is what the heir inherits.
-            const at = indexById(state.npcs, victim.id);
-            if (at < 0) return null;
-            // ASKED BEFORE THE ACCOUNT IS OPENED, not at the grave. The line
-            // below writes the victim's enmity against the killer, and a
-            // refusal after it would leave a grudge over a killing that never
-            // happened.
-            if (!theWorldMayEnd(state.npcs[at])) return null;
-            state.npcs[at] = upsertRelationship(state.npcs[at], {
-                targetId: killer.id,
-                targetName: killer.name,
-                kind: 'enemy',
-                standing: -1,
-                note: `Killed them at ${victim.locationId ?? 'somewhere'}.`
-            }, day);
-            const dying = state.npcs[at];
-
-            const dead = theWorldEnds(dying, day, `Killed by ${killer.name}.`);
-            if (!dead) return null;
-            state.npcs[at] = dead;
-            const handoff = settleNpcDeath(state, dying, day);
-
-            const summary =
-                `${killer.name} killed ${victim.name}`
-                + (victimFaction ? ` of the ${houseName(victimFaction.name)}` : '') + '.';
-
-            // ── AND SOMEBODY IS LEFT CARRYING IT, OR NOBODY IS ──────────
-            //
-            // The same rule and the same pricer `seedTheWrongsStillOpen` uses
-            // for the killings a world OPENS holding, asked at the grave rather
-            // than at the draw - see `whatAKillingLeaves`. Every one of the
-            // seeder's is a priced deed and not one of the world's own was, so
-            // `whoIsStillCarriedFor` swept the victim, nothing inherited the
-            // death, and a life could only ever open knowing about a killing
-            // the world was born with.
-            const theyLeft = whoTheyLeave({
-                dead: dying,
-                heirs: handoff.heirs,
-                stillHere: id => state.npcs.some(n => n.id === id && n.status === 'alive')
-            });
-            const leaves = whatAKillingLeaves(state, {
-                victim: dying, killer, day, theyLeft, description: summary
-            });
-
-            return emit(state, 'killing', day, {
-                day,
-                kind: 'grudge_opened',
-                scale: 'personal',
-                summary,
-                ...(leaves ? { data: aPricedDeed(leaves.weight) } : {}),
-                actors: [
-                    { id: killer.id, name: killer.name, role: 'killer' },
-                    { id: victim.id, name: victim.name, role: 'victim' }
-                ],
-                locationId: victim.locationId,
-                factionIds: victimFaction ? [victimFaction.id] : [],
-                visibility: 'regional',
-                magnitude: 0.45,
-                unattributed:
-                    'A body was found on the low road and nobody is saying whose it was.',
-                consequences: {
-                    immediate: 'One fewer, and somebody knows who did it.',
-                    losers: [{ id: victim.id, name: victim.name, role: 'victim' }],
-                    beneficiaries: [{ id: killer.id, name: killer.name, role: 'killer' }],
-                    relationshipChanges: handoff.primaryHeirId
-                        ? [{ aId: handoff.primaryHeirId, bId: killer.id, change: 'an inherited account' }]
-                        : [],
-                    tenYearsLater: handoff.primaryHeirId
-                        ? 'Somebody younger is still asking where he lives.'
-                        : 'Nobody was left to ask about it.'
-                }
-            }, {
-                npcs: [victim.id, killer.id],
-                factions: victimFaction ? [victimFaction.id] : []
-            }, [handoff]);
-        }
-    },
+    // Somebody killed somebody: not a template. Nobody is drawn to kill; the
+    // people with a reason act on it in their own pass. See
+    // `why-one-cultivator-kills-another.ts`.
 
     // ── Someone else got there first. ────────────────────────────────────
     {

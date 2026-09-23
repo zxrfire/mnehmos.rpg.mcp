@@ -707,14 +707,45 @@ export interface WhatACatalogStates {
      * out of date? Only the first is a statement.
      */
     theCatalogStatesTheyAreStanding?: boolean;
+    /**
+     * Ordinary goods register as nothing to this person.
+     *
+     * A second subject with the same shape as the first: a catalog states it,
+     * and a world pass may not contradict it. The line it reads is
+     * `estate.whyObjectsDoNotRegister` in `wanderers.ts`, on the man who settled
+     * his estate before the crossing and kept going six centuries past the end
+     * of it: *"He is not indifferent to objects out of discipline or
+     * philosophy. He completed the part of a life where objects matter ...
+     * nothing in that category has cost him anything since before their
+     * province was surveyed."* Beside it, `estate.notPathetic` says he does not
+     * experience it as a loss.
+     *
+     * WHAT IT IS READ BY, and the only thing: greed. Somebody for whom what a
+     * person below them carries is worth nothing has no reason to take it, so
+     * `whatTheyWouldFightOver` does not offer them one - the world had the one
+     * False Immortal in it kill a Seat of his own Court for a fan. It says
+     * nothing about a grievance, a seat, or anything else that moves anybody.
+     */
+    theCatalogStatesGoodsDoNotRegister?: boolean;
 }
 
 /** The tag a seeder puts on a row whose catalog states it is standing. */
 export const CATALOG_STATES_STANDING_TAG = 'catalog-states:standing';
 
+/** The tag a seeder puts on a row whose catalog states goods register as nothing to them. */
+export const CATALOG_STATES_GOODS_DO_NOT_REGISTER_TAG = 'catalog-states:goods-do-not-register';
+
 /** The tags that carry a catalog's statements onto the world row. */
 export function whatACatalogStatesAsTags(row: WhatACatalogStates): string[] {
-    return row.theCatalogStatesTheyAreStanding ? [CATALOG_STATES_STANDING_TAG] : [];
+    return [
+        ...(row.theCatalogStatesTheyAreStanding ? [CATALOG_STATES_STANDING_TAG] : []),
+        ...(row.theCatalogStatesGoodsDoNotRegister ? [CATALOG_STATES_GOODS_DO_NOT_REGISTER_TAG] : [])
+    ];
+}
+
+/** Somebody a catalog states ordinary goods register as nothing to. */
+export function theCatalogStatesGoodsDoNotRegister(npc: Pick<NpcRecord, 'tags'>): boolean {
+    return npc.tags.includes(CATALOG_STATES_GOODS_DO_NOT_REGISTER_TAG);
 }
 
 /**
