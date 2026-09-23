@@ -118,6 +118,63 @@ const WHAT_IT_IS_WORTH: Readonly<Record<
 } as const;
 
 /**
+ * WHAT THE ACT WAS WORTH, WHOEVER IS LEFT TO HOLD IT.
+ *
+ * {@link WhatFollows.against} answers a different question - what account
+ * somebody opens - and it is null where the loser left nobody and answered to
+ * no house. That is a true fact about the victim. It is not a discount on the
+ * act, and a writer reaching for a weight must not read it as one.
+ *
+ * Measured: `combat-verbs.ts` priced the deed it writes as
+ * `against?.severity ?? 'slight'`, so a player killing somebody with no kin and
+ * no house put the killing into the world's history at the lowest band there
+ * is - the floor meant for an event nobody was owed anything for. Three readers
+ * depend on that stamp: `whoIsStillCarriedFor` keeps a victim's row over the
+ * mortal sweep by it, `whatATellingLandsOn` will not write a row without it,
+ * and a life's opening reads it to know whether a death was an open killing.
+ *
+ * AND AN ABSENT STAMP IS NOT THE SAME THING AS A LOW ONE. The world's own
+ * writer - `what-a-confrontation-does-to-somebody-the-world-holds.ts` - leaves
+ * `deedWeight` off entirely in this case, and that is honest: it says nobody is
+ * left to carry this. `slight` says taking a life was trivial, which is the
+ * opposite of what this genre holds about killing somebody who had nobody
+ * behind them. Anyone tempted to make the quiet writer match the loud one has
+ * it backwards.
+ *
+ * THE ARGUMENT AGAINST FLOOR VALUES, IN ONE MEASUREMENT. The three readers of
+ * this field do not agree about what a missing stamp means, so the floor did
+ * not merely lose information - in one of them it REVERSED it:
+ *
+ *   - `what-comes-to-light-about-a-killing.ts` reads an absent stamp as
+ *     `unforgivable` by explicit default. Stamping a killing `slight` therefore
+ *     made the house's verdict WEAKER THAN SAYING NOTHING AT ALL.
+ *   - `bringing-what-you-know-about-somebody-to-the-room.ts` skips an unstamped
+ *     fact and ranks a stamped one, so a killing became eligible to surface as
+ *     the mildest thing anybody could say about a person.
+ *   - `whatATellingLandsOn` writes no row without a stamp, and `slight` is a
+ *     valid severity - so the killing opened an account at the lowest band
+ *     there is.
+ *
+ * One `??`, three different wrong answers. A default that stands in for "we did
+ * not work this out" is only safe where every reader agrees on what its absence
+ * means, and these three never did.
+ *
+ * WHERE THE TWO WRITERS STAND NOW: known, principled, and blocked on one thing.
+ * The principle is settled and applies to both - what an act was worth does not
+ * depend on who survived it. The obstacle is that on the world side the stamp is
+ * doing a SECOND job: `whoIsStillCarriedFor` keeps a victim's row over the
+ * mortal sweep because the stamp is there. A player kills a handful of people;
+ * a five-thousand-year world kills thousands, and stamping all of them keeps
+ * every victim's row for the length of the run. So retention has to stop riding
+ * on the stamp before the world side can stamp honestly. That is a change to
+ * what the world KEEPS rather than to what it records, and it wants the owner
+ * and a measurement, not a copy of this fix.
+ */
+export function whatTheActWasWorth(howFar: HowFarPastIt, terms: BoutTerms): Severity | null {
+    return howFar === 'kept' ? null : WHAT_IT_IS_WORTH[howFar][terms];
+}
+
+/**
  * A killing under agreed terms is the one case that opens between LINES. All
  * three of `blood_feud`'s conditions hold and hold nowhere else here: the
  * arrangement names the actor, the house does not stop telling it, and there is

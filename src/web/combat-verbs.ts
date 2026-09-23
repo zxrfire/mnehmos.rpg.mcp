@@ -34,6 +34,7 @@ import {
 import {
     theAccountsAFightOpens,
     whatFollowsFromTheBout,
+    whatTheActWasWorth,
     type BoutTerms
 } from '../engine/social-leverage/index.js';
 import { createObligation, severityRank } from '../engine/social/grudges.js';
@@ -2233,7 +2234,14 @@ export const combatVerbs = {
         const deed = this.atHand
             ? aDeedEntersTheWorld(this.atHand, {
                 kind: 'betrayal',
-                weight: followed.against?.severity ?? 'slight',
+                // The account somebody opens, or - where nobody is left to open
+                // one - what the act itself was worth. NOT a floor: `against`
+                // is null when the loser left nobody and answered to no house,
+                // and a killing does not become slight because the person
+                // killed had nobody behind them. See `whatTheActWasWorth`.
+                weight: followed.against?.severity
+                    ?? whatTheActWasWorth(followed.howFar, terms)
+                    ?? 'slight',
                 day: Math.floor(this.atHand.currentDay),
                 locationId: this.worldPlaceOf(cultivator),
                 place: placeName(cultivator),
