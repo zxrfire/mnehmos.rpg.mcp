@@ -19,7 +19,8 @@ import {
     type ConfrontationResult,
     assessPower
 } from '../engine/cultivation/combat.js';
-import { rankName } from '../engine/cultivation/realms.js';
+import { rankName, realmIndexOf } from '../engine/cultivation/realms.js';
+import { whatSteppingInCosts } from '../engine/world/a-challenge-is-answered-on-the-yard.js';
 import {
     type CouldBeCalled,
     type FightAnswer,
@@ -106,6 +107,7 @@ import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
+import { whatIsInTheirHand } from './what-is-on-you-and-in-your-hands.js';
 import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 
 /**
@@ -503,6 +505,17 @@ export const combatVerbs = {
             cultivator, this.repos, techniqueId ?? undefined
         );
 
+        // ── A BLADE ALREADY OUT IS NOT AN AMBUSH ─────────────────────────
+        //
+        // The one reader of `FLAG_BLADE_IN_HAND`, and the whole reason that
+        // flag is a fact rather than a line of prose. A concealed opening is
+        // worth the ambush edge and the target's first swing; somebody standing
+        // in front of the person they are about to hit with their sword already
+        // drawn has given both of those away, and everybody present watched
+        // them do it. See `what-is-on-you-and-in-your-hands.ts`.
+        const inTheHand = whatIsInTheirHand(this.db, cultivator.id);
+        const howItOpened = inTheHand === null ? opening : 'open';
+
         // AND NOW IT IS A FIGHT RATHER THAN A RESULT
         const opened = openFight({
             // Stable for the life of the fight and unique to it, so round four
@@ -526,7 +539,7 @@ export const combatVerbs = {
                 thrown: swing,
                 ...(toMakeThemComply ? { toMakeThemComply: true } : {}),
                 willWithdraw: true,
-                opening,
+                opening: howItOpened,
                 // WHETHER THEY WOULD RATHER DIE
                 ...(toMakeThemComply && theirRecord
                     ? (() => {
@@ -589,10 +602,18 @@ export const combatVerbs = {
         // The opening round happens on the turn the player swung, because they
         // swung. A verb that opened a fight and then spent the turn describing
         // it would be the player's own action costing them a round.
-        return this.whatTheySawYouCarrying(
+        const first = this.whatTheySawYouCarrying(
             cultivator, held,
             await this.answerTheFight(run, cultivator, ambient, held, { kind: 'strike' })
         );
+        if (inTheHand !== null && opening === 'from_concealment') {
+            first.facts.structure.push(
+                `The opening was not a concealed one: ${inTheHand.what} has been in this `
+                + `cultivator's hand since turn ${inTheHand.onTurn} and everybody here could `
+                + 'see it. FLAG_BLADE_IN_HAND closed the ambush edge.'
+            );
+        }
+        return first;
     },
 
     /**
@@ -1393,6 +1414,19 @@ export const combatVerbs = {
             const fighting = theFightStillStands(this.fight, run.id, cultivator.id)
                 ? this.fight
                 : null;
+            // AND THE REFUSAL CARRIES THE NUMBER. What getting a hand between
+            // two people costs is not an unknown: `whatSteppingInCosts` prices
+            // it, and the world's own duelling ground pays it every time
+            // somebody saves a loser from a killing blow. Read here rather than
+            // re-derived, at this cultivator's own height with the people
+            // standing here as the witnesses, so a player who asks what saving
+            // somebody would cost gets the figure the world would charge.
+            const watching = this.present(cultivator).length;
+            const cost = whatSteppingInCosts({
+                rescuerOrdinal: cultivator.realmOrdinal,
+                reachedRealm: realmIndexOf(cultivator.realmOrdinal),
+                witnesses: watching
+            });
             return refused('engine.stepBetween', 'attack', factsForRefusal(
                 'Nobody here is fighting anybody else.',
                 (fighting
@@ -1400,11 +1434,14 @@ export const combatVerbs = {
                         + 'no third person in it to come between. '
                     : 'There is no fight in front of you to come between. ')
                 + 'What you can stop is a fight you are in: let them go once they are beaten, '
-                + 'or break off.',
+                + `or break off. Getting between two other people at your own height, in front `
+                + `of ${watching} watching, costs ${cost} in face whether or not it works - `
+                + 'that is what the ground charges anybody who steps in.',
                 'Stepping into a fight between two other people. The engine holds a fight as one '
                 + 'aggressor, one defender and this cultivator as one of the two; no fight '
                 + 'between two other parties exists in world state, so there is nothing to '
-                + 'stand between. Nothing was resolved and no day passed.'
+                + `stand between. whatSteppingInCosts at ordinal ${cultivator.realmOrdinal} `
+                + `with ${watching} witnesses: ${cost}. Nothing was resolved and no day passed.`
             ));
         }
 

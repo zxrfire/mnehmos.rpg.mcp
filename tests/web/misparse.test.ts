@@ -306,7 +306,27 @@ describe('the fallback is inert', () => {
              * and a stranger who has said nothing about who they are cannot be
              * challenged at all.
              */
-            'challenge'
+            'challenge',
+            /**
+             * What is on the body and in the hands. No day, no roll, no other
+             * body: the most it moves is a flag and which object a possessor
+             * column points at.
+             *
+             * Structurally protected by its default: five intents, and the one
+             * an unrecognised label falls to is `wear`, which writes nothing at
+             * all. The two that do write undo themselves by saying so - robes
+             * come off onto the ground they can be picked up from, and a blade
+             * goes away again.
+             */
+            'carry',
+            /**
+             * Getting out of sight. Two reads of the room and one bit, and the
+             * bit is set and cleared by saying so.
+             *
+             * Structurally protected by its default: an unrecognised label
+             * lands on `self`, which writes nothing.
+             */
+            'conceal'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -455,6 +475,11 @@ describe('every verb is reachable from plain English', () => {
     // nearest cultivator" ended up meditating for a month.
         attack: 'I attack the nearest cultivator',
         coerce: 'I force him to submit',
+        // What is on the body and in the hands. Both halves reached nothing on
+        // the plain-sentence sweep before the verb existed.
+        carry: 'I draw my sword',
+        // `I hide` reached nothing; `I hide my cultivation` reached `status`.
+        conceal: 'I hide my cultivation',
         // The three ways of covering ground that are not walking, and a word
         // given. All four were engine modules with no caller; `ride` was a
         // label on `move` that resolved through the same flat journey.

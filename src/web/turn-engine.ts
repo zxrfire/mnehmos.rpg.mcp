@@ -1125,6 +1125,13 @@ import {
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
+import { theyGiveInWithNoFightStanding } from './giving-in-with-no-fight-standing.js';
+import {
+    theyTakeTheRobesOff,
+    whatTheirHandsDo,
+    whatTheirTokenProves,
+    whatWearingThemBuys
+} from './what-is-on-you-and-in-your-hands.js';
 import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
 import { settleWhetherYourMasterHasCalledYou } from './a-master-calls-their-disciples-in.js';
 import { whoCouldPutSomebodyOffTheRoll } from './who-could-put-somebody-off-the-roll.js';
@@ -4104,6 +4111,13 @@ export class GameService {
                                 ? 'let_them_go'
                                 : 'step_between_two_others'
                         );
+                    }
+                    // AND THE SAME FAMILY FROM THE OTHER END. A surrender said
+                    // with a fight standing never reaches the table at all;
+                    // this is the one said with nothing swinging, and what it
+                    // means is a question about the situation.
+                    if (restraint === 'give_in') {
+                        return theyGiveInWithNoFightStanding(this, cultivator);
                     }
                 }
                 // `terms` reaches the consequence layer and nothing else. See

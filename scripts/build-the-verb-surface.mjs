@@ -76,7 +76,11 @@ const TABLE = [
     'src/web/match-phrasings.ts',
     'src/web/site-phrasings.ts',
     'src/web/sect-phrasings.ts',
-    'src/web/institution-phrasings.ts'
+    'src/web/institution-phrasings.ts',
+    // `carry` is read here and nowhere else: what is on a body and in its hands.
+    'src/web/what-is-on-you-phrasings.ts',
+    // And `conceal`, read here: getting out of sight in either sense.
+    'src/web/keeping-out-of-sight-phrasings.ts'
 ];
 
 /**

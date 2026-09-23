@@ -71,7 +71,12 @@ import { howTheySaidTheySwung } from './how-they-said-they-swung.js';
 // Restraint, read by the same function the fight's own answers use, so the
 // argument about which of `let him hit me` and `let him go` wins is written
 // once. See `whatIsBeingHeldBack`.
-import { whatIsBeingHeldBack } from './fight-answers.js';
+import {
+    MAKING_SOMEBODY_ELSE_DO_IT,
+    AN_ASK_FOLLOWS_THE_KNEE,
+    THE_ANSWER_IS_TO_YIELD,
+    whatIsBeingHeldBack
+} from './fight-answers.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // The other half of the word `tell`: carrying news of a wrong TO somebody,
@@ -293,6 +298,7 @@ import {
 } from './sect-phrasings.js';
 import type { SectIntent } from './sect-phrasings.js';
 import { theThingBeingHandedIn } from './handing-in-phrasings.js';
+import { aThingWornOrHeld } from './what-is-on-you-phrasings.js';
 import { aBondBeingEnded } from './ending-a-bond-phrasings.js';
 import { stonesNamedIn } from './tool-result-prose.js';
 
@@ -1678,6 +1684,20 @@ export const ASKED_ABOUT_THE_ASKER =
  */
 export const A_QUESTION_ABOUT_STANDING =
     /\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/;
+
+/**
+ * A SENTENCE SHAPED LIKE A QUESTION, for the branches whose words a question
+ * wears as easily as an act does.
+ *
+ * Narrow on purpose: the opening word, or a question mark at the end. It is not
+ * a general test of whether somebody is asking - `theWholeSentenceIsAQuestion`
+ * is that, and it is wider than any branch here wants. This exists because the
+ * mercy and aid vocabulary reads "protect the X", and "who protects this
+ * ground" is the sentence a player types to find out who holds the ground they
+ * are standing on. Answered as an act, it had the player stepping in front of a
+ * blow nobody had thrown.
+ */
+const ASKED_RATHER_THAN_DONE = /^\s*(?:who|whose|what|which|where|when|why|how)\b|\?\s*$/i;
 
 /**
  * THE PARTS OF THE SHEET THE SHEET READ ALREADY PRINTS AND COULD NOT BE ASKED FOR.
@@ -4489,6 +4509,42 @@ function planIntent(input: string): PlannedAction {
         return { action: 'inventory' };
     }
 
+    // ── WHAT IS ON YOU, AND WHAT IS IN YOUR HAND ─────────────────────────
+    //
+    // Measured on the plain-sentence sweep: `I put on the robes`, `I wear the
+    // robes`, `I draw my sword` and `I drop the sword` all reached nothing.
+    // Both halves are ordinary and both are read by something that already
+    // exists - see `what-is-on-you-and-in-your-hands.ts`.
+    //
+    // ABOVE THE SWING AND BELOW THE FIGHT. `VIOLENCE_WITH_NO_OTHER_READING`
+    // owns "draw my sword ON him", which is a blow and keeps it: the guard
+    // below is the word `on` with somebody after it, which is the whole of
+    // the difference. And inside a fight the table never sees any of these,
+    // because `whatTheySaidInTheFight` reads the sentence first - which is why
+    // "I drop my sword" is a SURRENDER mid-fight and a blade on the ground
+    // standing in a market.
+    {
+        const onTheBody = aThingWornOrHeld(input);
+        if (onTheBody !== null) return onTheBody;
+    }
+
+    // ── AND GETTING OUT OF SIGHT, IN EITHER SENSE ────────────────────────
+    //
+    // Measured: `I hide` reached nothing, `I conceal my aura` reached nothing,
+    // and `I hide my cultivation` reached `status` - a character sheet handed
+    // to somebody who had just said they were putting their weight away.
+    //
+    // ABOVE `status` FOR THAT REASON and below the flee row's own guard, which
+    // is inside the reader: "I hide from them" is a flight and stays one. The
+    // declaration's phrasings are not restated here - they are
+    // `what-you-are-not-showing.ts`'s, which has read them since it was
+    // written, as a manner riding on another act. What is new is the sentence
+    // that is ONLY the declaration.
+    {
+        const outOfSight = whatIsBeingKeptOutOfSight(input);
+        if (outOfSight !== null) return outOfSight;
+    }
+
     // REACHING INTO A CROSSING, WHICH IS READ BEFORE STANDING OVER ONE
     //
     // The two share every noun, and this one needs a possessor as well, so it
@@ -4659,13 +4715,48 @@ function planIntent(input: string): PlannedAction {
     // is beaten in front of the player, which the engine already holds; a name
     // in the sentence would be a second opinion about it.
     {
-        const heldBack = whatIsBeingHeldBack(input);
+        // ASKING WHO PROTECTS THIS GROUND IS NOT PROTECTING IT. The aid half of
+        // this reads "protect the X", which a question wears too: "who protects
+        // this ground" was answered as the player stepping between somebody and
+        // a blow, and the read that names the holder of the ground sits below
+        // this. Inside a fight none of this applies, because the fight layer
+        // reads the sentence first and nobody asks a question mid-swing.
+        const heldBack = ASKED_RATHER_THAN_DONE.test(input) ? null : whatIsBeingHeldBack(input);
         if (heldBack !== null) {
             return {
                 action: 'attack',
                 intent: heldBack === 'let_them_go' ? 'let_them_go' : 'step_between'
             };
         }
+    }
+
+    // ── AND GIVING IN, WITH NO FIGHT AROUND IT ───────────────────────────
+    //
+    // The same family from the other end, and the same argument for planning
+    // it as `attack`: a fight's own answers plan here, and the intent is the
+    // whole of what separates a surrender from a swing.
+    //
+    // THE TABLE ONLY EVER SEES THESE OUTSIDE A FIGHT. `whatTheySaidInTheFight`
+    // reads the sentence before the table is asked, so "I yield" mid-exchange
+    // never arrives here at all - which is why this row cannot take the
+    // surrender that already works. Guarded on `MAKING_SOMEBODY_ELSE_DO_IT`
+    // for the reason that constant's own header gives: "I make him kneel" is a
+    // coercion and shares every word with this.
+    //
+    // AND KNEELING TO ASK IS AN ASK. Measured on the mechanics sweep: "I kneel
+    // and ask" reached this row, and it is how somebody says they are asking to
+    // be taken as a disciple - the genre's own posture for it. A sentence that
+    // goes on to ask for something is not a submission, whatever it did with
+    // its knees, so it falls through to the ask.
+    if (THE_ANSWER_IS_TO_YIELD.test(input)
+        // "SPARE ME A FEW STONES" IS A BEGGAR'S SENTENCE, NOT A BEATEN ONE.
+        // `spare me` is in the yielding vocabulary because it is what somebody
+        // says with a blade at their throat; with a THING after it, it is the
+        // oldest way in the language of asking for one. The ask reads it below.
+        && !/\bspare\s+(?:me|us)\s+(?:a|an|some|any|the|\d|few|couple)\b/i.test(input)
+        && !MAKING_SOMEBODY_ELSE_DO_IT.test(input)
+        && !AN_ASK_FOLLOWS_THE_KNEE.test(input)) {
+        return { action: 'attack', intent: 'give_in' };
     }
 
     // -- attacking somebody, which had no route at all --

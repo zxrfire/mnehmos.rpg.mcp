@@ -45,6 +45,29 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I flirt with the woman at the next table',
         'I try to recruit him to come with me'
     ],
+    conceal: [
+        'I hide',
+        'I keep out of sight',
+        'I lie low',
+        'I hide my cultivation',
+        'I conceal my aura',
+        'I mask my realm',
+        'I pass for a mortal',
+        'I stop hiding my cultivation',
+        'I let my aura out'
+    ],
+    carry: [
+        'I put on the robes',
+        'I put the robes on',
+        'I wear the sect robes',
+        'I take off the robes',
+        'I draw my sword',
+        'I unsheathe my blade',
+        'I put my sword away',
+        'I sheathe my blade',
+        'I drop the sword',
+        'I throw down my weapon'
+    ],
     investigate: [
         'I take a close look at the stone',
         'I examine the carving on the wall',

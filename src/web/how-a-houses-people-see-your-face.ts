@@ -20,6 +20,7 @@ import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import { openLedgerBetween, tieFrom } from './encounters.js';
+import { whatIsInTheirHand } from './what-is-on-you-and-in-your-hands.js';
 import type { GameService } from './turn-engine.js';
 
 export interface AWitness {
@@ -49,6 +50,13 @@ export function howTheirPeopleSeeYourFace<W extends AWitness>(
         statusesInArea(world.statuses, world.locations, placeId ?? '', today)
     );
     const inTheRobes = wearsTheRobesOf(world.objects, cultivator.id, input.houseId);
+    // A BLADE OUT IS READ WHERE THE ROBES ARE READ, and for the same reason:
+    // both are things a stranger sees without being told. Read HERE rather than
+    // passed in, exactly as the robes are, so that neither caller - the gate
+    // nor the lecture hall - has to remember to ask, and the two cannot come to
+    // read one face differently. See `FLAG_BLADE_IN_HAND`, whose header has
+    // asked for this since the flag was written.
+    const bladeInHand = whatIsInTheirHand(game.db, cultivator.id) !== null;
     const houseSize = howManyAHouseReallyHas(world, input.houseId);
     const strongestOfTheHouse = world.npcs
         .filter(npc => npc.status === 'alive' && npc.factionId === input.houseId)
@@ -66,6 +74,7 @@ export function howTheirPeopleSeeYourFace<W extends AWitness>(
                 || openLedgerBetween(game.repos, cultivator.id, witness.id).length > 0,
             keepingItToThemselves: input.keepingItToThemselves,
             inTheRobes,
+            ...(bladeInHand ? { bladeInHand: true } : {}),
             strongestOfTheHouse,
             houseSize,
             groundUnderDuress: ground.underDuress

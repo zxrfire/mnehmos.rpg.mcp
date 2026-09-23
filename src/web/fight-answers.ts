@@ -273,6 +273,22 @@ export const THE_ANSWER_IS_TO_YIELD =
     /\b(?:i )?(?:yield(?:s|ing)?|surrender(?:s|ing)?|submit(?:s|ting)?|give(?:s)? (?:up|in)|giving (?:up|in)|stand(?:s|ing)? down|kneel(?:s|ing)?|go(?:es|ing)? down on (?:one|my) knee|beg(?:s|ging)? for (?:mercy|my life)|throw(?:s|ing)? (?:down )?my (?:sword|blade|weapon)|drop(?:s|ping)? my (?:sword|blade|weapon)|ask(?:s|ing)? for mercy|plead(?:s|ing)? for (?:mercy|my life)|spare me|let me live|i (?:am|'m) beaten|you win)\b/i;
 
 /**
+ * A KNEE WITH AN ASK AFTER IT IS THE MANNER OF THE ASK.
+ *
+ * "I kneel and beg" is one act: somebody asking for something on their knees.
+ * Read as two, the knee is a submission with nobody to submit to and the ask is
+ * what the turn actually ran, so the player is told half their sentence was
+ * dropped. `the-part-of-the-sentence-that-was-not-run` holds that sentence in
+ * its ORDINARY corpus for exactly this reason.
+ *
+ * Read against the WHOLE sentence by both callers, because a clause read on its
+ * own has already lost the evidence: the table asks before it claims the
+ * yielding, and the reporter asks before it prices a clause it split off.
+ */
+export const AN_ASK_FOLLOWS_THE_KNEE =
+    /\b(?:and|then|to)\s+(?:ask|asks|asking|beg|begs|begging|request|requests|plead|pleads|pleading)\b/i;
+
+/**
  * Somebody else's knees, which is the opposite act and shares every word.
  *
  * "I make him kneel" is a coercion, `how-a-player-says-each-coercion.ts` owns
@@ -374,6 +390,31 @@ export function whatTheySaidInTheFight(said: string): FightAnswer | null {
 export const THE_SENTENCE_STEPS_INTO_SOMEBODY_ELSES_FIGHT =
     /\b(?:(?:stand|step|get|move|jump|wade)(?:s|ing)? (?:in )?between (?:them|the two|these two|those two)|put(?:s|ting)? myself between (?:them|the two)|come(?:s|ing)? between (?:them|the two)|break(?:s|ing)? (?:it|them) up|break(?:s|ing)? up (?:the|their) fight|pull(?:s|ing)? (?:them|the two of them) apart|separate(?:s|ing)? (?:them|the two))\b/i;
 
+/**
+ * Going to somebody's aid, which is the same act said the way anybody says it.
+ *
+ * `I help her` and `I save him` reached NOTHING on the plain-sentence sweep,
+ * and they are the commonest words in the genre for the thing the duelling
+ * ground already models: *people try to save, if they can't, the loser dies*.
+ * The engine holds what it costs (`whatSteppingInCosts` in
+ * `a-challenge-is-answered-on-the-yard.ts`), which is why this belongs with
+ * stepping between two people rather than anywhere else.
+ *
+ * SOMEBODY HAS TO BE NAMED, AND NAMED AS A PERSON. A bare "I help" is not this
+ * - it is an offer of work, and `work` owns it. `help me` is the shout for
+ * help, which `THE_ANSWER_IS_TO_SHOUT` owns and reads first inside a fight.
+ *
+ * AND THE PERSON IS A PRONOUN, A DETERMINER PHRASE, OR A CAPITALISED NAME.
+ * Measured, and it cost a test: an open `\w+` after the verb read "I look for a
+ * pill that HELPS BREAKTHROUGH" as going to the aid of somebody called
+ * breakthrough. A bare lowercase word after `help` is almost always a noun the
+ * help is FOR rather than a person it is given to. Note the pattern is read
+ * against the raw sentence, never a lowercased one, which is what makes the
+ * capital meaningful.
+ */
+export const THE_SENTENCE_GOES_TO_SOMEBODYS_AID =
+    /\b(?:help|helps|helping|save|saves|saving|rescue|rescues|rescuing|protect|protects|protecting|defend|defends|defending|shield|shields|shielding|come to (?:his|her|their) (?:aid|help)|go to (?:his|her|their) (?:aid|help)|step(?:s|ping)? in for)\s+(?:him\b|her\b|them\b|(?:the|that|this)\s+[\w'-]{2,20}\b|[A-Z][\w'-]{1,20}\b)(?!\s+(?:with|to|carry|carrying|move|moving|find|finding|look|looking)\b)/;
+
 /** The two acts of restraint a player can say when no fight is standing. */
 export type HeldBack = 'let_them_go' | 'step_between_two_others';
 
@@ -408,6 +449,14 @@ export function whatIsBeingHeldBack(
     if (line.length === 0) return null;
     if (THE_SENTENCE_STEPS_INTO_SOMEBODY_ELSES_FIGHT.test(line)) {
         return 'step_between_two_others';
+    }
+    // GOING TO SOMEBODY'S AID, AND WHOSE. Ordered under the explicit
+    // between-the-two phrasings and OVER the sparing read, because with
+    // somebody already on their knees in front of the player "I save him" is
+    // that person and letting them up is the act; with nobody kneeling it is
+    // the third-party rescue, which is the refusal below with the number on it.
+    if (THE_SENTENCE_GOES_TO_SOMEBODYS_AID.test(line)) {
+        return somebodyIsOnTheirKnees ? 'let_them_go' : 'step_between_two_others';
     }
     if (whatTheySaidInTheFight(line)?.kind !== 'spare') return null;
     return LETTING_SOMEBODY_GO.test(line) || somebodyIsOnTheirKnees
