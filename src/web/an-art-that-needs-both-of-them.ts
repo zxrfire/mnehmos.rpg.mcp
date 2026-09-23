@@ -79,10 +79,12 @@ export function whyTheRiteWillNotOpen(
             said: `The rite runs between two arts, not one. Yours draws; the other spends the `
                 + `body it is cultivated in, and ${subjectName} is cultivating no such thing. `
                 + 'A body that has never opened that half is not fuel - it is a person '
-                + 'standing there. Somebody made into a furnace was made into one over years, '
+                + 'standing there. Somebody made into a cultivation furnace was made into one over '
+                + 'years, '
                 + 'and the making is the road you are actually looking at.',
             account: `subject holds no art with runsOn='${RUNS_ON_OWN_LIFESPAN}'; the rite `
-                + 'does not open. What a furnace is worth is their own stage in that half, so '
+                + 'does not open. What a cultivation furnace is worth is their own stage in that '
+                + 'half, so '
                 + 'a subject holding none is worth none.'
         };
     }

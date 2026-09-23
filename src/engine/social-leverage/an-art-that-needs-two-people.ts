@@ -190,8 +190,8 @@ export function useAFurnaceTechnique(input: FurnaceUseInput): FurnaceUseResult {
             severity: 'unforgivable' as const,
             onDay: input.onDay,
             description: row.died
-                ? `${input.actor.name} used ${row.name} as a furnace by force, and it killed them.`
-                : `${input.actor.name} used ${row.name} as a furnace by force.`,
+                ? `${input.actor.name} used ${row.name} as a cultivation furnace by force, and it killed them.`
+                : `${input.actor.name} used ${row.name} as a cultivation furnace by force.`,
             participants: [input.actor.personId, row.personId],
             tags: ['furnace', 'coerced', ...(row.died ? ['killed'] : [])]
         }))
@@ -223,8 +223,8 @@ function theLineFor(
         const who = worked[0];
         if (!forced) {
             return who.conceived
-                ? `${who.name} was the furnace, willingly, and it took.`
-                : `${who.name} was the furnace, willingly.`;
+                ? `${who.name} was the cultivation furnace, willingly, and it took.`
+                : `${who.name} was the cultivation furnace, willingly.`;
         }
         if (who.died) return `${input.actor.name} forced it on ${who.name}, and it killed them.`;
         return who.conceived
@@ -235,8 +235,8 @@ function theLineFor(
     const many = `${worked.length} of them`;
     if (!forced) {
         return took === 0
-            ? `${many} were the furnace, willingly.`
-            : `${many} were the furnace, willingly, and it took on ${took}.`;
+            ? `${many} were the cultivation furnace, willingly.`
+            : `${many} were the cultivation furnace, willingly, and it took on ${took}.`;
     }
     const killed = dead === 0 ? '' : ` It killed ${dead}.`;
     const conceived = took === 0 ? '' : ` It took on ${took}.`;
