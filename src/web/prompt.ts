@@ -246,16 +246,6 @@ export function theRegisterAtThisHeight(realmOrdinal: number): RegisterBand {
     return REGISTER_BANDS[2];
 }
 
-/** Test seam: forget the cached voice doc so a later call re-reads it. */
-export function resetTheVoiceDoc(): void {
-    toneCache = null;
-}
-
-/** Test seam: forget the cached core so a later call re-reads it. */
-export function resetNarratorCore(): void {
-    narratorCoreCache = null;
-}
-
 /**
  * The discovery rule, at Tier 1 force.
  */

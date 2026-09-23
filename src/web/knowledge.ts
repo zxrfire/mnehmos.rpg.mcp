@@ -40,11 +40,6 @@ import { theOperatorReachesPast } from './operator-knowledge-reach.js';
  */
 export type { KnownEntityKind };
 
-/**
- * Stances that count as having heard of something.
- */
-export const AWARE_STANCES: readonly Stance[] = ['knows', 'believes', 'suspects'];
-
 /** Stable id for a place, which has no row of its own to point at. */
 export function placeKey(name: string): string {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed';

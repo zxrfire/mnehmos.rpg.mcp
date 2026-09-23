@@ -22,10 +22,6 @@ export { DAYS_PER_YEAR };
  */
 export type DayIndex = number;
 
-export function yearsBetween(fromDay: DayIndex, toDay: DayIndex): number {
-    return (toDay - fromDay) / DAYS_PER_YEAR;
-}
-
 export function daysForYears(years: number): number {
     return Math.round(years * DAYS_PER_YEAR);
 }

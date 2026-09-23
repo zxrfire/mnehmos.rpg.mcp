@@ -19,16 +19,6 @@ export const AMBIENT_QI_ORDER: readonly AmbientQi[] = [
     'thin', 'normal', 'spirit_tide', 'dense'
 ] as const;
 
-/**
- * Bands that exist but the world never rolls.
- */
-export const SITE_ONLY_BANDS: readonly AmbientQi[] = ['sealed_vein'] as const;
-
-/** Whether this band can arise from ordinary ambient conditions anywhere. */
-export function isReachableByTravel(band: AmbientQi): boolean {
-    return !SITE_ONLY_BANDS.includes(band);
-}
-
 /** Sum of the ambient weights. 100 by construction, computed so it stays true. */
 export const AMBIENT_WEIGHT_TOTAL = AMBIENT_QI_ORDER.reduce(
     (sum, key) => sum + AMBIENT_QI_WEIGHTS[key],

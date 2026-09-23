@@ -40,7 +40,6 @@
 
 import {
     canRefineGrade,
-    highestGradeRefinableAt,
     madeBelowTheLid
 } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { FOLD_FLOOR_ORDINAL, foldRangeInWalkingDays } from './how-far-somebody-can-fold-space-and-what-it-costs.js';
@@ -93,11 +92,6 @@ export function whatItLetsYouDo(what: WhatIsInTheSlip): string {
  */
 export function couldCutATalisman(grade: TechniqueGrade, crafterOrdinal: number): boolean {
     return canRefineGrade(grade, crafterOrdinal);
-}
-
-/** The best slip this hand could cut, or null for a hand that can cut none. */
-export function bestTalismanAHandCanCut(crafterOrdinal: number): TechniqueGrade | null {
-    return highestGradeRefinableAt(crafterOrdinal);
 }
 
 /**

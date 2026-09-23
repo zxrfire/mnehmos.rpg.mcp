@@ -26,10 +26,6 @@ export type DiceExpression = z.infer<typeof DiceExpressionSchema>;
 
 // Helper to validate string format "NdX+M" with optional drop/keep modifiers
 // Supports: NdX, NdX+M, NdXdl1, NdXkh2, NdXdl1+5, NdX!, etc.
-export const DiceStringSchema = z.string().regex(/^(\d+)d(\d+)(?:(dl|dh|kl|kh)(\d+))?([+-]\d+)?(!)?$/, {
-    message: "Invalid dice format. Expected format like '2d6', '1d20+5', '4d6dl1', '2d20kh1', '3d8-2', '2d6!'"
-});
-
 // Phase 1.2: CalculationResult schema
 export const CalculationResultSchema = z.object({
     input: z.string(),

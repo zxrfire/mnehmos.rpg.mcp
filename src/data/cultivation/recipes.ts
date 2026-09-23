@@ -26,7 +26,6 @@
  */
 
 import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
-import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { getPill, HOLLOWING_PILL_ID, SOUL_QUENCHING_PILL_ID } from './pills.js';
 import type { Band } from './techniques.js';
@@ -754,24 +753,12 @@ export function getRecipe(id: string): RecipeEntry | undefined {
     return RECIPE_BY_ID.get(id);
 }
 
-export function requireRecipe(id: string): RecipeEntry {
-    const r = RECIPE_BY_ID.get(id);
-    if (!r) throw new Error(`Unknown recipe: ${id}`);
-    return r;
-}
-
 export function getRecipesForPill(pillId: string): readonly RecipeEntry[] {
     return RECIPES_BY_PILL.get(pillId) ?? [];
 }
 
 export function getRecipesUsingHerb(herbId: string): readonly RecipeEntry[] {
     return RECIPES_BY_INGREDIENT.get(herbId) ?? [];
-}
-
-/** Every recipe an alchemist at this ordinal is permitted to attempt. */
-export function findRecipesForOrdinal(ordinal: number): RecipeEntry[] {
-    const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
-    return RECIPES.filter(r => r.requiredOrdinal <= cap);
 }
 
 /** The recipes that only exist because somebody dug. A ruin loot table. */

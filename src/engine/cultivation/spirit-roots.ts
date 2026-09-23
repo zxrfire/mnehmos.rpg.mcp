@@ -330,12 +330,6 @@ export interface InnateAttributes {
     charm: number;
 }
 
-export function getAttributeDef(key: AttributeKey): AttributeDef {
-    const def = ATTRIBUTES.find(a => a.key === key);
-    if (!def) throw new Error(`Unknown attribute: ${key}`);
-    return def;
-}
-
 /**
  * Roll the four innate attributes from four uniform [0,1) samples, keyed in
  * the fixed order might, insight, fortune, charm.
@@ -353,19 +347,4 @@ export function rollAttributes(samples: [number, number, number, number]): Innat
 function rollInRange(sample: number, min: number, max: number): number {
     const clamped = Math.max(0, Math.min(0.999999999, sample));
     return min + Math.floor(clamped * (max - min + 1));
-}
-
-/** Clamp an attribute set to its legal ranges (defensive, for loaded saves). */
-export function clampAttributes(attrs: InnateAttributes): InnateAttributes {
-    return {
-        might: clampTo(attrs.might, 1, 3),
-        insight: clampTo(attrs.insight, 1, 4),
-        fortune: clampTo(attrs.fortune, 0, 3),
-        charm: clampTo(attrs.charm, 1, 3)
-    };
-}
-
-function clampTo(n: number, min: number, max: number): number {
-    if (!Number.isFinite(n)) return min;
-    return Math.max(min, Math.min(max, Math.floor(n)));
 }

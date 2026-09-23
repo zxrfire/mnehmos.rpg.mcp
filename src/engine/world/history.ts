@@ -464,13 +464,6 @@ export function witnessedEventsFor(ledger: HistoryLedger, observer: Observer): H
     return ledger.facts.filter(f => classifyForObserver(f, observer) === 'witnessed');
 }
 
-/**
- * Mark an observer as having been present.
- */
-export function addWitness(fact: HistoricalFact, observerId: string): void {
-    if (!fact.witnessIds.includes(observerId)) fact.witnessIds.push(observerId);
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // QUERIES
 // The present is supposed to be explicable. These are how it gets explained.
@@ -589,14 +582,6 @@ export function unresolvedFacts(ledger: HistoryLedger): HistoricalFact[] {
 /** Everything the world tried and did not manage. */
 export function nearMisses(ledger: HistoryLedger, q: FactQuery = {}): HistoricalFact[] {
     return queryFacts(ledger, { ...q, nearMiss: true });
-}
-
-export function factsAbout(ledger: HistoryLedger, actorId: string): HistoricalFact[] {
-    return queryFacts(ledger, { actorId });
-}
-
-export function factsAtLocation(ledger: HistoryLedger, locationId: string): HistoricalFact[] {
-    return queryFacts(ledger, { locationId });
 }
 
 /**

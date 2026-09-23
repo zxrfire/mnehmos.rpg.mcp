@@ -445,26 +445,3 @@ export function buildActionDescription<TActions extends string>(
 // TYPE HELPERS FOR CONSOLIDATED TOOL SCHEMAS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Create the base schema for a consolidated tool
- * Includes the action parameter with description
- */
-export function createConsolidatedSchema<TActions extends string>(
-    actions: readonly TActions[],
-    definitions: Record<TActions, ActionDefinition>
-): z.ZodObject<{ action: z.ZodString }> {
-    return z.object({
-        action: z.string().describe(buildActionDescription(actions, definitions))
-    });
-}
-
-/**
- * Merge common schema with action-specific schema
- * Useful for building the full input schema for documentation
- */
-export function mergeSchemas(
-    common: z.AnyZodObject,
-    specific: z.AnyZodObject
-): z.AnyZodObject {
-    return common.merge(specific);
-}

@@ -3,7 +3,6 @@
  */
 
 import { z } from 'zod';
-import type { InjurySeverity } from '../../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE CONTRACT
@@ -396,11 +395,3 @@ export function woundNature(key: string | null | undefined): WoundNature {
     return getWoundType(key)?.nature ?? 'physical';
 }
 
-export function woundTypesByNature(nature: WoundNature): WoundType[] {
-    return WOUND_TYPES.filter(w => w.nature === nature);
-}
-
-/** Wound types that may legitimately be sustained at this severity. */
-export function woundTypesForSeverity(severity: InjurySeverity): WoundType[] {
-    return WOUND_TYPES.filter(w => w.severities.includes(severity));
-}

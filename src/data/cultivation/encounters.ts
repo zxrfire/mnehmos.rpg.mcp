@@ -5,7 +5,6 @@
 import {
     RegardProfileSchema,
     SimEventKindSchema,
-    type SimEventKind
 } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, TOTAL_RANKS } from '../../engine/cultivation/realms.js';
 import {
@@ -1774,15 +1773,6 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
 
 const ENCOUNTER_BY_ID: ReadonlyMap<string, EncounterEntry> = new Map(ENCOUNTERS.map(e => [e.id, e]));
 
-const ENCOUNTERS_BY_KIND: ReadonlyMap<EncounterKind, readonly EncounterEntry[]> = (() => {
-    const map = new Map<EncounterKind, EncounterEntry[]>();
-    for (const e of ENCOUNTERS) {
-        const bucket = map.get(e.kind);
-        if (bucket) bucket.push(e);
-        else map.set(e.kind, [e]);
-    }
-    return map;
-})();
 
 /**
  * Eligible entries per ordinal, precomputed for every rank. The time-skip
@@ -1809,10 +1799,6 @@ export function requireEncounter(id: string): EncounterEntry {
     const e = ENCOUNTER_BY_ID.get(id);
     if (!e) throw new Error(`Unknown encounter: ${id}`);
     return e;
-}
-
-export function getEncountersByKind(kind: EncounterKind): readonly EncounterEntry[] {
-    return ENCOUNTERS_BY_KIND.get(kind) ?? [];
 }
 
 /** Everything that may fire at this ordinal, unfiltered. */
@@ -1943,7 +1929,3 @@ export function ruinWeightShare(ordinal: number): number {
     return dig / total;
 }
 
-/** Every SimEvent kind this table can emit. Useful for engine exhaustiveness. */
-export function encounterSimEventKinds(): SimEventKind[] {
-    return [...new Set(ENCOUNTERS.map(e => e.simEventKind))];
-}

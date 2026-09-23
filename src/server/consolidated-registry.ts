@@ -40,6 +40,3 @@ export function getConsolidatedToolCategories(): ToolCategory[] {
     ];
 }
 
-export function getConsolidatedToolByName(name: string) {
-    return buildConsolidatedRegistry()[name] || null;
-}

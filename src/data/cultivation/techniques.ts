@@ -3617,13 +3617,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
 
 const TECHNIQUE_BY_ID: ReadonlyMap<string, TechniqueEntry> = new Map(TECHNIQUES.map(t => [t.id, t]));
 
-const TECHNIQUES_BY_CATEGORY: ReadonlyMap<TechniqueCategory, readonly TechniqueEntry[]> = buildGroups(t => t.category);
-const TECHNIQUES_BY_GRADE: ReadonlyMap<TechniqueGrade, readonly TechniqueEntry[]> = buildGroups(t => t.grade);
 const TECHNIQUES_BY_PROVENANCE: ReadonlyMap<TechniqueProvenance, readonly TechniqueEntry[]> =
     buildGroups(t => t.provenance);
-/** Key is the element name, or the literal string 'none' for elementless arts. */
-const TECHNIQUES_BY_ELEMENT: ReadonlyMap<Element | 'none', readonly TechniqueEntry[]> =
-    buildGroups(t => (t.element ?? 'none') as Element | 'none');
 
 function buildGroups<K>(key: (t: TechniqueEntry) => K): ReadonlyMap<K, readonly TechniqueEntry[]> {
     const map = new Map<K, TechniqueEntry[]>();
@@ -3745,26 +3740,6 @@ export function takesWithoutEndingTheStand(input: {
     return input.knownTechniqueIds.some(isFlowerArt);
 }
 
-/** Throwing variant, for engine paths where a missing id is a bug, not input. */
-export function requireTechnique(id: string): TechniqueEntry {
-    const t = TECHNIQUE_BY_ID.get(id);
-    if (!t) throw new Error(`Unknown technique: ${id}`);
-    return t;
-}
-
-export function getTechniquesByCategory(category: TechniqueCategory): readonly TechniqueEntry[] {
-    return TECHNIQUES_BY_CATEGORY.get(category) ?? [];
-}
-
-export function getTechniquesByGrade(grade: TechniqueGrade): readonly TechniqueEntry[] {
-    return TECHNIQUES_BY_GRADE.get(grade) ?? [];
-}
-
-/** Pass null for the elementless arts every root may safely cultivate. */
-export function getTechniquesByElement(element: Element | null): readonly TechniqueEntry[] {
-    return TECHNIQUES_BY_ELEMENT.get(element ?? 'none') ?? [];
-}
-
 /**
  * Arts by how they are obtained. `getTechniquesByProvenance('ruin')` is the
  * loot table for sealed sites - the reason a talentless cultivator digs.
@@ -3780,15 +3755,6 @@ export function getTechniquesByProvenance(provenance: TechniqueProvenance): read
  */
 export function getTechniquesWithNoSurvivingCopy(): TechniqueEntry[] {
     return TECHNIQUES.filter(t => !t.survivingCopy);
-}
-
-/**
- * Fragments of a destroyed house's discipline. Pass a house id to get just
- * that house's remains, or omit it for every fragment in the catalog.
- */
-export function getFragmentTechniques(destroyedHouseId?: string): TechniqueEntry[] {
-    return TECHNIQUES.filter(t => t.fragmentOf !== null
-        && (destroyedHouseId === undefined || t.fragmentOf === destroyedHouseId));
 }
 
 /** Everything no living teacher can transmit: ruin and grave sources together. */

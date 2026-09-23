@@ -83,13 +83,3 @@ export function getLightSourceProfile(item: Pick<Item, 'name' | 'properties'>): 
     return null;
 }
 
-export function lightSourceProperties(profile: LightSourceProfile): Record<string, unknown> {
-    return {
-        kind: profile.kind,
-        durationMinutes: profile.durationMinutes,
-        brightRadiusFeet: profile.brightRadiusFeet,
-        dimRadiusFeet: profile.dimRadiusFeet,
-        shape: profile.shape,
-        consumesItem: profile.consumesItem,
-    };
-}

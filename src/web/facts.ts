@@ -2108,25 +2108,6 @@ export function factsForStatus(
     };
 }
 
-export function factsForTalk(cultivator: Cultivator, ambient: AmbientQi, target: string | undefined): EngineFacts {
-    const who = target?.trim() || 'whoever is within earshot';
-    const lines = [
-        `${cultivator.name} spoke to ${who}. Words, and nothing that anyone will be able to point to later.`,
-        ...asToldToTheNarrator(standingLines(cultivator, ambient))
-    ];
-    return {
-        headline: `A conversation with ${who}.`,
-        lines,
-        structure: [
-            'No system resolved this: no trade, no sect standing, no relationship state changed.',
-            ...standingStructure(cultivator, ambient)
-        ],
-        prose:
-            `${cultivator.name} speaks to ${who}. Nothing in the world's ledgers moves for it - no stones change hands, no standing shifts, ` +
-            `no one owes anyone anything they did not already owe. In ${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}, that is what most conversations are.`
-    };
-}
-
 /**
  * Going somewhere.
  */

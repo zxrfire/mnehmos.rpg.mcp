@@ -170,10 +170,6 @@ export function isAboveTheLid(x: Layered | null | undefined): boolean {
     return layerOf(x) !== MORTAL_LAYER;
 }
 
-export function layerIndex(key: LayerKey): number {
-    return layerFor(key).index;
-}
-
 /** The layer above this one, or null at the top. Null is the normal answer. */
 export function layerAbove(key: LayerKey): WorldLayer | null {
     return WORLD_LAYERS[layerFor(key).index + 1] ?? null;

@@ -809,32 +809,13 @@ const HERBS_BY_BIOME: ReadonlyMap<HerbBiome, readonly Herb[]> = (() => {
     return map;
 })();
 
-const HERBS_BY_GRADE: ReadonlyMap<TechniqueGrade, readonly Herb[]> = (() => {
-    const map = new Map<TechniqueGrade, Herb[]>();
-    for (const h of HERBS) {
-        const bucket = map.get(h.grade);
-        if (bucket) bucket.push(h);
-        else map.set(h.grade, [h]);
-    }
-    return map;
-})();
 
 export function getHerb(id: string): Herb | undefined {
     return HERB_BY_ID.get(id);
 }
 
-export function requireHerb(id: string): Herb {
-    const h = HERB_BY_ID.get(id);
-    if (!h) throw new Error(`Unknown herb: ${id}`);
-    return h;
-}
-
 export function getHerbsByBiome(biome: HerbBiome): readonly Herb[] {
     return HERBS_BY_BIOME.get(biome) ?? [];
-}
-
-export function getHerbsByGrade(grade: TechniqueGrade): readonly Herb[] {
-    return HERBS_BY_GRADE.get(grade) ?? [];
 }
 
 /**

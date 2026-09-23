@@ -451,10 +451,3 @@ export function createFuzzyActionSchema<T extends string>(
     });
 }
 
-/**
- * Create a Zod schema that accepts flexible identifiers (UUID or name)
- * Note: This creates a passthrough schema - actual resolution happens at runtime
- */
-export const FlexibleIdentifierSchema = z.string()
-    .min(1, 'Identifier cannot be empty')
-    .describe('UUID or entity name');

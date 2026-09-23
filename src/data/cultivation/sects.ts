@@ -71,7 +71,6 @@
  */
 
 import type { Sect, SpiritRootKey, TechniqueCategory } from '../../schema/cultivation.js';
-import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { APEX_INSTITUTIONS } from './governance-and-water-rights.js';
 import {
     delegatedFrom,
@@ -3823,13 +3822,6 @@ export function getSectAdmission(id: string): SectAdmission | undefined {
     return SECT_ADMISSION[id];
 }
 
-/** Sects whose door is open to a cultivator at this ordinal. */
-export function findSectsForOrdinal(ordinal: number, alignment?: Sect['alignment']): SectEntry[] {
-    const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
-    const pool = alignment ? getSectsByAlignment(alignment) : SECTS;
-    return pool.filter(s => s.recruits && s.admissionOrdinal <= cap);
-}
-
 /** Monthly stipend in spirit stones for a rank index within a sect. */
 export function stipendForRank(sectId: string, rankIndex: number): number {
     const sect = requireSect(sectId);
@@ -3917,8 +3909,6 @@ export function auditAncestralClaim(sectId: string): {
 const DAO_HOUSE_BY_ID: ReadonlyMap<string, DaoHouseEntry> = new Map(DAO_HOUSES.map(h => [h.id, h]));
 const DESTROYED_HOUSE_BY_ID: ReadonlyMap<string, DestroyedDaoHouse> =
     new Map(DESTROYED_DAO_HOUSES.map(h => [h.id, h]));
-const DAO_HOUSE_BY_PRINCIPLE: ReadonlyMap<DaoPrinciple, DaoHouseEntry> =
-    new Map(DAO_HOUSES.map(h => [h.principle, h]));
 
 export function getDaoHouse(id: string): DaoHouseEntry | undefined {
     return DAO_HOUSE_BY_ID.get(id);
@@ -3928,11 +3918,6 @@ export function requireDaoHouse(id: string): DaoHouseEntry {
     const h = DAO_HOUSE_BY_ID.get(id);
     if (!h) throw new Error(`Unknown Dao house: ${id}`);
     return h;
-}
-
-/** One house per principle, which is the point of a house. */
-export function getDaoHouseByPrinciple(principle: DaoPrinciple): DaoHouseEntry | undefined {
-    return DAO_HOUSE_BY_PRINCIPLE.get(principle);
 }
 
 export function getDestroyedDaoHouse(id: string): DestroyedDaoHouse | undefined {
