@@ -44,9 +44,10 @@
  * ═════════════════════════════════════════════════════════════════════════
  *
  * `seedNamedFigures` instantiates `MEMBERS` and nobody else. The guest elders,
- * the wanderers, the sealed ancestors and everybody who crossed are named in
- * the catalogs and have no world row, so a stated tie with one of them on the
- * end cannot be written and never will be.
+ * the sealed ancestors and everybody who crossed are named in the catalogs and
+ * have no world row, so a stated tie with one of them on the end cannot be
+ * written and never will be. The wanderers belong to no house and are people in
+ * the world (`the-wanderer-the-catalog-names-is-somebody.ts`).
  *
  * That is a rule about the Lid and not a note about one woman, which is why
  * {@link KinSeeded.aboveTheLid} is a counter rather than a special case: the

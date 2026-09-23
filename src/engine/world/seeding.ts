@@ -73,7 +73,6 @@ import {
 import {
     addGoal, createNpc, setRealm, upsertRelationship, whatACatalogStatesAsTags, type NpcRecord
 } from './npc-state.js';
-import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { seedTheRogues } from './the-rogues-a-world-opens-with.js';
@@ -87,6 +86,8 @@ import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedWhatSealedPocketsStillGrow } from './what-a-sealed-pocket-still-grows.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
 import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
+import { lineagesFromTheKinTheWorldWrote } from './a-family-is-the-people-you-are-kin-to.js';
+import { CHILD_STANDING, PARENT_STANDING, rosterOf } from './the-ties-an-ordinary-life-produces.js';
 import { uniformsForEverybodyAlreadyOnARoll } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import {
     applyTheLoans,
@@ -287,7 +288,6 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const line = seedTheLineThatCameDown(state, opts.catalog, presentDay);
     const everybody = [...npcs, ...line];
     state.populationTarget = everybody.length;
-    const lineages = seedLineages(state, everybody, presentDay);
     // And the families the RELATIONSHIP layer has to be able to see, which is
     // not the same claim the lineage record makes and must not be read off it -
     // see `the-families-a-world-opens-holding.ts` for the measurement. Until
@@ -306,6 +306,13 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // these takes no seat away from a life that opens as somebody's child.
     seedTheKinTheCatalogStates(state);
     const families = seedTheFamiliesStandingInAPlace(state, presentDay);
+    // AND THE FAMILIES THE LINEAGE RECORD HOLDS, read off that kinship rather
+    // than off shared surnames. Last of the three, because a family is the
+    // people the marriages, the stated kin and the households joined - see
+    // `a-family-is-the-people-you-are-kin-to.ts` for what the surname chain was
+    // doing instead.
+    const lineages = lineagesFromTheKinTheWorldWrote(state);
+    state.lineages.push(...lineages);
     // And the wrongs, AFTER the families, because a wrong nobody carries for is
     // a wrong nobody can be told about.
     const wrongs = seedTheWrongsStillOpen(state, presentDay);
@@ -1641,7 +1648,43 @@ function seedTheLineThatCameDown(
         state.npcs.push(npc);
         created.push(npc);
     }
+
+    // AND THEY ARE KIN, which nothing said. The catalog calls them a line and
+    // reads them as a ladder down from the one who came out of the water, so
+    // each of them is the child of the nearest person above them in it. Without
+    // these rows the family exists in the writing and in no reader: the lineage
+    // record is built out of kinship now, and so is everything that asks who
+    // somebody's people are.
+    const byAge = created.slice().sort((a, b) => a.identity.bornOnDay - b.identity.bornOnDay);
+    const roster = rosterOf(state);
+    for (let i = 1; i < byAge.length; i++) {
+        bindKin(state, roster.at, byAge[i - 1]!, byAge[i]!, presentDay);
+    }
     return created;
+}
+
+/**
+ * One generation of the authored line to the next: a parent row and a child row,
+ * at the standings every other household in the world is written at.
+ */
+function bindKin(
+    state: WorldState,
+    at: Map<string, number>,
+    parent: NpcRecord,
+    child: NpcRecord,
+    onDay: number
+): void {
+    const parentAt = at.get(parent.id);
+    const childAt = at.get(child.id);
+    if (parentAt === undefined || childAt === undefined) return;
+    state.npcs[parentAt] = upsertRelationship(state.npcs[parentAt]!, {
+        targetId: child.id, targetName: child.name, kind: 'child',
+        standing: CHILD_STANDING, note: 'Their child.'
+    }, onDay);
+    state.npcs[childAt] = upsertRelationship(state.npcs[childAt]!, {
+        targetId: parent.id, targetName: parent.name, kind: 'parent',
+        standing: PARENT_STANDING, note: 'Raised them.'
+    }, onDay);
 }
 
 function seedNamedFigures(
@@ -2214,63 +2257,6 @@ function goalFor(
 // ─────────────────────────────────────────────────────────────────────────
 // LINEAGES
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Families, so that a death has somewhere to send what it leaves.
- */
-function seedLineages(state: WorldState, npcs: readonly NpcRecord[], presentDay: number): LineageRecord[] {
-    const bySurname = new Map<string, NpcRecord[]>();
-    for (const npc of npcs) {
-        const surname = npc.name.split(' ')[0];
-        const list = bySurname.get(surname);
-        if (list) list.push(npc);
-        else bySurname.set(surname, [npc]);
-    }
-
-    const out: LineageRecord[] = [];
-    for (const surname of Array.from(bySurname.keys()).sort()) {
-        const family = bySurname.get(surname)!
-            .slice()
-            .sort((a, b) => a.identity.bornOnDay - b.identity.bornOnDay || (a.id < b.id ? -1 : 1));
-        if (family.length < 2) continue;
-
-        const founder = family[0];
-        let lineage = createLineageRecord({
-            id: `lin-${surname.toLowerCase()}`,
-            surname,
-            founderId: founder.id,
-            foundedOnDay: founder.identity.bornOnDay
-        });
-
-        // Walk the family oldest first; anyone at least eighteen years younger
-        // than a living earlier member becomes their child.
-        for (let i = 1; i < family.length; i++) {
-            const child = family[i];
-            let parent: NpcRecord | null = null;
-            for (let j = i - 1; j >= 0; j--) {
-                if (child.identity.bornOnDay - family[j].identity.bornOnDay >= years(18)) {
-                    parent = family[j];
-                    break;
-                }
-            }
-            if (!parent) continue;
-            lineage = addLineageEdge(lineage, {
-                parentId: parent.id,
-                childId: child.id,
-                relation: 'descendant',
-                onDay: child.identity.bornOnDay
-            });
-        }
-
-        if (lineage.edges.length === 0) continue;
-        lineage.holdings = { spirit_stones: 0 };
-        state.lineages.push(lineage);
-        out.push(lineage);
-    }
-
-    void presentDay;
-    return out;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // OPPORTUNITIES AND THE SCHEDULE
