@@ -16234,6 +16234,13 @@ ${fit.line}`;
         return {
             rank: rankName(cultivator.realmOrdinal),
             age: Math.floor(cultivator.age),
+            // WHICH THE NARRATOR CALLED EVERY PLAYER A BOY WITHOUT. Reported
+            // from three fresh openings: Mei Ling was "the boy she raised" and
+            // Bai Ruo "a brat who has forgotten his place", because this shape
+            // carried no sex and `cultivator.sex` was sitting one field away.
+            // A model handed nothing does not decline to say; it guesses, and
+            // it guesses the same way every time.
+            sex: cultivator.sex,
             spiritStones: cultivator.spiritStones,
             booksHeld: copyNamesHeldBy(this.db, cultivator.id),
             // The roads they have actually sat down with, which is a different
