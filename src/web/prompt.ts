@@ -1079,7 +1079,7 @@ function theTurnToWrite(
             + 'sounds and smells like, what the ground and the weather are doing, who is about and what '
             + 'they are at. Several sentences.'
         : 'They have been here since last turn, so open with a brief reminder of where they are - a '
-            + 'clause or a sentence, no more.';
+            + 'clause or a sentence, no more, on one detail of the place the turn before did not use.';
     const who = opening
         ? 'Write the opening: the years first, then the place they are standing in now, and the people '
             + 'in it doing what their cards say.'
