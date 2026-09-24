@@ -45,3 +45,18 @@ formations, elders holding them steady, pills nobody at that realm could afford.
 most of why anyone tolerates a sect, and the sect will tell you exactly what it cost.**
 The mechanism it is protecting against is in
 [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
+
+### A reserve is for spending
+
+<!-- tier: 2 trigger="a house runs its stores down, or is asked why they are empty" -->
+
+A house keeps something back and will spend the lot when the year is bad enough. **A stock
+nobody would empty in a crisis is not a reserve, it is an ornament** - so stores falling is
+the house working, not the house failing, and a house that has emptied itself has been
+doing something.
+
+What a treasury holds and why it sits where it does is the header of
+[`what-a-house-keeps-in-its-treasury.ts`](../../../src/engine/world/what-a-house-keeps-in-its-treasury.ts);
+what it hands out and how its own people cut that back is
+[`what-a-house-hears-from-its-people-away.ts`](../../../src/engine/world/what-a-house-hears-from-its-people-away.ts).
+Neither is restated here.
