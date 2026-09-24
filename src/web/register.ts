@@ -11,6 +11,7 @@ import {
     canProjectLastRealm,
     contestedClaimsOf,
     getDaoHouse,
+    getPartingGift,
     getSect,
     intakeRouteOf,
     sectThreat,
@@ -919,6 +920,23 @@ export interface RegisterHouseAdmission {
 /**
  * One faction, and everybody attached to it.
  */
+/**
+ * A house's parting gift, as a register may state it.
+ *
+ * Deliberately NOT the catalog's own row: that carries `intact`, and whether
+ * the thing is still in the vault is a discovery rather than an entry.
+ */
+export interface RegisterPartingGift {
+    id: string;
+    name: string;
+    /** Plainly beyond what this age can produce. The catalog's own sentence. */
+    description: string;
+    /** Why it is held in reserve rather than wielded. */
+    reserveTerms: string;
+    /** Arts that came down with it. Usually none. */
+    techniqueIds: string[];
+}
+
 export interface SectDossier {
     id: string;
     name: string;
@@ -955,6 +973,21 @@ export interface SectDossier {
      * fact about the world on a given day and belongs to the read that has one.
      */
     reservesTheChair: boolean;
+    /**
+     * What an ascending ancestor left this house on the way out.
+     *
+     * Null on the great majority, which is the point of it: a parting gift is
+     * plainly beyond what this age can produce, and a house that holds one
+     * holds the single most valuable object in its province.
+     *
+     * WHAT IT SAYS IS WHAT THE HOUSE SAYS. `PartingGift.intact` is false where
+     * the thing has been spent, lost or quietly stolen, and that is not
+     * published - it sits beside `claimIsTrue`, which the catalog marks *never
+     * surfaced directly; discovered*. So the register carries the name and the
+     * terms it is held on, and a reader who wants to know whether it is still
+     * there has to go and find out.
+     */
+    theGiftAnAncestorLeft: RegisterPartingGift | null;
     /** What the catalog says it is for: attack, defence, movement, support. */
     specialities: string[];
     /** What it will teach, resolved. Null on a house with no teach list. */
@@ -2789,6 +2822,39 @@ function decisiveLine(d: SectDossier): string | null {
  * given day, and this page is built from the catalog. The design is
  * `offices-and-succession.md`, "The Protector", and none of it is repeated.
  */
+/**
+ * What the catalog holds about a house's parting gift, in register shape.
+ *
+ * `getPartingGift` has existed since the ancestry catalog was written and had
+ * no reader outside its own test, which is the defect the design owner named:
+ * *"too much shit is read by nothing."* The thing it returns is the largest
+ * object in a province and a player reading up on a house could not learn it
+ * existed.
+ */
+function theGiftLeftTo(sectId: string): RegisterPartingGift | null {
+    const gift = getPartingGift(sectId);
+    if (!gift) return null;
+    return {
+        id: gift.id,
+        name: gift.name,
+        description: gift.description,
+        reserveTerms: gift.reserveTerms,
+        techniqueIds: [...gift.techniqueIds]
+    };
+}
+
+/**
+ * And the sentence a reader gets, which says what it is FOR rather than that
+ * it exists: a thing nobody will use is a different fact from a thing nobody
+ * has.
+ */
+function theGiftLine(d: SectDossier): string | null {
+    const gift = d.theGiftAnAncestorLeft;
+    if (!gift) return null;
+    return `it holds ${gift.name}, left by an ancestor on the way out and beyond anything the `
+        + `age can make, and it does not use it: ${gift.reserveTerms}`;
+}
+
 function protectorLine(d: SectDossier): string | null {
     if (!d.reservesTheChair) return null;
     return 'it holds its protector\'s chair for a False Immortal and for nobody else, so the '
@@ -2806,6 +2872,7 @@ function buildSynopsis(d: SectDossier): string[] {
         forceLine(d),
         answeringLine(d),
         protectorLine(d),
+        theGiftLine(d),
         decisiveLine(d)
     ]
         .filter((s): s is string => s !== null && s.trim().length > 0)
@@ -3299,6 +3366,7 @@ function buildDossiers(
             description: sect?.description ?? '',
             titles: [...(sect?.ranks ?? [])],
             reservesTheChair: theChairIsHeldForAFalseImmortal(row.id),
+            theGiftAnAncestorLeft: theGiftLeftTo(row.id),
             specialities: [...(sect?.specialities ?? [])].map(String),
             curriculum: buildCurriculum(row.id, techniquesById),
             deepRoad: buildDeepRoad(row.id),
@@ -3461,6 +3529,9 @@ function buildDossiers(
             // An apex reserves the chair, and `who-stands-over-a-house.ts` is
             // where that is decided rather than here.
             reservesTheChair: true,
+            // On the faction id, because an apex with no sect row has no
+            // ancestry row either and the lookup is keyed on the house.
+            theGiftAnAncestorLeft: a.factionId ? theGiftLeftTo(a.factionId) : null,
             specialities: [],
             curriculum: a.factionId ? buildCurriculum(a.factionId, techniquesById) : null,
             // Read on the apex id as well as the faction id, because the two
