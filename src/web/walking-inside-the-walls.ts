@@ -339,16 +339,23 @@ export async function aWalkInsideTheWalls(
     const walked: Cultivator = { ...cultivator, location: destination.name };
     const people = npcsStandingIn(world, destination.id, compounds);
     const out = destination.id === seat.id;
+    // THE ROOM'S OWN NAME, not the row's. `destination.name` is
+    // `<house>: the refectory`, which is a database key with a house glued to
+    // the front of it, and it was reaching the page as one.
     const line = out
-        ? `You walk out of ${aRoomsOwnName(here)} and back to the gate, and you are standing at ${seat.name}.`
-        : `You walk from ${here.id === seat.id ? 'the gate' : aRoomsOwnName(here)} into ${destination.name}.`;
+        ? `You walk out of ${aRoomsOwnName(here)} and back to the gate.`
+        : `You walk from ${here.id === seat.id ? 'the gate' : aRoomsOwnName(here)} `
+          + `into ${aRoomsOwnName(destination)}.`;
     const facts = factsForToolResult(line, [
         line,
         people.length === 0
             ? 'Nobody is in it.'
             : `${people.length} ${people.length === 1 ? 'person is' : 'people are'} in it.`
     ]);
-    facts.required = [line];
+    // NOT `required`. Those are the lines a player has to read word for word,
+    // and since they are dramatized in the scene as well, a clerk's sentence
+    // put there is read out twice. Where somebody ended up is a fact and it is
+    // already in `lines`; the sentence that carries it is the narrator's.
     facts.structure.push(
         `walkInsideTheWalls: ${here.id} to ${destination.id}, inside ${seat.id}. No time passed; `
         + `${people.length} standing there by npcsStandingIn.`
