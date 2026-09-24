@@ -49,6 +49,7 @@ import {
     type TheAsk
 } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
 import { whoAnswersTo } from '../engine/world/what-a-house-answers-to.js';
+import { freeToTakeWork } from '../engine/world/a-disciple-takes-work-off-the-board.js';
 import {
     reasonsOpenTo,
     type HouseAsItStands
@@ -230,6 +231,12 @@ export function whoEachHouseIsLookingFor(
             }))
         }));
         if (looking.length === 0) continue;
+        // A HOUSE SENDS ITS OWN FIRST. Paper in a town is what it does when it
+        // cannot: nobody free, everybody out, or too few to spare. So a search
+        // reaches a wall only once the house has nobody to hand it to - which
+        // is the same judgement `peopleTakeWorkOffTheirHousesBoard` makes about
+        // every other errand, asked here of the search.
+        if (members.some(freeToTakeWork)) continue;
         out.set(houseId, looking.map(row => ({
             kind: 'missing' as const,
             who: row.memberName,
