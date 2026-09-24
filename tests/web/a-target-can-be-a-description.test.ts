@@ -184,9 +184,38 @@ describe('a title, which is how people are addressed here', () => {
         person({ id: 'outside', sex: 'male', sectId: 'theirs', sectRank: '5' })
     ];
 
-    it('reads senior and junior off the house ladder, and only inside the house', () => {
+    it('reads senior and junior inside the house and nowhere else', () => {
         expect(fits('senior brother', brothers, house)).toEqual(['above']);
         expect(fits('junior brother', brothers, house)).toEqual(['below']);
+    });
+
+    /**
+     * SENIORITY AMONG DISCIPLES IS BY ENTRY, NOT BY RUNG.
+     *
+     * Played: a just-joined Skin said *"Senior sister, where do the Skins
+     * sleep?"* to the one other person in the yard - a Skin of the same house
+     * who had been in it for years - and was told nobody standing there was
+     * senior to them. The same-rung senior is the one a new disciple has most
+     * of, and reading the title off the ladder makes them unreachable.
+     */
+    it('answers a peer title with somebody at the speaker\'s own rung', () => {
+        const yard = [
+            person({ id: 'sameRung', sex: 'female', sectId: 'ours', sectRank: '2' }),
+            person({ id: 'lower', sex: 'female', sectId: 'ours', sectRank: '1' })
+        ];
+        expect(fits('senior sister', yard, house)).toEqual(['sameRung']);
+        // And the other direction is unchanged: a junior is strictly lower,
+        // because entry below your own rung is what the world cannot say.
+        expect(fits('junior sister', yard, house)).toEqual(['lower']);
+    });
+
+    /** Your shixiong is the one nearest you, not the highest person who fits. */
+    it('puts the nearest rung first when no ordering was asked for', () => {
+        const yard = [
+            person({ id: 'grandElder', sex: 'female', sectId: 'ours', sectRank: '6' }),
+            person({ id: 'peer', sex: 'female', sectId: 'ours', sectRank: '2' })
+        ];
+        expect(fits('senior sister', yard, house)[0]).toBe('peer');
     });
 
     /**
@@ -240,7 +269,7 @@ describe('what a description asked for, when nobody is it', () => {
      * in your own house, man".
      */
     it('puts the head noun first and what narrows it after', () => {
-        expect(asked('my senior brother')).toBe('a man senior to you in your own house');
+        expect(asked('my senior brother')).toBe('a man who came into your house before you');
         expect(asked('the female elder')).toBe('a female elder');
     });
 

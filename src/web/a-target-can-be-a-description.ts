@@ -57,6 +57,35 @@ export interface ADescription {
      * them from a rank word alone.
      */
     readonly standing: 'above' | 'below' | null;
+    /**
+     * Whether this title's `standing` is ENTRY rather than rung.
+     *
+     * ── SHIXIONG IS NOT A RANK AND NEVER WAS ─────────────────────────────
+     *
+     * Senior brother and senior sister order by who came in first, not by who
+     * stands higher. Anybody of your own house who was in it before you is your
+     * senior, at your own rung or any other, and the one a new disciple meets
+     * most is at the same rung as themselves - the disciple who was sweeping
+     * this yard a year before they arrived.
+     *
+     * Played: a just-joined Skin of the Waterman Caravan said *"Senior sister,
+     * where do the Skins sleep?"* to a Skin of that house who had been in it
+     * for years, and was told nobody standing there was senior to them. The
+     * only other person in the yard, and the engine denied the bond existed.
+     *
+     * WHAT THE WORLD DOES NOT HOLD is the day anybody joined a house - not for
+     * its own people and not for the player, whose membership row carries a
+     * wall clock rather than a world day. So entry order is read off the one
+     * thing that IS true of every run: the world's people were of their houses
+     * before the run opened, and the player joined during it. A peer of your
+     * own house at or above your rung came in first. Below it the data cannot
+     * say, so a junior is somebody strictly lower and the answer stays honest.
+     *
+     * `joinedHouseOnDay` on an NPC would make this exact, and would also feed
+     * `yearsInHouse`, which `roomStageFor` reads and which is handed a hardcoded
+     * 0 today. It is about fifteen write sites and it is not this fix.
+     */
+    readonly byEntry: boolean;
     /** True where the title only means anything inside the speaker's own house. */
     readonly sameHouse: boolean;
     /**
@@ -157,15 +186,16 @@ const TITLES: Readonly<Record<string, Partial<{
     sex: 'male' | 'female';
     tie: string;
     rank: string;
+    byEntry: boolean;
 }>>> = Object.freeze({
-    'senior brother': { standing: 'above', sameHouse: true, sex: 'male' },
-    'shixiong': { standing: 'above', sameHouse: true, sex: 'male' },
-    'senior sister': { standing: 'above', sameHouse: true, sex: 'female' },
-    'shijie': { standing: 'above', sameHouse: true, sex: 'female' },
-    'junior brother': { standing: 'below', sameHouse: true, sex: 'male' },
-    'shidi': { standing: 'below', sameHouse: true, sex: 'male' },
-    'junior sister': { standing: 'below', sameHouse: true, sex: 'female' },
-    'shimei': { standing: 'below', sameHouse: true, sex: 'female' },
+    'senior brother': { standing: 'above', sameHouse: true, sex: 'male', byEntry: true },
+    'shixiong': { standing: 'above', sameHouse: true, sex: 'male', byEntry: true },
+    'senior sister': { standing: 'above', sameHouse: true, sex: 'female', byEntry: true },
+    'shijie': { standing: 'above', sameHouse: true, sex: 'female', byEntry: true },
+    'junior brother': { standing: 'below', sameHouse: true, sex: 'male', byEntry: true },
+    'shidi': { standing: 'below', sameHouse: true, sex: 'male', byEntry: true },
+    'junior sister': { standing: 'below', sameHouse: true, sex: 'female', byEntry: true },
+    'shimei': { standing: 'below', sameHouse: true, sex: 'female', byEntry: true },
     // A martial uncle stands a generation up the same house. The blood word is
     // the same word, and where the speaker has no house it falls to the tie.
     'martial uncle': { standing: 'above', sameHouse: true, sex: 'male' },
@@ -246,6 +276,7 @@ export function theDescriptionThisIs(query: string): ADescription | null {
     let rank: string | null = null;
     let alignment: SectAlignment | null = null;
     let standing: 'above' | 'below' | null = null;
+    let byEntry = false;
     let sameHouse = false;
     let tie: string | null = null;
     let carried = realmKey === null ? 0 : 1;
@@ -268,6 +299,7 @@ export function theDescriptionThisIs(query: string): ADescription | null {
         if (at < 0) continue;
         const asks = TITLES[title]!;
         standing = asks.standing ?? standing;
+        byEntry = asks.byEntry ?? byEntry;
         sameHouse = asks.sameHouse ?? sameHouse;
         sex = asks.sex ?? sex;
         tie = asks.tie ?? tie;
@@ -293,7 +325,7 @@ export function theDescriptionThisIs(query: string): ADescription | null {
 
     return carried === 0
         ? null
-        : { end, sex, rank, alignment, realmKey, standing, sameHouse, tie, word: query.trim() };
+        : { end, sex, rank, alignment, realmKey, standing, byEntry, sameHouse, tie, word: query.trim() };
 }
 
 /**
@@ -358,7 +390,13 @@ export function whoTheDescriptionFits(input: {
                 ? input.rankIndexOf(who.sectId, who.sectRank)
                 : who.realmOrdinal;
             if (theirs === null) return false;
-            if (what.standing === 'above' && theirs <= mine) return false;
+            // A SENIOR BROTHER IS NOT SOMEBODY ABOVE YOU. See `byEntry`: the
+            // peer titles order by who came in first, and the one a new
+            // disciple actually has is at their own rung. A junior stays
+            // strictly lower, because entry below your own rung is the one
+            // direction the world holds nothing to say.
+            const floor = what.byEntry && what.standing === 'above' ? theirs < mine : theirs <= mine;
+            if (what.standing === 'above' && floor) return false;
             if (what.standing === 'below' && theirs >= mine) return false;
         }
         return true;
@@ -385,6 +423,17 @@ export function whoTheDescriptionFits(input: {
         case 'weakest':
             return fits.sort((a, b) => a.realmOrdinal - b.realmOrdinal || byId(a, b));
         default:
+            // YOUR SENIOR BROTHER IS THE ONE NEAREST YOU, not the highest
+            // person in the house who fits. Asked for no ordering, a peer title
+            // takes the closest rung to the speaker's own, so the grand elder
+            // standing in the same yard is not handed back as a shixiong.
+            if (what.byEntry && me.rankIndex !== null) {
+                const gap = (who: SomebodyDescribable): number => {
+                    const rung = input.rankIndexOf(who.sectId, who.sectRank);
+                    return rung === null ? Number.MAX_SAFE_INTEGER : Math.abs(rung - me.rankIndex!);
+                };
+                return fits.sort((a, b) => gap(a) - gap(b) || byId(a, b));
+            }
             return fits.sort(byId);
     }
 }
@@ -521,9 +570,15 @@ export function whatTheDescriptionAskedFor(what: ADescription): string {
 
     const narrowing: string[] = [];
     if (what.standing !== null) {
-        narrowing.push(what.sameHouse
-            ? `${what.standing === 'above' ? 'senior' : 'junior'} to you in your own house`
-            : `standing ${what.standing} you`);
+        narrowing.push(what.byEntry
+            // The sentence a refusal is built out of, so it must say what was
+            // actually looked for. A peer title asks who came in before you,
+            // and a refusal that says "senior to you" describes a search
+            // nothing ran and tells the player their own house has no seniors.
+            ? `who came into your house ${what.standing === 'above' ? 'before' : 'after'} you`
+            : what.sameHouse
+                ? `${what.standing === 'above' ? 'senior' : 'junior'} to you in your own house`
+                : `standing ${what.standing} you`);
     } else if (what.sameHouse) {
         narrowing.push('of your own house');
     }
