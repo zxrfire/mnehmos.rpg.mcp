@@ -64,6 +64,16 @@ export const ENTERING_DAYS = 3;
 export const TREATMENT_DAYS = 30;
 /** Focus multipliers for time spent on something other than sealed seclusion. */
 export const TRAVEL_FOCUS = 0.15;
+/**
+ * How much of a stretch at the bench, the cauldron or the paper is also spent
+ * cultivating.
+ *
+ * A third, and not a sealed retreat. Making a thing and cutting slips are both
+ * paid for in the one resource nobody gets back: the design owner, on cutting as
+ * many as you like, *"remember it burns the most valuable resource, your
+ * cultivation time."* A drawer of slips is days at this rate.
+ */
+export const BENCH_FOCUS = 0.35;
 export const GATHERING_FOCUS = 0.2;
 export const WAITING_FOCUS = 0.25;
 /** Nobody gathers qi while climbing down a lined shaft in the dark. */

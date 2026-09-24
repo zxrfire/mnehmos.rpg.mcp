@@ -37,7 +37,6 @@
  */
 
 import {
-    STRUCTURAL_REPAIR_MEDICINES,
     STRUCTURAL_REPAIR_HOLDINGS,
     SENT_DOWN_SPENDINGS,
     SENT_DOWN_UNACCOUNTED,
@@ -175,11 +174,6 @@ export function buildRepairMedicineRegister(): RegisterRepairMedicine {
 /** Every medicine, for a caller that only wants the table. */
 export function repairMedicineTable(): RepairMedicineReading[] {
     return readAllRepairMedicine();
-}
-
-/** How many medicines the catalog holds. Never hardcode this anywhere. */
-export function repairMedicineCount(): number {
-    return STRUCTURAL_REPAIR_MEDICINES.length;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

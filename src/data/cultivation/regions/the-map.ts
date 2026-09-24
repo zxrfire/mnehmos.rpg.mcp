@@ -8,7 +8,7 @@ import type {
     Region,
     RegionPlaceConnection
 } from './region-schema.js';
-import { BLOWN_GROUND_ID, HOME_REGION_ID } from './region-ids.js';
+import { BLOWN_GROUND_ID } from './region-ids.js';
 import { THE_LOW_FALL } from './low-fall.js';
 import { THE_QUIET_MARCHES } from './quiet-marches.js';
 import { THE_WIDE_FIELD } from './wide-field.js';
@@ -218,10 +218,6 @@ export function requireRegion(id: string): Region {
     const r = indices().byId.get(id);
     if (!r) throw new Error(`Unknown region: ${id}`);
     return r;
-}
-
-export function getHomeRegion(): Region {
-    return requireRegion(HOME_REGION_ID);
 }
 
 export function getRegionForFaction(factionId: string): Region | undefined {

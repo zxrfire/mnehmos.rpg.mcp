@@ -269,12 +269,6 @@ export function getTradition(id: string): Tradition | undefined {
     return TRADITION_BY_ID.get(id);
 }
 
-export function requireTradition(id: TraditionId): Tradition {
-    const t = TRADITION_BY_ID.get(id);
-    if (!t) throw new Error(`Unknown tradition: ${id}`);
-    return t;
-}
-
 /** The tradition seated in a region. */
 export function traditionForRegion(regionId: string): Tradition | undefined {
     return TRADITIONS.find(t => t.seatRegionId === regionId);

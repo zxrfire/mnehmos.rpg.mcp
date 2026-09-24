@@ -291,12 +291,6 @@ export function getProvince(id: string): Province | undefined {
     return PROVINCE_BY_ID.get(id);
 }
 
-export function requireProvince(id: string): Province {
-    const p = PROVINCE_BY_ID.get(id);
-    if (!p) throw new Error(`Unknown province: ${id}`);
-    return p;
-}
-
 export function getPrefecture(id: string): Prefecture | undefined {
     return PREFECTURE_BY_ID.get(id);
 }

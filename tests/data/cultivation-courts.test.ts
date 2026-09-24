@@ -537,7 +537,10 @@ describe('a name in the pyramid says which tier it is', () => {
         // name came back with the standing.
         expect(mist.name).toBe('Azure Mist Court');
         expect(mist.powerOrdinal).toBe(37);
-        expect(mist.ranks).toContain('Court Warden');
+        // The head of a subsidiary sect is its own head, not the overseeing
+        // house's steward: `warden` is an officer's word and the Mist's own
+        // four-office list still uses it correctly for a post inside the house.
+        expect(mist.ranks).toContain('Court Master');
         expect(mist.description).toMatch(/Court/);
     });
 

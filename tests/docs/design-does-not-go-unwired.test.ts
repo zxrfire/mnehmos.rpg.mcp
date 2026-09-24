@@ -137,7 +137,12 @@ import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-expo
 // `contributionPerStoneOnAnOrdinaryErrand` went with the rule they priced, and
 // the road that replaced them is composed out of names that already existed
 // rather than out of new ones. Both numbers are meant to keep falling.
-const DEAD = 150;
+// 150 -> 106, MEASURED AT 104 ON A TREE OTHER AGENTS WERE LANDING ON, so two rows
+// of slack. Forty-five were deleted as lookups and helpers nothing ever asked
+// (the `require*` and `get*By*` family, schema fragments, test-reset hooks),
+// `terrain-patterns.ts` went whole because nothing imported the module, and
+// `whatHoldingItMeans` was wired: the bench says whose a lent furnace is.
+const DEAD = 106;
 // Raised by one, for the same reason and under the same discipline as `DEAD`
 // above: one name from the same session is pinned by its own test and has no
 // caller in the game yet.

@@ -659,6 +659,13 @@ yours.** A road in your head is your house's property as much as your own, and w
 it is how a road escapes into the world. So the terms of a departure are negotiated over the
 book, not over the person, and the house's reaction is proportional to what leaves with you.
 
+**This section is the decision; the rate is written beside the code.** How loyal somebody is
+(`src/engine/world/how-loyal-somebody-is-to-their-house.ts`) and what makes them walk out
+anyway (`src/engine/world/why-somebody-walks-out-of-a-compound.ts`) hold the other half: that
+leaving is rare and costly, that it is weighed over a whole career rather than a bad year, and
+that it gets steeper the higher somebody already stands. Neither of those decides what a
+departure is worth arguing over, which is what this section is for.
+
 ### The Hollow Court is the exception to all of it
 
 Everything in this section describes leaving as a thing that costs something. **Going to the

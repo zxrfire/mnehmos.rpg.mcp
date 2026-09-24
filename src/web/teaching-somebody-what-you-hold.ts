@@ -670,7 +670,9 @@ export const teachingVerbs = {
         // a disciple and a headcount.
         //
         // Read off the student's own tie row, which is where the world keeps it.
-        const theyAreYours = relationshipWith(student, cultivator.id)?.kind === 'master';
+        // The `master` row specifically: rows are keyed by the pair and the
+        // kind, so a student who is also their teacher's niece holds two.
+        const theyAreYours = relationshipWith(student, cultivator.id, 'master') !== null;
         const bond = whatTeachingYourOwnSettles({
             teacherId: cultivator.id,
             studentId: student.id,

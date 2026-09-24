@@ -126,7 +126,15 @@ const NOT_THE_GLOSSARYS_BUSINESS: Readonly<Record<string, string>> = {
         'the other half of the same branch, standing between two other people, and '
         + 'withheld for the same reason. Both were added because `i stay my hand` and `i '
         + 'stand between them` reached `unclear`; that is a job for the table and not for '
-        + 'the glossary.'
+        + 'the glossary.',
+    'attack/give_in':
+        'the third of that family and the same branch read from the other end: a surrender '
+        + 'said with no fight standing. Withheld for the reason the other two are - `attack` '
+        + 'takes no `intent` from a model, because nobody chooses an ending - and for one '
+        + 'more that is its own. A fight already reads these words before the table is asked '
+        + '(`whatTheySaidInTheFight`), so the only sentences that reach this label are the '
+        + 'ones said with nothing swinging. A model handed it could attach a surrender to a '
+        + 'turn where the engine had already answered one.'
 };
 
 /**

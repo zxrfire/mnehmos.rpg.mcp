@@ -15,6 +15,7 @@ import {
     CUT_IN_A_SITTING,
     DAYS_A_SITTING_TAKES,
     THE_COMMUNICATION_TALISMAN,
+    THE_PAIRED_COMMUNICATION_JADE,
     WHO_CAN_CUT_A_COMMUNICATION_TALISMAN
 } from '../data/cultivation/communication-talismans.js';
 import { howMuchAGradeIsWorthTracking } from '../engine/world/possessions.js';
@@ -1020,13 +1021,16 @@ export function renderCommunicationTalismanSection(): string {
     return `
 <section>
   <div class="sh"><h2>The communication talisman</h2><span class="r">${esc(t.grade)} grade &middot; one catalog row</span></div>
-  <p class="note"><strong>${esc(t.what)}</strong> Every one carries the mark of a house, and word goes only to that house.</p>
+  <p class="note"><strong>${esc(t.what)}</strong> Every one carries the mark of a house and is half of a pair: the half is keyed to whoever carries it, and its twin is kept in the hall where the house's lamps burn.</p>
   <ul class="spendlist">
     <li>How far word goes: <strong>${t.reachWalkingDays}</strong> walking days, which is the near provinces.</li>
-    <li>Who can cut one: ${rung(WHO_CAN_CUT_A_COMMUNICATION_TALISMAN)} and above.</li>
-    <li>A sitting: <strong>${CUT_IN_A_SITTING}</strong> cut in ${DAYS_A_SITTING_TAKES} day${DAYS_A_SITTING_TAKES === 1 ? '' : 's'}, from nothing a recipe names.</li>
+    <li>Where it arrives: at its twin in the house's hall, where a person of the house reads it.</li>
+    <li>Who can burn one: only the person it is keyed to. It breaks with their token and lamp, and when they leave the house.</li>
+    <li>Who can cut one: ${rung(WHO_CAN_CUT_A_COMMUNICATION_TALISMAN)} and above. A house's treasury keeps blanks, cut by Internal Affairs disciples as the house's work, and pairs are cut from them for whoever it sends out.</li>
+    <li>A sitting: <strong>${CUT_IN_A_SITTING}</strong> slips cut in ${DAYS_A_SITTING_TAKES} day${DAYS_A_SITTING_TAKES === 1 ? '' : 's'}, from nothing a recipe names; a pair is two.</li>
     <li>How it is kept: ${esc(kept)}.</li>
   </ul>
+  <p class="note"><strong>The ${esc(THE_PAIRED_COMMUNICATION_JADE.name)}</strong>, ${esc(THE_PAIRED_COMMUNICATION_JADE.grade)} grade. ${esc(THE_PAIRED_COMMUNICATION_JADE.what)} A master gives one half to a disciple they value and keeps the other.</p>
 </section>`;
 }
 

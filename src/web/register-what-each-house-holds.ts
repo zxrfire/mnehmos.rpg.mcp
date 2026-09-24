@@ -47,7 +47,7 @@
  */
 
 import type { SectDossier } from './register.js';
-import { SECTS, getSect, getSectAncestry } from '../data/cultivation/sects.js';
+import { getSect, getSectAncestry } from '../data/cultivation/sects.js';
 import { STRUCTURAL_REPAIR_HOLDINGS, getStructuralRepairMedicine } from '../data/cultivation/structural-repair-medicine.js';
 import { rankName } from '../engine/cultivation/realms.js';
 
@@ -297,11 +297,6 @@ export function buildHoldings(dossiers: readonly SectDossier[]): RegisterHolding
         },
         houses
     };
-}
-
-/** How many bodies the sect catalog holds. Never hardcode this anywhere. */
-export function houseCount(): number {
-    return SECTS.length;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

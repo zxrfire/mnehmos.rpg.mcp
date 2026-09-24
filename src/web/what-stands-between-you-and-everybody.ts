@@ -84,6 +84,7 @@ const HOW_IT_ENDS: Record<Settlement['resolution'], string> = {
     avenged: 'somebody acting on it',
     oath_fulfilled: 'doing the thing that was promised',
     oath_released: 'whoever holds the word letting it go',
+    broken: 'the word not being kept, which is not an ending anybody chooses',
     renounced: 'an arrangement between the two houses, which closes it without '
         + 'putting anything right',
     proven_false: 'somebody proving it was never true'

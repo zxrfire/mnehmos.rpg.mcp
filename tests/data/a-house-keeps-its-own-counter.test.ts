@@ -162,8 +162,11 @@ describe('whose counter a price row sits at', () => {
      * rings the bell, and neither of those has a house's name against it.
      */
     it('takes three rows off the board and no more', () => {
+        // An earth-grade vessel is never on a barrow either, which is a rule about
+        // the grade rather than about whose counter a row sits at.
         const wouldHaveBeen = PRICES.filter(
-            row => row.gives.kind !== 'quoted_only' && row.gives.kind !== 'pill');
+            row => row.gives.kind !== 'quoted_only' && row.gives.kind !== 'pill'
+                && !(row.gives.kind === 'a_vessel' && row.gives.grade !== 'mortal'));
         expect(wouldHaveBeen.length - THE_MORTAL_BOARD.length).toBe(Object.keys(OWNED).length);
         const gone = new Set(THE_MORTAL_BOARD.map(row => row.id));
         expect(wouldHaveBeen.filter(row => !gone.has(row.id)).map(row => row.id).sort())
