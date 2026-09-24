@@ -44,8 +44,26 @@ export const A_SENTENCE_THAT_ONLY_NEGOTIATES =
  * the measured failure was that *"fuck you all"* reached no verb at all and was
  * read as a QUESTION put to everybody standing there.
  */
-export const AN_INSULT =
-    /\b(?:fuck|screw) (?:you|him|her|them|the lot of|off)\b|\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b|\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b|\btell (?:him|her|them|the lot of them) (?:exactly )?what i think\b|\b(?:he|she|they) (?:is|are) a (?:disgrace|fraud|coward|joke)\b/i;
+export const AN_INSULT = new RegExp([
+    // Plain obscenity aimed at somebody. A player who types it means it.
+    String.raw`\b(?:fuck|screw) (?:you|him|her|them|the lot of|off)\b`,
+    // Saying it, in the verbs for saying it.
+    String.raw`\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b`,
+    String.raw`\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b`,
+    String.raw`\btell (?:him|her|them|the lot of them) (?:exactly )?what i think\b`,
+    // ── AND CONTEMPT WITH NO SWEARING IN IT ──────────────────────────────
+    //
+    // The first cut wanted an obscenity or a named verb, so "fuck you all"
+    // was caught and *"you are all worthless trash"* went straight through to
+    // the pressing path and killed the player on the next turn. A curse does
+    // not need a curse word.
+    //
+    // WHAT MAKES IT SAFE is the veto's other half: this fires only where no
+    // hand is raised in the same sentence, so "I strike the worthless dog"
+    // is untouched. The pattern is what somebody SAYS people are.
+    String.raw`\b(?:you|he|she|they|the lot of you|all of you)\s+(?:are|is|'re|'s)\s+(?:all\s+)?(?:a\s+|an\s+)?(?:worthless|pathetic|useless|contemptible|beneath|nothing|trash|scum|filth|rubbish|vermin|cowards?|dogs?|worms?|fools?|wretches?|disgraces?|frauds?|jokes?)\b`,
+    String.raw`\b(?:worthless|pathetic|useless|contemptible)\s+(?:trash|scum|filth|rubbish|vermin|dogs?|worms?|fools?|wretches?|cowards?)\b`
+].join('|'), 'i');
 
 /**
  * Anything that would put hands on somebody, in the plainest words.
@@ -54,7 +72,7 @@ export const AN_INSULT =
  * contain one of these has nobody being hit in it, whatever a model made of it.
  */
 export const A_HAND_RAISED =
-    /\b(?:attack|attacks|attacking|attacked|strike|strikes|striking|struck|hit|hits|hitting|punch|punches|punching|punched|kick|kicks|kicking|kicked|stab|stabs|stabbing|stabbed|cut|cuts|cutting|slash|slashes|kill|kills|killing|killed|draw|draws|drawing|drew|swing|swings|swinging|swung|lunge|lunges|charge|charges|charging|charged|grab|grabs|grabbing|grabbed|seize|seizes|seizing|seized|throttle|throttles|strangle|strangles|beat|beats|beating|fight|fights|fighting|fought|sword|blade|fist|fists)\b/i;
+    /\b(?:attack|attacks|attacking|attacked|strike|strikes|striking|struck|hit|hits|hitting|punch|punches|punching|punched|kick|kicks|kicking|kicked|stab|stabs|stabbing|stabbed|cut|cuts|cutting|slash|slashes|kill|kills|killing|killed|draw|draws|drawing|drew|swing|swings|swinging|swung|lunge|lunges|charge|charges|charging|charged|grab|grabs|grabbing|grabbed|seize|seizes|seizing|seized|throttle|throttles|strangle|strangles|beat|beats|beating|fight|fights|fighting|fought|sword|blade|fist|fists|make|makes|making|made|force|forces|forcing|forced|drag|drags|dragging|dragged|pin|pins|pinning|pinned|shove|shoves|shoving|shoved|push|pushes|pushing|pushed|throw|throws|throwing|threw)\b/i;
 
 /**
  * A bow, a kneel or cupped hands aimed at somebody.
