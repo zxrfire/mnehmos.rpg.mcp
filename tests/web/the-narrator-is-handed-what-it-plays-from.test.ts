@@ -263,6 +263,20 @@ describe('whoever raised the player is played as the one who did, on the last li
             .not.toContain('A life turns on this turn');
     });
 
+    /**
+     * The owner: cultivation is "something somebody spams, until they get interrupted by
+     * something". A sitting and nothing else is asked for short; any other act is not.
+     */
+    it('asks for a sitting to be short, and nothing else', () => {
+        const composed = (acts: string[]) => composeNarrationUser(facts,
+            { ...scene('He Xuxue is from home. Knowing them is not the same as being owed anything by them.'), realmOrdinal: 0 } as never,
+            { acts });
+        expect(lastLine(composed(['cultivate']))).toContain('A SITTING IS THE ACT A PLAYER REPEATS');
+        expect(composed(['cultivate'])).toContain('short on a sitting');
+        expect(lastLine(composed(['move', 'cultivate']))).not.toContain('A SITTING IS THE ACT A PLAYER REPEATS');
+        expect(composed(['interact'])).toContain('take the room');
+    });
+
     it('says it of a sibling too, and of nobody merely from home', () => {
         expect(lastLine(composeNarrationUser(facts, scene('He Xuxue is family, and grew up under the same roof as you.'))))
             .toContain('He Xuxue grew up under the same roof as you.');

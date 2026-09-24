@@ -63,7 +63,7 @@ person in it voiced as somebody, the engine deciding what happens to all of them
 in text format", "30-50% talking, and then fighting, cultivating", "and between dialogues you
 move around". Talking to one person is a one-to-one scene, and a face has no name until they
 give it. Judge a change by how the conversations read. The whole of it is in
-[`docs/world/writing/a-turn-is-a-conversation.md`](docs/world/writing/a-turn-is-a-conversation.md).
+[`docs/world/writing/the-shape-of-play.md`](docs/world/writing/the-shape-of-play.md).
 
 Forked from a D&D 5e MCP engine. The substrate (dice, SQLite, action-routed tools,
 worldgen, NPC runtime) is retained; the entire game-facing surface is

@@ -1,11 +1,11 @@
 <!-- tier: 3 -->
 
-# A turn is a conversation
+# The shape of play
 
-The shape of the game: what a turn is, and who is on the page for it. Settled by the owner on
+What the game is, what a turn is, and who is on the page for it. Settled by the owner on
 2026-09-24, while watching the narrator play on a local model. The narrator's rules that carry
-this are in `src/web/prompt.ts` (`whoStaysOnThePage`, `theTurnToWrite`) and
-`src/web/the-narrator-plays-the-world.ts` (HOW TO PLAY A TURN, `aPersonsCard`).
+this are in `src/web/prompt.ts` (`whoStaysOnThePage`, `theTurnToWrite`, `A_SITTING_IS_SHORT`)
+and `src/web/the-narrator-plays-the-world.ts` (HOW TO PLAY A TURN, `aPersonsCard`).
 
 ## What the game is
 
@@ -19,6 +19,14 @@ this are in `src/web/prompt.ts` (`whoStaysOnThePage`, `theTurnToWrite`) and
 A third to a half of play is the player talking to somebody. The rest is events: fighting,
 cultivating, crossings, and moving from one conversation to the next. The prose is built for the
 conversations first, and a change is judged by how they read.
+
+> a turn is not ONLY conversation. it's also cultivation. but cultivation i'd say is pretty
+> boring (which is fine, imagine it as something somebody spams) until they get interrupted by
+> something. which is how it works today
+
+A sitting is the act a player repeats. With nothing to break it, it is a few short lines: the
+days going by, one detail of the place, what changed or did not. The engine interrupting it
+(provisions gone, somebody coming over, the world arriving) is the turn, and gets the room.
 
 > also make it so more places have just 1 person, this makes the game simplier i think
 

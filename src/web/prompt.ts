@@ -1043,12 +1043,13 @@ export function composeNarrationUser(
         'the prose moves on to what they do. Where a ruling says somebody refused, it is closed, and',
         'they turn to something else.',
         '',
-        ...theRegisterBlock(scene.realmOrdinal),
+        ...theRegisterBlock(scene.realmOrdinal, aSittingAndNothingElse(told.acts)),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
             whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true,
             aLifeTurnsOnThisTurn(scene),
             whoStaysOnThePage(facts, scene, addressing, told.acts) !== null,
-            somebodyIsNewHere(scene, addressing, told.alreadyShown, whoStaysOnThePage(facts, scene, addressing, told.acts)))
+            somebodyIsNewHere(scene, addressing, told.alreadyShown, whoStaysOnThePage(facts, scene, addressing, told.acts)),
+            aSittingAndNothingElse(told.acts))
     ].join('\n');
 }
 
@@ -1184,6 +1185,26 @@ function somebodyIsNewHere(
     return onThePage.some(person => !(alreadyShown ?? new Set()).has(person.name));
 }
 
+/**
+ * A SITTING IS THE ACT A PLAYER REPEATS. The owner: "cultivation i'd say is pretty boring (which is
+ * fine, imagine it as something somebody spams) until they get interrupted by something". Played, a
+ * month's sitting with nothing in it ran 335 and 363 words, among the longest turns of a life. With
+ * this and the register's "take the room" swapped for "short", two replays came back at 198 and 191
+ * words with the engine's lines included, and one the provisions cut short at 246 and 275.
+ */
+const A_SITTING: ReadonlySet<string> = new Set(['cultivate', 'seclude', 'wait']);
+
+const A_SITTING_IS_SHORT =
+    'A SITTING IS THE ACT A PLAYER REPEATS, SO IT IS SHORT: with nothing in the rulings to break it, the '
+    + 'whole turn is three or four short paragraphs and under a hundred and fifty words - the days going by, '
+    + 'one detail of the place, what changed or did not, and anybody here only as a line. When the rulings '
+    + 'bring something that interrupts it, that is the turn, and it gets the room.';
+
+/** Whether the turn was planned as sitting and nothing else. */
+function aSittingAndNothingElse(acts: readonly string[] | undefined): boolean {
+    return (acts ?? []).length > 0 && (acts ?? []).every(act => A_SITTING.has(act));
+}
+
 /** Acts that are the player talking: to one person, or to the room. */
 export const A_CONVERSATION: ReadonlySet<string> = new Set([
     'interact', 'tell', 'request', 'insult', 'propose', 'decline', 'petition', 'challenge'
@@ -1260,7 +1281,8 @@ function theTurnToWrite(
     noTimePassed = false,
     aLifeTurns = false,
     oneToOne = false,
-    firstSeen = false
+    firstSeen = false,
+    aSitting = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1328,6 +1350,7 @@ function theTurnToWrite(
         + 'turns back to the road. Whoever has no part in this '
         + 'moment is left out. Never end '
         + 'on a list of what the player could do.'
+        + (aSitting ? ` ${A_SITTING_IS_SHORT}` : '')
         + (aLifeTurns
             ? ' A life turns on this turn, so the feeling goes all the way - grief ugly, triumph loud, '
                 + 'and the heavens unmoved.'
@@ -1397,12 +1420,14 @@ function heldByTheWorldBlock(held: readonly string[] | undefined): string[] {
 }
 
 /** Which register band this turn is in. The band name only: the rung is never sent. */
-function theRegisterBlock(realmOrdinal: number | undefined): string[] {
+function theRegisterBlock(realmOrdinal: number | undefined, aSitting = false): string[] {
     if (realmOrdinal === undefined) return [];
     return [
         `THE REGISTER FOR THIS TURN: ${theRegisterAtThisHeight(realmOrdinal)}. That is the heading of a`,
         'section above; write in the register it describes. Do not state the rung.',
-        'THE PARAGRAPH IS THE PART THAT MOVES, and at the bottom it is the expansive one: take the room.',
+        aSitting
+            ? 'THE PARAGRAPH IS THE PART THAT MOVES: short on a sitting.'
+            : 'THE PARAGRAPH IS THE PART THAT MOVES, and at the bottom it is the expansive one: take the room.',
         'THE SENTENCE DOES NOT CHANGE AND MUST NOT: short and plain, a person or a thing as its subject.',
         ''
     ];
