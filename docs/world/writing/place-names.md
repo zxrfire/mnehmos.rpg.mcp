@@ -338,9 +338,32 @@ The short version:
 - **A place row has no id and no back-link.** `connections[].otherPlaceName` is a raw
   string pointing at another place's `name`, declared on one end only and typed as
   `z.string().min(1)`, so a missed one passes the schema and silently unprices a road.
-- **Some house names are derived from place names** - Burnt Earth Temple, The Six Li
-  Wardens, Silver Island Market, Sand Well Caravan, Nine Peaks Ascetic Order. Renaming
-  the ground renames the house, and `sects.ts` usually belongs to somebody else that week.
+- **A house named after its ground is a COLLISION, and the owner has ruled it a bug** -
+  *"this is a bug as per agents.md naming collision"*. Found by playing: a new disciple of
+  the Sand Well Caravan typed `I go to Sand Well`, the natural short form of their own
+  house, and the game walked them four days to the well. Swept across all 38 houses, five
+  had it, every one the same shape - the house name is a place name plus a type noun:
+
+  | house | ground it collided with |
+  |---|---|
+  | ~~Sand Well Caravan~~ **Waterman Caravan** | Sand Well (wilds) - **done** |
+  | Burnt Earth Temple | Burnt Earth (settlement) |
+  | Nine Peaks Ascetic Order | Nine Peaks (settlement) |
+  | Silver Island Market | Silver Island (settlement) |
+  | Six Li Patrol | Six Li (settlement) |
+
+  **Rename the HOUSE, not the ground.** Measured: the five place names carry 33 to 151
+  references each and the houses 9 to 30, so the house is three to ten times the cheaper
+  side and every line of place prose survives.
+
+  **And the new name must still END in a type noun.** `tests/data/the-nouns-a-house-ends-with.test.ts`
+  holds the parser's list of the words a house name ends with against the catalog, so
+  moving the noun - *the Caravan of Sand Well* - makes the house unparseable. Change the
+  words in FRONT of it. Take them from the house's own vocabulary rather than inventing:
+  the Caravan's head is a Waterman.
+
+  **No apostrophes.** *Waterman's Caravan* broke a single-quoted literal in a region file
+  on the first pass.
 - **Never bulk-rename by script.** Several agents work this tree at once and a half-applied
   sweep is worse than an ugly name. Small batches, one province at a time.
 

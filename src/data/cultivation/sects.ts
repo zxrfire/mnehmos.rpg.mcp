@@ -1766,7 +1766,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'corpse-lantern-soul-forging',
         specialities: ['forbidden', 'defense'],
-        // Sand Well Caravan are the third, and it is a quarrel about the same
+        // Waterman Caravan are the third, and it is a quarrel about the same
         // bodies from two directions: the sand keeps a corpse and gives it
         // back a decade later with its possessions on it, so a carrier who
         // does not make the return leg is Cult stock, and the Caravan count
@@ -2115,7 +2115,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     //                       power in the world is worse off the day it falls,
     //                       including the power that would take it.
     //
-    //   Sand Well Caravan   are unowned because nothing on the Burial Sands
+    //   Waterman Caravan   are unowned because nothing on the Burial Sands
     //                       outlives the instrument that would hold it. A
     //                       grant runs twelve years and a surfacing is gone
     //                       inside nine, so there is nothing there that can
@@ -2193,7 +2193,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
 
     {
         id: 'sect-sand-well-caravan',
-        name: 'Sand Well Caravan',
+        name: 'Waterman Caravan',
         alignment: 'neutral',
         powerOrdinal: 19,
         ranks: ['Skin', 'Carrier', 'String Head', 'Route Elder', 'Grand Route Elder', 'Waterman'],

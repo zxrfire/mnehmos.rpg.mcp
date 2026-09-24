@@ -268,7 +268,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `FOUNDERS`, `HALFWATER_TERMS`, `SEA_CARGO`, `SEA_TRADERS`
 
-### Sand Well Caravan
+### Waterman Caravan
 
 `sect-sand-well-caravan` · its entry: [`sects.ts:2195`](../../src/data/cultivation/sects.ts)
 

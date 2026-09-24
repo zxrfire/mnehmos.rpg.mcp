@@ -270,7 +270,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'It is not here. It is the reason a proportion of the people here cannot leave, which is a different kind of presence and is the one that shapes the population.'
         },
         {
-            who: 'Sand Well Caravan',
+            who: 'Waterman Caravan',
             factionId: 'sect-sand-well-caravan',
             holds: 'nothing',
             doesHere:

@@ -3070,7 +3070,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Sand Well Caravan ----------------------------------------------------
+    // --- Waterman Caravan ----------------------------------------------------
     //
     // Silent Cliffs naming throughout - tool-names and face-numbers, no clan names -
     // and at the shed the tool is a water skin, so the roll reads like a kit

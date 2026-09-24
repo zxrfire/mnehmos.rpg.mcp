@@ -178,7 +178,7 @@ export const UnbackedReasonSchema = z.enum([
     'arrangement_that_is_not_patronage',
     'not_worth_the_trouble_yet',
     /**
-     * Added for Sand Well Caravan, and the existing six could not carry it.
+     * Added for Waterman Caravan, and the existing six could not carry it.
      *
      * Every other reason here is about the BODY - too poor, too far, too
      * useful, holding something nobody wants to disturb. This one is about

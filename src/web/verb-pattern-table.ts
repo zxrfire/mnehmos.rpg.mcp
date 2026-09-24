@@ -3360,7 +3360,7 @@ export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
  *
  * A determiner is required, and it is the whole of what keeps this narrow. "I
  * wait for a while" and "I wait for him" carry no determiner and stay the
- * one-day wait they have always been; `the intake` and `the Sand Well Caravan
+ * one-day wait they have always been; `the intake` and `the Waterman Caravan
  * intake` are references to something the world has a date for, and the handler
  * is the only layer that can tell which.
  *

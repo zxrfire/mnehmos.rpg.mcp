@@ -520,11 +520,11 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         );
         // AND WHERE THAT GROUND IS, WHICH THE LINE ABOVE MAKES THE PLAYER NEED.
         //
-        // Found by playing: a new Skin of the Sand Well Caravan was told they
+        // Found by playing: a new Skin of the Waterman Caravan was told they
         // were on the roll, and nothing told them where the Caravan was. They
         // walked four days to Sand Well, which is a well, and met nobody of
         // their own house. Naming the house is the sentence that takes them
-        // there - `I go to the Sand Well Caravan` - and it lands them at its
+        // there - `I go to the Waterman Caravan` - and it lands them at its
         // gate; what was missing was anybody saying so.
         //
         // `territory` is already on the body, from `sectCatalogFacts`. Nothing
