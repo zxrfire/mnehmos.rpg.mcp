@@ -498,7 +498,11 @@ function whatThePaperSays(
     switch (ask.kind) {
         case 'missing':
             return `${house.name} is asking after ${ask.who}, of their own, not seen for `
-                + `${ask.unseenForDays} days. The lamp lit for them still burns.`;
+                + `${ask.unseenForDays} days. `
+                + (ask.wants === 'them'
+                    ? 'The lamp lit for them still burns.'
+                    : 'The lamp lit for them has gone out, and the house wants '
+                        + 'what is left of them brought back.');
         case 'work':
             return `${house.name} is paying for hands and is not asking whose disciple you are. `
                 + `${ask.what} About ${ask.days} days, and it wants ${ask.hands} of them.`;
