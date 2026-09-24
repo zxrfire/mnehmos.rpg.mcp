@@ -40,6 +40,7 @@ import {
     THE_STORYTELLER,
     THE_WORLD_THEY_TAKE_FOR_GRANTED,
     WORKED_TURNS,
+    howTheyReadToYou,
     thePeopleHere,
     whoThePlayerNamed
 } from './the-narrator-plays-the-world.js';
@@ -1003,7 +1004,7 @@ export function composeNarrationUser(
         'somebody refused, it is closed - no question left in their mouth inviting another try.',
         '',
         ...theRegisterBlock(scene.realmOrdinal),
-        theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived)
+        theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing))
     ].join('\n');
 }
 
@@ -1029,12 +1030,32 @@ function theTurnBefore(previous: { said: string | null; shown: string } | null):
 }
 
 /** The last thing the model reads: which of the three kinds of turn this is. */
+/**
+ * Where the person spoken to stands against the player, when it is a realm or more either way.
+ *
+ * Their card already says so, in its first line. Played at Core Formation: told to kneel, a
+ * man two realms down answered "without a hint of hesitation" with a rant about his father,
+ * because the ruling said he answered at length and the card was forty lines up. The gap is
+ * what his answer is said THROUGH, so it rides on the last instruction too.
+ */
+function howTheAddressedStand(
+    scene: { company?: Company | null; realmOrdinal?: number },
+    addressing: string | null
+): string | null {
+    if (!addressing) return null;
+    const person = scene.company?.named.find(somebody => somebody.name === addressing);
+    if (!person) return null;
+    const reads = howTheyReadToYou(person.ordinal, scene.realmOrdinal ?? 0);
+    return reads.startsWith('far ') || reads.startsWith('so far ') ? reads : null;
+}
+
 function theTurnToWrite(
     scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null },
     addressing: string | null,
     alone: boolean,
     somebodyToPlay: boolean,
-    arrived: boolean
+    arrived: boolean,
+    addressedStands: string | null = null
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1047,7 +1068,11 @@ function theTurnToWrite(
         ? 'Write the opening: the years first, then the place they are standing in now, and the people '
             + 'in it doing what their cards say.'
         : addressing
-            ? `${setting} Then play ${addressing}: their answer, in their voice. Anybody else here may react too.`
+            ? `${setting} Then play ${addressing}: their answer, in their voice.`
+                + (addressedStands
+                    ? ` They stand ${addressedStands}: whatever the rulings have them say, they say it that way.`
+                    : '')
+                + ' Anybody else here may react too.'
             : alone
                 ? `${setting} Then the player's act and what it does. Nobody is here to answer.`
                 : somebodyToPlay

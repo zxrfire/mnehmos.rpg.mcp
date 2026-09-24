@@ -180,6 +180,22 @@ describe('the narration prompt carries it', () => {
         expect(narrationSystemPrompt().toLowerCase()).toContain("an absence is the engine's to state");
     });
 
+    /**
+     * The gap between the player and the person spoken to rides on the last instruction too.
+     * Played: told to kneel, a man two realms down answered "without a hint of hesitation".
+     */
+    it('ends on how the person spoken to stands, when it is a realm or more', () => {
+        const square = aSquareWith(['Wei Ciyi'], 0);
+        const far = composeNarrationUser(
+            FACTS as never, { ...SCENE, company: square, addressing: 'Wei Ciyi', realmOrdinal: 28 }
+        );
+        expect(far.slice(far.lastIndexOf('NOW WRITE THE TURN'))).toMatch(/They stand far below you/);
+        const level = composeNarrationUser(
+            FACTS as never, { ...SCENE, company: square, addressing: 'Wei Ciyi', realmOrdinal: 3 }
+        );
+        expect(level.slice(level.lastIndexOf('NOW WRITE THE TURN'))).not.toMatch(/They stand/);
+    });
+
     /** Opt-in, the way `filed` and `hearing` are: no roster is not an empty room. */
     it('says nothing about the room when the caller did not pass one', () => {
         const prompt = composeNarrationUser(FACTS as never, { ...SCENE });
