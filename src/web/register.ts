@@ -151,6 +151,9 @@ import {
     whoHoldsDeepRoad,
     type DeepRoadHolding
 } from '../data/cultivation/roads-to-the-top-of-the-ladder.js';
+// The bar on the protector's chair, which is a fact about the house and so can
+// be said here. Who is in it is a fact about a world on a day.
+import { theChairIsHeldForAFalseImmortal } from '../engine/world/who-stands-over-a-house.js';
 
 /**
  * The band this page is about: where the register starts naming people.
@@ -943,6 +946,15 @@ export interface SectDossier {
      * The ladder this house ranks its own people on, bottom to top.
      */
     titles: string[];
+    /**
+     * Whether it holds the protector's chair for a False Immortal.
+     *
+     * The office itself is on every house - see `who-stands-over-a-house.ts`,
+     * and `offices-and-succession.md` for what it is. What the register can say
+     * is the BAR, which is a fact about the house; who is in the chair is a
+     * fact about the world on a given day and belongs to the read that has one.
+     */
+    reservesTheChair: boolean;
     /** What the catalog says it is for: attack, defence, movement, support. */
     specialities: string[];
     /** What it will teach, resolved. Null on a house with no teach list. */
@@ -2770,6 +2782,21 @@ function decisiveLine(d: SectDossier): string | null {
 }
 
 /**
+ * What this house asks of whoever would stand over it.
+ *
+ * The office is on every house and the register is where an elder would read
+ * it. Only the BAR is said: who is in the chair is a fact about a world on a
+ * given day, and this page is built from the catalog. The design is
+ * `offices-and-succession.md`, "The Protector", and none of it is repeated.
+ */
+function protectorLine(d: SectDossier): string | null {
+    if (!d.reservesTheChair) return null;
+    return 'it holds its protector\'s chair for a False Immortal and for nobody else, so the '
+        + 'chair is open rather than abolished - and the strong people it will not give it to '
+        + 'are standing in the same province.';
+}
+
+/**
  * Three or four sentences that leave a reader able to place a faction.
  */
 function buildSynopsis(d: SectDossier): string[] {
@@ -2778,6 +2805,7 @@ function buildSynopsis(d: SectDossier): string[] {
         curriculumLine(d),
         forceLine(d),
         answeringLine(d),
+        protectorLine(d),
         decisiveLine(d)
     ]
         .filter((s): s is string => s !== null && s.trim().length > 0)
@@ -3270,6 +3298,7 @@ function buildDossiers(
             territory: sect?.territory ?? '',
             description: sect?.description ?? '',
             titles: [...(sect?.ranks ?? [])],
+            reservesTheChair: theChairIsHeldForAFalseImmortal(row.id),
             specialities: [...(sect?.specialities ?? [])].map(String),
             curriculum: buildCurriculum(row.id, techniquesById),
             deepRoad: buildDeepRoad(row.id),
@@ -3429,6 +3458,9 @@ function buildDossiers(
             // covering five provinces and six rungs covering one mountain are
             // the same column, and the difference between them is the reading.
             titles: a.ranks.map(r => r.title),
+            // An apex reserves the chair, and `who-stands-over-a-house.ts` is
+            // where that is decided rather than here.
+            reservesTheChair: true,
             specialities: [],
             curriculum: a.factionId ? buildCurriculum(a.factionId, techniquesById) : null,
             // Read on the apex id as well as the faction id, because the two
