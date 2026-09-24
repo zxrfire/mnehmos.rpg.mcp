@@ -1180,8 +1180,24 @@ export const combatVerbs = {
         // asked for runs against the run as it now stands.
         const asked = await andThen();
 
-        asked.facts.lines.unshift(...round.facts.lines);
-        asked.facts.required = [...(round.facts.required ?? []), ...(asked.facts.required ?? [])];
+        // ── THE BLOW ARRIVES WITH WHAT IT BELONGS TO ─────────────────────
+        //
+        // Reported from a played run: mid-fight "I look around" put a bare
+        // "Lu Nuoming lands 7 on you." at the top of a list of things the
+        // player could see, and the narrator wrote him as "not moved from
+        // where he stands" - because nothing on the line said a fight was
+        // happening, or that this was what looking around had cost.
+        //
+        // A number with no sentence round it is the same defect as a name with
+        // no noun on it: the narrator furnishes the missing half, and it
+        // furnishes a different one each turn.
+        const whileYouDid = 'The fight is still open, and the round landed while you did that.';
+        asked.facts.lines.unshift(whileYouDid, ...round.facts.lines);
+        asked.facts.required = [
+            whileYouDid,
+            ...(round.facts.required ?? []),
+            ...(asked.facts.required ?? [])
+        ];
         asked.facts.prose = [round.facts.prose, asked.facts.prose].join('\n\n');
         asked.facts.structure.unshift(
             'A fight was standing and the sentence was not an answer to it, so the round landed '
