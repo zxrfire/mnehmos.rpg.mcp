@@ -73,6 +73,10 @@ import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { FactionRecord } from './world-state.js';
 import type { WorldState } from './world-state.js';
 import { rankRealmBand } from '../../data/cultivation/members.js';
+import {
+    howLoyalTheyAre,
+    whatLoyaltyIsWorthHere
+} from './how-loyal-somebody-is-to-their-house.js';
 import { whatItCanPutOnTheGround } from './seeding.js';
 import { meritWith } from './what-a-house-counts-in-somebodys-favour.js';
 import { requiredContributionForRank } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
@@ -80,6 +84,7 @@ import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
 import { elderRungOf, isElderRank } from '../cultivation/leadership.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { roomAuthorityOf } from './architecture.js';
+import { howManyPeopleAHouseHas } from './how-many-people-a-house-has.js';
 
 /**
  * How many people a house will seat at each rank.
@@ -89,12 +94,38 @@ import { roomAuthorityOf } from './architecture.js';
  *
  * The bottom rank is uncapped. A house can always take another sweeper, and the
  * limit on its intake is what it can feed rather than how many stools it has.
+ *
+ * ── WHICH COUNT A RUNG IS SEATED AGAINST, WHICH IS TWO DIFFERENT RUNGS ───
+ *
+ * `a-house-and-who-is-in-it.md`: the bands are SAMPLED and the top is COMPLETE.
+ * So the two halves of a ladder are not seated against the same number, and the
+ * design owner ruled the distinction after it was measured both ways:
+ *
+ *   sampled rungs   outer, inner, core - the rungs the roll only samples. Their
+ *                   seats come off the ROLL, because a slice of fifteen drawn
+ *                   from a house of four hundred has to be seated against the
+ *                   slice or nothing binds it. Measured with these reading the
+ *                   real size instead (three seeds, 500 years): people on rung 0
+ *                   fell 469 to 176 while rung 5 rose 105 to 452, and the wait
+ *                   before promotion fell from 25 years to 4. The pyramid turned
+ *                   over, because only realm and merit were left holding it.
+ *   the elder band  and above - the rungs the roll holds COMPLETELY. These read
+ *                   the house's real size (`how-many-people-a-house-has.ts`),
+ *                   which is what a house of hundreds carrying nine elders
+ *                   actually looks like, and in practice they are bound by the
+ *                   house's offices anyway (`assessPromotions`).
+ *
+ * And the two chairs that are one person stay one person: the head, and the
+ * grand elder where a house has one - `rosterByRung` says the same thing about
+ * the same two rungs, and a narrowing that produced six grand elders was this
+ * function disagreeing with it.
  */
 export function seatsAtRank(
     rankIndex: number,
     rankCount: number,
     members: number,
-    abundance = 0
+    abundance = 0,
+    peopleTheHouseHas = members
 ): number {
     if (rankIndex <= 0) return Number.MAX_SAFE_INTEGER;
     // THE TOP SEAT IS ONE SEAT, and a seat that is held has no room in it - so
@@ -108,6 +139,11 @@ export function seatsAtRank(
     // filled. Heads survived only in houses a splinter had just founded.
     if (rankIndex >= rankCount - 1) return rankIndex === rankCount - 1 ? 1 : 0;
     if (rankIndex >= rankCount) return 0;
+    // THE GRAND ELDER IS ONE SPOT. `offices-and-succession.md`: first among
+    // equals of the elders, one spot only, and it is where a head retires to.
+    // `rosterByRung` has always seated it as one chair; the narrowing below
+    // seated it as a share, which at the real size came out at six.
+    if (rankIndex === rankCount - 2 && rankIndex > elderRungOf(rankCount)) return 1;
     // WHERE RESOURCES ARE NOT SCARCE, NEITHER IS PROMOTION.
     //
     // The pyramid is made of seats, and seats are scarce because the things
@@ -131,7 +167,10 @@ export function seatsAtRank(
     // room for them. The outer ranks have to stay the widest part of a house or
     // nothing is being selected for.
     const narrowing = Math.pow(2, (rankIndex + 1) * (1 - abundance));
-    const share = members / narrowing;
+    // The elder band is complete in the roll, so it is seated against the whole
+    // house; every rung under it is a sample and is seated against the sample.
+    const against = isElderRank(rankIndex, rankCount) ? peopleTheHouseHas : members;
+    const share = against / narrowing;
     return Math.max(1, Math.floor(share));
 }
 
@@ -209,6 +248,52 @@ function barFor(
         ?? ordinalExpectedAt(rankIndex, rankCount, admissionOrdinal, powerOrdinal);
 }
 
+/**
+ * How far past a rung's bar somebody from OUTSIDE must stand to be seated on it.
+ *
+ * Ruled by the design owner: *"the bar for hiring an external elder is higher
+ * than an internal promotion."* An insider is promoted at the bar (`barFor`)
+ * with the rung's merit behind them (`meritNeededFor`). Somebody taken in above
+ * the bottom rung has served this house not at all, so the height has to stand
+ * in for the service: a realm's width of ordinals past the same bar. The whole
+ * of the proof of worth beyond that is how badly the house wants them, which
+ * is the council's reading in `entry-offer.ts` and not a second figure here.
+ *
+ * Every rung above the bottom, not only the elder rungs: nobody enters above
+ * where a stranger starts without clearing it.
+ */
+export const AN_OUTSIDER_STANDS_PAST_THE_BAR_BY = 4;
+
+/** The ordinal somebody from outside must stand at to be seated at this rung. 0 at the bottom. */
+export function whatAnOutsiderMustStandAt(
+    factionId: string,
+    rankIndex: number,
+    rankCount: number,
+    admissionOrdinal: number,
+    powerOrdinal: number
+): number {
+    if (rankIndex <= 0) return 0;
+    return barFor(factionId, rankIndex, rankCount, admissionOrdinal, powerOrdinal)
+        + AN_OUTSIDER_STANDS_PAST_THE_BAR_BY;
+}
+
+/** The highest rung somebody from outside at this ordinal clears, never above `atMost`. */
+export function theHighestRungAnOutsiderClears(
+    factionId: string,
+    ordinal: number,
+    atMost: number,
+    rankCount: number,
+    admissionOrdinal: number,
+    powerOrdinal: number
+): number {
+    for (let rank = Math.min(atMost, rankCount - 1); rank > 0; rank--) {
+        if (ordinal >= whatAnOutsiderMustStandAt(factionId, rank, rankCount, admissionOrdinal, powerOrdinal)) {
+            return rank;
+        }
+    }
+    return 0;
+}
+
 export interface Promotion {
     npcId: string;
     factionId: string;
@@ -219,7 +304,7 @@ export interface Promotion {
      * house's count of their service, or only the rung. `uncontested` when
      * nobody who qualified was left behind.
      */
-    decidedBy: 'realm' | 'merit' | 'ordinal' | 'uncontested';
+    decidedBy: 'realm' | 'merit' | 'loyalty' | 'ordinal' | 'uncontested';
     /** True for an elder seated past the house's offices. */
     withoutAnOffice: boolean;
 }
@@ -289,6 +374,18 @@ export function assessPromotions(state: WorldState): {
 
     for (const { house, members, atRank } of viewOf(state).values()) {
         const rankCount = house.ranks.length;
+        // The roll, once, for the loyalty read: who somebody serves beside is
+        // what their ties to the house are read against.
+        const roll = {
+            memberIds: new Set(members.map(m => m.id)),
+            // And who gave this house their word and did not keep it, which is
+            // a ceiling on how loyal anybody reads to it. The world's ledger:
+            // `the-word-an-npc-gave.ts`.
+            brokeTheirWordToIt: new Set((state.obligations ?? [])
+                .filter(o => o.kind === 'oath' && o.subjectId === house.id
+                    && o.settlement?.resolution === 'broken')
+                .map(o => o.holderId))
+        };
         const admission = Number(house.resources.admission_ordinal ?? 0);
         const power = Number(house.resources.power_ordinal ?? admission);
 
@@ -296,8 +393,11 @@ export function assessPromotions(state: WorldState): {
         // somebody up is available to the person below them in the same pass.
         // A house does not wait a year between filling two links of one chain.
         const abundance = abundanceOf(house);
+        // BOTH COUNTS, and `seatsAtRank` decides which rung reads which: the
+        // sampled rungs against the roll, the elder band against the house.
+        const peopleItHas = howManyPeopleAHouseHas(state, house.id);
         for (let rank = rankCount - 1; rank >= 1; rank--) {
-            const seats = seatsAtRank(rank, rankCount, members.length, abundance);
+            const seats = seatsAtRank(rank, rankCount, members.length, abundance, peopleItHas);
             const bar = barFor(house.id, rank, rankCount, admission, power);
 
             const tall = members
@@ -320,7 +420,7 @@ export function assessPromotions(state: WorldState): {
             }
             const candidates = tall
                 .filter(m => meritWith(m, house.id) >= needed)
-                .sort((a, b) => byStanding(a, b, house.id, needed));
+                .sort((a, b) => byStanding(a, b, house.id, needed, roll));
             if (candidates.length === 0) continue;
 
             // ── THE ELDER BAND SEATS AS MANY WITH AN OFFICE AS THERE ARE OFFICES ──
@@ -349,7 +449,7 @@ export function assessPromotions(state: WorldState): {
                     promotions.push({
                         npcId: npc.id, factionId: house.id,
                         fromRank: rank - 1, toRank: rank,
-                        decidedBy: whatDecidedIt(npc, firstLeft, house.id, needed),
+                        decidedBy: whatDecidedIt(npc, firstLeft, house.id, needed, roll),
                         withoutAnOffice: false
                     });
                     atRank[rank]++;
@@ -439,10 +539,34 @@ function standingMerit(npc: NpcRecord, houseId: string, needed: number): number 
     return meritWith(npc, houseId) + (npc.tags.includes('chosen') ? Math.max(1, needed) : 0);
 }
 
-/** Realm first, a whole realm wins; then merit; then the rung; then the id. */
-function byStanding(a: NpcRecord, b: NpcRecord, houseId: string, needed: number): number {
+/**
+ * And what the house makes of them, which is the third thing it weighs and the
+ * weakest: loyalty, worth half of what being chosen is, read off who they are
+ * and how they stand with the people they serve beside. Never a gate - the two
+ * gates are above, and a whole realm still wins over all of it. See
+ * `how-loyal-somebody-is-to-their-house.ts`.
+ */
+function loyaltyMerit(npc: NpcRecord, house: HouseAndItsPeople, needed: number): number {
+    return whatLoyaltyIsWorthHere(howLoyalTheyAre(npc, {
+        membersOfTheHouse: house.memberIds,
+        brokeTheirWord: house.brokeTheirWordToIt?.has(npc.id) ?? false
+    }), needed);
+}
+
+/** A house's roll as the loyalty read wants it: the ids, once. */
+export interface HouseAndItsPeople {
+    memberIds: ReadonlySet<string>;
+    /** Who broke an oath sworn to this house. Absent where nobody has. */
+    brokeTheirWordToIt?: ReadonlySet<string>;
+}
+
+/** Realm first, a whole realm wins; then merit; then loyalty; then the rung; then the id. */
+export function byStanding(
+    a: NpcRecord, b: NpcRecord, houseId: string, needed: number, house: HouseAndItsPeople
+): number {
     return realmIndex(b.cultivation.realmOrdinal) - realmIndex(a.cultivation.realmOrdinal)
         || standingMerit(b, houseId, needed) - standingMerit(a, houseId, needed)
+        || loyaltyMerit(b, house, needed) - loyaltyMerit(a, house, needed)
         || b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
         || a.id.localeCompare(b.id);
 }
@@ -451,13 +575,15 @@ function whatDecidedIt(
     winner: NpcRecord,
     firstLeft: NpcRecord | null,
     houseId: string,
-    needed: number
+    needed: number,
+    house: HouseAndItsPeople
 ): Promotion['decidedBy'] {
     if (firstLeft === null) return 'uncontested';
     if (realmIndex(winner.cultivation.realmOrdinal) !== realmIndex(firstLeft.cultivation.realmOrdinal)) {
         return 'realm';
     }
     if (standingMerit(winner, houseId, needed) !== standingMerit(firstLeft, houseId, needed)) return 'merit';
+    if (loyaltyMerit(winner, house, needed) !== loyaltyMerit(firstLeft, house, needed)) return 'loyalty';
     return 'ordinal';
 }
 

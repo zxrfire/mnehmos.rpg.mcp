@@ -146,6 +146,8 @@ import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn } from './a-house-takes-in-one-of-its-own.js';
 import { theHousesAreCounted } from './how-many-people-a-house-has.js';
 import { theHousesTakeInEldersFromOutside } from './a-house-takes-in-an-elder-from-outside.js';
+import { coverTheEmptyChairs } from './somebody-covers-a-house-with-no-head.js';
+import { theTopOfAHouseChangesHands } from './a-house-changes-who-leads-it.js';
 import { theConclavesAreContested } from './a-conclave-seat-is-won-in-a-tournament.js';
 import { theChallengesThisYear } from './a-challenge-is-answered-on-the-yard.js';
 import { aChildTakesTheirParentsLine } from './a-child-takes-their-parents-line.js';
@@ -706,7 +708,17 @@ export function applyPressure(
         applyAreaStatuses(state, year, withinSpan(year * 365 + 65, fromDay, toDay));
         applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
+        // BEFORE THE PROMOTIONS, so a chair a retirement or a removal changes
+        // hands on is settled by the time anything reads it. A vacancy resolved
+        // later in the year would be covered first and resolved second.
+        theTopOfAHouseChangesHands(state, withinSpan(year * 365 + 89, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
+        // And a HOUSE whose chair the year's promotions left empty is covered by
+        // one of its own elders, where the room agrees to it. Not a promotion
+        // and not a rank: see `somebody-covers-a-house-with-no-head.ts`. After
+        // the promotions, because a house that just seated a proper head has
+        // nothing to cover.
+        coverTheEmptyChairs(state, withinSpan(year * 365 + 90.5, fromDay, toDay));
         // And an office whose chair the year's promotions left empty is filled
         // from outside. See `a-house-takes-in-an-elder-from-outside.ts`.
         theHousesTakeInEldersFromOutside(state, withinSpan(year * 365 + 91, fromDay, toDay));
