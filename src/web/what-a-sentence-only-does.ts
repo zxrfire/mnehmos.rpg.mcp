@@ -117,6 +117,19 @@ export const A_HAND_PUT_OUT_TO_STAY_UPRIGHT = new RegExp([
  * word with surrendering. What tells them apart is that a courtesy is aimed AT
  * a person - a name, a title, a senior - and a surrender is aimed at whoever is
  * currently hitting you, which the sentence does not have to say.
+ *
+ * ── AND A PRONOUN NAMES A PERSON ─────────────────────────────────────────
+ *
+ * Played, on the biggest beat an opening has: *"I go back to He Xuxue and
+ * kneel before him. Grandfather, I leave with the caravan tomorrow."* The
+ * object list held titles and capitalised names and not `him`, so the sentence
+ * fell past this to the yield and a cultivator saying goodbye to the man who
+ * raised them was read as a beaten one giving up.
+ *
+ * It is safe for the reason the yield's own guard states: the table only ever
+ * sees these OUTSIDE a fight, because `whatTheySaidInTheFight` reads the
+ * sentence first and takes a real yield before the table is asked. With nobody
+ * hitting you, kneeling before somebody is kneeling before somebody.
  */
 export const A_COURTESY_TO_SOMEBODY =
-    /\b(?:bow|bows|bowing|bowed|kneel|kneels|kneeling|knelt|salute|salutes|saluting|saluted|cup|cups|cupping)\b[^.!?]{0,30}?\b(?:to|before|toward|towards|at)\s+((?:my|our|the|his|her|their)\s+)?((?:senior|junior|elder|master|grand)\s+)?(seniors?|juniors?|elders?|masters?|patriarch|abbot|brothers?|sisters?|[A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)?)/;
+    /\b(?:bow|bows|bowing|bowed|kneel|kneels|kneeling|knelt|salute|salutes|saluting|saluted|cup|cups|cupping)\b[^.!?]{0,30}?\b(?:to|before|toward|towards|at)\s+((?:my|our|the|his|her|their)\s+)?((?:senior|junior|elder|master|grand)\s+)?(him|her|them|seniors?|juniors?|elders?|masters?|patriarch|abbot|brothers?|sisters?|[A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)?)/;

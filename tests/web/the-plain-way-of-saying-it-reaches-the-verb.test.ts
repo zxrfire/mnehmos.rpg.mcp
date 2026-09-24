@@ -309,6 +309,36 @@ describe('the sentence a mechanic invites', () => {
         expect(parseIntent('I kneel').intent).toBe('give_in');
     });
 
+    /**
+     * AND A COURTESY AIMED WITH A PRONOUN IS STILL A COURTESY.
+     *
+     * Played, on the biggest beat an opening has - saying goodbye to whoever
+     * raised you: *"I go back to He Xuxue and kneel before him. Grandfather, I
+     * leave with the caravan tomorrow."* `A_COURTESY_TO_SOMEBODY` held titles
+     * and capitalised names and not `him`, so the sentence fell past it to the
+     * yield, and a cultivator taking leave of the man who raised them was read
+     * as a beaten one giving up.
+     *
+     * Safe for the reason the yield's own guard states: the table only ever
+     * sees these outside a fight, because `whatTheySaidInTheFight` takes a real
+     * yield before the table is asked.
+     */
+    it.each([
+        'I go back to He Xuxue and kneel before him. Grandfather, I leave with the caravan tomorrow.',
+        'I kneel in the mud and bow to her three times',
+        'I kneel before him',
+        'I bow to them'
+    ])('does not read a courtesy aimed at a pronoun as giving up: %j', said => {
+        const plan = parseIntent(said);
+        expect(plan.action, said).toBe('interact');
+        expect(plan.intent, said).not.toBe('give_in');
+    });
+
+    it.each(['I kneel', 'I yield', 'I give up', 'I submit'])(
+        'still gives up from %j', said => {
+            expect(parseIntent(said).intent, said).toBe('give_in');
+        });
+
     it.each([
         // The board names a task and the player says it back.
         ['I take that task', 'sect'],
