@@ -320,8 +320,7 @@ describe('npc_manage unification - create + get_full_context', () => {
                 hp: 30,
                 maxHp: 30,
                 ac: 12,
-                stats: { str: 8, dex: 14, con: 12, int: 18, wis: 16, cha: 10 },
-                knownSpells: ['fireball', 'magic missile']
+                stats: { str: 8, dex: 14, con: 12, int: 18, wis: 16, cha: 10 }
             }, ctx);
 
             const data = parseResult(result);

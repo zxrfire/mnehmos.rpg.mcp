@@ -1,23 +1,15 @@
 import Database from 'better-sqlite3';
 import { v4 as uuid } from 'uuid';
-import {
-    Corpse,
-    CorpseState,
-    LootTable,
-    CORPSE_DECAY_RULES,
-    DEFAULT_LOOT_TABLES
-} from '../../schema/corpse.js';
+import { Corpse, CorpseState, CORPSE_DECAY_RULES } from '../../schema/corpse.js';
 import { InventoryRepository } from './inventory.repo.js';
 
-/** Corpses, loot generation, and harvesting. */
+/** Corpses and harvesting. */
 
 interface CorpseRow {
     id: string;
     character_id: string;
     character_name: string;
     character_type: string;
-    creature_type: string | null;
-    cr: number | null;
     world_id: string | null;
     region_id: string | null;
     position_x: number | null;
@@ -44,20 +36,6 @@ interface CorpseInventoryRow {
     looted: number;
 }
 
-interface LootTableRow {
-    id: string;
-    name: string;
-    creature_types: string;
-    cr_min: number | null;
-    cr_max: number | null;
-    guaranteed_drops: string;
-    random_drops: string;
-    currency_range: string | null;
-    harvestable_resources: string | null;
-    created_at: string;
-    updated_at: string;
-}
-
 export class CorpseRepository {
     private inventoryRepo: InventoryRepository;
 
@@ -71,19 +49,17 @@ export class CorpseRepository {
         position?: { x: number; y: number };
         worldId?: string;
         regionId?: string;
-        creatureType?: string;
-        cr?: number;
     } = {}): Corpse {
         const now = new Date().toISOString();
         const id = uuid();
 
         const stmt = this.db.prepare(`
             INSERT INTO corpses (
-                id, character_id, character_name, character_type, creature_type, cr,
+                id, character_id, character_name, character_type,
                 world_id, region_id, position_x, position_y, encounter_id,
                 state, state_updated_at, harvestable, harvestable_resources,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fresh', ?, 0, '[]', ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'fresh', ?, 0, '[]', ?, ?)
         `);
 
         stmt.run(
@@ -91,8 +67,6 @@ export class CorpseRepository {
             characterId,
             characterName,
             characterType,
-            options.creatureType ?? null,
-            options.cr ?? null,
             options.worldId ?? null,
             options.regionId ?? null,
             options.position?.x ?? null,
@@ -322,89 +296,6 @@ export class CorpseRepository {
         return { success: true, currency, transferred };
     }
 
-    /** Generate loot for a corpse based on creature type */
-    generateLoot(corpseId: string, creatureType: string, cr?: number): {
-        itemsAdded: Array<{ name: string; quantity: number }>;
-        currency: { gold: number; silver: number; copper: number };
-        harvestable: Array<{ resourceType: string; quantity: number }>;
-    } {
-        const corpse = this.findById(corpseId);
-        if (!corpse || corpse.lootGenerated) {
-            return { itemsAdded: [], currency: { gold: 0, silver: 0, copper: 0 }, harvestable: [] };
-        }
-
-        // Find matching loot table
-        const lootTable = this.findLootTableByCreatureType(creatureType, cr);
-        if (!lootTable) {
-            // Mark as generated but empty
-            this.markLootGenerated(corpseId);
-            return { itemsAdded: [], currency: { gold: 0, silver: 0, copper: 0 }, harvestable: [] };
-        }
-
-        const itemsAdded: Array<{ name: string; quantity: number }> = [];
-        const harvestable: Array<{ resourceType: string; quantity: number }> = [];
-
-        // Process guaranteed drops
-        for (const drop of lootTable.guaranteedDrops) {
-            const qty = this.rollQuantity(drop.quantity.min, drop.quantity.max);
-            if (qty > 0 && drop.itemName) {
-                itemsAdded.push({ name: drop.itemName, quantity: qty });
-                // Would need to create item in items table and add to corpse_inventory
-            }
-        }
-
-        // Process random drops
-        for (const drop of lootTable.randomDrops) {
-            if (Math.random() <= drop.weight) {
-                const qty = this.rollQuantity(drop.quantity.min, drop.quantity.max);
-                if (qty > 0 && drop.itemName) {
-                    itemsAdded.push({ name: drop.itemName, quantity: qty });
-                }
-            }
-        }
-
-        // Process currency
-        let gold = 0, silver = 0, copper = 0;
-        if (lootTable.currencyRange) {
-            gold = this.rollQuantity(lootTable.currencyRange.gold.min, lootTable.currencyRange.gold.max);
-            if (lootTable.currencyRange.silver) {
-                silver = this.rollQuantity(lootTable.currencyRange.silver.min, lootTable.currencyRange.silver.max);
-            }
-            if (lootTable.currencyRange.copper) {
-                copper = this.rollQuantity(lootTable.currencyRange.copper.min, lootTable.currencyRange.copper.max);
-            }
-        }
-
-        // Process harvestable resources
-        if (lootTable.harvestableResources) {
-            for (const resource of lootTable.harvestableResources) {
-                const qty = this.rollQuantity(resource.quantity.min, resource.quantity.max);
-                if (qty > 0) {
-                    harvestable.push({ resourceType: resource.resourceType, quantity: qty });
-                }
-            }
-        }
-
-        // Update corpse with harvestable resources
-        if (harvestable.length > 0) {
-            const now = new Date().toISOString();
-            const stmt = this.db.prepare(`
-                UPDATE corpses
-                SET harvestable = 1, harvestable_resources = ?, updated_at = ?
-                WHERE id = ?
-            `);
-            stmt.run(
-                JSON.stringify(harvestable.map(h => ({ ...h, harvested: false }))),
-                now,
-                corpseId
-            );
-        }
-
-        this.markLootGenerated(corpseId, { gold, silver, copper });
-
-        return { itemsAdded, currency: { gold, silver, copper }, harvestable };
-    }
-
     /**
      * Harvest a resource from a corpse
      * @param createItem - If true, creates an item in the items table and adds to harvester inventory
@@ -538,115 +429,6 @@ export class CorpseRepository {
         return result.changes;
     }
 
-    private markLootGenerated(corpseId: string, currency?: { gold: number; silver: number; copper: number }): void {
-        const now = new Date().toISOString();
-        if (currency && (currency.gold > 0 || currency.silver > 0 || currency.copper > 0)) {
-            const stmt = this.db.prepare(`
-                UPDATE corpses SET loot_generated = 1, currency = ?, updated_at = ? WHERE id = ?
-            `);
-            stmt.run(JSON.stringify(currency), now, corpseId);
-        } else {
-            const stmt = this.db.prepare(`
-                UPDATE corpses SET loot_generated = 1, updated_at = ? WHERE id = ?
-            `);
-            stmt.run(now, corpseId);
-        }
-    }
-
-    // LOOT TABLE OPERATIONS
-
-    createLootTable(table: Omit<LootTable, 'id' | 'createdAt' | 'updatedAt'>): LootTable {
-        const now = new Date().toISOString();
-        const id = uuid();
-
-        const stmt = this.db.prepare(`
-            INSERT INTO loot_tables (
-                id, name, creature_types, cr_min, cr_max,
-                guaranteed_drops, random_drops, currency_range, harvestable_resources,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        stmt.run(
-            id,
-            table.name,
-            JSON.stringify(table.creatureTypes),
-            table.crRange?.min ?? null,
-            table.crRange?.max ?? null,
-            JSON.stringify(table.guaranteedDrops),
-            JSON.stringify(table.randomDrops),
-            table.currencyRange ? JSON.stringify(table.currencyRange) : null,
-            table.harvestableResources ? JSON.stringify(table.harvestableResources) : null,
-            now,
-            now
-        );
-
-        return this.findLootTableById(id)!;
-    }
-
-    findLootTableById(id: string): LootTable | null {
-        const stmt = this.db.prepare(`SELECT * FROM loot_tables WHERE id = ?`);
-        const row = stmt.get(id) as LootTableRow | undefined;
-        if (!row) return null;
-        return this.rowToLootTable(row);
-    }
-
-    findLootTableByCreatureType(creatureType: string, cr?: number): LootTable | null {
-        // First try to find in database
-        const stmt = this.db.prepare(`SELECT * FROM loot_tables`);
-        const rows = stmt.all() as LootTableRow[];
-
-        for (const row of rows) {
-            const table = this.rowToLootTable(row);
-            if (table.creatureTypes.includes(creatureType.toLowerCase())) {
-                if (cr !== undefined && table.crRange) {
-                    if (cr >= table.crRange.min && cr <= table.crRange.max) {
-                        return table;
-                    }
-                } else {
-                    return table;
-                }
-            }
-        }
-
-        // Fall back to default loot tables
-        for (const defaultTable of DEFAULT_LOOT_TABLES) {
-            if (defaultTable.creatureTypes.includes(creatureType.toLowerCase())) {
-                if (cr !== undefined && defaultTable.crRange) {
-                    if (cr >= defaultTable.crRange.min && cr <= defaultTable.crRange.max) {
-                        return {
-                            id: `default-${defaultTable.name.toLowerCase().replace(/\s+/g, '-')}`,
-                            ...defaultTable,
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        };
-                    }
-                } else {
-                    return {
-                        id: `default-${defaultTable.name.toLowerCase().replace(/\s+/g, '-')}`,
-                        ...defaultTable,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    };
-                }
-            }
-        }
-
-        return null;
-    }
-
-    listLootTables(): LootTable[] {
-        const stmt = this.db.prepare(`SELECT * FROM loot_tables`);
-        const rows = stmt.all() as LootTableRow[];
-        return rows.map(r => this.rowToLootTable(r));
-    }
-
-    // HELPER METHODS
-
-    private rollQuantity(min: number, max: number): number {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
     private rowToCorpse(row: CorpseRow): Corpse {
         let currency = { gold: 0, silver: 0, copper: 0 };
         if (row.currency) {
@@ -667,8 +449,6 @@ export class CorpseRepository {
             characterId: row.character_id,
             characterName: row.character_name,
             characterType: row.character_type as 'pc' | 'npc' | 'enemy' | 'neutral',
-            creatureType: row.creature_type ?? undefined,
-            cr: row.cr ?? undefined,
             worldId: row.world_id,
             regionId: row.region_id,
             position: row.position_x !== null && row.position_y !== null
@@ -685,23 +465,6 @@ export class CorpseRepository {
             currencyLooted: row.currency_looted === 1,
             harvestable: row.harvestable === 1,
             harvestableResources: JSON.parse(row.harvestable_resources),
-            createdAt: row.created_at,
-            updatedAt: row.updated_at
-        };
-    }
-
-    private rowToLootTable(row: LootTableRow): LootTable {
-        return {
-            id: row.id,
-            name: row.name,
-            creatureTypes: JSON.parse(row.creature_types),
-            crRange: row.cr_min !== null && row.cr_max !== null
-                ? { min: row.cr_min, max: row.cr_max }
-                : undefined,
-            guaranteedDrops: JSON.parse(row.guaranteed_drops),
-            randomDrops: JSON.parse(row.random_drops),
-            currencyRange: row.currency_range ? JSON.parse(row.currency_range) : undefined,
-            harvestableResources: row.harvestable_resources ? JSON.parse(row.harvestable_resources) : undefined,
             createdAt: row.created_at,
             updatedAt: row.updated_at
         };

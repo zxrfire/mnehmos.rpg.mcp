@@ -109,16 +109,8 @@ export function migrate(db: Database.Database) {
       timestamp TEXT NOT NULL
   );
 
-    CREATE TABLE IF NOT EXISTS battlefield(
-    id TEXT PRIMARY KEY,
-    encounter_id TEXT NOT NULL,
-    grid_data TEXT NOT NULL, --JSON
-      created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY(encounter_id) REFERENCES encounters(id) ON DELETE CASCADE
-  );
-
-    -- combat_action_log was retired with the D&D combat engine that wrote it.
+    -- battlefield and combat_action_log were retired with the D&D combat engine
+    -- that wrote them. The tactical grid had no reader left at all.
     -- Confrontations are recorded in combat_records (migrations.cultivation.ts),
     -- which keys on the cultivator rather than on an encounter, because what
     -- outlives a fight is the person who survived it.
@@ -430,8 +422,6 @@ export function migrate(db: Database.Database) {
     character_id TEXT NOT NULL,
     character_name TEXT NOT NULL,
     character_type TEXT NOT NULL,
-    creature_type TEXT,
-    cr REAL,
 
     world_id TEXT,
     region_id TEXT,
@@ -469,21 +459,8 @@ export function migrate(db: Database.Database) {
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
   );
 
-  CREATE TABLE IF NOT EXISTS loot_tables(
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    creature_types TEXT NOT NULL DEFAULT '[]',
-    cr_min REAL,
-    cr_max REAL,
-    guaranteed_drops TEXT NOT NULL DEFAULT '[]',
-    random_drops TEXT NOT NULL DEFAULT '[]',
-    currency_range TEXT,
-    harvestable_resources TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_loot_tables_name ON loot_tables(name);
+  -- loot_tables was retired with the challenge-rating drop tables that filled
+  -- it. What a corpse carries is what its owner was carrying.
 
   -- IMPROVISATION SYSTEMS: Custom Effects Table
   -- Tracks divine boons, curses, transformations, and player-invented conditions
@@ -516,37 +493,8 @@ export function migrate(db: Database.Database) {
   CREATE INDEX IF NOT EXISTS idx_custom_effects_active ON custom_effects(is_active);
   CREATE INDEX IF NOT EXISTS idx_custom_effects_name ON custom_effects(name);
 
-  -- IMPROVISATION SYSTEMS: Synthesized Spells Table
-  -- Tracks spells permanently learned through Arcane Synthesis mastery
-  CREATE TABLE IF NOT EXISTS synthesized_spells(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    character_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    level INTEGER NOT NULL CHECK (level BETWEEN 1 AND 9),
-    school TEXT NOT NULL,
-    effect_type TEXT NOT NULL,
-    effect_dice TEXT,
-    damage_type TEXT,
-    targeting_type TEXT NOT NULL,
-    targeting_range INTEGER NOT NULL,
-    targeting_area_size INTEGER,
-    targeting_max_targets INTEGER,
-    saving_throw_ability TEXT,
-    saving_throw_effect TEXT,
-    components_verbal INTEGER NOT NULL DEFAULT 1,
-    components_somatic INTEGER NOT NULL DEFAULT 1,
-    components_material TEXT, -- JSON object or null
-    concentration INTEGER NOT NULL DEFAULT 0,
-    duration TEXT NOT NULL,
-    synthesis_dc INTEGER NOT NULL,
-    created_at TEXT NOT NULL,
-    mastered_at TEXT NOT NULL,
-    times_cast INTEGER NOT NULL DEFAULT 0,
-    UNIQUE(character_id, name)
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_synthesized_spells_character ON synthesized_spells(character_id);
-  CREATE INDEX IF NOT EXISTS idx_synthesized_spells_school ON synthesized_spells(school);
+  -- synthesized_spells was retired with Arcane Synthesis. A cultivator learns
+  -- techniques, and those live in the cultivation tables.
 
   -- PHASE-1: Spatial Graph System - Room Nodes
   CREATE TABLE IF NOT EXISTS room_nodes(
@@ -582,24 +530,7 @@ export function migrate(db: Database.Database) {
 
   CREATE INDEX IF NOT EXISTS idx_concentration_character ON concentration(character_id);
 
-  -- Aura System - tracks active area-effect auras centered on characters
-  CREATE TABLE IF NOT EXISTS auras(
-    id TEXT PRIMARY KEY,
-    owner_id TEXT NOT NULL,
-    spell_name TEXT NOT NULL,
-    spell_level INTEGER NOT NULL CHECK (spell_level BETWEEN 0 AND 9),
-    radius INTEGER NOT NULL CHECK (radius > 0), -- Radius in feet
-    affects_allies INTEGER NOT NULL DEFAULT 0, -- boolean
-    affects_enemies INTEGER NOT NULL DEFAULT 0, -- boolean
-    affects_self INTEGER NOT NULL DEFAULT 0, -- boolean
-    effects TEXT NOT NULL, -- JSON array of AuraEffect objects
-    started_at INTEGER NOT NULL, -- Round number
-    max_duration INTEGER, -- Maximum rounds (null = indefinite)
-    requires_concentration INTEGER NOT NULL DEFAULT 0, -- boolean
-    FOREIGN KEY(owner_id) REFERENCES characters(id) ON DELETE CASCADE
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_auras_owner ON auras(owner_id);
+  -- auras was retired with the spell auras it held. Nothing ever read it.
 
   -- EVENT INBOX: Polling-based event queue for "autonomous" NPC actions
   -- Events are pushed by internal systems, polled by frontend
@@ -753,48 +684,12 @@ function runMigrations(db: Database.Database) {
     WHERE position_x IS NULL;
   `);
 
-  // CRIT-002/006: Add spellcasting columns to characters table
   const hasCharacterClass = charColumns.some(col => col.name === 'character_class');
-  const hasSpellSlots = charColumns.some(col => col.name === 'spell_slots');
-  const hasPactMagicSlots = charColumns.some(col => col.name === 'pact_magic_slots');
-  const hasKnownSpells = charColumns.some(col => col.name === 'known_spells');
-  const hasPreparedSpells = charColumns.some(col => col.name === 'prepared_spells');
-  const hasCantripsKnown = charColumns.some(col => col.name === 'cantrips_known');
-  const hasMaxSpellLevel = charColumns.some(col => col.name === 'max_spell_level');
-  const hasConcentratingOn = charColumns.some(col => col.name === 'concentrating_on');
   const hasConditions = charColumns.some(col => col.name === 'conditions');
 
   if (!hasCharacterClass) {
     console.error('[Migration] Adding character_class column to characters table');
     db.exec(`ALTER TABLE characters ADD COLUMN character_class TEXT DEFAULT 'fighter';`);
-  }
-  if (!hasSpellSlots) {
-    console.error('[Migration] Adding spell_slots column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN spell_slots TEXT;`);
-  }
-  if (!hasPactMagicSlots) {
-    console.error('[Migration] Adding pact_magic_slots column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN pact_magic_slots TEXT;`);
-  }
-  if (!hasKnownSpells) {
-    console.error('[Migration] Adding known_spells column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN known_spells TEXT DEFAULT '[]';`);
-  }
-  if (!hasPreparedSpells) {
-    console.error('[Migration] Adding prepared_spells column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN prepared_spells TEXT DEFAULT '[]';`);
-  }
-  if (!hasCantripsKnown) {
-    console.error('[Migration] Adding cantrips_known column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN cantrips_known TEXT DEFAULT '[]';`);
-  }
-  if (!hasMaxSpellLevel) {
-    console.error('[Migration] Adding max_spell_level column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN max_spell_level INTEGER DEFAULT 0;`);
-  }
-  if (!hasConcentratingOn) {
-    console.error('[Migration] Adding concentrating_on column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN concentrating_on TEXT;`);
   }
   if (!hasConditions) {
     console.error('[Migration] Adding conditions column to characters table');
@@ -848,36 +743,11 @@ function runMigrations(db: Database.Database) {
     db.exec(`ALTER TABLE characters ADD COLUMN languages TEXT DEFAULT '[]';`);
   }
 
-  // HIGH-007: Add legendary creature columns to characters table
-  const hasLegendaryActions = charColumns.some(col => col.name === 'legendary_actions');
-  const hasLegendaryActionsRemaining = charColumns.some(col => col.name === 'legendary_actions_remaining');
-  const hasLegendaryResistances = charColumns.some(col => col.name === 'legendary_resistances');
-  const hasLegendaryResistancesRemaining = charColumns.some(col => col.name === 'legendary_resistances_remaining');
-  const hasLairActions = charColumns.some(col => col.name === 'has_lair_actions');
+  // Damage modifiers, kept as plain labels on the character row.
   const hasResistances = charColumns.some(col => col.name === 'resistances');
   const hasVulnerabilities = charColumns.some(col => col.name === 'vulnerabilities');
   const hasImmunities = charColumns.some(col => col.name === 'immunities');
 
-  if (!hasLegendaryActions) {
-    console.error('[Migration] Adding legendary_actions column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN legendary_actions INTEGER;`);
-  }
-  if (!hasLegendaryActionsRemaining) {
-    console.error('[Migration] Adding legendary_actions_remaining column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN legendary_actions_remaining INTEGER;`);
-  }
-  if (!hasLegendaryResistances) {
-    console.error('[Migration] Adding legendary_resistances column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN legendary_resistances INTEGER;`);
-  }
-  if (!hasLegendaryResistancesRemaining) {
-    console.error('[Migration] Adding legendary_resistances_remaining column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN legendary_resistances_remaining INTEGER;`);
-  }
-  if (!hasLairActions) {
-    console.error('[Migration] Adding has_lair_actions column to characters table');
-    db.exec(`ALTER TABLE characters ADD COLUMN has_lair_actions INTEGER DEFAULT 0;`);
-  }
   if (!hasResistances) {
     console.error('[Migration] Adding resistances column to characters table');
     db.exec(`ALTER TABLE characters ADD COLUMN resistances TEXT DEFAULT '[]';`);

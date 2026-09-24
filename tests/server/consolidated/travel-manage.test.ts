@@ -165,26 +165,26 @@ describe('travel_manage consolidated tool', () => {
         testEncounterId = randomUUID();
         db.prepare(`
             INSERT INTO corpses (
-                id, character_id, character_name, character_type, creature_type, cr,
+                id, character_id, character_name, character_type,
                 world_id, region_id, position_x, position_y, encounter_id,
                 state, state_updated_at, harvestable, harvestable_resources,
                 currency, looted, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
-            randomUUID(), randomUUID(), 'Goblin Warrior', 'enemy', 'goblin', 0.25,
+            randomUUID(), randomUUID(), 'Goblin Warrior', 'enemy',
             null, null, 0, 0, testEncounterId,
             'fresh', now, 0, JSON.stringify([]),
             JSON.stringify({ gold: 5, silver: 10, copper: 25 }), 0, now, now
         );
         db.prepare(`
             INSERT INTO corpses (
-                id, character_id, character_name, character_type, creature_type, cr,
+                id, character_id, character_name, character_type,
                 world_id, region_id, position_x, position_y, encounter_id,
                 state, state_updated_at, harvestable, harvestable_resources,
                 currency, looted, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
-            randomUUID(), randomUUID(), 'Goblin Archer', 'enemy', 'goblin', 0.25,
+            randomUUID(), randomUUID(), 'Goblin Archer', 'enemy',
             null, null, 0, 0, testEncounterId,
             'fresh', now, 0, JSON.stringify([]),
             JSON.stringify({ gold: 3, silver: 5, copper: 15 }), 0, now, now

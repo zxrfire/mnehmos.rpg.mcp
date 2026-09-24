@@ -99,7 +99,6 @@ export const CharacterSchema = z.object({
 
     // §10.3 forward-compat: generalized resource pools.
     // Operator's attentional_capacity lives here (resourcePools.attentional_capacity).
-    // Backwards-compatible - existing 5e characters keep spellSlots untouched.
     resourcePools: z.record(z.string(), z.object({
         current: z.number(),
         max: z.number(),
