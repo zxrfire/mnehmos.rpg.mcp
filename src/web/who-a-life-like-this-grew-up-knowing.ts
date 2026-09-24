@@ -47,6 +47,7 @@
  */
 
 import type { Cultivator } from '../schema/cultivation.js';
+import type { Sex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { getOrigin, type OriginTierKey } from '../engine/cultivation/origin.js';
@@ -217,6 +218,48 @@ const WHAT_A_HOUSEHOLD_TIE_IS: Readonly<Record<string, string>> = Object.freeze(
     parent: 'raised you.',
     kin: 'grew up under the same roof as you.'
 });
+
+/**
+ * What to CALL them, which is a fact about the row and not about the sentence.
+ *
+ * Played, and the design owner caught it in the opening: *"but this, you
+ * typically say, your grandfather, he ketao, right?"* - about a man the engine
+ * held as `parent`, and then, on the correction, *"i meant father ... it's
+ * about relationship ... forget about age."*
+ *
+ * The engine held the TIE and never a word for it, so the only kinship term in
+ * the run was the one the player typed. The narrator wrote "Grandfather"
+ * because "Grandfather" is what was in the sentence - and a father silently
+ * became a grandfather, which implies a father somewhere, dead or gone, whom
+ * the world does not hold and never wrote. Inventing a relative out of a form
+ * of address is the same defect as the note that once said *a family yours has
+ * been in the way of* and had a narrator conjure up a parent.
+ *
+ * NO AGE IN IT. The owner ruled that out directly, and it is right: the tie
+ * says which generation this is, so reading it off a year gap would be the
+ * engine second-guessing a row it already holds.
+ *
+ * A WORD, NOT A KIND. `parent` and `kin` are unchanged in the relationship
+ * rows, nothing is re-keyed and no stored world moves. What is added is how
+ * the engine SAYS one, which is why it is derived here and never written down.
+ *
+ * AND A PLAYER WHO CALLS THEM SOMETHING ELSE IS NOT CORRECTED HERE. Addressing
+ * your father as Grandfather is a coherent act and a stupid one, and
+ * `an-act-that-is-coherent-and-stupid.ts` is where this engine already keeps
+ * those. What this fixes is narrower and is the part that was wrong: the word
+ * the engine uses is the engine's, and a vocative in the player's sentence
+ * does not become a fact about who somebody is.
+ */
+const WHAT_A_HOUSEHOLD_TIE_MAKES_THEM: Readonly<Record<string, Readonly<Record<Sex, string>>>> =
+    Object.freeze({
+        parent: Object.freeze({ male: 'father', female: 'mother' }),
+        kin: Object.freeze({ male: 'brother', female: 'sister' })
+    });
+
+/** What this person is to the cultivator holding the row, in one word. */
+export function whatAHouseholdTieMakesThem(tie: string, sex: Sex): string | null {
+    return WHAT_A_HOUSEHOLD_TIE_MAKES_THEM[tie]?.[sex] ?? null;
+}
 
 /**
  * The killing behind a death, where the world wrote one.
@@ -672,14 +715,25 @@ function toFace(
         // exactly the thing that is owed something - so it says the tie instead
         // and still promises nothing about what anybody will do.
         statement: tie === null
-            ? `${npc.name} is from home. Knowing them is not the same as being owed anything `
-              + 'by them.'
+            // THE FLAVOUR THE OPENING ALREADY KNEW, ON THE CARD THE NARRATOR
+            // PLAYS THEM FROM. Reported from play: the opening said "Cao
+            // Rongping has had no good word for you since either of you was old
+            // enough to say one", and her card said only that she was from
+            // home - so a question put to somebody with a lifetime of spite got
+            // a bland deflection. The note is on this same object and was never
+            // carried across.
+            ? `${npc.name} is from home, and ${sourceNote} Knowing them is not the same as `
+              + 'being owed anything by them.'
             // ACTIVE, AND ABOUT THE HOLDER. `did the raising` named nobody and
             // reached the page as it stood. Family is a thing somebody DID for
             // this cultivator, and saying which is the whole of the substance.
-            : tie === 'parent'
-                ? `${npc.name} is family, and raised you.`
-                : `${npc.name} is family, and grew up under the same roof as you.`
+            //
+            // AND IT SAYS WHAT TO CALL THEM. See
+            // `whatAHouseholdTieMakesThem`: the engine held the tie and no word
+            // for it, so the only kinship term in a run was whichever one the
+            // player typed.
+            : `${npc.name} is your ${whatAHouseholdTieMakesThem(tie, npc.identity.sex)
+                ?? 'family'}, and ${WHAT_A_HOUSEHOLD_TIE_IS[tie] ?? 'is of your household.'}`
     };
 }
 

@@ -78,7 +78,13 @@ describe('a run does not open with nobody', () => {
             .awareness(cultivator.id)
             .filter(row => row.kind === 'cultivator');
         for (const row of rows) {
-            expect(row.statement.includes('is family')
+            // `is family` was the sentinel here until the engine learned what to
+            // CALL somebody - a row says "is your father" or "is your sister"
+            // now, because the tie was held and the word for it never was, and
+            // the only kinship term in a run was whichever one the player
+            // typed. What the test is about is unchanged: a household row says
+            // the tie, and an acquaintance says outright that nothing is owed.
+            expect(row.statement.includes('is your ')
                 || row.statement.includes('not the same as being owed'),
             `${row.name} is neither family nor plainly not owed: ${row.statement}`).toBe(true);
             expect(row.sourceKind).toBe('witnessed');
