@@ -78,7 +78,7 @@ import {
     type NpcRecord
 } from './npc-state.js';
 import { howAHouseStandsForMoney } from './the-world-changing-on-its-own.js';
-import { creditMerit, meritWith } from './what-a-house-counts-in-somebodys-favour.js';
+import { creditMeritWith, meritWith } from './what-a-house-counts-in-somebodys-favour.js';
 import {
     isInTheAirFor,
     regionOf,
@@ -117,6 +117,15 @@ import {
 const ON_BOARD_WORK = 'board-work|';
 
 /** What was agreed when somebody took a notice: the house, the day it ends, the pay. */
+/** Carried by somebody out on a search, naming who they were sent after. */
+export const OUT_LOOKING_FOR = 'out-looking-for|';
+
+/** Who this person was sent to find, or null. */
+export function whoTheyWereSentAfter(npc: Pick<NpcRecord, 'tags'>): string | null {
+    const tag = npc.tags.find(t => t.startsWith(OUT_LOOKING_FOR));
+    return tag ? tag.slice(OUT_LOOKING_FOR.length) || null : null;
+}
+
 export interface BoardWorkTerms {
     houseId: string;
     untilDay: number;
@@ -160,9 +169,13 @@ export function whatFinishingBoardWorkPays(npc: NpcRecord, doing: NpcActivity): 
     const terms = theBoardWorkTheyAreOn(npc, doing.untilDay);
     if (terms === null) return null;
     const cleared: NpcRecord = { ...npc, tags: npc.tags.filter(t => !t.startsWith(ON_BOARD_WORK)) };
-    if (npc.factionId !== terms.houseId) return cleared;
+    // COUNTED BY THE HOUSE THE WORK WAS FOR, WHOEVER DID IT. This used to pay
+    // nobody but that house's own, because merit was one pair keyed to the roll
+    // you were on and a stranger had nowhere to stand in it. It is per-house
+    // now, so a rogue who takes a house's work is counted by that house - which
+    // is the record a house weighing them for a seat later reads.
     return {
-        ...creditMerit(cleared, terms.contribution),
+        ...creditMeritWith(cleared, terms.houseId, terms.contribution),
         spiritStones: Math.max(0, (cleared.spiritStones ?? 0) + terms.stones)
     };
 }

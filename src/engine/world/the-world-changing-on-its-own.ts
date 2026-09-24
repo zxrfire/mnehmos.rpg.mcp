@@ -6,6 +6,8 @@ import { searchingMastersTakeADisciple } from './the-disciples-a-world-opens-wit
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
+import { whatASearchBroughtBack } from './what-a-search-brings-back.js';
+import { theHousesSendSomebodyLooking } from './a-house-sends-somebody-looking.js';
 import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
 import { whatGroundThisIs } from './what-ground-a-place-is.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
@@ -189,7 +191,8 @@ import { applyWhatThePartyCarriedOut } from './what-a-ruin-has-on-its-shelves.js
 import { giveThisYearsAttention } from './who-is-given-attention-this-year.js';
 import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 import {
-    peopleTakeWorkOffTheirHousesBoard, theBoardWorkTheyAreOn, whatFinishingBoardWorkPays
+    OUT_LOOKING_FOR, peopleTakeWorkOffTheirHousesBoard, theBoardWorkTheyAreOn,
+    whatFinishingBoardWorkPays, whoTheyWereSentAfter
 } from './a-disciple-takes-work-off-the-board.js';
 import { peopleTurnInWhatTheirHouseWants } from './what-a-house-gives-merit-for.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
@@ -687,6 +690,10 @@ export function applyPressure(
         // It also skips anybody nobody can find, which is what makes the pass
         // below reach anybody at all. See the guard inside.
         bringHomeWhoeverIsDue(state, withinSpan(year * 365 + 62, fromDay, toDay));
+        // AND THEN A HOUSE SENDS SOMEBODY AFTER WHOEVER IT HAS LOST. After the
+        // homecoming, because somebody who walked back in this morning is not
+        // somebody to go looking for.
+        theHousesSendSomebodyLooking(state, withinSpan(year * 365 + 62.5, fromDay, toDay));
 
         // AND WHO THE HOUSE HAS PUT SOMEWHERE. Postings run in years and are
         // taken by the people a house can spare - which an elder holding no
@@ -4248,10 +4255,46 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         const landed = whatCuttingForTheHouseLands(state, theMakerThisIs(npc), doing);
         const paid = whatCuttingPays(landed, npc.cultivation.realmOrdinal);
         const paidFor = paid > 0 ? { ...served, spiritStones: (served.spiritStones ?? 0) + paid } : served;
+        // AND A SEARCH PARTY COMES HOME WITH SOMETHING OR WITH NOTHING.
+        //
+        // The same shape as any other party a house sends out: the term runs,
+        // the term closes here, and what it was FOR is read off the tag it was
+        // sent with. `whatASearchBroughtBack` decides what it was worth - face
+        // across the house for a death nobody caused, an account against a name
+        // for one somebody did.
+        const sought = whoTheyWereSentAfter(npc);
+        const settled = sought === null || npc.factionId === null
+            ? paidFor
+            : { ...paidFor, tags: paidFor.tags.filter(t => !t.startsWith(OUT_LOOKING_FOR)) };
         state.npcs[i] = {
-            ...(back !== null && standing.has(back) ? setLocation(paidFor, back, day) : paidFor),
+            ...(back !== null && standing.has(back) ? setLocation(settled, back, day) : settled),
             activity: null
         };
+        if (sought !== null && npc.factionId !== null) {
+            // WHO HOLDS IT FOR THE HOUSE. An obligation needs somebody to
+            // hold it, and a house's own is whoever answers for it: the
+            // highest rung still standing, which is the head where there is
+            // one and the senior elder where there is not.
+            let head: string | null = null;
+            let highest = -1;
+            for (const one of state.npcs) {
+                if (one.factionId !== npc.factionId || one.status !== 'alive') continue;
+                if (one.factionRankIndex > highest) {
+                    highest = one.factionRankIndex;
+                    head = one.id;
+                }
+            }
+            const dead = state.npcs.find(n => n.id === sought) ?? null;
+            if (head !== null && dead !== null) {
+                whatASearchBroughtBack(state, {
+                    deadId: sought,
+                    houseId: npc.factionId,
+                    holderId: head,
+                    day,
+                    deadName: dead.name
+                });
+            }
+        }
         home++;
     }
     return home;
