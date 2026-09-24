@@ -937,13 +937,20 @@ export function auditNarration(
     // Opt-in: absent means the caller has not said whether this turn answered
     // anything, and nothing is checked. `unclear` is the case that legitimately
     // ends in a non-answer, and it files `false`.
-    const cameBackWithNothing = NOTHING_CAME_BACK.exec(text);
+    //
+    // ON HOW THE TURN ENDS. Played: "Your question hangs in the air, a shout to the square." opened
+    // a turn in which six people then answered, and the whole of it was thrown away. The last two
+    // paragraphs are where a turn says what came of the question.
+    const paragraphs = text.split(/\n\s*\n/);
+    const ending = paragraphs.slice(-2).join('\n\n');
+    const endingAt = text.length - ending.length;
+    const cameBackWithNothing = NOTHING_CAME_BACK.exec(ending);
     if (filed.answered === true && cameBackWithNothing !== null) {
         found.push({
             kind: 'invented_absence',
             detail:
                 'prose reports the question going unanswered; the engine answered it this turn',
-            quote: theClauseAround(text, cameBackWithNothing.index, cameBackWithNothing[0].length)
+            quote: theClauseAround(text, endingAt + cameBackWithNothing.index, cameBackWithNothing[0].length)
         });
     }
 

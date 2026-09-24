@@ -128,6 +128,22 @@ describe('a question the engine answered is not narrated as silence', () => {
         expect(kinds(text, { ...AT_LAYER_ONE, answered: true }))
             .not.toContain('invented_absence');
     });
+
+    /**
+     * Played: the question "hung in the air" in the opening line of a turn in which six people
+     * then answered it, and the whole turn was thrown away.
+     */
+    it('reads how the turn ends, not a question hanging before it is answered', () => {
+        const answered = [
+            'Your question hangs in the air, a shout to the square.',
+            '"Going? Where would anybody go?" the carter says.',
+            'The woman at the well laughs. "Ask him again tomorrow."',
+            'You look from one to the other.'
+        ].join('\n\n');
+        expect(kinds(answered, { ...AT_LAYER_ONE, answered: true })).not.toContain('invented_absence');
+        const unanswered = ['You shout it at the square.', 'The carter turns his cart.', 'The question goes unanswered.'].join('\n\n');
+        expect(kinds(unanswered, { ...AT_LAYER_ONE, answered: true })).toContain('invented_absence');
+    });
 });
 
 describe('saying where somebody stands is not claiming they moved', () => {
