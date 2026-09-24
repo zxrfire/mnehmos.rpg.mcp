@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { composeNarrationUser, theSeasonOn, whereTheyStandNow } from '../../src/web/prompt';
 import { whatTheQuestionAsks } from '../../src/web/a-sentence-can-be-more-than-one-call';
+import { ProviderNarrator } from '../../src/web/narrator';
 import { makeGameInWorld, ScriptedProvider } from './harness';
 
 const narrationPrompts = (provider: ScriptedProvider) => provider.calls
@@ -195,6 +196,28 @@ describe('a turn that ran nothing is written stopping at the start', () => {
     it('says nothing of the kind on an ordinary turn', () => {
         expect(composeNarrationUser(facts([]), { place: 'Plum Village', ambient: 'normal' }))
             .not.toContain('NOTHING RAN THIS TURN');
+    });
+
+    /**
+     * Played: "I cultivate until the day of the intake" was ruled no time passed, and the narration
+     * sat the player until their legs went numb.
+     */
+    it('says no time passed only when a ruling refused the time and the day did not move', async () => {
+        const provider = new ScriptedProvider({ plans: [], narrations: ['x'] });
+        const narrator = new ProviderNarrator(provider, { model: 'test' });
+        const standing = (day: number) => ({
+            rank: 'Qi Condensation Layer 1', age: 16, spiritStones: 30, booksHeld: [], methods: [],
+            untreatedInjuries: 0, house: null, dayOfTheRun: day
+        });
+        const refused = { headline: 'x', lines: ['Nothing written, no time passed.'], structure: [], prose: '' };
+        const scene = (day: number) => ({ place: 'Willow Village', ambient: 'thin', standing: standing(day) }) as never;
+        await narrator.narrate(refused, scene(3));
+        await narrator.narrate(refused, scene(3));
+        await narrator.narrate(refused, scene(40));
+        const last = (i: number) => lastLine(provider.calls[i]!.messages.find(m => m.role === 'user')!.content);
+        expect(last(1)).toContain('NO TIME PASSED THIS TURN');
+        // Another step of the turn took the days, so it is not said.
+        expect(last(2)).not.toContain('NO TIME PASSED THIS TURN');
     });
 });
 

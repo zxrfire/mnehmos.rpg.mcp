@@ -1449,6 +1449,10 @@ export class ProviderNarrator implements Narrator {
         // said "Right now, still" - the same afternoon, as far as it knew.
         const day = scene.standing?.dayOfTheRun;
         const weeksWent = day !== undefined && this.lastDayTold !== null && day - this.lastDayTold >= 7;
+        // A time-costing act the engine refused, on a turn where the day did not move at all. Only
+        // then, so a turn that travelled and was refused a sitting is not told nothing passed.
+        const noTimePassed = day !== undefined && this.lastDayTold === day
+            && facts.lines.some(line => /\bno time passed\b/i.test(line));
         if (day !== undefined) this.lastDayTold = day;
         if (arrived || weeksWent) {
             this.saidHere = new Set();
@@ -1471,7 +1475,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown, wornOut }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown, wornOut, noTimePassed }) }
                 ]
             });
 

@@ -954,6 +954,8 @@ export function composeNarrationUser(
         alreadyShown?: ReadonlySet<string>;
         /** Who has been on the page here turn after turn, so they sit out unless the turn is theirs. */
         wornOut?: ReadonlySet<string>;
+        /** A time-costing act was refused and the day did not move. See `theTurnToWrite`. */
+        noTimePassed?: boolean;
     } = {}
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
@@ -1032,7 +1034,7 @@ export function composeNarrationUser(
         '',
         ...theRegisterBlock(scene.realmOrdinal),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
-            whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts))
+            whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true)
     ].join('\n');
 }
 
@@ -1139,7 +1141,8 @@ function theTurnToWrite(
     arrived: boolean,
     addressedStands: string | null = null,
     addressedDid: string | null = null,
-    nothingRan = false
+    nothingRan = false,
+    noTimePassed = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1197,6 +1200,13 @@ function theTurnToWrite(
             ? ' NOTHING RAN THIS TURN: the player is asked which of their acts comes first. Write them '
                 + 'at the point of starting - a step toward it, a hand, a look - and stop there. Nothing '
                 + 'is read, found, bought, learned or answered.'
+            : '')
+        // Played: "I cultivate until the day of the intake" was ruled no time passed, and the
+        // narration sat the player "until your legs go numb" in three runs of three. Said here,
+        // the long sitting went in two runs of three.
+        + (noTimePassed && !nothingRan
+            ? ' NO TIME PASSED THIS TURN: whatever the player meant to spend time on did not begin. '
+                + 'Write them at the point of starting - a first step, settling, a first breath - and stop there.'
             : '')
         + (scene.standing?.dead
             ? ' THE PLAYER DIED THIS TURN. Their death is the last thing that happens: write it plainly, '
