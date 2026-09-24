@@ -4212,6 +4212,20 @@ function applyPostings(state: WorldState, year: number, day: number): number {
  * them back to the house (`applyPostings`). A place that has since ceased to
  * exist leaves them where they are.
  */
+/** The region a location sits under, or itself when it is one. */
+function theRegionUnder(state: WorldState, locationId: string | null): string | null {
+    let cursor = locationId;
+    const seen = new Set<string>();
+    while (cursor && !seen.has(cursor)) {
+        seen.add(cursor);
+        const location = state.locations.find(l => l.id === cursor);
+        if (!location) return null;
+        if (location.kind === 'region' || location.parentId === null) return location.id;
+        cursor = location.parentId;
+    }
+    return null;
+}
+
 function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
     const standing = new Set(state.locations.map(l => l.id));
     let home = 0;
@@ -4281,9 +4295,18 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
             // stand in - none of those is written here and all of them are
             // this. A house's dispatch book is where it thinks somebody is,
             // and the world is where they are.
+            // THEY LOOK AROUND. A party sent to a last known position does not
+            // stand on the exact square and go home - it searches the ground
+            // about it, the way anybody looking for a lost person does. So
+            // they are found anywhere under the same region as the place the
+            // book named, and not found beyond it. A body carried out of the
+            // province is a body nobody local is going to turn up.
+            const toldRegion = sought.toldToLookAt === null
+                ? null
+                : theRegionUnder(state, sought.toldToLookAt);
             const found = dead !== null
-                && sought.toldToLookAt !== null
-                && dead.locationId === sought.toldToLookAt;
+                && toldRegion !== null
+                && theRegionUnder(state, dead.locationId) === toldRegion;
             const houseAt = indexById(state.factions, npc.factionId);
 
             if (found && dead !== null) {
