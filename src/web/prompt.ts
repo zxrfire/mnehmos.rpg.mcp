@@ -1078,7 +1078,8 @@ function theTurnToWrite(
                 : somebodyToPlay
                     ? `${setting} Then the player's act and whoever it lands on. Said aloud to the room, `
                         + 'whoever is likeliest to answer does, each in their own voice; anything else, one '
-                        + 'or two people react at most, and the rest are left out rather than listed carrying on.'
+                        + 'or two people react at most, or somebody is overheard loud on their own affairs, and '
+                        + 'the rest are left out rather than listed carrying on.'
                     : `${setting} Then the player's act, and the crowd.`;
     // LAST, BECAUSE THIS MODEL WEIGHTS WHAT IT READ LAST. Played on gemma4:31b, both of these held
     // as rules higher up and broke anyway: "neither of them speaks" on nearly half of all turns, and

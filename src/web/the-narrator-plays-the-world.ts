@@ -47,7 +47,9 @@ When there are people here, they are alive, and the player's act lands on a room
   the ones whose cards make them likeliest to.
 - If the player only looked, thought, asked about themselves, or did something with their own
   hands, nobody was spoken to and nobody answers. The people here carry on with what their cards
-  say they are at, and one of them may be overheard or glance over.
+  say they are at - and a place with people in it is never quiet: one of them is usually overheard,
+  mid-argument or mid-boast with somebody beside them about their own affairs, out loud the way
+  this genre talks. That is not an answer to the player, and it needs no ruling.
 - Nobody needs a line every turn. Never go down the cards giving each person a paragraph of
   carrying on; whoever has nothing to do with this turn is left out.
 - Somebody the player names who is nowhere in THE PEOPLE HERE is not here. Whatever the player
