@@ -866,6 +866,26 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
             memoryIds: npc.memoryIds.filter(id => !forgottenMemories.has(id))
         }));
 
+    // ── AND THE ACCOUNTS, WHICH THIS SWEEP HAD NEVER HEARD OF ───────────
+    //
+    // It rewrites the facts, the people and the lineages, and left
+    // `state.obligations` alone - so it could take a row out and leave an
+    // account still naming them. Caught by the whole-world walk in
+    // `the-world-does-not-keep-a-farmer-who-died`, which exists for exactly
+    // the table nobody thought of: `obligations[].subjectId = npc-17`, pointing
+    // at somebody the sweep had removed.
+    //
+    // THE ACCOUNT GOES, NOT THE PERSON. Keeping whoever an open account names
+    // was the first attempt and it is the wrong end: it kept five dead farmers
+    // on the books of a two-century world, which is the thing this whole sweep
+    // exists to stop, and the note over `whoIsStillCarriedFor` says why the
+    // exception it already makes is deliberately small. An account whose
+    // holder or whose subject is somebody nobody in the world remembers is not
+    // collectible by anyone, and a priced deed still keeps both of them
+    // through the exception that was already there.
+    state.obligations = (state.obligations ?? []).filter(row =>
+        kept(row.holderId) && (row.subjectId === null || kept(row.subjectId)));
+
     const lineagesBefore = state.lineages.length;
     state.lineages = state.lineages
         .map(line => {
