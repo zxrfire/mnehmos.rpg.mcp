@@ -42,6 +42,7 @@ import {
     WORKED_TURNS,
     howTheyReadToYou,
     thePeopleHere,
+    whatTheyAreToYou,
     whoThePlayerNamed
 } from './the-narrator-plays-the-world.js';
 
@@ -1028,7 +1029,8 @@ export function composeNarrationUser(
         'they turn to something else.',
         '',
         ...theRegisterBlock(scene.realmOrdinal),
-        theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing))
+        theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
+            whatTheAddressedDidForYou(scene, addressing))
     ].join('\n');
 }
 
@@ -1095,13 +1097,34 @@ function howTheAddressedStand(
     return reads.startsWith('far ') || reads.startsWith('so far ') ? reads : null;
 }
 
+/**
+ * What the person spoken to did for the player, when it was raising them or sharing their roof.
+ *
+ * Their card already says so. Played on a parting - "Grandfather, I leave with the caravan
+ * tomorrow. I don't know when I will come back." - the man who raised the player "does not move
+ * a muscle, his face a mask of weathered stone", turned his back and went back to his meal, in
+ * every one of six runs, with the family rule forty lines up and a worked NOT/BUT under it. The
+ * same pair on the last line cracked him in three runs of three: a voice that breaks on the last
+ * word, a hand that reaches and stops. The ruling still sends him back to his meal; he goes.
+ */
+function whatTheAddressedDidForYou(
+    scene: { awareness?: readonly AwarenessRow[] },
+    addressing: string | null
+): string | null {
+    if (!addressing) return null;
+    const tie = whatTheyAreToYou(addressing, scene.awareness ?? []);
+    if (!tie || !tie.includes(' is family')) return null;
+    return tie.includes('raised you') ? 'raised you' : 'grew up under the same roof as you';
+}
+
 function theTurnToWrite(
     scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null },
     addressing: string | null,
     alone: boolean,
     somebodyToPlay: boolean,
     arrived: boolean,
-    addressedStands: string | null = null
+    addressedStands: string | null = null,
+    addressedDid: string | null = null
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1119,6 +1142,12 @@ function theTurnToWrite(
             ? `${setting} Then play ${addressing}: their answer, in their voice.`
                 + (addressedStands
                     ? ` They stand ${addressedStands}: whatever the rulings have them say, they say it that way.`
+                    : '')
+                + (addressedDid
+                    ? ` ${addressing} ${addressedDid}. When you are leaving, hurt or dying, what they held back `
+                        + 'breaks through whatever plain acts the rulings give them - NOT a face like stone and a '
+                        + 'turned back, BUT one thing the body gives away (the voice, a hand, a step) and a word '
+                        + 'never said before.'
                     : '')
                 + ' Anybody else here may react too.'
             : alone
@@ -1138,10 +1167,13 @@ function theTurnToWrite(
         + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
         + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
         + 'they do not do or do not say: whoever has no part in this moment is left out. Never end '
-        + 'on a list of what the player could do.'
+        + 'on a list of what the player could do. The feeling matches the stakes: flat for small '
+        + 'things, all the way when a life turns - a parting that may be forever, a death, a crossing '
+        + 'won or lost - grief ugly, triumph loud, and the heavens unmoved.'
         + (scene.standing?.dead
             ? ' THE PLAYER DIED THIS TURN. Their death is the last thing that happens: write it plainly, '
-                + 'in the body, and end there. Nothing after it, and nothing about mending or what comes next.'
+                + 'in the body, and end there, with whoever loved them breaking, not standing like stone. '
+                + 'Nothing after it, and nothing about mending or what comes next.'
             : '');
 }
 

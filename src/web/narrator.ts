@@ -859,8 +859,22 @@ const NOTHING_CAME_BACK = new RegExp([
  * what makes this safe to use - see there.
  */
 const DIED_PREDICATE =
-    '(?:is|are|was|were)\\s+dead|died|(?:is|are|was|were)\\s+killed|did\\s+not\\s+survive'
-    + '|will\\s+not\\s+wake|breathed?\\s+(?:his|her|their|your)\\s+last';
+    '(?:is|are|was|were)\\s+dead(?!\\s+to\\b)|died|(?:is|are|was|were)\\s+killed|did\\s+not\\s+survive'
+    // Intransitive only: "you will not wake me when you leave" is a parting.
+    + '|will\\s+not\\s+wake(?!\\s+(?:me|him|her|them|us|anyone|anybody|the|my|his|her|their|your)\\b)'
+    + '|breathed?\\s+(?:his|her|their|your)\\s+last';
+
+/**
+ * The prose with its spoken lines taken out.
+ *
+ * FOUND BY PLAYING. The death check is on what the NARRATION says happened,
+ * and a line somebody speaks is not that: a threat ("one more step and you are
+ * dead") or a curse is a person talking, and the turns that carry them are the
+ * turns that matter most.
+ */
+function outsideSpeech(text: string): string {
+    return text.replace(/"[^"]*"|“[^”]*”/g, ' ');
+}
 
 function forRegExp(literal: string): string {
     return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -869,7 +883,8 @@ function forRegExp(literal: string): string {
 /**
  * Prose that says THE PERSON WHOSE RUN THIS IS died.
  */
-function claimsThePlayerDied(text: string, who: string | undefined): boolean {
+function claimsThePlayerDied(prose: string, who: string | undefined): boolean {
+    const text = outsideSpeech(prose);
     // Unambiguous whoever is named: a run is the player's and nobody else's.
     if (/\bthe run is over\b/i.test(text)) return true;
 

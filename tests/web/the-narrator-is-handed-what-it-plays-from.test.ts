@@ -170,3 +170,39 @@ describe('a death is the last thing a turn says', () => {
         expect(message).not.toContain('THE PLAYER DIED THIS TURN');
     });
 });
+
+/**
+ * Played on a parting, "Grandfather, I leave with the caravan tomorrow": the man who raised the
+ * player stood like stone and turned his back in six runs of six, with the family rule in the
+ * system prompt. The tie rides on the last instruction, where it cracked him in three of three.
+ */
+describe('whoever raised the player is played as the one who did, on the last line', () => {
+    const facts = { headline: 'x', lines: ['He Xuxue hears you out.'], structure: [], prose: '' };
+    const person = (name: string) => ({
+        name, ordinal: 5, sex: 'male', age: 70, rank: null, at: 'in an inn, eating', looksUp: false,
+        playsToTheRoom: 0, withNames: [], like: null
+    });
+    const knows = (name: string, statement: string) => ({
+        kind: 'cultivator', id: `npc-${name}`, name, statement, stance: 'neutral',
+        sourceKind: 'witnessed', sourceNote: '', acquiredOnDay: 0, stage: 'known'
+    });
+    const scene = (statement: string) => ({
+        place: 'Willow Village', ambient: 'thin', addressing: 'He Xuxue',
+        company: { named: [person('He Xuxue')], strangers: [], total: 1 },
+        awareness: [knows('He Xuxue', statement)]
+    }) as unknown as Parameters<typeof composeNarrationUser>[1];
+    const lastLine = (message: string) => message.slice(message.lastIndexOf('NOW WRITE THE TURN'));
+
+    it('says the tie and what breaks through at a parting', () => {
+        const last = lastLine(composeNarrationUser(facts, scene('He Xuxue is family, and raised you.')));
+        expect(last).toContain('He Xuxue raised you.');
+        expect(last).toContain('When you are leaving, hurt or dying');
+    });
+
+    it('says it of a sibling too, and of nobody merely from home', () => {
+        expect(lastLine(composeNarrationUser(facts, scene('He Xuxue is family, and grew up under the same roof as you.'))))
+            .toContain('He Xuxue grew up under the same roof as you.');
+        expect(lastLine(composeNarrationUser(facts, scene('He Xuxue is from home. Knowing them is not the same as being owed anything by them.'))))
+            .not.toContain('When you are leaving');
+    });
+});

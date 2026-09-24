@@ -256,6 +256,25 @@ describe('the death check is about the player and nobody else', () => {
         }
     });
 
+    /**
+     * Played: a guardian's parting line, "You will not wake me when you leave",
+     * threw the whole turn away as the player dying. A spoken threat and a
+     * disowning are the same shape: somebody talking, not the prose reporting.
+     */
+    it('does not read a parting, a threat or a disowning as the player dying', () => {
+        for (const prose of [
+            '"You will not wake me when you leave," he says.',
+            'You will not wake him. You take the pack and go.',
+            '"One more step and you are dead," she says.',
+            'He looks at you. "If you walk out that gate, you are dead to this house."',
+            'You are dead to him now, and he says so with his back.'
+        ]) {
+            expect(auditNarration(prose, { died: false, who }), prose).toEqual([]);
+        }
+        expect(auditNarration('You will not wake.', { died: false, who }).map(v => v.kind))
+            .toEqual(['invented_death']);
+    });
+
     it('says nothing when the engine did record the death', () => {
         expect(auditNarration('You are dead.', { died: true, who })).toEqual([]);
     });
