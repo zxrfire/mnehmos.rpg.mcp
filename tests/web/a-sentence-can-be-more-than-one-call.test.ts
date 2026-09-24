@@ -171,6 +171,32 @@ describe('one clause is one act, however many patterns claim it', () => {
         expect(budget.secondReadings).toHaveLength(0);
     });
 
+    /**
+     * AND THE OBJECT IS NOT ALWAYS ON `target`.
+     *
+     * Played: *"I sit down across from He Xuxue and order a bowl of noodles"*.
+     * The whole-sentence reading is `buy(target: bowl of noodles)` and quotes
+     * nothing; the clause "order a bowl of noodles" is put back as
+     * `request(topic: bowl of noodles)`, because a commission names what is
+     * being made on `topic` and leaves `target` for whose hands. One ordering,
+     * read twice, both costly - this branch's own case - and it missed,
+     * because it only ever looked at `target`.
+     *
+     * So the turn asked which came first between buying the noodles and
+     * ordering the noodles. And the fork then ate the NEXT turn: "I buy the
+     * copy of Cross-Meridian Strike from the stall" was taken as its answer,
+     * the noodles ran, and the manual was never bought or refused.
+     */
+    it('does not ask about one object two verbs keep under different keys', () => {
+        const budget = whatThisTurnMayRun([
+            step('buy', { target: 'bowl of noodles' }),
+            step('request', { intent: 'a_making', topic: 'bowl of noodles' })
+        ]);
+        expect(budget.askAbout).toHaveLength(0);
+        expect(budget.toRun.map(s => s.action.action)).toEqual(['buy']);
+        expect(budget.secondReadings).toHaveLength(1);
+    });
+
     it('two readings of one clause quoted the same way are one act', () => {
         const budget = whatThisTurnMayRun([
             step('work', {}, 'work at the manual'),

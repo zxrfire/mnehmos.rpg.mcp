@@ -903,7 +903,21 @@ function theSameClause(a: PlanStep, b: PlanStep): boolean {
     }
     // No words to go on, so the object decides. Two costly verbs pointed at one
     // thing in one sentence are one act read twice.
-    const at = [a, b].map(step => forMatching(step.action.target ?? ''));
+    //
+    // ── AND THE OBJECT IS NOT ALWAYS ON `target` ─────────────────────────
+    //
+    // Played: "I sit down across from He Xuxue and order a bowl of noodles".
+    // The whole-sentence reading is `buy(target: bowl of noodles)` and quotes
+    // nothing; the clause "order a bowl of noodles" is put back as
+    // `request(topic: bowl of noodles)`. One ordering, read twice, and both
+    // costly - which is exactly what this branch is for. It missed because the
+    // two verbs keep the same object under different keys: a commission names
+    // what is being made on `topic` and leaves `target` for whose hands.
+    //
+    // So the turn asked which came first between buying the noodles and
+    // ordering the noodles, and the fork then ate the NEXT turn's sentence as
+    // its answer.
+    const at = [a, b].map(step => forMatching(step.action.target ?? step.action.topic ?? ''));
     return at[0] === at[1];
 }
 
