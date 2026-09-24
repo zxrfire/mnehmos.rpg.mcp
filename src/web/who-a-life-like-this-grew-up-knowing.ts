@@ -55,6 +55,10 @@ import { isBelowTheLid } from '../engine/world/layers.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { NpcRecord, RelationshipKind } from '../engine/world/npc-state.js';
+import {
+    whatTheirChildhoodLeftThem,
+    whoTheyHoldSomethingWith
+} from '../engine/world/what-a-childhood-leaves-somebody-holding.js';
 import { theFamilyThisLifeOpensWith } from './the-family-a-life-opens-with.js';
 import { worldLocationFor } from './entities.js';
 
@@ -401,6 +405,26 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     // by side, wrong once the opening said them as a list. A repeat is only
     // possible past the table's sixth face, which only the richest births
     // reach.
+    // ── AND WHAT THE CHILDHOOD LEFT THEM, BEFORE ANY OF IT IS READ ───
+    //
+    // A life arrived holding kin and nothing else, so the opening could never
+    // say *the one who taught you is dead* or *the one you owe is gone*: the
+    // tie was never written. The design owner: *"yes, some ties"*, and then
+    // *"maybe you're looking for a disciple that saved you... you wanna repay
+    // him. example, non exhaustive."*
+    //
+    // SOME lives, bound to people the world already has, and nothing here makes
+    // anybody die: eligibility is read off birth rather than status, so
+    // somebody the world has since killed is bound exactly as often as somebody
+    // it spared. See `what-a-childhood-leaves-somebody-holding.ts`.
+    whatTheirChildhoodLeftThem({
+        state: world,
+        life: world.npcs.find(n => n.id === cultivator.id) ?? null,
+        near: atHome,
+        seed,
+        day: world.currentDay
+    });
+
     const rng = forStream(seed, 'childhood', here.id);
     const notes = [...HOW_YOU_KNOW_THEM];
     for (let i = notes.length - 1; i > 0; i--) {
@@ -409,13 +433,61 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     }
     const placeOf = new Map(world.locations.map(l => [l.id, l]));
     const day = world.currentDay;
+    // WHOEVER THEY HOLD SOMETHING WITH, which is not the same question as who
+    // was standing nearby. Weight-ranked by what the tie or the account was
+    // worth, so the one who taught them outranks a neighbour and a stranger is
+    // not in the list at all - the trope is *the person who was teaching you
+    // was killed*, not *somebody died nearby*. Dead or alive: what makes this
+    // worth reading is that the world's own killings sometimes touch them.
+    const alreadyNamed = new Set([...kinIds, ...draw.map(npc => npc.id)]);
+    const held: NpcRecord[] = [];
+    for (const one of whoTheyHoldSomethingWith(world, cultivator.id)) {
+        const npc = world.npcs.find(n => n.id === one.otherId);
+        if (npc === undefined || alreadyNamed.has(npc.id)) continue;
+        if (!isBelowTheLid(npc) || !stillStandingOrKilledInTheseYears(npc)) continue;
+        held.push(npc);
+    }
+
     return [
         ...kin.map(one => toFace(
             one.npc, toldAbout(one.npc), WHAT_A_HOUSEHOLD_TIE_IS[one.kind], placeOf, one.kind,
             day, one.aMentionOnly)),
+        // WHAT THEY WERE TO THEM, not merely that they are gone. A tie says the
+        // one who taught you; an account says the one you owe, and the second is
+        // a road out of the opening rather than a fact about the past.
+        ...held.map(npc => toFace(
+            npc, toldAbout(npc), whatTheyWereToThem(world, cultivator.id, npc),
+            placeOf, tieKindWith(world, cultivator.id, npc.id), day)),
         ...draw.map((npc, at) =>
             toFace(npc, toldAbout(npc), notes[at % notes.length], placeOf, null, day))
     ];
+}
+
+/** The tie kind between these two, where the row carries one. */
+function tieKindWith(world: WorldState, lifeId: string, otherId: string): RelationshipKind | null {
+    const life = world.npcs.find(n => n.id === lifeId);
+    const tie = life?.relationships.find(r => r.targetId === otherId && r.standing > 0);
+    return tie?.kind ?? null;
+}
+
+/**
+ * What this person was to that life, in the opening's own voice.
+ *
+ * An account first, because it is the one that gives somebody something to do:
+ * a debt with a name on it is a road out of the opening, and a tie is a fact
+ * about the past.
+ */
+function whatTheyWereToThem(world: WorldState, lifeId: string, other: NpcRecord): string {
+    for (const record of world.obligations ?? []) {
+        if (record.status !== 'open') continue;
+        const between = (record.holderId === other.id && record.subjectId === lifeId)
+            || (record.subjectId === other.id && record.holderId === lifeId);
+        if (!between) continue;
+        if (record.cause === 'saved_life') return 'Got you out of something you would not have got out of.';
+        if (record.cause === 'sheltered') return 'Took you in when there was nowhere else.';
+        return 'Gave you what you needed and never asked after it.';
+    }
+    return 'Showed you what you know, before any of it had a name.';
 }
 
 /**

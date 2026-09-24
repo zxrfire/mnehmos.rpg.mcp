@@ -302,7 +302,39 @@ describe('a childhood can have a victim in it', () => {
     // PLAYED, ON PINNED WORLDS
     // ─────────────────────────────────────────────────────────────────────
 
-    it('says somebody was killed rather than that they are dead', async () => {
+    /**
+     * MIGHT, NOT DOES - RE-PINNED 2026-09-23 ON THE OWNER'S RULING.
+     *
+     * This asserted that EVERY pinned world put a killing in the opening, which
+     * is a certainty the world does not owe anybody. Shown four of twelve worlds
+     * with a wrong within reach of where somebody stands, the owner ruled the
+     * world right and travel expected; shown this one, his words were **"IT
+     * MIGHT. your mentor dying is a classic xianxia trope that ought to fall
+     * out."**
+     *
+     * So the claim is that the MECHANISM CAN put one there, and that where it
+     * does, the opening says it correctly. A world that produced none is a world
+     * where nobody near this life was killed in sixteen years, which is an
+     * ordinary childhood rather than a defect.
+     *
+     * The floor is one of the pinned worlds rather than all of them, and it is
+     * a floor against the layer breaking: measured on this tree, a killing
+     * reaches an opening only as kin or as somebody standing in the same
+     * settlement, so a world producing none of either is the honest zero. If
+     * this ever reads zero across every pinned world, the door has shut rather
+     * than the dice having gone quiet.
+     *
+     * WHAT IS STILL MISSING, and it is the trope itself: a MENTOR's death
+     * cannot reach an opening at all today. `facesFromHome` admits the dead as
+     * kin or as a face from the street and reads no tie, so the person who was
+     * teaching you is told as a neighbour or not at all. The owner has ruled
+     * that a dead master may be in an opening where a living one may not - the
+     * road is what the opening is about precisely because it cannot be walked -
+     * and that is built separately from this assertion.
+     */
+    it('can put a killing in an opening, and says it was a killing where it does', async () => {
+        const toldIn: string[] = [];
+        let withADeathAndAGrudge = 0;
         for (const pinned of WHERE_IT_HAPPENS) {
             const { db, game } = await makeGameInWorld(pinned);
             const { cultivator } = await game.newRun('Aspirant');
@@ -310,7 +342,10 @@ describe('a childhood can have a victim in it', () => {
             const where = pinned.worldSeed;
 
             const at = recap.findIndex(line => /\bKilled\b/.test(line));
-            expect(at, `${where} said nothing about a killing`).toBeGreaterThan(-1);
+            // An ordinary childhood, and the rest of this case is about the
+            // openings that are not.
+            if (at < 0) continue;
+            toldIn.push(where);
             const said = recap[at];
             expect(recap.filter(line => /\bKilled\b/.test(line)).length).toBe(1);
 
@@ -365,9 +400,35 @@ describe('a childhood can have a victim in it', () => {
             expect(said.includes('The account is yours to carry'),
                 `${where} disagreed with whoTheyCarryFor about ${whoDied}`)
                 .toBe(carries.has(victim!.id));
+            // Somebody gone AND something owed, on the one life.
+            if (carries.size > 0) withADeathAndAGrudge++;
 
             db.close();
         }
+
+        // ── AND THE ODDS OF IT ARE NONZERO, WHICH IS A DIFFERENT CLAIM ──
+        //
+        // NOT A PROPORTION, AND DELIBERATELY NOT A FLOOR. The owner's three
+        // sentences bound this from both sides and no one of them does it
+        // alone: **"IT MIGHT"**, **"its totally possible the protagonist had a
+        // happy childhood, lol"**, and **"the odds of having a life with
+        // someone dead and a grudge is nonzero"**. A childhood with nobody lost
+        // is a perfectly good childhood and the world owes nobody a tragedy, so
+        // any number above zero would be a floor wearing a wider net - somebody
+        // would re-pin it the next time the world got kinder.
+        //
+        // What nonzero catches, and nothing weaker does: a reading that is
+        // correct and UNREACHABLE. The cases above can all pass while the
+        // world's own killings never touch anybody's people, and then the
+        // mechanism works and never happens. Zero here means something upstream
+        // stopped ordinary killings reaching anybody who mattered to anybody.
+        //
+        // DEAD AND A GRUDGE, not merely dead: that is the story rather than the
+        // fact - somebody is gone and something is owed - so both have to stand
+        // on the same life.
+        expect(withADeathAndAGrudge,
+            'no life anywhere opened with somebody dead and a grudge standing')
+            .toBeGreaterThan(0);
     }, 900_000);
 
     /**
