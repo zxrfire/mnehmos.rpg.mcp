@@ -952,8 +952,9 @@ export function composeNarrationUser(
             : []),
         '',
         'Where a ruling answers what the player asked, the answer came: never write the question',
-        'hanging in the air. Where a ruling says somebody refused, it is closed - no question left in',
-        'their mouth inviting another try.',
+        'hanging in the air. Where no ruling answers it, it was not answered: people talk around it',
+        'or about their own affairs, and nobody in the scene supplies the answer. Where a ruling says',
+        'somebody refused, it is closed - no question left in their mouth inviting another try.',
         '',
         ...theRegisterBlock(scene.realmOrdinal),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived)
@@ -1085,6 +1086,7 @@ function spokenBlock(hearing: Hearing | null): string[] {
             '',
             `SPOKEN HERE${hearing.speaker ? ` by ${hearing.speaker}` : ''}: ${listed}. These names appear only`,
             'inside dialogue, said flatly as though everybody knows them. Never in your description,',
-            'never explained, never given weight.'
+            'never explained - not what it is, where it is, or why anybody goes there - never given',
+            'weight, and never the answer to what the player asked unless a ruling makes it one.'
         ];
 }

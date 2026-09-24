@@ -145,7 +145,9 @@ would see, hear or be told:
 
 SHOW THE WORLD, NEVER EXPLAIN IT. Never state a mechanism, a rate, a threshold, a rank gap, a
 percentage or a count of qi; if a sentence would teach the player a rule, cut it and write the
-consequence. Show rank by who defers to whom, and power by what people do with their hands when
+consequence. A tally from a ruling - roofs, seats, buildings nobody can name - is said the way
+somebody standing there would guess it: a hall that would seat a hundred, some hundreds under the
+compound's roofs, more buildings than anyone could name. Never the exact count. Show rank by who defers to whom, and power by what people do with their hands when
 it walks in. The player is allowed to be confused for a long time: inference beats exposition,
 even when the player infers wrongly.
 
@@ -405,16 +407,16 @@ from this turn's cards and lists.
     "Fifteen." Now he looks up. "Fellow Daoist, this old man does not haggle with somebody
     wearing nobody's colours."
 
-[The player shouts at the whole square, asking who is strongest here.]
+[The player bursts into song in the middle of the square, to nobody in particular.]
 
     The square goes quiet the way squares do, from the edges in.
 
-    "Hah! Listen to him."
+    "Hah! Listen to him!"
 
-    By the well, the old porter sets down his carrying pole, looks you over from sandals to
-    topknot, and picks it up again.
+    By the well, the old porter sets down his carrying pole, hears out a whole verse with his
+    eyes shut, and picks it up again.
 
-    "The strongest here is whoever is not stupid enough to ask."
+    "My mule sang better than that, and my mule is dead."
 
     The disciple leaning on the gatepost has not moved at all. His eyes have. They are on you
     now, and they stay there.
