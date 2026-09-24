@@ -1003,6 +1003,33 @@ ${unnamed}`;
         // is the point: the floor of this system is that something is SAID.
         if (verdict.wound === null && !verdict.fatal) return calls;
 
+        // AND A DEAD MAN TAKES NO MORE WOUNDS.
+        //
+        // `cultivator` is a snapshot taken before the act, and over a SET this
+        // function runs once per person - so the second wronged party was
+        // wounding a row the first one had already killed. `assertMutable`
+        // threw, inside a transaction, and the player read a stack trace
+        // instead of a turn. Reported from a played run: *"fuck you all"*
+        // routed over the whole square, and the fourth retaliation landed on a
+        // corpse.
+        //
+        // A death partway through a set is a real outcome and the turn says so
+        // where it happened; the ones who had not got to you yet simply never
+        // do. Read live rather than off the snapshot, because the snapshot is
+        // the thing that is wrong.
+        const stillStanding = this.repos.cultivators.getById(cultivator.id);
+        if (!stillStanding || !stillStanding.alive) {
+            calls.push({
+                name: 'cultivator.addInjury',
+                action: 'interact',
+                summary:
+                    `${party.name} would have answered it, and ${cultivator.name} was already `
+                    + 'dead when they got there.',
+                ok: true
+            });
+            return calls;
+        }
+
         // A WOUND THAT IS NOT A KILLING MUST NOT KILL
         const wanted = Math.max(1, Math.round(cultivator.maxHp * verdict.hpFraction));
         const damage = verdict.fatal ? wanted : Math.min(wanted, Math.max(0, cultivator.hp - 1));
