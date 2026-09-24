@@ -74,7 +74,18 @@ export function theHousesSendSomebodyLooking(state: WorldState, day: number): Wh
         const after = lost[rng.int(0, lost.length - 1)]!;
         const years = rng.int(YEARS_A_SEARCH_RUNS[0], YEARS_A_SEARCH_RUNS[1]);
 
-        state.npcs[at] = withTheErrand(searcher, house, after.personId, day, years);
+        // A SEARCH IS NOT BLIND, AND THE TASK IS WHERE IT IS NOT BLIND FROM.
+        // The house dispatched them, so what they were up to is on the errand
+        // itself - where it took them, who went along, when they were due.
+        // `markMissing` leaves that activity standing precisely so it survives
+        // them going missing: the errand that took them is the last true thing
+        // anybody has. A search reads it rather than guessing.
+        const lostRow = state.npcs.find(n => n.id === after.personId) ?? null;
+        state.npcs[at] = withTheErrand(
+            searcher, house, after.personId, day, years,
+            lostRow?.locationId ?? null,
+            lostRow?.activity?.withIds ?? []
+        );
         went.push({ houseId: house.id, searcherId: searcher.id, afterId: after.personId });
     }
     return went;
@@ -86,7 +97,11 @@ function withTheErrand(
     house: FactionRecord,
     afterId: string,
     day: number,
-    years: number
+    years: number,
+    /** Where the lost one was last standing, as the house has it. */
+    lastSeenAt: string | null,
+    /** Who went out with them. The first people anybody asks. */
+    whoWasWithThem: readonly string[]
 ): NpcRecord {
     const out: NpcRecord = {
         ...npc,
@@ -94,11 +109,16 @@ function withTheErrand(
         activity: {
             kind: 'out_with_a_party',
             note: `Out after one of the ${house.name}'s own.`,
-            withIds: [],
+            withIds: [...whoWasWithThem],
             sinceDay: day,
             untilDay: day + years * DAYS_PER_YEAR,
+            // HOME IS THE HOUSE. The errand ends where the answer is wanted,
+            // whatever ground the looking took them over.
             returnTo: house.seatLocationId ?? npc.locationId
         }
     };
-    return house.seatLocationId === null ? out : setLocation(out, house.seatLocationId, day);
+    // AND THEY START WHERE THE TRAIL DOES. The house knows what they were up
+    // to; a search that began at the compound gate would be the house
+    // forgetting its own dispatch book.
+    return lastSeenAt === null ? out : setLocation(out, lastSeenAt, day);
 }
