@@ -1002,16 +1002,18 @@ function theTurnToWrite(
             : alone
                 ? `${setting} Then the player's act and what it does. Nobody is here to answer.`
                 : somebodyToPlay
-                    ? `${setting} Then the player's act, and the room answering it - whoever is likeliest to `
-                        + 'react, each in their own voice.'
+                    ? `${setting} Then the player's act and whoever it lands on. Said aloud to the room, `
+                        + 'whoever is likeliest to answer does, each in their own voice; anything else, one '
+                        + 'or two people react at most, and the rest are left out rather than listed carrying on.'
                     : `${setting} Then the player's act, and the crowd.`;
     // LAST, BECAUSE THIS MODEL WEIGHTS WHAT IT READ LAST. Played on gemma4:31b, both of these held
     // as rules higher up and broke anyway: "neither of them speaks" on nearly half of all turns, and
     // a run the engine ruled went nowhere narrated as an escape from town.
     return `NOW WRITE THE TURN. ${who} Present tense, "you" for the player. Keep every ruling; `
         + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
-        + 'unchanged or no time passed, the player went nowhere. Never write that anybody is silent '
-        + 'or says nothing, and never end on a list of what the player could do.';
+        + 'unchanged or no time passed, the player went nowhere. Never write that anybody is silent, '
+        + 'says nothing or does not speak: where a ruling says nobody spoke, write what they do '
+        + 'instead. Never end on a list of what the player could do.';
 }
 
 /**

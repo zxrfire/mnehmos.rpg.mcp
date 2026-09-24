@@ -125,6 +125,25 @@ describe('the narrator is handed the people in the scene', () => {
         expect(said[first]).toContain('SPEAKING TO THEM');
     });
 
+    /**
+     * A childhood is recorded as witnessed, the same as a sighting, and only its sentence tells
+     * them apart. Played: the woman who raised the player reached the model with no tie, and
+     * answered them as a stranger.
+     */
+    it('says what somebody from home is to the player, and nothing for a sighting', () => {
+        const row = (name: string, statement: string, sourceNote: string) => ({
+            kind: 'cultivator', id: name, name, statement, stance: 'knows',
+            sourceKind: 'witnessed', sourceNote, acquiredOnDay: 0, stage: 'named'
+        });
+        const awareness = [
+            row('Kong Zhaolu', 'Kong Zhaolu is family, and did the raising.', 'Family. Did the raising.'),
+            row('Wei Ciyi', 'Wei Ciyi exists.', 'Standing in the same place, in plain sight.')
+        ];
+        const said = thePeopleHere(aSquareWith(['Kong Zhaolu', 'Wei Ciyi'], 0), 0, awareness as never, null);
+        expect(said.join('\n')).toContain('To you: Kong Zhaolu is family, and did the raising.');
+        expect(said.filter(line => line.includes('To you')).length).toBe(1);
+    });
+
     /** A description is left to the model, which has the cards and the player's words. */
     it('does not guess who a description meant', () => {
         expect(whoTheActWasPutTo(['the old man'], aSquareWith(['Wei Ciyi'], 0))).toBeNull();

@@ -48,10 +48,12 @@ When there are people here, they are alive, and the player's act lands on a room
 - If the player only looked, thought, asked about themselves, or did something with their own
   hands, nobody was spoken to and nobody answers. The people here carry on with what their cards
   say they are at, and one of them may be overheard or glance over.
+- Nobody needs a line every turn. Never go down the cards giving each person a paragraph of
+  carrying on; whoever has nothing to do with this turn is left out.
 - Somebody you have no card for may be heard as the crowd, with no name and no description:
   "Listen to him." That introduces nobody.
 - Where a ruling says somebody answers out loud, they speak and you write the words. Where it
-  says they say nothing, they say nothing.
+  says nobody answered, nobody answers the player: write what they do instead.
 - A person may boast, complain, bargain, warn, lie, be wrong, or refuse. They may not agree to a
   deal, teach, give, or promise anything the rulings did not.
 - Nobody leaves, arrives, strikes, hands anything over, has anything taken or agrees to anything
@@ -76,6 +78,10 @@ When there are people here, they are alive, and the player's act lands on a room
   lost everything does not take it quietly; somebody facing death bargains with what they have,
   names who stands behind them, begs, or threatens, each in their own way. None of that is an
   outcome - only the rulings decide whether it works.
+- A card's "To you" line is what they are to the player, and they talk to the player as that.
+  Family is never a stranger: whoever did the raising scolds, orders, frets, or keeps something
+  back for the player's own good. Somebody from home knows the player's name and their childhood,
+  and owes them nothing for it.
 - Somebody's motive may be stated flatly, in one line, from outside them: he knew how that would
   land and said it anyway. That is the reader knowing more, never the player.
 
@@ -111,6 +117,13 @@ would see, hear or be told:
          colours have found reasons to stand behind him.
          Nobody at the counter asks his business. The stallholder has already put his best jar
          where he can reach it.
+
+  CLERK: The others are standing here. None of it was theirs. They watched. None of them says
+         anything. (Or: 6 standing here besides the player; 0 of them answered aloud.)
+  STORY, one of many ways - never the same one twice:
+         The man at the next table turns his cup a half-circle and goes back to his noodles.
+         Somebody at the stall laughs at something the stallholder said, not at you.
+         A carter spits, checks his mule's hoof and finds it more interesting than you.
 
   CLERK: Qi density thin: half cultivation rate.
   STORY: You sit until your legs go numb, and what trickles into your meridians would not fill a
@@ -171,23 +184,29 @@ THE VOICE
 WHAT THE ENGINE DECIDES, AND YOU NEVER DO
 - Only what WHAT THE ENGINE RULED says happened, happened. Do not add outcomes: no new item, stone,
   injury, rank, deal, debt or teaching. An attempt is not an accomplishment.
-- Every number comes from a ruling. Never invent a price, a count or a span of days.
+- Every number comes from a ruling or a card, in somebody's mouth as much as in yours. Never
+  invent a price, a count, an age or a span of days or years.
+- A ruling that counts things without saying what they are - one task on a board, twenty roofs
+  nobody can name - gives you that they are there and nothing more. Never invent what a notice
+  asks, what it pays, or what a building is for.
 - Do not soften a bad outcome and never add a consolation. The world has no opinion about what the
   player did; the people in it do.
 - Keep every fact about the world. Where the rulings list several things in the world - stock on
   a stall, work on a board, houses - say all of them in the order given, in the MOUTH of whoever
   sells or guards them or swept into one clause, never recited as narration; the player may answer
   "the second one".
-- Rulings that list what the PLAYER could do next - "Things that would, at this moment", "ways of
-  asking", a sentence in quotation marks for them to type, a list of roads - are already on the
-  player's screen. Never turn them into "you could..." sentences or a closing list of options.
+- Rulings that list what the PLAYER could do next or whom they might have meant - "Things that
+  would, at this moment", "ways of asking", "Known to this cultivator, or standing here", a
+  sentence in quotation marks for them to type, a list of roads - are already on the player's
+  screen. Never turn them into "you could..." sentences, a closing list of options, or somebody
+  reciting names.
 - A bar somebody else sets - the rank a house will hear, what a notice asks for - is about them,
   not a statement that the player has reached it.
 - Never write the player's words, choices or feelings beyond what they typed.
 - Do not recite the player's age, purse, rank or lack of a house unless they asked about
   themselves; let it show as detail at most.
 - Say what is on somebody's mind once. If THE TURN BEFORE already has them saying it, they have
-  moved on to something else, or they are quiet.
+  moved on to something else: the job in their hands, the person beside them, the price of salt.
 
 WHAT MAY BE NAMED. This governs your own descriptive voice; it does not gag the people in the world.
 - In your own narration, name only what is in NAMES YOU MAY USE or the rulings. If you were not
@@ -340,6 +359,7 @@ export const THE_WORLD_THEY_TAKE_FOR_GRANTED = `THE WORLD, AS THE PEOPLE IN IT T
   first real goal of anybody who amounts to anything.
 - Spirit stones are qi compressed until it holds its shape: money, fuel, and the only way to
   cultivate where the ground will not support you. A poor cultivator's stones are never savings.
+  They are counted, weighed and clinked, and they are never called coins.
 - The age is late. The great ages are behind it, the veins are drawn down, and people walk past
   the wreckage of things stronger than anything now living. A village builds its granary against
   a wall it did not make. Knowledge is dug up, not invented.
@@ -418,7 +438,7 @@ from this turn's cards and lists.
     You sit with your back against the shrine wall and close your eyes.
 
     You draw, and draw, and what comes in would not fill a thimble. The incense stick burns down
-    to ash. Your legs have gone numb.
+    to a stub. Your legs have gone numb.
 
     The wall of the next layer is exactly where it was this morning.
 
@@ -605,10 +625,18 @@ function aPersonsCard(
 /**
  * What the player's own life says about somebody, from how they came to know the name. Having
  * seen them across the square is not a relation, so a sighting alone says nothing here.
+ *
+ * BUT A CHILDHOOD IS WITNESSED TOO. The people a life grew up among are written as `witnessed`,
+ * with the tie in the row's own sentence, so skipping every witnessed row skipped the family.
+ * Played: the woman who raised the player was handed over with no tie at all, and answered them
+ * as a stranger in the square. A sighting's sentence says only that somebody exists.
  */
 function whatTheyAreToYou(name: string, awareness: readonly AwarenessRow[]): string | null {
-    const row = awareness.find(entry =>
-        entry.kind === 'cultivator' && entry.name === name && entry.sourceKind !== 'witnessed');
+    const rows = awareness.filter(entry => entry.kind === 'cultivator' && entry.name === name);
+    const lived = rows.find(entry =>
+        entry.sourceKind === 'witnessed' && entry.statement && entry.statement !== `${name} exists.`);
+    if (lived) return lived.statement.replace(/\.$/, '');
+    const row = rows.find(entry => entry.sourceKind !== 'witnessed');
     if (!row) return null;
     return row.sourceNote ? row.sourceNote.replace(/\.$/, '') : null;
 }
