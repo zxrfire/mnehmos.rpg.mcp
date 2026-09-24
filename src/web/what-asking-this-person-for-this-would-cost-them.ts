@@ -893,6 +893,18 @@ export interface WhereTheirAttentionIs {
 export const TIME_GIVEN_WITHIN_THE_YEAR_CLOSES_THE_HAND = 1 / 3;
 
 /**
+ * How lately somebody has to have given you their time for a fresh ask to read
+ * as asking again so soon: a year.
+ *
+ * Its own figure, not the world's `ATTENTION_IS_RECENT_FOR_DAYS`, which is now a
+ * decade and measures something else - how warm the tie between two people is.
+ * A master who sat with you nine years ago is warm toward you AND has not been
+ * asked for anything lately; those are two different facts and this is the one
+ * about the ask.
+ */
+export const A_REPEAT_ASK_IS_WITHIN_DAYS = 365;
+
+/**
  * What they are in the middle of, as the refusal a busy person gives.
  *
  * Says when it ends where it has an end. Where it is a copy being written out

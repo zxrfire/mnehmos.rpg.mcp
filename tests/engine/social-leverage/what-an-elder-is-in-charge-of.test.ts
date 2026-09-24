@@ -404,3 +404,30 @@ describe('a head turning an elder out of their room', () => {
         expect(out.cost.standingCost).toBeGreaterThan(0);
     });
 });
+
+describe('an office whose chair stands empty is covered, and says so', () => {
+    /**
+     * The house doc's vacancy: the holder dies or leaves, somebody senior
+     * covers, the house fills the chair. A house seats one elder with an office
+     * per office, so an office dealt a second time round the people who decide
+     * is covered by somebody who already runs another.
+     */
+    const offices = ['treasury', 'archive', 'punishment_hall'] as const;
+    const deciders = [{ id: 'head', rankIndex: 5 }, { id: 'elder-a', rankIndex: 4 }];
+
+    it('names who is acting, and they answer for it', () => {
+        const portfolios = whoIsInChargeOfWhat({ rooms: offices, roll: deciders, rankCount: LADDER });
+        const covered = portfolios.filter(p => p.actingId);
+        expect(covered).toHaveLength(offices.length - deciders.length);
+        for (const p of covered) expect(p.holderId).toBe(p.actingId);
+        // And the ones with a holder of their own are not covered.
+        expect(portfolios.filter(p => !p.actingId)).toHaveLength(deciders.length);
+    });
+
+    it('stops being covered when the chair is filled by an elder promoted into the band', () => {
+        const filled = whoIsInChargeOfWhat({
+            rooms: offices, roll: [...deciders, { id: 'elder-b', rankIndex: 4 }], rankCount: LADDER
+        });
+        expect(filled.every(p => !p.actingId)).toBe(true);
+    });
+});

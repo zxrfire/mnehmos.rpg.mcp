@@ -32,6 +32,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { theHouseLosesTrackOf } from '../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { makeGame } from './harness.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import {
@@ -49,6 +50,17 @@ import {
 import { seedWorld } from '../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../src/engine/world/catalog.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
+
+/**
+ * The house loses track of somebody a season and more ago. What a house does not
+ * know is held on the house (`who-a-house-has-lost-track-of.ts`); it used to be
+ * read off a clock on the person, `lastConfirmedOnDay`.
+ */
+function loseTrackOf(state: import('../../src/engine/world/world-state.js').WorldState, gone: { id: string; factionId: string | null }): void {
+    const at = state.factions.findIndex(f => f.id === gone.factionId);
+    state.factions[at] = theHouseLosesTrackOf(state.factions[at]!, gone.id,
+        state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5));
+}
 
 /** Every city on the map, which is where a wall carries the most paper. */
 const CITIES = REGIONS.flatMap(r => r.places).filter(p => p.kind === 'city').map(p => p.name);
@@ -151,7 +163,7 @@ describe('what a house is asking after comes off its own lamps', () => {
 
         const gone = state.npcs.find(npc =>
             npc.status === 'alive' && npc.factionId && carriesATokenAt(npc.factionRankIndex))!;
-        gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
+        loseTrackOf(state, gone);
 
         const asks = whoEachHouseIsLookingFor(state).get(gone.factionId!);
         expect(asks).toHaveLength(1);
@@ -176,7 +188,7 @@ describe('what a house is asking after comes off its own lamps', () => {
         }).state;
         const gone = state.npcs.find(npc =>
             npc.status === 'alive' && npc.factionId && carriesATokenAt(npc.factionRankIndex))!;
-        gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
+        loseTrackOf(state, gone);
 
         // A hall with nothing burning in it: the house never lit a lamp for anybody.
         state.objects = state.objects.filter(o =>
@@ -190,7 +202,7 @@ describe('what a house is asking after comes off its own lamps', () => {
         }).state;
         const gone = state.npcs.find(npc =>
             npc.status === 'alive' && npc.factionId && carriesATokenAt(npc.factionRankIndex))!;
-        gone.lastConfirmedOnDay = state.currentDay - (WHEN_SILENCE_BECOMES_A_CAPTIVE + 5);
+        loseTrackOf(state, gone);
 
         // Everybody on that roll drops under the rung a lamp is lit at, which
         // is the state the world sim reaches by killing a house's elders. The

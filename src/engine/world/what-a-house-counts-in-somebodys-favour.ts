@@ -18,7 +18,9 @@
  *   attention       teaching disciples or giving a lecture, priced as a player's
  *                   talk is priced: the errand rate for the days given, times the
  *                   house's own people in the set, thinned by `shareOfAttention`.
- *                   Credited where the attention is given.
+ *                   Credited where the attention is given. What a lecture IS, open
+ *                   and closed, is written once in
+ *                   `how-far-up-the-world-reaches.md`.
  *
  * HELD AGAINST A HOUSE, NOT CARRIED. Somebody who walks out, is taken by a
  * splinter, or is enrolled somewhere new starts at nothing there, which is what
@@ -33,7 +35,7 @@ import {
     ORDINARY_DUTY_DAYS
 } from '../encounters/duties.js';
 import { shareOfAttention } from '../cultivation/cultivation.js';
-import type { NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 
 /** What this house counts in their favour. Nothing, for any other house. */
 export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null): number {
@@ -41,9 +43,19 @@ export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null)
     return npc.merit.points;
 }
 
-/** The same row with this much more counted by their own house. */
+/**
+ * The same row with this much more counted by their own house.
+ *
+ * AND NEVER ON THE PLAYER'S ROW. Their count is `contribution` on their
+ * membership, and the row's `merit` is a projection of it refreshed off the
+ * sheet every turn (`the-player-as-a-row-the-world-can-invite.ts`), so a credit
+ * written here would be wiped before any door read it - the purse defect one
+ * field over, and closed in the same place the four other guards are asked:
+ * `isTheWorldsToMove`. What the player earns is credited to the membership by
+ * the play layer, which is the one store a promotion then reads for them.
+ */
 export function creditMerit(npc: NpcRecord, points: number): NpcRecord {
-    if (npc.factionId === null || !(points > 0)) return npc;
+    if (npc.factionId === null || !(points > 0) || !isTheWorldsToMove(npc)) return npc;
     return {
         ...npc,
         merit: { houseId: npc.factionId, points: meritWith(npc, npc.factionId) + Math.round(points) }

@@ -43,7 +43,7 @@
 
 import type { RoomPurpose } from '../world/architecture.js';
 import type { APortfolio } from './what-an-elder-is-in-charge-of.js';
-import { whoAnswersAbout } from './what-an-elder-is-in-charge-of.js';
+import { inTheOrderOfficesAreDealt, whoAnswersAbout } from './what-an-elder-is-in-charge-of.js';
 import type { OnTheRoll } from './what-a-body-wants-is-what-its-deciders-want.js';
 import { whoDecidesIn } from './what-a-body-wants-is-what-its-deciders-want.js';
 
@@ -61,7 +61,7 @@ export interface APost {
 /**
  * Who works in each of this house's rooms.
  *
- * Rooms deepest-first, disciples heaviest-first, round robin - the same deal
+ * Rooms in the order offices are dealt, disciples heaviest-first, round robin - the same deal
  * `whoIsInChargeOfWhat` makes, so the archive's disciple is a more senior
  * disciple than the mission hall's for the same reason the archive's elder is a
  * more senior elder. One rule, read twice.
@@ -86,7 +86,7 @@ export function whoStaffsWhat(input: {
     if (hands.length === 0) return [];
 
     const rooms = [...input.portfolios]
-        .sort((a, b) => b.depth - a.depth || a.purpose.localeCompare(b.purpose));
+        .sort((a, b) => inTheOrderOfficesAreDealt(a.purpose, b.purpose));
 
     return rooms.map((room, i) => ({
         purpose: room.purpose,

@@ -14,7 +14,7 @@ import type { RegardBand } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
 import type { SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import type { HouseAsItStands } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
-import { whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
+import { theReasonBehind, whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
 import type { Membership } from './types.js';
 
 // WHAT KIND OF THING IT IS
@@ -223,7 +223,7 @@ export interface DutyTerms {
     days: number;
     /** Paid into `sect_members.contribution` on completion. Zero outside a house. */
     contribution: number;
-    /** Paid in spirit stones on completion. */
+    /** Paid in spirit stones on completion. Nothing for work that makes something, which is paid for what lands. */
     stones: number;
     /** How the ledger records walking away. */
     refusal: RefusalTerms;
@@ -291,7 +291,13 @@ export function dutyTermsFor(
         contribution: membership
             ? Math.max(1, Math.round(base * yieldScale * (days / ORDINARY_DUTY_DAYS)))
             : 0,
-        stones: Math.max(1, Math.round(base * STONES_PER_ERRAND_OF_CONTRIBUTION * yieldScale)),
+        // WORK THAT MAKES SOMETHING IS PAID FOR WHAT IT MAKES, when it lands, and
+        // not a stone up front: a notice cutting slips paid the board's rate for
+        // the term whatever it cut, about five stones a slip against a worth of a
+        // third of one. See `whatCuttingPays`.
+        stones: (theReasonBehind(entry.id)?.makes ?? null) !== null
+            ? 0
+            : Math.max(1, Math.round(base * STONES_PER_ERRAND_OF_CONTRIBUTION * yieldScale)),
         refusal: refusalFor(entry, tags, membership, origin, scale, givenBy),
         regard,
         scale,

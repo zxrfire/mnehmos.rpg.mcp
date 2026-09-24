@@ -17,6 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../../src/engine/world/a-house-raises-its-own.js';
 import { SECTS, getSect } from '../../../src/data/cultivation/sects.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
@@ -48,6 +49,7 @@ import {
     externalElderCost,
     isHeadOfHouse,
     impliedHouseSize,
+    rosterAtRung,
     isElderRank,
     obstructionChance,
     planDiscipleIntake,
@@ -290,22 +292,32 @@ describe('a house is a pyramid, which is why authority is worth anything', () =>
     });
 
     it('gives a more senior rung more hands to call on', () => {
-        const size = impliedHouseSize(5);
+        // ASKED OF A HOUSE AND NOT OF A SLICE. `houseSize` is the real size now
+        // (`how-many-people-a-house-has.ts`, and `whatTheCatalogCutItsQuartersFor`
+        // for the player's own house), so the question is what a rank can call on
+        // in a body of hundreds. Asked of `impliedHouseSize`, which sizes the
+        // dozen the world models, the bottom rung holds three people and every
+        // rank above it can call on all three: the ordering disappears into the
+        // rung's own size rather than into this rule.
+        const size = 500;
         const outer = commandableHands(1, 0, size, 5);
         const inner = commandableHands(2, 0, size, 5);
         const head = commandableHands(4, 0, size, 5);
-        // ONE RUNG OF SENIORITY NOW BUYS NOBODY AT THE BOTTOM, and it is the
-        // house's size that moved rather than this rule. `impliedHouseSize`
-        // follows `ROSTER_TAPER`, so flattening the slice puts a five-rung
-        // house at ten people - the roll `a-house-and-who-is-in-it.md` states
-        // outright - where the pyramid's own curve had put it at sixty-four.
-        // `CALL_FRACTION_PER_RUNG` is a quarter of a rung per rung of gap, and
-        // a quarter of a bottom rung of three is nobody. Retuning that constant
-        // against the smaller house is its own job; the ordering is what this
-        // asserts and the ordering still holds.
         expect(head).toBeGreaterThan(0);
         expect(inner).toBeGreaterThan(outer);
         expect(head).toBeGreaterThan(inner);
+    });
+
+    it('never sends more people than one person could know, however big the house', () => {
+        // `CALL_FRACTION_PER_RUNG` is a share of the people somebody can keep
+        // track of, not of the rung: a house of five hundred does not put a
+        // hundred and forty disciples under one elder's order.
+        for (const size of [200, 500, 5_000]) {
+            expect(commandableHands(4, 0, size, 5)).toBeLessThanOrEqual(A_ROLL_A_PLAYER_COULD_KNOW);
+        }
+        // And a small house is capped by the rung instead.
+        expect(commandableHands(4, 0, impliedHouseSize(5), 5))
+            .toBeLessThanOrEqual(rosterAtRung(impliedHouseSize(5), 0, 5));
     });
 
     it('gives nobody hands from a rung at or above their own', () => {

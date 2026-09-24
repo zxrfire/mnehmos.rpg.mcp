@@ -64,7 +64,9 @@ import {
 } from '../encounters/what-a-house-has-on-its-board.js';
 import type { EncounterEntry } from '../../data/cultivation/encounters.js';
 import type { SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { isGroundWithADoor, whatADoorAdmits } from './a-door-with-a-count-on-it.js';
 import { circleCandidatesFor } from './gatherings.js';
+import type { LocationRecord } from './locations.js';
 import { isBelowTheLid } from './layers.js';
 import {
     isAwayOnSomething,
@@ -104,7 +106,8 @@ import type { FactionRecord, WorldState } from './world-state.js';
 import {
     aSittingAtHomeIsTaken,
     freeForASittingAtHome,
-    itsCommunicationTalismansRunLow
+    itsCommunicationTalismansRunLow,
+    theDisciplesPostedToInternalAffairs
 } from './what-a-house-hears-from-its-people-away.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -267,11 +270,26 @@ function whereTheNoticeSendsThem(
         seatsInPlay: about
             .map(id => state.factions.find(f => f.id === id && f.dissolvedOnDay === null)?.seatLocationId ?? null)
             .filter((id): id is string => id !== null),
-        groundNearThem: groundTheseHousesHold(state.locations, about),
+        groundNearThem: groundTheseHousesHold(groundWorkCanTakeYouTo(state.locations), about),
         elsewhere,
         pick: count => forStream(house.id, 'posting_destination', reason.id)
             .int(0, Math.max(0, count - 1))
     });
+}
+
+/**
+ * Everywhere but a door somebody is counting places at.
+ *
+ * At a held, counted door there is no going anyway (`whatADoorAdmits`): the
+ * holder deals the places and a conclave picks who walks through. A notice off
+ * a board is not a place, so work that drew such a door sent people through it
+ * uncounted, from houses the holder dealt nothing to, and every one of them
+ * read as a party the conclave chose. Measured on the conclave fixture in
+ * `the-people-a-conclave-chose-walk-through.test.ts`: five people from the
+ * house the holder refused, and three who went alone.
+ */
+function groundWorkCanTakeYouTo(locations: readonly LocationRecord[]): LocationRecord[] {
+    return locations.filter(l => !isGroundWithADoor(l) || whatADoorAdmits({ ruin: l }).cell !== 'doled_out');
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -310,7 +328,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         if (roll) roll.push(i); else rolls.set(npc.factionId, [i]);
     }
 
-    const elsewhere = groundAPartyCanBeSentTo(state.locations);
+    const elsewhere = groundAPartyCanBeSentTo(groundWorkCanTakeYouTo(state.locations));
     let ground: HowTheGroundIsKnown | null = null;
     let took = 0;
 
@@ -390,6 +408,12 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
                 if (howAnAskReaches({ pitchOrdinal: terms.pitchOrdinal, reachOfTheHouse: reach }) !== 'the_wall') continue;
                 if (!takeableOffAWall(terms.regard.band)) continue;
                 if ((taken.get(entry.id)?.who.length ?? 0) >= reason.hands) continue;
+                // Cutting the house's slips is Internal Affairs work: its disciples
+                // first, and anybody else able only where none is posted.
+                if (reason.makes !== null) {
+                    const posted = theDisciplesPostedToInternalAffairs(state, faction.id);
+                    if (posted.length > 0 && !posted.includes(npc.id)) continue;
+                }
                 offers.push({ entry, reason, terms });
             }
             if (offers.length === 0) continue;

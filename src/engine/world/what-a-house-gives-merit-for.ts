@@ -6,9 +6,19 @@
  * off a beast, a dose, a sack of something, and for the player when a verb
  * reaches it.
  *
- * ── WHAT A HOUSE WANTS ───────────────────────────────────────────────────
+ * ── WHAT A HOUSE WANTS: IT CREDITS ONLY WHAT IT CANNOT SIMPLY BUY ────────
  *
- * *"A house can just buy stuff using its own treasury, why would it need you."*
+ * That sentence is the name of this rule, and it is worth having a name for,
+ * because everything below is the line it draws. Do not call it the museum rule:
+ * that phrase already means something else here - a world where nothing may be
+ * picked up (`a-taking-is-decided-by-ownership.ts`) - and two rules under one
+ * name is how the wrong one gets changed.
+ *
+ * Two sentences of the owner's, one from each end. Why the ordinary does not
+ * count: *"A house can just buy stuff using its own treasury, why would it need
+ * you."* And what does: *"think of a museum, a museum only wants the good
+ * stuff."*
+ *
  * So a house wants only what it cannot simply buy, and the engine already draws
  * that line: `howAGradeIsStored` stores a grade the world restocks as counted
  * (mortal, earth) and one it does not as tracked (heaven and above).
@@ -286,6 +296,44 @@ export function turnItInToTheHouse(state: WorldState, input: {
     const made = whatTheHouseMakesOf(state, house.id, object);
     if (!made.wanted) return 0;
 
+    // Credited before the fact is written, which is the order it always ran in:
+    // the fact may touch the giver's row, and a credit written after it would be
+    // written over what it touched.
+    if (input.forMerit !== false) {
+        state.npcs[at] = { ...creditMerit(npc, made.merit), updatedOnDay: input.onDay };
+    }
+    theHouseTakesItIn(state, {
+        giver: { id: npc.id, name: npc.name },
+        houseId: house.id,
+        objectId: object.id,
+        merit: input.forMerit === false ? 0 : made.merit,
+        onDay: input.onDay
+    });
+    return input.forMerit === false ? 0 : made.merit;
+}
+
+/**
+ * The house takes the row: it is the house's, on its shelf or in its stores,
+ * and the handing in is a fact the house holds.
+ *
+ * The one move, for a person of the world and for the player. Whoever calls it
+ * has already asked {@link whatTheHouseMakesOf} and credits the merit in their
+ * own ledger: `NpcRecord.merit` for the world's people, the player's
+ * `contribution` for the player. A `merit` of zero writes no fact, which is
+ * what handing over the leftovers of a book already read has always done.
+ */
+export function theHouseTakesItIn(state: WorldState, input: {
+    giver: { id: string; name: string };
+    houseId: string;
+    objectId: string;
+    merit: number;
+    onDay: number;
+}): boolean {
+    const where = state.objects.findIndex(o => o.id === input.objectId);
+    const object = state.objects[where];
+    const house = state.factions.find(f => f.id === input.houseId);
+    if (object === undefined || house === undefined) return false;
+
     const gradeLine = whatThisThingIs(object)?.grade;
     state.objects[where] = {
         ...object,
@@ -295,23 +343,22 @@ export function turnItInToTheHouse(state: WorldState, input: {
         locationId: house.seatLocationId,
         tags: [...object.tags.filter(t => t !== 'library' && !t.startsWith('faction:')),
             ...(object.kind === 'manual' ? ['library'] : []), `faction:${house.id}`],
-        data: { ...object.data, turnedInBy: npc.id, turnedInOnDay: input.onDay }
+        data: { ...object.data, turnedInBy: input.giver.id, turnedInOnDay: input.onDay }
     };
-    if (input.forMerit === false) return 0;
-    state.npcs[at] = { ...creditMerit(npc, made.merit), updatedOnDay: input.onDay };
+    if (!(input.merit > 0)) return true;
     appendWorldFact(state, makeFact({
         day: input.onDay,
         kind: 'inheritance',
         scale: 'personal',
-        actors: [{ id: npc.id, name: npc.name, role: 'giver' }],
+        actors: [{ id: input.giver.id, name: input.giver.name, role: 'giver' }],
         locationId: house.seatLocationId,
         factionIds: [house.id],
-        summary: `${npc.name} turned ${object.name} in to the ${house.name.replace(/^[Tt]he\s+/, '')}.`,
+        summary: `${input.giver.name} turned ${object.name} in to the ${house.name.replace(/^[Tt]he\s+/, '')}.`,
         visibility: 'faction',
         magnitude: gradeLine !== undefined && howAGradeIsStored(gradeLine) === 'tracked' ? 0.45 : 0.3,
-        data: { objectId: object.id, merit: made.merit, turnedIn: true }
+        data: { objectId: object.id, merit: input.merit, turnedIn: true }
     }));
-    return made.merit;
+    return true;
 }
 
 /**

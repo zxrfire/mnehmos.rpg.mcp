@@ -154,11 +154,36 @@ export interface APortfolio {
     holderId: string | null;
     /** How far into the compound it sits. Deepest goes to the most senior. */
     depth: number;
+    /**
+     * WHO IS ACTING IN IT, where the chair stands empty. The house doc's vacancy
+     * runs in three steps: the holder dies or leaves, somebody senior covers,
+     * the house fills the chair. A house seats one elder with an office per
+     * office (`assessPromotions`), so an office dealt a second time round the
+     * people who decide has nobody of its own and is covered by somebody who
+     * already runs another. That person is `holderId` too - they answer for it -
+     * and this says they are covering rather than holding. Null, or absent,
+     * where the office has its own holder or nobody at all. The chair is filled
+     * by the ordinary fill: an elder promoted into the band is one more person
+     * to deal to, and the next deal gives them the room.
+     */
+    actingId?: string | null;
 }
 
 /**
- * Hand a house's sealed rooms to the people who decide in it: rooms deepest-first,
- * people heaviest-voice-first, round robin.
+ * The order a house's offices are dealt in: every office of an earlier round
+ * (`officeAddedInRound`) before any of a later one, and within a round deepest
+ * first. One order for the elders and for the disciples posted under them
+ * (`whoStaffsWhat`).
+ */
+export function inTheOrderOfficesAreDealt(a: RoomPurpose, b: RoomPurpose): number {
+    const x = roomAuthorityOf(a);
+    const y = roomAuthorityOf(b);
+    return x.officeAddedInRound - y.officeAddedInRound || y.depth - x.depth || a.localeCompare(b);
+}
+
+/**
+ * Hand a house's sealed rooms to the people who decide in it: rooms in the order
+ * offices are dealt, people heaviest-voice-first, round robin.
  */
 export function whoIsInChargeOfWhat(input: {
     /** Every room the house has. Rooms nobody runs are dropped here. */
@@ -172,26 +197,25 @@ export function whoIsInChargeOfWhat(input: {
     // carries the argument. Every purpose that existed before the split has
     // `office === sealed`, so this deals exactly what it dealt.
     //
-    // AND THE DEAL IS POSITIONAL, WHICH IS A CONSTRAINT ON ADDING ROOMS rather
-    // than a bug to route around here. Offices sort deepest-first and are dealt
-    // round robin, so a room inserted ABOVE existing ones shifts every one of
-    // them - that is what the reverted ancestral hall did, and the note on that
-    // room records that no rung could get the discipline hall back afterwards.
-    // A room added BELOW the shallowest office appends and moves nothing, which
-    // is why `mission_hall` sits at 0.3 and says so.
+    // AND THE DEAL IS POSITIONAL, SO AN OFFICE IS DEALT IN THE ROUND IT WAS
+    // ADDED. Sorted deepest-first alone, a room inserted above existing ones
+    // shifted every one of them - the reverted ancestral hall did, and no rung
+    // could get the discipline hall back afterwards. A later round is dealt
+    // after every earlier office, so adding one appends and moves nobody.
     const offices = [...new Set(input.rooms)]
         .map(purpose => ({ purpose, ...roomAuthorityOf(purpose) }))
         .filter(r => r.office)
-        .sort((a, b) => b.depth - a.depth || a.purpose.localeCompare(b.purpose));
+        .sort((a, b) => inTheOrderOfficesAreDealt(a.purpose, b.purpose));
 
     const room = whoDecidesIn({ roll: input.roll, rankCount: input.rankCount });
     if (room.length === 0) {
-        return offices.map(r => ({ purpose: r.purpose, holderId: null, depth: r.depth }));
+        return offices.map(r => ({ purpose: r.purpose, holderId: null, depth: r.depth, actingId: null }));
     }
     return offices.map((r, i) => ({
         purpose: r.purpose,
         holderId: room[i % room.length].id,
-        depth: r.depth
+        depth: r.depth,
+        actingId: i >= room.length ? room[i % room.length].id : null
     }));
 }
 
