@@ -76,7 +76,8 @@ describe('the narrator plays the world', () => {
         // names a real person in whatever world the seed draws.
         const recap = game.state().log
             .filter(entry => entry.role === 'engine').map(entry => entry.text).join('\n');
-        const family = /The household:\n([A-Z][a-z]+ [A-Z][a-z]+)\./.exec(recap)?.[1];
+        // "Kong Zhaolu." with a label under it, or "Kong Zhaolu raised you." - either shape.
+        const family = /The household[^\n]*:\n([A-Z][a-z]+ [A-Z][a-z]+)[. ]/.exec(recap)?.[1];
         expect(family, 'the opening names the household').toBeTruthy();
 
         const turns: { said: string; text: string; source: string | undefined }[] = [];

@@ -401,22 +401,45 @@ export const THE_WORLD_THEY_TAKE_FOR_GRANTED = `THE WORLD, AS THE PEOPLE IN IT T
  * The worked turns. Examples move this model where rules do not, and they teach every property
  * they show, so each one is present tense, second person, and mostly untagged speech. They carry
  * no proper noun, because they sit in the prompt of every run.
+ *
+ * EACH ONE IS AN INPUT AND THE NARRATION IT GETS, in `<example>` tags. Published prompting
+ * guidance, for this model family and others, says the same things about examples: mirror the
+ * real use, keep the format consistent, vary them so no unintended pattern is learned, and
+ * delimit them so they cannot be mistaken for instructions. These had been outputs under a one-line situation, so gemma learned
+ * what a turn sounds like and never saw the rulings a turn is built from - and where a played
+ * situation matched one, it copied the output. The input half is the real user message cut down,
+ * with its real headings, so what is taught is how rulings and cards become a scene.
+ *
+ * None sits on a situation a player types: a song in the square, not a shout; seniors met in a
+ * walk, not greeted at a well. And none describes anybody by what they are not doing, which the
+ * old ones did twice while the rules said never to.
  */
-export const EXAMPLES_OPEN = 'EXAMPLES - these did not happen.';
-export const EXAMPLES_CLOSE = 'END OF EXAMPLES.';
+export const EXAMPLES_OPEN = '<examples>';
+export const EXAMPLES_CLOSE = '</examples>';
 
-export const WORKED_TURNS = `${EXAMPLES_OPEN} They show the voice only. Never continue them,
-refer to them, or reuse their lines. They carry no names on purpose: yours use the real names
-from this turn's cards and lists.
+export const WORKED_TURNS = `${EXAMPLES_OPEN}
+Each example is a turn's input, cut down, and the narration that turn should get. They show the
+voice, and how rulings and cards become a scene. They did not happen. Never continue them, refer
+to them, or reuse their lines. They carry no names on purpose: a real turn uses the real names
+from its own cards and lists.
 
-[The player asks a stallholder the price of a manual. A neighbour cuts in.]
-
-    The stallholder does not look up from his abacus.
+<example>
+<input>
+THE PEOPLE HERE
+- a rope-seller: a man, about fifty, level with you. Right now: minding a stall of hemp rope.
+- a tea-seller: a woman, about forty, below you. Right now: at the next stall.
+THE PLAYER SAID, WORD FOR WORD: "How much for a coil?"
+WHAT THE ENGINE RULED
+- Fifteen cash the coil. The same rope was twelve in the spring.
+- The seller will not come down for somebody wearing no house's colours.
+</input>
+<narration>
+    The rope-seller keeps his eyes on his abacus.
 
     "Fifteen."
 
-    You heard twelve in the spring, and you say so. He turns the slip over, slowly, so that the
-    damp stain along the spine is facing you.
+    You heard twelve in the spring, and you say so. He turns the coil over, slowly, so that the
+    damp stain along one side is facing you.
 
     "In the spring it was dry. Fifteen."
 
@@ -424,9 +447,22 @@ from this turn's cards and lists.
 
     "Fifteen." Now he looks up. "Fellow Daoist, this old man does not haggle with somebody
     wearing nobody's colours."
+</narration>
+</example>
 
-[The player bursts into song in the middle of the square, to nobody in particular.]
-
+<example>
+<input>
+THE PEOPLE HERE
+- a porter: a man, about sixty, level with you. Right now: resting a carrying pole by the well.
+- a disciple of a house the player does not know: a man, about twenty-five, above you. Right
+  now: leaning on the gatepost.
+- And 7 people whose faces the player cannot place.
+THE PLAYER SAID, WORD FOR WORD: "I sing"
+WHAT THE ENGINE RULED
+- You sing in the square. Nothing comes of it.
+- 9 standing here; 2 of them answered aloud.
+</input>
+<narration>
     The square goes quiet the way squares do, from the edges in.
 
     "Hah! Listen to him!"
@@ -436,12 +472,26 @@ from this turn's cards and lists.
 
     "My mule sang better than that, and my mule is dead."
 
-    The disciple leaning on the gatepost has not moved at all. His eyes have. They are on you
-    now, and they stay there.
+    The disciple on the gatepost keeps his shoulder to the wood. His eyes are on you now, and
+    they stay there.
+</narration>
+</example>
 
-[Two senior brothers of the player's own house come the other way down a covered walk. They do
-not like each other.]
-
+<example>
+<input>
+THE SCENE
+Place: a covered walk inside the player's own house.
+THE PEOPLE HERE
+- a broad senior brother: a man, about thirty, above you, of your house. What they are like:
+  plays to whoever is listening.
+- a thin senior brother: a man, about twenty-eight, above you, of your house. What they are
+  like: keeps score.
+THE PLAYER SAID, WORD FOR WORD: "I walk on to the archive"
+WHAT THE ENGINE RULED
+- Two seniors of your house stop you in the walk. One greets you. The other says something at
+  your expense. Nothing is asked of you and nothing is decided.
+</input>
+<narration>
     The two senior brothers stop in the middle of the walk, so that you have to stop too.
 
     "Junior Brother!" The broad one spreads his arms as if he had been looking for you all
@@ -460,16 +510,56 @@ not like each other.]
 
     A servant carrying a tray has found something on it to straighten, and is straightening it
     very slowly.
+</narration>
+</example>
 
-[The player sits down alone to cultivate on thin ground.]
+<example>
+<input>
+THE PEOPLE HERE
+- a drunk carter: a man, about forty, level with you. Right now: hanging off the player's
+  sleeve.
+- And 5 people whose faces the player cannot place.
+THE PLAYER SAID, WORD FOR WORD: "I shove the drunk off my sleeve"
+WHAT THE ENGINE RULED
+- You land 4 on the carter. He lands 6 on you. A minor wound, and it will close on its own.
+- You are on 34 of 40; he is on 32 of 36.
+- 5 standing here; 3 of them answered aloud.
+</input>
+<narration>
+    You put both hands in his chest and shove. He goes back two steps, finds his feet on the
+    third, and comes in swinging.
 
+    His fist glances off your cheekbone. It is a drunk's punch, all shoulder and no aim, and it
+    still makes your eye water.
+
+    "Again! Hit him again!"
+
+    "Five cash on the carter!"
+
+    "Five cash on the carter's feet giving out first!"
+
+    The carter wipes his mouth, looks at the blood on the back of his hand as if somebody else had
+    put it there, and squares up.
+</narration>
+</example>
+
+<example>
+<input>
+THE PEOPLE HERE: nobody. The player is alone.
+THE PLAYER SAID, WORD FOR WORD: "I sit by the shrine and cultivate until evening"
+WHAT THE ENGINE RULED
+- A day of sitting. Qi density thin: half cultivation rate.
+- +2 progress. 0 of 100 toward the next rank is now 2 of 100. Not yet eligible.
+</input>
+<narration>
     You sit with your back against the shrine wall and close your eyes.
 
     You draw, and draw, and what comes in would not fill a thimble. The incense stick burns down
     to a stub. Your legs have gone numb.
 
     The wall of the next layer is exactly where it was this morning.
-
+</narration>
+</example>
 ${EXAMPLES_CLOSE}`;
 
 /**

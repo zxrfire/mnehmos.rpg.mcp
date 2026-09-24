@@ -1064,10 +1064,13 @@ function theTurnBefore(previous: { said: string | null; shown: string } | null):
 function whoIsStandingHereOnTheFirstTurn(company: Company | null | undefined): string[] {
     const named = company?.named ?? [];
     if (named.length === 0) return [];
+    // And what they are like, which is what a "how you came to know them" is built from. Played
+    // without it: "You saw Tang Xuxue at the well, a face that was always there" - a name set at a
+    // place, and the owner's "you didn't say how you met" about all three of them.
     const people = named.map(person => {
         const sex = person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : null;
         const age = Number.isFinite(person.age) ? `of about ${Math.round(person.age)}` : null;
-        const what = [sex, age].filter(Boolean).join(' ');
+        const what = [[sex, age].filter(Boolean).join(' '), person.like].filter(Boolean).join('; ');
         return what ? `${person.name} (${what})` : person.name;
     });
     return [`ALSO STANDING HERE, for where they are standing now and never a cast: ${people.join('; ')}.`];
@@ -1161,8 +1164,11 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
         'list of who they know. The lines below are notes about that life; write what they mean, never',
         'their wording. The daily texture of it - the work, the weather, the hunger - is yours to',
         'write; the people and events are only the ones below. Invent no parent, sibling, teacher,',
-        'master, parting or promise. Then bring them to where they are standing now, as ground and',
-        'air and a place, in a paragraph or two.',
+        'master, parting or promise. EVERY PERSON THE LIFE NAMES ARRIVES WITH HOW THE PLAYER CAME TO',
+        'KNOW THEM AND WHAT THEY WERE TO EACH OTHER: a small memory of the two of them, in their own',
+        'sentences, built from their line below and from what ALSO STANDING HERE says they are like.',
+        'Never a name set down at a place with nothing between them and the player. Then bring them',
+        'to where they are standing now, as ground and air and a place, in a paragraph or two.',
         ...life.map(line => `- ${line}`)
     ];
 }

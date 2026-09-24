@@ -64,8 +64,11 @@ const recap: string = record.turns[0].engine.join('\n');
 const namesAfter = (marker: string): string[] => {
     const at = recap.indexOf(marker);
     if (at < 0) return [];
+    // A name leads its line, followed either by a label ("Kong Zhaolu. Family.") or by what they
+    // are to the player ("Kong Zhaolu raised you.").
     return recap.slice(at).split('\n').slice(1)
-        .filter(line => /^[A-Z][a-z]+ [A-Z][a-z]+\./.test(line)).map(line => line.split('.')[0]!);
+        .map(line => /^([A-Z][a-z]+ [A-Z][a-z]+)[. ]/.exec(line)?.[1])
+        .filter((name): name is string => name !== undefined);
 };
 const family = namesAfter('The household:')[0] ?? 'somebody';
 const known = namesAfter('People you can already put a name to');
