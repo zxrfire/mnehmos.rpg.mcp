@@ -152,6 +152,83 @@ export function recordMasterTaken(
 }
 
 /**
+ * Write the day a bond ended, and which of the two ended it.
+ *
+ * Its own row and not a correction of the taking: a life holds the day somebody
+ * knelt AND the day one of them walked, and the sequence is the account of what
+ * happened between them. The design owner, on there being no such thing as
+ * neglect any more: *"either they terminate the relationship or they don't"*.
+ */
+export function recordABondEnded(
+    state: WorldState,
+    disciple: NpcRecord,
+    master: NpcRecord,
+    endedBy: 'master' | 'disciple',
+    day: number
+): HistoricalFact {
+    const summary = endedBy === 'master'
+        ? `${master.name} cast ${disciple.name} out.`
+        : `${disciple.name} walked out on ${master.name}.`;
+    return appendWorldFact(state, makeFact({
+        day,
+        kind: 'promotion',
+        scale: 'local',
+        summary,
+        actors: [
+            { id: disciple.id, name: disciple.name, role: 'disciple' },
+            { id: master.id, name: master.name, role: 'master' }
+        ],
+        locationId: disciple.locationId,
+        factionIds: disciple.factionId ? [disciple.factionId] : [],
+        visibility: 'faction',
+        magnitude: 0.35,
+        causeKnown: true,
+        data: {
+            endedBy,
+            masterOrdinal: master.cultivation.realmOrdinal,
+            discipleOrdinal: disciple.cultivation.realmOrdinal
+        }
+    }), { recur: false });
+}
+
+/**
+ * Write the day somebody of a house began carrying somebody junior through a
+ * manual.
+ *
+ * A LINE AND NOT A BOND. The design owner: *"a master has to acknowledge the
+ * master-disciple relationship"*. Whoever in the house can open the book opens
+ * it; nobody knelt, and the row says what happened rather than calling it a
+ * master. See `recordMasterTaken` for the other one.
+ */
+export function recordATeachingLine(
+    state: WorldState,
+    student: NpcRecord,
+    teacher: NpcRecord,
+    manualName: string,
+    day: number
+): HistoricalFact {
+    return appendWorldFact(state, makeFact({
+        day,
+        kind: 'promotion',
+        scale: 'local',
+        summary: `${teacher.name} began carrying ${student.name} through ${manualName}.`,
+        actors: [
+            { id: student.id, name: student.name, role: 'student' },
+            { id: teacher.id, name: teacher.name, role: 'teacher' }
+        ],
+        locationId: student.locationId,
+        factionIds: student.factionId ? [student.factionId] : [],
+        visibility: 'faction',
+        magnitude: 0.2,
+        causeKnown: true,
+        data: {
+            teacherOrdinal: teacher.cultivation.realmOrdinal,
+            studentOrdinal: student.cultivation.realmOrdinal
+        }
+    }), { recur: false });
+}
+
+/**
  * Write the day a teaching line ended, and why.
  *
  * The reason is read off state rather than judged: a master who died is a

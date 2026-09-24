@@ -29,6 +29,7 @@ import { makeLocation } from '../../src/engine/world/locations.js';
 import { forStream } from '../../src/engine/cultivation/rng.js';
 import { chosenOf, circlesOf, holdGathering } from '../../src/engine/world/gatherings.js';
 import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
+import { creditMerit, meritWith } from '../../src/engine/world/what-a-house-counts-in-somebodys-favour.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE WIRING
@@ -239,6 +240,93 @@ describe('the row is not a free agent', () => {
         // the lifespan pass would otherwise have written the player's death
         // into the chronicle in the middle of their own run.
         expect(after.has(PLAYER_ID), 'the world buried the player').toBe(true);
+    }, 120_000);
+
+    it('is never paid into, because the purse on the row is not the one they spend out of', () => {
+        // The row is a projection of the sheet and is overwritten off it every
+        // turn, so stones the world pays into it are written and wiped. Measured
+        // on two pinned worlds before the guard: 540 over sixty years and 1,080
+        // over a hundred and twenty, none of it reaching the player. What they
+        // are owed they draw, through `sect_manage.stipend`, which pays the sheet.
+        const state = worldWithTwoHouses();
+        const purse = 500;
+        state.npcs.push({ ...playerRow(state, 10), spiritStones: purse });
+        const control: NpcRecord = {
+            ...playerRow(state, 10), id: 'npc-paid', name: 'An Ordinary Disciple',
+            tags: [], spiritStones: purse
+        };
+        state.npcs.push(control);
+
+        advanceWorldForPlay(state, { days: 365 * 60, stopOnInterrupt: false });
+
+        const player = state.npcs.find(n => n.id === PLAYER_ID)!;
+        expect(player.spiritStones, 'the world paid the player\'s row').toBe(purse);
+        // The control is what proves the payroll runs at all.
+        const paid = state.npcs.find(n => n.id === 'npc-paid');
+        expect(paid, 'the control did not survive to be paid').toBeDefined();
+        expect(paid!.spiritStones, 'nobody was paid, so this proves nothing')
+            .toBeGreaterThan(purse);
+    }, 120_000);
+
+    it('is never credited with service either, because the count on the row is the membership\'s', () => {
+        // The same defect as the purse, one field over: `creditMerit` is the one
+        // writer of `merit` and the world calls it from the board, the sendings,
+        // the turn-ins and the lessons. The player's count is `contribution` on
+        // their membership, which the play layer credits and the refresh projects
+        // onto the row - so a world credit here would be written and wiped, and
+        // the door that reads merit would be reading a number nobody can earn.
+        const state = worldWithTwoHouses();
+        const counted = 40;
+        const merit = { houseId: 'house-b', points: counted };
+        state.npcs.push({ ...playerRow(state, 10), merit });
+        const control: NpcRecord = {
+            ...playerRow(state, 10), id: 'npc-served', name: 'An Ordinary Disciple',
+            tags: [], merit: { ...merit }
+        };
+        state.npcs.push(control);
+
+        advanceWorldForPlay(state, { days: 365 * 60, stopOnInterrupt: false });
+
+        const player = state.npcs.find(n => n.id === PLAYER_ID)!;
+        expect(meritWith(player, 'house-b'), 'the world counted service onto the player\'s row')
+            .toBe(counted);
+        const served = state.npcs.find(n => n.id === 'npc-served');
+        expect(served, 'the control did not survive to be credited').toBeDefined();
+        expect(
+            meritWith(served!, 'house-b'),
+            'nobody was credited with anything, so this proves nothing'
+        ).toBeGreaterThan(counted);
+
+        // AND AT THE WRITER ITSELF, which is where the guard is. The row stands
+        // nowhere and most passes that count service pick people out of a place,
+        // so the run above cannot reach every caller; this reaches the one they
+        // all go through.
+        expect(
+            meritWith(creditMerit(playerRow(state, 10), 50), 'house-b'),
+            'creditMerit counted service onto the player\'s row'
+        ).toBe(0);
+        expect(
+            meritWith(creditMerit({ ...playerRow(state, 10), tags: [] }, 50), 'house-b'),
+            'creditMerit counts nothing for anybody, so this proves nothing'
+        ).toBeGreaterThan(0);
+    }, 120_000);
+
+    it('carries what the membership counts, so a door reading the row reads the sheet', async () => {
+        // The projection, the other half of the guard above: what a promotion
+        // comparison, a ruin's shelf and the walk-out pressure read off `merit`
+        // for the player is their membership's `contribution` and nothing else.
+        const { game, repos } = makeGame({ worldEnabled: true, seed: 'invited-merit' });
+        const created = await game.newRun('Wei Zhaoxun');
+        repos.sects.addMember('sect-azure-cloud-pavilion', created.cultivator.id, 1);
+        repos.sects.addContribution('sect-azure-cloud-pavilion', created.cultivator.id, 120);
+        await game.act('I look around');
+
+        const world = await game.loadWorld();
+        const row = world!.npcs.find(npc => npc.id === created.cultivator.id)!;
+        const membership = repos.sects.getMembership(created.cultivator.id)!;
+        expect(meritWith(row, membership.sectId)).toBe(membership.contribution);
+        expect(meritWith(row, 'sect-somebody-else'), 'a count for a house they are not on')
+            .toBe(0);
     }, 120_000);
 
     it('is never enrolled in a house it did not walk into, nor handed a book', () => {

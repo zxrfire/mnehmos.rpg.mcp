@@ -113,6 +113,9 @@ export function thisHouseCanIssue(ordinalsOnTheRoll: readonly number[]): boolean
 /** The room a house keeps its lamps burning in: the Life Lamp Hall, at the inner end. */
 export const WHERE_THE_LAMPS_BURN = 'life_lamp_hall';
 
+/** The tag every life lamp carries, and what a lamp is found by. */
+export const A_LIFE_LAMP = 'life-lamp';
+
 /** Deterministic ids, so a lamp and its token can always find each other. */
 export function lampIdFor(memberId: string): string {
     return `life-lamp-${memberId}`;
@@ -230,7 +233,7 @@ export function issueTo(input: {
         ownerName: input.houseName,
         power: null,
         locationId: input.lampRoomId,
-        tags: ['life-lamp', `house:${input.houseId}`, `member:${input.memberId}`],
+        tags: [A_LIFE_LAMP, `house:${input.houseId}`, `member:${input.memberId}`],
         // No `burning` field. Whether a lamp burns is its holder's aliveness,
         // which is one fact and is asked of the person - see `whatTheLampSays`.
         data: { memberId: input.memberId, litOnDay: input.onDay }
@@ -524,7 +527,7 @@ export function whoHasALampBurningIn(
 ): Set<string> {
     const burning = new Set<string>();
     for (const object of objects) {
-        if (object.ownerId !== houseId || !object.tags.includes('life-lamp')) continue;
+        if (object.ownerId !== houseId || !object.tags.includes(A_LIFE_LAMP)) continue;
         if (typeof object.data?.memberId === 'string') burning.add(object.data.memberId);
     }
     return burning;

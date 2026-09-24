@@ -79,6 +79,7 @@ import {
     type NpcRecord
 } from './npc-state.js';
 import { makeObject, type ObjectRecord } from './possessions.js';
+import { handBackTheirSlips } from './a-communication-talisman-carries-word-home.js';
 import type { WorldState } from './world-state.js';
 import {
     deliverWhatTheyOweTheHouse,
@@ -196,9 +197,13 @@ export function whereThisHouseBurnsItsLamps(
  * entered - measured on `town-b`: out in year 188, back on the same roll at a
  * dao ground in 192, and never sent to the house.
  *
+ * AND THE HOUSE'S SLIPS GO BACK WITH THEM, into its own stock
+ * (`handBackTheirSlips`): a house asks the people who leave for its
+ * communication talismans as it asks for its robes.
+ *
  * `rollOf` answers the house somebody is on today, null for none, and undefined
  * for somebody the caller is not asking about - who is skipped. Mutates in place
- * and returns how many were handed back.
+ * and returns how many things were handed back, a stack of slips counting once.
  */
 export function handBackWhatTheyNoLongerBelongTo(
     objects: ObjectRecord[],
@@ -217,7 +222,7 @@ export function handBackWhatTheyNoLongerBelongTo(
         objects[i] = { ...object, possessorId: null };
         handed++;
     }
-    return handed;
+    return handed + (handBackTheirSlips(objects, rollOf) > 0 ? 1 : 0);
 }
 
 /**

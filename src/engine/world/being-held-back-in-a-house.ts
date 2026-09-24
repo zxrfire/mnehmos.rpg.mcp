@@ -108,9 +108,25 @@ export function whereTheyAreHeldBack(
  * first year, and all three had walked out within ninety years - "they had
  * outgrown their place in that hall" - the top of the world scattered into
  * splinters because a living First Seat was read as a house with no room.
+ *
+ * ── AND IT IS THE TOP RUNG ONLY, WHICH IT WAS NOT AT FIRST ───────────────
+ *
+ * The first version exempted `atRank + 1 >= rankCount - 1` - the rung under the
+ * top AND the one under that - which was a generalisation nobody needed and it
+ * took a whole population with it. `whoSplitsAHouse` wants somebody senior,
+ * below the top, and CARRYING THE HELD-BACK TAG: in a seven-rung house that is
+ * ranks four and five, and rank five had just stopped being tagged. A pass
+ * written to found splinters stopped founding them.
+ *
+ * WHAT MAKES THIS WORTH A PARAGRAPH RATHER THAN A LINE. The evidence quoted for
+ * that pass working - 2.4 foundings a century, ten live splinters at a thousand
+ * years, measured 2026-09-22 - was true when it was taken and stopped being
+ * true in the same session it was quoted, because of this function. A measured
+ * claim with no date on it becomes folklore the moment the thing it measured
+ * changes. Both numbers here carry theirs.
  */
 export function waitingOnASuccession(blocked: Pick<Blocked, 'atRank'>, rankCount: number): boolean {
-    return rankCount > 0 && blocked.atRank + 1 >= rankCount - 1;
+    return rankCount > 0 && blocked.atRank + 1 >= rankCount;
 }
 
 /**

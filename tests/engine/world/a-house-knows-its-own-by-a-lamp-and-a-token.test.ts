@@ -36,6 +36,7 @@ import {
 } from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { BEAST_MATERIALS } from '../../../src/data/cultivation/beasts.js';
 import { roomAuthorityOf } from '../../../src/engine/world/architecture.js';
+import { whoAnswersAbout, whoIsInChargeOfWhat } from '../../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import Database from 'better-sqlite3';
 import { migrate } from '../../../src/storage/migrations.js';
 import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
@@ -187,17 +188,27 @@ describe('whose job it is', () => {
      */
     it('is the room, so the office needs no registry', () => {
         expect(THE_ROOM_THE_ROLL_IS_KEPT_IN).toBe('life_lamp_hall');
-        // NOT SEALED YET, AND THAT IS WHY THE INTERNAL AFFAIRS ELDER IS STILL
-        // ONLY A NAME. `whoIsInChargeOfWhat` deals only sealed rooms, so sealing
-        // this hall is the whole of what makes the office a person somebody can
-        // go to.
-        // It was tried and reverted: offices are dealt round-robin over the
-        // sealed rooms deepest-first, so adding one shifts every holder by one
-        // and moved discipline permanently past the rung that held it. See the
-        // note on `ancestral_hall` in `architecture.ts`. The Life Lamp Hall is
-        // not sealed and not an office for the same reason.
+        // AN OFFICE, SO THE INTERNAL AFFAIRS ELDER IS A PERSON. It could not be
+        // one while offices were dealt round-robin deepest-first: adding a room
+        // shifted every holder by one and moved discipline permanently past the
+        // rung that held it. It is dealt in a later round now
+        // (`officeAddedInRound`), after every office the deal started with.
+        expect(roomAuthorityOf('life_lamp_hall').office).toBe(true);
         expect(roomAuthorityOf('life_lamp_hall').sealed).toBe(false);
-        expect(roomAuthorityOf('life_lamp_hall').office).toBe(false);
+    });
+
+    it('moved nobody off an office they already held when it became one', () => {
+        const rooms = ['under_hall', 'treasury', 'archive', 'punishment_hall', 'tribute_room', 'mission_hall'] as const;
+        const roll = [
+            { id: 'head', rankIndex: 5 }, { id: 'elder-a', rankIndex: 4 },
+            { id: 'elder-b', rankIndex: 4 }, { id: 'elder-c', rankIndex: 4 }
+        ];
+        const before = whoIsInChargeOfWhat({ rooms, roll, rankCount: 6 });
+        const after = whoIsInChargeOfWhat({ rooms: [...rooms, 'life_lamp_hall'], roll, rankCount: 6 });
+        for (const office of before) {
+            expect(after.find(p => p.purpose === office.purpose)!.holderId, office.purpose).toBe(office.holderId);
+        }
+        expect(whoAnswersAbout(after, THE_ROOM_THE_ROLL_IS_KEPT_IN)).not.toBeNull();
     });
 });
 

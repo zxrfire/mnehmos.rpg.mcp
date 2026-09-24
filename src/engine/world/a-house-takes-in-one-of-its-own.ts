@@ -22,6 +22,14 @@
  * A splinter has no compound and no unmodelled hundreds, so this never reaches
  * one.
  *
+ * BORN TO SOMEBODY THERE. Minted with no family, the raised died heirless and
+ * displaced the world's births: measured on `pass-a` and `pass-b` over 200
+ * years, 619 raised deaths, every one heirless, born rows kept 800 against
+ * 1,622 with no raising at all, and ties passed per death 0.75 against 1.37.
+ * With a parent
+ * among the people at the house's ground, 480 of 591 raised deaths were
+ * heirless and they passed 735 ties; the pooled rate was 1.29.
+ *
  * NOT A FIFTH INTAKE PASS. It is recruitment's own half for the house's own
  * people, run beside `applyRecruitment`, which takes in the unaffiliated.
  */
@@ -30,17 +38,19 @@ import { forStream } from '../cultivation/rng.js';
 import { clampOrdinal } from '../cultivation/realms.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
-import { howManyAHouseReallyHas } from '../social/how-a-house-reads-a-face.js';
 import { aRollWorthModelling, theBandARaisedMemberStandsIn } from './a-house-raises-its-own.js';
+import { howManyNobodyModels, oneOfTheRestIsNowSomebody } from './how-many-people-a-house-has.js';
 import { isBelowTheLid } from './layers.js';
-import { createNpc, setRealm } from './npc-state.js';
+import { aChildTakesTheirParentsLine } from './a-child-takes-their-parents-line.js';
+import { createNpc, setRealm, type NpcRecord } from './npc-state.js';
+import { bindNewbornToHousehold, couldParent, rosterOf, type Roster } from './the-ties-an-ordinary-life-produces.js';
 import { getLocation, type FactionRecord, type WorldState } from './world-state.js';
 
 const DAYS_PER_YEAR = 365;
 
 /**
  * Whether a house has people the world does not model: its compound stands, it is
- * still the house's, and it sleeps somebody (`howManyAHouseReallyHas`). A seat a
+ * still the house's, and somebody of it is still counted (`howManyNobodyModels`). A seat a
  * conquest turned to a ruin sleeps nobody, whatever rooms still carry the name.
  *
  * READ OFF THE KIND, NOT THE `ruined` TAG. A splinter is seated where its founder
@@ -53,7 +63,7 @@ export function stillHasPeopleNobodyModels(state: WorldState, house: FactionReco
     const seat = house.seatLocationId === null ? null : getLocation(state, house.seatLocationId);
     if (!seat || seat.kind === 'ruin') return false;
     if (seat.controllingFactionId !== null && seat.controllingFactionId !== house.id) return false;
-    return howManyAHouseReallyHas(state, house.id) > 0;
+    return howManyNobodyModels(state, house.id) > 0;
 }
 
 /** Each house short of its roll takes one of its own in. Returns how many came forward. */
@@ -69,6 +79,7 @@ export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: nu
 
     let raised = 0;
     let taken: Set<string> | null = null;
+    let roster: Roster | null = null;
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house) || !house.tags.includes('recruits')) continue;
         const cf = getSect(house.id);
@@ -109,7 +120,24 @@ export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: nu
         });
         taken.add(npc.name);
         npc = { ...setRealm(npc, ordinal, day), factionId: house.id, factionRankIndex: 0 };
+
+        // BORN TO SOMEBODY. Whoever came forward was born to one of the people
+        // at the house's ground, as a birth there would be (`applyDemography`),
+        // and takes their line and household. Without it every one of them
+        // died heirless and inherited from nobody - see the header.
+        roster ??= rosterOf(state);
+        const oldEnough = (n: NpcRecord) => day - n.identity.bornOnDay >= (age + 18) * DAYS_PER_YEAR;
+        const parents = couldParent(
+            roster.living.filter(n => oldEnough(n) && n.locationId === house.seatLocationId), age, day);
+        const parent = parents.length > 0 ? parents[rng.int(0, parents.length - 1)]! : null;
+        if (parent) {
+            npc = aChildTakesTheirParentsLine(state, npc, parent, roster);
+            npc = bindNewbornToHousehold(state, npc, parent.id, day, roster).child;
+        }
+        roster.at.set(npc.id, state.npcs.length);
+        roster.living.push(npc);
         state.npcs.push(npc);
+        oneOfTheRestIsNowSomebody(house);
         raised++;
     }
     return raised;

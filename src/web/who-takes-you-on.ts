@@ -10,10 +10,11 @@
  * of two things is true where the player is standing today:
  *
  *   in person      somebody of the house out looking for disciples is here
- *                  (`isOutLookingForDisciples`)
- *   a selection    the house's grounds are open (`theSelectionOpenOn`) and the
- *                  player is in them, or the intake its paper named for this
- *                  place is being held (`anIntakeHeldHere`)
+ *   a selection    the house's grounds are open and the player is in them, or
+ *                  the intake its paper named for this place is being held
+ *
+ * The rule itself is `theRoadOntoARoll`, which the world's own intake reads too:
+ * *"NPCs join the same way you do."*
  *
  * Whoever that is took them on: they owe the house the report
  * `a-house-expects-somebody-it-took-on.ts` is about, exactly as a recruiter of
@@ -39,8 +40,8 @@ import { isTheWorldsToMove, type NpcRecord } from '../engine/world/npc-state.js'
 import { isInsideTheCompound } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import {
     A_SELECTION_RUNS_FOR_DAYS,
-    isOutLookingForDisciples,
     theNextSelection,
+    theRoadOntoARoll,
     theSelectionOpenOn
 } from '../engine/world/when-a-house-takes-people-on.js';
 import { getLocation, type WorldState } from '../engine/world/world-state.js';
@@ -70,64 +71,65 @@ export function whoIsTakingPeopleOnHere(
     const house = world.factions.find(f => f.id === houseId && f.dissolvedOnDay === null) ?? null;
     if (!house) return null;
 
+    // TWO CLOCKS, ON PURPOSE. A selection at a house's grounds is the world's
+    // calendar, read off the world's own seed and day, so the world's people and
+    // the player meet the same one. An intake on a wall is the paper this run
+    // reads, which is dated on the run's own clock (`billsOnTheWall`).
     const onDay = Math.floor(run.elapsedDays);
+    const worldDay = Math.floor(world.currentDay);
     const here = game.worldPlaceOf(cultivator);
     const byId = new Map(world.locations.map(l => [l.id, l]));
     const ofTheHouseHere = presentOfTheHouse(game, cultivator, world, houseId);
-    const mostSenior = (rows: typeof ofTheHouseHere) => [...rows].sort((a, b) =>
-        b.npc.factionRankIndex - a.npc.factionRankIndex || (a.npc.id < b.npc.id ? -1 : 1))[0] ?? null;
-
-    // IN PERSON: somebody out looking for disciples, standing here.
-    const looking = mostSenior(ofTheHouseHere.filter(row => isOutLookingForDisciples(row.npc.activity)));
-    if (looking) return { taking: true, how: 'in person', recruiter: recruiterOf(looking) };
-
-    // A SELECTION: its grounds open and the player in them, or its intake here.
     const seat = house.seatLocationId;
     const atItsGrounds = seat !== null && here !== null && isInsideTheCompound(byId, here, seat);
-    const selection = atItsGrounds ? theSelectionOpenOn(run.seed, houseId, onDay) : null;
     const place = placeName(cultivator);
     const ground = postingGroundOf(place);
     const wall = {
         field: openDoorsInTheWorld(), placeName: place, ground,
         placeProvinceId: provinceOfPlace(place), onDay, seed: run.seed
     };
-    const intake = selection === null && ground !== 'unplaceable'
-        ? anIntakeHeldHere(wall, houseId, A_SELECTION_RUNS_FOR_DAYS)
-        : null;
-    if (selection !== null || intake !== null) {
-        const runner = mostSenior(ofTheHouseHere);
-        const fromTheHouse = runner === null
-            ? whoTookThemOn(world.npcs, {
-                houseId,
-                personId: cultivator.id,
-                placeId: here,
-                // Whoever the house sent to run it, which is anybody of it:
-                // the ranking puts somebody at its grounds first.
-                inReach: () => true,
-                atTheHouse: id => seat !== null && isInsideTheCompound(byId, id, seat)
-            })
-            : null;
-        const recruiter = runner !== null
-            ? recruiterOf(runner)
-            : fromTheHouse !== null
-                ? { npcId: fromTheHouse.id, knownAs: fromTheHouse.id, name: fromTheHouse.name }
-                : null;
-        if (recruiter !== null) {
-            return { taking: true, how: selection !== null ? 'at its selection' : 'at its intake', recruiter };
+
+    // THE ONE RULE, which the world's own intake reads too.
+    const road = theRoadOntoARoll({
+        houseId,
+        ofTheHouseHere: ofTheHouseHere.map(row => row.npc),
+        atItsGroundsForASelection: atItsGrounds && theSelectionOpenOn(world.seed, houseId, worldDay) !== null,
+        atItsIntake: ground !== 'unplaceable' && anIntakeHeldHere(wall, houseId, A_SELECTION_RUNS_FOR_DAYS) !== null,
+        // Whoever the house sent to run it, which is anybody of it: the ranking
+        // puts somebody at its grounds first.
+        whoRunsIt: () => whoTookThemOn(world.npcs, {
+            houseId,
+            personId: cultivator.id,
+            placeId: here,
+            inReach: () => true,
+            atTheHouse: id => seat !== null && isInsideTheCompound(byId, id, seat)
+        })?.id ?? null
+    });
+    if (road !== null) {
+        const present = ofTheHouseHere.find(row => row.npc.id === road.recruiterId);
+        const npc = world.npcs.find(n => n.id === road.recruiterId);
+        if (present || npc) {
+            return {
+                taking: true,
+                how: road.how,
+                recruiter: present
+                    ? recruiterOf(present)
+                    : { npcId: npc!.id, knownAs: npc!.id, name: npc!.name }
+            };
         }
     }
 
     // NOBODY, AND WHERE TO GO INSTEAD.
-    const next = theNextSelection(run.seed, houseId, onDay);
+    const next = theNextSelection(world.seed, houseId, worldDay);
     const seatName = seat === null ? null : getLocation(world, seat)?.name ?? null;
     const posts = housesThatHaveToAdvertise(wall.field).some(h => h.id === houseId && h.postsInPublic);
     const parts = [`Nobody of ${house.name} is taking anybody on here today.`];
     if (seatName !== null) {
-        parts.push(next.opensOnDay <= onDay
+        parts.push(next.opensOnDay <= worldDay
             ? `Its grounds at ${seatName} are open to people who want to be taken on until `
-              + `${daysFrom(next.closesOnDay - onDay)}.`
+              + `${daysFrom(next.closesOnDay - worldDay)}.`
             : `It next opens its grounds at ${seatName} to people who want to be taken on in `
-              + `${next.opensOnDay - onDay} days, for ${A_SELECTION_RUNS_FOR_DAYS} days.`);
+              + `${next.opensOnDay - worldDay} days, for ${A_SELECTION_RUNS_FOR_DAYS} days.`);
     }
     if (posts) parts.push('It also holds intakes in towns in its province, and says where on the paper it puts up.');
     parts.push('Its people go out looking for disciples, and one of them can take you on wherever they find you.');

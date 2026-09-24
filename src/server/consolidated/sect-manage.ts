@@ -69,6 +69,8 @@ import {
 } from '../../engine/world/house-elemental-character.js';
 import { getSpiritRoot } from '../../engine/cultivation/spirit-roots.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
+import { writeOneObligation } from '../../storage/repos/obligation.repo.js';
+import { theOathAHouseOffersAtItsDoor } from '../../engine/social/the-oath-a-house-offers-at-its-door.js';
 import {
     servantBarOf,
     theDoorIsShutTo,
@@ -220,7 +222,13 @@ const JoinSchema = z.object({
 
 const LeaveSchema = z.object({
     action: z.literal('leave'),
-    cultivatorId: z.string().optional()
+    cultivatorId: z.string().optional(),
+    /**
+     * What the leaver says to the oath the house offers first: to transmit its
+     * arts to nobody. Sworn by default, which is the ordinary way out; refused
+     * is a choice, not a refusal of the leaving. See `the-oath-a-house-offers-at-its-door.ts`.
+     */
+    oath: z.enum(['swear', 'refuse']).optional()
 });
 
 const PromoteSchema = z.object({
@@ -720,8 +728,18 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
     }
 
     const sect = repos.sects.getById(membership.sectId);
+    // THE HOUSE OFFERS THE OATH FIRST: silence about its arts, or enmity.
+    const atTheDoor = theOathAHouseOffersAtItsDoor({
+        leaverId: cultivator.id,
+        leaverName: cultivator.name,
+        houseId: membership.sectId,
+        houseName: sect?.name ?? membership.sectId,
+        answer: args.oath ?? 'swear',
+        onDay: Math.max(0, Math.floor(run.elapsedDays))
+    });
     const removed = repos.db.transaction(() => {
         const ok = repos.sects.removeMember(membership.sectId, cultivator.id);
+        writeOneObligation(repos.db as unknown as Parameters<typeof writeOneObligation>[0], atTheDoor.record);
         repos.runs.incrementTurn(run.id, 1);
         return ok;
     })();
@@ -734,8 +752,9 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
         sect: sect ? { id: sect.id, name: sect.name } : { id: membership.sectId },
         formerRank: membership.rankTitle,
         contributionForfeited: membership.contribution,
+        oath: { answer: atTheDoor.answer, obligationId: atTheDoor.record.id },
         cultivator: describeCultivator(repos, after, runAfter),
-        note: 'Contribution does not travel. Whatever was earned here stays here.'
+        note: `Contribution does not travel. Whatever was earned here stays here. ${atTheDoor.line}`
     };
 }
 

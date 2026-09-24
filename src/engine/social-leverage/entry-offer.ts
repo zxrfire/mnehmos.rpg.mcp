@@ -10,6 +10,7 @@ import { getMembersOf } from '../../data/cultivation/members.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import { entryRankIndexFor } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import { heightAloneWouldHideThem } from '../social/presence-recognition.js';
+import { theHighestRungAnOutsiderClears } from '../world/promotion-inside-a-house.js';
 import type { Standing } from '../social/what-is-said-about-somebody.js';
 
 /** One person already on the house's roll, as the roster holds them. */
@@ -130,6 +131,12 @@ export function entryOfferFor(input: {
     askerOrdinal: number;
     /** `WhereTheBodyLands.leaning`, when the caller has read the council. */
     leaning?: number | null;
+    /**
+     * The highest rung this asker clears as somebody from outside
+     * (`theHighestRungAnOutsiderClears`). Nothing is offered above it. Omitted,
+     * nothing caps the offer.
+     */
+    clearsUpTo?: number | null;
 }): EntryOffer {
     const rankCount = input.ranks.length;
     // The head is not a peer. This line stops the Burnt Earth Temple's Abbot at
@@ -180,9 +187,15 @@ export function entryOfferFor(input: {
             input.ranks, input.admissionOrdinal, input.askerOrdinal
         ));
 
-    const offered = band === 'closed_door'
+    const wanted = band === 'closed_door'
         ? null
         : Math.min(topOffer, Math.max(0, baseline + rungs));
+    // THE OUTSIDER'S BAR. A rung above the bottom is taken from outside only by
+    // somebody standing past the bar an insider is promoted at.
+    const clearsUpTo = input.clearsUpTo ?? null;
+    const offered = wanted === null || clearsUpTo === null
+        ? wanted
+        : Math.min(wanted, Math.max(0, clearsUpTo));
 
     const reference = peerRank !== null
         ? `${peerCount} of the house's own ${anchor === 'peers_near'
@@ -219,6 +232,10 @@ export function entryOfferFor(input: {
             + `${offered === null
                 ? ' and the door does not open.'
                 : `, seating them at ${offered} (${input.ranks[offered] ?? '?'}).`}`
+            + `${offered !== null && wanted !== null && offered < wanted
+                ? ` Rank ${wanted} (${input.ranks[wanted] ?? '?'}) asks more of somebody from outside `
+                  + 'than of a disciple promoted to it, and they do not stand that high.'
+                : ''}`
     };
 }
 
@@ -241,6 +258,9 @@ export function offerAtTheDoorOf(
             realmOrdinal: m.realmOrdinal
         })),
         askerOrdinal,
-        leaning
+        leaning,
+        clearsUpTo: theHighestRungAnOutsiderClears(
+            factionId, askerOrdinal, sect.ranks.length - 1, sect.ranks.length,
+            sect.admissionOrdinal, sect.powerOrdinal)
     });
 }

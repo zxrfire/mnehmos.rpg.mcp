@@ -339,6 +339,30 @@ export function anIntakeHeldHere(
 }
 
 /**
+ * The houses holding an intake at this place on any day between two days: the
+ * same draw {@link anIntakeHeldHere} reads, over a span rather than a day, for a
+ * caller whose clock is a year. Both days a paper can name count.
+ */
+export function intakesHeldHereBetween(
+    input: Omit<WallInput, 'onDay'>,
+    fromDay: number,
+    toDay: number,
+    runsForDays: number
+): Set<string> {
+    const held = new Set<string>();
+    const first = Math.floor(Math.max(0, fromDay - runsForDays) / A_BILL_STAYS_UP_FOR_DAYS) - 1;
+    const last = Math.floor(Math.max(0, toDay) / A_BILL_STAYS_UP_FOR_DAYS);
+    for (let w = Math.max(0, first); w <= last; w++) {
+        for (const row of drawnOnThisWall({ ...input, onDay: w * A_BILL_STAYS_UP_FOR_DAYS }, w)) {
+            for (const opensOnDay of [row.inTheWindow, row.inTheWindow + A_BILL_STAYS_UP_FOR_DAYS]) {
+                if (opensOnDay <= toDay && opensOnDay + runsForDays - 1 >= fromDay) held.add(row.house.id);
+            }
+        }
+    }
+    return held;
+}
+
+/**
  * The knowledge a bill grants, shaped for `KnowledgeGate.learnIfNew`.
  */
 export function whatABillGrants(bill: RecruitingBill): {

@@ -55,6 +55,7 @@ import {
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { NOTHING_LEFT_BUT_TO_END_IT } from './nobody-is-invincible.js';
 import { indexById, type WorldState } from './world-state.js';
 
@@ -212,6 +213,7 @@ export function whatBeingPassedOverDoes(
             factIds: held?.factIds ?? [],
             inheritedFromId: held?.inheritedFromId ?? null
         }, day);
+        andTheOtherEnd(state.npcs, npc, { targetId: person.tookItId, kind: 'rival', standing: 0 }, day);
 
         // ONE GOAL PER DOOR, not one per year. Somebody passed over three times
         // for the same place is one ambition getting older, and stacking rows

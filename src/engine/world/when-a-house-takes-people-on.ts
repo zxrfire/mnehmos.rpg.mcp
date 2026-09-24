@@ -97,3 +97,56 @@ export function isOutLookingForDisciples(activity: Pick<NpcActivity, 'kind' | 'n
     if (!activity || activity.kind !== 'out_with_a_party' || RECRUITING === undefined) return false;
     return activity.note.toLowerCase().includes(RECRUITING.name.toLowerCase());
 }
+
+/** The ways onto a roll. */
+export type HowSomebodyIsTakenOn = 'in person' | 'at its selection' | 'at its intake';
+
+export interface TheRoadOntoARoll {
+    how: HowSomebodyIsTakenOn;
+    /** Whoever of the house took them on: the recruiter, or whoever ran it. */
+    recruiterId: string;
+}
+
+/** Somebody of the house, as the rule reads them. */
+export interface OneOfTheHouse {
+    id: string;
+    status: string;
+    factionId: string | null;
+    factionRankIndex: number;
+    activity: Pick<NpcActivity, 'kind' | 'note'> | null;
+}
+
+/**
+ * THE ONE RULE, for a player and for the world's own people alike. The design
+ * owner: *"NPCs join the same way you do."*
+ *
+ * Somebody of the house out looking for disciples, standing where they stand,
+ * takes them on in person. Otherwise its grounds open for a selection with them
+ * there, or the intake its notice named being held where they are, and whoever
+ * of it runs that took them on: somebody of the house standing there, the most
+ * senior first, else whoever the caller says the house sent. Null for no road
+ * at all.
+ *
+ * The caller says what "there" means, because the two clocks differ in grain: a
+ * player's turn is a day and a place, and the world's intake pass is a year and
+ * a province (see `the-world-joins-a-house-the-way-a-player-does.ts`).
+ */
+export function theRoadOntoARoll(input: {
+    houseId: string;
+    /** Of the house, standing where they stand. Anybody else in the list is ignored. */
+    ofTheHouseHere: readonly OneOfTheHouse[];
+    atItsGroundsForASelection: boolean;
+    atItsIntake: boolean;
+    /** Whoever of the house runs a selection or an intake when nobody of it is standing here. */
+    whoRunsIt: () => string | null;
+}): TheRoadOntoARoll | null {
+    const here = input.ofTheHouseHere
+        .filter(n => n.status === 'alive' && n.factionId === input.houseId)
+        .sort((a, b) => b.factionRankIndex - a.factionRankIndex || (a.id < b.id ? -1 : 1));
+    const looking = here.find(n => isOutLookingForDisciples(n.activity));
+    if (looking) return { how: 'in person', recruiterId: looking.id };
+    if (!input.atItsGroundsForASelection && !input.atItsIntake) return null;
+    const runner = here[0]?.id ?? input.whoRunsIt();
+    if (runner === null) return null;
+    return { how: input.atItsGroundsForASelection ? 'at its selection' : 'at its intake', recruiterId: runner };
+}
