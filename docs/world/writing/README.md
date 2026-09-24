@@ -10,6 +10,7 @@ of `docs/world` because the engine loads it at run time.
 
 | File | What it answers |
 |---|---|
+| [`a-turn-is-a-conversation.md`](a-turn-is-a-conversation.md) | what a turn is, and who is on the page: one-to-one talk, the room, how somebody enters |
 | [`escapes.md`](escapes.md) | characters that must not appear in prose |
 | [`place-names.md`](place-names.md) | what a place, house, item or art is called, and the two renames that were rejected |
 | [`how-the-prose-moves.md`](how-the-prose-moves.md) | how the prose MOVES: paragraph length, clause shape, who talks, where the beats fall |
