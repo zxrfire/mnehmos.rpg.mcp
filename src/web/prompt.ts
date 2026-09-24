@@ -966,7 +966,8 @@ export function composeNarrationUser(
             + (!arrived && told.ambientIsNews === false ? ' (Unchanged since last turn.)' : ''),
         ...(scene.standing?.dayOfTheRun === undefined
             ? []
-            : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. The weather and the light keep to it.`]),
+            : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. Set the weather by it on arriving `
+                + 'somewhere; after that it holds, and needs saying only when it changes.']),
         // A YARD IS NOT THE WHOLE OF A COMPOUND. Played: a new disciple stood on
         // their own house's ground for eleven turns and met the one other person
         // in the yard, while the rest of the house was a walk away through a gate
