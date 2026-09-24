@@ -988,6 +988,7 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     eat: 'eating',
     attack: 'the fight with',
     coerce: 'laying hands on',
+    insult: 'saying what you think of',
     interact: 'the approach to',
     request: 'the ask of',
     provision: 'buying the rations',

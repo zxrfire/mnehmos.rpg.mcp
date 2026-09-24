@@ -57,6 +57,7 @@
  * with the sentence that produced it.
  */
 
+import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
 import { z } from 'zod';
 // The leverage enum the social resolver reads. Set by the parser so that
 // nothing downstream has to translate a verb into a mechanic.
@@ -4382,6 +4383,35 @@ const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|
  * Turn free text into one action, with no model involved.
  */
 
+/**
+ * Somebody addressed by name or title before the rest of the sentence.
+ *
+ * *Lu Nuoming, what do you know about the Caravan?* - *Senior sister, where do
+ * the Skins sleep?* A xianxia player writes this constantly and the table had
+ * no rule for it, so the sentences fell past every verb to whatever their TAIL
+ * looked like: a question about a house became `investigate` on the house, a
+ * question about the dormitory became `assess`, and *Lu Nuoming, hello* became
+ * `unclear`. Nobody was ever spoken to.
+ *
+ * WHAT COUNTS AS AN ADDRESS. A capitalised name of one to three words, or a
+ * form of address the description reader already knows - senior brother, elder,
+ * master. Both halves are deliberately tight: this rule fires on the FRONT of a
+ * sentence, and a loose one would eat "Yes, I go north".
+ */
+const AN_ADDRESS_AT_THE_FRONT = /^\s*([^,]{2,40}),\s*(.+)$/;
+
+/** Whether what precedes the comma is somebody rather than a word. */
+function isAWayOfAddressingSomebody(said: string): boolean {
+    const trimmed = said.trim();
+    if (trimmed.length < 2) return false;
+    // A form of address the repo already reads - senior sister, my elder.
+    if (theDescriptionThisIs(trimmed) !== null) return true;
+    // Or a name: one to three words, each capitalised, no verb in it.
+    const words = trimmed.split(/\s+/);
+    if (words.length > 3) return false;
+    return words.every(word => /^[A-Z][a-z'-]+$/.test(word));
+}
+
 export function parseIntent(rawInput: string): PlannedAction {
     const input = inTheCharactersThePatternsUse(rawInput);
     const plan = readTheSentence(input);
@@ -4530,6 +4560,28 @@ function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
 
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
+
+    // ── SOMEBODY SPOKEN TO BEFORE THE SENTENCE STARTS ────────────────────
+    //
+    // Runs early, because every rule under it reads the TAIL and the tail of
+    // an address is a question about something else. See
+    // `AN_ADDRESS_AT_THE_FRONT` for why the test is narrow.
+    {
+        const addressed = AN_ADDRESS_AT_THE_FRONT.exec(input);
+        if (addressed && isAWayOfAddressingSomebody(addressed[1]!)) {
+            const rest = addressed[2]!.trim();
+            return {
+                action: 'interact',
+                target: addressed[1]!.trim(),
+                // A question is an asking; anything else said to somebody is
+                // talk. Both reach the same verb and the intent is what the
+                // engine reads to decide which.
+                intent: /\?\s*$|^(?:what|who|where|when|why|how|do|does|did|can|could|will|would|should|is|are|have|has)/i
+                    .test(rest) ? 'ask' : 'talk',
+                topic: rest
+            };
+        }
+    }
 
     // ── SAYING WHAT YOU THINK OF THEM ────────────────────────────────────
     //
