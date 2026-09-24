@@ -5005,8 +5005,49 @@ ${noticedWaiting}`;
                     })
                     : null;
 
-                const unread = this.freeAction(run, 'unclear', factsForRefusal(
-                    'The thought does not resolve.',
+                // ── AND THE BLANK LOOK IS NOT THE VERB, IT IS THE PROSE ──
+                //
+                // The design owner, on a bare "I sit down" reaching this:
+                // *"unclear is not kind of bad. what's bad is the blank look.
+                // the LLM narrator can make unclear not be bad."*
+                //
+                // `unclear` is the right reading for a sentence the table
+                // cannot place, and it is the cheapest thing in the closed set,
+                // which is the whole reason it exists. What was wrong is what
+                // the NARRATOR was handed. `factsForRefusal` puts its scene
+                // into `lines` as well as `prose`, so the model was being told,
+                // as a fact about the world, that the player's thought did not
+                // resolve - and it wrote that out. The engine describing its
+                // own reader, dressed up by a narrator.
+                //
+                // So the two channels part company here, which is what
+                // `observable` is for:
+                //
+                //   `lines`  - what is true in the world. The character did not
+                //              commit to anything and no time passed, and
+                //              somebody standing there asked what was meant.
+                //              A narrator can write that moment; there is
+                //              nothing in it about sentences or parsing.
+                //   `prose`  - unchanged, word for word. It is the shipping
+                //              mode for a player with no model, and the
+                //              affordance list is the useful half of it. It is
+                //              also the sentinel twenty test files watch for to
+                //              prove a blank look did NOT happen.
+                const unread = this.freeAction(run, 'unclear', observable(
+                    // A HEADLINE IS PLAYER-FACING - the overlay title and the
+                    // log's first line. "The thought does not resolve" is a
+                    // sentence about the reader, in the one place a player
+                    // cannot avoid reading it.
+                    'Nothing was decided.',
+                    [
+                        'Nothing was decided. No day passed and nothing was spent.',
+                        ...(question && asking
+                            ? [`${asking.asker.name} asked what was meant.`
+                                + (question.offered.length > 0
+                                    ? ` The most they could place of it: ${question.offered.join(', ')}.`
+                                    : ' They could place none of it.')]
+                            : [])
+                    ],
                     'You turn the thought over and it does not resolve into anything you could '
                     + 'actually do standing here.'
                     + (question ? ` ${question.said}` : '') + '\n\n'
@@ -5019,14 +5060,16 @@ ${noticedWaiting}`;
                     // list of permitted words.
                     + 'Those are not the only words that work. Say what you mean to do, '
                     + 'and find out what it costs.',
-                    question && asking
-                        ? `${asking.asker.name} asked what was meant, and offered `
-                          + (question.offered.length > 0
-                              ? question.offered.join(', ')
-                              : 'no name - they could place none of it')
-                          + '. Their answer is bounded by the square and their own house\'s '
-                          + 'roll; nothing else was read.'
-                        : undefined
+                    [
+                        question && asking
+                            ? `${asking.asker.name} asked what was meant, and offered `
+                              + (question.offered.length > 0
+                                  ? question.offered.join(', ')
+                                  : 'no name - they could place none of it')
+                              + '. Their answer is bounded by the square and their own house\'s '
+                              + 'roll; nothing else was read.'
+                            : 'Nobody was standing close enough to ask what was meant.'
+                    ]
                 ));
                 // The sentence itself goes to the inspector, where somebody
                 // tuning the parser can read exactly what it failed on.
