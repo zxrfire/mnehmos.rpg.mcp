@@ -271,9 +271,16 @@ function aPostingIsPutToThem(
     // A POST INSIDE THE WALLS RELIEVES NOBODY. The house's own office has no
     // disciple under it at all, which is why it is being put to anybody.
     const what = post.insideTheWalls
+        // WHAT THE PLAYER READS, AND IT USED TO BE UNREADABLE: *"Its disciples
+        // are what cut the house's slips for its disciples, and it has none."*
+        // Handed over from a playtest as garbled text reaching the player
+        // verbatim, and it was - the design note compressed until it ate its
+        // own tail. The fact under it is plain: a hall with nobody under it is
+        // a hall whose work is not being done, and that is why the post is
+        // being offered to somebody who just walked in.
         ? `${post.houseName} posts you under its Internal Affairs Elder, at ${post.townName}, for `
-          + `${years(post.termDays)}. Its disciples are what cut the house's slips for its disciples, `
-          + 'and it has none.'
+          + `${years(post.termDays)}. Nobody stands under the hall, so the slips its disciples `
+          + 'cut for the rest of the house are not being cut at all.'
         : `${post.houseName} posts you to ${post.townName} for ${years(post.termDays)}, `
           + `relieving ${post.relievedName}, whose tour there ends on day ${wantedBy}.`;
     const pending: PendingSummons = { duty, entryId, what, spokenOnDay: today };
