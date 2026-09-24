@@ -5503,7 +5503,7 @@ function planIntent(input: string): PlannedAction {
 
     // striking the barrier, and not everything with the word in it
     if (usedAsVerb(text, 'break\\s*through|breakthrough|breaks through|breaking through')
-        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|level up|levels up|levelling up|leveling up|power up|powers up|powering up|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)
+        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|level up|levels up|levelling up|leveling up|power up|powers up|powering up|(?:try|attempt|make|go for) (?:to |a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)
         // ── AND THE FORMS THAT MISSED, MEASURED ──────────────────────────
         //
         // Five phrasings of the other half of the core loop, all `unclear`:
