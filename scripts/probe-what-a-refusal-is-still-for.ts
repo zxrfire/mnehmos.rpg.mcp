@@ -191,7 +191,7 @@ import { MAX_ORDINAL } from '../src/engine/cultivation/realms.js';
 import { REGISTER_BANDS, theRegisterAtThisHeight, type RegisterBand } from '../src/web/prompt.js';
 import { GameService } from '../src/web/turn-engine.js';
 import { resetCultivationWorlds } from '../src/server/state/cultivation-world.js';
-import { makeGameInWorld, type Harness } from '../tests/web/harness.js';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld, type Harness } from '../tests/web/harness.js';
 import { SENTENCES } from './sentences-a-player-would-actually-type.js';
 
 /** Sentences that are nothing but a reference to what the last turn listed. */
@@ -292,7 +292,7 @@ export interface Scenario {
     given: string;
     fixture: Fixture;
     band: RegisterBand;
-    arrange(act: Act): Promise<void>;
+    arrange(act: Act, game: GameService): Promise<void>;
     /**
      * One turn played on the SAME service as the sentence, immediately before
      * it, for an arrangement whose effect is not in the rows.
@@ -339,15 +339,23 @@ async function practisingAMethod(act: Act): Promise<void> {
     await say(act, `I buy the ${book.trim()}`, `I learn the ${book.trim()}`);
 }
 
-/** Ask a house that admits at this standing to take you, by playing. */
-async function onAHouseRoll(act: Act): Promise<void> {
+/**
+ * Ask a house that admits at this standing to take you, by playing - with one
+ * of its people out looking for disciples beside you, because nobody joins a
+ * house out of thin air (~src/web/who-takes-you-on.ts~) and what this arranges is
+ * being on a roll, not finding a way onto one.
+ */
+async function onAHouseRoll(act: Act, game: GameService): Promise<void> {
     const houses = (await act('what sects are there')).narration ?? '';
     // The read names the one that would take them, and that sentence is where
     // the name is taken from: any name the game prints is one it must accept.
     const willing = /\b([A-Z][A-Za-z' ]{3,40}?) takes people at your standing/.exec(houses)?.[1];
     // "I join the nearest sect" does NOT join - it comes back with the listing
     // and leaves `sectId` null. See the banner.
+    const house = (willing ?? '').trim();
+    const recruiter = house.length > 0 ? await aRecruiterOfTheHouseIsHere(game, house) : null;
     await say(act, `I ask to join the ${(willing ?? 'nearest sect').trim()}`);
+    recruiter?.backWhereTheyWere();
 }
 
 const A_PERSON_STANDING_HERE = 'ADMIN spawn_encounter name=Shen Liefeng ordinal=10 disposition=friendly';
@@ -361,10 +369,10 @@ const THINGS_IN_THE_POUCH = [
 ];
 
 /** Everything the furnished scenarios furnish, so a band variant is one line. */
-async function allOfIt(act: Act): Promise<void> {
+async function allOfIt(act: Act, game: GameService): Promise<void> {
     await say(act, NAMES_THAT_CAN_BE_POINTED_AT, A_PERSON_STANDING_HERE, ...THINGS_IN_THE_POUCH);
     await practisingAMethod(act);
-    await onAHouseRoll(act);
+    await onAHouseRoll(act, game);
 }
 
 const [BOTTOM, MIDDLE, TOP] = REGISTER_BANDS;
@@ -458,7 +466,7 @@ export const SCENARIOS: readonly Scenario[] = [
     },
     {
         given: 'all of it at once, through the middle', fixture: 'furnished', band: MIDDLE,
-        arrange: async act => { await say(act, atTheFloorOf(MIDDLE)); await allOfIt(act); },
+        arrange: async (act, game) => { await say(act, atTheFloorOf(MIDDLE)); await allOfIt(act, game); },
         caveat: NOTHING_PLAYS_THE_CLIMB
     },
     {
@@ -468,7 +476,7 @@ export const SCENARIOS: readonly Scenario[] = [
     },
     {
         given: 'all of it at once, at the top', fixture: 'furnished', band: TOP,
-        arrange: async act => { await say(act, atTheFloorOf(TOP)); await allOfIt(act); },
+        arrange: async (act, game) => { await say(act, atTheFloorOf(TOP)); await allOfIt(act, game); },
         caveat: NOTHING_PLAYS_THE_CLIMB
     }
 ];
@@ -587,7 +595,7 @@ export async function measureAgainst(
         const harness = await makeGameInWorld({ seed, worldSeed, adminMode: true });
         await harness.game.newRun('Prober');
         try {
-            await scenario.arrange(line => harness.game.act(line));
+            await scenario.arrange(line => harness.game.act(line), harness.game);
         } catch { /* an arrangement that fails is still a state worth measuring */ }
 
         const arranged = capture(harness, seed);

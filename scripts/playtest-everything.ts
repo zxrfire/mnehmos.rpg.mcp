@@ -15,7 +15,7 @@
  * means a player can actually get there, not that the catalog contains a row.
  */
 
-import { makeGame } from '../tests/web/harness.js';
+import { aRecruiterOfTheHouseIsHere, makeGame } from '../tests/web/harness.js';
 import { SECTS, DAO_HOUSES, intakeRouteOf, sectThreat } from '../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS, COURTS } from '../src/data/cultivation/hierarchy.js';
 import { TECHNIQUES } from '../src/data/cultivation/techniques.js';
@@ -98,6 +98,10 @@ async function everyDoor(): Promise<void> {
         await (game as any).newRun('Applicant');
         stand(repos, game, Math.max(bar, 1));
         hearOf(game, sect.id, sect.name);
+        // Somebody of the house out looking for disciples beside them: nobody
+        // joins a house out of thin air (`src/web/who-takes-you-on.ts`), and what
+        // this reads is the door, not the road to it.
+        await aRecruiterOfTheHouseIsHere(game, sect.id);
         const atBar = await say(game, `I apply to the ${sect.name}`);
 
         const gotIn = cur(game).sectId !== null && cur(game).sectId !== undefined;
@@ -124,6 +128,7 @@ async function everyDoor(): Promise<void> {
             await (low as any).newRun('Beggar');
             stand(lowRepos, low, Math.max(0, bar - 3));
             hearOf(low, sect.id, sect.name);
+            await aRecruiterOfTheHouseIsHere(low, sect.id);
             await say(low, `I apply to the ${sect.name}`);
             const letIn = cur(low).sectId !== null && cur(low).sectId !== undefined;
             if (letIn) {
@@ -363,6 +368,8 @@ async function playWhatBelongsThere(): Promise<void> {
 
         const dead: string[] = [];
         for (const text of band.lines) {
+            // A join needs somebody of the house beside them; see above.
+            if (/join the Azure Dew Sect/.test(text)) await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
             const said = await say(game, text);
             const ok = !said.startsWith('THREW:')
                 && !/does not resolve|nothing you could actually do/i.test(said)

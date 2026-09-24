@@ -46,7 +46,7 @@
 
 import { readdirSync, statSync } from 'node:fs';
 
-import { makeGame } from '../tests/web/harness.js';
+import { aRecruiterOfTheHouseIsHere, makeGame } from '../tests/web/harness.js';
 import { SECTS } from '../src/data/cultivation/sects.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 import {
@@ -315,6 +315,12 @@ interface Probe {
      * finding and a list of counters incrementing correctly.
      */
     mustScale: string[];
+    /**
+     * The house a join is put to. Somebody of it out looking for disciples is put
+     * beside the player first: nobody joins a house out of thin air
+     * (`src/web/who-takes-you-on.ts`), and what this reads is the door.
+     */
+    joins?: string;
 }
 
 const PROBES: Probe[] = [
@@ -380,6 +386,7 @@ const PROBES: Probe[] = [
     },
     {
         say: 'I apply to the Azure Dew Sect',
+        joins: 'Azure Dew Sect',
         why: 'a door whose bar should be beneath a Nascent Soul cultivator',
         read: (_before, after, said) => ({
             joined: after.sectId ? 'yes' : 'no',
@@ -394,6 +401,7 @@ const PROBES: Probe[] = [
         // player joins anything - so the two phrasings are measured separately
         // rather than assumed equivalent.
         say: 'I ask to join the Azure Dew Sect as a disciple',
+        joins: 'Azure Dew Sect',
         why: 'the same door, phrased so the sect verb should take it',
         read: (_before, after) => ({
             joined: after.sectId ? 'yes' : 'no',
@@ -498,6 +506,7 @@ async function theVerbs(): Promise<void> {
             let said = '';
             let action = '?';
             try {
+                if (probe.joins) await aRecruiterOfTheHouseIsHere(game, probe.joins);
                 const r: any = await (game as any).act(probe.say);
                 said = String(r?.narration ?? '');
                 action = String(r?.toolCalls?.find((t: any) => t.name !== 'plan')?.action
@@ -624,7 +633,10 @@ async function theSameTwice(): Promise<void> {
             }
             const before = snapshot(game);
             let said = '';
-            try { said = String((await (game as any).act(probe.say))?.narration ?? ''); }
+            try {
+                if (probe.joins) await aRecruiterOfTheHouseIsHere(game, probe.joins);
+                said = String((await (game as any).act(probe.say))?.narration ?? '');
+            }
             catch (error) { said = `THREW ${(error as Error).message}`; }
             const after = snapshot(game);
             runs.push(JSON.stringify(probe.read(before, after, said)) + '|' + changed(before, after).join('+'));

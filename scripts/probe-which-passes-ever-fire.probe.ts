@@ -60,6 +60,34 @@
  * the CALLER imports from. The report says so on the line rather than leaving a
  * zero to be read as a finding.
  *
+ * ── AND `did: 0` IS TWO THINGS TOO, WHICH COST A FALSE HEADLINE ──────────
+ *
+ * A PASS THAT WRITES NO FACT IS INVISIBLE TO AN EVENT WALK. The default read
+ * above looks for a fact, or for the roster, the houses or the objects changing
+ * length. A pass whose whole work is an obligation, a tie, an activity, a figure
+ * in a ledger or a counter it returns moves none of those, so it reads as inert
+ * while changing the world every single year.
+ *
+ * This reported four passes as having done nothing in a thousand years. THREE OF
+ * THEM WERE THIS PROBE DESCRIBING ITS OWN REACH: one writes to `state.obligations`
+ * and returns a record, one returns four counters and rewrites people in place,
+ * and one is a pure read returning a closure that CAN NEVER do anything
+ * observable at its own call site - its zero was meaningless by construction and
+ * it is no longer watched at all. Only the fourth was a real finding.
+ *
+ * So the verdict is now in two lists and they are not the same claim:
+ *
+ *   DID NOTHING           passes carrying their own `didSomething`. A zero here
+ *                         is the world.
+ *   CANNOT SEE WHETHER    passes on the default read that left nothing it looks
+ *                         at. A zero here is the instrument, and the report says
+ *                         so instead of printing them under a heading that reads
+ *                         like a finding.
+ *
+ * Before reading any zero as a dead rule, ask what that pass WRITES. If the
+ * answer is not a fact, it needs a `didSomething` off whatever it does move, and
+ * until it has one this probe has nothing to say about it.
+ *
  * ── AND A CENSUS, EVERY HUNDRED YEARS ────────────────────────────────────
  *
  * The tally above answers "did this pass ever do anything". It cannot answer
@@ -99,7 +127,7 @@
  *     PROBE_CENSUS_EVERY  years between censuses, default 100
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { it, vi } from 'vitest';
 
@@ -147,11 +175,38 @@ const THE_PASSES_WATCHED: readonly AWatchedPass[] = [
     { name: 'peopleBringWhatTheyKnowToTheRoom', from: '../src/engine/world/bringing-what-you-know-about-somebody-to-the-room.js' },
     { name: 'whatTheirLeavingStirs', from: '../src/engine/world/what-somebody-senior-leaving-stirs.js' },
     { name: 'whoSplitsAHouse', from: '../src/engine/world/who-splits-a-house-and-who-goes-with-them.js' },
-    { name: 'theWanderersGoAbout', from: '../src/engine/world/the-wanderer-the-catalog-names-is-somebody.js' },
+    {
+        // IT WRITES NO FACT, so the default read sees a world of the same size
+        // and nothing to count. Its four counters ARE its answer, and it says so
+        // in its own return type.
+        name: 'theWanderersGoAbout',
+        from: '../src/engine/world/the-wanderer-the-catalog-names-is-somebody.js',
+        didSomething: returned => {
+            const c = returned as Partial<Record<string, number>> | undefined;
+            return (c?.lectures ?? 0) + (c?.lookedIn ?? 0)
+                + (c?.newInheritors ?? 0) + (c?.foundOutAboutADeath ?? 0) > 0;
+        }
+    },
     { name: 'peopleWithNoHouseMoveOn', from: '../src/engine/world/where-somebody-with-no-house-goes.js' },
     { name: 'searchingMastersTakeADisciple', from: '../src/engine/world/the-disciples-a-world-opens-with.js' },
-    { name: 'theRoadsOntoARollThisYear', from: '../src/engine/world/the-world-joins-a-house-the-way-a-player-does.js' },
-    { name: 'theOathOnTheWayOut', from: '../src/engine/world/the-word-an-npc-gave.js' },
+    // `theRoadsOntoARollThisYear` IS NOT WATCHED AND MUST NOT BE. It is a pure
+    // read returning a closure, so it can never do anything observable at its
+    // own call site and its zero here is meaningless by construction - it would
+    // report inert every run however many people joined a house through it. Its
+    // real question is what `roadFor` ANSWERS, which is a different measurement
+    // and belongs with whoever counts how many people were actually taken on.
+    {
+        // ITS WORK IS AN OBLIGATION, not a fact: an oath sworn or the grudge a
+        // refusal leaves, written onto `state.obligations`. The roster, houses
+        // and objects are all the same length afterwards, which is exactly the
+        // shape the default read cannot see.
+        name: 'theOathOnTheWayOut',
+        from: '../src/engine/world/the-word-an-npc-gave.js',
+        readsBefore: state => ((state as { obligations?: unknown[] }).obligations ?? []).length,
+        didSomething: (_returned, _moved, args, before) =>
+            (((args[0] as { obligations?: unknown[] })?.obligations ?? []).length)
+            !== (before as number)
+    },
     {
         name: 'theHousesAreCounted',
         from: '../src/engine/world/how-many-people-a-house-has.js',
@@ -202,6 +257,56 @@ for (const pass of THE_PASSES_WATCHED) {
     tallies.set(pass.name, {
         calls: 0, did: 0, sum: 0, facts: 0, years: new Set(), firstYear: null, lastYear: null
     });
+}
+
+// ── AND WHICH KINDS OF EVENT THE WORLD EVER WRITES ───────────────────────
+//
+// The pass tally answers "did this pass do anything". It cannot answer whether
+// a KIND of thing the world declares it can do ever happens, because a pass
+// that fires every year may write only two of the eight kinds it can produce.
+//
+// THE LIST IS READ OFF THE DECLARATION, not copied beside it. `PressureKind` is
+// the world's own statement of what can happen to it, so a kind added there
+// enters this walk without anybody remembering to add it here - which is the
+// whole point, since the unwired thing is precisely the one nobody wrote a
+// check for. A copied list would drift and then agree with itself.
+const THE_WORLD_PASS =
+    new URL('../src/engine/world/the-world-changing-on-its-own.ts', import.meta.url);
+
+function theKindsTheWorldDeclares(): string[] {
+    const source = readFileSync(THE_WORLD_PASS, 'utf8');
+    const at = source.indexOf('export type PressureKind');
+    if (at < 0) {
+        throw new Error(
+            'PressureKind is not declared where this probe reads it. The list this walk '
+            + 'covers comes from that declaration; without it the walk would silently '
+            + 'cover nothing, which is the failure it exists to catch.'
+        );
+    }
+    const union = source.slice(at, source.indexOf(';', at));
+    return [...new Set(union.match(/'[a-z_]+'/g)?.map(q => q.slice(1, -1)) ?? [])].sort();
+}
+
+interface AKindTally {
+    count: number;
+    seeds: Set<string>;
+    firstYear: number | null;
+    lastYear: number | null;
+}
+
+const kindsOfEvent = new Map<string, AKindTally>();
+const kindsOfFact = new Map<string, AKindTally>();
+
+function noteAKind(into: Map<string, AKindTally>, kind: string, seed: string, year: number) {
+    let t = into.get(kind);
+    if (t === undefined) {
+        t = { count: 0, seeds: new Set(), firstYear: null, lastYear: null };
+        into.set(kind, t);
+    }
+    t.count += 1;
+    t.seeds.add(seed);
+    if (t.firstYear === null) t.firstYear = year;
+    t.lastYear = year;
 }
 
 interface MaybeAWorld {
@@ -513,7 +618,21 @@ it('counts what every watched pass did', async () => {
         const world = state as unknown as TheWorldAsRead;
         const readings: ACensus[] = [census(world, A_BOND_IS_COLD_AT, A_MASTER_LOOKING)];
         for (let done = 0; done < YEARS; done += CENSUS_EVERY) {
-            advanceWorldYears(state, Math.min(CENSUS_EVERY, YEARS - done), { stopOnInterrupt: false });
+            // THE RETURN WAS BEING THROWN AWAY, and it is where the world says
+            // what kind of thing just happened. `pressure` is the events the
+            // pressure layer generated, each carrying its own kind; `events` is
+            // everything the span wrote to the record. Tallying them costs the
+            // run nothing - they are already built and already discarded.
+            const span = advanceWorldYears(
+                state, Math.min(CENSUS_EVERY, YEARS - done), { stopOnInterrupt: false }
+            ) as { pressure?: readonly { kind?: unknown }[]; events?: readonly { kind?: unknown }[] };
+            const year = done + Math.min(CENSUS_EVERY, YEARS - done);
+            for (const event of span.pressure ?? []) {
+                if (typeof event?.kind === 'string') noteAKind(kindsOfEvent, event.kind, seed, year);
+            }
+            for (const fact of span.events ?? []) {
+                if (typeof fact?.kind === 'string') noteAKind(kindsOfFact, fact.kind, seed, year);
+            }
             readings.push(census(world, A_BOND_IS_COLD_AT, A_MASTER_LOOKING));
         }
 
@@ -585,18 +704,111 @@ it('counts what every watched pass did', async () => {
         );
     }
 
-    const never = THE_PASSES_WATCHED.filter(p => tallies.get(p.name)!.did === 0);
+    // A ZERO FROM A PASS THAT ANSWERS FOR ITSELF IS A FINDING. A zero from one
+    // relying on the default read is two things at once, and printing both under
+    // one heading is the probe reporting its own reach as a property of the
+    // world. Three of the four this listed today wrote rows, ties and
+    // obligations every year and emitted no fact, so the default read had
+    // nothing to count and they read as inert while changing the world.
+    const answersForItself = (p: AWatchedPass) => p.didSomething !== undefined;
+    const never = THE_PASSES_WATCHED.filter(
+        p => tallies.get(p.name)!.did === 0 && answersForItself(p));
+    const unseen = THE_PASSES_WATCHED.filter(
+        p => tallies.get(p.name)!.did === 0 && !answersForItself(p)
+            && tallies.get(p.name)!.calls > 0);
     const uncalled = THE_PASSES_WATCHED.filter(p => tallies.get(p.name)!.calls === 0);
     lines.push('');
     lines.push(never.length === 0
-        ? 'Every watched pass did something at least once.'
-        : `DID NOTHING IN ${YEARS} YEARS: ${never.map(p => p.name).join(', ')}`);
+        ? 'Every pass that can answer for itself did something at least once.'
+        : `DID NOTHING IN ${YEARS} YEARS: ${never.map(p => p.name).join(', ')}. `
+          + 'Each of these says for itself whether it acted, so a zero here is the '
+          + 'world and not the instrument.');
+    if (unseen.length > 0) {
+        lines.push(
+            '',
+            `CALLED, AND THIS CANNOT SEE WHETHER THEY ACTED: ${unseen.map(p => p.name).join(', ')}.`,
+            'They were called and left no fact, no row and no figure the default read',
+            'looks at. That is not a finding about the world: a pass that writes an',
+            'obligation, a tie, an activity or a counter is invisible here, and "fired',
+            'but did nothing" and "does not report itself" are the same line. Give each',
+            'one a `didSomething` off whatever it actually moves before reading its zero',
+            'as anything at all.'
+        );
+    }
     if (uncalled.length > 0) {
         lines.push(
             `NEVER CALLED AT ALL: ${uncalled.map(p => p.name).join(', ')}`,
             'A pass is never called for two different reasons, and this cannot tell them apart:',
             'the board does not call it, or `from` is not the module the CALLER imports it from,',
             'so the wrapper was never the function the board held. Check the import in the caller.'
+        );
+    }
+
+    // ── AND WHAT KINDS OF THING EVER HAPPENED ────────────────────────────
+    const declared = theKindsTheWorldDeclares();
+    lines.push(
+        '',
+        `WHAT KINDS OF THING THE WORLD EVER WROTE, against the ${declared.length} `
+        + '`PressureKind` members it declares it can write.',
+        '',
+        'kind                                     wrote    seeds  first   last'
+    );
+    for (const kind of declared) {
+        const t = kindsOfEvent.get(kind);
+        lines.push(
+            `${kind.padEnd(40)} ${String(t?.count ?? 0).padStart(6)} `
+            + `${String(t?.seeds.size ?? 0).padStart(8)} `
+            + `${String(t?.firstYear ?? '-').padStart(6)} ${String(t?.lastYear ?? '-').padStart(6)}`
+        );
+    }
+
+    const neverWritten = declared.filter(k => (kindsOfEvent.get(k)?.count ?? 0) === 0);
+    const undeclared = [...kindsOfEvent.keys()].filter(k => !declared.includes(k)).sort();
+    lines.push('');
+    // THE LIST IS THE FINDING, not the count, and the sentence says what is
+    // absent rather than reporting a number somebody then has to go and look up.
+    lines.push(neverWritten.length === 0
+        ? `Every kind of thing the world says can happen happened, in ${YEARS} years.`
+        : `NOTHING EVER WROTE THESE, in ${YEARS} years across ${SEEDS.length} seed(s): `
+          + `${neverWritten.join(', ')}. The world declares it can write them and never `
+          + 'did. Either a rule is dead, or a precondition no world reaches guards it, '
+          + 'or the kind is a name nothing uses any more - and a grep cannot tell you '
+          + 'which, because a grep sees the declaration and the call and not the year '
+          + 'that never came.');
+    if (undeclared.length > 0) {
+        lines.push(
+            `WRITTEN BUT NOT DECLARED: ${undeclared.join(', ')}. These came out of a run `
+            + 'and are not in `PressureKind`, so this walk would not have covered them '
+            + 'and the type does not describe what the world does.'
+        );
+    }
+
+    // FACTS BY KIND IS THE SAME QUESTION ONE LAYER OUT: the record the player's
+    // recap is built from. There is no declared list to walk here, so this one
+    // reports what was written rather than what was missing - a kind of fact
+    // with a single seed behind it is the one to look at.
+    lines.push(
+        '',
+        `EVERY KIND OF FACT THE RECORD RECEIVED (${kindsOfFact.size} kinds).`,
+        '',
+        'fact kind                                wrote    seeds  first   last'
+    );
+    for (const kind of [...kindsOfFact.keys()].sort()) {
+        const t = kindsOfFact.get(kind)!;
+        lines.push(
+            `${kind.padEnd(40)} ${String(t.count).padStart(6)} ${String(t.seeds.size).padStart(8)} `
+            + `${String(t.firstYear ?? '-').padStart(6)} ${String(t.lastYear ?? '-').padStart(6)}`
+        );
+    }
+    const onOneSeed = [...kindsOfFact.entries()]
+        .filter(([, t]) => t.seeds.size === 1 && SEEDS.length > 1)
+        .map(([k]) => k).sort();
+    if (onOneSeed.length > 0) {
+        lines.push(
+            '',
+            `WRITTEN IN ONLY ONE SEED: ${onOneSeed.join(', ')}. Not a defect - a kind of `
+            + 'thing rare enough that one more seed decides whether it happens at all, '
+            + 'which is worth knowing before anybody pins a number to it.'
         );
     }
 

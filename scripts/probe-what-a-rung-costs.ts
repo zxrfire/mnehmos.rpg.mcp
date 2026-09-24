@@ -22,7 +22,7 @@
  * Run:  npx tsx scripts/probe-what-a-rung-costs.ts
  */
 
-import { makeGameInWorld } from '../tests/web/harness.js';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld } from '../tests/web/harness.js';
 import { KnowledgeGate } from '../src/web/knowledge.js';
 import { positionIn } from '../src/web/standing.js';
 import { portfoliosIn } from '../src/engine/social-leverage/authority-for-an-order.js';
@@ -65,7 +65,12 @@ async function oneWorld(seed: string): Promise<Row> {
             holderName: null, theirCallAlone: false, wants: null, barForTheNextRung: null
         };
     }
+    // Somebody of the house out looking for disciples, beside them: nobody joins
+    // a house out of thin air (`src/web/who-takes-you-on.ts`). Put back after, so
+    // who stands where the rung is decided is the world's and not the arrangement's.
+    const recruiter = await aRecruiterOfTheHouseIsHere(game, known[0]!.id);
     await game.act(`I join the ${known[0]!.name}`);
+    recruiter?.backWhereTheyWere();
 
     const after = (game as unknown as { repos: Parameters<typeof positionIn>[0] }).repos;
     const held = positionIn(after, cultivator.id);
