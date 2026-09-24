@@ -219,6 +219,69 @@ const MAX_NAMED_AGE = 700;
 const NAMED_YEARS_PER_ORDINAL = 9;
 
 /**
+ * How much of a rung's span somebody the world stands up has already spent.
+ *
+ * Old enough to have got where they are, young enough to still be here.
+ */
+const YEARS_A_RUNG_LEAVES_YOU = 0.9;
+
+/**
+ * The oldest a drawn life reaches, which is a rung's span rather than `MAX_AGE`.
+ *
+ * `MAX_AGE` is 120 and the ladder gives a hundred years at the bottom, where
+ * this pool is created. Drawing past the span is what stood people up dead.
+ *
+ * ── AND IT IS THE WHOLE SPAN, NOT THE CAREER PART OF IT ─────────────────
+ *
+ * `YEARS_A_RUNG_LEAVES_YOU` exists so a figure the catalog names is not stood
+ * up on their deathbed - somebody the world is about to ask things of needs
+ * years left to do them in. Nobody asks anything of this pool. They are the
+ * province: farmers, stallholders, somebody's grandmother, and a village with
+ * no old people in it is a stranger world than one whose eldest die next year.
+ *
+ * Measured: cutting them at nine tenths instead took the top decade off every
+ * life in the province and the households thickened, because the eighteen-year
+ * bar had a smaller pool of people old enough to be anybody's parent - biggest
+ * household across six worlds went from 12 to 15. The bug was drawing PAST the
+ * span; it was never the last ten years of it.
+ */
+const OLDEST_A_DRAWN_LIFE_REACHES =
+    Math.min(MAX_AGE, Math.floor(lifespanForOrdinal(0)) - 1);
+
+/**
+ * An age that is plausible for a rung AND that the rung can actually carry.
+ *
+ * ── THE SAME EXPRESSION, IN THE ONE PLACE IT LIVES ───────────────────────
+ *
+ * `MIN_AGE + ordinal * NAMED_YEARS_PER_ORDINAL` grows with the rung, and
+ * `lifespanForOrdinal` does NOT - it is flat at a hundred years across the
+ * bottom of the ladder, where a rung costs more years than a life is long. So
+ * the expression outruns the span, and somebody is stood up already dead.
+ *
+ * `a-house-raises-its-own` worked that out and capped its own draw. Nothing
+ * capped `seedNamedFigures`, which uses the same expression: measured, 58 of
+ * 207 catalogued members were given an age their rung cannot carry - ordinal
+ * 12 drawing 124 to 164 years against a span of 100. A fix that landed on one
+ * row and not on its siblings, which is the shape this repo keeps finding.
+ *
+ * MONOTONIC, AND THAT IS LOAD-BEARING. All three terms are non-decreasing in
+ * the ordinal, so the smallest of them is too - which is what keeps a senior
+ * of a stated kin tie older than their junior, the invariant
+ * `the-kin-a-world-opens-holding` pins. A cap that was not monotonic inverted
+ * a catalogued pair the first time this was tried.
+ */
+function anAgeTheRungCanCarry(ordinal: number, spread: number): number {
+    return Math.max(
+        MIN_AGE + 1,
+        Math.min(
+            MAX_NAMED_AGE,
+            Math.floor(lifespanForOrdinal(ordinal) * YEARS_A_RUNG_LEAVES_YOU),
+            MIN_AGE + Math.round(ordinal * NAMED_YEARS_PER_ORDINAL) + spread
+        )
+    );
+}
+
+/**
  * Lowest declared power at which a faction gets an instance it did not derive.
  *
  * Below this the ordinary population reaches the claim on its own, and seeding
@@ -1523,7 +1586,13 @@ function seedPopulation(
         for (let n = 0; n < share; n++) {
             const id = `npc-${seq++}`;
             const rng = forStream(state.seed, 'seed-life', id);
-            const age = rng.int(MIN_AGE, MAX_AGE);
+            // NOT `MAX_AGE`, WHICH IS TWENTY YEARS PAST WHAT THEY CAN LIVE.
+            // Everybody in this pool is created at ordinal 0 and the span at
+            // the bottom of the ladder is a hundred years, so a flat draw to
+            // 120 stood one in six of them up already dead. The RANGE is cut
+            // rather than the draw clamped, so nobody piles on the last legal
+            // year - a pile there is the same cull a few decades later.
+            const age = rng.int(MIN_AGE, OLDEST_A_DRAWN_LIFE_REACHES);
 
             let npc = createNpc(state.seed, {
                 id,
@@ -1729,10 +1798,7 @@ function seedNamedFigures(
         const rng = forStream(state.seed, 'seed-named', id);
         // Old enough to have got where the catalog says they are, without
         // being implausibly ancient for it.
-        const age = Math.min(
-            MAX_NAMED_AGE,
-            MIN_AGE + Math.round(member.realmOrdinal * NAMED_YEARS_PER_ORDINAL) + rng.int(0, 40)
-        );
+        const age = anAgeTheRungCanCarry(member.realmOrdinal, rng.int(0, 40));
 
         // Their birth follows from the seat they are already sitting in, not from a
         // lottery that knows nothing about it. See
@@ -1999,14 +2065,7 @@ function seedThePeopleAHouseRaised(
                 // use; the second is the ladder's own span for the rung they
                 // stand at, which that expression outruns at the bottom of the
                 // ladder where a rung costs more years than a life is long.
-                const span = lifespanForOrdinal(ordinal);
-                const age = Math.max(
-                    MIN_AGE + 1,
-                    Math.min(
-                        Math.floor(span * 0.9),
-                        MIN_AGE + Math.round(ordinal * NAMED_YEARS_PER_ORDINAL) + rng.int(0, 30)
-                    )
-                );
+                const age = anAgeTheRungCanCarry(ordinal, rng.int(0, 30));
 
                 let npc = createNpc(state.seed, {
                     id,

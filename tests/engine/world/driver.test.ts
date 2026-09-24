@@ -199,6 +199,25 @@ describe('pressure: the world changes on its own', () => {
         // The assertion stays as it is until that is ruled on, because a
         // per-event comparison would go green tomorrow and take the finding
         // with it. See the plan, "Left red and named".
+        //
+        // ── AND THE MEASUREMENT HAS MOVED, WHICH IS WHY IT IS RECORDED
+        //    BESIDE THE OLD ONE RATHER THAN OVER IT ────────────────────────
+        //
+        // Re-measured on the same seed and the same span, after the seeding
+        // pass stopped standing people up past the end of their own spans:
+        //
+        //     7 events in 120 years, not 120.
+        //     Across TWO veins - low-fall four times, scarwater three - not one.
+        //     The third still never changes hands.
+        //     Net after 120 years: still every vein where it started, because
+        //     four swaps and a three-cycle both come home.
+        //
+        // So the annual lock between one pair is gone and the endpoint
+        // comparison is still even, which is the test's own imprecision rather
+        // than the world's. The rest of the finding stands: a vein moves only
+        // between houses that already hate each other, every transfer deepens
+        // exactly that hostility, and one of the three is inert. Whoever rules
+        // on it should rule on these numbers.
         expect(veinsAfter).not.toBe(veinsBefore);
 
         // Every event names something it actually moved, and every fact it

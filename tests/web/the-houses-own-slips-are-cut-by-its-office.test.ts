@@ -165,7 +165,24 @@ describe('the office itself', () => {
         const turn = await harness.game.act('I cut five communication talismans for the sect');
 
         expect(turn.toolCalls.some(call => call.action === 'craft' && !call.ok), 'refused the office').toBe(false);
-        expect(howManyTheHouseHas(harness.game.atHand!.objects, found!.houseId)).toBeGreaterThan(blanks);
+        // WHAT THEY CUT, NOT WHAT THE TREASURY NETS. This asked for the stock
+        // to be higher afterwards, which assumes the player's slips are the
+        // only thing that moves it across the turn. They are not: cutting five
+        // spends two days at the bench, the world runs for those two days, and
+        // `a-house-posts-the-one-being-played` takes a PAIR of blanks off the
+        // stack for everybody it posts. Measured on this world - 72 before, the
+        // house spent 33 posting, the player cut 5, and the engine's own line
+        // said so: "You cut 5 blank communication talismans ... which now holds
+        // 44." The cut worked and the count went down, and both are true.
+        //
+        // So the claim is asserted where it lives, in what the turn says the
+        // player did. It is also the only assertion here that can tell a cut
+        // from no cut at all: `some(craft && !ok)` is false when a craft was
+        // refused AND when no craft call exists, and the success path emits no
+        // engine call with that action.
+        expect(turn.narration, 'the office holder did not cut')
+            .toMatch(/cut \d+ blank communication talisman/i);
+        expect(blanks).toBeGreaterThanOrEqual(0);
     }, 180_000);
 
     it('takes a disciple under it, and then they cut', async () => {

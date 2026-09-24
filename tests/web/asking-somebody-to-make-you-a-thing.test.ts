@@ -95,7 +95,16 @@ describe('what the words said was wanted', () => {
 });
 
 describe('and the answer is the one the engine already had', () => {
-    async function askedOf(seed: string, said: (name: string) => string) {
+    async function askedOf(
+        seed: string,
+        said: (name: string) => string,
+        /**
+         * Which of the people here to ask, where the case needs a PARTICULAR
+         * one. Given the square as the engine holds it, so a test can choose on
+         * the property it is about rather than on who the prose named first.
+         */
+        choose?: (here: readonly { name: string; realmOrdinal: number }[]) => string | undefined
+    ) {
         const { game, repos, db } = await makeGameInWorld({
             seed, worldSeed: seed, worldEnabled: true
         });
@@ -105,7 +114,14 @@ describe('and the answer is the one the engine already had', () => {
             .run(cultivator.id);
         await game.act('I look around');
         const here = await game.act('who is here') as unknown as { narration: string };
-        const name = /^([A-Z]\w+ \w+)/.exec(here.narration)?.[1];
+        // WHOEVER THE PROSE NAMED FIRST IS NOT A PROPERTY OF ANYBODY. That is
+        // what this used for every case, and it held only while the world put
+        // the same person at the front: a seeding change moved who is standing
+        // there and the case that needs somebody who CANNOT make the thing was
+        // handed somebody who can. A case with a requirement now states it.
+        const name = choose
+            ? choose(game.present(game.currentRun().cultivator))
+            : /^([A-Z]\w+ \w+)/.exec(here.narration)?.[1];
         expect(name, 'nobody was here to ask').toBeDefined();
         const answer = await game.act(said(name!)) as unknown as {
             narration: string;
@@ -121,8 +137,13 @@ describe('and the answer is the one the engine already had', () => {
     it('names the realm to reach for when the hands cannot', async () => {
         // Every refusal names its own route, which is the whole point of the
         // four the module distinguishes. "No" would be useless.
+        // The weakest hand in the square, because the claim is about a refusal
+        // naming the rung to reach for. Asking whoever stands nearest is asking
+        // a question that may not have that answer.
         const asked = await askedOf(
-            'craft-cannot', n => `I ask ${n} to craft me an earth grade talisman`
+            'craft-cannot',
+            n => `I ask ${n} to craft me an earth grade talisman`,
+            here => [...here].sort((a, b) => a.realmOrdinal - b.realmOrdinal)[0]?.name
         );
         expect(asked.narration).toMatch(/cannot make it/i);
         expect(asked.narration).toMatch(/Core Formation/i);

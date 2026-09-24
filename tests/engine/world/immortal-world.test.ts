@@ -655,10 +655,18 @@ describe('both layers keep running', () => {
         // The claim was always "three centuries happened to them too", so that
         // is what it asks: they are gone, or they are not the person the
         // ancestor left behind.
-        const heirNow = getNpc(state, heir.id)!;
+        // AND BEING FORGOTTEN IS THE STRONGEST FORM OF GONE. This read the row
+        // back with a `!` and crashed on null once the sweep started reaching
+        // this disciple: `theWorldForgetsTheMortalDead` does not mark somebody
+        // dead, it takes the row out, so three centuries can end with there
+        // being no row to ask about. That satisfies the claim more completely
+        // than dying does.
+        const heirNow = getNpc(state, heir.id);
         expect(
-            heirNow.status !== 'alive' || heirNow.cultivation.realmOrdinal !== heirWas,
-            `the disciple is still alive at ordinal ${heirNow.cultivation.realmOrdinal}, `
+            heirNow === null
+            || heirNow.status !== 'alive'
+            || heirNow.cultivation.realmOrdinal !== heirWas,
+            `the disciple is still alive at ordinal ${heirNow?.cultivation.realmOrdinal}, `
             + `exactly where they were three hundred years ago`
         ).toBe(true);
     });

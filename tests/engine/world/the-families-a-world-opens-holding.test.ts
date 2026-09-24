@@ -286,8 +286,19 @@ describe('the families a world opens holding', () => {
             }
         }
         expect(households, 'there are households at all').toBeGreaterThan(300);
+        // FOUR HOUSEHOLDS' WORTH RATHER THAN THREE, because the province got
+        // older. The drawn population used to be dealt ages up to 120 against a
+        // span of 100, so a slice of it was standing about already past the end
+        // of its own life; cutting the draw to the span put those people back
+        // inside the parenting window, and a denser window makes longer chains.
+        // Measured across these six worlds: the biggest went 12 to 16, and the
+        // two claims either side of this one did not move - there are still
+        // more than three hundred households and more than 85% of them are
+        // still two or three people. What this line is watching for is a
+        // settlement collapsing into one family tree, which the note above puts
+        // at thirty.
         expect(biggest, `biggest household across ${SEEDS.length} worlds`)
-            .toBeLessThanOrEqual(SIBLINGS_PER_HOUSEHOLD * 3);
+            .toBeLessThanOrEqual(SIBLINGS_PER_HOUSEHOLD * 4);
         expect(smallOnes / households, 'and the ordinary one is two or three people')
             .toBeGreaterThan(0.85);
     }, 300000);

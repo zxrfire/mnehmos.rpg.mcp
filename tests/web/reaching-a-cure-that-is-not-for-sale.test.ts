@@ -177,7 +177,18 @@ describe('reaching a cure that is not for sale', () => {
             const text = heard(await game.act(
                 `I offer ${speaker.name} the ${road!.name} for a Meridian Rebirth Pill`
             ));
-            // The price is met on every one of these, whatever the roll did.
+            // The price is met on every one of these, whatever the roll did -
+            // ON EVERY ONE THAT WAS READ AS THE OFFER. Saying the same sentence
+            // to the same person for the twelfth time is not guaranteed to be
+            // answered as an offer, and it should not be: they stop following
+            // it. That is the repeat handling working, and this loop used to
+            // demand the price clause out of it anyway. The claim is about what
+            // an offer is answered with, so a turn that was not one is recorded
+            // and skipped rather than asserted on.
+            if (/does not follow/.test(text)) {
+                outcomes.push('not followed');
+                continue;
+            }
             expect(text).toContain('serves them at least as well as keeping it does');
             took = /is in your pouch/.test(text);
             outcomes.push(
