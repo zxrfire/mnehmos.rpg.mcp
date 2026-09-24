@@ -445,6 +445,17 @@ export const HANDING_IT_OVER =
 export const A_HAND_RAISED =
     /\b(?:attack|attacks|attacking|attacked|strike|strikes|striking|struck|hit|hits|hitting|punch|punches|punching|punched|kick|kicks|kicking|kicked|stab|stabs|stabbing|stabbed|cut|cuts|cutting|slash|slashes|kill|kills|killing|killed|draw|draws|drawing|drew|swing|swings|swinging|swung|lunge|lunges|charge|charges|charging|charged|grab|grabs|grabbing|grabbed|seize|seizes|seizing|seized|throttle|throttles|strangle|strangles|beat|beats|beating|fight|fights|fighting|fought|sword|blade|fist|fists)\b/i;
 
+/**
+ * A bow, a kneel or cupped hands aimed at somebody.
+ *
+ * The genre's ordinary greeting and its ordinary apology, and it shares every
+ * word with surrendering. What tells them apart is that a courtesy is aimed AT
+ * a person - a name, a title, a senior - and a surrender is aimed at whoever
+ * is currently hitting you, which the sentence does not have to say.
+ */
+export const A_COURTESY_TO_SOMEBODY =
+    /\b(?:bow|bows|bowing|bowed|kneel|kneels|kneeling|knelt|salute|salutes|saluting|saluted|cup|cups|cupping)\b[^.!?]{0,30}?\b(?:to|before|toward|towards|at)\s+((?:my|our|the|his|her|their)\s+)?((?:senior|junior|elder|master|grand)\s+)?(seniors?|juniors?|elders?|masters?|patriarch|abbot|brothers?|sisters?|[A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)?)/;
+
 export const AN_INSULT =
     /\b(?:fuck|screw) (?:you|him|her|them|the lot of|off)\b|\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b|\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b|\btell (?:him|her|them|you|the lot of them) (?:exactly )?what i think\b|\b(?:he|she|they) (?:is|are) a (?:disgrace|fraud|coward|joke)\b/i;
 
@@ -4572,6 +4583,26 @@ function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
+    // ── A BOW IS AIMED AT SOMEBODY ───────────────────────────────────────
+    //
+    // The genre's ordinary greeting, and it shared every word with
+    // surrendering: "I kneel before the elder" reached `attack/give_in`, so a
+    // respectful disciple read as a beaten one. Excluded from the yield rule
+    // below, and given its own route here so it reaches the people rather than
+    // falling to `unclear`.
+    {
+        const courtesy = A_COURTESY_TO_SOMEBODY.exec(input);
+        if (courtesy) {
+            const who = [courtesy[2], courtesy[3]].filter(Boolean).join('').trim();
+            return {
+                action: 'interact',
+                ...(who.length >= 2 ? { target: who } : {}),
+                intent: 'talk',
+                topic: input.trim()
+            };
+        }
+    }
+
     // ── SOMEBODY SPOKEN TO BEFORE THE SENTENCE STARTS ────────────────────
     //
     // Runs early, because every rule under it reads the TAIL and the tail of
@@ -4998,7 +5029,15 @@ function planIntent(input: string): PlannedAction {
         // oldest way in the language of asking for one. The ask reads it below.
         && !/\bspare\s+(?:me|us)\s+(?:a|an|some|any|the|\d|few|couple)\b/i.test(input)
         && !MAKING_SOMEBODY_ELSE_DO_IT.test(input)
-        && !AN_ASK_FOLLOWS_THE_KNEE.test(input)) {
+        && !AN_ASK_FOLLOWS_THE_KNEE.test(input)
+        // AND A COURTESY IS NOT A SURRENDER. "I kneel before the elder" and
+        // "I bow deeply to my seniors" are the genre's ordinary greeting, and
+        // both reached `attack/give_in` - a respectful disciple was reading as
+        // a beaten one. Yielding is something you do to somebody who is
+        // HITTING you; a bow directed at a person with no fight in the
+        // sentence is a bow. The fight path still takes a yield when one is
+        // standing, because that is where a fight is known about.
+        && !A_COURTESY_TO_SOMEBODY.test(input)) {
         return { action: 'attack', intent: 'give_in' };
     }
 
