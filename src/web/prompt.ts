@@ -926,7 +926,9 @@ export function composeNarrationUser(
         '',
         ...whereTheyStandNow(scene.standing),
         '',
-        'NAMES YOU MAY USE in your own narration:',
+        // A PERMISSION, NOT MATERIAL. Played: asked what a new disciple should do first, a
+        // townsman counted this whole list off on his fingers, twenty-six names in one breath.
+        'NAMES YOU MAY USE in your own narration - a permission, not material. Nobody recites or lists them:',
         nameable.length > 0
             ? nameable.join(', ')
             : '(none; this cultivator has heard of nobody and nowhere but where they stand)',

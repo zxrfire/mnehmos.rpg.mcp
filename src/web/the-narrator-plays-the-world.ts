@@ -100,9 +100,13 @@ would see, hear or be told:
 
   CLERK: Reads as above you, on the same footing. 106 years old. Marks of a sect whose name
          means nothing to this cultivator. Addressed as Inner Disciple.
-  STORY: He is old the way cultivators are old - the face still firm, the eyes not. The
-         stitching at his cuffs belongs to a house you do not know. A boy bringing tea calls
+  STORY, one of many ways - never the same one twice:
+         The stitching at his cuffs belongs to a house you do not know. A boy bringing tea calls
          him Senior Brother and does not look up.
+         His hair is black and his hands are an old man's hands. Two younger men in the same
+         colours have found reasons to stand behind him.
+         Nobody at the counter asks his business. The stallholder has already put his best jar
+         where he can reach it.
 
   CLERK: Qi density thin: half cultivation rate.
   STORY: You sit until your legs go numb, and what trickles into your meridians would not fill a
