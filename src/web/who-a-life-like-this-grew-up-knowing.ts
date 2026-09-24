@@ -182,7 +182,20 @@ const HOW_YOU_KNOW_THEM: readonly string[] = [
     'worked the same ground in the same seasons you did.',
     'was always at the well, for as long back as you can remember.',
     'has been a face and a name to you since you were small, and nothing more than that.',
-    'comes of a family yours has been in the way of for as long as either remembers.'
+    // ── AND THIS ONE NAMES NO FAMILY, WHICH IS WHY IT CHANGED ────────────
+    //
+    // It read `comes of a family yours has been in the way of`, and before
+    // that `the two families have been in each other's way`. Both assert a
+    // household this life has, and the banner above says these notes must not:
+    // the engine models no family structure, and a note that claims one is the
+    // prose layer inventing a system.
+    //
+    // Played, and it invented the obvious thing. An opening on that line wrote
+    // "the way the Kong family looked at your father, and the way your father
+    // looked back" - a parent conjured out of the possessive, in a turn whose
+    // own instruction forbids inventing one. The ill-will is between two people
+    // and the world holds it that way, so that is how it is said.
+    'has had no good word for you since either of you was old enough to say one.'
 ];
 
 /**
