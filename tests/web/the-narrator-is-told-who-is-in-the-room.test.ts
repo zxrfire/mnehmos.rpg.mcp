@@ -170,6 +170,30 @@ describe('the narrator is handed the people in the scene', () => {
         expect(cardFor(2)).toContain('Right now: haggling over a cracked jade slip.');
     });
 
+    /**
+     * The owner: talking to one person is a one-to-one roleplay; "if i need someone else, the
+     * player ought to ask", and talking to anybody else, or to the room, hands the room back.
+     */
+    it('plays a conversation with one person as the two of them, and hands the room back after', () => {
+        const square = aSquareWith(['Wei Ciyi', 'Tang Minya', 'Lu Qing'], 2);
+        const cards = (acts: string[], lines = ['Wei Ciyi answers.']) => composeNarrationUser(
+            { ...FACTS, lines }, { ...SCENE, company: square, addressing: 'Wei Ciyi' }, { acts });
+        const talk = cards(['interact']);
+        expect(talk).toContain('- Wei Ciyi (THE PLAYER IS SPEAKING TO THEM)');
+        expect(talk).not.toContain('- Tang Minya');
+        expect(talk).not.toMatch(/faces the player cannot place/);
+        expect(talk).toContain('Everybody else here is background');
+        expect(talk.slice(talk.lastIndexOf('NOW WRITE THE TURN'))).toContain('Only the two of you are on the page');
+        // Somebody the engine put in it stays in it.
+        expect(cards(['interact'], ['Wei Ciyi answers.', 'Lu Qing laughs at him.'])).toContain('- Lu Qing');
+        // A blow is not a conversation, and the next look is not either: the room is back.
+        for (const acts of [['attack'], ['look'], []]) {
+            const back = cards(acts);
+            expect(back, acts.join()).toContain('- Tang Minya');
+            expect(back, acts.join()).not.toContain('Only the two of you are on the page');
+        }
+    });
+
     /** The one being spoken to leads, and is marked, so the turn is theirs. */
     it('puts the person the act was put to first, and marks them', () => {
         const square = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);

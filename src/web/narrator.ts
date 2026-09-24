@@ -1177,7 +1177,23 @@ export class ProviderNarrator implements Narrator {
      * is a legal action, because a player mid-run must not be blocked by an
      * unreachable inference server.
      */
+    /**
+     * The acts this turn was planned as, so the narration knows a conversation from a fight.
+     * Recorded at the one place every turn is read; see `aConversation` in prompt.ts.
+     */
+    private actsPlanned: readonly string[] = [];
+
     async plan(
+        input: string,
+        stateSummary: string,
+        lastTurn?: string | null
+    ): Promise<PlanWithSteps> {
+        const planned = await this.readThePlan(input, stateSummary, lastTurn);
+        this.actsPlanned = (planned.steps ?? [planned]).map(step => step.action.action);
+        return planned;
+    }
+
+    private async readThePlan(
         input: string,
         stateSummary: string,
         lastTurn?: string | null
@@ -1497,7 +1513,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown, wornOut, noTimePassed }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown, wornOut, noTimePassed, acts: this.actsPlanned }) }
                 ]
             });
 

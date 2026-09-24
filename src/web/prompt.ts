@@ -958,6 +958,8 @@ export function composeNarrationUser(
         wornOut?: ReadonlySet<string>;
         /** A time-costing act was refused and the day did not move. See `theTurnToWrite`. */
         noTimePassed?: boolean;
+        /** The acts this turn was planned as, so a conversation is told from a fight. */
+        acts?: readonly string[];
     } = {}
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
@@ -998,7 +1000,7 @@ export function composeNarrationUser(
             ? whoIsStandingHereOnTheFirstTurn(scene.company)
             : thePeopleHere(
                 scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,
-                told.alreadyShown, told.wornOut
+                told.alreadyShown, told.wornOut, whoStaysOnThePage(facts, scene, addressing, told.acts)
             )),
         '',
         ...whereTheyStandNow(scene.standing),
@@ -1037,7 +1039,8 @@ export function composeNarrationUser(
         ...theRegisterBlock(scene.realmOrdinal),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
             whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true,
-            aLifeTurnsOnThisTurn(scene, whatTheAddressedDidForYou(scene, addressing)))
+            aLifeTurnsOnThisTurn(scene),
+            whoStaysOnThePage(facts, scene, addressing, told.acts) !== null)
     ].join('\n');
 }
 
@@ -1136,9 +1139,54 @@ function theTurnAsksWhichComesFirst(facts: EngineFacts): boolean {
     return (facts.required ?? []).some(line => /\bWhich comes first\?/.test(line));
 }
 
+/** Acts that are the player talking: to one person, or to the room. */
+export const A_CONVERSATION: ReadonlySet<string> = new Set([
+    'interact', 'tell', 'request', 'insult', 'propose', 'decline', 'petition', 'challenge'
+]);
+
+/** Acts that put hands on somebody, where a room watching is part of the scene. */
+const HANDS_ON_SOMEBODY: ReadonlySet<string> = new Set(['attack', 'coerce']);
+
 /**
- * Whether the engine says a life turned this turn: a crossing attempted or won, a death, or the
- * player speaking to whoever raised them.
+ * TALKING TO ONE PERSON IS A ONE-TO-ONE ROLEPLAY, and this is who is on the page for it.
+ *
+ * The owner: "if you're talking to an npc, no need to say what the other npcs say, they can just
+ * be in the background, no need to describe them too" and "if i need someone else, the player
+ * ought to ask". Played before this: a guardian's parting answered by a woman at the next table
+ * ("A parting in the middle of a meal. How very dramatic."), and every card in the square handed
+ * over on every turn, so the model played whoever it was handed the most about.
+ *
+ * Null when this is not a conversation with somebody standing here. Otherwise the person spoken
+ * to, anybody a ruling names (the engine put them in it), and, on a turn a life turns on, family
+ * standing here - a death is not a conversation, but the one who raised you is in the room.
+ */
+function whoStaysOnThePage(
+    facts: EngineFacts,
+    scene: {
+        company?: Company | null; awareness?: readonly AwarenessRow[]; standing?: WhereTheyStandNow | null;
+        filed?: { breakthroughAttempted?: boolean; ranksGained?: number; died?: boolean } | null;
+    },
+    addressing: string | null,
+    acts: readonly string[] | undefined
+): ReadonlySet<string> | null {
+    const named = scene.company?.named ?? [];
+    if (!addressing || !named.some(person => person.name === addressing)) return null;
+    const planned = acts ?? [];
+    if (!planned.some(act => A_CONVERSATION.has(act)) || planned.some(act => HANDS_ON_SOMEBODY.has(act))) return null;
+    const ruled = [...facts.lines, ...(facts.required ?? [])].join(' ');
+    const lifeTurns = aLifeTurnsOnThisTurn(scene);
+    return new Set(named
+        .filter(person => person.name === addressing
+            || ruled.includes(person.name)
+            || (lifeTurns && (whatTheyAreToYou(person.name, scene.awareness ?? []) ?? '').includes(' is family')))
+        .map(person => person.name));
+}
+
+/**
+ * Whether the engine says a life turned this turn: a crossing attempted or won, or a death.
+ *
+ * Not every word to whoever raised you: that line has its own condition (leaving, hurt, dying) on
+ * the family clause, and "pass the salt" to a grandfather is not a turn a life turns on.
  *
  * Played: said on every turn, "the feeling matches the stakes: flat for small things" took the
  * loud lines out of ordinary talk - 0 of 32 spoken paragraphs in eight replays of four talk turns
@@ -1147,14 +1195,12 @@ function theTurnAsksWhichComesFirst(facts: EngineFacts): boolean {
  * who raised the player ("You fool! You absolute fool!") in two runs of two.
  */
 function aLifeTurnsOnThisTurn(
-    scene: { standing?: WhereTheyStandNow | null; filed?: { breakthroughAttempted?: boolean; ranksGained?: number; died?: boolean } | null },
-    addressedDid: string | null
+    scene: { standing?: WhereTheyStandNow | null; filed?: { breakthroughAttempted?: boolean; ranksGained?: number; died?: boolean } | null }
 ): boolean {
     return scene.standing?.dead === true
         || scene.filed?.died === true
         || scene.filed?.breakthroughAttempted === true
-        || (scene.filed?.ranksGained ?? 0) > 0
-        || addressedDid !== null;
+        || (scene.filed?.ranksGained ?? 0) > 0;
 }
 
 function theTurnToWrite(
@@ -1167,7 +1213,8 @@ function theTurnToWrite(
     addressedDid: string | null = null,
     nothingRan = false,
     noTimePassed = false,
-    aLifeTurns = false
+    aLifeTurns = false,
+    oneToOne = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1195,15 +1242,24 @@ function theTurnToWrite(
                         + 'turned back, BUT one thing the body gives away (the voice, a hand, a step) and a word '
                         + 'never said before.'
                     : '')
-                + ' Anybody else here may react too.'
+                + (oneToOne
+                    // Played: talk to one person came back with no "!" in 12 spoken paragraphs of six
+                    // replays; with this pair, 6 of 12 (the genre runs 31-52%).
+                    ? ' Only the two of you are on the page: nobody else speaks, acts or is described unless a '
+                        + 'ruling names them. If the player wants somebody else, the player will ask. They talk '
+                        + 'the way this genre talks - NOT a line said flat and let fall, BUT a line with its heat '
+                        + 'in it: a jab, a laugh, a boast, an exclamation.'
+                    : ' Anybody else here may react too.')
             : alone
                 ? `${setting} Then the player's act and what it does, with the place and nobody else in it. `
                     + 'Whatever a ruling answers comes to them as what they already know or can see.'
                 : somebodyToPlay
-                    ? `${setting} Then the player's act and whoever it lands on. Said aloud to the room, `
-                        + 'whoever is likeliest to answer does, each in their own voice; anything else, one '
-                        + 'or two people react at most, or somebody is overheard loud on their own affairs, and '
-                        + 'the rest are left out rather than listed carrying on.'
+                    // The owner: "if i talk to the room, 2-3 people respond, the rest are background noise".
+                    ? `${setting} Then the player's act and whoever it lands on. Said aloud to the room, two `
+                        + 'or three of the likeliest answer, each in their own voice and paragraph, and the rest '
+                        + 'of the room is background noise, a line at most and never person by person; anything '
+                        + 'else, one or two people react at most, or somebody is overheard loud on their own '
+                        + 'affairs, and the rest are left out rather than listed carrying on.'
                     : `${setting} Then the player's act, and the crowd.`;
     // LAST, BECAUSE THIS MODEL WEIGHTS WHAT IT READ LAST. Played on gemma4:31b, both of these held
     // as rules higher up and broke anyway: "neither of them speaks" on nearly half of all turns, and

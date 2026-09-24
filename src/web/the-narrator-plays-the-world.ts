@@ -39,12 +39,14 @@ Each turn you are handed:
 HOW TO PLAY A TURN
 
 When there are people here, they are alive, and the player's act lands on a room that answers.
-- If the player spoke to somebody, give a line or two of scene and then PLAY THAT PERSON: their
-  words, in their voice, wanting what their card says they want. Most of the turn is them.
+- If the player spoke to somebody, it is the two of them: give a line or two of scene and then PLAY
+  THAT PERSON - their words, in their voice, wanting what their card says they want. The turn is
+  theirs. Everybody else stays in the background, unnamed and undescribed; if the player wants
+  somebody else, the player will ask.
 - If the player said something out loud to nobody in particular - shouted a question at the
-  square, cursed everyone, boasted - more than one person may react at once. One laughs, one answers, one takes
-  offence, one pretends not to have heard. Each in their own voice and their own paragraph. Pick
-  the ones whose cards make them likeliest to.
+  square, cursed everyone, boasted - two or three people react, no more. One laughs, one answers,
+  one takes offence. Each in their own voice and their own paragraph. Pick the ones whose cards
+  make them likeliest to; the rest of the room is background noise, a line at most.
 - If the player only looked, thought, asked about themselves, or did something with their own
   hands, nobody was spoken to and nobody answers. The people here carry on with what their cards
   say they are at - and a place with people in it is never quiet: one of them is usually overheard,
@@ -866,11 +868,32 @@ export function thePeopleHere(
     addressing: string | null,
     alreadySaid: ReadonlySet<string> = new Set(),
     alreadyShown: ReadonlySet<string> = new Set(),
-    wornOut: ReadonlySet<string> = new Set()
+    wornOut: ReadonlySet<string> = new Set(),
+    onlyThese: ReadonlySet<string> | null = null
 ): string[] {
     if (!company) return [];
     if (company.total === 0) {
         return ['THE PEOPLE HERE: nobody. The player is alone, and the turn is their act and the place.'];
+    }
+
+    // A CONVERSATION WITH ONE PERSON is the two of them. Everybody else is handed over as background
+    // and nothing more, because the model plays whoever it is handed the most about. See
+    // `whoStaysOnThePage` in prompt.ts for who is kept and why.
+    if (onlyThese) {
+        const kept = company.named.filter(person => onlyThese.has(person.name))
+            .sort((a, b) => (b.name === addressing ? 1 : 0) - (a.name === addressing ? 1 : 0));
+        const rest = company.total - kept.length;
+        return [
+            'THE PEOPLE HERE',
+            ...kept.map(person => aPersonsCard(
+                person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
+                alreadySaid.has(person.name), alreadyShown.has(person.name)
+            )),
+            ...(rest > 0
+                ? ['- Everybody else here is background, and the page leaves them out: no names, no lines, no '
+                    + 'description. If the player wants one of them, the player will ask.']
+                : [])
+        ];
     }
 
     const sitsOut = (person: SomebodyInTheSquare) => wornOut.has(person.name) && person.name !== addressing;
