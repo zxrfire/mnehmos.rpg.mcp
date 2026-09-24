@@ -55,6 +55,7 @@ import type Database from 'better-sqlite3';
 import { aRecruiterOfTheHouseIsHere, makeGame, makeGameInWorld, cultivatorRow, type Harness } from './harness';
 import {
     ACTION_NAMES,
+    CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING,
     INTERACT_INTENTS,
     PRESSING_SOMEBODY,
     READ_ONLY_ACTIONS,
@@ -581,15 +582,39 @@ describe('asking whether somebody could be moved does not move them', () => {
         // clock, a moved purse and a time skip - so the verbs on it answer off
         // the plan and every verb not on it still answers off the list.
         //
+        // ── THERE ARE THREE NAMED LISTS NOW, NOT TWO ─────────────────────
+        //
+        // `costsTheAskerNothing` was two clauses when this was written and is
+        // three since `carry` and `conceal` landed, and this assertion knew
+        // about two of them. The third is
+        // `CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING`, and it exists because
+        // those two verbs fit neither of the others: BOTH OF THEM WRITE - a
+        // blade is in the hand afterwards, or the weight is off the
+        // shoulders - so neither is `READ_ONLY_ACTIONS`, which says a verb
+        // changes nothing at all; and neither has a free read inside a costly
+        // verb, which is what `THE_LABEL_THAT_REACHES_A_VERBS_READ` is for.
+        // What is true of them is narrower and is the whole of the third
+        // list: no day passes, nothing is rolled and no purse moves.
+        //
+        // Measured the day the verbs landed: `I draw my sword and attack him`
+        // was reported to the player as a sentence the turn had only half
+        // run, because the drawing was priced as an act competing with the
+        // swing. See the note on the list itself in `action-set.ts`.
+        //
         // Read in both directions, because half of it is the guard: a verb
         // quietly added to the read table would otherwise make a costly act
-        // free with nothing going red.
+        // free with nothing going red. THE GUARD IS THE DISJUNCTION OF THE
+        // NAMED LISTS AND NOT THE PREDICATE'S OWN ANSWER - asserting what
+        // `costsTheAskerNothing` happens to return would make this loop
+        // unfailable, which is the trap AGENTS.md names. A verb is free here
+        // only because somebody put it on a list and said why.
         for (const action of ACTION_NAMES) {
             if (action === 'interact') continue;
             const reads = THE_LABEL_THAT_REACHES_A_VERBS_READ[action];
             if (reads === undefined) {
                 expect(costsTheAskerNothing({ action }), action)
-                    .toBe(READ_ONLY_ACTIONS.includes(action));
+                    .toBe(READ_ONLY_ACTIONS.includes(action)
+                        || CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING.includes(action));
                 continue;
             }
             for (const label of reads) {

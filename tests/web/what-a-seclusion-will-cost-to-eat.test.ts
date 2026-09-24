@@ -14,7 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { makeGame, makeGameInWorld, startHttp } from './harness';
+import { makeGameInWorld, startHttp } from './harness';
 import {
     whatFeedingThisStretchCosts,
     PROVISION_COST_STONES,
@@ -70,8 +70,27 @@ describe('what feeding a stretch costs', () => {
 });
 
 describe('played', () => {
+    /**
+     * ── THE WORLD IS PINNED, AND IT HAS TO BE ────────────────────────────
+     *
+     * This read `makeGame({ worldEnabled: true })`, which is the one shape
+     * `harness.ts` opens by warning about: `worldEnabled` does not create a
+     * world, the first thing to touch one does, and `createWorld` with no seed
+     * mints it from `randomUUID()`. So the people, the prices and - what
+     * matters here - whether anything on the world's books reaches this
+     * cultivator during the stretch were different on every run of this file.
+     *
+     * That is load-bearing for this test and for no other in it, because
+     * `whenTheWorldWouldCutIn` shortens a sitting the world interrupts and the
+     * provisions are bought for the span actually LIVED. An unpinned world
+     * therefore decided whether the quote and the charge were taken over the
+     * same number of days. The harness names the signature exactly: *"it fails
+     * in company, passes alone, and moves to a different test each run."*
+     */
     it('quotes the same figure the seclusion then charges', async () => {
-        const { game } = makeGame({ worldEnabled: true });
+        const { game } = await makeGameInWorld({
+            worldSeed: 'a-quote-is-the-charge', seed: 'quote-equals-charge'
+        });
         await game.newRun('Shen Wuyou');
 
         const days = 750;
@@ -83,11 +102,18 @@ describe('played', () => {
         // food is bought either way, and the food is what this is about.
         const result = await game.cultivate(days, { anyway: true });
 
-        expect(result.state.cultivator.spiritStones).toBe(quoted.stonesAfter);
+        // NET OF WHAT THE SKIP ITSELF EARNED OR SPENT, which is the same
+        // correction the three tests below already make. The quote prices the
+        // food and nothing else; a stretch that also found something would
+        // otherwise read as the preview having been wrong about the food.
+        expect(result.state.cultivator.spiritStones)
+            .toBe(quoted.stonesAfter + result.timeSkip!.deltas.spiritStones);
     });
 
     it('is a read - asking what a stretch costs spends nothing', async () => {
-        const { game } = makeGame({ worldEnabled: true });
+        const { game } = await makeGameInWorld({
+            worldSeed: 'a-quote-is-the-charge', seed: 'asking-spends-nothing'
+        });
         await game.newRun('Shen Wuyou');
 
         const before = game.state();
@@ -203,7 +229,9 @@ describe('played', () => {
     }, 120_000);
 
     it('is served over HTTP for the picker to read', async () => {
-        const http = await startHttp(makeGame({ worldEnabled: true }).game);
+        const http = await startHttp((await makeGameInWorld({
+            worldSeed: 'a-quote-is-the-charge', seed: 'over-http'
+        })).game);
         try {
             await http.post('/api/run/new', { name: 'Shen Wuyou' });
             const res = await http.get('/api/seclusion/provisions?days=365');

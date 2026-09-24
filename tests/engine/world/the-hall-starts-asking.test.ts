@@ -89,17 +89,47 @@ describe('the hall starts asking', () => {
         }
     });
 
-    it('says it once, and not every year forever', async () => {
+    it('says it once per absence, and not every year forever', async () => {
         // A compound announcing the same absence for a century is not a house
         // noticing, it is a stuck flag. The alarm clears the errand.
+        //
+        // ── ONCE PER ABSENCE, NOT ONCE PER PERSON ────────────────────────
+        //
+        // This counted notices PER PERSON across the whole two hundred years,
+        // and that is a different claim from the one the sentence above makes.
+        // Measured on `asking-a`, the person with the most notices had FOUR,
+        // on days 365414, 373441, 375092 and 391772 - four distinct days
+        // spanning 26,358 of them. That is SEVENTY-TWO YEARS, and it is one
+        // cultivator who was lost, walked home
+        // (`A_LOST_PERSON_FINDS_THEIR_WAY_BACK` is half), was sent out again,
+        // and was lost again. Four disappearances, four alarms, and the house
+        // was right every time.
+        //
+        // ON A CULTIVATOR'S CLOCK SEVENTY-TWO YEARS IS NOTHING. `AGENTS.md`
+        // is explicit that a rate is only wrong if it is wrong over a life and
+        // a life here is centuries; the old assertion was a human intuition -
+        // *surely not the same person twice* - applied to people who live for
+        // a thousand. Somebody who goes missing four times in seventy-two
+        // years is the world working, not a flag stuck on.
+        //
+        // So the key is the ABSENCE, and the episode is identified by the day
+        // it opened: the lost notice is filed with `day: since`, the day the
+        // world lost sight of them, so two notices carrying one person and one
+        // day are the stuck flag this is for, and two carrying one person and
+        // two days are two separate disappearances. `data.lostTrackOf` names
+        // the person on the same row and is asserted below rather than used as
+        // the key, because a notice always names its subject in `actors`.
         for (const state of await worldsLived()) {
-            const perPerson = new Map<string, number>();
+            const perAbsence = new Map<string, number>();
             for (const notice of noticesIn(state)) {
                 for (const actor of notice.actors) {
-                    perPerson.set(actor.id, (perPerson.get(actor.id) ?? 0) + 1);
+                    const episode = `${actor.id}@${notice.day}`;
+                    perAbsence.set(episode, (perAbsence.get(episode) ?? 0) + 1);
                 }
             }
-            for (const [, times] of perPerson) expect(times).toBe(1);
+            for (const [episode, times] of perAbsence) {
+                expect(times, `${episode} was announced more than once`).toBe(1);
+            }
         }
     });
 
