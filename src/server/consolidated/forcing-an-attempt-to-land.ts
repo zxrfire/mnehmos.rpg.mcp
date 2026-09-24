@@ -102,7 +102,13 @@ export const THE_ACTIONS_THAT_ARRANGE_IT: Readonly<Record<string, readonly strin
         'ADMIN set_location location=<somewhere that sells it>, or ADMIN grant_item for the ' +
         'thing itself.'
     ],
-    'sect_manage.join': [
+    // KEYED BY THE REASON AND NOT BY THE TOOL, because `whatWouldArrangeIt`
+    // tries the code first and the call second - so a tool-level entry answers
+    // EVERY refusal that tool can make. This one sat on `sect_manage.join` and
+    // told a player with no house at all to leave the house they were not in.
+    // A hint that is right for one reason and wrong for the rest is worse than
+    // no hint, because it is read as the engine knowing why.
+    already_a_member: [
         'Membership is exclusive and walking out is its own act, at its own price. Leave first, ' +
         'out loud, and then the door is a door again.'
     ],
