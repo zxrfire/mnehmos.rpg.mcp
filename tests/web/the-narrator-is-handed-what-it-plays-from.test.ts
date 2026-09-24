@@ -128,3 +128,26 @@ describe('the scene carries a season read off the day', () => {
         expect(off).not.toContain('The season:');
     });
 });
+
+/**
+ * Played: a curse at a square got the player beaten to nothing and dead by the next day, and the
+ * narration ended with them in the dirt and the square walking off. The death was one ruling of
+ * thirty; now the turn's last instruction says so.
+ */
+describe('a death is the last thing a turn says', () => {
+    const facts = { headline: 'x', lines: ['Shen Wuyou is dead: killed in combat.'], structure: [], prose: '' };
+    const standing = {
+        rank: 'Qi Condensation Layer 1', age: 16, spiritStones: 0, booksHeld: [], methods: [],
+        untreatedInjuries: 2, house: null
+    };
+
+    it('ends the prompt on the death when the life ended this turn', () => {
+        const message = composeNarrationUser(facts, { place: 'Wind Turn', ambient: 'thin', standing: { ...standing, dead: true } });
+        expect(message.slice(message.lastIndexOf('NOW WRITE THE TURN'))).toContain('THE PLAYER DIED THIS TURN');
+    });
+
+    it('says nothing of the kind otherwise', () => {
+        const message = composeNarrationUser(facts, { place: 'Wind Turn', ambient: 'thin', standing });
+        expect(message).not.toContain('THE PLAYER DIED THIS TURN');
+    });
+});

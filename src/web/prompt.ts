@@ -595,6 +595,13 @@ export interface WhereTheyStandNow {
      * in this layer rather than in the engine, which has no use for one.
      */
     dayOfTheRun?: number;
+    /**
+     * The life ended this turn. Played: a curse at a square got the player beaten to nothing and
+     * killed on the next day, the rulings said so in one line among thirty, and the narration
+     * ended with them lying in the dirt while the square walked off. Nothing structural said
+     * this turn was the last one, so nothing made it the last line.
+     */
+    dead?: boolean;
 }
 
 /**
@@ -1020,7 +1027,7 @@ function theTurnBefore(previous: { said: string | null; shown: string } | null):
 
 /** The last thing the model reads: which of the three kinds of turn this is. */
 function theTurnToWrite(
-    scene: { theLifeBehindThem?: readonly string[] },
+    scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null },
     addressing: string | null,
     alone: boolean,
     somebodyToPlay: boolean,
@@ -1053,7 +1060,11 @@ function theTurnToWrite(
         + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
         + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
         + 'they do not do or do not say: whoever has no part in this moment is left out. Never end '
-        + 'on a list of what the player could do.';
+        + 'on a list of what the player could do.'
+        + (scene.standing?.dead
+            ? ' THE PLAYER DIED THIS TURN. Their death is the last thing that happens: write it plainly, '
+                + 'in the body, and end there. Nothing after it, and nothing about mending or what comes next.'
+            : '');
 }
 
 /**
