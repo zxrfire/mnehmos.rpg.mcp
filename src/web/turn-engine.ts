@@ -204,8 +204,11 @@ import {
 } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { anInsultLandsOnTheRoom } from '../engine/world/what-an-insult-to-a-room-costs.js';
-import { A_SENTENCE_THAT_ONLY_NEGOTIATES } from './going-back-and-forth-over-a-price.js';
-import { AN_INSULT, A_HAND_RAISED } from './verb-pattern-table.js';
+import {
+    AN_INSULT,
+    A_HAND_RAISED,
+    A_SENTENCE_THAT_ONLY_NEGOTIATES
+} from './what-a-sentence-only-does.js';
 import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';

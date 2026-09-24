@@ -58,6 +58,10 @@
  */
 
 import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
+import {
+    AN_INSULT,
+    A_COURTESY_TO_SOMEBODY
+} from './what-a-sentence-only-does.js';
 import { z } from 'zod';
 // The leverage enum the social resolver reads. Set by the parser so that
 // nothing downstream has to translate a verb into a mechanic.
@@ -423,41 +427,6 @@ export const HANDING_IT_OVER =
     + 'pay|pays|paying|paid|repay|repays|repaying|repaid|'
     + 'press|presses|pressing|pressed|slip|slips|slipping|slipped';
 
-/**
- * Telling a room, or one of them, what you think of it.
- *
- * Plain obscenity is on the list because a player who types it means it, and
- * the measured failure was that "fuck you all" reached no verb at all and was
- * read as a QUESTION put to everybody standing there. The rest are the
- * ordinary ways somebody says a thing they cannot take back: naming what
- * somebody is, spitting, sneering, cursing them.
- *
- * NOT `attack` AND NOT `coerce`. Nothing is demanded and nobody is touched.
- */
-/**
- * Anything that would put hands on somebody, in the plainest words.
- *
- * Kept beside {@link AN_INSULT} because the pair is read together: a sentence
- * that insults and does NOT contain one of these has nobody being hit in it,
- * whatever a model made of it. Broad rather than clever - this is a veto, and
- * a veto that misses is worse than one that is too easily satisfied.
- */
-export const A_HAND_RAISED =
-    /\b(?:attack|attacks|attacking|attacked|strike|strikes|striking|struck|hit|hits|hitting|punch|punches|punching|punched|kick|kicks|kicking|kicked|stab|stabs|stabbing|stabbed|cut|cuts|cutting|slash|slashes|kill|kills|killing|killed|draw|draws|drawing|drew|swing|swings|swinging|swung|lunge|lunges|charge|charges|charging|charged|grab|grabs|grabbing|grabbed|seize|seizes|seizing|seized|throttle|throttles|strangle|strangles|beat|beats|beating|fight|fights|fighting|fought|sword|blade|fist|fists)\b/i;
-
-/**
- * A bow, a kneel or cupped hands aimed at somebody.
- *
- * The genre's ordinary greeting and its ordinary apology, and it shares every
- * word with surrendering. What tells them apart is that a courtesy is aimed AT
- * a person - a name, a title, a senior - and a surrender is aimed at whoever
- * is currently hitting you, which the sentence does not have to say.
- */
-export const A_COURTESY_TO_SOMEBODY =
-    /\b(?:bow|bows|bowing|bowed|kneel|kneels|kneeling|knelt|salute|salutes|saluting|saluted|cup|cups|cupping)\b[^.!?]{0,30}?\b(?:to|before|toward|towards|at)\s+((?:my|our|the|his|her|their)\s+)?((?:senior|junior|elder|master|grand)\s+)?(seniors?|juniors?|elders?|masters?|patriarch|abbot|brothers?|sisters?|[A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)?)/;
-
-export const AN_INSULT =
-    /\b(?:fuck|screw) (?:you|him|her|them|the lot of|off)\b|\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b|\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b|\btell (?:him|her|them|you|the lot of them) (?:exactly )?what i think\b|\b(?:he|she|they) (?:is|are) a (?:disgrace|fraud|coward|joke)\b/i;
 
 /** Whose face it was said to, where one was named. */
 const INSULT_SUBJECT_VERBS =

@@ -44,16 +44,6 @@ export type WhatTheHaggleSaid =
 const ASKING_THE_PRICE =
     /\bhow much\b|\bwhat(?:'s| is| are)?\s+(?:your|the|his|her|their)\s+(?:price|best price|asking price|figure)\b|\bwhat\s+(?:do|does|would|will)\s+(?:you|he|she|they|it)\s+(?:want|take|ask|charge)\b|\bwhat\s+(?:are|is)\s+(?:you|he|she|they)\s+asking\b|\bgoing rate\b|\bname your price\b|\bhow many stones\b/i;
 
-/**
- * A sentence that goes back and forth over a price rather than paying one.
- *
- * Four words, each unambiguous: nobody writes *I haggle* and means *I pay what
- * they asked*. Narrow on purpose - a guard that second-guessed *I buy the
- * sword* would be worse than the bug it is here for, which is a model routing
- * a haggle to a verb that spends the purse.
- */
-export const A_SENTENCE_THAT_ONLY_NEGOTIATES =
-    /\b(?:haggle|haggles|haggling|haggled|negotiate|negotiates|negotiating|negotiated|bargain|bargains|bargaining|bargained|barter|barters|bartering|bartered)\b/i;
 
 /** Putting a thing rather than a figure across the table. */
 const SOMETHING_INSTEAD =
