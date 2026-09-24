@@ -3344,7 +3344,32 @@ export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
     String.raw`\bsettle(?:s|d)?\s+(?:my|his|her|their|our|the|up|a)\s+(?:debt|debts|account|accounts|score|tab|bill|dues)\b`,
     String.raw`\bsettling\s+(?:my|his|her|their|our|the|up|a)\s+(?:debt|debts|account|accounts|score|tab|bill|dues)\b`,
     String.raw`\bsettle(?:s|d)?\s+up\b`,
-    String.raw`\bsettling\s+up\b`
+    String.raw`\bsettling\s+up\b`,
+    // ── AND SITTING DOWN SOMEWHERE IS TAKING A SEAT ──────────────────
+    //
+    // Played, three times in one run and reproduced:
+    //
+    //   "I sit down across from He Xuxue and order a bowl of noodles"
+    //   "I sit down in the corner of the inn, gather the qi in my dantian
+    //    and try to break through to the next layer"
+    //
+    // Both spent thirty days. The WHOLE sentence reads correctly - `buy` for
+    // the first and `breakthrough` for the second - and that is what hid it:
+    // a plan of several steps is checked clause by clause, so `I sit down
+    // across from He Xuxue` is read on its own, and on its own it was a
+    // sitting. The model's `cultivate` then passed the danger guard because
+    // the table agreed with it about that clause.
+    //
+    // `down` is the whole of the distinction and it is the genre's: a
+    // cultivator SITS, and somebody taking a chair sits DOWN. The exception
+    // is a sentence that says which it is, so a cultivation word anywhere in
+    // it takes this back - "I sit down to cultivate", "I sit down
+    // cross-legged", "I sit down and gather qi" are all sittings and stay
+    // ones. Anchored at the start because the exception is about the whole
+    // sentence and not about what follows the verb.
+    String.raw`^(?![\s\S]*\b(?:cultivat|meditat|seclu|dantian|meridian|cross.?legged|`
+    + String.raw`lotus|circulat|breath|spiritual energy|spirit energy|qi\b))`
+    + String.raw`[\s\S]*\bs(?:it|its|at|itting)\s+down\b`
 ].join('|'), 'i');
 
 /**
