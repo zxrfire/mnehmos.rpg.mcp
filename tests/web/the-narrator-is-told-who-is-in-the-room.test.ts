@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
-import { thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
+import { howTheyReadToYou, thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
 import type { Company } from '../../src/web/facts';
 
 const FACTS = {
@@ -82,6 +82,20 @@ describe('the narrator is handed the people in the scene', () => {
         for (const wrong of ['rung', 'ordinal', 'layer', 'qi condensation']) {
             expect(said, wrong).not.toContain(wrong);
         }
+    });
+
+    /**
+     * A gap of whole realms is said as what it does between two people, both ways. Played: made
+     * Deity Transformation, the player ordered outer disciples about and one answered as to an
+     * equal - the card had said "far below you" and nothing about what that is to stand before.
+     */
+    it('says what a gap of realms does between two people, in both directions', () => {
+        const low = howTheyReadToYou(0, 28);
+        expect(low).toContain('far below you');
+        expect(low).toMatch(/defer|give way/);
+        expect(howTheyReadToYou(28, 0)).toContain('far above you');
+        expect(howTheyReadToYou(28, 0)).not.toMatch(/\d/);
+        expect(howTheyReadToYou(3, 3)).toBe('about level with you');
     });
 
     /** The one being spoken to leads, and is marked, so the turn is theirs. */

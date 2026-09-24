@@ -8,7 +8,7 @@
  * measurements behind them live in `docs/world/writing/`.
  */
 
-import { realmForOrdinal } from '../engine/cultivation/realms.js';
+import { realmIndexOf } from '../engine/cultivation/realms.js';
 import { catalogPersonBehind } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { getMember } from '../data/cultivation/members.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
@@ -93,8 +93,10 @@ rate". None of those words may reach the page. Turn each one into what somebody 
 would see, hear or be told:
 
   CLERK: A serious meridian injury, and it will not close on its own. You are on 22 of 40.
-  STORY: Something in your chest gives with a sound only you can hear, and you know at once it will
-         not close by itself. Your next breath comes short.
+  STORY, one of many ways - never the same one twice:
+         The blow takes you under the ribs, and your next breath stops halfway.
+         Heat spreads from the point of impact and does not fade; something in there has torn.
+         You straighten, and your left side refuses to come with you.
 
   CLERK: Reads as above you, on the same footing. 106 years old. Marks of a sect whose name
          means nothing to this cultivator. Addressed as Inner Disciple.
@@ -414,12 +416,29 @@ from this turn's cards and lists.
 
 ${EXAMPLES_CLOSE}`;
 
-/** How far above or below the player somebody reads, in words a person in a square would use. */
+/**
+ * How far above or below the player somebody reads, and what that does between them, in words a
+ * person in a square would use.
+ *
+ * Both directions, because the gap is felt by the lower one. Played on gemma4:31b: made Deity
+ * Transformation and walking into a house's outer courts, the player ordered its disciples to
+ * fetch their head, and a Qi Condensation disciple answered "it is a fair question" as to an equal.
+ * The card had said "far below you"; it had not said what that is like to stand in front of.
+ */
 export function howTheyReadToYou(theirs: number, yours: number): string {
     if (theirs === yours) return 'about level with you';
-    const otherRealm = realmForOrdinal(theirs).key !== realmForOrdinal(yours).key;
-    if (theirs > yours) return otherRealm ? 'far above you' : 'above you';
-    return otherRealm ? 'far below you' : 'below you';
+    const realms = Math.abs(realmIndexOf(theirs) - realmIndexOf(yours));
+    if (theirs > yours) {
+        if (realms === 0) return 'above you';
+        return realms === 1
+            ? 'far above you - you would give way, and they expect it'
+            : 'so far above you that standing near them presses on the breath';
+    }
+    if (realms === 0) return 'below you';
+    return realms === 1
+        ? 'far below you - they give way to you, and know they must'
+        : 'far below you, by more than one realm - your presence alone weighs on them; they defer, '
+            + 'fawn or fear, and cannot pretend otherwise';
 }
 
 /**
