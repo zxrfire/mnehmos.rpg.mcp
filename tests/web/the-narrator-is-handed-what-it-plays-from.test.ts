@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { composeNarrationUser } from '../../src/web/prompt';
+import { composeNarrationUser, whereTheyStandNow } from '../../src/web/prompt';
 import { makeGameInWorld, ScriptedProvider } from './harness';
 
 const narrationPrompts = (provider: ScriptedProvider) => provider.calls
@@ -81,5 +81,25 @@ describe('the people in the square reach the narrator as people', () => {
         const prompt = narrationPrompts(provider).at(-1)!;
         expect(prompt).toContain('THE PEOPLE HERE');
         expect(prompt).toMatch(/Right now: /);
+    });
+});
+
+/**
+ * Played: three new lives in a row, two of them women, were all called "boy" by the people who
+ * raised them. Nothing told the narrator, and it guessed.
+ */
+describe('the narrator is told whether the player is a woman or a man', () => {
+    const standing = {
+        rank: 'Qi Condensation Layer 1', age: 16, spiritStones: 30, booksHeld: [], methods: [],
+        untreatedInjuries: 0, house: null
+    };
+
+    it('says so on the standing line', () => {
+        expect(whereTheyStandNow({ ...standing, sex: 'female' })).toContain('- a woman, Qi Condensation Layer 1, 16 years old, no house behind them');
+        expect(whereTheyStandNow({ ...standing, sex: 'male' })).toContain('- a man, Qi Condensation Layer 1, 16 years old, no house behind them');
+    });
+
+    it('says nothing when the caller did not know', () => {
+        expect(whereTheyStandNow(standing)).toContain('- Qi Condensation Layer 1, 16 years old, no house behind them');
     });
 });

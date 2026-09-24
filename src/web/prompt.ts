@@ -580,6 +580,11 @@ export interface WhereTheyStandNow {
     untreatedInjuries: number;
     /** House, and what they are called inside it. Null for nobody's. */
     house: string | null;
+    /**
+     * So that nobody in the scene calls a young woman "boy". Played: three new lives in a row
+     * were all addressed as a boy, because the block said nothing and the model guessed.
+     */
+    sex?: 'female' | 'male';
 }
 
 /**
@@ -616,7 +621,8 @@ export function whereTheyStandNow(state: WhereTheyStandNow | null | undefined): 
         '  method".',
         '  no house - nobody\'s colours on them where everyone else is wearing some. NOT "you',
         '  serve no house".',
-        `- ${state.rank}, ${state.age} years old, ${state.house ?? 'no house behind them'}`,
+        `- ${state.sex ? `${state.sex === 'female' ? 'a woman' : 'a man'}, ` : ''}${state.rank}, `
+            + `${state.age} years old, ${state.house ?? 'no house behind them'}`,
         `- ${state.spiritStones} spirit stone${state.spiritStones === 1 ? '' : 's'}, ${carrying}`,
         `- ${practising}; ${body}`
     ];
