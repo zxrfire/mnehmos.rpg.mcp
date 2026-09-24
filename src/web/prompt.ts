@@ -1012,7 +1012,8 @@ export function composeNarrationUser(
             ]
             : []),
         '',
-        'Where a ruling answers what the player asked, somebody in the scene gives that answer. Where no',
+        'Where a ruling answers what the player asked, the answer reaches the page: from somebody in the',
+        'scene, or, with nobody here to give it, as what the player already knows or can see. Where no',
         'ruling answers it, nobody supplies one: people talk around it or about their own affairs, and',
         'the prose moves on to what they do. Where a ruling says somebody refused, it is closed, and',
         'they turn to something else.',
@@ -1088,7 +1089,8 @@ function theTurnToWrite(
                     : '')
                 + ' Anybody else here may react too.'
             : alone
-                ? `${setting} Then the player's act and what it does. Nobody is here to answer.`
+                ? `${setting} Then the player's act and what it does, with the place and nobody else in it. `
+                    + 'Whatever a ruling answers comes to them as what they already know or can see.'
                 : somebodyToPlay
                     ? `${setting} Then the player's act and whoever it lands on. Said aloud to the room, `
                         + 'whoever is likeliest to answer does, each in their own voice; anything else, one '
