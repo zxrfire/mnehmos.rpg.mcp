@@ -204,6 +204,7 @@ import {
 } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { anInsultLandsOnTheRoom } from '../engine/world/what-an-insult-to-a-room-costs.js';
+import { A_SENTENCE_THAT_ONLY_NEGOTIATES } from './going-back-and-forth-over-a-price.js';
 import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';
@@ -4028,6 +4029,24 @@ export class GameService {
         // A True Immortal is not standing in the province any more.
         if (canExistBeyondTheLid(cultivator) && MORTAL_WORLD_ACTIONS.includes(action.action)) {
             return this.aboveTheLid(run, cultivator, action.action);
+        }
+
+        // ── A HAGGLE IS NOT A PURCHASE, AND THIS ONE SPENDS MONEY ────────
+        //
+        // Reported from a played run: "I haggle with the stallholder over
+        // Cross-Meridian Strike" was routed by the model to `buy` and the
+        // purse paid the full fifteen stones. The pattern table gets this
+        // right - it reads `interact/trade`, which is the haggle - so the
+        // guard is not about the table. It is that a verb WHICH SPENDS must
+        // never be the reading of a sentence that only negotiates, whoever
+        // did the reading.
+        //
+        // Narrow on purpose: haggle, negotiate, bargain and barter are words
+        // nobody types meaning "pay the asking price". Everything else is left
+        // alone, because a guard that second-guesses "I buy the sword" would
+        // be worse than the bug.
+        if (action.action === 'buy' && A_SENTENCE_THAT_ONLY_NEGOTIATES.test(rawInput)) {
+            action = { ...action, action: 'interact', intent: 'trade' };
         }
 
         // THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT
