@@ -520,7 +520,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         );
         // AND WHERE THAT GROUND IS, WHICH THE LINE ABOVE MAKES THE PLAYER NEED.
         //
-        // Found by playing: a new Skin of the Waterman Caravan was told they
+        // Found by playing: a new Sand Servant of the Waterman Caravan was told they
         // were on the roll, and nothing told them where the Caravan was. They
         // walked four days to Sand Well, which is a well, and met nobody of
         // their own house. Naming the house is the sentence that takes them

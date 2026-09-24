@@ -878,7 +878,7 @@ The prose was dry because there was no person in the prompt. Measured by playing
 world and printing the phase-3 user message verbatim: three rounds of a fight, two other
 people in the square throughout, and the whole person-content of the prompt was
 *"You are on 36 of 40; Kong Liekuan is on 39 of 43."* Being taken into a house came back as
-*"Taken on by <house>, ranked Skin"* - the most personal event in the setting, with nobody
+*"Taken on by <house>, ranked Sand Servant"* - the most personal event in the setting, with nobody
 in it. **That is a fact about a channel, not about prose**, and no instruction to the
 narrator could have fixed it.
 

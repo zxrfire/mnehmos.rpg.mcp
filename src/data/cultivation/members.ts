@@ -3081,7 +3081,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Stopper Xi',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 0,
-        rank: 'Skin',
+        rank: 'Sand Servant',
         realmOrdinal: 1,
         role: 'peer',
         wants: 'to be counted back in nine times running, which is what the shed calls a season',

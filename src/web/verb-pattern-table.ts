@@ -4378,7 +4378,7 @@ const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|
  * Somebody addressed by name or title before the rest of the sentence.
  *
  * *Lu Nuoming, what do you know about the Caravan?* - *Senior sister, where do
- * the Skins sleep?* A xianxia player writes this constantly and the table had
+ * the Sand Servants sleep?* A xianxia player writes this constantly and the table had
  * no rule for it, so the sentences fell past every verb to whatever their TAIL
  * looked like: a question about a house became `investigate` on the house, a
  * question about the dormitory became `assess`, and *Lu Nuoming, hello* became

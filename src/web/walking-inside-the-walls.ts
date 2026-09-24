@@ -157,7 +157,7 @@ export function intoTheRoomTheWorkIsDoneIn(
  *
  * ── WHY THE SCENE NEEDS IT, MEASURED ─────────────────────────────────────
  *
- * Played: a Skin of the Waterman Caravan stood on its ground for eleven turns
+ * Played: a Sand Servant of the Waterman Caravan stood on its ground for eleven turns
  * and met one person. The house had eleven living members; five were on the
  * road, and of the six at home four were in the mission hall, the scripture
  * pavilion and the route elder's precinct, a walk inside a gate the player

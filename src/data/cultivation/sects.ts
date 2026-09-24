@@ -2196,7 +2196,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Waterman Caravan',
         alignment: 'neutral',
         powerOrdinal: 19,
-        ranks: ['Skin', 'Carrier', 'String Head', 'Route Elder', 'Grand Route Elder', 'Waterman'],
+        ranks: ['Sand Servant', 'Carrier', 'String Head', 'Route Elder', 'Grand Route Elder', 'Waterman'],
         admissionOrdinal: 0,
         stipend: [2, 6, 22, 75, 140, 260],
         teaches: [

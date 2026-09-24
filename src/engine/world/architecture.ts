@@ -763,7 +763,7 @@ export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
  * second precinct of any house with more than three rungs, and the bottom rung
  * is barred from the room it eats in.
  *
- * MEASURED on the Waterman Caravan, a seven-rung house, for a day-one Skin of
+ * MEASURED on the Waterman Caravan, a seven-rung house, for a day-one Sand Servant of
  * that house: of 23 rooms, `reachThrough` barred 20. Not the treasury and the
  * patriarch's residence - the refectory, the quarters they sleep in, the
  * practice yard, and the mission hall, which exists to hand work to exactly

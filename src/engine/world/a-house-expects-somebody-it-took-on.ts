@@ -532,9 +532,9 @@ export function questionedByTheInternalAffairsElder(
         // This branch is the house knowing nothing either way, and it was
         // returning the same verdict as the contradictions.
         //
-        // Played: a Skin taken on at the Wind Turn intake was turned away from
+        // Played: a Sand Servant taken on at the Wind Turn intake was turned away from
         // the gate the next day on this line, while every look in the same run
-        // said the house had them down as Skin. Two records of one membership,
+        // said the house had them down as Sand Servant. Two records of one membership,
         // disagreeing in front of the player - and the one that won was the
         // one reconstructing where somebody had been, over the one that was
         // the house's own roll.
