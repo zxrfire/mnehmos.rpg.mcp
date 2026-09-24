@@ -19,6 +19,7 @@ import {
     styleTagsOf,
     survivingTags,
     whatAHouseIsFocusedOn,
+    THE_ROOMS_A_HOUSE_SHARES,
     A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER,
     type CompoundInput
 } from '../../../src/engine/world/architecture.js';
@@ -328,9 +329,19 @@ describe('reachThrough', () => {
     it('waives the walls somebody went around, and nothing else', () => {
         const { all, darkNodeIds } = world();
         expect(darkNodeIds.length).toBeGreaterThan(0);
-        const node = all.find(l => l.id === darkNodeIds[0])!;
-        const into = all.find(l => l.id === String(node.data.opensOnto))!;
-        const inside = all.find(l => l.parentId === into.id && l.kind !== 'vault')!;
+        // WHICHEVER DARK NODE OPENS ON A PRECINCT WITH A ROOM IN IT. The first
+        // one is not guaranteed to: the rooms a house shares are all cut in the
+        // outermost precinct, so a precinct further in can be a wall and a yard.
+        const through = darkNodeIds
+            .map(id => all.find(l => l.id === id)!)
+            .map(node => ({ node, into: all.find(l => l.id === String(node.data.opensOnto))! }))
+            .map(pair => ({
+                ...pair,
+                inside: all.find(l => l.parentId === pair.into.id && l.kind !== 'vault')
+            }))
+            .find((pair): pair is typeof pair & { inside: LocationRecord } => pair.inside !== undefined);
+        expect(through).toBeDefined();
+        const { into, node, inside } = through!;
 
         const front = reachThrough(pathTo(all, inside.id), { realmOrdinal: 8 });
         const back = reachThrough([node, into, inside], { realmOrdinal: 8 }, { enteredAt: into.id });
@@ -582,5 +593,54 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
         const forges = SECTS.filter(sect => whatAHouseIsFocusedOn(sect).artifacts).map(sect => sect.id);
         expect(pills).toEqual(['sect-cinnabar-crucible-sect']);
         expect(forges).toEqual(['sect-ashen-forge-clan']);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROOMS A HOUSE SHARES
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the rooms a house shares', () => {
+    const opts = { seed: 'w', presentDay: 10_000 };
+
+    function world() {
+        const s = seat();
+        const { locations } = growCompound(s, broadHouse(), opts);
+        return { all: [s, ...locations], s };
+    }
+
+    it('cuts them in the outermost precinct, whatever their depth', () => {
+        const { all } = world();
+        for (const purpose of THE_ROOMS_A_HOUSE_SHARES) {
+            const room = all.find(l => purposeOf(l) === purpose);
+            if (!room) continue;
+            expect(
+                { purpose, precinct: Number(room.data.precinctIndex) }
+            ).toEqual({ purpose, precinct: 0 });
+        }
+    });
+
+    it('lets the bottom rung walk to the room it eats in on the day it arrives', () => {
+        const { all, s } = world();
+        // `admissionOrdinal` and nothing above it, which is what a house's
+        // newest member has.
+        const newest = { realmOrdinal: broadHouse().admissionOrdinal };
+        for (const purpose of ['refectory', 'dormitory', 'mission_hall', 'practice_yard'] as const) {
+            const room = all.find(l => purposeOf(l) === purpose);
+            if (!room) continue;
+            const reach = reachThrough(pathTo(all, room.id), newest, { enteredAt: s.id });
+            expect({ purpose, stoppedAt: reach.stoppedAt }).toEqual({ purpose, stoppedAt: null });
+        }
+    });
+
+    it('keeps the house\'s books and its dead behind the wall they are behind', () => {
+        const { all, s } = world();
+        const newest = { realmOrdinal: broadHouse().admissionOrdinal };
+        for (const purpose of ['scripture_pavilion', 'ancestral_hall', 'treasury'] as const) {
+            const room = all.find(l => purposeOf(l) === purpose);
+            if (!room) continue;
+            const reach = reachThrough(pathTo(all, room.id), newest, { enteredAt: s.id });
+            expect({ purpose, barred: reach.stoppedAt !== null }).toEqual({ purpose, barred: true });
+        }
     });
 });

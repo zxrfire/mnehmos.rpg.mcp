@@ -924,6 +924,8 @@ export function composeNarrationUser(
         playerSaid?: string | null;
         /** Who is standing here, as the square reads them. See `thePeopleHere`. */
         company?: Company | null;
+        /** Rooms off this yard the player could walk to. See `theDoorsOffThisYard`. */
+        doorsFromHere?: readonly string[];
         /** The person the engine resolved this turn's act onto, by name, if any. */
         addressing?: string | null;
         /** The years before turn 0, to be written rather than summarised. */
@@ -965,6 +967,18 @@ export function composeNarrationUser(
         ...(scene.standing?.dayOfTheRun === undefined
             ? []
             : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. The weather and the light keep to it.`]),
+        // A YARD IS NOT THE WHOLE OF A COMPOUND. Played: a new disciple stood on
+        // their own house's ground for eleven turns and met the one other person
+        // in the yard, while the rest of the house was a walk away through a gate
+        // they could pass. Nothing said there was anywhere to walk to.
+        ...(scene.doorsFromHere && scene.doorsFromHere.length > 0
+            ? [
+                `Doors off this yard, each a walk and none of them shut to this cultivator: `
+                + `${scene.doorsFromHere.join(', ')}. They belong in the scene as what they are - a `
+                + 'door standing open, a lamp lit in one, somebody crossing to another. Nobody '
+                + 'recites the list, and the player walks to one by saying so.'
+            ]
+            : []),
         '',
         ...thePeopleHere(
             scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,

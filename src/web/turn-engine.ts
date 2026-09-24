@@ -507,7 +507,7 @@ import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.j
 import { buyAVesselOffTheBoard } from './buying-a-vessel-off-the-board.js';
 import { whetherTheHousesCounterIsHere } from './a-house-counter-is-where-the-house-is.js';
 import { settleWhatWasPlacedWithAMaker } from './a-commission-placed-with-a-maker.js';
-import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
+import { intoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard } from './walking-inside-the-walls.js';
 // Above a certain grade a pill has a value and no price. The refusal that says
 // so already existed and nothing asked it.
 import {
@@ -3188,6 +3188,11 @@ export class GameService {
             // and the air, a narrator opens on an empty square, because that is
             // the cheapest guess.
             company,
+            // AND WHERE THE REST OF THEM ARE. The yard is not the compound: a
+            // house's own people are read into its rooms, and a scene that names
+            // only the square makes the house look empty to somebody standing
+            // inside it.
+            doorsFromHere: theDoorsOffThisYard(this, after.cultivator),
             addressing: whoTheActWasPutTo(
                 stepsOfThePlan(theTurnsPlan).map(step => step.action.target), company
             ),

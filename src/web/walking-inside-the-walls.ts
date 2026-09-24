@@ -153,6 +153,65 @@ export function intoTheRoomTheWorkIsDoneIn(
 }
 
 /**
+ * The rooms this player could walk to from where they are standing.
+ *
+ * ── WHY THE SCENE NEEDS IT, MEASURED ─────────────────────────────────────
+ *
+ * Played: a Skin of the Waterman Caravan stood on its ground for eleven turns
+ * and met one person. The house had eleven living members; five were on the
+ * road, and of the six at home four were in the mission hall, the scripture
+ * pavilion and the route elder's precinct, a walk inside a gate the player
+ * could pass at any time. The walk below already admitted them. The scene said
+ * `Place: Waterman Caravan grounds` and named the one person standing in the
+ * yard, so nothing in front of the player said there was anywhere to walk to.
+ *
+ * THE SAME GATE THE WALK APPLIES, and deliberately the same call: a door this
+ * offers is a door `aWalkInsideTheWalls` opens, and a room it leaves out is one
+ * the walk would refuse. Two reads would be two answers to *what has this
+ * person been shown*.
+ */
+export function theDoorsOffThisYard(
+    game: GameService,
+    cultivator: Cultivator
+): string[] {
+    const world = game.atHand;
+    if (!world) return [];
+    const compounds = whereCompoundsAre(world);
+    const hereId = game.worldPlaceOf(cultivator);
+    const seat = theSeatOfTheCompound(world, hereId, compounds);
+    if (seat === null || hereId === null) return [];
+    const compound = compounds.bySeat.get(seat.id)!;
+
+    const membership = game.repos.sects.getMembership(cultivator.id);
+    const house = membership ? game.repos.sects.getById(membership.sectId) : null;
+    const called = theLessonYourMasterCalledYouTo(game, world, cultivator);
+
+    const doors: string[] = [];
+    for (const room of world.locations) {
+        if (!compound.inside.has(room.id) || room.id === hereId) continue;
+        const purpose = purposeOf(room);
+        // A node of the house's array is masonry and not a room anybody walks
+        // into, and the gatehouse and the forecourt ARE the seat.
+        if (purpose === 'formation_node' || purpose === 'gatehouse' || purpose === 'forecourt') continue;
+        const { viewer } = howThisCultivatorStandsInTheHouseHolding({
+            ground: room,
+            cultivator,
+            standing: membership && house
+                ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length }
+                : null,
+            onDay: Math.floor(world.currentDay)
+        });
+        const invited = called?.dwelling.id === room.id;
+        if (!invited && !isAtLeast(roomStageFor(room, viewer), 'placed')) continue;
+        doors.push(aRoomsOwnName(room));
+    }
+    doors.sort();
+    // Out is always open, and it is only worth saying from inside a room.
+    if (hereId !== seat.id) doors.unshift('the gate');
+    return doors;
+}
+
+/**
  * A walk inside the walls of the compound this player is standing in, or null
  * where the sentence is not about one and the ordinary road should answer it.
  */

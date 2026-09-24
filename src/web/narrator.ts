@@ -394,6 +394,13 @@ export interface NarratorScene {
      * narrator can play them - see `thePeopleHere`.
      */
     company?: Company | null;
+    /**
+     * The rooms of this compound the player could walk to from where they stand.
+     *
+     * Who is in the yard is not who is in the house. See `theDoorsOffThisYard`,
+     * which reads them through the same gate the walk itself applies.
+     */
+    doorsFromHere?: readonly string[];
     /** The person this turn's act was put to, by name, where the engine resolved one. */
     addressing?: string | null;
     /**

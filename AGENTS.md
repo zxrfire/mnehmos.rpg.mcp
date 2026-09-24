@@ -3892,3 +3892,30 @@ directory that could plausibly own the idea.
 
 **And say "I did not find it" rather than "it does not exist."** The two sentences authorise
 completely different next actions, and only one of them is what you actually established.
+
+### One number read as two different things, and a fix that moved the number instead
+
+**A field that answers two questions answers one of them wrong**, and the wrong one is usually
+the one nobody is looking at. The tell is a fix in the history that reads *"this constant had
+to be N or X broke"*, with no note about the rows beside it.
+
+The shape that made this worth a section: a compound's rooms carry `depth` - how far in from
+the gate a room sits - and `precinctAt` rounds that onto the precinct ladder. `roomStageFor`
+and `reachThrough` then read that index as a **rung**: `viewer.rankIndex >= precinctIndex`. So
+a refectory at depth 0.1 landed in the second precinct of any house with more than three rungs,
+and the bottom rung was barred from the room it eats in.
+
+**It had already been found once, on one row.** The lecture hall's `depth` was cut to 0 with a
+comment explaining exactly this, *"behind a wall the bottom rung cannot pass... so the people a
+talk is for could not walk to it"*. That fix moved a number out of the way of the mapping and
+left the mapping alone. Measured on a seven-rung house afterwards, a day-one member of it was
+barred from **20 of its 23 rooms** - not the treasury and the patriarch's residence, but the
+refectory, the quarters they sleep in, the practice yard, and the mission hall, whose only job
+is to hand work to that rung. Played, the house read as empty from inside its own gate.
+
+**The tell, and it is cheap:** when a comment says a constant was tuned to make one row come
+out right, read the other rows through the same function. If the mapping can put any of them
+somewhere absurd, the mapping is the defect and the constant was a symptom. The fix belongs
+where the two meanings are told apart - here, a set of purposes that say *this room is the
+house's own shared life* - and not in the number, because the number is load-bearing for
+something else (`whoIsInChargeOfWhat` sorts offices by that same `depth`).

@@ -753,6 +753,49 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
 export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
 
 /**
+ * The rooms of a house its whole house uses, which sit in the outermost precinct.
+ *
+ * ── DEPTH IS NOT RANK, AND MAPPING ONE ONTO THE OTHER BARS A HOUSE FROM ITSELF ──
+ *
+ * `precinctAt` rounds a room's `depth` - how far in from the gate it sits - onto
+ * the precinct ladder, and `roomStageFor` then reads that index as a RUNG:
+ * `viewer.rankIndex >= precinctIndex`. So a refectory at depth 0.1 lands in the
+ * second precinct of any house with more than three rungs, and the bottom rung
+ * is barred from the room it eats in.
+ *
+ * MEASURED on the Waterman Caravan, a seven-rung house, for a day-one Skin of
+ * that house: of 23 rooms, `reachThrough` barred 20. Not the treasury and the
+ * patriarch's residence - the refectory, the quarters they sleep in, the
+ * practice yard, and the mission hall, which exists to hand work to exactly
+ * that rung. Played, it read as a house with nobody in it: five of eleven
+ * members were on the road and the other four were behind those walls.
+ *
+ * The lecture hall already carried this fix as a number - its `depth` was cut
+ * to 0 so `precinctAt` would round it to the outermost precinct - and the note
+ * on it says why. Six other rooms had the same defect and no such note. Doing
+ * it by purpose rather than by moving six more depths keeps `depth` meaning
+ * the one thing it means: `whoIsInChargeOfWhat` sorts offices deepest-first,
+ * so every depth is load-bearing for who holds what, and the mission hall's
+ * own note records what moving one cost the last time.
+ *
+ * WHAT STAYS BEHIND A WALL is what a wall is for: the precincts themselves, the
+ * scripture pavilion, the crafts, the vaults, the ancestral hall, a rung's own
+ * residence. A house keeps its books and its dead behind rank. It does not keep
+ * its kitchen there.
+ */
+export const THE_ROOMS_A_HOUSE_SHARES: ReadonlySet<RoomPurpose> = new Set<RoomPurpose>([
+    'gatehouse',
+    'forecourt',
+    'refectory',
+    'dormitory',
+    'practice_yard',
+    'duelling_ground',
+    'infirmary',
+    'lecture_hall',
+    'mission_hall'
+]);
+
+/**
  * Whether a room is one somebody is in charge of, and how far in it sits.
  */
 export function roomAuthorityOf(
@@ -938,7 +981,9 @@ export function growCompound(
                 capacityPer: PURPOSE[purpose].capacityPer * A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER
             }
             : PURPOSE[purpose];
-        const at = precinctAt(precincts, spec.depth);
+        const at = THE_ROOMS_A_HOUSE_SHARES.has(purpose)
+            ? precincts[0]
+            : precinctAt(precincts, spec.depth);
         const host = precinctRecords[at.index];
         if (!host) continue;
         const room = buildRoom(purpose, spec, at, host, input, style, unit, styleData, rng);
