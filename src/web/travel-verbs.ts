@@ -655,6 +655,40 @@ export const travelVerbs = {
         // there is nothing that could say a name is wrong; refusing then
         // would make travel impossible rather than safe.
         if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
+            // ── SOMEBODY STANDING HERE IS NOT A JOURNEY ──────────────
+            //
+            // Played, on the parting: *"I go back to He Xuxue and kneel before
+            // him. Grandfather, I leave with the caravan tomorrow."* The kneel
+            // resolved and landed on him. The first clause went to the travel
+            // verb, because "go back to <name>" is what the table reads it as
+            // and the table cannot see who is in the room - and the turn was
+            // spent on *"No road goes there. Unresolved destination 'He
+            // Xuxue'"*, about a man standing an arm's length away.
+            //
+            // Going back to somebody you are already standing with is crossing
+            // a room. It is not a road, it costs no day, and it is the sentence
+            // people open a parting or an apology with, which is why it is
+            // worth a beat rather than a refusal.
+            //
+            // The pair is the idiom `release` uses: a NAME through
+            // `partyPutTo`, a description or a pointer through
+            // `somebodyAtHand`, because neither answers both.
+            {
+                const named = place.name.trim();
+                const put = named.length >= 2
+                    ? this.partyPutTo(cultivator, named, this.scopeFor(cultivator))
+                    : null;
+                const here = this.present(cultivator);
+                const crossTo = (put ? here.find(row => row.id === put.id) : undefined)
+                    ?? (named.length > 0 ? this.somebodyAtHand(named, cultivator) : null);
+                if (crossTo) {
+                    return this.freeAction(run, 'move', factsForToolResult(
+                        `You cross to ${crossTo.name}.`,
+                        [`${crossTo.name} is standing here, so there was no road to take.`]
+                    ));
+                }
+            }
+
             // A HOUSE IS NOT A PLACE, AND SAYING SO BEATS SAYING YOU NEVER
             // HEARD OF IT.
             //
