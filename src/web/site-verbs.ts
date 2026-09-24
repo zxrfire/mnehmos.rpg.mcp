@@ -42,6 +42,9 @@ import {
     type SiteIntent
 } from './actions.js';
 import { applyTimeSkip } from './apply.js';
+// The move verb's own call, so a room of this compound is answered by the walk
+// rather than by a refusal that says the room does not exist.
+import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { worldLocationFor } from './entities.js';
 import {
@@ -416,6 +419,24 @@ export const siteVerbs = {
 
         const meant = this.siteMeant(run, cultivator, target);
         const site = meant.site;
+
+        // ── A ROOM OF THE COMPOUND YOU ARE STANDING IN IS A PLACE ────────
+        //
+        // The same argument the found-ground branch below makes: a room thirty
+        // paces away is a real place, and *there is no thing you meant* is
+        // false about it. Played - standing in the Waterman Caravan's
+        // forecourt, with the only two seniors in reach inside its mission
+        // hall - "I go to the mission hall" was read as a site and refused.
+        //
+        // The walk is the move verb's own call and applies the move verb's own
+        // gate, so nothing here decides who may go where. Only a walk that
+        // LANDED is taken: its refusals are about a room this person has not
+        // been shown, and a ruin whose name happens to hold a room word must
+        // not be answered by the compound.
+        if (!site) {
+            const walked = await aWalkInsideTheWalls(this, run, cultivator, target);
+            if (walked && walked.outcome === 'executed') return walked;
+        }
 
         // A named site that resolved to nothing is refused on every step that
         // does something, and answered with the listing on the step that is a

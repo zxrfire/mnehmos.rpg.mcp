@@ -149,6 +149,39 @@ describe('walking in and out', () => {
         expect(after.cultivator.location, everythingSaid(turn)).toBe(before.cultivator.location);
         expect(after.run.elapsedDays).toBe(before.run.elapsedDays);
     }, 120_000);
+
+    // ── AND WHEN THE SENTENCE REACHES THE OTHER VERB FOR GOING SOMEWHERE ──
+    //
+    // Played: a model read "I go to the mission hall" as a site rather than a
+    // move, and the site verb answered *there is no thing you meant* about a
+    // room thirty paces away holding the only two people in reach. The pattern
+    // table reads that sentence as `move/travel`, so nothing below the model
+    // could have caught it. A room of the compound underfoot is a place, and
+    // which verb a reading picked does not decide whether it exists.
+    it('answers a room of this compound whichever verb the reading reached', async () => {
+        const { harness, seat, hall, houseId, me } = await atTheGateOfAHouseWithATalkOn('site-route');
+        expect(harness.repos.sects.addMember(houseId, me.id, 0), 'the house has no roll row').not.toBeNull();
+        const { run, cultivator } = harness.game.currentRun();
+        expect(cultivator.location).toBe(seat.name);
+
+        const answered = await harness.game.site(
+            run, cultivator, 'thin', hall.name.replace(/^.*: /, ''), 'enter'
+        );
+        expect(
+            harness.game.currentRun().cultivator.location,
+            answered.facts.lines.join('\n')
+        ).toBe(hall.name);
+    }, 180_000);
+
+    // The other half of the same branch: a compound underfoot must not swallow
+    // a name that is not one of its rooms. "Hall" is in plenty of them.
+    it('still refuses a site it cannot name, standing on a house\'s ground', async () => {
+        const { harness, seat } = await atTheGateOfAHouseWithATalkOn('site-route-miss');
+        const { run, cultivator } = harness.game.currentRun();
+        const answered = await harness.game.site(run, cultivator, 'thin', 'the Hall of Nine Winters', 'enter');
+        expect(answered.outcome).not.toBe('executed');
+        expect(harness.game.currentRun().cultivator.location).toBe(seat.name);
+    }, 180_000);
 });
 
 describe('a stranger in a room', () => {
