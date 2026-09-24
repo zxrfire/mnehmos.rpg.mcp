@@ -61,7 +61,7 @@
  * these per turn.
  */
 
-import { lifespanForOrdinal } from '../cultivation/realms.js';
+import { lifespanForOrdinal, realmForOrdinal } from '../cultivation/realms.js';
 
 /**
  * How much of a rung's years have to be behind somebody before the road is
@@ -187,10 +187,21 @@ export function whatTheyWouldBeHeardOnAbout(
     // them and is still standing at the same wall. Said as the arithmetic, not
     // as despair.
     if (spent >= THE_ROAD_IS_RUNNING_OUT) {
+        // NAMED, BECAUSE TWO PEOPLE AT THE END OF THEIR ROAD ARE NOT IN THE
+        // SAME POSITION. This returned one sentence, so every one of the top
+        // tenth of a world said it word for word - three unrelated people in
+        // three worlds carrying an identical thing on their mind, which reads
+        // as a template rather than as a fact about anybody. The bar is not
+        // the problem and was already measured to the ninetieth percentile;
+        // the string was. A disciple with thirty of their eighty years behind
+        // them and an elder with six hundred of two thousand are both here and
+        // are not saying the same thing, so the rung they are stuck at is on
+        // it - which is more fact rather than more prose.
+        const wall = realmForOrdinal(person.ordinal)?.name ?? 'this rung';
         return {
-            state: 'the years this rung allows, nearly all spent, and no rung gained by them',
+            state: `the years ${wall} allows, nearly all spent, and no rung gained by them`,
             plainly:
-                'have spent most of the years this rung allows and are still standing at the same wall'
+                `have spent most of the years ${wall} allows and are still standing at the same wall`
         };
     }
 
