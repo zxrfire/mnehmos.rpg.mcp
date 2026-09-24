@@ -82,7 +82,7 @@ function speaking(): HouseWithSomethingToSay[] {
             name: 'House 7',
             provinceId: 'province-a',
             postsInPublic: true,
-            asks: [{ kind: 'missing', who: 'Mo Qingzhi', unseenForDays: 120 }]
+            asks: [{ kind: 'missing', who: 'Mo Qingzhi', unseenForDays: 120, wants: 'them' }]
         },
         {
             id: 'house-5',

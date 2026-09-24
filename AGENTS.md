@@ -509,6 +509,19 @@ out of a talisman and the parser could no longer reach it at all.
 `the-nouns-a-house-ends-with.test.ts` is the other one: the parser had ten
 hand-written lists of house words and none of them had ever heard of a guild.
 
+### One source of truth, and link to it rather than restating it
+
+A rule stated in two places is two rules, and one of them will be wrong first. When a
+comment explains a condition the code decides, it says where the decision lives and stops:
+*"which houses that leaves is decided in `housesWithSomethingToSay` and is not restated
+here."* When a comment needs a world fact the documents already carry - that a token
+shatters with its holder, what a life lamp says - it **links the document** rather than
+paraphrasing it, because a paraphrase drifts and nobody notices which copy aged.
+
+A comment that restates its own file's logic is the same defect at closer range: it is a
+second implementation written in English, and it goes stale the first time somebody edits
+the code and not the prose. Say why, and point at where.
+
 ### One word, one meaning, everywhere
 
 The rename failure above fires inside a longer name. It is one instance of a

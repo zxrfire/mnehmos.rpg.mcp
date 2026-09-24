@@ -3952,36 +3952,17 @@ const LATE_ENOUGH_TO_SAY_SO = 0.5;
  * house raising the alarm rather than a compound announcing the same absence
  * every year for a century.
  *
- * ── IT FIRES, AND IT FIRES ON THE SAME FEW PEOPLE ───────────────────────
+ * WHO IT ACTUALLY SEES. `bringHomeWhoeverIsDue` runs a day earlier and closes
+ * the errand of everybody at or past their due day - a superset of what this
+ * looks at - so what is left is whoever that pass will not touch: the people
+ * who are not `alive`. That is the right population and it was not chosen;
+ * this reads the state deliberately now.
  *
- * Measured over two hundred years on two seeds
- * (`scripts/zz-internal-affairs.probe.ts`):
- *
- *   notices written by this pass        365 / 169
- *   distinct people they are about       21 /  15
- *   notices by the absence pass          35 /  25
- *   people standing late at the end,
- *     never spoken about               220 / 215
- *
- * So the office is alive and it is not the alarm this header describes. It
- * says the same twenty-one names about seventeen times each while two hundred
- * and twenty people stand overdue and unmentioned - a selection that fires
- * constantly across a sliver of the world, which is the shape
- * `AGENTS.md` calls out under "how often, and on whom".
- *
- * TWO EARLIER MEASUREMENTS SAID ZERO AND BOTH WERE WRONG, which is worth
- * knowing before anybody trusts a third. `'overdue'` is a `PressureKind` and
- * never a `HistoricalEventKind`, so a filter on `f.kind === 'overdue'`
- * silently matches nothing; and counting by the summary alone cannot tell this
- * pass from `when-somebody-does-not-come-back.ts`, which writes the
- * byte-identical sentence. The split that works is `data.lostTrackOf`, which
- * only the absence pass carries.
- *
- * WHY THE POPULATION IS A SLIVER. `bringHomeWhoeverIsDue` runs at day 62 and
- * takes everybody at or past their due day - a superset of what this pass
- * looks at on day 63 - so the only people left are the ones that pass cannot
- * process. That is not nobody, but it is not "a week's errand that has taken a
- * month" either, and it is not chosen.
+ * Measured, 200 years, two seeds (`scripts/zz-internal-affairs.probe.ts`):
+ * 365/169 notices about 21/15 people, beside 35/25 from the absence pass.
+ * Counting it needs `data.lostTrackOf` to split the two, because both write
+ * the same sentence, and `'overdue'` is a `PressureKind` rather than a
+ * `HistoricalEventKind` - a filter on `f.kind` silently matches nothing.
  */
 function whatInternalAffairsNotices(state: WorldState, day: number): PressureEvent[] {
     const out: PressureEvent[] = [];

@@ -222,7 +222,7 @@ describe('what a house is asking after comes off its own lamps', () => {
         // the game prints is a house this has to work for.
         const anyHouse = housesWithSomethingToSay()[0]!.id;
         const houses = housesWithSomethingToSay(new Map([
-            [anyHouse, [{ kind: 'missing' as const, who: 'Mo Qingzhi', unseenForDays: 120 }]]
+            [anyHouse, [{ kind: 'missing' as const, who: 'Mo Qingzhi', unseenForDays: 120, wants: 'them' as const }]]
         ]));
         const asking = houses.find(h => h.id === anyHouse);
         expect(asking?.asks.some(ask => ask.kind === 'missing')).toBe(true);

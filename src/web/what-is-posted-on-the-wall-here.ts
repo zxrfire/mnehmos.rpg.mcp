@@ -48,6 +48,7 @@ import {
     type RecruitingBill,
     type TheAsk
 } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { whoAnswersTo } from '../engine/world/what-a-house-answers-to.js';
 import {
     reasonsOpenTo,
     type HouseAsItStands
@@ -138,9 +139,17 @@ export function housesWithSomethingToSay(
             hasAFind: false
         };
         const asks: TheAsk[] = [];
+        // A HOUSE WITH VASSALS ASKS THEM. Work is the ask a grant already
+        // covers: a house that holds others answers for the road and wants the
+        // bone, and it has sects below it that owe it exactly this. Paper in a
+        // market town is what a house with nobody underneath does instead.
+        // A warning is not the same - ground it answers for is a thing
+        // strangers need to be told whether or not somebody owes it labour.
+        const hasVassals = whoAnswersTo(sect.id).length > 0;
         for (const reason of reasonsOpenTo(standing)) {
             const kind = WHAT_A_REASON_PUTS_ON_A_WALL[reason.atStake];
             if (kind === 'work') {
+                if (hasVassals) continue;
                 asks.push({
                     kind,
                     what: reason.what,
@@ -224,7 +233,8 @@ export function whoEachHouseIsLookingFor(
         out.set(houseId, looking.map(row => ({
             kind: 'missing' as const,
             who: row.memberName,
-            unseenForDays: row.unseenForDays
+            unseenForDays: row.unseenForDays,
+            wants: row.wants
         })));
     }
     return out;

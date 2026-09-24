@@ -401,23 +401,45 @@ export function whatTheHallSays(input: {
     }));
 }
 
+/** What a house is asking to be brought back. */
+export type WhatTheHouseWants = 'them' | 'what is left of them';
+
 /**
- * The ones a house would ask strangers about.
+ * The ones a house would ask strangers about, and what it wants brought back.
  *
- * A DEATH IS NOT A SEARCH. A lamp going out closes the question - the house
- * knows, the moment it goes - so there is nothing to ask anybody for. What
- * sends paper out of a compound is the other reading: alive, and nobody can
- * find them.
+ * THE LAMP GRADES THE ASK RATHER THAN GATING IT. A lamp says somebody died; it
+ * does not say where, what did it, or whether anything is left to carry home.
+ * See `docs/world/houses/trust.md`, "Tokens shatter, so somebody has to be
+ * taken alive".
+ *
+ *   burning, nobody can find them  ->  they want THEM
+ *   out                            ->  they want WHAT IS LEFT: a body, a soul
+ *                                      still preserved, or an account of it
+ *
+ * A DEATH IN SIGHT OF THE HOUSE IS NOT A SEARCH. A lamp going out opens one
+ * only once they have been unseen as long as a captivity takes to read, which
+ * is the same threshold because it is the same question.
  */
 export function theOnesNobodyCanFind(
     readings: readonly WhatTheHallSays[]
-): { memberId: string; memberName: string; unseenForDays: number }[] {
+): {
+    memberId: string;
+    memberName: string;
+    unseenForDays: number;
+    wants: WhatTheHouseWants;
+}[] {
     return readings
-        .filter(row => row.reading === 'somebody_has_them')
+        .filter(row =>
+            row.reading === 'somebody_has_them'
+            || (row.reading === 'they_are_dead'
+                && row.unseenForDays >= WHEN_SILENCE_BECOMES_A_CAPTIVE))
         .map(row => ({
             memberId: row.memberId,
             memberName: row.memberName,
-            unseenForDays: row.unseenForDays
+            unseenForDays: row.unseenForDays,
+            wants: row.reading === 'somebody_has_them'
+                ? 'them' as const
+                : 'what is left of them' as const
         }));
 }
 

@@ -6,11 +6,10 @@
  * on a wall for that reason is itself the tell - `housesThatHaveToAdvertise`
  * derives it and `WHAT_THE_PAPER_GIVES_AWAY` says what it gives away.
  *
- * Everything else a house posts runs on the opposite rule: ANY house publishes
- * when it wants something from people who are not its own, and an apex that
- * would never hear an application still wants bone at mortal grade and still
- * answers for a road. That is the fix for the measured defect below and it is
- * the only honest answer to a rogue cultivator having nothing to do.
+ * Everything else a house posts runs on the opposite rule: a house publishes
+ * when it wants something from people who are not its own. Which houses that
+ * leaves is decided in one place - `housesWithSomethingToSay` - and is not
+ * restated here.
  *
  * MEASURED: one channel, one message. Before `noticesOnTheWall`, the whole of
  * what any house could ever publish outward was an intake, so somebody with no
@@ -26,6 +25,7 @@ import { realmForOrdinal } from '../cultivation/realms.js';
 // A house's calendar is a function of the seed, the house and the year, the same
 // way an intake's season is - so it is derived where the seed and the day already
 // are rather than passed in by a caller that would have to be edited to carry it.
+import type { WhatTheHouseWants } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whatThisHouseHasOnPaper } from './a-competition-anybody-may-enter.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -406,7 +406,16 @@ export type TheAsk =
      * having lamps at all - see `a-house-knows-its-own-by-a-lamp-and-a-token.ts`,
      * where a house with nobody at Foundation is never told anything.
      */
-    | { kind: 'missing'; who: string; unseenForDays: number }
+    | {
+        kind: 'missing';
+        who: string;
+        unseenForDays: number;
+        /**
+         * What is asked for, graded off the lamp: the person while it burns,
+         * what is left of them once it is out. Two searches, not one errand.
+         */
+        wants: WhatTheHouseWants;
+    }
     /** Work it would rather hire than send its own on. */
     | { kind: 'work'; what: string; days: number; hands: number }
     /** Ground it answers for, and what is happening on it. */
