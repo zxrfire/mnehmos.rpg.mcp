@@ -41,6 +41,56 @@ export const YEARS_A_SEARCH_RUNS: readonly [number, number] = [1, 3];
 /** How many of its own a house will have out looking at once. */
 export const HOW_MANY_A_HOUSE_SENDS = 1;
 
+/** Carried by a house that has stopped looking, naming who it stopped looking for. */
+export const GAVE_UP_LOOKING_FOR = 'gave-up-looking-for|';
+
+/** Carried by a house between attempts, counting how many have come back empty. */
+export const LOOKED_AND_FOUND_NOTHING = 'looked-and-found-nothing|';
+
+/**
+ * How many empty-handed parties a house sends before it stops.
+ *
+ * THREE, and the point is that it is a number rather than forever. A house
+ * that never stops looking has a standing errand nobody can close and a name
+ * its board says every year for a century; a house that stops after one did
+ * not care. Three is a house that tried.
+ */
+export const HOW_OFTEN_A_HOUSE_TRIES = 3;
+
+/** How many empty parties this house has sent after them. */
+export function howOftenTheyHaveLooked(
+    house: Pick<FactionRecord, 'tags'>,
+    personId: string
+): number {
+    const tag = house.tags.find(t => t.startsWith(`${LOOKED_AND_FOUND_NOTHING}${personId}|`));
+    return tag ? Number(tag.split('|')[2] ?? 0) : 0;
+}
+
+/** Whether this house has stopped looking for them. */
+export function theyHaveStoppedLooking(
+    house: Pick<FactionRecord, 'tags'>,
+    personId: string
+): boolean {
+    return house.tags.includes(`${GAVE_UP_LOOKING_FOR}${personId}`);
+}
+
+/** The house's row after a party came back with nothing. */
+export function aPartyCameBackWithNothing<H extends Pick<FactionRecord, 'tags'>>(
+    house: H,
+    personId: string
+): H {
+    const been = howOftenTheyHaveLooked(house, personId) + 1;
+    const kept = house.tags.filter(
+        t => !t.startsWith(`${LOOKED_AND_FOUND_NOTHING}${personId}|`)
+    );
+    return {
+        ...house,
+        tags: been >= HOW_OFTEN_A_HOUSE_TRIES
+            ? [...kept, `${GAVE_UP_LOOKING_FOR}${personId}`]
+            : [...kept, `${LOOKED_AND_FOUND_NOTHING}${personId}|${been}`]
+    };
+}
+
 export interface WhoWentLooking {
     houseId: string;
     searcherId: string;
@@ -54,7 +104,8 @@ export function theHousesSendSomebodyLooking(state: WorldState, day: number): Wh
 
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
-        const lost = whoTheHouseHasLostTrackOf(house).filter(one => alive.has(one.personId));
+        const lost = whoTheHouseHasLostTrackOf(house)
+            .filter(one => alive.has(one.personId) && !theyHaveStoppedLooking(house, one.personId));
         if (lost.length === 0) continue;
 
         // Already out after somebody. A house looking is a house looking.
@@ -105,7 +156,7 @@ function withTheErrand(
 ): NpcRecord {
     const out: NpcRecord = {
         ...npc,
-        tags: [...npc.tags, `${OUT_LOOKING_FOR}${afterId}`],
+        tags: [...npc.tags, `${OUT_LOOKING_FOR}${afterId}|${lastSeenAt ?? ''}`],
         activity: {
             kind: 'out_with_a_party',
             note: `Out after one of the ${house.name}'s own.`,

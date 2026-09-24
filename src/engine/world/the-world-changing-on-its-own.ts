@@ -7,7 +7,9 @@ import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { whatASearchBroughtBack } from './what-a-search-brings-back.js';
-import { theHousesSendSomebodyLooking } from './a-house-sends-somebody-looking.js';
+import {
+    aPartyCameBackWithNothing, theHousesSendSomebodyLooking
+} from './a-house-sends-somebody-looking.js';
 import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
 import { whatGroundThisIs } from './what-ground-a-place-is.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
@@ -4271,28 +4273,50 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
             activity: null
         };
         if (sought !== null && npc.factionId !== null) {
-            // WHO HOLDS IT FOR THE HOUSE. An obligation needs somebody to
-            // hold it, and a house's own is whoever answers for it: the
-            // highest rung still standing, which is the head where there is
-            // one and the senior elder where there is not.
-            let head: string | null = null;
-            let highest = -1;
-            for (const one of state.npcs) {
-                if (one.factionId !== npc.factionId || one.status !== 'alive') continue;
-                if (one.factionRankIndex > highest) {
-                    highest = one.factionRankIndex;
-                    head = one.id;
+            const dead = state.npcs.find(n => n.id === sought.afterId) ?? null;
+            // ONE RULE, AND EVERY REASON A SEARCH FAILS FALLS OUT OF IT: they
+            // are found where the house was told to look, or they are not
+            // found. Deep in a ruin the party could not follow them into, a
+            // body the killer moved, no body at all, a pocket realm nobody can
+            // stand in - none of those is written here and all of them are
+            // this. A house's dispatch book is where it thinks somebody is,
+            // and the world is where they are.
+            const found = dead !== null
+                && sought.toldToLookAt !== null
+                && dead.locationId === sought.toldToLookAt;
+            const houseAt = indexById(state.factions, npc.factionId);
+
+            if (found && dead !== null) {
+                // WHO HOLDS IT FOR THE HOUSE. An obligation needs somebody to
+                // hold it, and a house's own is whoever answers for it: the
+                // highest rung still standing, which is the head where there
+                // is one and the senior elder where there is not.
+                let head: string | null = null;
+                let highest = -1;
+                for (const one of state.npcs) {
+                    if (one.factionId !== npc.factionId || one.status !== 'alive') continue;
+                    if (one.factionRankIndex > highest) {
+                        highest = one.factionRankIndex;
+                        head = one.id;
+                    }
                 }
-            }
-            const dead = state.npcs.find(n => n.id === sought) ?? null;
-            if (head !== null && dead !== null) {
-                whatASearchBroughtBack(state, {
-                    deadId: sought,
-                    houseId: npc.factionId,
-                    holderId: head,
-                    day,
-                    deadName: dead.name
-                });
+                if (head !== null) {
+                    whatASearchBroughtBack(state, {
+                        deadId: sought.afterId,
+                        houseId: npc.factionId,
+                        holderId: head,
+                        day,
+                        deadName: dead.name
+                    });
+                }
+            } else if (houseAt >= 0) {
+                // AND A HOUSE THAT KEEPS FINDING NOTHING EVENTUALLY STOPS.
+                // Not this year - it sends somebody again next year, and the
+                // year after, and then it does not. See
+                // `HOW_OFTEN_A_HOUSE_TRIES`.
+                state.factions[houseAt] = aPartyCameBackWithNothing(
+                    state.factions[houseAt]!, sought.afterId
+                );
             }
         }
         home++;

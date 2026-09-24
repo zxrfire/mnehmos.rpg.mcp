@@ -120,10 +120,22 @@ const ON_BOARD_WORK = 'board-work|';
 /** Carried by somebody out on a search, naming who they were sent after. */
 export const OUT_LOOKING_FOR = 'out-looking-for|';
 
-/** Who this person was sent to find, or null. */
-export function whoTheyWereSentAfter(npc: Pick<NpcRecord, 'tags'>): string | null {
+/**
+ * Who this person was sent to find and where the house thought they were, or
+ * null.
+ *
+ * THE PLACE IS ON THE TAG BECAUSE THE SEARCH IS ONLY AS GOOD AS IT. A house
+ * sends a party to where its dispatch book says somebody was; whether they are
+ * still there is the whole question, and it cannot be asked without knowing
+ * where the party was told to look.
+ */
+export function whoTheyWereSentAfter(
+    npc: Pick<NpcRecord, 'tags'>
+): { afterId: string; toldToLookAt: string | null } | null {
     const tag = npc.tags.find(t => t.startsWith(OUT_LOOKING_FOR));
-    return tag ? tag.slice(OUT_LOOKING_FOR.length) || null : null;
+    if (!tag) return null;
+    const [afterId, place] = tag.slice(OUT_LOOKING_FOR.length).split('|');
+    return afterId ? { afterId, toldToLookAt: place || null } : null;
 }
 
 export interface BoardWorkTerms {
