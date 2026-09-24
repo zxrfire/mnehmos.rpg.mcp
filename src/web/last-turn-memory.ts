@@ -536,6 +536,28 @@ const AN_ORDINAL: ReadonlyArray<[RegExp, number]> = [
 const THE_LAST_ONE = /\b(?:the\s+)?(?:last|final)\s+one\b/i;
 
 /**
+ * An ordinal with a noun on it rather than with `one`.
+ *
+ * ── PEOPLE DO NOT SAY "THE FIRST ONE" AS OFTEN AS THEY SAY WHAT IT IS ────
+ *
+ * The ordinal branch below required the literal word `one`, so *"the first
+ * one"* resolved and *"I take the first task on the board"* did not - the
+ * phrase went to the duty resolver as a name, found nothing, and the turn
+ * answered that the board holds nothing that is one object. Played, one turn
+ * after the board printed its lines.
+ *
+ * ANCHORED END TO END, and that is the whole of what keeps it safe. This
+ * module's rule is that a reference is recognised only when the WHOLE phrase
+ * is reference words, because a partial match retargets a sentence that named
+ * something; `A_THING_BY_ITS_KIND` records what widening cost the last time it
+ * was tried loosely. So: an ordinal, one generic word for a member of a list,
+ * and at most a tail saying which list. Nothing else matches, and `the first
+ * elder` is not a member of this set.
+ */
+const AN_ORDINAL_WITH_A_NOUN_ON_IT =
+    /^(?:the\s+)?(?:first|1st|second|2nd|third|3rd|last|final)\s+(?:one|task|job|duty|commission|errand|entry|line|item|listing|offer|notice)(?:\s+(?:on|off|from)\s+(?:the\s+)?(?:board|wall|list|listing|notice\s*board))?$/i;
+
+/**
  * What a sentence says it is waiting FOR, or nothing.
  *
  * `wait` takes a span or a named thing, and a reference that nobody could bind
@@ -568,6 +590,7 @@ export function standsForSomethingNamedLastTurn(value: string | undefined): bool
     if (A_THING_BY_ITS_KIND.test(text)) return true;
     if (THE_LAST_ONE.test(text)) return true;
     if (THE_CHEAPER.test(text) || THE_DEARER.test(text)) return true;
+    if (AN_ORDINAL_WITH_A_NOUN_ON_IT.test(text)) return true;
     return AN_ORDINAL.some(([pattern]) => pattern.test(text)) && /\bone\b/i.test(text);
 }
 
@@ -661,9 +684,20 @@ export function whichOfTheNamedThings(
             if (THE_CHEAPER.test(text)) return theOnlyOneAt(priced, Math.min);
             if (THE_DEARER.test(text)) return theOnlyOneAt(priced, Math.max);
         }
-        if (THE_LAST_ONE.test(text)) return named[named.length - 1]!;
+        // THE SAME PHRASE THE RECOGNISER ABOVE ADMITS, COUNTED THE SAME WAY.
+        // `the first task on the board` and `the first one` are one phrase with
+        // two nouns on it, and a recogniser that takes both against a counter
+        // that takes one is a pointer the turn agrees is a pointer and then
+        // cannot bind - which reads to the player as the board being empty.
+        const withANounOnIt = AN_ORDINAL_WITH_A_NOUN_ON_IT.test(text.trim());
+        if (THE_LAST_ONE.test(text)
+            || (withANounOnIt && /\b(?:last|final)\b/i.test(text))) {
+            return named[named.length - 1]!;
+        }
         for (const [pattern, at] of AN_ORDINAL) {
-            if (pattern.test(text) && /\bone\b/i.test(text) && named[at]) return named[at]!;
+            if (!pattern.test(text)) continue;
+            if (!/\bone\b/i.test(text) && !withANounOnIt) continue;
+            if (named[at]) return named[at]!;
         }
         // A demonstrative with one thing to point at points at it. With two it
         // points at nothing, and saying so is better than choosing.

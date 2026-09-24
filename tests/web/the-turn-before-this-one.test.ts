@@ -451,3 +451,50 @@ describe('the vocabulary, which is closed and small', () => {
             .toBe('Lesser Qi-Gathering Manual');
     });
 });
+
+/**
+ * AN ORDINAL WITH A NOUN ON IT, WHICH IS HOW PEOPLE ACTUALLY SAY IT.
+ *
+ * Played: the duty board printed its lines and recorded them, and "I take the
+ * first task on the board" the turn after was not read as a pointer at all -
+ * the ordinal branch required the literal word `one`. The phrase went to the
+ * duty resolver as a name, matched nothing, and the turn told the player the
+ * board held nothing that was one object.
+ */
+describe('an ordinal said with a noun rather than with "one"', () => {
+    const board: ThingNamed[] = [
+        { name: 'Walk the Sand Well line to Six Li' },
+        { name: 'Stand the night watch at the west gate' },
+        { name: 'Carry the tally books to Iron Ridge' }
+    ];
+
+    it('points at the line the listing printed', () => {
+        for (const [said, expected] of [
+            ['the first task on the board', board[0]],
+            ['the first one', board[0]],
+            ['the second job', board[1]],
+            ['the third duty', board[2]],
+            ['the last task on the board', board[2]],
+            ['the second entry', board[1]]
+        ] as const) {
+            expect(whichOfTheNamedThings(said, said, board), said).toEqual(expected);
+        }
+    });
+
+    /**
+     * The anchor is the whole safety property: a reference is reference words
+     * end to end, or it is a name and belongs to the resolver that reads names.
+     * "The first elder" is a person and must never be a line off a board.
+     */
+    it('leaves alone a phrase that merely starts with an ordinal', () => {
+        for (const said of [
+            'the first elder',
+            'the first elder of the cut',
+            'my first disciple',
+            'the first light of dawn',
+            'the first task I ever took from the Azure Cloud Pavilion'
+        ]) {
+            expect(whichOfTheNamedThings(said, said, board), said).toBeNull();
+        }
+    });
+});

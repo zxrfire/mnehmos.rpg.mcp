@@ -201,3 +201,48 @@ describe('a model may not be the reason somebody joined a house', () => {
         expect(plan.action.intent).not.toBe('leave');
     }, 120_000);
 });
+
+/**
+ * SPEAKING TO SOMEBODY IS NOT SWINGING AT THEM.
+ *
+ * Played: "Tang Xuxue, empty your pockets" and "Lu Nuoming, enough! Let us stop
+ * this" were both read by the model as `attack`. A demand and a plea, each made
+ * into a blow, and the pattern table reads both as `interact/talk` - so nothing
+ * below the model produced either.
+ */
+describe('a model may not turn talk into a blow', () => {
+    it('declines an attack on a sentence the table reads as speaking, with no hand in it', async () => {
+        for (const said of [
+            'Tang Xuxue, empty your pockets',
+            'Lu Nuoming, enough! Let us stop this'
+        ]) {
+            expect(parseIntent(said).action, said).toBe('interact');
+            // NAMED, because a model that drops the object is caught by a
+            // different rule and would prove nothing about this one. The played
+            // reading had the person in it.
+            const who = said.split(',')[0]!;
+            const plan = await modelSaying(JSON.stringify({ action: 'attack', target: who }))
+                .plan(said, '');
+            expect(plan.action.action, `${said} -> ${plan.note ?? '(no note)'}`).toBe('interact');
+        }
+    });
+
+    /**
+     * THE ANCHOR IS THE TABLE, NOT THE HAND, and this is why. Neither of these
+     * contains a word `A_HAND_RAISED` knows, and the table calls both of them
+     * attacks. A veto on the hand alone would decline two real ones.
+     */
+    it('leaves the model alone where the table also reads a fight', async () => {
+        for (const said of ['I put him down', 'I go for him']) {
+            expect(parseIntent(said).action, said).toBe('attack');
+            const plan = await modelSaying('{"action":"attack"}').plan(said, '');
+            expect(plan.action.action, said).toBe('attack');
+        }
+    });
+
+    it('leaves an attack alone when the words hold a raised hand', async () => {
+        const said = 'I strike Lu Nuoming';
+        const plan = await modelSaying('{"action":"attack"}').plan(said, '');
+        expect(plan.action.action).toBe('attack');
+    });
+});
