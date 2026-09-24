@@ -585,6 +585,16 @@ export interface WhereTheyStandNow {
      * were all addressed as a boy, because the block said nothing and the model guessed.
      */
     sex?: 'female' | 'male';
+    /**
+     * Days since this run opened.
+     *
+     * SO THE WEATHER STOPS DRIFTING. The engine has no season and no time of
+     * day, so every arrival invented light and weather fresh and nothing but
+     * the turn before held it steady. A day is a thing the run has always
+     * known; a season is one line of arithmetic on top of it, and it belongs
+     * in this layer rather than in the engine, which has no use for one.
+     */
+    dayOfTheRun?: number;
 }
 
 /**

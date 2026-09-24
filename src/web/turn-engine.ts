@@ -16241,6 +16241,9 @@ ${fit.line}`;
             // A model handed nothing does not decline to say; it guesses, and
             // it guesses the same way every time.
             sex: cultivator.sex,
+            // AND WHEN IT IS, so the narrator stops inventing a season every
+            // time somebody arrives somewhere. The run has always known.
+            dayOfTheRun: Math.floor(this.currentRun().run.elapsedDays),
             spiritStones: cultivator.spiritStones,
             booksHeld: copyNamesHeldBy(this.db, cultivator.id),
             // The roads they have actually sat down with, which is a different
