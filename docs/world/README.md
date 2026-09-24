@@ -75,8 +75,11 @@ Sections elsewhere that contributed to it are marked `<!-- tier: 1 -->` so the l
 traceable, but **`NARRATOR-CORE.md` is the copy that ships.** Edit it directly when the
 core changes, and keep the contributing sections in step.
 
-`src/web/prompt.ts` currently hand-maintains its own compression of the bible. It should
-converge on `NARRATOR-CORE.md`.
+The narrator's system prompt is `NARRATOR-CORE.md` whole, the narrator-facing sections of
+`writing/tone.md` and the ladder doc verbatim (`VOICE_SECTIONS` in `src/web/prompt.ts` names
+them), and `src/web/the-narrator-plays-the-world.ts`, which holds the roleplay framing, a short
+account of what people in the world take for granted, and the worked turns. There is no
+hand-maintained copy of the bible any more.
 
 ---
 

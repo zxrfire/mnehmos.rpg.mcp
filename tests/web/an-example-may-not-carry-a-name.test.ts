@@ -14,7 +14,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { composeNarrationUser } from '../../src/web/prompt.js';
+import { narrationSystemPrompt } from '../../src/web/prompt.js';
+import { EXAMPLES_CLOSE, EXAMPLES_OPEN } from '../../src/web/the-narrator-plays-the-world.js';
 
 /** Forms of address and sentence openers, which are capitals and not names. */
 const NOT_A_NAME = new Set([
@@ -22,7 +23,7 @@ const NOT_A_NAME = new Set([
     // is listed alone as well as in 'Fellow Daoist' because lowercasing a
     // sentence opener can split the pair.
     'Daoist',
-    'Fellow Daoist', 'Senior', 'Junior', 'Elder Brother', 'Elder Sister',
+    'Fellow Daoist', 'Senior', 'Junior', 'Senior Brother', 'Nobody', 'Now', 'Elder Brother', 'Elder Sister',
     'And', 'But', 'Eight', 'Eleven', 'Fifteen', 'Forty', 'Hah', 'Last', 'Millet',
     'Nine', 'No', 'Nobody', 'Only', 'That', 'The', 'Then', 'There', 'They',
     'Think', 'Three', 'Twenty', 'Two', 'We', 'What', 'Where', 'You', 'Your', 'It',
@@ -32,19 +33,24 @@ const NOT_A_NAME = new Set([
 
 describe('an example sentence may not carry a name', () => {
     it('has no proper noun in any worked example', () => {
-        const prompt = composeNarrationUser(
-            { lines: ['Nothing happened.'] } as never,
-            { place: 'Nowhere', ambient: 'thin' } as never,
-            { ambientIsNews: false }
-        );
-        const start = prompt.indexOf('SHAPES TO VARY');
-        const end = prompt.indexOf('FIVE THINGS, CHECKED');
+        const prompt = narrationSystemPrompt();
+        const start = prompt.indexOf(EXAMPLES_OPEN);
+        const end = prompt.indexOf(EXAMPLES_CLOSE);
         expect(start, 'the examples block is in the prompt').toBeGreaterThan(-1);
         expect(end).toBeGreaterThan(start);
 
-        const examples = prompt.slice(start, end)
-            .split('\n')
-            .filter(line => line.startsWith('    ') || line.startsWith('       '));
+        // The worked turns, and the STORY half of every clerk-to-story pair, which is an
+        // example of the same kind sitting higher up.
+        const story = prompt.split('\n')
+            .map((line, i, all) => ({ line, i, all }))
+            .filter(({ line, i, all }) => line.startsWith('  STORY:')
+                || (line.startsWith('         ') && all.slice(0, i).reverse()
+                    .find(l => /^  (STORY|CLERK):/.test(l))?.startsWith('  STORY:')))
+            .map(({ line }) => line.replace('  STORY:', '       '));
+        const examples = [
+            ...prompt.slice(start, end).split('\n').filter(line => line.startsWith('    ')),
+            ...story
+        ];
         expect(examples.length, 'there are worked examples to check').toBeGreaterThan(10);
 
         const found: string[] = [];

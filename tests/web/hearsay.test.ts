@@ -288,16 +288,16 @@ describe('the whole path, through act', () => {
             // A name said by somebody passing through gets the SAID ALOUD
             // block, which is the correct licence for it and not what this
             // test is about.
-            if (!user.includes('SPOKEN IN THIS SCENE - OVERHEARD')) continue;
+            if (!user.includes('SPOKEN HERE, OVERHEARD')) continue;
 
-            expect(user).toMatch(/SPOKEN IN THIS SCENE - OVERHEARD/);
-            expect(user).toMatch(/ONLY inside/);
-            expect(user).toMatch(/must not be glossed by you/);
+            expect(user).toMatch(/appear only inside what they say/);
+            expect(user).toMatch(/never explained afterwards/);
             // The two lists are distinct: a spoken name is not a narratable one.
-            const spokenIndex = user.indexOf('SPOKEN IN THIS SCENE');
+            const spokenIndex = user.indexOf('SPOKEN HERE');
             const nameableIndex = user.indexOf('NAMES YOU MAY USE');
             expect(spokenIndex).toBeGreaterThanOrEqual(0);
-            expect(nameableIndex).toBeGreaterThan(spokenIndex);
+            expect(nameableIndex).toBeGreaterThanOrEqual(0);
+            expect(nameableIndex).not.toBe(spokenIndex);
             return;
         }
         throw new Error('no seed produced a spoken-name licence in 60 attempts');
@@ -308,14 +308,14 @@ describe('the whole path, through act', () => {
             { headline: 'x', lines: ['y'], structure: [], prose: '' },
             { place: HOME_PLACE, ambient: 'thin', awareness: [], hearing: null }
         );
-        expect(message).not.toContain('SPOKEN IN THIS SCENE');
+        expect(message).not.toContain('SPOKEN HERE');
     });
 });
 
 describe('the prompt states the loosened rule', () => {
     it('separates the narrator voice from the voices of characters', () => {
         const prompt = narrationSystemPrompt();
-        expect(prompt).toMatch(/governs\s+YOUR\s+OWN\s+DESCRIPTIVE\s+VOICE/i);
+        expect(prompt).toMatch(/governs\s+your\s+own\s+descriptive\s+voice/i);
         expect(prompt).toMatch(/CHARACTERS\s+ARE\s+DIFFERENT/);
         expect(prompt).toMatch(/of\s+course\s+you\s+know\s+it/i);
     });
@@ -340,9 +340,9 @@ describe('the prompt states the loosened rule', () => {
 
     it('carries the rules for writing an overheard fragment', () => {
         const prompt = narrationSystemPrompt();
-        expect(prompt).toMatch(/as\s+it\s+would\s+ACTUALLY\s+be\s+spoken/);
-        expect(prompt).toMatch(/restate\s+context\s+for\s+the\s+benefit\s+of\s+a\s+listener/i);
-        expect(prompt).toMatch(/Do\s+not\s+resolve\s+it\s+in\s+the\s+same\s+scene/i);
+        expect(prompt).toMatch(/as\s+it\s+would\s+actually\s+be\s+spoken/i);
+        expect(prompt).toMatch(/restates\s+context\s+for\s+the\s+benefit\s+of\s+a\s+listener/i);
+        expect(prompt).toMatch(/not\s+resolve\s+it\s+in\s+the\s+same\s+scene/i);
         expect(prompt).toMatch(/briefing\s+with\s+a\s+wall\s+in\s+front\s+of\s+it/i);
         expect(prompt).toMatch(/compromising\s+provenance/i);
     });

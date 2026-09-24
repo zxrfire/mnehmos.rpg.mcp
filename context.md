@@ -10,6 +10,12 @@ at the bottom.
 A **deterministic cultivation (xianxia) RPG engine** exposed over MCP, designed to be
 driven by an LLM runtime agent that narrates but never decides.
 
+**The point is next-level AI roleplay.** The game is played with a model: it plays the world
+and every person in it opposite you - your family, your senior brothers and sisters, the elders
+above them - while the engine decides what happens. Playing with no model is for debugging, for
+the test floor, and for somewhere a model is not available. See `AGENTS.md`, "The model is the
+game".
+
 This repo was forked from a D&D 5e MCP game engine and is being transformed into a
 cultivation game in the spirit of the xianxia genre: a text-first cultivation roguelike
 with permanent death, an ordinal realm ladder, fixed innate talent, and a survival layer

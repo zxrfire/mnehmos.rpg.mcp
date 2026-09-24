@@ -390,13 +390,12 @@ export interface NarratorScene {
      */
     filed?: FiledOutcome | null;
     /**
-     * Who is standing in the square.
-     *
-     * A CONSTRAINT on the prose and not material for it: see
-     * `describeTheRoom` in `prompt.ts` for the played defect, which is a
-     * narrator asked to write a scene and never told whether anybody was in it.
+     * Who is standing in the square. Each nameable person reaches the model as a card, so the
+     * narrator can play them - see `thePeopleHere`.
      */
     company?: Company | null;
+    /** The person this turn's act was put to, by name, where the engine resolved one. */
+    addressing?: string | null;
     /**
      * The years before the run opened, for the one turn that has any.
      *
@@ -420,7 +419,6 @@ export interface NarratorScene {
      *
      * Dramatic irony rather than a discovery: the narrator may show these to the
      * READER as a cutaway and may never write this cultivator perceiving one.
-     * `THE_READER_MAY_KNOW_MORE` in `prompt.ts` carries the rule and the pairs.
      * Nothing gates on this - what a character may name, ask after or walk up to
      * is `knowledge.ts` and is untouched by anything written here.
      */
@@ -1054,7 +1052,10 @@ export class DeterministicNarrator implements Narrator {
 
 export interface ProviderNarratorOptions {
     model: string;
-    /** Per-call wall clock budget. A slow model must not hang the request. */
+    /**
+     * Per-call wall clock budget. 0 waits for the model however long it takes, for an operator
+     * who would rather wait than read the engine's fallback; a dead server still errors out.
+     */
     timeoutMs?: number;
     /** Classification wants determinism; narration wants a little room. */
     intentTemperature?: number;
@@ -1092,6 +1093,11 @@ export class ProviderNarrator implements Narrator {
         this.maxNarrationTokens = options.maxNarrationTokens ?? 800;
     }
 
+    /** The abort signal for one call, or none when the operator asked to wait indefinitely. */
+    private budget(): AbortSignal | undefined {
+        return this.timeoutMs > 0 ? AbortSignal.timeout(this.timeoutMs) : undefined;
+    }
+
     /**
      * Phase 1. The return type is `Plan`, never a throw: every path out of here
      * is a legal action, because a player mid-run must not be blocked by an
@@ -1108,7 +1114,7 @@ export class ProviderNarrator implements Narrator {
                 model: this.options.model,
                 temperature: this.intentTemperature,
                 maxTokens: this.maxIntentTokens,
-                signal: AbortSignal.timeout(this.timeoutMs),
+                signal: this.budget(),
                 messages: [
                     { role: 'system', content: INTENT_SYSTEM_PROMPT },
                     { role: 'user', content: composeIntentUser(input, stateSummary, lastTurn) }
@@ -1352,14 +1358,24 @@ export class ProviderNarrator implements Narrator {
     private lastSceneTold: { place: string; ambient: AmbientQi } | null = null;
 
     /**
+     * What the player said last turn and what they were shown, so a conversation carries over:
+     * with nothing of the turn before, somebody asked a follow-up answers as a stranger.
+     */
+    private lastExchange: { said: string | null; shown: string } | null = null;
+
+    /**
      * Phase 3. The result is stored in the log and shown to the player. It is
      * not parsed, matched, or compared against anything; there is deliberately
      * no code in this package that reads a value out of it.
      */
     async narrate(facts: EngineFacts, scene: NarratorScene): Promise<Narration> {
-        const ambientIsNews = this.lastSceneTold === null
-            || this.lastSceneTold.place !== scene.place
-            || this.lastSceneTold.ambient !== scene.ambient;
+        // The first turn somewhere describes it in full; later turns there remind in a clause.
+        const arrived = this.lastSceneTold === null || this.lastSceneTold.place !== scene.place;
+        // A new life has no turn before it.
+        const previous = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0
+            ? null
+            : this.lastExchange;
+        const ambientIsNews = arrived || this.lastSceneTold!.ambient !== scene.ambient;
         // Recorded before the call rather than after it, so a narration that
         // times out or is discarded does not make the next turn repeat itself.
         // The model was told; whether it used it well is a separate question.
@@ -1369,10 +1385,10 @@ export class ProviderNarrator implements Narrator {
                 model: this.options.model,
                 temperature: this.narrationTemperature,
                 maxTokens: this.maxNarrationTokens,
-                signal: AbortSignal.timeout(this.timeoutMs),
+                signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { ambientIsNews }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous }) }
                 ]
             });
 
@@ -1421,8 +1437,9 @@ export class ProviderNarrator implements Narrator {
 
             // And anything the engine says the player must read, whether or not
             // the model felt like including it.
-            const whole = withRequiredLines(text, facts.required);
-            return { text: whole.slice(0, MAX_NARRATION_CHARS), source: 'model', note: null };
+            const whole = withRequiredLines(text, facts.required).slice(0, MAX_NARRATION_CHARS);
+            this.lastExchange = { said: scene.playerSaid ?? null, shown: whole };
+            return { text: whole, source: 'model', note: null };
         } catch (err) {
             return {
                 text: facts.prose,

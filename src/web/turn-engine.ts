@@ -988,6 +988,7 @@ import {
     composeStateSummary,
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
+import { whatSomebodyHoldsPrivately, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -2278,21 +2279,14 @@ export class GameService {
         // turns a new player reads first.
         const overheard = this.hear(created.cultivator, created.run, 'look', null);
 
-        if (live.forTheNarrator.length > 0) facts.lines.unshift(...live.forTheNarrator);
-        if (live.toldToThePlayer.length > 0) {
-            const said = live.toldToThePlayer.join('\n\n');
-            facts.prose = facts.prose.length > 0 ? `${said}\n\n${facts.prose}` : said;
-            // NOT on `required`, and the banner thirty lines below says why:
-            // that channel matches on the engine's own words surviving into the
-            // prose, and this prompt orders the model to write every fact again
-            // from nothing. Measured against the local model, which rendered
-            // every live fact faithfully and then had the whole list appended
-            // underneath its own paragraphs - the opening said the intake, the
-            // bar, the want and the price twice each.
-            //
-            // `prose` is the guarantee for a player with no model, and it is
-            // already set above.
-        }
+        // WHAT IS LIVE IS FILED, AND THE OPENING NARRATION IS THE LIFE AND THE PLACE.
+        //
+        // Turn 0 once read "nothing is happening" over two dated intakes and a book
+        // at a quarter of the purse, so what is live has to be on the first screen.
+        // Handed to the narrator as rulings it came back as a catalogue - intakes,
+        // bars, stall prices - in the one turn that is about who somebody is. So it
+        // is its own engine entry below the life, and the narration is the years and
+        // the square. Not in `prose` as well, which would show it twice.
         facts.structure.push(...live.structure);
         if (overheard) addHearing(facts, overheard);
 
@@ -2400,6 +2394,9 @@ export class GameService {
             // and before the narration because the narration is the first thing
             // that happens to them.
             { role: 'engine' as const, turn: 0, text: life.toldToThePlayer.join('\n') },
+            ...(live.toldToThePlayer.length > 0
+                ? [{ role: 'engine' as const, turn: 0, text: live.toldToThePlayer.join('\n\n') }]
+                : []),
             { role: 'narrator', turn: 0, text: opening.text }
         ]);
 
@@ -3168,6 +3165,7 @@ export class GameService {
             };
         }
 
+        const company = this.company(after.cultivator);
         const scene = {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
@@ -3180,10 +3178,13 @@ export class GameService {
             // What the engine actually filed. Phase 3 may dress this and may
             // not contradict it; see the banner in `narrator.ts`.
             filed: this.filedOutcome(execution, theTurnsPlan.action.action),
-            // Who is in it. See `describeTheRoom` for the played defect: a
-            // narrator told the place and the air and nothing about the people
-            // opens on an empty square, because that is the cheapest guess.
-            company: this.company(after.cultivator),
+            // Who is in it, as cards the narrator plays from. Told only the place
+            // and the air, a narrator opens on an empty square, because that is
+            // the cheapest guess.
+            company,
+            addressing: whoTheActWasPutTo(
+                stepsOfThePlan(theTurnsPlan).map(step => step.action.target), company
+            ),
             realmOrdinal: after.cultivator.realmOrdinal,
             // What they ARE and HOLD, whatever this turn did. See
             // `theStandingStateOf`: the model told somebody carrying a manual
@@ -18560,6 +18561,10 @@ ${fit.line}`;
                     // the player was never told about.
                     tiesHere: [],
                     houseId: person.sectId ?? null,
+                    houseName: person.sectId && this.knowledge.isAwareOf(cultivator.id, 'sect', person.sectId)
+                        ? getSect(person.sectId)?.name ?? null
+                        : null,
+                    ownMind: whatSomebodyHoldsPrivately(person.id, person.sectId ?? null),
                     rankIndex: row?.factionRankIndex ?? -1
                 });
             } else {

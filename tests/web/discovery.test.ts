@@ -16,12 +16,9 @@ import { describe, it, expect } from 'vitest';
 import { REGIONS, SECTS } from '../../src/data/cultivation/index';
 import { KnowledgeGate, existenceClaimKey } from '../../src/web/knowledge';
 import {
-    DISCOVERY_RULE,
     composeNarrationUser,
     composeStateSummary,
     narratorCore,
-    theVoiceDoc,
-    TONE_PATH,
     narrationSystemPrompt
 } from '../../src/web/prompt';
 import { resolveSect } from '../../src/web/entities';
@@ -431,7 +428,8 @@ describe('the prompt never carries the answer key', () => {
         );
 
         expect(message).toContain('NAMES YOU MAY USE');
-        expect(message).toContain(`- ${HOME_PLACE}`);
+        const names = message.split('\n')[message.split('\n').findIndex(l => l.startsWith('NAMES YOU MAY USE')) + 1];
+        expect(names).toContain(HOME_PLACE);
         for (const sect of SECTS) {
             expect(message).not.toContain(sect.name);
         }
@@ -498,132 +496,74 @@ describe('the narrator constitution', () => {
         expect(core.text).toContain('The AI narrates. The engine decides.');
     });
 
-    it('puts Tier 1 and the discovery rule into the narration prompt', () => {
+    it('puts Tier 1 and the naming rule into the narration prompt', () => {
         const prompt = narrationSystemPrompt();
         expect(prompt).toContain(narratorCore().text);
-        expect(prompt).toContain(DISCOVERY_RULE);
-        // Tier 1 comes before the setting detail: it is the constitution.
-        expect(prompt.indexOf('Narrator Core')).toBeLessThan(prompt.indexOf('THE CEILING'));
+        expect(prompt).toContain('WHAT MAY BE NAMED');
+        // Tier 1 comes before the setting and the genre: it is the constitution.
+        expect(prompt.indexOf('Narrator Core')).toBeLessThan(prompt.indexOf('THE WORLD, AS THE PEOPLE IN IT'));
     });
 
     /**
-     * AND THE VOICE DOC, WHICH MARKS ITSELF TIER 1 AND WAS READ BY NOTHING.
+     * THE PROMPT IS SIZED FOR A LOCAL MODEL, AND THE GENRE RULES SURVIVED THE CUT.
      *
-     * `docs/world/README.md` sets up the tiers and says tier 1 loads every
-     * turn. `tone.md` marks four of its own sections that way and the prompt
-     * carried a hand-written compression instead, which is the arrangement the
-     * README already calls out: "It should converge on NARRATOR-CORE.md."
-     *
-     * A hand copy is what drifted. The show and never explain TABLE never made
-     * it into the copy at all - six paired rows, and one of them names the beat
-     * the genre actually runs on: somebody is addressed by a title the player
-     * does not know, and the room rearranges itself.
-     *
-     * This reads the same file the prompt reads, so it pins no wording and
-     * cannot go stale. Section headings are asserted rather than prose for the
-     * same reason: the doc is free to be rewritten, and not free to stop
-     * arriving.
+     * Measured on gemma4:31b: the old prompt was 27.5k tokens a call and 93s a narration at the
+     * model's default 128k window, and the server's 30s timeout threw every one away. The voice
+     * sections still load verbatim; the per-turn rulebook is what went. This pins that the genre
+     * beats arrive and that the whole still fits the game's own model window.
      */
-    it('loads every tier-1 section of the voice doc rather than paraphrasing it', () => {
-        const voice = theVoiceDoc();
-        expect(voice.length, `${TONE_PATH} loaded nothing`).toBeGreaterThan(0);
-
+    it('fits a local model and still carries the beats the genre runs on', () => {
         const prompt = narrationSystemPrompt();
-        expect(prompt).toContain(voice);
-
-        // Every heading the docs mark tier 1, present by name.
-        for (const heading of [
-            '## The register',
-            // Promoted from tier 3: the narrator was never told the genre is
-            // funny, so the register it got was entirely the bleak half.
-            '## Humour is required, not optional',
-            '## Guidance for the narrator',
-            '## Naming conventions',
-            '## Show, never explain',
-            // The design owner's ruling on what changes with height, out of the
-            // ladder file. The rest of that file is hypotheses and stays off.
-            '## One rule, and the rest falls out of it'
-        ]) {
-            expect(voice, heading).toContain(heading);
-        }
-
-        // A SUBSECTION OF A TIER-1 SECTION IS PART OF IT.
-        //
-        // These two sit under `## Humour is required` and declare no tier of
-        // their own, and a section used to end at the first heading of any
-        // depth - so the worked examples were cut while the rule above them
-        // arrived. They are the two the narrator has least ability to invent:
-        // what to do with an act that parsed perfectly and cannot be carried
-        // out, and what a person says when asked a name they do not know.
-        for (const heading of [
-            '### Incoherent and coherent-and-stupid are two different failures',
-            '### Nobody says "a blank look"'
-        ]) {
-            expect(voice, heading).toContain(heading);
-        }
-
-        // The row that never arrived. It is the one worth naming: the whole
-        // point of the table is trading an explanation for a consequence.
+        // The game's own Ollama tag holds 32768 tokens (config/ollama). The system prompt has to
+        // leave room in it for the turn, the previous turn and the answer: about 22k tokens.
+        expect(prompt.length, 'the system prompt has outgrown the local model window')
+            .toBeLessThan(88_000);
+        // The beat the show-and-never-explain table named: a title the player does not know.
         expect(prompt).toContain('the room rearranges itself');
-        // And the beat the cut subsection carries: the answer to a coherent
-        // stupidity is written by whoever was standing there.
-        expect(prompt).toContain('it is written by the square');
-        // The ruling, which is the one thing on the ladder page that is a rule.
+        // The answer to a coherent stupidity is written by whoever was standing there.
+        expect(prompt).toContain('written by the square');
+        // The ladder ruling, which is the one thing on that page that is a rule.
         expect(prompt).toContain('Knowledge is a property of the person being asked');
+        // Humour, which the narrator was once never told about.
+        expect(prompt).toMatch(/Humour is required/);
+        // Scenes, crowds, numbers and lists, each with its examples.
+        for (const rule of [
+            'A SCENE IS A TRANSACTION OR A CONTEST OF STANDING',
+            'THE CROWD TALKS',
+            'NUMBERS ARE BOASTS',
+            'A LIST IS NEVER A LIST',
+            'THE SETTING\'S ORDINARY FURNITURE IS NOT AN ATROCITY'
+        ]) expect(prompt, rule).toContain(rule);
     });
 
     it('states unattributed consequence as the preferred move', () => {
-        expect(DISCOVERY_RULE).toMatch(/consequence without attribution/i);
-        expect(DISCOVERY_RULE).toMatch(/leave the cause unnamed/i);
+        const prompt = narrationSystemPrompt();
+        expect(prompt).toMatch(/consequence without attribution/i);
+        expect(prompt).toMatch(/leave\s+the cause unnamed/i);
     });
 
     it('carries the higher-stratum texture', () => {
-        expect(DISCOVERY_RULE).toMatch(/entourage tells them more/i);
-        expect(DISCOVERY_RULE).toMatch(/usually not interested/i);
-        expect(DISCOVERY_RULE).toMatch(/Do not explain them/i);
+        const prompt = narrationSystemPrompt();
+        expect(prompt).toMatch(/entourage/i);
+        expect(prompt).toMatch(/usually not interested/i);
+        expect(prompt).toMatch(/Do not explain them/i);
     });
 
     /**
-     * ── THE GATE WITHHELD FROM THE READER AS WELL AS FROM THE CHARACTER ──
-     *
-     * `DISCOVERY_RULE` read as "narrate only what this cultivator perceived",
-     * which is a first-person diary rather than this genre: the corpus cuts
-     * away constantly and the reader is routinely ahead of the protagonist.
-     * Ruled by the design owner that the engine should hand the narrator more
-     * and mark what is not held, rather than drop it.
-     *
-     * The split that makes it safe, and what these pin: what the CHARACTER
-     * knows still gates verbs and still lives in `knowledge.ts`, and nothing
-     * in the prompt adds to it; what the READER knows is prose and unlocks
-     * nothing. The permission is scoped to marked facts, so the block is inert
-     * when a turn marks none - which is why the rule also names the one shape
-     * already reaching a model, the turn-0 life line that says in its own
-     * words they have not been told.
+     * The reader may be ahead of the cultivator; the subject of the sentence is the whole test.
+     * What the CHARACTER knows still gates verbs in `knowledge.ts`, and nothing here adds to it.
      */
     it('lets the reader know more than the cultivator, without lifting the name gate', () => {
         const prompt = narrationSystemPrompt();
-        expect(prompt).toContain('THE READER MAY KNOW MORE THAN THE CULTIVATOR DOES');
-        // The two kinds of knowing, and that only one of them is a rule.
-        expect(prompt).toMatch(/What the CHARACTER knows decides what they may do/);
-        expect(prompt).toMatch(/What the READER knows is prose and unlocks nothing/);
-        // Pairs rather than prose rules: a small model copies a pair.
-        expect(prompt).toContain('  LEAK     You learn that somebody paid a favour');
-        expect(prompt).toContain('  CUTAWAY  The elder had been watching him since he came');
-        expect(prompt).toContain('The subject of the sentence is the whole test');
-        // The gate is amended, not spent. A name the player was never told
-        // still may not be used at them.
-        expect(prompt).toContain('Nothing is named AT the player');
+        expect(prompt).toContain('The reader may know more than the player');
+        expect(prompt).toContain('LEAK     You realise the elder has been watching you since the gate.');
+        expect(prompt).toContain('CUTAWAY  The elder had been watching him since he came through the gate.');
+        expect(prompt).toContain('the subject of the sentence is the whole test');
         expect(prompt).toContain('WHAT MAY BE NAMED');
-        // And the two blocks must not contradict each other in the one prompt.
-        expect(DISCOVERY_RULE).toContain('THE READER MAY KNOW MORE THAN THE CULTIVATOR DOES');
     });
 
     it('makes a cutaway reach as far as the band and no further', () => {
-        // Height is already selected per turn. An unqualified cutaway licence
-        // would have a province re-planning around a villager, which is the
-        // reach error the ladder page exists to prevent.
-        expect(narrationSystemPrompt())
-            .toContain('HOW FAR A CUTAWAY REACHES IS THE REGISTER FOR THIS TURN');
+        expect(narrationSystemPrompt()).toContain('How far a cutaway reaches is the register for this turn');
     });
 
     it('carries the marked facts in their own block, separate from what may be stated', () => {
@@ -635,7 +575,7 @@ describe('the narrator constitution', () => {
                 heldByTheWorldAndNotByThem: ['Somebody is carrying a debt for where they stand.']
             } as never
         );
-        expect(withHeld).toContain('HELD BY THE WORLD, NOT BY THIS CULTIVATOR');
+        expect(withHeld).toContain('HELD BY THE WORLD, NOT BY THE PLAYER');
         expect(withHeld).toContain('- Somebody is carrying a debt for where they stand.');
 
         // Absent means silent. A block with no material is a permission with

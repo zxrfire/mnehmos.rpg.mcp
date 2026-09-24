@@ -1489,6 +1489,25 @@ export interface SomebodyInTheSquare {
     tiesHere?: readonly { name: string; kind: string }[];
     /** Their house, for the relation of last resort. */
     houseId?: string | null;
+    /**
+     * The house's name where this cultivator has heard of it, and null where they have not.
+     * Colours are visible, so somebody on a roll reads as wearing them either way; what the
+     * gate decides is whether the player can put a name to them.
+     */
+    houseName?: string | null;
+    /**
+     * What this person holds privately: theirs to say or keep, never something a stranger sees.
+     * The narrator plays them from it, which is AGENTS.md's "route it through somebody who
+     * knows". From the catalog for a seeded member, and from their house for anybody on a roll.
+     */
+    ownMind?: {
+        wants?: string;
+        fears?: string;
+        mayNotSay?: string;
+        knows?: string;
+        houseGrievance?: string;
+        houseIsWrongAbout?: string;
+    } | null;
     /** Where they stand on its roll. Lower is junior. -1 when unaffiliated. */
     rankIndex?: number;
     /**

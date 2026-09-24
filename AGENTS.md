@@ -54,6 +54,11 @@ short. World and setting material goes under [`docs/world/`](docs/world/), split
 A **deterministic xianxia cultivation RPG engine** exposed over MCP, driven by an LLM
 runtime agent that narrates but never decides.
 
+**The point is next-level AI roleplay - a role-playing game in both senses.** An RPG's
+mechanics, deterministic and permanent, and a model roleplaying the world opposite you: every
+person in it voiced as somebody, the engine deciding what happens to all of them. See
+[The model is the game](#the-model-is-the-game).
+
 Forked from a D&D 5e MCP engine. The substrate (dice, SQLite, action-routed tools,
 worldgen, NPC runtime) is retained; the entire game-facing surface is
 being replaced with cultivation mechanics.
@@ -109,6 +114,47 @@ Concretely, this means:
 
 If a change would let the model quietly become authoritative, it is wrong even if the
 tests pass.
+
+---
+
+## The model is the game
+
+> **LLM mode is the main mode of this game.** Having an LLM act as the characters is the
+> standard. - the design owner, 2026-09-24
+
+The game is played with a language model. It reads what the player means, and it plays the
+world opposite them: it sets the place, and it voices every person in the scene - the one
+being spoken to, and the room around them - from the card the engine hands it for each.
+`src/web/the-narrator-plays-the-world.ts` is that frame. The acceptance test, in the owner's
+words: *play the game, talk to my senior sisters and brothers, enter a sect, become a
+patriarch - and none of that can be dry.*
+
+The engine-only tier, with no model configured, is for debugging, for playing somewhere there
+is no model at all, and for the floor of the test pyramid: engine tests run without a model and
+prove the mechanics in milliseconds (see
+[Three layers](#three-layers-and-the-cheap-one-carries-the-weight)). It keeps working and it
+is allowed to be dry: explicit commands in, the engine's own lines out. Nothing is designed for
+it first, and no feature is judged by how it reads there.
+
+- **Judge the game by playing it with the model.** Prose read off the deterministic tier says
+  nothing about how the game reads.
+- **Narration that reads like engine lines is almost always a fallback**, not the model writing
+  badly: a timeout, an empty answer, a discarded narration. Check `source` on the
+  `narrator.narrate` call before touching a prompt. Measured: every turn of one played session
+  fell back, because a 27.5k-token prompt took 93s against a 30s timeout.
+- **The fallback reader never hedges at the player.** A "did you mean X or Y" is the router
+  admitting it is unsure, and resolving that was the model's job. Without a model the player is
+  asked to be explicit; with one, the ambiguity is the model's to settle, or the field is dropped
+  and the verb answers generally.
+- **The engine hands the model what a person is, not only who is present.** A name alone is
+  played as a stranger. What somebody is at, what they are like, what is on their mind and what
+  they are to the player all reach the card.
+- **So the engine states facts, and more of them, and never prose.** An engine string is the
+  model's input. "The model is the game" is not licence to write atmosphere into the engine; it
+  is the reason not to. When two people read alike, the fix is a fact that tells them apart,
+  not a better sentence.
+- **The authority rule is unchanged.** The model plays people; it never decides what happened
+  to them.
 
 ---
 
@@ -1503,7 +1549,8 @@ than ordinary play ever produces - a description instead of a catalog name, a gr
 missing argument, a pronoun that is not an argument at all - so an admin line exercises the
 tier that is running as well as the engine behind it. Which tier answers is settled at process
 start; with none configured, the deterministic reader answers, and it must keep working
-because that is a shipping mode.
+because it is how the game is debugged and played with no model at all - see
+[The model is the game](#the-model-is-the-game).
 
 **The deterministic reader stays, and it is a lookup rather than an inference.**
 `BARE_NUMBER_ARG` and `PRIMARY_ARG` are the shape: which field an operator meant is a property

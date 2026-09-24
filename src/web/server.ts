@@ -79,6 +79,17 @@ export function readAdminMode(env: NodeJS.ProcessEnv = process.env): boolean {
 }
 
 /**
+ * How long one model call may take, from `NARRATOR_TIMEOUT_MS`. Unset or unreadable is 30s;
+ * 0 is no limit at all. Explicit, because `Number('0') || 30_000` read the one value that means
+ * "wait" as the default.
+ */
+export function narratorTimeoutFrom(raw: string | undefined): number {
+    if (raw === undefined || raw.trim() === '') return 30_000;
+    const ms = Number(raw);
+    return Number.isFinite(ms) && ms >= 0 ? ms : 30_000;
+}
+
+/**
  * Build the narrator from configuration.
  *
  * Note what is absent: any branch on which provider was selected. The name is
@@ -109,7 +120,7 @@ export function buildNarrator(
 
     const narrator = new ProviderNarrator(provider, {
         model: config.model,
-        timeoutMs: Number(process.env.NARRATOR_TIMEOUT_MS) || 30_000
+        timeoutMs: narratorTimeoutFrom(process.env.NARRATOR_TIMEOUT_MS)
     });
     return {
         narrator,

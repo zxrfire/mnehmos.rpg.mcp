@@ -20,11 +20,19 @@ Measured against the prompts this repo actually sends, on a real square:
 
 | call | tokens |
 |---|---|
-| phase 1 (intent) | ~7,960 - system prompt with the whole verb glossary, plus the state summary |
-| phase 3 (narration) | the same order |
+| phase 1 (intent) | ~6,000 - system prompt with the whole verb glossary, plus the state summary |
+| phase 3 (narration) | ~18,000 system (the storyteller, the voice docs, the worked turns) + ~2,000 per turn |
 
-`32768` is that, doubled for a well-travelled cultivator whose awareness list
-has grown, and rounded up.
+`32768` holds the narration call with room for the previous turn and the answer.
+The phase-3 system prompt is identical on every call, so Ollama keeps it cached:
+measured on gemma4:31b at this tag, a narration costs well under a second of
+prompt processing after the first and 5-15s in all.
+
+**Measured before this tag existed**, on plain `gemma4:31b` at its 128k default:
+35GB resident on a 32GB card, 12% of it on the CPU, and a 27.5k-token narration
+prompt took 93s - three times the server's 30s default timeout, so every turn
+fell back to the engine's own fact lines. Run the game on this tag, and see
+`run-game.ps1` for the timeout and keep-alive it sets.
 
 **More would not help.** Nothing is being truncated at 8,000 tokens, and nothing
 in this architecture grows with the length of a run: there is no conversation

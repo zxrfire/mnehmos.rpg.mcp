@@ -21,10 +21,12 @@ import { ProviderNarrator } from '../src/web/narrator.js';
 import { OllamaProvider } from '../src/agent/provider/ollama.js';
 import { createWorld, resetCultivationWorlds } from '../src/server/state/cultivation-world.js';
 
-const model = process.env.OLLAMA_MODEL ?? 'gemma4:31b-80k';
+// The game's own tag (config/ollama), and no time limit: a narration that times out falls back to
+// the engine's own lines, and measuring those as prose is measuring nothing.
+const model = process.env.OLLAMA_MODEL ?? 'rpg-gemma4-31b';
 resetCultivationWorlds();
 const db = new Database(':memory:'); db.pragma('foreign_keys = ON'); migrate(db);
-const narrator = new ProviderNarrator(new OllamaProvider({ defaultModel: model }), { model, timeoutMs: 180_000 });
+const narrator = new ProviderNarrator(new OllamaProvider({ defaultModel: model }), { model, timeoutMs: 0 });
 const game: any = new GameService({ db, narrator, worldEnabled: true, adminMode: false, seedFactory: () => 'xianxia' });
 resetCultivationWorlds();
 await createWorld({ seed: 'a-xianxia-run' });
@@ -50,7 +52,10 @@ function measure(label: string, text: string) {
     const said = new RegExp('\\b(?:say|says|said|ask|asks|asked|repl(?:y|ies|ied)|answers?|answered|murmurs?|murmured|shouts?|shouted|calls?|called|adds?|added|whispers?|whispered|cries|cried|tells?|told|offers?|offered)\\b', 'i');
     const spoken = ps.filter(p => /["“]/.test(p));
     const attributed = spoken.filter(p => said.test(p)).length;
-    rows.push(`${label.padEnd(34)} paras=${String(ps.length).padStart(2)}  med=${String(med(ps.map(words))).padStart(3)}w  max=${String(Math.max(...ps.map(words))).padStart(3)}w  speech=${pct(sp, ps.length).padStart(4)}  1-liners=${pct(one, ps.length).padStart(4)}  attributed=${spoken.length ? pct(attributed, spoken.length).padStart(4) : '   -'}`);
+    // LOUDNESS, which the three measures above never saw. Played on gemma4:31b the dialogue came
+    // back deadpan - an exclamation in 0-5% of paragraphs - where the genre's speech is loud.
+    const loud = spoken.filter(p => p.includes('!')).length;
+    rows.push(`${label.padEnd(34)} paras=${String(ps.length).padStart(2)}  med=${String(med(ps.map(words))).padStart(3)}w  max=${String(Math.max(...ps.map(words))).padStart(3)}w  speech=${pct(sp, ps.length).padStart(4)}  1-liners=${pct(one, ps.length).padStart(4)}  attributed=${spoken.length ? pct(attributed, spoken.length).padStart(4) : '   -'}  loud=${spoken.length ? pct(loud, spoken.length).padStart(4) : '   -'}`);
     if (process.env.SHOW) ps.forEach(p => console.log('   ' + String(words(p)).padStart(3) + 'w ' + (/["“]/.test(p) ? 'S ' : '. ') + p.slice(0, 100)));
 }
 for (const e of game.state().log) if (e.role === 'narrator') measure('TURN 0 (opening)', e.text);
@@ -83,3 +88,7 @@ console.log('CORPUS paragraph mix    1 sentence 29%   2 sentences 27%   3 senten
 // one-liners are flat across a book; DIALOGUE THINS TOWARD THE END, so a
 // measurement taken at one position is wrong about speech.
 console.log('CORPUS by position  begin 35w/35% speech   middle 34w/32%   end 32w/25%');
+// Loudness per book, the series' first books against their middle ones, measured the same way as
+// `loud` above: spoken paragraphs carrying an exclamation. It RISES with height - the top is the
+// loudest band - so a narrator gone quiet and grand up high has left the genre.
+console.log('CORPUS loud spoken  low band 31-52%, median 32%   middle band 49-69%, median 63%');

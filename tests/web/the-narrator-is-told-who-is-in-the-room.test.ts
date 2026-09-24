@@ -1,51 +1,21 @@
 /**
  * An empty square with four people standing in it.
  *
- * FOUND BY PLAYING BLIND, turn two of a run, one turn after a market read had
- * named four people selling manuals with their prices:
+ * FOUND BY PLAYING BLIND, turn two of a run, one turn after a market read had named four people
+ * selling manuals with their prices: "There is no one here to provide a manual, and no one to
+ * show the way." The narrator was asked for scene prose and never told who was in the scene, so
+ * the cheapest scene to write from nothing - an empty room - came back.
  *
- *     > i want to learn to cultivate
- *
- *     The air at Autumn Gate is still. There is no one here to provide a
- *     manual, and no one to show the way. To learn is to find a method, and to
- *     find a method is to find a teacher or a book.
- *
- *     A few such things exist within reach... A Lesser Qi-Gathering Manual and
- *     the Azure Dew Gathering Canon are available...
- *
- * The paragraph contradicts itself two sentences apart, and contradicts the
- * previous turn outright: Wei Ciyi, Tang Minya, Shen Minbo and Wei Lielu were
- * all named selling manuals one screen earlier.
- *
- * ── THE CAUSE, AND IT IS AN OMISSION RATHER THAN A LIE ───────────────────
- *
- * The narrator is asked for second-person SCENE prose and was never told who
- * was in the scene. The classifier gets a `STANDING HERE` block listing
- * everybody in the square; the narrator got the place, the air, and a list of
- * proper nouns the cultivator has heard of somewhere in the world. Nothing in
- * its prompt separated an empty square from a busy one - so the opening
- * sentence was a guess every single turn, and the cheapest scene to write from
- * nothing is an empty room.
- *
- * `NOTHING_CAME_BACK` cannot catch this and should not be widened to. That
- * guard is about a question reported as unanswered; here the question was
- * answered two sentences later. The invention is in the SCENE.
- *
- * ── AND IT IS NOT THE CLASSIFIER'S BLOCK HANDED OVER AGAIN ───────────────
- *
- * `describeWhoIsHere` exists to bind a pointing phrase, so it carries rungs,
- * ordinals, ages and sexes and closes on an instruction about targets. Giving
- * a prose writer that table produces precisely the roll call the narration
- * prompt already spends a paragraph forbidding. What a narrator needs is
- * smaller and different in kind: whether the room is empty, and which of the
- * people in it it is allowed to name. This file pins that difference, because
- * the obvious "fix" is to reuse the other block and it would trade one defect
- * for another.
+ * The narrator now plays the people in the scene, so it is handed a card for each of them: what
+ * they are at, what they are like, what is on their mind, and what they are to the player. What
+ * this pins is that the room reaches the model, that an empty room is said to be empty, that a
+ * face the player cannot place is never named, and that no card states a rung.
  */
 
 import { describe, it, expect } from 'vitest';
 
-import { composeNarrationUser, describeTheRoom } from '../../src/web/prompt';
+import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
+import { thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
 import type { Company } from '../../src/web/facts';
 
 const FACTS = {
@@ -65,63 +35,68 @@ function aSquareWith(named: readonly string[], strangers: number): Company {
             ordinal: 3,
             sex: 'man',
             age: 40 + i,
-            rank: null
+            rank: null,
+            at: i === 0 ? 'haggling over a cracked jade slip' : null,
+            looksUp: i === 0,
+            playsToTheRoom: 0,
+            withNames: [],
+            like: i === 0 ? 'says a thing twice when he wants it heard' : null,
+            chewing: i === 0 ? { state: 'a debt he cannot meet by the new moon', plainly: '' } : null
         })) as unknown as Company['named'],
         strangers: Array.from({ length: strangers }, () => ({ ordinal: 2 })),
         total: named.length + strangers
     };
 }
 
-describe('the prompt says whether anybody is standing here', () => {
-    it('names the people in the square', () => {
-        const said = describeTheRoom(aSquareWith(['Wei Ciyi', 'Tang Minya'], 0)).join('\n');
+describe('the narrator is handed the people in the scene', () => {
+    it('gives each person a card to play them from', () => {
+        const said = thePeopleHere(aSquareWith(['Wei Ciyi', 'Tang Minya'], 0), 0, [], null).join('\n');
         expect(said).toContain('Wei Ciyi');
         expect(said).toContain('Tang Minya');
+        expect(said).toContain('haggling over a cracked jade slip');
+        expect(said).toContain('says a thing twice when he wants it heard');
+        expect(said).toContain('a debt he cannot meet by the new moon');
     });
 
     /**
-     * AND SAYS SO WHEN IT IS ACTUALLY EMPTY, which is the half that keeps this
-     * from being a gag order. A cultivator alone on a mountain is alone, and an
-     * account of that turn is allowed to say it.
+     * AND SAYS SO WHEN IT IS ACTUALLY EMPTY, which is the half that keeps this from being a gag
+     * order. A cultivator alone on a mountain is alone, and an account of that turn may say it.
      */
     it('says the room is empty when it is', () => {
-        const said = describeTheRoom(aSquareWith([], 0)).join('\n').toLowerCase();
+        const said = thePeopleHere(aSquareWith([], 0), 0, [], null).join('\n').toLowerCase();
         expect(said).toContain('nobody');
         expect(said).toContain('alone');
     });
 
-    /**
-     * THE DISCOVERY GATE IS NOT LOOSENED BY THIS. Somebody whose face this
-     * cultivator cannot place has no name to give, and the narrator is told a
-     * person is there without being told who - which is exactly what the player
-     * can see standing in the square.
-     */
+    /** THE DISCOVERY GATE IS NOT LOOSENED BY THIS. A face nobody can place has no name to give. */
     it('counts the faces it cannot place instead of naming them', () => {
-        const said = describeTheRoom(aSquareWith(['Wei Ciyi'], 3)).join('\n');
+        const said = thePeopleHere(aSquareWith(['Wei Ciyi'], 3), 0, [], null).join('\n');
         expect(said).toContain('Wei Ciyi');
-        expect(said).toMatch(/3 others whose faces this cultivator cannot place/);
+        expect(said).toMatch(/3 people whose faces the player cannot place/);
     });
 
-    /**
-     * AND IT IS STATED AS A CONSTRAINT. The whole risk of putting a roster in
-     * front of a prose writer is that it reads as a list of things to mention.
-     */
-    it('tells the narrator this is not material to write from', () => {
-        const said = describeTheRoom(aSquareWith(['Wei Ciyi'], 0)).join('\n');
-        expect(said).toContain('CONSTRAINT');
-        expect(said.toLowerCase()).toContain('do not introduce these people');
-    });
-
-    /**
-     * NOT THE CLASSIFIER'S TABLE. No rungs, no ordinals, no ages, and no
-     * instruction about targets: those belong to the block that binds a
-     * pointing phrase, and copying them here is how the roll call comes back.
-     */
-    it('does not hand over the pointing table', () => {
-        const said = describeTheRoom(aSquareWith(['Wei Ciyi'], 2)).join('\n').toLowerCase();
-        for (const wrong of ['rung', 'ordinal', 'about 4', 'target', 'level with']) {
+    /** Nobody in a square perceives a rung, so a card reads standing in words and never numbers. */
+    it('reads standing in words, never as a rung', () => {
+        const said = thePeopleHere(aSquareWith(['Wei Ciyi'], 0), 0, [], null).join('\n').toLowerCase();
+        expect(said).toContain('above you');
+        for (const wrong of ['rung', 'ordinal', 'layer', 'qi condensation']) {
             expect(said, wrong).not.toContain(wrong);
         }
+    });
+
+    /** The one being spoken to leads, and is marked, so the turn is theirs. */
+    it('puts the person the act was put to first, and marks them', () => {
+        const square = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);
+        expect(whoTheActWasPutTo(['Tang Minya'], square)).toBe('Tang Minya');
+        const said = thePeopleHere(square, 0, [], 'Tang Minya');
+        const first = said.findIndex(line => line.includes('Tang Minya'));
+        expect(first).toBeLessThan(said.findIndex(line => line.includes('Wei Ciyi')));
+        expect(said[first]).toContain('SPEAKING TO THEM');
+    });
+
+    /** A description is left to the model, which has the cards and the player's words. */
+    it('does not guess who a description meant', () => {
+        expect(whoTheActWasPutTo(['the old man'], aSquareWith(['Wei Ciyi'], 0))).toBeNull();
     });
 });
 
@@ -131,32 +106,21 @@ describe('the narration prompt carries it', () => {
             FACTS as never,
             { ...SCENE, company: aSquareWith(['Wei Ciyi', 'Tang Minya'], 2) }
         );
-        expect(prompt).toContain('WHO IS IN THE ROOM');
+        expect(prompt).toContain('THE PEOPLE HERE');
         expect(prompt).toContain('Wei Ciyi');
     });
 
     /**
-     * AND IT TELLS THE NARRATOR WHOSE JOB AN ABSENCE IS. The played sentence
-     * was not only unsupported, it was the OPPOSITE of what the engine had
-     * ruled - so the rule that closes it is about who gets to state a missing
-     * thing, not about the square alone.
+     * AND IT TELLS THE NARRATOR WHOSE JOB AN ABSENCE IS. The played sentence was not only
+     * unsupported, it was the opposite of what the engine had ruled.
      */
     it('says an absence is the engine to state', () => {
-        const prompt = composeNarrationUser(
-            FACTS as never,
-            { ...SCENE, company: aSquareWith(['Wei Ciyi'], 0) }
-        );
-        expect(prompt.toLowerCase()).toContain("an absence is the engine's to state");
+        expect(narrationSystemPrompt().toLowerCase()).toContain("an absence is the engine's to state");
     });
 
-    /**
-     * A CALLER THAT CANNOT SEE THE SQUARE CHANGES NOTHING. The block is opt-in,
-     * the same way `filed` and `hearing` are, so a narration composed without a
-     * roster reads exactly as it did before rather than asserting an empty room
-     * by omission.
-     */
+    /** Opt-in, the way `filed` and `hearing` are: no roster is not an empty room. */
     it('says nothing about the room when the caller did not pass one', () => {
         const prompt = composeNarrationUser(FACTS as never, { ...SCENE });
-        expect(prompt).not.toContain('WHO IS IN THE ROOM');
+        expect(prompt).not.toContain('THE PEOPLE HERE');
     });
 });

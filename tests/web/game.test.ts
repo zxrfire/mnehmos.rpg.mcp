@@ -105,13 +105,20 @@ describe('character creation', () => {
         // Asserted by CONTENT as well as by count, because a count alone is
         // what went stale here: the recap shipped and this line kept saying
         // two, and a bare number cannot say which of the three went missing.
+        //
+        // AND A FOURTH, where the square has something live on it: the intakes, the stall, the
+        // bar this body does or does not clear. Filed beside the life rather than recited in the
+        // opening narration, which is the years and the place - played on gemma4:31b, handed
+        // over as rulings they came back as a catalogue in the one turn about who somebody is.
         const engine = state.log.filter(e => e.role === 'engine');
-        expect(engine).toHaveLength(3);
+        expect(engine).toHaveLength(4);
         expect(engine[0].text).toContain('Local Mode');
         expect(engine[0].text).toContain('fully playable');
         expect(engine[1].text).toContain('Talent is rolled once and never redrawn.');
         expect(engine[2].text, engine[2].text).toMatch(/16 years old/);
-        expect(state.log.filter(e => e.role === 'narrator')).toHaveLength(1);
+        const narrations = state.log.filter(e => e.role === 'narrator');
+        expect(narrations).toHaveLength(1);
+        expect(narrations[0]!.text).not.toContain(engine[3]!.text.split('\n')[0]!);
     });
 });
 
