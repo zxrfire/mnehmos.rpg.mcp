@@ -22,7 +22,6 @@ import {
     narrationSystemPrompt
 } from './prompt.js';
 import {
-    nearestVerbByMeaning,
     readyTheTier,
     theTableMeantIt,
     verbForASentenceThePatternsMissed
@@ -353,8 +352,24 @@ async function theModelIsNotWhyThisTurnIsDangerous(
  */
 async function theSentenceSaysSoToo(input: string, chosen: ActionName): Promise<boolean> {
     try {
-        const nearest = await nearestVerbByMeaning(input);
-        return nearest !== null && nearest.action === chosen;
+        // THE TIER'S SETTLED ANSWER, NOT THE RAW NEAREST NEIGHBOUR.
+        //
+        // This asked `nearestVerbByMeaning` directly, which is the number
+        // before any of the judgement the tier that owns it applies: the
+        // higher floor a time-spending verb has to clear, the pointer guard,
+        // the acts-performed-alone guard, the sentence-about-somebody-else
+        // guard, and the rulings the table has already made. So a verb the
+        // tier would refuse to hand back on its own could still corroborate
+        // the model, and the corroboration was a rawer reader than the one it
+        // was standing in for.
+        //
+        // Measured: a bare "I sit down" spent thirty days of a played run this
+        // way. The table reads it as unclear - it rules explicitly that
+        // sitting DOWN is taking a seat - the model read `cultivate`, this
+        // said the sentence agreed, and the guard let it through.
+        return verbForASentenceThePatternsMissed(
+            input, { action: FALLBACK_ACTION }
+        ).then(settled => settled.action === chosen);
     } catch {
         // The tier throws rather than degrading, and here that is survivable:
         // no corroboration is available, so there is none, and the guard below

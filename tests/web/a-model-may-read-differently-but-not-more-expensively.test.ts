@@ -102,6 +102,35 @@ describe('but it may not be why the turn became dangerous', () => {
         expect(plan.note).toMatch(/Say it plainly/);
     });
 
+    /**
+     * AND THE CORROBORATION IS NOT A RAWER READER THAN THE ONE IT STANDS IN
+     * FOR.
+     *
+     * Played, and it cost a month. A bare *"I sit down"* was read `cultivate`
+     * by the model, and the turn ran thirty days of seclusion.
+     *
+     * The guard has an escape hatch: where the table read NOTHING, a second
+     * reader agreeing with the model means the model did not invent the act.
+     * It was asking `nearestVerbByMeaning` directly - the number before any of
+     * the judgement the tier that owns it applies. "I sit down" sits at
+     * `cultivate` 0.847, so the raw reader said yes, and both readers were
+     * making the same mistake for the same reason. Two readers agreeing is
+     * only evidence when they are reading independently.
+     *
+     * The corroboration is the tier's SETTLED answer now, which declines this
+     * one because the table has already ruled on it: sitting DOWN is taking a
+     * seat.
+     */
+    it('declines a sitting the table has already ruled is not one', async () => {
+        await readyTheTier();
+        const said = 'I sit down';
+        expect(parseIntent(said).action, 'the table rules on this one').toBe('unclear');
+
+        const plan = await modelSaying('{"action":"cultivate","days":30}').plan(said, '');
+        expect(plan.action.action, plan.note ?? '(no note)').not.toBe('cultivate');
+        expect(dangerous(plan.action.action)).toBe(false);
+    }, 120_000);
+
     it('declines a free read read as a decade in a cave', async () => {
         const plan = await modelSaying('{"action":"seclude","days":3650}')
             .plan('what is this place like now', '');

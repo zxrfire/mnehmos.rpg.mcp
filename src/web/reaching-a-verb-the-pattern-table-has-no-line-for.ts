@@ -77,6 +77,7 @@ import {
     type PlannedAction
 } from './actions.js';
 import { anActNothingAnswers } from './an-act-nothing-in-the-world-answers.js';
+import { SITTING_THAT_IS_NOT_CULTIVATION } from './verb-pattern-table.js';
 import { HOW_A_PLAYER_SAYS_EACH_VERB } from './how-a-player-says-each-verb.js';
 import { ASKING_WHAT_IS_POSSIBLE } from './what-is-worth-doing-standing-here.js';
 import { theSentenceIsNothingButAPointer } from './last-turn-memory.js';
@@ -509,6 +510,32 @@ export async function verbForASentenceThePatternsMissed(
 
     const nearest = await nearestVerbByMeaning(input);
     if (nearest === null) return fromTable;
+
+    // ── A GAP IS THIS TIER'S BUSINESS. A RULING IS NOT ───────────────────
+    //
+    // `unclear` reaches here two different ways and they are not the same
+    // thing. The table can have NO LINE for a sentence, which is what this
+    // whole file is for. Or it can have a line saying what the sentence is
+    // NOT, and still end at `unclear` because nothing else claimed it - and
+    // that is a decision already taken, by a rule with a measurement behind
+    // it, which arrives here looking identical.
+    //
+    // Measured, and it cost a month of somebody's life. A bare "I sit down"
+    // sits at `cultivate` 0.847 in the verb space, well clear of the
+    // time-spending floor, so this tier hands back thirty days of seclusion -
+    // for a sentence the table rules on explicitly, because
+    // `SITTING_THAT_IS_NOT_CULTIVATION` says in as many words that sitting
+    // DOWN is taking a seat. In play the model read it as `cultivate` too, the
+    // danger guard asked this tier whether the sentence said so as well, got
+    // yes, and let it through: two readers agreeing, both making the same
+    // mistake for the same reason, which is not the independent evidence that
+    // guard thinks it is asking for.
+    //
+    // REFERENCED, NEVER RESTATED. The ruling is the table's and stays there;
+    // this reads it.
+    if (nearest.action === 'cultivate' && SITTING_THAT_IS_NOT_CULTIVATION.test(input)) {
+        return fromTable;
+    }
 
     // A THING YOU DO TO YOURSELF CANNOT ANSWER A SENTENCE ABOUT SOMEBODY ELSE.
     if (ONLY_EVER_ABOUT_YOURSELF.has(nearest.action)
