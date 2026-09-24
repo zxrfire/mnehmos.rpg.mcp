@@ -1193,8 +1193,15 @@ export const combatVerbs = {
         // furnishes a different one each turn.
         const whileYouDid = 'The fight is still open, and the round landed while you did that.';
         asked.facts.lines.unshift(whileYouDid, ...round.facts.lines);
+        // ON `lines` AND NOT ON `required`, WHICH IS WHERE I PUT IT FIRST.
+        //
+        // A required line is played in the scene AND closes the turn verbatim,
+        // so this arrived twice: once as drama and once as a clerk reading it
+        // back. The narrator is handed it either way - what `required` buys is
+        // that it cannot be DROPPED, and a round that landed announces itself
+        // in the blow. It did not need the guarantee and could not afford the
+        // repetition.
         asked.facts.required = [
-            whileYouDid,
             ...(round.facts.required ?? []),
             ...(asked.facts.required ?? [])
         ];
