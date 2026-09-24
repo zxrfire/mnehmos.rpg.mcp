@@ -208,6 +208,24 @@ describe('the narrator is handed the people in the scene', () => {
         expect(last(['Wei Ciyi'])).not.toContain('enters as the player first sees them');
     });
 
+    /**
+     * The owner: "you don't know their name, you just see a jade beauty in red... hide the name
+     * unless the player is sure this is them, cuz otherwise, they introduce themselves".
+     */
+    it('keeps a name off a face the player cannot be sure of', () => {
+        const square = aSquareWith(['Wei Ciyi'], 0);
+        const heard = [{ kind: 'cultivator', id: 'n1', name: 'Wei Ciyi', statement: 'Wei Ciyi is a name that got said.', sourceKind: 'overheard', sourceNote: 'A name that got said' }] as never;
+        const met = [{ kind: 'cultivator', id: 'n1', name: 'Wei Ciyi', statement: 'Wei Ciyi worked the next field over.', sourceKind: 'witnessed', sourceNote: '' }] as never;
+        const unsure = composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: heard });
+        expect(unsure).toContain('A FACE WITH NO NAME TO IT YET');
+        expect(unsure).not.toContain('A name that got said');
+        expect(unsure.slice(unsure.indexOf('NAMES YOU MAY USE'))).not.toMatch(/^[^\n]*\n[^\n]*Wei Ciyi/);
+        expect(composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: met })).not.toContain('A FACE WITH NO NAME TO IT YET');
+        // Said by the player, right or wrong, it is theirs to have said.
+        expect(composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: heard, playerSaid: 'Wei Ciyi, a word' }))
+            .not.toContain('A FACE WITH NO NAME TO IT YET');
+    });
+
     /** The one being spoken to leads, and is marked, so the turn is theirs. */
     it('puts the person the act was put to first, and marks them', () => {
         const square = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);

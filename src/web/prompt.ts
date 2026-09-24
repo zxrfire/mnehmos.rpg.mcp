@@ -42,6 +42,7 @@ import {
     WORKED_TURNS,
     howTheyReadToYou,
     thePeopleHere,
+    thePlayerIsSureItIsThem,
     whatTheyAreToYou,
     whoThePlayerNamed
 } from './the-narrator-plays-the-world.js';
@@ -962,7 +963,12 @@ export function composeNarrationUser(
         acts?: readonly string[];
     } = {}
 ): string {
-    const nameable = nameableNames(scene.awareness ?? []);
+    // A name heard of stays sayable as a name; it is not a name for a face standing here that the
+    // player cannot put it to. See `thePlayerIsSureItIsThem`.
+    const facesWithoutTheirNames = new Set((scene.company?.named ?? [])
+        .filter(person => !thePlayerIsSureItIsThem(person.name, scene.awareness ?? [], scene.playerSaid ?? null))
+        .map(person => person.name));
+    const nameable = nameableNames(scene.awareness ?? []).filter(name => !facesWithoutTheirNames.has(name));
     const addressing = scene.addressing ?? whoThePlayerNamed(scene.playerSaid, scene.company);
     const alone = scene.company?.total === 0;
     const somebodyToPlay = !alone && (scene.company?.named.length ?? 0) > 0;
@@ -1000,7 +1006,8 @@ export function composeNarrationUser(
             ? whoIsStandingHereOnTheFirstTurn(scene.company)
             : thePeopleHere(
                 scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,
-                told.alreadyShown, told.wornOut, whoStaysOnThePage(facts, scene, addressing, told.acts)
+                told.alreadyShown, told.wornOut, whoStaysOnThePage(facts, scene, addressing, told.acts),
+                scene.playerSaid ?? null
             )),
         '',
         ...whereTheyStandNow(scene.standing),

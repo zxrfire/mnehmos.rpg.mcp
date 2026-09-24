@@ -745,7 +745,8 @@ function aPersonsCard(
     addressed: boolean,
     alreadySaid: boolean,
     alreadyShown = false,
-    sitsOut = false
+    sitsOut = false,
+    nameKnown = true
 ): string {
     const colours = person.houseId
         ? person.houseName
@@ -761,6 +762,16 @@ function aPersonsCard(
     ].filter((part): part is string => part !== null).join(', ');
 
     const lines = [`- ${person.name}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
+    // A FACE IS NOT A NAME. The owner: "you don't know their name, you just see a jade beauty in
+    // red... hide the name unless the player is sure this is them, cuz otherwise, they introduce
+    // themselves". The card keeps the name, because the rulings use it; the prose never does. And
+    // what a name only heard is to the player stays off the card: "ohh you're x, i've heard of
+    // you" is the player's line to say, not the narrator's to spend.
+    if (!nameKnown) {
+        lines.push('    A FACE WITH NO NAME TO IT YET: the page never names them. Write them as they are '
+            + 'seen - age, clothes, colours, what they are at - until a ruling has them give their name.');
+        toYou = null;
+    }
     // ON THE PAGE TURN AFTER TURN, THEY SIT OUT. Played: a man whose card had him "asking after a
     // buyer by name, loudly" shouted for his buyer in four turns running, the card marked "already
     // shown" from the second, because a loud activity is the easiest overheard line in the square.
@@ -825,6 +836,18 @@ function aPersonsCard(
  * Played: the woman who raised the player was handed over with no tie at all, and answered them
  * as a stranger in the square. A sighting's sentence says only that somebody exists.
  */
+export function thePlayerIsSureItIsThem(
+    name: string,
+    awareness: readonly AwarenessRow[],
+    playerSaid: string | null = null
+): boolean {
+    // Said by the player, it is theirs to have said: right or wrong, the name is on the page.
+    if (playerSaid && playerSaid.toLowerCase().includes(name.toLowerCase())) return true;
+    return awareness.some(entry => entry.kind === 'cultivator' && entry.name === name
+        && entry.sourceKind === 'witnessed' && !!entry.statement && entry.statement !== `${name} exists.`);
+}
+
+/** What the player's own life says about somebody; see above. */
 export function whatTheyAreToYou(name: string, awareness: readonly AwarenessRow[]): string | null {
     const rows = awareness.filter(entry => entry.kind === 'cultivator' && entry.name === name);
     const lived = rows.find(entry =>
@@ -871,7 +894,8 @@ export function thePeopleHere(
     alreadySaid: ReadonlySet<string> = new Set(),
     alreadyShown: ReadonlySet<string> = new Set(),
     wornOut: ReadonlySet<string> = new Set(),
-    onlyThese: ReadonlySet<string> | null = null
+    onlyThese: ReadonlySet<string> | null = null,
+    playerSaid: string | null = null
 ): string[] {
     if (!company) return [];
     if (company.total === 0) {
@@ -889,7 +913,8 @@ export function thePeopleHere(
             'THE PEOPLE HERE',
             ...kept.map(person => aPersonsCard(
                 person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
-                alreadySaid.has(person.name), alreadyShown.has(person.name)
+                alreadySaid.has(person.name), alreadyShown.has(person.name), false,
+                thePlayerIsSureItIsThem(person.name, awareness, playerSaid)
             )),
             ...(rest > 0
                 ? ['- Everybody else here is background, and the page leaves them out: no names, no lines, no '
@@ -914,9 +939,12 @@ export function thePeopleHere(
         ...(room ? [room] : []),
         ...carded.map(person => aPersonsCard(
             person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
-            alreadySaid.has(person.name), alreadyShown.has(person.name), sitsOut(person)
+            alreadySaid.has(person.name), alreadyShown.has(person.name), sitsOut(person),
+            thePlayerIsSureItIsThem(person.name, awareness, playerSaid)
         )),
-        ...(namedOnly.length > 0 ? [`- Also here, and nameable: ${namedOnly.join(', ')}.`] : []),
+        ...(namedOnly.filter(name => thePlayerIsSureItIsThem(name, awareness, playerSaid)).length > 0
+            ? [`- Also here, and nameable: ${namedOnly.filter(name => thePlayerIsSureItIsThem(name, awareness, playerSaid)).join(', ')}.`]
+            : []),
         ...(faceless > 0
             ? [`- And ${faceless} ${faceless === 1 ? 'person' : 'people'} whose faces the player cannot place: `
                 + 'no names, never counted aloud. They may be heard as the crowd.']
