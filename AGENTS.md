@@ -552,6 +552,19 @@ That rename also cost the sentence "I swallow a healing pill", which is what a
 player actually types. **A name a player types keeps the word they type.** Both
 failures were in one rename, and it went back.
 
+And the third, which is the strictest:
+
+> **No two names share a word, even as part of a phrase.** The design owner: *"don't
+> collide words, even part of phrases."*
+
+`Five Grains Sect` was proposed for a house while `Grain Rain` was already a battlefield,
+and the owner stopped it on the one word. So had `Sweet Spring` been, beside Sweet Spring
+Island. A house, a place, a rank, an art, an item and a person each resolve by their words,
+in the parser and in the model, so a word two names share makes both of them harder to say.
+Before naming anything, check every word of the new name against every existing name in
+the catalog: houses, ranks, places, regions, arts, items, beasts, people. A match is a
+collision even when it is a different part of speech (`grain` and `Grains`).
+
 **Renaming is done across the whole tree at once**, because a name lives in the
 catalog, in the prose about it, in the ids and in the tests, and that is the only
 way it stays consistent. It has one failure mode: a replacement that fires INSIDE
