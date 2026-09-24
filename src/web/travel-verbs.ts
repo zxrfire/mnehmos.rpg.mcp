@@ -1473,7 +1473,20 @@ export const travelVerbs = {
             `${arrivedAt}, on ${chosen.conveyance.name.toLowerCase()}.`, lines
         );
         if (came) facts.required = [...(facts.required ?? []), came.line];
-        if (atTheGate.length > 0) facts.required = [...(facts.required ?? []), ...atTheGate];
+        // ── WHAT ARRIVING SOMEWHERE MAKES THE PLAYER READ VERBATIM ───────
+        //
+        // NOT THE GATE'S DESCRIPTION. Every line the gate produced used to be
+        // `required`, so a model that had already narrated the arrival had a
+        // dozen clerk lines stapled underneath it - "Outside the wall there is
+        // a town", "looks at people from rung 0 up", "The wall is a wall."
+        // Reported from a played run, and it is the LLM-mode rule: `required`
+        // carries what the player must read EXACTLY, and colour about a house
+        // you can see from the road is not that.
+        //
+        // The lines stay on `facts.lines`, so the narrator has every one of
+        // them and writes the gate from them. What a narrator may not drop is
+        // a DECISION, and arriving somewhere is not one - `way` is read where
+        // somebody walks up and asks.
         facts.structure.push(
             `priceJourney: ${chosen.conveyance.id} at power ${chosen.power ?? 'none'}, `
             + `${walkingDays} walking day(s) -> ${journey.daysOneWay}; `
@@ -1620,7 +1633,20 @@ export const travelVerbs = {
 
         lines.push(...atTheGate);
         const facts = factsForToolResult(`${arrivedAt}, in one step.`, lines);
-        if (atTheGate.length > 0) facts.required = [...(facts.required ?? []), ...atTheGate];
+        // ── WHAT ARRIVING SOMEWHERE MAKES THE PLAYER READ VERBATIM ───────
+        //
+        // NOT THE GATE'S DESCRIPTION. Every line the gate produced used to be
+        // `required`, so a model that had already narrated the arrival had a
+        // dozen clerk lines stapled underneath it - "Outside the wall there is
+        // a town", "looks at people from rung 0 up", "The wall is a wall."
+        // Reported from a played run, and it is the LLM-mode rule: `required`
+        // carries what the player must read EXACTLY, and colour about a house
+        // you can see from the road is not that.
+        //
+        // The lines stay on `facts.lines`, so the narrator has every one of
+        // them and writes the gate from them. What a narrator may not drop is
+        // a DECISION, and arriving somewhere is not one - `way` is read where
+        // somebody walks up and asks.
         facts.structure.push(
             `priceFold: fix ${fix}, range ${cost.rangeDays.toFixed(1)} day(s), `
             + `road ${walkingDays}, settling ${cost.settlingDays}, short by ${cost.landsShortBy}, `
@@ -1813,7 +1839,20 @@ export const travelVerbs = {
         lines.push(...atTheGate);
         const facts = factsForToolResult(`${route.toPlace}, through the span.`, lines);
         if (came) facts.required = [...(facts.required ?? []), came.line];
-        if (atTheGate.length > 0) facts.required = [...(facts.required ?? []), ...atTheGate];
+        // ── WHAT ARRIVING SOMEWHERE MAKES THE PLAYER READ VERBATIM ───────
+        //
+        // NOT THE GATE'S DESCRIPTION. Every line the gate produced used to be
+        // `required`, so a model that had already narrated the arrival had a
+        // dozen clerk lines stapled underneath it - "Outside the wall there is
+        // a town", "looks at people from rung 0 up", "The wall is a wall."
+        // Reported from a played run, and it is the LLM-mode rule: `required`
+        // carries what the player must read EXACTLY, and colour about a house
+        // you can see from the road is not that.
+        //
+        // The lines stay on `facts.lines`, so the narrator has every one of
+        // them and writes the gate from them. What a narrator may not drop is
+        // a DECISION, and arriving somewhere is not one - `way` is read where
+        // somebody walks up and asks.
         facts.structure.push(
             `quotePassageAtACounter: ${route.id}, fare ${quote.fareCash} cash at ${rate} per `
             + `walked day for ${quote.heads} head(s), ${quote.settlingDays} settling day(s) at `
