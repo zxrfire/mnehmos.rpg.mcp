@@ -1032,7 +1032,7 @@ export function composeNarrationUser(
         '',
         ...theRegisterBlock(scene.realmOrdinal),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
-            whatTheAddressedDidForYou(scene, addressing))
+            whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts))
     ].join('\n');
 }
 
@@ -1119,6 +1119,18 @@ function whatTheAddressedDidForYou(
     return tie.includes('raised you') ? 'raised you' : 'grew up under the same roof as you';
 }
 
+/**
+ * Whether the engine ran nothing and is asking the player which of their acts comes first.
+ *
+ * Played: "I go over to the board and read the task posted for someone of my standing" read as
+ * two acts, ran neither, and asked which came first - and the narration read the task anyway, a
+ * different invented one in each of three runs (spirit-grass, a blocked culvert, a sealed letter).
+ * Said on the last line, the same turn stopped at the step toward the board in three of three.
+ */
+function theTurnAsksWhichComesFirst(facts: EngineFacts): boolean {
+    return (facts.required ?? []).some(line => /\bWhich comes first\?/.test(line));
+}
+
 function theTurnToWrite(
     scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null },
     addressing: string | null,
@@ -1126,7 +1138,8 @@ function theTurnToWrite(
     somebodyToPlay: boolean,
     arrived: boolean,
     addressedStands: string | null = null,
-    addressedDid: string | null = null
+    addressedDid: string | null = null,
+    nothingRan = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1180,6 +1193,11 @@ function theTurnToWrite(
         + 'on a list of what the player could do. The feeling matches the stakes: flat for small '
         + 'things, all the way when a life turns - a parting that may be forever, a death, a crossing '
         + 'won or lost - grief ugly, triumph loud, and the heavens unmoved.'
+        + (nothingRan
+            ? ' NOTHING RAN THIS TURN: the player is asked which of their acts comes first. Write them '
+                + 'at the point of starting - a step toward it, a hand, a look - and stop there. Nothing '
+                + 'is read, found, bought, learned or answered.'
+            : '')
         + (scene.standing?.dead
             ? ' THE PLAYER DIED THIS TURN. Their death is the last thing that happens: write it plainly, '
                 + 'in the body, and end there, with whoever loved them breaking, not standing like stone. '
