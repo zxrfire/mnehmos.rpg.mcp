@@ -257,6 +257,29 @@ interface VerbVectorFile {
     readonly rows: readonly { readonly action: ActionName; readonly count: number }[];
 }
 
+/**
+ * The corpus this tree's source describes, as a hash of the exemplars alone.
+ *
+ * ── AND WHY IT GOES STALE IN A WORKTREE THAT CHANGED NOTHING ─────────────
+ *
+ * The vectors are ONE file, gitignored, and `.claude/worktrees/*` reach it
+ * through a junction to the main tree's `models/`. The fingerprint is taken
+ * from whichever tree is asking, off its own copy of
+ * `how-a-player-says-each-verb.ts`. So a shared artefact is keyed to per-tree
+ * source, and **the moment two trees differ in that one file, one of them is
+ * stale** - without either having touched the corpus.
+ *
+ * Measured the day it bit: a worktree pinned to an older commit read the main
+ * tree's vectors, which had been embedded from a working copy carrying
+ * in-flight exemplar edits, and threw on every routed turn. Re-embedding from
+ * the worktree would only have moved the staleness to the other tree.
+ *
+ * The fix is to bring the trees to the same commit and embed once, from the
+ * one that is ahead. What it costs to miss is not obvious from the error: the
+ * sentence tier simply does not run, every model read the danger gate refuses
+ * falls to the pattern table alone, and it reads as the TABLE being bad
+ * rather than as a layer being absent.
+ */
 export function corpusFingerprint(): string {
     const hash = createHash('sha256');
     for (const [action, phrasings] of Object.entries(HOW_A_PLAYER_SAYS_EACH_VERB)) {
