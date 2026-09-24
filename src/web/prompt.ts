@@ -1131,8 +1131,11 @@ function theTurnToWrite(
         ? 'The player has just arrived here, so open by describing the place in full: what it looks, '
             + 'sounds and smells like, what the ground and the weather are doing, who is about and what '
             + 'they are at. Several sentences.'
-        : 'They have been here since last turn, so open with a brief reminder of where they are - a '
-            + 'clause or a sentence, no more, on one detail of the place the turn before did not use.';
+        // Played: asked for "one detail of the place the turn before did not use", seven turns of ten
+        // in one inn opened "The smell of old grease hangs heavy...", because the turn before is
+        // the only one it can see. Tied to the moment, the detail changes with the moment.
+        : 'They have been here since last turn: open on the moment itself, with a brief reminder of '
+            + 'where they are inside it - a clause, no more, on a detail of the place that the moment touches.';
     const who = opening
         ? 'Write the opening as exposition only: the years of their own life first and for most of the '
             + 'turn, in the active voice, with the people who were in them; then where they are standing '
@@ -1166,7 +1169,12 @@ function theTurnToWrite(
         + 'blow in the rulings lands on the page, even on a turn the player spent looking or talking; '
         + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
         + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
-        + 'they do not do or do not say: whoever has no part in this moment is left out. Never end '
+        // Measured over eight replays of four played turns: 0.81 negated acts per 100 words
+        // without the pair, 0.42 with it (the genre runs 0.19-0.32). The same two pairs in the
+        // system prompt moved nothing (0.79).
+        + 'they do not do or do not say - NOT he does not look up, BUT he goes on eating; NOT she '
+        + 'does not even raise a hand, BUT her hands stay in her sleeves. Whoever has no part in this '
+        + 'moment is left out. Never end '
         + 'on a list of what the player could do. The feeling matches the stakes: flat for small '
         + 'things, all the way when a life turns - a parting that may be forever, a death, a crossing '
         + 'won or lost - grief ugly, triumph loud, and the heavens unmoved.'
