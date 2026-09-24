@@ -115,6 +115,18 @@ describe('the narrator is handed the people in the scene', () => {
         expect(after).toContain('already said what is on their mind');
     });
 
+    /**
+     * Once somebody has been on the page in this place, the same picture of them is spent.
+     * Played: a woman at an inn table was "her cold bowl" in seven turns of nine.
+     */
+    it('marks what somebody is at and what they are like as already shown', () => {
+        const square = aSquareWith(['Wei Ciyi'], 0);
+        expect(thePeopleHere(square, 0, [], null).join('\n')).toContain('Right now: haggling over a cracked jade slip.');
+        const after = thePeopleHere(square, 0, [], null, new Set(), new Set(['Wei Ciyi'])).join('\n');
+        expect(after).toContain('Already shown here - a new detail of it, or leave them out.');
+        expect(after).toContain('already shown here - only ever in a new act');
+    });
+
     /** The one being spoken to leads, and is marked, so the turn is theirs. */
     it('puts the person the act was put to first, and marks them', () => {
         const square = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);

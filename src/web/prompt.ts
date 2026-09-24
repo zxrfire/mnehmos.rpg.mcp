@@ -946,6 +946,8 @@ export function composeNarrationUser(
         previous?: { said: string | null; shown: string } | null;
         /** Who has already voiced what is on their mind in this place. See `thePeopleHere`. */
         alreadySaid?: ReadonlySet<string>;
+        /** Who has already been on the page in this place, so their picture is spent. */
+        alreadyShown?: ReadonlySet<string>;
     } = {}
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
@@ -964,7 +966,8 @@ export function composeNarrationUser(
             : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. The weather and the light keep to it.`]),
         '',
         ...thePeopleHere(
-            scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid
+            scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,
+            told.alreadyShown
         ),
         '',
         ...whereTheyStandNow(scene.standing),

@@ -1370,6 +1370,13 @@ export class ProviderNarrator implements Narrator {
     private saidHere = new Set<string>();
 
     /**
+     * Who has been on the page in this place at all, so the same picture of them is not handed
+     * over again as if new. Played: a woman at an inn table was "her cold bowl" in seven turns of
+     * nine.
+     */
+    private shownHere = new Set<string>();
+
+    /**
      * Phase 3. The result is stored in the log and shown to the player. It is
      * not parsed, matched, or compared against anything; there is deliberately
      * no code in this package that reads a value out of it.
@@ -1382,8 +1389,12 @@ export class ProviderNarrator implements Narrator {
             ? null
             : this.lastExchange;
         const ambientIsNews = arrived || this.lastSceneTold!.ambient !== scene.ambient;
-        if (arrived) this.saidHere = new Set();
+        if (arrived) {
+            this.saidHere = new Set();
+            this.shownHere = new Set();
+        }
         const alreadySaid: ReadonlySet<string> = new Set(this.saidHere);
+        const alreadyShown: ReadonlySet<string> = new Set(this.shownHere);
         // Recorded before the call rather than after it, so a narration that
         // times out or is discarded does not make the next turn repeat itself.
         // The model was told; whether it used it well is a separate question.
@@ -1396,7 +1407,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown }) }
                 ]
             });
 
@@ -1448,7 +1459,9 @@ export class ProviderNarrator implements Narrator {
             const whole = withRequiredLines(text, facts.required).slice(0, MAX_NARRATION_CHARS);
             this.lastExchange = { said: scene.playerSaid ?? null, shown: whole };
             for (const person of scene.company?.named ?? []) {
-                if (person.chewing && whole.includes(person.name)) this.saidHere.add(person.name);
+                if (!whole.includes(person.name)) continue;
+                this.shownHere.add(person.name);
+                if (person.chewing) this.saidHere.add(person.name);
             }
             return { text: whole, source: 'model', note: null };
         } catch (err) {

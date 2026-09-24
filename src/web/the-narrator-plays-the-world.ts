@@ -597,7 +597,8 @@ function aPersonsCard(
     yourOrdinal: number,
     toYou: string | null,
     addressed: boolean,
-    alreadySaid: boolean
+    alreadySaid: boolean,
+    alreadyShown = false
 ): string {
     const colours = person.houseId
         ? person.houseName
@@ -613,9 +614,20 @@ function aPersonsCard(
     ].filter((part): part is string => part !== null).join(', ');
 
     const lines = [`- ${person.name}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
-    if (person.at) lines.push(`    Right now: ${person.at}.`);
+    // AND ONCE THEY HAVE BEEN ON THE PAGE HERE, THE SAME PICTURE IS SPENT. Played: a woman eating
+    // at an inn table was "her cold bowl" in seven turns out of nine, and "shutting the world out"
+    // in nine, because the card handed over the same two phrases every turn.
+    if (person.at) {
+        lines.push(alreadyShown
+            ? `    Right now, still: ${person.at}. Already shown here - a new detail of it, or leave them out.`
+            : `    Right now: ${person.at}.`);
+    }
     if (person.withNames.length > 0) lines.push(`    With: ${person.withNames.join(', ')}.`);
-    if (person.like) lines.push(`    What they are like: ${person.like}.`);
+    if (person.like) {
+        lines.push(alreadyShown
+            ? `    What they are like, already shown here - only ever in a new act: ${person.like}.`
+            : `    What they are like: ${person.like}.`);
+    }
     if (person.chewing) {
         lines.push(alreadySaid
             ? '    Has already said what is on their mind in this place; they are past it now.'
@@ -700,7 +712,8 @@ export function thePeopleHere(
     yourOrdinal: number,
     awareness: readonly AwarenessRow[],
     addressing: string | null,
-    alreadySaid: ReadonlySet<string> = new Set()
+    alreadySaid: ReadonlySet<string> = new Set(),
+    alreadyShown: ReadonlySet<string> = new Set()
 ): string[] {
     if (!company) return [];
     if (company.total === 0) {
@@ -721,7 +734,7 @@ export function thePeopleHere(
         ...(room ? [room] : []),
         ...carded.map(person => aPersonsCard(
             person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
-            alreadySaid.has(person.name)
+            alreadySaid.has(person.name), alreadyShown.has(person.name)
         )),
         ...(namedOnly.length > 0 ? [`- Also here, and nameable: ${namedOnly.join(', ')}.`] : []),
         ...(faceless > 0
