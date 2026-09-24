@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
-import { howTheyReadToYou, thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
+import { howTheRoomReadsThem, howTheyReadToYou, thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
 import type { Company } from '../../src/web/facts';
 
 const FACTS = {
@@ -96,6 +96,23 @@ describe('the narrator is handed the people in the scene', () => {
         expect(howTheyReadToYou(28, 0)).toContain('far above you');
         expect(howTheyReadToYou(28, 0)).not.toMatch(/\d/);
         expect(howTheyReadToYou(3, 3)).toBe('about level with you');
+    });
+
+    /** The crowd has no card, so the room as a whole is told what is standing in it. */
+    it('tells the whole room when the player stands a realm above everybody in it', () => {
+        const square = aSquareWith(['Wei Ciyi'], 3);
+        expect(howTheRoomReadsThem(square, 28)).toMatch(/far above anybody here/);
+        expect(thePeopleHere(square, 28, [], null).join('\n')).toMatch(/nobody who can see them jeers/);
+        expect(howTheRoomReadsThem(square, 3)).toBeNull();
+    });
+
+    /** What is on somebody's mind is said once in a place; after that the card says they are past it. */
+    it('does not hand a worry back once it has been voiced here', () => {
+        const square = aSquareWith(['Wei Ciyi'], 0);
+        expect(thePeopleHere(square, 0, [], null).join('\n')).toContain('a debt he cannot meet by the new moon');
+        const after = thePeopleHere(square, 0, [], null, new Set(['Wei Ciyi'])).join('\n');
+        expect(after).not.toContain('a debt he cannot meet by the new moon');
+        expect(after).toContain('already said what is on their mind');
     });
 
     /** The one being spoken to leads, and is marked, so the turn is theirs. */

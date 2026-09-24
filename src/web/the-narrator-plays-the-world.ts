@@ -542,7 +542,8 @@ function aPersonsCard(
     person: SomebodyInTheSquare,
     yourOrdinal: number,
     toYou: string | null,
-    addressed: boolean
+    addressed: boolean,
+    alreadySaid: boolean
 ): string {
     const colours = person.houseId
         ? person.houseName
@@ -562,7 +563,9 @@ function aPersonsCard(
     if (person.withNames.length > 0) lines.push(`    With: ${person.withNames.join(', ')}.`);
     if (person.like) lines.push(`    What they are like: ${person.like}.`);
     if (person.chewing) {
-        lines.push(`    On their mind, and they can be heard on it once in a scene: ${person.chewing.state}.`);
+        lines.push(alreadySaid
+            ? '    Has already said what is on their mind in this place; they are past it now.'
+            : `    On their mind, and they can be heard on it once in a scene: ${person.chewing.state}.`);
     }
     if (person.carrying) lines.push(`    Their body shows: ${person.carrying}.`);
     if (person.tiesHere && person.tiesHere.length > 0) {
@@ -603,6 +606,27 @@ function whatTheyAreToYou(name: string, awareness: readonly AwarenessRow[]): str
 }
 
 /**
+ * How the whole room reads the player, where the gap is a realm or more either way.
+ *
+ * Cards speak for the people on them; a crowd has no card. Played: made Deity Transformation
+ * and walking up to a house's gate, the carded disciples fawned while the crowd sneered at "a
+ * dreamer" with no house on him - it had not been told what was standing in front of it.
+ */
+export function howTheRoomReadsThem(company: Company, yourOrdinal: number): string | null {
+    const ordinals = [...company.named.map(person => person.ordinal), ...company.strangers.map(row => row.ordinal)];
+    if (ordinals.length === 0) return null;
+    const yours = realmIndexOf(yourOrdinal);
+    const highest = Math.max(...ordinals.map(realmIndexOf));
+    const lowest = Math.min(...ordinals.map(realmIndexOf));
+    if (yours > highest) {
+        return '- The whole room, the crowd included, reads the player as far above anybody here: people '
+            + 'give way, voices drop, and nobody who can see them jeers.';
+    }
+    if (yours < lowest) return '- The whole room reads the player as the least of anybody here.';
+    return null;
+}
+
+/**
  * THE PEOPLE HERE, one card each, the addressed person first.
  *
  * Built from what the square already knows about everybody in it, seeded or not: what they are
@@ -613,7 +637,8 @@ export function thePeopleHere(
     company: Company | null | undefined,
     yourOrdinal: number,
     awareness: readonly AwarenessRow[],
-    addressing: string | null
+    addressing: string | null,
+    alreadySaid: ReadonlySet<string> = new Set()
 ): string[] {
     if (!company) return [];
     if (company.total === 0) {
@@ -628,10 +653,13 @@ export function thePeopleHere(
     const namedOnly = ranked.slice(PEOPLE_GIVEN_A_CARD).map(person => person.name);
     const faceless = company.total - company.named.length;
 
+    const room = howTheRoomReadsThem(company, yourOrdinal);
     return [
         'THE PEOPLE HERE',
+        ...(room ? [room] : []),
         ...carded.map(person => aPersonsCard(
-            person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing
+            person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
+            alreadySaid.has(person.name)
         )),
         ...(namedOnly.length > 0 ? [`- Also here, and nameable: ${namedOnly.join(', ')}.`] : []),
         ...(faceless > 0

@@ -904,6 +904,8 @@ export function composeNarrationUser(
         ambientIsNews?: boolean;
         /** The turn before this one, as the player saw it. See `theTurnBefore`. */
         previous?: { said: string | null; shown: string } | null;
+        /** Who has already voiced what is on their mind in this place. See `thePeopleHere`. */
+        alreadySaid?: ReadonlySet<string>;
     } = {}
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
@@ -918,7 +920,9 @@ export function composeNarrationUser(
         `The ground: ${describeAmbientPerceived(scene.ambient)}`
             + (!arrived && told.ambientIsNews === false ? ' (Unchanged since last turn.)' : ''),
         '',
-        ...thePeopleHere(scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing),
+        ...thePeopleHere(
+            scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid
+        ),
         '',
         ...whereTheyStandNow(scene.standing),
         '',

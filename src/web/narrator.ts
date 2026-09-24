@@ -1364,6 +1364,12 @@ export class ProviderNarrator implements Narrator {
     private lastExchange: { said: string | null; shown: string } | null = null;
 
     /**
+     * Who has voiced what is on their mind in this place, so it is said once. Played: a senior
+     * sister's worry about a loaned robe came back in every turn of three, word for word.
+     */
+    private saidHere = new Set<string>();
+
+    /**
      * Phase 3. The result is stored in the log and shown to the player. It is
      * not parsed, matched, or compared against anything; there is deliberately
      * no code in this package that reads a value out of it.
@@ -1376,6 +1382,8 @@ export class ProviderNarrator implements Narrator {
             ? null
             : this.lastExchange;
         const ambientIsNews = arrived || this.lastSceneTold!.ambient !== scene.ambient;
+        if (arrived) this.saidHere = new Set();
+        const alreadySaid: ReadonlySet<string> = new Set(this.saidHere);
         // Recorded before the call rather than after it, so a narration that
         // times out or is discarded does not make the next turn repeat itself.
         // The model was told; whether it used it well is a separate question.
@@ -1388,7 +1396,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid }) }
                 ]
             });
 
@@ -1439,6 +1447,9 @@ export class ProviderNarrator implements Narrator {
             // the model felt like including it.
             const whole = withRequiredLines(text, facts.required).slice(0, MAX_NARRATION_CHARS);
             this.lastExchange = { said: scene.playerSaid ?? null, shown: whole };
+            for (const person of scene.company?.named ?? []) {
+                if (person.chewing && whole.includes(person.name)) this.saidHere.add(person.name);
+            }
             return { text: whole, source: 'model', note: null };
         } catch (err) {
             return {
