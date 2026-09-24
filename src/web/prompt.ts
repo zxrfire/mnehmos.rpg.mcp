@@ -1049,7 +1049,8 @@ export function composeNarrationUser(
             aLifeTurnsOnThisTurn(scene),
             whoStaysOnThePage(facts, scene, addressing, told.acts) !== null,
             somebodyIsNewHere(scene, addressing, told.alreadyShown, whoStaysOnThePage(facts, scene, addressing, told.acts)),
-            aSittingAndNothingElse(told.acts))
+            aSittingAndNothingElse(told.acts),
+            (told.acts ?? []).some(act => A_JOURNEY.has(act)))
     ].join('\n');
 }
 
@@ -1194,6 +1195,9 @@ function somebodyIsNewHere(
  */
 const A_SITTING: ReadonlySet<string> = new Set(['cultivate', 'seclude', 'wait']);
 
+/** Acts that cover ground, so an arrival has a road behind it. */
+const A_JOURNEY: ReadonlySet<string> = new Set(['move', 'ride', 'fold', 'passage']);
+
 const A_SITTING_IS_SHORT =
     'A SITTING IS THE ACT A PLAYER REPEATS, SO IT IS SHORT: with nothing in the rulings to break it, the '
     + 'whole turn is three or four short paragraphs and under a hundred and fifty words - the days going by, '
@@ -1282,10 +1286,18 @@ function theTurnToWrite(
     aLifeTurns = false,
     oneToOne = false,
     firstSeen = false,
-    aSitting = false
+    aSitting = false,
+    travelled = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
-    const setting = arrived
+    const setting = arrived && travelled
+        // Played: eleven days to a town came back as the town first and "You have walked for eleven
+        // days" tacked on after it. Asked for the road first, two replays of two opened on it.
+        ? 'The player has just travelled here. Open on the road - a short paragraph of the days it took, '
+            + 'the weather and the ground it crossed, whoever or whatever the rulings put on it - and then '
+            + 'arrive: the place in full, what it looks, sounds and smells like, what the ground and the '
+            + 'weather are doing, who is about and what they are at.'
+        : arrived
         ? 'The player has just arrived here, so open by describing the place in full: what it looks, '
             + 'sounds and smells like, what the ground and the weather are doing, who is about and what '
             + 'they are at. Several sentences.'

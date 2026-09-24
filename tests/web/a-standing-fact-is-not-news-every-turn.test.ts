@@ -50,6 +50,15 @@ describe('the scene header, when the scene has not changed', () => {
         expect(text).not.toMatch(AS_ARRIVAL);
     });
 
+    /** Played: eleven days to a town came back as the town, then the road tacked on after it. */
+    it('puts the road before the place when the turn was a journey', () => {
+        const text = composeNarrationUser(FACTS, SCENE, { arrived: true, ambientIsNews: true, acts: ['move'] });
+        expect(text).toContain('The player has just travelled here. Open on the road');
+        expect(text).not.toMatch(AS_ARRIVAL);
+        // Arriving somewhere without covering ground - a first turn - is the place in full, as before.
+        expect(composeNarrationUser(FACTS, SCENE, { arrived: true, ambientIsNews: true })).toMatch(AS_ARRIVAL);
+    });
+
     it('is a place arrived at again when they have moved', () => {
         const text = composeNarrationUser(
             FACTS, { place: 'Sweet Spring Island', ambient: 'spirit_tide' }, { arrived: true, ambientIsNews: true }
