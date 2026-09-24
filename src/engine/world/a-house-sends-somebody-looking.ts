@@ -27,6 +27,7 @@ import {
 import { freeToTakeWork, OUT_LOOKING_FOR } from './a-disciple-takes-work-off-the-board.js';
 import { whoTheHouseHasLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { isBelowTheLid } from './layers.js';
+import { TOO_LITTLE_TO_BE_BELIEVED } from './somebody-puts-a-name-to-it.js';
 
 const DAYS_PER_YEAR = 365;
 
@@ -72,6 +73,64 @@ export function theyHaveStoppedLooking(
     personId: string
 ): boolean {
     return house.tags.includes(`${GAVE_UP_LOOKING_FOR}${personId}`);
+}
+
+/**
+ * The house, told where to look by somebody who claims to know.
+ *
+ * A house that gave up is a house that ran out of places to send people, not
+ * one that stopped caring - so a name and a place reopen it. The empty count
+ * goes with the giving-up mark, because a house starting again on new word is
+ * not three-quarters of the way to giving up again.
+ *
+ * WHOSE WORD, AND THE SAME BAR AS A NAME. A house does not take the word of a
+ * man it holds a grudge against; being unknown is not being distrusted, which
+ * is the whole of how a stranger gets heard. See `somebody-puts-a-name-to-it.ts`
+ * - the two are the same act about different facts, and a caller that has both
+ * should expect them to agree about who is believed.
+ */
+export function theHouseIsToldWhereToLook(
+    state: WorldState,
+    input: { houseId: string; personId: string; toldById: string | null; onDay: number }
+): boolean {
+    const at = state.factions.findIndex(f => f.id === input.houseId);
+    if (at < 0) return false;
+    const house = state.factions[at]!;
+    if (!theyHaveStoppedLooking(house, input.personId)) return false;
+
+    if (input.toldById !== null && !theyWouldTakeTheirWord(state, house, input.toldById)) {
+        return false;
+    }
+
+    state.factions[at] = {
+        ...house,
+        tags: house.tags.filter(
+            t => t !== `${GAVE_UP_LOOKING_FOR}${input.personId}`
+                && !t.startsWith(`${LOOKED_AND_FOUND_NOTHING}${input.personId}|`)
+        )
+    };
+    return true;
+}
+
+/**
+ * Whether anybody answering for this house would hear this person out.
+ *
+ * Read off the roll rather than off an office, because a house hears a thing
+ * through whoever is standing at the gate - and one elder holding a grudge
+ * does not stop the house listening if the rest do not.
+ */
+function theyWouldTakeTheirWord(
+    state: WorldState,
+    house: FactionRecord,
+    tellerId: string
+): boolean {
+    let heardBy = 0;
+    for (const npc of state.npcs) {
+        if (npc.factionId !== house.id || npc.status !== 'alive') continue;
+        const tie = npc.relationships.find(r => r.targetId === tellerId);
+        if (tie === undefined || tie.standing > TOO_LITTLE_TO_BE_BELIEVED) heardBy++;
+    }
+    return heardBy > 0;
 }
 
 /** The house's row after a party came back with nothing. */

@@ -8,6 +8,7 @@ import { createNpc, type NpcRecord } from '../../../src/engine/world/npc-state.j
 import { createObligation } from '../../../src/engine/social/grudges.js';
 import { withNoNameOnIt, hasANameOnIt } from '../../../src/engine/social/accounts-with-no-name.js';
 import { somebodyPutsANameToIt } from '../../../src/engine/world/somebody-puts-a-name-to-it.js';
+import { theHouseIsToldWhereToLook } from '../../../src/engine/world/a-house-sends-somebody-looking.js';
 
 const LOST = 1_000;
 const TOLD = LOST + 365 * 20;
@@ -124,5 +125,54 @@ describe('somebody puts a name to it', () => {
 
         expect(out.named).toBe(0);
         expect(hasANameOnIt(state.obligations[0]!)).toBe(false);
+    });
+});
+
+describe('a house told where to look starts again', () => {
+    it('clears the giving-up mark and the empty count', () => {
+        const state = aHouseCarryingIt();
+        state.factions.push({
+            ...state.factions[0]!,
+            id: 'house-a',
+            tags: ['gave-up-looking-for|npc-lost', 'looked-and-found-nothing|npc-lost|3']
+        });
+
+        expect(theHouseIsToldWhereToLook(state, {
+            houseId: 'house-a', personId: 'npc-lost', toldById: 'npc-stranger', onDay: TOLD
+        })).toBe(true);
+
+        const house = state.factions.find(f => f.id === 'house-a')!;
+        expect(house.tags).not.toContain('gave-up-looking-for|npc-lost');
+        // NOT THREE-QUARTERS OF THE WAY TO GIVING UP AGAIN. New word is a new
+        // search, so the count of empty parties goes with the mark.
+        expect(house.tags.some(t => t.startsWith('looked-and-found-nothing|npc-lost|'))).toBe(false);
+    });
+
+    it('does nothing where the house never gave up', () => {
+        const state = aHouseCarryingIt();
+        state.factions.push({ ...state.factions[0]!, id: 'house-a', tags: [] });
+        expect(theHouseIsToldWhereToLook(state, {
+            houseId: 'house-a', personId: 'npc-lost', toldById: null, onDay: TOLD
+        })).toBe(false);
+    });
+
+    it('will not take the word of somebody every one of them holds a grudge against', () => {
+        const state = aHouseCarryingIt();
+        state.factions.push({
+            ...state.factions[0]!, id: 'house-a', tags: ['gave-up-looking-for|npc-lost']
+        });
+        state.npcs[0] = {
+            ...state.npcs[0]!,
+            factionId: 'house-a',
+            relationships: [{
+                targetId: 'npc-liar', targetName: 'A Known Liar', kind: 'enemy',
+                standing: -0.9, note: '', sinceDay: 0, lastChangedDay: 0,
+                factIds: [], inheritedFromId: null
+            }]
+        };
+
+        expect(theHouseIsToldWhereToLook(state, {
+            houseId: 'house-a', personId: 'npc-lost', toldById: 'npc-liar', onDay: TOLD
+        })).toBe(false);
     });
 });
