@@ -194,6 +194,20 @@ describe('the narrator is handed the people in the scene', () => {
         }
     });
 
+    /**
+     * The owner: "you don't start with their names... you start with a description, like a man
+     * in xyz (that falls out of their character sheet)... he introduces himself as abc".
+     */
+    it('asks for somebody new here to be seen before they are named, and only then', () => {
+        const square = aSquareWith(['Wei Ciyi'], 0);
+        const last = (shown: string[]) => {
+            const text = composeNarrationUser(FACTS, { ...SCENE, company: square }, { alreadyShown: new Set(shown) });
+            return text.slice(text.lastIndexOf('NOW WRITE THE TURN'));
+        };
+        expect(last([])).toContain('enters as the player first sees them');
+        expect(last(['Wei Ciyi'])).not.toContain('enters as the player first sees them');
+    });
+
     /** The one being spoken to leads, and is marked, so the turn is theirs. */
     it('puts the person the act was put to first, and marks them', () => {
         const square = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);

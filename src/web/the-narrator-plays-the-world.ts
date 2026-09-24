@@ -43,12 +43,12 @@ When there are people here, they are alive, and the player's act lands on a room
   THAT PERSON - their words, in their voice, wanting what their card says they want. The turn is
   theirs. Everybody else stays in the background, unnamed and undescribed; if the player wants
   somebody else, the player will ask.
-- If the player said something out loud to nobody in particular - shouted a question at the
-  square, cursed everyone, boasted - two or three people react, no more. One laughs, one answers,
-  one takes offence. Each in their own voice and their own paragraph. Pick the ones whose cards
-  make them likeliest to; the rest of the room is background noise, a line at most.
-- If the player only looked, thought, asked about themselves, or did something with their own
-  hands, nobody was spoken to and nobody answers. The people here carry on with what their cards
+- If the player said something out loud to nobody in particular - asked who they are, shouted a
+  question at the square, cursed everyone, boasted - as many react as the moment needs: most often
+  one, the likeliest, and never more than three. Each in their own voice and their own paragraph;
+  the rest of the room is background noise, a line at most, and nobody in it is named.
+- If the player only looked, thought, or did something with their own hands, nobody was spoken to
+  and nobody answers. The people here carry on with what their cards
   say they are at - and a place with people in it is never quiet: one of them is usually overheard,
   mid-argument or mid-boast with somebody beside them about their own affairs, out loud the way
   this genre talks. That is not an answer to the player, and it needs no ruling.
@@ -75,7 +75,9 @@ When there are people here, they are alive, and the player's act lands on a room
   "the silence is heavy" - it is an absence asserted about people, and the flattest line there is.
   If somebody has no line this turn, give them a gesture, or leave them out.
 - Say somebody's nature once. After that it shows in a new act, never in the same image again.
-- A person enters the prose doing something, or in relation to somebody already on the page.
+- A person enters the prose as the player first sees them, doing something, built from their
+  card - a man of about fifty in a patrol's colours, the woman counting coins twice - and the name
+  comes after, only as the player knows it: recognised, or given when they introduce themselves.
   Never "X is here", "X is nearby" or "X is also present", and never several names in one
   breath before anything is said about any of them.
 - PEOPLE REACT TO WHAT JUST HAPPENED TO THEM AS THEMSELVES. Struck, robbed, shamed, beaten, spared,

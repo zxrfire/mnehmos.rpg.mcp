@@ -1040,7 +1040,8 @@ export function composeNarrationUser(
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
             whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true,
             aLifeTurnsOnThisTurn(scene),
-            whoStaysOnThePage(facts, scene, addressing, told.acts) !== null)
+            whoStaysOnThePage(facts, scene, addressing, told.acts) !== null,
+            somebodyIsNewHere(scene, addressing, told.alreadyShown, whoStaysOnThePage(facts, scene, addressing, told.acts)))
     ].join('\n');
 }
 
@@ -1122,9 +1123,19 @@ function whatTheAddressedDidForYou(
     addressing: string | null
 ): string | null {
     if (!addressing) return null;
-    const tie = whatTheyAreToYou(addressing, scene.awareness ?? []);
-    if (!tie || !tie.includes(' is family')) return null;
-    return tie.includes('raised you') ? 'raised you' : 'grew up under the same roof as you';
+    return whatAFamilyTieIs(whatTheyAreToYou(addressing, scene.awareness ?? []));
+}
+
+/**
+ * The household tie a To-you statement carries, read by what it says was done rather than by its
+ * wording around it, so "is family, and raised you" and "is your grandfather, and raised you" are
+ * the same tie.
+ */
+function whatAFamilyTieIs(statement: string | null): string | null {
+    if (!statement) return null;
+    if (/\braised you\b/.test(statement)) return 'raised you';
+    if (/\bunder the same roof\b/.test(statement)) return 'grew up under the same roof as you';
+    return null;
 }
 
 /**
@@ -1137,6 +1148,33 @@ function whatTheAddressedDidForYou(
  */
 function theTurnAsksWhichComesFirst(facts: EngineFacts): boolean {
     return (facts.required ?? []).some(line => /\bWhich comes first\?/.test(line));
+}
+
+/**
+ * A PERSON IS SEEN BEFORE THEY ARE NAMED. The owner, on "Mo Minbo is the first to speak": "you
+ * don't start with their names... think xianxia... you start with a description, like a man in
+ * xyz (that falls out of their character sheet)... he introduces himself as abc". Replayed on the
+ * first look round a square, the same turn came back "A man in his fifties sits at a nearby table,
+ * his movements slow and heavy... This is Yun Zhaoshan."
+ */
+const WHOEVER_IS_NEW_HERE_IS_SEEN_FIRST =
+    'Whoever is not yet on the page here enters as the player first sees them, built from their card - '
+    + 'what they wear, their age, what they are at, what their body shows - and the name comes after, only as '
+    + 'the player would know it: recognised from home, or given when they introduce themselves. NOT a name first '
+    + '("X is the first to speak") BUT a sight first ("A heavy man with mud to the knees is the first to speak. '
+    + 'It is X, from the next field over.").';
+
+/** Whether anybody on the page this turn has not been on it in this place before. */
+function somebodyIsNewHere(
+    scene: { company?: Company | null; theLifeBehindThem?: readonly string[] },
+    addressing: string | null,
+    alreadyShown: ReadonlySet<string> | undefined,
+    onlyThese: ReadonlySet<string> | null
+): boolean {
+    if ((scene.theLifeBehindThem?.length ?? 0) > 0) return false;
+    const onThePage = (scene.company?.named ?? [])
+        .filter(person => onlyThese === null || onlyThese.has(person.name) || person.name === addressing);
+    return onThePage.some(person => !(alreadyShown ?? new Set()).has(person.name));
 }
 
 /** Acts that are the player talking: to one person, or to the room. */
@@ -1178,7 +1216,7 @@ function whoStaysOnThePage(
     return new Set(named
         .filter(person => person.name === addressing
             || ruled.includes(person.name)
-            || (lifeTurns && (whatTheyAreToYou(person.name, scene.awareness ?? []) ?? '').includes(' is family')))
+            || (lifeTurns && whatAFamilyTieIs(whatTheyAreToYou(person.name, scene.awareness ?? [])) !== null))
         .map(person => person.name));
 }
 
@@ -1214,7 +1252,8 @@ function theTurnToWrite(
     nothingRan = false,
     noTimePassed = false,
     aLifeTurns = false,
-    oneToOne = false
+    oneToOne = false,
+    firstSeen = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1254,17 +1293,21 @@ function theTurnToWrite(
                 ? `${setting} Then the player's act and what it does, with the place and nobody else in it. `
                     + 'Whatever a ruling answers comes to them as what they already know or can see.'
                 : somebodyToPlay
-                    // The owner: "if i talk to the room, 2-3 people respond, the rest are background noise".
-                    ? `${setting} Then the player's act and whoever it lands on. Said aloud to the room, two `
-                        + 'or three of the likeliest answer, each in their own voice and paragraph, and the rest '
-                        + 'of the room is background noise, a line at most and never person by person; anything '
-                        + 'else, one or two people react at most, or somebody is overheard loud on their own '
-                        + 'affairs, and the rest are left out rather than listed carrying on.'
+                    // The owner: "if i talk to the room, 2-3 people respond, the rest are background noise",
+                    // then: "1 person CAN reply... for 'who am i' one person replying is good, cuz you don't
+                    // NEED multiple". Three is a ceiling, not a target.
+                    ? `${setting} Then the player's act and whoever it lands on. Said aloud with nobody named, `
+                        + 'the likeliest one answers - a second or third only when the moment truly needs more '
+                        + 'voices, NOT two people answering the same question BUT one answer and the room going '
+                        + 'on around it - each in their own voice and paragraph; the rest of the room is background '
+                        + 'noise, a line at most, unnamed and never person by person. Anything else, one or two '
+                        + 'people react at most, or somebody is overheard loud on their own affairs, and the rest '
+                        + 'are left out rather than listed carrying on.'
                     : `${setting} Then the player's act, and the crowd.`;
     // LAST, BECAUSE THIS MODEL WEIGHTS WHAT IT READ LAST. Played on gemma4:31b, both of these held
     // as rules higher up and broke anyway: "neither of them speaks" on nearly half of all turns, and
     // a run the engine ruled went nowhere narrated as an escape from town.
-    return `NOW WRITE THE TURN. ${who} Present tense, "you" for the player. Keep every ruling - a `
+    return `NOW WRITE THE TURN. ${who}${firstSeen ? ` ${WHOEVER_IS_NEW_HERE_IS_SEEN_FIRST}` : ''} Present tense, "you" for the player. Keep every ruling - a `
         + 'blow in the rulings lands on the page, even on a turn the player spent looking or talking; '
         + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
         + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
