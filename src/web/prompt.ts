@@ -1189,9 +1189,12 @@ function theTurnToWrite(
         + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
         // Measured over eight replays of four played turns: 0.81 negated acts per 100 words
         // without the pair, 0.42 with it (the genre runs 0.19-0.32). The same two pairs in the
-        // system prompt moved nothing (0.79).
+        // system prompt moved nothing (0.79). The silence pair: 4 of 9 replays of three played
+        // turns carried "he says nothing" or "the silence" without it, 0 of 9 with it, and the
+        // BUT was not copied.
         + 'they do not do or do not say - NOT he does not look up, BUT he goes on eating; NOT she '
-        + 'does not even raise a hand, BUT her hands stay in her sleeves. Whoever has no part in this '
+        + 'does not even raise a hand, BUT her hands stay in her sleeves; NOT he says nothing, BUT he '
+        + 'turns back to the road. Whoever has no part in this '
         + 'moment is left out. Never end '
         + 'on a list of what the player could do. The feeling matches the stakes: flat for small '
         + 'things, all the way when a life turns - a parting that may be forever, a death, a crossing '
