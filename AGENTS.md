@@ -509,6 +509,74 @@ out of a talisman and the parser could no longer reach it at all.
 `the-nouns-a-house-ends-with.test.ts` is the other one: the parser had ten
 hand-written lists of house words and none of them had ever heard of a guild.
 
+### One word, one meaning, everywhere
+
+The rename failure above fires inside a longer name. It is one instance of a
+general rule, and the general rule is the one to hold:
+
+> **A word carries one meaning in this system. If it is taken, take another
+> word.**
+
+Not one meaning per file, per layer or per kind - one meaning, across names,
+type nouns, categories, fields, verbs, ids and prose. The design owner, on why
+this is a rule rather than a preference: *it makes it hard to parse intent.
+words ought to not be reused. give it diff words.*
+
+**And the strong form, which is the one that actually gets broken: a word is not
+freed by being unambiguous in context.** *"EVEN IF THEY ARE USABLE IN DIFF
+CONTEXTS... to keep the game simple."* Being resolvable by the surrounding
+sentence is exactly the argument that sounds reasonable and costs the most - it
+moves the work from choosing a word once to disambiguating it at every reader,
+for ever, and every one of those readers is a place it can be got wrong. If the
+answer to "is this ambiguous?" is *only because of what is around it*, the word
+is taken. Take another.
+
+The reason is that the thing reading these words is a parser and a model, and
+both of them resolve a word by what it usually means. A word with two meanings
+does not halve in value - it stops carrying information at all, and every
+sentence containing it has to be disambiguated from the rest of the sentence.
+Bare `furnace` meant three things at once - the vessel pills are refined in, the
+vessel artifacts are forged in, and a person another cultivator draws off. The
+fix was not a cleverer resolver. It is why the words are what they are: the
+design owner, ruling it, *"that's why we have pill furnace, cauldron, cultivation
+furnace"* - the alchemy vessel is a **cauldron**, and **pill furnace** is the
+other name for that same thing; a **cultivation furnace** is a person; an
+**artifact furnace** is the forge. Bare `furnace` now names nothing, which is the
+point.
+
+**The cost is always paid by the reader that matches, and it is paid silently.**
+A collision does not error - the match SUCCEEDS and returns something plausible,
+which is why all three of these were found by playing and none by a check:
+
+| the word | matched inside | and the engine then |
+|---|---|---|
+| `pavilion` in the room-name list | Azure Cloud **Pavilion** | told somebody standing at a gate that the gate was not there: *"nobody has shown you anywhere called Azure Cloud Pavilion grounds inside Azure Cloud Pavilion grounds"* |
+| `furnace` reaching a price row | **pill** furnace | sold a player asking for a forging vessel the pill you put in it |
+| a house name inside a refused string | Azure Cloud Pavilion grounds | recorded *"Guest said they would move Azure Cloud Pavilion"* to eight hearers, about a destination it could not place |
+
+The shape is always the same: a comparison that is right for ONE question is
+reused for a second question it does not answer. `matchScore` routing somebody to
+the house they meant is correct and generous on purpose; the same score deciding
+what they ANNOUNCED is a different claim, and the generosity is what makes it
+wrong. A resolver may be loose. A reader deciding what happened may not.
+
+**What to do when two things want one word**, in the owner's words: *don't
+reuse, pick one, use synonyms for the other.* One of them keeps the word
+outright - normally whichever holds it in more places, or the one a player would
+type - and the others are renamed to a synonym the genre already uses. Not
+qualified, not disambiguated by context, renamed. That is how `furnace` was
+settled and how `dao partner` survived a challenge: the word had an owner
+already, so the proposal died rather than the word splitting.
+
+Two more things follow. **Check a new category word against the names in the tree
+before adding it** - the cost is one grep and the alternative is a defect that
+looks like the world behaving oddly. And **where two readers ask different
+questions of one string, say so where they sit**: two branches doing one job by
+different means, and the different means are the point - the loose one needs a
+guard and the exact one IS the guard. Somebody who finds them looking unalike
+unifies them onto the generous one, which is how the third instance above was
+first "fixed" and still wrote the event.
+
 ---
 
 ## How many people a house has
@@ -644,6 +712,170 @@ And when a measurement contradicts the prose, **change the prose in the same com
 say what it used to claim. `catastrophe.ts` records its own corrections in place, including
 the figures that turned out to be harness artifacts, because a number nobody can trace is
 worth less than a number with its retraction attached.
+
+---
+
+## How often, and on whom: the two questions that catch a dead mechanism
+
+A selection that never chooses anybody and a selection that always chooses the same one are
+the same defect wearing opposite clothes. Both run every year. Both write. Both look alive
+from the code. **Every static check in this repo passes on both** - the import graph, the
+partition check, the unread-export sweep, the typecheck, and the constructed-case tests that
+prove the mechanism works when handed a case by hand.
+
+Two measured instances, and the pair is what makes it teachable:
+
+- **Never.** Four yearly passes were called about 4,500 times across three worlds and acted
+  on nobody, not once. The whole catalog-wanderer layer was inert while every test of it
+  passed, because each test handed it a case that satisfied a condition the world never
+  produced.
+- **Always the same one.** A vein changed hands 120 times in 120 years. Every transfer was
+  real. All 120 were the same vein, alternating between the same two houses, with the other
+  veins never moving and the net after a century exactly where it started. The mechanism
+  feeds itself: only houses already standing at or below -0.3 may contest a vein, and every
+  contest deepens that hostility by another -0.3, so the one qualifying pair becomes more
+  qualified with each swap and owns the mechanism for ever.
+- **Only ever one, from the first tick.** A yearly pass tested a house's deference 199 times
+  and there was never a choice to make: exactly one record in the whole shipped catalog
+  carried `holdsByReputation`, so `pick(rng, eligible)` was a die with one face. Nothing
+  collapsed and nothing fed itself - **the data had a single instance of the property the
+  mechanism selects on**, and the mechanism was degenerate before the world started.
+- **Two correct rules composed in series.** `technique_lost` - the last person who can work an
+  art is gone - drew a person with `pickByMortality`, which weights by `lifeSpent²` and is
+  built to find people near the end of themselves, then rejected the draw unless nobody else
+  alive held their art. **Being the last holder of an art is structurally a high-realm
+  property** (median ordinal 36 against 10: a house's deepest manual reaches one person, its
+  low shelves reach dozens), and a high realm is an enormous lifespan. So the eligible set
+  carried **0.02% of the weight the draw uses**: P(fire) ≈ 1e-5 per draw, one firing per 1.2
+  million years, zero in a thousand measured. **Neither rule is wrong and the product is
+  zero.** The eligible set was never empty - 12-13 people, 22-23 arts - so this is not inert;
+  the pool simply never overlapped the draw.
+
+The fix for that last one is the shape of the lesson: **draw from the eligible set instead of
+testing for it afterwards.** A condition applied as a rejection after a draw is a condition
+the draw's weighting is free to contradict. Make it the pool and the contradiction cannot
+arise.
+
+The middle two are worth telling apart, because they look identical from outside and only one
+of them is about the mechanism. A selection that *collapses* is a rule that narrows itself,
+and the fix is in the rule. A selection that was *never wider than one* is a rule that is
+fine and a catalog with one row, and the fix is in the data. **Tuning the rate fixes
+neither**, and on the second it actively hides the shape: turning the weight down makes one
+house tested rarely instead of annually, which is the same mechanism firing less.
+
+So ask a new mechanism three questions, and none is enough alone:
+
+- **How often does it fire?** Zero is the obvious answer to check for and the easy one to
+  miss, because nothing errors.
+- **Across how much of the world does it spread?** A count on its own reads healthy right up
+  until you learn it is one edge. 120 looked like a busy world.
+- **How many rows in the data satisfy the condition it selects on?** Ask this of the catalog
+  and not of the run, because the run cannot tell you. The deference pass spread across two
+  parties every year - one held house and whichever house tested it - so a spread measured on
+  the mechanism read as two and was never wrong, only about the wrong half. **Count the
+  eligible set in the data before you watch the mechanism at all**; one is a finding, and it
+  is a finding no amount of running will produce.
+
+`scripts/probe-which-passes-ever-fire.probe.ts` answers the first for the yearly passes,
+and it is the reason the inert four were found at all. **Nothing in the tree answers the
+second.** No check measures whether a mechanism's choices are distributed or degenerate, and
+until one exists the only way to know is to log the choices themselves: step the span, print
+who was chosen each time, and look at the spread rather than the total.
+
+### List the writes. Do not reason from the function.
+
+Three wrong conclusions in one session came from the same move: reading a function, working
+out what it would do, and reporting that as a fact about the world.
+
+- `entryRankIndexFor` walks down from `ranks.length - 2` on realm ordinal alone, so a strong
+  outsider would be seated near the top of a house on arrival. It looked like the reason the
+  middle rungs were populated while promotion was closed. **Every live write of
+  `factionRankIndex` seats an arrival at rank 0**; the middle rungs are seeded from the
+  catalog's own members, and that function is reached only as a capped fallback.
+- `clearsUpTo` - the ruled bar an outsider must clear - is an optional parameter, and a grep
+  for it outside its own file returns nothing. The conclusion drawn was that no caller passes
+  it. **The wrapper in that same file passes it**, computed, on every public call.
+- "Promotion is effectively closed at every rung" followed from an exponential gate and a
+  world where most disciples earn no merit. **The measured wait at the sampled rungs is
+  twelve to sixteen years**, and the pyramid holds; the closure is at the head alone.
+
+Each was caught by a different reader doing the mechanical thing instead: listing every
+write of the field, reading the wrapper, running the span. **A function tells you what would
+happen if it were called with the arguments you imagined.** The writes tell you what happens.
+When the claim is about the world - who ends up where, how many, how often - the evidence is
+a list of writes or a measurement, and a reading of the code is a hypothesis that has not
+been tested yet.
+
+### A changed draw moves every number in the world, and the boundary is dateable
+
+`technique_lost` was changed from *draw a person, then reject unless they are the last holder*
+to *draw from the pool of last holders*. It fires two to seven times in five hundred years.
+**It moved everything.** Same seeds, both arms: total pressure events 2,104 → 2,007; on one
+seed `war_fought` 127 → 191 and `killing` 238 → 148.
+
+The cause is not a global reseed - each event draw gets its own stream
+(`forStream(state.seed, 'pressure-event', year, i)`). It is that `fireOne` makes up to six
+weighted attempts **on one stream** and returns on the first non-null, and the new template
+**consumes a different number of draws and sometimes returns early**. So every later attempt
+in that slot sees a different cursor, and the worlds diverge compounding.
+
+**So any world-level figure taken from a run spanning such a change is not comparable across
+it.** Neither measurement is wrong; they are from two different worlds. **The carve-out:
+seeding-time figures are comparable**, because seeding runs no pressure events - a population,
+a catalog census, who holds what at day 0. Anything read after the world has been advanced is
+not. **When a measurement matters, say which side of the change it was taken on.**
+
+### A composed draw's rate is not the product of its stages' averages
+
+The same mechanism, read twice, gives the two ways this goes wrong. `pickByMortality` weights
+by `lifeSpent²` and then rolls acceptance against `lifeSpent` - **the same quantity twice**,
+so the draw pre-selects the most-spent candidate and then faces *that* person's roll rather
+than the pool's median. Predicting from the median under-counted the real rate by three to
+four times.
+
+And the old ordering failed the opposite way: a rejection test **anti-correlated** with the
+draw's own weighting, giving a product of ~1e-5 from two rules that were each correct. **Two
+stages that correlate make a rate far above independence; two that anti-correlate make one far
+below.** Neither is visible from either stage alone.
+
+### `npm run typecheck` does not read the tests
+
+`tsconfig.json` carries `"exclude": [..., "tests"]`, so `tsc --noEmit -p tsconfig.json` never
+opens a test file. **A green typecheck after editing a test says nothing about that edit.**
+`npm run typecheck:all` uses `tsconfig.all.json`, which includes `tests/**/*.ts`, and is the
+one that covers them.
+
+This was found by running `tsc --listFiles` and looking for the edited file in the checked
+set, rather than by reading the exit code - which is the same move as listing the writes
+instead of reasoning from the function. **An exit code tells you a command succeeded. It does
+not tell you what the command looked at.**
+
+### A checker's own blind spot is found by using it on something you already know
+
+Every instrument built in one session to find a blind spot turned out to have one, and each
+was found by the next person to use it rather than by its author:
+
+- a partition check that read a patch's CONTEXT lines as well as its additions, so a
+  neighbouring call looked like it was in a patch that did not touch it;
+- a sequence checker whose commit-heading pattern required digits, so six entries labelled
+  `S1` to `S6` were parsed as part of the commit above them and a generated sweep emitted 45
+  commits with none of them in it;
+- a reconstruction check that proved the union of a file's patches equalled the working tree
+  and said nothing about the PARTITION, so every line could be present exactly once in the
+  wrong commit and the check still passed;
+- a probe that enumerates the passes it watches from a list maintained by hand, so a pass
+  nobody adds is invisible to the instrument built to find invisible passes.
+
+The conclusion is not to be more careful. It is that **a checker's own blind spot is found by
+using it on something whose answer you already know.** All four surfaced that way: the
+partition check was run against patches whose contents somebody could recite, the heading
+pattern against a document whose sections had been counted by hand, the reconstruction
+against a file with a known line count, and the stale-map check proved itself within the hour
+by refusing a map that had been correct the day before.
+
+So when an instrument is new, spend the first run on a case with a known answer rather than
+on the question you built it for. A checker that has only ever been run on unknowns has not
+been tested; it has been trusted.
 
 ---
 
