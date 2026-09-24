@@ -434,6 +434,17 @@ export const HANDING_IT_OVER =
  *
  * NOT `attack` AND NOT `coerce`. Nothing is demanded and nobody is touched.
  */
+/**
+ * Anything that would put hands on somebody, in the plainest words.
+ *
+ * Kept beside {@link AN_INSULT} because the pair is read together: a sentence
+ * that insults and does NOT contain one of these has nobody being hit in it,
+ * whatever a model made of it. Broad rather than clever - this is a veto, and
+ * a veto that misses is worse than one that is too easily satisfied.
+ */
+export const A_HAND_RAISED =
+    /\b(?:attack|attacks|attacking|attacked|strike|strikes|striking|struck|hit|hits|hitting|punch|punches|punching|punched|kick|kicks|kicking|kicked|stab|stabs|stabbing|stabbed|cut|cuts|cutting|slash|slashes|kill|kills|killing|killed|draw|draws|drawing|drew|swing|swings|swinging|swung|lunge|lunges|charge|charges|charging|charged|grab|grabs|grabbing|grabbed|seize|seizes|seizing|seized|throttle|throttles|strangle|strangles|beat|beats|beating|fight|fights|fighting|fought|sword|blade|fist|fists)\b/i;
+
 export const AN_INSULT =
     /\b(?:fuck|screw) (?:you|him|her|them|the lot of|off)\b|\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b|\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b|\btell (?:him|her|them|you|the lot of them) (?:exactly )?what i think\b|\b(?:he|she|they) (?:is|are) a (?:disgrace|fraud|coward|joke)\b/i;
 

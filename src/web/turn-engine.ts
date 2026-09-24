@@ -205,6 +205,7 @@ import {
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { anInsultLandsOnTheRoom } from '../engine/world/what-an-insult-to-a-room-costs.js';
 import { A_SENTENCE_THAT_ONLY_NEGOTIATES } from './going-back-and-forth-over-a-price.js';
+import { AN_INSULT, A_HAND_RAISED } from './verb-pattern-table.js';
 import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';
@@ -4047,6 +4048,23 @@ export class GameService {
         // be worse than the bug.
         if (action.action === 'buy' && A_SENTENCE_THAT_ONLY_NEGOTIATES.test(rawInput)) {
             action = { ...action, action: 'interact', intent: 'trade' };
+        }
+
+        // ── AND A SENTENCE THAT ONLY SWEARS DOES NOT OPEN A FIGHT ────────
+        //
+        // Same guard, worse consequence. Reported from a played run: "fuck you
+        // all" as the first turn in a square was read by the model as `attack`
+        // on the nearest man, and a fight opened. The table reads it as
+        // `insult`, which is what it is.
+        //
+        // A fight is the least reversible thing this game does, so the test is
+        // a veto rather than a preference: the sentence insults, and nobody's
+        // hands are in it. `I punch him and call him a dog` contains a raised
+        // hand and is left exactly alone.
+        if ((action.action === 'attack' || action.action === 'coerce')
+            && AN_INSULT.test(rawInput)
+            && !A_HAND_RAISED.test(rawInput)) {
+            action = { action: 'insult', ...(action.target ? { target: action.target } : {}) };
         }
 
         // THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT
