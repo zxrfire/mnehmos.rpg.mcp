@@ -281,6 +281,40 @@ export function whatTheyWouldBeHeardOnAbout(
  * The KIND and never the name, because a name is a proper noun and the
  * discovery gate is the reason this game withholds those.
  */
+/**
+ * How much of the borrowed-things population one noun has to be before it is a
+ * uniform rather than a loan.
+ *
+ * A fifth. Low enough that a house issuing robes to its outer disciples is
+ * caught, high enough that two people happening to have been lent a blade are
+ * not - and it is a share rather than a count, so it holds at any world size.
+ */
+const A_THING_TOO_MANY_PEOPLE_CARRY = 0.2;
+
+/** Below this many people carrying anything, no share means anything. */
+const ENOUGH_CARRIERS_TO_SEE_A_PATTERN = 5;
+
+/** Whether this noun is what everybody is carrying rather than what one person was lent. */
+function isStandardIssue(
+    objects: readonly { name?: string; kind: string; ownerId: string | null; possessorId: string | null }[],
+    noun: string
+): boolean {
+    const carriers = new Set<string>();
+    const carryingThis = new Set<string>();
+    for (const row of objects) {
+        if (row.possessorId === null) continue;
+        if (row.ownerId === null || row.ownerId === row.possessorId) continue;
+        carriers.add(row.possessorId);
+        if (theCommonNounFor(row) === noun) carryingThis.add(row.possessorId);
+    }
+    // AND A SHARE OF TWO IS NOT A SHARE. Below a handful of carriers every
+    // noun is most of them, so the test would call the only blade in a fixture
+    // standard issue. The floor is what makes this a reading about a world
+    // rather than about whoever happens to be in the list.
+    if (carriers.size < ENOUGH_CARRIERS_TO_SEE_A_PATTERN) return false;
+    return carryingThis.size / carriers.size > A_THING_TOO_MANY_PEOPLE_CARRY;
+}
+
 export function whatTheyCarryForSomebodyElse(
     objects: readonly {
         name?: string; kind: string; ownerId: string | null; possessorId: string | null;
@@ -299,12 +333,19 @@ export function whatTheyCarryForSomebodyElse(
         // same. What this is about is the third case, which is the only one
         // with terms attached to it.
         if (object.ownerId === null || object.ownerId === personId) continue;
-        // AND A HOUSE TOKEN IS NOT A LOAN. Every member of every house carries
-        // one, so a reading that counted it would fire on ~29 of 415 people in
-        // a seeded world and always say the same uninteresting thing. Measured
-        // before the lending pass existed, that was the ONLY thing anybody in
-        // this world carried for somebody else.
-        if (object.kind === 'token') continue;
+        // AND STANDARD ISSUE IS NOT A LOAN.
+        //
+        // This used to name the house token alone - every member carries one,
+        // so counting it said the same uninteresting thing about ~29 of 415
+        // people. The robe then did exactly the same thing a lending pass
+        // later: three unrelated low-rank disciples in two houses all had *a
+        // robe in their hands, owned by their house, on loan* on their mind.
+        //
+        // So the rule is the one the token exclusion was a special case of,
+        // and it needs no list: a thing MOST of the people who carry anything
+        // are carrying is a uniform, and a uniform is not something on
+        // anybody's mind. The furnace a house lent to one disciple still is.
+        if (isStandardIssue(objects, theCommonNounFor(object))) continue;
         return {
             noun: theCommonNounFor(object),
             from: houseIds === null || houseIds.has(object.ownerId) ? 'a house' : 'a person'
