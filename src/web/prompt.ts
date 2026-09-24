@@ -998,10 +998,10 @@ export function composeNarrationUser(
             ]
             : []),
         '',
-        'Where a ruling answers what the player asked, the answer came: never write the question',
-        'hanging in the air. Where no ruling answers it, nobody in the scene supplies an answer: people',
-        'talk around it or about their own affairs, and the prose never remarks on what went unsaid. Where a ruling says',
-        'somebody refused, it is closed - no question left in their mouth inviting another try.',
+        'Where a ruling answers what the player asked, somebody in the scene gives that answer. Where no',
+        'ruling answers it, nobody supplies one: people talk around it or about their own affairs, and',
+        'the prose moves on to what they do. Where a ruling says somebody refused, it is closed, and',
+        'they turn to something else.',
         '',
         ...theRegisterBlock(scene.realmOrdinal),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing))
