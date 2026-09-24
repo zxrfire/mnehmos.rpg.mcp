@@ -249,6 +249,18 @@ describe('whoever raised the player is played as the one who did, on the last li
         expect(last).toContain('When you are leaving, hurt or dying');
     });
 
+    /**
+     * Said on every turn, "flat for small things" took the loud lines out of ordinary talk. The
+     * all-the-way line is for a turn a life turns on: a crossing, a death, whoever raised you.
+     */
+    it('asks for the feeling to go all the way only on a turn a life turns on', () => {
+        const at = (extra: object) => lastLine(composeNarrationUser(facts, { ...scene('He Xuxue is from home. Knowing them is not the same as being owed anything by them.'), ...extra } as never));
+        expect(at({})).not.toContain('A life turns on this turn');
+        expect(at({ filed: { breakthroughAttempted: true } })).toContain('A life turns on this turn');
+        expect(lastLine(composeNarrationUser(facts, scene('He Xuxue is family, and raised you.'))))
+            .toContain('A life turns on this turn');
+    });
+
     it('says it of a sibling too, and of nobody merely from home', () => {
         expect(lastLine(composeNarrationUser(facts, scene('He Xuxue is family, and grew up under the same roof as you.'))))
             .toContain('He Xuxue grew up under the same roof as you.');

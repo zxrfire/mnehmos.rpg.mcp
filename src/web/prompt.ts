@@ -937,6 +937,8 @@ export function composeNarrationUser(
         heldByTheWorldAndNotByThem?: readonly string[];
         /** What they are and hold, whatever this turn did. See `whereTheyStandNow`. */
         standing?: WhereTheyStandNow | null;
+        /** What the engine filed: whether a crossing was attempted or won, and a death. */
+        filed?: { breakthroughAttempted?: boolean; ranksGained?: number; died?: boolean } | null;
     },
     /**
      * Whether this is the first turn in this place, and whether the air is new since the last one.
@@ -1034,7 +1036,8 @@ export function composeNarrationUser(
         '',
         ...theRegisterBlock(scene.realmOrdinal),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
-            whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true)
+            whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true,
+            aLifeTurnsOnThisTurn(scene, whatTheAddressedDidForYou(scene, addressing)))
     ].join('\n');
 }
 
@@ -1133,6 +1136,27 @@ function theTurnAsksWhichComesFirst(facts: EngineFacts): boolean {
     return (facts.required ?? []).some(line => /\bWhich comes first\?/.test(line));
 }
 
+/**
+ * Whether the engine says a life turned this turn: a crossing attempted or won, a death, or the
+ * player speaking to whoever raised them.
+ *
+ * Played: said on every turn, "the feeling matches the stakes: flat for small things" took the
+ * loud lines out of ordinary talk - 0 of 32 spoken paragraphs in eight replays of four talk turns
+ * carried a "!", against 4 of 32 without it and 31-52% in the genre. A haggle is loud in this
+ * genre without being deep. Said only where a life turns, the failed crossing still broke the man
+ * who raised the player ("You fool! You absolute fool!") in two runs of two.
+ */
+function aLifeTurnsOnThisTurn(
+    scene: { standing?: WhereTheyStandNow | null; filed?: { breakthroughAttempted?: boolean; ranksGained?: number; died?: boolean } | null },
+    addressedDid: string | null
+): boolean {
+    return scene.standing?.dead === true
+        || scene.filed?.died === true
+        || scene.filed?.breakthroughAttempted === true
+        || (scene.filed?.ranksGained ?? 0) > 0
+        || addressedDid !== null;
+}
+
 function theTurnToWrite(
     scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null },
     addressing: string | null,
@@ -1142,7 +1166,8 @@ function theTurnToWrite(
     addressedStands: string | null = null,
     addressedDid: string | null = null,
     nothingRan = false,
-    noTimePassed = false
+    noTimePassed = false,
+    aLifeTurns = false
 ): string {
     const opening = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0;
     const setting = arrived
@@ -1196,9 +1221,11 @@ function theTurnToWrite(
         + 'does not even raise a hand, BUT her hands stay in her sleeves; NOT he says nothing, BUT he '
         + 'turns back to the road. Whoever has no part in this '
         + 'moment is left out. Never end '
-        + 'on a list of what the player could do. The feeling matches the stakes: flat for small '
-        + 'things, all the way when a life turns - a parting that may be forever, a death, a crossing '
-        + 'won or lost - grief ugly, triumph loud, and the heavens unmoved.'
+        + 'on a list of what the player could do.'
+        + (aLifeTurns
+            ? ' A life turns on this turn, so the feeling goes all the way - grief ugly, triumph loud, '
+                + 'and the heavens unmoved.'
+            : '')
         + (nothingRan
             ? ' NOTHING RAN THIS TURN: the player is asked which of their acts comes first. Write them '
                 + 'at the point of starting - a step toward it, a hand, a look - and stop there. Nothing '
