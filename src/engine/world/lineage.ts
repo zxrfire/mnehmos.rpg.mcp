@@ -153,6 +153,36 @@ export function childrenOf(
         .sort((a, b) => a.onDay - b.onDay || (a.childId < b.childId ? -1 : 1));
 }
 
+/**
+ * THE KINDS OF EDGE THAT STAND ABOVE SOMEBODY, RATHER THAN BESIDE THEM.
+ *
+ * An edge has only `parentId` and `childId` to put a pair in, so every relation
+ * borrows those two fields - and two of them are not generational at all. A
+ * `clan` edge is a MARRIAGE and a `sworn_sibling` edge is an oath between
+ * equals: both people stand beside each other, and a walk that does not say so
+ * steps sideways into a spouse and counts them as a generation.
+ *
+ * The design owner's ruling on which side each kind falls: a line of teaching IS
+ * a lineage in this world - a disciple stands in a succession, inherits an art
+ * and answers for the person who taught them - so `descendant`, `successor` and
+ * `disciple` all stand above. A spouse is not an ancestor of anybody, and
+ * neither is a sworn sibling.
+ *
+ * ADD A NEW EDGE KIND AND DECIDE HERE which side it falls on. This list is
+ * where the next person will look, and the question to ask is not "is it
+ * family" but "does this person stand ABOVE the other".
+ */
+export const STANDS_ABOVE_YOU: readonly LineageRelation[] =
+    ['descendant', 'successor', 'disciple'] as const;
+
+/**
+ * Every edge this person is the `childId` end of, WHATEVER THE RELATION.
+ *
+ * UNFILTERED ON PURPOSE AND LOADED BECAUSE OF IT. A `clan` edge is a marriage
+ * written through the same two fields, so this answers "who are this person's
+ * parents" with their SPOUSE among them. Nothing in `src/` calls it today; a
+ * caller that wants ancestry must filter by {@link STANDS_ABOVE_YOU}.
+ */
 export function parentsOf(lineage: LineageRecord, childId: string): LineageEdge[] {
     return lineage.edges
         .filter(e => e.childId === childId)
@@ -164,6 +194,12 @@ export function parentsOf(lineage: LineageRecord, childId: string): LineageEdge[
  *
  * Depth-capped because a two-hundred-year skip can produce a great many
  * descendants and the caller almost always wants the next generation or two.
+ *
+ * UNFILTERED, AND THE SAME LOADED GUN AS {@link parentsOf}: this walks every
+ * relation, so a marriage is stepped through as though it were a generation and
+ * a spouse arrives as a descendant at depth 1. It reports each row's relation,
+ * so a caller CAN filter - and a caller that means ancestry should filter by
+ * {@link STANDS_ABOVE_YOU} rather than reading the whole walk.
  */
 export function descendantsOf(
     lineage: LineageRecord,
@@ -192,8 +228,10 @@ export function descendantsOf(
 export function ancestorsOf(
     lineage: LineageRecord,
     descendantId: string,
-    maxDepth = 8
+    maxDepth = 8,
+    relations: readonly LineageRelation[] = STANDS_ABOVE_YOU
 ): { id: string; depth: number; relation: LineageRelation }[] {
+    const wanted = new Set(relations);
     const out: { id: string; depth: number; relation: LineageRelation }[] = [];
     const seen = new Set<string>([descendantId]);
     let frontier = [descendantId];
@@ -202,6 +240,7 @@ export function ancestorsOf(
         const next: string[] = [];
         for (const id of frontier) {
             for (const edge of parentsOf(lineage, id)) {
+                if (!wanted.has(edge.relation)) continue;
                 if (seen.has(edge.parentId)) continue;
                 seen.add(edge.parentId);
                 out.push({ id: edge.parentId, depth, relation: edge.relation });
@@ -213,7 +252,16 @@ export function ancestorsOf(
     return out;
 }
 
-/** Generations between the founder and this member. Zero for the founder. */
+/**
+ * Generations between the founder and this member. Zero for the founder.
+ *
+ * COUNTS ONLY WHAT STANDS ABOVE, and it did not always: this walks
+ * `ancestorsOf`, which now filters by {@link STANDS_ABOVE_YOU}, so a marriage
+ * is no longer a generation. A depth measured before 23 September may be larger
+ * than the same house's depth now, and the difference is spouses that were
+ * being counted as forebears - which made a house's depth depend on who married
+ * whom. The number moved because the question was wrong, not the world.
+ */
 export function generationOf(lineage: LineageRecord, memberId: string): number {
     if (memberId === lineage.founderId) return 0;
     const line = ancestorsOf(lineage, memberId).find(a => a.id === lineage.founderId);
@@ -254,6 +302,24 @@ export interface HeirRef {
  *
  * The array is handed straight to the social layer's `inheritLedgerOnDeath`,
  * which is why the relation strings are theirs and not a local vocabulary.
+ *
+ * ── IT WALKS DOWNWARD ONLY, AND THAT IS THE ANSWER RATHER THAN A GAP ─────
+ *
+ * This reads edges where the deceased is at the `parentId` end. So a person who
+ * died as somebody's CHILD, with no children, disciples or successor of their
+ * own, has no heir - and that is right: an estate descends. Your children
+ * inherit from you; you do not inherit from your parents. Your disciple
+ * inherits from you; you do not inherit from your master.
+ *
+ * `clan` is the exception and it is not an inconsistency: a marriage has no
+ * downward, so it is written from BOTH ends and whichever spouse dies first
+ * finds the other. Measured on one world at 200 years: 728 `descendant` edges,
+ * none reciprocated; 164 `clan` edges, 82 reciprocated - every pair, both ways.
+ *
+ * Measured, so nobody investigates it twice: 282 deaths in that world found no
+ * heir and every one of them was somebody whose only heir-kind edge was at the
+ * child end. They are not missing edges. They are people who died as somebody's
+ * child.
  */
 export function heirsOf(
     lineage: LineageRecord,

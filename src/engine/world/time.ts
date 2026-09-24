@@ -788,24 +788,53 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
                 state.npcs[at] = inheritGoals(state.npcs[at], goals, deceased.id, onDay);
                 inherited = state.npcs[at].goals.slice(before);
             }
-            // And the accounts, in BOTH directions.
-            for (const account of deceased.relationships) {
-                if (account.standing > GRUDGE_STANDING && account.standing < FRIENDSHIP_STANDING) {
-                    continue;
+            // ── AND THE ACCOUNTS, IN BOTH DIRECTIONS, DEALT ROUND ────────
+            //
+            // Every account went to `primary`, which is `heirs[0]` - a constant
+            // index and not a choice, so nothing in a run could spread it and
+            // one person collected a dead master's whole list. Measured over 200
+            // years on two worlds: 293 inherited ties on 71 living people, 37 of
+            // them holding four or more, in a world where 92% carried nothing.
+            // A few collectors rather than a texture.
+            //
+            // THE ORDER IS MEANINGFUL AND IS KEPT. `heirsOf` walks a priority -
+            // descendant, successor, disciple, clan, sworn sibling - and within
+            // each, oldest edge first. So the senior claim takes the weightiest
+            // account and the rest are dealt round in that order: a master's
+            // unfinished business splitting among the disciples, which is the
+            // genre's answer as well as the distribution's.
+            //
+            // THE DAMPER SURVIVES AND MATTERS MORE NOW. An heir who already
+            // knows the target inherits nothing about them, and with one taker
+            // that swallowed the account entirely. Dealt round, an account one
+            // heir would have swallowed can land cleanly on the next - so this
+            // may move the numbers further than the dealing does.
+            const takers = heirs
+                .map(heir => indexById(state.npcs, heir.id))
+                .filter(index => index >= 0);
+            const dealt = deceased.relationships
+                .filter(account => account.standing <= GRUDGE_STANDING
+                    || account.standing >= FRIENDSHIP_STANDING)
+                .sort((a, b) => a.standing - b.standing);
+            for (const [n, account] of dealt.entries()) {
+                for (let step = 0; step < takers.length; step++) {
+                    const to = takers[(n + step) % takers.length]!;
+                    const heir = state.npcs[to]!;
+                    if (account.targetId === heir.id) continue;
+                    if (heir.relationships.some(r => r.targetId === account.targetId)) continue;
+                    state.npcs[to] = upsertRelationship(heir, {
+                        targetId: account.targetId,
+                        targetName: account.targetName,
+                        kind: inheritedKind(account.kind, account.standing),
+                        // It thins by a generation, and it does not go away.
+                        standing: account.standing * 0.85,
+                        note: account.note,
+                        factIds: account.factIds,
+                        inheritedFromId: deceased.id
+                    }, onDay);
+                    andTheOtherEnd(state.npcs, state.npcs[to], { targetId: account.targetId, kind: inheritedKind(account.kind, account.standing), standing: 0 }, onDay);
+                    break;
                 }
-                if (account.targetId === primary.id) continue;
-                if (state.npcs[at].relationships.some(r => r.targetId === account.targetId)) continue;
-                state.npcs[at] = upsertRelationship(state.npcs[at], {
-                    targetId: account.targetId,
-                    targetName: account.targetName,
-                    kind: inheritedKind(account.kind, account.standing),
-                    // It thins by a generation, and it does not go away.
-                    standing: account.standing * 0.85,
-                    note: account.note,
-                    factIds: account.factIds,
-                    inheritedFromId: deceased.id
-                }, onDay);
-                andTheOtherEnd(state.npcs, state.npcs[at], { targetId: account.targetId, kind: inheritedKind(account.kind, account.standing), standing: 0 }, onDay);
             }
         }
     }

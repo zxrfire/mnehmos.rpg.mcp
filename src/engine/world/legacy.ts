@@ -54,6 +54,7 @@ import {
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { storeMemory } from './memory.js';
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
 import { indexById, type WorldState } from './world-state.js';
@@ -334,6 +335,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
                         ? 'Was there when it cost the sect something.'
                         : 'Remembers the name, barely.'
                 }, onDay);
+                andTheOtherEnd(state.npcs, survivor, { targetId: deceased.id, kind: 'acquaintance', standing: 0 }, onDay);
                 storeMemory(state.memories, {
                     ownerId: survivor.id,
                     kind: 'loss',
@@ -366,7 +368,15 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
             state.npcs[heirAt] = inheritGoals(state.npcs[heirAt], goals, deceased.id, onDay);
             goalsPassed = state.npcs[heirAt].goals.length - before;
 
-            // And what they were owed, and owed for.
+            // AND WHAT THEY WERE OWED, AND OWED FOR.
+            //
+            // ONE HEIR HERE, ON PURPOSE. This is `enshrineRun` - the PLAYER's
+            // run ending and their own estate settled once - and a player has
+            // one line to leave it to. The dealing that spreads a dead NPC's
+            // accounts across their heirs lives in `settleNpcDeath`, which is a
+            // different event that happens to look like this one: a world full
+            // of people dying, where one collector is a defect. Both are live
+            // and neither is a copy of the other.
             for (const grudge of deceased.relationships.filter(r => r.standing <= -0.4)) {
                 state.npcs[heirAt] = upsertRelationship(state.npcs[heirAt], {
                     targetId: grudge.targetId,
@@ -377,6 +387,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
                     factIds: grudge.factIds,
                     inheritedFromId: deceased.id
                 }, onDay);
+                andTheOtherEnd(state.npcs, state.npcs[heirAt], { targetId: grudge.targetId, kind: grudge.kind, standing: grudge.standing }, onDay);
             }
 
             if (goalsPassed > 0) {

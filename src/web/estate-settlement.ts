@@ -52,6 +52,9 @@
  * this path - it moves what somebody was trying to do, never what they owned.
  */
 
+import { theirSlipsBreak } from '../engine/world/a-communication-talisman-carries-word-home.js';
+import { theirJadeBreaks } from '../engine/world/a-pair-of-communication-jade.js';
+import { isACommunicationTalismanInAPouch } from './sending-word-on-a-communication-talisman.js';
 import type Database from 'better-sqlite3';
 
 import type { Cultivator } from '../schema/cultivation.js';
@@ -144,7 +147,9 @@ function trackedOnTheBody(
 function countedOnTheBody(db: Database.Database, cultivator: Cultivator): CountedGoods {
     return {
         spiritStones: Math.max(0, Math.round(cultivator.spiritStones)),
-        stock: listPouch(db, cultivator.id).map(entry => ({
+        // A communication talisman is keyed to its holder and breaks with their
+        // lamp, so none is on the body for anybody to take. See `theirSlipsBreak`.
+        stock: listPouch(db, cultivator.id).filter(entry => !isACommunicationTalismanInAPouch(entry.itemId)).map(entry => ({
             itemId: entry.itemId,
             kind: entry.kind as 'pill' | 'herb',
             quantity: entry.quantity
@@ -278,6 +283,10 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
     const worldDay = world ? Math.floor(world.currentDay) : null;
 
     const counted = countedOnTheBody(db, cultivator);
+    if (world) {
+        theirSlipsBreak(world.objects, cultivator.id);
+        theirJadeBreaks(world.objects, cultivator.id, Math.floor(world.currentDay));
+    }
     const found = world
         ? trackedOnTheBody(db, world, dead)
         : { tracked: [] as TrackedThing[], unaccounted: ['no world is running, so no object row was read'] };

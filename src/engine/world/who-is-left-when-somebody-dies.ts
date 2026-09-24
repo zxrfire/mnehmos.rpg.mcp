@@ -28,7 +28,10 @@ const WHO_CARRIES_IT: Readonly<Partial<Record<RelationshipKind, InheritanceRelat
         parent: 'clan',
         spouse: 'clan',
         kin: 'clan',
-        disciple: 'disciple'
+        // The teaching line, from both ends: a disciple carries a dead master
+        // as a master carries a dead disciple.
+        disciple: 'disciple',
+        master: 'disciple'
     });
 
 /**
