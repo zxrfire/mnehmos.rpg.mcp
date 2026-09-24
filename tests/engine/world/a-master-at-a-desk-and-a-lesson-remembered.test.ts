@@ -120,7 +120,7 @@ describe('a master at a desk', () => {
 });
 
 describe('attention given is remembered on the tie', () => {
-    it('stamps both ends when the set has run its term, and nobody without a tie', () => {
+    it('stamps both ends when the lesson is given, and nobody without a tie', () => {
         const state = createWorld({ seed: 'remembered', presentYear: 1000, regionCount: 1 });
         const here = state.locations[0]!.id;
         const day = state.currentDay;
@@ -137,11 +137,17 @@ describe('attention given is remembered on the tie', () => {
 
         const m = state.npcs.find(p => p.id === 'master')!;
         const d = state.npcs.find(p => p.id === 'disciple')!;
-        expect(m.relationships.find(r => r.targetId === 'disciple')!.lastAttentionOnDay).toBe(ended);
-        expect(d.relationships.find(r => r.targetId === 'master')!.lastAttentionOnDay).toBe(ended);
+        // STAMPED WHEN IT IS GIVEN. The set that ended yesterday stamps its own
+        // end, and then this year's pass sets the master in front of the same
+        // disciple again and stamps today - which is the point: the world moves
+        // a master's row on for its own reasons, and reading attention only off
+        // a set that ran to term lost every year of teaching that got
+        // interrupted.
+        expect(m.relationships.find(r => r.targetId === 'disciple')!.lastAttentionOnDay).toBe(day);
+        expect(d.relationships.find(r => r.targetId === 'master')!.lastAttentionOnDay).toBe(day);
         expect(state.npcs.find(p => p.id === 'stranger')!.relationships).toEqual([]);
         expect(gaveAttentionRecently(d.relationships[0], day)).toBe(true);
-        expect(gaveAttentionRecently(d.relationships[0], ended + ATTENTION_IS_RECENT_FOR_DAYS + 1)).toBe(false);
+        expect(gaveAttentionRecently(d.relationships[0], day + ATTENTION_IS_RECENT_FOR_DAYS + 1)).toBe(false);
     });
 
     it('survives a save', () => {

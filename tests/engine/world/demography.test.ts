@@ -103,7 +103,31 @@ describe('a newborn is born somewhere somebody can stand', () => {
 
     it('keeps settlements populated across a long span', async () => {
         const { before, after } = await advancedWorld(80);
-        expect(after.settlements).toBeGreaterThanOrEqual(before.settlements);
+        // ── RE-PINNED ON A RULING, 23 SEPTEMBER, NOT TUNED TO A RUN ──────
+        //
+        // This demanded that settlements hold at least as many people at eighty
+        // years as at seeding. Measured after the doors work: 363 at seeding and
+        // 350 at eighty years. The whole distribution, because the number only
+        // makes sense beside the others - 52 fewer alive, 58 drained out of the
+        // region containers, 71 fewer standing on a seat, and about 90 alive in
+        // none of those buckets at all, BECAUSE INSIDE A COMPOUND YOU STAND IN A
+        // ROOM.
+        //
+        // The cause, named rather than listed: houses now take in people they
+        // used to refuse, and a recruit entered at a seat moves into the
+        // compound. So people who stood in a village stand inside a sect, and
+        // the village count falls by exactly that much.
+        //
+        // The design owner, asked whether that is the world working or the world
+        // thinning: *"i don't really care about 13 people"* - *"that's fine."*
+        //
+        // THE FLOOR SITS BELOW THE MEASUREMENT AND NOT AT IT. What this guards
+        // is the defect it was written for - settlements draining until nobody
+        // is in them - and a bound at today's figure would go red on any honest
+        // movement. 85% of the seeded count is 309 against a measured 350, which
+        // still fails long before a village empties. Expressed as a share rather
+        // than a literal so it survives a change in world population.
+        expect(after.settlements).toBeGreaterThanOrEqual(Math.floor(before.settlements * 0.85));
         // And the world is not simply growing: the headcount is held to target
         // by the same demography, so this is redistribution, not inflation.
         expect(after.alive).toBeLessThanOrEqual(before.alive * 1.1);

@@ -92,17 +92,41 @@ const held = (over: Partial<HeldBack> = {}): HeldBack => ({
     houseId: 'house-a', atRank: 3, sinceDay: DAY, realmsPastTheBar: 0, reason: 'no_seat', ...over
 });
 
-describe('the rung under a head is waiting on a succession, not held back', () => {
-    it('writes nobody held back for the head\'s chair, and does for any rung below it', () => {
+/**
+ * RE-PINNED 2026-09-23, NARROWED TO THE TOP RUNG. This asserted that the rung
+ * UNDER the head is not held back either, which generalised the defect rather
+ * than stating it.
+ *
+ * The defect: the Hollow Court's four Seats stand at `rankIndex 3` of a FOUR
+ * rung ladder - the top rung - and `seatsAtRank` gives that rung one chair, so
+ * three of the four were stamped held back `no_seat` from the first year and all
+ * three walked out within ninety years. Somebody on the top rung has nothing
+ * above them, which is what the exemption is for, and the narrowed rule covers
+ * that case exactly.
+ *
+ * What the old rule ALSO exempted was the rung below the top, and that band is
+ * `whoSplitsAHouse`'s whole population: senior, below the top, carrying the tag.
+ * Exempting it left the splinter pass with nobody - a rule written today made
+ * another rule written today unreachable, and the evidence quoted for the second
+ * one working (2.4 foundings a century, ten live splinters at a thousand years,
+ * measured 2026-09-22) predated the first.
+ */
+describe('somebody on the top rung is waiting on a succession, not held back', () => {
+    it('exempts the top rung and holds back the rung under it, which is where splinters come from', () => {
         const state = aHouse();
+        person(state, 'head', 5, 44);
         person(state, 'second', 4, 40);
         person(state, 'elder', 3, 36);
         const blocked: Blocked[] = [
+            { npcId: 'head', factionId: 'house-a', atRank: 5, reason: 'no_seat', bar: 40 },
             { npcId: 'second', factionId: 'house-a', atRank: 4, reason: 'no_seat', bar: 36 },
             { npcId: 'elder', factionId: 'house-a', atRank: 3, reason: 'no_seat', bar: 33 }
         ];
         noteWhoIsHeldBack(state, blocked, DAY, isTheWorldsToMove);
-        expect(whereTheyAreHeldBack(state.npcs.find(n => n.id === 'second')!)).toBeNull();
+        // Nothing above them: a succession, not a denial.
+        expect(whereTheyAreHeldBack(state.npcs.find(n => n.id === 'head')!)).toBeNull();
+        // And everybody below it is held back, including the rung that splits.
+        expect(whereTheyAreHeldBack(state.npcs.find(n => n.id === 'second')!)).not.toBeNull();
         expect(whereTheyAreHeldBack(state.npcs.find(n => n.id === 'elder')!)).not.toBeNull();
     });
 });

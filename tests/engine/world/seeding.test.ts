@@ -162,6 +162,18 @@ describe('seeding: a world that is already running', () => {
         for (const lineage of state.lineages) {
             expect(lineage.edges.length).toBeGreaterThan(0);
             for (const edge of lineage.edges) {
+                // ONLY THE GENERATIONAL EDGES. A `clan` edge is a MARRIAGE,
+                // written through the same two fields because `addLineageEdge`
+                // has only `parentId` and `childId` to put a pair in, and there
+                // is no reason for one spouse to have been born after the other.
+                //
+                // Measured on this seed: 4 of 101 edges failed this and every
+                // one was `relation: 'clan'` with a `spouse` tie behind it. Not
+                // one descendant edge ran backwards. The rule was sound and the
+                // scope was not, and it only went red when the marriages the
+                // world opens holding happened to pair the older of two people
+                // at the `childId` end.
+                if (edge.relation !== 'descendant') continue;
                 const parent = state.npcs.find(n => n.id === edge.parentId)!;
                 const child = state.npcs.find(n => n.id === edge.childId)!;
                 expect(child.identity.bornOnDay).toBeGreaterThan(parent.identity.bornOnDay);

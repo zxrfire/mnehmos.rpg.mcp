@@ -43,7 +43,14 @@ function livingIn(state: WorldState): NpcRecord[] {
     return state.npcs.filter(npc => isActing(npc.status));
 }
 
-/** Households as the tie graph actually holds them, not as the pass counted them. */
+/**
+ * Households as the tie graph actually holds them, not as the pass counted them.
+ *
+ * The authored line at Old River is left out: the catalog states ten generations
+ * of one family and the seeder now writes that ladder as kinship, so it is one
+ * blood component of a dozen-odd people by construction. It is not a household
+ * this pass produced, and counting it here measured the catalog.
+ */
 function householdsOf(state: WorldState): number[] {
     const living = livingIn(state);
     const at = new Map(state.npcs.map(npc => [npc.id, npc]));
@@ -53,17 +60,18 @@ function householdsOf(state: WorldState): number[] {
         if (seen.has(npc.id)) continue;
         if (!npc.relationships.some(r => BLOOD.has(r.kind))) continue;
         const stack = [npc.id];
-        let size = 0;
+        const ids: string[] = [];
         while (stack.length > 0) {
             const id = stack.pop()!;
             if (seen.has(id)) continue;
             seen.add(id);
-            size++;
+            ids.push(id);
             for (const tie of at.get(id)?.relationships ?? []) {
                 if (BLOOD.has(tie.kind) && !seen.has(tie.targetId)) stack.push(tie.targetId);
             }
         }
-        sizes.push(size);
+        if (ids.some(id => id.startsWith('npc-line-'))) continue;
+        sizes.push(ids.length);
     }
     return sizes;
 }
@@ -143,11 +151,14 @@ describe('the families a world opens holding', () => {
      */
     it('never eats a tie it did not write', async () => {
         const state = await world('fam-c');
+        // Keyed by the pair AND the kind: rows are keyed that way now, so two
+        // people can hold an `ally` row and a `master` row at once and a
+        // pair-only key would compare one against the other.
         const before = new Map<string, { kind: string; note: string }>();
         for (const npc of state.npcs) {
             for (const tie of npc.relationships) {
                 if (tie.note === 'Was the other candidate.' || tie.note === 'Serves under.') {
-                    before.set(`${npc.id}->${tie.targetId}`, { kind: tie.kind, note: tie.note });
+                    before.set(`${npc.id}->${tie.targetId}|${tie.kind}`, { kind: tie.kind, note: tie.note });
                 }
             }
         }
@@ -159,9 +170,18 @@ describe('the families a world opens holding', () => {
         seedTheFamiliesStandingInAPlace(state, state.currentDay);
         for (const npc of state.npcs) {
             for (const tie of npc.relationships) {
-                const held = before.get(`${npc.id}->${tie.targetId}`);
-                if (held) expect(tie.kind, `${npc.id}->${tie.targetId}`).toBe(held.kind);
+                const held = before.get(`${npc.id}->${tie.targetId}|${tie.kind}`);
+                if (held) expect(tie.note, `${npc.id}->${tie.targetId}`).toBe(held.note);
             }
+        }
+        // And every remembered row is still there: none was eaten.
+        for (const [key, held] of before) {
+            const [pair, kind] = key.split('|');
+            const [holderId, targetId] = pair!.split('->');
+            const npc = state.npcs.find(row => row.id === holderId)!;
+            expect(npc.relationships.some(tie => tie.targetId === targetId && tie.kind === kind),
+                `${key} was eaten`).toBe(true);
+            expect(held.kind).toBe(kind);
         }
         const rivals = state.npcs
             .flatMap(npc => npc.relationships)
@@ -215,8 +235,18 @@ describe('the families a world opens holding', () => {
      *
      * Pooled, because six worlds are six draws and a band asserted on one is a
      * band that goes red when the population shifts by twenty people.
+     *
+     * THE CEILING MOVED WHEN KINSHIP BECAME KINSHIP. It was a half, set when a
+     * family was mostly a shared surname. With marriages seeded, parents written
+     * both ways and siblings taken off a parent's other children, the measured
+     * share is 51.1 / 55.8 / 52.8 / 57.1 / 51.1 / 51.3 across the six seeds, 53.7%
+     * pooled, and the composition is ordinary: 16% of the living hold a spouse,
+     * 28% a parent, almost nobody only a sibling. Two thirds, because the thing
+     * the ceiling is really guarding is still true at 54% and would not be at 70%:
+     * 46 people in a hundred have nobody of their blood anywhere, so *"nobody
+     * would notice I was gone"* remains a state a person can be in.
      */
-    it('puts between a quarter and a half of the world in a family', async () => {
+    it('puts between a quarter and two thirds of the world in a family', async () => {
         let living = 0;
         let inAFamily = 0;
         const perWorld: string[] = [];
@@ -233,7 +263,7 @@ describe('the families a world opens holding', () => {
         expect(share, `pooled over ${SEEDS.length} worlds: ${perWorld.join(', ')}`)
             .toBeGreaterThan(0.25);
         expect(share, `pooled over ${SEEDS.length} worlds: ${perWorld.join(', ')}`)
-            .toBeLessThan(0.5);
+            .toBeLessThan(0.65);
     }, 300000);
 
     /**

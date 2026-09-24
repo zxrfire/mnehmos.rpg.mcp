@@ -210,7 +210,29 @@ describe('the seeded world reads correctly off the register', () => {
         // then spends it. Conditioning it on the ordinal it produced would
         // invert the causality, and it would show up right here.
         expect(derived.length).toBeGreaterThan(200);
-        expect(derived.filter(n => HOUSEHOLD_ORIGINS.includes(n.identity.origin)).length).toBe(0);
+        // ── THE BLANKET ZERO IS GONE, AND NO GUARD WENT WITH IT ──────────
+        //
+        // This demanded that NO derived person carry a household origin -
+        // `dao_house_bloodline`, `apex_sect_members_child`, `fostered_on_a_word`.
+        // All three are live rows in the ordinary lottery and the first carries a
+        // weight of 240, so the assertion forbade a weighted table from rolling
+        // three of its own rows across two hundred draws. That is not an
+        // invariant, it is a bet: it held only while those keys were unreachable,
+        // and the table's own comment records them being split out of one older
+        // row. Measured 23 September: 35 of the derived population had one.
+        //
+        // It should not hold even in principle. A dao house's bloodline produces
+        // CHILDREN, most of them unremarkable, and they are ordinary people in
+        // the world - which is the engine behind one of this genre's most-used
+        // openings, the scion of a fallen house with a name that used to mean
+        // something. A world where nobody is born into a bloodline unless
+        // somebody curated them by hand is a world where that story cannot
+        // happen.
+        //
+        // THE REAL INVARIANT IS THE LOOP BELOW and it never ran, because a wrong
+        // assertion above a right one hides the right one. Each derived person's
+        // origin equals their OWN roll, which is precisely the claim somebody
+        // meant to make here: the lottery decided this, not the seeder.
         for (const npc of derived.slice(0, 40)) {
             expect(npc.identity.origin)
                 .toBe(rollOrigin(forStream(state.seed, 'npc-origin', npc.id).next()).key);

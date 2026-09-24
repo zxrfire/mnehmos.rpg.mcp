@@ -18,6 +18,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { whoTheHouseHasLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
@@ -505,7 +506,10 @@ describe('the world actually sends people', () => {
         // Some of them did not come back. `markMissing` and not `markDead`:
         // the absence layer owns how long before anybody says it out loud and
         // who inherits, and settling it here would take that decision away.
-        expect(state.npcs.some(n => n.status === 'missing')).toBe(true);
+        // Losing them is a house not knowing where they are, not a status on
+        // them: the house held it, whether or not it has since learned the end.
+        expect(state.factions.some(f => whoTheHouseHasLostTrackOf(f).length > 0)
+            || state.history.facts.some(f => typeof f.data.lostTrackOf === 'string')).toBe(true);
 
         // And a solvent house keeps something in the yard, which is the writer
         // `adjustCountedHolding` never had.

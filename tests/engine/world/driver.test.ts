@@ -170,6 +170,35 @@ describe('pressure: the world changes on its own', () => {
             .filter(l => l.kind === 'vein')
             .map(l => `${l.id}:${l.controllingFactionId}`)
             .join('|');
+        // ── LEFT RED ON PURPOSE. THE TEST IS IMPRECISE AND THE WORLD IS
+        //    WRONG, AND FIXING THE TEST FIRST WOULD BURY THE WORLD ─────────
+        //
+        // This compares ENDPOINTS, so an even number of swaps reads as nothing
+        // having happened. That is a real weakness and it is not why this is
+        // red. Measured 23 September, stepping the same span one year at a time
+        // and logging every `vein_lost` with the controller either side of it:
+        //
+        //     120 events in 120 years. 120 of them moved a vein. 0 were no-ops.
+        //     ALL 120 were the same vein, loc-region-low-fall-vein, alternating
+        //     sect-azure-cloud -> sect-crimson-abyss -> sect-azure-cloud, every
+        //     year, without a single year off.
+        //     The other two veins never changed hands at all.
+        //     Net after 120 years: every vein exactly where it started.
+        //
+        // So the most consequential thing that can happen to a sect happens
+        // annually to one vein between one pair of houses, forever, while the
+        // rest of the world's veins are inert. `rivalsOf` requires standing at
+        // or below -0.3, so only a pair that already hate each other can ever
+        // transact - and every transfer calls `adjustStandingBetween(loser,
+        // winner, -0.3)`, which deepens exactly the hostility that selected
+        // them. The mechanism feeds itself.
+        //
+        // That is the never-fires class inverted: not a pass that never runs,
+        // but one that runs on a single edge every time and on nothing else.
+        //
+        // The assertion stays as it is until that is ruled on, because a
+        // per-event comparison would go green tomorrow and take the finding
+        // with it. See the plan, "Left red and named".
         expect(veinsAfter).not.toBe(veinsBefore);
 
         // Every event names something it actually moved, and every fact it
@@ -604,6 +633,24 @@ describe('the acceptance test: five hundred years', () => {
         // 663, because everybody killed, expelled or scattered is replaced.
         // The claim this test makes is about SCALING - "not a function of
         // 182,500 days" - and that is untouched.
+        //
+        // ── WHAT A FAILURE HERE MEANS, AND WHAT IT DOES NOT ──────────────
+        //
+        // This is a TRIPWIRE ON A QUIET MACHINE, not a performance claim. It
+        // catches the thing it was written for: a change that makes advancing
+        // the world cost more per year, which shows up as this number rising
+        // run after run on a box with nothing else on it.
+        //
+        // IT ALSO FAILS UNDER CONTENTION, and that is not a defect. Measured
+        // 23 September: 35,103ms in a full suite at twelve forks on a loaded
+        // machine, and PASSING when the same file is run on its own minutes
+        // later against the same commit. Somebody reading the red without that
+        // will go hunting for a slowdown that is not there - or, worse, raise
+        // the bound to make it quiet and throw the tripwire away.
+        //
+        // So: red here on a full parallel run means nothing until it is red
+        // ALONE. Re-run this file by itself before believing it, and only then
+        // ask what got slower.
         expect(elapsedMs).toBeLessThan(30_000);
         expect(after.year).toBe(before.year + 500);
     });
@@ -714,9 +761,20 @@ describe('the acceptance test: five hundred years', () => {
         for (const fact of state.history.facts) {
             expect(fact.day).toBeLessThanOrEqual(state.currentDay);
         }
-        // Lineage edges never point at somebody born first.
+        // Lineage edges never point at somebody born first - AND ONLY THE
+        // GENERATIONAL ONES DO. A `clan` edge is a MARRIAGE, written through
+        // the same two fields because `addLineageEdge` has only `parentId` and
+        // `childId` to put a pair in, and there is no reason on earth for one
+        // spouse to have been born after the other.
+        //
+        // Measured on `seed-a`: 4 of 101 edges failed this, and every one of
+        // them was `relation: 'clan'` with a `spouse` tie behind it - He
+        // Peichen and Wei Zhaoshan, Lu Minwu and Lu Anming, Ge Yiran and Wen
+        // Danyang, Third Face Ren and Iron Ridge Shen. Not one descendant edge
+        // ran backwards. The rule was sound and the scope was not.
         for (const lineage of state.lineages) {
             for (const edge of lineage.edges) {
+                if (edge.relation !== 'descendant') continue;
                 const parent = state.npcs.find(n => n.id === edge.parentId);
                 const child = state.npcs.find(n => n.id === edge.childId);
                 if (parent && child) {

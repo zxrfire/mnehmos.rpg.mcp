@@ -125,7 +125,7 @@ describe('given the probe, when the corpus is shuffled', () => {
                 seed: `${WORLD}-${SITUATION}`, worldSeed: WORLD, adminMode: true
             });
             await game.newRun('Prober');
-            await scenario.arrange(line => game.act(line));
+            await scenario.arrange(line => game.act(line), game);
 
             const read = new Map<string, string>();
             for (const said of order) {
