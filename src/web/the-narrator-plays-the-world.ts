@@ -12,6 +12,8 @@ import { realmForOrdinal } from '../engine/cultivation/realms.js';
 import { catalogPersonBehind } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { getMember } from '../data/cultivation/members.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
+import { getSect } from '../data/cultivation/sects.js';
+import type { NpcRecord } from '../engine/world/npc-state.js';
 import type { Company, SomebodyInTheSquare } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
 import { AN_AMBITION_IS_ANSWERED_AS_THINKING } from './the-lanes-a-sentence-can-go-down.js';
@@ -52,8 +54,15 @@ When there are people here, they are alive, and the player's act lands on a room
   says they say nothing, they say nothing.
 - A person may boast, complain, bargain, warn, lie, be wrong, or refuse. They may not agree to a
   deal, teach, give, or promise anything the rulings did not.
-- Nobody leaves, arrives, strikes, hands anything over or agrees to anything unless a ruling says
-  so. What a card says somebody is at is what they go on doing.
+- Nobody leaves, arrives, strikes, hands anything over, has anything taken or agrees to anything
+  unless a ruling says so. What a card says somebody is at is what they go on doing.
+- An act the ruling says went nowhere went nowhere. "Location unchanged", "no time passed",
+  "refused", "not run": write the first step and the stop - never the journey, the search or the
+  grab that the ruling did not rule.
+- NEVER WRITE THAT PEOPLE ARE SILENT. "Nobody says a word", "neither speaks", "he says nothing",
+  "the silence is heavy" - it is an absence asserted about people, and the flattest line there is.
+  If somebody has no line this turn, give them a gesture, or leave them out.
+- Say somebody's nature once. After that it shows in a new act, never in the same image again.
 - A person enters the prose doing something, or in relation to somebody already on the page.
   Never "X is here", "X is nearby" or "X is also present", and never several names in one
   breath before anything is said about any of them.
@@ -79,7 +88,13 @@ STAY INSIDE THE STORY
 
 The rulings are written by a clerk: "reads as above you", "last known to be at", "the record
 holds", "the catalog", "0 of 100 qi-units", "3x the rate", "2 rungs above you", "a question to ask
-against their house". None of those words may reach the page. Turn each one into what somebody standing there would see, hear or be told:
+against their house", "1 untreated wound", "25 of 50 left", "costing 10% of the cultivation
+rate". None of those words may reach the page. Turn each one into what somebody standing there
+would see, hear or be told:
+
+  CLERK: A serious meridian injury, and it will not close on its own. You are on 22 of 40.
+  STORY: Something in your chest gives with a sound only you can hear, and you know at once it will
+         not close by itself. Your next breath comes short.
 
   CLERK: Reads as above you, on the same footing. 106 years old. Marks of a sect whose name
          means nothing to this cultivator. Addressed as Inner Disciple.
@@ -150,11 +165,12 @@ WHAT THE ENGINE DECIDES, AND YOU NEVER DO
 - Do not soften a bad outcome and never add a consolation. The world has no opinion about what the
   player did; the people in it do.
 - Keep every fact about the world. Where the rulings list several things in the world - stock on
-  a stall, work on a board, houses - say all of them in the order given; the player may answer
+  a stall, work on a board, houses - say all of them in the order given, in the MOUTH of whoever
+  sells or guards them or swept into one clause, never recited as narration; the player may answer
   "the second one".
-- Rulings that list what the PLAYER could do next - "things that would", "ways of asking", a
-  sentence in quotation marks for them to type - are already on the player's screen. Never turn
-  them into "you could..." sentences or a closing list of options.
+- Rulings that list what the PLAYER could do next - "Things that would, at this moment", "ways of
+  asking", a sentence in quotation marks for them to type, a list of roads - are already on the
+  player's screen. Never turn them into "you could..." sentences or a closing list of options.
 - A bar somebody else sets - the rank a house will hear, what a notice asks for - is about them,
   not a statement that the player has reached it.
 - Never write the player's words, choices or feelings beyond what they typed.
@@ -269,8 +285,8 @@ A TAKING IS A HAND. A theft is the moment - a sleeve, a stallholder's head turne
 exactly what the ruling says about who noticed. A threat is a promise made in a body: the grip,
 the voice dropping, and the other person doing the arithmetic on their face.
 
-WHATEVER THE ACT, THE ROOM SAW IT. Onlookers answer a blow, a grab or somebody kneeling as loudly
-as they answer a boast, and they take sides.
+WHATEVER THE ACT, THE ROOM SAW IT. Onlookers answer a blow, a grab, somebody kneeling or somebody's
+breath changing as they cross a wall, as loudly as they answer a boast, and they take sides.
     "He struck first! Everybody saw it!"
     "Everybody saw you standing well back, too."
 
@@ -443,6 +459,45 @@ export function whatSomebodyHoldsPrivately(
     };
 }
 
+/** The kinds of tie somebody names when they need somebody behind them. */
+const WHO_THEY_WOULD_NAME = new Set(['parent', 'master', 'spouse']);
+
+/**
+ * What somebody cornered reaches for: who stands behind them, and what they have on them.
+ *
+ * Read off the world row and the people it points at, so it holds for anybody the world made,
+ * seeded or not. Titles only - their father, their house's own master - because a name the player
+ * was never given cannot enter the prose.
+ */
+export function whatTheyHaveToReachFor(
+    row: NpcRecord,
+    byId: ReadonlyMap<string, NpcRecord>,
+    objects: readonly { name: string; possessorId: string | null }[]
+): NonNullable<SomebodyInTheSquare['toReachFor']> {
+    const standsBehind: string[] = [];
+    for (const tie of row.relationships) {
+        if (!WHO_THEY_WOULD_NAME.has(tie.kind)) continue;
+        const them = byId.get(tie.targetId);
+        if (!them || them.status !== 'alive') continue;
+        const who = tie.kind === 'parent'
+            ? (them.identity.sex === 'female' ? 'mother' : 'father')
+            : tie.kind === 'spouse'
+                ? (them.identity.sex === 'female' ? 'wife' : 'husband')
+                : 'master';
+        const ranks = them.factionId ? getSect(them.factionId)?.ranks : undefined;
+        const title = ranks && them.factionRankIndex >= 0 ? ranks[them.factionRankIndex] : undefined;
+        const head = ranks !== undefined && them.factionRankIndex === ranks.length - 1;
+        const whose = them.factionId === row.factionId ? 'of their own house' : 'of another house';
+        standsBehind.push(title
+            ? `their ${who}, ${title} ${whose}${head ? ', and the head of it' : ''}`
+            : `their ${who}, on nobody's roll`);
+        if (standsBehind.length === 3) break;
+    }
+    const things = objects.filter(thing => thing.possessorId === row.id).slice(0, 3).map(thing => thing.name);
+    const stones = `${row.spiritStones} spirit stone${row.spiritStones === 1 ? '' : 's'}`;
+    return { standsBehind, carries: [stones, ...things].join(', ') };
+}
+
 /**
  * The person present whom this turn's act was put to, from the targets the plan carried.
  *
@@ -495,6 +550,13 @@ function aPersonsCard(
         lines.push(`    Ties to others here: ${person.tiesHere.map(tie => `${tie.kind} of ${tie.name}`).join('; ')}.`);
     }
     if (toYou) lines.push(`    To you: ${toYou}.`);
+    // For everybody on a card, not only the one spoken to: the one who begs after a friend falls
+    // is rarely the one the blow was aimed at.
+    const reach = person.toReachFor;
+    if (reach) {
+        const behind = reach.standsBehind.length > 0 ? reach.standsBehind.join('; ') : 'nobody they could name';
+        lines.push(`    If cornered, theirs to reach for: ${behind}. On them: ${reach.carries}.`);
+    }
     // Only for the person the turn is about: a private layer on everybody in the square is a
     // briefing, and the model plays whoever it was handed the most about.
     const mind = addressed ? person.ownMind : null;

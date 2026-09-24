@@ -989,7 +989,7 @@ import {
     composeStateSummary,
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
-import { whatSomebodyHoldsPrivately, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -18607,6 +18607,9 @@ ${fit.line}`;
                         ? getSect(person.sectId)?.name ?? null
                         : null,
                     ownMind: whatSomebodyHoldsPrivately(person.id, person.sectId ?? null),
+                    toReachFor: row === null
+                        ? null
+                        : whatTheyHaveToReachFor(row, byId, this.atHand?.objects ?? []),
                     rankIndex: row?.factionRankIndex ?? -1
                 });
             } else {

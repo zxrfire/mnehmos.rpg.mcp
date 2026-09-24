@@ -937,7 +937,8 @@ export function composeNarrationUser(
         ...(facts.required && facts.required.length > 0
             ? [
                 '',
-                'SAY THESE WORD FOR WORD, wherever they fit - the player has to read them exactly:',
+                'SAY THESE WORD FOR WORD, as the last lines of the turn, after the scene - the player has',
+                'to read them exactly, and they are not part of the story:',
                 ...facts.required.map(line => `- ${line}`)
             ]
             : []),
@@ -998,8 +999,13 @@ function theTurnToWrite(
                     ? `${setting} Then the player's act, and the room answering it - whoever is likeliest to `
                         + 'react, each in their own voice.'
                     : `${setting} Then the player's act, and the crowd.`;
+    // LAST, BECAUSE THIS MODEL WEIGHTS WHAT IT READ LAST. Played on gemma4:31b, both of these held
+    // as rules higher up and broke anyway: "neither of them speaks" on nearly half of all turns, and
+    // a run the engine ruled went nowhere narrated as an escape from town.
     return `NOW WRITE THE TURN. ${who} Present tense, "you" for the player. Keep every ruling; `
-        + 'add no outcome; reuse none of the clerk\'s wording.';
+        + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
+        + 'unchanged or no time passed, the player went nowhere. Never write that anybody is silent '
+        + 'or says nothing, and never end on a list of what the player could do.';
 }
 
 /**

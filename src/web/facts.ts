@@ -1508,6 +1508,13 @@ export interface SomebodyInTheSquare {
         houseGrievance?: string;
         houseIsWrongAbout?: string;
     } | null;
+    /**
+     * What somebody cornered reaches for first: who stands behind them, by title and never by
+     * name, and what they have on them. A name the player was never given cannot enter the prose,
+     * and "our house's master is my father" needs none. Theirs to say, never something a stranger
+     * sees.
+     */
+    toReachFor?: { standsBehind: string[]; carries: string } | null;
     /** Where they stand on its roll. Lower is junior. -1 when unaffiliated. */
     rankIndex?: number;
     /**

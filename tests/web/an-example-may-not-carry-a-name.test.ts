@@ -23,7 +23,7 @@ const NOT_A_NAME = new Set([
     // is listed alone as well as in 'Fellow Daoist' because lowercasing a
     // sentence opener can split the pair.
     'Daoist',
-    'Fellow Daoist', 'Senior', 'Junior', 'Senior Brother', 'Nobody', 'Now', 'Elder Brother', 'Elder Sister',
+    'Fellow Daoist', 'Senior', 'Junior', 'Senior Brother', 'Nobody', 'Now', 'Brother', 'Sister', 'Elder', 'Junior Brother', 'Junior Sister', 'Elder Brother', 'Elder Sister',
     'And', 'But', 'Eight', 'Eleven', 'Fifteen', 'Forty', 'Hah', 'Last', 'Millet',
     'Nine', 'No', 'Nobody', 'Only', 'That', 'The', 'Then', 'There', 'They',
     'Think', 'Three', 'Twenty', 'Two', 'We', 'What', 'Where', 'You', 'Your', 'It',
