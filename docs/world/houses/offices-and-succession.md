@@ -185,6 +185,12 @@ contest. Everything above inner can be lost by somebody else being better; inner
 Nothing in the tournament may take anybody past it: a beaten conclave disciple lands at inner
 and stops there.
 
+> **Who heads a house, and whether that house answers to another, is next door:**
+> [`postings-and-grant-houses.md`](./postings-and-grant-houses.md). A posting is
+> an arm of a house run by that house's officer; a grant house is its own sect
+> with its own patriarch. The title follows the relationship, which is why one of
+> them is headed by a warden and the other never is.
+
 **An office is held the same way: until somebody takes it away.** There is no term on one and
 nothing falls due, so a holder keeps their chair until they die, leave, or are removed - and
 removal is a thing somebody does, in the open, by putting what they know about the holder in

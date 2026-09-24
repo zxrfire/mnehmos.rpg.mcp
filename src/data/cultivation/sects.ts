@@ -845,7 +845,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Azure Mist Court',
         alignment: 'righteous',
         powerOrdinal: 37,
-        ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Grand Mist Elder', 'Court Warden'],
+        ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Grand Mist Elder', 'Court Master'],
         admissionOrdinal: 1,
         stipend: [3, 10, 30, 95, 170, 300],
         // ── WHY THE HEAD STANDS TWENTY RUNGS ABOVE THE SHELF ─────────────
@@ -925,7 +925,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Azure Dew Sect',
         alignment: 'righteous',
         powerOrdinal: 24,
-        ranks: ['Dew Servant', 'Outer Disciple', 'Inner Disciple', 'Dew Elder', 'Grand Dew Elder', 'Sect Warden'],
+        ranks: ['Dew Servant', 'Outer Disciple', 'Inner Disciple', 'Dew Elder', 'Grand Dew Elder', 'Sect Master'],
         admissionOrdinal: 0,
         stipend: [2, 8, 26, 85, 150, 260],
         // Its own gathering canon rather than the market primer, which is what

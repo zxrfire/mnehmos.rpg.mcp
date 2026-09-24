@@ -18,7 +18,7 @@ Counts are mentions, so they rank rather than measure. The first file listed is 
 always the one to read first.
 
 **The median house is written about in 18 files**, and the most-written-about,
-the Azure Cloud Pavilion, in 40. That is the number this file exists for:
+the Azure Cloud Pavilion, in 41. That is the number this file exists for:
 nobody was going to find all of that by grepping, and nobody did - six times in one
 session somebody wrote down design that was already in the catalog.
 
@@ -26,16 +26,16 @@ session somebody wrote down design that was already in the catalog.
 
 ### Azure Cloud Pavilion
 
-`sect-azure-cloud-pavilion` · its entry: [`sects.ts:481`](../../src/data/cultivation/sects.ts)
+`sect-azure-cloud-pavilion` · its entry: [`sects.ts:480`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`members.ts`](../../src/data/cultivation/members.ts) 14 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 11 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`origin.md`](../../docs/world/houses/origin.md) 5
-  …and 32 more files.
+  …and 33 more files.
 
 **Constants most about it:** `IMMORTAL_HOLDINGS`, `LOW_FALL_PREFECTURES`, `STOCK_VERSUS_FLOW`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, `ARTIFACTS`, and 26 more
 
 ### Verdant Spring Valley
 
-`sect-verdant-spring-valley` · its entry: [`sects.ts:562`](../../src/data/cultivation/sects.ts)
+`sect-verdant-spring-valley` · its entry: [`sects.ts:561`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2
   …and 10 more files.
@@ -44,7 +44,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Nine Peaks Ascetic Order
 
-`sect-nine-peaks-ascetic-order` · its entry: [`sects.ts:631`](../../src/data/cultivation/sects.ts)
+`sect-nine-peaks-ascetic-order` · its entry: [`sects.ts:630`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2
   …and 12 more files.
@@ -53,14 +53,14 @@ session somebody wrote down design that was already in the catalog.
 
 ### Burnt Earth Temple
 
-`sect-sweptground-temple` · its entry: [`sects.ts:760`](../../src/data/cultivation/sects.ts)
+`sect-sweptground-temple` · its entry: [`sects.ts:759`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3
   …and 10 more files.
 
 ### Lantern Hall
 
-`sect-lantern-hall` · its entry: [`sects.ts:795`](../../src/data/cultivation/sects.ts)
+`sect-lantern-hall` · its entry: [`sects.ts:794`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 10 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3
   …and 8 more files.
@@ -69,34 +69,34 @@ session somebody wrote down design that was already in the catalog.
 
 ### Azure Mist Court
 
-`sect-azure-mist-court` · its entry: [`sects.ts:845`](../../src/data/cultivation/sects.ts)
+`sect-azure-mist-court` · its entry: [`sects.ts:844`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
-  …and 3 more files.
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 1 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
+  …and 4 more files.
 
 **Constants most about it:** `LOW_FALL_PREFECTURES`, `A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT`
 
 ### Azure Dew Sect
 
-`sect-azure-dew-sect` · its entry: [`sects.ts:925`](../../src/data/cultivation/sects.ts)
+`sect-azure-dew-sect` · its entry: [`sects.ts:924`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1
-  …and 3 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 1 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
+  …and 4 more files.
 
 **Constants most about it:** `AZURE_INTAKE`, `FOSTERAGE_TERMS`, `LOW_FALL_PREFECTURES`
 
 ### Earth Vein Tower
 
-`sect-earth-vein-tower` · its entry: [`sects.ts:982`](../../src/data/cultivation/sects.ts)
+`sect-earth-vein-tower` · its entry: [`sects.ts:981`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 30 · [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) 25 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 12 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6
   …and 25 more files.
 
-**Constants most about it:** `OPENLY_OR_IN_SECRET`, `APEX_INSTITUTIONS`, `AZURE_CLOUD_INTAKE`, `DEPARTURE_DESTINATIONS`, `FACTION_HISTORY`, `FACTION_PARENTAGE`, and 30 more
+**Constants most about it:** `OPENLY_OR_IN_SECRET`, `APEX_INSTITUTIONS`, `AZURE_CLOUD_INTAKE`, `DEPARTURE_DESTINATIONS`, `FACTION_HISTORY`, `FACTION_PARENTAGE`, and 29 more
 
 ### Myriad Course Hall
 
-`sect-myriad-course-hall` · its entry: [`sects.ts:1037`](../../src/data/cultivation/sects.ts)
+`sect-myriad-course-hall` · its entry: [`sects.ts:1036`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 61 · [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) 24 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 14 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 12 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 12 · [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) 9 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 8 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 8
   …and 27 more files.
@@ -105,7 +105,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Stone Marrow Hall
 
-`sect-stone-marrow-hall` · its entry: [`sects.ts:1089`](../../src/data/cultivation/sects.ts)
+`sect-stone-marrow-hall` · its entry: [`sects.ts:1088`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 23 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
   …and 21 more files.
@@ -114,7 +114,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Thousand Treasure Pavilion
 
-`sect-thousand-treasure-pavilion` · its entry: [`sects.ts:1140`](../../src/data/cultivation/sects.ts)
+`sect-thousand-treasure-pavilion` · its entry: [`sects.ts:1139`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 2
   …and 14 more files.
@@ -123,7 +123,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Cinnabar Crucible Sect
 
-`sect-cinnabar-crucible-sect` · its entry: [`sects.ts:1178`](../../src/data/cultivation/sects.ts)
+`sect-cinnabar-crucible-sect` · its entry: [`sects.ts:1177`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 3
   …and 14 more files.
@@ -132,7 +132,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Ashen Forge Clan
 
-`sect-ashen-forge-clan` · its entry: [`sects.ts:1222`](../../src/data/cultivation/sects.ts)
+`sect-ashen-forge-clan` · its entry: [`sects.ts:1221`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2
   …and 8 more files.
@@ -141,7 +141,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Hollow Bell Wanderers
 
-`sect-hollow-bell-wanderers` · its entry: [`sects.ts:1271`](../../src/data/cultivation/sects.ts)
+`sect-hollow-bell-wanderers` · its entry: [`sects.ts:1270`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 2 · [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) 1 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 1 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 1
   …and 6 more files.
@@ -150,21 +150,21 @@ session somebody wrote down design that was already in the catalog.
 
 ### Cold Sword Sect
 
-`sect-cold-sword-sect` · its entry: [`sects.ts:1326`](../../src/data/cultivation/sects.ts)
+`sect-cold-sword-sect` · its entry: [`sects.ts:1325`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`what-changes-as-the-ladder-is-climbed.md`](../../docs/world/writing/what-changes-as-the-ladder-is-climbed.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
   …and 3 more files.
 
 ### Orchid Court
 
-`sect-orchid-court` · its entry: [`sects.ts:1397`](../../src/data/cultivation/sects.ts)
+`sect-orchid-court` · its entry: [`sects.ts:1396`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`white-stair.ts`](../../src/data/cultivation/regions/white-stair.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`patronage.md`](../../docs/world/houses/patronage.md) 1 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
   …and 5 more files.
 
 ### Frostmirror Court
 
-`sect-frostmirror-court` · its entry: [`sects.ts:1462`](../../src/data/cultivation/sects.ts)
+`sect-frostmirror-court` · its entry: [`sects.ts:1461`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 4 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 3
   …and 16 more files.
@@ -173,16 +173,16 @@ session somebody wrote down design that was already in the catalog.
 
 ### Deeproot Court
 
-`sect-deeproot-court` · its entry: [`sects.ts:1526`](../../src/data/cultivation/sects.ts)
+`sect-deeproot-court` · its entry: [`sects.ts:1525`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 14 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3
-  …and 7 more files.
+  …and 8 more files.
 
 **Constants most about it:** `SHARED_EVENTS`, `FACTION_RELATIONSHIPS`, `COURTS`, `LID_NON_POSITIONS`, `SEALED_FIGURE_NAMES`, `WHY_NOBODY_MOVES`
 
 ### The Hollow Court
 
-`sect-hollow-court` · its entry: [`sects.ts:1553`](../../src/data/cultivation/sects.ts)
+`sect-hollow-court` · its entry: [`sects.ts:1552`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 10 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) 3
   …and 23 more files.
@@ -191,7 +191,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### The Severed
 
-`sect-the-severed` · its entry: [`sects.ts:1609`](../../src/data/cultivation/sects.ts)
+`sect-the-severed` · its entry: [`sects.ts:1608`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2
   …and 11 more files.
@@ -200,14 +200,14 @@ session somebody wrote down design that was already in the catalog.
 
 ### Crimson Abyss Fortress
 
-`sect-crimson-abyss-fortress` · its entry: [`sects.ts:1684`](../../src/data/cultivation/sects.ts)
+`sect-crimson-abyss-fortress` · its entry: [`sects.ts:1683`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
   …and 8 more files.
 
 ### Bone Lantern Cult
 
-`sect-bone-lantern-cult` · its entry: [`sects.ts:1752`](../../src/data/cultivation/sects.ts)
+`sect-bone-lantern-cult` · its entry: [`sects.ts:1751`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 2
   …and 9 more files.
@@ -216,7 +216,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Nine Abyss Flame Sect
 
-`sect-nine-abyss-flame-sect` · its entry: [`sects.ts:1798`](../../src/data/cultivation/sects.ts)
+`sect-nine-abyss-flame-sect` · its entry: [`sects.ts:1797`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 2
   …and 9 more files.
@@ -225,7 +225,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Storm Tyrant Court
 
-`sect-storm-tyrant-court` · its entry: [`sects.ts:1866`](../../src/data/cultivation/sects.ts)
+`sect-storm-tyrant-court` · its entry: [`sects.ts:1865`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
   …and 17 more files.
@@ -234,7 +234,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Clearwater Ward
 
-`sect-clearwater-ward` · its entry: [`sects.ts:1979`](../../src/data/cultivation/sects.ts)
+`sect-clearwater-ward` · its entry: [`sects.ts:1978`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 14 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 11 · [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 10 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 6 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 5 · [`history.ts`](../../src/data/cultivation/history.ts) 4
   …and 14 more files.
@@ -243,16 +243,16 @@ session somebody wrote down design that was already in the catalog.
 
 ### Six Li Patrol
 
-`sect-six-li-patrol` · its entry: [`sects.ts:2017`](../../src/data/cultivation/sects.ts)
+`sect-six-li-patrol` · its entry: [`sects.ts:2016`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 3 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2
-  …and 9 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 3 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 2 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2
+  …and 10 more files.
 
-**Constants most about it:** `CALENDARS`, `THE_SENDING_PYRAMID`
+**Constants most about it:** `CALENDARS`, `DRIVEN_PROVINCE_SCHEDULE_ORDER`, `THE_SENDING_PYRAMID`
 
 ### Fallen Grain Caravan
 
-`sect-fallen-grain-caravan` · its entry: [`sects.ts:2056`](../../src/data/cultivation/sects.ts)
+`sect-fallen-grain-caravan` · its entry: [`sects.ts:2055`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 7 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 5 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4
   …and 14 more files.
@@ -261,7 +261,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Silver Island Market
 
-`sect-silver-island-market` · its entry: [`sects.ts:2140`](../../src/data/cultivation/sects.ts)
+`sect-silver-island-market` · its entry: [`sects.ts:2139`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) 3 · [`place-names.md`](../../docs/world/writing/place-names.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 2
   …and 3 more files.
@@ -270,7 +270,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Sand Well Caravan
 
-`sect-sand-well-caravan` · its entry: [`sects.ts:2196`](../../src/data/cultivation/sects.ts)
+`sect-sand-well-caravan` · its entry: [`sects.ts:2195`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
   …and 3 more files.
@@ -279,7 +279,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Ninefold Karma Palace
 
-`house-ninefold-karma` · its entry: [`sects.ts:2240`](../../src/data/cultivation/sects.ts)
+`house-ninefold-karma` · its entry: [`sects.ts:2239`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`history.ts`](../../src/data/cultivation/history.ts) 18 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 15 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 6 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 6
   …and 21 more files.
@@ -288,7 +288,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Flowing Light Tower
 
-`house-flowing-light` · its entry: [`sects.ts:2367`](../../src/data/cultivation/sects.ts)
+`house-flowing-light` · its entry: [`sects.ts:2366`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 13 · [`history.ts`](../../src/data/cultivation/history.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
   …and 10 more files.
@@ -297,7 +297,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Vermilion Seal Terrace
 
-`house-vermilion-seal` · its entry: [`sects.ts:2470`](../../src/data/cultivation/sects.ts)
+`house-vermilion-seal` · its entry: [`sects.ts:2469`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 5 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) 2
   …and 12 more files.
@@ -306,7 +306,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Still Blade Peak
 
-`house-still-blade` · its entry: [`sects.ts:2575`](../../src/data/cultivation/sects.ts)
+`house-still-blade` · its entry: [`sects.ts:2574`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 17 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) 2
   …and 8 more files.
@@ -315,7 +315,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Jade Register Hall
 
-`house-jade-register` · its entry: [`sects.ts:2682`](../../src/data/cultivation/sects.ts)
+`house-jade-register` · its entry: [`sects.ts:2681`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 10 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6 · [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`trust.md`](../../docs/world/houses/trust.md) 3
   …and 15 more files.
@@ -324,7 +324,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Shrinking Earth Pavilion
 
-`house-shrinking-earth` · its entry: [`sects.ts:2784`](../../src/data/cultivation/sects.ts)
+`house-shrinking-earth` · its entry: [`sects.ts:2783`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 26 · [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 4
   …and 17 more files.
@@ -333,7 +333,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Immovable Mountain Temple
 
-`house-immovable-mountain` · its entry: [`sects.ts:2911`](../../src/data/cultivation/sects.ts)
+`house-immovable-mountain` · its entry: [`sects.ts:2910`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 49 · [`sects.ts`](../../src/data/cultivation/sects.ts) 37 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 17 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 12 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 12 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 10 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9
   …and 17 more files.
@@ -342,7 +342,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Iron Tally Court
 
-`house-iron-tally-court` · its entry: [`sects.ts:3051`](../../src/data/cultivation/sects.ts)
+`house-iron-tally-court` · its entry: [`sects.ts:3050`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 15 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 3 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 3
   …and 4 more files.
@@ -351,7 +351,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Nine Stone Array
 
-`house-nine-stone-array` · its entry: [`sects.ts:3073`](../../src/data/cultivation/sects.ts)
+`house-nine-stone-array` · its entry: [`sects.ts:3072`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 2 · [`closed-ground.md`](../../docs/world/places/closed-ground.md) 1
 
@@ -359,7 +359,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### Nine Nether Hall
 
-`house-nine-nether` · its entry: [`sects.ts:3094`](../../src/data/cultivation/sects.ts)
+`house-nine-nether` · its entry: [`sects.ts:3093`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3 · [`closed-ground.md`](../../docs/world/places/closed-ground.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`history.ts`](../../src/data/cultivation/history.ts) 1 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 1 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 1
 

@@ -1713,7 +1713,15 @@ export const COURTS: readonly Court[] = [
                 // The embodied court keeps its sect's own top rank, the same
                 // way the Kiln does: the province has been reading the real
                 // title for three centuries without knowing it was one.
-                title: 'Court Warden',
+                //
+                // AND THE RANK MOVED, SO THIS MOVES WITH IT. The Mist is a
+                // subsidiary sect rather than an arm of the Pavilion, so its
+                // head is its own head: `warden` is an officer's word - a post
+                // held on behalf of somebody, which is what the Kiln and
+                // Deeproot are - and it said the opposite of what this house is.
+                // The three other offices below keep their own names, which were
+                // never titles of the head.
+                title: 'Court Master',
                 office: 'Holds the recall roll: every disciple the terraces sent down, what they failed at, and what happened to them after. It is the only such record in the Jade Gorge and the Pavilion has never asked to see it.',
                 realmOrdinal: 37,
                 apexRank: 'Sword Elder',
@@ -2173,7 +2181,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'No grant means no arbitration and nobody to appeal to, in a province that has none of those for anybody - so the cost is not the usual one. It is that the Ward has to carry its own crop over a pass it does not control, to a Hall that holds from the body it refused, and it has no standing anywhere to complain about the price it is offered.',
         unbackedReason: 'refused_a_backer',
         independenceStance: 'proud',
-        note: 'The refusal is a hundred and forty years old, was put in writing once, and the Ward has never repeated it or explained it. The Frostmirror keeps the letter.'
+        holdsByReputation: true,
+        note: 'The refusal is a hundred and forty years old, was put in writing once, and the Ward has never repeated it or explained it. The Frostmirror keeps the letter. What holds the valley is not the letter and not a garrison: the province is satisfied that whoever moved a marker there would find the Cold Crucible short of stock the following winter, and nobody has been curious enough to test it.'
     },
     'sect-frostmirror-court': {
         factionId: 'sect-frostmirror-court',
