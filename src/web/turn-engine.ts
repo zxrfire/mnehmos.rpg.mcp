@@ -4064,7 +4064,17 @@ export class GameService {
         // a veto rather than a preference: the sentence insults, and nobody's
         // hands are in it. `I punch him and call him a dog` contains a raised
         // hand and is left exactly alone.
-        if ((action.action === 'attack' || action.action === 'coerce')
+        // `interact` IS ON THIS LIST AND IT IS THE ONE THAT KILLED SOMEBODY.
+        //
+        // Round 26: "fuck you all" as the first turn was read as
+        // `interact(everyone here)`, which the engine priced as PRESSING each
+        // of six people. Three of them answered with a serious wound, the body
+        // went 40 to 0, somebody took the purse, and the run ended on day 1 at
+        // Qi Condensation Layer 1. The earlier veto only watched `attack` and
+        // `coerce`, so the deadliest reading of a curse was the one that did
+        // not look violent.
+        if ((action.action === 'attack' || action.action === 'coerce'
+                || action.action === 'interact')
             && AN_INSULT.test(rawInput)
             && !A_HAND_RAISED.test(rawInput)) {
             action = { action: 'insult', ...(action.target ? { target: action.target } : {}) };
@@ -16247,6 +16257,10 @@ ${fit.line}`;
             // AND WHEN IT IS, so the narrator stops inventing a season every
             // time somebody arrives somewhere. The run has always known.
             dayOfTheRun: Math.floor(this.currentRun().run.elapsedDays),
+            // AND WHETHER THEY ARE STILL ALIVE TO BE STOOD ANYWHERE. Read off
+            // the row rather than the run, because the row is what the rest of
+            // this block is about.
+            ...(cultivator.alive ? {} : { dead: true }),
             spiritStones: cultivator.spiritStones,
             booksHeld: copyNamesHeldBy(this.db, cultivator.id),
             // The roads they have actually sat down with, which is a different
