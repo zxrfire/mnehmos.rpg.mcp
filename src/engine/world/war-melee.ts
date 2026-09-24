@@ -324,7 +324,7 @@ function fightOneYear(
             //
             // Found by a fixture rather than by reading: 250 people over 60
             // years put a stated-standing row in a war and it came out "Killed
-            // by Third Face Ren", through a file the ratchet had exempted as
+            // by Luo Zhaowu", through a file the ratchet had exempted as
             // the player's door. It is both.
             finished: c.finished && theWorldMayEnd(byId.get(c.id) ?? { tags: [] }),
             // A war is the absence of an arrangement, not a declaration of

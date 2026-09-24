@@ -501,6 +501,15 @@ or **arrays** - never *magic circles* - **jade slip**, **storage ring**, **stora
 **forbidden land**, **ancestral land**, **spirit vein**, **spirit tide**, and the **mortal**
 or **secular world** for everything below the climb.
 
+**Everyday things, where prose slips out of the genre without noticing.** Time is the sun,
+the hour of the day (*the hour of the Snake*), an **incense stick** burning down, days,
+months and seasons: seven days are seven days, and nothing ticks on a wall. Writing is on
+**paper**, a **bamboo slip**, a **jade slip** or a **scroll**, never parchment. A meal is
+rice, millet, **congee**, noodles, **steamed buns**, pickled vegetables, tea and wine.
+Distance is **li** and paces. Played: *"as if the clock of the village has stopped"*, *"a roll
+of parchment"*, *"a piece of coarse bread"*. The owner: *"I DON'T WANT NON XIANXIA BULLSHIT IN
+IT"*.
+
 **Violence, whose vocabulary is the most fixed in the genre.** Counted over the reference
 material: *killing intent* 2058, *trembled* 2452, *mouthful of blood* 482, *coughed up blood*
 200, *cold snort* / *snorted coldly* 657, *eyes flickered* 856, *face fell* 473, *sent

@@ -126,10 +126,10 @@ export const THE_QUIET_MARCHES: Region = {
     },
     customs: {
         socialPrinciple: 'Patronage. One holder, a public and wholly discretionary grant book, and no second party to defect to, so the only political question anyone asks is who is on the book.',
-        death: 'The dead are walled into the face they were working, and the face is finished around them. A worked-out district is therefore also a cemetery, and the Fallen Grain Caravan will not cut a face that holds somebody without asking the family.',
+        death: 'Coffins go up, not down. They are set on stakes driven into the cliff face, as high as the family can pay to have them carried, and the height is the whole of the rank: a carver sits a few spans over the road, a house founder is a dark speck you have to be told is there, and nobody in the Marches is buried, because the ground is the work. A face with coffins on it is not cut, and the oldest districts are read from below like a roll.',
         taboo: 'Never leave a cut unfinished. Locals hold that an open cut spreads the deadening, and a visitor who chips a souvenir off a face and walks away has committed the one offence the Silent Cliffs does not forgive.',
         threatModel: 'The ground. Dead zones that do not look dead, a burn edge that moves about a pace a year, and dust-lung, which kills more carvers than everything else combined.',
-        naming: 'Tool-names and face-numbers rather than clan names: Chisel Ma, Third Face Ren, Stakes, Iron Ridge Bo. A person who gives two names in the Jade Gorge style is announcing that they are leaving.',
+        naming: 'Surnames of its own, and none of them Jade Gorge clan names: Ma Qingru, Luo Zhaowu, Kang Shanhe, Bo Kuanchen. The stock is small and local, so a name here places somebody to the district the way a clan name places somebody downriver, and a person who turns up carrying a Jade Gorge surname is understood to have come from there rather than to have married into anything.',
         time: 'Counted in faces rather than years - a person is "four faces old" in the trade - and a working day ends when the dust has settled enough to see the far wall.'
     },
     cultivation: {
@@ -308,7 +308,7 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'trade_route',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The border road to Clear River Ford: eleven days by cart and the only route that does not cross dead ground. Salvage out, pills and grain in, at a fourteen percent premium before haggling.',
+                'The border road to Clear River Ford: eleven days by cart and the only route that does not cross dead ground. Salvage out, pills and grain in, at fourteen percent over before haggling.',
             travelDays: 11
         },
         {
@@ -342,7 +342,7 @@ export const THE_QUIET_MARCHES: Region = {
     crossingNotes: [
         'The qi thins about half a day before the border marker and keeps thinning. Cultivation that returned a day\'s progress at home returns something a visitor will first assume is a fault in their own circulation.',
         'Then the sound arrives before the town does: chisels, a couple of hundred of them, carried a long way on flat air.',
-        'Everything is grey. Dust on the roofs, on the animals, in the bread, and a pale ring around every local mouth.',
+        'Everything is grey. Dust on the roofs, on the animals, in the flatbread, and a pale ring around every local mouth.',
         'The road is staked in painted wood rather than paved, and leaving the stakes is how people die here. Six Li Patrol explain this once, free, and are visibly tired of explaining it.',
         'Nobody asks what realm you are. They ask whether you hold a grant, and the answer decides the rest of the conversation.',
         'There are no sect patrols, no admission days and no gates with disciples on them - there is a counter, a register, a queue, and a clerk who is not empowered to make an exception and will say so pleasantly.',

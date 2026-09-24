@@ -459,7 +459,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 2600,
         attestation: 'secure',
         attestationNote:
-            'A face number and a work rank, which is a complete name in the Silent Cliffs and reads as a filing reference to everybody in the Jade Gorge. The schedule carries it in the same column as any other completed face, dated, with nothing in the reason column.',
+            'A local surname and a work rank, which is a complete name in the Silent Cliffs and reads as a filing reference to everybody in the Jade Gorge, where a name without a clan on it is not quite a name. The schedule carries it in the same column as any other completed face, dated, with nothing in the reason column.',
         answers: 'answers',
         juniority: 1,
         manner:

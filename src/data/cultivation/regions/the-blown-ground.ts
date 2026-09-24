@@ -295,7 +295,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         death: 'Left where they fell, and the cover takes them within the year and gives them back a decade later with their possessions still on them. Nobody is buried and nobody is burned, and the dead belong to whoever is standing over them when the sand puts them out again.',
         taboo: 'Never point. Indicating where a show is, in company, with your hand, is how a finder is killed, and a visitor who does it at Wind Turn has the conversation ended for them by somebody else before they have finished the gesture.',
         threatModel: 'People, and specifically people who have already been refused everywhere. There is no institution to answer for anyone and nothing to be taken away from anyone, so what a stranger will do is decided entirely by what they think they can get, and everybody plans on that being the whole of it.',
-        naming: 'The gate that refused you: Refused-at-Three Walls Ma, Autumn Gate Bo, Iron Ridge-Queue Ren. Where the Drowned Sea names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
+        naming: 'The gate that refused you, given where a mainlander gives a county: Lian out of Three Walls, Zou out of Autumn Gate, Shao out of the Iron Ridge queue. Where the Drowned Sea names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
         time: 'Counted in shows. "Two shows ago" is anything from a season to nine years and nobody converts it, and the only fixed calendar anybody here observes is the posting cycle at nine city gates, which is imported, resented and universally known.'
     },
     ambientProfile: { thin: 78, normal: 4, dense: 12, spirit_tide: 6 },
@@ -387,7 +387,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         directDays: 9,
         throughTheCentreDays: 17,
         whyItIsEmpty:
-            'Eleven days to Clear River Ford and six down the gorge is seventeen days and a toll; the direct line is nine and is free. It is empty because no convoy can be insured across it - the Stone Marrow Hall will not write the policy at any price, which is the strongest thing a commercial house can say about anything - and because a cart that is robbed on it has been robbed by nobody, in nowhere, with no bench that would hear it. Every party that has tried the shortcut with goods has arrived, or has not, and the ones that did not are the reason the eight days are still there to be saved.'
+            'Eleven days to Clear River Ford and six down the gorge is seventeen days and a toll; the direct line is nine and is free. It is empty because no convoy can be underwritten across it - the Stone Marrow Hall will not put its name on a load at any price, which is the strongest thing an escort house can say about anything - and because a cart that is robbed on it has been robbed by nobody, in nowhere, with no bench that would hear it. Every party that has tried the shortcut with goods has arrived, or has not, and the ones that did not are the reason the eight days are still there to be saved.'
     },
     whatItCostsTheNeighbours: [
         {
@@ -414,8 +414,8 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     trueHereFalseThere: [
         'A survey is correct and expires. Everywhere else a survey is permanent and grantable, or impossible, or beside the point; this is the only ground in the world that is measured constantly, measured accurately, and granted to nobody, because what it measures walks about a li a year.',
         'Dense ground has nobody on it. In every province in the world a vein is owned before it is found, and here a cultivator with no house, no register entry and no teacher can sit on spirit-tide ground for as long as it lasts - which is where every solitary in the world got what a book alone cannot buy.',
-        'A find is sold once, at the finder\'s price, to whoever is nearest. Everywhere else the seller\'s problem is proving where a thing came from; here the buyer\'s problem is that the place it came from will not be there next season, and no warranty, bench or bond exists that would cover it.',
-        'The shortest road in the world runs through here and it is empty. Every other route in the world is used, tolled and argued over; this one is on every map, saves eight days between two provinces, costs nothing, and carries no cart, no courier and no insured convoy at all.'
+        'A find is sold once, at the finder\'s price, to whoever is nearest. Everywhere else the seller\'s problem is proving where a thing came from; here the buyer\'s problem is that the place it came from will not be there next season, and no middleman, guarantor or bench exists that would stand behind it.',
+        'The shortest road in the world runs through here and it is empty. Every other route in the world is used, tolled and argued over; this one is on every map, saves eight days between two provinces, costs nothing, and carries no cart, no courier and no escorted convoy at all.'
     ],
     crossingNotes: [
         'The stakes stop. Whichever side a traveller comes in from there is a last painted marker, a Warden or a Ledger boundary stone or the end of a lease line, and then there is not one, and the change is abrupt enough that most people stop walking without deciding to.',

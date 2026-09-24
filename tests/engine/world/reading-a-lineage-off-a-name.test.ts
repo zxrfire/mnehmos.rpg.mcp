@@ -19,7 +19,13 @@ describe('what counts as a name at all', () => {
     it('declines a seat, an office or a by-name rather than inventing a family', () => {
         // Every one of these is a real row in MEMBERS, and surnameOf answers a
         // word that is not a surname for all of them.
-        for (const title of ['The Abbot', 'First Seat', 'Fourth Seat', 'The Storm Tyrant', 'Nine Boards Qiu']) {
+        // `Nine Boards Qiu` stood here as the by-name case until the design
+        // owner cut the whole convention - *"i don't like tool names and face
+        // numbers"* - and it is an ordinary Surname+given name now, which is
+        // exactly what this must NOT decline. The seats and the titles carry
+        // the rule on their own; there is no by-name left in the catalog to
+        // stand for that half of it.
+        for (const title of ['The Abbot', 'First Seat', 'Fourth Seat', 'The Storm Tyrant']) {
             expect(lineageNameOf(title), title).toBeNull();
         }
         // The defect this guards, stated: surnameOf on its own says otherwise.

@@ -58,10 +58,10 @@ export const THE_DROWNED_REACH: Region = {
     },
     customs: {
         socialPrinciple: 'None. Nothing on this water is granted, arbitrated, surveyed or certified, and the only two institutions that function here are the two whose entire doctrine was never holding anything in the first place.',
-        death: 'Over the side, weighted, with the name said once and not written down. The Drowned Sea is the only province in the world that keeps no record of its dead, and all four of the others regard this as barbarism and say so.',
+        death: 'Over the side, weighted, with the name said once and not written down. No tablet is cut, no ground is kept and there is nothing anybody could sweep, so the Drowned Sea is the only province in the world that keeps no record of its dead, and all four of the others regard this as barbarism and say so.',
         taboo: 'Never count the stone chest aloud. What is in it is what everybody aboard is standing on, and saying the figure where it can be heard is the moment a crew stops being a crew and becomes a number of people with an interest.',
         threatModel: 'The weather and the arithmetic, in that order and usually together. Most people who die in the South die because a passage took eleven days longer than it was provisioned for, which is not misfortune, it is a sum somebody did wrong ashore.',
-        naming: 'Hulls and landfalls instead of clans: Bell of the Third Landfall, Ma out of Iron Ridge, Sweet Spring Island Xu. A person at sea is named for where they came aboard, and nobody asks past that.',
+        naming: 'A landfall where a mainlander would give a county: Sui out of Bronze Bell Cliff, Ma out of Iron Ridge, Nie out of the Salt Fields. A person at sea keeps their surname and gives the place they came aboard instead of the ground their people are from, and nobody asks past that.',
         time: 'Counted in passages and in stones burned. Nine passages is a career; a hull\'s age is the number of stones it has gone through, cut into the mast where anybody can read it, and it is the one figure in the province nobody argues with.'
     },
     cultivation: {

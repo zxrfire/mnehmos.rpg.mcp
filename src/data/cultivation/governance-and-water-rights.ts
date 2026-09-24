@@ -1296,7 +1296,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         lastRealm: {
             count: 1,
             pinned: true,
-            holderName: 'Nail Duan',
+            holderName: 'Zhong Anshan',
             note: 'One, and the Myriad Course Hall is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is sitting on the thing that must not be left. Legalism is what an institution does when its strongest member cannot be spent.'
         },
         sentDown: {
@@ -3425,7 +3425,7 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
     },
     {
         id: 'guest-third-face-ren',
-        name: 'Third Face Ren',
+        name: 'Luo Zhaowu',
         realmOrdinal: 19,
         traditionId: 'tradition-cut',
         hostFactionId: 'sect-stone-marrow-hall',

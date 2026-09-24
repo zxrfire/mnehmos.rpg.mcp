@@ -1140,7 +1140,7 @@ function runCompetition(
     }
 
     // ONE LINE PER BOARD, NAMED. Rendered flat, a bracketed field reads as a
-    // broken ranking - "1. Xiao Yaozhi, 2. Lu Rongwu, 1. Iron Ridge Shen" is
+    // broken ranking - "1. Xiao Yaozhi, 2. Lu Rongwu, 1. Peng Kuanbo" is
     // two winners and no way to see why. The realm is what makes it legible,
     // and it is what a house is actually boasting about.
     const boards = new Map<RealmKey, GatheringPlacing[]>();

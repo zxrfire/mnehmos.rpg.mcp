@@ -55,8 +55,8 @@ export const THE_LOW_FALL: Region = {
         food: 'river fish, glutinous rice steamed in leaves, pickled greens, and tea served bitter and free at any sect gate'
     },
     customs: {
-        socialPrinciple: 'Rivalry between institutions, mediated by fee-charging third parties. Nobody is strong enough to stop anybody else, which is what keeps the arbitration houses in business.',
-        death: 'Burial in family ground, with a tablet in a sect hall for anyone who died on sect business. The tablets are dusted; the graves are frequently not.',
+        socialPrinciple: 'Rivalry between institutions, mediated by fee-charging third parties. Nobody is strong enough to stop anybody else, which is why the arbitration houses never want for work.',
+        death: 'Burial in the clan\'s ancestral ground, with a tablet in a sect hall for anyone who died in the sect\'s service. The tablets are dusted every month; the graves are swept once a year and frequently not then.',
         taboo: 'Do not repeat what was taken from someone at a crossing. Everyone knows who has lost a name and nobody says it aloud, and a visitor who asks is not corrected, merely never spoken to again.',
         threatModel: 'People. Sect politics kill more low-realm cultivators here than beasts, weather and ruins combined, and everybody plans around that.',
         naming: 'Two-syllable given names with clan surnames - Ru Anjing, Yan Duo, Mu Ganlu - and sect titles used in place of names once a person holds rank.',

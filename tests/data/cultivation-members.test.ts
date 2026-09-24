@@ -467,17 +467,22 @@ describe('members catalog', () => {
     });
 
     it('names people the way their region names people', () => {
-        // regions.ts customs.naming: the Jade Gorge uses clan surnames with
-        // given names; the Silent Cliffs uses tool-names and face-numbers and has no
-        // clan names at all. The tell is that a Silent Cliffs name is not two words
-        // of the "Surname Given" shape drawn from the Jade Gorge pool.
+        // regions.ts customs.naming: both regions name people Surname + given
+        // name, and they draw the surnames from DIFFERENT STOCK. The tell is
+        // that no Silent Cliffs surname appears in the Jade Gorge pool.
+        //
+        // It used to be tool-names and face-numbers against clan names, which
+        // the design owner cut: *"i don't like tool names and face numbers."*
+        // The rule this test is about is older than that convention and is
+        // not what was cut - the two regions still name people unlike each
+        // other, and a name still says which one somebody is from.
         //
         // A HOUSE THAT WITHHOLDS NAMES CONTRIBUTES NO CLAN NAMES TO THE POOL.
         // The Hollow Court's Seats are carried as positions - `First Seat` is
         // what stands in for a name, because no name of theirs leaves those
         // mountains - so feeding them in would put `First` and `Third` into the
-        // Jade Gorge clan pool and make the Silent Cliffs face-number `Third Face Ren`
-        // read as somebody's clan. Keyed off `WITHDRAWN_POWERS` rather than off
+        // Jade Gorge clan pool and make the Silent Cliffs surname in `Luo
+        // Zhaowu` read as somebody's clan. Keyed off `WITHDRAWN_POWERS` rather than off
         // one sect id: withholding is what produces positions-instead-of-names,
         // and any house that ever did it would do the same thing here.
         const lowFallSurnames = new Set(

@@ -789,7 +789,7 @@ describe('the acceptance test: five hundred years', () => {
         // Measured on `seed-a`: 4 of 101 edges failed this, and every one of
         // them was `relation: 'clan'` with a `spouse` tie behind it - He
         // Peichen and Wei Zhaoshan, Lu Minwu and Lu Anming, Ge Yiran and Wen
-        // Danyang, Third Face Ren and Iron Ridge Shen. Not one descendant edge
+        // Danyang, Luo Zhaowu and Peng Kuanbo. Not one descendant edge
         // ran backwards. The rule was sound and the scope was not.
         for (const lineage of state.lineages) {
             for (const edge of lineage.edges) {

@@ -791,7 +791,7 @@ identifies none of them - and the third house was not there.
 
 **`surnameOf` returns a title for 41 of 186 roster rows.** It splits at the first space, which is
 exact for what `personName` generates and wrong for "The Abbot", "First Seat", "The Storm Tyrant",
-"Clan Chief Duan Wu" and "Nine Boards Qiu". Left alone it invents lineages: *The* read as a
+"Clan Chief Duan Wu" and "Shao Mingchen". Left alone it invents lineages: *The* read as a
 five-house family, *Second* and *Third* as lines standing on the Hollow Court's roll. The lineage
 reader accepts only two-token `Surname Given` names and **declines the other 41 rather than
 guessing** - which loses about a dozen real surnames sitting behind titles, and is the correct

@@ -49,11 +49,11 @@ export const THE_WIDE_FIELD: Region = {
     },
     customs: {
         socialPrinciple: 'Tenancy. Nobody holds ground, everybody holds a lease, and the lease is priced in assayed stones by a house that holds no ground either. The whole of politics here is the renewal calendar, and it is public.',
-        death: 'Burned outside the wall the same day, ashes broadcast on the field, because nine cities on a plain cannot bury two thousand years of people. Anybody who keeps a body is doing something, and everybody assumes the worst of them.',
+        death: 'Burned outside the wall the same day and the ashes turned into the field, because nine cities on a plain cannot bury two thousand years of people. What a family keeps is the tablet in the clan hall, so there is nothing to sweep and nobody goes out to sweep it; anybody who keeps a body is doing something, and everybody assumes the worst of them.',
         taboo: 'Never ask what a field grew before. Everyone knows which fields are battlefields, the price of the crop depends on nobody saying so at the gate, and a visitor who asks in a market has emptied it.',
         threatModel: 'People, in numbers, and the numbers are mortal. What kills a cultivator in the Yellow Plain is a city deciding it has had enough of them, which it does about once a century and does thoroughly.',
-        naming: 'A wall before a clan: Ci of the Fourth Gate, Wan Hongfu out of Cloud Gate, Shu Threewall. An easterner who gives a clan name first is either very old money or lying about where they are from.',
-        time: 'Nine watches to the day, rung, so the whole province agrees on the hour to a few minutes. It does not agree on the year at all: each city counts from its own charter, and a contract carries three dates and a bell.'
+        naming: 'The city gate before the clan: Xi Linzhao out of Cloud Gate, Kong out of Autumn Gate, Gu out of Three Walls. An easterner who gives a clan name first is either very old money or lying about where they are from.',
+        time: 'Nine watches to the day, rung, so the whole province agrees on the hour to a few minutes. It does not agree on the year at all: each city counts from its own founding, and a contract carries three dates and a bell.'
     },
     cultivation: {
         method:
@@ -242,7 +242,7 @@ export const THE_WIDE_FIELD: Region = {
         'Nothing anybody swears binds. There is no certified ground east of the watershed, so an oath is a promise, a treaty is a lease, and every arrangement in the province carries a deposit instead of a witness.',
         'No institution holds a foot of land. Nine cities, thirty-odd halls, floors, gate houses and stack rooms, and every one of them rented from mortals who could evict the strongest thing in the province and have.',
         'A battlefield is an asset with a harvest date, worked on a published rotation by people the rest of the world will not sit next to, and the crop is sold at a market where asking about it empties the room.',
-        'The hour is agreed to a few minutes across a whole province and the year is not agreed at all, because the bells are rung and the charters are not.'
+        'The hour is agreed to a few minutes across a whole province and the year is not agreed at all, because a bell is rung where everybody can hear it and a city\'s own reckoning is not.'
     ],
     crossingNotes: [
         'The horizon arrives first. A Jade Gorge cultivator coming down the gorge road spends the first day unable to judge distance, because nothing here interrupts anything and the sky goes all the way down.',

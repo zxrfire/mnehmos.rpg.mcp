@@ -31,7 +31,7 @@ export const TITLE_TRANSLATIONS: readonly TitleTranslation[] = [
     {
         party: 'The Iron Ridge Assay House',
         mapping: 'A third table used for insurance: Standing Cut is read one rank low, at Qi Condensation Perfection, because a carver with no formations and no alchemy fights like a weaker cultivator.',
-        interest: 'The Stone Marrow Hall underwrites escort contracts and pays out on deaths. Its table is the only one anybody uses commercially, and it is the one that gets outsiders killed.'
+        interest: 'The Stone Marrow Hall underwrites escort contracts and pays the family when a man does not come back. Its table is the one the escort trade uses, and it is the one that gets outsiders killed.'
     },
     {
         party: 'Flowing Light Tower',

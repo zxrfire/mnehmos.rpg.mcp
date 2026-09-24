@@ -130,14 +130,14 @@ export const THE_WHITE_STAIR: Region = {
         light: 'enormous and flat and coming from underneath as well as above, with no shadow at noon and a glare that blinds anybody who has not blackened under the eyes',
         sound: 'the ice, which is never quiet: a crack carries four li on cold air and everybody stops for a moment and then goes on with what they were doing',
         smell: 'nothing whatsoever, which visitors find distressing inside a day and cannot explain, and which is the first thing a northerner notices about anywhere else',
-        food: 'hard cheese, blood, fat, boiled snow, and imported grain that arrives seventeen days old and is rationed against the five months the pass is shut'
+        food: 'roasted barley meal, butter tea, dried curd, blood, boiled snow, and imported grain that arrives seventeen days old and is rationed against the five months the pass is shut'
     },
     customs: {
         socialPrinciple: 'One curriculum and one holder of it. There is no politics of territory because the territory moves, and no politics of patronage because there is nothing to grant; there is only whether the Court will teach you, which your root decides and nothing you can offer changes.',
         death: 'The dead go into the ice at the face, and the ice gives them back about a century later at a lower band, in good condition, still recognisable. This is ordinary, there is a form for it, and the rest of the world regards it as the single most disturbing thing about the province.',
         taboo: 'Never cut below the working face. Taking ice that has not melted yet is stealing from the next century, and it is the one offence the North punishes rather than merely disapproving of.',
         threatModel: 'The ground, which is not ground. Crevasse fields under new snow that move every year and are surveyed by nobody, and cold that kills a Foundation cultivator in an afternoon if they stop walking.',
-        naming: 'Elevation names: a person carries the band they were born at. Nine Hundred Ren, Above-the-Face Bai, Low Xu. A name goes down over a lifetime as the bands do, and everybody can hear how far.',
+        naming: 'Generation characters, taken in order off the line the Court cut out of the ice, so everybody who came up on one retreat carries the same syllable in the middle of their name. The surnames are few and northern - Yue, Ning, Bai, Xiao, Lang - and two northerners who have never met can place each other within a retreat before either of them says anything else.',
         time: 'Counted in retreats rather than years - four retreats ago is about a century - so two northerners can disagree about the date by twenty years without either of them being wrong or thinking the question interesting.'
     },
     cultivation: {

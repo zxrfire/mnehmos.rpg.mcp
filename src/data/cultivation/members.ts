@@ -94,7 +94,7 @@ export type Member = z.infer<typeof MemberSchema>;
 /**
  * Which sex a row's own writing has already committed to.
  *
- * FOUND BY PLAYING. Half Cup Lian came out of the world female and her entry
+ * FOUND BY PLAYING. Lian Wukuan came out of the world female and her entry
  * reads *"the sound the sand makes at night nine days out, which HE will admit
  * to out there and not at the shed door"*. Nothing was wrong with either half:
  * `MemberSchema` has no sex on it, so `createNpc` rolls one, and the prose had
@@ -2622,8 +2622,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
 
     // ═══════════════════════════════════════════════════════════════════
     // THE QUIET MARCHES
-    // Tool-names and face-numbers, no clan names, and a ceiling that
-    // arrives four realms earlier than it does one province over.
+    // A surname stock of its own, none of it Jade Gorge clan names, and a
+    // ceiling that arrives four realms earlier than it does one province over.
     // ═══════════════════════════════════════════════════════════════════
 
     // --- Myriad Course Hall ------------------------------------------------
@@ -2632,7 +2632,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // distinguish them in writing, which is why this roll reads flat.
     {
         id: 'member-course-shu',
-        name: 'Course Shu',
+        name: 'Qi Qingyan',
         factionId: 'sect-myriad-course-hall',
         rankIndex: 0,
         rank: 'Hand',
@@ -2649,7 +2649,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-spoil-yan',
-        name: 'Spoil Yan',
+        name: 'Chu Kuanhe',
         factionId: 'sect-myriad-course-hall',
         rankIndex: 0,
         rank: 'Hand',
@@ -2669,7 +2669,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-set-hand-que',
-        name: 'Set Hand Que',
+        name: 'Qu Shanming',
         factionId: 'sect-myriad-course-hall',
         rankIndex: 1,
         rank: 'Set Hand',
@@ -2690,7 +2690,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-deep-band-tuo',
-        name: 'Deep Band Tuo',
+        name: 'Dong Tuobo',
         factionId: 'sect-myriad-course-hall',
         rankIndex: 3,
         rank: 'Course Keeper',
@@ -2707,7 +2707,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-nail-duan',
-        name: 'Nail Duan',
+        name: 'Zhong Anshan',
         factionId: 'sect-myriad-course-hall',
         rankIndex: 4,
         rank: 'Nail-Keeper',
@@ -2729,7 +2729,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // --- Clearwater Ward ---------------------------------------------------
     {
         id: 'member-queue-bo',
-        name: 'Queue Bo',
+        name: 'Bo Kuanchen',
         factionId: 'sect-clearwater-ward',
         rankIndex: 0,
         rank: 'Applicant',
@@ -2746,7 +2746,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-chisel-ma',
-        name: 'Chisel Ma',
+        name: 'Ma Qingru',
         factionId: 'sect-clearwater-ward',
         rankIndex: 1,
         rank: 'Ticketed',
@@ -2763,7 +2763,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-third-face-ren',
-        name: 'Third Face Ren',
+        name: 'Luo Zhaowu',
         factionId: 'sect-clearwater-ward',
         rankIndex: 2,
         rank: 'Standing Grant',
@@ -2783,7 +2783,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-kettle-shen',
-        name: 'Iron Ridge Shen',
+        name: 'Peng Kuanbo',
         factionId: 'sect-clearwater-ward',
         rankIndex: 3,
         rank: 'Under-Warden of the Weir',
@@ -2804,7 +2804,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-gapwater-yun',
-        name: 'Jade Face Yun',
+        name: 'Song Tianshan',
         factionId: 'sect-clearwater-ward',
         rankIndex: 6,
         rank: 'Weir Master',
@@ -2823,7 +2823,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // --- Six Li Patrol -------------------------------------------------
     {
         id: 'member-stakes',
-        name: 'Stakes',
+        name: 'Kang Shanhe',
         factionId: 'sect-six-li-patrol',
         rankIndex: 0,
         rank: 'Marker',
@@ -2840,7 +2840,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-paint-hui',
-        name: 'Paint Hui',
+        name: 'Pan Huiya',
         factionId: 'sect-six-li-patrol',
         rankIndex: 0,
         rank: 'Marker',
@@ -2857,7 +2857,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-ninth-marker-ji',
-        name: 'Ninth Marker Ji',
+        name: 'Xie Zhaoshan',
         factionId: 'sect-six-li-patrol',
         rankIndex: 1,
         rank: 'Warden',
@@ -2874,7 +2874,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-survey-wen',
-        name: 'Survey Wen',
+        name: 'Zeng Mingchen',
         factionId: 'sect-six-li-patrol',
         rankIndex: 2,
         rank: 'Road Warden',
@@ -2895,7 +2895,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-longstake-mu',
-        name: 'Longstake Mu',
+        name: 'Qian Hebo',
         factionId: 'sect-six-li-patrol',
         rankIndex: 3,
         rank: 'Warden of the Six Li',
@@ -2914,7 +2914,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // --- Fallen Grain Caravan ------------------------------------------------
     {
         id: 'member-barrow-nine',
-        name: 'Barrow Nine',
+        name: 'Yao Lanyi',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 0,
         rank: 'Barrow Hand',
@@ -2931,7 +2931,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-sorting-yard-heng',
-        name: 'Sorting Yard Heng',
+        name: 'Tian Hengshan',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 0,
         rank: 'Barrow Hand',
@@ -2948,7 +2948,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-second-face-guo',
-        name: 'Second Face Guo',
+        name: 'Guo Minchen',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 1,
         rank: 'Gleaner',
@@ -2965,7 +2965,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-lampblack-ke',
-        name: 'Lampblack Ke',
+        name: 'Teng Kefeng',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 2,
         rank: 'Deep Gleaner',
@@ -2989,7 +2989,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-hollowmarket-zhai',
-        name: 'Willow Village Zhai',
+        name: 'Zhai Anming',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 3,
         rank: 'Caravan Factor',
@@ -3017,7 +3017,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // ---------------------------------------------------
     {
         id: 'member-dryrun-ping',
-        name: 'The Bitter Crossing Ping',
+        name: 'Ping Zhenhe',
         factionId: 'sect-silver-island-market',
         rankIndex: 0,
         rank: 'Barge Hand',
@@ -3105,13 +3105,18 @@ const AUTHORED_MEMBERS: readonly Member[] = [
 
     // --- Waterman Caravan ----------------------------------------------------
     //
-    // Silent Cliffs naming throughout - tool-names and face-numbers, no clan names -
-    // and at the shed the tool is a water skin, so the roll reads like a kit
-    // list. Every one of them is priced by the same four-day figure, which is
-    // the shed's real gate and not the three questions at the door.
+    // Silent Cliffs naming throughout: local surnames, none of them Jade Gorge
+    // clan names, so the roll places every one of them to the district without
+    // a clan in sight. Every one is priced by the same four-day figure, which
+    // is the shed's real gate and not the three questions at the door.
+    //
+    // The tool-names this house was authored with are gone. The design owner:
+    // *"i don't like tool names and face numbers. get rid of it."* What the
+    // convention was FOR - that the Marches name people unlike the Gorge -
+    // survives it, and is the thing `cultivation-members` still holds them to.
     {
         id: 'member-stopper-xi',
-        name: 'Stopper Xi',
+        name: 'Xi Zhenhe',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 0,
         rank: 'Sand Servant',
@@ -3128,7 +3133,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-half-cup-lian',
-        name: 'Half Cup Lian',
+        name: 'Lian Wukuan',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
         rank: 'Carrier',
@@ -3145,7 +3150,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-short-rope-yi',
-        name: 'Short Rope Yi',
+        name: 'Yi Bochen',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
         rank: 'Carrier',
@@ -3169,7 +3174,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-tally-board-mu',
-        name: 'Tally Board Mu',
+        name: 'Zou Wanqing',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 2,
         rank: 'String Head',
@@ -3186,7 +3191,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-sounding-wei',
-        name: 'Sounding Wei',
+        name: 'Zheng Tianbo',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 3,
         rank: 'Route Elder',
@@ -3606,7 +3611,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // its production line is a straight function of its wage bill.
     {
         id: 'member-halfwater-yue',
-        name: 'Silver Island Yue',
+        name: 'Yue Ruoqing',
         factionId: 'sect-silver-island-market',
         rankIndex: 5,
         rank: 'Barge Master',
@@ -3628,7 +3633,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // spend walking, and the other name from it is on the fourth board.
     {
         id: 'member-nine-boards-qiu',
-        name: 'Nine Boards Qiu',
+        name: 'Shao Mingchen',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 5,
         rank: 'Waterman',

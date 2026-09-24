@@ -51,7 +51,7 @@
  * own generator produces (`personName` makes `Surname Given` and nothing else)
  * and wrong for a great deal of the authored roster. Measured over `MEMBERS`
  * at the time of writing: 41 of 186 rows are not of that shape - "The Abbot",
- * "First Seat", "The Storm Tyrant", "Clan Chief Duan Wu", "Nine Boards Qiu" -
+ * "First Seat", "The Storm Tyrant", "Clan Chief Duan Wu", "Shao Mingchen" -
  * and `surnameOf` answers "The", "First", "Clan" and "Nine" for them. Left
  * alone, that invents lineages: "The" read as a five-house family, "Second" and
  * "Third" as lines standing on the Hollow Court's roll.
