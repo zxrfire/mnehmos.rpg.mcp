@@ -167,6 +167,24 @@ describe('lines the player must read survive a narrator that skips them', () => 
         expect(withRequiredLines(already, [LINE])).toBe(already);
     });
 
+    /**
+     * Played: a required option came back with "actually" dropped, and the exact line was
+     * appended under the list, so the player read the same option twice.
+     */
+    it('puts a line copied with a word dropped right where it stands, once', () => {
+        const OPTION = '"I call on somebody who owes me" - not willingness - reach. Somebody who can '
+            + 'actually stand in front of them will do it for a tie they already hold.';
+        const copied = 'You fall.\n\n- "I get out of here" - the first thing that works.\n'
+            + '- "I call on somebody who owes me" - not willingness - reach. Somebody who can stand '
+            + 'in front of them will do it for a tie they already hold.';
+        const whole = withRequiredLines(copied, [OPTION]);
+        expect(whole.split('owes me').length - 1).toBe(1);
+        expect(whole).toContain(`- ${OPTION}`);
+        // A line that merely shares its opening words is not a copy.
+        expect(withRequiredLines('- "I call on somebody who owes me" and they come.', [OPTION]))
+            .toContain(`\n\n${OPTION}`);
+    });
+
     it('does nothing at all when the engine required nothing', () => {
         expect(withRequiredLines('Prose.', [])).toBe('Prose.');
         expect(withRequiredLines('Prose.', undefined)).toBe('Prose.');

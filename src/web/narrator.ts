@@ -1005,11 +1005,41 @@ export function withRequiredLines(text: string, required: readonly string[] | un
     const seen = normaliseForMatch(text);
     const missing = required.filter(line => !seen.includes(normaliseForMatch(line)));
     if (missing.length === 0) return text;
-    return [text, ...missing].join('\n\n');
+
+    // A LINE COPIED WITH A WORD DROPPED IS PUT RIGHT WHERE IT STANDS. Played: the model wrote a
+    // required option with "actually" missing, and the exact line was appended under the list,
+    // so the player read the same option twice. The copy is the narrator saying it; it only has
+    // to say it exactly.
+    const lines = text.split('\n');
+    const stillMissing = missing.filter(line => {
+        const at = lines.findIndex(written => nearlyTheSameLine(written, line));
+        if (at < 0) return true;
+        const bullet = /^\s*[-*]\s+/.exec(lines[at]!)?.[0] ?? '';
+        lines[at] = `${bullet}${line}`;
+        return false;
+    });
+    return [lines.join('\n'), ...stillMissing].filter(part => part.length > 0).join('\n\n');
 }
 
 function normaliseForMatch(value: string): string {
     return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/** The same words in the same order, give or take one word in ten. */
+function nearlyTheSameLine(written: string, required: string): boolean {
+    const a = normaliseForMatch(written).split(' ').filter(Boolean);
+    const b = normaliseForMatch(required).split(' ').filter(Boolean);
+    if (b.length < 8 || Math.abs(a.length - b.length) > Math.ceil(b.length / 10)) return false;
+    const row = new Array<number>(b.length + 1).fill(0);
+    for (const word of a) {
+        let diagonal = 0;
+        for (let j = 1; j <= b.length; j++) {
+            const above = row[j]!;
+            row[j] = word === b[j - 1] ? diagonal + 1 : Math.max(row[j]!, row[j - 1]!);
+            diagonal = above;
+        }
+    }
+    return row[b.length]! >= Math.floor(b.length * 0.9);
 }
 
 /** Longest prose a narration may return. Beyond this it is truncated, not rejected. */
