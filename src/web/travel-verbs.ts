@@ -1159,7 +1159,7 @@ export const travelVerbs = {
      *
      * `NpcActivity.sinceDay` and `untilDay` are world-clock fields: the world's
      * own sendings write them off `WorldState.currentDay`, and the two passes
-     * that read them - `bringHomeWhoeverIsDue` and `whatTheKeeperNotices` -
+     * that read them - `bringHomeWhoeverIsDue` and `whatInternalAffairsNotices` -
      * are handed a world day. A term written on `Run.elapsedDays` is therefore
      * a term that ended before the run began.
      *

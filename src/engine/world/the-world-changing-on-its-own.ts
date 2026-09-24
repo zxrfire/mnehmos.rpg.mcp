@@ -681,8 +681,11 @@ export function applyPressure(
 
         // WHOEVER IS DUE BACK COMES BACK, and it happens BEFORE anybody is
         // called late. A party whose term ran out three months ago and which
-        // nothing has processed yet is not overdue, it is unprocessed, and a
-        // keeper who cannot tell those apart raises the alarm about everybody.
+        // nothing has processed yet is not overdue, it is unprocessed, and an
+        // office that cannot tell those apart raises the alarm about everybody.
+        //
+        // It also skips anybody nobody can find, which is what makes the pass
+        // below reach anybody at all. See the guard inside.
         bringHomeWhoeverIsDue(state, withinSpan(year * 365 + 62, fromDay, toDay));
 
         // AND WHO THE HOUSE HAS PUT SOMEWHERE. Postings run in years and are
@@ -690,11 +693,11 @@ export function applyPressure(
         // room is, by design, because there are fewer rooms than elders.
         applyPostings(state, year, withinSpan(year * 365 + 64, fromDay, toDay));
 
-        // AND THEN WHO HAS NOT COME BACK. The keeper's job is personnel: they
+        // AND THEN WHO HAS NOT COME BACK. Internal Affairs' job is personnel: they
         // are the one who knows a week's errand has taken a month, and the one
         // who tells everybody else something is wrong. It goes out as an
         // ordinary fact, so it reaches people the way every other thing does.
-        events.push(...whatTheKeeperNotices(
+        events.push(...whatInternalAffairsNotices(
             state,
             withinSpan(year * 365 + 63, fromDay, toDay)
         ));
@@ -3225,7 +3228,7 @@ function applySendings(
             // The lost went out on the same errand to the same place; they are
             // marked missing a few lines below and `markMissing` leaves the
             // activity standing, so what is on their record is the errand that
-            // took them. That is also the only thing the keeper has to notice -
+            // took them. That is also the only thing Internal Affairs has to notice -
             // a house whose people all come home has nothing to raise an alarm
             // about.
             for (const member of party) {
@@ -3805,7 +3808,7 @@ function applyPeopleWalkingOut(
                 activity: {
                     // Chasing a thing they need, which is the kind's own words.
                     // NOT `out_with_a_party`: that has a term and a place to
-                    // come back to, and the keeper would call them overdue for
+                    // come back to, and Internal Affairs would call them overdue for
                     // a journey nobody sent them on.
                     kind: 'their_own_business',
                     note: `Left the compound. ${who.to.why}`,
@@ -3921,13 +3924,20 @@ function reasonSaidPlainly(why: WhyTheyWentOut | undefined): string {
  * mission should've only taken a week. That's their job - personnel. They're
  * the ones who tell other people something is wrong."*
  *
+ * The office is INTERNAL AFFAIRS, which is what this world already calls the
+ * people who handle a house's own - see
+ * `a-communication-talisman-carries-word-home.ts`, where Internal Affairs cuts
+ * the talismans and reads what comes back. "Keeper" was the word in the ruling
+ * above and it is taken many times over: a bell keeper, a formation keeper, a
+ * waystation keeper, a ledger keeper, a Namekeeper. One word, one meaning.
+ *
  * A share of the term rather than a fixed span, because a week late off a
  * forty-day errand is a delay and a week late off a two-year war is nothing.
  */
 const LATE_ENOUGH_TO_SAY_SO = 0.5;
 
 /**
- * The keeper notices, and it goes out the way everything goes out.
+ * Internal Affairs notices, and it goes out the way everything goes out.
  *
  * NOT A NEW CHANNEL. It is a world fact with an `unattributed` line on it, so
  * it reaches a player who cannot name the missing person as "a compound has
@@ -3935,14 +3945,45 @@ const LATE_ENOUGH_TO_SAY_SO = 0.5;
  * hearsay layer doing exactly what it already does for every other event.
  *
  * DERIVED FROM THE TERM. Nothing marks anybody overdue: a party's activity
- * carries the day it is due back, so being late is arithmetic, and a keeper
+ * carries the day it is due back, so being late is arithmetic, and Internal Affairs
  * cannot forget to notice.
  *
  * Said ONCE. The activity is cleared when it is said, because the point is the
  * house raising the alarm rather than a compound announcing the same absence
  * every year for a century.
+ *
+ * ── IT FIRES, AND IT FIRES ON THE SAME FEW PEOPLE ───────────────────────
+ *
+ * Measured over two hundred years on two seeds
+ * (`scripts/zz-internal-affairs.probe.ts`):
+ *
+ *   notices written by this pass        365 / 169
+ *   distinct people they are about       21 /  15
+ *   notices by the absence pass          35 /  25
+ *   people standing late at the end,
+ *     never spoken about               220 / 215
+ *
+ * So the office is alive and it is not the alarm this header describes. It
+ * says the same twenty-one names about seventeen times each while two hundred
+ * and twenty people stand overdue and unmentioned - a selection that fires
+ * constantly across a sliver of the world, which is the shape
+ * `AGENTS.md` calls out under "how often, and on whom".
+ *
+ * TWO EARLIER MEASUREMENTS SAID ZERO AND BOTH WERE WRONG, which is worth
+ * knowing before anybody trusts a third. `'overdue'` is a `PressureKind` and
+ * never a `HistoricalEventKind`, so a filter on `f.kind === 'overdue'`
+ * silently matches nothing; and counting by the summary alone cannot tell this
+ * pass from `when-somebody-does-not-come-back.ts`, which writes the
+ * byte-identical sentence. The split that works is `data.lostTrackOf`, which
+ * only the absence pass carries.
+ *
+ * WHY THE POPULATION IS A SLIVER. `bringHomeWhoeverIsDue` runs at day 62 and
+ * takes everybody at or past their due day - a superset of what this pass
+ * looks at on day 63 - so the only people left are the ones that pass cannot
+ * process. That is not nobody, but it is not "a week's errand that has taken a
+ * month" either, and it is not chosen.
  */
-function whatTheKeeperNotices(state: WorldState, day: number): PressureEvent[] {
+function whatInternalAffairsNotices(state: WorldState, day: number): PressureEvent[] {
     const out: PressureEvent[] = [];
     const houseOf = new Map(state.factions.map(f => [f.id, f]));
 
@@ -3965,7 +4006,7 @@ function whatTheKeeperNotices(state: WorldState, day: number): PressureEvent[] {
 
         out.push(emit(state, 'overdue', day, {
             day,
-            // The keeper SAYS it. That is the act - a house learning one of
+            // Internal Affairs SAYS it. That is the act - a house learning one of
             // its own has not come back is a person telling everybody.
             kind: 'said_in_public',
             scale: 'local',
@@ -4192,6 +4233,25 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         if (!doing || (!isAwayOnSomething(doing.kind) && theBoardWorkTheyAreOn(npc, doing.untilDay) === null)) continue;
         if (doing.untilDay === null || doing.untilDay === undefined) continue;
         if (day < doing.untilDay) continue;
+        // A PERSON NOBODY CAN FIND DOES NOT COME HOME, and this is the line
+        // that made Internal Affairs dead for the life of the repo.
+        //
+        // `markMissing` leaves the activity standing on purpose - see
+        // `theWorldLoses`: *"they are marked missing a few lines below and
+        // markMissing leaves the activity standing, so what is on their record
+        // is the errand that took them. That is also the only thing Internal Affairs
+        // has to notice."* It did not touch `status` either, so somebody the
+        // world had lost was still `alive` and still due back, and this pass
+        // walked them home and cleared the very field the next pass reads -
+        // one day before it reads it.
+        //
+        // HOW OFTEN IT ACTUALLY REFUSES IS NOT MEASURED, and it is probably
+        // rarely: `whatHousesLearnOfTheirOwn` resolves a lost person in the
+        // same slice it marks them, either sending them walking home on a
+        // fresh term or cutting them loose with no activity at all, so by the
+        // time this pass sees them there is usually nothing left to refuse.
+        // The guard is kept because it is true, not because it is load-bearing.
+        if (isLostTrackOf(state, npc)) continue;
 
         // A place that has since ceased to exist leaves them standing where
         // the errand took them, which is truer than teleporting them into a
