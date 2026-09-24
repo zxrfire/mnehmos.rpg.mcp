@@ -42,7 +42,7 @@ import {
     type PlanStep,
     type WhichComesFirst
 } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
-import type { ActionName, PlannedAction } from '../../src/web/actions.js';
+import { parseIntent, type ActionName, type PlannedAction } from '../../src/web/actions.js';
 
 function step(action: ActionName, extra: Partial<PlanStep['action']> = {}, said?: string): PlanStep {
     return { action: { action, ...extra }, ...(said ? { said } : {}) };
@@ -281,6 +281,82 @@ describe('the question never requires a player to know a string', () => {
  * give -> give -> give, `oneClauseIsOneAct` collapsed it to one, and the theft
  * vanished from a turn where the model had escalated nothing.
  */
+/**
+ * SAYING WHAT YOU MEAN TO DO IS NOT DOING IT, AND IT CARRIES.
+ *
+ * FOUND BY PLAYING, on turn 2 of a life:
+ *
+ *     "Grandfather, the Waterman Caravan is holding an intake here in thirteen
+ *      days. I mean to go before them and become a cultivator."
+ *
+ * A boy telling the man who raised him what he intends. The turn ran the
+ * speech AND thirty days of cultivation, refused for want of a method, with
+ * the refusal reaching the prose.
+ *
+ * The marker is in one clause and the act is in the next, and the split puts
+ * them in different rows: "I mean to go before them" reads as nothing, and
+ * "become a cultivator." on its own is a bare imperative the sentence tier
+ * answers `cultivate` at 0.794. Nobody is wrong locally. The intention simply
+ * stopped governing the clause it governs.
+ *
+ * `AN_AMBITION_IS_A_READ` is the same ruling one layer up, written for the
+ * model - *the player has said where they are going and not what they are
+ * doing, so there is no act to take* - and it is equally clear about the other
+ * half: A WISH THAT NAMES AN ACT IS THE ACT. Both halves are pinned here,
+ * because a fix that stops the cultivation and also stops "I mean to buy a
+ * sword" buying one is not a fix.
+ */
+describe('what follows an intention is still the intention', () => {
+    it('drops the clauses hanging off it rather than running them', () => {
+        expect(theClausesOf(
+            'Grandfather, the Waterman Caravan is holding an intake here in thirteen days. '
+            + 'I mean to go before them and become a cultivator.'
+        )).toEqual([
+            'the Waterman Caravan is holding an intake here in thirteen days. '
+            + 'I mean to go before them'
+        ]);
+    });
+
+    it.each([
+        'I mean to go before them and become a cultivator',
+        'I plan to go before them and become a cultivator',
+        'I want to go before them and become a cultivator'
+    ])('carries across the marker in %j', said => {
+        expect(theClausesOf(said)).toEqual([said.split(' and ')[0]]);
+    });
+
+    /**
+     * AND AN ACT BEFORE THE MARKER IS STILL AN ACT. Only what hangs OFF the
+     * intention is the intention; a sentence that does something and then says
+     * what it means to do next has done something.
+     */
+    it('leaves an act stated before the intention alone', () => {
+        expect(theClausesOf('I go to the market and I mean to buy a sword')).toEqual([
+            'I go to the market',
+            'I mean to buy a sword'
+        ]);
+    });
+
+    /**
+     * AND A WISH THAT NAMES AN ACT IS STILL THE ACT, which is the half of the
+     * ruling this could most easily have broken.
+     */
+    it.each([
+        ['I mean to buy a sword', 'buy'],
+        ['I want to join a sect', 'sect']
+    ])('still reaches the act from %j', (said, verb) => {
+        expect(parseIntent(said).action).toBe(verb);
+    });
+
+    /**
+     * AND AN ORDINARY SENTENCE IS UNTOUCHED. The marker has to be there.
+     */
+    it('does not cut a sentence with no intention in it', () => {
+        expect(theClausesOf('I go to Cloud Gate and then sit down and cultivate for a year'))
+            .toEqual(['I go to Cloud Gate', 'sit down', 'cultivate for a year']);
+    });
+});
+
 describe("a costly step survives when the player's own words reach it", () => {
     const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
 

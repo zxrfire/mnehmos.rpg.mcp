@@ -158,12 +158,59 @@ function forMatching(text: string): string {
  * The player's sentence, cut where a person would cut it.
  */
 export function theClausesOf(input: string): string[] {
-    return input
-        .split(/,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/i)
-        .map(part => part.trim())
-        .filter(part => part.split(/\s+/).filter(Boolean).length >= 2)
-        .filter(part => !thisFragmentModifiesTheActBesideIt(part));
+    return whatFollowsAnIntentionIsStillTheIntention(
+        input
+            .split(/,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/i)
+            .map(part => part.trim())
+            .filter(part => part.split(/\s+/).filter(Boolean).length >= 2)
+            .filter(part => !thisFragmentModifiesTheActBesideIt(part))
+    );
 }
+
+/**
+ * Saying what you MEAN to do, and the clauses that hang off it.
+ *
+ * FOUND BY PLAYING, on turn 2 of a life:
+ *
+ *     "Grandfather, the Waterman Caravan is holding an intake here in thirteen
+ *      days. I mean to go before them and become a cultivator."
+ *
+ * A boy telling the man who raised him what he intends. The turn ran the
+ * speech AND thirty days of cultivation, refused for want of a method, with
+ * the refusal reaching the prose.
+ *
+ * The marker is in one clause and the act is in the next, and the split puts
+ * them in different rows: "I mean to go before them" reads as nothing, and
+ * "become a cultivator." on its own is a bare imperative that the sentence
+ * tier answers `cultivate` at 0.794. Nobody is wrong locally. The intention
+ * simply stopped governing the clause it governs.
+ *
+ * So it carries. From the first clause that states an intention, the rest of
+ * the sentence is that intention rather than a list of acts, and none of it is
+ * put back as something to run. `AN_AMBITION_IS_A_READ` is the same ruling one
+ * layer up, written for the model: *the player has said where they are going
+ * and not what they are doing, so there is no act to take.*
+ *
+ * NOT A WISH THAT NAMES AN ACT, which that ruling is equally clear about - "I
+ * want to join a sect" is a join. Nothing here touches a clause the table can
+ * read as an act on its own; what it stops is a clause being read as one only
+ * because the words that made it a wish were cut off it.
+ */
+function whatFollowsAnIntentionIsStillTheIntention(clauses: string[]): string[] {
+    const at = clauses.findIndex(clause => A_SENTENCE_THAT_STATES_AN_INTENTION.test(clause));
+    return at === -1 ? clauses : clauses.slice(0, at + 1);
+}
+
+/**
+ * Saying what you mean to do rather than doing it.
+ *
+ * The forms a player writes an intention in, and no more: each one has to be
+ * followed by the act it is an intention ABOUT, which is what keeps "I will"
+ * out of the way of "I will kill him" - that is a declaration and reads as one
+ * already.
+ */
+const A_SENTENCE_THAT_STATES_AN_INTENTION =
+    /\b(?:i\s+(?:mean|plan|intend|hope|aim|want|wish|need)\s+to|i(?:'m| am)\s+going\s+to|i\s+will\s+one\s+day|one\s+day\s+i|someday|some\s+day)\b/i;
 
 /**
  * A fragment that qualifies the act next to it rather than naming one.
