@@ -958,6 +958,12 @@ export function composeNarrationUser(
     const alone = scene.company?.total === 0;
     const somebodyToPlay = !alone && (scene.company?.named.length ?? 0) > 0;
     const arrived = told.arrived ?? told.ambientIsNews ?? true;
+    // TURN 0 IS EXPOSITION ONLY, and the owner's word for it is a rule, not a proportion: "it
+    // shouldn't give ANYONE speech at the first turn, the first turn is special". Played before
+    // this: two thin paragraphs of life, then four of cards played in card order, one of them a
+    // quoted speech about the years at this rung. The cards are what invited the cast, so the
+    // opening is handed none; whoever the life names is in the life.
+    const opening = (scene.theLifeBehindThem?.length ?? 0) > 0;
 
     return [
         'THE SCENE',
@@ -981,10 +987,12 @@ export function composeNarrationUser(
             ]
             : []),
         '',
-        ...thePeopleHere(
-            scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,
-            told.alreadyShown
-        ),
+        ...(opening
+            ? whoIsStandingHereOnTheFirstTurn(scene.company)
+            : thePeopleHere(
+                scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,
+                told.alreadyShown
+            )),
         '',
         ...whereTheyStandNow(scene.standing),
         '',
@@ -1047,6 +1055,25 @@ function theTurnBefore(previous: { said: string | null; shown: string } | null):
 
 /** The last thing the model reads: which of the three kinds of turn this is. */
 /**
+ * The people standing in the square on turn 0, as bodies and nothing a voice could come out of.
+ *
+ * The opening gets no cards, because cards were played as a cast with speeches. But with no card
+ * at all, the woman who raised the player was written as "he" in the last paragraph. So the
+ * opening is told who is here, their sex and rough age, and nothing about what is on their mind.
+ */
+function whoIsStandingHereOnTheFirstTurn(company: Company | null | undefined): string[] {
+    const named = company?.named ?? [];
+    if (named.length === 0) return [];
+    const people = named.map(person => {
+        const sex = person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : null;
+        const age = Number.isFinite(person.age) ? `of about ${Math.round(person.age)}` : null;
+        const what = [sex, age].filter(Boolean).join(' ');
+        return what ? `${person.name} (${what})` : person.name;
+    });
+    return [`ALSO STANDING HERE, for where they are standing now and never a cast: ${people.join('; ')}.`];
+}
+
+/**
  * Where the person spoken to stands against the player, when it is a realm or more either way.
  *
  * Their card already says so, in its first line. Played at Core Formation: told to kneel, a
@@ -1081,8 +1108,10 @@ function theTurnToWrite(
         : 'They have been here since last turn, so open with a brief reminder of where they are - a '
             + 'clause or a sentence, no more, on one detail of the place the turn before did not use.';
     const who = opening
-        ? 'Write the opening: the years first, then the place they are standing in now, and the people '
-            + 'in it doing what their cards say.'
+        ? 'Write the opening as exposition only: the years of their own life first and for most of the '
+            + 'turn, in the active voice, with the people who were in them; then where they are standing '
+            + 'now. NOBODY SPEAKS ON THIS TURN - no quoted line from anybody, no scene beat, no cast of '
+            + 'who is standing about.'
         : addressing
             ? `${setting} Then play ${addressing}: their answer, in their voice.`
                 + (addressedStands
@@ -1125,12 +1154,15 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
     return [
         '',
         'THE LIFE BEHIND THIS CULTIVATOR. This is the first turn of the run, and the only one with',
-        'sixteen years behind it. OPEN BY WRITING THOSE YEARS - the household, the ground that raised',
-        'them, the faces they have known since before anybody was anybody, what they were told about',
-        'the world and by whom - as short paragraphs of a life, not a summary. Invent no parent,',
-        'sibling, teacher, master, parting or promise: every person and event in the life is below,',
-        'and somebody on a card is part of it only as these lines say. Then bring them to where they',
-        'are standing now, described in full.',
+        'sixteen years behind it. It is EXPOSITION ONLY: who the player is, the life behind them, the',
+        'people in it, and where they are standing now. OPEN BY WRITING THOSE YEARS as their own story,',
+        'in the active voice - she raised you, you worked the same thin field every season, you grew',
+        'up hearing the name of a house nobody had seen - most of the turn, not a summary and never a',
+        'list of who they know. The lines below are notes about that life; write what they mean, never',
+        'their wording. The daily texture of it - the work, the weather, the hunger - is yours to',
+        'write; the people and events are only the ones below. Invent no parent, sibling, teacher,',
+        'master, parting or promise. Then bring them to where they are standing now, as ground and',
+        'air and a place, in a paragraph or two.',
         ...life.map(line => `- ${line}`)
     ];
 }

@@ -31,6 +31,25 @@ describe('the opening is a life and a place, not a catalogue', () => {
         expect(facts).not.toMatch(/is holding an intake|A stall here/);
         expect(opening).toContain('THE LIFE BEHIND THIS CULTIVATOR');
     });
+
+    /**
+     * The owner: "it shouldn't give ANYONE speech at the first turn, the first turn is special,
+     * it's exposition only". Played before: two paragraphs of life, then the square's cards played
+     * in card order with a quoted speech in them. The opening is handed no cast, and its last
+     * instruction says nobody speaks.
+     */
+    it('hands the opening no cast and says nobody speaks on it', async () => {
+        const provider = new ScriptedProvider({ plans: ['{"action":"look"}'], narrations: ['The years.', 'A look.'] });
+        const { game } = await makeGameInWorld({ worldSeed: 'a-xianxia-run', seed: 'xianxia', provider });
+        await game.newRun('Shen Wuyou');
+        await game.act('I look around');
+
+        const [opening, look] = narrationPrompts(provider);
+        expect(opening).not.toContain('THE PEOPLE HERE');
+        expect(opening!.slice(opening!.lastIndexOf('NOW WRITE THE TURN'))).toContain('NOBODY SPEAKS ON THIS TURN');
+        expect(look).toContain('THE PEOPLE HERE');
+        expect(look).not.toContain('NOBODY SPEAKS ON THIS TURN');
+    });
 });
 
 describe('a conversation carries over', () => {
