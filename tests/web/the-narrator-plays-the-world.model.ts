@@ -16,6 +16,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { OllamaProvider } from '../../src/agent/provider/ollama';
 import { ProviderNarrator } from '../../src/web/narrator';
+import { EXAMPLES_CLOSE, EXAMPLES_OPEN, WORKED_TURNS } from '../../src/web/the-narrator-plays-the-world';
 import { makeGameInWorld } from './harness';
 
 const BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
@@ -30,8 +31,22 @@ const CLERK = new RegExp([
     '\\d+(?:\\.\\d+)?x (?:the rate|ordinary|what)',
     '\\d+ rungs? (?:above|below)',
     'the catalog',
-    'on the roster as'
+    'on the roster as',
+    'a wall beneath you',
+    'looking harder adds'
 ].join('|'), 'i');
+
+/**
+ * Every line of speech in the worked examples, long enough to be distinctive. Played: a shout
+ * at the square came back as the square example's punchline, word for word, because that
+ * example sat on the exact situation a player types.
+ */
+const EXAMPLE_LINES = WORKED_TURNS
+    .slice(WORKED_TURNS.indexOf(EXAMPLES_OPEN), WORKED_TURNS.indexOf(EXAMPLES_CLOSE))
+    .split('"')
+    .filter((_, i) => i % 2 === 1)
+    .map(line => line.replace(/\s+/g, ' ').trim())
+    .filter(line => line.length >= 20);
 
 /** A turn that closes on a list of what the player might do next. */
 const ENDS_ON_A_MENU = /(?:^|\n)\s*(?:You could|You might|Or you could)[^\n]*$/;
@@ -76,6 +91,8 @@ describe('the narrator plays the world', () => {
             expect(source, `"${said}" fell back to the engine's own lines`).toBe('model');
             expect(text.match(CLERK)?.[0], `"${said}" copied the clerk`).toBeUndefined();
             expect(ENDS_ON_A_MENU.test(text.trim()), `"${said}" ended on a menu`).toBe(false);
+            const flat = text.replace(/\s+/g, ' ');
+            expect(EXAMPLE_LINES.find(line => flat.includes(line)), `"${said}" copied a worked example`).toBeUndefined();
         }
 
         // Spoken to by name, the person answers out loud.
