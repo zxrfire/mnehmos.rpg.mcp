@@ -518,6 +518,22 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
             'No journey was involved and none is implied: being on their roll and being on their ' +
             'ground are two different things.'
         );
+        // AND WHERE THAT GROUND IS, WHICH THE LINE ABOVE MAKES THE PLAYER NEED.
+        //
+        // Found by playing: a new Skin of the Sand Well Caravan was told they
+        // were on the roll, and nothing told them where the Caravan was. They
+        // walked four days to Sand Well, which is a well, and met nobody of
+        // their own house. Naming the house is the sentence that takes them
+        // there - `I go to the Sand Well Caravan` - and it lands them at its
+        // gate; what was missing was anybody saying so.
+        //
+        // `territory` is already on the body, from `sectCatalogFacts`. Nothing
+        // is derived here and nothing new is carried: this says out loud a fact
+        // the tool has always returned.
+        const ground = (body.sect as { territory?: unknown } | undefined)?.territory;
+        if (typeof ground === 'string' && ground.length > 0) {
+            lines.push(`Their ground: ${ground} Naming the house is what takes you to it.`);
+        }
         if (typeof body.defectedFrom === 'string' && body.defectedFrom.length > 0) {
             lines.push(
                 'Whatever standing was built at the last door stayed there. ' +
