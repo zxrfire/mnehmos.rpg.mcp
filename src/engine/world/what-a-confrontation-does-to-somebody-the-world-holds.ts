@@ -106,6 +106,7 @@ import {
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import type { InheritanceRelation, ObligationInput } from '../social/grudges.js';
 import {
     theAccountsAFightOpens,
@@ -311,6 +312,7 @@ export function whatTheConfrontationDidToThem(
                 standing: -0.15,
                 note: 'Lost to them.'
             }, day);
+        andTheOtherEnd(state.npcs, state.npcs[at], { targetId: input.byId, kind: 'rival', standing: 0 }, day);
     }
 
     // ── THE DEATH ────────────────────────────────────────────────────────

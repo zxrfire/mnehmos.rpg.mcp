@@ -36,7 +36,22 @@
  * those words - *"the reason an unclaimed piece of ground is safe to rob is
  * structural: there is nobody on the row to notice"* - and until this existed,
  * the row said a dead house was still watching.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * EXCEPT ITS LIFE LAMPS, WHICH GO OUT WITH IT
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * A lamp in a Life Lamp Hall is not a thing that is owned; it is the house's own
+ * record of who of it is alive, kept burning by the house's hall, and nobody's
+ * but the house's to read (`a-house-knows-its-own-by-a-lamp-and-a-token.ts`).
+ * With the house gone there is nobody keeping it and nothing it answers for, so
+ * the rows go with the house rather than lying in the ruin as loot. Found on
+ * `echo`: a splinter seated itself on ground the world had already emptied, lit
+ * lamps there, and fell nine years later, and the lamps it lit lay on the
+ * emptied ground as though somebody had left them to be found.
  */
+
+import { A_LIFE_LAMP } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 
 /** A thing whose ownership is decided by who has it, once the house is gone. */
 export interface AThingLeftBehind {
@@ -117,6 +132,9 @@ export function applyWhoOwnsThemNow(
     },
     fallenHouseId: string
 ): number {
+    // Its lamps go out with it. See the header.
+    state.objects = state.objects.filter(object =>
+        !(object.ownerId === fallenHouseId && object.tags.includes(A_LIFE_LAMP)));
     const byId = new Map(state.npcs.map(npc => [npc.id, npc.name]));
     const landed = new Map(
         whoOwnsThemNow(state.objects, fallenHouseId, id => byId.get(id) ?? null)
@@ -133,4 +151,4 @@ export function applyWhoOwnsThemNow(
 }
 
 /** The shape this pass rewrites. Kept structural so the module stays pure. */
-type ObjectRecordLike = AThingLeftBehind & { ownerName: string };
+type ObjectRecordLike = AThingLeftBehind & { ownerName: string; tags: readonly string[] };

@@ -34,14 +34,18 @@ import {
     addGoal,
     bodyStandingOn,
     carryingWounds,
+    isTheWorldsToMove,
     maxBodyOf,
     relationshipWith,
+    setLocation,
     theWorldEnds,
     upsertRelationship,
     woundsCarriedBy,
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
+import { isElderRank } from '../cultivation/leadership.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import {
     whetherItGoesOn,
     whetherTheyGotUp,
@@ -356,12 +360,18 @@ export function holdGathering(
     const site = kind === 'expedition' ? reachableSite(state, circle, rng) : null;
     const locationId = site?.id ?? circle.host.seatLocationId;
 
+    // AND WHO ELSE CAME. See `aGrandGatheringOfPowers`: a gathering of houses
+    // that stand high is one of the reasons a head or an elder is not at their
+    // own seat, and it was the one kind of outing nothing produced.
+    const seniors = aGrandGatheringOfPowers(state, circle, sending.map(s => s.faction), locationId, day);
+
     const ties: GatheringTie[] = [];
     const placings: GatheringPlacing[] = [];
     let scoring: ScoringMode | null = null;
     let selectedUpwardId: string | null = null;
     let summary = '';
     const changes: string[] = [];
+    if (seniors.length > 0) changes.push(`${seniors.length} came out of their own seats for it`);
 
     // THE ID BEFORE THE SENTENCE, NOT THE ROW BEFORE THE SENTENCE.
     //
@@ -415,6 +425,9 @@ export function holdGathering(
         summary,
         data: {
             gathering: kind,
+            // How many houses sent the person who runs them rather than the
+            // people they teach. See `aGrandGatheringOfPowers`.
+            camePersonally: seniors.length,
             unattributed:
                 'There are unfamiliar colours on the road up to the compound, and the '
                 + 'inns have put their prices up.',
@@ -495,14 +508,19 @@ function pointTiesAt(
         const at = indexById(state.npcs, tie.fromId);
         if (at < 0) continue;
         const holder = state.npcs[at];
-        const which = holder.relationships.findIndex(r => r.targetId === tie.toId);
-        if (which < 0) continue;
-        const row = holder.relationships[which];
-        if (!row.factIds.includes(was)) continue;
-        const factIds = row.factIds.filter(id => id !== was);
-        if (!factIds.includes(now)) factIds.push(now);
+        // EVERY ROW BETWEEN THEM. Rows are keyed by the pair and the kind, so
+        // the fact this renames may be on any of them.
         const relationships = holder.relationships.slice();
-        relationships[which] = { ...row, factIds };
+        let moved = false;
+        for (let which = 0; which < relationships.length; which++) {
+            const row = relationships[which]!;
+            if (row.targetId !== tie.toId || !row.factIds.includes(was)) continue;
+            const factIds = row.factIds.filter(id => id !== was);
+            if (!factIds.includes(now)) factIds.push(now);
+            relationships[which] = { ...row, factIds };
+            moved = true;
+        }
+        if (!moved) continue;
         state.npcs[at] = { ...holder, relationships };
     }
 }
@@ -1000,6 +1018,7 @@ function heldAgainstTheKiller(
             ? WHAT_IT_COSTS_YOU_WITH_THEIR_OWN
             : WHAT_A_KILLING_COSTS_YOU_WITH_A_WITNESS) + onPurpose;
         write(state, witness, gone.by, delta, note, factId, day, ties);
+        andTheOtherEnd(state.npcs, witness, { targetId: gone.by.id, kind: 'rival', standing: delta }, day);
     }
 }
 
@@ -1519,7 +1538,7 @@ const STRUCTURAL: ReadonlySet<RelationshipKind> = new Set<RelationshipKind>([
 ]);
 
 /** The word for a number. The thresholds are the ones the rest of the engine uses. */
-function kindFor(standing: number): RelationshipKind {
+export function kindFor(standing: number): RelationshipKind {
     if (standing <= GRUDGE_STANDING) return 'enemy';
     if (standing <= -0.15) return 'rival';
     if (standing >= FRIENDSHIP_STANDING) return 'ally';
@@ -1703,3 +1722,85 @@ function bestArt(npc: NpcRecord): CombatantInput['technique'] {
 
 /** Re-exported for a harness that wants the raw resolver result. */
 export type { ConfrontationResult, RuinWing };
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHO ELSE COMES OUT FOR IT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The height a circle has to stand at before the people who run its houses come
+ * to it themselves.
+ *
+ * `powerOrdinal` is what a house reliably stands at, and Core Formation is where
+ * this world stops calling somebody a disciple. A circle whose host stands there
+ * or above is a room worth a head's year; anything under it is the chosen going
+ * to meet the chosen, which is what a gathering already was.
+ */
+export const A_GATHERING_OF_POWERS_STANDS_AT = 17;
+
+/** Days a senior is away for it: there and back, and the days it runs. */
+export const A_SENIOR_IS_AWAY_FOR_DAYS = 60;
+
+/*
+ * MEASURED on `shape-a` over 500 years: 154 gatherings, 80 of them with at
+ * least one house sending the person who runs it, and 196 seniors out of their
+ * own seats over the five centuries - about one every two and a half years
+ * somewhere in the world. `camePersonally` on the gathering's own fact is the
+ * count, so the digest and anybody asking where a head was can read it.
+ */
+
+/**
+ * Who leaves their own seat for a grand gathering.
+ *
+ * The design owner's list of why a head or an elder is not at home has a grand
+ * gathering of powers on it, and nothing in the world produced one: every
+ * gathering was drawn from `chosenOf`, so the seniors of every house in the
+ * world stood at their own seats for two thousand years. This is that reason,
+ * built where gatherings already are.
+ *
+ * ONE PER HOUSE, and it is the head where the head is standing at home, else
+ * the most senior elder who is. Nobody already away is pulled off what they are
+ * doing. They go as themselves - a `travelling` term with their own seat as
+ * `returnTo`, closed by `bringHomeWhoeverIsDue` like every other term - so for
+ * two months the house's deepest person is somewhere else, which is the whole
+ * point of it being a reason.
+ */
+export function aGrandGatheringOfPowers(
+    state: WorldState,
+    circle: Circle,
+    houses: readonly FactionRecord[],
+    locationId: string | null,
+    day: number
+): NpcRecord[] {
+    if (locationId === null) return [];
+    if (Number(circle.host.resources.power_ordinal ?? 0) < A_GATHERING_OF_POWERS_STANDS_AT) return [];
+
+    const went: NpcRecord[] = [];
+    for (const house of houses) {
+        const seat = house.seatLocationId;
+        if (seat === null || seat === locationId) continue;
+        const atHome = state.npcs.filter(n =>
+            n.status === 'alive' && isBelowTheLid(n) && n.factionId === house.id
+            && n.locationId === seat && n.activity === null && isTheWorldsToMove(n)
+            && isElderRank(n.factionRankIndex, house.ranks.length));
+        if (atHome.length === 0) continue;
+        const going = [...atHome].sort((a, b) => b.factionRankIndex - a.factionRankIndex
+            || b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
+            || (a.id < b.id ? -1 : 1))[0]!;
+        const at = indexById(state.npcs, going.id);
+        if (at < 0) continue;
+        state.npcs[at] = {
+            ...setLocation(state.npcs[at]!, locationId, day),
+            activity: {
+                kind: 'travelling',
+                note: `Gone to ${circle.host.name} for the gathering.`,
+                withIds: [],
+                sinceDay: day,
+                untilDay: day + A_SENIOR_IS_AWAY_FOR_DAYS,
+                returnTo: seat
+            }
+        };
+        went.push(state.npcs[at]!);
+    }
+    return went;
+}

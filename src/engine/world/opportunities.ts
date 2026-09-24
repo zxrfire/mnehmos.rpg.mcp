@@ -365,11 +365,6 @@ export function missedWindowsFor(
     return out;
 }
 
-/** Record that a window lapsed. Used by the clock; a plain counter. */
-export function countMiss(opp: OpportunityWindow, misses = 1): OpportunityWindow {
-    return { ...opp, missedWindows: opp.missedWindows + misses };
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // QUERIES
 // ─────────────────────────────────────────────────────────────────────────

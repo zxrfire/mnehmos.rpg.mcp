@@ -61,6 +61,42 @@ export type RelationshipType =
     | 'custom';
 
 /**
+ * The other half of each type, held by the other person.
+ *
+ * Every relationship runs both ways (the design owner's standing rule), and a
+ * type names what the OTHER person is to the holder: whoever holds `master`
+ * toward somebody is held as `disciple` by them. A type that reads the same from
+ * both sides is its own other half.
+ */
+export const THE_OTHER_HALF: Readonly<Partial<Record<RelationshipType, RelationshipType>>> = Object.freeze({
+    parent: 'child',
+    child: 'parent',
+    elder_sibling: 'younger_sibling',
+    younger_sibling: 'elder_sibling',
+    ancestor: 'descendant',
+    descendant: 'ancestor',
+    master: 'disciple',
+    disciple: 'master',
+    former_master: 'former_disciple',
+    former_disciple: 'former_master',
+    senior_brother: 'junior_brother',
+    junior_brother: 'senior_brother',
+    sect_superior: 'sect_subordinate',
+    sect_subordinate: 'sect_superior',
+    patron: 'client',
+    client: 'patron',
+    creditor: 'debtor',
+    debtor: 'creditor',
+    servant: 'employer',
+    employer: 'servant'
+});
+
+/** The type the other person holds, for a tie of this type. */
+export function theOtherHalfOf(type: RelationshipType): RelationshipType {
+    return THE_OTHER_HALF[type] ?? type;
+}
+
+/**
  * How much this tie matters to the holder - as a stored fact, set by whoever
  * writes the record, never computed from anybody's realm or stats.
  */

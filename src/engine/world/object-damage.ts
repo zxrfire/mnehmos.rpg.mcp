@@ -109,11 +109,6 @@ export type ThingState =
     /** It stopped existing. There was no row, so there is no record of it. */
     | 'gone';
 
-/** Whether this state is one the thing came out the other side of. */
-export function stillExists(state: ThingState): boolean {
-    return state === 'held' || state === 'holed' || state === 'inert';
-}
-
 export interface ThingHarmed {
     /** The one quantity, unchanged and unwrapped, so a caller can show it. */
     exposure: WeaponExposure;

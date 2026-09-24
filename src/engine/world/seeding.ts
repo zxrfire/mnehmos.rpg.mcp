@@ -112,6 +112,7 @@ import {
     seedTheMarriagesStandingInAPlace
 } from './the-marriages-a-world-opens-holding.js';
 import { seedTheKinTheCatalogStates } from './the-kin-a-world-opens-holding.js';
+import { AT_ARMS_LENGTH, howWarmlyTheyStartTowardTheirParent } from './what-a-house-answers-to.js';
 import {
     seedTheWrongsStillOpen,
     type WrongsSeeded
@@ -1164,7 +1165,21 @@ function seedFactions(
         // Rivalries are symmetric in the catalog, so recording one side is
         // enough; the other faction's own pass records the mirror.
         for (const rivalId of cf.rivalIds) faction.standing[rivalId] = -0.6;
-        if (cf.parentFactionId) faction.standing[cf.parentFactionId] = 0.4;
+        // THE STRUCTURE IS NOT THIS LINE. Who a house holds from is
+        // `FACTION_PARENTAGE`, and it stays there: what is written here is only
+        // how warmly this house starts out toward its parent, which varies by
+        // what the terms actually say. It used to be a flat 0.4 for every
+        // subsidiary in the world, which was a directed structural fact
+        // collapsed into one warmth number at the moment the world was built.
+        // See `what-a-house-answers-to.ts`.
+        if (cf.parentFactionId) {
+            // Null where the parentage table says nothing about this house, and
+            // then the old flat figure stands: a house the catalog parents must
+            // still come out related, or a zero here reads downstream as no
+            // relation at all.
+            faction.standing[cf.parentFactionId] =
+                howWarmlyTheyStartTowardTheirParent(faction.id) ?? AT_ARMS_LENGTH;
+        }
 
         // A federated sect holds its vein from somebody. An unbacked one holds
         // it because nobody has taken it yet. Both are recorded as control.

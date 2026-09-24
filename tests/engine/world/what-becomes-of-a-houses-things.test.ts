@@ -18,8 +18,10 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+    applyWhoOwnsThemNow,
     whoOwnsThemNow
 } from '../../../src/engine/world/what-becomes-of-a-houses-things-when-the-house-ends';
+import { A_LIFE_LAMP } from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token';
 
 const FALLEN = 'sect-the-severed';
 const STANDING = 'sect-azure-cloud-pavilion';
@@ -82,5 +84,31 @@ describe('what becomes of a house\'s things when the house ends', () => {
         expect(landed.map(where => where.objectId)).toEqual(['a', 'b']);
         // And nothing is left pointing at the house that ended.
         for (const where of landed) expect(where.ownerId).not.toBe(FALLEN);
+    });
+});
+
+describe('and the lamps it kept go out with it', () => {
+    /**
+     * A life lamp is the house's own record of who of it is alive, not loot.
+     * Found on `echo`: a splinter seated on ground the world had already
+     * emptied lit lamps there and fell nine years later, and the lamps lay on
+     * the emptied ground to be found. Red-checked by not dropping them: this
+     * goes red.
+     */
+    it('takes the fallen house\'s lamps off the world, and nobody else\'s', () => {
+        const lamp = (id: string, ownerId: string) => ({
+            ...thing(id, { ownerId }), tags: [A_LIFE_LAMP, `house:${ownerId}`, `member:${id}`]
+        });
+        const state = {
+            objects: [
+                lamp('lamp-of-a', FALLEN),
+                lamp('lamp-of-b', STANDING),
+                { ...thing('cauldron'), tags: ['cauldron'] }
+            ],
+            npcs: [{ id: 'npc-survivor', name: 'Xue Lianhua' }]
+        };
+        applyWhoOwnsThemNow(state, FALLEN);
+        expect(state.objects.map(o => o.id)).toEqual(['lamp-of-b', 'cauldron']);
+        expect(state.objects.find(o => o.id === 'cauldron')!.ownerId).toBeNull();
     });
 });

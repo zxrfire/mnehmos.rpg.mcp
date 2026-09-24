@@ -127,6 +127,13 @@ export interface Settlement {
         | 'compensated'
         | 'oath_fulfilled'
         | 'oath_released'
+        /**
+         * The word was not kept. Not a choice anybody makes and never offered
+         * by `whatWouldCloseIt`: it is what happened, written by whoever saw
+         * the person do the thing they swore not to do, and it is always paired
+         * with a `broken_oath` opened for the party who was owed it.
+         */
+        | 'broken'
         | 'renounced'
         | 'proven_false';
     onDay: DayIndex;

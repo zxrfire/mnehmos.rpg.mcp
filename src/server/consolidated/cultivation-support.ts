@@ -991,6 +991,29 @@ export function severBond(
         relationshipId
     );
 
+    // AND THE OTHER END. A relationship runs both ways, so a bond the crossing
+    // took is ended on the cultivator's own row toward them as well.
+    const theirs = db
+        .prepare(`
+            SELECT id, active, ended_reason, ended_on_day, last_updated_on_day
+            FROM relationships WHERE from_character_id = ? AND to_character_id = ? AND active = 1
+        `)
+        .all(cultivatorId, holderId) as { id: string; active: number; ended_reason: string | null; ended_on_day: number | null; last_updated_on_day: number }[];
+    for (const other of theirs) {
+        const endedToo = endRelationship({
+            active: other.active === 1,
+            endedReason: other.ended_reason,
+            endedOnDay: other.ended_on_day,
+            lastUpdatedOnDay: other.last_updated_on_day
+        } as Relationship, 'toll', onDay);
+        db.prepare(`
+            UPDATE relationships
+            SET active = ?, ended_reason = ?, ended_on_day = ?, last_updated_on_day = ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+        `).run(endedToo.active ? 1 : 0, endedToo.endedReason, endedToo.endedOnDay, endedToo.lastUpdatedOnDay, other.id);
+    }
+
     // Everything this holder held about the cultivator: filed under the
     // person's claim key, or hanging off a fact that names them as a subject.
     const deleted = db
