@@ -207,7 +207,8 @@ import { anInsultLandsOnTheRoom } from '../engine/world/what-an-insult-to-a-room
 import {
     AN_INSULT,
     A_HAND_RAISED,
-    A_SENTENCE_THAT_ONLY_NEGOTIATES
+    A_SENTENCE_THAT_ONLY_NEGOTIATES,
+    A_HAND_PUT_OUT_TO_STAY_UPRIGHT
 } from './what-a-sentence-only-does.js';
 import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
@@ -4091,6 +4092,27 @@ export class GameService {
             && AN_INSULT.test(rawInput)
             && !A_HAND_RAISED.test(rawInput)) {
             action = { action: 'insult', ...(action.target ? { target: action.target } : {}) };
+        }
+
+        // ── AND A HAND PUT OUT TO STAY UPRIGHT IS NOT A HAND RAISED ──────
+        //
+        // The run-ender this one is for is written up on
+        // `A_HAND_PUT_OUT_TO_STAY_UPRIGHT`: a player on 7 of 40 grabbed the
+        // sleeve of the woman who raised them to keep from falling, and the
+        // engine pressed her. She struck once and that was the run.
+        //
+        // WIDER THAN THE OTHERS ON PURPOSE. The insult veto asks that no hand
+        // be raised anywhere in the sentence, because a curse and a blow can
+        // sit in one line. This cannot: the hand IS the sentence, and it is the
+        // stated purpose that makes it safe. So `A_HAND_RAISED` is not consulted
+        // and `grab` being an attack verb is exactly the thing being overridden.
+        if ((action.action === 'attack' || action.action === 'coerce')
+            && A_HAND_PUT_OUT_TO_STAY_UPRIGHT.test(rawInput)) {
+            action = {
+                action: 'interact',
+                intent: 'talk',
+                ...(action.target ? { target: action.target } : {})
+            };
         }
 
         // THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT

@@ -75,6 +75,35 @@ export const A_HAND_RAISED =
     /\b(?:attack|attacks|attacking|attacked|strike|strikes|striking|struck|hit|hits|hitting|punch|punches|punching|punched|kick|kicks|kicking|kicked|stab|stabs|stabbing|stabbed|cut|cuts|cutting|slash|slashes|kill|kills|killing|killed|draw|draws|drawing|drew|swing|swings|swinging|swung|lunge|lunges|charge|charges|charging|charged|grab|grabs|grabbing|grabbed|seize|seizes|seizing|seized|throttle|throttles|strangle|strangles|beat|beats|beating|fight|fights|fighting|fought|sword|blade|fist|fists|make|makes|making|made|force|forces|forcing|forced|drag|drags|dragging|dragged|pin|pins|pinning|pinned|shove|shoves|shoving|shoved|push|pushes|pushing|pushed|throw|throws|throwing|threw)\b/i;
 
 /**
+ * A hand put out to stay upright, which is not a hand raised.
+ *
+ * ── THE MEASURED CASE, AND IT ENDED A RUN ────────────────────────────────
+ *
+ * Played, on 7 of 40 after a fight the player had broken off: *"I sway, and
+ * grab Kong Zhaolu's sleeve to keep from falling"*. `grab` is an attack verb,
+ * so the pattern table read the sentence as an ATTACK on the woman who raised
+ * this cultivator; the model made it `coerce`; and the cost rule waved that
+ * through, correctly by its own lights, because a model may pick a different
+ * dangerous verb when the reader without one already reached a dangerous verb.
+ * She answered with a strike for 7 and the run ended. Leaning on your family to
+ * stay upright killed the player.
+ *
+ * Every earlier veto here is about what a sentence SAYS. This one is about what
+ * it says the hand was FOR, which the sentence states outright and which no
+ * assault is ever written with: nobody grabs somebody to keep from falling and
+ * means a blow. The purpose clause is the anchor and it is required - `grab her
+ * sleeve` alone is untouched, and stays an attack, because it is one.
+ */
+export const A_HAND_PUT_OUT_TO_STAY_UPRIGHT = new RegExp([
+    // The hand, and then what it was for. Said in either order.
+    String.raw`\b(?:grab|grabs|grabbed|grabbing|catch|catches|caught|catching|clutch|clutches|clutched|clutching|hold|holds|held|holding|take|takes|took|taking|seize|seizes|seized|seizing|reach|reaches|reached|reaching)\b[^.!?]{0,60}?\b(?:to (?:keep|stop) (?:myself|me)?\s*(?:from\s+)?(?:falling|going down)|to (?:steady|right) (?:myself|me)|to (?:stay|keep) (?:upright|on my feet|standing)|so (?:i|I) (?:do not|don't|didn't) fall|for support)\b`,
+    // And the shapes that carry it without a clause, because they cannot mean
+    // anything else: you do not lean on somebody you are attacking.
+    String.raw`\b(?:lean|leans|leaned|leaning)\s+(?:on|against|into)\b`,
+    String.raw`\b(?:steady|steadies|steadied|steadying)\s+(?:myself|me)\b`
+].join('|'), 'i');
+
+/**
  * A bow, a kneel or cupped hands aimed at somebody.
  *
  * The genre's ordinary greeting and its ordinary apology, and it shares every
