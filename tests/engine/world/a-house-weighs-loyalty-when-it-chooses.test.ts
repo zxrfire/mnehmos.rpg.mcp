@@ -77,7 +77,7 @@ function member(
         factionId: HOUSE,
         factionRankIndex: rank,
         relationships: ties,
-        merit: merit > 0 ? { houseId: HOUSE, points: merit } : null
+        merit: merit > 0 ? [{ houseId: HOUSE, points: merit }] : null
     };
 }
 

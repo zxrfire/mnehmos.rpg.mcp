@@ -46,7 +46,7 @@ function person(id: string, rank: number, ordinal: number, tags: string[] = []):
         factionRankIndex: rank,
         activity: null,
         tags,
-        merit: rank < 0 ? null : { houseId: HOUSE.id, points: 1_000_000 }
+        merit: rank < 0 ? null : [{ houseId: HOUSE.id, points: 1_000_000 }]
     };
 }
 

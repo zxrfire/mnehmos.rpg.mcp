@@ -527,11 +527,15 @@ export interface NpcRecord {
     spiritStones: number;
 
     /**
-     * What the house they serve counts in their favour, and which house that
-     * is. Read and credited only through
-     * `what-a-house-counts-in-somebodys-favour.ts`. Absent is none.
+     * What each house counts in their favour. Read and credited only through
+     * `what-a-house-counts-in-somebodys-favour.ts`. Absent or empty is none.
+     *
+     * ONE ROW PER HOUSE, because service is not only owed to the house you
+     * belong to. A stranger who does a house's work earns something it counts,
+     * and a house weighing an outsider for a seat has that to weigh. This was
+     * a single pair and an outsider had nowhere to stand in it.
      */
-    merit?: HouseMerit | null;
+    merit?: readonly HouseMerit[] | null;
 
     /**
      * What they are worth in front of people, raised by public wins and deeds

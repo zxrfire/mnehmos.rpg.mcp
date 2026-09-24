@@ -2206,10 +2206,17 @@ interface NpcRow {
 function parseMerit(raw: string | null): NpcRecord['merit'] {
     if (raw === null || raw === undefined) return undefined;
     try {
-        const parsed = JSON.parse(raw) as { houseId?: unknown; points?: unknown };
-        return typeof parsed.houseId === 'string' && Number.isFinite(parsed.points)
-            ? { houseId: parsed.houseId, points: Number(parsed.points) }
-            : undefined;
+        // A ROW WRITTEN BEFORE MERIT WAS PER-HOUSE IS ONE PAIR, and reads as a
+        // list of one. Nothing migrates: the column is JSON and both shapes
+        // parse, so a world saved last month opens without a schema change.
+        const parsed = JSON.parse(raw) as unknown;
+        const rows = Array.isArray(parsed) ? parsed : [parsed];
+        const kept = rows.filter(
+            (row): row is { houseId: string; points: number } =>
+                typeof (row as { houseId?: unknown }).houseId === 'string'
+                && Number.isFinite((row as { points?: unknown }).points)
+        ).map(row => ({ houseId: row.houseId, points: Number(row.points) }));
+        return kept.length > 0 ? kept : undefined;
     } catch {
         return undefined;
     }

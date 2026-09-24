@@ -509,7 +509,7 @@ describe('a sitting between other work', () => {
         expect(howManyTheHouseHas(state.objects, HOUSE)).toBeGreaterThan(0);
         const elder = state.npcs[at(state, 'elder')]!;
         expect(elder.activity, 'nothing they were at is interrupted').toEqual(teaching);
-        expect(elder.merit?.points ?? 0).toBeGreaterThan(0);
+        expect(elder.merit?.[0]?.points ?? 0).toBeGreaterThan(0);
     });
 
     it('and is paid for what landed, at what the slips are worth', () => {

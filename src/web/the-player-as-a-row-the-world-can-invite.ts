@@ -267,7 +267,7 @@ export function standInTheWorld(
         // none, which is what the world's own rows do when somebody moves.
         merit: house.factionId === null
             ? null
-            : { houseId: house.factionId, points: Math.max(0, Math.round(house.contribution ?? 0)) },
+            : [{ houseId: house.factionId, points: Math.max(0, Math.round(house.contribution ?? 0)) }],
         spiritStones: Math.max(0, Math.round(cultivator.spiritStones)),
         // Death is the cultivation engine's to declare and it declares it on
         // the sheet - so the sheet is read here in this direction as in every

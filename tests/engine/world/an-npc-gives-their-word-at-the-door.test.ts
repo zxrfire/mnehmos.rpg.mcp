@@ -169,7 +169,7 @@ describe('what a broken word costs inside a house', () => {
             });
             return {
                 ...npc, factionId: SEAT, factionRankIndex: 0,
-                merit: { houseId: SEAT, points: needed }
+                merit: [{ houseId: SEAT, points: needed }]
             };
         };
         // The one who broke their word sorts FIRST by id, so a seat decided any

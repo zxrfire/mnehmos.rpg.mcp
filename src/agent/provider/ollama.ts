@@ -59,6 +59,14 @@ export interface OllamaProviderConfig {
      * without it, which needs no capability list to maintain.
      */
     think?: boolean;
+    /**
+     * How long the server keeps the model loaded after a call, in Ollama's own
+     * duration syntax ("30m", "2h", "-1" for forever). Absent means the server's
+     * default of five minutes, which a player reading a long scene outlasts - the
+     * next turn then pays a cold load (measured 18s on gemma4:31b). Read from
+     * `OLLAMA_KEEP_ALIVE` if omitted.
+     */
+    keepAlive?: string;
     /** Allow tests to inject a custom fetch implementation. */
     fetchImpl?: typeof fetch;
 }
@@ -98,6 +106,7 @@ export class OllamaProvider implements LLMProvider {
     private readonly defaultModel: string;
     private readonly think: boolean;
     private readonly contextWindow: number | undefined;
+    private readonly keepAlive: string | undefined;
     private readonly fetchImpl: typeof fetch;
     /**
      * Models that answered "I do not take a `think` flag". Learned rather than
@@ -113,6 +122,7 @@ export class OllamaProvider implements LLMProvider {
         this.defaultModel = config.defaultModel ?? PROVIDER_DEFAULT_MODEL.ollama;
         this.think = config.think ?? false;
         this.contextWindow = config.contextWindow ?? numberFromEnv(process.env.OLLAMA_NUM_CTX);
+        this.keepAlive = config.keepAlive ?? (process.env.OLLAMA_KEEP_ALIVE || undefined);
         this.fetchImpl = config.fetchImpl ?? fetch;
     }
 
@@ -137,6 +147,7 @@ export class OllamaProvider implements LLMProvider {
             stream: false
         };
         if (Object.keys(options).length > 0) body.options = options;
+        if (this.keepAlive !== undefined) body.keep_alive = this.keepAlive;
 
         // reasoningEffort is deliberately NOT mapped: Ollama exposes thinking via
         // a `think` flag that only thinking-tuned models accept, so effort is a

@@ -93,7 +93,7 @@ describe('a room taken off somebody', () => {
             ...nobody,
             face: 4,
             factionRankIndex: house.ranks.length - 1,
-            merit: { houseId: house.id, points: 400, updatedOnDay: day }
+            merit: [{ houseId: house.id, points: 400, updatedOnDay: day }]
         };
         expect(whatTheyAreWorthToTheirHouseNow(state, rebuilt, house))
             .toBeGreaterThan(howHeavyTheirRemovalStillIs(rebuilt, day));

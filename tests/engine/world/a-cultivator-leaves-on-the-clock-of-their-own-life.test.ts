@@ -193,7 +193,7 @@ describe('what going would cost somebody', () => {
         return {
             ...setRealm(createNpc('own-clock', { id: 'weighing', bornOnDay: 0, onDay: DAY, locationId: null, occupation: 'disciple' }), 20, DAY),
             factionId: 'house-a', factionRankIndex: rank, relationships: ties,
-            merit: merit > 0 ? { houseId: 'house-a', points: merit } : null
+            merit: merit > 0 ? [{ houseId: 'house-a', points: merit }] : null
         };
     }
     const tie = (id: string, since: number): NpcRecord['relationships'][number] => ({

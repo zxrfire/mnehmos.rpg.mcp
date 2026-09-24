@@ -37,10 +37,37 @@ import {
 import { shareOfAttention } from '../cultivation/cultivation.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 
-/** What this house counts in their favour. Nothing, for any other house. */
+/** What this house counts in their favour. Nothing, where it counts none. */
 export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null): number {
-    if (houseId === null || !npc.merit || npc.merit.houseId !== houseId) return 0;
-    return npc.merit.points;
+    if (houseId === null || !npc.merit) return 0;
+    return npc.merit.find(row => row.houseId === houseId)?.points ?? 0;
+}
+
+/** Every house that counts something in their favour, most first. */
+export function whoCountsThemFavourably(
+    npc: Pick<NpcRecord, 'merit'>
+): readonly { houseId: string; points: number }[] {
+    return [...(npc.merit ?? [])].sort((a, b) => b.points - a.points);
+}
+
+/**
+ * The same row with this much more counted by a named house.
+ *
+ * FOR ANY HOUSE, INCLUDING ONE THEY DO NOT BELONG TO. A stranger who brings a
+ * house its dead back has done it a service, and a house weighing that stranger
+ * for a seat later reads this - `whatAnOutsiderMustStandAt` is a realm bar and
+ * says the rest is how badly the house wants them, which is what a record of
+ * service is evidence of.
+ */
+export function creditMeritWith(npc: NpcRecord, houseId: string, points: number): NpcRecord {
+    if (!(points > 0) || !isTheWorldsToMove(npc)) return npc;
+    const held = npc.merit ?? [];
+    const at = held.findIndex(row => row.houseId === houseId);
+    const next = [...held];
+    const gained = Math.round(points);
+    if (at >= 0) next[at] = { houseId, points: next[at]!.points + gained };
+    else next.push({ houseId, points: gained });
+    return { ...npc, merit: next };
 }
 
 /**
@@ -55,11 +82,8 @@ export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null)
  * the play layer, which is the one store a promotion then reads for them.
  */
 export function creditMerit(npc: NpcRecord, points: number): NpcRecord {
-    if (npc.factionId === null || !(points > 0) || !isTheWorldsToMove(npc)) return npc;
-    return {
-        ...npc,
-        merit: { houseId: npc.factionId, points: meritWith(npc, npc.factionId) + Math.round(points) }
-    };
+    if (npc.factionId === null) return npc;
+    return creditMeritWith(npc, npc.factionId, points);
 }
 
 /** What the board pays for this many days of errands pitched at this height. */

@@ -126,6 +126,24 @@ describe('OllamaProvider', () => {
         expect(body.options).toBeUndefined();
     });
 
+    it('asks the server to keep the model loaded for as long as an operator said', async () => {
+        const mock = mockFetch({ body: chatReply('x') });
+        const provider = new OllamaProvider({ fetchImpl: mock.fn, keepAlive: '2h' });
+
+        await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hi' }] });
+        const body = JSON.parse(mock.lastRequest.init?.body as string);
+        expect(body.keep_alive).toBe('2h');
+    });
+
+    it('leaves how long the model stays loaded to the server when nobody said', async () => {
+        const mock = mockFetch({ body: chatReply('x') });
+        const provider = new OllamaProvider({ fetchImpl: mock.fn });
+
+        await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hi' }] });
+        const body = JSON.parse(mock.lastRequest.init?.body as string);
+        expect(body.keep_alive).toBeUndefined();
+    });
+
     // ── usage + cost ──────────────────────────────────────────────────────
 
     it('maps prompt_eval_count/eval_count onto prompt/completion tokens', async () => {

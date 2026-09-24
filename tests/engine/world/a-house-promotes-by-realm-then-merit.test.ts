@@ -39,7 +39,7 @@ const house = makeFaction({
 
 function member(id: string, rank: number, ordinal: number, merit: number, tags: string[] = []): NpcRecord {
     const npc = createNpc('merit', { id, bornOnDay: 0, onDay: 0, cultivation: { realmOrdinal: ordinal } });
-    return { ...npc, factionId: HOUSE, factionRankIndex: rank, tags, merit: merit > 0 ? { houseId: HOUSE, points: merit } : null };
+    return { ...npc, factionId: HOUSE, factionRankIndex: rank, tags, merit: merit > 0 ? [{ houseId: HOUSE, points: merit }] : null };
 }
 
 /** Rooms the way the architecture writes them: a location naming the house and what it is for. */
@@ -57,12 +57,21 @@ function outcome(state: WorldState, id: string) {
 }
 
 describe('merit is held against the house that counts it', () => {
-    it('reads as nothing for any other house, and starts again in a new one', () => {
+    // WHAT LEAVING A HOUSE DOES TO WHAT IT COUNTED, and it used to wipe it.
+    // Merit was one pair keyed to whichever house you were on the roll of, so
+    // moving started the count again and a house had no way to count anybody
+    // who was not its own. It is per-house now, and the ruling that forced it
+    // is that a stranger who does a house's work earns something it counts -
+    // which a house weighing them for a seat later has to be able to read.
+    // So an old house's count stands beside the new one and neither hides the
+    // other.
+    it('reads as nothing for any other house, and keeps what each one counted', () => {
         const npc = member('m', 0, 5, 400);
         expect(meritWith(npc, HOUSE)).toBe(400);
         expect(meritWith(npc, 'another-house')).toBe(0);
         const moved = creditMerit({ ...npc, factionId: 'another-house' }, 30);
-        expect(moved.merit).toEqual({ houseId: 'another-house', points: 30 });
+        expect(meritWith(moved, 'another-house')).toBe(30);
+        expect(meritWith(moved, HOUSE)).toBe(400);
     });
 
     it('survives a save', () => {
@@ -73,7 +82,7 @@ describe('merit is held against the house that counts it', () => {
         state.npcs.push(member('served', 2, 14, 1234));
         repo.saveWorld(state);
         const loaded = repo.loadWorld(state.id)!;
-        expect(loaded.npcs.find(n => n.id === 'served')!.merit).toEqual({ houseId: HOUSE, points: 1234 });
+        expect(loaded.npcs.find(n => n.id === 'served')!.merit).toEqual([{ houseId: HOUSE, points: 1234 }]);
         expect(loaded).toEqual(state);
         db.close();
     });

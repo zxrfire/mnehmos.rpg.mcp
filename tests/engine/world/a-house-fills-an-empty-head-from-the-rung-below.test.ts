@@ -30,7 +30,7 @@ const headBar = ordinalExpectedAt(HEAD, RANKS.length, 2, 30);
 function member(id: string, rank: number, ordinal: number): NpcRecord {
     const npc = createNpc('succession', { id, bornOnDay: 0, onDay: 0, cultivation: { realmOrdinal: ordinal } });
     // Served past every rung's minimum, so only the chair and the bar are being asked.
-    return { ...npc, factionId: house.id, factionRankIndex: rank, merit: { houseId: house.id, points: 1e9 } };
+    return { ...npc, factionId: house.id, factionRankIndex: rank, merit: [{ houseId: house.id, points: 1e9 }] };
 }
 
 function world(npcs: NpcRecord[]): WorldState {

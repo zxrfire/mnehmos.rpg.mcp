@@ -21,6 +21,7 @@
  * Run: npx tsx scripts/probe-rogues-and-the-court-over-a-long-run.ts
  *   PROBE_PLAN  seed:horizon,horizon;...   PROBE_OUT
  */
+import { meritWith } from '../src/engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { appendFileSync, writeFileSync } from 'node:fs';
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
@@ -229,7 +230,7 @@ async function main(): Promise<void> {
                 const house = state.factions.find(f => f.id === n.factionId);
                 if (house === undefined) continue;
                 face += Math.max(0, Number(n.face ?? 0));
-                service += (n.merit?.houseId === house.id ? n.merit.points : 0)
+                service += meritWith(n, house.id)
                     / whatServiceIsWorthBesideAWin(house);
                 let speaks = 0;
                 for (const other of state.npcs) {

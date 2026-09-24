@@ -32,7 +32,7 @@ const RANKS = ['Outer', 'Inner', 'Core', 'True', 'Elder', 'Grand Elder', 'Head']
 
 function member(id: string, rank: number, ordinal: number, merit = 100_000): NpcRecord {
     const npc = createNpc('real-size', { id, bornOnDay: 0, onDay: 0, cultivation: { realmOrdinal: ordinal } });
-    return { ...npc, factionId: HOUSE, factionRankIndex: rank, merit: { houseId: HOUSE, points: merit } };
+    return { ...npc, factionId: HOUSE, factionRankIndex: rank, merit: [{ houseId: HOUSE, points: merit }] };
 }
 
 function quarters(sleeps: number) {

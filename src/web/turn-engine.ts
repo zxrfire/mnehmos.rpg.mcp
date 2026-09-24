@@ -203,6 +203,7 @@ import {
     whatSomebodyIsLike
 } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
+import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
@@ -18752,7 +18753,7 @@ ${fit.line}`;
         // What the house counted last time this row was written. The projection
         // carries the membership's `contribution`, and a promotion pass reads it
         // off the row, so a count that moved has to reach disk like a rung.
-        const wasWorth = before?.merit?.points ?? 0;
+        const wasWorth = meritWith(before ?? { merit: null }, membership?.sectId ?? null);
 
         const row = standInTheWorld(this.atHand, cultivator, {
             factionId: membership?.sectId ?? null,
@@ -18771,7 +18772,7 @@ ${fit.line}`;
         // do not change anybody's house.
         if (row === null) return;
         if (row.factionId !== wasIn || row.factionRankIndex !== wasAt
-            || (row.merit?.points ?? 0) !== wasWorth || before === null) {
+            || meritWith(row, membership?.sectId ?? null) !== wasWorth || before === null) {
             this.theWorldMoved();
         }
     }

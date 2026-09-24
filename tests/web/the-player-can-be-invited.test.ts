@@ -277,11 +277,11 @@ describe('the row is not a free agent', () => {
         // the door that reads merit would be reading a number nobody can earn.
         const state = worldWithTwoHouses();
         const counted = 40;
-        const merit = { houseId: 'house-b', points: counted };
+        const merit = [{ houseId: 'house-b', points: counted }];
         state.npcs.push({ ...playerRow(state, 10), merit });
         const control: NpcRecord = {
             ...playerRow(state, 10), id: 'npc-served', name: 'An Ordinary Disciple',
-            tags: [], merit: { ...merit }
+            tags: [], merit: [...merit]
         };
         state.npcs.push(control);
 
