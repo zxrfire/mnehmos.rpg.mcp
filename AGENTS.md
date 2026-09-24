@@ -3751,6 +3751,20 @@ HEAD rather than in it. So finish with `git reset -- <the paths you committed>` 
 `git diff --cached` is empty for them. Resetting a path leaves the working tree alone, so
 anybody else's unstaged edits in the same file survive.
 
+**And that reset must run where `GIT_INDEX_FILE` is NOT set, which is the part that is easy to
+get wrong while believing you got it right.** Chained into the same shell as the commit - which
+is the natural way to write it - the variable is still exported, so the reset clears the
+**private** index, which was about to be discarded anyway, and the shared one is never touched.
+Every check then passes: the commit is correct, `git show --stat HEAD` is correct, and the
+staged revert is still sitting there. Measured here across three commits in one session, found
+only because an unrelated `git status` printed `MM` on files that had already been committed
+and reset.
+
+So either `unset GIT_INDEX_FILE` first, or run the reset as its own command. **`MM` in
+`git status` on a path you have already committed is the tell**, and `git diff --cached --stat`
+coming back empty is the confirmation. Check it after the push rather than before, because HEAD
+moving is what makes the shared entry stale in the first place.
+
 **Whatever you do, verify after rather than only before.** `git show --stat HEAD` is the check
 that catches this, and it is the only one that runs late enough to see the race. If you swept
 somebody, say so to them immediately and **do not rewrite the commit** - a pushed commit that
