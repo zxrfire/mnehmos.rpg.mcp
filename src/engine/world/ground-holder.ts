@@ -103,6 +103,29 @@ export interface WhoHoldsThisGround {
  */
 const REGION_DECLARES_NOBODY = 'no_authority';
 
+/**
+ * What sort of ground a place is, for a sentence that would otherwise leave a
+ * narrator guessing.
+ *
+ * Reported from a played run: *"Nobody holds The Burial Sands, and everybody
+ * has noticed"* came back every look as the model inventing what the Burial
+ * Sands might be - *"the mark of the Burial Sands"*, *"the absence of that
+ * treasure"*. A name with no noun on it is a name a narrator will furnish.
+ *
+ * Empty where the kind adds nothing a reader could not see, because a sentence
+ * saying *the town of Six Li, a town* is worse than one that says neither.
+ */
+function whatSortOfGroundThisIs(step: { kind?: string }): string {
+    switch (step.kind) {
+        case 'region': return ', a province';
+        case 'vein': return ', a vein';
+        case 'ruin': return ', a ruin';
+        case 'sect_seat': return ", a house's own ground";
+        case 'wilds': return ', open ground';
+        default: return '';
+    }
+}
+
 function chainFrom(
     locations: readonly LocationRecord[],
     locationId: string
@@ -311,7 +334,7 @@ export function whoHoldsTheGround(
                 holderFactionId: null,
                 holderName: null,
                 alignment: null,
-                why: `Nobody holds ${step.name}, and everybody has noticed.`
+                why: `Nobody holds ${step.name}${whatSortOfGroundThisIs(step)}, and everybody has noticed.`
             };
         }
     }
