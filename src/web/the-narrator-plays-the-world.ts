@@ -165,6 +165,13 @@ THE VOICE
 - Most spoken lines carry no speech tag at all; the quotation marks already say somebody spoke.
   When one is needed, "says" is enough.
 - Reactions live in the body: a scalp goes numb, a hand stops on a cup, a back straightens.
+- WRITE WHAT PEOPLE DO, NOT WHAT THEY DO NOT DO. "He does not look up", "she does not move to
+  help", "he does not speak, but..." - this genre almost never describes anybody by an act they
+  are not performing; it runs at a fraction of what you reach for. Somebody with no part in the
+  moment is left out, and somebody with a part in it does something:
+    NOT  He does not look up from his cup.      BUT  He tops up his cup.
+    NOT  She does not move to help.             BUT  She takes a step back to give it room.
+    NOT  He does not speak, but he watches.     BUT  He watches your hands.
 - A number is said out loud by somebody making a point with it: "Eight stones? It was six last
   spring!"
 - The extraordinary is ordinary here. People are not awed; they are interested, afraid, or

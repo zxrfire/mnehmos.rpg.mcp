@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { composeNarrationUser, whereTheyStandNow } from '../../src/web/prompt';
+import { composeNarrationUser, theSeasonOn, whereTheyStandNow } from '../../src/web/prompt';
 import { makeGameInWorld, ScriptedProvider } from './harness';
 
 const narrationPrompts = (provider: ScriptedProvider) => provider.calls
@@ -101,5 +101,30 @@ describe('the narrator is told whether the player is a woman or a man', () => {
 
     it('says nothing when the caller did not know', () => {
         expect(whereTheyStandNow(standing)).toContain('- Qi Condensation Layer 1, 16 years old, no house behind them');
+    });
+});
+
+/**
+ * The engine has no seasons, and a model handed none writes a different one at every gate. The
+ * prompt reads one off the run's day, so a whole life keeps to a calendar.
+ */
+describe('the scene carries a season read off the day', () => {
+    it('turns the year from early spring', () => {
+        expect(theSeasonOn(0)).toBe('early spring');
+        expect(theSeasonOn(100)).toBe('early summer');
+        expect(theSeasonOn(364)).toBe('late winter');
+        expect(theSeasonOn(365)).toBe('early spring');
+    });
+
+    it('puts it in the scene, and only when the day is known', () => {
+        const facts = { headline: 'x', lines: ['Wind Turn.'], structure: [], prose: '' };
+        const standing = {
+            rank: 'Qi Condensation Layer 1', age: 16, spiritStones: 30, booksHeld: [], methods: [],
+            untreatedInjuries: 0, house: null
+        };
+        const on = composeNarrationUser(facts, { place: 'Wind Turn', ambient: 'thin', standing: { ...standing, dayOfTheRun: 200 } });
+        expect(on).toContain('The season: early autumn.');
+        const off = composeNarrationUser(facts, { place: 'Wind Turn', ambient: 'thin', standing });
+        expect(off).not.toContain('The season:');
     });
 });

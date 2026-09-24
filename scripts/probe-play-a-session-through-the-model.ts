@@ -107,9 +107,14 @@ const sorted = paragraphs.map(words).sort((a: number, b: number) => a - b);
 const pct = (n: number, d: number) => d === 0 ? '-' : `${Math.round(100 * n / d)}%`;
 const silent = record.turns.slice(1)
     .filter((t: any) => /says nothing|say a word|says a word|offers a word|offer a word|does not speak|do not speak|nobody speaks|neither speaks|is silent|are silent|in silence/i.test(t.narration)).length;
+// Somebody described by an act they are not performing: "he does not look up". Counted outside
+// quotation marks, per hundred words, the way the corpus figure below was taken.
+const narration = paragraphs.join(' ').replace(/"[^"]*"/g, ' ');
+const negations = (narration.match(/\b(?:does|do|did) not\b|\b(?:doesn|don|didn)'t\b/gi) ?? []).length;
 console.log(`\nmodel narrated ${record.turns.slice(1).filter((t: any) => t.narrationSource === 'model').length}/${record.turns.length - 1}`
     + `   median paragraph ${sorted[Math.floor(sorted.length / 2)] ?? 0}w   speech ${pct(spoken.length, paragraphs.length)}`
     + `   loud speech ${pct(spoken.filter((p: string) => p.includes('!')).length, spoken.length)}`
-    + `   turns with a silence line ${silent}`);
-console.log('corpus first books: median 32-40w, speech 24-35%, loud speech 31-52%');
+    + `   turns with a silence line ${silent}`
+    + `   not-doing ${(100 * negations / Math.max(1, words(narration))).toFixed(2)}/100w`);
+console.log('corpus first books: median 32-40w, speech 24-35%, loud speech 31-52%, not-doing 0.19-0.32/100w');
 save();

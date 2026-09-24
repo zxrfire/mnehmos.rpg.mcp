@@ -598,6 +598,23 @@ export interface WhereTheyStandNow {
 }
 
 /**
+ * The season on a day of the run, which begins in early spring.
+ *
+ * The engine models no seasons and has no use for one, so this is the prompt layer's own
+ * reading of the run's day. It exists because a model handed no season writes a different one
+ * every time somebody arrives somewhere: summer heat at a gate, frost at the next look. The
+ * start is fixed rather than drawn, since all it has to be is the same every turn of a life.
+ */
+export function theSeasonOn(dayOfTheRun: number): string {
+    const SEASONS = [
+        'early spring', 'late spring', 'early summer', 'late summer',
+        'early autumn', 'late autumn', 'early winter', 'late winter'
+    ] as const;
+    const dayOfTheYear = ((Math.floor(dayOfTheRun) % 365) + 365) % 365;
+    return SEASONS[Math.min(SEASONS.length - 1, Math.floor(dayOfTheYear / (365 / SEASONS.length)))]!;
+}
+
+/**
  * What the player is and holds, as background to write FROM.
  *
  * Handed over because the model once told somebody carrying a manual that the manual was what
@@ -935,6 +952,9 @@ export function composeNarrationUser(
         `Place: ${scene.place}`,
         `The ground: ${describeAmbientPerceived(scene.ambient)}`
             + (!arrived && told.ambientIsNews === false ? ' (Unchanged since last turn.)' : ''),
+        ...(scene.standing?.dayOfTheRun === undefined
+            ? []
+            : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. The weather and the light keep to it.`]),
         '',
         ...thePeopleHere(
             scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid
@@ -968,8 +988,8 @@ export function composeNarrationUser(
             : []),
         '',
         'Where a ruling answers what the player asked, the answer came: never write the question',
-        'hanging in the air. Where no ruling answers it, it was not answered: people talk around it',
-        'or about their own affairs, and nobody in the scene supplies the answer. Where a ruling says',
+        'hanging in the air. Where no ruling answers it, nobody in the scene supplies an answer: people',
+        'talk around it or about their own affairs, and the prose never remarks on what went unsaid. Where a ruling says',
         'somebody refused, it is closed - no question left in their mouth inviting another try.',
         '',
         ...theRegisterBlock(scene.realmOrdinal),
@@ -1031,9 +1051,9 @@ function theTurnToWrite(
     return `NOW WRITE THE TURN. ${who} Present tense, "you" for the player. Keep every ruling - a `
         + 'blow in the rulings lands on the page, even on a turn the player spent looking or talking; '
         + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
-        + 'unchanged or no time passed, the player went nowhere. Never write that anybody is silent, '
-        + 'says nothing or does not speak: where a ruling says nobody spoke, write what they do '
-        + 'instead. Never end on a list of what the player could do.';
+        + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
+        + 'they do not do or do not say: whoever has no part in this moment is left out. Never end '
+        + 'on a list of what the player could do.';
 }
 
 /**
