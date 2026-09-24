@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import type { Sex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { requireSect, getSect } from './sects.js';
 import { getRegionForFaction } from './regions.js';
@@ -89,6 +90,38 @@ export const MemberSchema = z.object({
     theCatalogStatesTheyAreStanding: z.boolean().optional()
 });
 export type Member = z.infer<typeof MemberSchema>;
+
+/**
+ * Which sex a row's own writing has already committed to.
+ *
+ * FOUND BY PLAYING. Half Cup Lian came out of the world female and her entry
+ * reads *"the sound the sand makes at night nine days out, which HE will admit
+ * to out there and not at the shed door"*. Nothing was wrong with either half:
+ * `MemberSchema` has no sex on it, so `createNpc` rolls one, and the prose had
+ * committed to the other before the roll existed.
+ *
+ * Counted over all 196 rows, on `wants`, `fears` and `detail` together: 73 say
+ * he, 76 say she, 44 say neither, and 3 say both because the pronoun is about
+ * somebody ELSE in the entry. So 149 rows carry an answer nothing was reading,
+ * and about half of them were contradicted in any given world.
+ *
+ * DERIVED RATHER THAN DECLARED, and that is the point. A `sex` field on 149
+ * rows is 149 chances for the field and the sentence beside it to drift apart;
+ * this cannot drift, because it reads the very sentence that would otherwise
+ * do the contradicting. The prose is the source of truth because the prose is
+ * what a player reads.
+ *
+ * Null where the row says nothing and where it says both - the second because
+ * an entry that mentions another person is evidence about them and not about
+ * its subject. Null means the roll stands, exactly as it did before.
+ */
+export function theSexThisRowsProseCommitsTo(member: Member): Sex | null {
+    const written = `${member.wants} ${member.fears} ${member.detail}`;
+    const he = /\b(?:he|his|him|himself)\b/i.test(written);
+    const she = /\b(?:she|her|hers|herself)\b/i.test(written);
+    if (he === she) return null;
+    return he ? 'male' : 'female';
+}
 
 // PLAUSIBILITY
 

@@ -886,13 +886,21 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         );
     }
 
+    // WHO THEY ARE BEFORE WHAT THEY ARE CALLED.
+    //
+    // These were two independent draws, so a name said nothing about the person
+    // wearing it. `personName` now composes from the half of the syllable
+    // palette that belongs to this sex, which is what makes `senior sister` and
+    // `senior brother` usable on somebody whose name is all a player has.
+    const sex = opts.sex ?? rollSex(sexRng.next());
+
     return {
         id: opts.id,
-        name: opts.name ?? personName(nameRng, opts.takenNames),
+        name: opts.name ?? personName(nameRng, sex, opts.takenNames),
         identity: {
             bornOnDay: opts.bornOnDay,
             origin: opts.origin ?? rollOrigin(originRng.next()).key,
-            sex: opts.sex ?? rollSex(sexRng.next()),
+            sex,
             physique: physique?.key ?? null,
             bloodline: opts.bloodline ?? null,
             occupation: opts.occupation ?? 'unknown',

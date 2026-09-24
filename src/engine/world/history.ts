@@ -3,6 +3,7 @@
  */
 
 import { pluralOf } from '../../utils/a-count-agrees-with-what-it-counts.js';
+import type { Sex } from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { RUIN_NAMES, SCAR_NAMES } from '../../data/cultivation/regions.js';
@@ -773,14 +774,45 @@ export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
     ['Meng', 'Nine Peaks Ascetic Order'],
 ]);
 
-const GIVEN_HEAD = [
-    'Zhen', 'Ci', 'Wan', 'Shu', 'Rong', 'Xu', 'Lan', 'Ke', 'Yao', 'Pei',
-    'Zhao', 'Min', 'Tian', 'Nuo', 'Jing', 'Fu', 'Hui', 'Lie', 'An', 'Sui'
+/**
+ * A NAME SAYS WHICH THEY ARE, AND THIS ONE DID NOT.
+ *
+ * `personName` drew from one pool and `createNpc` rolled the sex separately, so
+ * every generated person in the world - hundreds of them - carried a name with
+ * no relation to who they were. The design owner, on a woman whose entry calls
+ * her "Half Cup Lian": *"that's a very weird name ... just give the npc's
+ * masculine or feminine names. you know what they sound like."*
+ *
+ * It costs more than the reading. `senior sister` and `senior brother` are how
+ * this genre addresses somebody whose name you have, and a player who cannot
+ * tell from the name cannot use either of them.
+ *
+ * SORTED, NOT REPLACED. Every syllable below was already in the two pools; none
+ * has been added and none dropped, so the world's names read exactly as they
+ * did - the same palette, drawn in two halves instead of one. Ten and ten each
+ * way, so neither sex has the narrower set of names.
+ *
+ * The tail carries most of it, which is why it is split first and why the heads
+ * that go with it are chosen to agree: a peak, waves, a mountain and the
+ * martial word are what men are named for here, and the quiet words, the
+ * weather and the plants are what women are named for. None of this is a rule
+ * about a language - it is the palette this world was authored in, read off the
+ * catalog's own 196 people.
+ */
+export const GIVEN_HEAD_MALE = [
+    'Zhen', 'Xu', 'Ke', 'Zhao', 'Min', 'Tian', 'Fu', 'Lie', 'An', 'Sui'
 ] as const;
 
-const GIVEN_TAIL = [
-    'shan', 'he', 'ming', 'ru', 'qing', 'yi', 'lin', 'bo', 'zhi', 'yan',
-    'xue', 'feng', 'tao', 'lu', 'ping', 'wu', 'chen', 'shi', 'ya', 'kuan'
+export const GIVEN_HEAD_FEMALE = [
+    'Ci', 'Wan', 'Shu', 'Rong', 'Lan', 'Yao', 'Pei', 'Nuo', 'Jing', 'Hui'
+] as const;
+
+export const GIVEN_TAIL_MALE = [
+    'shan', 'he', 'ming', 'bo', 'feng', 'tao', 'lu', 'wu', 'chen', 'kuan'
+] as const;
+
+export const GIVEN_TAIL_FEMALE = [
+    'ru', 'qing', 'yi', 'lin', 'zhi', 'yan', 'xue', 'ping', 'shi', 'ya'
 ] as const;
 
 /**
@@ -843,17 +875,38 @@ const ERA_ADJ = [
 /**
  * A person's name, unique within `taken` when one is supplied.
  */
-export function personName(rng: CultivationRNG, taken?: ReadonlySet<string>): string {
-    const base = `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}`;
+export function personName(
+    rng: CultivationRNG,
+    /**
+     * Who this is, so the name says so.
+     *
+     * Optional because the world is full of callers that name a thing rather
+     * than a person - and because a caller with no sex to hand is better off
+     * drawing from both halves than being made to invent one. See the pools.
+     */
+    sex?: Sex,
+    taken?: ReadonlySet<string>
+): string {
+    const heads = sex === 'male'
+        ? GIVEN_HEAD_MALE
+        : sex === 'female' ? GIVEN_HEAD_FEMALE : [...GIVEN_HEAD_MALE, ...GIVEN_HEAD_FEMALE];
+    const tails = sex === 'male'
+        ? GIVEN_TAIL_MALE
+        : sex === 'female' ? GIVEN_TAIL_FEMALE : [...GIVEN_TAIL_MALE, ...GIVEN_TAIL_FEMALE];
+    const draw = (): string => `${rng.pick(SURNAMES)} ${rng.pick(heads)}${rng.pick(tails)}`;
+
+    const base = draw();
     if (!taken || !taken.has(base)) return base;
 
     for (let attempt = 0; attempt < 24; attempt++) {
-        const retry = `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}`;
+        const retry = draw();
         if (!taken.has(retry)) return retry;
     }
     for (let attempt = 0; attempt < 24; attempt++) {
-        const wider =
-            `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}${rng.pick(GIVEN_TAIL)}`;
+        // THE SAME HALF FOR BOTH SYLLABLES. A third syllable drawn from the
+        // other pool is how a name stops saying anything, which is the whole
+        // defect this is here to end.
+        const wider = `${draw()}${rng.pick(tails)}`;
         if (!taken.has(wider)) return wider;
     }
     return base;

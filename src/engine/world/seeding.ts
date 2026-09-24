@@ -30,6 +30,7 @@ import { THE_LINE_AT_OLD_RIVER } from '../../data/cultivation/a-family-that-came
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { rollOf } from '../../data/cultivation/faction-roll.js';
 import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
+import { theSexThisRowsProseCommitsTo } from '../../data/cultivation/members.js';
 import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
@@ -1834,9 +1835,23 @@ function seedNamedFigures(
             // which is the whole difference between a bar and a coincidence:
             // rolling would have seeded half a closed house with people it
             // could not have admitted.
-            ...(whoAHouseWillTake(faction.id) !== null
-                ? { sex: whoAHouseWillTake(faction.id)! }
-                : {}),
+            // AND OTHERWISE WHAT THE ROW'S OWN WRITING ALREADY SAID.
+            //
+            // `MemberSchema` carries no sex, so this rolled one - while 149 of
+            // the 196 entries had already committed to one in their `wants`,
+            // `fears` or `detail`, and about half of those came out of the
+            // world contradicted. Played: Half Cup Lian, female, whose entry
+            // says "which HE will admit to out there".
+            //
+            // The house's bar still wins, because it is a bar: a house that
+            // admits one sex has a roll of that sex, since every one of them
+            // came through its door. Under it, the writing decides. Where the
+            // writing says nothing - or says both, because it is talking about
+            // somebody else - the roll stands exactly as it did.
+            ...(whoAHouseWillTake(faction.id) ?? theSexThisRowsProseCommitsTo(member)) !== null
+                ? { sex: (whoAHouseWillTake(faction.id)
+                    ?? theSexThisRowsProseCommitsTo(member))! }
+                : {},
             tags: [
                 'catalog:member', `faction:${faction.id}`,
                 // What this catalog STATES rides onto the row here, the same

@@ -299,7 +299,7 @@ export function theNameItTookAtTheChange(
     // is a name it already rolled, and rolling a second would be the rename
     // this file refuses.
     if (npc.name !== theSpeciesItIs(npc)?.name) return null;
-    return personName(forStream(seed, 'npc-name', npc.id), takenNames);
+    return personName(forStream(seed, 'npc-name', npc.id), npc.identity.sex, takenNames);
 }
 
 /**
