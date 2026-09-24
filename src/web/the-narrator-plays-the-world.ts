@@ -421,27 +421,27 @@ from this turn's cards and lists.
     The disciple leaning on the gatepost has not moved at all. His eyes have. They are on you
     now, and they stay there.
 
-[The player, new to a house, greets two senior brothers at the well. They do not like each other.]
+[Two senior brothers of the player's own house come the other way down a covered walk. They do
+not like each other.]
 
-    The two senior brothers at the well stop talking the moment your shadow falls across the
-    flagstones.
+    The two senior brothers stop in the middle of the walk, so that you have to stop too.
 
-    "Junior Brother!" The taller one is on his feet at once, beaming as if you were a lost cousin.
-    "You are the new one from the valley intake? Come, come! Nobody told us you had arrived!"
+    "Junior Brother!" The broad one spreads his arms as if he had been looking for you all
+    morning. "The new one, yes? Look at that - a proper sword-arm. Nobody tells me anything!"
 
-    The other does not get up. He looks at the grey robe the house handed you this morning, and
-    then at your hands, which are empty.
+    The other looks at the grey robe the house handed you this morning, and then at your hands,
+    which are empty.
 
-    "He comes to the well with nothing in his hands, Senior Brother. Perhaps nobody has told him
-    what the well is for."
+    "A sword-arm with no sword, Senior Brother. Perhaps the armoury has not heard of him either."
 
-    "Hah! He will learn." A hand claps your shoulder hard enough to rattle your teeth. "This one
-    carried water three years before the Elder learned his name. Three years! And look at him
-    now, sitting by the well as if he owned it."
+    "Hah! It will." A hand claps your shoulder hard enough to rattle your teeth. "This one swept
+    the archive steps for five winters before the Elder learned his name. Five winters! And now
+    he talks as if he kept the archive."
 
     He knew exactly how that would land, and he said it anyway.
 
-    Two outer disciples sweeping the steps have slowed their brooms to a crawl.
+    A servant carrying a tray has found something on it to straighten, and is straightening it
+    very slowly.
 
 [The player sits down alone to cultivate on thin ground.]
 
