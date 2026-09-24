@@ -3351,19 +3351,30 @@ export const REGION_GOVERNANCE: Record<string, {
     fromBelow: string;
     joining: string;
 }> = {
+    // ── SAID THE WAY SOMEBODY STANDING THERE WOULD SAY IT ────────────────
+    //
+    // These two reach a player through `whatItIsLikeHere` and `whatAskingIsLike`,
+    // and the comment at the second of those already promises they never name
+    // the model. They did: `federated power` and `direct ruler` are the model's
+    // own words, and the rest was written in an analyst's voice - a count of
+    // institutions nobody standing in a valley perceives, `cross-cutting feuds`,
+    // and the reader's own conclusion handed to them as `loud, exploitable and
+    // survivable`. A local model reciting that is the model doing what it was
+    // told; the line was the defect. Facts, in the order somebody would notice
+    // them, and the conclusion left where it belongs.
     'region-low-fall': {
         model: 'federated',
         apexId: 'apex-earth-vein-tower',
         fromBelow:
-            'Twenty-seven institutions, cross-cutting feuds, a local sect for every valley and somebody nearby to petition about anything. Nobody is strong enough to stop anyone else, which is loud, exploitable and survivable.',
-        joining: 'Joining a federated power means joining a sect: an admission day, a queue, an elder who looks at you, and a name on an outer-gate roll.'
+            'Every valley here has a sect in it, and they do not agree about much. Whatever your trouble is, somebody within a day\'s walk will hear it, and somebody else within a day\'s walk will take the other side. None of them can make the rest do anything.',
+        joining: 'You go to a gate on the day it opens, you stand in the queue, an elder looks at you, and if it goes well your name is written on an outer roll by somebody who was in the room.'
     },
     'region-quiet-marches': {
         model: 'administered',
         apexId: 'apex-myriad-course-hall',
         fromBelow:
-            'One administration, a register and a schedule. No intermediate institution of any kind, nobody local with authority to decide anything, and a counter with a queue at it. Consistent, impersonal, and it does not know your name.',
-        joining: 'Joining a direct ruler means being processed: a test you sat at seven, an entry in a register you may read, and a decision made elsewhere by somebody you will never meet.'
+            'One register, one schedule, and a counter with a queue at it. There is nobody between you and it, and nobody behind it who can decide anything. You are told the same thing everybody is told, on the day the schedule says.',
+        joining: 'You are processed: a test you sat at seven, an entry in a register you are allowed to read, and a decision made somewhere else by somebody you will never meet.'
     }
 };
 
