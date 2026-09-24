@@ -843,12 +843,18 @@ export const travelVerbs = {
         const introduced = whatArrivingIntroduces(this, applied.cultivator);
         const perceived = introduced.perceived;
         facts.structure.push(...introduced.structure);
-        // A GATE IS REQUIRED, NOT OPTIONAL. What the door says is the whole of
-        // why the journey ended where it did, and a narrator that drops it has
-        // put the player somewhere with no account of why they are outside.
+        // THE GATE IS ON `lines` AND IS NOT REQUIRED, which is the same ruling
+        // the three other arrival sites carry. It used to say a gate was
+        // required because a narrator dropping it leaves the player outside
+        // with no account of why - and the answer to that is that the narrator
+        // is HANDED it and writes from it. `required` is what must be read
+        // EXACTLY, and twelve lines of description about a wall are not: a
+        // played run had them stapled under the narration, clerk by clerk.
+        //
+        // This was the fourth site and the sweep that fixed the other three
+        // missed it, because it builds the list a different way.
         if (introduced.lines.length > 0) {
             facts.lines.push(...introduced.lines);
-            facts.required = [...(facts.required ?? []), ...introduced.lines];
         }
 
         // AND THE PEOPLE WHO CAME WITH YOU. A road has no capacity: everybody
