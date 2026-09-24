@@ -203,6 +203,7 @@ import {
     whatSomebodyIsLike
 } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
+import { anInsultLandsOnTheRoom } from '../engine/world/what-an-insult-to-a-room-costs.js';
 import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';
@@ -4265,6 +4266,47 @@ export class GameService {
                     action.withArt,
                     action.terms ?? 'open', action.opening ?? 'open'
                 );
+
+            // ── SAYING WHAT YOU THINK OF THEM ────────────────────────
+            //
+            // Handed over from a playtest as a sentence with no route: "fuck
+            // you all" read three ways across three runs, twice as a QUESTION
+            // put to six people who each answered something nobody had asked.
+            // A provocation is an act. It spends no days, no stones and no
+            // blood - only standing, which is what makes it the cheapest way
+            // in this game to make a room dislike you.
+            case 'insult': {
+                const here = this.present(cultivator);
+                const aimedAt = action.target
+                    ? this.somebodyAtHand(action.target, cultivator) ?? null
+                    : null;
+                const landed = this.atHand === null
+                    ? null
+                    : anInsultLandsOnTheRoom(this.atHand, {
+                        speakerId: cultivator.id,
+                        speakerName: cultivator.name,
+                        presentIds: here.map(row => row.id),
+                        atId: aimedAt?.id ?? null,
+                        onDay: this.atHand.currentDay
+                    });
+
+                const facts = factsForToolResult(
+                    here.length === 0
+                        ? 'Said to nobody. There is no one here to have heard it.'
+                        : aimedAt
+                            ? `Said to ${aimedAt.name}, in front of ${here.length - 1} other(s).`
+                            : `Said to the ${here.length} people standing here.`,
+                    here.length === 0
+                        ? ['Nobody was standing here.']
+                        : here.map(row => `${row.name} heard it.`)
+                );
+                facts.structure.push(
+                    `insult: tookOffence=${landed?.tookOffence ?? 0}`
+                    + ` at=${aimedAt?.id ?? 'the room'}`
+                    + ` faceLost=${landed?.faceLost ?? 0}.`
+                );
+                return this.freeAction(run, 'insult', facts);
+            }
 
             case 'coerce': {
                 // ── THE ART NEEDS BOTH OF THEM ───────────────────────────

@@ -168,6 +168,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             "I offer an alliance" with that is worse than answering nothing, because it looks
             like an answer.`
     },
+    insult: {
+        takes: ['target'],
+        says: `say something to a room, or to one person in it, that they are entitled to
+            take offence at: an insult, a sneer, a provocation. "target" names one of them
+            where the player aimed it at somebody; leave it off and it was said to
+            everybody standing there. It spends no time and nothing but standing.`
+    },
     investigate: {
         takes: ['target'],
         says: `examine a place, a person, a record, an inscription, an object; search a ruin.

@@ -100,6 +100,11 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
      * here because a member of the closed set that plain English cannot reach
      * is the same as not having it - which is the whole of this file.
      */
+    insult: [
+        'fuck you all',
+        'I tell them what I think of them',
+        'I call him a fraud to his face',
+    ],
     coerce: [
         'I force him to submit',
         'I make him kneel',

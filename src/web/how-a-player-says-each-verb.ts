@@ -200,6 +200,15 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I hold him against the wall until he hands it over',
         'I drag him back here by the collar'
     ],
+    insult: [
+        'fuck you all',
+        'I tell them all exactly what I think of them',
+        'I spit on the floor in front of him',
+        'I call the elder a fraud to his face',
+        'I say something unforgivable about his mother',
+        'I sneer at the lot of them',
+        'I tell him he is a disgrace to his house',
+    ],
     cultivate: [
         'I sit down and cultivate',
         'I circulate my qi for a while',

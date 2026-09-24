@@ -423,6 +423,24 @@ export const HANDING_IT_OVER =
     + 'press|presses|pressing|pressed|slip|slips|slipping|slipped';
 
 /**
+ * Telling a room, or one of them, what you think of it.
+ *
+ * Plain obscenity is on the list because a player who types it means it, and
+ * the measured failure was that "fuck you all" reached no verb at all and was
+ * read as a QUESTION put to everybody standing there. The rest are the
+ * ordinary ways somebody says a thing they cannot take back: naming what
+ * somebody is, spitting, sneering, cursing them.
+ *
+ * NOT `attack` AND NOT `coerce`. Nothing is demanded and nobody is touched.
+ */
+export const AN_INSULT =
+    /\b(?:fuck|screw) (?:you|him|her|them|the lot of|off)\b|\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b|\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b|\btell (?:him|her|them|you|the lot of them) (?:exactly )?what i think\b|\b(?:he|she|they) (?:is|are) a (?:disgrace|fraud|coward|joke)\b/i;
+
+/** Whose face it was said to, where one was named. */
+const INSULT_SUBJECT_VERBS =
+    /insult|insults|insulting|insulted|sneer at|sneers at|jeer at|jeers at|taunt|taunts|taunted|mock|mocks|mocked|curse|curses|cursed|spit on|spits on|spit at|spits at|tell|tells|call|calls/;
+
+/**
  * SOMEBODY MADE TO HAND IT OVER IS NOT SOMEBODY GIVING IT.
  */
 export const MADE_TO_HAND_IT_OVER =
@@ -4512,6 +4530,23 @@ function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
 
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
+
+    // ── SAYING WHAT YOU THINK OF THEM ────────────────────────────────────
+    //
+    // BEFORE COERCION, because "I tell him he is a disgrace" contains no
+    // threat and must not be read as one, and because an insult naming
+    // nobody would otherwise fall through every rule under it to `unclear`.
+    // A provocation is an act and the room is entitled to take offence.
+    {
+        if (AN_INSULT.test(text)) {
+            const who = (extractSubject(input, INSULT_SUBJECT_VERBS) ?? '').trim();
+            return {
+                action: 'insult',
+                ...(who.length >= 2 ? { target: who } : {})
+            };
+        }
+    }
+
     // THE SAME SENTENCE WITH ITS PROPER NAMES TAKEN OUT, for the branches that
     // anchor on a CATEGORY noun. A word doing duty inside a name is not that
     // word being used as a category - five catalogued places were measurably

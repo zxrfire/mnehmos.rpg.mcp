@@ -35,6 +35,17 @@ export const ACTION_NAMES = [
      * Making somebody do something, with hands rather than with words.
      */
     'coerce',
+    /**
+     * Telling a room, or one of them, what you think of it.
+     *
+     * Handed over from a playtest as a sentence with no route: *"fuck you all"*
+     * read three ways across three runs, twice as a question put to six people
+     * who each answered something nobody had asked. A provocation is an act and
+     * the room is entitled to take offence at it. It spends no days, no stones
+     * and no blood - only standing, which is the one thing a cultivator cannot
+     * buy back quickly.
+     */
+    'insult',
     'cultivate',
     'seclude',
     'breakthrough',
@@ -495,6 +506,14 @@ export function theVerbsOwnName(text: string): ActionName | null {
  * Actions that spend in-world time, and can therefore kill.
  */
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
+    /**
+     * A MISREAD SENTENCE MUST NOT INSULT A ROOM. Not here because it spends
+     * days - it spends none - but for the reason this list exists: it is the
+     * one verb in the set that writes permanently in other people's names and
+     * cannot be taken back on the next turn. Everything else that is free of
+     * the clock undoes itself; a room that heard it heard it.
+     */
+    'insult',
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
     'move', 'gather', 'hunt', 'wait', 'work', 'refine', 'eat',
     /**
@@ -948,6 +967,12 @@ export type HowAnActCanEndBadly =
  * How each verb can end badly, and the empty array where it cannot.
  */
 export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly HowAnActCanEndBadly[]>> = {
+    /**
+     * NOTHING GOES WRONG, because the room disliking you is the act rather
+     * than a way it failed. Nobody draws on a man for being rude, no day
+     * passes and nothing is spent but standing.
+     */
+    insult: [],
     /**
      * Eight of its ten intents run their days through `GameService.shortSkip`,
      * which is a real span with a real encounter window over it. The other two --

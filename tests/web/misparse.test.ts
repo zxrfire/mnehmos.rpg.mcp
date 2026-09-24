@@ -475,6 +475,7 @@ describe('every verb is reachable from plain English', () => {
     // nearest cultivator" ended up meditating for a month.
         attack: 'I attack the nearest cultivator',
         coerce: 'I force him to submit',
+        insult: 'fuck you all',
         // What is on the body and in the hands. Both halves reached nothing on
         // the plain-sentence sweep before the verb existed.
         carry: 'I draw my sword',
