@@ -524,7 +524,30 @@ export function questionedByTheInternalAffairsElder(
         if (named) there = `in that province around then, by the house's own record`;
     }
     if (there === null) {
-        return no(`Nothing ${house.name} knows of ${recruiter.name} puts them anywhere near ${where.name} then.`);
+        // ── NOT KNOWING IS NOT KNOWING OTHERWISE ─────────────────────────
+        //
+        // Every branch above this one is the house knowing something that
+        // CONTRADICTS the account: no such person, somebody who was demonstrably
+        // in another province, a rung that could not have taken anybody on.
+        // This branch is the house knowing nothing either way, and it was
+        // returning the same verdict as the contradictions.
+        //
+        // Played: a Skin taken on at the Wind Turn intake was turned away from
+        // the gate the next day on this line, while every look in the same run
+        // said the house had them down as Skin. Two records of one membership,
+        // disagreeing in front of the player - and the one that won was the
+        // one reconstructing where somebody had been, over the one that was
+        // the house's own roll.
+        //
+        // A recruiter at a remote intake who has not sent word yet is the
+        // ORDINARY case, which is what the slip system exists for. So a house
+        // with no record admits them and says it has none. It is still not a
+        // clean entry, and the sentence says which kind it is.
+        return {
+            matches: true,
+            because: `${house.name} has no record of ${recruiter.name} being anywhere near `
+                + `${where.name} then, and none of them being elsewhere either.`
+        };
     }
 
     const bar = Number(house.resources.admission_ordinal ?? 0);
