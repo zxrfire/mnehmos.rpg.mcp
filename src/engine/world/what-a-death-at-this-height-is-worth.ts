@@ -67,8 +67,11 @@
  *                           whose presence was the reason a house was left
  *                           alone is exactly this, and has no title at all.
  *   what only they carried  the last living holder of an art. What goes with
- *                           them is not replaceable, which `technique_lost`
- *                           already says in its own way.
+ *                           them is not replaceable. `technique_lost` asks the
+ *                           same question of the whole roll, and both now derive
+ *                           it from {@link howManyLivingHoldEachArt} rather than
+ *                           each counting for itself - see that function for
+ *                           what the two copies had already drifted on.
  *
  * NOT YET A ROAD, and worth writing down so nobody assumes it is handled:
  * somebody whose name alone was keeping two houses from fighting. The world
@@ -153,6 +156,7 @@
 
 import { whatArrivingInIsWorth } from './a-crossing-enters-the-world-as-news.js';
 import { makeFact, type EventScale, type FactVisibility } from './history.js';
+import { isBelowTheLid } from './layers.js';
 import { relationshipWith, type NpcRecord } from './npc-state.js';
 import { settleObligation } from '../social/grudges.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -231,6 +235,55 @@ export interface WhatTheyHeldUp {
 }
 
 /**
+ * How many living people below the lid carry each art in the world.
+ *
+ * THE PRIMITIVE, and the reason it is a map rather than a per-person walk. Two
+ * readers want this property and they want it at different scales: a death asks
+ * it of ONE person, and `technique_lost` has to ask it of the whole roll to know
+ * who it may draw from at all. A per-person answer used to build a pool is a
+ * walk of the roll per person, which is the roll squared; this is one walk, and
+ * both readers derive from it.
+ *
+ * ALIVE AND BELOW THE LID. Somebody above the lid holding an art is not somebody
+ * anybody here can be taught by, which is what "nobody living has it" means in
+ * the world the player is standing in. This unified two filters that disagreed:
+ * the pass already read the lid and {@link whatTheyHeldUp} did not, so a person
+ * whose art survived only in the hands of an immortal read as replaceable here
+ * and as the last of it there.
+ */
+export function howManyLivingHoldEachArt(state: WorldState): Map<string, number> {
+    const counts = new Map<string, number>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !isBelowTheLid(npc)) continue;
+        // A person's own list is not a set by construction, and counting a
+        // duplicate twice would make somebody the second holder of their own art.
+        for (const id of new Set(npc.cultivation.techniqueIds)) {
+            counts.set(id, (counts.get(id) ?? 0) + 1);
+        }
+    }
+    return counts;
+}
+
+/**
+ * The arts this person carries that nobody else alive carries.
+ *
+ * What goes out of the world with them. Empty is the ordinary answer: a house
+ * teaches its shelf to everybody who can reach it, so most arts are held by
+ * dozens and only the top of a library reaches exactly one person.
+ *
+ * Pass `counts` when asking about more than one person - see
+ * {@link howManyLivingHoldEachArt} for why.
+ */
+export function theArtsOnlyTheyHold(
+    state: WorldState,
+    npc: NpcRecord,
+    counts: Map<string, number> = howManyLivingHoldEachArt(state)
+): string[] {
+    if (npc.status !== 'alive' || !isBelowTheLid(npc)) return [];
+    return [...new Set(npc.cultivation.techniqueIds)].filter(id => counts.get(id) === 1);
+}
+
+/**
  * What a person was holding up, read off the world rather than off a title.
  *
  * Cheap by construction: nobody below `NOBODY_LEANS_ON_A_MORTAL` is holding
@@ -246,11 +299,8 @@ export function whatTheyHeldUp(state: WorldState, npc: NpcRecord): WhatTheyHeldU
     }
 
     let leanedOnThem = 0;
-    const theirs = new Set(npc.cultivation.techniqueIds);
-    let alone = theirs.size > 0;
     for (const other of state.npcs) {
         if (other.id === npc.id || other.status !== 'alive') continue;
-        if (alone && other.cultivation.techniqueIds.some(id => theirs.has(id))) alone = false;
         const tie = relationshipWith(other, npc.id);
         if (tie === null) continue;
         // Somebody who answered to them: their master, their teacher, the
@@ -260,7 +310,9 @@ export function whatTheyHeldUp(state: WorldState, npc: NpcRecord): WhatTheyHeldU
         if ((tie.kind === 'master' || tie.kind === 'teacher' || tie.kind === 'patron')
             && tie.standing > 0) leanedOnThem++;
     }
-    return { swornTo, leanedOnThem, theLastOfAnArt: alone };
+    // DERIVED, not counted here. This walk used to carry its own copy of the
+    // rule, which is how it came to disagree with the pass about the lid.
+    return { swornTo, leanedOnThem, theLastOfAnArt: theArtsOnlyTheyHold(state, npc).length > 0 };
 }
 
 /**

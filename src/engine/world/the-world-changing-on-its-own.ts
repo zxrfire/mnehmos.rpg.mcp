@@ -96,6 +96,8 @@ import { ruinFromFallenSeat } from './provenance.js';
 import {
     WHEN_IT_IS_AN_OLD_WOUND,
     WHERE_THE_OLD_MONSTERS_BEGIN,
+    howManyLivingHoldEachArt,
+    theArtsOnlyTheyHold,
     theWakeOfADeath,
     theirDeathWouldRearrangeTheWorld,
     whatADeathIsWorth,
@@ -333,7 +335,7 @@ import {
 } from './building-a-conveyance-out-of-what-a-hunt-brings-back.js';
 import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { BEAST_CORE_ORDINAL } from '../../data/cultivation/beasts.js';
-import { gradeForOrdinal } from '../../data/cultivation/techniques.js';
+import { getTechnique, gradeForOrdinal } from '../../data/cultivation/techniques.js';
 import { STOCK_GRADES } from './what-a-place-still-has-in-the-ground.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import {
@@ -6323,13 +6325,71 @@ const TEMPLATES: Template[] = [
     },
 
     // ── The last person who could do a thing is gone. ────────────────────
+    //
+    // WHY THE POOL IS THE RULE RATHER THAN A TEST AFTER IT. This drew a holder
+    // from everybody carrying any art at all, then threw the draw away unless
+    // the art happened to be one nobody else held - and it had never fired in
+    // the history of this repo. Neither rule was wrong. `pickByMortality`
+    // correctly hunts people near the end of themselves; being the last holder
+    // of an art is correctly a HIGH-REALM property, because a house teaches its
+    // low shelves to dozens and its deepest manual to one; and a high realm is
+    // an enormous lifespan. So the weight sat almost entirely off the eligible
+    // set and the product of two correct rules was zero.
+    //
+    // MEASURED ON THE SHIPPED CATALOG (`loadCultivationCatalog`, seedWorld
+    // defaults, seeds `tl-a` and `tl-b`), NOT the driver fixture:
+    //
+    //   people alive below the lid holding any art      991 / 1001
+    //   arts held by exactly one living person           22 / 23
+    //   people who are the last holder of one            12 / 13   <- the pool
+    //   median realm ordinal, those people               36 / 34
+    //   median realm ordinal, everybody else             10 / 10
+    //   share of the mortality weight on the eligible  0.023% / 0.029%
+    //   P(fire) per draw, as it was written            1.0e-5 / 1.3e-5
+    //   technique_lost events in 500 played years          0 / 0
+    //
+    // At 0.08 draws a year that was one firing per ~1.2 million years. Drawing
+    // FROM the eligible set instead leaves the acceptance roll inside
+    // `pickByMortality` as the whole of the rate - about two or three per
+    // millennium on this cohort's spans - so no constant was added to reach it,
+    // and nobody should add one.
+    //
+    // AND WHAT THIS EVENT ACTUALLY CLAIMS, which the first cut got wrong in its
+    // strings. `theWorldLoses` does NOT take anybody out of the world:
+    // `markMissing` leaves `status` alone and tags the person, because missing
+    // is not a state of a person here - `who-a-house-has-lost-track-of.ts`
+    // carries the ruling, *"Missing people are still somewhere physical, just
+    // the sect doesn't know."* So the art is not destroyed and the last holder
+    // is alive and still carrying it. What happened is that the only person who
+    // could teach it cannot be found, which is the lost art of the genre and is
+    // why the rumour row about a mislabelled copy fits. The consequences said
+    // *"Nobody living has been taught it"*, which was false about a living
+    // person on the roll; they now say what is true.
     {
         kind: 'technique_lost',
         weight: 5,
         apply(state, day, rng) {
+            // The rule IS the pool: everybody carrying something nobody else
+            // alive carries. One walk of the roll, shared by every candidate.
+            //
+            // Not somebody anybody has already lost track of. Losing the same
+            // person twice writes the same loss twice, and their house has not
+            // found them since.
+            //
+            // `isLostTrackOf` AND NOT the tag on the person, which was the first
+            // cut and was wrong in a way only a long run shows. There are two
+            // marks: the world's, which sits on the person for ONE SLICE, and
+            // the house's, which is durable - `who-a-house-has-lost-track-of.ts`
+            // says so in its header, and the absence pass clears the first as it
+            // writes the second. Reading only the person's mark, this pass found
+            // the same sole holder unmarked again the next year and lost them
+            // again, every year, for ever. Measured as
+            // `the-hall-starts-asking` going red on a hall that asked after one
+            // person five times: *says it once, and not every year forever*.
+            const counts = howManyLivingHoldEachArt(state);
             const holders = theWorldsPeople(state).filter(
-                n => n.status === 'alive' && isBelowTheLid(n) &&
-                    n.cultivation.techniqueIds.length > 0
+                n => !isLostTrackOf(state, n) &&
+                    theArtsOnlyTheyHold(state, n, counts).length > 0
             );
             // Weighted the same way `elder_died` is. Going out and not coming
             // back is a thing that happens to people who were running out of
@@ -6337,29 +6397,30 @@ const TEMPLATES: Template[] = [
             // them does not simply fail to return.
             const npc = pickByMortality(rng, holders, day);
             if (!npc) return null;
-            const techniqueId = pick(rng, npc.cultivation.techniqueIds);
+            const techniqueId = pick(rng, theArtsOnlyTheyHold(state, npc, counts));
             if (!techniqueId) return null;
-
-            // Only lost if nobody else alive has it. That is the whole rule.
-            const others = state.npcs.filter(
-                n => n.id !== npc.id && n.status === 'alive' && isBelowTheLid(n) &&
-                    n.cultivation.techniqueIds.includes(techniqueId)
-            );
-            if (others.length > 0) return null;
 
             const gone = theWorldLoses(npc, day, 'Went out and did not come back.');
             if (!gone) return null;
             replaceNpc(state, gone);
+
+            // The art by the name a person would say, not by its id. The id had
+            // never reached a player only because this pass had never fired.
+            const artName = getTechnique(techniqueId)?.name ?? techniqueId;
 
             return emit(state, 'technique_lost', day, {
                 day,
                 kind: 'technique_lost',
                 scale: 'regional',
                 summary:
-                    `${npc.name} was the last person known to be able to work ${techniqueId}, ` +
-                    `and is no longer anywhere.`,
+                    `${npc.name} was the last person anybody could name who could work the ` +
+                    `${artName}, and nobody knows where they are.`,
                 actors: [{ id: npc.id, name: npc.name, role: 'last_holder' }],
                 locationId: npc.locationId,
+                // Their own house, so `faction` visibility means the people who
+                // would know. Handed nothing, `whoWasThere` falls through to
+                // everybody standing nearby and the word does no work.
+                factionIds: npc.factionId ? [npc.factionId] : [],
                 visibility: 'faction',
                 fidelity: 'partial',
                 causeKnown: false,
@@ -6369,12 +6430,15 @@ const TEMPLATES: Template[] = [
                     'able to restart it.',
                 data: { techniqueId },
                 consequences: {
-                    immediate: 'Nobody living has been taught it.',
-                    opportunitiesClosed: ['Learning it from anyone.'],
+                    immediate: 'Nobody who can be found has been taught it.',
+                    opportunitiesClosed: ['Learning it from anybody anyone can reach.'],
                     rumours: ['That there is a copy in the archive, mislabelled.'],
                     tenYearsLater: 'It is spoken of as something the sect used to be able to do.'
                 }
-            }, { npcs: [npc.id] });
+            }, {
+                npcs: [npc.id],
+                factions: npc.factionId ? [npc.factionId] : []
+            });
         }
     },
 
