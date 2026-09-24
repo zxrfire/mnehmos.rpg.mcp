@@ -246,8 +246,11 @@ describe('a sentence that reaches the wrong thing', () => {
 
     describe('an act aimed at somebody reaches somebody', () => {
         it.each([
-            ['i insult him', 'interact', 'him'],
-            ['i insult the elder', 'interact', 'elder'],
+            // `insult` rather than `interact`: it was promoted to a verb of
+            // its own when a curse had to be able to reach a ROOM. What this
+            // file is about is the TARGET, which is unchanged.
+            ['i insult him', 'insult', 'him'],
+            ['i insult the elder', 'insult', 'elder'],
             ['i draw my sword on him', 'attack', 'him']
         ])('%s', (said, verb, who) => {
             const got = reached(said);

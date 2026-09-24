@@ -59,9 +59,24 @@ describe('saying it', () => {
             'I laugh in his face',
             'I tell him his sect is trash'
         ]) {
+            // ONE ACT, AND THE TABLE READS IT IN TWO PLACES.
+            //
+            // It was written as `interact/insult`. `fuck you all` then needed
+            // a sentence aimed at a ROOM rather than at a person, which an
+            // interact intent has nowhere to put, so `insult` became a verb -
+            // and the older row stayed where it was, holding phrasings the
+            // new gate does not, each at the precedence it needs.
+            //
+            // So this asks what it always meant to ask: that the sentence
+            // reaches the act. `turn-engine` folds the intent into the verb
+            // before anything runs, which is what stops two readings being
+            // two mechanics.
             const parsed = parseIntent(sentence);
-            expect(parsed.action, sentence).toBe('interact');
-            expect(parsed.intent, sentence).toBe('insult');
+            expect(
+                parsed.action === 'insult'
+                    || (parsed.action === 'interact' && parsed.intent === 'insult'),
+                `${sentence} -> ${parsed.action}/${parsed.intent ?? '-'}`
+            ).toBe(true);
         }
     });
 
@@ -136,5 +151,42 @@ describe('doing it to somebody far above you', () => {
         expect(ledger).toMatch(/held against you/i);
         expect(ledger).toContain('Wen Shuyi');
         expect(ledger).toMatch(/humiliation/i);
+    }, 120000);
+
+    /**
+     * AND THE OTHER READING REACHES THE SAME MACHINE.
+     *
+     * The table reads this act in two places: `AN_INSULT` gates the `insult`
+     * verb, and a row in `INTERACT_INTENT_PATTERNS` still reaches
+     * `interact/insult` with phrasings the gate does not hold. Each sits at
+     * the precedence it needs - moving the second up to the first's position
+     * took `I humiliate him in front of them` off `attack` and `I call her a
+     * liar about her rank` off `challenge`, measured - so the two readings
+     * stay.
+     *
+     * WHAT MAY NOT STAY IS TWO MACHINES. `I insult him` landed on the room's
+     * standing and `I laugh in his face` landed on the obligation ledger, so
+     * what an insult DID depended on which words somebody happened to type.
+     */
+    it('opens the same account from the phrasing the gate does not hold', async () => {
+        expect(parseIntent('I make a fool of Wen Shuyi').action, 'the other reading, or this proves nothing')
+            .toBe('interact');
+
+        const { game } = await makeGameInWorld({
+            seed: 'insult', worldSeed: 'face', adminMode: true
+        });
+        await game.newRun('Rude');
+        await game.act('I look around');
+        await game.act('ADMIN spawn_encounter ordinal=8 name=Wen Shuyi');
+
+        const done = await game.act('I make a fool of Wen Shuyi');
+        // The ledger, which this reading always reached.
+        expect(calls(done), said(done)).toContain('engine.resolveAttempt');
+        expect(calls(done)).toContain('social.createObligation');
+        // AND THE ROOM, WHICH IT DID NOT. This line is written by the verb's own
+        // handler and by nothing else, so its presence is the whole of what the
+        // fold is for: everybody standing there heard it, whichever words
+        // reached the act.
+        expect(said(done)).toMatch(/heard it/i);
     }, 120000);
 });

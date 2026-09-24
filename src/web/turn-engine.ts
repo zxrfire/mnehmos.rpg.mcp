@@ -4094,6 +4094,26 @@ export class GameService {
             action = { action: 'insult', ...(action.target ? { target: action.target } : {}) };
         }
 
+        // ── AND THERE IS ONE INSULT, NOT TWO ─────────────────────────────
+        //
+        // The table reads this act in two places and always has: `AN_INSULT`
+        // gates the `insult` VERB, and a row in `INTERACT_INTENT_PATTERNS`
+        // reaches `interact/insult` with phrasings the first has never held -
+        // `I laugh in his face`, `make a fool of`, `their sect is trash`.
+        // Neither list is wrong and merging them is worse than both: each sits
+        // at the precedence it needs, and moving the second one up to the
+        // first's position took `I humiliate him in front of them` off `attack`
+        // and `I call her a liar about her rank` off `challenge`, measured.
+        //
+        // TWO READINGS ARE FINE. TWO MACHINES ARE NOT. What the split cost was
+        // that the verb landed on the room's standing and the intent landed on
+        // the obligation ledger, so what an insult DID depended on which words
+        // somebody happened to type. They meet here, at the verb, which does
+        // both.
+        if (action.action === 'interact' && action.intent === 'insult') {
+            action = { action: 'insult', ...(action.target ? { target: action.target } : {}) };
+        }
+
         // ── AND A HAND PUT OUT TO STAY UPRIGHT IS NOT A HAND RAISED ──────
         //
         // The run-ender this one is for is written up on
@@ -4362,9 +4382,30 @@ export class GameService {
             // in this game to make a room dislike you.
             case 'insult': {
                 const here = this.present(cultivator);
-                const aimedAt = action.target
-                    ? this.somebodyAtHand(action.target, cultivator) ?? null
+
+                // WHO WAS NAMED, RESOLVED THE WAY A NAME IS RESOLVED.
+                //
+                // `somebodyAtHand` alone answers a DESCRIPTION or a pointer -
+                // "the elder", "her", "the youngest girl" - and returns null on
+                // a proper name, which is what a player types. Measured: `I
+                // insult Wen Shuyi`, with Wen Shuyi standing in a room of
+                // fifteen, resolved to nobody, so the full weight never landed
+                // on her and the room took it as a curse thrown at all of them.
+                // The pair is the idiom `release` already uses one verb over.
+                // AND "THEM ALL" IS THE ROOM, WHICH IS ALREADY WHAT THIS
+                // VERB DOES. `theSetThisNames` is the reader every other act
+                // over a crowd uses; without it the phrase went to the name
+                // resolvers, which answer with ONE person, and the full weight
+                // of a curse thrown at fifteen people landed on whoever was
+                // last in the crowd order.
+                const named = theSetThisNames((action.target ?? '').trim())?.kind === 'everyone_here'
+                    ? ''
+                    : (action.target ?? '').trim();
+                const put = named.length >= 2
+                    ? this.partyPutTo(cultivator, named, this.scopeFor(cultivator))
                     : null;
+                const aimedAt = (put ? here.find(row => row.id === put.id) : undefined)
+                    ?? (named.length > 0 ? this.somebodyAtHand(named, cultivator) : null);
                 const landed = this.atHand === null
                     ? null
                     : anInsultLandsOnTheRoom(this.atHand, {
@@ -4390,7 +4431,43 @@ export class GameService {
                     + ` at=${aimedAt?.id ?? 'the room'}`
                     + ` faceLost=${landed?.faceLost ?? 0}.`
                 );
-                return this.freeAction(run, 'insult', facts);
+
+                // ── AND THE ACCOUNT IS OPENED IN THE NAME OF WHOEVER WAS
+                //    NAMED ──────────────────────────────────────────────
+                //
+                // The room's standing is not the whole of what an insult
+                // leaves, and promoting this to a verb of its own left the
+                // other half unreachable. `ATTEMPT_INTENTS` still holds
+                // `insult` and nothing has arrived at it since: the table
+                // stopped producing `interact/insult`, so the grudge, the
+                // reprisal and the whole of `canBeGivenBack` went with it.
+                // That is the failure the verb was built to end - *"the
+                // sentence found the verb, the narrator wrote a scene, and
+                // the ledger stayed empty"* - written back in by the commit
+                // that was supposed to fix it.
+                //
+                // TWO HALVES, TWO STORES, NEITHER A SECOND OPINION. The room
+                // is world-state standing and face, which is
+                // `anInsultLandsOnTheRoom` above and nowhere else. The named
+                // person's account is the run's obligation ledger, which is
+                // the attempt machine and nowhere else. A curse thrown at
+                // nobody in particular opens no account because there is
+                // nobody to hold one.
+                const room = this.freeAction(run, 'insult', facts);
+                if (!aimedAt) return room;
+
+                const answered = await this.interact(
+                    run, cultivator, ambient, aimedAt.name, 'insult',
+                    undefined, undefined, rawInput
+                );
+                // TWO CALLS IN ONE SENTENCE, WHICH THIS ENGINE ALREADY FOLDS.
+                // Pushing the room's lines onto the answer's facts drops them:
+                // `prose` is composed when the facts are built and is what the
+                // player reads, so a line added afterwards is a line nobody
+                // sees. `foldTheCallsIntoOneTurn` is the seam written for
+                // exactly this and it carries the prose, the structure and the
+                // calls together.
+                return foldTheCallsIntoOneTurn([room, answered], answered.facts.headline);
             }
 
             case 'coerce': {

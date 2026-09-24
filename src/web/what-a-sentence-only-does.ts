@@ -50,7 +50,14 @@ export const AN_INSULT = new RegExp([
     // Saying it, in the verbs for saying it.
     String.raw`\b(?:insult|insults|insulting|insulted|sneer|sneers|sneering|sneered|jeer|jeers|jeering|taunt|taunts|taunting|taunted|mock|mocks|mocking|mocked|curse|curses|cursing|cursed|spit|spits|spitting|spat)\b`,
     String.raw`\b(?:call|calls|calling|called) (?:him|her|them|the \w+) (?:a|an) (?:fraud|coward|disgrace|dog|worm|cur|fool|wretch)\b`,
-    String.raw`\btell (?:him|her|them|the lot of them) (?:exactly )?what i think\b`,
+    // TELLING THEM WHAT YOU THINK OF THEM, which is how the corpus says it:
+    // *"I tell them all exactly what I think of them"*. `them all` is the
+    // form somebody types at a room and it fell between the words.
+    String.raw`\btell (?:him|her|them|everyone|the lot of them)(?: all)? (?:exactly )?what i think\b`,
+    // And saying a thing about somebody that cannot be taken back, which is
+    // the other exemplar and the older insult in the genre: it is aimed at
+    // their people rather than at them.
+    String.raw`\bsay(?:s|ing)?\s+something\s+(?:unforgivable|unspeakable|cruel|vile|filthy|foul|insulting)\s+about\b`,
     // ── AND CONTEMPT WITH NO SWEARING IN IT ──────────────────────────────
     //
     // The first cut wanted an obscenity or a named verb, so "fuck you all"

@@ -4602,7 +4602,20 @@ function planIntent(input: string): PlannedAction {
     // A provocation is an act and the room is entitled to take offence.
     {
         if (AN_INSULT.test(text)) {
-            const who = (extractSubject(input, INSULT_SUBJECT_VERBS) ?? '').trim();
+            // WHO IT WAS SAID TO, AND NOT THE REST OF THE SENTENCE.
+            // `extractSubject` reads to the end of the line, so "I tell him
+            // what I think" named a person called "him what I think" - which
+            // resolves to nobody, and an insult that resolves to nobody is
+            // read as one thrown at the room. What follows the person here is
+            // always what was said, never who it was said to.
+            const who = (extractSubject(input, INSULT_SUBJECT_VERBS) ?? '')
+                .replace(/\s+(?:exactly\s+)?(?:what|that|how|why|where|when)\b.*$/i, '')
+                // And what they were CALLED, which is the other half of the
+                // same sentence: "I call him a dog" named a person called
+                // "him a dog". The head is required, so "a dog" on its own is
+                // left whole.
+                .replace(/^(.+?)\s+(?:a|an)\s+\w+$/i, '$1')
+                .trim();
             return {
                 action: 'insult',
                 ...(who.length >= 2 ? { target: who } : {})
