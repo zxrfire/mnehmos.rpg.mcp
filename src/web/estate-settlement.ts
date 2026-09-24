@@ -425,8 +425,26 @@ function factsForEstate(
             );
         }
     } else {
+        // NOBODY TOOK IT IS NOT NOBODY WAS THERE.
+        //
+        // Played: this read "Nobody was there" while the man who raised this
+        // cultivator was holding their head and two others were standing in
+        // the room. The same shape as `eight-people-were-there-and-nobody-was`,
+        // which settled who ENDS UP with what was on the body; this is the
+        // sentence, which kept claiming something it is not in a position to
+        // know.
+        //
+        // `standingOver` IS NOT THE ROOM. It is who is entitled to go through
+        // the body, and `settleTheEstateInside` passes an empty list for a
+        // death nobody did - so eight people can be standing there and it
+        // still be empty. Reading it as the room is reading a different
+        // question's answer.
+        //
+        // So this says what happened to what was on the body, which is the one
+        // thing it knows, and says nothing about who was watching.
         lines.push(
-            `Nobody was there. What ${deps.cultivator.name} was carrying is at ${place}, where they fell: `
+            `Nobody went through it. What ${deps.cultivator.name} was carrying is at ${place}, `
+            + 'where they fell: '
             + `${describeGoods(asLegacyGoods(estate.buried ?? { spiritStones: 0, stock: [] }))}`
             + `${estate.objects.length > 0 ? `, and ${estate.objects.map(o => o.name).join(', ')}` : ''}.`
         );

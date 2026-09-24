@@ -1246,17 +1246,37 @@ export const combatVerbs = {
 
         this.whatTheFightBroke(cultivator, held, result, execution);
 
+        // ── AND NOT TO SOMEBODY WHO IS NOT GOING TO GET ANOTHER TURN ─────
+        //
+        // Played. Foundation Establishment against a Void Tribulation, third
+        // attack, dead. The narration ended on the death - "your eyes stay
+        // open, but the village, the woman, and the sobbing man are already
+        // gone" - which is what the death line asks for, and under it the
+        // player read four ways out of a life that was over: "I get out of
+        // here", "I talk to them", "I call on somebody who owes me", "I go and
+        // cultivate".
+        //
+        // The list is advice for the NEXT turn. On a turn there is no next
+        // turn, it is not advice, and `required` puts it in front of the
+        // player whatever the narrator does. The gap itself still goes to
+        // `structure`, which is mechanical and reads as a record.
+        const theRunClosed = (settled as { died?: boolean }).died === true;
+
         // A ROUTE OUT OF A HOPELESS FIGHT IS NOT OPTIONAL
         if (result.outcome === 'no_contest' && result.gap.options.length > 0) {
-            const routes = sayingWhatWouldWork(
-                routesOutOfAGap(result.gap.options), held.party.name,
-                held.routesAlreadyNamed === true
-            );
+            const routes = theRunClosed
+                ? []
+                : sayingWhatWouldWork(
+                    routesOutOfAGap(result.gap.options), held.party.name,
+                    held.routesAlreadyNamed === true
+                );
             // Marked after composing and not before, so the round that is
             // actually handed the list is the one that counts as having been
             // told. See `StandingFight.routesAlreadyNamed`.
             held.routesAlreadyNamed = true;
-            execution.facts.required = [...(execution.facts.required ?? []), ...routes];
+            if (routes.length > 0) {
+                execution.facts.required = [...(execution.facts.required ?? []), ...routes];
+            }
             // NO SOURCE FILE NAMES IN A CHANNEL THE PLAYER READS.
             //
             // Found by playing. This line ended “the rest are recorded in

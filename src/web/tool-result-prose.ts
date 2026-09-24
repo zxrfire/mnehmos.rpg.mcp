@@ -351,8 +351,15 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     if (typeof body.outcome === 'string' && Array.isArray(body.exchanges)) {
         const them = body.opponent as { id?: string; name?: string } | undefined;
 
-        // AND WHAT WOULD HAVE WORKED
-        const gap = body.gap as { options?: unknown } | undefined;
+        // AND WHAT WOULD HAVE WORKED - UNLESS THERE IS NO NEXT TURN TO DO IT
+        // IN. `died` is the survival layer's word and it is the player's. The
+        // list is four things to type next; handing it to somebody whose run
+        // just closed is the engine offering a way out of a life that is over.
+        // Reported from a played death. See the same guard in `combat-verbs`,
+        // which keeps it out of `required`.
+        const gap = body.died === true
+            ? undefined
+            : body.gap as { options?: unknown } | undefined;
         if (Array.isArray(gap?.options) && gap.options.length > 0) {
             lines.push(...sayingWhatWouldWork(
                 routesOutOfAGap(gap.options as string[]),

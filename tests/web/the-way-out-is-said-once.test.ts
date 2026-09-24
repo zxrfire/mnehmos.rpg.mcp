@@ -50,6 +50,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { routesOutOfAGap, sayingWhatWouldWork } from '../../src/web/gap-routes';
+import { summariseToolBody } from '../../src/web/tool-result-prose';
 import { REAL_OPTIONS } from '../../src/engine/cultivation/combat';
 
 /**
@@ -102,5 +103,40 @@ describe('the ways out of a hopeless fight are said once', () => {
     it('says nothing when no route survived the mapping', () => {
         expect(sayingWhatWouldWork([], 'Shu Wanping')).toEqual([]);
         expect(sayingWhatWouldWork([], 'Shu Wanping', true)).toEqual([]);
+    });
+});
+
+/**
+ * AND NOT TO SOMEBODY WHO IS NOT GOING TO GET ANOTHER TURN.
+ *
+ * Played. Foundation Establishment against a Void Tribulation, third attack,
+ * dead. The narration ended on the death - *"your eyes stay open, but the
+ * village, the woman, and the sobbing man are already gone"* - which is what
+ * the death line asks for, and under it the player read four ways out of a
+ * life that was over.
+ *
+ * The list is four things to TYPE NEXT. On a turn there is no next turn it is
+ * not advice about anything, and `required` puts it in front of the player
+ * whatever the narrator does. `died` is the survival layer's word and it is
+ * the player's, which is how both callers read it.
+ */
+describe('the ways out are not offered to somebody whose run just closed', () => {
+    const afterTheFight = (died: boolean) => ({
+        outcome: 'no_contest',
+        exchanges: [],
+        opponent: { id: 'them', name: 'A Void Tribulation cultivator' },
+        gap: { options: AS_THE_ENGINE_SAYS_THEM },
+        died
+    });
+
+    it('offers them while there is a turn left to take one', () => {
+        expect(summariseToolBody(afterTheFight(false)).join(' '))
+            .toContain('not a better swing');
+    });
+
+    it('says nothing about them on the turn the player dies', () => {
+        const said = summariseToolBody(afterTheFight(true)).join(' ');
+        expect(said).not.toContain('not a better swing');
+        expect(said).not.toContain('I get out of here');
     });
 });
