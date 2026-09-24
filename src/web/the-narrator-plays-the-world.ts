@@ -136,12 +136,9 @@ would see, hear or be told:
          Somebody at the stall laughs at something the stallholder said, not at you.
          A carter spits, checks his mule's hoof and finds it more interesting than you.
 
-  CLERK: Qi density thin: half cultivation rate.
-  STORY: You sit until your legs go numb, and what trickles into your meridians would not fill a
-         thimble.
-
-  CLERK: 0 of 100 qi-units toward the next rank. Not yet eligible.
-  STORY: The wall of the next layer is exactly where it was this morning.
+  CLERK: Qi density thin: half cultivation rate. / 0 of 100 qi-units toward the next rank.
+  STORY: what the hours of sitting are like in this place, today - the weather, a sound, the
+         body - in an image of your own that no earlier turn has used.
 
   CLERK: Qi density dense: double cultivation rate, and a bonus to breakthrough odds.
   STORY: The air is thick enough to lean on. A breath here does the work of two on the road.
@@ -607,10 +604,10 @@ WHAT THE ENGINE RULED
 <narration>
     You sit with your back against the shrine wall and close your eyes.
 
-    You draw, and draw, and what comes in would not fill a thimble. The incense stick burns down
-    to a stub. Your legs have gone numb.
+    The incense stick in the offering bowl burns down to a stub while you draw. Somebody has left
+    a rice cake on the step; by noon the ants have it.
 
-    The wall of the next layer is exactly where it was this morning.
+    When the stub goes out there is a little more in your dantian than there was at dawn.
 </narration>
 </example>
 ${EXAMPLES_CLOSE}`;
