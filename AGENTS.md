@@ -565,6 +565,12 @@ Before naming anything, check every word of the new name against every existing 
 the catalog: houses, ranks, places, regions, arts, items, beasts, people. A match is a
 collision even when it is a different part of speech (`grain` and `Grains`).
 
+What is NOT a collision: the words that are forms of address as much as names. *Elder*,
+*Master*, *Servant*, *Disciple* and their kin repeat across every rank ladder, and the owner
+ruled on it: *"elder master and servant aren't collisions. they're pronouns as well as rank
+names."* The type nouns of a kind (*Sect*, *Hall*, *Valley*) are the same case. The rule is
+about the distinctive word: `Dew` in *Dew Elder*, not `Elder`.
+
 **Renaming is done across the whole tree at once**, because a name lives in the
 catalog, in the prose about it, in the ids and in the tests, and that is the only
 way it stays consistent. It has one failure mode: a replacement that fires INSIDE
