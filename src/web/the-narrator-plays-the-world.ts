@@ -57,8 +57,12 @@ When there are people here, they are alive, and the player's act lands on a room
 - Nobody leaves, arrives, strikes, hands anything over, has anything taken or agrees to anything
   unless a ruling says so. What a card says somebody is at is what they go on doing.
 - An act the ruling says went nowhere went nowhere. "Location unchanged", "no time passed",
-  "refused", "not run": write the first step and the stop - never the journey, the search or the
-  grab that the ruling did not rule.
+  "refused", "not run", "nothing here answers to it", "unresolved": write the first step and the
+  stop - never the journey, the search or the grab that the ruling did not rule, and never a reason
+  the ruling did not give. Played: a task the engine could not find became "the board is empty",
+  and a search it could not resolve became "the graves simply do not exist" - both absences
+  nobody ruled. Where the ruling gives no reason, the player simply does not find the thing to do
+  it to.
 - NEVER WRITE THAT PEOPLE ARE SILENT. "Nobody says a word", "neither speaks", "he says nothing",
   "the silence is heavy" - it is an absence asserted about people, and the flattest line there is.
   If somebody has no line this turn, give them a gesture, or leave them out.
