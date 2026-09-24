@@ -555,6 +555,41 @@ out of a talisman and the parser could no longer reach it at all.
 `the-nouns-a-house-ends-with.test.ts` is the other one: the parser had ten
 hand-written lists of house words and none of them had ever heard of a guild.
 
+### Look for it before you build it. It is usually already there.
+
+In one session, nine things that looked like missing features turned out to be written
+already and merely unreached: the Internal Affairs Elder, the grand elder seat a head retires
+to, the external-elder door, the guest-elder arrangement, the room that decides about one of
+its own, the life lamps, `theOnesNobodyCanFind`, `aNameAttaches`, and the whole of vein size
+as a four-value enum that already reaches the yearly economy. **Every one would have been
+reimplemented by somebody who searched for a function name instead of for the idea.**
+
+So before writing a mechanism:
+
+- **Search for the state, not the word.** `whatTheKeeperNotices` and the Internal Affairs
+  Elder are the same office under two names; `waitingOnASuccession` is not about succession at
+  all. A grep for the noun you have in mind finds the word you happened to choose.
+- **Read the docs the code points at.** `docs/world/` describes things the engine has, things
+  it does not, and - the expensive case - things it has under another name.
+- **When the answer exists but does not fire, that is a different bug** and it is the one
+  this repo has most of. Fixing it is a wire, not a feature.
+
+And the same rule one level in: **do not write a second opinion beside an existing one.** An
+insult verb briefly modelled how each bystander felt about the man who was sworn at - reading
+their tie to him, deciding whether they cared - and every line of it was a bespoke copy of
+`hearing-of-a-wrong.ts`, which decides who carries for whom off ties that already exist.
+**What you say is yours; how they respond is theirs.** A mechanism that writes both is two
+mechanisms for one fact, and the copy is the one nobody will find when the original changes.
+
+**This is where bespoke comes from, and drift after it.** Nobody sets out to write a second
+copy. They write the piece in front of them, in the shape the case in front of them wants,
+because looking cost more than typing - and the copy is correct on the day it is written.
+Then the original gains a rule, or loses one, and the two disagree; and because the copy was
+never named as a copy, the disagreement reads as a bug in whichever one somebody happens to
+be standing in. Every drift in this file's history started as a reasonable local decision.
+**Searching first is not tidiness. It is the only point at which the copy is cheap to not
+make.**
+
 ### One source of truth, and link to it rather than restating it
 
 A rule stated in two places is two rules, and one of them will be wrong first. When a
