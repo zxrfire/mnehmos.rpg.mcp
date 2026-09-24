@@ -2273,17 +2273,25 @@ export class GameService {
             ambient,
             this.company(created.cultivator),
             null,
-            live.toldToThePlayer.length === 0
+            live.toldToThePlayer.length === 0,
+            // NOBODY SPEAKS ON THE FIRST TURN. See `factsForLook`.
+            true
         );
-        // AND TWO VOICES THAT WERE HAVING THE CONVERSATION ANYWAY.
+        // AND NOT THE TWO VOICES THAT WERE HAVING THE CONVERSATION ANYWAY.
         //
         // `hear` is the one channel in this game that produces SPEECH and an
-        // unidentified perception in the same sentence - a sect and a person
-        // named past a wall, neither explained - and every verb that reads a
-        // square calls it except the opening. Measured across played turns it
-        // is the best line the scene layer produces and it fired on none of the
-        // turns a new player reads first.
-        const overheard = this.hear(created.cultivator, created.run, 'look', null);
+        // unidentified perception in the same sentence, and it used to be called
+        // here because it fired on none of the turns a new player reads first.
+        // That argument was about a good line reaching nobody; the design owner
+        // has since ruled on the turn rather than the line: *"it shouldn't give
+        // ANYONE speech at the first turn, the first turn is special, it's
+        // exposition only"*.
+        //
+        // So the opening has no voices in it at all - not overheard names, and
+        // not what anybody can be heard on. Every other verb that reads a square
+        // still calls `hear`, and the second turn of a run is the first place a
+        // player hears anybody.
+        const overheard = null;
 
         // WHAT IS LIVE IS FILED, AND THE OPENING NARRATION IS THE LIFE AND THE PLACE.
         //

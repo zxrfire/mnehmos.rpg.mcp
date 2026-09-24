@@ -362,11 +362,28 @@ export function theLifeBehindTheFirstTurn(
     // household tie is on the row and it reads as family once it is used.
     const family = faces.filter(one => one.tie !== null);
     const theStreet = faces.filter(one => one.tie === null);
-    const sayThem = (said: readonly AFaceFromBeforeTheRun[]): void => {
+    // ── A NAME AND A LABEL UNDER IT IS NOT AN ACCOUNT OF A LIFE ──────────
+    //
+    // This printed `Lu Nuoming. Grew up on the same road. Still in Wind Turn.`
+    // and the narrator wrote what it was shown: an opening that was a roll of
+    // names, one line each, with dialogue hung on some of them. The design
+    // owner, reading it - *"this isn't xianxia, you don't open with a list of
+    // names and what they're saying"*, *"who are these randos?"*, and of the
+    // one that came through in the passive, *"why the passive voice?"*.
+    //
+    // The notes are predicates now (`HOW_YOU_KNOW_THEM`), so the name goes in
+    // front of one and the result is a sentence somebody could say out loud.
+    // What a person IS to this cultivator is the substance; the label was the
+    // defect. The household of one says so, because being the only person in
+    // the house is the fact that gives the rest of the line its weight.
+    const sayThem = (said: readonly AFaceFromBeforeTheRun[], aloneInTheHouse = false): void => {
         for (const one of said) {
+            const where = whereToFindThem(one, birth.place.name);
+            const only = aloneInTheHouse
+                ? ' There has never been anybody else in the house.'
+                : '';
             lines.push({
-                text: `${one.name}. ${one.sourceNote} ${whereToFindThem(one, birth.place.name)}`
-                    .trimEnd()
+                text: `${one.name} ${one.sourceNote}${only} ${where}`.trimEnd()
             });
         }
     };
@@ -377,7 +394,7 @@ export function theLifeBehindTheFirstTurn(
                 ? 'The household:'
                 : 'The household, and where each of them is now:'
         });
-        sayThem(family);
+        sayThem(family, family.length === 1);
     }
     if (theStreet.length > 0) {
         const knowing =

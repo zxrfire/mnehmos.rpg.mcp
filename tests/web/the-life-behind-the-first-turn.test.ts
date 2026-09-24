@@ -197,14 +197,14 @@ describe('the life behind the first turn', () => {
      */
     it('names the people a childhood left behind, and how they are known', () => {
         const faces = [
-            face('Han Ronglu', 'Grew up on the same road.'),
-            face('Mo Wanming', 'One of the faces that was always at the well.')
+            face('Han Ronglu', 'grew up on the same road as you.'),
+            face('Mo Wanming', 'was always at the well, for as long back as you can remember.')
         ];
         const life = told({}, faces);
         expect(life).toContain('Han Ronglu');
-        expect(life).toContain('Grew up on the same road.');
+        expect(life).toContain('Han Ronglu grew up on the same road as you.');
         expect(life).toContain('Mo Wanming');
-        expect(life).toContain('One of the faces that was always at the well.');
+        expect(life).toContain('Mo Wanming was always at the well, for as long back as you can remember.');
         // Acquaintance and nothing else. The module that draws them grants no
         // favour, and an opening that implied one would be handing over the
         // thing the player is supposed to go and earn.
@@ -219,17 +219,17 @@ describe('the life behind the first turn', () => {
      */
     it('says where each of them is, in the three ways the world can answer', () => {
         const life = told({}, [
-            face('Han Ronglu', 'Grew up on the same road.'),
-            face('Mo Wanming', 'One of the faces that was always at the well.', 'Plum Village'),
-            face('Bai Shuyi', 'Worked the same ground in the same seasons.', null)
+            face('Han Ronglu', 'grew up on the same road as you.'),
+            face('Mo Wanming', 'was always at the well, for as long back as you can remember.', 'Plum Village'),
+            face('Bai Shuyi', 'worked the same ground in the same seasons you did.', null)
         ]);
         // Standing in the square the recap opened by naming, said tersely
         // because it is usually true of everybody on the list at once.
-        expect(life).toContain('Grew up on the same road. Still in Three Walls.');
+        expect(life).toContain('Han Ronglu grew up on the same road as you. Still in Three Walls.');
         // Somewhere else, named so the player can set out for it.
-        expect(life).toContain('One of the faces that was always at the well. In Plum Village now.');
+        expect(life).toContain('Mo Wanming was always at the well, for as long back as you can remember. In Plum Village now.');
         // And no place invented where the world holds none.
-        expect(life).toMatch(/Bai Shuyi\..*Nobody could say where they are standing now\./);
+        expect(life).toMatch(/Bai Shuyi worked the same ground.*Nobody could say where they are standing now./);
     });
 
     /**
@@ -242,12 +242,12 @@ describe('the life behind the first turn', () => {
      */
     it('says the household apart from the street', () => {
         const life = told({}, [
-            kin('Wei Anlu', 'parent', 'Family. Did the raising.'),
-            kin('Wei Xiaoyu', 'kin', 'Family. Grew up under the same roof.'),
-            face('Han Ronglu', 'Grew up on the same road.')
+            kin('Wei Anlu', 'parent', 'raised you.'),
+            kin('Wei Xiaoyu', 'kin', 'grew up under the same roof as you.'),
+            face('Han Ronglu', 'grew up on the same road as you.')
         ]);
         expect(life).toContain('The household, and where each of them is now:');
-        expect(life).toContain('Wei Anlu. Family. Did the raising. Still in Three Walls.');
+        expect(life).toContain('Wei Anlu raised you. Still in Three Walls.');
         // The household comes first and the street keeps its own heading, so
         // neither list is read as the other.
         expect(life.indexOf('The household')).toBeLessThan(life.indexOf('Han Ronglu'));
@@ -271,14 +271,14 @@ describe('the life behind the first turn', () => {
      * life is told it lost one.
      */
     it('says the ending rather than the address for a parent who has died', () => {
-        const dead = { ...kin('Wei Anlu', 'parent', 'Family. Did the raising.'), diedYearsAgo: 40 };
+        const dead = { ...kin('Wei Anlu', 'parent', 'raised you.'), diedYearsAgo: 40 };
         const life = told({}, [dead]);
-        expect(life).toContain('Wei Anlu. Family. Did the raising. Dead these 40 years.');
-        expect(life).not.toContain('Wei Anlu. Family. Did the raising. Still in');
+        expect(life).toContain('Wei Anlu raised you. There has never been anybody else in the house. Dead these 40 years.');
+        expect(life).not.toContain('Wei Anlu raised you. There has never been anybody else in the house. Still in');
     });
 
     it('says nothing about a household when the world gave this life none', () => {
-        const life = told({}, [face('Han Ronglu', 'Grew up on the same road.')]);
+        const life = told({}, [face('Han Ronglu', 'grew up on the same road as you.')]);
         expect(life).not.toContain('The household');
         expect(life).toContain('Han Ronglu');
     });
@@ -291,7 +291,7 @@ describe('the life behind the first turn', () => {
      * nobody.
      */
     it('counts places and houses as places and houses, with the people above it', () => {
-        const life = told({}, [face('Han Ronglu', 'Grew up on the same road.')]);
+        const life = told({}, [face('Han Ronglu', 'grew up on the same road as you.')]);
         expect(life).toMatch(/1 name of places and houses/);
         // Both indices read, so a block that stopped being printed at all
         // cannot pass this by coming back as -1.
@@ -319,7 +319,7 @@ describe('the life behind the first turn', () => {
                 id: 'sect-azure-dew', name: 'Azure Dew Sect',
                 powerOrdinal: 21, admissionOrdinal: 2, recruits: true, regionId: 'r'
             }
-        }), 16, [face('Han Ronglu', 'Grew up on the same road.')]);
+        }), 16, [face('Han Ronglu', 'grew up on the same road as you.')]);
         expect(both.toldToThePlayer.length).toBeLessThanOrEqual(both.forTheNarrator.length);
         expect(both.toldToThePlayer.length).toBeGreaterThan(0);
     });

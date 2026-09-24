@@ -1204,14 +1204,26 @@ export function factsForLook(
     /**
      * Whether the ground under them has nothing wrong with it.
      */
-    groundIsQuiet = true
+    groundIsQuiet = true,
+    /**
+     * Whether this is the first turn of a life, on which nobody speaks.
+     *
+     * The design owner, on the opening: *"it shouldn't give ANYONE speech at
+     * the first turn, the first turn is special, it's exposition only"*. What a
+     * person can be heard on is a voice, so it is not said here - the square is
+     * who is standing in it and what they are at, and the turn is the sixteen
+     * years behind the cultivator reading it.
+     */
+    nobodySpeaks = false
 ): EngineFacts {
     const where = placeName(cultivator);
     // Two renderings of one square, for the same reason `ground` below has two:
     // what is handed to a model is material to write from, and what is printed
     // when no model answered is the finished line. See `WhoIsListening`.
-    const who = describeCompany(company, cultivator.realmOrdinal, 'walking_up', 'the narrator');
-    const whoToThePlayer = describeCompany(company, cultivator.realmOrdinal, 'walking_up');
+    const who = describeCompany(
+        company, cultivator.realmOrdinal, 'walking_up', 'the narrator', nobodySpeaks);
+    const whoToThePlayer = describeCompany(
+        company, cultivator.realmOrdinal, 'walking_up', 'a player with no narrator', nobodySpeaks);
     const noticed = selfNoticing(cultivator, groundIsQuiet);
 
     // ── A LOOK ANSWERS ABOUT THE SURROUNDINGS, NOT ABOUT THE LOOKER ──────
@@ -1745,13 +1757,17 @@ function describeCompany(
     company: Company,
     observerOrdinal = 0,
     how: HowYouCameToBeLooking = 'asked_who_is_here',
-    listening: WhoIsListening = 'a player with no narrator'
+    listening: WhoIsListening = 'a player with no narrator',
+    /** See `factsForLook`: on the first turn of a life, nobody has a voice. */
+    nobodySpeaks = false
 ): string | null {
     if (company.total === 0) return null;
     const heardOn = (who: string, mind: WhatIsOnTheirMind): string =>
-        `What ${who} can be heard on, unprompted and not to you: `
-        + (listening === 'the narrator' ? mind.state : `they ${mind.plainly}`)
-        + '.';
+        nobodySpeaks
+            ? ''
+            : `What ${who} can be heard on, unprompted and not to you: `
+                + (listening === 'the narrator' ? mind.state : `they ${mind.plainly}`)
+                + '.';
 
     // ── ONE PERSON, OR THEIR PARTY, AND A COUNT FOR THE REST ─────────────
     //
@@ -1811,7 +1827,7 @@ function describeCompany(
                 ? met
                 : company.named.find(person => (person.chewing ?? null) !== null) ?? null;
             if (speaking?.chewing) {
-                sentences.push(heardOn(speaking.name, speaking.chewing));
+                { const line = heardOn(speaking.name, speaking.chewing); if (line) sentences.push(line); }
             }
             // The party is already inside the clause - "mid-conversation with
             // X" - so it is not repeated. What is worth saying is that they
@@ -1916,7 +1932,7 @@ function describeCompany(
                 // years somebody else has spent, so it is the engine reading
                 // its own rows aloud. Saying WHAT THEY CAN BE HEARD ON leaves
                 // the only honest rendering being the one that was wanted.
-                sentences.push(heardOn(person.name, person.chewing));
+                { const line = heardOn(person.name, person.chewing); if (line) sentences.push(line); }
             }
         }
 

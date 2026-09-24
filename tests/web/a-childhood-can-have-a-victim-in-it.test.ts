@@ -352,7 +352,14 @@ describe('a childhood can have a victim in it', () => {
             // The name is read OUT of the line rather than hardcoded: any name
             // the game prints is a name the game has to accept, and pinning the
             // one this world happened to draw would pin the draw.
-            const whoDied = said.split('.')[0];
+            //
+            // THE NAME IS WHAT THE LINE OPENS WITH, and it used to be whatever
+            // stood before the first full stop, because the line used to read
+            // `Name. Label. Where.` It reads as a sentence now - `Cao Rongshi
+            // worked the same ground in the same seasons you did.` - so
+            // splitting on the stop takes the whole clause. Two words, which is
+            // how every name in this world is built.
+            const whoDied = said.split(/\s+/).slice(0, 2).join(' ');
 
             // It is the ENDING that is said, not the address. A killed person's
             // row still carries the place they died in, so a whereabouts here

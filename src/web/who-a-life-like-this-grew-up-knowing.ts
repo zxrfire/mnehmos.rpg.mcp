@@ -161,16 +161,28 @@ export function aChildhoodCouldHaveContained(
  *
  * AND NONE OF THEM NAMES THE HOLDER. The recap prints these verbatim to the
  * person holding them, so `since before either of them was anybody` called the
- * player `them` in a line about somebody they grew up with. Five of the six
- * were already subjectless, which is the register these are written in.
+ * player `them` in a line about somebody they grew up with.
+ *
+ * ── EACH ONE FINISHES A SENTENCE THAT STARTS WITH THEIR NAME ─────────────
+ *
+ * They used to be subjectless fragments, which solved the sentence above and
+ * created a worse one: the recap printed `Lu Nuoming. Grew up on the same road.`
+ * and the narrator wrote what it was shown - an opening that was a list of
+ * names with a label under each. The design owner, reading it: *"this isn't
+ * xianxia, you don't open with a list of names and what they're saying"*, and
+ * of the one line that came through in the passive, *"why the passive voice?"*.
+ *
+ * So they are PREDICATES now, in the second person, and the caller puts the
+ * name in front. Nothing subjectless, nothing passive, and the holder is `you`
+ * because the record is theirs and always was.
  */
 const HOW_YOU_KNOW_THEM: readonly string[] = [
-    'Grew up on the same road.',
-    'Has been at the far end of that street since before either was anybody.',
-    'Worked the same ground in the same seasons.',
-    'One of the faces that was always at the well.',
-    'Known by sight and by name since childhood, and by nothing else.',
-    'The two families have been in each other\'s way for as long as either remembers.'
+    'grew up on the same road as you.',
+    'has been at the far end of that street since before either of you was anybody.',
+    'worked the same ground in the same seasons you did.',
+    'was always at the well, for as long back as you can remember.',
+    'has been a face and a name to you since you were small, and nothing more than that.',
+    'comes of a family yours has been in the way of for as long as either remembers.'
 ];
 
 /**
@@ -182,12 +194,15 @@ const HOW_YOU_KNOW_THEM: readonly string[] = [
  * for a record nothing used to read aloud. This channel is read aloud TO the
  * holder, so `Raised them.` under a parent's name would tell a player that
  * somebody raised somebody else. That is what
- * `an-account-of-your-own-life-is-addressed-to-you` is about, and the register
- * every other note in this file is written in: no subject at all.
+ * `an-account-of-your-own-life-is-addressed-to-you` is about.
+ *
+ * A PREDICATE, like its neighbour above, and for the reason written there: the
+ * subjectless form put `Kong Zhaolu. Family. Did the raising.` in front of a
+ * narrator, which wrote "Kong Zhaolu did the raising" onto the page.
  */
 const WHAT_A_HOUSEHOLD_TIE_IS: Readonly<Record<string, string>> = Object.freeze({
-    parent: 'Family. Did the raising.',
-    kin: 'Family. Grew up under the same roof.'
+    parent: 'raised you.',
+    kin: 'grew up under the same roof as you.'
 });
 
 /**
@@ -476,6 +491,9 @@ function tieKindWith(world: WorldState, lifeId: string, otherId: string): Relati
  * An account first, because it is the one that gives somebody something to do:
  * a debt with a name on it is a road out of the opening, and a tie is a fact
  * about the past.
+ *
+ * A PREDICATE, finishing a sentence that starts with their name. See
+ * `HOW_YOU_KNOW_THEM` for why none of these stands on its own any more.
  */
 function whatTheyWereToThem(world: WorldState, lifeId: string, other: NpcRecord): string {
     for (const record of world.obligations ?? []) {
@@ -483,11 +501,11 @@ function whatTheyWereToThem(world: WorldState, lifeId: string, other: NpcRecord)
         const between = (record.holderId === other.id && record.subjectId === lifeId)
             || (record.subjectId === other.id && record.holderId === lifeId);
         if (!between) continue;
-        if (record.cause === 'saved_life') return 'Got you out of something you would not have got out of.';
-        if (record.cause === 'sheltered') return 'Took you in when there was nowhere else.';
-        return 'Gave you what you needed and never asked after it.';
+        if (record.cause === 'saved_life') return 'got you out of something you would not have got out of alone.';
+        if (record.cause === 'sheltered') return 'took you in when there was nowhere else.';
+        return 'gave you what you needed and never asked after it.';
     }
-    return 'Showed you what you know, before any of it had a name.';
+    return 'showed you what you know, before any of it had a name.';
 }
 
 /**
@@ -643,9 +661,12 @@ function toFace(
         statement: tie === null
             ? `${npc.name} is from home. Knowing them is not the same as being owed anything `
               + 'by them.'
+            // ACTIVE, AND ABOUT THE HOLDER. `did the raising` named nobody and
+            // reached the page as it stood. Family is a thing somebody DID for
+            // this cultivator, and saying which is the whole of the substance.
             : tie === 'parent'
-                ? `${npc.name} is family, and did the raising.`
-                : `${npc.name} is family, and grew up under the same roof.`
+                ? `${npc.name} is family, and raised you.`
+                : `${npc.name} is family, and grew up under the same roof as you.`
     };
 }
 
