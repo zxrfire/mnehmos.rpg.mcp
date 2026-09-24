@@ -952,6 +952,8 @@ export function composeNarrationUser(
         alreadySaid?: ReadonlySet<string>;
         /** Who has already been on the page in this place, so their picture is spent. */
         alreadyShown?: ReadonlySet<string>;
+        /** Who has been on the page here turn after turn, so they sit out unless the turn is theirs. */
+        wornOut?: ReadonlySet<string>;
     } = {}
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
@@ -992,7 +994,7 @@ export function composeNarrationUser(
             ? whoIsStandingHereOnTheFirstTurn(scene.company)
             : thePeopleHere(
                 scene.company, scene.realmOrdinal ?? 0, scene.awareness ?? [], addressing, told.alreadySaid,
-                told.alreadyShown
+                told.alreadyShown, told.wornOut
             )),
         '',
         ...whereTheyStandNow(scene.standing),

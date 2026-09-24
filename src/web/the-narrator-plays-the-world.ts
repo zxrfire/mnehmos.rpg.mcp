@@ -743,7 +743,8 @@ function aPersonsCard(
     toYou: string | null,
     addressed: boolean,
     alreadySaid: boolean,
-    alreadyShown = false
+    alreadyShown = false,
+    sitsOut = false
 ): string {
     const colours = person.houseId
         ? person.houseName
@@ -759,6 +760,15 @@ function aPersonsCard(
     ].filter((part): part is string => part !== null).join(', ');
 
     const lines = [`- ${person.name}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
+    // ON THE PAGE TURN AFTER TURN, THEY SIT OUT. Played: a man whose card had him "asking after a
+    // buyer by name, loudly" shouted for his buyer in four turns running, the card marked "already
+    // shown" from the second, because a loud activity is the easiest overheard line in the square.
+    // What they are at is what gets reused, so it is not handed over; who they are to the player is.
+    if (sitsOut) {
+        lines.push('    On the page here turn after turn already: leave them out unless this turn is theirs.');
+        if (toYou) lines.push(`    To you: ${toYou}.`);
+        return lines.join('\n');
+    }
     // AND ONCE THEY HAVE BEEN ON THE PAGE HERE, THE SAME PICTURE IS SPENT. Played: a woman eating
     // at an inn table was "her cold bowl" in seven turns out of nine, and "shutting the world out"
     // in nine, because the card handed over the same two phrases every turn.
@@ -858,15 +868,18 @@ export function thePeopleHere(
     awareness: readonly AwarenessRow[],
     addressing: string | null,
     alreadySaid: ReadonlySet<string> = new Set(),
-    alreadyShown: ReadonlySet<string> = new Set()
+    alreadyShown: ReadonlySet<string> = new Set(),
+    wornOut: ReadonlySet<string> = new Set()
 ): string[] {
     if (!company) return [];
     if (company.total === 0) {
         return ['THE PEOPLE HERE: nobody. The player is alone, and the turn is their act and the place.'];
     }
 
+    const sitsOut = (person: SomebodyInTheSquare) => wornOut.has(person.name) && person.name !== addressing;
     const ranked = [...company.named].sort((a, b) =>
         (b.name === addressing ? 1 : 0) - (a.name === addressing ? 1 : 0)
+        || (sitsOut(a) ? 1 : 0) - (sitsOut(b) ? 1 : 0)
         || (b.looksUp ? 1 : 0) - (a.looksUp ? 1 : 0)
         || b.playsToTheRoom - a.playsToTheRoom);
     const carded = ranked.slice(0, PEOPLE_GIVEN_A_CARD);
@@ -879,7 +892,7 @@ export function thePeopleHere(
         ...(room ? [room] : []),
         ...carded.map(person => aPersonsCard(
             person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
-            alreadySaid.has(person.name), alreadyShown.has(person.name)
+            alreadySaid.has(person.name), alreadyShown.has(person.name), sitsOut(person)
         )),
         ...(namedOnly.length > 0 ? [`- Also here, and nameable: ${namedOnly.join(', ')}.`] : []),
         ...(faceless > 0

@@ -17,6 +17,8 @@ import { describe, it, expect } from 'vitest';
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
 import { howTheRoomReadsThem, howTheyReadToYou, thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
 import type { Company } from '../../src/web/facts';
+import { ProviderNarrator } from '../../src/web/narrator';
+import { ScriptedProvider } from './harness';
 
 const FACTS = {
     headline: 'two arts you could be taught',
@@ -125,6 +127,47 @@ describe('the narrator is handed the people in the scene', () => {
         const after = thePeopleHere(square, 0, [], null, new Set(), new Set(['Wei Ciyi'])).join('\n');
         expect(after).toContain('Already shown here - a new detail of it, or leave them out.');
         expect(after).toContain('already shown here - only ever in a new act');
+    });
+
+    /**
+     * On the page turn after turn, they sit out. Played: a man "asking after a buyer by name,
+     * loudly" shouted for his buyer four turns running with the card marked already shown.
+     */
+    it('hands over no activity for somebody on the page here turn after turn, unless spoken to', () => {
+        const square = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);
+        const worn = new Set(['Wei Ciyi']);
+        const after = thePeopleHere(square, 0, [], null, new Set(), worn, worn);
+        expect(after.join('\n')).not.toContain('haggling over a cracked jade slip');
+        expect(after.join('\n')).toContain('leave them out unless this turn is theirs');
+        // And they go to the back of the room.
+        expect(after.findIndex(line => line.includes('Tang Minya')))
+            .toBeLessThan(after.findIndex(line => line.includes('Wei Ciyi')));
+        const spokenTo = thePeopleHere(square, 0, [], 'Wei Ciyi', new Set(), worn, worn).join('\n');
+        expect(spokenTo).toContain('haggling over a cracked jade slip');
+        expect(spokenTo).not.toContain('leave them out unless this turn is theirs');
+    });
+
+    /**
+     * Weeks in one place are a new scene there. Played: after three months of sitting in a village
+     * square, "Bai Shuxue is still eating standing up", because his card still said "still".
+     */
+    it('starts the place over when weeks have gone by in it', async () => {
+        const provider = new ScriptedProvider({ plans: [], narrations: ['Wei Ciyi haggles.'] });
+        const narrator = new ProviderNarrator(provider, { model: 'test' });
+        const facts = { headline: 'x', lines: ['Nothing.'], structure: [], prose: '' };
+        const standing = {
+            rank: 'Qi Condensation Layer 1', age: 16, spiritStones: 30, booksHeld: [], methods: [],
+            untreatedInjuries: 0, house: null
+        };
+        const on = (day: number) => narrator.narrate(facts, {
+            ...SCENE, company: aSquareWith(['Wei Ciyi'], 0), standing: { ...standing, dayOfTheRun: day }
+        } as never);
+        const cardFor = (i: number) => provider.calls[i]!.messages.find(m => m.role === 'user')!.content;
+        await on(0);
+        await on(0);
+        await on(90);
+        expect(cardFor(1)).toContain('Right now, still: haggling over a cracked jade slip.');
+        expect(cardFor(2)).toContain('Right now: haggling over a cracked jade slip.');
     });
 
     /** The one being spoken to leads, and is marked, so the turn is theirs. */

@@ -1426,7 +1426,10 @@ export class ProviderNarrator implements Narrator {
      * over again as if new. Played: a woman at an inn table was "her cold bowl" in seven turns of
      * nine.
      */
-    private shownHere = new Set<string>();
+    private shownHere = new Map<string, number>();
+
+    /** The run's day at the last narration, so a stretch of weeks in one place starts it over. */
+    private lastDayTold: number | null = null;
 
     /**
      * Phase 3. The result is stored in the log and shown to the player. It is
@@ -1441,12 +1444,21 @@ export class ProviderNarrator implements Narrator {
             ? null
             : this.lastExchange;
         const ambientIsNews = arrived || this.lastSceneTold!.ambient !== scene.ambient;
-        if (arrived) {
+        // WEEKS IN ONE PLACE ARE A NEW SCENE THERE. Played: after three months sitting in a village
+        // square the narration closed on "Bai Shuxue is still eating standing up", because his card
+        // said "Right now, still" - the same afternoon, as far as it knew.
+        const day = scene.standing?.dayOfTheRun;
+        const weeksWent = day !== undefined && this.lastDayTold !== null && day - this.lastDayTold >= 7;
+        if (day !== undefined) this.lastDayTold = day;
+        if (arrived || weeksWent) {
             this.saidHere = new Set();
-            this.shownHere = new Set();
+            this.shownHere = new Map();
         }
         const alreadySaid: ReadonlySet<string> = new Set(this.saidHere);
-        const alreadyShown: ReadonlySet<string> = new Set(this.shownHere);
+        const alreadyShown: ReadonlySet<string> = new Set(this.shownHere.keys());
+        // Two turns here and they sit out unless the turn is theirs. See `aPersonsCard`.
+        const wornOut: ReadonlySet<string> = new Set(
+            [...this.shownHere].filter(([, turns]) => turns >= 2).map(([name]) => name));
         // Recorded before the call rather than after it, so a narration that
         // times out or is discarded does not make the next turn repeat itself.
         // The model was told; whether it used it well is a separate question.
@@ -1459,7 +1471,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown, wornOut }) }
                 ]
             });
 
@@ -1512,7 +1524,7 @@ export class ProviderNarrator implements Narrator {
             this.lastExchange = { said: scene.playerSaid ?? null, shown: whole };
             for (const person of scene.company?.named ?? []) {
                 if (!whole.includes(person.name)) continue;
-                this.shownHere.add(person.name);
+                this.shownHere.set(person.name, (this.shownHere.get(person.name) ?? 0) + 1);
                 if (person.chewing) this.saidHere.add(person.name);
             }
             return { text: whole, source: 'model', note: null };
