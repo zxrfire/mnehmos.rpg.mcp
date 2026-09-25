@@ -803,6 +803,7 @@ import { theContractBehind } from '../engine/encounters/paper-on-a-town-wall.js'
 import { whoPostedIt } from '../engine/encounters/how-a-task-is-worded.js';
 import { HOUSE_MISSIONS } from '../data/cultivation/what-a-house-posts-for-its-own.js';
 import {
+    asIfAtTheirOwnBoard,
     theBoardTheyStandAt,
     theWallWhereTheyStand,
     walkOverToTheBoard
@@ -4630,9 +4631,13 @@ export class GameService {
                     return this.whoWouldStandOverYourCrossing(run, cultivator);
                 }
                 // Nobody named, and the house has posted the protecting as a
-                // mission for them: "I act as dao protector" takes it.
+                // mission for them: "I act as dao protector" takes it. Read off
+                // the board as they would stand at it inside their own walls, and
+                // `duty` walks them over to it. Outside the walls it is the
+                // guard's own answer.
                 if (!action.target) {
-                    const posted = (await this.whatIsPostedOnTheWallHere(cultivator))
+                    const atTheBoard = asIfAtTheirOwnBoard(this, cultivator) ?? cultivator;
+                    const posted = (await this.whatIsPostedOnTheWallHere(atTheBoard))
                         .find(offer => theMissionBehind(offer.entry.id)?.id === 'mission-dao-protector');
                     if (posted) return this.duty(run, cultivator, ambient, posted.entry.name);
                 }

@@ -70,6 +70,19 @@ export function theBoardTheyStandAt(world: WorldState | null, cultivator: Cultiv
 }
 
 /**
+ * Somebody inside their own house's walls, as they would stand at its board: a copy of them there,
+ * so what the board holds can be read before anybody walks. Null anywhere else.
+ */
+export function asIfAtTheirOwnBoard(game: GameService, cultivator: Cultivator): Cultivator | null {
+    const world = game.atHand;
+    const seat = world ? theSeatTheyAreInside(world, cultivator) : null;
+    const held = positionIn(game.repos, cultivator.id);
+    if (!world || seat === null || held === null || theHouseOf(seat) !== held.sectId) return null;
+    const board = theAreasOf(world, seat).areas.find(area => area.for === 'board');
+    return board ? { ...cultivator, location: seat.name, standingIn: board.id } : null;
+}
+
+/**
  * Somebody inside a seat's walls and not at its board, walked over to it. Null where they are
  * not inside one or are at it already. No time passes, as for any walk across a place.
  */

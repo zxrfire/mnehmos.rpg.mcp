@@ -108,3 +108,20 @@ describe('the mission board inside a house', () => {
         expect(days()).toBe(0);
     }, 240_000);
 });
+
+describe('acting as dao protector, with nobody named', () => {
+    it('walks an elder inside their own walls over to the board and takes the post', async () => {
+        const { game, standing } = await standingAt('dao-inside', 'forecourt', { rung: 'elder', ordinal: 20 });
+        const said = (await game.act('I act as dao protector')).narration ?? '';
+        expect(said).toContain('You walk over to the mission board.');
+        expect(said).toContain('You take up the post: Act as dao protector for the outer disciples of Azure Cloud Pavilion');
+        expect(standing()).toContain('#board#');
+    }, 240_000);
+
+    it('is the guard verb\'s own answer outside the walls', async () => {
+        const { game } = await standingAt('dao-outside', 'a town', { rung: 'elder', ordinal: 20 });
+        const said = (await game.act('I act as dao protector')).narration ?? '';
+        expect(said).not.toContain('mission board');
+        expect(said).not.toContain('You take up the post');
+    }, 240_000);
+});
