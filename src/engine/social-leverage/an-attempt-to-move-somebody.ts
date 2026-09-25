@@ -5,8 +5,12 @@
  * NOTHING HERE READS `Approach.intent`. `actions.ts` forbids branching on it.
  * What is priced is `Approach.leverage`, the closed enum saying what is on the
  * table, so seduction (`attachment`) runs through the same machine as a purse.
- * Nothing reads `factionId` or `alignment` either: charm works everywhere, and
- * what varies by house is the GROUND, a fact about the place. See `ground-trust.ts`.
+ * Nothing reads `factionId`, and alignment is read in two terms only: charm works
+ * everywhere, and what varies by house is the GROUND, a fact about the place. See
+ * `ground-trust.ts`. The two are the owner's ruling that a demonic house supports
+ * its own and measures people by strength: `backingWeight` (your house supplies the
+ * method) and `mightWeight` (a demonic subject weighs the rung gap twice). Both are
+ * zero for everybody else, and neither gates anything.
  *
  * Pure. State in, deltas out, every roll from the caller's seeded stream.
  */
@@ -32,6 +36,8 @@ import type { DayIndex } from '../social/common.js';
 import { howHeavyThePromiseIs, type ThePromiseYouMade } from './background-as-leverage.js';
 import { groundWeight, type TheGroundUnderYou } from './ground-trust.js';
 import { openHandednessOf } from './how-freely-somebody-parts-with-what-they-have.js';
+import { willTheHouseBackThis } from './what-a-house-will-do-about-it.js';
+import { whatTheStrongMakeOfYou } from './what-the-strong-make-of-you.js';
 
 /**
  * How much the thing you want would cost the person you want it from. This and
@@ -108,6 +114,15 @@ const GRUDGE_PER_RANK = 0.1;
 
 /** They have an open goal you are in a position to move. */
 const THEY_WANT_SOMETHING = 0.15;
+
+/** Your house puts its hand to the method: `willTheHouseBackThis` answered `supplied`. */
+const THE_HOUSE_SUPPLIES_IT = 0.15;
+
+/**
+ * To somebody on the demonic path a wrong you let stand is weakness shown. The rung gap is the
+ * other half of might makes right, and it is counted again rather than priced here.
+ */
+const WEAKNESS_SHOWN = 0.1;
 
 // THE PURSE. Priced against the SUBJECT'S own income curve (`earningsPerYear`,
 // the one the world seeds every purse from) rather than a table here, so a
@@ -246,6 +261,11 @@ export interface AttemptInput {
     yourTie?: TieReading | null;
     /** The open obligation ledger between these two, in either direction. */
     ledger?: readonly ObligationRecord[];
+    /**
+     * Every open record naming the actor, whoever holds it. Read only by a subject on the
+     * demonic path, who measures the actor by strength: see `whatTheStrongMakeOfYou`.
+     */
+    actorsRecord?: readonly ObligationRecord[];
     /**
      * True when the subject has an open goal this actor could plausibly move.
      * Read off a real goal row - `activeGoals` in `npc-state.ts` via
@@ -531,6 +551,8 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
         // same in a market town and in a demonic house's forecourt. The sign
         // flips where leverage is force - "the more lawless somewhere is, the
         // more credible the threat". See `RECOURSE_AGAINST_A_THREAT`.
+        backing: round4(backingWeight(input)),
+        might: round4(mightWeight(input, standing)),
         ground: round4(groundWeight({
             ground: input.where ?? null,
             ask: input.ask,
@@ -541,6 +563,35 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
 
     const raw = Object.values(terms).reduce((sum, n) => sum + n, 0);
     return { odds: round4(clamp(raw, ODDS_FLOOR, ODDS_CEILING)), terms };
+}
+
+/**
+ * What your own house putting its hand to the method adds. A demonic house supplies the
+ * leverage for a heavy ask run on a person; every other answer adds nothing here, and a
+ * `forbidden` one is paid downstream, when the house finds out.
+ */
+export function backingWeight(input: AttemptInput): number {
+    const leverage = input.approach?.leverage ?? 'none';
+    return willTheHouseBackThis(input.actor.alignment, leverage, input.ask) === 'supplied'
+        ? THE_HOUSE_SUPPLIES_IT
+        : 0;
+}
+
+/**
+ * Might makes right, for a subject on the demonic path: the rung gap counts twice, and a wrong
+ * the actor let stand costs them. How the actor came by their strength is not read. Zero for
+ * everybody else.
+ */
+export function mightWeight(input: AttemptInput, standing: number): number {
+    const read = whatTheStrongMakeOfYou({
+        observerAlignment: input.subject.alignment,
+        observerOrdinal: input.subject.ordinal,
+        aboutId: input.actor.id,
+        aboutOrdinal: input.actor.ordinal,
+        ledger: input.actorsRecord ?? input.ledger ?? []
+    });
+    if (read === null) return 0;
+    return standing - (read.regard === 'contempt' ? WEAKNESS_SHOWN : 0);
 }
 
 /**

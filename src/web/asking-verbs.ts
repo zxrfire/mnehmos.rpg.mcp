@@ -1614,6 +1614,8 @@ ${unnamed}`;
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // For a subject who measures by strength. See `whatTheStrongMakeOfYou`.
+            actorsRecord: ledgerAbout(this.db as unknown as ObligationDb, cultivator.id),
             // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
             // tie the subject already holds, because the ruling is about the same
             // STRANGER saying the same thing.
@@ -2525,6 +2527,8 @@ ${done.span.facts.prose}`;
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // For a subject who measures by strength. See `whatTheStrongMakeOfYou`.
+            actorsRecord: ledgerAbout(this.db as unknown as ObligationDb, cultivator.id),
             // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
             // tie the subject already holds, because the ruling is about the same
             // STRANGER saying the same thing.
