@@ -115,9 +115,11 @@ describe('the manner is read off the species row and two species do not agree', 
     const seam = theSpeciesTheyMeant('seam')!;
     const ape = theSpeciesTheyMeant('white-ape')!;
 
-    it('gives each of them five statements', () => {
+    it('gives each of them the authored manner first, then five statements read off the row', () => {
         for (const one of [fox, seam, ape]) {
-            expect(howThisOneDealsWithPeople(one)).toHaveLength(5);
+            const manner = howThisOneDealsWithPeople(one);
+            expect(manner).toHaveLength(6);
+            expect(manner[0]).toBe(one.changedManner);
         }
     });
 
@@ -168,11 +170,14 @@ describe('the manner is read off the species row and two species do not agree', 
         expect(serpent.ability.kind).toBe(fox.ability.kind);
         expect(worksOnThePersonRatherThanTheTerms(serpent)).toBe(false);
 
-        const manner = howThisOneDealsWithPeople(fox).join(' ');
-        expect(manner).toMatch(/works on whoever is in front of it rather than on the terms/);
-        expect(manner).toMatch(/being welcome is the thing it reaches for/);
-        // Conduct, never a label and never a body.
-        expect(manner).not.toMatch(/seductive|alluring|beautiful|charming|flirt/i);
+        const derived = howThisOneDealsWithPeople(fox).slice(1).join(' ');
+        expect(derived).toMatch(/works on whoever is in front of it rather than on the terms/);
+        expect(derived).toMatch(/being welcome is the thing it reaches for/);
+        // THE DERIVED LINES are conduct, never a label and never a body. The
+        // label is the authored row's to give - the owner keeps the fox
+        // seductive in `changedManner` (`cultivation-beasts.test.ts`), and that
+        // line leads the manner; what the columns add must not say it again.
+        expect(derived).not.toMatch(/seductive|alluring|beautiful|charming|flirt/i);
     });
 
     it('forks what they do about a name they have not got, off the same three columns', () => {

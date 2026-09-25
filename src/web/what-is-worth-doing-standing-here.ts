@@ -13,6 +13,7 @@ import {
     SAY_TO_KEEP_SWINGING,
     SAY_TO_PRESS,
     SAY_TO_SHOUT,
+    SAY_TO_SPARE,
     SAY_TO_YIELD
 } from './fight-answers.js';
 import { rankName } from '../engine/cultivation/realms.js';
@@ -496,6 +497,19 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             + 'what a surrender is worth is decided by the person still standing, and by what '
             + 'they came here for. Somebody who came to kill has been handed somebody who is '
             + 'not fighting back.'));
+
+        // AND THE SAME MOMENT FROM THE OTHER END. `SAY_TO_SPARE` was built beside
+        // `SAY_TO_YIELD` and never called, so a player who had beaten somebody
+        // was never told they could stop. Gated on the engine's own comparison
+        // in `unfinished-fight.ts` - ahead on the fraction, and they have paid
+        // something - because short of it the sentence is a round spent on guard.
+        if (f.theirHp / Math.max(1, f.theirMaxHp) < f.yourHp / Math.max(1, f.yourMaxHp)
+            && f.theirHp < f.theirMaxHp) {
+            add(situation('fight_spare', SAY_TO_SPARE, 'spare',
+                `Stop, with ${f.them} still alive. It ends the fight on your terms and in front `
+                + 'of whoever is here, and it softens nothing: some people hold being let go '
+                + 'longer than being beaten.'));
+        }
 
         add(situation('fight_shout', SAY_TO_SHOUT, 'call_for_help',
             'Spend the round on a shout. Who comes is a fact about who is standing '

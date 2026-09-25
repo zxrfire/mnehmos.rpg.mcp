@@ -43,8 +43,9 @@
  *                     as, and the absence is the ordinary state of everybody
  *                     about almost everything.
  *
- *   HOW THEY DEAL     derived, here, from the species row this thing came off.
- *                     No manner is stored and none is authored per species.
+ *   HOW THEY DEAL     read, here, off the species row this thing came off:
+ *                     the one authored line of temperament, `changedManner`,
+ *                     and five statements derived from columns beside it.
  *
  * ── THE KNOWLEDGE HALF NEEDED NO FIELD, AND THAT IS THE FINDING ─────────
  *
@@ -154,7 +155,7 @@ export function theOnesThatCanBeStoodUp(): readonly Beast[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// HOW THEY DEAL - DERIVED FROM THE ROW, NOT AUTHORED PER SPECIES
+// HOW THEY DEAL - READ OFF THE ROW, ONE LINE AUTHORED AND FIVE DERIVED
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -335,14 +336,19 @@ function howMuchOfPeopleItHasHad(beast: Beast): string {
 /**
  * How this one deals with people, read off its species row.
  *
- * Five statements from five columns that were already there. Nothing is stored,
- * nothing is authored per species, and adding a species to the catalog gives it
- * a manner without touching this file. If this ever needs a table keyed on
- * `beast.id`, something has drifted - see the banner over `BeastAbilitySchema`,
- * which makes the same argument about the ability itself.
+ * The species' own temperament first, then five statements from five columns
+ * that were already there. Adding a species to the catalog gives it a manner
+ * without touching this file. If this ever needs a table keyed on `beast.id`,
+ * something has drifted - the per-species line lives on the row, not here.
  */
 export function howThisOneDealsWithPeople(beast: Beast): string[] {
     return [
+        // WHAT KIND OF THING IT WAS, STILL SHOWING. `changedManner` is authored
+        // on every row for exactly this scene and was built and never read, so
+        // a fox and a weasel crossed into the same five sentences. A changed
+        // beast that behaves like nothing in particular is a person carrying a
+        // species for no reason.
+        beast.changedManner,
         WHAT_IT_REACHES_FOR[beast.ability.kind],
         // The vein line says what it wants; where what it wants is held by a
         // person, the same column says something sharper about how it goes
@@ -359,11 +365,11 @@ export function howThisOneDealsWithPeople(beast: Beast): string[] {
 
 /** The structural row behind the manner, so an operator can see it derived. */
 export function whereTheMannerCameFrom(beast: Beast): string {
-    return `${beast.name}: manner read off the species row - ability ${beast.ability.kind} `
-        + `(${beast.ability.name}), vein relation ${beast.veinRelation}, disposition `
-        + `${beast.disposition}, group size ${beast.groupSize}, nature ${beast.nature}, `
-        + `persistence ${beast.persistence}. Nothing was stored and nothing was authored for `
-        + 'this species.';
+    return `${beast.name}: manner read off the species row - changedManner (authored for `
+        + `the kind), ability ${beast.ability.kind} (${beast.ability.name}), vein relation `
+        + `${beast.veinRelation}, disposition ${beast.disposition}, group size `
+        + `${beast.groupSize}, nature ${beast.nature}, persistence ${beast.persistence}. `
+        + 'Nothing was stored for this individual.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────

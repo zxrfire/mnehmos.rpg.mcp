@@ -749,7 +749,9 @@ export function applyTeachingLines(
             load.set(npc.id, n);
         }
 
-        const power = Number(faction.resources.power_ordinal ?? 0);
+        // Through `houseStrength`, which was built for this field and never
+        // called: the same number, read in one place rather than two.
+        const power = houseStrength(state, factionId);
         const rankCount = Math.max(1, faction.ranks.length);
         // The deepest LIVING master already standing above each student. A tie
         // is who would give a student attention; `guideOrdinalFor` pays only
