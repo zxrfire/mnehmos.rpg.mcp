@@ -753,7 +753,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 45 | 65 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 199 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 90 | 432 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 111 | 129 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 115 | 130 |
 
 <!-- END GENERATED: design-constants -->
 
