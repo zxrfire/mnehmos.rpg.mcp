@@ -1592,6 +1592,10 @@ const NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE = new Set([
     'i', 'it', 'its', 'their', 'them', 'they', 'like', 'someone', 'somebody',
     'anyone', 'anybody', 'people', 'nobody',
     'up', 'out', 'over', 'go', 'going',
+    // And the supplicant's own verbs: "I have come to ask to be taken in"
+    // named a house called `ask`.
+    'ask', 'asks', 'asking', 'asked', 'beg', 'begs', 'begging', 'come', 'came',
+    'coming', 'please', 'humbly',
     // AND THE WORDS A POSTED NOTICE IS POINTED AT BY
     'intake', 'intakes', 'notice', 'notices', 'bill', 'bills', 'poster',
     'posters', 'paper', 'wall', 'post', 'posts', 'posted', 'posting',
@@ -2768,7 +2772,9 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // forms are anchored so they cannot eat "I sneak in behind him" - which
     // names somebody, and is read where following is read.
     ['enter', /\b(?:enter|go into|goes into|go inside|walk into|walks into|step into|climb into|breach|infiltrate|sneak into|slip into)\b|^\s*(?:i\s+)?(?:sneaks?|slips?|steals?|creeps?)\s+in(?:side)?(?:\s+(?:through|past|by|under|over)\s+[\w' -]{2,40})?\s*[.!?]*$/],
-    ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
+    // `come to` followed by a verb is WHY somebody came, not where: "I have
+    // come to ask to be taken in" walked the player toward a place called "ask".
+    ['approach', /\b(?:approach|draw near|walk up to|close on|come to(?!\s+(?:ask|beg|seek|request|petition|plead|join|apply|learn|study|serve|see|be|offer|pay|speak|talk|trade|buy|sell|find|terms)\b))\b/],
     // Going after somebody. `chase`, `pursue` and `run after` were missing and
     // are how anybody says it when the person is already walking away; all
     // three are the same act as following, which is what this intent is. Not
@@ -5820,7 +5826,9 @@ function planIntent(input: string): PlannedAction {
             && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text))
         ? parseAsk(input)
         : null;
-    if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
+    // Asking to be TAKEN IN is asking to join, said the way a supplicant at a
+    // gate says it (played: "I have come to ask to be taken in").
+    if (asked && !/\b(?:join(?:ing)?|to be taken (?:in|on)(?! by)|take me (?:in|on))\b/.test(text)) {
         // THE INTENT IS IN THE ASKING, NOT IN WHAT IS BEING ASKED ABOUT.
         //
         // "I ask him where the market is" reached `interact/trade` - a haggle -
@@ -6878,7 +6886,7 @@ function planIntent(input: string): PlannedAction {
         return { action: 'sect', intent: 'standing', ...(named ? { target: named } : {}) };
     }
 
-    if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)
+    if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted|to be taken in(?! by))\b/.test(text)
         // The plural half is what the exemplar corpus actually says - "which
         // houses take people", "tell me about the houses near here" - and it
         // was written out by hand, so it knew five words. "which courts take

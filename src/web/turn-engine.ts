@@ -296,7 +296,7 @@ import {
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 // Type-only in the other direction, so no cycle: that module takes a
 // `GameService` as a type and imports nothing from here at runtime.
-import { theHouseThisNameReaches, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { theHouseThisNameReaches, theHouseWhoseGateThisIs, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
 import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
@@ -3893,7 +3893,7 @@ export class GameService {
                 step => theseWereThePlayersOwnWords(step, rawInput)
             );
             if (theirs.length > 0) {
-                sayThisWhateverTheNarratorDoes(folded.facts, sayingWhatTheReadingDropped(theirs));
+                sayThisWhateverTheNarratorDoes(folded.facts, sayingWhatTheReadingDropped(theirs, rawInput));
             }
             for (const step of plan.droppedClauses) {
                 folded.calls.push(
@@ -8104,8 +8104,21 @@ ${noticed}`;
         // engine had printed on the screen above. `the intake` was never a
         // name, so it does not become one by failing to bind; dropping it
         // reaches the listing below, which names both papers.
-        const query = fromTheWall.house
+        const said = fromTheWall.house
             ?? (fromTheWall.wasAPaperReference ? '' : (target ?? '').trim());
+
+        // AT A HOUSE'S GATE, "TAKE ME IN" MEANS THIS HOUSE. Played at the
+        // Tranquil Oasis gate: "I have come to ask to be taken in" got the
+        // province's listing of twenty-nine houses. Asking with no name, or
+        // with only "the sect", is asking the gate in front of you, and the
+        // gate decides it like any named ask.
+        const atItsGate = (intent === undefined || intent === 'join')
+            && !fromTheWall.wasAPaperReference
+            && (said.length < 3 || GENERIC_HOUSE_PHRASE.test(said))
+            && this.atHand
+            ? theHouseWhoseGateThisIs(this.atHand, placeName(cultivator))
+            : null;
+        const query = atItsGate?.factionName ?? said;
 
         // A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE
         const named = query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)

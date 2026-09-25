@@ -73,9 +73,16 @@ export const DECLINING_VERBS =
 export const CHILD_NOUNS =
     /\b(?:child|children|kid|kids|baby|babies|infant|infants|son|sons|daughter|daughters|heir|heirs|offspring|famil(?:y|ies)|household)\b/;
 
-/** Having one, and the decades that follow. */
+/**
+ * Having one, and the decades that follow.
+ *
+ * The verb has to GOVERN the child noun, within three words of it. Played:
+ * "My family belongs to the Tranquil Oasis Sect. I have come to ask to be
+ * taken in" was read as having a child with the sect, because `family` and
+ * the auxiliary `have` only had to be somewhere in the same sentence.
+ */
 export const HAVING_A_CHILD =
-    /\b(?:have|has|having|raise|raises|raising|rear|rears|rearing|bring up|bringing up|brings up|start|starts|starting|found|founds|founding|bear|bears|bearing)\b/;
+    /\b(?:have|has|having|raise|raises|raising|rear|rears|rearing|bring up|bringing up|brings up|start|starts|starting|found|founds|founding|bear|bears|bearing)\s+(?:[a-z']+\s+){0,3}?(?:child|children|kid|kids|baby|babies|infant|infants|son|sons|daughter|daughters|heir|heirs|offspring|famil(?:y|ies)|household)\b/;
 
 /**
  * Placing one, which is the favour reaching a player for the first time.

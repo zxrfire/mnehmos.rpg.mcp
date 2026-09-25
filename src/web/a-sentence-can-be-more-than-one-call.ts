@@ -1527,8 +1527,14 @@ export function theRowForSomethingStillToCome(step: PlanStep): ToolCallRecordish
 /**
  * What the player reads when the reading layer dropped one of their clauses.
  */
-export function sayingWhatTheReadingDropped(dropped: readonly PlanStep[]): string {
-    const named = dropped.map(whatThisStepIsCalled);
+export function sayingWhatTheReadingDropped(dropped: readonly PlanStep[], wholeSentence?: string): string {
+    // A step that quotes the WHOLE sentence is named by its act, not by the
+    // sentence: quoted back entire, it told the player none of what they said
+    // happened when part of it plainly did.
+    const whole = (wholeSentence ?? '').trim();
+    const named = dropped.map(step => whole.length > 0 && (step.said ?? '').trim() === whole
+        ? whatThisStepIsCalled({ ...step, said: undefined })
+        : whatThisStepIsCalled(step));
     const rest = named.length === 1
         ? named[0]!
         : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;

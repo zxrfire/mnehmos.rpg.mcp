@@ -337,6 +337,18 @@ async function theModelIsNotWhyThisTurnIsDangerous(
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
 
+    // A DESTINATION THE PLAYER NAMED IS NOT ONE THE MODEL INVENTED. Played:
+    // "I walk back to Cold Peak for the Silver Island Market intake" - the
+    // model read move(Cold Peak), the table read nothing because of the tail,
+    // and the guard declined a walk to a place the sentence names in so many
+    // words. Only where the table read NOTHING: a table that read the sentence
+    // as something cheaper ("I ask about Cold Peak") still wins.
+    if (GOES_TO_A_PLACE.has(fromModel.action)
+        && withoutAModel.action.action === FALLBACK_ACTION
+        && theSentenceNamesIt(input, fromModel.target)) {
+        return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
+    }
+
     // The deterministic side read nothing rather than something cheaper, and a
     // second reader agrees with the model about what the sentence says. Two
     // readers agreeing is not a model inventing an act, which is the only thing
@@ -357,6 +369,16 @@ async function theModelIsNotWhyThisTurnIsDangerous(
             + `Say it plainly - "I attack him" - to mean ${fromModel.action}.`,
         tierFailure: withoutAModel.tierFailure
     };
+}
+
+/** Verbs whose whole act is getting to the place named. `fold` is not one: a fold is said. */
+const GOES_TO_A_PLACE: ReadonlySet<ActionName> = new Set<ActionName>(['move', 'ride', 'passage']);
+
+/** Whether the model's target is in the sentence in so many words, article or no. */
+function theSentenceNamesIt(input: string, target: string | undefined): boolean {
+    const plain = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim()} `;
+    const named = plain(target ?? '').replace(/^ the /, ' ');
+    return named.trim().length >= 3 && plain(input).includes(named);
 }
 
 /**
