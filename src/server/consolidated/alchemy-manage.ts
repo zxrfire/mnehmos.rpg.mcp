@@ -66,6 +66,7 @@ import {
 // this function through it flips the evaluation order and takes the server out
 // at boot. See `where-a-cultivator-is-standing.ts`.
 import { standingOf } from './where-a-cultivator-is-standing.js';
+import { disciplineWorksIn, getRegion } from '../../data/cultivation/regions.js';
 import { whatThisGroundAddsToAPrice } from './what-this-ground-adds-to-a-price.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
@@ -325,6 +326,28 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
                 currentOrdinal: cultivator.realmOrdinal,
                 grade: gradeOfPill ?? null,
                 blockedByGrade: gradeWall !== null
+            }
+        );
+    }
+
+    // ── AND THE GROUND HAS TO LET A REFINEMENT SET ──
+    //
+    // A province's catalog row names the disciplines that do not work there at
+    // all, with the reason, and until this nothing read it: a player in the
+    // Buddha Precipice refined as if the air held what the row says it does
+    // not. Asked before the pouch, because no set of herbs changes the answer.
+    const here = standingOf(cultivator);
+    if (!disciplineWorksIn(here.regionId, 'alchemy')) {
+        const why = getRegion(here.regionId)?.cultivation.missingDisciplines
+            .find(m => m.discipline === 'alchemy')?.reason ?? '';
+        return guidingError(
+            'discipline_does_not_work_here',
+            `${recipe.name} cannot be refined in ${here.regionName}. ${why}`.trim(),
+            {
+                regionId: here.regionId,
+                discipline: 'alchemy',
+                hint: 'Carry the ingredients to a province where a refinement sets. Nothing was '
+                    + 'spent and no time passed.'
             }
         );
     }

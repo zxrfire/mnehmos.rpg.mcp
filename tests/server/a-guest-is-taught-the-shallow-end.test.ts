@@ -20,7 +20,8 @@ import { handleSectManage } from '../../src/server/consolidated/sect-manage.js';
 import { adminResult } from '../../src/server/consolidated/admin-manage.js';
 import { closeDb, getDb } from '../../src/storage/index.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
-import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
+import { ensureCultivationDb, writeFlag } from '../../src/server/consolidated/cultivation-support.js';
+import { FLAG_GUEST_STUDENT_OF } from '../../src/server/consolidated/sect-guest.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import { getTechnique, stopsSomewhere } from '../../src/data/cultivation/techniques.js';
@@ -278,5 +279,57 @@ describe('a guest keeps their own house', () => {
         const standing = await sect({ action: 'standing', cultivatorId: id });
         expect(standing.member).toBe(true);
         expect(standing.sect.id).toBe(home.id);
+    });
+});
+
+/**
+ * And the end of the arrangement: the house puts membership to its guest.
+ *
+ * `guestWouldBeOfferedAPlace` was called "the payoff for the whole arrangement"
+ * in the probation test's own header, and nothing in `src/` called it - so a
+ * guest could sit out the whole term, learn everything the house opens, and
+ * never be told the house had come round. It is now said where a guest asks
+ * how their place stands.
+ *
+ * The term and the shelf are arranged, not played: the roll's own day is set
+ * back past the house's term and the arts are written onto the sheet. Neither
+ * asserts an outcome; the offer is the engine's to make.
+ */
+describe('a guest the house has come round to', () => {
+    beforeEach(() => { closeDb(); getDb(':memory:'); });
+
+    /** A house with no published door, that opens something to a beginner. */
+    function aHouseThatWouldComeRound() {
+        for (const house of SECTS) {
+            const place = guestPlaceAt(house.id, 0, null);
+            if (place && place.publishedDoor === null && place.opens.length > 0) return place;
+        }
+        throw new Error('no house in the catalog takes a guest it could come round to');
+    }
+
+    it('is told membership has been put to them once the term is sat and the shelf is learned', async () => {
+        const id = await aNobody('Wen Sat-In');
+        const place = aHouseThatWouldComeRound();
+        hearOf(id, place.factionId);
+        const taken = await sect({ action: 'guest', cultivatorId: id, sectId: place.factionId, accept: true });
+        expect(taken.error).toBeUndefined();
+
+        const early = await sect({ action: 'guest', cultivatorId: id });
+        expect(early.membershipPutToYou, 'offered on the first day').toBeNull();
+
+        const repos = ensureCultivationDb();
+        new CultivatorRepository(getDb()).update(id, {
+            knownTechniques: place.opens.map(o => o.techniqueId)
+        });
+        writeFlag(repos.db, id, FLAG_GUEST_STUDENT_OF, JSON.stringify({
+            hostFactionId: place.factionId,
+            sinceDay: -Math.ceil((place.termYears + 1) * 365),
+            againstTheirOwnHouse: false
+        }));
+
+        const later = await sect({ action: 'guest', cultivatorId: id });
+        expect(later.membershipPutToYou).not.toBeNull();
+        expect(later.membershipPutToYou.hostFactionId).toBe(place.factionId);
+        expect(later.narrationHint).toContain(place.factionName);
     });
 });

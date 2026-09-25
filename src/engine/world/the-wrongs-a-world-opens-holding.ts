@@ -85,8 +85,16 @@ import {
     type Party,
     type WhatADeedLeaves
 } from '../social-leverage/what-a-deed-leaves.js';
+import { howToWriteTheDeed } from '../social-leverage/what-somebody-does-about-being-wronged.js';
 import type { InheritanceRelation } from '../social/grudges.js';
 import type { WorldState, FactionRecord } from './world-state.js';
+
+/**
+ * How a killing is written as a deed, off the shape of the wrong rather than
+ * typed at each site: it does not come back, and the person it was done to is
+ * not there to hold it. `what-somebody-does-about-being-wronged.ts` owns both.
+ */
+const A_KILLING = howToWriteTheDeed('killed');
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE NUMBERS
@@ -174,7 +182,7 @@ export function whatAKillingLeaves(
             cause: 'killed_kin',
             paidBy: 'subject',
             cost: A_LIFE,
-            irreversible: true,
+            irreversible: A_KILLING.irreversible,
             onDay: input.day,
             description: input.description
         },
@@ -184,7 +192,7 @@ export function whatAKillingLeaves(
         // found directly. See the draw below for why `beyond` is not written.
         reach: input.killer.factionId ? 'answerable' : 'unbacked',
         // The dead hold nothing. Their people hold it from day one.
-        principalCannotHoldIt: true
+        principalCannotHoldIt: A_KILLING.principalCannotHoldIt
     });
 }
 
@@ -367,7 +375,7 @@ export function seedTheWrongsStillOpen(
                         cause: 'killed_kin',
                         paidBy: 'subject',
                         cost: A_LIFE,
-                        irreversible: true,
+                        irreversible: A_KILLING.irreversible,
                         onDay: day,
                         description:
                             `${doer.name} killed ${victim.name}, and nothing has been `
@@ -382,7 +390,7 @@ export function seedTheWrongsStillOpen(
                     reach: doer.factionId ? 'answerable' : 'unbacked',
                     // The dead hold nothing. Their people hold it from day one,
                     // which is the whole reason the family has to exist first.
-                    principalCannotHoldIt: true
+                    principalCannotHoldIt: A_KILLING.principalCannotHoldIt
                 }
             });
 

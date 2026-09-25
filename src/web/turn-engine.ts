@@ -247,7 +247,7 @@ import { meritWith } from '../engine/world/what-a-house-counts-in-somebodys-favo
 import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
-import { capOf } from '../data/cultivation/techniques.js';
+import { capOf, takesWithoutEndingTheStand } from '../data/cultivation/techniques.js';
 import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, guidanceMultiplier, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { practiceMatchBonus } from '../engine/cultivation/understanding.js';
@@ -887,7 +887,10 @@ import {
     type GroundEntitlement
 } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import { aSealHereMeansAnUndrawnPocket } from '../engine/world/locations.js';
-import { whatThisPersonCanDrawFrom } from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
+import {
+    whatTheSealLooksLike,
+    whatThisPersonCanDrawFrom
+} from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import {
     WHAT_A_RATION_TAKES,
     howManyMoreRationsFit,
@@ -4844,6 +4847,18 @@ ${noticedWaiting}`;
                     whatTheyHaveOn(this.atHand?.objects ?? [], cultivator.id));
                 sheet.facts.lines.push(wearing);
                 sheet.facts.prose = `${sheet.facts.prose}\n\n${wearing}`;
+                // AND A SEAL, WHERE ONE IS ON THEM. It caps the pool at a tenth
+                // and stops the ground feeding them, and the sheet said nothing:
+                // somebody sealed by their house was told their progress and not
+                // that it had been lidded. Their own seal is theirs to know.
+                const sealed = whatTheSealLooksLike(
+                    cultivator.qiSeal ?? null,
+                    Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
+                );
+                if (sealed !== null) {
+                    sheet.facts.lines.push(sealed);
+                    sheet.facts.prose = `${sheet.facts.prose}\n\n${sealed}`;
+                }
                 // The pouch AND every thing held: a sword or a spare robe takes room too. What is
                 // worn or held weighs and takes no room. See `what-somebody-is-carrying-takes.ts`.
                 const load = together(
@@ -11678,7 +11693,11 @@ ${line}`;
         // ticking on `elapsedDays` would grow back to full every time somebody
         // died and a new life opened.
         const draw = drawFromTheGround(place, {
-            kind, grade, wanted, onDay: Math.floor(this.atHand.currentDay)
+            kind, grade, wanted, onDay: Math.floor(this.atHand.currentDay),
+            // A bed worked by the flower school's hands. Herbs only: the
+            // school's craft is keeping a stand, not a carcass.
+            takenByTheSchool: kind === 'herb'
+                && takesWithoutEndingTheStand({ knownTechniqueIds: cultivator.knownTechniques })
         });
         if (recordGroundDraw(place, draw)) this.theWorldMoved();
         return { taken: draw.taken, line: draw.line };

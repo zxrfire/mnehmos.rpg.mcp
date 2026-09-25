@@ -46,6 +46,7 @@ import { forStream } from '../../engine/cultivation/rng.js';
 import { dutyTermsAtAMonthlyRate, takeableOffAWall } from '../../engine/encounters/duties.js';
 import { aContractAsAnOffer, contractsPostedAt } from '../../engine/encounters/paper-on-a-town-wall.js';
 import { placeSeedKey } from '../../data/cultivation/place-names.js';
+import { takesWithoutEndingTheStand } from '../../data/cultivation/techniques.js';
 import { manualsAStallCarries } from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import {
     drawFromTheGround,
@@ -635,7 +636,12 @@ export async function handleForage(
             kind: 'herb',
             grade: drawn.herb.grade,
             wanted,
-            onDay: ground.onDay
+            onDay: ground.onDay,
+            // The same armful, and a smaller wound to the bed, when the hands
+            // are the flower school's. The web layer's `gather` asks the same.
+            takenByTheSchool: takesWithoutEndingTheStand({
+                knownTechniqueIds: cultivator.knownTechniques
+            })
         })
         : null;
     const taken = draw ? draw.taken : wanted;

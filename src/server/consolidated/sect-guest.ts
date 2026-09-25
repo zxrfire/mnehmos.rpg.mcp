@@ -224,12 +224,28 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
                     + 'afterwards.'
                   : 'You would be on their guest roll and on nobody\'s house roll, which is '
                     + 'exactly where you are now.');
+        // AND WHETHER THE HOUSE THEY SIT IN HAS COME ROUND. The payoff of the
+        // whole arrangement: a term sat out, and everything the house opens to
+        // a guest learned, and the house puts membership to them. It is said
+        // here because this is where a guest asks how their place stands.
+        const offered = guestWouldBeOfferedAPlace(
+            repos.db, cultivator.id, cultivator.realmOrdinal, cultivator.knownTechniques, today
+        );
+        const offerLine = offered === null
+            ? null
+            : `${offered.hostName} has put membership to you, after ${offered.yearsSatIn} `
+              + `year${offered.yearsSatIn === 1 ? '' : 's'} on its guest roll. `
+              + (homeId
+                  ? `Taking it is leaving ${getSect(homeId)?.name ?? 'your own house'}.`
+                  : 'You are on nobody\'s house roll, so taking it leaves nothing behind.');
+        const said = probation
+            ? `${narrationHint} You are ${Math.round(probation.yearsOnTheRoll)} years into `
+              + `the ${getSect(probation.factionId ?? '')?.name ?? 'house'}'s own intake, `
+              + 'and nothing about you has been decided yet.'
+            : narrationHint;
         return {
-            narrationHint: probation
-                ? `${narrationHint} You are ${Math.round(probation.yearsOnTheRoll)} years into `
-                  + `the ${getSect(probation.factionId ?? '')?.name ?? 'house'}'s own intake, `
-                  + 'and nothing about you has been decided yet.'
-                : narrationHint,
+            narrationHint: offerLine === null ? said : `${said} ${offerLine}`,
+            membershipPutToYou: offered === null ? null : { ...offered, line: offerLine },
             standingAt: rankName(cultivator.realmOrdinal),
             // The probation said out loud from the inside. A term whose own
             // terms are a secret is a worse arrangement than the one the
@@ -375,7 +391,7 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
 /**
  * Whether the house has come round to putting membership to its guest.
  */
-export function guestWouldBeOfferedAPlace(
+function guestWouldBeOfferedAPlace(
     db: Database.Database,
     cultivatorId: string,
     ordinal: number,
