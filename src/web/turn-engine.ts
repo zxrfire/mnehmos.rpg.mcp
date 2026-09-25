@@ -1169,7 +1169,7 @@ import {
     theCommunicationTalismansOnYou,
     theLineForCommunicationTalismans
 } from './sending-word-on-a-communication-talisman.js';
-import { stowVerbs, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
+import { stowVerbs, whatIsKeptInYourRoom, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
 // Whose the thing is, asked of the world before anything calls a taking a theft.
@@ -13460,6 +13460,9 @@ ${opened.text}` : receipt,
         if (heldRows.length > 0) lines.push(`Holding: ${heldRows.map(row => row.name).join(', ')}.`);
         // AND WHAT IS IN A RING, which is the ring's and not in the pack. See `what-is-in-your-ring.ts`.
         lines.push(...theLinesForTheirRings(this.atHand?.objects ?? [], cultivator.id));
+        // AND WHAT IS OWNED AND KEPT ELSEWHERE, which is not to hand. See `leaving-a-thing-in-your-own-room.ts`.
+        const keptInTheRoom = this.atHand ? whatIsKeptInYourRoom(this, this.atHand, cultivator) : null;
+        if (keptInTheRoom !== null) lines.push(keptInTheRoom);
         if (rations > 0) {
             lines.push(
                 `Food: ${rations} ration${rations === 1 ? '' : 's'}`

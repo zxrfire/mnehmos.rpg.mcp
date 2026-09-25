@@ -36,6 +36,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { makeObject } from '../../src/engine/world/possessions';
 import { parseIntent } from '../../src/web/actions';
 import { SECTS } from '../../src/data/cultivation/sects';
 import { getPill } from '../../src/data/cultivation/pills';
@@ -125,6 +126,39 @@ describe('a thing left in the room stays there', () => {
         await harness.game.act(`I take the ${WHAT_IT_IS_CALLED} from my room`);
         expect(pouchQuantity(harness.db, cultivatorId, A_PILL)).toBe(3);
         expect(pouchQuantity(harness.db, room, A_PILL)).toBe(0);
+    });
+
+    /**
+     * A thing, not a stack. The owner: "separate inventory (what is handy to me right now) from
+     * ownership (I can leave things in my sect abode ...)". The room holds a sword the way a ring
+     * does, and the inventory says it is kept there and whether it can be reached from here.
+     */
+    it('keeps a thing as well as a stack, and says where it is kept', async () => {
+        const { harness, cultivatorId } = await aDiscipleWithAPillAndARoom('quarters-a-thing');
+        const room = whereAHouseLetsYouKeepThings(LOCAL_SECT.id, cultivatorId);
+        harness.game.atHand!.objects.push(makeObject({
+            id: 'sword-left', name: 'an iron sword', kind: 'artifact', power: 2, volume: 3,
+            possessorId: cultivatorId, ownerId: cultivatorId
+        }));
+        const sword = () => harness.game.atHand!.objects.find(o => o.id === 'sword-left')!;
+
+        await harness.game.act('I go home');
+        await harness.game.act('I put the sword in my room');
+        expect(sword().possessorId).toBe(room);
+
+        // A road can stop a journey short, so go on until they are there.
+        for (let leg = 0; leg < 6 && harness.repos.cultivators.getById(cultivatorId)!.location !== 'Iron Ridge'; leg++) {
+            await harness.game.act('I travel to Iron Ridge');
+        }
+        expect(harness.repos.cultivators.getById(cultivatorId)!.location).toBe('Iron Ridge');
+        const away = await harness.game.act('what am I carrying');
+        const said = [away.narration ?? '', ...harness.game.state().log.slice(-8).map(e => e.text)].join(' ');
+        expect(said).toMatch(/Kept in your room at [^:]+: an iron sword/);
+        expect(said).toMatch(/Not reachable from where you are standing/);
+
+        await harness.game.act('I go home');
+        await harness.game.act('I take the sword from my room');
+        expect(sword().possessorId).toBe(cultivatorId);
     });
 
     it('does not reach across a province', async () => {

@@ -47,6 +47,19 @@ import {
     whatStopsThemCarryingIt
 } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { hadAs, isWorn, type ObjectRecord } from '../engine/world/possessions.js';
+import {
+    howManyHeld,
+    together,
+    whatTheirThingsTake,
+    whereItWouldGo
+} from '../engine/world/what-somebody-is-carrying-takes.js';
+
+/** The thing a sentence names among `rows`, by a word of its name. */
+function aThingNamed(rows: readonly ObjectRecord[], said: string): ObjectRecord | null {
+    const words = said.toLowerCase().replace(/^(?:my|the|a|an)\s+/, '').split(/\s+/).filter(word => word.length > 2);
+    return rows.find(row => words.some(word => row.name.toLowerCase().includes(word))) ?? null;
+}
 
 /** Which way a thing is going. A room read from both ends is still one room. */
 export type StowIntent = 'leave' | 'collect' | 'look';
@@ -111,19 +124,47 @@ function standingOnTheirHousesGround(
     return false;
 }
 
+/**
+ * The things left in the room: world objects the room holds, the way a ring holds what is put in
+ * it (`possessorId` is the room's holder key). Beside the counted stacks, which live in the pouch
+ * table under the same key.
+ */
+export function theThingsInTheRoom(objects: readonly ObjectRecord[], holderId: string): ObjectRecord[] {
+    return objects.filter(object => object.possessorId === holderId);
+}
+
 /** What is in the room, as a sentence, or a plain statement that it is empty. */
 function whatIsInThere(game: GameService, quarters: Quarters): string {
     const held = countedHoldings(game.db, quarters.holderId);
-    if (held.length === 0) return 'There is nothing in it.';
-    return held
-        .map(row => (row.quantity > 1 ? `${row.name} (${row.quantity})` : row.name))
-        .join(', ');
+    const things = theThingsInTheRoom(game.atHand?.objects ?? [], quarters.holderId);
+    if (held.length === 0 && things.length === 0) return 'There is nothing in it.';
+    return [
+        ...things.map(object => object.name),
+        ...held.map(row => (row.quantity > 1 ? `${row.name} (${row.quantity})` : row.name))
+    ].join(', ');
 }
 
 /** Litres left, after what is already in there. */
 function roomLeftIn(game: GameService, quarters: Quarters): number {
     const load = whatAllOfThatTakes(countedHoldings(game.db, quarters.holderId));
-    return Math.max(0, Math.round((quarters.room - load.volume) * 100) / 100);
+    const things = theThingsInTheRoom(game.atHand?.objects ?? [], quarters.holderId)
+        .reduce((sum, object) => sum + object.volume, 0);
+    return Math.max(0, Math.round((quarters.room - load.volume - things) * 100) / 100);
+}
+
+/**
+ * The inventory's line for what is kept in the room, or null for nobody with one or an empty room.
+ * Owned and elsewhere, not to hand: the owner, "separate inventory (what is handy to me right
+ * now) from ownership". Reachable only on the house's ground.
+ */
+export function whatIsKeptInYourRoom(game: GameService, world: WorldState, cultivator: Cultivator): string | null {
+    const mine = theQuartersThisCultivatorHas(game, world, cultivator);
+    if (!mine) return null;
+    const inside = whatIsInThere(game, mine.quarters);
+    if (inside === 'There is nothing in it.') return null;
+    const here = standingOnTheirHousesGround(world, game.worldPlaceOf(cultivator), mine.factionId);
+    return `Kept in your room at ${mine.houseName}: ${inside}.`
+        + (here ? '' : ' Not reachable from where you are standing.');
 }
 
 /** How good the room is, said the way somebody living in it would say it. */
@@ -225,6 +266,54 @@ export const stowVerbs = {
         }
 
         const lot = whichHoldingTheyNamed(from, said);
+        // A THING, NOT A STACK: a sword, a spare robe, a stolen chest. The owner: "separate
+        // inventory (what is handy to me right now) from ownership (I can leave things in my sect
+        // abode ...)". The room holds it the way a ring does; see `theThingsInTheRoom`.
+        const thing = lot ? null : aThingNamed(
+            which === 'leave'
+                ? world.objects.filter(object => object.possessorId === cultivator.id && !isWorn(object))
+                : theThingsInTheRoom(world.objects, quarters.holderId),
+            said
+        );
+        if (thing) {
+            if (which === 'leave' && thing.volume > roomLeftIn(this, quarters)) {
+                return refused('engine.willNotFit', 'stow', factsForRefusal(
+                    'The room is full.',
+                    `${quarters.name} holds ${quarters.room} litres at your rung and there is `
+                    + `${roomLeftIn(this, quarters)} of it left.`,
+                    `stow/leave: ${thing.id} is ${thing.volume}L. Nothing moved.`
+                ));
+            }
+            const at = world.objects.findIndex(object => object.id === thing.id);
+            if (which === 'leave') {
+                world.objects[at] = { ...hadAs(thing, 'inventory'), possessorId: quarters.holderId, locationId: quarters.locationId };
+            } else {
+                const lands = whereItWouldGo(
+                    together(whatAllOfThatTakes(countedHoldings(this.db, cultivator.id)),
+                        whatTheirThingsTake(world.objects, cultivator.id)),
+                    thing, whatABodyCanCarry(cultivator.realmOrdinal), howManyHeld(world.objects, cultivator.id));
+                if (lands === 'too_heavy' || lands === 'hands_full') {
+                    return refused('engine.willNotFit', 'stow', factsForRefusal(
+                        'You cannot carry it.',
+                        lands === 'too_heavy'
+                            ? `${thing.name} is more than this body will carry on top of what is already on it.`
+                            : `${thing.name} will not go in your pack and your hands are full.`,
+                        `stow/collect: ${lands} moving ${thing.id}. Nothing moved.`
+                    ));
+                }
+                world.objects[at] = hadAs({ ...thing, possessorId: cultivator.id }, lands);
+            }
+            this.theWorldMoved();
+            const facts = factsForToolResult(
+                which === 'leave' ? `${thing.name}: left in your room.` : `${thing.name}: taken back.`,
+                which === 'leave'
+                    ? [`${thing.name} goes into ${whatTheRoomIsLike(quarters)}`,
+                        `It will be there when you come back. Room left: ${roomLeftIn(this, quarters)} litres of ${quarters.room}.`]
+                    : [`${thing.name} comes out of your room and onto you.`]
+            );
+            facts.structure.push(`stow/${which}: object ${thing.id} ${which === 'leave' ? `${cultivator.id} -> ${quarters.holderId}` : `${quarters.holderId} -> ${cultivator.id}`}.`);
+            return this.freeAction(run, 'stow', facts);
+        }
         if (!lot) {
             return refused('engine.nothingCalledThat', 'stow', factsForRefusal(
                 `Nothing called ${said}.`,
