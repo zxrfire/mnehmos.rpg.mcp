@@ -83,7 +83,7 @@ describe('what a carriage and a spirit boat hold', () => {
         const from = repos.cultivators.getById(cultivator.id)!.location;
 
         const asked = await game.act('I fly my spirit boat to Silver Island');
-        expect(asked.narration).toMatch(/answers only to somebody at Void Tribulation/);
+        expect(asked.narration).toMatch(/answers only to a driver at Void Tribulation/);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(from);
         expect(repos.cultivators.getById(cultivator.id)!.spiritStones).toBe(100);
     }, 180_000);

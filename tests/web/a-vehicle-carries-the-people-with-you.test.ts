@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { aVehicleOf } from '../../src/engine/world/a-vehicle';
+import { A_SPIRIT_BOAT_ANSWERS_TO, aVehicleOf } from '../../src/engine/world/a-vehicle';
 import { makeGameInWorld } from './harness';
 
 function placeRow(game: any, location: string | null) {
@@ -51,6 +51,24 @@ describe('a vehicle and the people with you', () => {
             const now = (game as any).atHand.npcs.find((npc: any) => npc.id === member.id);
             expect(now.locationId, `${member.name} did not come`).toBe(arrived.id);
         }
+    }, 300_000);
+
+    /** The owner: the rank is "specifically the DRIVER", and "you can ride in it at any rank". */
+    it('flies a spirit boat for a novice when somebody going can drive it, and says who does', async () => {
+        const { game } = await makeGameInWorld({ seed: 'road-party-boat', worldSeed: 'world-road-party-move' });
+        const { cultivator: born } = await game.newRun('Wen Shu');
+        const { cultivator, party, going } = twoOnTheRoadWithThem(game as any, born);
+        const world = (game as any).atHand;
+        const driver = world.npcs.find((npc: any) => npc.id === party[0].id);
+        driver.cultivation = { ...driver.cultivation, realmOrdinal: A_SPIRIT_BOAT_ANSWERS_TO };
+        world.objects.push(aVehicleOf({ id: 'boat', conveyanceId: 'conv-spirit-boat',
+            ownerId: cultivator.id, ownerName: 'Wen Shu', at: game.worldPlaceOf(cultivator) }));
+        (game as any).repos.cultivators.update(cultivator.id, { spiritStones: 200 });
+
+        const turn = await game.act(`we fly the spirit boat to ${going}`);
+        expect(turn.toolCalls.some(call => call.action === 'ride' && call.ok), JSON.stringify(turn.toolCalls.map(c => c.summary))).toBe(true);
+        expect(turn.narration).toContain(`${driver.name} drives it; the rest of you ride.`);
+        expect((game as any).repos.cultivators.getById(cultivator.id).location).toBe(going);
     }, 300_000);
 
     it('makes more than one trip where it seats fewer than the party', async () => {

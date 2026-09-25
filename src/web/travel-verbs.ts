@@ -1708,19 +1708,27 @@ export const travelVerbs = {
         const withYou = this.whoIsWithYouOnTheRoad(cultivator);
         const heads = 1 + withYou.length;
 
-        // A SPIRIT BOAT ANSWERS ONLY TO SOMEBODY AT THE RANK TO FLY IT, and anybody going may be
-        // at the helm. Asked for by name, it says so; otherwise it is simply not what goes.
-        const highest = Math.max(cultivator.realmOrdinal, ...withYou.map(person => person.cultivation.realmOrdinal));
-        const aPilot = highest >= A_SPIRIT_BOAT_ANSWERS_TO;
-        if (!aPilot && asked && itWantsAPilot(asked) && available.some(a => a.conveyance.id === asked.id)) {
+        // A SPIRIT BOAT ANSWERS ONLY TO ITS DRIVER. The owner: the rank is "specifically the DRIVER",
+        // and "you can ride in it at any rank". The player drives it at that rank; otherwise the
+        // highest of those going who is at it takes the helm, and everybody else rides. Asked for
+        // by name with nobody to drive it, it says so; otherwise it is simply not what goes.
+        const driver: { name: string; ordinal: number } | null =
+            cultivator.realmOrdinal >= A_SPIRIT_BOAT_ANSWERS_TO
+                ? { name: 'You', ordinal: cultivator.realmOrdinal }
+                : withYou
+                    .filter(person => person.cultivation.realmOrdinal >= A_SPIRIT_BOAT_ANSWERS_TO)
+                    .sort((a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal)
+                    .map(person => ({ name: person.name, ordinal: person.cultivation.realmOrdinal }))[0] ?? null;
+        if (driver === null && asked && itWantsAPilot(asked) && available.some(a => a.conveyance.id === asked.id)) {
             return refused('engine.priceJourney', 'ride', factsForRefusal(
-                'It will not answer to you.',
-                `${asked.name} answers only to somebody at ${rankName(A_SPIRIT_BOAT_ANSWERS_TO)} or above at `
-                + 'its helm, and nobody going is. Nothing is spent, and it does not lift.',
-                `ride: ${asked.id} wants a pilot at ordinal ${A_SPIRIT_BOAT_ANSWERS_TO}; the highest going is `
-                + `${highest}. Location unchanged, no time passed.`));
+                'Nobody here can drive it.',
+                `${asked.name} answers only to a driver at ${rankName(A_SPIRIT_BOAT_ANSWERS_TO)} or above. `
+                + 'Anybody may ride in it, but you are not at that rank, and nobody going with you is. '
+                + 'Nothing is spent, and it does not lift.',
+                `ride: ${asked.id} wants a driver at ordinal ${A_SPIRIT_BOAT_ANSWERS_TO}; the player is at `
+                + `${cultivator.realmOrdinal} and nobody going reaches it. Location unchanged, no time passed.`));
         }
-        const flyable = available.filter(a => aPilot || !itWantsAPilot(a.conveyance));
+        const flyable = available.filter(a => driver !== null || !itWantsAPilot(a.conveyance));
 
         const chosen = (asked && flyable.some(a => a.conveyance.id === asked.id)
             ? flyable.find(a => a.conveyance.id === asked.id)!
@@ -1774,6 +1782,11 @@ export const travelVerbs = {
                         : ' Nothing saved: this is what walking costs.'),
             journey.arrivalReads
         ];
+        if (driver && itWantsAPilot(chosen.conveyance)) {
+            lines.push(driver.name === 'You'
+                ? 'You drive it yourself.'
+                : `${driver.name} drives it; ${withYou.length > 1 ? 'the rest of you ride' : 'you ride'}.`);
+        }
         if (journey.wrongToolNote) lines.push(journey.wrongToolNote);
         // WHAT IT HOLDS AGAINST HOW MANY ARE GOING. `priceJourney` also returns
         // `daysForEverybody` for this, and it is NOT spent here: `conv-on-foot`
