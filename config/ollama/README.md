@@ -14,32 +14,51 @@ alternation. Twenty seconds of loading, per turn, in both directions.
 A separate tag is a separate loaded instance. Nothing else on the machine
 notices.
 
-## What the window is sized to, and why it is not bigger
+## What the window is sized to
 
-Measured against the prompts this repo actually sends, on a real square:
+Measured against the prompts this repo actually sends (2026-09-24, from the model's own
+`prompt_eval_count`):
 
 | call | tokens |
 |---|---|
 | phase 1 (intent) | ~6,000 - system prompt with the whole verb glossary, plus the state summary |
-| phase 3 (narration) | ~18,000 system (the storyteller, the voice docs, the worked turns) + ~2,000 per turn |
+| phase 3 (narration) | ~21,600 system (the storyteller, the voice docs, the worked turns) + up to ~2,400 per turn, the previous turn included |
 
-`32768` holds the narration call with room for the previous turn and the answer.
-The phase-3 system prompt is identical on every call, so Ollama keeps it cached:
-measured on gemma4:31b at this tag, a narration costs well under a second of
-prompt processing after the first and 5-15s in all.
+The tag holds **65536**, which needs two settings on the Ollama SERVER, set as user
+environment variables on this machine:
+
+```
+OLLAMA_FLASH_ATTENTION=1   # exact attention in tiles; same result, less memory, faster
+OLLAMA_KV_CACHE_TYPE=q8_0  # the remembered keys and values at 8 bits; a small precision loss
+```
+
+Why they matter: gemma4:31b has 60 layers, and 50 of them attend only over a 1024-token
+sliding window, a fixed cost whatever the window. Only the 10 global layers grow with it
+(4 KV heads of 512): 80 KB a token at f16, 40 KB at q8_0. Measured on the RTX 5090 (32 GB),
+all 100% GPU:
+
+| num_ctx | f16 cache | q8_0 cache + flash attention |
+|---|---|---|
+| 32768 | 27 GB, 2.4 GB free | 25 GB, 4.5 GB free |
+| 65536 | would not fit beside the desktop | 26 GB, 2.8 GB free |
+| 98304 | - | 28 GB, 1.4 GB free |
+| 131072 | - | 30 GB, 0.55 GB free |
+
+65536 is the largest that leaves more VRAM free than the old 32768 did. Without the two
+server settings, drop the tag back to 32768. The owner accepted the 8-bit precision loss:
+*"loss of accuracy is no big deal for an rpg with low stakes for consistency"*.
+
+**What the room is for.** A narration turn uses about 24,000 of it. The rest is for the
+narrator to remember more of the conversation it is in (the game is mostly talking), not
+for a longer rulebook: attention thins over a long prompt, and the per-turn last line is
+where the model is steered. `tests/web/discovery.test.ts` holds the system prompt to
+88,000 characters as that discipline.
 
 **Measured before this tag existed**, on plain `gemma4:31b` at its 128k default:
 35GB resident on a 32GB card, 12% of it on the CPU, and a 27.5k-token narration
 prompt took 93s - three times the server's 30s default timeout, so every turn
 fell back to the engine's own fact lines. Run the game on this tag, and see
 `run-game.ps1` for the timeout and keep-alive it sets.
-
-**More would not help.** Nothing is being truncated at 8,000 tokens, and nothing
-in this architecture grows with the length of a run: there is no conversation
-history by design, and phase 1 sees the current state, one turn of what just
-happened, and the sentence. See the note on `lastTurn` in `src/web/prompt.ts`.
-A larger window is VRAM spent on space that stays empty - and at the model's own
-128000 default, gemma4:26b held 22.8GB of a 32GB card.
 
 ## Building it
 

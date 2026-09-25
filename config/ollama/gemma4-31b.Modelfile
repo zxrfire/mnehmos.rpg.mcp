@@ -1,10 +1,14 @@
 # The game's own tag. See README.md in this directory for why it is a tag
-# rather than a request parameter, and where 32768 comes from.
+# rather than a request parameter, and where the window comes from.
 FROM gemma4:31b
 
-# Sized to the phase-1 and phase-3 prompts this repo sends, doubled. Measured,
-# not guessed: the intent call is a shade under 8,000 tokens.
-PARAMETER num_ctx 32768
+# 65536, with the Ollama server run with OLLAMA_FLASH_ATTENTION=1 and
+# OLLAMA_KV_CACHE_TYPE=q8_0 (user environment variables on this machine).
+# Measured on the RTX 5090 (32 GB), all 100% GPU: 32768 -> 25 GB, 65536 -> 26 GB,
+# 98304 -> 28 GB, 131072 -> 30 GB. At 65536 there is more VRAM free (2.8 GB) than
+# there was at 32768 before the cache was quantised (2.4 GB). Without those two
+# server settings this window would not fit: drop it back to 32768.
+PARAMETER num_ctx 65536
 
 # Phase 1 is a classifier and phase 3 is a stylist, and the code sets the
 # temperature per call - 0 for routing, higher for prose. Left at the base

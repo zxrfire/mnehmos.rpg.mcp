@@ -514,8 +514,9 @@ describe('the narrator constitution', () => {
      */
     it('fits a local model and still carries the beats the genre runs on', () => {
         const prompt = narrationSystemPrompt();
-        // The game's own Ollama tag holds 32768 tokens (config/ollama). The system prompt has to
-        // leave room in it for the turn, the previous turn and the answer: about 22k tokens.
+        // The game's own Ollama tag holds 65536 tokens (config/ollama). This is no longer the
+        // window's limit - the system prompt is about 21.6k tokens of it - but a discipline: the
+        // room is for the conversation the narrator is in, and the rulebook steers least.
         expect(prompt.length, 'the system prompt has outgrown the local model window')
             .toBeLessThan(88_000);
         // The beat the show-and-never-explain table named: a title the player does not know.
