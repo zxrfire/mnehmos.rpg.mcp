@@ -108,6 +108,7 @@ describe('a lane is a choice a model can make', () => {
     it('puts a room at an inn with buying, never with work', () => {
         expect(THE_LANES.trade.says).toMatch(/a room or a bed at an inn is bought here/);
         expect(THE_LANES.work.says).toMatch(/never a room or a bed/);
+        expect(THE_LANES.work.says).toMatch(/Never a house's own board/);
         expect(parseIntent('cool, ill grab a room for 2 nights then')).toMatchObject({ action: 'buy', target: 'a room for the night' });
     });
 

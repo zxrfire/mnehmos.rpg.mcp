@@ -316,7 +316,11 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'learn_technique'
     },
     work: {
-        says: 'work for pay, and what is going on the notice board; never a room or a bed, which is trade',
+        // A HOUSE'S OWN BOARD IS HOUSE. Played blind at a sect's gate: "what's on your notice board
+        // then?" went to work/board, the mortal work list, and the house's own postings - its
+        // deliveries among them, which anybody may take - were never read.
+        says: "work for pay: labour, and the contracts on a town's wall. Never a house's own board, "
+            + 'which is house, and never a room or a bed, which is trade',
         intents: { take: 'work', board: 'work' },
         otherwise: 'work'
     }
