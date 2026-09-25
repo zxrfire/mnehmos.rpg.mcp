@@ -4,6 +4,15 @@
 
 import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { aDeliveryAsAnOffer, aStrangerIsNotHandedTheGoods, whatAHouseSendsItsSisters } from '../engine/world/what-a-house-sends-its-sisters.js';
+import { aWorkNoticeAsAnOffer } from '../engine/encounters/a-work-notice-taken-off-a-wall.js';
+import { noticesOnTheWall } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { openDoorsInTheWorld, postingGroundOf, provinceOfPlace } from '../engine/world/the-doors-and-walls-a-house-takes-people-at.js';
+import {
+    everythingEachHouseIsAsking,
+    housesWithSomethingToSay,
+    whatEachHouseHasAPriceOn,
+    whoEachHouseIsLookingFor
+} from './what-is-posted-on-the-wall-here.js';
 import {
     rollEncounters,
     arrivableFromUnheard,
@@ -72,7 +81,7 @@ import {
     whatCuttingForTheHouseLands,
     whatCuttingPays
 } from '../engine/world/what-a-house-hears-from-its-people-away.js';
-import type { SendingReason } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { SENDING_REASONS, type SendingReason } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { forStream } from '../engine/cultivation/rng.js';
 // The one answer to who a house would sit down with. The world holds its own
 // gatherings off this same reading, so a visit and a friendly competition are
@@ -874,7 +883,7 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
     // house was going to make anyway, so nothing here is invented. See
     // `what-a-house-has-on-its-board.ts`.
     const wall = whatTheHouseItselfNeedsDone(deps, cultivator, membership);
-    const paper = theContractsOnTheWallHere(cultivator, membership);
+    const paper = theContractsOnTheWallHere(deps, cultivator, membership);
 
     const offers = [
         ...commissionBoard(cultivator.realmOrdinal, membership),
@@ -907,8 +916,9 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
  * money, and a disciple may take one on their own time, which credits their
  * house nothing. See `paper-on-a-town-wall.ts`.
  */
-function theContractsOnTheWallHere(cultivator: Cultivator, membership: Membership | null): TheWall {
+function theContractsOnTheWallHere(deps: EncounterDeps, cultivator: Cultivator, membership: Membership | null): TheWall {
     const wall: TheWall = { offers: [], refusals: [] };
+    theWorkNoticesOnTheWallHere(deps, cultivator, membership, wall);
     for (const contract of contractsPostedAt(standingOf(cultivator).settlementKind)) {
         const entry = aContractAsAnOffer(contract);
         const terms = dutyTermsAtAMonthlyRate({
@@ -923,6 +933,50 @@ function theContractsOnTheWallHere(cultivator: Cultivator, membership: Membershi
         else wall.refusals.push({ entryId: entry.id, name: entry.name, reason: terms.regard.reaction });
     }
     return wall;
+}
+
+/**
+ * AND THE HIRED WORK A HOUSE PUT UP ON THIS WALL, taken like a contract: by anybody, paid on
+ * completion, and buying no place on a roll. Read off the same draw a reading of the wall takes,
+ * so what the wall says is what can be taken off it. See `a-work-notice-taken-off-a-wall.ts`.
+ */
+function theWorkNoticesOnTheWallHere(
+    deps: EncounterDeps,
+    cultivator: Cultivator,
+    membership: Membership | null,
+    wall: TheWall
+): void {
+    const run = deps.repos.runs.getActiveRun(cultivator.id);
+    const placeName = (cultivator.location ?? '').trim();
+    if (!run || placeName.length === 0) return;
+    const world = deps.world ?? null;
+    const asking = world
+        ? everythingEachHouseIsAsking(whoEachHouseIsLookingFor(world), whatEachHouseHasAPriceOn(world))
+        : new Map();
+    const notices = noticesOnTheWall({
+        field: openDoorsInTheWorld(),
+        placeName,
+        ground: postingGroundOf(placeName),
+        placeProvinceId: provinceOfPlace(placeName),
+        onDay: Math.floor(run.elapsedDays),
+        seed: run.seed,
+        speaking: housesWithSomethingToSay(asking)
+    });
+    for (const notice of notices) {
+        const reason = notice.kind === 'work' && notice.reasonId
+            ? SENDING_REASONS.find(row => row.id === notice.reasonId) : undefined;
+        if (!reason) continue;
+        const entry = aWorkNoticeAsAnOffer(notice, reason);
+        const terms = {
+            ...dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission'),
+            days: reason.days,
+            // Hired work is paid and credits no house: it is not a way in.
+            contribution: 0,
+            cohort: 0
+        };
+        if (takeableOffAWall(terms.regard.band)) wall.offers.push({ entry, terms, weight: entry.weight });
+        else wall.refusals.push({ entryId: entry.id, name: entry.name, reason: terms.regard.reaction });
+    }
 }
 
 /**

@@ -417,8 +417,11 @@ export type TheAsk =
          */
         wants: WhatTheHouseWants;
     }
-    /** Work it would rather hire than send its own on. */
-    | { kind: 'work'; what: string; days: number; hands: number }
+    /**
+     * Work it would rather hire than send its own on. `reasonId` is the sending it is hired out of,
+     * whose task and handle a taker says it by; a notice without one is read and not taken.
+     */
+    | { kind: 'work'; what: string; days: number; hands: number; reasonId?: string }
     /** Ground it answers for, and what is happening on it. */
     | { kind: 'warning'; what: string }
     /**
@@ -462,6 +465,8 @@ export interface Notice {
     houseId: string;
     houseName: string;
     placeName: string;
+    /** The sending a work notice is hired out of, where it names one: what taking it takes. */
+    reasonId?: string;
     /** What the paper says. Engine-authored fact, not narration. */
     saying: string;
     /**
@@ -616,6 +621,7 @@ export function noticesOnTheWall(input: WallInput & {
             houseName: house.name,
             placeName: input.placeName,
             saying: whatThePaperSays(house, ask, input.onDay),
+            ...(ask.kind === 'work' && ask.reasonId ? { reasonId: ask.reasonId } : {}),
             andWhatItIsNot: WHAT_A_NOTICE_DOES_NOT_BUY[ask.kind],
             // A DATE ONLY WHERE THE PAPER GENUINELY HAS ONE. Three of the four
             // asks are not appointments and carry none; the open competition

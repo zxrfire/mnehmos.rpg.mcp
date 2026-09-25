@@ -800,6 +800,7 @@ import {
     whichPostingTheyMeant
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
 import { theContractBehind } from '../engine/encounters/paper-on-a-town-wall.js';
+import { theNoticeBehind } from '../engine/encounters/a-work-notice-taken-off-a-wall.js';
 import { whoPostedIt } from '../engine/encounters/how-a-task-is-worded.js';
 import { HOUSE_MISSIONS } from '../data/cultivation/what-a-house-posts-for-its-own.js';
 import {
@@ -1643,6 +1644,7 @@ function theNameOfTheWork(entryId: string): string {
         ?? theReasonBehind(entryId)?.name
         ?? theContractBehind(entryId)?.said
         ?? theMissionBehind(entryId)?.said
+        ?? theNoticeBehind(entryId)?.reason.said
         ?? 'What the house asked for';
 }
 
@@ -1652,6 +1654,7 @@ function whatKindOfLine(id: string): string {
     const mission = theMissionBehind(id);
     if (mission) return `missions:${mission.rung}`;
     if (theContractBehind(id)) return 'contracts';
+    if (theNoticeBehind(id)) return 'notices';
     return theReasonBehind(id) ? 'sendings' : 'commissions';
 }
 
@@ -7706,7 +7709,8 @@ ${noticed}`;
         // and their own house's missions where they have one. The same board
         // the duty verb reads, so a line named here is a line that verb takes.
         const onTheWall = (await this.whatIsPostedOnTheWallHere(cultivator)).flatMap(offer => {
-            const row = theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id);
+            const row = theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id)
+                ?? theNoticeBehind(offer.entry.id)?.reason;
             return row ? [{ offer, row }] : [];
         });
         // A named trade has to become a catalog id, or the tool reads it as
@@ -7807,7 +7811,8 @@ ${noticed}`;
         return theWallWhereTheyStand(this, cultivator, sectBoardFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand }, cultivator
         )).offers.filter(offer =>
-            (theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id)) !== null);
+            (theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id)
+                ?? theNoticeBehind(offer.entry.id)) !== null);
     }
 
     /**
@@ -7817,6 +7822,8 @@ ${noticed}`;
     private sayWhatIsOnTheWall(done: Execution, offers: readonly DutyCandidate[]): void {
         const contracts = offers.filter(offer => theContractBehind(offer.entry.id) !== null);
         const missions = offers.filter(offer => theMissionBehind(offer.entry.id) !== null);
+        // Hired work a house put up here, taken like a contract. See `a-work-notice-taken-off-a-wall.ts`.
+        const notices = offers.filter(offer => theNoticeBehind(offer.entry.id) !== null);
         const lineFor = (offer: DutyCandidate): string => {
             const title = offer.entry.name;
             this.nameWhatTheyGot(title);
@@ -7832,6 +7839,10 @@ ${noticed}`;
         } else {
             lines.push('No contract is posted on the wall here for somebody at your rung.');
         }
+        if (notices.length > 0) {
+            lines.push('And hired work a house has put up here, which anybody may take:');
+            lines.push(...notices.slice(0, DUTIES_SHOWN).map(lineFor));
+        }
         if (missions.length > 0) {
             const fits = whatFitsOnTheBoard(missions, DUTIES_SHOWN, offer => offer.entry.id);
             lines.push('And what your house sends its own on:');
@@ -7840,8 +7851,8 @@ ${noticed}`;
         done.facts.lines.push(...lines);
         done.facts.prose = `${done.facts.prose}\n${lines.join('\n')}`;
         done.facts.structure.push(
-            `encounters.sectBoardFor: ${contracts.length} contract(s) and ${missions.length} `
-            + 'mission(s) on the wall, listed with the mortal work.'
+            `encounters.sectBoardFor: ${contracts.length} contract(s), ${notices.length} notice(s) of `
+            + `hired work and ${missions.length} mission(s) on the wall, listed with the mortal work.`
         );
     }
 
@@ -17290,7 +17301,8 @@ ${fit.line}`;
             : undefined;
         // A contract or a mission by its handle, which its printed title contains.
         const saysTheHandleOf = (entryId: string): boolean => {
-            const handle = theMissionBehind(entryId)?.said ?? theContractBehind(entryId)?.said;
+            const handle = theMissionBehind(entryId)?.said ?? theContractBehind(entryId)?.said
+                ?? theNoticeBehind(entryId)?.reason.said;
             return handle !== undefined && new RegExp(String.raw`\b${handle}\b`, 'i').test(wanted);
         };
         const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)

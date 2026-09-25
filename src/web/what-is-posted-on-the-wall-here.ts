@@ -156,7 +156,8 @@ export function housesWithSomethingToSay(
                     kind,
                     what: reason.what,
                     days: reason.days,
-                    hands: reason.hands
+                    hands: reason.hands,
+                    reasonId: reason.id
                 });
             } else if (kind === 'warning') {
                 asks.push({ kind, what: reason.what });
