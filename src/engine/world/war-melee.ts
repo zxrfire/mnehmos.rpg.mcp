@@ -603,21 +603,59 @@ export function areAtWarWithEachOther(state: WorldState, aId: string, bId: strin
     // The same test `liveWars` applies, for one pair, without building every
     // war to ask about two houses: this is asked for every pair the killing
     // read weighs, and the full list was a tenth of a late simulated year.
-    let byId: Map<string, WorldState['factions'][number]> | null = null;
-    for (const effect of state.schedule) {
-        if (effect.data.kind !== 'war_resolution') continue;
-        const sideA = String(effect.data.sideA ?? '');
-        const sideB = String(effect.data.sideB ?? '');
-        if (!((sideA === aId && sideB === bId) || (sideA === bId && sideB === aId))) continue;
-        byId ??= new Map(state.factions.map(f => [f.id, f]));
-        const a = byId.get(sideA);
-        const b = byId.get(sideB);
+    const bookings = warsBookedBetween(state.schedule, aId, bId);
+    if (bookings.length === 0) return false;
+    // Two houses, read live: a house is replaced in place when it changes, so
+    // nothing about one is kept between calls.
+    const houseA = state.factions.find(f => f.id === aId);
+    const houseB = state.factions.find(f => f.id === bId);
+    for (const data of bookings) {
+        const sideA = String(data.sideA ?? '');
+        const a = sideA === aId ? houseA : houseB;
+        const b = sideA === aId ? houseB : houseA;
         if (!a || !b) continue;
         if (a.dissolvedOnDay !== null || b.dissolvedOnDay !== null) continue;
         if (!a.tags.includes('at_war') || !b.tags.includes('at_war')) continue;
         return true;
     }
     return false;
+}
+
+/**
+ * The war bookings on a schedule, by the pair of houses they name.
+ *
+ * The schedule keeps every effect it has ever booked, so a scan of it per pair
+ * grew with the world's age until it was the largest cost of a late year. It
+ * only ever grows at the end, and a booking replaced in place keeps its `data`,
+ * so an index kept against the array and read on from where it stopped sees
+ * what a scan sees. A schedule that shrinks is a new array and is read afresh.
+ */
+const WAR_BOOKINGS = new WeakMap<readonly WorldState['schedule'][number][], {
+    upTo: number;
+    byPair: Map<string, WorldState['schedule'][number]['data'][]>;
+}>();
+
+const aPairOfHouses = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+function warsBookedBetween(
+    schedule: readonly WorldState['schedule'][number][],
+    aId: string,
+    bId: string
+): readonly WorldState['schedule'][number]['data'][] {
+    let index = WAR_BOOKINGS.get(schedule);
+    if (!index || index.upTo > schedule.length) {
+        index = { upTo: 0, byPair: new Map() };
+        WAR_BOOKINGS.set(schedule, index);
+    }
+    for (let at = index.upTo; at < schedule.length; at++) {
+        const data = schedule[at]!.data;
+        if (data.kind !== 'war_resolution') continue;
+        const pair = aPairOfHouses(String(data.sideA ?? ''), String(data.sideB ?? ''));
+        const list = index.byPair.get(pair);
+        if (list) list.push(data); else index.byPair.set(pair, [data]);
+    }
+    index.upTo = schedule.length;
+    return index.byPair.get(aPairOfHouses(aId, bId)) ?? [];
 }
 
 function liveWars(state: WorldState): LiveWar[] {
