@@ -107,9 +107,33 @@ const SOMETHING_ELSE_OFF_A_BEAST: readonly [number, number] = [8, 6];
 
 const MATERIALS = new Map(BEAST_MATERIALS.map(material => [material.id, material]));
 
-/** Whether a pouch item is a part off a beast. */
-export function isABeastPart(itemId: string): boolean {
-    return MATERIALS.has(itemId);
+/** Where the parts of a kill too big to take were left: counted stock on the ground, theirs. */
+export function whereAKillIsLeft(locationId: string, personId: string): string {
+    return `ground:${locationId}:${personId}`;
+}
+
+/** Where a part off a kill goes: the pack, a vehicle with them that has the room, or the ground. */
+export type WhereAPartGoes =
+    | { where: 'pack' }
+    | { where: 'vehicle'; vehicleId: string; vehicleName: string }
+    | { where: 'ground' };
+
+/**
+ * Where one part off a kill ends up. Into the pack when it fits beside what is already carried;
+ * into the free hold of a vehicle with them when it does not; and otherwise left where the beast
+ * fell, still theirs, for them to come back to with something that can carry it.
+ */
+export function whereAPartGoes(input: {
+    part: HowMuchRoomItTakes;
+    carrying: HowMuchRoomItTakes;
+    body: HowMuchRoomItTakes;
+    vehicles: readonly { id: string; name: string; free: HowMuchRoomItTakes }[];
+}): WhereAPartGoes {
+    const fits = (room: HowMuchRoomItTakes, already: HowMuchRoomItTakes) =>
+        already.volume + input.part.volume <= room.volume && already.weight + input.part.weight <= room.weight;
+    if (fits(input.body, input.carrying)) return { where: 'pack' };
+    const vehicle = input.vehicles.find(row => fits(row.free, { volume: 0, weight: 0 }));
+    return vehicle ? { where: 'vehicle', vehicleId: vehicle.id, vehicleName: vehicle.name } : { where: 'ground' };
 }
 
 /** What one part takes up, or null for anything that is not off a beast. */

@@ -186,6 +186,7 @@ import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
 import { thePlacesOnTheSheet, type APlaceOnTheSheet } from './places-on-the-sheet.js';
+import { whatABeastPartTakes, whereAKillIsLeft, whereAPartGoes } from '../engine/world/what-a-beast-part-takes.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
@@ -11033,6 +11034,48 @@ ${line}`;
     }
 
     /**
+     * Where a part off a kill goes: the pack when it fits beside what is carried, a vehicle with
+     * them that has the room, or the ground where the beast fell. See `whereAPartGoes`.
+     */
+    private whereAPartOffAKillGoes(cultivator: Cultivator, materialId: string): {
+        holder: string;
+        line: string | null;
+        objectAt: { possessorId: string | null; locationId: string | null };
+    } {
+        const objects = this.atHand?.objects ?? [];
+        const here = this.worldPlaceOf(cultivator);
+        const goes = whereAPartGoes({
+            part: whatABeastPartTakes(materialId) ?? { volume: 0, weight: 0 },
+            carrying: together(whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id)),
+                whatTheirThingsTake(objects, cultivator.id)),
+            body: whatABodyCanCarry(cultivator.realmOrdinal),
+            vehicles: this.theVehiclesWithTheirFreeHold(cultivator)
+        });
+        if (goes.where === 'pack') return { holder: cultivator.id, line: null, objectAt: { possessorId: cultivator.id, locationId: null } };
+        if (goes.where === 'vehicle') {
+            return { holder: goes.vehicleId, line: `It is more than your pack takes, and it goes into ${goes.vehicleName}.`,
+                objectAt: { possessorId: goes.vehicleId, locationId: null } };
+        }
+        return {
+            holder: whereAKillIsLeft(here ?? 'nowhere', cultivator.id),
+            line: 'It is more than you can carry, and it stays where the beast fell, yours to come back for '
+                + 'with something that can take it.',
+            objectAt: { possessorId: null, locationId: here }
+        };
+    }
+
+    /** The vehicles with them, and what each still has free, counted stock in them included. */
+    theVehiclesWithTheirFreeHold(cultivator: Cultivator): { id: string; name: string; free: { volume: number; weight: number } }[] {
+        const objects = this.atHand?.objects ?? [];
+        return theVehiclesTheyAreWith(objects, cultivator.id, this.worldPlaceOf(cultivator)).map(vehicle => {
+            const free = theFreeHoldOf(objects, [vehicle]);
+            const stock = whatAllOfThatTakes(everythingInThePouch(this.db, vehicle.id));
+            return { id: vehicle.id, name: vehicle.name,
+                free: { volume: free.volume - stock.volume, weight: free.weight - stock.weight } };
+        });
+    }
+
+    /**
      * Move what came off the body into the world, in the shape it deserves.
      */
     private takeFromTheBody(
@@ -11074,10 +11117,12 @@ ${line}`;
             }
 
             if (shape === 'counted') {
-                addToPouch(this.db, cultivator.id, material.id, 'herb', 1);
+                // WHERE IT GOES: the pack, a vehicle with them, or the ground. See `whereAPartGoes`.
+                const goes = this.whereAPartOffAKillGoes(cultivator, material.id);
+                addToPouch(this.db, goes.holder, material.id, 'herb', 1);
                 lines.push(
-                    `${material.name} (${material.grade}, about ${material.value} stones) `
-                    + 'into the pouch.'
+                    `${material.name} (${material.grade}, about ${material.value} stones)`
+                    + (goes.line === null ? ' into the pouch.' : `. ${goes.line}`)
                 );
                 calls.push({
                     name: 'storage.addToPouch',
@@ -11098,14 +11143,16 @@ ${line}`;
                 place: here,
                 onDay: today
             });
+            const goes = this.whereAPartOffAKillGoes(cultivator, material.id);
             if (this.atHand) {
-                this.atHand.objects.push(record);
+                this.atHand.objects.push({ ...record, ...goes.objectAt });
                 this.theWorldMoved();
             }
+            if (goes.line !== null) lines.push(goes.line);
             // And the pouch entry beside it, which is the player-facing half
             // and not a second copy: the object row is which one this is and
             // where it has been, the pouch row is the thing a counter quotes.
-            addToPouch(this.db, cultivator.id, material.id, 'herb', 1);
+            addToPouch(this.db, goes.holder, material.id, 'herb', 1);
             lines.push(
                 `${material.name} (${material.grade}, about ${material.value} stones) comes off `
                 + 'it. This one is on the record: whose it is, where it came from, and what it '
@@ -17930,7 +17977,9 @@ ${fit.line}`;
                 whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id).filter(entry => entry.kind !== 'ration')),
                 whatTheirThingsTake(objects, cultivator.id)),
             body: whatABodyCanCarry(cultivator.realmOrdinal),
-            cartRoom: theFreeHoldOf(objects, theVehiclesTheyAreWith(objects, cultivator.id, this.worldPlaceOf(cultivator))),
+            cartRoom: this.theVehiclesWithTheirFreeHold(cultivator).reduce(
+                (sum, row) => ({ volume: sum.volume + Math.max(0, row.free.volume), weight: sum.weight + Math.max(0, row.free.weight) }),
+                { volume: 0, weight: 0 }),
             held: this.rationsHeld(cultivator)
         });
         const bought = Math.min(wanted, affordable, fits);
