@@ -6,11 +6,17 @@
 import { z } from 'zod';
 import { RegardProfileSchema } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
-import { offeredTo, refusalsFor, type RegardAskerInput } from '../../engine/cultivation/regard.js';
+import { apparentOrdinal, offeredTo, refusalsFor, type RegardAskerInput } from '../../engine/cultivation/regard.js';
 import { DAO_HOUSES } from './sects.js';
 
 /** Cash to the spirit stone. The one conversion the whole file rests on. */
 export const CASH_PER_STONE = 100;
+
+/**
+ * In-world month, which every `cashPerMonth` in the catalog is quoted by. 365/12
+ * would put a "three month" skip on a fractional day.
+ */
+export const DAYS_PER_MONTH = 30;
 
 export function cashToStones(cash: number): number {
     return cash / CASH_PER_STONE;
@@ -33,15 +39,22 @@ export function stonesForACashPrice(cash: number): number {
 
 // ─────────────────────────────────────────────────────────────────────────
 // OCCUPATIONS
-// What a poor cultivator does between breakthroughs, and what everyone else
-// does all the time.
+// Mortal work, and only mortal work. A cultivator has no profession: what one
+// is paid for is a contract off a town wall (`CONTRACTS` in `rogues.ts`) or a
+// mission off their own house's board (`HOUSE_MISSIONS`). An 'either' row is
+// menial mortal work a cultivator may also take, and that is all it is. See
+// docs/world/normal-in-the-cultivation-world.md, "Cultivators have no profession".
 // ─────────────────────────────────────────────────────────────────────────
 
 export const OccupationSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
-    /** Who can actually hold it. */
-    kind: z.enum(['mortal', 'cultivator', 'either']),
+    /**
+     * Who is put to it. 'mortal' is a mortal's trade, put only to somebody an
+     * employer takes for a mortal ({@link passesForAMortal}); 'either' is menial
+     * work a cultivator may also take.
+     */
+    kind: z.enum(['mortal', 'either']),
     /** Minimum realm ordinal. Zero means a mortal can do it. */
     minOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** Typical earnings in cash per month, before food and lodging. */
@@ -50,7 +63,7 @@ export const OccupationSchema = z.object({
     settlements: z.array(z.enum(['hamlet', 'village', 'market_town', 'sect_town', 'city'])),
     /** How likely it is to hurt you, in plain terms. */
     risk: z.enum(['none', 'low', 'moderate', 'high', 'lethal']),
-    /** Why a cultivator would or would not take it. */
+    /** Who does it, and why a cultivator would or would not. */
     note: z.string().min(40),
     /**
      * The generic column. Filled uniformly below rather than per entry: work
@@ -63,7 +76,7 @@ export const OccupationSchema = z.object({
 export type Occupation = z.infer<typeof OccupationSchema>;
 
 /**
- * How much longer than usual a job keeps being put to somebody.
+ * How much longer than usual mortal work keeps being put to somebody.
  */
 export const OCCUPATION_REGARD_SPAN = 1.2;
 
@@ -75,7 +88,7 @@ export const MORTAL_ECONOMY_REGARD = { gate: 0, span: OCCUPATION_REGARD_SPAN } a
 const OCCUPATION_DATA: readonly Occupation[] = [
     // ── mortal work, which is most work ───────────────────────────────
     { id: 'job-farmhand', name: 'Farmhand', kind: 'mortal', minOrdinal: 0, cashPerMonth: 180, settlements: ['hamlet', 'village'], risk: 'low', note: 'Board and a corner to sleep in are usually included, which is most of the pay. A cultivator who takes this is either hiding or finished.' },
-    { id: 'job-porter', name: 'Porter', kind: 'either', minOrdinal: 0, cashPerMonth: 240, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'The commonest first job for a Qi Condensation cultivator with no connections: the body is better than a mortal\'s and nobody asks questions.' },
+    { id: 'job-porter', name: 'Porter', kind: 'either', minOrdinal: 0, cashPerMonth: 240, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'The commonest first work a Qi Condensation cultivator with no connections takes: the body is better than a mortal\'s and nobody asks questions.' },
     { id: 'job-ferryman', name: 'Ferryman', kind: 'either', minOrdinal: 0, cashPerMonth: 300, settlements: ['village', 'market_town'], risk: 'low', note: 'Clear River Alliance work in the Jade Gorge. Steady, and the Alliance pays partly in crossings owed rather than cash.' },
     { id: 'job-charcoal-burner', name: 'Charcoal burner', kind: 'mortal', minOrdinal: 0, cashPerMonth: 200, settlements: ['hamlet', 'village'], risk: 'moderate', note: 'Solitary, filthy and out in the woods for weeks, which makes it the standard cover for anyone who does not want to be found.' },
     { id: 'job-scribe', name: 'Scribe', kind: 'either', minOrdinal: 0, cashPerMonth: 400, settlements: ['market_town', 'sect_town', 'city'], risk: 'none', note: 'Requires literacy, which is rare. Lantern Hall and the Ninefold Karma Palace both hire, and both read what you wrote before paying.' },
@@ -89,38 +102,14 @@ const OCCUPATION_DATA: readonly Occupation[] = [
     // ── work that only exists where there is no ground ─────────────────
     { id: 'job-deckhand', name: 'Deckhand', kind: 'either', minOrdinal: 0, cashPerMonth: 340, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Paid by the passage rather than the month, and the figure here is a passage annualised. A hull will take anybody who can pay the burn or work it off, and asks where you came aboard and nothing past that.' },
     { id: 'job-water-carrier', name: 'Water carrier', kind: 'either', minOrdinal: 0, cashPerMonth: 380, settlements: ['hamlet', 'village'], risk: 'high', note: 'Sink Carriers work on the Burial Sands: forty to sixty skins in a string, four days from the only well. Better paid than a porter and it kills about one in six a season, and the shed publishes the figure at the door.' },
-    { id: 'job-quay-watch', name: 'Quay watch', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_300, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Silver Island Market\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told at hiring that it does not go above Foundation Establishment.' },
-    { id: 'job-shipmaster', name: 'Shipmaster', kind: 'either', minOrdinal: 0, cashPerMonth: 2_600, settlements: ['market_town', 'city'], risk: 'high', note: 'Owns or commands a hull, which is the largest thing anybody in the province owns. The whole of the job is a sum done ashore about how many days of water to load, and the whole of the risk is being wrong about it once.' },
+    { id: 'job-shipmaster', name: 'Shipmaster', kind: 'mortal', minOrdinal: 0, cashPerMonth: 2_600, settlements: ['market_town', 'city'], risk: 'high', note: 'Owns or commands a hull, which is the largest thing anybody in the province owns. The whole of the job is a sum done ashore about how many days of water to load, and the whole of the risk is being wrong about it once.' },
 
-    // ── work a Qi Condensation cultivator can realistically take ───────
-    { id: 'job-beast-culler', name: 'Spirit-beast culler', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_200, settlements: ['village', 'market_town', 'sect_town'], risk: 'high', note: 'Paid per head on a village contract. The standard living for an unaffiliated Qi Condensation cultivator, and the standard way one dies at twenty-six.' },
-    { id: 'job-escort', name: 'Caravan escort (cultivator)', kind: 'cultivator', minOrdinal: 5, cashPerMonth: 2_000, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'Underwritten by the Stone Marrow Hall, which prices the contract off its own rank table - the table that reads Buddha Precipice carvers a rank low.' },
-    { id: 'job-dangerous-herb-gathering', name: 'Herb gathering, guarded ground', kind: 'cultivator', minOrdinal: 6, cashPerMonth: 1_800, settlements: ['village', 'market_town'], risk: 'high', note: 'Earth-grade herbs grow where something is living. Pays four times a picker and kills about one gatherer in twenty a year.' },
+    // ── menial work at the edge of the cultivators' world ──────────────
     { id: 'job-bellows-hand', name: 'Bellows hand (alchemy)', kind: 'either', minOrdinal: 0, cashPerMonth: 600, settlements: ['market_town', 'sect_town', 'city'], risk: 'moderate', note: 'The Cinnabar Crucible Sect\'s bottom rung and the only route into alchemy from outside. Three years of it before anyone lets you near a cauldron.' },
-    { id: 'job-formation-hand', name: 'Formation hand', kind: 'cultivator', minOrdinal: 8, cashPerMonth: 1_500, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Holding nodes steady while somebody who understands them works. Impossible in the Buddha Precipice, where formations do not run at all.' },
-    { id: 'job-courier', name: 'Courier', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 1_100, settlements: ['market_town', 'sect_town', 'city'], risk: 'moderate', note: 'Shrinking Earth Pavilion work, paid per true li rather than walked. The Span will not hire anyone who cannot read its two-number directions.' },
-    { id: 'job-cave-sitter', name: 'Cave sitter', kind: 'cultivator', minOrdinal: 2, cashPerMonth: 800, settlements: ['sect_town', 'village'], risk: 'low', note: 'Sitting in somebody else\'s rented cave so the claim does not lapse while they are away. Dull, safe, and the sitter cultivates on their employer\'s ground, which is the actual wage.' },
-    { id: 'job-outer-chores', name: 'Outer disciple chores', kind: 'cultivator', minOrdinal: 1, cashPerMonth: 400, settlements: ['sect_town'], risk: 'low', note: 'A stipend rather than a wage, plus access to sect ground - which is worth more than the stipend and is why anyone accepts it.' },
-    { id: 'job-tutor', name: 'Tutor to a merchant family', kind: 'cultivator', minOrdinal: 5, cashPerMonth: 900, settlements: ['market_town', 'city'], risk: 'none', note: 'Teaching a merchant\'s child the Lesser Qi-Gathering Manual. Humiliating, safe, and the fastest way for a low-realm cultivator to meet people with money.' },
-    { id: 'job-gleaner', name: 'Gleaner (burn zone)', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 3_000, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Buddha Precipice only. The best-paid work available to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
-    { id: 'job-face-labour', name: 'Face labour (carving)', kind: 'cultivator', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town'], risk: 'high', note: 'Buddha Precipice only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
     { id: 'job-placer-runner', name: 'Placer\'s runner', kind: 'either', minOrdinal: 0, cashPerMonth: 550, settlements: ['village', 'market_town'], risk: 'low', note: 'Border-road work: finding foreign cultivators willing to be assessed, for a placer who charges more than a month of cave rent to do it.' },
     { id: 'job-gravedigger', name: 'Gravedigger', kind: 'mortal', minOrdinal: 0, cashPerMonth: 230, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'Paid by the plot and not by the month, so the wage is a winter figure. The only trade that can tell you honestly how a town died last year.' },
     { id: 'job-bell-keeper', name: 'Bell keeper', kind: 'mortal', minOrdinal: 0, cashPerMonth: 150, settlements: ['village', 'market_town'], risk: 'none', note: 'Rings for funerals, for beasts and for fire, and refuses to ring for anything else, which in several valleys includes ringing twice.' },
-    { id: 'job-salt-carrier', name: 'Salt carrier', kind: 'mortal', minOrdinal: 0, cashPerMonth: 290, settlements: ['village', 'market_town', 'city'], risk: 'moderate', note: 'Legal at the gate and lucrative between them. The risk in the figure is the gate rather than the road.' },
-
-    // commissions
-    { id: 'job-vein-warden', name: 'Vein warden', kind: 'cultivator', minOrdinal: 21, cashPerMonth: 12_000, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Sitting on somebody else\'s vein so that nothing else draws on it. The wage is nominal; what is actually being paid is the right to cultivate on the ground you are guarding.' },
-    { id: 'job-convoy-escort', name: 'Pill convoy escort', kind: 'cultivator', minOrdinal: 23, cashPerMonth: 20_000, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'The Cinnabar Crucible Sect moves finished heaven-grade medicine four times a year and will not move it without somebody who can survive being ambushed by the people who want it.' },
-    { id: 'job-tide-breaker', name: 'Tide breaker', kind: 'cultivator', minOrdinal: 25, cashPerMonth: 45_000, settlements: ['village', 'market_town', 'sect_town'], risk: 'lethal', note: 'A beast tide is coming and a county has raised what it can. Paid on the count of what is standing afterwards, which is a payment structure with an obvious defect.' },
-    { id: 'job-formation-keeper', name: 'Formation keeper', kind: 'cultivator', minOrdinal: 27, cashPerMonth: 60_000, settlements: ['sect_town', 'city'], risk: 'low', note: 'Holding a great formation steady across a season. Dull, safe, extremely well paid, and the standard way a sect finds out what an unaffiliated cultivator actually knows.' },
-    { id: 'job-boundary-arbiter', name: 'Boundary arbiter', kind: 'cultivator', minOrdinal: 29, cashPerMonth: 120_000, settlements: ['sect_town', 'city'], risk: 'none', note: 'Two houses disagree about a vein and neither will accept the other\'s survey. What is being bought is somebody both sides would rather not argue with.' },
-    { id: 'job-retained-deterrent', name: 'Retained deterrent', kind: 'cultivator', minOrdinal: 31, cashPerMonth: 250_000, settlements: ['sect_town', 'city'], risk: 'none', note: 'Paid to be resident and visible and to do nothing at all. The contract specifies attendance and says nothing about work, because the work is the attendance.' },
-    { id: 'job-tribulation-watch', name: 'Tribulation watch', kind: 'cultivator', minOrdinal: 33, cashPerMonth: 400_000, settlements: ['sect_town'], risk: 'high', note: 'Standing off a crossing so nothing interferes with it, and being close enough to the lightning that a bad crossing takes the watcher with it. Sects pay this without haggling.' },
-    { id: 'job-seal-inspection', name: 'Seal inspection', kind: 'cultivator', minOrdinal: 35, cashPerMonth: 700_000, settlements: ['sect_town', 'city'], risk: 'lethal', note: 'Going down to a seal that has held for two ages and reporting whether it still does. The fee is large because the reporting half is not reliably included.' },
-    { id: 'job-house-guest', name: 'House guest', kind: 'cultivator', minOrdinal: 37, cashPerMonth: 1_200_000, settlements: ['city'], risk: 'none', note: 'A high house pays for the fact of your presence under its roof for a season, and expects nothing whatever in return. Everyone involved knows what is being purchased.' },
-    { id: 'job-sky-survey', name: 'Sky survey', kind: 'cultivator', minOrdinal: 39, cashPerMonth: 2_000_000, settlements: ['city'], risk: 'moderate', note: 'Walking the upper air over a region and saying what is up there. Almost nobody can go and look, so almost nobody can check the answer, which is priced in.' },
-    { id: 'job-lid-assay', name: 'Assay beneath the Lid', kind: 'cultivator', minOrdinal: 42, cashPerMonth: 5_000_000, settlements: ['city'], risk: 'high', note: 'Reading how much of the ceiling is left over a place, for people who have a reason to want the number and no way at all to take it themselves.' }
+    { id: 'job-salt-carrier', name: 'Salt carrier', kind: 'mortal', minOrdinal: 0, cashPerMonth: 290, settlements: ['village', 'market_town', 'city'], risk: 'moderate', note: 'Legal at the gate and lucrative between them. The risk in the figure is the gate rather than the road.' }
 ];
 
 /**
@@ -714,14 +703,30 @@ export function getSettlement(kind: Settlement['kind']): Settlement | undefined 
 }
 
 /**
- * What a cultivator at this ordinal can actually take for money. The answer at
- * ordinal 0 to 6 is the important one, because that is where a run spends most
- * of its life and there is otherwise nothing to do between breakthroughs.
- */
-/**
- * The last ordinal at which anybody offers a cultivator work.
+ * The last ordinal at which anybody offers a cultivator mortal work.
  */
 export const MORTAL_WORK_CEILING_ORDINAL = 20;
+
+/**
+ * The rung an employer of mortals takes somebody for a mortal at. Zero, which
+ * is what `minOrdinal` already calls a mortal.
+ */
+export const THE_RUNG_A_MORTAL_STANDS_ON = 0;
+
+/**
+ * Whether the person asking is taken for a mortal: standing at the bottom rung,
+ * or passing for it with a concealment that holds. The second is the farmhand's
+ * "hiding", and it is read off the same concealment the rest of the regard
+ * layer reads, not a flag of its own.
+ */
+export function passesForAMortal(asker: RegardAskerInput): boolean {
+    const who = typeof asker === 'number' ? { ordinal: asker } : asker;
+    return apparentOrdinal(who.ordinal, who.approach) <= THE_RUNG_A_MORTAL_STANDS_ON;
+}
+
+/** What a mortal's trade says to somebody it is not put to. */
+const NOT_PUT_TO_A_CULTIVATOR =
+    "A mortal's trade. Nobody here puts it to somebody they can see is a cultivator.";
 
 /**
  * Everything reachable and still in place, before regard narrows it.
@@ -740,7 +745,9 @@ export function findWorkForOrdinal(
     settlement?: Settlement['kind']
 ): Occupation[] {
     const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
-    return offeredTo(workExistingFor(rung, settlement), ordinal);
+    const mortal = passesForAMortal(ordinal);
+    return offeredTo(workExistingFor(rung, settlement), ordinal)
+        .filter(o => o.kind === 'either' || mortal);
 }
 
 /**
@@ -751,8 +758,13 @@ export function workWithheldFrom(
     settlement?: Settlement['kind']
 ): { occupation: Occupation; reason: string; band: string }[] {
     const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
-    return refusalsFor(workExistingFor(rung, settlement), ordinal)
+    const refused = refusalsFor(workExistingFor(rung, settlement), ordinal)
         .map(({ record, regard }) => ({ occupation: record, reason: regard.reaction, band: regard.band }));
+    if (passesForAMortal(ordinal)) return refused;
+    const mortalTrades = offeredTo(workExistingFor(rung, settlement), ordinal)
+        .filter(o => o.kind === 'mortal')
+        .map(o => ({ occupation: o, reason: NOT_PUT_TO_A_CULTIVATOR, band: 'a mortal trade' }));
+    return [...refused, ...mortalTrades];
 }
 
 /** How mortals here treat a cultivator at this ordinal. */

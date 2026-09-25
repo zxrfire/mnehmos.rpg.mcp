@@ -16,6 +16,7 @@ import type { SendingReason } from '../../data/cultivation/why-a-house-puts-a-pa
 import type { HouseAsItStands } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { theReasonBehind, whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
 import type { Membership } from './types.js';
+import { CASH_PER_STONE, DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
 
 // WHAT KIND OF THING IT IS
 
@@ -273,11 +274,7 @@ export function dutyTermsFor(
     const days = daysFor(tags, scale);
     const posture = postureFor(membership, givenBy);
 
-    // What comes back scales with how far the thing is beneath the person
-    // doing it, which is `yieldMultiplier` doing the job it exists for. An
-    // elder clearing something at their own rung is paid for their time; an
-    // elder clearing something ten rungs down is paid for a morning.
-    const yieldScale = Math.max(0.25, Math.min(3, regard.yieldMultiplier));
+    const yieldScale = yieldScaleFor(regard);
     const base = CONTRIBUTION_BASE + pitchOrdinal * CONTRIBUTION_PER_ORDINAL;
 
     return {
@@ -285,12 +282,7 @@ export function dutyTermsFor(
         posture,
         pitchOrdinal,
         days,
-        // No house, no ledger to be credited in. A rogue doing the same work
-        // for the same people is paid in stones and in nothing else, which is
-        // the whole difference membership buys.
-        contribution: membership
-            ? Math.max(1, Math.round(base * yieldScale * (days / ORDINARY_DUTY_DAYS)))
-            : 0,
+        contribution: contributionFor(pitchOrdinal, yieldScale, days, membership),
         // WORK THAT MAKES SOMETHING IS PAID FOR WHAT IT MAKES, when it lands, and
         // not a stone up front: a notice cutting slips paid the board's rate for
         // the term whatever it cut, about five stones a slip against a worth of a
@@ -303,6 +295,64 @@ export function dutyTermsFor(
         scale,
         cohort: cohortFor(scale, membership),
         access: accessFor(tags, membership)
+    };
+}
+
+/**
+ * What comes back scales with how far the thing is beneath the person doing
+ * it, which is `yieldMultiplier` doing the job it exists for. An elder clearing
+ * something at their own rung is paid for their time; an elder clearing
+ * something ten rungs down is paid for a morning.
+ */
+function yieldScaleFor(regard: Regard): number {
+    return Math.max(0.25, Math.min(3, regard.yieldMultiplier));
+}
+
+/**
+ * No house, no ledger to be credited in. A rogue doing the same work for the
+ * same people is paid in stones and in nothing else, which is the whole
+ * difference membership buys.
+ */
+function contributionFor(
+    pitchOrdinal: number,
+    yieldScale: number,
+    days: number,
+    membership: Membership | null
+): number {
+    if (!membership) return 0;
+    const base = CONTRIBUTION_BASE + pitchOrdinal * CONTRIBUTION_PER_ORDINAL;
+    return Math.max(1, Math.round(base * yieldScale * (days / ORDINARY_DUTY_DAYS)));
+}
+
+/**
+ * A term priced at a monthly rate: a contract off a town wall, or a mission a
+ * house sends its own on. The row states the rate and the term; the stones are
+ * the rate for the days, scaled by the same regard every other duty is.
+ *
+ * Contribution only where the house is the taker's own and it is the house's
+ * work: a contract a disciple takes on their own time touches nobody's ledger,
+ * which is `creditsTheHouse` false.
+ */
+export function dutyTermsAtAMonthlyRate(input: {
+    entry: EncounterEntry;
+    cashPerMonth: number;
+    days: number;
+    ordinal: number;
+    membership: Membership | null;
+    creditsTheHouse: boolean;
+}): DutyTerms {
+    const terms = dutyTermsFor(input.entry, input.ordinal, input.membership, 'commission');
+    const yieldScale = yieldScaleFor(terms.regard);
+    return {
+        ...terms,
+        days: input.days,
+        contribution: input.creditsTheHouse
+            ? contributionFor(terms.pitchOrdinal, yieldScale, input.days, input.membership)
+            : 0,
+        stones: Math.max(1, Math.round(
+            input.cashPerMonth * (input.days / DAYS_PER_MONTH) * yieldScale / CASH_PER_STONE
+        )),
+        cohort: 0
     };
 }
 

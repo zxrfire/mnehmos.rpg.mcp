@@ -378,7 +378,7 @@ other.
 
 <!-- BEGIN GENERATED: catalog -->
 
-**72 catalog files, 13 of which name a doc.**
+**74 catalog files, 14 of which name a doc.**
 These are `.ts` files and no search of `docs/` reaches them. Where the
 "Also in" column is empty, this file is the only written record of what
 it describes.
@@ -394,7 +394,7 @@ it describes.
 | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | Communication talismans: the slip a house's people carry to send word home. | 137 | [`capability-gaps-by-realm.md`](climbing/capability-gaps-by-realm.md) |
 | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | Recorded contingencies: plans held by parties, waiting on events that have not happened. | 308 | - |
 | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | How the last crossing is actually attempted, and who still has somebody answering from the other side of it. | 657 | - |
-| [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | The fallen: cultivators the road already finished with, and what they do now. | 723 | - |
+| [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | The fallen: cultivators the road already finished with, and what they do now. | 739 | - |
 | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | What makes a demonic sect demonic, stated so a reader can tell six of them apart. | 295 | - |
 | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | Encounter and opportunity tables for the time-skip simulation. | 1824 | - |
 | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | Faction character - the retroactive distinctness pass. | 1299 | - |
@@ -409,12 +409,12 @@ it describes.
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1578 | - |
 | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 323 | - |
 | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | Things that came down from above. | 789 | [`items.md`](things/items.md) |
-| [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 596 | - |
+| [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 602 | - |
 | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3018 | - |
 | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | Bodies that will hold a thing for somebody who is not coming back, and the terms each of them holds it on. | 373 | - |
 | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | The ancient tier: what a richer age made, what is left of it, and who is holding the remains. | 670 | - |
 | [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 4400 | - |
-| [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 782 | - |
+| [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 794 | [`normal-in-the-cultivation-world.md`](normal-in-the-cultivation-world.md) |
 | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | The named dead, the named absent, and the named enormous. | 1274 | - |
 | [`pills.ts`](../../src/data/cultivation/pills.ts) | Alchemy - the pill catalog. | 821 | - |
 | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | Place names - one source of truth for what every place is called. | 192 | [`place-names.md`](writing/place-names.md) |
@@ -438,7 +438,7 @@ it describes.
 | [`regions/wide-field.ts`](../../src/data/cultivation/regions/wide-field.ts) | The Yellow Plain: flat, dug over, nine cities, and no high ground anybody could fortify. | 255 | - |
 | [`regions.ts`](../../src/data/cultivation/regions.ts) | The map, as a barrel. Every export this file used to hold is still exported from here and nothing that imported it has changed. | 56 | - |
 | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | The four roads that reach the top of the ladder, and what it actually takes to be walked up one. | 262 | - |
-| [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 903 | - |
+| [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 962 | - |
 | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | What ordinary people say about the powers above them, and where it is wrong. | 1028 | [`discovery.md`](houses/discovery.md) |
 | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | Sealed ancestors: sealed and dormant high-realm beings, held and unheld. | 641 | - |
 | [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3974 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
@@ -450,7 +450,9 @@ it describes.
 | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 363 | - |
 | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | Two traditions, one ladder. The world holds two genuinely different ways of cultivating, and the difference between them is the oldest quarrel in it. Both climb the SAME rungs: a fourth-realm practitioner of either is Core Formation, ordinal 17 to 20, and `realmOrdinal` means exactly what it means everywhere else. There is no second scale in this file and there must never be one. | 295 | - |
 | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | Wandering figures: people who belong to nothing and are therefore worth asking. | 799 | - |
+| [`what-a-cultivator-can-earn.ts`](../../src/data/cultivation/what-a-cultivator-can-earn.ts) | What a cultivator can be paid for, at a rung: the one reading of it. | 65 | - |
 | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | What a house moves its people on: the rungs, what a house has of each, and the very small number of craft that are objects with names. | 521 | - |
+| [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts) | Missions: the standing work a house posts on its own board for its own people, each at a rate by the month of the term. | 62 | - |
 | [`what-an-artifact-is-made-of.ts`](../../src/data/cultivation/what-an-artifact-is-made-of.ts) | WHAT AN ARTIFACT IS MADE OF, and whether anybody is holding it. | 294 | - |
 | [`what-an-indenture-is-and-what-happens-when-it-ends.ts`](../../src/data/cultivation/what-an-indenture-is-and-what-happens-when-it-ends.ts) | What an indenture is, what the years are for, and what a person walks out into on the day the term is served. | 175 | - |
 | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | What each house makes, and what crosses the water because it makes it. | 501 | - |
@@ -468,7 +470,7 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**272 design constants in the catalog. 22 are read by nothing at all,
+**274 design constants in the catalog. 22 are read by nothing at all,
 and 93 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
@@ -639,7 +641,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `ARCHIVE_AS_CLAIM` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 3 | 1 |
 | `FOSTERAGE_TERMS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 3 | 2 |
 | `RETIRED_WOUND_KEYS` | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | 3 | 3 |
-| `UNDERWRITTEN_OCCUPATION_IDS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 3 | 3 |
+| `UNDERWRITTEN_CONTRACT_IDS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 3 | 3 |
 | `CROSS_TRADITION_ERRORS` | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | 3 | 4 |
 | `WHY_ACCOUNTS_DISAGREE` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 5 |
 | `CONTINGENCIES` | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | 3 | 6 |
@@ -701,8 +703,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `RUMOURS` | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | 6 | 25 |
 | `FALSE_IMMORTALS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 6 | 36 |
 | `SENT_DOWN_UNACCOUNTED` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 7 | - |
-| `ROGUE_TRADES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 7 | 11 |
 | `SETTLEMENTS` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 7 | 11 |
+| `ROGUE_TRADES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 7 | 12 |
 | `LOCAL_RESIDUE` | [`history.ts`](../../src/data/cultivation/history.ts) | 7 | 13 |
 | `CALENDARS` | [`history.ts`](../../src/data/cultivation/history.ts) | 7 | 14 |
 | `LOST_MATERIALS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 7 | 19 |
@@ -711,7 +713,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SECT_ANCESTRY` | [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | 7 | 50 |
 | `IMMORTAL_CHANNELS` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 8 | 4 |
 | `WHY_UNAFFILIATED` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 8 | 6 |
+| `HOUSE_MISSIONS` | [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts) | 8 | 7 |
 | `GRADE_ORDER` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 8 | 9 |
+| `CONTRACTS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 8 | 11 |
 | `BOUNTIES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 8 | 15 |
 | `DEAD_CIVILISATIONS` | [`history.ts`](../../src/data/cultivation/history.ts) | 8 | 15 |
 | `HELD_INSTRUMENTS` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 8 | 24 |
@@ -722,7 +726,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WOUND_TYPES` | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | 9 | 27 |
 | `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 20 |
 | `PLACES_THAT_TEACH_A_DAO` | [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) | 10 | 27 |
-| `FALLEN` | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | 10 | 35 |
+| `FALLEN` | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | 10 | 37 |
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 11 | 19 |
 | `AGES` | [`history.ts`](../../src/data/cultivation/history.ts) | 11 | 41 |
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |

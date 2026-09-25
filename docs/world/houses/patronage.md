@@ -260,7 +260,7 @@ out-earn the least valuable grant in that province, which is what the word is fo
 
 **And what a house makes.** The third fact the catalog stated and nothing could read,
 after `holdsVein` and the levy. The Cinnabar Crucible Sect moves finished heaven-grade
-medicine four times a year and pays `job-convoy-escort` 2,400 stones a year to guard
+medicine four times a year and pays the `mission-convoy-escort` rate, 2,400 stones a year, to guard
 it, against a modelled income of 1,000 - it was spending more than twice everything it
 had on guards for goods the world did not price. `trade` is two words: `grade`, the
 dearest thing the house can finish, and `devotion`, how much of the house the trade is.
@@ -268,7 +268,7 @@ It is **not a flag**, deliberately: most houses here can make something, and wha
 separates a specialist is that every rung of its ladder from Bellows Hand to Hall
 Grandmaster is a furnace title. What is priced is **the fee, not the merchandise** -
 the customer brings the materials or buys them at the counter, so what the house sells
-is the work, which `OCCUPATIONS` already prices by the rung it needs.
+is the work, which `whatACultivatorCanEarnAt` already prices by the rung it needs.
 
 The scale is anchored to two prices the mortal economy already publishes rather than
 chosen: `price-gate-registration` is 300 cash a head a year and is called *"the

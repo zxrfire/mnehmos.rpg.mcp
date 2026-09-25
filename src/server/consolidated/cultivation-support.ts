@@ -12,6 +12,7 @@ import {
     type Relationship
 } from '../../engine/social/index.js';
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
+import { DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
 import {
     rankIndexOnAHousesRoll,
     theRollAlone,
@@ -1852,8 +1853,9 @@ export interface DurationInput {
     years?: number;
 }
 
-/** In-world month. 365/12 would put a "three month" skip on a fractional day. */
-export const DAYS_PER_MONTH = 30;
+// The in-world month lives beside the rates quoted by it, and is re-exported
+// here for the durations every handler reads.
+export { DAYS_PER_MONTH };
 
 /**
  * Total days for a duration expressed in any mix of days, months and years.

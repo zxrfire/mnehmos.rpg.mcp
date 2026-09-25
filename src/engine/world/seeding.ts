@@ -1005,11 +1005,12 @@ export function howMuchRockItHolds(veinWorth: CatalogFaction['veinWorth']): numb
  *
  * THE FEE, NOT THE MERCHANDISE. The customer brings the materials or buys them
  * at the counter, so what a house sells is the work and the skill - which is a
- * thing this repo already prices. `OCCUPATIONS` pays a cultivator by the month
- * against the rung the work needs: a bellows hand at the bottom of the ladder
- * is 600 cash a month, a formation hand at 8 is 1,500, and the pill convoy
- * escort at 23 - the one job in the catalog written about this trade - is
- * 20,000, which is 2,400 stones a year for ONE pair of hands.
+ * thing this repo already prices. `whatACultivatorCanEarnAt` rates a
+ * cultivator's month against the rung the work needs: a bellows hand at the
+ * bottom of the ladder is 600 cash a month, a formation hand's contract at 8 is
+ * 1,500, and the pill convoy escort mission at 23 - the one term in the catalog
+ * written about this trade - is 20,000, which is 2,400 stones a year for ONE
+ * pair of hands.
  *
  * So a hall of hands at heaven-grade work is a multiple of that escort, and
  * 9,000 is a little under four of him. The check that makes it checkable rather

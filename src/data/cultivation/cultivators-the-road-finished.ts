@@ -32,14 +32,17 @@
  * least three are dangerous - one of them precisely because everyone in the
  * room has decided he is not.
  *
- * Money is the mortal economy and nothing else: see `mortal-world.ts`, and use
+ * Money is the mortal economy and nothing else: see `mortal-world.ts`. Somebody
+ * whose cultivation is gone holds a mortal's trade; somebody who still has some
+ * takes contracts, because a cultivator has no profession. Use
  * `monthsOfWorkToAfford` rather than writing a second set of numbers.
  */
 
 import { z } from 'zod';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { ExistenceStateSchema, FoundationQualitySchema } from '../../schema/cultivation.js';
-import { SettlementSchema, getOccupation, getPrice } from './mortal-world.js';
+import { SettlementSchema, getPrice } from './mortal-world.js';
+import { aPaidTerm } from './what-a-cultivator-can-earn.js';
 import { PLACE } from './place-names.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -77,8 +80,8 @@ export const FallenSchema = z.object({
     /**
      * What they can actually bring to work now. Zero where the cultivation is
      * gone, and never above `lastOrdinal`. This is the number an employer is
-     * hiring, which is why the meridian-destroyed hold mortal jobs beside the
-     * cultivator jobs they used to be paid four times as much for.
+     * paying for, which is why the meridian-destroyed hold mortal trades beside
+     * the contracts they used to be paid four times as much for.
      */
     currentOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** Whether the ladder is still open to them at all. Usually it is not. */
@@ -94,9 +97,13 @@ export const FallenSchema = z.object({
     existenceState: ExistenceStateSchema,
     identityContinuity: z.number().min(0).max(1).nullable(),
     foundationQuality: FoundationQualitySchema.nullable(),
-    /** What they do for money. `occupationId` indexes `OCCUPATIONS`. */
+    /**
+     * What they do for money: a mortal's trade (`occupationId`, into
+     * `OCCUPATIONS`) or a contract off a wall (`contractId`, into `CONTRACTS`).
+     */
     work: z.object({
         occupationId: z.string().nullable(),
+        contractId: z.string().optional(),
         doing: z.string().min(40),
         /** A price id from `PRICES` where the trade quotes one. */
         quotesPriceId: z.string().nullable()
@@ -267,7 +274,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: 'incomplete',
         work: {
-            occupationId: 'job-formation-hand',
+            occupationId: null,
+            contractId: 'contract-formation-hand',
             doing: 'Holds nodes steady for people who understand them. Indoors, seated, and the steadiest hands in the city belong to somebody with nothing left to spend them on.',
             quotesPriceId: null
         },
@@ -325,7 +333,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: 'damaged',
         work: {
-            occupationId: 'job-escort',
+            occupationId: null,
+            contractId: 'contract-escort',
             doing: 'Takes caravan escort contracts at Core Formation and spends most of the fee on medicine, which is an arrangement he describes as break-even and defends.',
             quotesPriceId: 'price-clear-meridian-pill'
         },
@@ -356,7 +365,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: null,
         work: {
-            occupationId: 'job-gleaner',
+            occupationId: null,
+            contractId: 'contract-gleaner',
             doing: 'Still dives. Crews pay him a share and a half and will not sleep in the same tent, and he has stopped arguing about either half of that.',
             quotesPriceId: null
         },
@@ -385,8 +395,9 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: 0.8,
         foundationQuality: null,
         work: {
-            occupationId: 'job-formation-hand',
-            doing: 'The lantern reads the node and names the plate; the carrier lays it. They are hired as one formation hand and split the wage two ways, which neither of them considers unfair and both mention.',
+            occupationId: null,
+            contractId: 'contract-formation-hand',
+            doing: 'The lantern reads the node and names the plate; the carrier lays it. They sign one contract as a formation hand and split the rate two ways, which neither of them considers unfair and both mention.',
             quotesPriceId: null
         },
         place: {
@@ -474,7 +485,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: 'sacrificed',
         work: {
-            occupationId: 'job-escort',
+            occupationId: null,
+            contractId: 'contract-escort',
             doing: 'Captains an escort crew on the border road. The Stone Marrow Hall rank table reads him at Foundation and pays accordingly, and the table is not wrong about the rank.',
             quotesPriceId: 'price-caravan-passage'
         },
@@ -503,7 +515,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: 'stable',
         work: {
-            occupationId: 'job-courier',
+            occupationId: null,
+            contractId: 'contract-courier',
             doing: 'Runs Shrinking Earth Pavilion work at true distance, and is very good at it, which is a trade that rewards somebody who does not need to be anywhere in particular.',
             quotesPriceId: 'price-span-courier'
         },
@@ -532,7 +545,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: null,
         work: {
-            occupationId: 'job-beast-culler',
+            occupationId: null,
+            contractId: 'contract-beast-culler',
             doing: 'Takes village culling contracts, and takes them slowly. A broken arm costs him a splint and a season rather than a pill and an afternoon, and he prices his own time accordingly.',
             quotesPriceId: 'price-splint-and-month'
         },
@@ -592,7 +606,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: null,
         work: {
-            occupationId: 'job-beast-culler',
+            occupationId: null,
+            contractId: 'contract-beast-culler',
             doing: 'Culls on village contracts, on one working side, and has done for three decades. He is slower than the young ones and has buried more of them than he can name.',
             quotesPriceId: 'price-clear-meridian-pill'
         },
@@ -685,7 +700,8 @@ export const FALLEN: readonly Fallen[] = [
         identityContinuity: null,
         foundationQuality: null,
         work: {
-            occupationId: 'job-face-labour',
+            occupationId: null,
+            contractId: 'contract-face-labour',
             doing: 'Still cutting, for a share of what comes out, and buying a fresh chisel every season because that is what the work costs before it costs anything else.',
             quotesPriceId: 'price-chisel'
         },
@@ -714,9 +730,9 @@ export const FALLEN: readonly Fallen[] = [
  * gross earnings before food and lodging, which is why a torn meridian carried
  * for thirty years is the ordinary outcome rather than a tragedy.
  */
-export function monthsOfWorkToAfford(priceId: string, occupationId: string): number | undefined {
+export function monthsOfWorkToAfford(priceId: string, paidTermId: string): number | undefined {
     const price = getPrice(priceId);
-    const job = getOccupation(occupationId);
-    if (!price || !job || job.cashPerMonth <= 0) return undefined;
-    return Number((price.cash / job.cashPerMonth).toFixed(1));
+    const term = aPaidTerm(paidTermId);
+    if (!price || !term || term.cashPerMonth <= 0) return undefined;
+    return Number((price.cash / term.cashPerMonth).toFixed(1));
 }

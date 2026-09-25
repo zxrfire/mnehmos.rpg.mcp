@@ -1275,7 +1275,7 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
         handler: (args: unknown) =>
             handleWork(args as z.infer<typeof WorkSchema>, runCultivate),
         aliases: ['job', 'labour', 'labor', 'earn', 'hire'],
-        description: 'Take an occupation for a span. Wages paid for days actually worked; cultivation runs at zero.'
+        description: 'Take mortal work for a span, or read the contracts on the wall. A cultivator has no profession. Wages paid for days actually worked; cultivation runs at zero.'
     },
     market: {
         schema: MarketSchema,
@@ -1337,8 +1337,10 @@ from, the Dao they add up to, and what that road opens and closes. Comprehension
 to comprehend FROM - a teacher, a readable manual, ground that has something to teach. Without
 access a road is not harder, it is ABSENT. Never tell a player a Dao would suit them.
 
-THE LOW REALMS: work takes a job for a span (wages for days actually worked; cultivation runs at
-zero for the whole of it), market shows local prices, what this settlement has and lacks, and how
+THE LOW REALMS: work takes menial mortal work for a span (wages for days actually worked;
+cultivation runs at zero for the whole of it) and lists the contracts on the wall where they stand,
+which is what a cultivator is paid for past mortal work - a cultivator has no profession, and a
+rogue takes a contract where a disciple is sent on a mission. market shows local prices, what this settlement has and lacks, and how
 mortals here actually treat someone at this rank, forage searches the ground for herbs. Thirty
 stones is the starting purse and a decent cave is sixty a month. Most of a cultivating life is
 spent paying for the next month of it.

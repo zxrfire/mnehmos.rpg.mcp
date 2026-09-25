@@ -75,6 +75,9 @@ import {
     monthsOfSurvival,
     stonesToCash
 } from '../../src/data/cultivation/mortal-world.js';
+import { CONTRACTS } from '../../src/data/cultivation/rogues.js';
+import { HOUSE_MISSIONS } from '../../src/data/cultivation/what-a-house-posts-for-its-own.js';
+import { whatACultivatorCanEarnAt } from '../../src/data/cultivation/what-a-cultivator-can-earn.js';
 import {
     FACTION_CHARACTER,
     getFactionCharacter,
@@ -895,16 +898,30 @@ describe('the mortal world', () => {
             .toBeLessThan(getPrice('price-farmland-mu')!.cash * 50);
     });
 
-    it('gives a poor cultivator something to do between breakthroughs', () => {
-        const earlyWork = findWorkForOrdinal(4).filter(o => o.kind !== 'mortal');
-        expect(earlyWork.length, 'nothing for a Qi Condensation cultivator to do')
+    it('gives a poor cultivator something to be paid for between breakthroughs', () => {
+        const earlyWork = whatACultivatorCanEarnAt(4);
+        expect(earlyWork.length, 'nothing for a Qi Condensation cultivator to be paid for')
             .toBeGreaterThanOrEqual(4);
         const avg = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
         const mortalPay = OCCUPATIONS.filter(o => o.kind === 'mortal').map(o => o.cashPerMonth);
-        const cultivatorPay = OCCUPATIONS.filter(o => o.kind === 'cultivator').map(o => o.cashPerMonth);
+        const cultivatorPay = [...CONTRACTS, ...HOUSE_MISSIONS].map(o => o.cashPerMonth);
         expect(avg(cultivatorPay)).toBeGreaterThan(avg(mortalPay) * 2);
-        expect(OCCUPATIONS.some(o => o.risk === 'lethal')).toBe(true);
+        expect(CONTRACTS.some(o => o.risk === 'lethal')).toBe(true);
         expect(OCCUPATIONS.filter(o => o.minOrdinal === 0).length).toBeGreaterThanOrEqual(10);
+    });
+
+    it('has no profession for a cultivator in it: every occupation is mortal work', () => {
+        for (const o of OCCUPATIONS) {
+            expect(['mortal', 'either'], `${o.id} is a cultivator's occupation`).toContain(o.kind);
+        }
+        // A cultivator is put to menial work either sort takes, and never to a
+        // mortal's trade unless they pass for a mortal.
+        expect(findWorkForOrdinal(4).every(o => o.kind === 'either')).toBe(true);
+        expect(findWorkForOrdinal(0).some(o => o.kind === 'mortal')).toBe(true);
+        expect(findWorkForOrdinal({
+            ordinal: 4,
+            approach: { concealed: true, presentedAs: 0 }
+        }).some(o => o.kind === 'mortal')).toBe(true);
     });
 
     it('describes every settlement kind as somewhere with things in it', () => {

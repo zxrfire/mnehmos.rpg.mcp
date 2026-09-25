@@ -45,13 +45,13 @@
  *
  * MESHING, NOT DUPLICATING
  * ------------------------
- * `OCCUPATIONS` in `mortal-world.ts` is the wage table and stays the wage
- * table. Every trade here points at the occupation ids it is done under and
- * adds only what is different about doing it with no faction behind you:
- * who pays, what is deducted, and what happens when it goes wrong. Where a
- * contract is underwritten off a faction rank table, the unbacked rate is
- * `UNBACKED_DEDUCTION` below the listed wage - computed by
- * `unbackedMonthlyFor`, never written down twice.
+ * A cultivator has no profession. What a rogue is paid for is paper on a wall:
+ * a bounty, which is one purse for one thing done, or a contract, which is a
+ * term at a monthly rate. Both live below. `OCCUPATIONS` in `mortal-world.ts`
+ * is mortal work only, and a trade here names the mortal rows it shades into
+ * beside the contracts it is done under. Where a contract is underwritten off
+ * a faction rank table, the unbacked rate is `UNBACKED_DEDUCTION` below the
+ * posted rate - computed by `unbackedMonthlyFor`, never written down twice.
  *
  * Nobody here is flagged important, and nothing here is a shortcut into a
  * sect's library.
@@ -62,8 +62,7 @@ import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { PLACE } from './place-names.js';
 import {
     CASH_PER_STONE,
-    OccupationSchema,
-    getOccupation
+    OccupationSchema
 } from './mortal-world.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -82,21 +81,21 @@ import {
  */
 export const UNBACKED_DEDUCTION = 0.25;
 
-/** Occupations paid off a rank table, and therefore discounted for the sectless. */
-export const UNDERWRITTEN_OCCUPATION_IDS: readonly string[] = [
-    'job-escort',
-    'job-formation-hand',
-    'job-courier'
+/** Contracts paid off a rank table, and therefore discounted for the sectless. */
+export const UNDERWRITTEN_CONTRACT_IDS: readonly string[] = [
+    'contract-escort',
+    'contract-formation-hand',
+    'contract-courier'
 ];
 
-/** What the listed wage actually pays a cultivator with no faction behind them. */
-export function unbackedMonthlyFor(occupationId: string): number | undefined {
-    const job = getOccupation(occupationId);
-    if (!job) return undefined;
-    const rate = UNDERWRITTEN_OCCUPATION_IDS.includes(occupationId)
+/** What the posted rate actually pays a cultivator with no faction behind them. */
+export function unbackedMonthlyFor(contractId: string): number | undefined {
+    const contract = getContract(contractId);
+    if (!contract) return undefined;
+    const rate = UNDERWRITTEN_CONTRACT_IDS.includes(contractId)
         ? 1 - UNBACKED_DEDUCTION
         : 1;
-    return Math.round(job.cashPerMonth * rate);
+    return Math.round(contract.cashPerMonth * rate);
 }
 
 export const UNBACKED = {
@@ -248,7 +247,7 @@ export const WHY_UNAFFILIATED: readonly WhyUnaffiliated[] = [
 // ─────────────────────────────────────────────────────────────────────────
 // TRADES
 // What a sectless cultivator can actually be paid for, pointed at the
-// occupations it is done under.
+// contracts it is done under and the mortal work it shades into.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const RoguePaySchema = z.object({
@@ -264,8 +263,10 @@ export const RogueTradeSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     minOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
-    /** Occupation ids in `OCCUPATIONS` this trade is done under. May be empty. */
+    /** Mortal work in `OCCUPATIONS` this trade shades into. May be empty. */
     occupationIds: z.array(z.string()),
+    /** Contract ids in `CONTRACTS` this trade is done under. May be empty. */
+    contractIds: z.array(z.string()),
     pay: RoguePaySchema,
     risk: OccupationSchema.shape.risk,
     /** Who is actually holding the purse. */
@@ -284,7 +285,8 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-ruin-diver',
         name: 'Ruin-diver',
         minOrdinal: 4,
-        occupationIds: ['job-gleaner'],
+        occupationIds: [],
+        contractIds: ['contract-gleaner'],
         pay: {
             basis: 'share',
             cash: 9_000,
@@ -301,6 +303,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         name: 'Grave-reader',
         minOrdinal: 4,
         occupationIds: [],
+        contractIds: [],
         pay: {
             basis: 'per_job',
             cash: 4_000,
@@ -316,11 +319,12 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-bounty-taker',
         name: 'Bounty-taker',
         minOrdinal: 3,
-        occupationIds: ['job-beast-culler'],
+        occupationIds: [],
+        contractIds: ['contract-beast-culler'],
         pay: {
             basis: 'per_head',
             cash: 300,
-            note: 'Three hundred cash a head on a village contract, which is where the culling wage in the occupation table comes from: four heads a month is an ordinary month.'
+            note: 'Three hundred cash a head on a village contract, which is where the culling rate in `CONTRACTS` comes from: four heads a month is an ordinary month.'
         },
         risk: 'high',
         whoPays: 'Village headmen, the Clearwater Ward, a sect with a specific problem, and, at the bad end, a broker holding somebody\'s private grudge.',
@@ -332,11 +336,12 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-escort',
         name: 'Escort for hire',
         minOrdinal: 5,
-        occupationIds: ['job-escort', 'job-caravan-guard'],
+        occupationIds: ['job-caravan-guard'],
+        contractIds: ['contract-escort'],
         pay: {
             basis: 'monthly',
             cash: 1_500,
-            note: 'The listed escort wage less the unbacked deduction. Use `unbackedMonthlyFor` rather than this figure: the table moves and this note will not.'
+            note: 'The posted escort rate less the unbacked deduction. Use `unbackedMonthlyFor` rather than this figure: the table moves and this note will not.'
         },
         risk: 'high',
         whoPays: 'The Stone Marrow Hall underwrites the contract and prices it off its own rank table. Merchants hire under that price directly when they think they can get away with it.',
@@ -348,7 +353,8 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-mercenary-crew',
         name: 'Standing mercenary crew',
         minOrdinal: 5,
-        occupationIds: ['job-escort', 'job-beast-culler'],
+        occupationIds: [],
+        contractIds: ['contract-escort', 'contract-beast-culler'],
         pay: {
             basis: 'per_job',
             cash: 12_000,
@@ -364,11 +370,12 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-formation-hand',
         name: 'Hired formation hand',
         minOrdinal: 8,
-        occupationIds: ['job-formation-hand'],
+        occupationIds: [],
+        contractIds: ['contract-formation-hand'],
         pay: {
             basis: 'monthly',
             cash: 1_125,
-            note: 'The listed formation-hand wage less the unbacked deduction, and the steadiest cash in this file. Impossible in the Buddha Precipice, where formations do not run.'
+            note: 'The posted formation-hand rate less the unbacked deduction, and the steadiest cash in this file. Impossible in the Buddha Precipice, where formations do not run.'
         },
         risk: 'moderate',
         whoPays: 'Any sect maintaining a compound it did not build, which is all of them. Node work is endless and no institution has enough hands for it.',
@@ -380,7 +387,8 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-seclusion-watch',
         name: 'Seclusion watch',
         minOrdinal: 2,
-        occupationIds: ['job-cave-sitter'],
+        occupationIds: [],
+        contractIds: ['contract-cave-sitter'],
         pay: {
             basis: 'monthly',
             cash: 800,
@@ -397,6 +405,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         name: 'Itinerant dealer',
         minOrdinal: 2,
         occupationIds: ['job-placer-runner'],
+        contractIds: [],
         pay: {
             basis: 'monthly',
             cash: 2_200,
@@ -412,7 +421,8 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-auction-runner',
         name: 'Auction runner',
         minOrdinal: 4,
-        occupationIds: ['job-courier'],
+        occupationIds: [],
+        contractIds: ['contract-courier'],
         pay: {
             basis: 'per_job',
             cash: 900,
@@ -428,7 +438,8 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         id: 'rogue-herb-runner',
         name: 'Guarded-ground herb runner',
         minOrdinal: 6,
-        occupationIds: ['job-dangerous-herb-gathering', 'job-herb-picker'],
+        occupationIds: ['job-herb-picker'],
+        contractIds: ['contract-dangerous-herb-gathering'],
         pay: {
             basis: 'monthly',
             cash: 1_800,
@@ -565,6 +576,54 @@ export const BOUNTIES: readonly Bounty[] = [
         catch: 'They pay well, immediately, and in full, and they take an interest in the seller afterwards that the seller did not agree to and cannot end.'
     }
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// CONTRACTS
+// The other paper on a wall: a term at a monthly rate rather than one purse.
+// A rogue takes one for the money; a disciple may take one on their own time,
+// and it touches nobody's ledger. A house's own work for its own people is a
+// mission, and lives in `what-a-house-posts-for-its-own.ts`.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const ContractSchema = z.object({
+    id: z.string(),
+    /** What the paper asks for, as it reads on the wall. */
+    name: z.string().min(1),
+    /** The rung the work is pitched at. Zero means a mortal body could do it. */
+    minOrdinal: OccupationSchema.shape.minOrdinal,
+    /** The rate, in cash per month of the term, before food and lodging. */
+    cashPerMonth: OccupationSchema.shape.cashPerMonth,
+    /** Days the term runs. A term, not a computation. */
+    days: z.number().int().min(1),
+    /** Where paper for it goes up. */
+    settlements: OccupationSchema.shape.settlements,
+    risk: OccupationSchema.shape.risk,
+    /** Who posts it, and what taking it is like. */
+    note: z.string().min(40)
+});
+export type Contract = z.infer<typeof ContractSchema>;
+
+export const CONTRACTS: readonly Contract[] = [
+    { id: 'contract-face-labour', name: 'Face labour (carving)', minOrdinal: 0, cashPerMonth: 700, days: 30, settlements: ['market_town'], risk: 'high', note: 'Buddha Precipice only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
+    { id: 'contract-cave-sitter', name: 'Cave sitter', minOrdinal: 2, cashPerMonth: 800, days: 90, settlements: ['sect_town', 'village'], risk: 'low', note: 'Sitting in somebody else\'s rented cave so the claim does not lapse while they are away. Dull, safe, and the sitter cultivates on their employer\'s ground, which is the actual pay.' },
+    { id: 'contract-quay-watch', name: 'Quay watch', minOrdinal: 3, cashPerMonth: 1_300, days: 30, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Silver Island Market\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told when it signs on that it does not go above Foundation Establishment.' },
+    { id: 'contract-beast-culler', name: 'Spirit-beast culler', minOrdinal: 3, cashPerMonth: 1_200, days: 30, settlements: ['village', 'market_town', 'sect_town'], risk: 'high', note: 'Paid per head on a village contract. The standard living for an unaffiliated Qi Condensation cultivator, and the standard way one dies at twenty-six.' },
+    { id: 'contract-courier', name: 'Courier', minOrdinal: 4, cashPerMonth: 1_100, days: 20, settlements: ['market_town', 'sect_town', 'city'], risk: 'moderate', note: 'Shrinking Earth Pavilion paper, paid per true li rather than walked. The Span will not sign anyone who cannot read its two-number directions.' },
+    { id: 'contract-gleaner', name: 'Gleaner (burn zone)', minOrdinal: 4, cashPerMonth: 3_000, days: 90, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Buddha Precipice only. The best-paid paper open to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
+    { id: 'contract-escort', name: 'Caravan escort (cultivator)', minOrdinal: 5, cashPerMonth: 2_000, days: 30, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'Underwritten by the Stone Marrow Hall, which prices the contract off its own rank table - the table that reads Buddha Precipice carvers a rank low.' },
+    { id: 'contract-tutor', name: 'Tutor to a merchant family', minOrdinal: 5, cashPerMonth: 900, days: 90, settlements: ['market_town', 'city'], risk: 'none', note: 'Teaching a merchant\'s child the Lesser Qi-Gathering Manual. Humiliating, safe, and the fastest way for a low-realm cultivator to meet people with money.' },
+    { id: 'contract-dangerous-herb-gathering', name: 'Herb gathering, guarded ground', minOrdinal: 6, cashPerMonth: 1_800, days: 30, settlements: ['village', 'market_town'], risk: 'high', note: 'Earth-grade herbs grow where something is living. Pays four times a picker and kills about one gatherer in twenty a year.' },
+    { id: 'contract-formation-hand', name: 'Formation hand', minOrdinal: 8, cashPerMonth: 1_500, days: 30, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Holding nodes steady while somebody who understands them works. Impossible in the Buddha Precipice, where formations do not run at all.' },
+    { id: 'contract-boundary-arbiter', name: 'Boundary arbiter', minOrdinal: 29, cashPerMonth: 120_000, days: 30, settlements: ['sect_town', 'city'], risk: 'none', note: 'Two houses disagree about a vein and neither will accept the other\'s survey. What is being bought is somebody both sides would rather not argue with.' },
+    { id: 'contract-retained-deterrent', name: 'Retained deterrent', minOrdinal: 31, cashPerMonth: 250_000, days: 90, settlements: ['sect_town', 'city'], risk: 'none', note: 'Paid to be resident and visible and to do nothing at all. The contract specifies attendance and says nothing about work, because the work is the attendance.' },
+    { id: 'contract-lid-assay', name: 'Assay beneath the Lid', minOrdinal: 42, cashPerMonth: 5_000_000, days: 20, settlements: ['city'], risk: 'high', note: 'Reading how much of the ceiling is left over a place, for people who have a reason to want the number and no way at all to take it themselves.' }
+];
+
+const CONTRACT_BY_ID: ReadonlyMap<string, Contract> = new Map(CONTRACTS.map(c => [c.id, c]));
+
+export function getContract(id: string): Contract | undefined {
+    return CONTRACT_BY_ID.get(id);
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // SUPPLY

@@ -470,7 +470,7 @@ Takes `days`, `target`.
 
 ### `work`
 
-take an occupation for a span, for wages. "days" (default 90); "target" may name the kind of work. This is how somebody with no stones eats, and it is the right answer far more often than a model expects.
+earn for a span: a contract on the wall where they stand, a mission from their own house, or menial mortal work either sort takes. "days" (default 90) is for the mortal work, and a contract or a mission runs its own term; "target" may name any of them. This is how somebody with no stones eats, and it is the right answer far more often than a model expects.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'work'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.work` · the deterministic parser reaches it · spends in-world time.
 

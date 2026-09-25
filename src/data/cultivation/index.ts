@@ -26,6 +26,8 @@ import { ENCOUNTERS } from './encounters.js';
 import { REGIONS } from './regions.js';
 import { TRADITIONS } from './traditions.js';
 import { OCCUPATIONS, PRICES, SETTLEMENTS } from './mortal-world.js';
+import { CONTRACTS } from './rogues.js';
+import { HOUSE_MISSIONS } from './what-a-house-posts-for-its-own.js';
 import { FACTION_CHARACTER } from './faction-character.js';
 import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, GUEST_ELDERS } from './hierarchy.js';
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from './immortal-items.js';
@@ -251,6 +253,8 @@ export interface CultivationCatalogCounts {
     regions: number;
     traditions: number;
     occupations: number;
+    contracts: number;
+    houseMissions: number;
     prices: number;
     settlements: number;
     /** Factions with a full distinctness record. Should equal `sects`. */
@@ -327,6 +331,8 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         regions: REGIONS.length,
         traditions: TRADITIONS.length,
         occupations: OCCUPATIONS.length,
+        contracts: CONTRACTS.length,
+        houseMissions: HOUSE_MISSIONS.length,
         prices: PRICES.length,
         settlements: SETTLEMENTS.length,
         charactered: Object.keys(FACTION_CHARACTER).length,

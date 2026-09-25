@@ -53,10 +53,12 @@ import {
     ROGUE_TRADES,
     UNBACKED,
     UNBACKED_DEDUCTION,
-    UNDERWRITTEN_OCCUPATION_IDS,
+    CONTRACTS,
+    UNDERWRITTEN_CONTRACT_IDS,
     WHY_UNAFFILIATED,
     unbackedMonthlyFor
 } from '../data/cultivation/rogues.js';
+import { HOUSE_MISSIONS } from '../data/cultivation/what-a-house-posts-for-its-own.js';
 import { FALLEN } from '../data/cultivation/cultivators-the-road-finished.js';
 import {
     WHAT_THE_END_OF_A_TERM_LEAVES,
@@ -165,14 +167,21 @@ function pricesSection(): string {
     </tr>`).join('')}</tbody>
   </table></div>`).join('');
 
-    const work = OCCUPATIONS
-        .slice()
-        .sort((a, b) => a.minOrdinal - b.minOrdinal || b.cashPerMonth - a.cashPerMonth)
+    // Mortal work first, then what a cultivator is paid for instead of a
+    // profession: a contract off a wall, or a mission from their own house.
+    const PAID_AS_ORDER = ["a mortal's trade", 'menial work', 'a contract', 'a mission'];
+    const work = [
+        ...OCCUPATIONS.map(o => ({ ...o, paidAs: o.kind === 'mortal' ? "a mortal's trade" : 'menial work' })),
+        ...CONTRACTS.map(c => ({ ...c, paidAs: 'a contract' })),
+        ...HOUSE_MISSIONS.map(m => ({ ...m, paidAs: 'a mission' }))
+    ]
+        .sort((a, b) => PAID_AS_ORDER.indexOf(a.paidAs) - PAID_AS_ORDER.indexOf(b.paidAs)
+            || a.minOrdinal - b.minOrdinal || b.cashPerMonth - a.cashPerMonth)
         .map(job => {
             const unbacked = unbackedMonthlyFor(job.id);
             const docked = unbacked !== undefined && unbacked !== job.cashPerMonth;
             return `<tr>
-      <td class="nm">${esc(job.name)}</td>
+      <td class="nm">${esc(job.name)} ${dim(job.paidAs)}</td>
       <td class="n">${job.minOrdinal === 0 ? dim('a mortal can do it') : `${job.minOrdinal} ${esc(rankName(job.minOrdinal))}`}</td>
       <td class="n">${money(job.cashPerMonth)}${docked ? ` ${chip(`${num(unbacked)} with no house behind you`)}` : ''}</td>
       <td class="m">${esc(RISK_WORD[job.risk] ?? job.risk)}</td>
@@ -182,17 +191,17 @@ function pricesSection(): string {
         }).join('');
 
     return `<section class="startfolded">
-  <div class="sh"><h2>What a life costs</h2><span class="r">${PRICES.length} priced rows &middot; ${OCCUPATIONS.length} ways of earning &middot; ${num(CASH_PER_STONE)} cash to the spirit stone</span></div>
+  <div class="sh"><h2>What a life costs</h2><span class="r">${PRICES.length} priced rows &middot; ${OCCUPATIONS.length + CONTRACTS.length + HOUSE_MISSIONS.length} ways of earning &middot; ${num(CASH_PER_STONE)} cash to the spirit stone</span></div>
   <p class="note"><strong>One rate, and both economies in the same column.</strong> A mortal is paid in cash and a cultivator carries spirit stones, and at ${num(CASH_PER_STONE)} cash to the stone the two are the same money at different magnifications. Every figure on this tab is printed both ways where the stone figure means anything, so a wage and a pill can be read against each other without arithmetic.</p>
   <p class="note"><strong>The distance is the point.</strong> The cheapest thing on the board is ${esc(cheapest.name)} at ${num(cheapest.cash)} cash; the dearest is ${esc(dearest.name)} at ${num(dearest.cash)}${yearsOfWork >= 1 ? `, which is ${yearsOfWork < 10 ? yearsOfWork.toFixed(1) : num(Math.round(yearsOfWork))} years of the best-paid work a mortal can get` : ''}. Nothing in the catalog is scaled to make that gap smaller, and a player who has just been handed a starting purse is looking at a board most of which is not for them.</p>
   ${tables}
-  <p class="note"><strong>Work is offered a little further up the ladder than goods are.</strong> A wage is a relationship and relationships go absurd more slowly than transactions do, so the column of rungs below runs higher than a reader expects - up to ordinal ${MORTAL_WORK_CEILING_ORDINAL}, past which nobody offers a cultivator a job at all and the trades on the next section are the whole of the answer.</p>
-  ${UNDERWRITTEN_OCCUPATION_IDS.length
-      ? `<p class="note"><strong>${UNDERWRITTEN_OCCUPATION_IDS.length} of these are paid off a rank table</strong>, so somebody with no house behind them is quoted the same job at ${Math.round(UNBACKED_DEDUCTION * 100)} per cent less. That is not haggling and it is not prejudice: the posted rate assumes a body that answers for the worker, and where there is none the rate is the rate for a person nobody will answer for.</p>`
+  <p class="note"><strong>A cultivator has no profession.</strong> A mortal's trade is put only to somebody taken for a mortal, and menial work a cultivator may also take is put to them a little further up the ladder than goods are - a wage is a relationship and relationships go absurd more slowly than transactions do - up to ordinal ${MORTAL_WORK_CEILING_ORDINAL}. What a cultivator is paid for otherwise is a contract off a town wall, which a rogue takes and a disciple may take on their own time, or a mission their own house sends them on.</p>
+  ${UNDERWRITTEN_CONTRACT_IDS.length
+      ? `<p class="note"><strong>${UNDERWRITTEN_CONTRACT_IDS.length} of the contracts are paid off a rank table</strong>, so somebody with no house behind them is quoted the same contract at ${Math.round(UNBACKED_DEDUCTION * 100)} per cent less. That is not haggling and it is not prejudice: the posted rate assumes a body that answers for the worker, and where there is none the rate is the rate for a person nobody will answer for.</p>`
       : ''}
   <div class="scroll"><table class="itemtbl">
     <colgroup><col style="width:17%"><col style="width:13%"><col style="width:16%"><col style="width:14%"><col style="width:16%"><col style="width:24%"></colgroup>
-    <caption>Every way of earning in the catalog &middot; mortal work first</caption>
+    <caption>Every way of earning in the catalog &middot; mortal work first, then contracts, then missions</caption>
     <thead><tr><th>Work</th><th>Rung it takes</th><th>A month</th><th>What it does to you</th><th>Where it exists</th><th>Note</th></tr></thead>
     <tbody>${work}</tbody>
   </table></div>
@@ -565,6 +574,8 @@ function indentureSection(): string {
 export function belowTheLadderRowCount(): number {
     return PRICES.length
         + OCCUPATIONS.length
+        + CONTRACTS.length
+        + HOUSE_MISSIONS.length
         + SETTLEMENTS.length
         + SETTLEMENT_FEARS.length
         + ROGUE_TRADES.length

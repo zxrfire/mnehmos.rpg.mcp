@@ -75,6 +75,41 @@ one.
 - **The marriage alliance** for somebody else's spiritual root.
 - **Disowning** a disciple whose cultivation was crippled.
 
+## Cultivators have no profession
+
+The design owner: *"no cultivator has a profession, that's for mortals"*. An innkeeper, a
+ferryman and a tax clerk have trades. A cultivator is a cultivator first, and what one is
+paid for is something done, not something they are.
+
+- **Only mortal work is an occupation.** `OCCUPATIONS` in
+  [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) holds a mortal's trades,
+  put only to somebody an employer takes for a mortal (the bottom rung, or a concealment
+  that holds), and menial work either sort takes, like portering or picking herbs.
+- **A rogue takes a contract.** Paper on a town wall at a monthly rate for a term:
+  culling, a caravan escort, guarded-ground herbs, gleaning a burn zone, tutoring a
+  merchant's child, a boundary arbitration, being a retained deterrent. `CONTRACTS` in
+  [`rogues.ts`](../../src/data/cultivation/rogues.ts), beside the bounties. A disciple may
+  take one on their own time, and it credits their house nothing.
+- **A disciple is sent on a mission.** The standing work a house posts for its own: outer
+  disciple chores, a vein warden, a pill convoy escort, a tide breaker, a formation
+  keeper, a tribulation watch, a seal inspection, a sky survey. `HOUSE_MISSIONS` in
+  [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts),
+  posted only where the house has the need and somebody on its roll could do it.
+- **Both are served the same way**, taken off the wall through the one duty every board
+  line is served by, and the `work` verb lists them beside the mortal work.
+- **A standing is not work.** A high house paying for somebody's presence under its roof
+  is the guest elder arrangement (`GUEST_ELDERS`), not a row paid by the month. An elder
+  holds an office in their own house, which is standing too.
+- **Refining and crafting are what a cultivator does**, through `refine` and `craft`. They
+  are not a trade on a board.
+- **One reading of what a cultivator can earn:** `whatACultivatorCanEarnAt` in
+  [`what-a-cultivator-can-earn.ts`](../../src/data/cultivation/what-a-cultivator-can-earn.ts).
+  A copy of a manual at a stall and a house's fee for a season on its ground are priced
+  off it.
+
+In prose and engine lines, nothing calls a cultivator's work a job, a profession or an
+occupation. A rogue takes a contract; a disciple is sent on a mission.
+
 ## Truly xianxia-tier
 
 - **Spirit root theft** and **bloodline harvesting** - your ancestry in a vial.

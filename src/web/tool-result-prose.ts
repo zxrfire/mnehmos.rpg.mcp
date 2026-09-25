@@ -756,12 +756,11 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     const offered = body.work as Array<{ name?: string; cashPerMonth?: number; monthsLodgingItCovers?: number; risk?: string }> | undefined;
     if (Array.isArray(offered)) {
         if (offered.length === 0) {
-            lines.push(
-                'Nobody here is hiring anyone, for anything. Somewhere with more people in it ' +
-                'will have something.'
-            );
+            // Mortal work only: the contracts and missions on the wall are said
+            // beside it by the verb, which is where the wall is read.
+            lines.push('No mortal work here is put to you.');
         } else {
-            lines.push('What is going, for somebody standing where they are standing:');
+            lines.push('Mortal work going here, for somebody standing where they are standing:');
             for (const job of offered.slice(0, 6)) {
                 const keep = typeof job.monthsLodgingItCovers === 'number'
                     ? `, and a month of it keeps them about ${job.monthsLodgingItCovers} months`

@@ -19,6 +19,10 @@
 
 import { parseIntent } from '../../src/web/actions';
 import { aRecruiterOfTheHouseIsHere, makeGame, planned } from './harness';
+import { HOME_REGION_ID, requireRegion } from '../../src/data/cultivation/regions';
+
+/** Standing on the home province itself, where no town wall carries contracts. */
+const OFF_ANY_SETTLEMENT = requireRegion(HOME_REGION_ID).name;
 
 async function inAHouse(seed: string) {
     const { db, game } = makeGame({ seed, worldEnabled: true });
@@ -40,11 +44,13 @@ describe('the board can be acted on', () => {
      * dozen lines. Somebody on nobody's roll is not being asked by anybody and
      * reads the catalogue alone, which at the bottom rung is a single job - so
      * that is where the rule is still expressible. See
-     * `a-house-posts-what-it-needs-doing.test.ts`.
+     * `a-house-posts-what-it-needs-doing.test.ts`. And off a settlement, because
+     * a town wall carries its contracts beside it (`paper-on-a-town-wall.ts`).
      */
     it('takes the only mission on the board when asked for "the mission"', async () => {
-        const { game } = makeGame({ seed: 'take-the-mission', worldEnabled: true });
-        await game.newRun('Rogue');
+        const { game, repos } = makeGame({ seed: 'take-the-mission', worldEnabled: true });
+        const { cultivator } = await game.newRun('Rogue');
+        repos.cultivators.update(cultivator.id, { location: OFF_ANY_SETTLEMENT });
         const listed = await game.act('what missions are there');
         expect(listed.narration).toMatch(/Culling Work in a Thin District/);
 
@@ -69,8 +75,9 @@ describe('the board can be acted on', () => {
         'I take a duty off the wall',
         'I take work from the board'
     ])('takes the only line when the sentence also names the wall: %s', async said => {
-        const { game } = makeGame({ seed: `wall-named-${said.length}`, worldEnabled: true });
-        await game.newRun('Rogue');
+        const { game, repos } = makeGame({ seed: `wall-named-${said.length}`, worldEnabled: true });
+        const { cultivator } = await game.newRun('Rogue');
+        repos.cultivators.update(cultivator.id, { location: OFF_ANY_SETTLEMENT });
         const listed = await game.act('what missions are there');
         expect(listed.narration, 'the fixture needs one line on the wall')
             .toMatch(/Culling Work in a Thin District/);

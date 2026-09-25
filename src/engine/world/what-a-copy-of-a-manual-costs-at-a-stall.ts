@@ -27,8 +27,8 @@
  *   WHOSE TIME    A copy is somebody's months. `manuals.md` says only somebody
  *                 who has read a book to its end can write it out again, so the
  *                 copyist stands at or above the book's `requiredOrdinal` - and
- *                 `OCCUPATIONS` already says what work is open to a cultivator
- *                 at that rung and what it pays. The price is what the copyist
+ *                 `whatACultivatorCanEarnAt` already says what a cultivator at
+ *                 that rung is paid for, and at what rate. The price is what the copyist
  *                 gave up to make the copy, which is why a deeper book costs
  *                 more for a reason rather than by decree.
  *
@@ -86,7 +86,8 @@
  * for one says so and names the routes that do work.
  */
 
-import { CASH_PER_STONE, OCCUPATIONS } from '../../data/cultivation/mortal-world.js';
+import { CASH_PER_STONE } from '../../data/cultivation/mortal-world.js';
+import { whatACultivatorCanEarnAt } from '../../data/cultivation/what-a-cultivator-can-earn.js';
 import { getTechnique, stopsSomewhere, TECHNIQUES } from '../../data/cultivation/techniques.js';
 import { realmForOrdinal } from '../cultivation/realms.js';
 import {
@@ -148,21 +149,20 @@ export function monthsToCopy(requiredOrdinal: number, cap: number): number {
 // ─── WHOSE MONTHS THEY ARE ────────────────────────────────────────────────
 
 /**
- * What a cultivator standing at this rung is paid for a month of work.
+ * What a cultivator standing at this rung is paid for a month.
  *
- * The median of what is actually open to them, off `OCCUPATIONS`, filtered the
- * way the work board filters: cultivator work and the work either sort can
- * take, at or below the rung. Mortal-only rows are excluded because the person
- * who can copy this book is not a mortal.
+ * The median of the rates open to them - contracts, missions and the menial
+ * work either sort can take, at or below the rung - off
+ * `whatACultivatorCanEarnAt`. A mortal's own trade is not among them, because
+ * the person who can copy this book is not a mortal.
  *
  * Returns null when the catalog offers somebody at that rung nothing at all,
  * which is the honest answer rather than a fallback: at a height where nobody
  * is hiring, nobody is copying books for a living either.
  */
 export function copyistMonthlyCash(requiredOrdinal: number): number | null {
-    const open = OCCUPATIONS
-        .filter(o => o.kind !== 'mortal' && o.minOrdinal <= requiredOrdinal)
-        .map(o => o.cashPerMonth)
+    const open = whatACultivatorCanEarnAt(requiredOrdinal)
+        .map(term => term.cashPerMonth)
         .sort((a, b) => a - b);
     if (open.length === 0) return null;
     const mid = Math.floor(open.length / 2);

@@ -31,6 +31,7 @@ import { sectBoardFor } from '../../src/web/encounters';
 import { REALM_TIERS, rankName } from '../../src/engine/cultivation/realms';
 import { BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts';
 import { pitchedWellBeneath } from '../../src/engine/encounters/duties';
+import { theContractBehind } from '../../src/engine/encounters/paper-on-a-town-wall';
 import {
     whatAHouseHasOnItsBoard,
     whichPostingTheyMeant
@@ -214,7 +215,10 @@ describe('a house posts what it needs doing', () => {
         const reading = await aMemberReadingTheBoard('board-priced');
         const board = reading.boardAt(6);
         for (const offer of board.offers) {
-            expect(offer.terms.contribution).toBeGreaterThan(0);
+            // A contract off the town wall credits no house, whoever takes it:
+            // a disciple takes one on their own time. See `paper-on-a-town-wall.ts`.
+            if (theContractBehind(offer.entry.id) !== null) expect(offer.terms.contribution).toBe(0);
+            else expect(offer.terms.contribution).toBeGreaterThan(0);
             expect(offer.terms.stones).toBeGreaterThan(0);
             expect(offer.terms.days).toBeGreaterThan(0);
             expect(offer.terms.refusal.kind).toBe('grudge');

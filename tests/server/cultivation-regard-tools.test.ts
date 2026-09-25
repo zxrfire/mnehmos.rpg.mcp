@@ -123,7 +123,9 @@ describe('the world answers by height, through the tools', () => {
                 await standingAt(ordinal, `work-${ordinal}`);
                 const board = await cultivation({ action: 'work' });
                 expect(board.error, `ordinal ${ordinal}`).toBeUndefined();
-                expect(board.work.length, `ordinal ${ordinal} has offers`).toBeGreaterThan(0);
+                // Mortal work runs out up the ladder; the contracts on the wall do not.
+                expect(board.work.length + board.contracts.length, `ordinal ${ordinal} has offers`)
+                    .toBeGreaterThan(0);
                 expect(board.note.length).toBeGreaterThan(40);
                 if (board.withheldCount > 0) {
                     expect(board.withheld[0].reason.length).toBeGreaterThan(40);

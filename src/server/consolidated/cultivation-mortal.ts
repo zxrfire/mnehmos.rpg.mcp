@@ -43,6 +43,8 @@ import {
     type HerbBiome
 } from '../../data/cultivation/herbs.js';
 import { forStream } from '../../engine/cultivation/rng.js';
+import { dutyTermsAtAMonthlyRate, takeableOffAWall } from '../../engine/encounters/duties.js';
+import { aContractAsAnOffer, contractsPostedAt } from '../../engine/encounters/paper-on-a-town-wall.js';
 import { manualsAStallCarries } from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import {
     drawFromTheGround,
@@ -79,7 +81,7 @@ export const WorkSchema = z.object({
     action: z.literal('work'),
     cultivatorId: z.string().optional(),
     occupationId: z.string().optional()
-        .describe('Omit to see what work this cultivator can actually take where they are standing'),
+        .describe('Mortal work to take. Omit to see the mortal work put to this cultivator where they are standing, and the contracts on the wall there'),
     days: z.number().min(0).max(3_650_000).optional(),
     months: z.number().min(0).max(120_000).optional(),
     years: z.number().min(0).max(10_000).optional(),
@@ -154,12 +156,16 @@ export async function handleWork(
     const withheld = workWithheldFrom(asker, settlement);
     const exists = workExistingFor(cultivator.realmOrdinal, settlement);
 
-    // No job named: this is the query half, and it is the important one.
+    // Nothing named: this is the query half, and it is the important one.
     if (!args.occupationId) {
         return {
             standing: describeStanding(cultivator, standing),
             purse: describePurse(cultivator),
             work: available.map(o => describeOccupation(o, standing.regionId, asker)),
+            // A CULTIVATOR HAS NO PROFESSION. What one is paid for past menial
+            // mortal work is a contract on the wall here, taken off it in play
+            // through the one duty lifecycle every board line is served by.
+            contracts: contractsOnTheWallFor(cultivator, standing),
             // Silence is not an answer. Everything on the board here that is
             // NOT being put to them, with the measured reason attached.
             withheld: withheld.slice(0, 8).map(w => ({
@@ -447,6 +453,33 @@ function describeRegard(regard: Regard): Record<string, unknown> {
         intent: regard.intent,
         note: regard.note
     };
+}
+
+/** The contracts on the wall where they stand that they may take, priced at their rung. */
+function contractsOnTheWallFor(cultivator: Cultivator, standing: Standing): Record<string, unknown>[] {
+    return contractsPostedAt(standing.settlementKind).flatMap(contract => {
+        const terms = dutyTermsAtAMonthlyRate({
+            entry: aContractAsAnOffer(contract),
+            cashPerMonth: contract.cashPerMonth,
+            days: contract.days,
+            ordinal: cultivator.realmOrdinal,
+            membership: null,
+            creditsTheHouse: false
+        });
+        if (!takeableOffAWall(terms.regard.band)) return [];
+        return [{
+            id: contract.id,
+            name: contract.name,
+            minOrdinal: contract.minOrdinal,
+            minRank: rankName(contract.minOrdinal),
+            cashPerMonth: contract.cashPerMonth,
+            days: terms.days,
+            spiritStonesOnCompletion: terms.stones,
+            band: terms.regard.band,
+            risk: contract.risk,
+            note: contract.note
+        }];
+    });
 }
 
 function describeOccupation(

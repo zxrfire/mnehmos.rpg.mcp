@@ -10,7 +10,7 @@
 
 import { ENCOUNTERS } from '../data/cultivation/encounters.js';
 import { getTechnique } from '../data/cultivation/index.js';
-import { getOccupation } from '../data/cultivation/mortal-world.js';
+import { getContract } from '../data/cultivation/rogues.js';
 import { resolveMelee } from '../engine/cultivation/combat.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
@@ -254,7 +254,7 @@ export function theRestOfTheFight(
 ): { lines: string[]; escortHeld: boolean } {
     const band = occurrence.confrontation?.count ?? 1;
     const bandRung = occurrence.confrontation?.threatOrdinal ?? 0;
-    const guardRung = getOccupation('job-escort')?.minOrdinal ?? 0;
+    const guardRung = getContract('contract-escort')?.minOrdinal ?? 0;
     const body = (who: string, rung: number) => {
         const made = service.theBodyTheyStandIn(run, { id: who, name: who }, false, rung, null);
         return isGuidingErrorBody(made) ? null : made;

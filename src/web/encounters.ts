@@ -34,10 +34,14 @@ import {
 import { theRung } from './facts.js';
 import { howAHouseStandsForMoney } from '../engine/world/the-world-changing-on-its-own.js';
 import {
+    aMissionAsAnOffer,
+    theMissionsAHousePosts,
     theReasonBehind,
     whatAHouseHasOnItsBoard
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
-import { dutyTermsFor, takeableOffAWall } from '../engine/encounters/duties.js';
+import { dutyTermsAtAMonthlyRate, dutyTermsFor, takeableOffAWall } from '../engine/encounters/duties.js';
+import { aContractAsAnOffer, contractsPostedAt } from '../engine/encounters/paper-on-a-town-wall.js';
+import { standingOf } from '../server/consolidated/where-a-cultivator-is-standing.js';
 import {
     howAnAskReaches,
     whyItIsNotOnTheWall,
@@ -871,10 +875,12 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
     // house was going to make anyway, so nothing here is invented. See
     // `what-a-house-has-on-its-board.ts`.
     const wall = whatTheHouseItselfNeedsDone(deps, cultivator, membership);
+    const paper = theContractsOnTheWallHere(cultivator, membership);
 
     const offers = [
         ...commissionBoard(cultivator.realmOrdinal, membership),
-        ...wall.offers
+        ...wall.offers,
+        ...paper.offers
     ].sort((a, b) => b.terms.contribution - a.terms.contribution ||
             b.terms.stones - a.terms.stones ||
             (a.entry.id < b.entry.id ? -1 : 1));
@@ -888,9 +894,36 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
                 name: row.entry.name,
                 reason: row.regard.reaction
             })),
-            ...wall.refusals
+            ...wall.refusals,
+            ...paper.refusals
         ]
     };
+}
+
+/**
+ * The contracts up on the wall where this person is standing, and the ones
+ * pitched too far above them to be handed over.
+ *
+ * Anybody may take one, on a roll or off it: a rogue takes a contract for the
+ * money, and a disciple may take one on their own time, which credits their
+ * house nothing. See `paper-on-a-town-wall.ts`.
+ */
+function theContractsOnTheWallHere(cultivator: Cultivator, membership: Membership | null): TheWall {
+    const wall: TheWall = { offers: [], refusals: [] };
+    for (const contract of contractsPostedAt(standingOf(cultivator).settlementKind)) {
+        const entry = aContractAsAnOffer(contract);
+        const terms = dutyTermsAtAMonthlyRate({
+            entry,
+            cashPerMonth: contract.cashPerMonth,
+            days: contract.days,
+            ordinal: cultivator.realmOrdinal,
+            membership,
+            creditsTheHouse: false
+        });
+        if (takeableOffAWall(terms.regard.band)) wall.offers.push({ entry, terms, weight: entry.weight });
+        else wall.refusals.push({ entryId: entry.id, name: entry.name, reason: terms.regard.reaction });
+    }
+    return wall;
 }
 
 /**
@@ -1250,6 +1283,24 @@ function whatTheHouseItselfNeedsDone(
 
     for (const standing of theHousesWhoseWallThisIs(deps, cultivator, membership)) {
         const world = deps.world;
+        // A ROLL IS NOT ALWAYS A ROAD. Two bodies in this world admit nobody,
+        // so "earn a place on the roll" is a road that does not exist and the
+        // honest answer names the nomination instead. And the road is named
+        // with names on it: which bodies the apex takes names from is the
+        // province's own arrangement rather than anybody's secret, but it is
+        // still a thing somebody had to be told, so it is filtered through what
+        // this reader knows.
+        const offTheRoll = (): string => thereIsNoDoorAt(standing.house.id)
+            ? whyYouCannotBePostedThere(standing.house.name, {
+                bodyId: standing.house.id,
+                ordinal: cultivator.realmOrdinal,
+                houseId: null,
+                namesTheyKnow: whoCouldNominateInto(standing.house.id)
+                    .map(c => c.nominatorId)
+                    .filter(id => deps.knowledge.isAwareOf(cultivator.id, 'sect', id))
+            })
+            : `${standing.house.name} posts this to its own. Nobody off the roll is handed `
+              + `one, and a place on ${standing.house.name}'s roll is what changes that.`;
         for (const entry of whatAHouseHasOnItsBoard({
             house: standing.house,
             ordinal: cultivator.realmOrdinal,
@@ -1273,26 +1324,7 @@ function whatTheHouseItselfNeedsDone(
             const why = reaches === 'word_of_mouth'
                 ? whyItIsNotOnTheWall(standing.house.name)
                 : membership === null
-                    // A ROLL IS NOT ALWAYS A ROAD. Two bodies in this world
-                    // admit nobody, so "earn a place on the roll" is a road
-                    // that does not exist and the honest answer names the
-                    // nomination instead.
-                    ? thereIsNoDoorAt(standing.house.id)
-                        // And the road is named with names on it. Which bodies
-                        // the apex takes names from is the province's own
-                        // arrangement rather than anybody's secret, but it is
-                        // still a thing somebody had to be told, so it is
-                        // filtered through what this reader knows.
-                        ? whyYouCannotBePostedThere(standing.house.name, {
-                            bodyId: standing.house.id,
-                            ordinal: cultivator.realmOrdinal,
-                            houseId: null,
-                            namesTheyKnow: whoCouldNominateInto(standing.house.id)
-                                .map(c => c.nominatorId)
-                                .filter(id => deps.knowledge.isAwareOf(cultivator.id, 'sect', id))
-                        })
-                        : `${standing.house.name} posts this to its own. Nobody off the roll is handed `
-                          + `one, and a place on ${standing.house.name}'s roll is what changes that.`
+                    ? offTheRoll()
                     // AND A WALL DOES NOT DECIDE WHO IS WORTH ITS WORK. What
                     // `summonable` answers is whether the HOUSE would spend
                     // this person on this, which is the question when the house
@@ -1309,6 +1341,26 @@ function whatTheHouseItselfNeedsDone(
                 continue;
             }
             wall.refusals.push({ entryId: entry.id, name: entry.name, reason: why });
+        }
+
+        // AND THE STANDING WORK IT SENDS ITS OWN ON, at the rate it pays: a disciple is sent on a
+        // mission. Posted to the house's own, and a reader off the roll is told so in the words
+        // every other posting uses. See `what-a-house-posts-for-its-own.ts`.
+        for (const mission of theMissionsAHousePosts(standing.house, standing.reach)) {
+            const entry = aMissionAsAnOffer(mission, standing.house);
+            const terms = dutyTermsAtAMonthlyRate({
+                entry,
+                cashPerMonth: mission.cashPerMonth,
+                days: mission.days,
+                ordinal: cultivator.realmOrdinal,
+                membership,
+                creditsTheHouse: true
+            });
+            const why = membership === null
+                ? offTheRoll()
+                : takeableOffAWall(terms.regard.band) ? null : terms.regard.reaction;
+            if (why === null) wall.offers.push({ entry, terms, weight: entry.weight });
+            else wall.refusals.push({ entryId: entry.id, name: entry.name, reason: why });
         }
 
         // AND WHAT THE HOUSE IS SENDING ITS SISTERS, which anybody may carry: "you can take any

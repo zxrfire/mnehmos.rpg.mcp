@@ -107,10 +107,10 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-stone-marrow-hall` · its entry: [`sects.ts:1086`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 23 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
-  …and 21 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 23 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 10 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
+  …and 20 more files.
 
-**Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 5 more
+**Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 6 more
 
 ### Thousand Treasure Pavilion
 
@@ -125,10 +125,10 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-cinnabar-crucible-sect` · its entry: [`sects.ts:1175`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 3
-  …and 14 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) 3
+  …and 15 more files.
 
-**Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, `SEA_CARGO`, and 2 more
+**Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `HOUSE_MISSIONS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, and 3 more
 
 ### Ashen Forge Clan
 
@@ -263,10 +263,10 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-silver-island-market` · its entry: [`sects.ts:2137`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) 3 · [`place-names.md`](../../docs/world/writing/place-names.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 2
-  …and 3 more files.
+**Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) 3 · [`place-names.md`](../../docs/world/writing/place-names.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1
+  …and 4 more files.
 
-**Constants most about it:** `FOUNDERS`, `HALFWATER_TERMS`, `SEA_CARGO`, `SEA_TRADERS`
+**Constants most about it:** `CONTRACTS`, `FOUNDERS`, `HALFWATER_TERMS`, `SEA_CARGO`, `SEA_TRADERS`
 
 ### Tranquil Oasis Sect
 
@@ -329,7 +329,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 26 · [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 4
   …and 17 more files.
 
-**Constants most about it:** `DEAD_CIVILISATIONS`, `DEAD_SCRIPTS`, `THE_FIRST_CULTIVATORS`, `AGES`, `CUSTODY_TAKERS`, `DEPARTURE_DESTINATIONS`, and 5 more
+**Constants most about it:** `DEAD_CIVILISATIONS`, `DEAD_SCRIPTS`, `THE_FIRST_CULTIVATORS`, `AGES`, `CONTRACTS`, `CUSTODY_TAKERS`, and 6 more
 
 ### Immovable Mountain Temple
 

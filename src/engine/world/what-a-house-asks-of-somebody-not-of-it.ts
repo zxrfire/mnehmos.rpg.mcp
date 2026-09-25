@@ -11,8 +11,8 @@
  * THE TERMS ARE PRICED OFF WHAT THE ENGINE ALREADY PRICES. No new currency and
  * no new ledger:
  *
- *   a fee            a season of the best-paid work open at the ground's own
- *                    floor, off `OCCUPATIONS`, in the stones cash converts to.
+ *   a fee            a season at the best rate open at the ground's own floor,
+ *                    off `whatACultivatorCanEarnAt`, in the stones cash converts to.
  *   a copy           `couldWriteOutACopy`, which is the one thing in the engine
  *                    that answers whether somebody could put an art on paper,
  *                    asked about an art the house has not already got.
@@ -25,7 +25,8 @@
  * answer the house that wants paying.
  */
 
-import { CASH_PER_STONE, OCCUPATIONS } from '../../data/cultivation/mortal-world.js';
+import { CASH_PER_STONE } from '../../data/cultivation/mortal-world.js';
+import { whatACultivatorCanEarnAt } from '../../data/cultivation/what-a-cultivator-can-earn.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import { couldWriteOutACopy, manualsOf } from './manuals.js';
 
@@ -74,7 +75,7 @@ export interface WhatTheyCouldPutUp {
 export const MONTHS_A_TERM_ON_HELD_GROUND = 3;
 
 /**
- * The best-paid month of work open to somebody standing at this rung.
+ * The best-paid month open to somebody standing at this rung.
  *
  * THE MEDIAN IS THE WRONG INSTRUMENT HERE, measured: `copyistMonthlyCash` takes
  * the median of everything at or below a rung, the board carries fourteen
@@ -89,9 +90,8 @@ export const MONTHS_A_TERM_ON_HELD_GROUND = 3;
  */
 function bestOpenMonthlyCash(ordinal: number): number | null {
     let best: number | null = null;
-    for (const work of OCCUPATIONS) {
-        if (work.kind === 'mortal' || work.minOrdinal > ordinal) continue;
-        if (best === null || work.cashPerMonth > best) best = work.cashPerMonth;
+    for (const term of whatACultivatorCanEarnAt(ordinal)) {
+        if (best === null || term.cashPerMonth > best) best = term.cashPerMonth;
     }
     return best;
 }
@@ -100,10 +100,10 @@ function bestOpenMonthlyCash(ordinal: number): number | null {
  * What a house asks, in spirit stones, to let a stranger sit for a season.
  *
  * Scaled by the ground's own floor because that is who the ground is addressed
- * to, and read off the wage board rather than off a table here, so a house
+ * to, and read off what a cultivator can earn rather than off a table here, so a house
  * cannot end up charging for a season what a bowl of millet costs.
  *
- * Null where the wage board has nobody working at that height. It is not a fee
+ * Null where nothing is paid at that height. It is not a fee
  * of zero: a house whose terrace nobody can be paid to stand on is not a house
  * that takes stones for it.
  */

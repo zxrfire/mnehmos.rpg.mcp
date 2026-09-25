@@ -50,6 +50,8 @@ import { describe, expect, it } from 'vitest';
 
 import { parseIntent, tradeNamedIn, type ActionName } from '../../src/web/actions';
 import { OCCUPATIONS } from '../../src/data/cultivation/mortal-world';
+import { CONTRACTS } from '../../src/data/cultivation/rogues';
+import { HOUSE_MISSIONS } from '../../src/data/cultivation/what-a-house-posts-for-its-own';
 
 describe('a job is reachable by its own name', () => {
     it('takes the trade the game just recommended, in the words it used', () => {
@@ -73,8 +75,9 @@ describe('a job is reachable by its own name', () => {
     it('is derived from the catalog, so a job added tomorrow is typeable', () => {
         // Not a hand-written list. Every trade the board prints is reachable by
         // its printed name inside a work frame, which is the property that
-        // cannot go stale against `mortal-world.ts`.
-        for (const job of OCCUPATIONS) {
+        // cannot go stale against `mortal-world.ts`, and the same holds for the
+        // contracts and missions the work verb lists beside the mortal work.
+        for (const job of [...OCCUPATIONS, ...CONTRACTS, ...HOUSE_MISSIONS]) {
             const printed = job.name.replace(/\s*\([^)]*\)\s*/g, ' ').split(',')[0]!.trim();
             if (printed.length < 4) continue;
             expect(

@@ -92,6 +92,9 @@ const NOT_THE_REGISTER_S_BUSINESS: Readonly<Record<string, string>> = {
     'standoff.ts':
         'the same shim, for `the-top-of-the-world.ts`. Showing it would show that '
         + 'catalog twice under two names.',
+    'what-a-cultivator-can-earn.ts':
+        'a reading over three catalogs the register already prints row by row - the '
+        + 'mortal work, the contracts and the missions. It holds no row of its own.',
     'encounters.ts':
         'the draw table, and not one row of it is a thing that exists. An entry is '
         + 'a weight, an ordinal window and a summary with {token} slots the engine '

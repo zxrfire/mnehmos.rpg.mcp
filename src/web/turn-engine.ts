@@ -777,9 +777,11 @@ import {
 } from '../engine/world/what-somebody-standing-here-would-part-with.js';
 import { assessAcquisition, extensionOption, type AcquisitionRoute } from '../engine/encounters/index.js';
 import {
+    theMissionBehind,
     theReasonBehind,
     whichPostingTheyMeant
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
+import { theContractBehind } from '../engine/encounters/paper-on-a-town-wall.js';
 import type {
     ArrivableFact,
     DutyCandidate
@@ -1600,6 +1602,8 @@ function aTermCutShort(served: number, asked: number, dueOnDay: number): string 
 function theNameOfTheWork(entryId: string): string {
     return getEncounter(entryId)?.name
         ?? theReasonBehind(entryId)?.name
+        ?? theContractBehind(entryId)?.name
+        ?? theMissionBehind(entryId)?.name
         ?? 'What the house asked for';
 }
 
@@ -4859,7 +4863,7 @@ ${noticedWaiting}`;
 
             case 'work':
                 return this.work(
-                    cultivator, action.days ?? DEFAULT_WORK_DAYS, action.target, action.intent
+                    run, cultivator, ambient, action.days ?? DEFAULT_WORK_DAYS, action.target, action.intent
                 );
 
             case 'market':
@@ -7399,10 +7403,20 @@ ${noticed}`;
     // ── logistics ────────────────────────────────────────────────────────
 
     /**
-     * Taking work, through the tool layer that owns the mortal economy.
+     * Taking work: mortal work through the tool layer that owns the mortal
+     * economy, and a contract or a mission off the wall through the duty
+     * lifecycle every board line is served by.
+     *
+     * A CULTIVATOR HAS NO PROFESSION. What one is paid for is a contract posted
+     * where they stand, which a rogue takes and a disciple may take on their
+     * own time, or a mission their own house sends them on. Mortal work is put
+     * to them only where it is menial work either sort takes, or where they
+     * pass for a mortal. See docs/world/normal-in-the-cultivation-world.md.
      */
     private async work(
+        run: Run,
         cultivator: Cultivator,
+        ambient: AmbientQi,
         days: number,
         target: string | undefined,
         /**
@@ -7411,6 +7425,17 @@ ${noticed}`;
         intent?: string
     ): Promise<Execution> {
         const readingTheBoard = intent === 'board';
+
+        // WHAT IS UP ON THE WALL HERE for somebody at this rung: the contracts,
+        // and their own house's missions where they have one. The same board
+        // the duty verb reads, so a line named here is a line that verb takes.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const onTheWall = sectBoardFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand }, cultivator
+        ).offers.flatMap(offer => {
+            const row = theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id);
+            return row ? [{ offer, row }] : [];
+        });
         // A named trade has to become a catalog id, or the tool reads it as
         // "no occupation named" and lists the board instead of doing the work.
         // Matched against what is going HERE, at this realm: naming a trade the
@@ -7420,13 +7445,22 @@ ${noticed}`;
         // WHAT IS GOING *HERE*
         const here = standingOf(cultivator).settlementKind ?? undefined;
         const offered = findWorkForOrdinal(cultivator.realmOrdinal, here);
-        const named = wanted.length >= 3
-            ? offered.find(o => wanted.toLowerCase().includes(o.name.toLowerCase())
-                || o.name.toLowerCase().includes(wanted.toLowerCase()))
-            : undefined;
+        const names = (name: string): boolean => wanted.length >= 3
+            && (wanted.toLowerCase().includes(name.toLowerCase())
+                || name.toLowerCase().includes(wanted.toLowerCase()));
+        const named = offered.find(o => names(o.name));
 
         // "take any work" means take any work
         const anyWork = named === undefined && GameService.WORK_UNSPECIFIED.test(wanted);
+
+        // A CONTRACT OR A MISSION NAMED IS TAKEN OFF THE WALL. Only by name:
+        // each carries its own term and its own risk, and "any work" choosing a
+        // lethal contract for somebody would be the engine making their
+        // decision. Unnamed, the listing below shows what is on the wall.
+        if (!readingTheBoard && named === undefined) {
+            const paper = onTheWall.find(line => names(line.row.name));
+            if (paper) return this.duty(run, cultivator, ambient, paper.offer.entry.name);
+        }
         // Reading the board is not taking anything off it, so no occupation
         // reaches `handleWork` - which is the branch that already answers
         // "What is going, for somebody standing where they are standing", and
@@ -7483,7 +7517,44 @@ ${noticed}`;
                 }
             }
         }
-        return this.fromToolResult('cultivation_mortal.work', 'work', result, 'The work');
+        const done = this.fromToolResult('cultivation_mortal.work', 'work', result, 'The work');
+        const listedTheBoard = Array.isArray((result as { work?: unknown }).work);
+        if (listedTheBoard) this.sayWhatIsOnTheWall(done, onTheWall.map(line => line.offer));
+        return done;
+    }
+
+    /**
+     * The contracts and missions on the wall, said under the mortal work, each
+     * with its term and its pay. A named line is one `duty` takes.
+     */
+    private sayWhatIsOnTheWall(done: Execution, offers: readonly DutyCandidate[]): void {
+        const contracts = offers.filter(offer => theContractBehind(offer.entry.id) !== null);
+        const missions = offers.filter(offer => theMissionBehind(offer.entry.id) !== null);
+        const lineFor = (offer: DutyCandidate): string => {
+            const title = offer.entry.name.split(', for ')[0] ?? offer.entry.name;
+            this.nameWhatTheyGot(title);
+            return `  ${title}: ${humanDays(offer.terms.days)}, ${offer.terms.stones} spirit stone`
+                + `${offer.terms.stones === 1 ? '' : 's'} on completion`
+                + (offer.terms.contribution > 0 ? ` and ${offer.terms.contribution} contribution` : '')
+                + '.';
+        };
+        const lines: string[] = [];
+        if (contracts.length > 0) {
+            lines.push('Contracts on the wall here, which anybody may take down:');
+            lines.push(...contracts.slice(0, DUTIES_SHOWN).map(lineFor));
+        } else {
+            lines.push('No contract is posted on the wall here for somebody at your rung.');
+        }
+        if (missions.length > 0) {
+            lines.push('And what your house sends its own on:');
+            lines.push(...missions.slice(0, DUTIES_SHOWN).map(lineFor));
+        }
+        done.facts.lines.push(...lines);
+        done.facts.prose = `${done.facts.prose}\n${lines.join('\n')}`;
+        done.facts.structure.push(
+            `encounters.sectBoardFor: ${contracts.length} contract(s) and ${missions.length} `
+            + 'mission(s) on the wall, listed with the mortal work.'
+        );
     }
 
 

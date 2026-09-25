@@ -50,10 +50,16 @@ import {
     type SendingReason
 } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import {
+    NEED_PREDICATES,
     reasonsOpenTo,
     type HouseAsItStands
 } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
-import { clampOrdinal } from '../cultivation/realms.js';
+import {
+    HOUSE_MISSIONS,
+    getHouseMission,
+    type HouseMission
+} from '../../data/cultivation/what-a-house-posts-for-its-own.js';
+import { MAX_ORDINAL, clampOrdinal } from '../cultivation/realms.js';
 import type { RoomPurpose } from '../world/architecture.js';
 
 /**
@@ -314,4 +320,48 @@ export function whichPostingTheyMeant(
     }
     if (hits.length !== 1) return null;
     return hits[0] ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MISSIONS
+// The standing work a house sends its own on, at the rate it pays. Beside the
+// reasons rather than among them: a reason is a sending the world itself makes,
+// and a mission is posted for the house's own people to be sent on.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The missions this house posts: those it has the need for, read by the same
+ * predicates its reasons are, and pitched no higher than somebody on its roll
+ * stands.
+ */
+export function theMissionsAHousePosts(house: HouseAsItStands, reachOfTheHouse: number): HouseMission[] {
+    return HOUSE_MISSIONS.filter(mission =>
+        mission.minOrdinal <= reachOfTheHouse && NEED_PREDICATES[mission.needs](house));
+}
+
+/**
+ * A mission as a line on the house's board. Named the way a house's postings
+ * are, `<what>, for <house>`, so the board groups it under the house.
+ */
+export function aMissionAsAnOffer(mission: HouseMission, house: { id: string; name: string }): EncounterEntry {
+    return {
+        id: `${mission.id}@${house.id}`,
+        name: `${mission.name}, for ${house.name}`,
+        kind: 'sect_event',
+        simEventKind: 'sect_event',
+        weight: 1,
+        minOrdinal: 0,
+        maxOrdinal: MAX_ORDINAL,
+        interrupts: false,
+        threatOrdinal: clampOrdinal(mission.minOrdinal),
+        summaryTemplate: mission.note,
+        tokens: [],
+        tags: ['mission']
+    };
+}
+
+/** The mission a board line was made from, or null. */
+export function theMissionBehind(entryId: string): HouseMission | null {
+    const at = entryId.indexOf('@');
+    return at < 0 ? null : getHouseMission(entryId.slice(0, at)) ?? null;
 }

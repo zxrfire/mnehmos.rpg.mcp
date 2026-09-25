@@ -120,9 +120,12 @@ import {
     whoTheyAreSittingUnder
 } from './what-a-request-asks-and-of-whom.js';
 import { whatAThreatPromises } from './what-a-threat-promises.js';
-// The board's own trade names, so any job the listing prints is a job a player
-// can take by naming it. See `tradeNamedIn`.
+// The work board's own names - mortal work, the contracts on a wall and the
+// missions a house posts - so any line the listing prints is a line a player can
+// take by naming it. See `tradeNamedIn`.
 import { OCCUPATIONS } from '../data/cultivation/mortal-world.js';
+import { CONTRACTS } from '../data/cultivation/rogues.js';
+import { HOUSE_MISSIONS } from '../data/cultivation/what-a-house-posts-for-its-own.js';
 
 // A namespace import of THIS module, read lazily and only to take the phrase
 // patterns below back out as a spelling vocabulary. It is a live binding, so
@@ -2083,7 +2086,7 @@ const AN_AGENT_NOUN_AND_ITS_VERB: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /**
- * Every way of naming a line on the mortal work board.
+ * Every way of naming a line on the work board: mortal work, a contract, a mission.
  */
 /**
  * A TRADE NAME IS ALSO A PERSON, AND THAT COST FIVE TESTS ON THE FIRST TRY.
@@ -2117,7 +2120,7 @@ const TRADE_PHRASES: readonly TradePhrase[] = (() => {
         const between = key.split(' ').join('[\\s-]+');
         rows.push({ said: key, name, kind, matches: new RegExp(`\\b${between}s?\\b`) });
     };
-    for (const job of OCCUPATIONS) {
+    for (const job of [...OCCUPATIONS, ...CONTRACTS, ...HOUSE_MISSIONS]) {
         const printed = job.name.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
         add(printed, job.name, 'name');
         // "Herb gathering, guarded ground" - the clause after the comma says

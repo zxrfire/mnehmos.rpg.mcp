@@ -57,15 +57,20 @@ import {
     DEALER_MARKUP,
     UNBACKED,
     UNBACKED_DEDUCTION,
-    UNDERWRITTEN_OCCUPATION_IDS,
+    UNDERWRITTEN_CONTRACT_IDS,
+    CONTRACTS,
+    ContractSchema,
+    getContract,
     unbackedMonthlyFor
 } from '../../src/data/cultivation/rogues.js';
+import { whatACultivatorCanEarnAt } from '../../src/data/cultivation/what-a-cultivator-can-earn.js';
 
 // Catalog reads only this file makes. The game reads the catalog arrays itself.
 const getFallen = (id: string) => FALLEN.find(f => f.id === id);
 const fallenByKind = (kind: Fallen['kind']) => FALLEN.filter(f => f.kind === kind);
 const fallenInRegion = (regionId: string) => FALLEN.filter(f => f.place.regionId === regionId);
 const fallenWorkingAs = (occupationId: string) => FALLEN.filter(f => f.work.occupationId === occupationId);
+const fallenOnContract = (contractId: string) => FALLEN.filter(f => f.work.contractId === contractId);
 const dangerousFallen = (opts: { underestimatedOnly?: boolean } = {}) =>
     FALLEN.filter(f => f.danger !== null && (!opts.underestimatedOnly || f.danger.underestimated));
 const getRogueTrade = (id: string) => ROGUE_TRADES.find(t => t.id === id);
@@ -91,10 +96,10 @@ const roadPrice = (priceId: string, kind: keyof typeof DEALER_MARKUP) => {
 const monthsToAffordOnTheRoad = (
     priceId: string,
     kind: keyof typeof DEALER_MARKUP,
-    occupationId: string
+    contractId: string
 ): number | undefined => {
     const cost = roadPrice(priceId, kind);
-    const monthly = unbackedMonthlyFor(occupationId);
+    const monthly = unbackedMonthlyFor(contractId);
     if (cost === undefined || monthly === undefined || monthly <= 0) return undefined;
     return Number((cost / monthly).toFixed(1));
 };
@@ -125,15 +130,17 @@ const PLACES_BY_REGION: ReadonlyMap<string, Set<string>> = new Map(
     REGIONS.map(r => [r.id, new Set(r.places.map(p => p.name))])
 );
 
-// The WAGE economy, which is what a rogue trade competes against.
+// The WAGE economy, which is what a rogue trade competes against: mortal work,
+// and what a cultivator is paid for at or below the mortal ceiling.
 //
-// `OCCUPATIONS` now runs the whole ladder: the commissions above the mortal
-// ceiling are the same rows in the same table, and one of them pays five
+// The contracts and missions run the whole ladder, and one of them pays five
 // million cash a month. Measuring "a season of wage work" against that would
 // compare a ruin diver's share to a False Immortal's retainer, which is not
-// what any of these assertions is about. The wage economy is the half of the
-// table at or below the ceiling, and it is the half a rogue can actually reach.
-const WAGE_ECONOMY = OCCUPATIONS.filter(o => o.minOrdinal <= MORTAL_WORK_CEILING_ORDINAL);
+// what any of these assertions is about.
+const WAGE_ECONOMY = [
+    ...OCCUPATIONS,
+    ...whatACultivatorCanEarnAt(MORTAL_WORK_CEILING_ORDINAL)
+];
 const MIN_OCCUPATION_WAGE = Math.min(...WAGE_ECONOMY.map(o => o.cashPerMonth));
 const MAX_OCCUPATION_WAGE = Math.max(...WAGE_ECONOMY.map(o => o.cashPerMonth));
 
@@ -228,20 +235,27 @@ describe('the fallen', () => {
         expect(fallenInRegion('region-quiet-marches').length).toBeGreaterThan(0);
     });
 
-    it('holds jobs the occupation table would actually give them', () => {
+    it('holds mortal trades and takes contracts the tables would actually give them', () => {
         for (const f of FALLEN) {
             expect(f.currentOrdinal, `${f.id} is stronger now than it ever was`)
                 .toBeLessThanOrEqual(f.lastOrdinal);
-            if (f.work.occupationId === null) continue;
-            const job = getOccupation(f.work.occupationId);
-            expect(job, `${f.id} works an unknown job ${f.work.occupationId}`).toBeDefined();
             expect(
-                job!.minOrdinal,
-                `${f.id} holds ${job!.id}, which needs ordinal ${job!.minOrdinal} and they have ${f.currentOrdinal}`
+                f.work.occupationId !== null && f.work.contractId !== undefined,
+                `${f.id} both holds a trade and takes a contract`
+            ).toBe(false);
+            const row = f.work.contractId !== undefined
+                ? getContract(f.work.contractId)
+                : f.work.occupationId === null ? null : getOccupation(f.work.occupationId);
+            if (row === null) continue;
+            expect(row, `${f.id} works an unknown row ${f.work.contractId ?? f.work.occupationId}`).toBeDefined();
+            expect(
+                row!.minOrdinal,
+                `${f.id} takes ${row!.id}, which needs ordinal ${row!.minOrdinal} and they have ${f.currentOrdinal}`
             ).toBeLessThanOrEqual(f.currentOrdinal);
         }
         // And the mesh is live in both directions.
-        expect(fallenWorkingAs('job-beast-culler').length).toBeGreaterThan(0);
+        expect(fallenOnContract('contract-beast-culler').length).toBeGreaterThan(0);
+        expect(fallenWorkingAs('job-innkeeper').length).toBeGreaterThan(0);
         expect(fallenWorkingAs('job-nonexistent').length).toBe(0);
     });
 
@@ -251,7 +265,7 @@ describe('the fallen', () => {
             expect(getPrice(f.work.quotesPriceId), `${f.id} quotes unknown price`).toBeDefined();
         }
         // The arithmetic that keeps the maimed maimed, computed rather than told.
-        const months = monthsOfWorkToAfford('price-clear-meridian-pill', 'job-beast-culler')!;
+        const months = monthsOfWorkToAfford('price-clear-meridian-pill', 'contract-beast-culler')!;
         expect(months).toBeGreaterThan(4);
         expect(months).toBeLessThan(6);
         expect(monthsOfWorkToAfford('price-clear-meridian-pill', 'job-nobody')).toBeUndefined();
@@ -332,7 +346,7 @@ describe('rogue trades', () => {
         }
     });
 
-    it('meshes with the occupation table rather than duplicating it', () => {
+    it('meshes with the contracts and the mortal work rather than duplicating them', () => {
         for (const t of ROGUE_TRADES) {
             for (const id of t.occupationIds) {
                 const job = getOccupation(id);
@@ -342,8 +356,17 @@ describe('rogue trades', () => {
                     `${t.id} opens at ${t.minOrdinal} but ${id} needs ${job!.minOrdinal}`
                 ).toBeLessThanOrEqual(t.minOrdinal);
             }
+            for (const id of t.contractIds) {
+                const contract = getContract(id);
+                expect(contract, `${t.id} names unknown contract ${id}`).toBeDefined();
+                expect(
+                    contract!.minOrdinal,
+                    `${t.id} opens at ${t.minOrdinal} but ${id} needs ${contract!.minOrdinal}`
+                ).toBeLessThanOrEqual(t.minOrdinal);
+            }
             expectFactionsResolve(t.factionIds, t.id);
         }
+        for (const c of CONTRACTS) expect(() => ContractSchema.parse(c), c.id).not.toThrow();
     });
 
     it('pays inside the mortal economy, per month and per job alike', () => {
@@ -364,20 +387,20 @@ describe('rogue trades', () => {
     it('prices being unbacked as a deduction off the underwritten trades only', () => {
         expect(UNBACKED_DEDUCTION).toBeGreaterThan(0);
         expect(UNBACKED_DEDUCTION).toBeLessThan(0.5);
-        for (const id of UNDERWRITTEN_OCCUPATION_IDS) {
-            const job = getOccupation(id)!;
-            expect(job, id).toBeDefined();
-            expect(unbackedMonthlyFor(id)).toBe(Math.round(job.cashPerMonth * (1 - UNBACKED_DEDUCTION)));
-            expect(unbackedMonthlyFor(id)!).toBeLessThan(job.cashPerMonth);
+        for (const id of UNDERWRITTEN_CONTRACT_IDS) {
+            const contract = getContract(id)!;
+            expect(contract, id).toBeDefined();
+            expect(unbackedMonthlyFor(id)).toBe(Math.round(contract.cashPerMonth * (1 - UNBACKED_DEDUCTION)));
+            expect(unbackedMonthlyFor(id)!).toBeLessThan(contract.cashPerMonth);
         }
         // Piece work is not discounted: the goods are the proof.
-        expect(unbackedMonthlyFor('job-beast-culler')).toBe(getOccupation('job-beast-culler')!.cashPerMonth);
-        expect(unbackedMonthlyFor('job-nobody')).toBeUndefined();
+        expect(unbackedMonthlyFor('contract-beast-culler')).toBe(getContract('contract-beast-culler')!.cashPerMonth);
+        expect(unbackedMonthlyFor('contract-nobody')).toBeUndefined();
 
         // The monthly trades quote the deducted figure they claim to quote.
         for (const t of ROGUE_TRADES) {
             if (t.pay.basis !== 'monthly') continue;
-            const underwritten = t.occupationIds.filter(id => UNDERWRITTEN_OCCUPATION_IDS.includes(id));
+            const underwritten = t.contractIds.filter(id => UNDERWRITTEN_CONTRACT_IDS.includes(id));
             if (underwritten.length !== 1) continue;
             expect(t.pay.cash, `${t.id} does not quote the unbacked rate for ${underwritten[0]}`)
                 .toBe(unbackedMonthlyFor(underwritten[0]));
@@ -413,7 +436,7 @@ describe('bounties', () => {
     });
 
     it('has purses a mortal economy could pay, and mostly honours them', () => {
-        const monthOfCulling = getOccupation('job-beast-culler')!.cashPerMonth;
+        const monthOfCulling = getContract('contract-beast-culler')!.cashPerMonth;
         for (const b of BOUNTIES) {
             expect(b.purseCash, `${b.id} pays less than a bowl of millet`)
                 .toBeGreaterThanOrEqual(getPrice('price-millet')!.cash);
@@ -478,7 +501,7 @@ describe('itinerant dealers', () => {
         expect(roadPrice('price-nothing', 'medicine')).toBeUndefined();
 
         const months = monthsToAffordOnTheRoad(
-            'price-lesser-healing-pill', 'medicine', 'job-beast-culler')!;
+            'price-lesser-healing-pill', 'medicine', 'contract-beast-culler')!;
         expect(months).toBeGreaterThan(1);
         expect(months).toBeLessThan(4);
     });
@@ -572,9 +595,10 @@ describe('one economy, not two', () => {
         expect(stonesToCash(STARTING_SPIRIT_STONES)).toBe(3_000);
     });
 
-    it('names only prices and occupations that exist', () => {
+    it('names only prices, occupations and contracts that exist', () => {
         const priceIds = new Set(PRICES.map(p => p.id));
         const jobIds = new Set(OCCUPATIONS.map(o => o.id));
+        const contractIds = new Set(CONTRACTS.map(c => c.id));
         const quoted = FALLEN
             .map(f => f.work.quotesPriceId)
             .filter((id): id is string => id !== null);
@@ -584,6 +608,11 @@ describe('one economy, not two', () => {
             ...ROGUE_TRADES.flatMap(t => t.occupationIds)
         ];
         for (const id of worked) expect(jobIds.has(id), `unknown occupation ${id}`).toBe(true);
+        const contracted = [
+            ...FALLEN.map(f => f.work.contractId).filter((id): id is string => id !== undefined),
+            ...ROGUE_TRADES.flatMap(t => t.contractIds)
+        ];
+        for (const id of contracted) expect(contractIds.has(id), `unknown contract ${id}`).toBe(true);
     });
 
     it('keeps the auction bonds, purses and shares on the same scale as a wage', () => {

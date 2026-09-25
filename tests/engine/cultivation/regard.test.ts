@@ -44,6 +44,7 @@ import {
     workExistingFor,
     workWithheldFrom
 } from '../../../src/data/cultivation/mortal-world.js';
+import { whatACultivatorCanEarnAt } from '../../../src/data/cultivation/what-a-cultivator-can-earn.js';
 import {
     getEncounter,
     encounterDamage,
@@ -52,9 +53,8 @@ import {
 
 // The highest ordinal any mortal work is still offered at.
 const measuredMortalWorkCeiling = (): number => {
-    const mortalWork = OCCUPATIONS.filter(o => o.kind !== 'cultivator');
     for (let ordinal = MAX_ORDINAL; ordinal >= 0; ordinal--) {
-        if (offeredTo(mortalWork, ordinal).some(o => o.minOrdinal <= ordinal)) return ordinal;
+        if (offeredTo(OCCUPATIONS, ordinal).some(o => o.minOrdinal <= ordinal)) return ordinal;
     }
     return 0;
 };
@@ -325,26 +325,30 @@ describe('the boards answer by height', () => {
 
     it('is NOT worse at height, which is the bug this replaces', () => {
         // The measured defect: ordinals 0 and 13 got offers and everything from
-        // 21 upward got "nobody here is hiring anyone, for anything".
+        // 21 upward got "nobody here is hiring anyone, for anything". Above the
+        // mortal ceiling what is put to a cultivator is a contract or a mission,
+        // and there is one at every height.
         for (const ordinal of [0, 5, 13, 21, 25, 33, 45]) {
-            expect(findWorkForOrdinal(ordinal).length, `ordinal ${ordinal}`).toBeGreaterThan(0);
+            expect(offeredTo(whatACultivatorCanEarnAt(ordinal), ordinal).length, `ordinal ${ordinal}`)
+                .toBeGreaterThan(0);
         }
     });
 
     it('offers a Tribulation Transcendence cultivator something entirely different', () => {
-        const low = findWorkForOrdinal(5).map(o => o.id);
-        const high = findWorkForOrdinal(45).map(o => o.id);
+        const low = offeredTo(whatACultivatorCanEarnAt(5), 5).map(o => o.id);
+        const high = offeredTo(whatACultivatorCanEarnAt(45), 45).map(o => o.id);
         expect(low.length).toBeGreaterThan(0);
         expect(high.length).toBeGreaterThan(0);
         // Disjoint: not one thing on the beginner's board is on theirs.
         expect(high.filter(id => low.includes(id))).toHaveLength(0);
     });
 
-    it('keeps the commissions in the same table as the farmhand', () => {
-        // No parallel catalog. One array, one schema, one resolver.
-        const ids = new Set(OCCUPATIONS.map(o => o.id));
-        expect(ids.has('job-farmhand')).toBe(true);
-        expect(ids.has('job-lid-assay')).toBe(true);
+    it('reads what a cultivator is paid for through one function, and a mortal trade is not in it', () => {
+        const ids = new Set(whatACultivatorCanEarnAt(MAX_ORDINAL).map(o => o.id));
+        expect(ids.has('job-porter')).toBe(true);
+        expect(ids.has('contract-lid-assay')).toBe(true);
+        expect(ids.has('mission-sky-survey')).toBe(true);
+        expect(ids.has('job-farmhand')).toBe(false);
         expect(OCCUPATIONS.every(o => o.regard !== undefined)).toBe(true);
     });
 
@@ -369,12 +373,18 @@ describe('the boards answer by height', () => {
         }
     });
 
-    it('withholds exactly what refusalsFor drops, with its reason', () => {
+    it('withholds what refusalsFor drops, and a mortal trade from anybody not taken for a mortal', () => {
         for (const ordinal of [0, 13, 21, 33, 45]) {
-            const dropped = refusalsFor(workExistingFor(ordinal), ordinal);
-            expect(workWithheldFrom(ordinal)).toEqual(dropped.map(({ record, regard }) => ({
+            const dropped = refusalsFor(workExistingFor(ordinal), ordinal).map(({ record, regard }) => ({
                 occupation: record, reason: regard.reaction, band: regard.band
-            })));
+            }));
+            const withheld = workWithheldFrom(ordinal);
+            expect(withheld.slice(0, dropped.length)).toEqual(dropped);
+            const mortalTrades = ordinal === 0
+                ? []
+                : offeredTo(workExistingFor(ordinal), ordinal).filter(o => o.kind === 'mortal');
+            expect(withheld.slice(dropped.length).map(w => w.occupation.id))
+                .toEqual(mortalTrades.map(o => o.id));
         }
     });
 });

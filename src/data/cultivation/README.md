@@ -187,10 +187,14 @@ Two rules that are the whole point:
 - **A resolver that narrows a pool must be able to say what it dropped.** `offeredTo` has
   `refusalsFor` beside it, and `findWorkForOrdinal` has `workWithheldFrom`, for exactly this.
 
-`OCCUPATIONS` is the worked example of the whole idea: the commissions a Deity Transformation
-cultivator is offered are rows in the same array, under the same schema, read by the same
-`findWorkForOrdinal`. An "immortal work" table beside the occupation table would be the same
-mistake as an "immortal weapons" table beside the artifact table.
+What a cultivator is paid for is the worked example of the whole idea. A cultivator has no
+profession, so `OCCUPATIONS` is mortal work only, and what a cultivator is paid for is a
+contract (`CONTRACTS` in `rogues.ts`) or a mission (`HOUSE_MISSIONS`). The three are three
+tables because who posts them and who may take them differ, and every price that reads a
+cultivator's month reads all three through `whatACultivatorCanEarnAt` - so the work a Deity
+Transformation cultivator is paid for sits on the same rate scale as a porter's. An "immortal
+work" table beside them would be the same mistake as an "immortal weapons" table beside the
+artifact table.
 
 ### Elements, and the starved ones
 
