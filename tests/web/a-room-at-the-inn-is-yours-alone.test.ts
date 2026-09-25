@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { makeGameInWorld } from './harness';
+import { makeGameInWorld, ScriptedProvider } from './harness';
 
 const WORLD = 'road-world';
 
@@ -38,6 +38,18 @@ describe('a room at the inn', () => {
         const up = await game.act('I go up to my room');
         expect(game.state().cultivator.location).toBe(standing);
         expect(up.narration).not.toMatch(/your room at the inn/);
+    }, 120_000);
+
+    // Played: "sweet, ill grab a room for tonight then" came from the model as a buy of the inn's
+    // own name, and nothing on the board is called that.
+    it('is taken when the model buys the inn by its name', async () => {
+        const provider = new ScriptedProvider({
+            plans: ['{"action":"buy","target":"The Eleven Beds"}'], narrations: ['The opening.', 'A room.']
+        });
+        const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD, provider });
+        await game.newRun('Sleeper');
+        await game.act('sweet, ill grab a room for tonight then');
+        expect(game.state().log.some(entry => entry.role === 'engine' && /^A room at /.test(entry.text))).toBe(true);
     }, 120_000);
 
     it('comes back down to the inn', async () => {

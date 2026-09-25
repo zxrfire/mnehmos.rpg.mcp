@@ -12496,10 +12496,16 @@ ${opened.text}` : receipt,
             && byCategory === null && namesAPill === null
             ? resolvePriceLoosely(query)
             : null;
-        const price = asRide !== undefined
+        let price = asRide !== undefined
             ? getPrice(asRide)
             : resolved ? getPrice(resolved.id)
                 : byCategory ?? (looseHit ? getPrice(looseHit.id) : undefined);
+        // AND A ROOM, HOWEVER THE INN WAS NAMED. Played: "sweet, ill grab a room for tonight then"
+        // came from the model as buy(target "The Eleven Beds"), the inn's own name, and nothing on
+        // the board is called that. The same reading `wait` gives a night's sleep.
+        if (!price && (/\b(?:inns?|rooms?|beds?|lodging)\b/i.test(query) || AT_THE_INN.test(rawInput))) {
+            price = getPrice('price-inn-night');
+        }
 
         if (!price) {
             // ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM
