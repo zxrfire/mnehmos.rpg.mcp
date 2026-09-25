@@ -15,6 +15,9 @@ import { describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { whoseThisIs, couldBeCalledBackIn } from '../../../src/engine/world/a-house-holds-its-own';
 import type { WorldState } from '../../../src/engine/world/world-state';
+import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
+import { seedWorld } from '../../../src/engine/world/seeding';
+import { applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own';
 
 // The pyramid's seeds at the same horizon, so the walks are shared: see `tests/support/soaked-world.ts`.
 const SEEDS = ['pyr-a', 'pyr-b', 'pyr-c'];
@@ -121,5 +124,47 @@ describe('a house at war opens its vault', () => {
         expect(stillInside).toBeGreaterThan(walkedOffWithIt);
         // And the leverage is real rather than theoretical.
         expect(walkedOffWithIt).toBeGreaterThan(0);
+    });
+});
+
+describe('and a war takes stones out of the chest', () => {
+    /**
+     * BOTH ARMS IN ONE COMMAND, and they differ in one tag: the house is at
+     * war in one and not in the other. A year of wages, levies and towns moves
+     * both alike and cancels, so the gap between the two chests is the war's
+     * bill. Per house, because whether a room opens is its own elders' call.
+     */
+    it('a house at war ends the year with less than the same house at peace, and never below nothing', async () => {
+        const catalog = await loadCultivationCatalog();
+        const base = seedWorld({ seed: 'war-chest', catalog }).state;
+        const houses = base.factions
+            .filter(f => f.dissolvedOnDay === null && !f.tags.includes('at_war')
+                && base.npcs.some(n => n.factionId === f.id && n.status === 'alive'))
+            .slice(0, 8);
+        let spent = 0;
+        for (const house of houses) {
+            const atPeace = JSON.parse(JSON.stringify(base)) as WorldState;
+            const atWar = JSON.parse(JSON.stringify(base)) as WorldState;
+            atWar.factions.find(f => f.id === house.id)!.tags.push('at_war');
+            const from = base.currentDay;
+            applyPressure(atPeace, from, from + 365, { intensity: 0 });
+            applyPressure(atWar, from, from + 365, { intensity: 0 });
+            const chest = (state: WorldState) =>
+                Number(state.factions.find(f => f.id === house.id)!.resources.spirit_stones ?? 0);
+            expect(chest(atWar)).toBeGreaterThanOrEqual(0);
+            expect(chest(atWar)).toBeLessThanOrEqual(chest(atPeace));
+            if (chest(atWar) < chest(atPeace)) spent++;
+        }
+        // Most rooms open for a war (see `what-a-house-opens-its-treasury-for.ts`,
+        // measured at 83%), and a room that says no spends nothing.
+        expect(spent).toBeGreaterThanOrEqual(Math.ceil(houses.length / 2));
+    });
+
+    it('and over a lived world no chest is ever overdrawn', async () => {
+        for (const state of await worldsLived()) {
+            for (const house of state.factions) {
+                expect(Number(house.resources.spirit_stones ?? 0)).toBeGreaterThanOrEqual(0);
+            }
+        }
     });
 });

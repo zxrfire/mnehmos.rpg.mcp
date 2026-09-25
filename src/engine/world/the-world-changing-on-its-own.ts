@@ -48,8 +48,12 @@ import {
 import {
     armItsOwn,
     howTheWarGoesFor,
+    whatItWouldSpend,
+    whetherTheVaultOpens,
+    whyItLeftTheTreasury,
     type HandedOut
 } from './what-a-house-opens-its-treasury-for.js';
+import { takeFromTheHouse } from './a-house-holds-its-own.js';
 import { HALLS_DOWN } from './what-a-year-of-war-does-to-a-compound.js';
 import { transferPossession, type ObjectRecord } from './possessions.js';
 import { theArtLeftInThisGround } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
@@ -2367,10 +2371,28 @@ function housesOpeningTheirVaults(state: WorldState, day: number): PressureEvent
         const members = state.npcs.filter(npc =>
             npc.factionId === house.id && npc.status === 'alive');
         if (members.length === 0) continue;
+        const roll = members.map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex }));
+
+        // THE RATE HALF: WHAT THE WAR TAKES OUT OF THE CHEST. Levies, the pay
+        // of the people in the field, walls, wards and arrows, asked of the
+        // same room as the swords below, and spent out of the one treasury the
+        // world spends from. No draw: the room's leaning is a function of who
+        // sits in it, so the sum is too.
+        const held = Number(house.resources.spirit_stones ?? 0);
+        const spend = whatItWouldSpend({
+            held,
+            answer: whetherTheVaultOpens({
+                what: 'the_war', how, roll, rankCount: house.ranks.length, asOfDay: onDay
+            }).answer
+        });
+        if (spend > 0) {
+            house.resources.spirit_stones = takeFromTheHouse(
+                held, spend, whyItLeftTheTreasury({ what: 'the_war', how })).after;
+        }
 
         const armed = armItsOwn({
             how,
-            roll: members.map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex })),
+            roll,
             rankCount: house.ranks.length,
             holds: state.objects.filter(o => o.ownerId === house.id),
             takers: members.map(npc => ({

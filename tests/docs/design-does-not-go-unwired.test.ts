@@ -184,7 +184,8 @@ const DEAD = 0;
 // named with its reason in the commit that lowered this.
 // 81 -> 79: the memory store's read side reaches conversation - `recallAbout`
 // and `trajectoryOf` are read by `what-somebody-remembers.ts`.
-const TEST_ONLY = 79;
+// then -> 76: war money leaves a treasury (whetherTheVaultOpens, whatItWouldSpend, whyItLeftTheTreasury).
+const TEST_ONLY = 76;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
