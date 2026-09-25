@@ -2,6 +2,7 @@
  * One party asking something of another, of the dead, or of somebody above the Lid.
  */
 
+import { askingYourHouseForARepairDose } from './asking-your-house-for-a-repair-dose.js';
 import { DISASTER_RESPONSES } from '../data/cultivation/catastrophe.js';
 import { IMMORTAL_MOTIVE, getChannel } from '../data/cultivation/crossings.js';
 import {
@@ -263,6 +264,12 @@ export const institutionVerbs = {
         const which: PetitionIntent = PETITION_INTENTS.includes(intent as PetitionIntent)
             ? intent as PetitionIntent
             : DEFAULT_PETITION_INTENT;
+
+        // A repair dose asked of your own house is the house's standard, not a
+        // form and not a grant. See `asking-your-house-for-a-repair-dose.ts`.
+        const repair = askingYourHouseForARepairDose(
+            this, run, cultivator, target ?? 'my house', matter ?? target ?? '');
+        if (repair) return repair;
 
         if (which === 'stock') return this.requisition(run, cultivator, target, matter);
         if (which === 'descent') return this.claimDescent(run, cultivator, target);

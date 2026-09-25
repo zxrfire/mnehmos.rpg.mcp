@@ -2,6 +2,7 @@
  * Asking somebody for something, and what saying yes would cost them.
  */
 
+import { askingYourHouseForARepairDose } from './asking-your-house-for-a-repair-dose.js';
 import { getSect } from '../data/cultivation/index.js';
 import {
     ledgerAbout,
@@ -1320,6 +1321,15 @@ ${unnamed}`;
             run, cultivator, named, query, table.sentence, table.putDown, 'request', true
         );
         if (ofItself) return ofItself;
+
+        // ── A REPAIR DOSE, ASKED OF YOUR OWN HOUSE ───────────────────────
+        //
+        // Before the party is resolved as a person, because the party is the
+        // house. The medicine is spent on a house's own by its standard and is
+        // never bartered out of it; asking anybody else's house for one falls
+        // through to the barter below. See `asking-your-house-for-a-repair-dose.ts`.
+        const repair = askingYourHouseForARepairDose(this, run, cultivator, query, named);
+        if (repair) return repair;
 
         // "MY MASTER" IS WHOEVER THEY KNELT TO, READ OFF THE TIE. Standing in
         // front of them, a description resolves it off the player's world row,
