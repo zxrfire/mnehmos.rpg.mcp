@@ -2,13 +2,10 @@
  * Domain service boundary for MCP handlers.
  *
  * Handlers should ask this facade for the repositories they need instead of
- * opening a database and constructing repositories themselves.  The facade is
- * scoped with AsyncLocalStorage so tests can inject doubles without a mutable
- * process-wide singleton, while HTTP requests still resolve the verified
- * tenant through getDb().
+ * opening a database and constructing repositories themselves. HTTP requests
+ * resolve the verified tenant through getDb().
  */
 
-import { AsyncLocalStorage } from 'node:async_hooks';
 import Database from 'better-sqlite3';
 import { getDb } from '../storage/index.js';
 import { CharacterRepository } from '../storage/repos/character.repo.js';
@@ -32,8 +29,6 @@ export interface DomainServices {
     readonly worldSnapshot: WorldSnapshotRepository;
 }
 
-const scopedServices = new AsyncLocalStorage<DomainServices>();
-
 /** Build the default repository facade for one database handle. */
 export function createDomainServices(db: Database.Database): DomainServices {
     return {
@@ -54,10 +49,5 @@ export function createDomainServices(db: Database.Database): DomainServices {
  * using the storage test database override.
  */
 export function getDomainServices(): DomainServices {
-    return scopedServices.getStore() ?? createDomainServices(getDb());
-}
-
-/** Execute a handler with an explicitly injected facade. */
-export function runWithDomainServices<T>(services: DomainServices, fn: () => T): T {
-    return scopedServices.run(services, fn);
+    return createDomainServices(getDb());
 }

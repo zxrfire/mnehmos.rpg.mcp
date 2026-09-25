@@ -6,7 +6,6 @@ import {
     isGuidingError,
     resolveIdentifier,
     CRUD_ALIASES,
-    extendAliases,
     createFuzzyActionSchema
 } from '../../src/utils/fuzzy-enum.js';
 
@@ -266,25 +265,6 @@ describe('fuzzy-enum utilities', () => {
             expect(CRUD_ALIASES['modify']).toBe('update');
             expect(CRUD_ALIASES['remove']).toBe('delete');
             expect(CRUD_ALIASES['all']).toBe('list');
-        });
-    });
-
-    describe('extendAliases', () => {
-        it('should merge base and extension aliases', () => {
-            const base = { 'new': 'create' as const };
-            const extension = { 'spawn': 'create' as const };
-            const result = extendAliases(base, extension);
-
-            expect(result['new']).toBe('create');
-            expect(result['spawn']).toBe('create');
-        });
-
-        it('should allow extension to override base', () => {
-            const base = { 'add': 'create' as const };
-            const extension = { 'add': 'update' as const };
-            const result = extendAliases(base, extension);
-
-            expect(result['add']).toBe('update');
         });
     });
 

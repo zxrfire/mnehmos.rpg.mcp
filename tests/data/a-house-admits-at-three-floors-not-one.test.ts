@@ -4,7 +4,6 @@ import { MEMBERS, rankRealmBand } from '../../src/data/cultivation/members.js';
 import {
     houseFloorsOf,
     servantBarOf,
-    discipleBarOf,
     groundReachOf,
     A_SERVANT_STANDS_THIS_FAR_BELOW_WHAT_THE_GROUND_REACHES
 } from '../../src/data/cultivation/the-three-floors-a-house-admits-at.js';
@@ -55,7 +54,7 @@ describe('a house admits at three floors, not one', () => {
                 expect(
                     rankRealmBand(sect.id, rank)!.minOrdinal,
                     `${sect.id} rank ${rank}`
-                ).toBeGreaterThanOrEqual(discipleBarOf(sect.id)!);
+                ).toBeGreaterThanOrEqual(houseFloorsOf(sect.id)!.disciple);
             }
         }
     });
@@ -123,7 +122,7 @@ describe('a house admits at three floors, not one', () => {
         expect(guestFloorOf('sect-azure-cloud-pavilion')).toBe(0);
         expect(SECT_ADMISSION['sect-azure-cloud-pavilion']!.guestFromOrdinal).toBe(0);
         expect(servantBarOf('sect-azure-cloud-pavilion')).toBeGreaterThan(0);
-        expect(discipleBarOf('sect-azure-cloud-pavilion')).toBe(3);
+        expect(houseFloorsOf('sect-azure-cloud-pavilion')?.disciple).toBe(3);
     });
 
     it('answers for an unknown faction rather than guessing', () => {

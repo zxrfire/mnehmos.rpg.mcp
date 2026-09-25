@@ -32,16 +32,13 @@ export interface AgentRuntimeDeps {
 
 let defaultDeps: AgentRuntimeDeps | null = null;
 
-export function setAgentRuntime(deps: AgentRuntimeDeps): void {
+/** Null clears it. */
+export function setAgentRuntime(deps: AgentRuntimeDeps | null): void {
     defaultDeps = deps;
 }
 
 export function getAgentRuntime(): AgentRuntimeDeps | null {
     return defaultDeps;
-}
-
-export function clearAgentRuntime(): void {
-    defaultDeps = null;
 }
 
 /**

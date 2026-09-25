@@ -20,7 +20,10 @@ import {
     refiningOrdinalFor
 } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { whatItWasWorth } from '../../../src/engine/social-leverage/what-a-deed-leaves.js';
-import { createLeverage } from '../../../src/engine/social/grudges.js';
+import { createObligation, type ObligationInput } from '../../../src/engine/social/grudges.js';
+
+/** Something known about somebody that they would rather was not. */
+const createLeverage = (input: Omit<ObligationInput, 'kind'>) => createObligation({ ...input, kind: 'leverage' });
 
 describe('the grade of what a body yields', () => {
     it('is the grade that body could have worked, and no other ladder', () => {

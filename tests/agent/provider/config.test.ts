@@ -1,7 +1,6 @@
 import {
     resolveRuntimeProviderConfig,
     normalizeProviderName,
-    isProviderName,
     describeProviderConfiguration,
     loadRuntimeConfigFile,
     PROVIDER_NAMES,
@@ -46,12 +45,13 @@ describe('normalizeProviderName', () => {
     });
 });
 
-describe('isProviderName', () => {
-    it('accepts canonical names only - not aliases', () => {
-        expect(isProviderName('anthropic')).toBe(true);
-        expect(isProviderName('ollama')).toBe(true);
-        expect(isProviderName('claude')).toBe(false);
-        expect(isProviderName(42)).toBe(false);
+describe('PROVIDER_NAMES', () => {
+    it('holds canonical names only - not aliases', () => {
+        const names: readonly unknown[] = PROVIDER_NAMES;
+        expect(names.includes('anthropic')).toBe(true);
+        expect(names.includes('ollama')).toBe(true);
+        expect(names.includes('claude')).toBe(false);
+        expect(names.includes(42)).toBe(false);
     });
 });
 

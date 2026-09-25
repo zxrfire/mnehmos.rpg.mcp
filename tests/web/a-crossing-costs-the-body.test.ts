@@ -60,8 +60,14 @@ describe('what arriving costs', () => {
         for (let i = 0; i < 8 && crossings < 3; i++) {
             h.repos.cultivators.update(id, { cultivationProgress: 100_000 } as never);
             const before = h.game.state().cultivator;
-            const { narration } = await h.game.act('I break through');
+            const turn = await h.game.act('I break through');
+            const { narration } = turn;
             const after = h.game.state().cultivator;
+            // Which of the five crossings it was is named on the call.
+            const struck = turn.toolCalls.find(call => call.name === 'engine.attemptBreakthrough');
+            expect(struck?.summary).toMatch(
+                /(clean_success|broken_success|clean_failure|failure_with_sequelae|death): /
+            );
             if (after.realmOrdinal === before.realmOrdinal) continue;  // a failure, which is free
             crossings++;
 

@@ -15,7 +15,8 @@ import { CharacterSchema } from '../../src/schema/character.js';
 import { ConcentrationRepository } from '../../src/storage/repos/concentration.repo.js';
 import { SpatialRepository } from '../../src/storage/repos/spatial.repo.js';
 import { PerceptionAssessmentRepository } from '../../src/storage/repos/perception-assessment.repo.js';
-import { ensurePool, maxByLevel } from '../../src/engine/perception/attentional-capacity.js';
+import { maxByLevel } from '../../src/engine/perception/attentional-capacity.js';
+import { ensurePool } from '../support/an-observer-with-a-full-pool.js';
 import { randomUUID } from 'crypto';
 
 const ctx = { sessionId: 'test' };

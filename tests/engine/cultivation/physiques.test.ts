@@ -18,7 +18,6 @@ import { join } from 'node:path';
 
 import {
     PHYSIQUES,
-    PHYSIQUE_WEIGHT_CARRIED,
     PHYSIQUE_WEIGHT_TOTAL,
     cultivationSpeedOf,
     describePhysique,
@@ -33,6 +32,9 @@ import {
 import { PhysiqueKeySchema } from '../../../src/schema/cultivation.js';
 import { UNBOUNDED_LIFESPAN_YEARS } from '../../../src/engine/cultivation/realms.js';
 import { computeCultivationRate } from '../../../src/engine/cultivation/cultivation.js';
+
+/** Births in ten thousand that carry anything at all. */
+const PHYSIQUE_WEIGHT_CARRIED = PHYSIQUES.reduce((sum, p) => sum + p.weight, 0);
 import {
     evaluateDeathConditions,
     lifespanCeilingFor,

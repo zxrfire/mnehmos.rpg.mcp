@@ -17,13 +17,6 @@ export type PressureLevel =
     /** The will, taken. An ancient art, and never a verb. */
     | 'taken';
 
-export const PRESSURE_ORDER: readonly PressureLevel[] = Object.freeze(['said', 'done', 'taken']);
-
-/** Whether `a` went further than `b`. The ladder is total and ordered. */
-export function wentFurtherThan(a: PressureLevel, b: PressureLevel): boolean {
-    return PRESSURE_ORDER.indexOf(a) > PRESSURE_ORDER.indexOf(b);
-}
-
 /**
  * How long the compliance outlives the moment.
  *

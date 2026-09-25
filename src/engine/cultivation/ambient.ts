@@ -35,10 +35,6 @@ export function ambientBreakthroughMod(ambient: AmbientQi): number {
     return AMBIENT_QI_BREAKTHROUGH_MOD[ambient];
 }
 
-/** Probability of drawing this band from an unbiased roll. */
-export function ambientProbability(ambient: AmbientQi): number {
-    return AMBIENT_QI_WEIGHTS[ambient] / AMBIENT_WEIGHT_TOTAL;
-}
 
 // ROLLING
 
@@ -236,12 +232,6 @@ export function typicalAmbientFor(density: number): AmbientQi {
     return best;
 }
 
-/**
- * Whether today's band is what this place ordinarily gives.
- */
-export function isTypicalForGround(band: AmbientQi, density: number): boolean {
-    return band === typicalAmbientFor(density);
-}
 
 export function ambientForLocationOnDay(
     runSeed: string,
@@ -373,14 +363,3 @@ export function eraAmbientMultiplier(qiDensity: number): number {
     return ERA_DENSITY_ANCHORS[ERA_DENSITY_ANCHORS.length - 1].multiplier;
 }
 
-const AMBIENT_DESCRIPTIONS: Record<AmbientQi, string> = {
-    thin: 'The spiritual energy here is thin; cultivation is half as fast and breakthroughs are noticeably riskier.',
-    normal: 'Spiritual energy here is unremarkable - neither help nor hindrance.',
-    dense: 'Spiritual energy here is dense; cultivation runs at double rate and breakthroughs are easier.',
-    spirit_tide: 'A spirit tide is running. Qi is three times as abundant as normal and the heavens are unusually permissive.',
-    sealed_vein: 'A pocket nothing has drawn on. Qi stands four times the ordinary baseline and does not thin while it holds - the density the open world stopped being able to produce.'
-};
-
-export function describeAmbient(ambient: AmbientQi): string {
-    return AMBIENT_DESCRIPTIONS[ambient];
-}

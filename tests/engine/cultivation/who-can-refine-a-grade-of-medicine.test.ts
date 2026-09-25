@@ -16,7 +16,6 @@ import {
     madeBelowTheLid,
     refiningOrdinalFor,
     refiningRealmNameFor,
-    sentDownGrades,
     whyTheCauldronRefuses
 } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import {
@@ -68,7 +67,8 @@ describe('nobody in this world makes immortal grade', () => {
         expect(refiningOrdinalFor('chaos')).toBe(TRUE_IMMORTAL_ORDINAL);
         expect(madeBelowTheLid('immortal')).toBe(false);
         expect(madeBelowTheLid('chaos')).toBe(false);
-        expect(sentDownGrades().sort()).toEqual(['chaos', 'immortal']);
+        expect(Object.keys(REFINING_REALM_BY_GRADE).filter(g => !madeBelowTheLid(g as never)).sort())
+            .toEqual(['chaos', 'immortal']);
     });
 
     it('does not let a False Immortal do it', () => {

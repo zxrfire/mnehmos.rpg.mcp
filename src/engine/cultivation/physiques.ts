@@ -91,9 +91,6 @@ export const PHYSIQUES: readonly Physique[] = [
  */
 export const PHYSIQUE_WEIGHT_TOTAL = 10_000;
 
-/** Births in ten thousand that carry anything at all. */
-export const PHYSIQUE_WEIGHT_CARRIED = PHYSIQUES.reduce((sum, p) => sum + p.weight, 0);
-
 export function getPhysique(key: PhysiqueKey): Physique {
     const found = PHYSIQUES.find(p => p.key === key);
     if (!found) throw new Error(`Unknown physique: ${key}`);

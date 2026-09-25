@@ -52,9 +52,12 @@ import {
 } from '../../../src/engine/cultivation/injuries.js';
 import {
     assessPower,
-    brokenCombatPowerForOrdinal,
+    BROKEN_STATUS_POWER,
     combatPowerForOrdinal
 } from '../../../src/engine/cultivation/combat.js';
+
+/** What a broken holder of this rung prices at, at median attributes. */
+const brokenCombatPowerForOrdinal = (ordinal: number) => combatPowerForOrdinal(ordinal) * BROKEN_STATUS_POWER;
 import { isRealmBoundary, realmForOrdinal, MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 
 const rng = () => new CultivationRNG('boundary-trials');

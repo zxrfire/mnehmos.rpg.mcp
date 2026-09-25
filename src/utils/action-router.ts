@@ -413,35 +413,6 @@ function fieldNamesOf(schema?: z.ZodType<any>): string[] {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// HELPER: Build action description for tool schema
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Generate description text for the 'action' parameter
- * Includes all valid actions and their aliases
- */
-export function buildActionDescription<TActions extends string>(
-    actions: readonly TActions[],
-    definitions: Record<TActions, ActionDefinition>
-): string {
-    const parts = [`Action to perform: ${actions.join(', ')}`];
-
-    // Collect aliases
-    const aliasLines: string[] = [];
-    for (const [action, def] of Object.entries(definitions) as Array<[TActions, ActionDefinition]>) {
-        if (def.aliases && def.aliases.length > 0) {
-            aliasLines.push(`${def.aliases.join('/')} -> ${action}`);
-        }
-    }
-
-    if (aliasLines.length > 0) {
-        parts.push(`Aliases: ${aliasLines.join(', ')}`);
-    }
-
-    return parts.join('. ');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // TYPE HELPERS FOR CONSOLIDATED TOOL SCHEMAS
 // ═══════════════════════════════════════════════════════════════════════════
 

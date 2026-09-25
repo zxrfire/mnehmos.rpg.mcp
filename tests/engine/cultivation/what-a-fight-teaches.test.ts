@@ -44,11 +44,19 @@ import {
     FIGHT_INSIGHT_CHANCE,
     FIGHT_PROGRESS_SHARE,
     FIGHT_TEACHING_BY_BAND,
-    fightsBeforeTheRungStopsPaying,
-    fightsToCarryARung,
     whatAFightTaught,
     type AFightThatHappened
 } from '../../../src/engine/cultivation/what-a-fight-teaches.js';
+import type { RegardBand } from '../../../src/schema/cultivation.js';
+
+/** Qualifying fights to carry a whole rung, if fighting could - which it cannot. */
+function fightsToCarryARung(band: RegardBand = 'matched'): number {
+    const weight = FIGHT_TEACHING_BY_BAND[band];
+    return weight <= 0 ? Infinity : 1 / (FIGHT_PROGRESS_SHARE * weight);
+}
+/** Qualifying fights fighting pays for before the ceiling stops it. */
+const fightsBeforeTheRungStopsPaying = (band: RegardBand = 'matched') =>
+    fightsToCarryARung(band) * FIGHT_CARRIES_AT_MOST;
 import { bandForGap } from '../../../src/engine/cultivation/regard.js';
 import { progressRequiredForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { MAX_DEGREE, MAX_SUBSTITUTION } from '../../../src/engine/cultivation/understanding.js';

@@ -30,8 +30,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { simulateTimeSkip, ambientDuringSkip } from '../../../src/engine/cultivation/time-skip.js';
+import { simulateTimeSkip } from '../../../src/engine/cultivation/time-skip.js';
 import {
+    ambientForBlock,
     ambientWeightsForDensity,
     impliedDensityFor,
     typicalAmbientFor
@@ -64,16 +65,13 @@ describe('the skip honours the ground it is handed', () => {
 
     it('reports the band from the density, not from the place name', () => {
         for (const day of [0, 30, 300, 3000]) {
-            expect(ambientDuringSkip(
-                { seed: SEED, locationId: RICH_PLACE, locationDensity: 1.0 }, day
-            )).not.toBe('thin');
+            expect(ambientForBlock(SEED, RICH_PLACE, day, { density: 1.0 })).not.toBe('thin');
         }
     });
 
     it('still lets a sealed pocket override the geology entirely', () => {
-        expect(ambientDuringSkip(
-            { seed: SEED, locationId: RICH_PLACE, locationDensity: 1.0, anUnopenedPocket: true }, 0
-        )).toBe('sealed_vein');
+        expect(ambientForBlock(SEED, RICH_PLACE, 0, { density: 1.0, anUnopenedPocket: true }))
+            .toBe('sealed_vein');
     });
 });
 

@@ -7,9 +7,9 @@ import {
     debit,
     refill,
     read,
-    ensurePool,
     ATTENTIONAL_CAPACITY_KEY,
 } from '../../../src/engine/perception/attentional-capacity.js';
+import { ensurePool } from '../../support/an-observer-with-a-full-pool.js';
 import { getDb, closeDb } from '../../../src/storage/index.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
 import { CharacterSchema } from '../../../src/schema/character.js';

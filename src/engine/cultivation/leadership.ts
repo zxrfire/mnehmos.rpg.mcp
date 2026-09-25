@@ -8,11 +8,6 @@ import { A_ROLL_A_PLAYER_COULD_KNOW } from '../world/a-house-raises-its-own.js';
 // AUTHORITY
 
 /**
- * The fraction of a house's ladder above which a rung runs something.
- */
-export const ELDER_RUNG_FRACTION = 2 / 3;
-
-/**
  * The elders are the top three rungs, and never the bottom two. Measured across
  * the catalog when this landed: unchanged for the four four-rung bodies, and
  * correct for all thirty-one that took a grand elder.
@@ -756,16 +751,6 @@ export type BacklashLevel =
     | 'departure'
     | 'challenge'
     | 'removal';
-
-/** Ascending severity. Index into this is the escalation ordering. */
-export const BACKLASH_ORDER: readonly BacklashLevel[] = [
-    'none',
-    'grumbling',
-    'obstruction',
-    'departure',
-    'challenge',
-    'removal'
-];
 
 /** Standing at or below which each level begins. Strictly descending. */
 export const GRUMBLING_AT = 20;

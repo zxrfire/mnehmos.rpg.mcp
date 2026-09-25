@@ -36,6 +36,7 @@ import {
 import { maxHpForOrdinal, maxQiForOrdinal } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { describeDeath } from '../engine/cultivation/survival.js';
+import { classifyCrossingResult, getCrossingResult } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
     FLAG_PENDING_PILL,
@@ -306,12 +307,19 @@ export const crossingVerb = {
             : null;
         if (filed) this.theWorldMoved();
 
+        // Which of the five a crossing can be, named off what it produced.
+        const kind = getCrossingResult(classifyCrossingResult({
+            succeeded: result.outcome === 'success',
+            survived: result.outcome !== 'death',
+            brokenStatus: result.arrivedBroken,
+            injuriesSustained: result.injuriesSustained
+        }));
         const calls: ToolCallRecord[] = [{
             name: 'engine.attemptBreakthrough',
             action: 'breakthrough',
             summary:
                 `${(result.finalChance * 100).toFixed(1)}% final chance, rolled ${result.roll.toFixed(4)} - ` +
-                `${result.outcome}. ${result.narrationHint}`,
+                `${result.outcome}, ${kind.kind}: ${kind.name}. ${result.narrationHint}`,
             ok: true
         }];
         // 道心. Its own row rather than a clause on the one above, because the

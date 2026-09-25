@@ -172,7 +172,9 @@ const DEAD = 0;
 // 406 -> 222: the catalogs' lookups - 155 wrappers deleted with each test
 // reading the catalog itself, 18 fixtures moved into their tests, 11 wired
 // into reads a player meets.
-const TEST_ONLY = 222;
+// 222 -> 178: outside the world simulation - D&D-era server and utility
+// code deleted, fixtures moved into their tests, ten wired or deduped.
+const TEST_ONLY = 178;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

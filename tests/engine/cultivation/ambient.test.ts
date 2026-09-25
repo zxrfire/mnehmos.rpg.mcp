@@ -20,9 +20,7 @@ import {
     ambientBreakthroughMod,
     ambientForBlock,
     ambientForLocationOnDay,
-    ambientProbability,
     ambientRateMultiplier,
-    describeAmbient,
     rollAmbientQi
 } from '../../../src/engine/cultivation/ambient.js';
 
@@ -44,7 +42,6 @@ describe('ambient qi tables', () => {
         for (const band of AMBIENT_QI_ORDER) {
             expect(ambientRateMultiplier(band)).toBe(AMBIENT_QI_RATE_MULTIPLIER[band]);
             expect(ambientBreakthroughMod(band)).toBe(AMBIENT_QI_BREAKTHROUGH_MOD[band]);
-            expect(describeAmbient(band).length).toBeGreaterThan(0);
         }
     });
 
@@ -86,7 +83,7 @@ describe('rollAmbientQi', () => {
         const N = 100_000;
         for (let i = 0; i < N; i++) counts[rollAmbientQi(i / N)]++;
         for (const band of AMBIENT_QI_ORDER) {
-            expect(counts[band] / N).toBeCloseTo(ambientProbability(band), 3);
+            expect(counts[band] / N).toBeCloseTo(AMBIENT_QI_WEIGHTS[band] / AMBIENT_WEIGHT_TOTAL, 3);
         }
     });
 });

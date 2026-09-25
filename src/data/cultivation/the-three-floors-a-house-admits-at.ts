@@ -123,10 +123,6 @@ export function servantBarOf(factionId: string): number | undefined {
     return floors.servant ?? floors.disciple;
 }
 
-/** The floor for the disciple track. `Sect.admissionOrdinal`, unchanged. */
-export function discipleBarOf(factionId: string): number | undefined {
-    return houseFloorsOf(factionId)?.disciple;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE ONE FLOOR THAT IS NOT A RUNG

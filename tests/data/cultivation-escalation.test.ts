@@ -48,9 +48,14 @@ import {
     UNPROVISIONED,
     isSupplyStalled,
     masteryCeilingFor,
-    practiceCeilingFor,
-    supplyLimitedArts
+    practiceCeilingFor
 } from '../../src/engine/cultivation/upkeep.js';
+
+/** Every art the supply actually stops somebody in, with the figure. */
+const supplyLimitedArts = () => ANCIENT_ARTS
+    .filter(a => a.upkeepHerbId !== null)
+    .map(a => masteryCeilingFor(a.techniqueId, UNPROVISIONED))
+    .filter(c => c.ceiling === null || c.ceiling < 1);
 
 // Catalog reads only this file makes; the game asks by technique, through `whoHoldsDormant`.
 const dormantArtsOf = (factionId: string) => DORMANT_ARTS.filter(d => d.factionId === factionId);

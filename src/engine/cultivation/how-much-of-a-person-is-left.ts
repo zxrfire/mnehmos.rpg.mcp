@@ -19,13 +19,6 @@ export function continuityCeilingFor(soul: SoulState): number {
     return CONTINUITY_CEILING_BY_SOUL_STATE[soul] ?? 1;
 }
 
-/** True where the pair could not both be true of one person. */
-export function soulAndSelfDisagree(
-    self: { soulState: SoulState; identityContinuity: number }
-): boolean {
-    return self.identityContinuity > continuityCeilingFor(self.soulState) + 1e-9;
-}
-
 /**
  * Push a soul down to at least `floor`, and bring how much of the person is left
  * down with it.

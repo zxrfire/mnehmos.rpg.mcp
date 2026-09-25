@@ -18,7 +18,6 @@ import { SECTS, getSect } from '../../../src/data/cultivation/sects.js';
 import {
     CERTAIN_DISCOVERY,
     DEPLETION_WEIGHT,
-    RESERVE_ACCESS_FRACTION,
     SIPHON_PACES,
     baseReservesFor,
     canReachReserves,
@@ -31,6 +30,9 @@ import {
     siphonPeriod,
     type SiphonPace
 } from '../../../src/engine/cultivation/embezzlement.js';
+
+/** The share of the ladder the gate used to open at, before it read the elder rungs. */
+const RESERVE_ACCESS_FRACTION = 2 / 3;
 
 const PACES: SiphonPace[] = ['careful', 'steady', 'greedy'];
 

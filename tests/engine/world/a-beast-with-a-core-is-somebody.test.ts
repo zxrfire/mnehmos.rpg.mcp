@@ -74,7 +74,8 @@ import {
 } from '../../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { bandOf, hasACore } from '../../../src/engine/world/hunting-a-spirit-beast.js';
 import { isTheWorldsToMove, setRealm } from '../../../src/engine/world/npc-state.js';
-import { ObligationLedger, createFavor } from '../../../src/engine/social/grudges.js';
+import { createFavor } from '../../../src/engine/social/grudges.js';
+import { ObligationLedger } from '../../support/an-obligation-ledger-held-in-memory.js';
 
 const SEED = 'a-beast-with-a-core';
 const GROUND = 'loc-high-ledge';

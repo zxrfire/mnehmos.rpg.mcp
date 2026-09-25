@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    couldHoldAChildAtZero,
     doorsOf,
     housesWithTwoDoors,
     howAChildAtZeroGetsIn,
@@ -68,7 +67,6 @@ describe('a child at ordinal zero, and the tally the catalog owns', () => {
         const total =
             walksUp.length + needsAWord.length + barWillNotMove.length + noDoorToSkip.length;
         expect(total, 'every sect has exactly one answer').toBe(SECTS.length);
-        expect(couldHoldAChildAtZero().length).toBe(walksUp.length + needsAWord.length);
     });
 
     it('has more houses reachable with a word than without one', () => {

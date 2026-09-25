@@ -13,7 +13,7 @@ import { closeDb, getDb } from '../../../src/storage/index.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
 import { ProviderFactory } from '../../../src/agent/provider/factory.js';
 import { LLMProvider, ProviderCallResult, ProviderError } from '../../../src/agent/provider/types.js';
-import { buildAgentRuntime, setAgentRuntime, clearAgentRuntime } from '../../../src/agent/runtime/deps.js';
+import { buildAgentRuntime, setAgentRuntime } from '../../../src/agent/runtime/deps.js';
 import { randomUUID } from 'crypto';
 
 process.env.NODE_ENV = 'test';
@@ -88,7 +88,7 @@ describe('combat_manage advance - agent auto-invoke hook', () => {
     });
 
     afterEach(() => {
-        clearAgentRuntime();
+        setAgentRuntime(null);
         closeDb();
     });
 

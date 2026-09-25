@@ -61,9 +61,7 @@ import {
     THE_EXTINCTION_IS_SYMMETRIC,
     THE_TRADE,
     THE_RUIN_MEDICINE,
-    absenceTierOf,
-    materialGatedArts,
-    unresolvedAncientReferences
+    absenceTierOf
 } from '../../src/data/cultivation/lost-ages.js';
 import {
     EXTINCT_HERB_IDS,
@@ -71,6 +69,7 @@ import {
     FORAGEABLE_HERBS,
     HERBS,
     findHerbsForOrdinal,
+    getHerb,
     rollHerb
 } from '../../src/data/cultivation/herbs.js';
 import {
@@ -91,6 +90,36 @@ import { SITES } from '../../src/data/cultivation/inheritance-trials.js';
 import { FALSE_IMMORTAL_ORDINAL, MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
 
 // Catalog reads only this file makes. The game reads the catalog itself.
+/** Ancient arts whose practice consumes something the world no longer grows. */
+const materialGatedArts = () => ANCIENT_ARTS.filter(a => a.upkeepHerbId !== null);
+
+/** Every id the ancient tier names that must resolve in a real catalog, and what does not. */
+function unresolvedAncientReferences(): string[] {
+    const herbs = [
+        ...LOST_MATERIALS.map(m => m.herbId),
+        ...materialGatedArts().map(a => a.upkeepHerbId as string),
+        ...STOCKED_INHERITANCES.map(s => s.upkeepHerbId),
+        THE_RUIN_MEDICINE.extinctIngredientHerbId
+    ];
+    const pills = [THE_RUIN_MEDICINE.pillId];
+    const recipes = [THE_RUIN_MEDICINE.recipeId, ...LOST_MATERIALS.flatMap(m => m.closedRecipeIds)];
+    const techniques = [
+        ...ANCIENT_ARTS.map(a => a.techniqueId),
+        ...ARCHIVE_COPIES.map(c => c.techniqueId),
+        ...STOCKED_INHERITANCES.map(s => s.techniqueId),
+        ...LOST_MATERIALS.flatMap(m => m.gatesTechniqueIds)
+    ];
+    const bad: string[] = [];
+    for (const id of new Set(herbs)) if (!getHerb(id)) bad.push(`herb ${id}`);
+    for (const id of new Set(pills)) if (!getPill(id)) bad.push(`pill ${id}`);
+    for (const id of new Set(recipes)) if (!getRecipe(id)) bad.push(`recipe ${id}`);
+    for (const id of new Set(techniques)) if (!getTechnique(id)) bad.push(`technique ${id}`);
+    for (const id of new Set(herbs)) {
+        if (!EXTINCT_HERB_IDS.has(id)) bad.push(`herb ${id} is named as lost and is not extinct`);
+        if (!EXTINCTION_NOTES[id]) bad.push(`herb ${id} is extinct and does not say why`);
+    }
+    return bad;
+}
 const getPrefecture = (id: string) => PREFECTURES.find(p => p.id === id);
 const prefecturesOf = (provinceId: string) => PREFECTURES.filter(p => p.provinceId === provinceId);
 const contestedGround = () => PREFECTURES.filter(p => p.discrepancy !== 'none');

@@ -22,7 +22,6 @@ import {
     realmsSpannedBy,
     spanStanding,
     ORDINARY_REALM_SPAN,
-    DERIVATION_FLOOR_YEARS,
     DERIVATION_LIFE_SHARE,
     PRECEDENT_WELL_WALKED,
     derivationBaseYears,
@@ -33,6 +32,9 @@ import {
     type ExtendableManual,
     type GatedManual
 } from '../../../src/engine/cultivation/escapes.js';
+
+/** What deriving costs at the bottom of the ladder, on well-walked ground. */
+const DERIVATION_FLOOR_YEARS = Math.round(derivationBaseYears(0));
 import {
     NO_MANUAL_CEILING,
     computeCultivationRate,

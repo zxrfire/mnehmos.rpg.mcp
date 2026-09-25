@@ -147,17 +147,6 @@ export function whoCanHoldAChildAtZero(): WhoCanHoldAChildAtZero {
     return out;
 }
 
-/**
- * Every house that could hold a person at ordinal zero, by either route.
- *
- * The one list that answers "where could this child go at all", and the reason
- * the mechanic matters: without it the answer is `walksUp` alone.
- */
-export function couldHoldAChildAtZero(): string[] {
-    const { walksUp, needsAWord } = whoCanHoldAChildAtZero();
-    return [...walksUp, ...needsAWord];
-}
-
 // AT CHARACTER CREATION
 
 /**

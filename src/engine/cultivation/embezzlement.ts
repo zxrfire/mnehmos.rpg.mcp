@@ -5,11 +5,6 @@
 import { isElderRank } from './leadership.js';
 
 /**
- * The fraction that used to decide who could reach the reserves.
- */
-export const RESERVE_ACCESS_FRACTION = 2 / 3;
-
-/**
  * Whether this rank can reach the reserves at all.
  */
 export function canReachReserves(rankIndex: number, rankCount: number): boolean {

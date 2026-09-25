@@ -18,7 +18,6 @@ import { closeDb, getDb } from '../../src/storage/index.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
 import {
-    activeWorldId,
     createWorld,
     listWorlds,
     resetCultivationWorlds
@@ -180,7 +179,7 @@ describe('the wiring', () => {
             expect(worlds.map(w => w.id)).toContain(second.id);
             // Nothing walks into two at once.
             expect(worlds.filter(w => w.active).length).toBe(1);
-            expect(activeWorldId()).toBe(second.id);
+            expect(worlds.find(w => w.active)?.id).toBe(second.id);
         });
 
         it('survives a cold start by loading the world rather than reseeding it', async () => {

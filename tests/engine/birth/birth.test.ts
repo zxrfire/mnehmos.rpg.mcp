@@ -36,7 +36,6 @@ import {
     type OriginTierKey
 } from '../../../src/engine/cultivation/origin.js';
 import {
-    discipleBarOf,
     houseFloorsOf
 } from '../../../src/data/cultivation/the-three-floors-a-house-admits-at.js';
 import { seedWorld, sectGroundId } from '../../../src/engine/world/seeding.js';
@@ -244,7 +243,7 @@ describe('an origin buys inputs and never rank', () => {
         const pavilion = world.houses.find(h => h.id === 'sect-azure-cloud-pavilion')!;
         const born = { realmOrdinal: 0 };
         expect(born.realmOrdinal).toBeLessThan(pavilion.floors.disciple);
-        expect(pavilion.floors.disciple).toBe(discipleBarOf('sect-azure-cloud-pavilion'));
+        expect(pavilion.floors.disciple).toBe(houseFloorsOf('sect-azure-cloud-pavilion')?.disciple);
 
         // And a member's child is on no roll there at all, because an apex is
         // joined rather than born into.

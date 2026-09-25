@@ -4,7 +4,6 @@ import { BIOME_HABITABILITY, WATER_BIOMES, validateStructurePlacement, getSugges
 
 import { PubSub } from '../engine/pubsub.js';
 
-import { randomUUID } from 'crypto';
 import { getWorldManager } from './state/world-manager.js';
 import { SessionContext } from './types.js';
 import { WorldRepository } from '../storage/repos/world.repo.js';
@@ -13,7 +12,6 @@ import * as zlib from 'zlib';
 import { StructureType } from '../schema/structure.js';
 import { BiomeType } from '../schema/biome.js';
 import { WorldSnapshotRepository } from '../storage/repos/world-snapshot.repo.js';
-import { persistGeneratedWorldEntities } from '../services/generated-world-persistence.service.js';
 export { LEGACY_SURFACE_POLICY } from './legacy-surface-policy.js';
 
 // Global state for the server (in-memory for MVP)
@@ -24,25 +22,6 @@ export function setWorldPubSub(instance: PubSub) {
 }
 
 export const Tools = {
-    GENERATE_WORLD: {
-        name: 'generate_world',
-        description: 'Generate a new procedural RPG world with seed, width, and height parameters. Example: { "seed": "atlas", "width": 50, "height": 50 }',
-        inputSchema: z.object({
-            seed: z.string().describe('Seed for random number generation'),
-            width: z.number().int().min(10).max(1000).describe('Width of the world grid'),
-            height: z.number().int().min(10).max(1000).describe('Height of the world grid'),
-            landRatio: z.number().min(0.1).max(0.9).optional().describe('Land to water ratio (0.1 = mostly ocean, 0.9 = mostly land, default 0.3)'),
-            temperatureOffset: z.number().min(-30).max(30).optional().describe('Global temperature offset (-30 to +30) to shift biome distribution'),
-            moistureOffset: z.number().min(-30).max(30).optional().describe('Global moisture offset (-30 to +30) to shift biome distribution')
-        })
-    },
-    GET_WORLD_STATE: {
-        name: 'get_world_state',
-        description: 'Retrieves the current state of the generated world.',
-        inputSchema: z.object({
-            worldId: z.string().describe('The ID of the world to retrieve')
-        })
-    },
     APPLY_MAP_PATCH: {
         name: 'apply_map_patch',
         description: 'Apply DSL commands to modify the world map. Use find_valid_poi_location first for structure placement. Example: { "worldId": "id", "script": "ADD_STRUCTURE..." }',
@@ -164,69 +143,6 @@ function invalidateTileCache(db: any, worldId: string) {
     }
 }
 
-export async function handleGenerateWorld(args: unknown, _ctx: SessionContext) {
-    const parsed = Tools.GENERATE_WORLD.inputSchema.parse(args);
-    
-    console.error(`[WorldGen] Generating world with seed "${parsed.seed}" (${parsed.width}x${parsed.height})`);
-    const startTime = Date.now();
-    
-    const world = generateWorld({
-        seed: parsed.seed,
-        width: parsed.width,
-        height: parsed.height,
-        landRatio: parsed.landRatio,
-        temperatureOffset: parsed.temperatureOffset,
-        moistureOffset: parsed.moistureOffset
-    });
-
-    const genTime = Date.now() - startTime;
-    console.error(`[WorldGen] World generated in ${genTime}ms`);
-
-    const worldId = randomUUID();
-    // Store with session namespace in runtime manager
-    getWorldManager().create(worldId, world);
-
-    // Persist world metadata to database
-    const db = getDb();
-    const worldRepo = new WorldRepository(db);
-    const now = new Date().toISOString();
-    worldRepo.create({
-        id: worldId,
-        name: `World-${parsed.seed}`,
-        seed: parsed.seed,
-        width: parsed.width,
-        height: parsed.height,
-        createdAt: now,
-        updatedAt: now
-    });
-    persistGeneratedWorldEntities(db, worldId, world);
-    new WorldSnapshotRepository(db).save(worldId, world);
-
-    // Pre-cache the tile data so subsequent loads are instant
-    const tileData = buildTileData(world);
-    saveTilesToCache(db, worldId, tileData);
-
-    return {
-        content: [
-            {
-                type: 'text' as const,
-                text: JSON.stringify({
-                    worldId,
-                    message: 'World generated successfully',
-                    generationTimeMs: genTime,
-                    stats: {
-                        width: world.width,
-                        height: world.height,
-                        regions: world.regions.length,
-                        structures: world.structures.length,
-                        rivers: world.rivers.filter(r => r > 0).length
-                    }
-                }, null, 2)
-            }
-        ]
-    };
-}
-
 // Helper to get world from memory or restore from DB
 async function getOrRestoreWorld(worldId: string, sessionId: string) {
     const manager = getWorldManager();
@@ -269,32 +185,6 @@ async function getOrRestoreWorld(worldId: string, sessionId: string) {
     manager.create(worldId, world);
     snapshots.save(worldId, world);
     return world;
-}
-
-export async function handleGetWorldState(args: unknown, ctx: SessionContext) {
-    const parsed = Tools.GET_WORLD_STATE.inputSchema.parse(args);
-    const currentWorld = await getOrRestoreWorld(parsed.worldId, ctx.sessionId);
-
-    if (!currentWorld) {
-        throw new Error(`World ${parsed.worldId} not found.`);
-    }
-
-    return {
-        content: [
-            {
-                type: 'text' as const,
-                text: JSON.stringify({
-                    seed: currentWorld.seed,
-                    width: currentWorld.width,
-                    height: currentWorld.height,
-                    stats: {
-                        regions: currentWorld.regions.length,
-                        structures: currentWorld.structures.length
-                    }
-                }, null, 2)
-            }
-        ]
-    };
 }
 
 import { parseDSL } from '../engine/dsl/parser.js';
@@ -970,10 +860,4 @@ export async function handleSuggestPoiLocations(args: unknown, ctx: SessionConte
             }
         ]
     };
-}
-
-// Helper function for tests to clear world state
-export function clearWorld() {
-    // No-op for now, or could clear all worlds in manager
-    // getWorldManager().clear(); // If we added a clear method
 }

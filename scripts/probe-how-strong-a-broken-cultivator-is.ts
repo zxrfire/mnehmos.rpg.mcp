@@ -47,7 +47,6 @@
 import {
     assessPower,
     combatPowerForOrdinal,
-    brokenCombatPowerForOrdinal,
     resolveExchange,
     BROKEN_STATUS_POWER,
     BROKEN_TRANSMISSION,
@@ -417,7 +416,7 @@ for (const { tier, status } of BROKEN_REALMS) {
     const intact = power(tier.ordinalStart, MEDIAN.might, MEDIAN.insight);
     const broken = power(tier.ordinalStart, MEDIAN.might, MEDIAN.insight, { injuries: [wound] });
     const top = power(tier.ordinalEnd, MEDIAN.might, MEDIAN.insight, { injuries: [wound] });
-    const declared = brokenCombatPowerForOrdinal(tier.ordinalStart) / combatPowerForOrdinal(tier.ordinalStart);
+    const declared = BROKEN_STATUS_POWER;
 
     // The uncontrolled case, and the one the ordering does NOT cover: the best
     // broken cultivator the world can field, with an art, against the worst
@@ -437,7 +436,7 @@ for (const { tier, status } of BROKEN_REALMS) {
 }
 line();
 line('  "realised" is what the break costs at median attributes and "declared" is');
-line('  `brokenCombatPowerForOrdinal` as a share of the rung. They agree, because');
+line('  `BROKEN_STATUS_POWER`, the share of the rung. They agree, because');
 line('  the break is now a declared price rather than a coincidence of');
 line('  INJURY_WEIGHTS. The two power columns are the same person at the bottom and');
 line(`  the top of their realm and differ by x${WITHIN_REALM_PEAK}: sub-rank steps are not gated by a`);

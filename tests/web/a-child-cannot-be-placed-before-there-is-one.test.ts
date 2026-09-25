@@ -79,4 +79,35 @@ describe('placing a child', () => {
         ) as unknown as Said;
         expect(heard(said)).not.toMatch(/no child to place/i);
     }, 300_000);
+
+    /**
+     * Where a word buys nothing at this door, the refusal names the doors the
+     * player has heard of where a word does move the bar.
+     */
+    it('names where a word would work when it buys nothing here', async () => {
+        const { game } = await makeGameInWorld({ seed: 'a-child', worldSeed: 'world-c1' });
+        const { cultivator } = await game.newRun('Parent');
+        await game.act('I look around');
+        const g = game as unknown as {
+            present(c: unknown): { id: string; name: string; sectId: string | null }[];
+            knowledge: { learn(input: Record<string, unknown>): unknown };
+            atHand: { npcs: { id: string; factionId: string | null }[] };
+        };
+        const here = g.present(cultivator);
+        await game.act(`I have a child with ${here[0]!.name}`);
+
+        // Arranged: somebody here stands for the Pavilion, whose floor is open
+        // to anybody, and the player has heard of a house where a word moves
+        // the bar. The refusal itself is the game's.
+        const asked = here.find(row => row.sectId !== null)!;
+        g.atHand.npcs.find(npc => npc.id === asked.id)!.factionId = 'sect-azure-cloud-pavilion';
+        g.knowledge.learn({
+            holderId: cultivator.id, kind: 'sect', id: 'sect-azure-mist-court',
+            name: 'Azure Mist Court', onDay: 0, sourceKind: 'told', stage: 'named',
+            statement: 'The Azure Mist Court exists.'
+        });
+
+        const said = await game.act(`I place my child with ${asked.name}`);
+        expect(JSON.stringify(said)).toContain('A word does move the bar at Azure Mist Court.');
+    }, 300_000);
 });

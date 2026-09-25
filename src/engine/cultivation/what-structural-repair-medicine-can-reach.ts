@@ -14,8 +14,6 @@ import {
 import { lifespanForOrdinal, realmForOrdinal, REALM_TIERS, MAX_ORDINAL } from './realms.js';
 import { netEarningsPerYear } from './origin.js';
 import {
-    BROKEN_STATUSES,
-    REPAIRED_IN_THE_CRUCIBLE,
     brokenStatusFor,
     clearBrokenStatus
 } from './what-goes-wrong-at-a-realm-boundary.js';
@@ -441,33 +439,6 @@ export function readAllRepairMedicine(): RepairMedicineReading[] {
     return STRUCTURAL_REPAIR_MEDICINES
         .map(readRepairMedicine)
         .sort((a, b) => a.weightInStones - b.weightInStones);
-}
-
-/**
- * Every structural break, and what the world has for it.
- */
-export interface BreakCoverage {
-    woundKey: string;
-    /** The rung somebody carrying this is standing at. */
-    atOrdinal: number;
-    medicineId: string | null;
-    madeBelowTheLid: boolean | null;
-    /** Whether a successful crossing would clear it instead. */
-    theCrucibleClearsIt: boolean;
-}
-
-export function coverageOfEveryBreak(): BreakCoverage[] {
-    return BROKEN_STATUSES.map(woundKey => {
-        const atOrdinal = ordinalCarrying(woundKey);
-        const medicine = cheapestMedicineFor(woundKey, atOrdinal);
-        return {
-            woundKey,
-            atOrdinal,
-            medicineId: medicine?.id ?? null,
-            madeBelowTheLid: medicine?.madeBelowTheLid ?? null,
-            theCrucibleClearsIt: REPAIRED_IN_THE_CRUCIBLE[woundKey] ?? false
-        };
-    });
 }
 
 /**

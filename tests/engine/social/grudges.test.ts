@@ -8,7 +8,6 @@
  */
 
 import {
-    ObligationLedger,
     createBloodFeud,
     createGrudge,
     createFavor,
@@ -19,6 +18,7 @@ import {
     severityRank
 } from '../../../src/engine/social/grudges.js';
 import { daysForYears } from '../../../src/engine/social/common.js';
+import { ObligationLedger } from '../../support/an-obligation-ledger-held-in-memory.js';
 
 function theKilling() {
     return createGrudge({

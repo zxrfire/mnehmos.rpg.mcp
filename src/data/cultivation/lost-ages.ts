@@ -3,14 +3,10 @@
  * the remains.
  */
 
-import { EXTINCT_HERB_IDS, EXTINCTION_NOTES, getHerb } from './herbs.js';
-import { getPill } from './pills.js';
-import { getRecipe } from './recipes.js';
 import {
     ANCIENT_TECHNIQUE_IDS,
     NO_SURVIVING_COPY_TECHNIQUE_IDS,
-    NO_SURVIVING_COPY_NOTES,
-    getTechnique
+    NO_SURVIVING_COPY_NOTES
 } from './techniques.js';
 
 // THE AXIS: CATEGORICAL AGAINST ELEMENTAL
@@ -670,60 +666,4 @@ export function absenceTierOf(techniqueId: string): AbsenceTier {
     // sitting in front of somebody, which is the most actionable of the three.
     if (DORMANT_HOLDERS[techniqueId]) return 'dormant';
     return ancient.upkeepHerbId ? 'lost' : 'abandoned';
-}
-
-/** Ancient arts whose practice consumes something the world no longer grows. */
-export function materialGatedArts(): AncientArt[] {
-    return ANCIENT_ARTS.filter(a => a.upkeepHerbId !== null);
-}
-
-/**
- * Everything referenced by this file that must resolve in the real catalogs.
- * Exported so the design guard can assert it rather than reimplementing the
- * list, and so a broken id fails loudly instead of reading as a gap.
- */
-export function ancientTierReferences(): {
-    herbs: string[];
-    pills: string[];
-    recipes: string[];
-    techniques: string[];
-} {
-    return {
-        herbs: [
-            ...LOST_MATERIALS.map(m => m.herbId),
-            ...materialGatedArts().map(a => a.upkeepHerbId as string),
-            ...STOCKED_INHERITANCES.map(s => s.upkeepHerbId),
-            THE_RUIN_MEDICINE.extinctIngredientHerbId
-        ],
-        pills: [THE_RUIN_MEDICINE.pillId],
-        recipes: [
-            THE_RUIN_MEDICINE.recipeId,
-            ...LOST_MATERIALS.flatMap(m => m.closedRecipeIds)
-        ],
-        techniques: [
-            ...ANCIENT_ARTS.map(a => a.techniqueId),
-            ...ARCHIVE_COPIES.map(c => c.techniqueId),
-            ...STOCKED_INHERITANCES.map(s => s.techniqueId),
-            ...LOST_MATERIALS.flatMap(m => m.gatesTechniqueIds)
-        ]
-    };
-}
-
-/**
- * Whether every id this file names resolves. Kept here rather than only in the
- * test so a tool can ask, and so the failure mode is a thrown name rather than
- * a silently empty lookup.
- */
-export function unresolvedAncientReferences(): string[] {
-    const refs = ancientTierReferences();
-    const bad: string[] = [];
-    for (const id of new Set(refs.herbs)) if (!getHerb(id)) bad.push(`herb ${id}`);
-    for (const id of new Set(refs.pills)) if (!getPill(id)) bad.push(`pill ${id}`);
-    for (const id of new Set(refs.recipes)) if (!getRecipe(id)) bad.push(`recipe ${id}`);
-    for (const id of new Set(refs.techniques)) if (!getTechnique(id)) bad.push(`technique ${id}`);
-    for (const id of new Set(refs.herbs)) {
-        if (!EXTINCT_HERB_IDS.has(id)) bad.push(`herb ${id} is named as lost and is not extinct`);
-        if (!EXTINCTION_NOTES[id]) bad.push(`herb ${id} is extinct and does not say why`);
-    }
-    return bad;
 }

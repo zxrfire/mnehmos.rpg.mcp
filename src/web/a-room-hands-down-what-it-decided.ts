@@ -103,6 +103,7 @@ import {
     STONES_PER_ERRAND_OF_CONTRIBUTION
 } from '../engine/encounters/duties.js';
 import {
+    createDebt,
     createObligation,
     settleObligation,
     severityRank,
@@ -526,8 +527,7 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
         const stonesTaken = Math.max(0, hadStones - stonesLeft);
 
         const short = (asked.contribution - contributionTaken) + (asked.stones - stonesTaken);
-        const row = createObligation({
-            kind: 'debt',
+        const row = createDebt({
             // The person owes it, so they hold it and the house is the subject -
             // `whichWayItPoints` reads a debt that way and this is not the place
             // to disagree with it.

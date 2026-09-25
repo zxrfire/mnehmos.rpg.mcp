@@ -126,29 +126,3 @@ export function refill(
     repo.update(observerId, { resourcePools: updatedPools });
     return { before: cap.current, after: cap.max, max: cap.max, mutated: true };
 }
-
-/**
- * Initialise the pool for an observer (used on subsystem binding).
- * If the pool already exists, leaves it untouched.
- */
-export function ensurePool(
-    observerId: string,
-    repo: CharacterRepository,
-    when: string = new Date().toISOString(),
-): boolean {
-    const character = repo.findById(observerId);
-    if (!character) return false;
-    const cap = readPool(character);
-    if (cap.poolExists) return false;
-
-    const updatedPools = {
-        ...(character.resourcePools ?? {}),
-        [ATTENTIONAL_CAPACITY_KEY]: {
-            current: cap.max,
-            max: cap.max,
-            lastRefilledAt: when,
-        },
-    };
-    repo.update(observerId, { resourcePools: updatedPools });
-    return true;
-}

@@ -276,7 +276,7 @@ The worked list, with the verdict on each:
 | Basic formations | **absent** | There is no formation system anywhere. `'formation'` is a hazard string, a `CapabilityModifierSource`, and a location affinity. Nothing lays one |
 | Storing and manipulating qi in more sophisticated ways | **built, invisibly** | This *is* the satiety table and the progress curve. It needs saying, not building |
 | Establishing a personal inheritance | **absent for the living** | `legacy.ts` builds a gated grave when you die. Divestment before a crossing is named in `price-of-advancement.ts` as the author of the whole inheritance economy and there is no verb for it |
-| Taking disciples | **indirect** | `leadership.ts` grants it at the **elder rung of a house**, derived from `ELDER_RUNG_FRACTION`. Not keyed to realm, and unavailable to anybody outside a house |
+| Taking disciples | **indirect** | `leadership.ts` grants it at the **elder rung of a house**, which `elderRungOf` puts at the top three rungs and never below index 2. Not keyed to realm, and unavailable to anybody outside a house |
 | Being a recognised local cultivator | **indirect** | `regard.ts` bands move with the ordinal, so prices, yields, refusals and reactions all change. Nobody remembers your name; the room simply prices you correctly |
 | Surviving environments mortals cannot | **built** | Location thresholds, `standingConsequence`, the satiety table |
 | Making artifacts and medicine rather than buying them | **half built** | Medicine: fully built, and **not a Foundation capability at all** - `alchemy-manage.refine` opens at recipe `requiredOrdinal`, and three recipes sit at ordinal 0. Artifacts: absent. There is no forge verb and no crafting path to `artifacts.ts` |

@@ -23,9 +23,11 @@ import {
     canReachReserves,
     discoveryChance,
     noticeFromShortfall,
+    reservesRemaining,
     resolveDiscovery,
     siphonPeriod
 } from '../../engine/cultivation/embezzlement.js';
+import { recruitmentShapeAt } from '../../engine/encounters/what-a-house-asks-of-somebody-it-cannot-order.js';
 import { CultivationRNG, forStream } from '../../engine/cultivation/rng.js';
 import {
     FLAG_STIPEND_PAID_DAY,
@@ -274,6 +276,9 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     return {
         count: sects.length,
         cultivatorOrdinal: ordinal,
+        // How many houses in the world turn away, take on, court or defer to
+        // somebody at this rung. Counts, not names.
+        atYourRung: ordinal === null ? null : recruitmentShapeAt(ordinal),
         sects: sects.map(sect => {
             const facts = sectCatalogFacts(sect.id);
             const recruits = (facts?.recruits as boolean | undefined) ?? true;
@@ -969,17 +974,18 @@ export async function handleSiphon(args: z.infer<typeof SiphonSchema>): Promise<
     // No pace named: report the position and take nothing.
     if (!args.pace) {
         const standing = siphonPeriod(state, base, 'careful', membership.rankIndex, rankCount);
+        const held = reservesRemaining(sect.stipend, state.takenTotal);
         return {
             sect: { id: sect.id, name: sect.name },
             rank: { index: membership.rankIndex, title: membership.rankTitle },
-            reserves: { held: Math.max(0, base - state.takenTotal), originally: base },
+            reserves: { held, originally: base },
             alreadyTaken: state.takenTotal,
             suspicion: round2(state.drawNotice + noticeFromShortfall(state.takenTotal, base)),
             discoveryChanceIfCaughtNow: round2(discoveryChance(state.drawNotice + noticeFromShortfall(state.takenTotal, base))),
             paces: SIPHON_PACES,
             nextPeriodAtCareful: { wouldTake: standing.taken },
             narrationHint:
-                `${sect.name} keeps ${Math.max(0, base - state.takenTotal).toLocaleString()} spirit stones in reserve, ` +
+                `${sect.name} keeps ${held.toLocaleString()} spirit stones in reserve, ` +
                 `and ${membership.rankTitle} can sign for them. ` +
                 (state.takenTotal > 0
                     ? `${state.takenTotal.toLocaleString()} is already gone, and the ledger is ${round2(state.drawNotice + noticeFromShortfall(state.takenTotal, base))} of the way to somebody asking about it. `
@@ -1032,7 +1038,7 @@ export async function handleSiphon(args: z.infer<typeof SiphonSchema>): Promise<
             monthsRun: months,
             takenThisTime: taken,
             takenInTotal: current.takenTotal,
-            reservesLeft: Math.max(0, base - current.takenTotal),
+            reservesLeft: reservesRemaining(sect.stipend, current.takenTotal),
             shareOfReservesGone: round2(current.takenTotal / Math.max(1, base)),
             suspicion: round2(suspicion),
             discoveryChanceNextPeriod: round2(discoveryChance(suspicion)),

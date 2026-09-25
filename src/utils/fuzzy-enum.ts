@@ -375,16 +375,6 @@ export const CRUD_ALIASES: Record<string, 'create' | 'get' | 'list' | 'update' |
     'kill': 'delete'
 };
 
-/**
- * Extend base aliases with domain-specific ones
- */
-export function extendAliases<T extends string>(
-    base: Record<string, T>,
-    extensions: Record<string, T>
-): Record<string, T> {
-    return { ...base, ...extensions };
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // FORMAT GUIDING ERROR FOR MCP RESPONSE
 // ═══════════════════════════════════════════════════════════════════════════

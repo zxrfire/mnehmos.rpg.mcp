@@ -177,21 +177,3 @@ export function whatAFightTaught(fight: AFightThatHappened): WhatAFightTaught {
                       + `${(FIGHT_CARRIES_AT_MOST * 100).toFixed(0)}% of it and no further.`)
     };
 }
-
-/**
- * How many qualifying fights it would take to carry one rung, if fighting could
- * carry a whole one - which it cannot.
- */
-export function fightsToCarryARung(band: RegardBand = 'matched'): number {
-    const weight = FIGHT_TEACHING_BY_BAND[band];
-    if (weight <= 0) return Infinity;
-    return 1 / (FIGHT_PROGRESS_SHARE * weight);
-}
-
-/**
- * How many qualifying fights fighting will actually pay for, before
- * `FIGHT_CARRIES_AT_MOST` stops paying.
- */
-export function fightsBeforeTheRungStopsPaying(band: RegardBand = 'matched'): number {
-    return fightsToCarryARung(band) * FIGHT_CARRIES_AT_MOST;
-}

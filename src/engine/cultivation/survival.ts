@@ -686,9 +686,8 @@ export function evaluateDeathConditions(
         // the HP bar rather than about a wound. Losing the fight that follows
         // still kills you the ordinary way, and a badly wounded cultivator now
         // loses it far more often.
-        if (ctx.forcingCombat) {
-            const hpFraction = cultivator.maxHp > 0 ? cultivator.hp / cultivator.maxHp : 0;
-            if (hpFraction < SUICIDAL_HP_FRACTION) return 'obviously_fatal_choice';
+        if (ctx.forcingCombat && assessSuicidalCombat(cultivator).suicidal) {
+            return 'obviously_fatal_choice';
         }
     }
 

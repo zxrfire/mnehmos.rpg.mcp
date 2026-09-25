@@ -20,7 +20,7 @@ import { closeDb, getDb } from '../../src/storage/index.js';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
-import { getSect } from '../../src/data/cultivation/sects.js';
+import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import type { SpiritRootKey } from '../../src/schema/cultivation.js';
 
 const TYRANT = 'sect-storm-tyrant-court';
@@ -161,5 +161,15 @@ describe('and a player can find out before they walk up', () => {
         for (const house of preferring) {
             expect(house.rootAtTheDoor).not.toBe('refused');
         }
+    });
+
+    it('says how the whole world answers somebody at this rung, in counts', async () => {
+        const id = await applicant('Bai Rong', 'listing-shape', 'single_wood');
+        const listed = await sect({ action: 'list', cultivatorId: id });
+        const shape = listed.atYourRung;
+        expect(shape.ordinal).toBe(listed.cultivatorOrdinal);
+        expect(shape.turnedAway + shape.recruited + shape.courted + shape.deferredTo)
+            .toBeLessThanOrEqual(SECTS.length);
+        expect(shape.recruited + shape.turnedAway).toBeGreaterThan(0);
     });
 });

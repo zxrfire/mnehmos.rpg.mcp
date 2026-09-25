@@ -173,10 +173,6 @@ export async function activeWorld(): Promise<WorldHandle> {
     return loaded.get(created.id)!;
 }
 
-export function activeWorldId(): string | null {
-    return activeId;
-}
-
 /** Every world this installation holds, oldest first. */
 export function listWorlds(): WorldSummary[] {
     const store = repo();

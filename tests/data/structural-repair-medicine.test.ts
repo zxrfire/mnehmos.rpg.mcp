@@ -31,13 +31,27 @@ import {
     shareOfALifetimeAt,
     anIndividualCouldPay,
     sentDownLedgerTotals,
-    coverageOfEveryBreak,
     readAllRepairMedicine
 } from '../../src/engine/cultivation/what-structural-repair-medicine-can-reach.js';
 import {
     BROKEN_STATUSES,
     REPAIRED_IN_THE_CRUCIBLE
 } from '../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
+
+/** Every structural break, and what the world has for it. */
+function coverageOfEveryBreak() {
+    return BROKEN_STATUSES.map(woundKey => {
+        const atOrdinal = ordinalCarrying(woundKey);
+        const medicine = cheapestMedicineFor(woundKey, atOrdinal);
+        return {
+            woundKey,
+            atOrdinal,
+            medicineId: medicine?.id ?? null,
+            madeBelowTheLid: medicine?.madeBelowTheLid ?? null,
+            theCrucibleClearsIt: REPAIRED_IN_THE_CRUCIBLE[woundKey] ?? false
+        };
+    });
+}
 import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
 import { WOUND_TYPES } from '../../src/data/cultivation/wounds.js';
 import { PILLS } from '../../src/data/cultivation/pills.js';

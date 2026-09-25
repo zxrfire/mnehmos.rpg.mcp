@@ -35,14 +35,6 @@ import type { CultivationRNG } from './rng.js';
 export const NASCENT_SOUL_ORDINAL = REALM_TIERS.find(t => t.key === 'nascent_soul')!.ordinalStart;
 
 /**
- * States available to anyone at all, at any realm. Below Nascent Soul these are
- * the only outcomes: you are here, you are dead, or nobody knows which.
- */
-export const MORTAL_EXISTENCE_STATES = [
-    'alive', 'physically_dead', 'missing', 'unknown'
-] as const;
-
-/**
  * States that only become reachable at Nascent Soul and above, and even then
  * only under conditions. Reachable is not the same as available.
  */
@@ -126,11 +118,6 @@ export function hasBody(state: ExistenceState): boolean {
         case 'unknown':
             return false;
     }
-}
-
-/** Recompute the convenience boolean from the authoritative state. */
-export function aliveFlagFor(state: ExistenceState): boolean {
-    return isGoingConcern(state);
 }
 
 // LEGALITY OF A TRANSITION

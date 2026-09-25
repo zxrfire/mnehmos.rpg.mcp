@@ -21,10 +21,8 @@ import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../../src/engine/world/a-house-ra
 import { SECTS, getSect } from '../../../src/data/cultivation/sects.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
-    BACKLASH_ORDER,
     CHALLENGE_AT,
     DEPARTURE_AT,
-    ELDER_RUNG_FRACTION,
     ERRANDS,
     GRUMBLING_AT,
     OBSTRUCTION_AT,
@@ -62,9 +60,18 @@ import {
     shieldedCost,
     standingAfterYears,
     type ActCost,
+    type BacklashLevel,
     type ElderFollowing,
     type HouseState
 } from '../../../src/engine/cultivation/leadership.js';
+
+/** The share of the ladder elders used to start at, before the rung was read off the top three. */
+const ELDER_RUNG_FRACTION = 2 / 3;
+
+/** Backlash in ascending severity. */
+const BACKLASH_ORDER: readonly BacklashLevel[] = [
+    'none', 'grumbling', 'obstruction', 'departure', 'challenge', 'removal'
+];
 
 /** The house playtesting actually broke on. Five rungs, admits at nothing. */
 const DEW = 'sect-azure-dew-sect';

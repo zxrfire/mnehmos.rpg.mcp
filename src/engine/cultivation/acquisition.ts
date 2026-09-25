@@ -829,14 +829,6 @@ export function derivationBaseYears(targetOrdinal: number): number {
     return Math.sqrt(mortal * here);
 }
 
-/**
- * What deriving costs at the bottom of the ladder, on well-walked ground.
- *
- * The floor of the curve, derived rather than authored: nothing above Qi
- * Condensation is ever cheaper than this.
- */
-export const DERIVATION_FLOOR_YEARS = Math.round(derivationBaseYears(0));
-
 // NEW GROUND
 //
 // "Obviously it gets harder as you go up cuz you're on new ground."

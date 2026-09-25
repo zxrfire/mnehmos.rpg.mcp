@@ -15,6 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildRegister, renderRegisterHtml } from '../../src/web/register.js';
+import { DRIVEN_PROVINCE_SCHEDULE_ORDER, PROVINCES } from '../../src/data/cultivation/regions.js';
 
 /**
  * The limit, stated once here and once in the renderer.
@@ -302,5 +303,14 @@ describe('the register is consistent with itself', () => {
             expect(flattened, `a name ran into the ${badge} badge`)
                 .not.toMatch(new RegExp(`[a-z)]${badge}`));
         }
+    });
+});
+
+describe('the ground table', () => {
+    it("lists a scheduled house's provinces in the order its schedule takes them", () => {
+        const html = renderRegisterHtml(buildRegister() as never, {} as never);
+        const names = DRIVEN_PROVINCE_SCHEDULE_ORDER.map(id => PROVINCES.find(p => p.id === id)!.name);
+        expect(names.length).toBeGreaterThan(1);
+        expect(html).toContain(names.join(', '));
     });
 });

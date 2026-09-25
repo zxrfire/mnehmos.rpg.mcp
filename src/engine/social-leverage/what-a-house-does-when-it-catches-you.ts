@@ -14,7 +14,7 @@ import { REGARD_BAND_ORDER, regardFor } from '../cultivation/regard.js';
 import type { RegardBand } from '../../schema/cultivation.js';
 import { canPointAt, type KnowingStage } from '../social/discovery.js';
 import type { DayIndex } from '../social/common.js';
-import { DAYS_PER_YEAR } from '../social/common.js';
+import { daysForYears } from '../social/common.js';
 import type { ObligationInput, Severity } from '../social/grudges.js';
 import {
     WHAT_THE_END_OF_A_TERM_LEAVES,
@@ -420,7 +420,7 @@ function theYearsTaken(input: {
     const termYears = termOfYearsFor(alignment, input.weight);
     const dueOnDay = termYears === null
         ? null
-        : input.onDay + Math.round(termYears * DAYS_PER_YEAR);
+        : input.onDay + daysForYears(termYears);
     const witnessFactionId = theOathwrightWouldWitnessFor(input.houseId)
         ? THE_OATHWRIGHT_HOUSE
         : null;

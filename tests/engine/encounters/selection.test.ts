@@ -9,7 +9,6 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    ENCOUNTER_ACTIVITIES,
     encounterPool,
     interruptsThrough,
     outgrown,
@@ -21,6 +20,13 @@ import {
 } from '../../../src/engine/encounters/index.js';
 import { getEncounter, ENCOUNTERS } from '../../../src/data/cultivation/encounters.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
+
+/** Every activity. A Record, so an activity added to the type and not here fails to compile. */
+const EVERY_ACTIVITY: Record<EncounterActivity, true> = {
+    seclusion: true, sealed: true, travel: true, abroad: true,
+    gathering: true, labour: true, convalescence: true
+};
+const ENCOUNTER_ACTIVITIES = Object.keys(EVERY_ACTIVITY) as EncounterActivity[];
 
 const requireEncounter = (id: string) => getEncounter(id)!;
 

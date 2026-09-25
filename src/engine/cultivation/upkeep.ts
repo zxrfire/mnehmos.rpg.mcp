@@ -149,14 +149,3 @@ export function isSupplyStalled(
     return ceiling !== null && ceiling < 1 && mastery >= ceiling;
 }
 
-/**
- * Every art the supply actually stops somebody in, with the figure.
- */
-export function supplyLimitedArts(
-    provisioning: Provisioning = UNPROVISIONED
-): MasteryCeiling[] {
-    return ANCIENT_ARTS
-        .filter(a => a.upkeepHerbId !== null)
-        .map(a => masteryCeilingFor(a.techniqueId, provisioning))
-        .filter(c => c.ceiling === null || c.ceiling < 1);
-}

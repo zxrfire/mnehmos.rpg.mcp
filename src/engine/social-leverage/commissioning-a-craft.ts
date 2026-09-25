@@ -268,8 +268,6 @@ export const DAYS_AT_THE_GATE: Readonly<Record<'mortal' | 'earth' | 'heaven', nu
     heaven: 9 * DAYS_PER_YEAR
 };
 
-/** The heaven anchor in years, which is what the test holds equal to the deepest road's copy. */
-export const YEARS_TO_MAKE_A_HEAVEN_THING = DAYS_AT_THE_GATE.heaven / DAYS_PER_YEAR;
 
 /**
  * The fewest days a pill or an artifact of a grade takes, however strong the hand.

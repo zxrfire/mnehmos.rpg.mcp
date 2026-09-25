@@ -22,7 +22,6 @@ import {
     assessPower,
     combatPowerForOrdinal,
     resolveConfrontation,
-    weaponAgainst,
     type CombatantInput
 } from '../../../src/engine/cultivation/combat.js';
 import { pillBandOrdinal } from '../../../src/engine/cultivation/breakthrough.js';
@@ -52,10 +51,16 @@ function body(ordinal: number, extra: Partial<CombatantInput> = {}): CombatantIn
 }
 
 function exposureOf(weaponPower: number, targetOrdinal: number, extra: Partial<CombatantInput> = {}) {
-    return weaponAgainst(
-        { id: 'w', name: 'a blade', power: weaponPower },
-        assessPower(body(targetOrdinal, extra), AMBIENT)
-    );
+    const metBy = assessPower(body(targetOrdinal, extra), AMBIENT);
+    return weaponExposure({
+        weaponPower,
+        weaponStanding: combatPowerForOrdinal(weaponPower),
+        metBy: metBy.total,
+        metByBodyAlone: metBy.bodyAlone,
+        metByOrdinal: metBy.ordinal,
+        factors: metBy.factors,
+        standingOf: combatPowerForOrdinal
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -3,8 +3,7 @@ import {
     createActionRouter,
     formatMcpSuccess,
     formatMcpError,
-    formatValidationError,
-    buildActionDescription
+    formatValidationError
 } from '../../src/utils/action-router.js';
 
 describe('action-router utilities', () => {
@@ -220,48 +219,6 @@ describe('action-router utilities', () => {
             expect(parsed.action).toBe('create');
             expect(parsed.issues).toHaveLength(2);
             expect(parsed.hint).toBeDefined();
-        });
-    });
-
-    describe('buildActionDescription', () => {
-        it('should list all actions', () => {
-            const actions = ['create', 'get', 'update', 'delete'] as const;
-            const definitions = {
-                create: { schema: z.object({}), handler: async () => {} },
-                get: { schema: z.object({}), handler: async () => {} },
-                update: { schema: z.object({}), handler: async () => {} },
-                delete: { schema: z.object({}), handler: async () => {} }
-            };
-
-            const description = buildActionDescription(actions, definitions);
-
-            expect(description).toContain('create');
-            expect(description).toContain('get');
-            expect(description).toContain('update');
-            expect(description).toContain('delete');
-        });
-
-        it('should include aliases', () => {
-            const actions = ['create', 'get'] as const;
-            const definitions = {
-                create: {
-                    schema: z.object({}),
-                    handler: async () => {},
-                    aliases: ['new', 'add']
-                },
-                get: {
-                    schema: z.object({}),
-                    handler: async () => {},
-                    aliases: ['fetch']
-                }
-            };
-
-            const description = buildActionDescription(actions, definitions);
-
-            expect(description).toContain('new/add');
-            expect(description).toContain('create');
-            expect(description).toContain('fetch');
-            expect(description).toContain('get');
         });
     });
 });

@@ -38,8 +38,6 @@ import {
 } from './tradition.js';
 import {
     resolveWeaponAgainstBody,
-    weaponExposure,
-    type WeaponExposure,
     type WeaponUnmade
 } from './whether-a-weapon-survives-being-used.js';
 import {
@@ -351,12 +349,6 @@ export const BROKEN_STATUS_POWER = 0.75;
  */
 export const BROKEN_TRANSMISSION = 0.5;
 
-/**
- * What a broken holder of this rung prices at, at median attributes.
- */
-export function brokenCombatPowerForOrdinal(ordinal: number): number {
-    return combatPowerForOrdinal(ordinal) * BROKEN_STATUS_POWER;
-}
 
 /**
  * The technique line, with everything past full weight compressed rather than cut.
@@ -1125,21 +1117,6 @@ function atRisk(
         rng
     );
     return { ...unmade, objectId: object.id, objectName: object.name };
-}
-
-/**
- * What a fight would do to an object, without fighting one.
- */
-export function weaponAgainst(object: CarriedObject, metBy: CombatantPower): WeaponExposure {
-    return weaponExposure({
-        weaponPower: object.power,
-        weaponStanding: combatPowerForOrdinal(object.power),
-        metBy: metBy.total,
-        metByBodyAlone: metBy.bodyAlone,
-        metByOrdinal: metBy.ordinal,
-        factors: metBy.factors,
-        standingOf: combatPowerForOrdinal
-    });
 }
 
 /** Lopsided exchanges tear things. Even exchanges mostly bruise. */
@@ -2624,11 +2601,11 @@ export function sideStrength(powers: readonly CombatantPower[]): SideStrength {
     const strongest = powers.reduce((best, p) => Math.max(best, p.total), 0);
     const summed = powers.reduce((total, p) => total + p.total, 0);
     const effectiveBodies = strongest > 0 ? summed / strongest : powers.length;
-    const raw = effectiveBodies <= 1 ? 1 : Math.pow(effectiveBodies, NUMBERS_EXPONENT);
-    const multiplier = Math.min(MAX_NUMBERS_MULTIPLIER, raw);
+    const multiplier = numbersMultiplier(effectiveBodies);
+    const capped = effectiveBodies > 1 && Math.pow(effectiveBodies, NUMBERS_EXPONENT) > MAX_NUMBERS_MULTIPLIER;
     const weight = strongest * multiplier;
 
-    return { strongest, summed, effectiveBodies, multiplier, capped: multiplier < raw, weight };
+    return { strongest, summed, effectiveBodies, multiplier, capped, weight };
 }
 
 /**

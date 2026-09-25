@@ -11,7 +11,6 @@ export {
     TURN_ENCOUNTER_CHANCE,
     ARRIVAL_PER_FACT_CHANCE,
     MAX_OCCURRENCES_PER_WINDOW,
-    ENCOUNTER_ACTIVITIES,
     activityProfile,
     arrivalExposure,
     sealedDoorFraction,

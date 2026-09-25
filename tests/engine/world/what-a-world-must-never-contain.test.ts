@@ -34,9 +34,13 @@ import { getWoundType } from '../../../src/data/cultivation/wounds.js';
 import {
     continuityCeilingFor,
     reconcileSoulAndSelf,
-    ruinSoul,
-    soulAndSelfDisagree
+    ruinSoul
 } from '../../../src/engine/cultivation/how-much-of-a-person-is-left.js';
+import type { SoulState } from '../../../src/schema/cultivation.js';
+
+/** True where the pair could not both be true of one person. */
+const soulAndSelfDisagree = (self: { soulState: SoulState; identityContinuity: number }) =>
+    self.identityContinuity > continuityCeilingFor(self.soulState) + 1e-9;
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 function seeded(seed = 'invariant-a', population = 250): WorldState {

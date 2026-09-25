@@ -73,7 +73,7 @@ import {
     HOW_A_HOUSE_IS_SEEN,
     getHollowCourtMember
 } from '../data/cultivation/hollow-court-roster.js';
-import { ARTERIALS, PROVINCES, REGIONS } from '../data/cultivation/regions.js';
+import { ARTERIALS, DRIVEN_PROVINCE_SCHEDULE_ORDER, PROVINCES, REGIONS } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import {
     SHARED_EVENTS,
@@ -5172,6 +5172,12 @@ function groundTable(): string {
             `${esc(r.arterial)} sits in ${esc(r.province)}, which ${esc(apexName(r.holder))} holds, and is run through ${esc(r.court ?? '')} - and ${esc(r.court ?? '')} answers to ${esc(apexName(r.patron))}.`).join(' ')} A holding is administered <em>through</em> a court, courts answer to an apex, and nothing requires the two to be the same house. So an apex can depend on a rival for the working of its own ground, and <strong>no document anywhere says so</strong> - not because it is hidden, but because there is no document whose job it would be, and neither house has ever had a reason to ask for one.</p>`}`;
 }
 
+/** A province's place in the driven schedule; unscheduled ground keeps catalog order. */
+function scheduleSlot(provinceId: string): number {
+    const at = DRIVEN_PROVINCE_SCHEDULE_ORDER.indexOf(provinceId);
+    return at < 0 ? DRIVEN_PROVINCE_SCHEDULE_ORDER.length : at;
+}
+
 /**
  * How much ground each apex actually holds, including the ones holding none.
  */
@@ -5179,7 +5185,9 @@ function apexGroundTable(): string {
     const rows = APEX_INSTITUTIONS
         .map(apex => ({
             name: apex.name,
+            // Where the house tests its ground on a schedule, in the schedule's order.
             provinces: PROVINCES.filter(p => p.heldByApexId === apex.id)
+                .sort((a, b) => scheduleSlot(a.id) - scheduleSlot(b.id))
         }))
         .sort((a, b) => b.provinces.length - a.provinces.length
             || a.name.localeCompare(b.name));

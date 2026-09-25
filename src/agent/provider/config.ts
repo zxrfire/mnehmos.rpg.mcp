@@ -145,11 +145,6 @@ export function normalizeProviderName(raw: string | null | undefined): ProviderN
     return PROVIDER_ALIASES[key] ?? null;
 }
 
-/** Type guard for values that are already canonical provider names. */
-export function isProviderName(value: unknown): value is ProviderName {
-    return typeof value === 'string' && (PROVIDER_NAMES as readonly string[]).includes(value);
-}
-
 /** The sentence to show an operator when a provider is not configured. */
 export function describeProviderConfiguration(name: ProviderName): string {
     const envVar = PROVIDER_CONFIG_ENV[name];

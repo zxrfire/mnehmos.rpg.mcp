@@ -20,7 +20,6 @@ import {
     ambientForLocationOnDay,
     ambientWeightsForDensity,
     impliedDensityFor,
-    isTypicalForGround,
     rollAmbientAtDensity,
     typicalAmbientFor
 } from '../../../src/engine/cultivation/ambient.js';
@@ -184,10 +183,10 @@ describe('the engine does not hand the narrator permanent claims', () => {
     it('lets a caller tell geology from weather', () => {
         // "Thin, and it always has been" is a claim about the ground, and is
         // only earned on ground that is actually thin.
-        expect(isTypicalForGround('thin', 0.1)).toBe(true);
-        expect(isTypicalForGround('thin', 0.45)).toBe(false);
-        expect(isTypicalForGround('dense', 0.8)).toBe(true);
-        expect(isTypicalForGround('spirit_tide', 0.8)).toBe(false);
+        expect(typicalAmbientFor(0.1)).toBe('thin');
+        expect(typicalAmbientFor(0.45)).not.toBe('thin');
+        expect(typicalAmbientFor(0.8)).toBe('dense');
+        expect(typicalAmbientFor(0.8)).not.toBe('spirit_tide');
     });
 
     it('agrees with what the place actually reports over a long stretch', () => {

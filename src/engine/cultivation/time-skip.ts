@@ -15,7 +15,6 @@ import {
     STARVATION_TURNS,
     HP_RECOVERY_FRACTION_PER_DAY,
     stagnationYearsForOrdinal,
-    type AmbientQi,
     type Cultivator,
     type DeathCause,
     type Element,
@@ -1801,12 +1800,4 @@ function daysUntilYear(limit: number, current: number): number {
 
 function deathSummary(cause: DeathCause, name: string, ordinal: number, age: number): string {
     return `${name} died at ${rankName(ordinal)}, age ${Math.floor(age)}: ${cause.replace(/_/g, ' ')}.`;
-}
-
-/** Ambient band governing a given absolute day of a skip. For UI preview. */
-export function ambientDuringSkip(ctx: TimeSkipContext, absDay: number): AmbientQi {
-    return ambientForBlock(ctx.seed, ctx.locationId, absDay, {
-        density: ctx.locationDensity,
-        anUnopenedPocket: ctx.anUnopenedPocket
-    });
 }

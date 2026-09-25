@@ -24,7 +24,6 @@ import {
     DAYS_AT_THE_GATE,
     DAYS_TO_CUT_A_SLIP,
     THE_FEWEST_DAYS_THE_WORK_TAKES,
-    YEARS_TO_MAKE_A_HEAVEN_THING,
     daysAtTheWork,
     whatACommissionComesTo,
     whatASlipIsWorth,
@@ -52,7 +51,7 @@ import { ARTIFACTS } from '../../../src/data/cultivation/artifacts.js';
 
 describe('the days a made thing takes', () => {
     it('takes the grade\'s days at the gate, and the heaven anchor is the deepest road\'s copy', () => {
-        expect(YEARS_TO_MAKE_A_HEAVEN_THING).toBe(YEARS_TO_COPY_THE_DEEPEST_ROAD);
+        expect(DAYS_AT_THE_GATE.heaven / DAYS_PER_YEAR).toBe(YEARS_TO_COPY_THE_DEEPEST_ROAD);
         for (const grade of ['mortal', 'earth', 'heaven'] as const) {
             expect(daysAtTheWork(grade, refiningOrdinalFor(grade))).toBe(Math.ceil(DAYS_AT_THE_GATE[grade]));
             // The gate sits above the floor, so skill has room to save time.

@@ -3050,11 +3050,16 @@ export async function handleAdminManage(
     args: unknown,
     _ctx?: SessionContext
 ): Promise<AdminOutcome> {
-    const response = await router(args as Record<string, unknown>);
+    const data: any = await adminResult(args);
+    const asRouted = (): AdminOutcome => ({
+        content: [{
+            type: 'text',
+            text: data.error === 'unreadable_admin_result' ? String(data.message) : JSON.stringify(data, null, 2)
+        }],
+        changed: false
+    });
     try {
-        const jsonText = response.content[0]?.text;
-        if (!jsonText) return { ...response, changed: false };
-        const data = JSON.parse(jsonText);
+        if (data.error === 'unreadable_admin_result') return asRouted();
 
         const out: string[] = [];
 
@@ -3355,7 +3360,7 @@ export async function handleAdminManage(
 
         return { content: [{ type: 'text', text: blocks(...out) }], changed };
     } catch {
-        return { ...response, changed: false };
+        return asRouted();
     }
 }
 

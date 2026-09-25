@@ -243,10 +243,6 @@ export function activityProfile(activity: EncounterActivity): ActivityProfile {
     return PROFILES[activity] ?? PROFILES.abroad;
 }
 
-/** Every activity, for the design guards. */
-export const ENCOUNTER_ACTIVITIES: readonly EncounterActivity[] =
-    Object.keys(PROFILES) as EncounterActivity[];
-
 // WHERE THEY ARE STANDING
 
 /**

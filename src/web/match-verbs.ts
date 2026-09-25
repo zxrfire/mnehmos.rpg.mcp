@@ -6,7 +6,7 @@ import { favourStanceOf } from '../data/cultivation/a-favour-skips-the-admission
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getSect } from '../data/cultivation/index.js';
 import { intakeRouteOf } from '../data/cultivation/sects.js';
-import { spendAWord, wasPlaced } from '../engine/birth/spending-a-word-to-place-a-child.js';
+import { spendAWord, wasPlaced, whoCanHoldAChildAtZero } from '../engine/birth/spending-a-word-to-place-a-child.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import {
     type APartyToAMatch,
@@ -1067,12 +1067,19 @@ export const matchVerbs = {
 
         if (!wasPlaced(result)) {
             const stance = favourStanceOf(houseId);
+            // Where a word does move the bar, among the houses they can name.
+            const elsewhere = whoCanHoldAChildAtZero().needsAWord
+                .filter(id => id !== houseId && this.knowledge.isAwareOf(cultivator.id, 'sect', id))
+                .map(id => getSect(id)?.name ?? id);
+            const why = stance?.why
+                ?? 'There is nothing at this door for a word to move, and asking anyway '
+                   + 'spends something for nothing.';
             return refused('engine.spendAWord', 'child', factsForRefusal(
                 'The word buys nothing here.',
-                stance?.why
-                    ?? 'There is nothing at this door for a word to move, and asking anyway '
-                       + 'spends something for nothing.',
-                `spendAWord refused: ${result}.`
+                elsewhere.length === 0
+                    ? why
+                    : `${why} A word does move the bar at ${elsewhere.join(', ')}.`,
+                `spendAWord refused: ${result}. Word-movable houses known: ${elsewhere.length}.`
             ));
         }
 
@@ -1099,7 +1106,8 @@ export const matchVerbs = {
             `Placed, on a word to ${party?.name ?? askedOfId}.`,
             [
                 `You ask, personally, and the bar comes down for one person once. The child is `
-                + `on ${houseId}'s roll at the bottom of it, on no rung, having met nothing.`,
+                + `on ${getSect(houseId)?.name ?? houseId}'s roll at the bottom of it, on no rung, `
+                + 'having met nothing.',
                 'What it cost is not stones. You owe somebody, the amount was never named, and '
                 + 'an unnamed debt does not end the way a price does.',
                 'And it is a gamble rather than a gift: a child placed above what they turn out '

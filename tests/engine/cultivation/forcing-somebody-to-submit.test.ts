@@ -46,8 +46,13 @@ import { forStream } from '../../../src/engine/cultivation/rng.js';
 import {
     ORDINARILY_YIELDS,
     whatALevelLeaves,
-    wentFurtherThan
+    type PressureLevel
 } from '../../../src/engine/cultivation/how-far-you-went-to-make-them-comply.js';
+
+/** The ladder, total and ordered: words, then hands, then the will. */
+const PRESSURE_ORDER: readonly PressureLevel[] = ['said', 'done', 'taken'];
+const wentFurtherThan = (a: PressureLevel, b: PressureLevel) =>
+    PRESSURE_ORDER.indexOf(a) > PRESSURE_ORDER.indexOf(b);
 import {
     A_BLOW_MEANT_TO_END_IT,
     AN_ORDINARY_SWING,

@@ -62,11 +62,6 @@ export function madeBelowTheLid(grade: TechniqueGrade): boolean {
     return !isExpelledFromBelow(refiningOrdinalFor(grade));
 }
 
-/** Every grade that is only ever sent down, never refined here. */
-export function sentDownGrades(): TechniqueGrade[] {
-    return (Object.keys(REFINING_REALM_BY_GRADE) as TechniqueGrade[])
-        .filter(grade => !madeBelowTheLid(grade));
-}
 
 /**
  * The realm's own display name, for saying the requirement out loud.

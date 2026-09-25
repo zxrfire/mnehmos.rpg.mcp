@@ -1,8 +1,6 @@
 import { getDb } from '../../src/storage/index.js';
 import {
-    createDomainServices,
     getDomainServices,
-    runWithDomainServices,
     type DomainServices,
 } from '../../src/server/domain-services.js';
 import { useInMemoryDatabase } from '../helpers/test-db.js';
@@ -10,14 +8,8 @@ import { useInMemoryDatabase } from '../helpers/test-db.js';
 useInMemoryDatabase();
 
 describe('domain service boundary', () => {
-    it('allows handlers and tests to inject a request-scoped facade', async () => {
-        const services = createDomainServices(getDb());
-
-        await runWithDomainServices(services, async () => {
-            expect(getDomainServices()).toBe(services);
-        });
-
-        expect(getDomainServices()).not.toBe(services);
+    it('builds the facade on the current database', () => {
+        expect(getDomainServices().db).toBe(getDb());
     });
 
     it('exposes the repository dependencies needed by world, npc and inventory', () => {

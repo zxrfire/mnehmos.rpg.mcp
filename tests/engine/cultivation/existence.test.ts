@@ -16,10 +16,8 @@ import {
     type ExistenceState
 } from '../../../src/schema/cultivation.js';
 import {
-    MORTAL_EXISTENCE_STATES,
     NASCENT_SOUL_ORDINAL,
     PROFOUND_EXISTENCE_STATES,
-    aliveFlagFor,
     canAct,
     canEnterExistenceState,
     hasBody,
@@ -31,6 +29,9 @@ import {
     resolveBodilyDestruction
 } from '../../../src/engine/cultivation/existence.js';
 import { evaluateDeathConditions } from '../../../src/engine/cultivation/survival.js';
+
+/** Open to anyone at any realm: here, dead, or nobody knows which. */
+const MORTAL_EXISTENCE_STATES = ['alive', 'physically_dead', 'missing', 'unknown'] as const;
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { makeCultivator, makeInjuries } from './fixtures.js';
 
@@ -86,11 +87,8 @@ describe('the field set', () => {
     });
 
     it('keeps the alive flag derivable from the authoritative state', () => {
-        for (const state of ALL_STATES) {
-            expect(aliveFlagFor(state)).toBe(isGoingConcern(state));
-        }
-        expect(aliveFlagFor('physically_dead')).toBe(false);
-        expect(aliveFlagFor('soul_preserved')).toBe(true);
+        expect(isGoingConcern('physically_dead')).toBe(false);
+        expect(isGoingConcern('soul_preserved')).toBe(true);
     });
 
     it('separates having a body from being a going concern', () => {
