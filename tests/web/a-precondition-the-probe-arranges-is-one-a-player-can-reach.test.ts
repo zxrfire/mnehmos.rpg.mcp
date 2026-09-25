@@ -93,7 +93,10 @@ describe('given a beginner, when they buy a book and begin it', () => {
 
         // AND THE GATE IS SHUT BEHIND THEM. This is the observable claim: the
         // no-method refusal no longer fires.
-        const sat = await game.act('I sit down');
+        // A sentence that SAYS it is a sitting. A bare "I sit down" is
+        // taking a seat now, and reaches the unclear turn rather than the
+        // method gate this probe is here to prove is shut.
+        const sat = await game.act('I sit down to cultivate');
         expect(sat.narration ?? '', sat.narration).not.toMatch(/No cultivation method/i);
         expect(
             sat.toolCalls.filter(c => !c.ok && !c.name.startsWith('narrator.')).map(c => c.name),

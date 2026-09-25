@@ -34,7 +34,11 @@ const AMBITIONS = [
 
 /** Acts. These still name one, and must not be swallowed. */
 const ACTS = [
-    'I sit down',
+    // `I sit down` stood here until the owner ruled that sitting DOWN is
+    // taking a seat and not a sitting - it reaches nothing now, which is
+    // the point of `SITTING_THAT_IS_NOT_CULTIVATION`. This is the same act
+    // said the way that names it.
+    'I sit down to cultivate',
     'I sit and cultivate',
     'I meditate'
 ];

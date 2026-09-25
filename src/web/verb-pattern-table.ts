@@ -3367,8 +3367,23 @@ export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
     // cross-legged", "I sit down and gather qi" are all sittings and stay
     // ones. Anchored at the start because the exception is about the whole
     // sentence and not about what follows the verb.
-    String.raw`^(?![\s\S]*\b(?:cultivat|meditat|seclu|dantian|meridian|cross.?legged|`
-    + String.raw`lotus|circulat|breath|spiritual energy|spirit energy|qi\b))`
+    //
+    // ── WHOLE WORDS, AND NEVER A STEM ────────────────────────────────
+    //
+    // This was written with stems - `cultivat`, `meditat`, `circulat`,
+    // `seclu` - so one alternative would catch every ending. It broke the
+    // spelling repair, measured by `one-typo-does-not-cost-a-turn`: *"I
+    // cultivat for a month"* stopped reaching `cultivate`. The repair builds
+    // its vocabulary by harvesting every run of letters out of every pattern
+    // this module exports, so a stem written HERE is a word THERE - and a
+    // player's typo that happens to equal a stem is an exact match, which the
+    // repair leaves alone. Any pattern in this file teaches the speller
+    // English; a stem teaches it a word nobody spells.
+    String.raw`^(?![\s\S]*\b(?:cultivate|cultivates|cultivated|cultivating|cultivation|`
+    + String.raw`meditate|meditates|meditated|meditating|meditation|`
+    + String.raw`seclude|secluded|seclusion|dantian|meridian|meridians|`
+    + String.raw`cross.?legged|lotus|circulate|circulates|circulating|`
+    + String.raw`breath|breathe|breathing|spiritual energy|spirit energy|qi)\b)`
     + String.raw`[\s\S]*\bs(?:it|its|at|itting)\s+down\b`
 ].join('|'), 'i');
 
