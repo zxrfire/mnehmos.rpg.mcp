@@ -2249,9 +2249,15 @@ export function factsForMove(
     };
 }
 
-export function factsForEat(cultivator: Cultivator, satietyRestored: number, stonesSpent: number): EngineFacts {
+export function factsForEat(
+    cultivator: Cultivator,
+    satietyRestored: number,
+    stonesSpent: number,
+    /** Where it was bought, as a sentence says it: "at the inn in the town below the gate". */
+    where?: string
+): EngineFacts {
     const lines = [
-        `${cultivator.name} ate. Satiety restored by ${satietyRestored} to ${cultivator.satiety}/100; ` +
+        `${cultivator.name} ate${where ? ` ${where}` : ''}. Satiety restored by ${satietyRestored} to ${cultivator.satiety}/100; ` +
         `${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'} spent, leaving ${cultivator.spiritStones}.`,
         'The hunger stops. It will come back.'
     ];
@@ -2266,7 +2272,7 @@ export function factsForEat(cultivator: Cultivator, satietyRestored: number, sto
             'until a Grain Abstinence Pill removes the requirement.'
         ],
         prose:
-            `A meal, bought for ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'}. The hunger stops, ` +
+            `A meal, bought${where ? ` ${where}` : ''} for ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'}. The hunger stops, ` +
             'and a farmer sitting at the next table did the same thing for less.'
     };
 }

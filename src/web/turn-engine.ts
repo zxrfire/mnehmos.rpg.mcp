@@ -313,6 +313,7 @@ import {
 // `GameService` as a type and imports nothing from here at runtime.
 import { theHouseThisNameReaches, theHouseWhoseGateThisIs, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { aWorkTopic, theGateAStrangerStandsAt, theGateIsAsked, whatTheGateSaysOfItsWork } from './the-gate-speaks-for-its-house.js';
+import { whereFoodComesFromHere, whereFoodIsSoldInstead } from './where-food-is-sold.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
 import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
@@ -12176,6 +12177,10 @@ ${opened.text}` : receipt,
                 'They are as fed as they get; no purchase made.'
             ));
         }
+        // WHERE THE FOOD COMES FROM: bought where somebody sells it, and out of the pack anywhere
+        // else. See `where-food-is-sold.ts`.
+        const food = whereFoodComesFromHere(this, cultivator);
+        if (!food.sold) return this.eatFromThePack(run, cultivator);
         if (cultivator.spiritStones < MEAL_COST_STONES) {
             return refused('cultivator.applyDeltas', 'eat', factsForRefusal(
                 'Nothing to buy it with.',
@@ -12198,7 +12203,7 @@ ${opened.text}` : receipt,
         })();
 
         return {
-            facts: factsForEat(after, restored, MEAL_COST_STONES),
+            facts: factsForEat(after, restored, MEAL_COST_STONES, food.where),
             events: [],
             timeSkip: null,
             breakthrough: null,
@@ -12209,6 +12214,46 @@ ${opened.text}` : receipt,
                 summary:
                     `Satiety +${restored} to ${after.satiety}/100, starvation counter cleared, ` +
                     `${MEAL_COST_STONES} spirit stone spent (${after.spiritStones} left).`,
+                ok: true
+            }]
+        };
+    }
+
+    /** A ration opened where nobody sells food, or the refusal that says where somebody does. */
+    private eatFromThePack(run: Run, cultivator: Cultivator): Execution {
+        const held = this.rationsHeld(cultivator);
+        if (held <= 0) {
+            return refused('cultivator.applyDeltas', 'eat', factsForRefusal(
+                'Nothing to eat here.',
+                `${whereFoodIsSoldInstead(this, cultivator)} Your pack holds no dry food.`,
+                'No seller here and no ration held. Nothing eaten, nothing spent.'
+            ));
+        }
+        const restored = SATIETY_MAX - cultivator.satiety;
+        const after = this.db.transaction((): Cultivator => {
+            this.setRationsHeld(cultivator, held - 1);
+            const updated = this.repos.cultivators.applyDeltas(cultivator.id, {
+                satiety: restored,
+                starvationTurns: -cultivator.starvationTurns
+            });
+            if (!updated) throw new GameError('Cultivator vanished mid-meal.', 500);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+        const left = held - 1;
+        const line = `Nobody here sells food, so you open a sack of dry food from your pack and eat it. `
+            + (left === 0 ? 'It was the last one.' : `${left === 1 ? 'One sack' : `${left} sacks`} left.`);
+        return {
+            facts: observable('Fed from the pack.', [line], line,
+                [`eatFromThePack: satiety +${restored} to ${after.satiety}/100, one ration opened, ${left} held. No stones spent.`]),
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'cultivator.applyDeltas',
+                action: 'eat',
+                summary: `Satiety +${restored} to ${after.satiety}/100 out of the pack; ${left} ration(s) left.`,
                 ok: true
             }]
         };
@@ -18606,6 +18651,13 @@ ${fit.line}`;
             held: this.rationsHeld(cultivator)
         });
         const bought = Math.min(wanted, affordable, fits);
+        if (!whereFoodComesFromHere(this, cultivator).sold) {
+            return refused('cultivator.applyDeltas', 'provision', factsForRefusal(
+                'Nobody here sells dry food.',
+                `${whereFoodIsSoldInstead(this, cultivator)} Nothing is bought.`,
+                'Provisions: no seller where they stand. Nothing bought, nothing spent.'
+            ));
+        }
 
         if (bought === 0 && affordable > 0) {
             // What they already carry, said first: a player who asks for a week of food while
