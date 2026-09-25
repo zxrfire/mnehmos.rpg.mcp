@@ -317,8 +317,9 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     },
     work: {
         // A HOUSE'S OWN BOARD IS HOUSE. Played blind at a sect's gate: "what's on your notice board
-        // then?" went to work/board, the mortal work list, and the house's own postings - its
-        // deliveries among them, which anybody may take - were never read.
+        // then?" went to work/board, the mortal work list, and the house never answered. Its board
+        // is inside its walls, and at the gate the gate answers for it: see
+        // `the-gate-speaks-for-its-house.ts`.
         says: "work for pay: labour, and the contracts on a town's wall. Never a house's own board, "
             + 'which is house, and never a room or a bed, which is trade',
         intents: { take: 'work', board: 'work' },

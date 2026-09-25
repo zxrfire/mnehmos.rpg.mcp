@@ -37,6 +37,8 @@ async function standingWhereThereIsABoard(seed: string) {
     const world = (game as unknown as { atHand: WorldAtHand }).atHand;
     const seat = world.locations.find(l => l.kind === 'sect_seat')!;
     await say(`ADMIN move ${seat.name}`);
+    // The board is inside the walls: stand inside them, where anybody who got in reads it.
+    game.repos.cultivators.standIn(game.currentRun().cultivator.id, `${seat.id}#forecourt#board`);
     return { game, say, world: () => (game as unknown as { atHand: WorldAtHand }).atHand };
 }
 

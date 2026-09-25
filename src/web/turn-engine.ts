@@ -312,6 +312,7 @@ import {
 // Type-only in the other direction, so no cycle: that module takes a
 // `GameService` as a type and imports nothing from here at runtime.
 import { theHouseThisNameReaches, theHouseWhoseGateThisIs, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { aWorkTopic, theGateAStrangerStandsAt, theGateIsAsked, whatTheGateSaysOfItsWork } from './the-gate-speaks-for-its-house.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
 import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
@@ -5439,6 +5440,9 @@ ${noticedWaiting}`;
 
                 // WHAT IS NAILED TO THE WALL, ASKED FOR DELIBERATELY.
                 if (action.intent === 'bills') {
+                    // A house's gate carries no wall: its board is inside, and the gate answers.
+                    const atTheGate = theGateAStrangerStandsAt(this, cultivator);
+                    if (atTheGate) return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
                     const wall = readTheWall(
                         this.knowledge, cultivator, run, this.whoIsBeingLookedFor()
                     );
@@ -6632,6 +6636,15 @@ ${noticed}`;
             }
         }
 
+        // WORK ASKED AT A HOUSE'S GATE is answered by the gate, which speaks for the house. See
+        // `the-gate-speaks-for-its-house.ts`.
+        if ((intent === undefined || intent === 'talk') && aWorkTopic(topic)) {
+            const atTheGate = theGateAStrangerStandsAt(this, cultivator);
+            if (atTheGate && theGateIsAsked(this, cultivator, atTheGate, query)) {
+                return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
+            }
+        }
+
         // A SET IS NOT ONE PERSON, AND THAT IS TRUE OF EVERY VERB
         //
         // The design owner, having listed the ways a set gets named - everyone
@@ -7531,6 +7544,12 @@ ${noticed}`;
         intent?: string
     ): Promise<Execution> {
         const readingTheBoard = intent === 'board';
+        // At a house's gate the work going is the house's, and the gate answers for it.
+        if (readingTheBoard) {
+            this.atHand = this.atHand ?? await this.loadWorld();
+            const atTheGate = theGateAStrangerStandsAt(this, cultivator);
+            if (atTheGate) return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
+        }
 
         // WHAT IS UP ON THE WALL HERE for somebody at this rung: the contracts,
         // and their own house's missions where they have one. The same board
@@ -16884,6 +16903,11 @@ ${fit.line}`;
         target: string | undefined
     ): Promise<Execution> {
         this.atHand = this.atHand ?? await this.loadWorld();
+        // THE BOARD IS INSIDE, and a stranger outside the gate is answered by the gate: that the
+        // board is for the house's own, and what it puts up for outsiders. See
+        // `the-gate-speaks-for-its-house.ts`.
+        const atTheGate = theGateAStrangerStandsAt(this, cultivator);
+        if (atTheGate) return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
         const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
         const board = sectBoardFor(deps, cultivator);
         const wanted = (target ?? '').trim();

@@ -73,7 +73,10 @@ async function aBoardWhereTheTermGetsCut(seed = 'cut-19') {
     await game.newRun('Runner');
     const say = (s: string) => game.act(s);
     await say('ADMIN set_realm ordinal=14');
-    await say(`ADMIN move ${game.atHand.locations.find(l => l.kind === 'sect_seat')!.name}`);
+    const seat = game.atHand.locations.find(l => l.kind === 'sect_seat')!;
+    await say(`ADMIN move ${seat.name}`);
+    // The board is inside the walls: stand inside them, where anybody who got in reads it.
+    game.repos.cultivators.standIn(game.currentRun().cultivator.id, `${seat.id}#forecourt#board`);
     const board = await say('what duties are there');
     const offered = /\n {2}([^:\n]{5,60}): /.exec(board.narration ?? '')?.[1];
     return { game, say, repos, offered };

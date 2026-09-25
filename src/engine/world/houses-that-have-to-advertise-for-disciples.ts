@@ -511,7 +511,7 @@ export const WHAT_A_NOTICE_DOES_NOT_BUY: Record<TheAsk['kind'], string> = {
 };
 
 /** How the paper words one ask. */
-function whatThePaperSays(
+export function whatThePaperSays(
     house: HouseWithSomethingToSay,
     ask: TheAsk,
     /** The day the wall is being read, for the one ask that is an appointment. */

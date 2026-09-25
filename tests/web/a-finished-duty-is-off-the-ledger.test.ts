@@ -71,6 +71,8 @@ async function standingAtTheBoard(seed: string) {
     await say('ADMIN set_realm ordinal=14');
     const seat = game.atHand.locations.find(l => l.kind === 'sect_seat')!;
     await say(`ADMIN move ${seat.name}`);
+    // The board is inside the walls: stand inside them, where anybody who got in reads it.
+    game.repos.cultivators.standIn(game.currentRun().cultivator.id, `${seat.id}#forecourt#board`);
     return { game, say, repos };
 }
 
