@@ -204,12 +204,19 @@ describe('getting in front of somebody worth asking', () => {
         // `a-target-can-be-a-description.ts` now reads it literally, as the
         // person standing closest to this cultivator's own height. That is a
         // peer, and a peer is exactly who is not worth asking.
+        //
+        // THE STRONGEST ONE STANDING IN FRONT OF THEM. A house's own people are
+        // read into its rooms, so the elders above are in the halls and not in
+        // the yard a stranger arrives in; "here" is the yard, and the ask goes
+        // to the deepest person in it.
+        const inTheYard = game.present(game.state().cultivator as never)
+            .slice().sort((a, b) => b.realmOrdinal - a.realmOrdinal)[0];
+        expect(inTheYard, 'nobody is standing in the yard at all').toBeDefined();
         const asked = await say('I ask the strongest one here to teach me');
-        const reached = worthAsking.some(npc => asked.includes(npc.name));
         expect(
-            reached,
-            `the request must reach one of ${worthAsking.map(n => n.name).join(', ')}; got: ${asked.slice(0, 300)}`
-        ).toBe(true);
+            asked,
+            `the request must reach ${inTheYard!.name}, the deepest in the yard; got: ${asked.slice(0, 300)}`
+        ).toContain(inTheYard!.name);
 
         // Priced, not shrugged off. `summariseToolBody`'s fallback - "It is
         // done. Nothing about it drew attention." - is what an unwired verb
