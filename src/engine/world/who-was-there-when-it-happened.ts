@@ -320,26 +320,6 @@ export function linkFactToWhoItNames(
 }
 
 /**
- * Every fact this person was standing in front of, in the order they happened.
- *
- * The read that runs the other way from `trajectoryOf`, and the one that makes a
- * witness worth storing: a trajectory answers what happened TO somebody, and
- * until this there was no way to ask what somebody SAW - which is the whole of
- * what having been there is good for, since it is what lets them be the one who
- * tells you.
- *
- * Derived off `witnessIds` rather than off a second list on the person. Presence
- * is a fact about the world and it is already stored exactly once; a mirror of
- * it on the roster would be a copy to drift, and `historyFactIds` is not the
- * place for it - see the block above for the measurement that settled that.
- */
-export function whatTheySaw(state: WorldState, npc: NpcRecord): HistoricalFact[] {
-    return state.history.facts
-        .filter(f => f.witnessIds.includes(npc.id))
-        .sort((a, b) => a.day - b.day || (a.id < b.id ? -1 : 1));
-}
-
-/**
  * Every fact on somebody's record, in the order they happened.
  *
  * The read side of the same link, and the thing a follower of a trajectory

@@ -14,7 +14,7 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { catalogPersonBehind } from '../src/engine/world/a-catalog-person-and-their-world-row.js';
-import { isOneOfTheBeasts } from '../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
+import { theSpeciesItIs } from '../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { reachableCeilingFor, manualCeilingOf, BOOKLESS_CEILING } from '../src/engine/world/manuals.js';
 import { roadsInReachOf } from '../src/engine/world/how-a-cultivator-comes-by-a-road.js';
 import { canAttemptBreakthrough, daoRequirementFor } from '../src/engine/cultivation/breakthrough.js';
@@ -49,8 +49,8 @@ function bandRow(pool: any[]): number[] {
 
 function report(year: number): void {
     const alive = (state.npcs as any[]).filter(n => n.status === 'alive');
-    const beasts = alive.filter(n => isOneOfTheBeasts(n));
-    const people = alive.filter(n => !isOneOfTheBeasts(n));
+    const beasts = alive.filter(n => theSpeciesItIs(n) !== null);
+    const people = alive.filter(n => theSpeciesItIs(n) === null);
     const sim = people.filter(n => !authored(n));
     const auth = people.filter(n => authored(n));
     const hi = (xs: any[]) => xs.reduce((m, n) => Math.max(m, n.cultivation.realmOrdinal), -1);

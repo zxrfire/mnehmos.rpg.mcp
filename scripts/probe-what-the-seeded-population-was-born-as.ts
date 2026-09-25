@@ -21,7 +21,7 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { ORIGIN_TIERS, type OriginTierKey } from '../src/engine/cultivation/origin.js';
-import { HOUSEHOLD_ORIGINS } from '../src/engine/world/how-many-of-the-broken-are-ever-mended.js';
+import { HOUSEHOLD_ORIGINS } from '../tests/support/how-many-of-the-broken-are-ever-mended.js';
 import type { NpcRecord } from '../src/engine/world/npc-state.js';
 
 const catalog = await loadCultivationCatalog();

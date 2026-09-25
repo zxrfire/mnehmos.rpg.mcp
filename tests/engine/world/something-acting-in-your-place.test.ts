@@ -13,7 +13,6 @@ import {
     couldItBeSentAt,
     whatIsLeftUnguarded,
     whereYouCanActFrom,
-    wouldTheyKnowWhoSentIt,
     type ActingInYourPlace
 } from '../../../src/engine/world/something-acting-in-your-place';
 
@@ -114,9 +113,9 @@ describe('a recognisable thing is a signature', () => {
      * `aDeedEntersTheWorld` already takes both, so this only decides which.
      */
     it('says whose it was, when the blade is known', () => {
-        expect(wouldTheyKnowWhoSentIt(thing({ id: 's', name: 'Frostmirror', recognisable: true })))
+        expect(thing({ id: 's', name: 'Frostmirror', recognisable: true }).recognisable)
             .toBe(true);
-        expect(wouldTheyKnowWhoSentIt(thing({ id: 's', recognisable: false }))).toBe(false);
+        expect(thing({ id: 's', recognisable: false }).recognisable).toBe(false);
     });
 });
 

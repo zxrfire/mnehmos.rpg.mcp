@@ -1,20 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import {
-    advanceWorldYears,
-    worldShape
-} from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import { applyPressure, pressureTemplates } from '../../../src/engine/world/pressure.js';
 import {
     MARKET_MAGNITUDE,
     buildPlayerDigest,
-    namesPermitted,
     simpleAccess,
     unattributedTextOf
 } from '../../../src/engine/world/digest.js';
 import { cloneWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { makeFact, appendFact, queryFacts } from '../../../src/engine/world/history.js';
+import { worldShape } from '../../support/the-shape-of-a-world.js';
+import { namesPermitted } from '../../support/the-names-a-digest-may-use.js';
 
 const YEAR = 365;
 

@@ -27,8 +27,8 @@ import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { worldShape } from '../../../src/engine/world/driver.js';
 import { npcsAt, type WorldState } from '../../../src/engine/world/world-state.js';
+import { worldShape } from '../../support/the-shape-of-a-world.js';
 
 
 function headcount(state: WorldState, kind: string): number {

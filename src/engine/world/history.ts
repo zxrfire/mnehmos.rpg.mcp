@@ -152,19 +152,6 @@ export interface EventConsequences {
     tenYearsLater: string;
 }
 
-export const CONSEQUENCE_TEST_QUESTIONS: readonly { key: keyof EventConsequences; question: string }[] = [
-    { key: 'immediate', question: 'What changed immediately?' },
-    { key: 'physical', question: 'What changed physically?' },
-    { key: 'beneficiaries', question: 'Who benefited?' },
-    { key: 'losers', question: 'Who lost something?' },
-    { key: 'factionReactions', question: 'Which factions reacted?' },
-    { key: 'relationshipChanges', question: 'Which relationships changed?' },
-    { key: 'opportunitiesOpened', question: 'What new opportunities appeared?' },
-    { key: 'opportunitiesClosed', question: 'What old opportunities disappeared?' },
-    { key: 'rumours', question: 'What rumours spread?' },
-    { key: 'tenYearsLater', question: 'What is still true ten years later?' }
-] as const;
-
 export interface HistoricalFact {
     id: string;
     /** Absolute day. The canonical clock; `year` is a convenience mirror. */
@@ -379,22 +366,6 @@ export function appendFact(
 // THE CONSEQUENCE TEST
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Which of the ten questions this consequence block leaves unanswered. */
-export function missingConsequences(c: Partial<EventConsequences> | null | undefined): string[] {
-    if (!c) return CONSEQUENCE_TEST_QUESTIONS.map(q => q.question);
-    const missing: string[] = [];
-    for (const { key, question } of CONSEQUENCE_TEST_QUESTIONS) {
-        const value = c[key];
-        const empty =
-            value === undefined ||
-            value === null ||
-            (typeof value === 'string' && value.trim() === '') ||
-            (Array.isArray(value) && value.length === 0);
-        if (empty) missing.push(question);
-    }
-    return missing;
-}
-
 export function fillConsequences(c: Partial<EventConsequences>): EventConsequences {
     return {
         immediate: c.immediate ?? '',
@@ -465,11 +436,6 @@ export function concurrentEventsFor(
     });
 }
 
-/** Facts this observer was physically present for. */
-export function witnessedEventsFor(ledger: HistoryLedger, observer: Observer): HistoricalFact[] {
-    return ledger.facts.filter(f => classifyForObserver(f, observer) === 'witnessed');
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // QUERIES
 // The present is supposed to be explicable. These are how it gets explained.
@@ -534,17 +500,6 @@ export function queryFacts(ledger: HistoryLedger, q: FactQuery = {}): Historical
 }
 
 /**
- * Record something that almost happened.
- */
-export function recordNearMiss(
-    ledger: HistoryLedger,
-    fact: PendingFact,
-    note: string
-): HistoricalFact {
-    return appendFact(ledger, { ...fact, nearMiss: true, nearMissNote: note });
-}
-
-/**
  * Record something the engine does not know the answer to.
  */
 export function recordUnresolved(
@@ -580,51 +535,9 @@ export function resolveFact(
     return fact;
 }
 
-/** Everything the engine itself cannot answer. */
-export function unresolvedFacts(ledger: HistoryLedger): HistoricalFact[] {
-    return ledger.facts.filter(f => f.truth === 'unresolved');
-}
-
 /** Everything the world tried and did not manage. */
 export function nearMisses(ledger: HistoryLedger, q: FactQuery = {}): HistoricalFact[] {
     return queryFacts(ledger, { ...q, nearMiss: true });
-}
-
-/**
- * Walk a fact's causal chain back to its roots.
- */
-export function causalChain(
-    ledger: HistoryLedger,
-    factId: string,
-    maxDepth = 16
-): HistoricalFact[] {
-    const byId = new Map(ledger.facts.map(f => [f.id, f]));
-    const out: HistoricalFact[] = [];
-    const seen = new Set<string>();
-    let frontier = [factId];
-    for (let depth = 0; depth <= maxDepth && frontier.length > 0; depth++) {
-        const next: string[] = [];
-        for (const id of frontier) {
-            if (seen.has(id)) continue;
-            seen.add(id);
-            const fact = byId.get(id);
-            if (!fact) continue;
-            out.push(fact);
-            next.push(...fact.causes);
-        }
-        frontier = next;
-    }
-    return out;
-}
-
-/**
- * Facts whose cause was never recorded.
- *
- * "Nobody knows why" as a queryable state of the world. This is the list a
- * scholar, a grave-reader or a very old cultivator is working from.
- */
-export function unexplainedFacts(ledger: HistoryLedger): HistoricalFact[] {
-    return ledger.facts.filter(f => !f.causeKnown || f.fidelity === 'lost');
 }
 
 /**
@@ -644,11 +557,6 @@ export function explainFact(
     fact.causeKnown = true;
     if (FIDELITY_ORDER[fidelity] > FIDELITY_ORDER[fact.fidelity]) fact.fidelity = fidelity;
     return fact;
-}
-
-/** Degrade a record as the centuries pass. Called explicitly, never on a timer. */
-export function degradeFidelity(fact: HistoricalFact, to: RecordFidelity): void {
-    if (FIDELITY_ORDER[to] < FIDELITY_ORDER[fact.fidelity]) fact.fidelity = to;
 }
 
 export interface ChronicleOptions extends FactQuery {

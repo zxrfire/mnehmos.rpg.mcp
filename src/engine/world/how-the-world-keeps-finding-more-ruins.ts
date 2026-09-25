@@ -1296,15 +1296,6 @@ export function characterOfSeededRuin(
     return characters[rng.int(0, characters.length - 1)];
 }
 
-/**
- * Everything the world currently knows about and has not emptied.
- */
-export function standingReserve(state: WorldState): LocationRecord[] {
-    return state.locations.filter(
-        l => l.kind === 'ruin' && l.sealed && l.discovered && !l.tags.includes('emptied')
-    );
-}
-
 /** What this province has found, across every band. Used for the worked-out reading. */
 export function foundUnder(region: LocationRecord): number {
     let total = 0;
@@ -1314,12 +1305,3 @@ export function foundUnder(region: LocationRecord): number {
     return total;
 }
 
-/** And what is left in it, across every band. Finite, and stated. */
-export function stillInGroundUnder(region: LocationRecord): number {
-    let total = 0;
-    for (let band = 0; band <= DEEPEST_BAND; band++) {
-        total += Math.max(0, ruinsInGroundUnder(region, band)
-            - Number(region.data[foundKeyForBand(band)] ?? 0));
-    }
-    return total;
-}

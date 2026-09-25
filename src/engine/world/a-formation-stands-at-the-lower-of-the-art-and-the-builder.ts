@@ -290,15 +290,6 @@ export function isFormation(object: Pick<ObjectRecord, 'kind'>): boolean {
     return object.kind === 'formation';
 }
 
-/** Which stance it was laid in, or null on a row that is not a formation. */
-export function stanceOf(
-    object: Pick<ObjectRecord, 'kind' | 'data'>
-): FormationStance | null {
-    if (!isFormation(object)) return null;
-    const s = object.data?.stance;
-    return s === 'defensive' || s === 'offensive' ? s : null;
-}
-
 /**
  * Every formation standing at a place.
  */
@@ -310,7 +301,9 @@ export function formationsStandingAt(
 }
 
 /**
- * The floor this formation puts under whoever built it.
+ * The floor this formation puts under whoever built it: the rung it was whole
+ * at, which is also the rung a house's own ward was set at.
+ * `whatAHouseIsMadeOf` reads it for the second.
  */
 export function whatItsBuilderMustHaveBeen(
     object: Pick<ObjectRecord, 'kind' | 'power' | 'data'>

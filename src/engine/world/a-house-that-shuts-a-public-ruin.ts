@@ -55,11 +55,6 @@ import type { FactionRecord } from './world-state.js';
 /** The tag every account opened by a monopoly carries. */
 export const SHUT_TO_EVERYBODY_ELSE = 'monopoly';
 
-/** Whether a record in the ledger is one of these. */
-export function isAMonopolyAccount(record: { tags?: readonly string[] }): boolean {
-    return (record.tags ?? []).includes(SHUT_TO_EVERYBODY_ELSE);
-}
-
 /** The house as this act needs it: a name, a seat, and who is on the road. */
 export interface AHouseThatCouldShutIt {
     id: string;

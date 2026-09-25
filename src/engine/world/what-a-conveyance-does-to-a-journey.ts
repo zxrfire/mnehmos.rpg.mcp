@@ -259,13 +259,6 @@ export function whatArrivingOnThisSays(conveyance: Conveyance, power: number | n
         + 'which is most of its value to a party that would rather not be remarked on.';
 }
 
-/**
- * Whether a party on this can arrive without the district knowing.
- */
-export function couldArriveUnremarked(conveyance: Conveyance): boolean {
-    return !conveyance.seenComing;
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // THE ROW THAT IS NOT AN OBJECT
 // ─────────────────────────────────────────────────────────────────────────

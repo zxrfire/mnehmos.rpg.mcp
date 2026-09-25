@@ -103,7 +103,7 @@
  */
 
 import { isAtLeast, type KnowingStage } from '../social/discovery.js';
-import { keptAs, type ObjectRecord } from './possessions.js';
+import { keptAs, knowsOwnership, type ObjectRecord } from './possessions.js';
 import {
     certaintyRank,
     whatTheGapItselfTells,
@@ -261,8 +261,8 @@ export function whatTheyRecogniseAboutIt(
     thing: ThingOnShow,
     observer: ThingObserver
 ): ThingRecognised {
-    const toldWhereItCameFrom = thing.knownOwnershipBy.includes(observer.id)
-        || (observer.factionId !== null && thing.knownOwnershipBy.includes(observer.factionId));
+    const toldWhereItCameFrom = knowsOwnership(thing, observer.id)
+        || (observer.factionId !== null && knowsOwnership(thing, observer.factionId));
     const theirOwnHouse = thing.ownerId !== null && observer.factionId === thing.ownerId;
     const reference: KnowingStage = thing.ownerId === null
         ? 'unaware'

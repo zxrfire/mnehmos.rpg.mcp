@@ -52,6 +52,7 @@ import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.j
 import {
     isRuined,
     isTracked,
+    knowsOwnership,
     revealOwnership,
     transferPossession
 } from '../engine/world/possessions.js';
@@ -992,7 +993,7 @@ export const combatVerbs = {
 
         // They know now, and they go on knowing. Written before the line is
         // composed, so a narration that never runs cannot lose the fact.
-        if (!thing.knownOwnershipBy.includes(them.id)) {
+        if (!knowsOwnership(thing, them.id)) {
             this.atHand.objects[at] = revealOwnership(thing, them.id);
             this.theWorldMoved();
         }

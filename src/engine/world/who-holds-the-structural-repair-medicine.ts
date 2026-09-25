@@ -292,34 +292,6 @@ export function repairMedicineHeldBy(state: WorldState, factionId: string): Live
     return out;
 }
 
-/** How many of one medicine stand in the whole world right now. */
-export function worldCountOfRepairMedicine(state: WorldState, medicineId: string): number {
-    const medicine = getStructuralRepairMedicine(medicineId);
-    if (!medicine) return 0;
-    if (repairStorageModel(medicine) === 'row') {
-        return state.objects.filter(
-            o => o.data?.medicineId === medicineId && isUnspentDose(o)
-        ).length;
-    }
-    return state.factions.reduce(
-        (n, f) => n + Number(f.resources[repairStockKey(medicineId)] ?? 0),
-        0
-    );
-}
-
-/**
- * The count the standing register carries: how many sent-down doses are left.
- *
- * The only medicine that reaches a break above ordinal 28, summed live off the
- * world. It never goes up. If it reads lower than the catalog's opening figure,
- * somebody has spent one, and the row that says who is still in `state.objects`.
- */
-export function sentDownDosesStanding(state: WorldState): number {
-    return STRUCTURAL_REPAIR_MEDICINES
-        .filter(m => !m.madeBelowTheLid)
-        .reduce((n, m) => n + worldCountOfRepairMedicine(state, m.id), 0);
-}
-
 /**
  * Counted stock belonging to a body this world has no faction row for.
  *

@@ -224,26 +224,6 @@ export function whatThePlaceDidToIt(placeName: string): string {
 
 const OFF_A_BODY_IN = 'taken off a body in';
 
-/**
- * The same read backwards: whether a place marked this row, and which place.
- *
- * Forward is "what does a mark say"; backward is "was this thing marked, and
- * where". The backward half is the one anything downstream actually asks -
- * a war wanting to know whether it broke a thing or the ground did, a house
- * wanting to know why its property came back short - and without it every
- * caller would match the sentence itself, which is four copies of a format
- * string waiting to drift.
- */
-export function whereTheGroundGotIt(
-    object: Pick<ObjectRecord, 'provenance'>
-): string | null {
-    for (let i = object.provenance.length - 1; i >= 0; i--) {
-        const source = object.provenance[i].source;
-        if (source.startsWith(`${OFF_A_BODY_IN} `)) return source.slice(OFF_A_BODY_IN.length + 1);
-    }
-    return null;
-}
-
 /** What the place did to one row. One entry per tracked thing, in input order. */
 export interface MarkAtDeath {
     itemId: string;

@@ -1,14 +1,33 @@
 import { describe, it, expect } from 'vitest';
 import {
     pairProtectors,
-    thingsThatCouldStandOverAHouse,
+    type CouldStandInAChair,
     type HouseOnItsGround
 } from '../../../src/engine/world/house-protector-pairing.js';
+import { beastsOnThisGround } from '../../../src/engine/world/hunting-a-spirit-beast.js';
 import { houseElementalCharacterOf } from '../../../src/engine/world/house-elemental-character.js';
 import { BEASTS, BEAST_CHANGE_ORDINAL } from '../../../src/data/cultivation/beasts.js';
 import { SECTS, SECT_ADMISSION } from '../../../src/data/cultivation/sects.js';
 import { getTechnique } from '../../../src/data/cultivation/techniques.js';
 import { HELD_INSTRUMENTS } from '../../../src/data/cultivation/sealed-ancestors.js';
+
+/**
+ * NO GROUND PASSED, DELIBERATELY. Every other caller of `beastsOnThisGround`
+ * narrows by what is underfoot where somebody is standing; this one is not
+ * standing anywhere. It asks which KINDS of creature take a chair over a house,
+ * for every house on the map at once, and a house in the ice province and a
+ * house in the grain province have to be able to draw from the same answer.
+ * Narrowing here would be answering a question nobody asked.
+ */
+function thingsThatCouldStandOverAHouse(): CouldStandInAChair[] {
+    return beastsOnThisGround({ onAVein: true, sealed: false })
+        .filter(b =>
+            b.ordinal >= BEAST_CHANGE_ORDINAL
+            && b.disposition !== 'demonic'
+            && b.veinRelation === 'holds')
+        .map(b => ({ id: b.id, ordinal: b.ordinal, element: b.element ?? null }))
+        .sort((a, b) => (b.ordinal - a.ordinal) || a.id.localeCompare(b.id));
+}
 
 const houses: HouseOnItsGround[] = SECTS.map(s => ({
     factionId: s.id,

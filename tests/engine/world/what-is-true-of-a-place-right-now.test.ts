@@ -22,10 +22,6 @@
  *    the roads empty; one number cannot say that. The effect is carried by the
  *    status, so decision 3 survives it - a per-type dial under an invented kind
  *    behaves exactly like one under a famine.
- *
- * And one boundary: presence is read off `NpcRecord.locationId`. This module
- * stores no second copy of who is where, which is why `whoIsInArea` is tested
- * against NPCs the ordinary factory made and never against a roster of its own.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -34,10 +30,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
     STOPS_PASSAGE,
-    areaChainOf,
     dangerDeltaInArea,
     daysStatusHasRun,
-    daysUntilStatusReview,
     extendStatus,
     isStatusRunningOn,
     isStoppedInArea,
@@ -51,11 +45,9 @@ import {
     stoppedInArea,
     whatIsGoingOnHere,
     whatTheGroundDoesToPrices,
-    whoIsInArea,
     type AreaStatus
 } from '../../../src/engine/world/what-is-true-of-a-place-right-now.js';
 import { makeLocation, type LocationRecord } from '../../../src/engine/world/locations.js';
-import { createNpc } from '../../../src/engine/world/npc-state.js';
 import type { KnowingStage } from '../../../src/engine/social/discovery.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -174,26 +166,16 @@ describe('a status has to end, and the type will not let you write one that does
         expect(() => extendStatus(f, f.beganOnDay + 1)).toThrow(/forward/);
     });
 
-    it('counts the days it has run and the days to review without going negative', () => {
+    it('counts the days it has run without going negative', () => {
         const f = famine();
         expect(daysStatusHasRun(f, FAMINE_BEGAN - 5)).toBe(0);
         expect(daysStatusHasRun(f, AT)).toBe(30);
         // Past the review it stops accruing. It is not still running.
         expect(daysStatusHasRun(f, FAMINE_BEGAN + 10_000)).toBe(200);
-        expect(daysUntilStatusReview(f, AT)).toBe(170);
-        expect(daysUntilStatusReview(f, FAMINE_BEGAN + 10_000)).toBe(0);
     });
 });
 
 describe('a status is true of an area and of everything under it', () => {
-    it('walks the chain innermost first', () => {
-        expect(areaChainOf(places(), 'loc-prefecture'))
-            .toEqual(['loc-prefecture', 'loc-town', 'loc-province']);
-        expect(areaChainOf(places(), 'loc-province')).toEqual(['loc-province']);
-        expect(areaChainOf(places(), null)).toEqual([]);
-        expect(areaChainOf(places(), 'loc-nothing')).toEqual([]);
-    });
-
     it('reaches down from a province into a town in it', () => {
         const found = statusesInArea([famine('loc-province')], places(), 'loc-prefecture', AT);
         expect(found.map(s => s.id)).toEqual(['status-famine']);
@@ -527,51 +509,6 @@ describe('passage: the season and somebody deciding are reported apart', () => {
         expect(reading.stopped).toBe(true);
         expect(reading.bySeason).toBe(false);
         expect(reading.byStatus.map(s => s.id)).toEqual(['status-blockade']);
-    });
-});
-
-describe('presence is read off locationId and stored nowhere else', () => {
-    it('finds who is in an area through the ordinary NPC record', () => {
-        const world = places();
-        const day = 3600;
-        const inPrefecture = createNpc('seed-status-test', {
-            id: 'npc-in-prefecture', bornOnDay: 0, onDay: day, locationId: 'loc-prefecture'
-        });
-        const inTown = createNpc('seed-status-test', {
-            id: 'npc-in-town', bornOnDay: 0, onDay: day, locationId: 'loc-town'
-        });
-        const elsewhere = createNpc('seed-status-test', {
-            id: 'npc-elsewhere', bornOnDay: 0, onDay: day, locationId: 'loc-elsewhere'
-        });
-        const nowhere = createNpc('seed-status-test', {
-            id: 'npc-nowhere', bornOnDay: 0, onDay: day, locationId: null
-        });
-        const npcs = [inPrefecture, inTown, elsewhere, nowhere];
-
-        expect(whoIsInArea(npcs, world, 'loc-prefecture').map(n => n.id)).toEqual(['npc-in-prefecture']);
-        expect(whoIsInArea(npcs, world, 'loc-town').map(n => n.id).sort())
-            .toEqual(['npc-in-prefecture', 'npc-in-town']);
-        expect(whoIsInArea(npcs, world, 'loc-province').map(n => n.id).sort())
-            .toEqual(['npc-elsewhere', 'npc-in-prefecture', 'npc-in-town']);
-        // Somebody whose location is unknown is in no area. `layers.ts` already
-        // reasons about this person; they are not quietly assigned anywhere.
-        expect(whoIsInArea(npcs, world, 'loc-far')).toEqual([]);
-    });
-
-    it('meshes: who is standing in the area a war is true of', () => {
-        const world = places();
-        const day = FAMINE_BEGAN + 30;
-        const npcs = [
-            createNpc('seed-status-test', {
-                id: 'npc-a', bornOnDay: 0, onDay: day, locationId: 'loc-prefecture'
-            }),
-            createNpc('seed-status-test', {
-                id: 'npc-b', bornOnDay: 0, onDay: day, locationId: 'loc-elsewhere'
-            })
-        ];
-        const running = statusesInArea([war('loc-town')], world, 'loc-prefecture', day);
-        expect(running).toHaveLength(1);
-        expect(whoIsInArea(npcs, world, running[0].areaId).map(n => n.id)).toEqual(['npc-a']);
     });
 });
 

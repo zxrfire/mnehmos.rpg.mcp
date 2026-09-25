@@ -6,8 +6,6 @@ import {
     enshrineRun,
     lastFinishedRun,
     planNextRun,
-    predecessorOf,
-    previousRunGraves,
     recordRun,
     runSeedFor,
     worldRuns,
@@ -113,7 +111,7 @@ describe('legacy: the world outlives the run', () => {
         expect(out.goods).toHaveLength(2);
         // Findable, not given: nobody knows it is there yet.
         expect(out.grave!.discovered).toBe(false);
-        expect(previousRunGraves(state).map(g => g.id)).toContain(out.grave!.id);
+        expect(state.locations.find(l => l.id === out.grave!.id)?.tags).toContain('previous_run');
 
         // Gated by what they were, so robbing it is a real question.
         const weak = evaluateAccess(out.grave!, { realmOrdinal: 2 });
@@ -194,7 +192,7 @@ describe('legacy: the world outlives the run', () => {
             leavesBody: false
         });
         expect(out.grave).toBeNull();
-        expect(previousRunGraves(state)).toHaveLength(0);
+        expect(state.locations.filter(l => l.kind === 'grave' && l.tags.includes('previous_run'))).toHaveLength(0);
     });
 });
 
@@ -232,7 +230,7 @@ describe('legacy: the next run starts in the world the last one left', () => {
         expect(worldRuns(state)).toHaveLength(1);
         const last = lastFinishedRun(state)!;
         expect(last.cultivatorId).toBe(npc.id);
-        expect(predecessorOf(state, last)!.status).toBe('physically_dead');
+        expect(state.npcs.find(n => n.id === last.cultivatorId)!.status).toBe('physically_dead');
     });
 
     it('plans a successor who is usually a stranger, and sometimes not', () => {
@@ -289,7 +287,7 @@ describe('legacy: the next run starts in the world the last one left', () => {
 
         // The grave survived, the world moved, and the record of the life is
         // still in the ledger centuries later.
-        expect(previousRunGraves(state).map(g => g.id)).toContain(graveOut.grave!.id);
+        expect(state.locations.find(l => l.id === graveOut.grave!.id)?.tags).toContain('previous_run');
         expect(state.history.facts.length).toBeGreaterThan(factsAtDeath);
         expect(queryFacts(state.history, { actorId: npc.id }).length).toBeGreaterThan(0);
         expect(state.objects.some(o => o.id === graveOut.goods[0].id)).toBe(true);

@@ -64,7 +64,7 @@ import {
 } from '../../data/cultivation/beasts.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { clampOrdinal } from '../cultivation/realms.js';
-import { abilityAt, bandOf, hasACore } from './hunting-a-spirit-beast.js';
+import { abilityAt, bandOf } from './hunting-a-spirit-beast.js';
 import { addGoal, createNpc, setRealm, type NpcRecord } from './npc-state.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 import {
@@ -103,11 +103,6 @@ export function theSpeciesItIs(npc: Pick<NpcRecord, 'tags'>): Beast | null {
     return BEASTS.find(b => b.id === tag.slice(BEAST_TAG_PREFIX.length)) ?? null;
 }
 
-/** Whether this row is one of these at all. */
-export function isOneOfTheBeasts(npc: Pick<NpcRecord, 'tags'>): boolean {
-    return theSpeciesItIs(npc) !== null;
-}
-
 /** One of these, with its species read at the rung it actually stands on. */
 export interface TheOneOnThisGround {
     npc: NpcRecord;
@@ -136,22 +131,6 @@ export function theOnesInParticularAt(
         out.push({ npc, species, asItStands: asItStandsNow(species, npc.cultivation.realmOrdinal) });
     }
     return out;
-}
-
-/**
- * Why this one gets no row, or null when it gets one.
- *
- * A refusal that says what would have changed it, which is what every refusal
- * in this engine owes. Below the core there is no particular animal for
- * anybody to have had a view about, so there is nothing to refuse ACCESS to -
- * the ground still has what the ground has.
- */
-export function whyThisOneIsNotAnybodyInParticular(beast: Beast): string | null {
-    if (hasACore(beast)) return null;
-    return `${beast.name} stands at ordinal ${beast.ordinal} and has no core. It is an amount `
-        + 'on a piece of ground rather than an individual - pelts and sinew, the same way a '
-        + 'bowl of millet is - so there is nobody here to owe anybody anything. What carries a '
-        + 'core carries a history somebody can ask about two centuries later.';
 }
 
 export interface StandingUpABeast {

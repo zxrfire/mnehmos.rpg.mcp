@@ -65,12 +65,10 @@ import {
 import {
     BEAST_TAG_PREFIX,
     idOfTheOneOnThisGround,
-    isOneOfTheBeasts,
     itHasCrossed,
     standUpTheOneOnThisGround,
     theSpeciesItIs,
-    whatItIsNow,
-    whyThisOneIsNotAnybodyInParticular
+    whatItIsNow
 } from '../../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { bandOf, hasACore } from '../../../src/engine/world/hunting-a-spirit-beast.js';
 import { isTheWorldsToMove, setRealm } from '../../../src/engine/world/npc-state.js';
@@ -100,17 +98,13 @@ describe('a beast with a core is somebody in particular', () => {
         expect(cored.filter(b => b.groupSize !== 1)).toEqual([]);
     });
 
-    it('writes nothing for what has no core, and says what would have changed that', () => {
+    it('writes nothing for what has no core: below it the ground holds an amount, not somebody', () => {
+        // The hunt stands a row up only past `hasACore` (`standUpWhatHasACore`
+        // in the turn engine); what sits below it is read off the catalog as a
+        // count, which is what the `counted` band says.
         expect(counted.length).toBeGreaterThan(0);
-        for (const beast of counted) {
-            const why = whyThisOneIsNotAnybodyInParticular(beast);
-            expect(why, beast.id).not.toBeNull();
-            expect(why).toContain('core');
-            expect(bandOf(beast)).toBe('counted');
-        }
-        for (const beast of cored) {
-            expect(whyThisOneIsNotAnybodyInParticular(beast), beast.id).toBeNull();
-        }
+        for (const beast of counted) expect(bandOf(beast), beast.id).toBe('counted');
+        for (const beast of cored) expect(bandOf(beast), beast.id).not.toBe('counted');
     });
 
     it('stands a cored beast up as an ordinary row the world is free to move', () => {
@@ -134,13 +128,12 @@ describe('a beast with a core is somebody in particular', () => {
     it('makes the species readable off the row, and off nothing else', () => {
         for (const beast of cored) {
             const row = standUp(beast);
-            expect(isOneOfTheBeasts(row)).toBe(true);
+            expect(theSpeciesItIs(row)).not.toBeNull();
             expect(theSpeciesItIs(row)?.id).toBe(beast.id);
             expect(row.tags).toContain(`${BEAST_TAG_PREFIX}${beast.id}`);
         }
         // An ordinary person carries no such tag and reads as nobody's species.
         const person = { ...standUp(cored[0]!), tags: ['catalog:member'] };
-        expect(isOneOfTheBeasts(person)).toBe(false);
         expect(theSpeciesItIs(person)).toBeNull();
     });
 

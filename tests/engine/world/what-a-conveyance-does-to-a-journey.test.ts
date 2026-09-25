@@ -37,7 +37,6 @@ import {
     REACH_IN_WALKING_DAYS,
     WALKING_DAYS_PER_DAY_BY_GRADE,
     bestForThisRoad,
-    couldArriveUnremarked,
     couldFlyOnTheirOwnBlade,
     daysByConveyance,
     burnsStonesUnderWay,
@@ -176,12 +175,12 @@ describe('what a witness reads', () => {
     });
 
     it('lets the ordinary rungs pass unremarked, and never lets a hull', () => {
-        expect(couldArriveUnremarked(MOUNT)).toBe(true);
-        expect(couldArriveUnremarked(CARRIAGE_EARTH)).toBe(true);
+        expect(MOUNT.seenComing).toBe(false);
+        expect(CARRIAGE_EARTH.seenComing).toBe(false);
         expect(
-            couldArriveUnremarked(BOAT),
+            BOAT.seenComing,
             'a hull that can arrive quietly is a signal with no cost attached'
-        ).toBe(false);
+        ).toBe(true);
     });
 });
 

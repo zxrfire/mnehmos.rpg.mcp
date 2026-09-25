@@ -4,8 +4,8 @@
  * MEASURED BEFORE THIS FILE, and it is the reason it exists. Lamps were being
  * LIT and never READ. `seedTreasuries` lights a lamp and cuts a token for every
  * disciple of every house that can make them, so a fresh world holds hundreds of
- * them as objects - and `whatTheLampSays`, `whatIsLeftOfThem` and
- * `whatAHouseMakesOfSilence` had no caller anywhere in `src/`. A house could
+ * them as objects - and `whatTheLampSays` and `whatAHouseMakesOfSilence` had
+ * no caller anywhere in `src/`. A house could
  * lose a disciple and nothing in the engine noticed, which is precisely the
  * fact `docs/world/houses/trust.md` says a house cannot miss.
  *

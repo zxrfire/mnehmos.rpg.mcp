@@ -27,7 +27,6 @@ import {
     applyServedTogether,
     bindNewbornToHousehold,
     couldParent,
-    tieSupply,
     HOUSEHOLD_MIN_AGE,
     SERVICE_CEILING,
     SIBLINGS_PER_HOUSEHOLD
@@ -36,6 +35,7 @@ import {
     beginAbsence,
     applyAbsence
 } from '../../../src/engine/world/when-somebody-does-not-come-back.js';
+import { tieSupply } from '../../support/what-the-world-has-to-lose.js';
 
 const YEAR = 365;
 

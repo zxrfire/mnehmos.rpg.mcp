@@ -32,7 +32,6 @@ import { APEX_INSTITUTIONS } from '../src/data/cultivation/hierarchy.js';
 import { bandFor, holds, mentionableFor } from '../src/web/lore.js';
 import {
     applyLocationChange,
-    explainLocationChange,
     makeLocation,
     stateAsOfDay
 } from '../src/engine/world/locations.js';
@@ -498,8 +497,14 @@ async function disasters() {
     }
 
     sub('and then, centuries later, somebody finds out why');
-    const explained = explainLocationChange(place, place.changes[0].id, 'fact-the-thing-that-actually-happened', 'full');
-    const change = explained.changes[0];
+    // Nothing in the engine finds out why a place changed; this is the shape it
+    // would take, applied by hand.
+    const change = {
+        ...place.changes[0],
+        causeFactId: 'fact-the-thing-that-actually-happened',
+        causeKnown: true,
+        fidelity: 'full' as const
+    };
     line(`  cause known now: ${change.causeKnown} (fidelity: ${change.fidelity})`);
     line(`  the local explanations are still on the record: ${change.attributedCauses.length}`);
     if (change.causeKnown && change.attributedCauses.length >= 2) {

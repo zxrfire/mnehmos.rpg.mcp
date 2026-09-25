@@ -5,13 +5,15 @@ import { getSect } from '../../../src/data/cultivation/sects.js';
 import { HELPLESS_REALM_GAP } from '../../../src/engine/cultivation/combat.js';
 import {
     couldTheyTellItIs,
-    isFlat,
     whatTheirRealmAffords,
     whatTheirReferenceAffords,
     whatTheGapItselfTells,
     whereThisArtWasLearned,
     type ArtObserver
 } from '../../../src/engine/world/recognising-whose-art-you-just-watched.js';
+
+/** A verdict a reader can act on without hedging. */
+const FLAT: ReadonlySet<string> = new Set(['it_is', 'it_is_not']);
 
 const AZURE = 'sect-azure-cloud-pavilion';
 
@@ -146,20 +148,20 @@ describe('putting a claim to the check', () => {
     it('no reference is told plainly and never handed a false negative', () => {
         const answer = couldTheyTellItIs(demonstration, reader(40), AZURE);
         expect(answer.verdict).toBe('would_not_know_it');
-        expect(isFlat(answer.verdict)).toBe(false);
+        expect(FLAT.has(answer.verdict)).toBe(false);
     });
 
     it('a reference and a low rung is hedged, and honestly hedged', () => {
         const answer = couldTheyTellItIs(demonstration, reader(20, { [AZURE]: 'placed' }), AZURE);
         expect(answer.verdict).toBe('consistent');
-        expect(isFlat(answer.verdict)).toBe(false);
+        expect(FLAT.has(answer.verdict)).toBe(false);
         expect(answer.theHouseDoesTeachIt).toBe(true);
     });
 
     it('a reference and a high rung is flat', () => {
         const answer = couldTheyTellItIs(demonstration, reader(35, { [AZURE]: 'known' }), AZURE);
         expect(answer.verdict).toBe('it_is');
-        expect(isFlat(answer.verdict)).toBe(true);
+        expect(FLAT.has(answer.verdict)).toBe(true);
     });
 
     it('a flat negative is only ever given to somebody who has earned it', () => {
@@ -171,7 +173,7 @@ describe('putting a claim to the check', () => {
         // the same answer with more confidence than they hold.
         const unsure = couldTheyTellItIs(demonstration, reader(20, { [other]: 'named' }), other);
         expect(unsure.verdict).toBe('inconsistent');
-        expect(isFlat(unsure.verdict)).toBe(false);
+        expect(FLAT.has(unsure.verdict)).toBe(false);
     });
 
     it('the rung gap is its own answer and is not the same as ignorance', () => {

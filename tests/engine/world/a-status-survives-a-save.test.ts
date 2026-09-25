@@ -20,12 +20,16 @@ import Database from 'better-sqlite3';
 
 import { migrate } from '../../../src/storage/migrations.js';
 import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
-import {
-    createWorld, getAreaStatus, upsertAreaStatus
-} from '../../../src/engine/world/world-state.js';
+import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import {
     liftStatus, makeAreaStatus, type AreaStatus
 } from '../../../src/engine/world/what-is-true-of-a-place-right-now.js';
+
+/** A world with this status written in, the way the pass writes one: by id. */
+const withStatus = (state: WorldState, status: AreaStatus): WorldState =>
+    ({ ...state, statuses: [...state.statuses.filter(s => s.id !== status.id), status] });
+const statusOn = (state: WorldState, id: string): AreaStatus | null =>
+    state.statuses.find(s => s.id === id) ?? null;
 
 const BEGAN = 365_000;
 
@@ -90,8 +94,8 @@ describe('a status survives a save', () => {
 
         let state = createWorld({ seed: 'status-round-trip', regionCount: 2 });
         const area = state.locations[0].id;
-        state = upsertAreaStatus(state, drought(area));
-        state = upsertAreaStatus(state, theWater(area));
+        state = withStatus(state, drought(area));
+        state = withStatus(state, theWater(area));
 
         repo.saveWorld(state);
         const loaded = repo.loadWorld(state.id);
@@ -99,7 +103,7 @@ describe('a status survives a save', () => {
         expect(loaded!.statuses).toHaveLength(2);
         expect(loaded).toEqual(state);
 
-        const back = getAreaStatus(loaded!, 'status-drought')!;
+        const back = statusOn(loaded!, 'status-drought')!;
         // A cause nothing chose comes back as null, not as the string 'null'.
         expect(back.cause.decidedById).toBeNull();
         expect(back.cause.what).toBe(drought(area).cause.what);
@@ -115,11 +119,11 @@ describe('a status survives a save', () => {
         // And the war beside it, which sets no per-type dial at all, comes back
         // with an empty map rather than an undefined - the shape every reader
         // in the engine indexes into without a guard.
-        expect(getAreaStatus(loaded!, 'status-the-water')!.priceMultiplierByCategory)
+        expect(statusOn(loaded!, 'status-the-water')!.priceMultiplierByCategory)
             .toEqual({});
 
         // And a cause somebody chose keeps who chose it.
-        expect(getAreaStatus(loaded!, 'status-the-water')!.cause.decidedById)
+        expect(statusOn(loaded!, 'status-the-water')!.cause.decidedById)
             .toBe('sect-clear-river-fordhall');
 
         db.close();
@@ -132,15 +136,15 @@ describe('a status survives a save', () => {
         const repo = new WorldStateRepository(db);
 
         let state = createWorld({ seed: 'status-lift', regionCount: 1 });
-        state = upsertAreaStatus(state, drought(state.locations[0].id));
+        state = withStatus(state, drought(state.locations[0].id));
         repo.saveWorld(state);
 
-        const running = getAreaStatus(repo.loadWorld(state.id)!, 'status-drought')!;
-        repo.saveWorld(upsertAreaStatus(
+        const running = statusOn(repo.loadWorld(state.id)!, 'status-drought')!;
+        repo.saveWorld(withStatus(
             repo.loadWorld(state.id)!, liftStatus(running, BEGAN + 12)
         ));
 
-        expect(getAreaStatus(repo.loadWorld(state.id)!, 'status-drought')!.liftedOnDay)
+        expect(statusOn(repo.loadWorld(state.id)!, 'status-drought')!.liftedOnDay)
             .toBe(BEGAN + 12);
         db.close();
     });

@@ -23,8 +23,9 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears, worldShape } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../src/engine/world/driver.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
+import { worldShape } from '../tests/support/the-shape-of-a-world.js';
 
 const args = process.argv.slice(2);
 const horizons = (args[0] ?? '50,100,200,400,800').split(',').map(Number);

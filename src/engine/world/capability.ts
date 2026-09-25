@@ -296,15 +296,6 @@ export function heldGrants(actor: CapabilityActor): CapabilityGrant[] {
     return (actor.heldGrants ?? []).filter(g => available.has(g));
 }
 
-/** Why a grant is not in force: never reached, or reached and never acquired. */
-export function grantStatus(
-    actor: CapabilityActor,
-    grant: CapabilityGrant
-): 'held' | 'available_not_held' | 'out_of_reach' {
-    if (!isGrantAvailableAt(actor.realmOrdinal, grant)) return 'out_of_reach';
-    return (actor.heldGrants ?? []).includes(grant) ? 'held' : 'available_not_held';
-}
-
 /**
  * Hazards this actor's grants make irrelevant, and which grant did it.
  */
@@ -370,20 +361,6 @@ export interface CapabilityModifier {
     /** Applies only where the subject carries one of these tags. Empty = any. */
     subjectTags: string[];
     note: string;
-}
-
-export function makeCapabilityModifier(
-    init: Partial<CapabilityModifier> &
-        Pick<CapabilityModifier, 'id' | 'source' | 'sourceId' | 'offsets'>
-): CapabilityModifier {
-    return {
-        label: init.label ?? init.sourceId,
-        hazards: init.hazards ?? [],
-        subjectIds: init.subjectIds ?? [],
-        subjectTags: init.subjectTags ?? [],
-        note: init.note ?? '',
-        ...init
-    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

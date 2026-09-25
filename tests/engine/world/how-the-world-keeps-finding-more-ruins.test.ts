@@ -37,8 +37,6 @@ import {
     prospectingEffortIn,
     ruinsInGroundUnder,
     scaleLeftBySomebodyAt,
-    standingReserve,
-    stillInGroundUnder,
     whatTheDeadLeftUnder
 } from '../../../src/engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
@@ -57,6 +55,7 @@ import {
     WHY_CLOSED_GROUND,
     SITES
 } from '../../../src/data/cultivation/inheritance-trials.js';
+import { standingReserve, stillInGroundUnder } from '../../support/the-ruins-a-world-has-left-to-find.js';
 
 const YEAR = 365;
 

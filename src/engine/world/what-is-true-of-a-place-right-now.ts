@@ -28,7 +28,6 @@ import type { Price } from '../../data/cultivation/mortal-world.js';
 import type { KnowingStage } from '../social/discovery.js';
 import { isAtLeast, stageRank } from '../social/discovery.js';
 import { isOpenOn, nextOpeningDay, type LocationRecord } from './locations.js';
-import type { NpcRecord } from './npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE RECORD
@@ -207,11 +206,6 @@ export function daysStatusHasRun(status: AreaStatus, day: number): number {
     return Math.max(0, end - status.beganOnDay);
 }
 
-/** Days until the world looks at it again. Zero once that day has passed. */
-export function daysUntilStatusReview(status: AreaStatus, day: number): number {
-    return Math.max(0, status.reviewOnDay - day);
-}
-
 /** It stopped being true. */
 export function liftStatus(status: AreaStatus, onDay: number): AreaStatus {
     return { ...status, liftedOnDay: onDay };
@@ -238,16 +232,6 @@ export function extendStatus(status: AreaStatus, toDay: number): AreaStatus {
 // A status on a province is true in every town in it. A status on a district
 // is true in the district and nowhere else.
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * A place and every place containing it, innermost first.
- */
-export function areaChainOf(
-    locations: readonly LocationRecord[],
-    locationId: string | null
-): string[] {
-    return chainFrom(indexById(locations), locationId);
-}
 
 function indexById(
     locations: readonly LocationRecord[]
@@ -297,22 +281,6 @@ export function statusesInArea(
             if (a.beganOnDay !== b.beganOnDay) return a.beganOnDay - b.beganOnDay;
             return a.id < b.id ? -1 : 1;
         });
-}
-
-/**
- * Who is standing in this area right now.
- */
-export function whoIsInArea(
-    npcs: readonly NpcRecord[],
-    locations: readonly LocationRecord[],
-    areaId: string
-): NpcRecord[] {
-    const byId = indexById(locations);
-    const inside = new Set<string>();
-    for (const l of locations) {
-        if (chainFrom(byId, l.id).includes(areaId)) inside.add(l.id);
-    }
-    return npcs.filter(n => n.locationId !== null && inside.has(n.locationId));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

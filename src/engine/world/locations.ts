@@ -91,18 +91,6 @@ export interface ThresholdModifier {
     note: string;
 }
 
-export function makeModifier(
-    init: Partial<ThresholdModifier> & Pick<ThresholdModifier, 'id' | 'source' | 'sourceId' | 'offsets'>
-): ThresholdModifier {
-    return {
-        label: init.label ?? init.sourceId,
-        hazards: init.hazards ?? [],
-        locationIds: init.locationIds ?? [],
-        note: init.note ?? '',
-        ...init
-    };
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // ENVIRONMENT × CULTIVATION
 // ─────────────────────────────────────────────────────────────────────────
@@ -643,54 +631,6 @@ function applyPatch(location: LocationRecord, patch: LocationPatch, onDay: numbe
     return next;
 }
 
-/**
- * Somebody found out why.
- */
-export function explainLocationChange(
-    location: LocationRecord,
-    changeId: string,
-    causeFactId: string,
-    fidelity: LocationChange['fidelity'] = 'partial'
-): LocationRecord {
-    return {
-        ...location,
-        changes: location.changes.map(c =>
-            c.id === changeId
-                ? {
-                    ...c,
-                    causeFactId,
-                    causeKnown: true,
-                    fidelity: betterFidelity(c.fidelity, fidelity)
-                }
-                : c
-        )
-    };
-}
-
-/** Record an explanation the locals hold. Belief, not truth; stored as such. */
-export function attributeCause(
-    location: LocationRecord,
-    changeId: string,
-    explanation: string
-): LocationRecord {
-    return {
-        ...location,
-        changes: location.changes.map(c =>
-            c.id === changeId && !c.attributedCauses.includes(explanation)
-                ? { ...c, attributedCauses: c.attributedCauses.concat(explanation) }
-                : c
-        )
-    };
-}
-
-const FIDELITY_ORDER = { lost: 0, rumour: 1, partial: 2, full: 3 } as const;
-function betterFidelity(
-    a: LocationChange['fidelity'],
-    b: LocationChange['fidelity']
-): LocationChange['fidelity'] {
-    return FIDELITY_ORDER[b] > FIDELITY_ORDER[a] ? b : a;
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // THE THREE LAYERS, QUERIED
 // ─────────────────────────────────────────────────────────────────────────
@@ -738,11 +678,6 @@ export function locationHistory(location: LocationRecord): LocationHistoryEntry[
         });
     }
     return rows;
-}
-
-/** Changes to this place whose true cause is not on record. */
-export function unexplainedChanges(location: LocationRecord): LocationChange[] {
-    return location.changes.filter(c => !c.causeKnown || c.fidelity === 'lost');
 }
 
 /**
@@ -1129,98 +1064,6 @@ function describeAccess(
     }
 }
 
-export function canSurvive(location: LocationRecord, query: AccessQuery): boolean {
-    const level = evaluateAccess(location, query).level;
-    return level === 'surviving' || level === 'operational' || level === 'mastered';
-}
-
-export function canOperate(location: LocationRecord, query: AccessQuery): boolean {
-    const level = evaluateAccess(location, query).level;
-    return level === 'operational' || level === 'mastered';
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT BEING HERE DOES
-// ─────────────────────────────────────────────────────────────────────────
-
-export interface CultivationContext {
-    locationId: string;
-    /**
-     * Multiplier on cultivation rate for time spent here. This is the number
-     * that makes "cultivate for ten years" resolve differently in a city, on a
-     * spirit mountain, and on a poisoned battlefield.
-     */
-    rateMultiplier: number;
-    /** 0..1 chance-weight the caller may use for how hostile the place is. */
-    danger: number;
-    /** Itemised, so a player can be told why their decade was slow. */
-    factors: { source: string; multiplier: number; note: string }[];
-    /** Local laws in force here, verbatim. The narrator reads these out. */
-    specialRules: string[];
-}
-
-const AMBIENT_RATE: Record<AmbientQi, number> = {
-    thin: 0.5,
-    normal: 1,
-    dense: 2,
-    spirit_tide: 3,
-    sealed_vein: 4
-};
-
-/**
- * What ten years here is worth.
- */
-export function cultivationContext(
-    location: LocationRecord,
-    profile?: ActorEnvironmentProfile
-): CultivationContext {
-    const factors: { source: string; multiplier: number; note: string }[] = [];
-
-    factors.push({
-        source: 'ambient_qi',
-        multiplier: AMBIENT_RATE[location.ambient],
-        note: `Ambient qi: ${location.ambient}.`
-    });
-    factors.push({
-        source: 'spiritual_density',
-        multiplier: 0.5 + location.environment.spiritualDensity,
-        note: `Usable density ${location.environment.spiritualDensity.toFixed(2)}.`
-    });
-    if (location.sealed) {
-        factors.push({
-            source: 'sealed',
-            multiplier: 0.25,
-            note: 'The place is sealed. Whatever is inside is not reaching anyone.'
-        });
-    }
-    if (location.environment.danger > 0.5) {
-        factors.push({
-            source: 'danger',
-            multiplier: 1 - (location.environment.danger - 0.5) * 0.6,
-            note: 'Too much of the day goes on staying alive.'
-        });
-    }
-    if (profile) {
-        const compat = environmentalCompatibility(location, profile);
-        if (compat.multiplier !== 1) {
-            factors.push({
-                source: 'affinity',
-                multiplier: compat.multiplier,
-                note: compat.matched.map(m => `${m.via} match on ${m.tag}`).join('; ')
-            });
-        }
-    }
-
-    const rateMultiplier = factors.reduce((r, f) => r * Math.max(0, f.multiplier), 1);
-    return {
-        locationId: location.id,
-        rateMultiplier: Number(rateMultiplier.toFixed(6)),
-        danger: location.environment.danger,
-        factors,
-        specialRules: location.environment.specialRules.slice()
-    };
-}
-
 /**
  * How many people a place holds, relative to the others.
  *
@@ -1395,30 +1238,6 @@ export function openingsBetween(
 // TRAVEL
 // ─────────────────────────────────────────────────────────────────────────
 
-export interface TravelOption {
-    link: LocationLink;
-    usable: boolean;
-    reason: string;
-}
-
-/**
- * Links out of a place, with a stored reason for each one the character cannot
- * use. Portals are ordinary links with a short `travelDays`; they lead to
- * another place on this planet, and there is nowhere else for them to lead.
- */
-export function travelOptions(
-    location: LocationRecord,
-    keyIds: readonly string[] = []
-): TravelOption[] {
-    return location.links.map(link => {
-        if (!link.open) return { link, usable: false, reason: 'The way is closed.' };
-        if (link.requiresKeyId && !keyIds.includes(link.requiresKeyId)) {
-            return { link, usable: false, reason: `Requires ${link.requiresKeyId}.` };
-        }
-        return { link, usable: true, reason: '' };
-    });
-}
-
 /**
  * Walking days from one place to everywhere the roads reach.
  *
@@ -1534,28 +1353,6 @@ export function forbidZone(
             addAffinities: input.affinities ?? [],
             addTags: ['forbidden']
         }
-    });
-}
-
-/** A place is not deleted when it ends. It becomes the next thing. */
-export function transformOnDestruction(
-    location: LocationRecord,
-    input: {
-        onDay: number;
-        becomes: LocationKind;
-        summary: string;
-        patch?: LocationPatch;
-        causeFactId?: string | null;
-        witnessed?: boolean;
-    }
-): ChangeResult {
-    return applyLocationChange(location, {
-        onDay: input.onDay,
-        kind: 'destroyed',
-        summary: input.summary,
-        causeFactId: input.causeFactId ?? null,
-        witnessed: input.witnessed ?? false,
-        patch: { kind: input.becomes, addTags: ['ruined'], ...(input.patch ?? {}) }
     });
 }
 
@@ -1922,42 +1719,6 @@ export function locationFromScar(scar: Scar): LocationRecord {
         }
     });
     return location;
-}
-
-/**
- * A secret realm: a sealed pocket on this planet that opens on a cycle.
- *
- * There is no space travel in this setting and no other worlds. A secret realm
- * is a place you walk into through a seam that is not always there.
- */
-export function makeSecretRealm(
-    init: Pick<LocationRecord, 'id' | 'name'> & {
-        parentId?: string | null;
-        thresholds: LocationThresholds;
-        hazards?: string[];
-        affinities?: EnvironmentAffinity[];
-        cycle: OpeningCycle;
-        qiDensity?: number;
-        description?: string;
-        originFactId?: string | null;
-    }
-): LocationRecord {
-    return makeLocation({
-        id: init.id,
-        name: init.name,
-        kind: 'secret_realm',
-        parentId: init.parentId ?? null,
-        description: init.description ?? '',
-        ambient: 'dense',
-        qiDensity: init.qiDensity ?? 80,
-        thresholds: init.thresholds,
-        hazards: init.hazards ?? ['sealed_qi'],
-        affinities: init.affinities ?? [],
-        cycle: init.cycle,
-        discovered: false,
-        originFactId: init.originFactId ?? null,
-        tags: ['secret_realm']
-    });
 }
 
 function clamp01(n: number): number {

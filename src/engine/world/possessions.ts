@@ -525,15 +525,6 @@ export function transferPossession(object: ObjectRecord, input: TransferInput): 
     };
 }
 
-/** Set who it actually belongs to, without moving it. */
-export function setOwnership(
-    object: ObjectRecord,
-    ownerId: string | null,
-    ownerName = ''
-): ObjectRecord {
-    return { ...object, ownerId, ownerName };
-}
-
 export interface ClaimInput {
     claimantId: string;
     claimantName: string;
@@ -646,7 +637,7 @@ export function lastTheft(object: ObjectRecord): ProvenanceEntry | null {
 }
 
 /** Whether this party could recognise the thing for what it is. */
-export function knowsOwnership(object: ObjectRecord, partyId: string): boolean {
+export function knowsOwnership(object: Pick<ObjectRecord, 'knownOwnershipBy'>, partyId: string): boolean {
     return object.knownOwnershipBy.includes(partyId);
 }
 

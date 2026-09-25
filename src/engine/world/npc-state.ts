@@ -1135,23 +1135,6 @@ export function sealLaidOn(npc: NpcRecord, seal: AQiSeal, onDay: number): NpcRec
 }
 
 /**
- * Take one off.
- *
- * The row is cleared rather than dated, because a lifted seal is not a fact
- * about the person any more - what they were held for is in the ledger, which is
- * where a history belongs. A seal that ran its term needs none of this:
- * {@link theSealOn} reads it as gone on the day it lifts.
- */
-export function sealLifted(npc: NpcRecord, onDay: number): NpcRecord {
-    if (npc.cultivation.seal === null) return npc;
-    return {
-        ...npc,
-        cultivation: { ...npc.cultivation, seal: null },
-        updatedOnDay: onDay
-    };
-}
-
-/**
  * The seal actually holding them on a given day, or null.
  *
  * The read every caller wants, and the reason nothing sweeps: a term that ran
@@ -1620,31 +1603,6 @@ export function inheritGoals(
         updatedOnDay: onDay
     };
     return next;
-}
-
-/** Update where a goal has got to, and what is still in the way. */
-export function updateGoal(
-    npc: NpcRecord,
-    goalId: string,
-    patch: { progress?: string; obstacles?: string[]; priority?: number; deadlineOnDay?: number | null },
-    onDay: number
-): NpcRecord {
-    return {
-        ...npc,
-        goals: npc.goals.map(g =>
-            g.id === goalId
-                ? {
-                    ...g,
-                    progress: patch.progress ?? g.progress,
-                    obstacles: patch.obstacles ?? g.obstacles,
-                    priority: patch.priority !== undefined ? clamp01(patch.priority) : g.priority,
-                    deadlineOnDay:
-                        patch.deadlineOnDay !== undefined ? patch.deadlineOnDay : g.deadlineOnDay
-                }
-                : g
-        ),
-        updatedOnDay: onDay
-    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -27,7 +27,8 @@ import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import { markDead, setExistence } from '../../../src/engine/world/npc-state.js';
-import { expelsOrdinal } from '../../../src/engine/world/layers.js';
+import { isBelowTheLid } from '../../../src/engine/world/layers.js';
+import { isExpelledFromBelow } from '../../../src/engine/cultivation/realms.js';
 import { readTies } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
 import { ordinaryWoundFor } from '../../../src/engine/cultivation/which-wound-an-ordinary-injury-is.js';
 import { getWoundType } from '../../../src/data/cultivation/wounds.js';
@@ -163,7 +164,7 @@ describe('a world must never contain', () => {
         // `layer: mortal` on an ordinal 44 is correct and is not what this
         // checks. What is incoherent is standing somewhere that cannot hold you.
         const state = advanced();
-        const wrong = state.npcs.filter(n => expelsOrdinal(n.layer, n.cultivation.realmOrdinal));
+        const wrong = state.npcs.filter(n => isBelowTheLid(n) && isExpelledFromBelow(n.cultivation.realmOrdinal));
         expect(wrong.map(n => `${n.name} ${n.layer} ${n.cultivation.realmOrdinal}`)).toEqual([]);
     });
 

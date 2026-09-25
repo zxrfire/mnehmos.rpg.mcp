@@ -1075,32 +1075,6 @@ export function whatItsTradeBringsIn(trade: CatalogFaction['trade']): number {
 }
 
 /**
- * What a house takes off what it HOLDS in a year: rock, gates, towns, benches.
- *
- * The four terms of the yearly economy that come from the holding, and
- * deliberately not the per-member one beside them. A roll is not a holding: it
- * grows and shrinks with who is alive this decade, and the pyramid - the claim
- * that the body you answer to is richer than you - is a claim about the grant,
- * not about how many people happen to be standing in the compound.
- *
- * One copy, so the seeded purse, the yearly economy and the test that walks
- * every parentage edge cannot each grow their own arithmetic. Before this the
- * only way to ask the question was to retype four terms, and the first thing
- * that retyped them left the towns out.
- */
-export function whatItsHoldingsBringIn(
-    cf: Pick<CatalogFaction, 'id' | 'veinWorth' | 'levy' | 'trade' | 'reliableOrdinal'>,
-    locations: readonly LocationRecord[]
-): number {
-    return Math.round(
-        howMuchRockItHolds(cf.veinWorth) * 5_000 * (0.5 + whatItCanPutOnTheGround(cf.reliableOrdinal))
-        + whatALevyBringsIn(cf.levy)
-        + whatTheTownsBringIn(locations, cf.id)
-        + whatItsTradeBringsIn(cf.trade)
-    );
-}
-
-/**
  * The generator's flat input, read straight off the catalog row.
  */
 function compoundInputFor(cf: CatalogFaction): CompoundInput {
@@ -1273,7 +1247,6 @@ function seedFactions(
             if (location.controllingFactionId !== cf.id) continue;
             faction.controlledLocationIds.push(location.id);
         }
-
 
         state.factions.push(faction);
         out.push(faction);
@@ -1915,7 +1888,6 @@ export function ageInsideRecordedHistory(
     if (spanYears <= MIN_AGE) return wantedYears;
     return Math.min(wantedYears, spanYears);
 }
-
 
 /**
  * Stand up whatever a house's own contents say is there and the world has not

@@ -40,16 +40,13 @@
  * number will pick the one that suits the story it is telling, every time.
  */
 
-import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import {
     createLedger,
     dayOfYear,
-    eraForDay,
     openEra,
     placeName,
     seedPriorAges,
-    yearOfDay,
     type HistoricalFact,
     type HistoryLedger,
     type PriorAgesOptions
@@ -392,33 +389,6 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// TIME READERS
-// Reading the clock is free. Moving it belongs to `time.ts`.
-// ─────────────────────────────────────────────────────────────────────────
-
-export function currentYear(state: WorldState): number {
-    return yearOfDay(state.currentDay);
-}
-
-export interface WorldDate {
-    absoluteDay: number;
-    year: number;
-    dayOfYear: number;
-}
-
-export function dateOf(state: WorldState, day = state.currentDay): WorldDate {
-    return {
-        absoluteDay: day,
-        year: yearOfDay(day),
-        dayOfYear: day - yearOfDay(day) * DAYS_PER_YEAR
-    };
-}
-
-export function currentEraQiDensity(state: WorldState): number {
-    return eraForDay(state.history, state.currentDay)?.qiDensity ?? 1;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -510,24 +480,8 @@ export function getObject(state: WorldState, id: string): ObjectRecord | null {
     return state.objects.find(o => o.id === id) ?? null;
 }
 
-export function upsertLineage(state: WorldState, lineage: LineageRecord): WorldState {
-    return { ...state, lineages: replace(state.lineages, l => l.id === lineage.id, lineage) };
-}
-
 export function upsertObject(state: WorldState, object: ObjectRecord): WorldState {
     return { ...state, objects: replace(state.objects, o => o.id === object.id, object) };
-}
-
-export function getAreaStatus(state: WorldState, id: string): AreaStatus | null {
-    return state.statuses.find(s => s.id === id) ?? null;
-}
-
-/**
- * Write a status. The only path, so beginning one, lifting one and extending
- * one are the same call with a different record.
- */
-export function upsertAreaStatus(state: WorldState, status: AreaStatus): WorldState {
-    return { ...state, statuses: replace(state.statuses, s => s.id === status.id, status) };
 }
 
 export function npcsAt(state: WorldState, locationId: string): NpcRecord[] {

@@ -11,12 +11,9 @@ import {
     STRUCTURAL_REPAIR_HOLDINGS,
     type StructuralRepairMedicine
 } from '../../data/cultivation/structural-repair-medicine.js';
-import { lifespanForOrdinal, realmForOrdinal, REALM_TIERS, MAX_ORDINAL } from './realms.js';
+import { lifespanForOrdinal, realmForOrdinal, REALM_TIERS } from './realms.js';
 import { netEarningsPerYear } from './origin.js';
-import {
-    brokenStatusFor,
-    clearBrokenStatus
-} from './what-goes-wrong-at-a-realm-boundary.js';
+import { clearBrokenStatus } from './what-goes-wrong-at-a-realm-boundary.js';
 import { currentWoundKey, isPermanentWound, woundNature } from '../../data/cultivation/wounds.js';
 import { PILLS } from '../../data/cultivation/pills.js';
 import type { Injury } from '../../schema/cultivation.js';
@@ -439,16 +436,6 @@ export function readAllRepairMedicine(): RepairMedicineReading[] {
     return STRUCTURAL_REPAIR_MEDICINES
         .map(readRepairMedicine)
         .sort((a, b) => a.weightInStones - b.weightInStones);
-}
-
-/**
- * The rung a cultivator carrying this break is standing at.
- */
-export function ordinalCarrying(woundKey: string): number {
-    for (let from = 0; from < MAX_ORDINAL; from++) {
-        if (brokenStatusFor(from) === woundKey) return from + 1;
-    }
-    return NOTHING_REPAIRS_ABOVE_ORDINAL + 1;
 }
 
 /** The medicine row for an id, for callers holding only the id. */

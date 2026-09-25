@@ -43,10 +43,10 @@ import {
     homecoming,
     type Absence
 } from '../src/engine/world/when-somebody-does-not-come-back.js';
-import { tieSupply } from '../src/engine/world/the-ties-an-ordinary-life-produces.js';
 import { KnowledgeLedger, type KnowledgeRecord } from '../src/engine/social/knowledge.js';
 import { stageOfRecord } from '../src/engine/social/discovery.js';
-import { worldShape } from '../src/engine/world/driver.js';
+import { worldShape } from '../tests/support/the-shape-of-a-world.js';
+import { tieSupply } from '../tests/support/what-the-world-has-to-lose.js';
 
 const line = (s = '') => console.log(s);
 const rule = (t: string) => { line(); line('='.repeat(94)); line('  ' + t); line('='.repeat(94)); };

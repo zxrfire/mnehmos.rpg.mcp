@@ -22,7 +22,7 @@ import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { yearOfDay } from '../src/engine/world/history.js';
 import { trajectoryOf } from '../src/engine/world/who-was-there-when-it-happened.js';
-import { describeWithRecurrence } from '../src/engine/world/a-fact-that-keeps-happening-is-one-row.js';
+import { lastOccurrenceOf, occurrencesOf } from '../src/engine/world/a-fact-that-keeps-happening-is-one-row.js';
 import { readTies } from '../src/engine/world/reading-a-tie-against-the-roster.js';
 import type { NpcRecord } from '../src/engine/world/npc-state.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
@@ -58,7 +58,7 @@ function printLife(state: WorldState, npc: NpcRecord): void {
         const age = Math.max(0, yearOfDay(fact.day) - born);
         const about = ABOUT_A_PERSON.has(fact.kind) ? ' ' : '.';
         line(`  ${String(yearOfDay(fact.day)).padStart(6)}  age ${String(age).padStart(4)} ${about}` +
-            ` [${fact.kind}] ${describeWithRecurrence(fact, yearOfDay)}`);
+            ` [${fact.kind}] ${fact.summary}${occurrencesOf(fact) > 1 ? ` x${occurrencesOf(fact)} to ${yearOfDay(lastOccurrenceOf(fact))}` : ''}`);
     }
     const personal = facts.filter(f => ABOUT_A_PERSON.has(f.kind)).length;
     line();

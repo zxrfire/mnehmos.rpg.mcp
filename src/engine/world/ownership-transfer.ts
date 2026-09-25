@@ -92,11 +92,6 @@ export type OwnershipRoute =
     | 'nobody_to_argue_with'
     | 'possession';
 
-/** Whether a route moves the register at all. Three do; the fourth is the rest of the world. */
-export function movesTheRegister(route: OwnershipRoute): boolean {
-    return route !== 'possession';
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // IS THERE ANYBODY TO RAISE IT WITH
 // ─────────────────────────────────────────────────────────────────────────

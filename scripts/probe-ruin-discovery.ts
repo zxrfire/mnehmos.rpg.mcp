@@ -20,12 +20,9 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { applyPressure } from '../src/engine/world/pressure.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { DAO_GROUND_TAG } from '../src/engine/world/how-a-cultivator-comes-by-a-road.js';
-import {
-    prospectFor,
-    standingReserve,
-    stillInGroundUnder
-} from '../src/engine/world/how-the-world-keeps-finding-more-ruins.js';
+import { prospectFor } from '../src/engine/world/how-the-world-keeps-finding-more-ruins.js';
 import type { WorldCatalog } from '../src/engine/world/catalog.js';
+import { standingReserve, stillInGroundUnder } from '../tests/support/the-ruins-a-world-has-left-to-find.js';
 
 const YEAR = 365;
 

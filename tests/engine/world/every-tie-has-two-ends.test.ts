@@ -18,17 +18,27 @@
 
 import { describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
-import {
-    THE_OTHER_END,
-    andLetGoAtTheOtherEnd,
-    andTheOtherEnd,
-    tiesWithNobodyAtTheOtherEnd
-} from '../../../src/engine/world/a-tie-has-two-ends.js';
-import { createNpc, relationshipWith, upsertRelationship, type NpcRecord } from '../../../src/engine/world/npc-state.js';
+import { THE_OTHER_END, andLetGoAtTheOtherEnd, andTheOtherEnd } from '../../../src/engine/world/a-tie-has-two-ends.js';
+import { createNpc, relationshipWith, upsertRelationship, type NpcRecord, type RelationshipKind } from '../../../src/engine/world/npc-state.js';
 import { THE_OTHER_HALF, theOtherHalfOf } from '../../../src/engine/social/relationships.js';
 import { whoTheyLeave } from '../../../src/engine/world/who-is-left-when-somebody-dies.js';
 import { makeGame } from '../../web/harness.js';
 import { recordContact, tieFrom } from '../../../src/web/encounters.js';
+
+/** Every tie in this roster that has nobody at the other end, as `holder -> target`. */
+function tiesWithNobodyAtTheOtherEnd(npcs: readonly NpcRecord[]): { holderId: string; targetId: string; kind: RelationshipKind; note: string }[] {
+    const byId = new Map(npcs.map(row => [row.id, row]));
+    const out: { holderId: string; targetId: string; kind: RelationshipKind; note: string }[] = [];
+    for (const npc of npcs) {
+        for (const tie of npc.relationships) {
+            const other = byId.get(tie.targetId);
+            if (other === undefined) continue;
+            if (other.relationships.some(back => back.targetId === npc.id)) continue;
+            out.push({ holderId: npc.id, targetId: tie.targetId, kind: tie.kind, note: tie.note });
+        }
+    }
+    return out;
+}
 
 describe('the world', () => {
     it('holds no tie without its other end, at world open and forty years on', async () => {

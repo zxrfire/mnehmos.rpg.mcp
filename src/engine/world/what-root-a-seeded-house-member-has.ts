@@ -360,15 +360,3 @@ export function drawRootForSomebodyAlreadyInAHouse(
     return rows[rows.length - 1].root;
 }
 
-/** Share of people at this rung in this house holding each root, for reporting. */
-export function rootSharesAt(
-    road: HouseRoad,
-    realmOrdinal: number,
-    rankIndex: number
-): Map<SpiritRootKey, number> {
-    const rows = rootWeightsForSomebodyAt(road, realmOrdinal, rankIndex);
-    const total = rows.reduce((sum, r) => sum + r.weight, 0);
-    const out = new Map<SpiritRootKey, number>();
-    for (const row of rows) out.set(row.root.key, total > 0 ? row.weight / total : 0);
-    return out;
-}

@@ -18,9 +18,13 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createWorld, schedule } from '../../../src/engine/world/world-state.js';
-import { advanceYears, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
+import { createWorld, schedule, type WorldState } from '../../../src/engine/world/world-state.js';
+import { advanceTime, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
 import { soakedWorld } from '../../support/soaked-world.js';
+
+/** Years, as the days `advanceTime` takes. */
+const advanceYears = (state: WorldState, years: number, opts: Parameters<typeof advanceTime>[2] = {}) =>
+    advanceTime(state, Math.round(years * 365), opts);
 
 const YEAR = 365;
 

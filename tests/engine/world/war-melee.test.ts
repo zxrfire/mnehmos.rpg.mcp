@@ -30,9 +30,30 @@ import {
     howAHouseIsFaring,
     whatAHouseCanPutOut
 } from '../../../src/engine/world/war-melee.js';
-import { isRuined, makeObject } from '../../../src/engine/world/possessions.js';
-import { whereTheGroundGotIt } from '../../../src/engine/world/estate-at-death.js';
+import { isRuined, makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
+import { whatThePlaceDidToIt } from '../../../src/engine/world/estate-at-death.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
+
+/**
+ * The same read backwards: whether a place marked this row, and which place.
+ *
+ * Forward is "what does a mark say"; backward is "was this thing marked, and
+ * where". The backward half is the one anything downstream actually asks -
+ * a war wanting to know whether it broke a thing or the ground did, a house
+ * wanting to know why its property came back short - and without it every
+ * caller would match the sentence itself, which is four copies of a format
+ * string waiting to drift.
+ */
+function whereTheGroundGotIt(
+    object: Pick<ObjectRecord, 'provenance'>
+): string | null {
+    const marked = whatThePlaceDidToIt('');
+    for (let i = object.provenance.length - 1; i >= 0; i--) {
+        const source = object.provenance[i].source;
+        if (source.startsWith(marked)) return source.slice(marked.length);
+    }
+    return null;
+}
 
 interface AtWar {
     state: WorldState;

@@ -8,7 +8,7 @@
  * that rung.
  *
  * The loop is not here. It is
- * `src/engine/world/how-many-of-the-broken-are-ever-mended.ts`, so that this
+ * `tests/support/how-many-of-the-broken-are-ever-mended.ts`, so that this
  * probe and the test that guards the target cannot drift apart - which is the
  * first item on AGENTS.md's list of ways a measurement goes wrong.
  *
@@ -20,7 +20,7 @@ import {
     measureWhoGetsMended,
     NEW_CULTIVATORS_PER_YEAR,
     HOUSEHOLD_ORIGINS
-} from '../src/engine/world/how-many-of-the-broken-are-ever-mended.js';
+} from '../tests/support/how-many-of-the-broken-are-ever-mended.js';
 import {
     readAllRepairMedicine,
     sentDownLedgerTotals

@@ -24,7 +24,6 @@ import {
     mendsThisBreak,
     repairRefusalReason,
     cheapestMedicineFor,
-    ordinalCarrying,
     applyStructuralRepair,
     repairCashPrice,
     repairWeightInStones,
@@ -56,6 +55,7 @@ import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
 import { WOUND_TYPES } from '../../src/data/cultivation/wounds.js';
 import { PILLS } from '../../src/data/cultivation/pills.js';
 import { InjurySchema, type Injury } from '../../src/schema/cultivation.js';
+import { ordinalCarrying } from '../support/how-many-of-the-broken-are-ever-mended.js';
 
 const openingHoldersOf = (medicineId: string) =>
     STRUCTURAL_REPAIR_HOLDINGS.filter(h => h.medicineId === medicineId);

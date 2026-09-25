@@ -47,8 +47,6 @@
  */
 
 import type { Element } from '../cultivation/spirit-roots.js';
-import { BEAST_CHANGE_ORDINAL } from '../../data/cultivation/beasts.js';
-import { beastsOnThisGround } from './hunting-a-spirit-beast.js';
 
 /** A house, as the ground question needs it. */
 export interface HouseOnItsGround {
@@ -111,24 +109,6 @@ export interface ProtectorPairing {
  * drops every `sealed_only` entry, which is correct and is also the module's
  * sharpest limitation - see the note at the bottom of the file.
  */
-/**
- * NO GROUND PASSED, DELIBERATELY. Every other caller of `beastsOnThisGround`
- * narrows by what is underfoot where somebody is standing; this one is not
- * standing anywhere. It asks which KINDS of creature take a chair over a house,
- * for every house on the map at once, and a house in the ice province and a
- * house in the grain province have to be able to draw from the same answer.
- * Narrowing here would be answering a question nobody asked.
- */
-export function thingsThatCouldStandOverAHouse(): CouldStandInAChair[] {
-    return beastsOnThisGround({ onAVein: true, sealed: false })
-        .filter(b =>
-            b.ordinal >= BEAST_CHANGE_ORDINAL
-            && b.disposition !== 'demonic'
-            && b.veinRelation === 'holds')
-        .map(b => ({ id: b.id, ordinal: b.ordinal, element: b.element ?? null }))
-        .sort((a, b) => (b.ordinal - a.ordinal) || a.id.localeCompare(b.id));
-}
-
 /**
  * Match each thing to at most one house, and each house to at most one thing.
  *

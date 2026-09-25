@@ -263,20 +263,3 @@ export function lastOccurrenceOf(fact: HistoricalFact): number {
     const n = Number(fact.data.lastOccurrenceDay ?? fact.day);
     return Number.isFinite(n) ? n : fact.day;
 }
-
-/**
- * The row's statement with its recurrence said out loud.
- *
- * The summary itself is never rewritten - it is part of the recurrence key, and
- * a row whose key drifted would stop absorbing its own further occurrences and
- * start a second row beside itself. So the recurrence is composed at read time
- * from what the row stores, which costs nothing and keeps the key stable.
- */
-export function describeWithRecurrence(fact: HistoricalFact, yearOfDay: (day: number) => number): string {
-    const occurrences = occurrencesOf(fact);
-    if (occurrences <= 1) return fact.summary;
-    const from = yearOfDay(Number(fact.data.firstOccurrenceDay ?? fact.day));
-    const to = yearOfDay(lastOccurrenceOf(fact));
-    if (from === to) return `${fact.summary} (${occurrences} times in year ${from}.)`;
-    return `${fact.summary} (${occurrences} times, years ${from} to ${to}.)`;
-}

@@ -8,12 +8,8 @@ import {
     MORTAL_LAYER,
     WORLD_LAYERS,
     evaluateLayerCrossing,
-    expelsOrdinal,
     isAboveTheLid,
     isBelowTheLid,
-    layerAbove,
-    layerBelow,
-    layerForOrdinal,
     layerOf
 } from '../../../src/engine/world/layers.js';
 import {
@@ -22,14 +18,11 @@ import {
     LID_CHANNEL_TAG,
     MAX_PERIL_RELIEF,
     advanceImmortalLayer,
-    afterCrossingOf,
     ascend,
     ascensionOf,
-    cannotBeHeldBelow,
     descend,
     ensureImmortalLayer,
     immortalStanding,
-    immortalWorldShape,
     perilChance,
     readChannel,
     readTwoWays,
@@ -37,10 +30,10 @@ import {
     sendAcross,
     thingsMadeAbove
 } from '../../../src/engine/world/immortal-world.js';
-import { advanceWorldYears, worldShape } from '../../../src/engine/world/driver.js';
-import { buildPlayerDigest, namesPermitted, simpleAccess } from '../../../src/engine/world/digest.js';
+import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { buildPlayerDigest, simpleAccess } from '../../../src/engine/world/digest.js';
 import { queryFacts } from '../../../src/engine/world/history.js';
-import { addLineageEdge, createLineageRecord, descendantsOf } from '../../../src/engine/world/lineage.js';
+import { addLineageEdge, ancestorsOf, createLineageRecord } from '../../../src/engine/world/lineage.js';
 import { evaluateAccess } from '../../../src/engine/world/locations.js';
 import { addGoal, setRealm, upsertRelationship } from '../../../src/engine/world/npc-state.js';
 import { makeObject } from '../../../src/engine/world/possessions.js';
@@ -50,12 +43,15 @@ import {
     FALSE_IMMORTAL_ORDINAL,
     OBJECT_CEILING_BELOW_THE_LID,
     TRUE_IMMORTAL_ORDINAL,
+    isExpelledFromBelow,
     powerMultiplierForOrdinal
 } from '../../../src/engine/cultivation/realms.js';
 import { cloneWorld, getFaction, getNpc, upsertNpc, upsertObject } from '../../../src/engine/world/world-state.js';
 import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
 import { migrate } from '../../../src/storage/migrations.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
+import { immortalWorldShape, worldShape } from '../../support/the-shape-of-a-world.js';
+import { namesPermitted } from '../../support/the-names-a-digest-may-use.js';
 
 const YEAR = 365;
 
@@ -136,18 +132,17 @@ describe('layers: the one point where progression is geographic', () => {
         expect(WORLD_LAYERS.map(l => l.index)).toEqual([0, 1]);
         // Higher layers, later or never. There is nowhere above the immortal
         // world, and adding one is a data change nobody should make.
-        expect(layerAbove(IMMORTAL_LAYER)).toBeNull();
-        expect(layerBelow(MORTAL_LAYER)).toBeNull();
-        expect(layerAbove(MORTAL_LAYER)!.key).toBe(IMMORTAL_LAYER);
+        expect(WORLD_LAYERS[WORLD_LAYERS.length - 1]!.key).toBe(IMMORTAL_LAYER);
+        expect(WORLD_LAYERS[WORLD_LAYERS.length - 1]!.expelsAbove).toBeNull();
     });
 
     it('puts 46 on the far side and 45 on this one, which is the whole of the difference', () => {
-        expect(layerForOrdinal(FALSE_IMMORTAL_ORDINAL).key).toBe(MORTAL_LAYER);
-        expect(layerForOrdinal(TRUE_IMMORTAL_ORDINAL).key).toBe(IMMORTAL_LAYER);
+        expect(WORLD_LAYERS.find(l => l.key === IMMORTAL_LAYER)!.entryOrdinal)
+            .toBe(TRUE_IMMORTAL_ORDINAL);
         // A False Immortal may stay. That is why the world has had False
         // Immortals living in it and has never had a True one.
-        expect(expelsOrdinal(MORTAL_LAYER, FALSE_IMMORTAL_ORDINAL)).toBe(false);
-        expect(expelsOrdinal(MORTAL_LAYER, TRUE_IMMORTAL_ORDINAL)).toBe(true);
+        expect(isExpelledFromBelow(FALSE_IMMORTAL_ORDINAL)).toBe(false);
+        expect(isExpelledFromBelow(TRUE_IMMORTAL_ORDINAL)).toBe(true);
     });
 
     it('reads anything without a stated layer as below the Lid', () => {
@@ -300,9 +295,13 @@ describe('the far side, materialised on contact', () => {
         // Not a parallel catalog: ordinary rows in the ordinary object table,
         // ordered by the ordinary power field. What makes them unavailable
         // below is the crossing rule, which applies to everything in the world.
+        const heldBelow = (o: (typeof made)[number]) => evaluateLayerCrossing({
+            subject: o.kind === 'manual' ? 'manual' : 'object',
+            direction: 'down', ordinal: 0, power: o.power, madeAbove: true
+        }).permitted;
         const weapons = made.filter(o => o.kind !== 'manual');
-        expect(weapons.every(o => cannotBeHeldBelow(o))).toBe(true);
-        expect(made.some(o => o.kind === 'manual' && !cannotBeHeldBelow(o))).toBe(true);
+        expect(weapons.every(o => !heldBelow(o))).toBe(true);
+        expect(made.some(o => o.kind === 'manual' && heldBelow(o))).toBe(true);
     });
 
     it('has natural law of its own that a newcomer does not get a vote on', () => {
@@ -369,7 +368,7 @@ describe('ascension is a transition and never an ending', () => {
         expect(after.locationId).toBe(IMMORTAL_LANDING_LOCATION_ID);
         // Lifespan has stopped being a number, and does not quietly run out.
         expect(after.cultivation.lifespanEndsOnDay).toBeGreaterThan(state.currentDay + 1e9);
-        expect(afterCrossingOf(state, npc.id)).toBe('still_above');
+        expect(ascensionOf(state, npc.id)?.afterCrossing).toBe('still_above');
     });
 
     it('is not a hard reset: everything that was true about them still is', () => {
@@ -388,7 +387,7 @@ describe('ascension is a transition and never an ending', () => {
 
         // Still on the family tree, with the descendant still below.
         const lineage = state.lineages.find(l => l.id === 'lin-candidate')!;
-        expect(descendantsOf(lineage, npc.id).map(d => d.id)).toContain(heir.id);
+        expect(ancestorsOf(lineage, heir.id).map(a => a.id)).toContain(npc.id);
         expect(isBelowTheLid(getNpc(state, heir.id)!)).toBe(true);
     });
 
@@ -612,7 +611,7 @@ describe('ascension removes exactly two things', () => {
         }
 
         // And the sect's claim is unchanged by the truth, which is the point.
-        const claimIsTrue = afterCrossingOf(state, npc.id) === 'still_above';
+        const claimIsTrue = ascensionOf(state, npc.id)?.afterCrossing === 'still_above';
         expect(typeof claimIsTrue).toBe('boolean');
         expect(getFaction(state, factionId)!.resources.ascended_ancestors).toBe(1);
     });

@@ -16,11 +16,10 @@
 import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
+import type { WorldState } from '../../../src/engine/world/world-state.js';
 import {
     repairMedicineHeldBy,
     everyRepairHolding,
-    sentDownDosesStanding,
-    worldCountOfRepairMedicine,
     doseAHouseWouldUse,
     spendRepairDose,
     repairStorageModel,
@@ -30,14 +29,43 @@ import {
 } from '../../../src/engine/world/who-holds-the-structural-repair-medicine.js';
 import {
     STRUCTURAL_REPAIR_MEDICINES,
-    STRUCTURAL_REPAIR_HOLDINGS
+    STRUCTURAL_REPAIR_HOLDINGS,
+    getStructuralRepairMedicine
 } from '../../../src/data/cultivation/structural-repair-medicine.js';
 import { sentDownLedgerTotals } from '../../../src/engine/cultivation/what-structural-repair-medicine-can-reach.js';
 import {
     measureWhoGetsMended,
     HOUSEHOLD_ORIGINS
-} from '../../../src/engine/world/how-many-of-the-broken-are-ever-mended.js';
+} from '../../support/how-many-of-the-broken-are-ever-mended.js';
 import { willTheHouseSpendOnThem, chosenOf, CHOSEN_PER_HOUSE } from '../../../src/engine/cultivation/who-a-house-will-spend-a-repair-dose-on.js';
+
+/** How many of one medicine stand in the whole world right now. */
+function worldCountOfRepairMedicine(state: WorldState, medicineId: string): number {
+    const medicine = getStructuralRepairMedicine(medicineId);
+    if (!medicine) return 0;
+    if (repairStorageModel(medicine) === 'row') {
+        return state.objects.filter(
+            o => o.data?.medicineId === medicineId && isUnspentDose(o)
+        ).length;
+    }
+    return state.factions.reduce(
+        (n, f) => n + Number(f.resources[repairStockKey(medicineId)] ?? 0),
+        0
+    );
+}
+
+/**
+ * The count the standing register carries: how many sent-down doses are left.
+ *
+ * The only medicine that reaches a break above ordinal 28, summed live off the
+ * world. It never goes up. If it reads lower than the catalog's opening figure,
+ * somebody has spent one, and the row that says who is still in `state.objects`.
+ */
+function sentDownDosesStanding(state: WorldState): number {
+    return STRUCTURAL_REPAIR_MEDICINES
+        .filter(m => !m.madeBelowTheLid)
+        .reduce((n, m) => n + worldCountOfRepairMedicine(state, m.id), 0);
+}
 
 const catalog = await loadCultivationCatalog();
 const world = () => seedWorld({ seed: 'repair-holdings', catalog }).state;

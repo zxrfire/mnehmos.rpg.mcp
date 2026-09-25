@@ -30,9 +30,10 @@ import { makeLocation } from '../../../src/engine/world/locations.js';
 import { makeFact } from '../../../src/engine/world/history.js';
 import {
     appendWorldFact,
-    trajectoryOf,
-    whatTheySaw
+    trajectoryOf
 } from '../../../src/engine/world/who-was-there-when-it-happened.js';
+import { whatOneOfTheWorldsOwnPeopleKnows } from '../../../src/engine/world/what-one-of-the-worlds-own-people-knows.js';
+import { stageCeilingFor } from '../../../src/engine/social/discovery.js';
 
 const DAY = 365 * 1_000;
 
@@ -90,31 +91,27 @@ describe('a trajectory is what happened to you', () => {
 });
 
 describe('and what you saw is a second thing you can be asked', () => {
+    /**
+     * Asked through the read that answers it for the world's own people:
+     * `whatOneOfTheWorldsOwnPeopleKnows` reads presence off `witnessIds` per
+     * person, and being there is the witnessed ceiling.
+     */
+    const theyHoldIt = (state: WorldState, who: NpcRecord, factId: string): string =>
+        whatOneOfTheWorldsOwnPeopleKnows(state)(who.id, 'event', factId);
+
     it('answers with everything this person was standing in front of', () => {
         const state = build();
         const fact = aKilling(state);
-        expect(whatTheySaw(state, npc(state, 'onlooker')).map(f => f.id)).toContain(fact.id);
+        expect(theyHoldIt(state, npc(state, 'onlooker'), fact.id)).toBe(stageCeilingFor('witnessed'));
     });
 
-    it('answers with nothing for somebody who was somewhere else', () => {
+    it('does not put somebody who was somewhere else in front of it', () => {
         const state = build();
-        aKilling(state);
+        const fact = aKilling(state);
         push(state, 'elsewhere', 'Somebody Elsewhere', 4);
-        const away = { ...npc(state, 'elsewhere'), locationId: 'nowhere-near' };
-        expect(whatTheySaw(state, away)).toEqual([]);
-    });
-
-    it('is in the order it happened, like the trajectory beside it', () => {
-        const state = build();
-        const first = aKilling(state);
-        const second = appendWorldFact(state, makeFact({
-            day: DAY + 365, kind: 'war', scale: 'local', magnitude: 0.5,
-            visibility: 'public', locationId: 'town',
-            actors: [{ id: 'doer', name: 'The Doer', role: 'claimant' }],
-            summary: 'The Doer went to war a year later.'
-        }), { recur: false });
-        expect(whatTheySaw(state, npc(state, 'onlooker')).map(f => f.id))
-            .toEqual([first.id, second.id]);
+        const at = state.npcs.findIndex(n => n.id === 'elsewhere');
+        state.npcs[at] = { ...state.npcs[at]!, locationId: 'nowhere-near' };
+        expect(theyHoldIt(state, state.npcs[at]!, fact.id)).not.toBe(stageCeilingFor('witnessed'));
     });
 });
 

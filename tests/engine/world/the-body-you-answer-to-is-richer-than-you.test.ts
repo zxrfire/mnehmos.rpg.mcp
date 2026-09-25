@@ -48,12 +48,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { loadCultivationCatalog, type CatalogFaction } from '../../../src/engine/world/catalog.js';
-import { seedWorld, whatItsHoldingsBringIn } from '../../../src/engine/world/seeding.js';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
 import {
     APEX_INSTITUTIONS,
     FACTION_PARENTAGE,
     theBodyItAnswersTo
 } from '../../../src/data/cultivation/governance-and-water-rights.js';
+import { whatItsHoldingsBringIn } from '../../support/what-a-house-takes-off-its-holdings.js';
 
 const catalog = await loadCultivationCatalog();
 const { state } = seedWorld({ seed: 'pyramid-probe', catalog, presentYear: 1000, population: 300 });

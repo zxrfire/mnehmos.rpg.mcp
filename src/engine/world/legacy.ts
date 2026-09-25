@@ -51,8 +51,7 @@ import {
     inheritGoals,
     legacyGoals,
     markDead,
-    upsertRelationship,
-    type NpcRecord
+    upsertRelationship
 } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { storeMemory } from './memory.js';
@@ -533,12 +532,3 @@ export function lastFinishedRun(state: WorldState): WorldRun | null {
     return finished.length > 0 ? finished[finished.length - 1] : null;
 }
 
-/** Graves left by previous runs. What a new cultivator can dig up. */
-export function previousRunGraves(state: WorldState): LocationRecord[] {
-    return state.locations.filter(l => l.kind === 'grave' && l.tags.includes('previous_run'));
-}
-
-/** A dead run's NPC record. Dead, and it stays that way. */
-export function predecessorOf(state: WorldState, run: WorldRun): NpcRecord | null {
-    return state.npcs.find(n => n.id === run.cultivatorId) ?? null;
-}

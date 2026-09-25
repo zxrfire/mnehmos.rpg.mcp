@@ -36,8 +36,8 @@ import {
 import { makeFaction, type FactionRecord } from '../../../src/engine/world/world-state.js';
 import { whoTurnsYouAwayFrom } from '../../../src/engine/world/ruin-gatekeepers.js';
 import {
+    SHUT_TO_EVERYBODY_ELSE,
     howBadlyItIsTaken,
-    isAMonopolyAccount,
     shutAPublicRuin,
     whatItTakesToHold,
     whoLosesAccessTo,
@@ -163,7 +163,7 @@ describe('a house that shuts a public ruin', () => {
             expect(account.kind).toBe('grudge');
             expect(account.subjectId).toBe('f-a');
             expect(act.angered).toContain(account.holderId);
-            expect(isAMonopolyAccount(account)).toBe(true);
+            expect(account.tags).toContain(SHUT_TO_EVERYBODY_ELSE);
         }
         // And nobody holds one against themselves.
         expect(act.accounts.map(a => a.holderId)).not.toContain('f-a');

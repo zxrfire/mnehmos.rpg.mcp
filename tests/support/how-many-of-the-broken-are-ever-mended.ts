@@ -8,10 +8,11 @@
  * and the span the rung granted them runs out at that rung with no further
  * crossing to buy more.
  *
- * This lives in `src/engine` rather than in `scripts/` for one reason: the
+ * This lives in `tests/support` rather than in `scripts/` for one reason: the
  * probe and the test both need it, and AGENTS.md's list of ways a measurement
  * goes wrong starts with somebody keeping a second copy of the loop. There is
- * one loop, it is here, and both callers run it.
+ * one loop, it is here, and both callers run it. Nothing in the game runs it,
+ * which is why it is not in `src/`.
  *
  * ── THE TWO SCARCITIES, MEASURED SEPARATELY ──────────────────────────────
  *
@@ -42,23 +43,34 @@
  * claim: the true figure is lower than what this prints.
  */
 
-import { forStream } from '../cultivation/rng.js';
-import { rollSpiritRoot, rollAttributes } from '../cultivation/spirit-roots.js';
-import { rollOrigin, type OriginTierKey } from '../cultivation/origin.js';
-import { deriveLife } from './seeding.js';
-import { MAX_ORDINAL } from '../cultivation/realms.js';
+import { forStream } from '../../src/engine/cultivation/rng.js';
+import { rollSpiritRoot, rollAttributes } from '../../src/engine/cultivation/spirit-roots.js';
+import { rollOrigin, type OriginTierKey } from '../../src/engine/cultivation/origin.js';
+import { deriveLife } from '../../src/engine/world/seeding.js';
+import { MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import {
     rollArrivesBroken,
     brokenStatusFor
-} from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
+} from '../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import {
-    cheapestMedicineFor,
-    ordinalCarrying
-} from '../cultivation/what-structural-repair-medicine-can-reach.js';
+    NOTHING_REPAIRS_ABOVE_ORDINAL,
+    cheapestMedicineFor
+} from '../../src/engine/cultivation/what-structural-repair-medicine-can-reach.js';
 import {
     STRUCTURAL_REPAIR_HOLDINGS,
     STRUCTURAL_REPAIR_MEDICINES
-} from '../../data/cultivation/structural-repair-medicine.js';
+} from '../../src/data/cultivation/structural-repair-medicine.js';
+
+/**
+ * The rung a cultivator carrying this break is standing at: the inverse of
+ * `brokenStatusFor`, which is what this harness and the medicine test walk.
+ */
+export function ordinalCarrying(woundKey: string): number {
+    for (let from = 0; from < MAX_ORDINAL; from++) {
+        if (brokenStatusFor(from) === woundKey) return from + 1;
+    }
+    return NOTHING_REPAIRS_ABOVE_ORDINAL + 1;
+}
 
 /**
  * New cultivators the two provinces produce in a year.

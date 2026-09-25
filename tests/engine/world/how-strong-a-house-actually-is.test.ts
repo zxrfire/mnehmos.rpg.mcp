@@ -47,7 +47,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { seedWorld, whatItsHoldingsBringIn } from '../../../src/engine/world/seeding.js';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
 import {
     howStrongAHouseActuallyIs,
     howStrongThisHouseIsNow,
@@ -61,6 +61,7 @@ import {
     WHAT_A_SECONDED_PERSON_IS_WORTH_AT_THE_POSTING,
     WHAT_A_SECONDED_PERSON_IS_WORTH_AT_HOME
 } from '../../../src/data/cultivation/faction-roll.js';
+import { whatItsHoldingsBringIn } from '../../support/what-a-house-takes-off-its-holdings.js';
 
 const catalog = await loadCultivationCatalog();
 const { state } = seedWorld({ seed: 'rating-probe', catalog, presentYear: 1000, population: 300 });

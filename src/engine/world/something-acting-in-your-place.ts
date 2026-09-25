@@ -136,16 +136,6 @@ export function couldItBeSentAt(input: {
 }
 
 /**
- * Whether a deed done by this thing has its owner's name on it.
- *
- * The answer the world writes down, and the reason a famous blade is a mixed
- * blessing: it does the work and it says who sent it.
- */
-export function wouldTheyKnowWhoSentIt(proxy: ActingInYourPlace): boolean {
-    return proxy.recognisable;
-}
-
-/**
  * What is left behind while this thing is out.
  *
  * Null where nothing is. A sword leaves its owner standing; a nascent soul

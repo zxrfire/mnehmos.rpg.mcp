@@ -181,17 +181,3 @@ export function andLetGoAtTheOtherEnd(
     }
 }
 
-/** Every tie in this roster that has nobody at the other end, as `holder -> target`. */
-export function tiesWithNobodyAtTheOtherEnd(npcs: readonly NpcRecord[]): { holderId: string; targetId: string; kind: RelationshipKind; note: string }[] {
-    const byId = new Map(npcs.map(row => [row.id, row]));
-    const out: { holderId: string; targetId: string; kind: RelationshipKind; note: string }[] = [];
-    for (const npc of npcs) {
-        for (const tie of npc.relationships) {
-            const other = byId.get(tie.targetId);
-            if (other === undefined) continue;
-            if (other.relationships.some(back => back.targetId === npc.id)) continue;
-            out.push({ holderId: npc.id, targetId: tie.targetId, kind: tie.kind, note: tie.note });
-        }
-    }
-    return out;
-}

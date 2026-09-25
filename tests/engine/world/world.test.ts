@@ -6,16 +6,14 @@ import { migrate } from '../../../src/storage/migrations.js';
 import { migrateWorld } from '../../../src/storage/migrations.world.js';
 import {
     createWorld,
-    currentYear,
-    dateOf,
     getNpc,
     lineageOf,
     pendingEffects,
     schedule,
-    upsertLineage,
     upsertNpc,
+    type WorldState
 } from '../../../src/engine/world/world-state.js';
-import { advanceTime, advanceYears, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
+import { advanceTime, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
 import {
     createNpc,
     addGoal,
@@ -30,14 +28,13 @@ import {
     setRealm,
     relationshipWith,
     theTieBecomes,
-    updateGoal,
     upsertRelationship,
     whatStandsBetween
 } from '../../../src/engine/world/npc-state.js';
 import {
     addLineageEdge,
+    ancestorsOf,
     createLineageRecord,
-    descendantsOf,
     generationOf,
     heirsOf,
     settleInheritance,
@@ -79,15 +76,13 @@ import {
     makeResourceLot,
     queryObjects,
     revealOwnership,
-    setOwnership,
     transferPossession
 } from '../../../src/engine/world/possessions.js';
-import {
-    cultivationContext,
-    makeLocation,
-    makeThresholds
-} from '../../../src/engine/world/locations.js';
-import { appendFact, makeFact, queryFacts, degradeFidelity } from '../../../src/engine/world/history.js';
+import { appendFact, makeFact, queryFacts, yearOfDay } from '../../../src/engine/world/history.js';
+
+/** Years, as the days `advanceTime` takes. */
+const advanceYears = (state: WorldState, years: number, opts: Parameters<typeof advanceTime>[2] = {}) =>
+    advanceTime(state, Math.round(years * 365), opts);
 
 const YEAR = 365;
 
@@ -390,7 +385,7 @@ describe('world state: the authoritative store', () => {
         expect(JSON.stringify(a)).toBe(JSON.stringify(b));
         expect(JSON.stringify(createWorld({ seed: 'w-beta', presentYear: 1000 }))).not.toBe(JSON.stringify(a));
 
-        expect(currentYear(a)).toBe(1000);
+        expect(yearOfDay(a.currentDay)).toBe(1000);
         expect(a.history.facts.length).toBeGreaterThan(0);
         expect(a.locations.some(l => l.kind === 'ruin')).toBe(true);
         expect(a.locations.some(l => l.kind === 'region')).toBe(true);
@@ -398,9 +393,8 @@ describe('world state: the authoritative store', () => {
 
     it('derives the date from one clock', () => {
         const world = createWorld({ seed: 'w-4', skipPriorAges: true, presentYear: 500 });
-        expect(dateOf(world).year).toBe(500);
-        expect(dateOf(world).dayOfYear).toBe(0);
-        expect(dateOf(world, 500 * YEAR + 40).dayOfYear).toBe(40);
+        expect(yearOfDay(world.currentDay)).toBe(500);
+        expect(world.currentDay - yearOfDay(world.currentDay) * YEAR).toBe(0);
     });
 });
 
@@ -826,7 +820,7 @@ describe('memory: storage, retrieval and compression', () => {
         expect(unsupportedMemories(s, world.history, 'pc')).toHaveLength(0);
 
         // Centuries pass and the record is gone. The memory is not.
-        degradeFidelity(world.history.facts[0], 'lost');
+        world.history.facts[0].fidelity = 'lost';
         const orphaned = unsupportedMemories(s, world.history, 'pc');
         expect(orphaned).toHaveLength(1);
         expect(orphaned[0].summary).toContain('used to be a mountain');
@@ -884,9 +878,8 @@ describe('npc records: durable, not simulated', () => {
         let npc = createNpc('s', { id: 'npc-1', bornOnDay: 0, onDay: 0 });
         npc = addGoal(npc, { kind: 'revenge', text: 'Avenge a father.', priority: 0.9 }, 10 * YEAR);
         const id = npc.goals[0].id;
-        npc = updateGoal(npc, id, { progress: 'Found the man.', obstacles: [] }, 200 * YEAR);
+        expect(npc.goals[0].id).toBe(id);
         expect(npc.goals[0].openedOnDay).toBe(10 * YEAR);
-        expect(npc.goals[0].progress).toBe('Found the man.');
         expect(activeGoals(npc)).toHaveLength(1);
     });
 
@@ -976,9 +969,9 @@ describe('lineage: the edge, and what travels down it', () => {
         return l;
     }
 
-    it('walks descendants and generations', () => {
+    it('walks ancestry and generations', () => {
         const l = line();
-        expect(descendantsOf(l, 'npc-1').map(d => d.id).sort()).toEqual(['npc-2', 'npc-3', 'npc-d']);
+        expect(ancestorsOf(l, 'npc-3').map(a => a.id)).toEqual(['npc-2', 'npc-1']);
         expect(generationOf(l, 'npc-1')).toBe(0);
         expect(generationOf(l, 'npc-2')).toBe(1);
         expect(generationOf(l, 'npc-3')).toBe(2);
@@ -1033,7 +1026,7 @@ describe('death handoff: goals and heirs outlive their holder', () => {
         world = upsertNpc(world, son);
         let lineage = createLineageRecord({ id: 'lin-1', surname: 'Yun', founderId: 'npc-1', foundedOnDay: -95 * YEAR });
         lineage = addLineageEdge(lineage, { parentId: 'npc-1', childId: 'npc-2', relation: 'descendant', onDay: -30 * YEAR });
-        world = upsertLineage(world, lineage);
+        world = { ...world, lineages: [...world.lineages, lineage] };
 
         const handoffs: { deceasedId: string; heirIds: string[] }[] = [];
         const out = advanceYears(world, 10, {
@@ -1095,7 +1088,7 @@ describe('possession is not ownership', () => {
         expect(isDisputed(obj)).toBe(false);     // one claim, and nobody owns it yet
         expect(knowsOwnership(obj, 'npc-1')).toBe(false);
 
-        obj = setOwnership(obj, 'npc-9', 'Mo Yaolin');
+        obj = { ...obj, ownerId: 'npc-9', ownerName: 'Mo Yaolin' };
         expect(isDisputed(obj)).toBe(true);      // holder is not the owner
         obj = revealOwnership(obj, 'npc-1');
         expect(knowsOwnership(obj, 'npc-1')).toBe(true);
@@ -1103,7 +1096,7 @@ describe('possession is not ownership', () => {
 
     it('records a taking without moving ownership', () => {
         let obj = sword();
-        obj = setOwnership(obj, 'npc-1', 'Yun Cishan');
+        obj = { ...obj, ownerId: 'npc-1', ownerName: 'Yun Cishan' };
         obj = transferPossession(obj, {
             onDay: 500, toHolderId: 'npc-7', toHolderName: 'a thief', how: 'stolen'
         });
@@ -1127,7 +1120,7 @@ describe('possession is not ownership', () => {
 
     it('queries by the situation rather than by the object', () => {
         let stolenSword = sword();
-        stolenSword = setOwnership(stolenSword, 'npc-1', 'Yun Cishan');
+        stolenSword = { ...stolenSword, ownerId: 'npc-1', ownerName: 'Yun Cishan' };
         stolenSword = transferPossession(stolenSword, {
             onDay: 500, toHolderId: 'npc-7', toHolderName: 'a thief', how: 'stolen'
         });
@@ -1140,74 +1133,3 @@ describe('possession is not ownership', () => {
     });
 });
 
-// ─────────────────────────────────────────────────────────────────────────
-// ENVIRONMENT
-// ─────────────────────────────────────────────────────────────────────────
-
-describe('locations carry environment, not just a name', () => {
-    it('makes ten years resolve differently in different places', () => {
-        const city = makeLocation({
-            id: 'loc-city', name: 'Blackwater', kind: 'settlement',
-            ambient: 'thin',
-            environment: {
-                spiritualDensity: 0.1, danger: 0.1, resources: ['trade'], climate: 'temperate',
-                politicalControl: 'a merchant council', specialRules: [],
-                knownSecrets: [], historicalScars: []
-            }
-        });
-        const mountain = makeLocation({
-            id: 'loc-mountain', name: 'the Cold Kiln peak', kind: 'vein',
-            ambient: 'dense',
-            environment: {
-                spiritualDensity: 0.9, danger: 0.2, resources: ['qi', 'herbs'], climate: 'frozen',
-                politicalControl: 'the Cold Kiln Hall', specialRules: ['no flight above the third terrace'],
-                knownSecrets: [], historicalScars: []
-            }
-        });
-        const battlefield = makeLocation({
-            id: 'loc-field', name: 'the poisoned furrow', kind: 'forbidden_zone',
-            ambient: 'thin',
-            hazards: ['corrosive'],
-            environment: {
-                spiritualDensity: 0.2, danger: 0.9, resources: [], climate: 'sour',
-                politicalControl: 'nobody', specialRules: ['the dead do not stay down'],
-                knownSecrets: [], historicalScars: ['a war that nobody won']
-            }
-        });
-
-        const c = cultivationContext(city).rateMultiplier;
-        const m = cultivationContext(mountain).rateMultiplier;
-        const b = cultivationContext(battlefield).rateMultiplier;
-
-        expect(m).toBeGreaterThan(c);
-        expect(b).toBeLessThan(c);
-        expect(cultivationContext(battlefield).specialRules).toContain('the dead do not stay down');
-    });
-
-    it('reports a sealed ruin as holding qi nobody can reach', () => {
-        const ruin = makeLocation({
-            id: 'loc-ruin', name: 'a sealed compound', kind: 'ruin',
-            ambient: 'dense', qiDensity: 0.95, sealed: true,
-            thresholds: makeThresholds(13, 21, 25, 30),
-            environment: {
-                spiritualDensity: 0.05, danger: 0.8, resources: ['qi'], climate: 'sunless',
-                politicalControl: 'whoever gets in', specialRules: [], knownSecrets: [],
-                historicalScars: []
-            }
-        });
-        const ctx = cultivationContext(ruin);
-        expect(ruin.qiDensity).toBeGreaterThan(0.9);
-        expect(ctx.rateMultiplier).toBeLessThan(1);
-        expect(ctx.factors.some(f => f.source === 'sealed')).toBe(true);
-    });
-
-    it('favours a specialist over a generalist in the same ground', () => {
-        const marsh = makeLocation({
-            id: 'loc-marsh', name: 'the Sourbank marsh', kind: 'forbidden_zone',
-            affinities: [{ tag: 'poison', multiplier: 1.6, thresholdOffset: 8, note: '' }]
-        });
-        const specialist = cultivationContext(marsh, { specialties: ['poison'] }).rateMultiplier;
-        const outsider = cultivationContext(marsh, { specialties: ['metal'] }).rateMultiplier;
-        expect(specialist).toBeGreaterThan(outsider);
-    });
-});

@@ -7,7 +7,7 @@ import {
     BEAST_CORE_ORDINAL,
     type Beast
 } from '../../data/cultivation/beasts.js';
-import { REACHABLE_FROM, canPointAt, type KnowingStage } from '../social/discovery.js';
+import { canPointAt, type KnowingStage } from '../social/discovery.js';
 import type { DayIndex } from '../social/common.js';
 import type { ObligationCause } from '../social/grudges.js';
 import {
@@ -49,11 +49,6 @@ export function answerabilityOf(beast: Beast, standing: Party | null): Answerabi
     return standing === null ? 'nobody_stood_behind_it' : 'answerable';
 }
 
-/** True where the hunt returned an amount rather than a particular animal. */
-export function isAnAmountRatherThanAnAnimal(beast: Beast): boolean {
-    return beast.ordinal < BEAST_CORE_ORDINAL;
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // WHO CAN PUT A NAME TO IT
 // ─────────────────────────────────────────────────────────────────────────
@@ -83,9 +78,6 @@ export function whoCanPointAtYou(
     }
     return named;
 }
-
-/** The rung at which a killing acquires a name and can open an account. */
-export const A_KILLING_ACQUIRES_A_NAME_AT: KnowingStage = REACHABLE_FROM;
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT THEY LOST, WHICH IS THE DIRECTION AND NOT THE SIZE

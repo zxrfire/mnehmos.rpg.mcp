@@ -207,42 +207,6 @@ export function parentsOf(lineage: LineageRecord, childId: string): LineageEdge[
         .sort((a, b) => a.onDay - b.onDay || (a.parentId < b.parentId ? -1 : 1));
 }
 
-/**
- * Everyone downstream of a person, breadth-first.
- *
- * Depth-capped because a two-hundred-year skip can produce a great many
- * descendants and the caller almost always wants the next generation or two.
- *
- * UNFILTERED, AND THE SAME LOADED GUN AS {@link parentsOf}: this walks every
- * relation, so a marriage is stepped through as though it were a generation and
- * a spouse arrives as a descendant at depth 1. It reports each row's relation,
- * so a caller CAN filter - and a caller that means ancestry should filter by
- * {@link STANDS_ABOVE_YOU} rather than reading the whole walk.
- */
-export function descendantsOf(
-    lineage: LineageRecord,
-    ancestorId: string,
-    maxDepth = 6
-): { id: string; depth: number; relation: LineageRelation }[] {
-    const out: { id: string; depth: number; relation: LineageRelation }[] = [];
-    const seen = new Set<string>([ancestorId]);
-    let frontier: { id: string; relation: LineageRelation }[] = [{ id: ancestorId, relation: 'descendant' }];
-
-    for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth++) {
-        const next: { id: string; relation: LineageRelation }[] = [];
-        for (const node of frontier) {
-            for (const edge of childrenOf(lineage, node.id)) {
-                if (seen.has(edge.childId)) continue;
-                seen.add(edge.childId);
-                out.push({ id: edge.childId, depth, relation: edge.relation });
-                next.push({ id: edge.childId, relation: edge.relation });
-            }
-        }
-        frontier = next;
-    }
-    return out;
-}
-
 export function ancestorsOf(
     lineage: LineageRecord,
     descendantId: string,

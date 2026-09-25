@@ -21,7 +21,6 @@
 import { describe, it, expect } from 'vitest';
 import {
     drawOriginForSomebodyAlreadyAtOrdinal,
-    originSharesAtOrdinal,
     originWeightsForSomebodyAtOrdinal,
     rungsAFortuneFunds,
     selectionLikelihood
@@ -33,13 +32,22 @@ import {
     originProbability,
     type OriginTierKey
 } from '../../../src/engine/cultivation/origin.js';
-import { HOUSEHOLD_ORIGINS } from '../../../src/engine/world/how-many-of-the-broken-are-ever-mended.js';
+import { HOUSEHOLD_ORIGINS } from '../../support/how-many-of-the-broken-are-ever-mended.js';
 import { createNpc } from '../../../src/engine/world/npc-state.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { MEMBERS } from '../../../src/data/cultivation/members.js';
 import { clampOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+
+/** Share of people at this rung who were born into each tier, for reporting. */
+function originSharesAtOrdinal(realmOrdinal: number): Map<OriginTierKey, number> {
+    const rows = originWeightsForSomebodyAtOrdinal(realmOrdinal);
+    const total = rows.reduce((sum, r) => sum + r.weight, 0);
+    const out = new Map<OriginTierKey, number>();
+    for (const row of rows) out.set(row.tier.key, total > 0 ? row.weight / total : 0);
+    return out;
+}
 
 const highShare = (shares: Map<OriginTierKey, number>) =>
     HOUSEHOLD_ORIGINS.reduce((sum, k) => sum + (shares.get(k) ?? 0), 0);

@@ -1,32 +1,90 @@
 import { describe, it, expect } from 'vitest';
 import {
     fillConsequences,
-    CONSEQUENCE_TEST_QUESTIONS,
     appendFact,
-    causalChain,
     chronicle,
     classifyForObserver,
     concurrentEventsFor,
     createLedger,
     dayOfYear,
-    degradeFidelity,
     explainFact,
     makeFact,
-    missingConsequences,
     nearMisses,
     openEra,
     queryFacts,
-    recordNearMiss,
     recordUnresolved,
     resolveFact,
     seedPriorAges,
-    unexplainedFacts,
-    unresolvedFacts,
-    witnessedEventsFor,
+    type EventConsequences,
+    type HistoricalFact,
     type HistoryLedger,
     type Observer
 } from '../../../src/engine/world/history.js';
 import { RUIN_NAMES, SCAR_NAMES } from '../../../src/data/cultivation/regions.js';
+
+const CONSEQUENCE_TEST_QUESTIONS: readonly { key: keyof EventConsequences; question: string }[] = [
+    { key: 'immediate', question: 'What changed immediately?' },
+    { key: 'physical', question: 'What changed physically?' },
+    { key: 'beneficiaries', question: 'Who benefited?' },
+    { key: 'losers', question: 'Who lost something?' },
+    { key: 'factionReactions', question: 'Which factions reacted?' },
+    { key: 'relationshipChanges', question: 'Which relationships changed?' },
+    { key: 'opportunitiesOpened', question: 'What new opportunities appeared?' },
+    { key: 'opportunitiesClosed', question: 'What old opportunities disappeared?' },
+    { key: 'rumours', question: 'What rumours spread?' },
+    { key: 'tenYearsLater', question: 'What is still true ten years later?' }
+] as const;
+
+/** Everything the engine itself cannot answer. */
+const unresolved = (ledger: HistoryLedger): HistoricalFact[] =>
+    ledger.facts.filter(f => f.truth === 'unresolved');
+
+/** "Nobody knows why", read the way `queryFacts` would be asked it. */
+const unexplained = (ledger: HistoryLedger): HistoricalFact[] =>
+    ledger.facts.filter(f => !f.causeKnown || f.fidelity === 'lost');
+
+/** Which of the ten questions this consequence block leaves unanswered. */
+function missingConsequences(c: Partial<EventConsequences> | null | undefined): string[] {
+    if (!c) return CONSEQUENCE_TEST_QUESTIONS.map(q => q.question);
+    const missing: string[] = [];
+    for (const { key, question } of CONSEQUENCE_TEST_QUESTIONS) {
+        const value = c[key];
+        const empty =
+            value === undefined ||
+            value === null ||
+            (typeof value === 'string' && value.trim() === '') ||
+            (Array.isArray(value) && value.length === 0);
+        if (empty) missing.push(question);
+    }
+    return missing;
+}
+
+/**
+ * Walk a fact's causal chain back to its roots.
+ */
+function causalChain(
+    ledger: HistoryLedger,
+    factId: string,
+    maxDepth = 16
+): HistoricalFact[] {
+    const byId = new Map(ledger.facts.map(f => [f.id, f]));
+    const out: HistoricalFact[] = [];
+    const seen = new Set<string>();
+    let frontier = [factId];
+    for (let depth = 0; depth <= maxDepth && frontier.length > 0; depth++) {
+        const next: string[] = [];
+        for (const id of frontier) {
+            if (seen.has(id)) continue;
+            seen.add(id);
+            const fact = byId.get(id);
+            if (!fact) continue;
+            out.push(fact);
+            next.push(...fact.causes);
+        }
+        frontier = next;
+    }
+    return out;
+}
 
 function ledgerWithEra(): HistoryLedger {
     const ledger = createLedger();
@@ -83,22 +141,20 @@ describe('history: the surviving record', () => {
             day: 100, kind: 'zone_forbidden', summary: 'The forest turned.',
             causeKnown: false, fidelity: 'rumour'
         }));
-        expect(unexplainedFacts(ledger).map(f => f.id)).toContain(mystery.id);
+        expect(unexplained(ledger).map(f => f.id)).toContain(mystery.id);
 
         const cause = appendFact(ledger, makeFact({ day: 99, kind: 'death', summary: 'Something large died here.' }));
         explainFact(ledger, mystery.id, [cause.id], 'partial');
 
-        expect(unexplainedFacts(ledger).map(f => f.id)).not.toContain(mystery.id);
+        expect(unexplained(ledger).map(f => f.id)).not.toContain(mystery.id);
         expect(causalChain(ledger, mystery.id).map(f => f.id)).toContain(cause.id);
     });
 
-    it('degrades fidelity but never improves it by accident', () => {
+    it('is not made better by being explained worse than it already is', () => {
         const ledger = ledgerWithEra();
-        const fact = appendFact(ledger, makeFact({ day: 1, kind: 'war', summary: 'A war.', fidelity: 'partial' }));
-        degradeFidelity(fact, 'full');
-        expect(fact.fidelity).toBe('partial');
-        degradeFidelity(fact, 'lost');
-        expect(fact.fidelity).toBe('lost');
+        const fact = appendFact(ledger, makeFact({ day: 1, kind: 'war', summary: 'A war.' }));
+        explainFact(ledger, fact.id, [], 'rumour');
+        expect(fact.fidelity).toBe('full');
     });
 });
 
@@ -121,7 +177,7 @@ describe('history: even the engine may not know', () => {
         expect(fact.claimedOutcomes).toHaveLength(4);
         // The summary says only what is known. It does not pick one.
         expect(fact.summary).not.toContain('destroyed');
-        expect(unresolvedFacts(ledger).map(f => f.id)).toEqual([fact.id]);
+        expect(unresolved(ledger).map(f => f.id)).toEqual([fact.id]);
     });
 
     it('lets somebody find out, without losing what people used to say', () => {
@@ -139,7 +195,7 @@ describe('history: even the engine may not know', () => {
         expect(resolved!.truth).toBe('reconstructed');
         expect(resolved!.causeKnown).toBe(true);
         expect(resolved!.claimedOutcomes).toContain('ascended');
-        expect(unresolvedFacts(ledger)).toHaveLength(0);
+        expect(unresolved(ledger)).toHaveLength(0);
     });
 
     it('separates unresolved from merely poorly recorded', () => {
@@ -155,14 +211,14 @@ describe('history: things that almost happened', () => {
     it('stores a near miss as an ordinary row with a flag', () => {
         const ledger = ledgerWithEra();
         appendFact(ledger, makeFact({ day: 10, kind: 'war', summary: 'A war that was won.' }));
-        const miss = recordNearMiss(
-            ledger,
-            makeFact({
+        const miss = appendFact(ledger, {
+            ...makeFact({
                 day: 20, kind: 'war', scale: 'continental',
                 summary: 'The Cold Kiln Hall came within two provinces of holding the continent.'
             }),
-            'Their patriarch died of an old wound in the fourth year, and nobody replaced him.'
-        );
+            nearMiss: true,
+            nearMissNote: 'Their patriarch died of an old wound in the fourth year, and nobody replaced him.'
+        });
 
         expect(miss.nearMiss).toBe(true);
         expect(miss.nearMissNote).toContain('old wound');
@@ -198,7 +254,8 @@ describe('history: three kinds of world event', () => {
     });
 
     it('reports what the observer was standing under', () => {
-        expect(witnessedEventsFor(ledger, observer).map(f => f.id)).toEqual([present.id]);
+        expect(ledger.facts.filter(f => classifyForObserver(f, observer) === 'witnessed').map(f => f.id))
+            .toEqual([present.id]);
     });
 
     it('filters a chronicle by relation', () => {
@@ -279,7 +336,7 @@ describe('history: seeding prior ages', () => {
         const oldest = prior.ledger.facts.filter(f => f.eraId === 'era-0');
         expect(oldest.length).toBeGreaterThan(0);
         expect(oldest.every(f => f.fidelity === 'lost' || f.fidelity === 'partial')).toBe(true);
-        expect(unexplainedFacts(prior.ledger).length).toBeGreaterThan(0);
+        expect(unexplained(prior.ledger).length).toBeGreaterThan(0);
     });
 });
 

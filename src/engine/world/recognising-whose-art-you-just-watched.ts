@@ -309,7 +309,3 @@ export function couldTheyTellItIs(
     };
 }
 
-/** Verdicts a reader can act on without hedging. */
-export function isFlat(verdict: ClaimVerdict): boolean {
-    return verdict === 'it_is' || verdict === 'it_is_not';
-}

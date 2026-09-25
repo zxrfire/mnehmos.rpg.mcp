@@ -51,7 +51,6 @@ import {
     carryingWounds,
     maxBodyOf,
     sealLaidOn,
-    sealLifted,
     theSealOn
 } from '../../../src/engine/world/npc-state';
 import {
@@ -142,13 +141,6 @@ describe('a seal is a fact about one of the world\'s own people', () => {
             liftsOnDay: null, byId: 'an-elder', note: 'held', sinceDay: A_DAY
         }, A_DAY);
         expect(theSealOn(held, A_DAY + 1_000_000)).not.toBeNull();
-    });
-
-    it('comes off when a hand takes it off', () => {
-        const held = sealLaidOn(somebody(), {
-            liftsOnDay: null, byId: 'an-elder', note: 'held', sinceDay: A_DAY
-        }, A_DAY);
-        expect(theSealOn(sealLifted(held, A_DAY + 10), A_DAY + 10)).toBeNull();
     });
 
     /**

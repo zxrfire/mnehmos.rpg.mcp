@@ -17,7 +17,6 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-    movesTheRegister,
     nobodyLeftToArgueWith,
     takenByForceOfArms,
     takenByStandingOverIt,
@@ -112,7 +111,6 @@ describe('the three routes, and the fourth answer that is most of the world', ()
         });
 
         expect(route).toBe('possession');
-        expect(movesTheRegister(route)).toBe(false);
         expect(object.possessorId).toBe('npc-thief');
         // The whole thread. The Tripod Court still owns it, which is what makes
         // it findable and what makes carrying it dangerous.
@@ -138,7 +136,6 @@ describe('the three routes, and the fourth answer that is most of the world', ()
         });
 
         expect(route).toBe('nobody_to_argue_with');
-        expect(movesTheRegister(route)).toBe(true);
         expect(object.ownerId).toBe('npc-immortal');
         // Short of having made the thing. Somebody standing over it has the
         // best claim available and not a perfect one, because the record is

@@ -21,7 +21,6 @@ import {
     formationsStandingAt,
     isFormation,
     raiseFormation,
-    stanceOf,
     whatAnArtCanRaiseTo,
     whatItsBuilderMustHaveBeen,
     whereAFormationStands,
@@ -281,7 +280,7 @@ describe('the row it mints', () => {
         expect(raised.row?.kind).toBe('formation');
         expect(raised.row?.power).toBe(42);
         expect(isFormation(raised.row!)).toBe(true);
-        expect(stanceOf(raised.row!)).toBe('defensive');
+        expect(raised.row!.data.stance).toBe('defensive');
     });
 
     it('is never carried: possessorId is null and locationId is where it stands', () => {

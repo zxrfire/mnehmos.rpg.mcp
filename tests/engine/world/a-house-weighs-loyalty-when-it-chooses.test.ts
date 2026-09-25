@@ -52,7 +52,11 @@ import { createNpc, isActing, type NpcRecord, type NpcRelationship } from '../..
 import { makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceYears } from '../../../src/engine/world/time.js';
+import { advanceTime } from '../../../src/engine/world/time.js';
+
+/** Years, as the days `advanceTime` takes. */
+const advanceYears = (state: WorldState, years: number, opts: Parameters<typeof advanceTime>[2] = {}) =>
+    advanceTime(state, Math.round(years * 365), opts);
 
 const RANKS = ['Outer', 'Inner', 'Core', 'True', 'Elder', 'Grand Elder', 'Head'];
 const HOUSE = 'house-that-weighs-loyalty';

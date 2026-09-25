@@ -7,7 +7,6 @@ import { forStream } from '../cultivation/rng.js';
 import { DESCENT_TRIBULATION_STRIKES } from '../cultivation/existence.js';
 import {
     MAX_ORDINAL,
-    OBJECT_CEILING_BELOW_THE_LID,
     TRUE_IMMORTAL_ORDINAL,
     powerMultiplierForOrdinal,
     rankName
@@ -17,13 +16,11 @@ import {
     personName,
     placeName,
     recordUnresolved,
-    yearOfDay,
     type HistoricalFact
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     IMMORTAL_LAYER,
-    MORTAL_LAYER,
     evaluateLayerCrossing,
     isAboveTheLid,
     isBelowTheLid,
@@ -53,7 +50,6 @@ import {
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
 import { theyTakeGroundAndMakeItTheirs } from './somewhere-that-is-theirs.js';
 import {
-    currentEraQiDensity,
     getFaction,
     getLocation,
     getNpc,
@@ -588,7 +584,7 @@ function summarise(state: WorldState, created: boolean): ImmortalLayerSummary {
         perilGroundIds: above.filter(l => l.tags.includes('peril_ground')).map(l => l.id).sort(),
         nativeIds: state.npcs.filter(n => isAboveTheLid(n) && n.tags.includes('native'))
             .map(n => n.id).sort(),
-        objectIds: state.objects.filter(o => o.tags.includes('immortal_make')).map(o => o.id).sort(),
+        objectIds: thingsMadeAbove(state).map(o => o.id).sort(),
         oldestFoundedOnDay: Math.min(
             ...state.factions.filter(f => isAboveTheLid(f)).map(f => f.foundedOnDay ?? 0)
         )
@@ -613,13 +609,6 @@ export function ascensionsOf(state: WorldState): AscensionRecord[] {
 
 export function ascensionOf(state: WorldState, residentId: string): AscensionRecord | null {
     return ascensionsOf(state).find(a => a.residentId === residentId) ?? null;
-}
-
-/**
- * What the engine knows became of somebody who crossed.
- */
-export function afterCrossingOf(state: WorldState, residentId: string): AscensionRecord['afterCrossing'] | null {
-    return ascensionOf(state, residentId)?.afterCrossing ?? null;
 }
 
 /**
@@ -1774,72 +1763,11 @@ function replenishNatives(state: WorldState, day: number, interval: number): num
     return 1;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// A COMPACT VIEW, FOR ADMIN AND FOR TESTS
-// ─────────────────────────────────────────────────────────────────────────
-
-export interface ImmortalWorldShape {
-    exists: boolean;
-    day: number;
-    year: number;
-    residents: number;
-    natives: number;
-    arrivals: number;
-    houses: number;
-    /** Ascensions the engine knows ended badly. Never rendered below the Lid. */
-    diedAbove: number;
-    stillAbove: number;
-    /** Lowest qi density anywhere above. It is also the highest: the layer is flat. */
-    minQiDensityAbove: number;
-    maxQiDensityBelow: number;
-    /** The lower world's own age. It only ever falls, and it is late. */
-    eraQiDensityBelow: number;
-    /**
-     * Share of places below that reach the immortal floor.
-     */
-    shareBelowAtImmortalDensity: number;
-}
-
-export function immortalWorldShape(state: WorldState): ImmortalWorldShape {
-    const above = state.locations.filter(l => isAboveTheLid(l));
-    const below = state.locations.filter(l => layerOf(l) === MORTAL_LAYER);
-    const residents = residentsAbove(state);
-    const records = ascensionsOf(state);
-    const floorAbove = above.length === 0 ? 0 : Math.min(...above.map(l => l.qiDensity));
-    return {
-        exists: above.length > 0,
-        day: state.currentDay,
-        year: yearOfDay(state.currentDay),
-        residents: residents.length,
-        natives: residents.filter(n => n.tags.includes('native')).length,
-        arrivals: residents.filter(n => n.tags.includes('ascended')).length,
-        houses: state.factions.filter(f => isAboveTheLid(f)).length,
-        diedAbove: records.filter(r => r.afterCrossing === 'died_above').length,
-        stillAbove: records.filter(r => r.afterCrossing === 'still_above').length,
-        minQiDensityAbove: floorAbove,
-        maxQiDensityBelow: Math.max(0, ...below.map(l => l.qiDensity)),
-        eraQiDensityBelow: currentEraQiDensity(state),
-        shareBelowAtImmortalDensity: below.length === 0
-            ? 0
-            : Number((below.filter(l => l.qiDensity >= floorAbove).length / below.length).toFixed(4))
-    };
-}
-
 /** Objects that exist only because there is a place they could be made. */
 export function thingsMadeAbove(state: WorldState): ObjectRecord[] {
     return state.objects
         .filter(o => o.tags.includes('immortal_make'))
         .sort((a, b) => (b.power ?? 0) - (a.power ?? 0) || (a.id < b.id ? -1 : 1));
-}
-
-/**
- * True when this object could never be held below the Lid.
- *
- * A property of the object's rating read through the ordinary crossing rule,
- * not a flag anybody set. `OBJECT_CEILING_BELOW_THE_LID` is the whole of it.
- */
-export function cannotBeHeldBelow(object: ObjectRecord): boolean {
-    return object.kind !== 'manual' && (object.power ?? 0) > OBJECT_CEILING_BELOW_THE_LID;
 }
 
 function clamp01(n: number): number {

@@ -24,7 +24,6 @@ import {
     roadRefuses,
     reachableCeiling,
     rootWeightsForSomebodyAt,
-    rootSharesAt,
     drawRootForSomebodyAlreadyInAHouse,
     STAYS_ON_A_REFUSING_ROAD_PER_RUNG,
     type HouseRoad
@@ -42,6 +41,19 @@ import { createNpc } from '../../../src/engine/world/npc-state.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+
+/** Share of people at this rung in this house holding each root, for reporting. */
+function rootSharesAt(
+    road: HouseRoad,
+    realmOrdinal: number,
+    rankIndex: number
+): Map<SpiritRootKey, number> {
+    const rows = rootWeightsForSomebodyAt(road, realmOrdinal, rankIndex);
+    const total = rows.reduce((sum, r) => sum + r.weight, 0);
+    const out = new Map<SpiritRootKey, number>();
+    for (const row of rows) out.set(row.root.key, total > 0 ? row.weight / total : 0);
+    return out;
+}
 
 const catalog = await loadCultivationCatalog();
 

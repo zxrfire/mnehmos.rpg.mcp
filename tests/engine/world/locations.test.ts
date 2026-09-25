@@ -1,13 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
     applyLocationChange,
-    attributeCause,
-    canOperate,
-    canSurvive,
     effectiveThresholds,
     environmentalCompatibility,
     evaluateAccess,
-    explainLocationChange,
     forbidZone,
     isOpenOn,
     linkLocations,
@@ -15,19 +11,67 @@ import {
     locationsFromPriorAges,
     makeAffinity,
     makeLocation,
-    makeModifier,
-    makeSecretRealm,
     makeThresholds,
     nextClosingDay,
     nextOpeningDay,
     openingsBetween,
     QI_DENSITY_MIN,
     stateAsOfDay,
-    transformOnDestruction,
-    travelOptions,
-    unexplainedChanges
+    type EnvironmentAffinity,
+    type LocationRecord,
+    type LocationThresholds,
+    type OpeningCycle,
+    type ThresholdModifier
 } from '../../../src/engine/world/locations.js';
 import { seedPriorAges } from '../../../src/engine/world/history.js';
+
+/**
+ * A secret realm: a sealed pocket on this planet that opens on a cycle.
+ *
+ * There is no space travel in this setting and no other worlds. A secret realm
+ * is a place you walk into through a seam that is not always there.
+ */
+function makeSecretRealm(
+    init: Pick<LocationRecord, 'id' | 'name'> & {
+        parentId?: string | null;
+        thresholds: LocationThresholds;
+        hazards?: string[];
+        affinities?: EnvironmentAffinity[];
+        cycle: OpeningCycle;
+        qiDensity?: number;
+        description?: string;
+        originFactId?: string | null;
+    }
+): LocationRecord {
+    return makeLocation({
+        id: init.id,
+        name: init.name,
+        kind: 'secret_realm',
+        parentId: init.parentId ?? null,
+        description: init.description ?? '',
+        ambient: 'dense',
+        qiDensity: init.qiDensity ?? 80,
+        thresholds: init.thresholds,
+        hazards: init.hazards ?? ['sealed_qi'],
+        affinities: init.affinities ?? [],
+        cycle: init.cycle,
+        discovered: false,
+        originFactId: init.originFactId ?? null,
+        tags: ['secret_realm']
+    });
+}
+
+function makeModifier(
+    init: Partial<ThresholdModifier> & Pick<ThresholdModifier, 'id' | 'source' | 'sourceId' | 'offsets'>
+): ThresholdModifier {
+    return {
+        label: init.label ?? init.sourceId,
+        hazards: init.hazards ?? [],
+        locationIds: init.locationIds ?? [],
+        note: init.note ?? '',
+        ...init
+    };
+}
 
 const DAY = 365;
 
@@ -155,10 +199,9 @@ describe('locations: environment interacts with cultivation', () => {
         expect(effective.survival).toBeLessThan(corrupted.thresholds.survival);
     });
 
-    it('canSurvive and canOperate agree with the assessment', () => {
-        expect(canSurvive(corrupted, { realmOrdinal: 18 })).toBe(true);
-        expect(canOperate(corrupted, { realmOrdinal: 18 })).toBe(false);
-        expect(canOperate(corrupted, { realmOrdinal: 21 })).toBe(true);
+    it('reads surviving and operating off one assessment', () => {
+        expect(evaluateAccess(corrupted, { realmOrdinal: 18 }).level).toBe('surviving');
+        expect(evaluateAccess(corrupted, { realmOrdinal: 21 }).level).toBe('operational');
     });
 });
 
@@ -235,20 +278,12 @@ describe('locations: origin, changes, current state', () => {
     });
 
     it('holds competing explanations without treating any of them as the cause', () => {
-        let loc = blackwater();
-        const mystery = unexplainedChanges(loc);
+        const loc = blackwater();
+        const mystery = loc.changes.filter(c => !c.causeKnown);
         expect(mystery).toHaveLength(1);
         expect(mystery[0].kind).toBe('destroyed');
         expect(mystery[0].attributedCauses).toHaveLength(2);
         expect(mystery[0].causeFactId).toBeNull();
-
-        loc = attributeCause(loc, mystery[0].id, 'A third village says it was the river');
-        expect(unexplainedChanges(loc)[0].attributedCauses).toHaveLength(3);
-
-        // Centuries later, somebody finds out.
-        loc = explainLocationChange(loc, mystery[0].id, 'f412', 'partial');
-        expect(unexplainedChanges(loc)).toHaveLength(0);
-        expect(loc.changes.find(c => c.id === mystery[0].id)!.causeFactId).toBe('f412');
     });
 
     it('does not mutate the input location', () => {
@@ -289,12 +324,12 @@ describe('locations: catastrophes scar the map rather than growing it', () => {
 
     it('destruction is a transition, not a deletion', () => {
         const city = makeLocation({ id: 'loc-city', name: 'Saltbell', kind: 'settlement' });
-        const { location } = transformOnDestruction(city, {
+        const { location } = applyLocationChange(city, {
             onDay: 1000 * DAY,
-            becomes: 'ruin',
+            kind: 'destroyed',
             summary: 'The city was buried when the ridge came down.',
             witnessed: true,
-            patch: { addHazards: ['collapse'], addTags: ['excavation'] }
+            patch: { kind: 'ruin', addHazards: ['collapse'], addTags: ['excavation'] }
         });
         expect(location.kind).toBe('ruin');
         expect(location.tags).toContain('excavation');
@@ -348,8 +383,8 @@ describe('locations: cycles, seals and travel on one planet', () => {
 
         expect(a.links[0].toLocationId).toBe('loc-b');
         expect(b.links[0].toLocationId).toBe('loc-a');   // symmetric
-        expect(travelOptions(a, [])[0].usable).toBe(false);
-        expect(travelOptions(a, ['key-jade-token'])[0].usable).toBe(true);
+        expect(a.links[0].open).toBe(true);
+        expect(a.links[0].requiresKeyId).toBe('key-jade-token');
     });
 });
 

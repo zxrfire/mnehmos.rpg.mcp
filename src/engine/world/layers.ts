@@ -137,15 +137,6 @@ export function isLayerKey(value: string): value is LayerKey {
     return WORLD_LAYERS.some(l => l.key === value);
 }
 
-export function layerFor(key: LayerKey): WorldLayer {
-    const layer = WORLD_LAYERS.find(l => l.key === key);
-    // Unreachable while `LayerKey` and the registry agree. The throw exists so
-    // a future edit that adds a key without a row fails loudly here instead of
-    // silently treating the new layer as the mortal one.
-    if (!layer) throw new Error(`No world layer registered for '${key}'`);
-    return layer;
-}
-
 /** Coerce a stored string, which may predate the field or be nonsense. */
 export function toLayerKey(value: string | null | undefined): LayerKey {
     return value != null && isLayerKey(value) ? value : DEFAULT_LAYER;
@@ -166,38 +157,6 @@ export function isBelowTheLid(x: Layered | null | undefined): boolean {
 
 export function isAboveTheLid(x: Layered | null | undefined): boolean {
     return layerOf(x) !== MORTAL_LAYER;
-}
-
-/** The layer above this one, or null at the top. Null is the normal answer. */
-export function layerAbove(key: LayerKey): WorldLayer | null {
-    return WORLD_LAYERS[layerFor(key).index + 1] ?? null;
-}
-
-/** The layer below this one, or null at the bottom. */
-export function layerBelow(key: LayerKey): WorldLayer | null {
-    const at = layerFor(key).index;
-    return at <= 0 ? null : WORLD_LAYERS[at - 1] ?? null;
-}
-
-/**
- * Where somebody at this ordinal belongs.
- *
- * The highest layer whose entry ordinal they have reached. A False Immortal at
- * forty-five belongs below and may stay there; that one rung is the entire
- * practical difference between the two landings of the last crossing.
- */
-export function layerForOrdinal(ordinal: number): WorldLayer {
-    let found = WORLD_LAYERS[0];
-    for (const layer of WORLD_LAYERS) {
-        if (ordinal >= layer.entryOrdinal) found = layer;
-    }
-    return found;
-}
-
-/** True where this layer has stopped being somewhere this ordinal can be. */
-export function expelsOrdinal(key: LayerKey, ordinal: number): boolean {
-    const ceiling = layerFor(key).expelsAbove;
-    return ceiling !== null && ordinal > ceiling;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

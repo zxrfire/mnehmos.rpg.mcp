@@ -24,7 +24,8 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { DAYS_PER_YEAR } from '../src/engine/cultivation/cultivation.js';
-import { expelsOrdinal, layerForOrdinal } from '../src/engine/world/layers.js';
+import { isBelowTheLid } from '../src/engine/world/layers.js';
+import { isExpelledFromBelow } from '../src/engine/cultivation/realms.js';
 import type { NpcRecord } from '../src/engine/world/npc-state.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
@@ -129,10 +130,10 @@ async function main(): Promise<void> {
     rule('LAYER AND LADDER');
     // A layer is a PLACE, not a rank, so "belongs on" is not "must be on":
     // only being on a layer that expels your ordinal is actually incoherent.
-    const expelled = state.npcs.filter(n => expelsOrdinal(n.layer, n.cultivation.realmOrdinal));
+    const expelled = state.npcs.filter(n => isBelowTheLid(n) && isExpelledFromBelow(n.cultivation.realmOrdinal));
     line(`  people standing on a layer that expels their ordinal  ${expelled.length}`);
     for (const n of expelled.slice(0, 8)) {
-        line(`    ${n.name}: ordinal ${n.cultivation.realmOrdinal} filed as ${n.layer}, belongs on ${layerForOrdinal(n.cultivation.realmOrdinal).key}`);
+        line(`    ${n.name}: ordinal ${n.cultivation.realmOrdinal} filed as ${n.layer}, belongs above the Lid`);
     }
     const highMortals = state.npcs.filter(n => n.layer === 'mortal' && n.cultivation.realmOrdinal >= 41);
     line(`  ordinal 41+ filed on the mortal layer  ${highMortals.length} (legal below 46)`);

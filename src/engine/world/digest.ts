@@ -52,6 +52,7 @@
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { HistoricalEventKind, HistoricalFact } from './history.js';
+import { lastOccurrenceOf, occurrencesOf } from './a-fact-that-keeps-happening-is-one-row.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // ACCESS
@@ -208,7 +209,11 @@ export function buildPlayerDigest(
 
         lines.push({
             factId: fact.id,
-            occurrences: 1,
+            // A row that kept happening is ONE row, and it says how many times
+            // (`a-fact-that-keeps-happening-is-one-row.ts`). Counted only where
+            // every occurrence falls inside this span: past its end the row
+            // cannot say how many were in it, and one is the honest floor.
+            occurrences: lastOccurrenceOf(fact) <= toDay ? occurrencesOf(fact) : 1,
             day: fact.day,
             year: fact.year,
             kind: fact.kind,
@@ -566,13 +571,3 @@ export function simpleAccess(input: SimpleAccessInput): PlayerAccess {
     };
 }
 
-/** Every name a digest is permitted to use. For asserting the hard rule. */
-export function namesPermitted(digest: PlayerDigest): { factions: Set<string>; npcs: Set<string> } {
-    const factions = new Set<string>();
-    const npcs = new Set<string>();
-    for (const line of digest.lines) {
-        for (const id of line.namableFactionIds) factions.add(id);
-        for (const id of line.namableNpcIds) npcs.add(id);
-    }
-    return { factions, npcs };
-}

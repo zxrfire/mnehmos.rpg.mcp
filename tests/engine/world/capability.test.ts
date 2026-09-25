@@ -3,12 +3,11 @@ import {
     assessCapability,
     can,
     ARRANGED_GRANTS,
-    grantStatus,
+    isGrantAvailableAt,
     grantsConferredAt,
     grantsHeldWith,
     grantsAvailableAt,
     heldGrants,
-    makeCapabilityModifier,
     makeRequirements,
     makeSubject,
     neutralisedHazards,
@@ -18,13 +17,28 @@ import {
     requirementsFromOpposition,
     subjectFromLocation,
     subjectFromOpposition,
-    type CapabilityActor
+    type CapabilityActor,
+    type CapabilityModifier
 } from '../../../src/engine/world/capability.js';
 import {
     makeAffinity,
     makeLocation,
     makeThresholds
 } from '../../../src/engine/world/locations.js';
+
+function makeCapabilityModifier(
+    init: Partial<CapabilityModifier> &
+        Pick<CapabilityModifier, 'id' | 'source' | 'sourceId' | 'offsets'>
+): CapabilityModifier {
+    return {
+        label: init.label ?? init.sourceId,
+        hazards: init.hazards ?? [],
+        subjectIds: init.subjectIds ?? [],
+        subjectTags: init.subjectTags ?? [],
+        note: init.note ?? '',
+        ...init
+    };
+}
 
 function actor(init: Partial<CapabilityActor> & { realmOrdinal: number }): CapabilityActor {
     return { id: 'a', ...init };
@@ -167,9 +181,11 @@ describe('capability: realm classes are potential, not entitlement', () => {
         const prepared = actor({ realmOrdinal: 22, heldGrants: ['prepared_vessel'] });
 
         expect(heldGrants(unprepared)).toHaveLength(0);
-        expect(grantStatus(unprepared, 'prepared_vessel')).toBe('available_not_held');
-        expect(grantStatus(prepared, 'prepared_vessel')).toBe('held');
-        expect(grantStatus(actor({ realmOrdinal: 14 }), 'prepared_vessel')).toBe('out_of_reach');
+        // Reached and not acquired, held, and out of reach: the two refusals
+        // `priceFold` gives are this same split for the fold.
+        expect(isGrantAvailableAt(22, 'prepared_vessel')).toBe(true);
+        expect(heldGrants(prepared)).toContain('prepared_vessel');
+        expect(isGrantAvailableAt(14, 'prepared_vessel')).toBe(false);
     });
 
     it('drops a claimed grant the realm does not support', () => {

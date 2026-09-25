@@ -33,11 +33,9 @@ import {
 } from '../../../src/engine/social/discovery.js';
 import type { Party } from '../../../src/engine/social-leverage/what-a-deed-leaves.js';
 import {
-    A_KILLING_ACQUIRES_A_NAME_AT,
     WHAT_A_STAGE_MEANS_ABOUT_A_KILLING,
     WHY_NOTHING_PAST_THE_CHANGE_IS_HANDLED_HERE,
     answerabilityOf,
-    isAnAmountRatherThanAnAnimal,
     shareOfWhatTheyHad,
     whatTheKillLeft,
     whatTheyLost,
@@ -97,7 +95,6 @@ const demonicInTheWindow = (): Beast => {
 describe('whether there is anything to answer for at all', () => {
     it('returns an amount rather than an animal below the core line', () => {
         for (const b of BEASTS.filter(x => x.ordinal < BEAST_CORE_ORDINAL)) {
-            expect(isAnAmountRatherThanAnAnimal(b), b.id).toBe(true);
             expect(answerabilityOf(b, DISTRICT), b.id).toBe('not_an_individual');
         }
         // Even a demonic one, and even with somebody standing right there. The
@@ -179,8 +176,7 @@ describe('the consequence is downstream of the knowing, never of the killing', (
             expect(opened > 0, `${stage} opened ${opened} record(s)`).toBe(shouldOpen);
         }
         // The rung is the ladder's own, not a second copy of it.
-        expect(A_KILLING_ACQUIRES_A_NAME_AT).toBe(REACHABLE_FROM);
-        expect(A_KILLING_ACQUIRES_A_NAME_AT).toBe('placed');
+        expect(REACHABLE_FROM).toBe('placed');
     });
 
     it('names every rung, so nobody paraphrases the ladder a sixth time', () => {

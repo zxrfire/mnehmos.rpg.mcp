@@ -82,8 +82,7 @@ import {
     ORIGIN_TIERS,
     BREAKTHROUGH_PILL_STONES,
     PRICE_GROWTH_PER_ORDINAL,
-    type OriginTier,
-    type OriginTierKey
+    type OriginTier
 } from '../cultivation/origin.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -213,11 +212,3 @@ export function drawOriginForSomebodyAlreadyAtOrdinal(
     return rows[rows.length - 1].tier;
 }
 
-/** Share of people at this rung who were born into each tier, for reporting. */
-export function originSharesAtOrdinal(realmOrdinal: number): Map<OriginTierKey, number> {
-    const rows = originWeightsForSomebodyAtOrdinal(realmOrdinal);
-    const total = rows.reduce((sum, r) => sum + r.weight, 0);
-    const out = new Map<OriginTierKey, number>();
-    for (const row of rows) out.set(row.tier.key, total > 0 ? row.weight / total : 0);
-    return out;
-}

@@ -38,7 +38,8 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears, worldShape } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { worldShape } from '../tests/support/the-shape-of-a-world.js';
 
 const line = (s = '') => console.log(s);
 const rule = (t: string) => { line(); line('='.repeat(92)); line('  ' + t); line('='.repeat(92)); };

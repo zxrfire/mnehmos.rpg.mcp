@@ -11,17 +11,18 @@ import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
-import { makeFact, yearOfDay, type PendingFact } from '../../../src/engine/world/history.js';
+import { makeFact, type PendingFact } from '../../../src/engine/world/history.js';
 import { createWorld } from '../../../src/engine/world/world-state.js';
 import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';
 import {
-    describeWithRecurrence,
     keptItsOwnRow,
     lastOccurrenceOf,
     occurrencesOf,
     recurrenceKeyOf
 } from '../../../src/engine/world/a-fact-that-keeps-happening-is-one-row.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
+import { buildPlayerDigest, simpleAccess } from '../../../src/engine/world/digest.js';
+import { reportFromDigest } from '../../../src/web/tool-result-prose.js';
 
 function world(): WorldState {
     return createWorld({ seed: 'recur', presentYear: 1000, regionCount: 0, skipPriorAges: true });
@@ -89,7 +90,7 @@ describe('folding an occurrence', () => {
         expect(lastOccurrenceOf(state.history.facts[0])).toBe(400_000 + 11 * 4380);
     });
 
-    it('says the recurrence out loud without touching the summary', () => {
+    it('carries the recurrence on the row without touching the summary', () => {
         const state = world();
         appendWorldFact(state, renewal(400_000));
         appendWorldFact(state, renewal(800_000));
@@ -97,7 +98,8 @@ describe('folding an occurrence', () => {
         // The summary is part of the key. Rewriting it would make the row stop
         // absorbing its own further occurrences.
         expect(row.summary).toBe("The Ashen Anvil Clan's grant on its vein comes up for renewal.");
-        expect(describeWithRecurrence(row, yearOfDay)).toContain('2 times, years');
+        expect(occurrencesOf(row)).toBe(2);
+        expect(lastOccurrenceOf(row)).toBe(800_000);
     });
 
     it('loses nobody who was there on any occasion', () => {
@@ -237,5 +239,34 @@ describe('the ledger stays walkable', () => {
         const state = advanced();
         const occurrences = state.history.facts.reduce((sum, f) => sum + occurrencesOf(f), 0);
         expect(occurrences).toBeGreaterThan(state.history.facts.length);
+    });
+});
+
+/**
+ * AND THE PLAYER IS TOLD HOW MANY TIMES.
+ *
+ * The count lived on the row and nothing read it: a member of the house heard a
+ * renewal that came round twice in the span as one renewal. The digest now
+ * carries the row's count, and the report says it in words.
+ */
+describe('what somebody in the house hears of it', () => {
+    it('hears a row that came round twice in the span as twice', () => {
+        const state = world();
+        appendWorldFact(state, renewal(400_000));
+        appendWorldFact(state, renewal(400_200));
+        const access = simpleAccess({ actorId: 'someone', factionId: 'ashen-forge', knownFactionIds: ['ashen-forge'] });
+        const digest = buildPlayerDigest(state.history.facts, access, 399_000, 401_000);
+        expect(digest.lines).toHaveLength(1);
+        expect(digest.lines[0]!.occurrences).toBe(2);
+        expect(reportFromDigest(digest).lines.join(' ')).toMatch(/twice over the span/);
+    });
+
+    it('does not claim a count for occurrences past the end of the span', () => {
+        const state = world();
+        appendWorldFact(state, renewal(400_000));
+        appendWorldFact(state, renewal(900_000));
+        const access = simpleAccess({ actorId: 'someone', factionId: 'ashen-forge', knownFactionIds: ['ashen-forge'] });
+        const digest = buildPlayerDigest(state.history.facts, access, 399_000, 401_000);
+        expect(digest.lines[0]!.occurrences).toBe(1);
     });
 });

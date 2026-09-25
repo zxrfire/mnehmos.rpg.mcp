@@ -23,7 +23,7 @@
  */
 
 import { makeGame } from '../tests/web/harness.js';
-import { forbidZone, locationHistory, unexplainedChanges } from '../src/engine/world/locations.js';
+import { forbidZone, locationHistory } from '../src/engine/world/locations.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 
 const line = (s = '') => console.log(s);
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
     line(`  the ground remembers:     ${changed ? 'yes' : 'NO'}`);
 
     const history = locationHistory(scarred);
-    const unexplained = unexplainedChanges(scarred);
+    const unexplained = scarred.changes.filter(c => !c.causeKnown || c.fidelity === 'lost');
     line(`  what the change says:     ${change.summary}`);
     line(`  changes on the record:    ${history.length}`);
     line(`  of which unexplained:     ${unexplained.length}`);

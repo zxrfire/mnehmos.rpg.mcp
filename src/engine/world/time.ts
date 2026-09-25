@@ -1038,15 +1038,6 @@ function inheritedKind(kind: RelationshipKind, standing: number): RelationshipKi
     }
 }
 
-/** Convenience for the common phrasing. */
-export function advanceYears(
-    state: WorldState,
-    years: number,
-    opts: AdvanceTimeOptions = {}
-): TimeAdvanceResult {
-    return advanceTime(state, Math.round(years * DAYS_PER_YEAR), opts);
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // CONCURRENT EVENTS
 // ─────────────────────────────────────────────────────────────────────────

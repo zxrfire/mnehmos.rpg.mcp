@@ -26,13 +26,10 @@ import {
     theTokenStillAnswers,
     tokenIdFor,
     whatAHouseMakesOfSilence,
-    whatIsLeftOfThem,
     whatTheLampSays,
     couldLightALamp,
     lampsAreLitAt,
-    thisHouseCanIssue,
-    whatALampIsMadeFrom,
-    wouldMakeALamp
+    thisHouseCanIssue
 } from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { BEAST_MATERIALS } from '../../../src/data/cultivation/beasts.js';
 import { roomAuthorityOf } from '../../../src/engine/world/architecture.js';
@@ -41,6 +38,56 @@ import Database from 'better-sqlite3';
 import { migrate } from '../../../src/storage/migrations.js';
 import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
 import { fixtureCatalog } from './fixtures.js';
+import { highestGradeRefinableAt } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+import type { TechniqueGrade } from '../../../src/schema/cultivation.js';
+
+/**
+ * WHAT A LAMP IS MADE FROM. Kept here because nothing in play cuts a lamp out
+ * of a material yet: `issueTo` lights one for every disciple without spending
+ * anything, so this is the requirement stated against the catalog.
+ *
+ * The design owner: *"remember it requires foundation establishment materials
+ * too - probably beast bones."*
+ *
+ * DERIVED FROM THE HAND, NOT PICKED. A Foundation hand makes these, and
+ * `who-can-refine-a-grade-of-medicine.ts` already owns which grade of material
+ * a given rung can work at all - so the grade a lamp wants is simply the best
+ * that rung can hold. It comes out MORTAL: earth grade wants Core Formation,
+ * which is a realm above the hand doing the work.
+ *
+ * That is worth more than naming a grade here, because the two move together.
+ * Reprice what a Foundation hand can work and the lamp follows, rather than
+ * this file quietly asking for something nobody at the rung can hold.
+ *
+ * AND BONE, WHICH THE CATALOG HAS UNDER ANOTHER NAME. There is no material
+ * called a bone in `beasts.ts`; the mortal-grade bone of a beast big enough to
+ * carve a lamp out of is the Ironhide Tusk, and the earth-grade ones - antler,
+ * horn, fang, tooth - are all a realm too high. So the requirement is stated as
+ * a grade and a kind rather than as one id, and a second mortal-grade bone
+ * added to the catalog satisfies it with no edit here.
+ */
+function whatALampIsMadeFrom(): { grade: TechniqueGrade; itIsBone: true } {
+    const grade = highestGradeRefinableAt(lampsAreLitAt());
+    return {
+        // Unreachable while the refining table has a mortal row, which it must:
+        // mortal grade opens at ordinal zero. A loud fallback rather than a
+        // throw, because a bad edit here should fail a test and not a run.
+        grade: grade ?? 'mortal',
+        itIsBone: true
+    };
+}
+
+/** Whether this material would do for a lamp. */
+function wouldMakeALamp(material: {
+    grade: TechniqueGrade;
+    taking?: string;
+    name?: string;
+}): boolean {
+    const wants = whatALampIsMadeFrom();
+    if (material.grade !== wants.grade) return false;
+    // Bone, in the words the catalog actually uses for it.
+    return /tusk|horn|fang|tooth|antler|bone|plastron|scute/i.test(material.name ?? '');
+}
 
 describe('what a house issues', () => {
     it('gives every disciple a token to carry and a lamp burning', async () => {
@@ -154,11 +201,8 @@ describe('and what death does to them', () => {
         // The route to a stolen identity that must not exist.
         expect(theTokenStillAnswers(true)).toBe(true);
         expect(theTokenStillAnswers(false)).toBe(false);
-
-        const left = whatIsLeftOfThem({ holderIsAlive: false, holderName: 'Yan Shuling' });
-        expect(left!.lamp).toMatch(/gone out/);
-        expect(left!.token).toMatch(/Dust/);
-        expect(whatIsLeftOfThem({ holderIsAlive: true, holderName: 'Yan Shuling' })).toBeNull();
+        // And the lamp that answered for them has gone out with them.
+        expect(whatTheLampSays(false)).toBe('they_are_dead');
     });
 
     /**
