@@ -175,8 +175,13 @@ describe('the narrator is handed the people in the scene', () => {
      */
     it('plays a conversation with one person as the two of them, and hands the room back after', () => {
         const square = aSquareWith(['Wei Ciyi', 'Tang Minya', 'Lu Qing'], 2);
+        // People the player knows, so each card is headed by the name.
+        const known = ['Wei Ciyi', 'Tang Minya', 'Lu Qing'].map((name, i) => ({
+            kind: 'cultivator', id: `n${i}`, name, statement: `${name} worked the next field over.`,
+            sourceKind: 'witnessed', sourceNote: ''
+        })) as never;
         const cards = (acts: string[], lines = ['Wei Ciyi answers.']) => composeNarrationUser(
-            { ...FACTS, lines }, { ...SCENE, company: square, addressing: 'Wei Ciyi' }, { acts });
+            { ...FACTS, lines }, { ...SCENE, company: square, addressing: 'Wei Ciyi', awareness: known }, { acts });
         const talk = cards(['interact']);
         expect(talk).toContain('- Wei Ciyi (THE PLAYER IS SPEAKING TO THEM)');
         expect(talk).not.toContain('- Tang Minya');
@@ -217,6 +222,13 @@ describe('the narrator is handed the people in the scene', () => {
         const met = [{ kind: 'cultivator', id: 'n1', name: 'Wei Ciyi', statement: 'Wei Ciyi worked the next field over.', sourceKind: 'witnessed', sourceNote: '' }] as never;
         const unsure = composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: heard });
         expect(unsure).toContain('A FACE WITH NO NAME TO IT YET');
+        // Headed by how they look, and the name only for the rulings.
+        expect(unsure).not.toMatch(/^- Wei Ciyi:/m);
+        expect(unsure).toMatch(/^- (?:a man|a woman|somebody)[^\n]*the rulings call them Wei Ciyi/m);
+        // A look at the square writes everybody in it as witnessed, and that is still not a name
+        // put to a face. Played: "This is Mo Anlu", for three strangers, the turn after a look.
+        const seen = [{ kind: 'cultivator', id: 'n1', name: 'Wei Ciyi', statement: 'Wei Ciyi is a name that got said. What it is remains unknown.', sourceKind: 'witnessed', sourceNote: 'Standing in the same place, in plain sight.' }] as never;
+        expect(composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: seen })).toContain('A FACE WITH NO NAME TO IT YET');
         expect(unsure).not.toContain('A name that got said');
         expect(unsure.slice(unsure.indexOf('NAMES YOU MAY USE'))).not.toMatch(/^[^\n]*\n[^\n]*Wei Ciyi/);
         expect(composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: met })).not.toContain('A FACE WITH NO NAME TO IT YET');

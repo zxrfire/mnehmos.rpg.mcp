@@ -751,7 +751,13 @@ function aPersonsCard(
         person.rank ? `addressed as ${person.rank} by their own house` : null
     ].filter((part): part is string => part !== null).join(', ');
 
-    const lines = [`- ${person.name}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
+    // A face with no name to it is headed by how it looks, the name after it for the rulings.
+    // Played: headed by the name with "the page never names them" under it, the narration
+    // opened "This is Mo Anlu" for three strangers in one square.
+    const seen = `${person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : 'somebody'}`
+        + (Number.isFinite(person.age) ? ` of about ${Math.round(person.age)}` : '');
+    const heading = nameKnown ? person.name : `${seen} (the rulings call them ${person.name}; the page does not)`;
+    const lines = [`- ${heading}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
     if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
     // Facts, and the narrator plays what follows from them. See `whatTheCardSaysOfALoss`.
     for (const line of person.whatTheyLost ?? []) lines.push(`    ${line}`);
@@ -761,8 +767,8 @@ function aPersonsCard(
     // what a name only heard is to the player stays off the card: "ohh you're x, i've heard of
     // you" is the player's line to say, not the narrator's to spend.
     if (!nameKnown) {
-        lines.push('    A FACE WITH NO NAME TO IT YET: the page never names them. Write them as they are '
-            + 'seen - age, clothes, colours, what they are at - until a ruling has them give their name.');
+        lines.push(`    A FACE WITH NO NAME TO IT YET: NOT "This is ${person.name}" BUT ${seen} - age, clothes, `
+            + 'colours, what they are at - until a ruling has them give their name.');
         toYou = null;
     }
     // ON THE PAGE TURN AFTER TURN, THEY SIT OUT. Played: a man whose card had him "asking after a
@@ -837,14 +843,23 @@ export function thePlayerIsSureItIsThem(
     // Said by the player, it is theirs to have said: right or wrong, the name is on the page.
     if (playerSaid && playerSaid.toLowerCase().includes(name.toLowerCase())) return true;
     return awareness.some(entry => entry.kind === 'cultivator' && entry.name === name
-        && entry.sourceKind === 'witnessed' && !!entry.statement && entry.statement !== `${name} exists.`);
+        && entry.sourceKind === 'witnessed' && aLivedSentence(name, entry.statement));
+}
+
+/**
+ * Whether a row's sentence says something lived, rather than only that somebody exists. A look
+ * at a square writes everybody in it as witnessed, "a name that got said", so that news can point
+ * at them. Played: one look and the next turn opened "This is Mo Anlu" for three strangers, all
+ * counted as faces the player was sure of.
+ */
+function aLivedSentence(name: string, statement: string | null | undefined): statement is string {
+    return !!statement && statement !== `${name} exists.` && !statement.includes(' is a name that got said');
 }
 
 /** What the player's own life says about somebody; see above. */
 export function whatTheyAreToYou(name: string, awareness: readonly AwarenessRow[]): string | null {
     const rows = awareness.filter(entry => entry.kind === 'cultivator' && entry.name === name);
-    const lived = rows.find(entry =>
-        entry.sourceKind === 'witnessed' && entry.statement && entry.statement !== `${name} exists.`);
+    const lived = rows.find(entry => entry.sourceKind === 'witnessed' && aLivedSentence(name, entry.statement));
     if (lived) return lived.statement.replace(/\.$/, '');
     const row = rows.find(entry => entry.sourceKind !== 'witnessed');
     if (!row) return null;
