@@ -812,9 +812,21 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
     const isDropped = (id: string): boolean => dropped.has(id);
     const stillOnRecord = (id: string): boolean => !dropped.has(id);
 
+    // A row that names nobody forgotten is handed back as itself, not rebuilt:
+    // the recurrence index keys rows by identity, and rebuilding every row every
+    // year re-keyed the whole ledger each time it was read.
+    const touches = (fact: HistoricalFact): boolean =>
+        fact.actors.some(actor => gone.has(actor.id))
+        || fact.witnessIds.some(id => gone.has(id))
+        || fact.causes.some(isDropped)
+        || withoutTheForgotten(fact.data, gone) !== fact.data
+        || (fact.consequences !== null && (
+            fact.consequences.beneficiaries.some(a => gone.has(a.id))
+            || fact.consequences.losers.some(a => gone.has(a.id))
+            || fact.consequences.relationshipChanges.some(change => gone.has(change.aId) || gone.has(change.bId))));
     state.history.facts = state.history.facts
         .filter(fact => stillOnRecord(fact.id))
-        .map(fact => ({
+        .map(fact => !touches(fact) ? fact : ({
             ...fact,
             actors: fact.actors.filter(actor => kept(actor.id)),
             witnessIds: fact.witnessIds.filter(kept),

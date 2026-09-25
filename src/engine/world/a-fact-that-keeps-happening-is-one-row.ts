@@ -156,6 +156,7 @@ interface LedgerIndex {
 }
 
 const INDEXES = new WeakMap<readonly HistoricalFact[], LedgerIndex>();
+const KEY_OF_ROW = new WeakMap<HistoricalFact, string>();
 
 /**
  * The index for this ledger, caught up to whatever is currently in it.
@@ -174,7 +175,12 @@ function indexFor(ledger: HistoryLedger): LedgerIndex {
     }
     for (let at = index.indexedUpTo; at < ledger.facts.length; at++) {
         const fact = ledger.facts[at];
-        const key = recurrenceKeyOf(fact);
+        // A row carried over unchanged from a replaced ledger keeps its key.
+        let key = KEY_OF_ROW.get(fact);
+        if (key === undefined) {
+            key = recurrenceKeyOf(fact);
+            KEY_OF_ROW.set(fact, key);
+        }
         // First row wins. A later duplicate that predates this module keeps its
         // own row rather than being retro-merged; history is not rewritten.
         if (!index.byKey.has(key)) index.byKey.set(key, fact);

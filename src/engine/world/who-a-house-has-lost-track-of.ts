@@ -67,7 +67,17 @@ export function whoTheHouseHasLostTrackOf(house: Pick<FactionRecord, 'tags'>): S
 
 /** Since when this house has not known where this person is, or null where it does. */
 export function whenTheHouseLostTrackOf(house: Pick<FactionRecord, 'tags'>, personId: string): number | null {
-    return whoTheHouseHasLostTrackOf(house).find(x => x.personId === personId)?.sinceDay ?? null;
+    // The first of this person's own tags that reads, as `fromTag` reads it -
+    // without parsing every tag the house carries, which this did for every
+    // person the world asked about, against every house.
+    if (!personId) return null;
+    const theirs = `${THE_HOUSE_LOST_TRACK_OF}${personId}|`;
+    for (const tag of house.tags) {
+        if (!tag.startsWith(theirs)) continue;
+        const sinceDay = Number(tag.slice(theirs.length).split('|')[0]);
+        if (Number.isFinite(sinceDay)) return sinceDay;
+    }
+    return null;
 }
 
 /** The house, having lost track of somebody. The earlier day stands where it already had. */
