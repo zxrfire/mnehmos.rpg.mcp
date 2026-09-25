@@ -120,7 +120,6 @@ export {
 
 export {
     assessFit,
-    bestFor,
     mayHoldAFit,
     pillPotencyFor,
     PILL_GRADE_FACTOR,
@@ -136,7 +135,6 @@ export {
 
 export {
     assessAcquisition,
-    bestAcquisition,
     canTransmit,
     extensionOption,
     findFromManual,

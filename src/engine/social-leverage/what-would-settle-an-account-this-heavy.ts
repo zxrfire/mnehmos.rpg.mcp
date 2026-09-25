@@ -92,17 +92,6 @@ export function whatWouldCloseIt(
     return out;
 }
 
-/**
- * Whether a binding is one of the things that would close this.
- */
-export function couldBeSettledByABinding(
-    record: Pick<ObligationRecord, 'kind' | 'severity' | 'status' | 'fromBelief'>,
-    parties: AccountParties
-): boolean {
-    return whatWouldCloseIt(record, parties).includes('renounced')
-        && record.kind !== 'favor' && record.kind !== 'debt' && record.kind !== 'oath';
-}
-
 export interface TheBargain {
     /** The original account, closed. */
     settled: Settlement;

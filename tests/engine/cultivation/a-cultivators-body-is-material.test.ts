@@ -6,15 +6,16 @@
  * introduced a scale. Every assertion below is checked against
  * `who-can-refine-a-grade-of-medicine.ts` rather than against a number typed
  * out here, so a change to that ladder moves these tests with it.
+ *
+ * A harvest record, a "could they use it themselves" wrapper and a constant
+ * for what a harvest costs the body used to sit beside the grade read. Nothing
+ * in play took material off a dead cultivator, so none of them had a caller;
+ * they went, and what they pinned is asserted here against the reads the game
+ * does make: the grade, the refining gate, and the deed layer's price.
  */
 
 import { describe, expect, it } from 'vitest';
-import {
-    couldUseItThemselves,
-    gradeOfWhatABodyYields,
-    harvestFrom,
-    WHAT_A_HARVEST_COSTS_THE_BODY
-} from '../../../src/engine/cultivation/a-cultivators-body-is-material.js';
+import { gradeOfWhatABodyYields } from '../../../src/engine/cultivation/a-cultivators-body-is-material.js';
 import {
     canRefineGrade,
     refiningOrdinalFor
@@ -40,42 +41,13 @@ describe('the grade of what a body yields', () => {
         // change to the ladder moves this with it.
         expect(gradeOfWhatABodyYields(refiningOrdinalFor('mortal') - 1)).toBeNull();
         expect(gradeOfWhatABodyYields(refiningOrdinalFor('mortal'))).toBe('mortal');
-        expect(harvestFrom({
-            part: 'marrow', fromId: 'off_the_ladder', fromName: 'Somebody',
-            fromOrdinal: refiningOrdinalFor('mortal') - 1, byId: 'somebody', onDay: 1
-        })).toBeNull();
-    });
-
-    it('gates working it on exactly the gate that gates a herb', () => {
-        const heaven = refiningOrdinalFor('heaven');
-        const taken = harvestFrom({
-            part: 'bone', fromId: 'them', fromName: 'Them',
-            fromOrdinal: heaven, byId: 'a_nobody', onDay: 10
-        });
-        expect(taken).not.toBeNull();
-        for (const ordinal of [0, 5, 12, heaven - 1, heaven, heaven + 8]) {
-            expect(couldUseItThemselves(taken!, ordinal))
-                .toBe(canRefineGrade(taken!.grade, ordinal));
-        }
     });
 
     it('leaves a low cultivator holding something they cannot use', () => {
-        const heaven = refiningOrdinalFor('heaven');
-        const taken = harvestFrom({
-            part: 'core', fromId: 'them', fromName: 'Them',
-            fromOrdinal: heaven, byId: 'a_nobody', onDay: 10
-        })!;
-        expect(couldUseItThemselves(taken, 2)).toBe(false);
+        const grade = gradeOfWhatABodyYields(refiningOrdinalFor('heaven'))!;
+        expect(canRefineGrade(grade, 2)).toBe(false);
         // Which is the plot: they have to find somebody who can, and everybody
         // who can is by construction able to read what it is.
-    });
-
-    it('carries the part through as data and never reads it', () => {
-        const parts = ['core', 'marrow', 'bone', 'something nobody has thought of'];
-        const grades = parts.map(part => harvestFrom({
-            part, fromId: 'them', fromName: 'Them', fromOrdinal: 20, byId: 'me', onDay: 1
-        })?.grade);
-        expect(new Set(grades).size).toBe(1);
     });
 });
 
@@ -104,10 +76,10 @@ describe('the laundering moves the fact rather than erasing it', () => {
 
 describe('what it costs the body', () => {
     it('is the whole of it, and the deed layer prices it at the top', () => {
-        expect(WHAT_A_HARVEST_COSTS_THE_BODY).toBe(1);
+        // The whole body, irreversibly: cost 1 is all of somebody.
         expect(whatItWasWorth({
             cause: 'harvested', paidBy: 'subject',
-            cost: WHAT_A_HARVEST_COSTS_THE_BODY, irreversible: true,
+            cost: 1, irreversible: true,
             onDay: 1, description: 'Taken for what they were made of.'
         })).toBe('unforgivable');
     });

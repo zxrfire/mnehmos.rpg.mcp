@@ -12,13 +12,14 @@ import {
     type Stance
 } from '../engine/social/knowledge.js';
 import {
+    advanceStage,
     canName,
     canPointAt as stageCanPointAt,
     confidenceForStage,
     highestStage,
     stageFromSource,
     stageFromStance,
-    stageFromTags,
+    stageOfRecord,
     stageRank,
     stageTag,
     stanceForStage,
@@ -413,7 +414,7 @@ export class KnowledgeGate {
      */
     learnIfNew(input: AwarenessInput): boolean {
         const held = this.stageOf(input.holderId, input.kind, input.id);
-        if (stageRank(stageWanted(input)) <= stageRank(held)) return false;
+        if (!advanceStage(held, stageWanted(input)).moved) return false;
         this.learn(input);
         return true;
     }
@@ -538,11 +539,13 @@ function stageWanted(input: AwarenessInput): KnowingStage {
     return stageFromStance(input.stance ?? 'believes', input.sourceKind);
 }
 
-/** Where one stored row sits. Its own tag first; derived only as a fallback. */
+/** Where one stored row sits, read by the same rule as any knowledge record. */
 function stageOfRaw(row: RawRow): KnowingStage {
-    const tagged = stageFromTags(parseTags(row.tags));
-    if (tagged) return tagged;
-    return stageFromStance(row.stance as Stance, row.source_kind as SourceKind);
+    return stageOfRecord({
+        tags: parseTags(row.tags),
+        stance: row.stance as Stance,
+        source: { kind: row.source_kind as SourceKind }
+    });
 }
 
 function parseTags(blob: string): string[] {

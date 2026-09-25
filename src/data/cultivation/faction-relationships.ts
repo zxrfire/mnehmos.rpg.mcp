@@ -909,22 +909,3 @@ export function relationshipsOf(factionId: string, alsoKnownAsIds: readonly stri
         || Number(y.source === 'authored') - Number(x.source === 'authored')
         || x.otherName.localeCompare(y.otherName));
 }
-
-/** Every authored and derived pair in the world. For the coherence tests. */
-export function allFactionRelationshipPairs(): readonly {
-    id: string;
-    aId: string;
-    bId: string;
-    aStandsTo: RelationStance;
-    kind: RelationKind;
-    source: RelationSource;
-}[] {
-    return ALL_PAIRS.map(p => ({
-        id: p.id,
-        aId: p.aId,
-        bId: p.bId,
-        aStandsTo: p.aStandsTo,
-        kind: p.kind,
-        source: p.source
-    }));
-}

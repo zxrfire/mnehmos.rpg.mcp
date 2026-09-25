@@ -46,7 +46,7 @@ import {
     daysOfLifeRemaining,
     lifespanCeilingFor
 } from '../../../src/engine/cultivation/survival.js';
-import { getPhysique } from '../../../src/engine/cultivation/physiques.js';
+import { physiqueOrNull } from '../../../src/engine/cultivation/physiques.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
 import { makeCultivator } from './fixtures.js';
 
@@ -90,7 +90,7 @@ describe('the days a body has left', () => {
         expect(daysOfLifeRemaining(yin)).toBeLessThan(daysOfLifeRemaining(ordinary));
         expect(daysOfLifeRemaining(yin)).toBe(
             Math.floor(
-                (lifespanCeilingFor(ordinary) * getPhysique('profound_yin').lifespan - AGE)
+                (lifespanCeilingFor(ordinary) * physiqueOrNull('profound_yin')!.lifespan - AGE)
                 * DAYS_PER_YEAR
             )
         );

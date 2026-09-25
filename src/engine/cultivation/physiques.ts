@@ -91,12 +91,6 @@ export const PHYSIQUES: readonly Physique[] = [
  */
 export const PHYSIQUE_WEIGHT_TOTAL = 10_000;
 
-export function getPhysique(key: PhysiqueKey): Physique {
-    const found = PHYSIQUES.find(p => p.key === key);
-    if (!found) throw new Error(`Unknown physique: ${key}`);
-    return found;
-}
-
 /** Null for a key that is not in the catalog, and for null. For loading saves. */
 export function physiqueOrNull(key: string | null | undefined): Physique | null {
     if (!key) return null;
@@ -114,11 +108,6 @@ export function rollPhysique(sample: number): Physique | null {
         if (cursor < 0) return physique;
     }
     return null;
-}
-
-/** Probability of being born with this one, as a fraction of 1. */
-export function physiqueProbability(key: PhysiqueKey): number {
-    return getPhysique(key).weight / PHYSIQUE_WEIGHT_TOTAL;
 }
 
 // WHAT THE THREE MODIFIERS ARE WORTH, WHEREVER THEY ARE READ

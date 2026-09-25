@@ -62,8 +62,7 @@ import {
     anIndividualCouldPay,
     cheapestMedicineFor,
     NOTHING_REPAIRS_ABOVE_ORDINAL,
-    repairWeightInStones,
-    theRungsThatRepairAPermanentInjury
+    repairWeightInStones
 } from '../../../src/engine/cultivation/what-structural-repair-medicine-can-reach';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms';
 
@@ -204,10 +203,11 @@ describe('what answers a part that is gone', () => {
     });
 
     it('has one rung above the rank ladder, and it does not let the taker choose', () => {
-        const anyRank = theRungsThatRepairAPermanentInjury()
-            .filter(rung => rung.reachesUpToOrdinal === null);
+        // Past the rank ladder is the pill catalog, and the one there names no
+        // wound, so the taker cannot point it at one.
+        const anyRank = PILLS.filter(p => p.effect === 'mends_what_will_not_close');
         expect(anyRank.length, 'the chaos rung is missing or doubled').toBe(1);
-        expect(anyRank[0]!.choosesTheWound).toBe(false);
+        expect(anyRank[0]!.mends ?? []).toEqual([]);
         expect(cheapestMedicineFor('severed-flesh', NOTHING_REPAIRS_ABOVE_ORDINAL + 1),
             'the rank ladder reached past its own ceiling').toBeNull();
     });

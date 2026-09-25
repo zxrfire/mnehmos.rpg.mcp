@@ -13,13 +13,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import {
-    ageOf,
-    everybodyDrawingHere,
-    isAlive,
-    personFromARun,
-    personFromTheWorld
-} from '../../../src/engine/people/there-is-one-kind-of-person';
+import { everybodyDrawingHere } from '../../../src/engine/people/there-is-one-kind-of-person';
 import type { NpcRecord } from '../../../src/engine/world/npc-state';
 import type { Cultivator } from '../../../src/schema/cultivation';
 
@@ -145,47 +139,5 @@ describe('everybody drawing on one piece of ground', () => {
 
     it('is empty ground when nobody is standing on it', () => {
         expect(everybodyDrawingHere({ inTheWorld: [], onRunSheets: [], onDay: DAY })).toEqual([]);
-    });
-});
-
-describe('one person, read the same way from either store', () => {
-    it('derives an age the world never stored', () => {
-        const npc = aWorldPerson({ id: 'npc-a', ordinal: 5, bornOnDay: DAY - 365 * 137 });
-        expect(ageOf(npc, DAY)).toBe(137);
-        expect(personFromTheWorld(npc, DAY).age).toBe(137);
-    });
-
-    it('never reports a negative age for somebody not yet born', () => {
-        expect(ageOf(aWorldPerson({ id: 'npc-a', ordinal: 5, bornOnDay: DAY + 500 }), DAY)).toBe(0);
-    });
-
-    it('answers the same questions about a run sheet', () => {
-        const person = personFromARun({
-            id: 'me', name: 'Shen Ke', realmOrdinal: 12, age: 40, alive: true, location: 'loc-here'
-        } as unknown as Cultivator);
-        expect(person.realmOrdinal).toBe(12);
-        expect(person.age).toBe(40);
-        expect(person.alive).toBe(true);
-        expect(person.from).toBe('a_run');
-    });
-
-    it('and says which store answered, for a caller that has to know', () => {
-        expect(personFromTheWorld(aWorldPerson({ id: 'npc-a', ordinal: 5 }), DAY).from)
-            .toBe('the_world');
-    });
-});
-
-describe('whether somebody is standing', () => {
-    it('reads a run sheet off its own boolean', () => {
-        expect(isAlive({ alive: true })).toBe(true);
-        expect(isAlive({ alive: false })).toBe(false);
-    });
-
-    it('and a world row off its status, where a soul preserved is not alive', () => {
-        expect(isAlive({ status: 'alive' })).toBe(true);
-        expect(isAlive({ status: 'dead' })).toBe(false);
-        // Not dead, and not somebody you can talk to. The third state is why
-        // this is not `status !== 'dead'`.
-        expect(isAlive({ status: 'soul_preserved' })).toBe(false);
     });
 });

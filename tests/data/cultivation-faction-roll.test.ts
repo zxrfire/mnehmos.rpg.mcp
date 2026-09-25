@@ -9,10 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import {
-    rollOf,
-    everybodyOnARoll
-} from '../../src/data/cultivation/faction-roll.js';
+import { rollOf, type RollEntry } from '../../src/data/cultivation/faction-roll.js';
 import {
     HOLLOW_COURT_ROSTER,
     HollowCourtMemberSchema,
@@ -32,9 +29,28 @@ const workingNamesInCirculation = () =>
 
 const HOLLOW = 'sect-hollow-court';
 
+/**
+ * Every body's roll, once per body, as the game asks for it. A body with two
+ * ids is one body, so it is asked once.
+ */
+const EVERY_ROLL: readonly (readonly RollEntry[])[] = (() => {
+    const asked = new Set<string>();
+    const out: RollEntry[][] = [];
+    const bodies = [
+        ...SECTS.map(s => s.id), ...COURTS.map(c => c.id), ...MEMBERS.map(m => m.factionId)
+    ];
+    for (const id of bodies) {
+        const key = [...idsForFaction(id)].sort().join('|');
+        if (asked.has(key)) continue;
+        asked.add(key);
+        out.push(rollOf(id));
+    }
+    return out;
+})();
+
 describe('the roll - one question, one answer', () => {
     it('gives every id on a roll a row in the catalog it names', () => {
-        for (const entry of everybodyOnARoll()) {
+        for (const entry of EVERY_ROLL.flat()) {
             const found = entry.source === 'members'
                 ? MEMBERS.some(m => m.id === entry.id)
                 : entry.source === 'court officers'
@@ -45,7 +61,7 @@ describe('the roll - one question, one answer', () => {
     });
 
     it('never puts one person on two rolls', () => {
-        const ids = everybodyOnARoll().map(e => e.id);
+        const ids = EVERY_ROLL.flat().map(e => e.id);
         expect(new Set(ids).size, 'somebody is on two rolls').toBe(ids.length);
     });
 

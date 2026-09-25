@@ -14,12 +14,10 @@
  * `if (stored)` inside it, and again when the tables merge. The read is what
  * makes the second version unnecessary.
  *
- * ── AND WHY IT CONVERGES ON THE WORLD'S SHAPE ────────────────────────────
- *
- * The NPC side DERIVES what the player side STORES. An NPC's age is a birth day
- * and today; a cultivator's age is a number somebody has to remember to
- * increment. Converging on the derived form deletes writes rather than adding
- * them, which is the direction this engine's own rule points.
+ * The one question asked of both stores here is who is drawing on a piece of
+ * ground. A general person read (name, age, rung, where) was written beside it
+ * and nothing asked it, so it went; the next question both stores have to
+ * answer the same way belongs in this file.
  *
  * ── WHERE THE TWO GENUINELY DISAGREE ─────────────────────────────────────
  *
@@ -31,68 +29,6 @@
 
 import type { Cultivator } from '../../schema/cultivation.js';
 import type { NpcRecord } from '../world/npc-state.js';
-
-/** One person, from either store, reduced to what both can answer. */
-export interface Person {
-    id: string;
-    name: string;
-    /** The rung. The one field neither store disagrees about. */
-    realmOrdinal: number;
-    /** Years lived. Derived on the world side, stored on the run side. */
-    age: number;
-    /** Whether they are standing. Not the same as "not dead": see `isAlive`. */
-    alive: boolean;
-    /** Where they are, as the store that holds them names it. */
-    where: string | null;
-    /** Which store answered. For a caller that genuinely needs to know. */
-    from: 'a_run' | 'the_world';
-}
-
-/** Days in a year, for the one derivation that needs it. */
-const DAYS_PER_YEAR = 365;
-
-/** How old somebody in the world is, on a given day. */
-export function ageOf(npc: NpcRecord, onDay: number): number {
-    return Math.max(0, Math.floor((onDay - npc.identity.bornOnDay) / DAYS_PER_YEAR));
-}
-
-/**
- * Whether somebody is standing.
- *
- * `status === 'alive'` and not `status !== 'dead'`, because the world has a
- * third state: `soul_preserved` is not dead and is not somebody you can talk to
- * in a square. A caller that wants the wider question asks for the status.
- */
-export function isAlive(who: { status?: string; alive?: boolean }): boolean {
-    if (typeof who.alive === 'boolean') return who.alive;
-    return who.status === 'alive';
-}
-
-/** A world person, read as a person. */
-export function personFromTheWorld(npc: NpcRecord, onDay: number): Person {
-    return {
-        id: npc.id,
-        name: npc.name,
-        realmOrdinal: npc.cultivation.realmOrdinal,
-        age: ageOf(npc, onDay),
-        alive: npc.status === 'alive',
-        where: npc.locationId ?? null,
-        from: 'the_world'
-    };
-}
-
-/** A run's person, read as a person. */
-export function personFromARun(cultivator: Cultivator): Person {
-    return {
-        id: cultivator.id,
-        name: cultivator.name,
-        realmOrdinal: cultivator.realmOrdinal,
-        age: cultivator.age,
-        alive: cultivator.alive,
-        where: cultivator.location ?? null,
-        from: 'a_run'
-    };
-}
 
 /**
  * EVERYBODY DRAWING ON ONE PIECE OF GROUND.

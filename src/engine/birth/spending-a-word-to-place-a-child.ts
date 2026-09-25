@@ -179,50 +179,6 @@ export function placementsAWordWouldOpen(
     });
 }
 
-/**
- * What this origin's name is worth at this age, said in one object.
- */
-export interface WhatTheNameReaches {
-    origin: OriginTierKey;
-    applicantOrdinal: number;
-    /** Highest house power ordinal the name reaches. origin.ts's number. */
-    reach: number;
-    /** Houses that would take them on the family's word and their own ordinal. */
-    alreadyQualified: string[];
-    /** Houses only a word opens. Empty at every tier with no standing. */
-    wordWouldOpen: string[];
-    /** Words this origin starts with. `OriginTier.vouchers`, unchanged. */
-    vouchers: number;
-}
-
-export function whatTheNameReaches(
-    key: OriginTierKey,
-    applicantOrdinal: number,
-    houses: readonly PlacementCandidate[]
-): WhatTheNameReaches {
-    const tier = getOrigin(key);
-    const reach = tier.placement.reach;
-    const alreadyQualified = reach <= 0
-        ? []
-        : houses
-            .filter(h => {
-                if (h.powerOrdinal > reach) return false;
-                const doors = doorsOf(h.id);
-                const lowest = doors ? doors.lowestDoor : h.admissionOrdinal;
-                return applicantOrdinal >= lowest;
-            })
-            .map(h => h.id);
-
-    return {
-        origin: key,
-        applicantOrdinal,
-        reach,
-        alreadyQualified,
-        wordWouldOpen: placementsAWordWouldOpen(key, applicantOrdinal, houses).map(h => h.id),
-        vouchers: tier.vouchers
-    };
-}
-
 // IN A LIFE: SPENDING ONE ON YOUR OWN CHILD
 //
 // The other half of the mechanic, and the half that had nowhere to live. A

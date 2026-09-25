@@ -259,40 +259,6 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
     };
 }
 
-/**
- * The best of a haul, and honestly. Ordered by fit and then by how much ceiling
- * it buys, and it never reorders to flatter: an all-unsuited haul returns an
- * unsuited best. Null for an empty haul, which is a real and common result.
- */
-export function bestAcquisition(
-    manuals: readonly ManualLike[],
-    shared: Omit<AcquisitionInput, 'manual'>
-): AcquisitionReport | null {
-    let best: AcquisitionReport | null = null;
-    for (const manual of manuals) {
-        const report = assessAcquisition({ ...shared, manual });
-        if (best === null || acquisitionRank(report) < acquisitionRank(best)) best = report;
-    }
-    return best;
-}
-
-const FIT_RANK: Record<Suitability['fit'], number> = {
-    suited: 0,
-    partly: 1,
-    out_of_reach: 2,
-    unsuited: 3,
-    outgrown: 4
-};
-
-function acquisitionRank(report: AcquisitionReport): number {
-    // Usable first, then fit, then ceiling. A high ceiling never promotes an
-    // unsuited book above a suited one - that would be the interface telling a
-    // player to sit with something that will teach them nothing.
-    const usable = report.usable ? 0 : 1;
-    const ceiling = report.techniqueCap === null ? 0 : 1 / (1 + report.techniqueCap);
-    return usable * 100 + FIT_RANK[report.suitability.fit] * 10 + ceiling;
-}
-
 // THE LIVING TEACHER
 //
 // Different people specialise in different things, and a method reaches a

@@ -15,7 +15,7 @@ import {
     homecoming
 } from '../../../src/engine/world/when-somebody-does-not-come-back.js';
 import { KnowledgeLedger } from '../../../src/engine/social/knowledge.js';
-import { stageAcross } from '../../../src/engine/social/discovery.js';
+import { stageOfRecord } from '../../../src/engine/social/discovery.js';
 
 const YEAR = 365;
 
@@ -197,8 +197,8 @@ describe('beginAbsence', () => {
         const ledger = new KnowledgeLedger();
         for (const record of accounts) ledger.addRecord(record);
 
-        expect(stageAcross(ledger.heldBy('enemy'))).toBe('encountered');
-        expect(stageAcross(ledger.heldBy('her'))).toBe('placed');
+        expect(ledger.heldBy('enemy').map(stageOfRecord)).toEqual(['encountered']);
+        expect(ledger.heldBy('her').map(stageOfRecord)).toEqual(['placed']);
         expect(ledger.knows('enemy')).toHaveLength(1);
         // The truth is a fact, held by nobody, and both accounts point at it.
         expect(truth.subjects).toEqual(['him']);

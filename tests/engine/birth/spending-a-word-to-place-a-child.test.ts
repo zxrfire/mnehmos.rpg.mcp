@@ -7,7 +7,6 @@ import {
     placementsAWordWouldOpen,
     spendAWord,
     wasPlaced,
-    whatTheNameReaches,
     whoCanHoldAChildAtZero
 } from '../../../src/engine/birth/spending-a-word-to-place-a-child.js';
 import { ORIGIN_TIERS, placementsWithinReach, type PlacementCandidate } from '../../../src/engine/cultivation/origin.js';
@@ -131,14 +130,12 @@ describe('what a great name is actually worth at seven years old', () => {
         const farm = ORIGIN_TIERS[0];
         expect(farm.placement.reach).toBe(0);
         expect(placementsAWordWouldOpen(farm.key, 0, HOUSES)).toEqual([]);
-        expect(whatTheNameReaches(farm.key, 0, HOUSES).vouchers).toBe(0);
+        expect(farm.vouchers).toBe(0);
     });
 
-    it('reports capacity and what that capacity reaches together', () => {
-        const reaches = whatTheNameReaches(top.key, 0, HOUSES);
-        expect(reaches.vouchers).toBeGreaterThan(0);
-        expect(reaches.wordWouldOpen.length).toBeGreaterThan(0);
-        expect(reaches.reach).toBe(top.placement.reach);
+    it('gives a family with words to spend somewhere to spend them', () => {
+        expect(top.vouchers).toBeGreaterThan(0);
+        expect(placementsAWordWouldOpen(top.key, 0, HOUSES).length).toBeGreaterThan(0);
     });
 });
 

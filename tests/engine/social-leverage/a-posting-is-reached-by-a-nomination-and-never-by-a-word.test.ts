@@ -41,7 +41,6 @@ import { describe, expect, it } from 'vitest';
 import {
     A_NOMINATION_WEIGHS,
     aNameGoesUp,
-    aNameWasPutUp,
     howFarANameGoes,
     howFarShortOfThePosting,
     thePostingAt,
@@ -49,12 +48,17 @@ import {
     whatANominationWouldTake,
     whatThisHousesNameReaches,
     whatWouldPutYouThere,
-    whoCouldNominateInto
+    whoCouldNominateInto,
+    type ANameWentUp
 } from '../../../src/engine/social-leverage/who-can-put-your-name-up-for-a-posting';
 import { spendAWord, wasPlaced } from '../../../src/engine/birth/spending-a-word-to-place-a-child';
 import { thereIsNoDoorAt } from '../../../src/data/cultivation/a-favour-skips-the-admission-bar';
 import { SECTS } from '../../../src/data/cultivation/sects';
 import { getParentage, chainToApex } from '../../../src/data/cultivation/governance-and-water-rights';
+
+/** Whether `aNameGoesUp` came back with a nomination rather than a refusal. */
+const aNameWasPutUp = (result: ReturnType<typeof aNameGoesUp>): result is ANameWentUp =>
+    typeof result !== 'string';
 
 // The two bodies are read out of the catalog, never named here: which bodies
 // have no door is a property of the stance table, and a third one appearing is

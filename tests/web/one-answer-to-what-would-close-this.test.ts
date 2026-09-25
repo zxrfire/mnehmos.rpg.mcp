@@ -46,10 +46,8 @@ import {
 import {
     STRUCTURAL_REPAIR_MEDICINES
 } from '../../src/data/cultivation/structural-repair-medicine';
-import {
-    NOTHING_REPAIRS_ABOVE_ORDINAL,
-    theRungsThatRepairAPermanentInjury
-} from '../../src/engine/cultivation/what-structural-repair-medicine-can-reach';
+import { NOTHING_REPAIRS_ABOVE_ORDINAL } from '../../src/engine/cultivation/what-structural-repair-medicine-can-reach';
+import { getPillsByEffect } from '../../src/data/cultivation/pills';
 import { WOUND_TYPES } from '../../src/data/cultivation/wounds';
 import { HOME_REGION_ID } from '../../src/data/cultivation/regions';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
@@ -83,15 +81,16 @@ function gateOverAFreshRun(): { db: Database.Database; gate: KnowledgeGate } {
 
 describe('the road for a permanent injury is five rungs and the read is on it', () => {
     it('runs mortal to chaos, and only the top one refuses to choose', () => {
-        const rungs = theRungsThatRepairAPermanentInjury();
-        expect(rungs.length).toBe(STRUCTURAL_REPAIR_MEDICINES.length + 1);
-        // Four that reach a stated rung and let the taker point at a wound, and
-        // one that reaches any rank and does not.
-        const anyRank = rungs.filter(r => r.reachesUpToOrdinal === null);
+        // Four that reach a stated rung and let the taker point at a wound -
+        // every repair row names what it mends - and one pill past them that
+        // reaches any rank and names nothing, so it cannot be pointed.
+        for (const dose of STRUCTURAL_REPAIR_MEDICINES) {
+            expect(dose.mends.length, `${dose.id} names no wound`).toBeGreaterThan(0);
+        }
+        const anyRank = getPillsByEffect('mends_what_will_not_close');
         expect(anyRank.length).toBe(1);
         expect(anyRank[0]!.grade).toBe('chaos');
-        expect(anyRank[0]!.choosesTheWound).toBe(false);
-        expect(rungs.filter(r => r.choosesTheWound).length).toBe(STRUCTURAL_REPAIR_MEDICINES.length);
+        expect(anyRank[0]!.mends ?? []).toEqual([]);
     });
 
     it('names the cheapest rung that reaches the body carrying it', () => {

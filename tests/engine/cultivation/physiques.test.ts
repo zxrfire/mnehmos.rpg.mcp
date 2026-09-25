@@ -22,10 +22,8 @@ import {
     cultivationSpeedOf,
     describePhysique,
     drawnOffMultiplierOf,
-    getPhysique,
     lifespanWithPhysique,
     physiqueOrNull,
-    physiqueProbability,
     rollPhysique,
     type Physique
 } from '../../../src/engine/cultivation/physiques.js';
@@ -80,8 +78,7 @@ describe('the catalog', () => {
     });
 
     it('resolves a key, and answers null for one it has never heard of', () => {
-        expect(getPhysique('profound_yin').name).toBe('Profound Yin Body');
-        expect(() => getPhysique('nine-yin' as never)).toThrow();
+        expect(physiqueOrNull('profound_yin')!.name).toBe('Profound Yin Body');
         expect(physiqueOrNull('profound_yin')?.key).toBe('profound_yin');
         expect(physiqueOrNull('a-body-nobody-authored')).toBeNull();
         expect(physiqueOrNull(null)).toBeNull();
@@ -123,7 +120,7 @@ describe('rollPhysique', () => {
             counts.set(key, (counts.get(key) ?? 0) + 1);
         }
         for (const p of PHYSIQUES) {
-            expect((counts.get(p.key) ?? 0) / N).toBeCloseTo(physiqueProbability(p.key), 3);
+            expect((counts.get(p.key) ?? 0) / N).toBeCloseTo(p.weight / PHYSIQUE_WEIGHT_TOTAL, 3);
         }
     });
 
@@ -138,8 +135,8 @@ describe('rollPhysique', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 /** The pair the design owner asked to be kept symmetric. */
-const YIN = getPhysique('profound_yin');
-const YANG = getPhysique('pure_yang');
+const YIN = physiqueOrNull('profound_yin')!;
+const YANG = physiqueOrNull('pure_yang')!;
 
 describe('nothing branches on which physique somebody has', () => {
     it('keeps the yin and yang rows identical in every number', () => {
@@ -251,7 +248,7 @@ describe('the lifespan ceiling', () => {
         expect(lifespanCeilingFor({ ...BODY, physique: 'profound_yin' }))
             .toBeCloseTo(100 * YIN.lifespan, 10);
         expect(lifespanCeilingFor({ ...BODY, physique: 'hollow_marrow' }))
-            .toBeCloseTo(100 * getPhysique('hollow_marrow').lifespan, 10);
+            .toBeCloseTo(100 * physiqueOrNull('hollow_marrow')!.lifespan, 10);
     });
 
     it('leaves an unbounded span unbounded', () => {

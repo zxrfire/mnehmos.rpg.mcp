@@ -21,7 +21,7 @@ import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { rollSpiritRoot } from '../../../src/engine/cultivation/spirit-roots.js';
 import {
     PHYSIQUES,
-    getPhysique,
+    physiqueOrNull,
     rollPhysique
 } from '../../../src/engine/cultivation/physiques.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
@@ -127,7 +127,7 @@ describe('the lifespan stamp reads it', () => {
     });
 
     it('is shortened for a body that does not last', () => {
-        const yin = getPhysique('profound_yin');
+        const yin = physiqueOrNull('profound_yin')!;
         expect(stampFor('profound_yin'))
             .toBeCloseTo(lifespanForOrdinal(0) * yin.lifespan * DAYS_PER_YEAR, 6);
         expect(stampFor('profound_yin')).toBeLessThan(stampFor(null));
@@ -149,7 +149,7 @@ describe('the lifespan stamp reads it', () => {
             id: 'npc-climb', bornOnDay: 0, onDay: 0, physique: 'profound_yin'
         } as never);
         const climbed = setRealm(npc, 13, 100);
-        const yin = getPhysique('profound_yin');
+        const yin = physiqueOrNull('profound_yin')!;
         expect(climbed.cultivation.lifespanEndsOnDay)
             .toBeCloseTo(lifespanForOrdinal(13) * yin.lifespan * DAYS_PER_YEAR, 6);
         // And it is still short of what the rung alone would have given.

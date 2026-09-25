@@ -9,25 +9,19 @@ A human being is stored in **two** places in this repo - a `Cultivator` row for 
 is being played through, and an `NpcRecord` in world state for everybody else. That is drift
 being worked off, not a design, and it is **not** merged here.
 
-**What is merged is the READ.** `Person` is the one shape, and the questions you can ask about
-somebody are answered the same way whichever table they came out of:
+**What is merged is the READ**, one question at a time, so that a question asked of a person
+is answered the same way whichever table they came out of:
 
 | export | what it answers |
 |---|---|
-| `Person` | the one shape a caller should want |
-| `personFromTheWorld(npc, onDay)` | a world NPC as a `Person` |
-| `personFromARun(cultivator)` | a played cultivator as a `Person` |
 | `everybodyDrawingHere(...)` | everybody standing on this ground, both tables at once |
-| `ageOf(npc, onDay)` | age as a reading off a birth day, never a stored counter |
-| `isAlive(who)` | one answer over two differently-shaped status fields |
+
+A general `Person` read (name, age, rung, where) was written beside it and nothing asked it, so
+it went. The next question both stores have to answer the same way belongs here.
 
 **Why the read and not the storage.** The storage merge is expensive and the read is cheap,
 and every verb written before the read is unified has to be written twice - once with an
 `if (stored)` inside it, and again when the tables merge.
-
-**And why it converges on the world's shape.** The NPC side DERIVES what the player side
-STORES. An NPC's age is a birth day and today; a cultivator's age is a number somebody has to
-remember to increment. Converging on the derived form deletes writes rather than adding them.
 
 **Where the two genuinely disagree:** satiety, starvation, bleeding, cultivation progress,
 battle counters and achievements are a RUN's facts about a person, not the person's own. The

@@ -15,7 +15,6 @@ import { lifespanForOrdinal, realmForOrdinal, REALM_TIERS } from './realms.js';
 import { netEarningsPerYear } from './origin.js';
 import { clearBrokenStatus } from './what-goes-wrong-at-a-realm-boundary.js';
 import { currentWoundKey, isPermanentWound, woundNature } from '../../data/cultivation/wounds.js';
-import { PILLS } from '../../data/cultivation/pills.js';
 import type { Injury } from '../../schema/cultivation.js';
 
 // THE CEILINGS
@@ -353,83 +352,35 @@ export function readRepairMedicine(medicine: StructuralRepairMedicine): RepairMe
 // THE LADDER, AND WHY ITS TOP RUNG IS NOT IN THE ARRAY ABOVE
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * One rung of the road a permanent injury is answered on.
- *
- * FIVE RUNGS, MORTAL THROUGH CHAOS, and the design owner asked for the chaos
- * one on this list. It is READ rather than stored as a fifth array row, and the
- * reasons are checkable rather than aesthetic:
- *
- *   IT IS A PILL, AND PILLS ARE REACHABLE. The chaos rung sits in a pouch, is
- *   refined from a recovered formula, and is swallowed through
- *   `alchemy-manage`'s resolver on its own seeded draw. `STRUCTURAL_REPAIR_
- *   MEDICINES` has no player-facing path at all - `applyStructuralRepair` has
- *   no caller outside its own tests, because those four are institutional
- *   objects that houses spend on their own people. Moving the chaos rung into
- *   that array would delete the one permanent-injury medicine a player can
- *   actually take.
- *
- *   THE TWO ROWS CARRY DIFFERENT FACTS. A repair row carries `madeBelowTheLid`,
- *   a per-century refining rate, terms instead of a price, faction holdings and
- *   a sent-down ledger that has to reconcile. The chaos rung has a formula
- *   anybody at the right rung can attempt and no holdings anywhere, and
- *   inventing a provenance and a rate for it would be authoring content to fit
- *   a shape rather than recording a fact.
- *
- *   AND ITS `mends` IS EMPTY ON PURPOSE. The repair schema requires at least
- *   one named wound; the chaos rung names none, because nobody made it for
- *   anything. That is the row saying something, and relaxing the schema to
- *   admit it would weaken the invariant for the other four.
- *
- * So the ladder is a reading over two catalogs, which is the one place the five
- * rungs are stated, and nothing keeps a second copy of either.
- */
-export interface RepairRung {
-    id: string;
-    name: string;
-    grade: string;
-    /** The last rung it repairs at, or null for the one that reaches any rank. */
-    reachesUpToOrdinal: number | null;
-    /** What it was made for. Empty for the rung that was made for nothing. */
-    mends: readonly string[];
-    /**
-     * Whether the taker gets to say which injury it closes. False for the chaos
-     * rung, which is the price of reaching past the rank ladder at all.
-     */
-    choosesTheWound: boolean;
-}
-
-/**
- * The whole road, lowest rung first.
- *
- * The four institutional doses by rank, then the one that reaches any rank and
- * does not let you choose. Read off both catalogs so a content edit in either
- * moves it and nothing here authors a rung.
- */
-export function theRungsThatRepairAPermanentInjury(): RepairRung[] {
-    const byRank: RepairRung[] = [...STRUCTURAL_REPAIR_MEDICINES]
-        .sort((a, b) => a.reachesUpToOrdinal - b.reachesUpToOrdinal)
-        .map(m => ({
-            id: m.id,
-            name: m.name,
-            grade: m.grade,
-            reachesUpToOrdinal: m.reachesUpToOrdinal,
-            mends: m.mends,
-            choosesTheWound: true
-        }));
-    const drawn = PILLS.filter(p => p.effect === 'mends_what_will_not_close');
-    for (const pill of drawn) {
-        byRank.push({
-            id: pill.id,
-            name: pill.name,
-            grade: pill.grade,
-            reachesUpToOrdinal: null,
-            mends: pill.mends ?? [],
-            choosesTheWound: (pill.mends ?? []).length > 0
-        });
-    }
-    return byRank;
-}
+// FIVE RUNGS, MORTAL THROUGH CHAOS, and the design owner asked for the chaos
+// one on this list. It is READ rather than stored as a fifth array row, and the
+// reasons are checkable rather than aesthetic:
+//
+//   IT IS A PILL, AND PILLS ARE REACHABLE. The chaos rung sits in a pouch, is
+//   refined from a recovered formula, and is swallowed through
+//   `alchemy-manage`'s resolver on its own seeded draw. `STRUCTURAL_REPAIR_
+//   MEDICINES` has no player-facing path at all - `applyStructuralRepair` has
+//   no caller outside its own tests, because those four are institutional
+//   objects that houses spend on their own people. Moving the chaos rung into
+//   that array would delete the one permanent-injury medicine a player can
+//   actually take.
+//
+//   THE TWO ROWS CARRY DIFFERENT FACTS. A repair row carries `madeBelowTheLid`,
+//   a per-century refining rate, terms instead of a price, faction holdings and
+//   a sent-down ledger that has to reconcile. The chaos rung has a formula
+//   anybody at the right rung can attempt and no holdings anywhere, and
+//   inventing a provenance and a rate for it would be authoring content to fit
+//   a shape rather than recording a fact.
+//
+//   AND ITS `mends` IS EMPTY ON PURPOSE. The repair schema requires at least
+//   one named wound; the chaos rung names none, because nobody made it for
+//   anything. That is the row saying something, and relaxing the schema to
+//   admit it would weaken the invariant for the other four.
+//
+// So the ladder is a reading over two catalogs, and the reading is
+// `whatWouldCloseThisWound` in `web/what-would-close-this-wound.ts`: this file's
+// `cheapestMedicineFor` for the four by rank, and the chaos pill off the pill
+// catalog past them. Nothing keeps a second copy of either.
 
 /** The whole table as readings, cheapest first. */
 export function readAllRepairMedicine(): RepairMedicineReading[] {

@@ -278,23 +278,6 @@ function lineFor(find: Find, fit: Fit, axes: readonly FitAxis[]): string {
 }
 
 /**
- * The best of a haul, for whoever is holding it.
- */
-export function bestFor(finds: readonly Find[], seeker: Seeker): { find: Find; suitability: Suitability } | null {
-    let best: { find: Find; suitability: Suitability } | null = null;
-    for (const find of finds) {
-        const suitability = assessFit(find, seeker);
-        if (!best || FIT_ORDER.indexOf(suitability.fit) < FIT_ORDER.indexOf(best.suitability.fit)) {
-            best = { find, suitability };
-        }
-    }
-    return best;
-}
-
-/** Best first. `out_of_reach` above `unsuited`: it may fit later. */
-const FIT_ORDER: readonly Fit[] = ['suited', 'partly', 'out_of_reach', 'unsuited', 'outgrown'];
-
-/**
  * Tags that mean "there is something here somebody could be suited to". Read off
  * the catalog's own tags: a market stall and a bandit do not hold a fit; a manual
  * in a lost grade, an inheritance trial, a refining method on a wall and a body

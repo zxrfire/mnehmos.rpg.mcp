@@ -206,22 +206,18 @@ export function stageFromStance(stance: Stance, source: SourceKind): KnowingStag
     return source === 'witnessed' || source === 'confessed' ? 'encountered' : 'placed';
 }
 
-/** Where one stored record sits. Tag first, derived only as a fallback. */
-export function stageOfRecord(record: KnowledgeRecord): KnowingStage {
-    return stageFromTags(record.tags) ?? stageFromStance(record.stance, record.source.kind);
-}
-
 /**
- * The holder's position, given every live row they have on the topic. The
- * highest, because nothing falls.
+ * Where one stored record sits. Tag first, derived only as a fallback.
+ *
+ * Takes the three fields it reads rather than a whole record, so the gate's
+ * own stored rows are read by this and not by a second copy of it. A holder's
+ * position across several rows is the highest of them, because nothing falls:
+ * `KnowledgeGate.stageOf` folds these under `highestStage`.
  */
-export function stageAcross(records: readonly KnowledgeRecord[]): KnowingStage {
-    let stage: KnowingStage = 'unaware';
-    for (const record of records) {
-        if (record.superseded) continue;
-        stage = highestStage(stage, stageOfRecord(record));
-    }
-    return stage;
+export function stageOfRecord(
+    record: Pick<KnowledgeRecord, 'tags' | 'stance'> & { source: Pick<KnowledgeRecord['source'], 'kind'> }
+): KnowingStage {
+    return stageFromTags(record.tags) ?? stageFromStance(record.stance, record.source.kind);
 }
 
 export interface StageStep {
@@ -239,16 +235,4 @@ export interface StageStep {
 export function advanceStage(from: KnowingStage, gained: KnowingStage): StageStep {
     const to = highestStage(from, gained);
     return { from, to, moved: stageRank(to) > stageRank(from) };
-}
-
-/**
- * The step an acquisition from this source would produce. The one function a
- * writer needs: where they end up, with the source ceiling already applied.
- */
-export function stepFor(
-    from: KnowingStage,
-    source: SourceKind,
-    claimed: KnowingStage
-): StageStep {
-    return advanceStage(from, stageFromSource(source, claimed));
 }

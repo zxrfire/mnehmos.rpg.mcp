@@ -8,12 +8,15 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    couldBeSettledByABinding,
     settleItWithABinding,
     whatWalkingOutOfItCosts,
     whatWouldCloseIt
 } from '../../../src/engine/social-leverage/what-would-settle-an-account-this-heavy.js';
 import { createGrudge, createOath, type ObligationRecord } from '../../../src/engine/social/grudges.js';
+
+/** A binding is on offer where `renounced` is among what would close it. */
+const offersABinding = (...args: Parameters<typeof whatWouldCloseIt>) =>
+    whatWouldCloseIt(...args).includes('renounced');
 
 const bothSidesHavePeople = {
     holderIsAHouse: true, subjectIsAHouse: true,
@@ -53,16 +56,16 @@ describe('what an account this heavy can be closed with', () => {
     });
 
     it('offers a binding only where the account is heavy AND there are people to bind', () => {
-        expect(couldBeSettledByABinding(graveBetweenHouses(), bothSidesHavePeople)).toBe(true);
-        expect(couldBeSettledByABinding(
+        expect(offersABinding(graveBetweenHouses(), bothSidesHavePeople)).toBe(true);
+        expect(offersABinding(
             graveBetweenHouses(), { ...bothSidesHavePeople, couldBeBound: false })).toBe(false);
-        expect(couldBeSettledByABinding(
+        expect(offersABinding(
             { ...graveBetweenHouses(), severity: 'serious' }, bothSidesHavePeople)).toBe(false);
     });
 
     it('never offers one for a favour or a debt', () => {
         const owed = { ...graveBetweenHouses(), kind: 'favor' as const };
-        expect(couldBeSettledByABinding(owed, bothSidesHavePeople)).toBe(false);
+        expect(offersABinding(owed, bothSidesHavePeople)).toBe(false);
         expect(whatWouldCloseIt(owed, bothSidesHavePeople)).toEqual(['repaid', 'forgiven']);
     });
 

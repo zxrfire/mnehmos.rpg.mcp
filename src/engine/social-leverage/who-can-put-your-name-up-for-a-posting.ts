@@ -730,8 +730,3 @@ export function aNameGoesUp(input: ANameGoesUpInput): ANameWentUp | NoNomination
         told
     };
 }
-
-/** Whether a call to {@link aNameGoesUp} came back with a nomination. */
-export function aNameWasPutUp(result: ANameWentUp | NoNominationReaches): result is ANameWentUp {
-    return typeof result !== 'string';
-}

@@ -175,7 +175,7 @@ pass `assessFit` like anything else, so the commonest failure is not "could not 
 "found it, and it was written for somebody else".
 
 **Implemented by.** `capOf` and the manual chain in `src/data/cultivation/techniques.ts`;
-`assessFit` / `bestFor`; the five obtaining routes already enumerated and tested in
+`assessFit`; the five obtaining routes already enumerated and tested in
 `tests/data/cultivation-technique-routes.test.ts` (taught, trial, grave, carving, parting
 gift). Nothing new.
 

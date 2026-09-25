@@ -12,8 +12,7 @@ import { describe, it, expect } from 'vitest';
 import {
     FACTION_RELATIONSHIPS,
     FactionRelationshipSchema,
-    relationshipsOf,
-    allFactionRelationshipPairs
+    relationshipsOf
 } from '../../src/data/cultivation/faction-relationships.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import {
@@ -44,6 +43,17 @@ const resolves = (id: string): boolean =>
 
 const relsFor = (id: string) => relationshipsOf(id, idsForFaction(id));
 
+/** Every tie the game can show, once each, as the first body that reports it sees it. */
+const EVERY_TIE: readonly { id: string; aId: string; bId: string }[] = (() => {
+    const seen = new Map<string, { id: string; aId: string; bId: string }>();
+    for (const body of BODIES) {
+        for (const r of relsFor(body.id)) {
+            if (!seen.has(r.id)) seen.set(r.id, { id: r.id, aId: body.id, bId: r.otherId });
+        }
+    }
+    return [...seen.values()];
+})();
+
 describe('faction relationships - the authored catalog', () => {
     it('every authored pair satisfies the schema', () => {
         for (const rel of FACTION_RELATIONSHIPS) {
@@ -72,10 +82,17 @@ describe('faction relationships - the authored catalog', () => {
 });
 
 describe('faction relationships - one tie, two sides', () => {
+    /**
+     * Asked of `relationshipsOf`, the read the game makes, from every body's
+     * side: two rows naming the same body on the other end is a tie recorded
+     * twice, whichever tables implied it.
+     */
     it('a pair appears exactly once in the world, however many tables imply it', () => {
-        const keys = allFactionRelationshipPairs()
-            .map(p => [p.aId, p.bId].sort().join('::'));
-        expect(new Set(keys).size, 'a tie is recorded twice').toBe(keys.length);
+        const bodyKey = (id: string) => [...idsForFaction(id)].sort().join('|');
+        for (const body of BODIES) {
+            const others = relsFor(body.id).map(r => bodyKey(r.otherId));
+            expect(new Set(others).size, `${body.name} holds a tie recorded twice`).toBe(others.length);
+        }
     });
 
     /**
@@ -84,7 +101,7 @@ describe('faction relationships - one tie, two sides', () => {
      * ever loosened into two mirrored records.
      */
     it('both sides agree on the facts and mirror the direction', () => {
-        for (const pair of allFactionRelationshipPairs()) {
+        for (const pair of EVERY_TIE) {
             const mine = relationshipBetween(pair.aId, pair.bId);
             const theirs = relationshipBetween(pair.bId, pair.aId);
             expect(mine, `${pair.id}: A has no row for B`).toBeDefined();
@@ -233,7 +250,7 @@ describe('faction relationships - upward and downward warmth', () => {
     });
 
     it('at least one tie has the two sides feeling differently', () => {
-        const mismatched = allFactionRelationshipPairs().filter(p => {
+        const mismatched = EVERY_TIE.filter(p => {
             const tie = relationshipBetween(p.aId, p.bId);
             return tie !== undefined && tie.warmth !== tie.theirWarmth;
         });

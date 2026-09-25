@@ -10,7 +10,6 @@
 import { describe, expect, it } from 'vitest';
 import {
     assessFit,
-    bestFor,
     mayHoldAFit,
     pillPotencyFor,
     readQualityFor,
@@ -123,32 +122,6 @@ describe('fit', () => {
     it('says there is nothing left in a thing they have outgrown', () => {
         expect(assessFit({ ...fireManual, gradeOrdinal: 0 }, { ...fireRoot, ordinal: 30 }).fit)
             .toBe('outgrown');
-    });
-});
-
-describe('a haul', () => {
-    it('is judged by whether any of it was for them, not by what it is worth', () => {
-        const haul: Find[] = [
-            { id: 'a', name: 'A heaven-grade water method', kind: 'manual', gradeOrdinal: 20, elements: ['water'] },
-            { id: 'b', name: 'A plain fire method', kind: 'manual', gradeOrdinal: 11, elements: ['fire'] }
-        ];
-        const best = bestFor(haul, fireRoot)!;
-        // The worse object wins, because it is the one that fits.
-        expect(best.find.id).toBe('b');
-        expect(best.suitability.fit).toBe('suited');
-    });
-
-    it('returns nothing for an empty haul, which is a real result', () => {
-        expect(bestFor([], fireRoot)).toBeNull();
-    });
-
-    it('prefers something out of reach over something that will never fit', () => {
-        const haul: Find[] = [
-            { id: 'a', name: 'A water method', kind: 'manual', gradeOrdinal: 12, elements: ['water'] },
-            { id: 'b', name: 'A fire method', kind: 'manual', gradeOrdinal: 30, elements: ['fire'] }
-        ];
-        // One of them may fit later. The other never will.
-        expect(bestFor(haul, fireRoot)!.find.id).toBe('b');
     });
 });
 

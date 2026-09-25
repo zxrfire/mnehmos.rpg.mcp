@@ -22,7 +22,6 @@ import {
     canPointAt,
     highestStage,
     isAtLeast,
-    stageAcross,
     stageCeilingFor,
     stageFromSource,
     stageFromStance,
@@ -31,10 +30,11 @@ import {
     stageRank,
     stageTag,
     stanceForStage,
-    stepFor,
     type KnowingStage
 } from '../../../src/engine/social/discovery';
 import { recordKnowledge, type SourceKind } from '../../../src/engine/social/knowledge';
+import { KnowledgeGate } from '../../../src/web/knowledge';
+import { closeDb, getDb } from '../../../src/storage/index';
 
 describe('the six stages', () => {
     it('are the doc\'s six, in the doc\'s order', () => {
@@ -71,7 +71,7 @@ describe('each step needs a source, and the source caps the step', () => {
 
         let stage: KnowingStage = 'unaware';
         for (let i = 0; i < 100; i++) {
-            stage = stepFor(stage, 'overheard', 'known').to;
+            stage = advanceStage(stage, stageFromSource('overheard', 'known')).to;
         }
         expect(stage).toBe('whisper');
     });
@@ -117,33 +117,26 @@ describe('stages never fall', () => {
         });
     });
 
+    /**
+     * Asked of the gate the game reads, rather than of a fold written for this
+     * file. `KnowledgeGate.stageOf` is the one place a holder's rows are
+     * combined, and it reads only live ones.
+     */
     it('reads a holder\'s position as the highest live row they have', () => {
-        const rows = [
-            recordKnowledge({
-                holderId: 'h', claimKey: 'exists:place:kettle', stance: 'suspects',
-                statement: 'a word', onDay: 1, source: { kind: 'overheard' },
-                tags: [stageTag('whisper')]
-            }),
-            recordKnowledge({
-                holderId: 'h', claimKey: 'exists:place:kettle', stance: 'believes',
-                statement: 'somebody came from there', onDay: 40, source: { kind: 'told' },
-                tags: [stageTag('placed')]
-            })
-        ];
-        expect(stageAcross(rows)).toBe('placed');
+        closeDb();
+        const gate = new KnowledgeGate(getDb(':memory:'));
+        gate.learn({
+            holderId: 'h', kind: 'place', id: 'kettle', name: 'Kettle', onDay: 1,
+            sourceKind: 'overheard', stage: 'whisper', statement: 'a word'
+        });
+        gate.learn({
+            holderId: 'h', kind: 'place', id: 'kettle', name: 'Kettle', onDay: 40,
+            sourceKind: 'told', stage: 'placed', statement: 'somebody came from there'
+        });
+        expect(gate.stageOf('h', 'place', 'kettle')).toBe('placed');
         // And the weaker row is not deleted by the stronger one arriving.
-        expect(rows).toHaveLength(2);
-    });
-
-    it('ignores superseded rows', () => {
-        const superseded = {
-            ...recordKnowledge({
-                holderId: 'h', claimKey: 'k', stance: 'knows', statement: 's',
-                onDay: 1, source: { kind: 'witnessed' }, tags: [stageTag('known')]
-            }),
-            superseded: true
-        };
-        expect(stageAcross([superseded])).toBe('unaware');
+        expect(gate.provenanceOf('h', 'place', 'kettle')).toHaveLength(2);
+        closeDb();
     });
 });
 

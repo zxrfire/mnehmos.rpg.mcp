@@ -32,7 +32,7 @@ import { randomUUID } from 'crypto';
 
 import { makeGameInWorld } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
-import { getPhysique } from '../../src/engine/cultivation/physiques';
+import { physiqueOrNull } from '../../src/engine/cultivation/physiques';
 
 const WORLD = 'a-body-you-were-born-as-world';
 
@@ -63,7 +63,7 @@ describe('a body somebody was born as, on their own sheet', () => {
         expect(said.narration ?? '').toContain('Profound Yin Body');
         // The cost, said in years, on the sheet the player reads most. A price
         // the person paying it never sees is not a price.
-        const ceiling = Math.round(100 * getPhysique('profound_yin').lifespan);
+        const ceiling = Math.round(100 * physiqueOrNull('profound_yin')!.lifespan);
         expect(said.narration ?? '').toContain(`finished at ${ceiling} years`);
     }, 120_000);
 

@@ -10,7 +10,6 @@ import { describe, it, expect } from 'vitest';
 
 import {
     assessAcquisition,
-    bestAcquisition,
     canTransmit,
     extensionOption,
     findFromManual,
@@ -224,37 +223,6 @@ describe('route 1b through the funnel - a partial set is honestly reported', () 
         expect(report.refusals).toContain('unsuited');
         expect(report.lines.join(' ')).toContain('however long they sit');
         expect(report.lines.join(' ')).toContain('rung of ceiling');
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-describe('bestAcquisition - the honest read on a haul', () => {
-    it('returns null for an empty haul, which is a real result', () => {
-        expect(bestAcquisition([], { seeker: fireSeeker, route: 'grave' })).toBeNull();
-    });
-
-    it('never promotes an unsuited book over a suited one for having a higher ceiling', () => {
-        // The interface must not tell a player to sit with something that will
-        // teach them nothing just because it is rated higher.
-        const suitedButShort: ManualLike = {
-            id: 'short', name: 'A Short Fire Manual', requiredOrdinal: 17, cap: 21,
-            grade: 'earth', element: 'fire'
-        };
-        const magnificentAndWrong: ManualLike = {
-            id: 'wrong', name: 'A Magnificent Ice Canon', requiredOrdinal: 17, cap: 33,
-            grade: 'immortal', element: 'ice'
-        };
-        const best = bestAcquisition([magnificentAndWrong, suitedButShort], {
-            seeker: fireSeeker, route: 'grave', dao: FIRE_DAO
-        });
-        expect(best?.suitability.fit).toBe('suited');
-        expect(best?.techniqueCap).toBe(21);
-    });
-
-    it('an all-unsuited haul returns an unsuited best rather than flattering', () => {
-        const best = bestAcquisition([FIRE_MANUAL], { seeker: waterSeeker, route: 'grave' });
-        expect(best?.usable).toBe(false);
-        expect(best?.suitability.fit).toBe('unsuited');
     });
 });
 
