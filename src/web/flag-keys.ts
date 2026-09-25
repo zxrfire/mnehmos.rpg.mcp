@@ -37,6 +37,12 @@ export const FLAG_STEP_TAKEN = 'unearned_step_taken';
 export const FLAG_RATIONS_HELD = 'rations_held';
 
 /**
+ * The notices this cultivator turned in, by notice id (house, sending and window): the first to
+ * turn one in is paid and its paper comes down. See `a-notice-is-turned-in.ts`.
+ */
+export const FLAG_NOTICES_TURNED_IN = 'notices_turned_in';
+
+/**
  * Who is on their knees in front of this cultivator, and the turn it happened.
  *
  * Stored as `<id>:<turn>`. A submission is the outcome of a confrontation and

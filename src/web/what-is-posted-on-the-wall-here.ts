@@ -39,6 +39,7 @@ import {
 } from '../engine/world/the-doors-and-walls-a-house-takes-people-at.js';
 export { openDoorsInTheWorld, postingGroundOf, provinceOfPlace };
 import {
+    A_BILL_STAYS_UP_FOR_DAYS,
     noticesOnTheWall,
     whatANoticeGrants,
     WHAT_THE_PAPER_GIVES_AWAY,
@@ -49,6 +50,7 @@ import {
     type TheAsk
 } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
 import { whoAnswersTo } from '../engine/world/what-a-house-answers-to.js';
+import { theNoticesThatAreDown, whatANoticeWantsBrought } from '../engine/encounters/a-notice-is-turned-in.js';
 import { freeToTakeWork } from '../engine/world/a-disciple-takes-work-off-the-board.js';
 import {
     reasonsOpenTo,
@@ -152,6 +154,10 @@ export function housesWithSomethingToSay(
             const kind = WHAT_A_REASON_PUTS_ON_A_WALL[reason.atStake];
             if (kind === 'work') {
                 if (hasVassals) continue;
+                // ONLY WHAT CAN BE TURNED IN. A notice is first come, first paid, so work with
+                // nothing to bring is never paper: the owner, of the opening party, "stop it from
+                // being a notice". See `a-notice-is-turned-in.ts`.
+                if (!whatANoticeWantsBrought(reason)) continue;
                 asks.push({
                     kind,
                     what: reason.what,
@@ -335,7 +341,9 @@ export function readTheWall(
      * {@link whoEachHouseIsLookingFor}. Absent everywhere the caller holds no
      * world, and a wall with no searches on it is the honest reading then.
      */
-    alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map()
+    alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map(),
+    /** The notices this reader turned in, whose paper has come down. See `a-notice-is-turned-in.ts`. */
+    turnedIn: ReadonlySet<string> = new Set()
 ): WallReading {
     const placeName = (cultivator.location ?? '').trim();
     const onDay = Math.floor(run.elapsedDays);
@@ -349,7 +357,9 @@ export function readTheWall(
     };
     const notices = noticesOnTheWall({
         ...wall,
-        speaking: housesWithSomethingToSay(alsoAsking)
+        speaking: housesWithSomethingToSay(alsoAsking),
+        // FIRST COME, FIRST PAID: a notice somebody turned in is down. See `a-notice-is-turned-in.ts`.
+        isDown: theNoticesThatAreDown({ runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS, turnedIn })
     });
     const bills = notices.flatMap(notice => notice.bill ?? []);
 

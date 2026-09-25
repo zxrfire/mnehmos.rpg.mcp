@@ -28,6 +28,8 @@ import { realmForOrdinal } from '../cultivation/realms.js';
 // are rather than passed in by a caller that would have to be edited to carry it.
 import type { WhatTheHouseWants } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whatThisHouseHasOnPaper } from './a-competition-anybody-may-enter.js';
+import { whatANoticeWantsBrought } from '../encounters/a-notice-is-turned-in.js';
+import { SENDING_REASONS } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE FIELD
@@ -501,7 +503,7 @@ export const WHAT_A_NOTICE_DOES_NOT_BUY: Record<TheAsk['kind'], string> = {
         'Bringing them back is paid and it is not a way in. The house is asking the province '
         + 'a question it cannot answer from inside its own walls.',
     work:
-        'It is hired work and not a place on the roll. Nobody who takes it is of the house '
+        'It is paid and it is not a place on the roll. Nobody who brings it in is of the house '
         + 'afterwards, and the board inside the compound is still shut to them.',
     warning:
         'It asks nothing of anybody. A house that holds ground says what is happening on it, '
@@ -530,9 +532,20 @@ export function whatThePaperSays(
                     ? 'The lamp lit for them still burns.'
                     : 'The lamp lit for them has gone out, and the house wants '
                         + 'what is left of them brought back.');
-        case 'work':
+        case 'work': {
+            // FIRST COME, FIRST PAID. The owner: "first person to turn it in gets it, and they
+            // retract the notice". Where the sending asks something brought, the paper says what,
+            // and what it pays. See `a-notice-is-turned-in.ts`.
+            const reason = ask.reasonId ? SENDING_REASONS.find(row => row.id === ask.reasonId) : undefined;
+            const brought = reason ? whatANoticeWantsBrought(reason) : null;
+            if (brought) {
+                return `${house.name} will pay ${brought.purse} spirit stones to the first who brings `
+                    + `${brought.lots} lots of herbs or beast parts to its gate, and takes the notice `
+                    + `down when somebody does. ${ask.what}`;
+            }
             return `${house.name} is paying for hands and is not asking whose disciple you are. `
                 + `${ask.what} About ${ask.days} days, and it wants ${ask.hands} of them.`;
+        }
         case 'warning':
             return `${house.name} answers for ground in this province and has put up a warning. `
                 + ask.what;
@@ -562,6 +575,8 @@ export function whatThePaperSays(
  */
 export function noticesOnTheWall(input: WallInput & {
     speaking: readonly HouseWithSomethingToSay[];
+    /** A notice already turned in, by anybody: its paper has come down. */
+    isDown?: (houseId: string, ask: TheAsk) => boolean;
 }): Notice[] {
     const slots = BILLS_A_WALL_CARRIES[input.ground];
     if (slots <= 0) return [];
@@ -584,7 +599,9 @@ export function noticesOnTheWall(input: WallInput & {
     // competes with itself for them like anybody else. A price is not in the
     // pool: see the nails of its own below.
     const pool = reaching
-        .flatMap(house => house.asks.filter(ask => ask.kind !== 'wanted').map(ask => ({ house, ask })))
+        .flatMap(house => house.asks
+            .filter(ask => ask.kind !== 'wanted' && !(input.isDown?.(house.id, ask) ?? false))
+            .map(ask => ({ house, ask })))
         .sort((a, b) => a.house.id.localeCompare(b.house.id)
             || a.ask.kind.localeCompare(b.ask.kind));
 

@@ -21,9 +21,12 @@ import { factsForToolResult } from './facts.js';
 import { provinceForFaction } from '../data/cultivation/regions/provinces.js';
 import { theOneOnWatchAtTheGate } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import {
+    A_BILL_STAYS_UP_FOR_DAYS,
     WHAT_A_NOTICE_DOES_NOT_BUY,
     whatThePaperSays
 } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { theNoticesThatAreDown } from '../engine/encounters/a-notice-is-turned-in.js';
+import { theNoticesTurnedIn } from './turning-in-what-a-notice-asks.js';
 import {
     everythingEachHouseIsAsking,
     housesWithSomethingToSay,
@@ -100,7 +103,12 @@ export function whatTheGateSaysOfItsWork(
         ? everythingEachHouseIsAsking(whoEachHouseIsLookingFor(world), whatEachHouseHasAPriceOn(world))
         : new Map();
     const speaking = housesWithSomethingToSay(asking).find(row => row.id === house.factionId) ?? null;
-    const asks = speaking?.postsInPublic ? speaking.asks : [];
+    // A notice somebody has turned in is down, and the gate does not name it.
+    const isDown = theNoticesThatAreDown({
+        runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS,
+        turnedIn: theNoticesTurnedIn(game, cultivator.id)
+    });
+    const asks = speaking?.postsInPublic ? speaking.asks.filter(ask => !isDown(house.factionId, ask)) : [];
     // "the town walls of the Jade Gorge": a name's own "The" is lower case inside a sentence.
     const province = provinceForFaction(house.factionId)?.name.replace(/^The /, 'the ') ?? null;
 

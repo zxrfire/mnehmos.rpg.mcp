@@ -109,7 +109,8 @@ describe('the wall carries work a house will give a stranger', () => {
         const { game } = await standingIn(CITIES[0]!);
         const answer = await game.act('what is posted here');
         const said = JSON.stringify(answer);
-        expect(said).toContain('is not asking whose disciple you are');
+        // First come, first paid: the paper says what to bring and what it pays for it.
+        expect(said).toContain('to the first who brings');
         expect(said).toContain('not a place on the roll');
     });
 

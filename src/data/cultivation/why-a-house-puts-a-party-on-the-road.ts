@@ -304,7 +304,7 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         name: 'After materials',
         said: 'materials trip',
         task: 'Make the materials trip to {place} for {house} for the next {term}',
-        what: 'Out gathering herbs, ore and beast parts, because at that grade they are '
+        what: 'Out gathering herbs and beast parts, because at that grade they are '
             + 'the one thing nobody already owns.',
         needs: 'nothing',
         ceilingOrdinal: BEAST_CHANGE_ORDINAL,
