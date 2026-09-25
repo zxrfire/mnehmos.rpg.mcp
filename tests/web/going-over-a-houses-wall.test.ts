@@ -155,7 +155,7 @@ describe('over the wall, played', () => {
                 ...npc,
                 locationId: house.seat.id,
                 cultivation: { ...npc.cultivation, realmOrdinal: ordinal },
-                activity: { kind: 'talking', withIds: [me().id], sinceDay: today, untilDay: today + 1 }
+                activity: { kind: 'talking', note: '', withIds: [me().id], sinceDay: today, untilDay: today + 1 }
             };
             harness.game.theWorldMoved();
         };
