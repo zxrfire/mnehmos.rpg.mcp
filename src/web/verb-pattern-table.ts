@@ -4654,6 +4654,10 @@ const ASKING_TO_BE_LET_IN =
     /^\s*(?:(?:may|can|could|might)\s+(?:i|we)\s+(?:please\s+)?(?:enter|come\s+in(?:side)?|go\s+in(?:side)?|be\s+let\s+in|pass(?:\s+through)?)|(?:please\s+)?let\s+(?:me|us)\s+(?:in|through|pass)|i\s+(?:ask|request|beg)\s+(?:to\s+(?:enter|be\s+let\s+in|come\s+in)|for\s+(?:entry|entrance|admittance))|i\s+request\s+(?:entry|entrance|admittance))(?:\s+(?:to|into|at)?\s*(.{3,60}?))?\s*(?:,?\s*please)?[\s?.!]*$/i;
 
 /** "who is a disciple of the Azure Dew Sect?": who of a named house is here. */
+/** Asking who heads a house, which the house's own standing read answers. */
+const WHO_LEADS_A_HOUSE =
+    /\b(?:in charge|in command|leads?|heads?|runs?|rules?|leader|patriarch|matriarch|sect master|master of|lord of)\b/;
+
 const WHO_OF_A_HOUSE_IS_HERE =
     /\b(?:who(?:'s| is| are)?(?:\s+here(?:\s+(?:is|are))?)?|is\s+(?:any\s?one|any\s?body|some\s?one|some\s?body)(?:\s+here)?|are\s+there\s+any|which\s+of\s+(?:them|these\s+people|you)(?:\s+(?:is|are))?)\s+(?:(?:a|an|the|any)\s+)?(?:(?:disciples?|members?|elders?|people|ones?|servants?|cultivators?|followers?)\s+)?(?:of|from|with|in|belonging\s+to|serving)\s+(.{3,60}?)\s*(?:here)?[\s?.!]*$/i;
 
@@ -5090,7 +5094,9 @@ function planIntent(input: string): PlannedAction {
         if (letIn && (house.length === 0 || A_HOUSE_IS_NAMED.test(house))) {
             return { action: 'look', intent: 'the_gate', ...(house ? { target: house } : {}) };
         }
-        const ofAHouse = WHO_OF_A_HOUSE_IS_HERE.exec(input);
+        // Who LEADS a house is a question about its head, answered elsewhere:
+        // "who is in charge of the Azure Cloud Pavilion" is not who of it is here.
+        const ofAHouse = WHO_LEADS_A_HOUSE.test(text) ? null : WHO_OF_A_HOUSE_IS_HERE.exec(input);
         const named = (ofAHouse?.[1] ?? '').trim();
         if (ofAHouse && A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT.test(named)) {
             return { action: 'look', intent: 'their_people_here', target: named };
