@@ -18,6 +18,7 @@ import {
     type Duty,
     type EncounterActivity,
     type Contact,
+    type TieChange,
     type ContactPerson,
     type Locatability,
     type Membership,
@@ -1775,6 +1776,46 @@ export function recordContact(
     return withEvent;
 }
 
+
+/**
+ * One end of a tie moved: how THEY stand toward the player, and nothing about
+ * how the player stands toward them. For a reaction that is theirs alone -
+ * being recognised for something pleases or stings the one recognised.
+ */
+export function moveTheirSideOnly(
+    repos: CultivationRepos,
+    them: { id: string },
+    cultivatorId: string,
+    onDay: number,
+    tie: TieChange
+): void {
+    const db = repos.db as unknown as DatabaseHandle;
+    const type = tie.type as RelationshipType;
+    const held = readRelationship(db, them.id, cultivatorId, type);
+    const base = held ?? createRelationship({
+        fromId: them.id, toId: cultivatorId, type, onDay, strength: 0,
+        significance: tie.significance, attitude: tie.attitude
+    });
+    const moved = recordRelationshipEvent(updateRelationship(base, {
+        onDay,
+        type,
+        strength: base.strength + tie.strengthDelta,
+        significance: tie.significance,
+        attitude: tie.attitude,
+        roles: [...new Set([...base.roles, ...tie.roles])],
+        appendHistory: tie.eventSummary
+    }), {
+        onDay,
+        kind: tie.eventKind,
+        summary: tie.eventSummary,
+        significance: tie.significance === 'defining' ? 'defining' : 'notable'
+    });
+    repos.db.transaction(() => {
+        writeRelationship(db, moved);
+        const event = moved.events[moved.events.length - 1];
+        if (event) writeRelationshipEvent(db, moved.id, event);
+    })();
+}
 
 /**
  * THE OPEN LEDGER BETWEEN TWO PEOPLE, IN BOTH DIRECTIONS.

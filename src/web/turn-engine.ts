@@ -638,7 +638,7 @@ import {
     countedHoldingKey
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 // ── AND A WORD GIVEN, CARRIED, OR NOT KEPT ───────────────────────────────
-import { openOathsHeldBy, recordABondBothWays, theMasterTheyKneltTo } from './encounters.js';
+import { moveTheirSideOnly, openOathsHeldBy, recordABondBothWays, theMasterTheyKneltTo } from './encounters.js';
 import { whatABondOpens, whetherYouMayTake } from '../engine/social-leverage/taking-somebody-as-your-own.js';
 import { aMasterWhoValuesThemGivesAHalf } from '../engine/world/a-pair-of-communication-jade.js';
 import type { RelationshipType } from '../engine/social/relationships.js';
@@ -931,6 +931,7 @@ import { stagesHeldBy, stagesOf } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { Narrator, NarratorScene, TheWayItIsDoneHere } from './narrator.js';
 import { INTERACT_SETTLES_NOTHING } from './action-set.js';
+import { chanceOfPlacingAFace, whatNamingThemDoes, whatTheyAreKnownFor } from './recognising-somebody-you-had-heard-of.js';
 import type { WhereTheyStandNow } from './prompt.js';
 // One sentence can contain a plan. The law that bounds how much of the player's
 // life it may spend lives in this module, not here; what `game.ts` owns is
@@ -1937,6 +1938,8 @@ export class GameService {
     private introducedThisTurn = false;
     /** Names given by somebody spoken to this turn, said on the page as a ruling. */
     private namesGivenThisTurn: string[] = [];
+    /** Rulings from a name heard of being said aloud this turn. */
+    private recognitionsThisTurn: string[] = [];
 
     /**
      * NAME A THING THIS TURN ACTUALLY PUT IN THEIR HANDS.
@@ -2560,6 +2563,7 @@ export class GameService {
         this.namedThisTurn = [];
         this.introducedThisTurn = false;
         this.namesGivenThisTurn = [];
+        this.recognitionsThisTurn = [];
         this.namedOutOfThisTurn = null;
 
         // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
@@ -3177,6 +3181,9 @@ export class GameService {
             }
         }
 
+        // AND WHOEVER HERE THEY HAD ONLY HEARD OF, placed or not on sight.
+        this.recogniseWhoIsHereInSilence(after.cultivator, after.run);
+
         // AND THE PEOPLE WHO WERE IN IT
         this.sayWhoWasInIt(
             execution, squareBefore, cultivator, after.cultivator,
@@ -3216,6 +3223,7 @@ export class GameService {
         for (const name of this.namesGivenThisTurn) {
             execution.facts.lines.push(`${name} gives you their name.`);
         }
+        execution.facts.lines.push(...this.recognitionsThisTurn);
 
         const company = this.company(after.cultivator);
         const scene = {
@@ -6463,9 +6471,15 @@ ${noticed}`;
             return this.nobodyByThatName(cultivator, query, scope, 'interact', intent, rawInput);
         }
 
+        // A NAME ONLY HEARD OF, read before the approach is filed over it.
+        const onlyHeardOf = party.kind === 'cultivator' && this.aNameOnlyHeardOf(cultivator, party.id);
         this.noteEncounter(
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
         );
+        // SAID ALOUD, it lands as whatever they are known for.
+        if (onlyHeardOf && (rawInput ?? '').toLowerCase().includes(party.name.toLowerCase())) {
+            this.recognisedAloud(cultivator, run, party);
+        }
         // SPOKEN TO, THEY GIVE A NAME. A face the player cannot yet be sure of
         // introduces itself on a word that settles nothing; a threat, a bribe or
         // a theft gets no introduction.
@@ -19959,6 +19973,62 @@ ${fit.line}`;
         });
         if (learned) this.introducedThisTurn = true;
         return learned;
+    }
+
+    /** Whether the player holds this person only as a name heard of, never met. */
+    private aNameOnlyHeardOf(cultivator: Cultivator, personId: string): boolean {
+        const row = this.knowledge.awareness(cultivator.id, 'cultivator').find(r => r.id === personId);
+        return row !== undefined && (row.sourceKind === 'told' || row.sourceKind === 'read');
+    }
+
+    /**
+     * A name heard of, said to their face. The player is sure of them from here
+     * on, and the reaction follows what they are known for - it pleases or it
+     * stings, on their side of the tie and nowhere else.
+     */
+    private recognisedAloud(cultivator: Cultivator, run: Run, person: { id: string; name: string }): void {
+        const where = placeName(cultivator);
+        this.knowledge.learnIfNew({
+            holderId: cultivator.id, kind: 'cultivator', id: person.id, name: person.name,
+            onDay: Math.floor(run.elapsedDays), sourceKind: 'witnessed',
+            sourceNote: `Named to their face at ${where}.`,
+            statement: `${person.name}, whom you had heard of, and named to their face at ${where}.`,
+            stage: 'known'
+        });
+        this.introducedThisTurn = true;
+        const known = this.atHand ? whatTheyAreKnownFor(this.atHand, person.id) : null;
+        this.recognitionsThisTurn.push(whatNamingThemDoes(person.name, known));
+        if (known === null) return;
+        moveTheirSideOnly(this.repos, person, cultivator.id, Math.floor(run.elapsedDays), {
+            type: 'acquaintance',
+            strengthDelta: known.cuts === 'flatters' ? 0.1 : -0.1,
+            significance: 'incidental',
+            attitude: known.cuts === 'flatters' ? 'glad to be known for it' : 'stung to be known for it',
+            eventKind: 'recognised',
+            eventSummary: `Named by ${cultivator.name}, who knew them for ${known.what}.`,
+            roles: []
+        });
+    }
+
+    /**
+     * Whoever here the player had only heard of, placed on sight or not. Kept
+     * to themselves: the player is sure of the face, the person never learns
+     * they were known, and nothing between them moves. One look a day.
+     */
+    private recogniseWhoIsHereInSilence(cultivator: Cultivator, run: Run): void {
+        const day = Math.floor(run.elapsedDays);
+        const chance = chanceOfPlacingAFace(cultivator.attributes.insight);
+        for (const person of this.present(cultivator)) {
+            if (!this.aNameOnlyHeardOf(cultivator, person.id)) continue;
+            if (forStream(cultivator.id, 'placing-a-face', person.id, day).next() >= chance) continue;
+            this.knowledge.learnIfNew({
+                holderId: cultivator.id, kind: 'cultivator', id: person.id, name: person.name,
+                onDay: day, sourceKind: 'witnessed',
+                sourceNote: `Placed on sight at ${placeName(cultivator)}.`,
+                statement: `${person.name}, whom you had heard of, is the one standing here.`,
+                stage: 'encountered'
+            });
+        }
     }
 
     /**
