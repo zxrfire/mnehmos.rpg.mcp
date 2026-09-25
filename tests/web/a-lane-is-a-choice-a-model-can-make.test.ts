@@ -111,6 +111,12 @@ describe('a lane is a choice a model can make', () => {
         expect(parseIntent('cool, ill grab a room for 2 nights then')).toMatchObject({ action: 'buy', target: 'a room for the night' });
     });
 
+    /** Played: "any inn round here?" went to the roads out, and the inn was never said. */
+    it('looks for an inn here, and does not list the roads out for it', () => {
+        expect(THE_LANES.perceive.says).toMatch(/an inn/);
+        expect(THE_LANES.consult.says).toMatch(/never what is here/);
+    });
+
     /** A response that named a verb outright still works, table readings included. */
     it('leaves a plan that named its verb alone', () => {
         const said = validatePlan({ action: 'cultivate', days: 30, reason: 'sat down' });

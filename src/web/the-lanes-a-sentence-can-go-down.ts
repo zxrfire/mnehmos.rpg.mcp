@@ -159,7 +159,10 @@ interface Lane {
  */
 export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     perceive: {
-        says: 'looking at what is in front of you, or at one thing in particular',
+        // WHAT IS IN THIS PLACE IS LOOKED AT. Played: "any inn round here? could use a bed tonight"
+        // went to consult/places_within_reach, the roads out, and the inn was never said.
+        says: 'looking at what is in front of you, or at one thing in particular - and what this place '
+            + 'has in it, an inn, a market, a counter',
         // `qi` and `ground` both reach `look` on purpose. Measured against the
         // local model, a lane intent named `place` caught "I sense the qi here"
         // and sent it to `recognise`, which reads a person rather than a
@@ -176,7 +179,8 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'look'
     },
     consult: {
-        says: 'what you already are, hold, know, or could reach - asked of yourself',
+        says: 'what you already are, hold, know, or could reach - asked of yourself; somewhere else to '
+            + 'go, never what is here (an inn or a market here is perceive)',
         intents: {
             standing: 'status',
             carried: 'inventory',
