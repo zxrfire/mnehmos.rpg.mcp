@@ -256,7 +256,9 @@ async function earningIsNotSpending(
  */
 async function theModelIsNotWhyThisTurnIsDangerous(
     fromModel: PlannedAction,
-    input: string
+    input: string,
+    /** The turn before, where a "that town" or a "there" finds what it points at. */
+    lastTurn?: string | null
 ): Promise<ReadingCheck> {
     const takingFromThem = readsAsTaking(fromModel);
 
@@ -338,6 +340,24 @@ async function theModelIsNotWhyThisTurnIsDangerous(
                 + 'what you are and what every house in the world reads off you, and a model may '
                 + 'not be the reason it happened. '
                 + 'Say it plainly - "I join the Azure Dew Sect" - to mean it.',
+            tierFailure: withoutAModel.tierFailure
+        };
+    }
+
+    // A DESTINATION NEITHER SAID NOR JUST NAMED IS THE MODEL'S. Played blind, starving at the Azure
+    // Dew gate: "ok ill go down to that town and buy something to eat" meant the town below the
+    // wall, and the model read move(Silver Island), nine days back the way they came. Eating spends
+    // an act too, so the check below waved the walk through, and they walked into starvation. A
+    // place a model puts in a going act is in the sentence or in the turn before it.
+    if (GOES_TO_A_PLACE.has(fromModel.action) && (fromModel.target ?? '').trim().length > 0
+        && !theSentenceNamesIt(input, fromModel.target) && !aGoingWordLeadsTo(input, fromModel.target)
+        && !(lastTurn && theSentenceNamesIt(lastTurn, fromModel.target))) {
+        return {
+            action: withoutAModel.action,
+            declined:
+                `the model read this as going to ${fromModel.target}, which neither this sentence nor `
+                + `the turn before names; reading it without a model reaches ${labelFor(withoutAModel.action)}. `
+                + 'Say the place by name to go there.',
             tierFailure: withoutAModel.tierFailure
         };
     }
@@ -1399,7 +1419,7 @@ export class ProviderNarrator implements Narrator {
         // code it reached before.
         const asSteps = stepsInTheResponse(raw, input);
         if (asSteps !== null && asSteps.length > 0) {
-            return await this.aPlanRatherThanAVerb(asSteps, input);
+            return await this.aPlanRatherThanAVerb(asSteps, input, lastTurn);
         }
 
         // The gate. An unknown action name, a `days` of 1e9, a `realmOrdinal`
@@ -1428,7 +1448,7 @@ export class ProviderNarrator implements Narrator {
         // player would have got with no model at all - and never silently: the
         // note is the routing row, which is the row that exists to say where
         // the verb came from.
-        const checked = await theModelIsNotWhyThisTurnIsDangerous(chosen, input);
+        const checked = await theModelIsNotWhyThisTurnIsDangerous(chosen, input, lastTurn);
         if (checked.declined !== null) {
             return {
                 action: checked.action,
@@ -1444,7 +1464,8 @@ export class ProviderNarrator implements Narrator {
      */
     private async aPlanRatherThanAVerb(
         fromTheReader: readonly PlanStep[],
-        input: string
+        input: string,
+        lastTurn?: string | null
     ): Promise<PlanWithSteps> {
         // THE SENTENCE SAYS HOW MANY ACTS ARE IN IT
         const whole = await theWholeSentenceAsAPlan(
@@ -1471,7 +1492,7 @@ export class ProviderNarrator implements Narrator {
 
             const quoted = theClauseThisStepQuotes(step, input);
             const verdict = await theModelIsNotWhyThisTurnIsDangerous(
-                step.action, quoted ?? input
+                step.action, quoted ?? input, lastTurn
             );
             tierFailure = verdict.tierFailure ?? tierFailure;
 
