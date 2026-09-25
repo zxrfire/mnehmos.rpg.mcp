@@ -144,6 +144,21 @@ export function takeARoom(
     const stones = toBuy > 0 ? stonesForACashPrice(cash) : 0;
     const keeper = whoKeepsTheCounter(game, cultivator, 'inn', ['inn']);
 
+    // ALREADY PAID FOR, AND SAID SO. Played: "crash for the night" bought "0 night(s)
+    // for 0 cash" under a purchase headline, and the narrator slept the night that
+    // never passed.
+    if (toBuy === 0 && held !== null) {
+        const facts = factsForToolResult('The room is already yours.', [
+            `The room at the inn at ${here} is already yours through day ${held.paidThroughDay}; `
+            + 'nothing more is bought.'
+        ]);
+        facts.structure.push(
+            `a-room-at-an-inn: already paid through run day ${held.paidThroughDay}. `
+            + 'Nothing bought, no time passed.'
+        );
+        return game.freeAction(run, 'buy', facts);
+    }
+
     if (cultivator.spiritStones < stones) {
         return refused('engine.whatTheBedCostsHere', 'buy', factsForRefusal(
             'Not for what you are carrying.',

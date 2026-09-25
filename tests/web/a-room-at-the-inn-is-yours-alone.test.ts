@@ -52,6 +52,37 @@ describe('a room at the inn', () => {
         expect(game.state().log.some(entry => entry.role === 'engine' && /^A room at /.test(entry.text))).toBe(true);
     }, 120_000);
 
+    /** Played: a second "crash for the night" bought "0 night(s) for 0 cash" and the narrator slept it. */
+    it('says a room already paid for is already yours, and spends nothing', async () => {
+        const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+        await game.newRun('Sleeper');
+        await game.act('I take a room at the inn');
+        const stones = game.state().cultivator.spiritStones;
+
+        const again = await game.act('I take a room at the inn');
+        expect(again.narration).toMatch(/already yours through day \d+; nothing more is bought/);
+        expect(game.state().cultivator.spiritStones).toBe(stones);
+        expect(game.state().run.elapsedDays).toBe(0);
+    }, 120_000);
+
+    /** Played: "head back downstairs" came as move(the town they stood in) and spent a day on the road. */
+    it('never spends a day going to the place they already stand in', async () => {
+        const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+        await game.newRun('Sleeper');
+        const town = game.state().cultivator.location;
+        await game.act('I take a room at the inn');
+        await game.act('I go up to my room');
+
+        const down = await game.act(`I go to ${town}`);
+        expect(down.narration).toMatch(/from your room at the inn to /);
+        expect(game.state().run.elapsedDays).toBe(0);
+
+        await game.act('I go out to the street');
+        const there = await game.act(`I go to ${town}`);
+        expect(there.narration).toMatch(/already/i);
+        expect(game.state().run.elapsedDays).toBe(0);
+    }, 120_000);
+
     it('comes back down to the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Sleeper');

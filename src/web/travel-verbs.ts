@@ -114,7 +114,7 @@ import {
     type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
 import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
-import { aWalkAcrossThePlace, standThemIn, theGateLetsThemIn, theWatchAtTheGate } from './walking-across-a-place.js';
+import { aWalkAcrossThePlace, standThemIn, theAreaTheyAreIn, theGateLetsThemIn, theWatchAtTheGate } from './walking-across-a-place.js';
 import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
 import { abodeLocationId } from '../engine/world/immortal-world.js';
@@ -675,6 +675,21 @@ export const travelVerbs = {
                 + 'them. You are not on that house\'s ground.',
                 `move: "${place!.name}" resolved to interior row ${aRoomSomewhere.id}, not inside the `
                 + 'compound this cultivator is standing in. Location unchanged, no time passed.'
+            ));
+        }
+        // WHERE THEY ALREADY STAND IS NOT A ROAD. Played: "head back downstairs" came
+        // from the model as move(the town they were in) and spent a day on the road to
+        // it. It is a walk out of the area they are in - down from a room to the inn,
+        // or out to where a road arrives - or they are already there. Never a day.
+        // A house's own seat is the gate's to answer: standing outside it, going to it is going in.
+        if (place && !house && loosePlaceKey(place.name) === loosePlaceKey(placeName(cultivator))) {
+            const inRoom = theAreaTheyAreIn(this.atHand, cultivator)?.area.for === 'room';
+            const out = await aWalkAcrossThePlace(this, run, cultivator, inRoom ? 'downstairs' : 'street');
+            if (out) return out;
+            return refused('engine.resolvePlace', 'move', factsForRefusal(
+                `You are already in ${placeName(cultivator)}.`,
+                `You are standing in ${placeName(cultivator)} already.`,
+                `move: "${place.name}" is where this cultivator stands. Location unchanged, no time passed.`
             ));
         }
         if (!place) {
