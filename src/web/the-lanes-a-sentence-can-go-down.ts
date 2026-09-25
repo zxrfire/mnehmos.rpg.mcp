@@ -233,7 +233,10 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'eat'
     },
     trade: {
-        says: 'stones for things and things for stones, except food, which is sustain',
+        // A ROOM IS BOUGHT. Played: "cool, ill grab a room for 2 nights then" went to work/board,
+        // "board" read as bed and board, and the guard dropped it as a job.
+        says: 'stones for things and things for stones - a room or a bed at an inn is bought here - '
+            + 'except food, which is sustain',
         // `give` is the player parting with THEIRS. A demand made of
         // somebody else is fight/make_them_comply, and the two collided.
         intents: { buy: 'buy', sell: 'sell', give_mine_away: 'give', prices: 'market' },
@@ -293,7 +296,7 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'learn_technique'
     },
     work: {
-        says: 'work for pay, and what is going',
+        says: 'work for pay, and what is going on the notice board; never a room or a bed, which is trade',
         intents: { take: 'work', board: 'work' },
         otherwise: 'work'
     }

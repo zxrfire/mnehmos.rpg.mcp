@@ -3008,7 +3008,7 @@ const A_SHIP_OR_A_CARRIAGE_WORD =
 
 /** Taking a room, which pays for it. */
 const TAKING_A_ROOM =
-    /\b(?:take|takes|taking|took|rent|rents|renting|rented|get|gets|getting|book|books|booking|booked|hire|hires|hiring|pay for|pays for)\s+(?:a|an|the|my|one)?\s*(?:private\s+|cheap\s+|spare\s+)?(?:room|rooms|bed)\b/;
+    /\b(?:take|takes|taking|took|rent|rents|renting|rented|get|gets|getting|grab|grabs|grabbing|grabbed|book|books|booking|booked|hire|hires|hiring|pay for|pays for)\s+(?:a|an|the|my|one)?\s*(?:private\s+|cheap\s+|spare\s+)?(?:room|rooms|bed)\b/;
 
 /** Staying the nights at an inn, which pays for them and spends them. */
 const STAYING_AT_THE_INN =

@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { LANE_NAMES, THE_LANES, isALane, theVerbForThisLane } from '../../src/web/the-lanes-a-sentence-can-go-down';
 import { carryWhatOnlyTheSentenceKnows, validatePlan } from '../../src/web/planned-action';
 import { ACTION_NAMES } from '../../src/web/action-set';
+import { parseIntent } from '../../src/web/actions';
 
 describe('a lane is a choice a model can make', () => {
     it('offers far fewer choices than the action set', () => {
@@ -98,6 +99,16 @@ describe('a lane is a choice a model can make', () => {
         expect(carryWhatOnlyTheSentenceKnows({ action: 'wait' }, 'sleep for 3 nights').days).toBe(3);
         // Only a wait reads nights: "at night" is not a span of anything else.
         expect(carryWhatOnlyTheSentenceKnows({ action: 'look' }, 'I look around at night').days).toBeUndefined();
+    });
+
+    /**
+     * A room at an inn is bought, and the work lane's board is the notice board. Played: "cool,
+     * ill grab a room for 2 nights then" went to work/board, read as bed and board.
+     */
+    it('puts a room at an inn with buying, never with work', () => {
+        expect(THE_LANES.trade.says).toMatch(/a room or a bed at an inn is bought here/);
+        expect(THE_LANES.work.says).toMatch(/never a room or a bed/);
+        expect(parseIntent('cool, ill grab a room for 2 nights then')).toMatchObject({ action: 'buy', target: 'a room for the night' });
     });
 
     /** A response that named a verb outright still works, table readings included. */
