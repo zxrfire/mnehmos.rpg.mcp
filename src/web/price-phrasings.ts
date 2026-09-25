@@ -1,6 +1,7 @@
 /**
  * What somebody says about a price a house has put on a head: reading one,
- * taking one up, and bringing one in.
+ * taking one up, and bringing one in. Nobody takes one up, and the sentence is
+ * still routed so it can be answered (`turning-in-a-price-on-somebody.ts`).
  *
  * `price` alone is the market's word ("what is the price of millet"), so it
  * counts here only as a price ON somebody. `bounty` is nothing else's.

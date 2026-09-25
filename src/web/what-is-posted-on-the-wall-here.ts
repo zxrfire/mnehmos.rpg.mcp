@@ -63,7 +63,7 @@ import {
     whoHasALampBurningIn
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import type { KnowledgeGate } from './knowledge.js';
-import { thePricesStanding } from '../engine/world/a-house-puts-a-price-on-somebody.js';
+import { thePapersStillUp } from '../engine/world/a-house-puts-a-price-on-somebody.js';
 
 /**
  * WHAT A REASON A HOUSE ALREADY HAS PUTS ON A PUBLIC WALL.
@@ -256,15 +256,16 @@ export function whoEachHouseIsLookingFor(
 }
 
 /**
- * The prices each house has standing on somebody, as asks for its walls. Like a
- * search, only the world holds these, and with no world there are none.
+ * The prices each house has up on somebody, as asks for its walls and its gate.
+ * Like a search, only the world holds these, and with no world there are none.
+ * One turned in is down everywhere at once, because every wall reads this.
  */
 export function whatEachHouseHasAPriceOn(
     world: WorldState | null | undefined
 ): Map<string, readonly TheAsk[]> {
     const out = new Map<string, TheAsk[]>();
     if (!world) return out;
-    for (const paper of thePricesStanding(world, world.currentDay)) {
+    for (const paper of thePapersStillUp(world, world.currentDay)) {
         if (!paper.posterFactionId) continue;
         const asks = out.get(paper.posterFactionId) ?? [];
         asks.push({

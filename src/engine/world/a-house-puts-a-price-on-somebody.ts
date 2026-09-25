@@ -3,20 +3,24 @@
  * purse, and the proof it pays on.
  *
  * The ruling: a price on a head is a piece of paper, and anybody can read it -
- * the person named on it included. It runs both ways: the player can take one up
- * and bring the proof, and the people who take one up against the player arrive
- * the way anybody with an account arrives. Nobody here is a kind of person. A
- * taker is whoever reads the paper and finds the purse worth the walk.
+ * the person named on it included. It runs both ways: the player can turn one in,
+ * and the people who go after one on the player arrive the way anybody with an
+ * account arrives. Nobody here is a kind of person. A taker is whoever reads the
+ * paper and finds the purse worth the walk.
+ *
+ * A paper is a house notice, so nobody signs on for it: the first to turn in the
+ * proof at the gate is paid, and it comes down everywhere
+ * (`engine/encounters/a-notice-is-turned-in.ts`).
  *
  * ── WHAT IS STORED, AND WHY ONLY THAT ────────────────────────────────────
  *
  * Posting is a decision taken on a day with a purse committed out of a treasury
  * as it stood then, so it is written once, as a world fact (`bounty_posted`),
- * and everything else is read off it: whether it still stands (the named person
- * is alive, the span has not run out, nobody has been paid on it), which walls
- * carry it (the house's own reach, `reachesThisGround`), and who might take it
- * up. A purse paid is a `grudge_settled` fact naming the paper, which is what
- * closes it for everybody at once.
+ * and everything else is read off it: whether it is still up (the span has not
+ * run out, nobody has turned it in), which walls carry it (the house's own
+ * reach, `reachesThisGround`), and who might go after it. A purse brought in is
+ * a `grudge_settled` fact naming the paper, which is what closes it for
+ * everybody at once.
  *
  * ── WHERE THE ACCOUNT COMES FROM ─────────────────────────────────────────
  *
@@ -49,10 +53,19 @@
  *
  * ── PROOF ────────────────────────────────────────────────────────────────
  *
- * The paper names a token, a head or a witnessed death. What the engine checks
- * is the one thing all three stand for: the world holds a death naming the
- * claimant as the killer and the named person as the victim. Killing them
- * through any ordinary road writes that row; nothing else does.
+ * The proof is the killing: the world holds a death naming whoever brings it as
+ * the killer and the named person as the victim, on or after the day the paper
+ * went up. Killing them through any ordinary road writes that row; nothing else
+ * does. It is the smallest proof the engine can check. A house token is no proof,
+ * because it shatters with its holder (`a-house-knows-its-own-by-a-lamp-and-a-token.ts`);
+ * nothing comes off a body that names it; and no record hands a living captive over.
+ *
+ * So the race is for the killing. Somebody else who kills the named person for
+ * the purse brings it in at once (`a-year-of-people-acting-on-why-they-would-kill.ts`);
+ * one who killed them for another reason brings it in on a day drawn on the
+ * notice's own stream ({@link whenThePaperCameDown}). A killing that was hidden
+ * gave up its proof, and a paper on somebody the one being played killed waits
+ * for them.
  */
 
 import { z } from 'zod';
@@ -66,7 +79,8 @@ import { SEVERITY_ORDER, type ObligationCause, type ObligationRecord, type Sever
 import { AGAINST_THEIR_OWN } from '../social-leverage/what-a-house-does-when-it-catches-you.js';
 import { openHandednessOf } from '../social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import { whatItWasWorth } from '../social-leverage/what-a-deed-leaves.js';
-import { BILLS_A_WALL_CARRIES, reachesThisGround } from './houses-that-have-to-advertise-for-disciples.js';
+import { A_BILL_STAYS_UP_FOR_DAYS, BILLS_A_WALL_CARRIES, reachesThisGround } from './houses-that-have-to-advertise-for-disciples.js';
+import { aNoticeId, theDaySomebodyElseTurnsItIn } from '../encounters/a-notice-is-turned-in.js';
 import { postingGroundOf, provinceOfPlace } from './the-doors-and-walls-a-house-takes-people-at.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { isBelowTheLid } from './layers.js';
@@ -290,12 +304,11 @@ export function howThisHouseHonoursItsPaper(state: WorldState, houseId: string):
     return HOW_A_HEAD_HONOURS_THE_PAPER.find(row => hand >= row.atLeast)!.honoured;
 }
 
-/** What proof the paper asks for. All three are produced by one killing; see the header. */
-export function whatProofThePaperAsksFor(honoured: Honoured, subjectHasAHouse: boolean): string {
-    if (honoured === 'if_witnessed') return 'a death somebody the house trusts saw done';
-    return subjectHasAHouse
-        ? 'the token of the house they answer to, taken off the body'
-        : 'the head, brought to its gate';
+/** What proof the paper asks for: that whoever brings it did the killing. See the header. */
+export function whatProofThePaperAsksFor(honoured: Honoured): string {
+    return honoured === 'if_witnessed'
+        ? 'proof they did the killing themselves, seen done by somebody the house trusts'
+        : 'proof they did the killing themselves';
 }
 
 const THE_CATCH: Readonly<Record<Honoured, string>> = {
@@ -343,7 +356,7 @@ export function whatAHouseWouldPost(
         posterFactionId: house.id,
         posterNote: `${house.name}, at its own gate and on every wall in the ground it answers for.`,
         purseCash: purseStones * CASH_PER_STONE,
-        evidence: whatProofThePaperAsksFor(honoured, theirHouse !== null),
+        evidence: whatProofThePaperAsksFor(honoured),
         honoured,
         catch: THE_CATCH[honoured],
         targetId: account.subjectId,
@@ -457,32 +470,85 @@ function paidOn(state: WorldState): Set<string> {
         .map(f => String(f.data.priceFactId)));
 }
 
-/**
- * Every price standing on `day`: posted, not run out, not paid on, and the
- * person on it still alive.
- */
-export function thePricesStanding(state: WorldState, day: number): PersonBounty[] {
+/** Papers posted by `day`, not run out, and not brought in through {@link aPriceIsBroughtIn}. */
+function thePapersNobodyHasBroughtIn(state: WorldState, day: number): PersonBounty[] {
     const paid = paidOn(state);
     const out: PersonBounty[] = [];
     for (const fact of state.history.facts) {
         if (fact.kind !== POSTED || fact.day > day || paid.has(fact.id)) continue;
         const paper = paperFrom(state, fact);
-        if (!paper || paper.lapsesOnDay <= day) continue;
-        if (!theyAreStillAlive(state, paper.targetId)) continue;
-        out.push(paper);
+        if (paper && paper.lapsesOnDay > day) out.push(paper);
     }
     return out;
 }
 
 /**
- * Every paper nobody has been paid on, standing or not: a claim on one whose
- * person is dead is a claim on a paper that no longer stands.
+ * Every price standing on `day`: posted, not run out, not brought in, and the
+ * person on it still alive - what somebody could still go after.
  */
-export function thePapersNotYetPaidOn(state: WorldState): PersonBounty[] {
-    const paid = paidOn(state);
-    return state.history.facts
-        .filter(f => f.kind === POSTED && !paid.has(f.id))
-        .flatMap(f => paperFrom(state, f) ?? []);
+export function thePricesStanding(state: WorldState, day: number): PersonBounty[] {
+    return thePapersNobodyHasBroughtIn(state, day).filter(paper => theyAreStillAlive(state, paper.targetId));
+}
+
+/**
+ * Every paper still on the walls on `day`. A death does not take one down; being
+ * turned in does, so a paper on somebody dead stays up until whoever holds the
+ * proof brings it in, or its span runs out.
+ */
+export function thePapersStillUp(state: WorldState, day: number): PersonBounty[] {
+    return thePapersNobodyHasBroughtIn(state, day).filter(paper =>
+        theyAreStillAlive(state, paper.targetId) || theDayTheKillerBringsItIn(state, paper, day) === null);
+}
+
+/**
+ * The day the killer of the person on a paper brings it in, if that is by `day`.
+ * Only a killing done openly while the paper was up, by somebody the world moves
+ * who lives to walk to the gate: a life being played brings its own in. Drawn on
+ * the notice's own stream, inside the span a house notice is up for, so a replay
+ * does not move it.
+ */
+function theDayTheKillerBringsItIn(
+    state: WorldState,
+    paper: PersonBounty,
+    day: number
+): { onDay: number; byId: string } | null {
+    // THE FACT OF THE DEATH, on the day they died: a fight they walked away from names a victim too.
+    const diedOn = state.npcs.find(n => n.id === paper.targetId)?.diedOnDay ?? null;
+    if (diedOn === null) return null;
+    const death = state.history.facts.find(f => roleIn(f, 'victim')?.id === paper.targetId
+        && roleIn(f, 'killer') !== null && Math.floor(f.day) === Math.floor(diedOn));
+    if (!death || death.visibility === 'secret') return null;
+    if (death.day < paper.postedOnDay || death.day >= paper.lapsesOnDay) return null;
+    const killer = state.npcs.find(n => n.id === roleIn(death, 'killer')!.id);
+    if (!killer || !isTheWorldsToMove(killer)) return null;
+    const onDay = theDaySomebodyElseTurnsItIn(
+        state.seed,
+        aNoticeId(paper.posterFactionId ?? '', paper.targetId, paper.postedOnDay),
+        death.day,
+        Math.min(A_BILL_STAYS_UP_FOR_DAYS, paper.lapsesOnDay - death.day));
+    if (onDay === null || onDay > day) return null;
+    return killer.diedOnDay !== null && killer.diedOnDay < onDay ? null : { onDay, byId: killer.id };
+}
+
+/**
+ * When a paper came down by being turned in, and by whom, or null while nobody
+ * has: brought in through {@link aPriceIsBroughtIn}, or by its killer on the day
+ * {@link thePapersStillUp} draws for them.
+ */
+export function whenThePaperCameDown(
+    state: WorldState,
+    paper: PersonBounty,
+    day: number
+): { onDay: number; byId: string } | null {
+    const brought = state.history.facts.find(f =>
+        f.kind === 'grudge_settled' && f.data.priceFactId === paper.id && f.day <= day);
+    if (brought) return { onDay: brought.day, byId: roleIn(brought, 'claimant')?.id ?? '' };
+    return theyAreStillAlive(state, paper.targetId) ? null : theDayTheKillerBringsItIn(state, paper, day);
+}
+
+/** Every paper ever posted, up or down. */
+export function everyPaperPosted(state: WorldState): PersonBounty[] {
+    return state.history.facts.filter(f => f.kind === POSTED).flatMap(f => paperFrom(state, f) ?? []);
 }
 
 /** A price ever posted, standing or not, by the fact it was posted as. */

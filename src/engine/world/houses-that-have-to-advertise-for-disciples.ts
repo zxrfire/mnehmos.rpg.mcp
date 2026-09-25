@@ -513,7 +513,7 @@ export const WHAT_A_NOTICE_DOES_NOT_BUY: Record<TheAsk['kind'], string> = {
         + 'that is worth afterwards is whatever the people who heard it make of it.',
     wanted:
         'The purse is what the paper says, and whether it is paid is between the house and '
-        + 'whoever brings it what it asks for. Taking it up puts nobody on the roll.'
+        + 'whoever brings it what it asks for. Turning it in puts nobody on the roll.'
 };
 
 /** How the paper words one ask. */
@@ -546,8 +546,10 @@ export function whatThePaperSays(
             return `${house.name} answers for ground in this province and has put up a warning. `
                 + ask.what;
         case 'wanted':
+            // FIRST COME, FIRST PAID, like any notice. See `a-house-puts-a-price-on-somebody.ts`.
             return `${house.name} will pay ${ask.purseStones} spirit stones for ${ask.who}, `
-                + `${ask.forWhat}. It pays on ${ask.proof}.`;
+                + `${ask.forWhat}. It pays at its gate, to the first to turn in ${ask.proof}, and takes `
+                + 'the notice down when somebody does.';
         case 'open_competition':
             // ANNOUNCED BY NAME AND BY AFFILIATION, INCLUDING NONE, which is the
             // whole of what an open competition is for and is therefore what the
@@ -709,7 +711,9 @@ export function noticesOnTheWall(input: WallInput & {
     // is the same reason the dated paper is not. As many as the wall carries
     // standing business, largest purse first - measured on two seeded worlds
     // over a century, a whole world stands between none and nine at once, so a
-    // province's wall rarely carries more than one.
+    // province's wall rarely carries more than one. A price that has come down
+    // never arrives here: which are up is the world's to say (`thePapersStillUp`),
+    // so `isDown` has nothing to add.
     const prices = reaching
         .flatMap(house => house.asks.flatMap(ask => ask.kind === 'wanted' ? [{ house, ask }] : []))
         .sort((a, b) => b.ask.purseStones - a.ask.purseStones

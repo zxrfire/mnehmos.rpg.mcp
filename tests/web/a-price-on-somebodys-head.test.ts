@@ -3,11 +3,14 @@
  *
  * The ruling this file holds the engine to: a house with something heavy
  * against a person may put a price on them; the price is a paper on its walls,
- * which anybody can read - the person named on it included; anybody may take
- * one up, the player too, and bringing the house the proof pays the purse by
- * the paper's honoured word; and the people who come for the player over one
- * arrive the way anybody with an account arrives. There is no kind of person
- * who does this, only people who read the paper.
+ * which anybody can read - the person named on it included; and the people who
+ * come for the player over one arrive the way anybody with an account arrives.
+ *
+ * AND A PRICE IS A NOTICE, so the owner's ruling on notices binds it: nobody
+ * takes one up or signs on for it. The first to turn in what it asks at the
+ * house's gate is paid, the notice comes down everywhere, and whoever comes
+ * second gets nothing. Before that ruling a price was taken up as an oath on the
+ * ledger and claimed later, the way a duty off a board is.
  *
  * ── WHAT THESE ASSERTIONS ENCODE ─────────────────────────────────────────
  *
@@ -18,13 +21,21 @@
  * theirs. The arrangement is asked of the engine - `whatAHouseWouldPost`
  * picks the house that would post - rather than a seed found by luck.
  *
- * THE PLAYER CAN TAKE ONE UP AND BE PAID. Taking one up writes an oath the way
- * a duty does; a death written through the ordinary killing writer is the
- * proof; bringing it to the house pays the purse out of the treasury, and a
- * claim with nobody dead pays nothing and says so. The house is chosen by the
- * engine's own read of how it honours paper, so `reliably` is what is tested.
+ * A TAKE-UP IS ANSWERED AND CHANGES NOTHING. The answer names the proof and the
+ * gate; no stone, ledger row or world fact moves.
  *
- * SOMEBODY WHO TOOK ONE UP ARRIVES AS AN ACCOUNT. `accountsComingDue`, which
+ * THE PROOF IS THE KILLING. A death the ordinary killing writer records, naming
+ * the player as the killer, turned in at the posting house's gate: refused
+ * while the person lives and anywhere but the gate, paid there by the paper's
+ * honoured word (`reliably` is what is tested), and then gone from every wall.
+ * A death alone does not take the paper down; being turned in does.
+ *
+ * SOMEBODY ELSE CAN GET THERE FIRST. Somebody else who killed the person brings
+ * it in on a day drawn on the notice's own stream; after that day the notice
+ * is down and the player is told the second gets nothing. The arrangement asks
+ * the engine for a notice whose draw lands, rather than trusting a seed.
+ *
+ * SOMEBODY WHO GOES AFTER ONE ARRIVES AS AN ACCOUNT. `accountsComingDue`, which
  * travel and seclusion hand to the encounter draw, carries a row for them, and
  * the arrival it produces names the purse and whose paper it was.
  *
@@ -36,7 +47,9 @@
  * `advanceWorldForCultivator` fails the first test; dropping the price loop in
  * `accountsComingDue` fails the arrival; dropping the call in the yearly pass fails
  * the world's own killing; paying on `if_witnessed` regardless
- * of the death being seen fails the witness case.
+ * of the death being seen fails the witness case; putting only papers on the
+ * living on the walls fails the turn-in; and never drawing the killer's day
+ * fails the one where somebody else was first.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -49,7 +62,7 @@ import { demonicStandingOf } from '../../src/data/cultivation/demonic-sects-and-
 import { createObligation } from '../../src/engine/social/grudges.js';
 import { writeOneObligation, ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
 import { provinceOfPlace, postingGroundOf } from '../../src/engine/world/the-doors-and-walls-a-house-takes-people-at.js';
-import { BILLS_A_WALL_CARRIES } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { A_BILL_STAYS_UP_FOR_DAYS, BILLS_A_WALL_CARRIES } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples.js';
 import {
     A_HOUSE_PUTS_A_PRICE_ON_IT,
     accountsHousesHoldAgainstThem,
@@ -57,10 +70,15 @@ import {
     aPriceIsBroughtIn,
     housesPutUpTheirPaper,
     howThisHouseHonoursItsPaper,
+    thePapersStillUp,
     thePricesStanding,
     whatAHouseWouldPost,
-    type AHouseAccount
+    whenThePaperCameDown,
+    type AHouseAccount,
+    type PersonBounty
 } from '../../src/engine/world/a-house-puts-a-price-on-somebody.js';
+import { aNoticeId, theDaySomebodyElseTurnsItIn } from '../../src/engine/encounters/a-notice-is-turned-in.js';
+import { whatEachHouseHasAPriceOn } from '../../src/web/what-is-posted-on-the-wall-here.js';
 import { whatTheConfrontationDidToThem } from '../../src/engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 import { isTheWorldsToMove } from '../../src/engine/world/npc-state.js';
 import { accountsComingDue } from '../../src/web/who-comes-to-settle-an-account.js';
@@ -144,7 +162,8 @@ describe('the sentences reach it', () => {
             "I take the price on Wen Shu's head", 'I accept the bounty on Wen Shu']) {
             expect(parseIntent(said), said).toMatchObject({ action: 'sect', intent: 'bounty', target: 'Wen Shu' });
         }
-        for (const said of ['I claim the bounty on Wen Shu', 'I collect the price on Wen Shu', 'I claim the purse on Wen Shu']) {
+        for (const said of ['I claim the bounty on Wen Shu', 'I collect the price on Wen Shu', 'I claim the purse on Wen Shu',
+            'I turn in the bounty on Wen Shu']) {
             expect(parseIntent(said), said).toMatchObject({ action: 'sect', intent: 'bounty', topic: 'claim', target: 'Wen Shu' });
         }
         for (const said of ['what bounties are there', 'are there any bounties', 'is there a price on my head']) {
@@ -176,24 +195,172 @@ describe('a price on the player is a paper they can read', () => {
         const said = JSON.stringify(read);
         expect(said).toContain(`${house.name} will pay ${standing[0]!.purseStones} spirit stones for Lan Qiye`);
         expect(said).toContain(`The name on ${house.name}'s price is yours.`);
+        expect(said).toContain('It pays at its gate, to the first to turn in');
         // THE PAPER, NOT THE RECORD. How the house honours it is not on it.
         expect(said).not.toMatch(/reliably|if_witnessed|rarely/);
-    });
 
-    it('cannot be taken up by the person it names', async () => {
-        const harness = await aPlayerInTheWorld('a-price-on-yourself');
-        const { house, row } = aHouseThatWouldPostOnThePlayer(harness);
-        writeOneObligation(harness.db, row);
-        harness.db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(house.town, harness.cultivator.id);
-        await spend(harness, 90);
-
+        // AND TAKING IT UP IS ANSWERED LIKE ANYBODY'S: nobody signs on.
         const tried = await harness.game.act('I take the bounty on Lan Qiye');
-        expect(JSON.stringify(tried)).toContain('The name on that paper is yours.');
-        expect(ledgerAbout(harness.db, harness.cultivator.id).some(r => r.tags.includes('price'))).toBe(false);
+        expect(tried.narration).toContain('Nobody signs on for a notice.');
+        expect(tried.narration).toContain(`The name on ${house.name}'s price is yours.`);
     });
 });
 
-describe('somebody who took one up comes as an account', () => {
+/** A paper a house that pays reliably puts on somebody the world moves, asked of the engine. */
+function aPaperOnSomebody(harness: any, accept: (paper: PersonBounty, target: any) => boolean = () => true) {
+    const { world } = harness;
+    // Not the player's own house: its gate is not one they stand at as a stranger.
+    const house = housesThatPostPaper(world).find(h =>
+        howThisHouseHonoursItsPaper(world, h.id) === 'reliably' && h.id !== harness.cultivator.sectId);
+    expect(house, 'the pinned world has a house that pays reliably').toBeDefined();
+    // Nobody another house already has paper up on, so the one paper is the only one.
+    const priced = new Set(thePricesStanding(world, world.currentDay).map(p => p.targetId));
+    const targets = world.npcs.filter((n: any) => n.status === 'alive' && isTheWorldsToMove(n)
+        && n.factionId !== house!.id && n.locationId !== null && !priced.has(n.id));
+    for (const target of targets) {
+        const account: AHouseAccount = {
+            key: `a-price-on-${target.id}`,
+            houseId: house!.id,
+            subjectId: target.id,
+            subjectName: target.name,
+            severity: 'unforgivable',
+            // Long enough ago that the paper went up a year back.
+            onDay: Math.floor(world.currentDay) - 400,
+            forWhat: 'for the death of one of its own'
+        };
+        const would = whatAHouseWouldPost(world, account);
+        if (!would || !accept(would, target)) continue;
+        const [paper] = housesPutUpTheirPaper(world, [account], world.currentDay);
+        if (!paper) continue;
+        harness.game.theWorldMoved();
+        const seat = world.locations.find((l: any) => l.id === world.factions.find((f: any) => f.id === house!.id).seatLocationId);
+        return { house: house!, target, paper, seat };
+    }
+    throw new Error('no paper the pinned world would put up');
+}
+
+function standAt(harness: any, place: string) {
+    harness.db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(place, harness.cultivator.id);
+}
+
+function thePricesOn(world: any, houseId: string): string[] {
+    return (whatEachHouseHasAPriceOn(world).get(houseId) ?? []).flatMap((ask: any) => ask.kind === 'wanted' ? [ask.whoId] : []);
+}
+
+describe('nobody takes up a price', () => {
+    it('answers a take-up with the proof and the gate, and changes nothing', async () => {
+        const harness = await aPlayerInTheWorld('a-price-not-taken-up');
+        const { world, cultivator } = harness;
+        const { house, target, paper, seat } = aPaperOnSomebody(harness);
+        standAt(harness, house.town);
+
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const ledger = ledgerAbout(harness.db, cultivator.id).length;
+        const priceFacts = () => world.history.facts.filter((f: any) => f.kind === 'grudge_settled' || f.kind === 'bounty_posted').length;
+        const facts = priceFacts();
+        const treasury = Number(world.factions.find((f: any) => f.id === house.id).resources.spirit_stones);
+
+        for (const said of [`I take the bounty on ${target.name}`, `I sign up for the bounty on ${target.name}`]) {
+            const answered = (await harness.game.act(said)).narration as string;
+            expect(answered, said).toContain('Nobody signs on for a notice.');
+            expect(answered, said).toContain(`to the first to turn in ${paper.evidence}`);
+            expect(answered, said).toContain(`at its gate at ${seat.name}`);
+        }
+
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stones);
+        expect(ledgerAbout(harness.db, cultivator.id)).toHaveLength(ledger);
+        expect(priceFacts()).toBe(facts);
+        expect(Number(world.factions.find((f: any) => f.id === house.id).resources.spirit_stones)).toBe(treasury);
+        expect(thePricesOn(world, house.id)).toContain(target.id);
+    });
+});
+
+describe('the first to turn it in is paid', () => {
+    it('pays the killer at the gate, and the notice is gone from every wall', async () => {
+        const harness = await aPlayerInTheWorld('a-price-turned-in');
+        const { world, cultivator } = harness;
+        const { house, target, paper, seat } = aPaperOnSomebody(harness);
+
+        standAt(harness, seat.name);
+        const tooSoon = await harness.game.act(`I turn in the bounty on ${target.name}`);
+        expect(tooSoon.narration).toContain(`${target.name} is alive`);
+
+        // THE PROOF IS A DEATH THE ORDINARY KILLING WRITER RECORDS.
+        whatTheConfrontationDidToThem(world, {
+            npcId: target.id, byId: cultivator.id, byName: cultivator.name,
+            day: Math.floor(world.currentDay), wounds: [], outcome: 'lethal', lost: true, finished: true
+        });
+        harness.game.theWorldMoved();
+
+        // A DEATH DOES NOT TAKE IT DOWN. Being turned in does.
+        expect(thePricesOn(world, house.id)).toContain(target.id);
+        standAt(harness, house.town);
+        const onTheWall = (await harness.game.act('what is posted here')).narration as string;
+        expect(onTheWall).toContain(`${house.name} will pay ${paper.purseStones} spirit stones for ${target.name}`);
+        const notHere = await harness.game.act(`I turn in the bounty on ${target.name}`);
+        expect(notHere.narration).toContain(`turned in at the gate of ${house.name} at ${seat.name}`);
+
+        standAt(harness, seat.name);
+        const stonesBefore = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const treasuryBefore = Number(world.factions.find((f: any) => f.id === house.id).resources.spirit_stones);
+        const turned = await harness.game.act(`I hand in proof of ${target.name}'s death`);
+        expect(turned.narration).toContain(`pays ${paper.purseStones} spirit stones out of the house's stores. The notice comes down.`);
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stonesBefore + paper.purseStones);
+        expect(Number(world.factions.find((f: any) => f.id === house.id).resources.spirit_stones))
+            .toBe(treasuryBefore - paper.purseStones);
+
+        // DOWN EVERYWHERE: every wall and the gate read the one list.
+        expect(thePricesOn(world, house.id)).not.toContain(target.id);
+        expect(thePapersStillUp(world, world.currentDay).some(p => p.id === paper.id)).toBe(false);
+        standAt(harness, house.town);
+        const after = (await harness.game.act('what is posted here')).narration as string;
+        expect(after).not.toContain(`${house.name} will pay ${paper.purseStones} spirit stones for ${target.name}`);
+
+        // AND IT IS PAID ONCE.
+        standAt(harness, seat.name);
+        const again = await harness.game.act(`I turn in the bounty on ${target.name}`);
+        expect(again.narration).toContain('You turned it in today, and the notice is down.');
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stonesBefore + paper.purseStones);
+    });
+
+    it('tells the player somebody else got there first, and pays nothing', async () => {
+        const harness = await aPlayerInTheWorld('a-price-beaten');
+        const { world, cultivator } = harness;
+        const deathDay = Math.floor(world.currentDay) - 200;
+        let killer: any = null;
+        // A killing whose notice's own draw has somebody bring it in, asked of the engine.
+        const { house, target, paper, seat } = aPaperOnSomebody(harness, (would, person) => {
+            killer = world.npcs.find((n: any) => n.status === 'alive' && isTheWorldsToMove(n)
+                && n.id !== person.id && n.factionId !== would.posterFactionId);
+            return killer !== undefined && theDaySomebodyElseTurnsItIn(world.seed,
+                aNoticeId(would.posterFactionId!, person.id, would.postedOnDay), deathDay,
+                Math.min(A_BILL_STAYS_UP_FOR_DAYS, would.lapsesOnDay - deathDay)) !== null;
+        });
+        whatTheConfrontationDidToThem(world, {
+            npcId: target.id, byId: killer.id, byName: killer.name,
+            day: deathDay, wounds: [], outcome: 'lethal', lost: true, finished: true
+        });
+        harness.game.theWorldMoved();
+
+        // Up until the drawn day, and the same day however often it is asked.
+        const down = whenThePaperCameDown(world, paper, world.currentDay);
+        expect(down).toEqual({ onDay: expect.any(Number), byId: killer.id });
+        expect(whenThePaperCameDown(world, paper, world.currentDay)).toEqual(down);
+        expect(thePapersStillUp(world, down!.onDay - 1).some(p => p.id === paper.id)).toBe(true);
+        expect(thePapersStillUp(world, down!.onDay).some(p => p.id === paper.id)).toBe(false);
+        expect(thePricesOn(world, house.id)).not.toContain(target.id);
+
+        standAt(harness, seat.name);
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const turned = (await harness.game.act(`I turn in the bounty on ${target.name}`)).narration as string;
+        expect(turned).toContain(`Somebody else turned in ${house.name}'s price on ${target.name}`);
+        expect(turned).toContain('The second to bring it gets nothing.');
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stones);
+    });
+
+});
+
+describe('somebody who goes after one on the player comes as an account', () => {
     it('is on the list the encounter draw is handed, and arrives naming the purse', async () => {
         const harness = await aPlayerInTheWorld('a-price-comes-due');
         const { house, row } = aHouseThatWouldPostOnThePlayer(harness);
@@ -231,65 +398,7 @@ describe('somebody who took one up comes as an account', () => {
     });
 });
 
-describe('the player can take one up and bring it in', () => {
-    it('takes a price up, is refused while the person lives, and is paid on the death', async () => {
-        const harness = await aPlayerInTheWorld('a-price-taken-up');
-        const { world, cultivator } = harness;
-        // A house that honours its paper reliably, asked of the engine.
-        const house = housesThatPostPaper(world).find(h => howThisHouseHonoursItsPaper(world, h.id) === 'reliably');
-        expect(house, 'the pinned world has a house that pays reliably').toBeDefined();
-        const target = world.npcs.find((n: any) =>
-            n.status === 'alive' && isTheWorldsToMove(n) && n.factionId !== house!.id && n.locationId !== null);
-        const account: AHouseAccount = {
-            key: 'a-price-taken-up',
-            houseId: house!.id,
-            subjectId: target.id,
-            subjectName: target.name,
-            severity: 'unforgivable',
-            onDay: world.currentDay - 100,
-            forWhat: 'for the death of one of its own'
-        };
-        const posted = whatAHouseWouldPost(world, account)
-            ? housesPutUpTheirPaper(world, [account], world.currentDay)
-            : housesPutUpTheirPaper(world, [{ ...account, key: 'a-price-taken-up-2' }], world.currentDay);
-        expect(posted, 'the engine puts the paper up').toHaveLength(1);
-        const paper = posted[0]!;
-        harness.game.theWorldMoved();
-        harness.db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(house!.town, cultivator.id);
-
-        const taken = await harness.game.act(`I take the bounty on ${target.name}`);
-        expect(JSON.stringify(taken)).toContain(`You take up ${house!.name}'s price on ${target.name}`);
-        const word = ledgerAbout(harness.db, cultivator.id).find(r => r.tags.includes(`paper:${paper.id}`));
-        expect(word?.status).toBe('open');
-
-        const seat = world.locations.find((l: any) => l.id === world.factions.find((f: any) => f.id === house!.id).seatLocationId);
-        harness.db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(seat.name, cultivator.id);
-        const tooSoon = await harness.game.act(`I claim the bounty on ${target.name}`);
-        expect(JSON.stringify(tooSoon)).toContain(`${target.name} is alive`);
-
-        // THE PROOF IS A DEATH THE ORDINARY KILLING WRITER RECORDS.
-        whatTheConfrontationDidToThem(world, {
-            npcId: target.id, byId: cultivator.id, byName: cultivator.name,
-            day: Math.floor(world.currentDay), wounds: [], outcome: 'lethal', lost: true, finished: true
-        });
-        harness.game.theWorldMoved();
-
-        const stonesBefore = harness.repos.cultivators.getById(cultivator.id).spiritStones;
-        const treasuryBefore = Number(world.factions.find((f: any) => f.id === house!.id).resources.spirit_stones);
-        const claimed = await harness.game.act(`I claim the bounty on ${target.name}`);
-        expect(JSON.stringify(claimed)).toContain(`${house!.name} pays you ${paper.purseStones} spirit stones`);
-        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stonesBefore + paper.purseStones);
-        expect(Number(world.factions.find((f: any) => f.id === house!.id).resources.spirit_stones))
-            .toBe(treasuryBefore - paper.purseStones);
-        const settled = ledgerAbout(harness.db, cultivator.id).find(r => r.tags.includes(`paper:${paper.id}`));
-        expect(settled?.status).toBe('settled');
-
-        // AND IT IS PAID ONCE.
-        const again = await harness.game.act(`I claim the bounty on ${target.name}`);
-        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stonesBefore + paper.purseStones);
-        expect(JSON.stringify(again)).toContain('There is no price to bring in.');
-    });
-
+describe('what a house pays on', () => {
     it('if_witnessed pays for a seen death and not for an unseen one', async () => {
         const harness = await aPlayerInTheWorld('a-price-witnessed');
         const { world } = harness;

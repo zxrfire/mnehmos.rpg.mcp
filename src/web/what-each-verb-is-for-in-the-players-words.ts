@@ -605,7 +605,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             'take', 'authority', 'decree',
             // Handing a THING in, which the house credits where it wants it.
             'hand_in',
-            // A price a house put on somebody's head, which anybody may take up.
+            // A price a house put on somebody's head, which anybody may turn in.
             'bounty'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
@@ -640,9 +640,11 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             is being taken from anybody.
 
             "bounty" is a price a house has put on somebody's head, and it is any house's, not
-            only the player's own: "target" names the person on the paper, and with no topic
-            it takes the price up; "topic" "claim" brings the house the proof and asks to be
-            paid. With nobody named it reads the prices up where the player is standing.
+            only the player's own: "target" names the person on the paper. Nobody takes one up:
+            with no topic the answer is what the paper pays on and where it is turned in, and
+            nothing changes; "topic" "claim" turns the proof in at the house's gate, where the
+            first to bring it is paid. With nobody named it reads the prices up where the
+            player is standing.
 
             Default to the read - "standing" - unless the player plainly asked
             for a step, because joining is a life's worth of allegiance and cannot be unsaid.`

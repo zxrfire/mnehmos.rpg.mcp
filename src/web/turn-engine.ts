@@ -1226,7 +1226,7 @@ import {
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
-import { priceVerbs } from './taking-up-a-price-on-somebody.js';
+import { namesAPriceOfThisHouse, nobodyTakesUpAPrice, turnInAPrice } from './turning-in-a-price-on-somebody.js';
 import { seenToFromTheHouseShelf } from './house-medicine-for-a-member.js';
 import { theyGiveInWithNoFightStanding } from './giving-in-with-no-fight-standing.js';
 import {
@@ -8479,15 +8479,20 @@ ${noticed}`;
                 // paid. See `turning-in-what-a-notice-asks.ts`.
                 this.atHand = this.atHand ?? await this.loadWorld();
                 const atTheGate = theGateAStrangerStandsAt(this, cultivator);
+                // A price this house put on somebody, named, is turned in at the same gate.
+                if (atTheGate && namesAPriceOfThisHouse(this.atHand, atTheGate.factionId, target ?? '')) {
+                    return turnInAPrice(this, run, cultivator, target);
+                }
                 if (atTheGate) return turnInWhatANoticeAsks(this, run, cultivator, atTheGate, target);
                 return this.handItInToTheHouse(run, cultivator, target);
             }
 
-            // A price any house put on somebody. See `taking-up-a-price-on-somebody.ts`.
+            // A price any house put on somebody: turned in, never taken up. See
+            // `turning-in-a-price-on-somebody.ts`.
             case 'bounty':
                 return topic === 'claim'
-                    ? this.bringInAPrice(run, cultivator, target)
-                    : this.takeUpAPrice(run, cultivator, target);
+                    ? turnInAPrice(this, run, cultivator, target)
+                    : nobodyTakesUpAPrice(this, run, cultivator, target);
 
             case 'standing': {
                 // ── A HOUSE THAT IS NOT YOURS IS A QUESTION ABOUT THE HOUSE ──
@@ -21516,7 +21521,3 @@ Object.assign(GameService.prototype, handingInVerbs);
 export interface GameService extends PostingVerbs {}
 type PostingVerbs = typeof postingVerbs;
 Object.assign(GameService.prototype, postingVerbs);
-// And a price on somebody's head.
-export interface GameService extends PriceVerbs {}
-type PriceVerbs = typeof priceVerbs;
-Object.assign(GameService.prototype, priceVerbs);
