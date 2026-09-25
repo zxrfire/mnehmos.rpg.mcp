@@ -15,7 +15,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { LANE_NAMES, THE_LANES, isALane, theVerbForThisLane } from '../../src/web/the-lanes-a-sentence-can-go-down';
-import { validatePlan } from '../../src/web/planned-action';
+import { carryWhatOnlyTheSentenceKnows, validatePlan } from '../../src/web/planned-action';
 import { ACTION_NAMES } from '../../src/web/action-set';
 
 describe('a lane is a choice a model can make', () => {
@@ -86,6 +86,18 @@ describe('a lane is a choice a model can make', () => {
         expect(asked.ok && asked.action.action).toBe('interact');
         const wanted = validatePlan({ lane: 'speak', intent: 'ask_them_for', target: 'Elder Hu', topic: 'a sword' });
         expect(wanted.ok && wanted.action.action).toBe('request');
+    });
+
+    /**
+     * A night slept is a day, and the model's count of them reaches the verb. Played: "k im gonna
+     * sleep it off for all 3 nights" came back days 3, and one night was slept.
+     */
+    it('keeps the nights on a wait, from the model or the sentence', () => {
+        const said = validatePlan({ lane: 'cultivate', intent: 'wait', days: 3, reason: 'sleep' });
+        expect(said.ok && said.action.days).toBe(3);
+        expect(carryWhatOnlyTheSentenceKnows({ action: 'wait' }, 'sleep for 3 nights').days).toBe(3);
+        // Only a wait reads nights: "at night" is not a span of anything else.
+        expect(carryWhatOnlyTheSentenceKnows({ action: 'look' }, 'I look around at night').days).toBeUndefined();
     });
 
     /** A response that named a verb outright still works, table readings included. */

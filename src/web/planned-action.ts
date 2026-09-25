@@ -25,7 +25,7 @@ import {
     DEFAULT_WORK_DAYS
 } from './verb-day-costs.js';
 import { parseIntent } from './actions.js';
-import { parseDuration } from './sentence-parts.js';
+import { nightsAskedFor, parseDuration } from './sentence-parts.js';
 
 /**
  * Intents the prompt suggests for `move`. Suggestions, not a schema: the field
@@ -345,7 +345,9 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // asked to come or to watch, and how long a talk runs. Not in
     // `TIMED_ACTIONS`, whose default is a month of sitting and would turn every
     // unspanned ask into one.
-    if (days && (name === 'sect' || name === 'request' || name === 'teach')) action.days = days;
+    // And `wait`, whose own default is one day. Played: "k im gonna sleep it off for all 3 nights"
+    // came back days 3 from the model, and one night was slept.
+    if (days && (name === 'sect' || name === 'request' || name === 'teach' || name === 'wait')) action.days = days;
 
     if (reason) action.reason = reason;
 
@@ -548,7 +550,9 @@ export function carryWhatOnlyTheSentenceKnows(
     // DEFAULT on most sentences - `DEFAULT_SECLUSION_DAYS` and its siblings -
     // and a default overriding a model's considered span would be this defect
     // pointing the other way.
-    const saidOutright = parseDuration(input);
+    // Nights are read only for a wait, where a night is a day slept; anywhere else "at night"
+    // would be a span. See `nightsAskedFor`.
+    const saidOutright = parseDuration(input) ?? (merged.action === 'wait' ? nightsAskedFor(input) : null);
     if (saidOutright !== null && merged.days !== saidOutright) {
         merged.days = saidOutright;
     }
