@@ -98,7 +98,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**255 situations, from 33 files.**
+**256 situations, from 33 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -265,6 +265,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | somebody proposes buying years from above the Lid | [`history/ancient.md`](history/ancient.md#the-extinction-is-symmetric) | The extinction is symmetric (tier 2) |
 | somebody proposes refining, upgrading, improving or promoting an object, or asks whether a material can be raised a grade | [`things/items.md`](things/items.md#nothing-moves-up) | Nothing moves up (tier 2) |
 | somebody proposes sending a person or an object through the Lid in either direction | [`climbing/immortals.md`](climbing/immortals.md#what-crosses-the-lid) | What crosses the Lid (tier 2) |
+| somebody puts on, draws, drops, stows or retrieves a thing, or asks what is on them or where their things are | [`things/items.md`](things/items.md#worn-held-or-in-the-inventory-and-where-else-a-thing-can-be) | Worn, held, or in the inventory, and where else a thing can be (tier 2) |
 | somebody says dao protector and it is unclear which of the two they mean | [`climbing/immortals.md`](climbing/immortals.md#what-a-cultivator-today-means-by-dao-protector) | What a cultivator today means by "dao protector" (tier 2) |
 | somebody sells a copy of an art that belongs to a house | [`climbing/manuals.md`](climbing/manuals.md#what-a-house-does-about-it) | What a house does about it (tier 2) |
 | somebody sends word to their house or to a person, cuts slips, or asks what a pair of communication jade does | [`../../src/engine/world/how-a-word-reaches-somebody-who-is-not-there.md`](../../src/engine/world/how-a-word-reaches-somebody-who-is-not-there.md#how-a-word-reaches-somebody-who-is-not-there) | How a word reaches somebody who is not there (tier 2) |
@@ -395,7 +396,7 @@ it describes.
 | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | How the last crossing is actually attempted, and who still has somebody answering from the other side of it. | 657 | - |
 | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | The fallen: cultivators the road already finished with, and what they do now. | 723 | - |
 | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | What makes a demonic sect demonic, stated so a reader can tell six of them apart. | 295 | - |
-| [`encounters.ts`](../../src/data/cultivation/encounters.ts) | Encounter and opportunity tables for the time-skip simulation. | 1821 | - |
+| [`encounters.ts`](../../src/data/cultivation/encounters.ts) | Encounter and opportunity tables for the time-skip simulation. | 1824 | - |
 | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | Faction character - the retroactive distinctness pass. | 1299 | - |
 | [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) | How each faction came to be where it is, and what that explains. | 969 | - |
 | [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) | How each faction stands with the bodies above it, below it and beside it. | 931 | - |
@@ -727,8 +728,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `BEAST_MATERIALS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 12 | 21 |
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
-| `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 13 | 24 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 49 |
+| `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 14 | 24 |
 | `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 19 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 16 | 2 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 17 |

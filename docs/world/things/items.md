@@ -18,6 +18,7 @@ Read alongside [`economy.md`](./economy.md), which covers price, ownership and p
 | &nbsp;&nbsp;[A price and nothing else](#a-price-and-nothing-else) | Somebody buys a meal, or a province stops selling grain |
 | &nbsp;&nbsp;[An amount somewhere](#an-amount-somewhere) | Somebody forages, hunts, or buys a common book |
 | &nbsp;&nbsp;[One thing with a history](#one-thing-with-a-history) | An object is worth being asked about two centuries later |
+| &nbsp;&nbsp;[Worn, held, or in the inventory](#worn-held-or-in-the-inventory-and-where-else-a-thing-can-be) | Somebody puts on, draws, stows or retrieves a thing, or asks what is on them |
 | &nbsp;&nbsp;[Nothing moves up](#nothing-moves-up) | Somebody proposes refining, upgrading, or promoting a thing |
 | &nbsp;&nbsp;[Provenance is testimony](#provenance-is-testimony) | Two houses disagree about where a treasure came from |
 | &nbsp;&nbsp;[Why that line falls where it does](#why-that-line-falls-where-it-does) | Somebody asks why the cheap things restock and the good ones do not |
@@ -145,6 +146,46 @@ Two consequences worth stating, because both have already been got wrong once:
   it; whose it is remains a question with an answer, and that answer is what makes it findable
   by the people who lost it. A looter who becomes the owner by the act of looting erases the
   only thread anybody could have followed.
+
+### Worn, held, or in the inventory, and where else a thing can be
+
+<!-- tier: 2 trigger="somebody puts on, draws, drops, stows or retrieves a thing, or asks what is on them or where their things are" -->
+
+**A thing somebody has is had one of three ways: worn, held, or in their inventory** - the owner:
+*"so 3 states: held, worn and inventory"*. Clothes are items like any other (`what-somebody-stands-up-in.ts`),
+and so is a drawn blade: *"weapons would use held state too, it's not bespoke"*. The states are tags
+on the row (`howItIsHad`, `hadAs` in `possessions.ts`):
+
+- **Worn**: on the body. One outfit at a time - changing into one thing puts the rest in the
+  inventory. A house hands its robes over and the person changes into them; nobody is dressed by
+  being issued something. A worn thing weighs and takes no room in the pack.
+- **Held**: in a hand, two hands' worth at most. A drawn weapon, or a thing too big for the pack.
+  Drawing needs a free hand. Held things weigh and take no room.
+- **Inventory**: in the pack, bounded by what the body carries by volume and weight
+  (`what-somebody-is-carrying-takes.ts`).
+
+**Anything that changes hands arrives in the new holder's inventory**, never on them or in their
+hand, until they put it on or take it up.
+
+**A thing can also be somewhere other than on a person: in a container, reachable only under
+that container's own condition.** The owner: *"separate inventory (what is handy to me right now)
+from ownership"*.
+
+| Container | Reached when | Holds |
+|---|---|---|
+| A storage ring | it is worn, and the mark on it is yours (`a-storage-ring.ts`) | by its grade |
+| The room a house gives you | you stand on the house's ground | by your rung |
+| An abode of your own | you stand in it | what a ring of your grade holds |
+| A vehicle | it is where you are (planned) | by its size |
+
+A thing in a container is the container's (`possessorId` is the container), so it goes where the
+container goes: a stolen ring comes with everything in it. Somebody else's ring is shut until its
+mark is broken, on the same odds a seal is broken on.
+
+**And a lost thing leaves its holder short of what it served** - something to wear, to fight with,
+to prove who they are (`somebody-robbed-of-something-they-need.ts`). They see to it when next seen,
+only where a replacement can be had: their house issues another inside its compound to somebody
+who reported the loss, a plain one can be found among people, and in the wilds they go without.
 
 ### How somebody comes to own a thing, as opposed to holding it
 
