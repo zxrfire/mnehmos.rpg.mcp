@@ -13,6 +13,8 @@
  * explicit that this world generates situations rather than quests, and a
  * registered tool for tracked objectives with rewards is an invitation to do
  * the one thing the charter forbids.
+ *
+ * `turn_manage` went later, with the D&D-era strategy module it drove.
  */
 
 // Batch 1 - Simple CRUD
@@ -33,7 +35,6 @@ export { NpcManageTool, handleNpcManage } from './npc-manage.js';
 
 // Batch 6b - Utility
 export { MathManageTool, handleMathManage } from './math-manage.js';
-export { TurnManageTool, handleTurnManage } from './turn-manage.js';
 
 // Batch 6c - Session/Travel/Batch
 export { SessionManageTool, handleSessionManage } from './session-manage.js';
@@ -70,7 +71,6 @@ import { WorldMapTool, handleWorldMap } from './world-map.js';
 import { SpatialManageTool, handleSpatialManage } from './spatial-manage.js';
 import { NpcManageTool, handleNpcManage } from './npc-manage.js';
 import { MathManageTool, handleMathManage } from './math-manage.js';
-import { TurnManageTool, handleTurnManage } from './turn-manage.js';
 import { SessionManageTool, handleSessionManage } from './session-manage.js';
 import { TravelManageTool, handleTravelManage } from './travel-manage.js';
 import { BatchManageTool, handleBatchManage } from './batch-manage.js';
@@ -98,7 +98,6 @@ export const ConsolidatedTools: ToolContract[] = [
     defineToolContract(SpatialManageTool, handleSpatialManage),
     defineToolContract(NpcManageTool, handleNpcManage),
     defineToolContract(MathManageTool, handleMathManage),
-    defineToolContract(TurnManageTool, handleTurnManage),
     defineToolContract(SessionManageTool, handleSessionManage),
     defineToolContract(TravelManageTool, handleTravelManage),
     defineToolContract(BatchManageTool, handleBatchManage),

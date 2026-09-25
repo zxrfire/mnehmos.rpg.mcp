@@ -62,7 +62,6 @@ does, so search for the CONCEPT under several words:
 | [`engine/social/`](./engine/social/README.md) | what people know, believe, suspect and remember - per holder, with a source and a confidence |
 | [`engine/social-leverage/`](./engine/social-leverage/README.md) | what it costs to move a person who does not have to do it |
 | [`engine/spatial/`](./engine/spatial/README.md) | cheapest path over a costed graph. Retained for folding space; not wired |
-| [`engine/strategy/`](./engine/strategy/README.md) | what a house does about another house over time. Retained for war; not wired |
 | [`engine/world/`](./engine/world/README.md) | what is true of the world right now: who exists, where, holding what, owing whom, and the day clock over all of it |
 | [`engine/worldgen/`](./engine/worldgen/README.md) | the ground itself, deterministic from the world seed: height, climate, biome, rivers, lakes |
 

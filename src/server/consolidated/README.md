@@ -57,7 +57,6 @@ Two things that surprise people:
 | [`spatial-manage.ts`](./spatial-manage.ts) | Consolidated Spatial Management Tool Replaces 5 separate tools for spatial/room operations: look_at_surroundings, generate_room_node, get_room_exits, move_character_to_room, list_rooms |
 | [`technique-manage.ts`](./technique-manage.ts) | Consolidated Technique Tool - `technique_manage` |
 | [`travel-manage.ts`](./travel-manage.ts) | Consolidated travel_manage tool Replaces: travel_to_location, loot_encounter, rest_party 3 tools → 1 tool with 3 actions |
-| [`turn-manage.ts`](./turn-manage.ts) | Consolidated Turn Management Tool Replaces 5 separate tools: init_turn_state, get_turn_status, submit_turn_actions, mark_ready, poll_turn_results |
 | [`what-this-ground-adds-to-a-price.ts`](./what-this-ground-adds-to-a-price.ts) | What the ground somebody is standing on adds to a price, by type of good. |
 | [`where-a-cultivator-is-standing.ts`](./where-a-cultivator-is-standing.ts) | Where a cultivator is standing, as a province and a place. |
 | [`world-manage.ts`](./world-manage.ts) | Consolidated World Management Tool Replaces 7 separate tools for world lifecycle management: create_world, get_world, list_worlds, delete_world, update_world_environment, generate_world, get_world_state |

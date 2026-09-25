@@ -3,13 +3,14 @@ import { buildConsolidatedRegistry } from '../../src/server/consolidated-registr
 
 describe('consolidated tool contracts', () => {
     it('keeps metadata, schemas, action docs, and handlers in one contract per tool', () => {
-        // 23, down from 37. The spellcasting, character-sheet and three combat
+        // 22, down from 37. The spellcasting, character-sheet and three combat
         // tools went with the engines behind them and one cultivation-facing
         // combat_manage replaced the three; a second pass then removed six that
         // were registered here and imported nowhere else - quest, party,
-        // strategy, theft, corpse and improvisation.
-        expect(ConsolidatedTools).toHaveLength(23);
-        expect(new Set(ConsolidatedTools.map(contract => contract.name)).size).toBe(23);
+        // strategy, theft, corpse and improvisation. turn_manage went with the
+        // D&D-era strategy module.
+        expect(ConsolidatedTools).toHaveLength(22);
+        expect(new Set(ConsolidatedTools.map(contract => contract.name)).size).toBe(22);
 
         for (const contract of ConsolidatedTools) {
             expect(contract.metadata.name).toBe(contract.name);

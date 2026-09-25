@@ -25,8 +25,8 @@ work must honor them.*
 - Scheduling: **at most TWO biographies write live concurrently.**
   The spec §3.3 leapfrog scheduler is tightened: |active_writers|
   ≤ 2; one freezes while the other advances toward the held mark.
-  Engine implication: turn_manage (or successor) tracks an active-
-  writer set capped at 2.
+  Engine implication: a turn scheduler tracks an active-writer set
+  capped at 2. (`turn_manage`, the D&D-era one, was removed.)
 - Production implication: other biographies are frozen; their time
   is debited and credited per §3.4 when they unfreeze.
 

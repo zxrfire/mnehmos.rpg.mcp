@@ -35,7 +35,7 @@ export function getConsolidatedToolCategories(): ToolCategory[] {
         'world', 'inventory', 'party',
         'math', 'secret',
         'npc', 'spatial',
-        'turn-management', 'meta', 'narrative', 'agent',
+        'meta', 'narrative', 'agent',
         'cultivation', 'run', 'technique', 'alchemy', 'sect', 'admin', 'combat'
     ];
 }

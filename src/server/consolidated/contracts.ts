@@ -23,7 +23,6 @@ const TOOL_DESCRIPTORS: Readonly<Record<string, ToolDescriptor>> = {
     spatial_manage: { category: 'spatial', keywords: ['room', 'look', 'move', 'exits', 'dungeon', 'space'], capabilities: ['Room generation', 'Movement', 'Exit management'] },
     npc_manage: { category: 'npc', keywords: ['npc', 'relationship', 'memory', 'conversation', 'social'], capabilities: ['Relationships', 'Memory', 'Social interactions'] },
     math_manage: { category: 'math', keywords: ['dice', 'roll', 'probability', 'algebra', 'physics', 'math'], capabilities: ['Dice rolling', 'Probability', 'Math operations'] },
-    turn_manage: { category: 'turn-management', keywords: ['turn', 'phase', 'ready', 'poll', 'results', 'async'], capabilities: ['Turn phases', 'Action submission', 'Result polling'] },
     session_manage: { category: 'meta', keywords: ['session', 'initialize', 'context', 'start', 'resume'], capabilities: ['Session initialization', 'Context loading'] },
     travel_manage: { category: 'party', keywords: ['travel', 'move', 'rest', 'loot', 'journey', 'party'], capabilities: ['Party travel', 'Encounter looting', 'Camp/rest'] },
     batch_manage: { category: 'meta', keywords: ['batch', 'bulk', 'create', 'workflow', 'template'], capabilities: ['Bulk character creation', 'Workflows', 'Templates'] },

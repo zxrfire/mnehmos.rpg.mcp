@@ -149,7 +149,6 @@ Where each currently lives:
 | `social/` | Relationships, obligations, knowledge and belief, secrets | [README](social/README.md) |
 | `worldgen/` | Procedural generation | retained substrate |
 | `spatial/` | A* and line of sight over a graph | held for folding space |
-| `strategy/` | Nation simulation | retained substrate |
 | `perception/` | The Operator's constraint-perception lens | see `data/subsystems/` |
 
 The retained substrate came from the D&D 5e engine this repo was forked from. It is sound
@@ -159,6 +158,9 @@ engineering and is kept; the game-facing surface above it is what has been repla
 described a game this engine no longer runs, and the D&D combat engine went with them. Combat is
 now `cultivation/combat.ts` - the categorical realm gap, composite power, upsets that have to be
 paid for, and the two traditions' different answers to being killed.
+
+`strategy/`, a D&D-era nation simulator, was removed the same way. War between houses is
+`world/war-melee.ts`, `world/war-spoils.ts` and `world/what-a-year-of-war-does-to-a-compound.ts`.
 
 ---
 
@@ -179,8 +181,8 @@ Every subsystem below this file, and the question each one answers:
 - [`people/`](./people/README.md) - one read over the two tables a person is stored in.
 - [`perception/`](./perception/README.md) - what somebody can see, and what they miss.
 - [`worldgen/`](./worldgen/README.md) - the ground, deterministic from the world seed.
-- [`spatial/`](./spatial/README.md), [`strategy/`](./strategy/README.md) - retained from the
-  D&D substrate for folding space and for war between houses. Neither is wired.
+- [`spatial/`](./spatial/README.md) - retained from the D&D substrate for folding space. Not
+  wired.
 - [`dsl/`](./dsl/README.md) - a small expression language for authored rules.
 
 Outside this tree:

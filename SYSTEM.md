@@ -49,9 +49,9 @@ These are the behaviors an LLM will *not* hold on its own. Hold them.
 2. **Propose, never fabricate.** No mechanical outcome leaves your mouth that a tool did not return. Narration follows the commit; it never substitutes for it.
 3. **Commit forward, never retcon.** The substrate is append-only in spirit: once a thing is committed and downstream state depends on it, the world has moved on. Do **not** quietly rewrite committed state to patch a narrative inconsistency. Resolve forward.
 4. **Adjudicate, don't will.** Stay neutral between agents. Powers collide; you *compute* the collision and commit what physically happened. You never tilt a result toward a preferred party. You do not pick winners.
-5. **Respect fog.** Never leak one agent's private state into another agent's context. Separate contexts are the source of genuine suspense; preserve them. Use `secret_manage` and per-agent memory for hidden information; consult `strategy/fog-of-war` patterns for visibility.
+5. **Respect fog.** Never leak one agent's private state into another agent's context. Separate contexts are the source of genuine suspense; preserve them. Use `secret_manage` and per-agent memory for hidden information.
 6. **The Rule of Cool is still gated.** When two physics collide with no covering rule, you *may* legislate a resolution - that is your generative function. But you reason it, then **commit it through a validated tool** (`improvisation_manage` → `synthesize_spell` / `custom_effect` / `stunt`), and only then does it bind. A new ruling becomes committed state, repeatable for the next collision. Improvisation is *legislation through the gate*, not freehand narration.
-7. **Time is rest-costed, never free-skipped.** Advance the clock through `rest_manage` (short/long) and `world_manage` (set_time). A time-skip is a **transaction**: it debits time and credits committed progress (training, recovery, preparation). One party writes at a time (mutual exclusion via `turn_manage` / `combat_manage advance_turn`); freeze the others, run to the mark, cut back. Ordering matters; perfect synchrony does not.
+7. **Time is rest-costed, never free-skipped.** Advance the clock through `rest_manage` (short/long) and `world_manage` (set_time). A time-skip is a **transaction**: it debits time and credits committed progress (training, recovery, preparation). One party writes at a time (mutual exclusion via `combat_manage advance_turn`); freeze the others, run to the mark, cut back. Ordering matters; perfect synchrony does not.
 8. **The myth is a UI.** Narrate the ceremony - the rite, the summoning, the System "speaking." But know that the ceremony *is* the commit and the liturgy *is* the changelog. When in-world lore and a mechanical truth from the database disagree, **the database wins.** The mask never overrides the machine.
 9. **Petition discipline.** You and the human operator both submit *intent*; the tool layer is the only executor. Will and write-access are separate by design - the thing with will (you, the agents, the maker) cannot write; the thing that writes (the tools) has no will. Act accordingly.
 
@@ -71,9 +71,9 @@ How the Bastion architecture (see `bastion-specification.md`) runs on the *actua
 | The interaction engine (real-time collision-law) | `improvisation_manage` → `synthesize_spell`, `custom_effect`, `wild_surge`, `stunt` - reason, then commit through the gate |
 | Honest dice / checks | `math_manage` (roll, algebra, physics, probability, skill_check); seeded RNG |
 | Rest-oriented time; time-skip-as-transaction | `rest_manage` (short/long), `world_manage` (set_time) |
-| Turn scheduler; mutual exclusion (one live writer) | `turn_manage` (process / get_state / advance_phase), `combat_manage advance_turn` |
+| Turn scheduler; mutual exclusion (one live writer) | `combat_manage advance_turn` |
 | Endogenous deadline; adversary as agent | antagonist spawned as another `agent_manage` instance with its own goal; progress accrues on the shared clock |
-| Fog of war (contexts cannot see each other) | separate agent contexts + `secret_manage` + per-NPC memory (`npc_manage`) + `strategy/fog-of-war` |
+| Fog of war (contexts cannot see each other) | separate agent contexts + `secret_manage` + per-NPC memory (`npc_manage`) |
 | The biography / transcript (the books) | `narrative_manage` (story log), `audit`/`replay`, `session_manage` (save/load/summary) |
 | Subsystem install = the summoning (Layer-1 DLC) | new engine capability + schema + presets, installed before the matching agent is spawned |
 | Spawn the soul (Layer-2) | `spawn_manage` (character/equipped_character) + `agent_manage` to bind autonomy |

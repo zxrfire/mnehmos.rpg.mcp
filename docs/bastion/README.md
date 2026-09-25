@@ -41,10 +41,9 @@ one was forked from, which is where they came from and where they belong.
 - [`../../src/README.md`](../../src/README.md) - the code index, including which directories
   are retained substrate rather than cultivation code
   ([`spatial/`](../../src/engine/spatial/README.md),
-  [`strategy/`](../../src/engine/strategy/README.md),
   [`perception/`](../../src/engine/perception/README.md),
-  [`server/handlers/`](../../src/server/handlers/README.md)). Those four are the live remainder
-  of what this directory documents.
+  [`server/handlers/`](../../src/server/handlers/README.md)). Those three are the live remainder
+  of what this directory documents. The D&D-era `strategy/` module was removed.
 - [`../../AGENTS.md`](../../AGENTS.md) - the rule about deleting an example once the thing it
   named has moved. Most of what is here is that, at directory scale.
 

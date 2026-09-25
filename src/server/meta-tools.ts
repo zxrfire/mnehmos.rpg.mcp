@@ -17,7 +17,7 @@ export const SearchToolsSchema = z.object({
     'world', 'inventory', 'party',
     'math', 'secret',
     'npc', 'spatial',
-    'turn-management', 'meta', 'agent',
+    'meta', 'agent',
     'cultivation', 'run', 'technique', 'alchemy', 'sect', 'admin', 'combat'
   ]).optional().describe('Filter by category'),
   maxResults: z.number().min(1).max(50).default(10).describe('Maximum results to return'),

@@ -76,10 +76,6 @@ Both also reach the design prose in `src/data/cultivation/`.
   a house puts in front of somebody: its board, its duties, and who it sends out.
 - [`../../../src/engine/household/README.md`](../../../src/engine/household/README.md) -
   marriage between houses, and what a house would take for a match.
-- [`../../../src/engine/strategy/README.md`](../../../src/engine/strategy/README.md) - the
-  layer that would decide what a house does about ANOTHER house over time. It exists,
-  retained from the substrate, and is not wired - which is why that question currently has
-  prose here and no machinery.
 - [`../../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - the
   house tables themselves, in context with the rest of the catalog.
 

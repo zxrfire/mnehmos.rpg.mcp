@@ -25,12 +25,10 @@ The two rules that matter when adding one:
 | [`corpse.repo.ts`](./corpse.repo.ts) | - |
 | [`cultivator.repo.ts`](./cultivator.repo.ts) | - |
 | [`custom-effects.repo.ts`](./custom-effects.repo.ts) | CustomEffectsRepository Handles CRUD operations for custom effects (divine boons, curses, transformations). |
-| [`diplomacy.repo.ts`](./diplomacy.repo.ts) | - |
 | [`encounter.repo.ts`](./encounter.repo.ts) | - |
 | [`event-inbox.repo.ts`](./event-inbox.repo.ts) | EVENT INBOX REPOSITORY Manages the event queue for "autonomous" NPC actions. |
 | [`inventory.repo.ts`](./inventory.repo.ts) | - |
 | [`item.repo.ts`](./item.repo.ts) | - |
-| [`nation.repo.ts`](./nation.repo.ts) | - |
 | [`npc-memory.repo.ts`](./npc-memory.repo.ts) | - |
 | [`obligation.repo.ts`](./obligation.repo.ts) | The obligation ledger's rows, read back. |
 | [`party.repo.ts`](./party.repo.ts) | Row returned from the join query with character data |
@@ -45,8 +43,6 @@ The two rules that matter when adding one:
 | [`spatial.repo.ts`](./spatial.repo.ts) | - |
 | [`structure.repo.ts`](./structure.repo.ts) | - |
 | [`technique.repo.ts`](./technique.repo.ts) | - |
-| [`turn-action.repo.ts`](./turn-action.repo.ts) | - |
-| [`turn-state.repo.ts`](./turn-state.repo.ts) | - |
 | [`world-snapshot.repo.ts`](./world-snapshot.repo.ts) | - |
 | [`world-state.repo.ts`](./world-state.repo.ts) | PARAMETER BUILDERS |
 | [`world.repo.ts`](./world.repo.ts) | - |

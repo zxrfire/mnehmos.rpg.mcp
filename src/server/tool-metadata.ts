@@ -7,7 +7,7 @@ export type ToolCategory =
   | 'world' | 'inventory' | 'party'
   | 'math' | 'secret'
   | 'npc' | 'spatial'
-  | 'turn-management' | 'meta' | 'batch' | 'context' | 'narrative' | 'composite'
+  | 'meta' | 'batch' | 'context' | 'narrative' | 'composite'
   | 'agent'
   // Cultivation (xianxia) surface
   | 'cultivation' | 'run' | 'technique' | 'alchemy' | 'sect' | 'admin' | 'combat';

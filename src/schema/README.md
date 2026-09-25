@@ -23,12 +23,10 @@ should: see [the declaration-list note](../../docs/comment-cleanup-rules.md).
 | [`concentration.ts`](./concentration.ts) | Held attention: an effect somebody is actively sustaining. |
 | [`corpse.ts`](./corpse.ts) | Corpse decay rules (in game hours) |
 | [`cultivation.ts`](./cultivation.ts) | Cultivation domain schemas: the cultivator record, the survival layer, the technique and alchemy systems, sects, and the permadeath run ledger. |
-| [`diplomacy.ts`](./diplomacy.ts) | - |
 | [`encounter.ts`](./encounter.ts) | CRIT-003: Position schema for spatial combat |
 | [`improvisation.ts`](./improvisation.ts) | IMPROVISATION SYSTEMS SCHEMAS Defines Zod schemas for: - Rule of Cool (Improvised Stunts) - Custom Effects System (Divine Boons, Curses, Transformations) - Arcane Synthesis (Dynamic Spell Creation) |
 | [`index.ts`](./index.ts) | Schema exports |
 | [`inventory.ts`](./inventory.ts) | Constants for inventory system limits |
-| [`nation.ts`](./nation.ts) | - |
 | [`party.ts`](./party.ts) | Party status enum |
 | [`patch.ts`](./patch.ts) | - |
 | [`perception.ts`](./perception.ts) | Constraint-Perception subsystem schemas: the Hierarchy-of-Controls model as a queryable primitive. |
@@ -39,7 +37,6 @@ should: see [the declaration-list note](../../docs/comment-cleanup-rules.md).
 | [`spatial.ts`](./spatial.ts) | PHASE-2: Export BiomeType and Atmospheric for social hearing mechanics |
 | [`structure.ts`](./structure.ts) | - |
 | [`tile.ts`](./tile.ts) | - |
-| [`turn-state.ts`](./turn-state.ts) | Action schema for batch submission |
 | [`world.ts`](./world.ts) | - |
 
 ---

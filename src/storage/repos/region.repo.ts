@@ -47,21 +47,6 @@ export class RegionRepository {
         return rows.map((row) => this.mapRowToRegion(row));
     }
 
-    updateOwnership(regionId: string, ownerNationId: string | null, controlLevel: number): void {
-        const stmt = this.db.prepare(`
-            UPDATE regions 
-            SET owner_nation_id = ?, control_level = ?, updated_at = ?
-            WHERE id = ?
-        `);
-        stmt.run(ownerNationId, controlLevel, new Date().toISOString(), regionId);
-    }
-
-    findByOwner(ownerNationId: string): Region[] {
-        const stmt = this.db.prepare('SELECT * FROM regions WHERE owner_nation_id = ?');
-        const rows = stmt.all(ownerNationId) as RegionRow[];
-        return rows.map((row) => this.mapRowToRegion(row));
-    }
-
     private mapRowToRegion(row: RegionRow): Region {
         return RegionSchema.parse({
             id: row.id,
