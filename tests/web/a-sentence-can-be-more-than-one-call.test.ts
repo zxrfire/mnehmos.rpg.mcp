@@ -1097,3 +1097,16 @@ describe('the sentence composes without a model', () => {
         expect(composed.heldForTheQuestion).toHaveLength(1);
     });
 });
+
+/** Played blind: "Weng Er, any work for outsiders?" asked her, then ran the question again as work. */
+describe('a clause that is already the topic of a step', () => {
+    it('is not put back as an act of its own', async () => {
+        const SAID = 'Weng Er, any work for outsiders?';
+        const reads = async (clause: string): Promise<PlannedAction> =>
+            clause.includes('work') ? { action: 'work', intent: 'board' } : { action: 'unclear' };
+        const fromTheReader = [step('interact', { target: 'Weng Er', topic: 'any work for outsiders?' })];
+        const whole = await theWholeSentenceAsAPlan(SAID, fromTheReader, reads);
+        expect(whole.steps.map(s => s.action.action)).toEqual(['interact']);
+        expect(whole.backfilled).toHaveLength(0);
+    });
+});

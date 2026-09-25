@@ -385,6 +385,14 @@ export async function theWholeSentenceAsAPlan(
                     + 'before it found, which takes nothing from anybody';
                 continue;
             }
+            // A CLAUSE THAT IS ALREADY A STEP'S TOPIC IS THAT STEP. Played blind: "Weng Er,
+            // any work for outsiders?" asked her, then ran the question again as work.
+            const clauseSaid = forMatching(clauses[at]!);
+            if (clauseSaid.length > 0 && fromTheReader.some(step =>
+                step.action.topic !== undefined && forMatching(step.action.topic).includes(clauseSaid))) {
+                why[at] += '; not put back - it is what the step beside it is about';
+                continue;
+            }
             if (reading.action === 'unclear') {
                 why[at] += '; not put back - nothing reads it';
                 continue;
