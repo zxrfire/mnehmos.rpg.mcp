@@ -119,7 +119,7 @@ describe('a place is read into areas of at most three', () => {
         expect(repos.cultivators.getById(cultivator.id)!.standingIn ?? null).toBeNull();
     }, 300_000);
 
-    it('stands a stranger outside a house\'s gate with the one on watch, and says who is on watch', async () => {
+    it('stands a stranger outside a house\'s gate with the one on watch, unnamed until known', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-stranger', worldSeed: GATE_WORLD });
         const { cultivator } = await game.newRun('Stranger');
         const { faction, seat } = aSeatedHouse((await game.loadWorld())!)!;
@@ -134,7 +134,9 @@ describe('a place is read into areas of at most three', () => {
         expect(here.length).toBeLessThanOrEqual(AT_MOST_IN_AN_AREA);
         const onWatch = here.find(row => row.sectId === faction.id);
         expect(onWatch, 'nobody of the house was at its gate').toBeDefined();
-        expect(said).toContain(`${onWatch!.name}, a disciple of ${faction.name}, is on watch at the gate.`);
+        // Played blind: the narrator wrote "She is Weng Er" before she had said her name.
+        expect(said).toContain(`A disciple of ${faction.name} is on watch at the gate.`);
+        expect(said).not.toContain(onWatch!.name);
     }, 300_000);
 
     it('lets somebody of the house the gate knows into the forecourt', async () => {

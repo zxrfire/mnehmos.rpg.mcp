@@ -360,7 +360,7 @@ function whatIsAtTheGateHere(
     lines.push(...whatYouAlreadyHoldAboutThem(game, cultivator, house));
 
     // THE ONE ON WATCH, who is at every gate a house has anybody behind. See `theWatchAtTheGate`.
-    const watch = theWatchAtTheGate(game, house.seat, house.factionName);
+    const watch = theWatchAtTheGate(game, cultivator, house.seat, house.factionName);
     lines.push(watch.line);
     structure.push(watch.structure);
 

@@ -26,6 +26,7 @@ import {
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
+import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 import { worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import { refused } from './tool-result-prose.js';
@@ -294,6 +295,7 @@ const ON_WATCH = 'on watch at the gate';
  */
 export function theWatchAtTheGate(
     game: GameService,
+    cultivator: Cultivator,
     seat: LocationRecord,
     houseName: string
 ): { line: string; structure: string } {
@@ -318,7 +320,10 @@ export function theWatchAtTheGate(
         game.theWorldMoved();
     }
     return {
-        line: `${watch.name}, a disciple of ${houseName}, is on watch at the gate.`,
+        // A stranger on watch is not named until the player knows them.
+        line: thePlayerIsSureItIsThem(watch.name, game.knowledge.awareness(cultivator.id))
+            ? `${watch.name}, a disciple of ${houseName}, is on watch at the gate.`
+            : `A disciple of ${houseName} is on watch at the gate.`,
         structure: `theWatchAtTheGate(${seat.id}): ${watch.id} at rung ${watch.factionRankIndex}.`
     };
 }

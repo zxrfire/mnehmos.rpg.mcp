@@ -1006,6 +1006,7 @@ import {
     theClauseThisStepQuotes,
     theRowForAPlanTheWorldCutOff,
     sayingWhatTheReadingDropped,
+    spendsSomething,
     theRowForAChoice,
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
@@ -3974,8 +3975,13 @@ export class GameService {
             const theirs = plan.droppedClauses.filter(
                 step => theseWereThePlayersOwnWords(step, rawInput)
             );
-            if (theirs.length > 0) {
-                sayThisWhateverTheNarratorDoes(folded.facts, sayingWhatTheReadingDropped(theirs, rawInput));
+            // And only a different act that would have cost something. Played blind: a
+            // question that elaborated the act that ran ("any jobs an outsider can do?")
+            // was told it "was not part of what happened", which read as a scolding.
+            const worthSaying = theirs.filter(step => spendsSomething(step)
+                && !budget.toRun.some(ran => ran.action.action === step.action.action));
+            if (worthSaying.length > 0) {
+                sayThisWhateverTheNarratorDoes(folded.facts, sayingWhatTheReadingDropped(worthSaying, rawInput));
             }
             for (const step of plan.droppedClauses) {
                 folded.calls.push(
