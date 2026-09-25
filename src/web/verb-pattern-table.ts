@@ -4791,6 +4791,8 @@ function planIntent(input: string): PlannedAction {
     // reached nothing. With a road stopped where they stand, the move carries
     // on down it.
     if (CARRYING_ON.test(text)) return { action: 'move', intent: 'travel' };
+    // HITTING THE SACK IS SLEEP, ahead of every row that reads "hit" as a blow.
+    if (/\bhit(?:s|ting)? the (?:sack|hay)\b/.test(text)) return { action: 'wait', days: nightsAskedFor(text) ?? 1 };
     // AND CARRYING ON TO SOMEWHERE NAMED. Played: "ugh. keep going to iron ridge" read as a wait.
     {
         const onTo = CARRYING_ON_TO.exec(text);
@@ -7547,6 +7549,9 @@ function planIntent(input: string): PlannedAction {
     // AND THE LANGUAGE OF RECOVERY, WHICH IS NOT THE LANGUAGE OF SITTING
     if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around|sits? tight|sitting tight|let some time pass|let time pass|bide my time)\b/.test(text)
         || /\b(?:lie up|lies up|lying up|lie low|lies low|lying low|recover|recovers|recovering|recuperate|recuperates|recuperating|convalesce|stay off it|stay off my feet|keep off my feet|stay in bed|take it easy)\b/.test(text)
+        // THE WORDS PEOPLE SLEEP IN. Played: "crash for the night" in a paid room read as
+        // nothing, so the model's sleep had no table reading to stand beside.
+        || /\b(?:crash(?:es|ing)?\s+(?:for the night|out|here|in (?:the|my) (?:bed|room)|for (?:a|the) (?:night|few hours))|turns? in for the night|hit the (?:sack|hay)|beds? down|get some (?:sleep|shut-?eye)|call it a night|kip|nap|naps|napping|doze|dozes|dozing|snooze|snoozes)\b/.test(text)
         || /\b(?:let|leave)\s+(?:it|them|the wound|the wounds|my wounds?|my meridians?)\s+(?:heal|mend|close|knit|settle)\b/.test(text)
         || /\buntil\s+(?:the\s+)?(?:wound|wounds|injury|injuries|meridians?)\b[^.!?]{0,20}\b(?:closed?|heals?|healed|mends?|mended|knits?)\b/.test(text)
         || /\buntil\s+i\s+can\s+(?:stand|walk|move|fight|travel)\b/.test(text)) {

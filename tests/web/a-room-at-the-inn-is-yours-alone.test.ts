@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld, ScriptedProvider } from './harness';
 
 const WORLD = 'road-world';
@@ -82,6 +83,22 @@ describe('a room at the inn', () => {
         expect(there.narration).toMatch(/already/i);
         expect(game.state().run.elapsedDays).toBe(0);
     }, 120_000);
+
+    // Played: "crash for the night" in the paid room read as nothing, and the model's sleep was
+    // refused for having no reading beside it.
+    it.each([
+        ['crash for the night', 1],
+        ['ok im gonna crash for the night', 1],
+        ['hit the sack', 1],
+        ['call it a night', 1],
+        ['bed down for 2 nights', 2]
+    ])('reads the words people sleep in as a night: %s', (said, nights) => {
+        expect(parseIntent(said)).toMatchObject({ action: 'wait', days: nights });
+    });
+
+    it('does not read a collision as sleep', () => {
+        expect(parseIntent('I crash into him').action).not.toBe('wait');
+    });
 
     it('comes back down to the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
