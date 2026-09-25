@@ -14,6 +14,7 @@
  */
 
 import {
+    aRoomOfTheirOwn,
     theAreasOf,
     theOneOnWatchAtTheGate,
     whoCouldBeSentToTheGate,
@@ -31,15 +32,19 @@ import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from './walking-up-to-a-house.js';
+import { whereTheyAreLodged } from './a-room-at-an-inn.js';
 
 /** The words for a kind of area, where a place has no area by that exact name. */
 const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
     [/^(?:street|streets|square|out|outside)$/, 'street'],
     [/^(?:market|markets|marketplace|market place|stalls?|stall row|row)$/, 'market'],
-    [/^(?:inn|teahouse|tea house|tavern|wine shop|wineshop|eating house|restaurant)$/, 'table'],
+    [/^(?:inn|teahouse|tea house|tavern|wine shop|wineshop|eating house|restaurant|downstairs|common room)$/, 'table'],
     [/^(?:gate|gates|outside the gate|out|outside)$/, 'gate'],
     [/^(?:forecourt|courtyard|yard|in|inside)$/, 'forecourt']
 ];
+
+/** A room of their own at the inn: "my room", "the room", "upstairs", "my bed". */
+const A_ROOM_OF_THEIR_OWN = /\b(?:(?:my|our|the)\s+(?:room|bed)|upstairs)\b/i;
 
 /** What a player typed, as an area would be named, without its article. */
 function asAnAreaIsNamed(said: string): string {
@@ -171,7 +176,13 @@ export async function aWalkAcrossThePlace(
     const here = theAreaTheyAreIn(world, cultivator);
     if (!world || !here) return null;
 
-    const destination = theAreaNamed(theAreasOf(world, here.place).areas, asAnAreaIsNamed(said));
+    // THE ROOM THEY PAID FOR, alone but for whoever is with them. Played: "head up to my room"
+    // reached a house's interior room somewhere else and was refused. See `aRoomOfTheirOwn`.
+    // Not lodged here, "my room" is theirs to mean elsewhere - a house's quarters - and the road
+    // and home reads answer it.
+    const lodged = A_ROOM_OF_THEIR_OWN.test(said) && whereTheyAreLodged(game, cultivator) !== null;
+    let destination = lodged ? aRoomOfTheirOwn(here.place, cultivator.id) : null;
+    destination ??= theAreaNamed(theAreasOf(world, here.place).areas, asAnAreaIsNamed(said));
     if (destination === null) return null;
 
     if (destination.id === here.area.id) {

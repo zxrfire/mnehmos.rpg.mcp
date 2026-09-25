@@ -50,7 +50,7 @@ import {
 export const AT_MOST_IN_AN_AREA = 3;
 
 /** What an area of a place is for. */
-export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'here';
+export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'here' | 'room';
 
 export interface AnAreaOfAPlace {
     /** `<place id>#<kind>#<slug>`. */
@@ -154,6 +154,8 @@ function theNamesFor(place: Pick<LocationRecord, 'name' | 'tags'>, what: WhatAnA
             const own = itsOwnName(place);
             return [own, `the far side of ${own}`, `further along ${own}`, `the edge of ${own}`];
         }
+        // Nobody is dealt into a room somebody paid for; see `aRoomOfTheirOwn`.
+        case 'room': return [];
     }
 }
 
@@ -169,6 +171,16 @@ function theNameAt(names: readonly string[], index: number): string {
 
 function anArea(place: Pick<LocationRecord, 'id'>, what: WhatAnAreaIsFor, name: string): AnAreaOfAPlace {
     return { id: `${place.id}${MARK}${what}${MARK}${slug(name)}`, placeId: place.id, name, for: what };
+}
+
+/**
+ * A room somebody has paid for at an inn here, as an area of the place: nobody is dealt into it,
+ * so standing in it is standing alone but for whoever is with them. The owner: "go to your room,
+ * sleep ... in the room is just yourself (unless ur with a party)". Its id carries the holder,
+ * so two lodgers are never in each other's room. Null for any other id.
+ */
+export function aRoomOfTheirOwn(place: Pick<LocationRecord, 'id'>, holderId: string): AnAreaOfAPlace {
+    return { id: `${place.id}${MARK}room${MARK}${holderId}`, placeId: place.id, name: 'your room at the inn', for: 'room' };
 }
 
 /** Whether an activity is still running on this day. */
@@ -342,6 +354,8 @@ export function whereInThisPlaceTheyStand(
     const { areas } = theAreasOf(state, place);
     const exact = areas.find(area => area.id === standingIn);
     if (exact) return exact;
+    const aRoom = `${place.id}${MARK}room${MARK}`;
+    if (standingIn?.startsWith(aRoom)) return aRoomOfTheirOwn(place, standingIn.slice(aRoom.length));
     const [placeId, kind] = (standingIn ?? '').split(MARK);
     const sameKind = placeId === place.id ? areas.find(area => area.for === kind) : undefined;
     if (sameKind) return sameKind;

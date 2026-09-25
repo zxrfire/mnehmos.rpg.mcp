@@ -1138,6 +1138,13 @@ function theReferenceToAPaper(text: string): string | undefined {
     return noun === undefined ? undefined : `the ${noun.toLowerCase()}`;
 }
 
+/** Going up or down, to a room or the stairs: "head up to my room", "I go downstairs". */
+// Only the stairs, or up to a room or bed: "I go back down" and "down to the
+// province" are the crossing down (`descend`), and "walk up to" a person is an
+// approach.
+const UP_OR_DOWN =
+    /^(?:(?:i|we)\s+)?(?:go|goes|head|heads|walk|walks|climb|climbs|run|runs)\s+(?:back\s+)?(?:(up|down)(?:stairs|\s+the\s+stairs)|up\s+to\s+((?:my|our|the)\s+(?:room|bed)))\s*[.!?]*$/;
+
 /** Carrying on down the road, said as a whole sentence. */
 const CARRYING_ON =
     /^(?:(?:i|we)\s+)?(?:(?:keep|carry|press|push|continue|walk|move|head)\s+(?:on(?:wards?)?|going|walking|moving|ahead|forward|north|south|east|west)(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road))?|continue(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road|walk))?|onwards?|on we go)\s*[.!?]*$/;
@@ -4765,6 +4772,16 @@ function planIntent(input: string): PlannedAction {
     // reached nothing. With a road stopped where they stand, the move carries
     // on down it.
     if (CARRYING_ON.test(text)) return { action: 'move', intent: 'travel' };
+
+    // UP TO A ROOM, AND DOWN AGAIN. Played: "head up to my room" reached nothing,
+    // and "I go upstairs" the same; the walk across a place reads what they name.
+    {
+        const upOrDown = UP_OR_DOWN.exec(text);
+        if (upOrDown) {
+            const named = (upOrDown[2] ?? '').trim();
+            return { action: 'move', intent: 'travel', target: named.length > 0 ? named : `${upOrDown[1] ?? 'up'}stairs` };
+        }
+    }
 
     // GOODS HANDED OVER where they were sent: a delivery off a house's wall. Ahead of giving,
     // which "hand over" also reaches. See `what-a-house-sends-its-sisters.ts`.

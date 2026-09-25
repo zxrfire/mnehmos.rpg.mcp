@@ -604,6 +604,11 @@ export const travelVerbs = {
             const stopped = readJsonFlag<StoppedRoad>(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
             if (stopped !== null && stopped.from === placeName(cultivator)) said = stopped.to;
         }
+        // A ROOM PAID FOR HERE IS UPSTAIRS, NOT HOME: "my room" to a lodger is the inn's.
+        if (HOME_RATHER_THAN_A_PLACE_NAME.test((target ?? '').trim())) {
+            const upstairs = await aWalkAcrossThePlace(this, run, cultivator, target);
+            if (upstairs) return upstairs;
+        }
         if (HOME_RATHER_THAN_A_PLACE_NAME.test((target ?? '').trim())) {
             this.atHand = this.atHand ?? await this.loadWorld();
             const home = whereHomeIs(this, this.atHand, cultivator);
