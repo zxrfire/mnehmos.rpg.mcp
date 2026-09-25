@@ -109,7 +109,7 @@ describe('a night outdoors costs the body', () => {
         await game.newRun('Sleeper');
 
         const looked = await game.act('I look around');
-        expect(looked.narration).toMatch(/There is an inn here: a room is \d+ cash a night, and a meal \d+\./);
+        expect(looked.narration).toMatch(/An inn here lets rooms: \d+ cash a night, and a meal \d+\./);
     }, 120_000);
 
     it('ends the room when they leave the place, so coming back is outdoors again', async () => {

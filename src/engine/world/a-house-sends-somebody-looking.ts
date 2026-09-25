@@ -216,7 +216,9 @@ function withTheErrand(
         activity: {
             kind: 'out_with_a_party',
             note: `Out after one of the ${house.name}'s own.`,
-            withIds: [...whoWasWithThem],
+            // Never themselves: a searcher who was in the lost one's party is one of
+            // "who went out with them", and a party names each other, not itself.
+            withIds: whoWasWithThem.filter(id => id !== npc.id),
             sinceDay: day,
             untilDay: day + years * DAYS_PER_YEAR,
             // HOME IS THE HOUSE. The errand ends where the answer is wanted,

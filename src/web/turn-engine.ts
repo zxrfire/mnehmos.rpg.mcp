@@ -16891,9 +16891,17 @@ ${fit.line}`;
         }
 
         // a line, taken
+        // A MEMBER IS SENT BY THEIR HOUSE FIRST. Since cultivators took contracts rather
+        // than a profession, "I take the escort" matched the town's caravan escort
+        // contract ahead of the house's own escort; a member means the house's unless
+        // they say contract.
+        const theHouses = board.membership && !/\bcontracts?\b/i.test(wanted)
+            ? matchedPosting(wanted, board.offers.filter(offer => whoPosted(offer) !== null))
+            : undefined;
         const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
             ? board.offers[0]
-            : board.offers.find(offer => matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD)
+            : theHouses
+                ?? board.offers.find(offer => matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD)
                 ?? board.offers.find(offer => sharesADistinctivePhrase(wanted, offer.entry.name))
                 // AND THE HOUSE'S OWN POSTINGS, by the reason they were posted
                 // for. Both matchers above refuse a single word naming a

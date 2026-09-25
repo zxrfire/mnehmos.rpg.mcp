@@ -81,12 +81,12 @@ describe('coming by something to ride', () => {
         // thing that differs is what is under them.
         const { say } = await withAPurse('ride-d');
         const walked = await say('I ride to Nine Peaks');
-        expect(walked.narration ?? '').toMatch(/^On foot/);
+        expect(walked.narration ?? '').toMatch(/^Afoot/);
 
         const { say: say2 } = await withAPurse('ride-d');
         await say2('I buy a horse');
         const rode = await say2('I ride to Nine Peaks');
-        expect(rode.narration ?? '').not.toMatch(/^On foot/);
+        expect(rode.narration ?? '').not.toMatch(/^Afoot/);
         expect(rode.narration ?? '').toMatch(/broken spirit beast/i);
     }, 300_000);
 

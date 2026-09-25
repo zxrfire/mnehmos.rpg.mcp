@@ -3346,7 +3346,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'unwritten-span-scripture',
-        name: 'Unwritten Remnant Scripture',
+        name: 'Unwritten Vestige Scripture',
         category: 'cultivation',
         grade: 'chaos',
         // A gathering canon lands on the person practising it, which is one

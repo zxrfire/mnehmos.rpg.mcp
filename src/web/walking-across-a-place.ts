@@ -43,8 +43,12 @@ const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
     [/^(?:forecourt|courtyard|yard|in|inside)$/, 'forecourt']
 ];
 
-/** A room of their own at the inn: "my room", "the room", "upstairs", "my bed". */
-const A_ROOM_OF_THEIR_OWN = /\b(?:(?:my|our|the)\s+(?:room|bed)|upstairs)\b/i;
+/**
+ * A room of their own at the inn: "my room", "the room", "upstairs", "my bed", and a bare
+ * "room" or "bed", which is how a model hands the same sentence over (played: "ok head up to
+ * my room" came as target "room", and reached a house's interior room somewhere else).
+ */
+const A_ROOM_OF_THEIR_OWN = /^\s*(?:the\s+)?(?:inn\s+)?(?:room|bed)\s*$|\b(?:(?:my|our|the)\s+(?:inn\s+)?(?:room|bed)|upstairs)\b/i;
 
 /** What a player typed, as an area would be named, without its article. */
 function asAnAreaIsNamed(said: string): string {

@@ -190,7 +190,7 @@ export function whatSomebodyHereWouldAsk(input: {
     if (here.length === 0) {
         return {
             said: `${input.asker.name} does not follow, and says so. They ask what you mean `
-                + 'by it. There is nobody else standing here to put it to.',
+                + 'by it. Nobody else is standing here to put it to.',
             offered: []
         };
     }

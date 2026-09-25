@@ -82,7 +82,7 @@ describe('an art addresses by its reach alone', () => {
 
     it('an art that carries somebody a long way still addresses what its reach says', () => {
         // The named case, because it is the one a reader will reach for: the
-        // Unwritten Remnant Scripture opens above the floor for `place` and carries
+        // Unwritten Vestige Scripture opens above the floor for `place` and carries
         // its reader the rest of the ladder, and it lands on one person. How far
         // a book carries somebody and what it is aimed at are two facts.
         const top = getTechnique('unwritten-span-scripture')!;

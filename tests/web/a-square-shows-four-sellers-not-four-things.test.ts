@@ -28,6 +28,7 @@ import { readWhatIsOnOfferHere, SELLERS_SHOWN } from '../../src/web/who-here-is-
 import { createWorld, type WorldState } from '../../src/engine/world/world-state.js';
 import { createNpc, setRealm, type NpcRecord } from '../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
+import { AT_MOST_IN_AN_AREA } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques.js';
 import { makeCultivator } from '../engine/cultivation/fixtures.js';
 
@@ -94,10 +95,12 @@ describe('a square shows four sellers, not four things', () => {
         const sellers = new Set(offers.map(o => o.sellerId));
 
         expect(offers.length, 'the board is not full').toBe(SELLERS_SHOWN);
+        // Every seller standing where the player stands, and an area holds three at
+        // most (`where-in-a-place-somebody-is-standing.ts`): the fourth is across the square.
         expect(
             sellers.size,
             'one seller took slots that belonged to people standing right there'
-        ).toBe(4);
+        ).toBe(Math.min(4, AT_MOST_IN_AN_AREA));
     });
 
     it('still fills the board from one seller when there is only one', () => {

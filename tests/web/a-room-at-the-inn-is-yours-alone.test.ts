@@ -100,6 +100,20 @@ describe('a room at the inn', () => {
         expect(parseIntent('I crash into him').action).not.toBe('wait');
     });
 
+    /** Played: the model handed "ok head up to my room" over as target "room". */
+    it('takes a bare "room" as the room at the inn', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Sleeper');
+        await game.act('I take a room at the inn');
+
+        const up = await game.act('I go to room');
+        expect(up.narration).toMatch(/to your room at the inn/);
+        // Alone in it, nobody is standing close enough to ask what a stray sentence meant.
+        const stray = await game.act('Qixuanzhe');
+        expect(stray.narration).not.toMatch(/asked what was meant/);
+        expect(game.present(repos.cultivators.getById(cultivator.id)!)).toEqual([]);
+    }, 120_000);
+
     it('comes back down to the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Sleeper');

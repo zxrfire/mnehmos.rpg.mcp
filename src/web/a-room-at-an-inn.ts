@@ -52,7 +52,7 @@ export function anInnIsKeptHere(cultivator: Cultivator): boolean {
 export function theInnAsSeenHere(game: GameService, cultivator: Cultivator): string | null {
     if (!anInnIsKeptHere(cultivator)) return null;
     const bed = whatTheBedCostsHere(game, cultivator, 'price-inn-night');
-    return `There is an inn here: a room is ${bed.cash} cash a night, and a meal ${bed.mealCash}.`;
+    return `An inn here lets rooms: ${bed.cash} cash a night, and a meal ${bed.mealCash}.`;
 }
 
 /** The counters kept where they stand, for "the innkeeper" and "the clerk" to be read against. */
