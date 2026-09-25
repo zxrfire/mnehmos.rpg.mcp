@@ -179,8 +179,11 @@ function anArea(place: Pick<LocationRecord, 'id'>, what: WhatAnAreaIsFor, name: 
  * sleep ... in the room is just yourself (unless ur with a party)". Its id carries the holder,
  * so two lodgers are never in each other's room. Null for any other id.
  */
-export function aRoomOfTheirOwn(place: Pick<LocationRecord, 'id'>, holderId: string): AnAreaOfAPlace {
-    return { id: `${place.id}${MARK}room${MARK}${holderId}`, placeId: place.id, name: 'your room at the inn', for: 'room' };
+export function aRoomOfTheirOwn(place: Pick<LocationRecord, 'id' | 'kind'>, holderId: string): AnAreaOfAPlace {
+    // The owner: a room is an area "at an inn (or in your sect, or a cave)". A cave
+    // of their own is the whole place and needs no area inside it.
+    const name = place.kind === 'sect_seat' ? 'your quarters' : 'your room at the inn';
+    return { id: `${place.id}${MARK}room${MARK}${holderId}`, placeId: place.id, name, for: 'room' };
 }
 
 /** Whether an activity is still running on this day. */

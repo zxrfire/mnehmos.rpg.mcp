@@ -31,6 +31,7 @@ import {
     quotePassageAtACounter
 } from '../engine/world/buying-passage-at-a-measured-span-counter.js';
 import { grantsHeldWith } from '../engine/world/capability.js';
+import { residenceOf } from '../engine/world/somewhere-that-is-theirs.js';
 import {
     FOLD_FLOOR_ORDINAL,
     FOLD_GRANT,
@@ -544,6 +545,10 @@ export function whereHomeIs(
     if (world) {
         const abode = getLocation(world, abodeLocationId(cultivator.id));
         if (abode) return { kind: 'abode', name: abode.name, layer: layerOf(abode) };
+        // AND GROUND OF THEIR OWN BELOW THE LID - a cave they took and made theirs. The owner
+        // counts it with the inn and the sect as a room of their own.
+        const residence = residenceOf(world, cultivator.id);
+        if (residence) return { kind: 'abode', name: residence.name, layer: layerOf(residence) };
 
         const mine = theQuartersThisCultivatorHas(game, world, cultivator);
         if (mine) {

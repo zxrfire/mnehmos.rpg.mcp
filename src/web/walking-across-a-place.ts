@@ -182,10 +182,15 @@ export async function aWalkAcrossThePlace(
 
     // THE ROOM THEY PAID FOR, alone but for whoever is with them. Played: "head up to my room"
     // reached a house's interior room somewhere else and was refused. See `aRoomOfTheirOwn`.
-    // Not lodged here, "my room" is theirs to mean elsewhere - a house's quarters - and the road
-    // and home reads answer it.
-    const lodged = A_ROOM_OF_THEIR_OWN.test(said) && whereTheyAreLodged(game, cultivator) !== null;
-    let destination = lodged ? aRoomOfTheirOwn(here.place, cultivator.id) : null;
+    // A ROOM OF THEIR OWN, which the owner puts "at an inn (or in your sect, or a cave)": the room
+    // paid for at the inn here, or their quarters at their own house's seat once past its gate. A
+    // cave that is theirs is the whole place. Anywhere else "my room" is the home read's to answer.
+    const aRoomIsMeant = A_ROOM_OF_THEIR_OWN.test(said);
+    const atTheirOwnSeat = aRoomIsMeant && cultivator.sectId !== null
+        && theHouseWhoseGateThisIs(world, here.place.name)?.factionId === cultivator.sectId
+        && theGateBetweenThemAndIt(game, cultivator) === null;
+    const theirs = aRoomIsMeant && (whereTheyAreLodged(game, cultivator) !== null || atTheirOwnSeat);
+    let destination = theirs ? aRoomOfTheirOwn(here.place, cultivator.id) : null;
     destination ??= theAreaNamed(theAreasOf(world, here.place).areas, asAnAreaIsNamed(said));
     if (destination === null) return null;
 

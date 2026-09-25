@@ -114,6 +114,23 @@ describe('a room at the inn', () => {
         expect(game.present(repos.cultivators.getById(cultivator.id)!)).toEqual([]);
     }, 120_000);
 
+    /** The owner: a room is an area "at an inn (or in your sect, or a cave)". */
+    it('is their quarters at their own house\'s seat, and nobody else is in them', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Sleeper');
+        const world = (await game.loadWorld())!;
+        const seat = world.locations.find(l => l.kind === 'sect_seat'
+            && typeof (l.data as { factionId?: unknown }).factionId === 'string'
+            && repos.sects.getById((l.data as { factionId: string }).factionId) !== null)!;
+        const houseId = (seat.data as { factionId: string }).factionId;
+        repos.sects.addMember(houseId, cultivator.id, 0);
+        repos.cultivators.update(cultivator.id, { location: seat.name, sectId: houseId });
+
+        const up = await game.act('I go to my room');
+        expect(up.narration).toMatch(/to your quarters/);
+        expect(game.present(repos.cultivators.getById(cultivator.id)!)).toEqual([]);
+    }, 120_000);
+
     it('comes back down to the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Sleeper');
