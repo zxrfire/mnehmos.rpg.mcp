@@ -92,10 +92,12 @@ const WORTH_ASKING = 17;
 
 const WORLD_SEED = 'in-front-of-somebody-world';
 const RUN_SEED = 'in-front-of-somebody-run';
+/** A run seed whose roads are not stopped on the way to the gate. */
+const ROUTE_SEED = 'in-front-of-somebody-run-13';
 
 describe('getting in front of somebody worth asking', () => {
     it('walks the whole route on names the game printed', async () => {
-        const { db, game } = await makeGameInWorld({ worldSeed: WORLD_SEED, seed: RUN_SEED });
+        const { db, game } = await makeGameInWorld({ worldSeed: WORLD_SEED, seed: ROUTE_SEED });
         const { cultivator } = await game.newRun('Lin Baoqing');
 
         const world = await activeWorld();

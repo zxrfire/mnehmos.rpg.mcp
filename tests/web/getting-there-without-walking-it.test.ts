@@ -54,10 +54,10 @@ import {
 import { REGIONS, requireRegion, HOME_REGION_ID, ADJACENT_REGION_ID } from '../../src/data/cultivation/regions';
 
 /** A run standing somewhere named, with every place nameable. */
-async function standingAt(place: string, seed: string) {
+async function standingAt(place: string, seed: string, worldSeed = `${seed}-world`) {
     process.env.ADMIN_MODE = 'true';
     const harness = await makeGameInWorld({
-        seed, worldSeed: `${seed}-world`, adminMode: true
+        seed, worldSeed, adminMode: true
     });
     const { cultivator } = await harness.game.newRun('Lin Baoqing');
     await harness.game.act('ADMIN grant_knowledge kind=place');
@@ -76,7 +76,8 @@ describe('the road is as long as the catalog says it is', () => {
         .reduce((shortest, link) => Math.min(shortest, link.travelDays), Number.MAX_SAFE_INTEGER);
 
     it('spends the stated road on a journey between provinces', async () => {
-        const { game, db, cultivatorId } = await standingAt('Clear River Ford', 'road-paid');
+        // A run seed whose road is not stopped, in the world this arm always used.
+        const { game, db, cultivatorId } = await standingAt('Clear River Ford', 'road-paid-1', 'road-paid-world');
 
         const result = await game.act('I travel to Iron Ridge');
         const after = cultivatorRow(db, cultivatorId);

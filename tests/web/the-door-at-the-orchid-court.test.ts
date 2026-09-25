@@ -68,7 +68,8 @@ describe('a player can find the valley and walk to it', () => {
     });
 
     it('takes somebody there and spends the day the catalog states', async () => {
-        const { game } = await makeGameInWorld({ seed: 'orchid-door', worldSeed: 'orchid-world' });
+        // A run seed whose roads are not stopped.
+        const { game } = await makeGameInWorld({ seed: 'orchid-door-2', worldSeed: 'orchid-world' });
         await game.newRun('Probe');
 
         await game.act(`I travel to ${PLACE.ORCHID_TERRACE}`);

@@ -62,6 +62,45 @@ describe('a road has things on it', () => {
     }, 120_000);
 
     /**
+     * SAYING IT AGAIN WALKS WHAT IS LEFT. Stopped on day nine of eleven, the
+     * next journey to the same place from the same place is two days, not
+     * eleven.
+     */
+    it('walks only the rest of a stopped road when it is said again', async () => {
+        const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+        await game.newRun('Traveller');
+        const before = game.state();
+
+        await game.act(WHERE);
+        const stoppedAt = game.state();
+        expect(stoppedAt.run.elapsedDays - before.run.elapsedDays).toBe(9);
+
+        await game.act(WHERE);
+        const after = game.state();
+
+        expect(after.run.elapsedDays - stoppedAt.run.elapsedDays).toBe(2);
+        expect(after.cultivator.location).not.toBe(before.cultivator.location);
+    }, 120_000);
+
+    /**
+     * AND IT WAITS WHILE THEY STAND THERE. Dealing with whatever stopped the
+     * road - here, a look round - does not undo the days already walked.
+     */
+    it('still has only the rest of the road ahead after something else was done there', async () => {
+        const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+        await game.newRun('Traveller');
+
+        await game.act(WHERE);
+        await game.act('I look around');
+        const between = game.state();
+
+        await game.act(WHERE);
+        const after = game.state();
+
+        expect(after.run.elapsedDays - between.run.elapsedDays).toBe(2);
+    }, 120_000);
+
+    /**
      * AND A ROAD WALKED TO ITS END STILL ARRIVES, with what it met on the way.
      * A merchant on the road is not a reason to stop.
      */

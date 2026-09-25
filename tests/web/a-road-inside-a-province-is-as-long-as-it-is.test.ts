@@ -71,7 +71,8 @@ describe('a road inside a province costs what the catalog says', () => {
         // walking back up the gorge is the only place that distinction is
         // observable, and a one-way road is a bug `linkLocations` already
         // names as one.
-        const { game } = await makeGameInWorld({ seed: 'place-road-back', worldSeed: WORLD });
+        // A run seed whose road back is not stopped.
+        const { game } = await makeGameInWorld({ seed: 'place-road-back-1', worldSeed: WORLD });
         await game.newRun('Probe');
 
         await game.act(`I travel to ${PLACE.STONE_FORD}`);

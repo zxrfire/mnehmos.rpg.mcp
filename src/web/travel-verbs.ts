@@ -64,9 +64,12 @@ import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { primaryRoadOf } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import {
+    clearFlag,
     listCarriedArtifacts,
     daoHeartConditions,
-    tollConditionsFor
+    readJsonFlag,
+    tollConditionsFor,
+    writeFlag
 } from '../server/consolidated/cultivation-support.js';
 import type { ActionName } from './actions.js';
 import { applyTimeSkip } from './apply.js';
@@ -126,6 +129,19 @@ import type { GameService } from './turn-engine.js';
  * played had ever reached.
  */
 const MUSTERING = 'mustering';
+
+/**
+ * A journey stopped short: where it was going, from where, and how much of it
+ * was walked. It waits for as long as the player stands where it stopped -
+ * dealing with whatever stopped the road does not undo the days walked.
+ */
+const FLAG_ROAD_STOPPED = 'road_stopped';
+interface StoppedRoad {
+    readonly to: string;
+    readonly from: string;
+    readonly road: number;
+    readonly walked: number;
+}
 
 /** Names for a set of ids, so a line can say who rather than how many. */
 function theNamesOf(npcs: readonly NpcRecord[], ids: readonly string[]): string[] {
@@ -819,6 +835,23 @@ export const travelVerbs = {
         // once already, so an unpriced journey still costs the flat day.
         const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
 
+        // ── A STOPPED ROAD GOES ON FROM WHERE IT STOPPED ─────────────────
+        //
+        // From the same place, to the same end. Whatever happened while they
+        // stood there - the fight with whoever stopped them - leaves it; setting
+        // out anywhere else, or being somewhere else, walks the road from its
+        // start.
+        const held = readJsonFlag<StoppedRoad>(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
+        if (held !== null) clearFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
+        const alreadyWalked = held !== null
+            && held.to === arrivedAt
+            && held.from === placeName(cultivator)
+            && held.road === onTheRoad
+            && held.walked > 0 && held.walked < onTheRoad
+            ? held.walked
+            : 0;
+        const leg = onTheRoad - alreadyWalked;
+
         const startDay = Math.floor(run.elapsedDays);
 
         // ── THE ROAD HAS THINGS ON IT ────────────────────────────────────
@@ -841,7 +874,7 @@ export const travelVerbs = {
             {
                 seed: run.seed,
                 startDay,
-                days: onTheRoad,
+                days: leg,
                 activity: 'travel',
                 cultivator,
                 // The row id is a randomUUID. See PLAYER_ROLL_IDENTITY.
@@ -856,7 +889,7 @@ export const travelVerbs = {
         // true of every broken sitting - so a journey stopped on day four has
         // spent four days and arrived nowhere, and the rest of the road is
         // still ahead.
-        const lived = daysActuallySpent(enc, startDay, onTheRoad);
+        const lived = daysActuallySpent(enc, startDay, leg);
         const setOut = withEncounterDeltas(cultivator, enc);
         const skip = simulateTimeSkip(setOut, lived, {
             seed: run.seed,
@@ -885,7 +918,7 @@ export const travelVerbs = {
         });
 
         this.putBackWhatWasNotEaten(cultivator, skip);
-        const stopped = !skip.died && skip.simulatedDays < onTheRoad;
+        const stopped = !skip.died && skip.simulatedDays < leg;
         const applied = applyTimeSkip(this.repos, {
             before: setOut, run, skip, ...(stopped ? {} : { location: arrivedAt })
         });
@@ -900,18 +933,28 @@ export const travelVerbs = {
         );
 
         if (stopped) {
+            const walked = alreadyWalked + skip.simulatedDays;
+            const remaining = onTheRoad - walked;
+            const stoppedRoad: StoppedRoad = {
+                to: arrivedAt,
+                from: placeName(applied.cultivator),
+                road: onTheRoad,
+                walked
+            };
+            writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify(stoppedRoad));
             const cut = whatCutTheSpanShort({
-                asked: onTheRoad, lived, skip, arrival: enc, startDay, world: null
+                asked: leg, lived, skip, arrival: enc, startDay, world: null
             });
-            const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, 'Travel', onTheRoad);
+            const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, 'Travel', leg);
             const line = `The road to ${arrivedAt} stopped short. `
                 + (cut ? sayingWhatEndedTheSpan(cut, humanDays) : `${humanDays(skip.simulatedDays)} were spent on it.`)
-                + ` You are not there. The rest of the road is still ahead of you - say it again and it runs.`;
+                + ` You are not there. The rest of the road is still ahead of you, ${humanDays(remaining)} of it`
+                + ` - say it again and you walk only that.`;
             facts.lines.unshift(line);
             facts.required = [...(facts.required ?? []), line];
             facts.lines.push(...onTheWay.lines, ...world.lines);
             facts.structure.push(...onTheWay.structure, ...world.structure,
-                `move: stopped on day ${skip.simulatedDays} of ${onTheRoad} for ${arrivedAt}; location unchanged.`);
+                `move: stopped on day ${walked} of ${onTheRoad} for ${arrivedAt}; location unchanged.`);
             return {
                 facts,
                 events: skip.events,
@@ -921,8 +964,8 @@ export const travelVerbs = {
                 calls: [{
                     name: 'engine.encounterWindow',
                     action: 'move',
-                    summary: `The road to ${arrivedAt} was stopped on day ${skip.simulatedDays} of `
-                        + `${onTheRoad}. Location unchanged; ${onTheRoad - skip.simulatedDays} day(s) of road remain.`,
+                    summary: `The road to ${arrivedAt} was stopped on day ${walked} of `
+                        + `${onTheRoad}. Location unchanged; ${remaining} day(s) of road remain.`,
                     ok: true
                 }]
             };
@@ -946,6 +989,12 @@ export const travelVerbs = {
         // WHAT WAS MET ON THE ROAD, on a road that was walked to its end.
         facts.lines.push(...onTheWay.lines);
         facts.structure.push(...onTheWay.structure);
+        if (alreadyWalked > 0) {
+            facts.structure.push(
+                `move: resumed a stopped road; ${alreadyWalked} of ${onTheRoad} days were already walked, `
+                + `${skip.simulatedDays} walked now.`
+            );
+        }
         // WHICH PLACE THE ROAD ENDED AT, where the name typed was a province.
         // Said on the required channel: a player who typed a province and is
         // standing in a town has to be told which town.
