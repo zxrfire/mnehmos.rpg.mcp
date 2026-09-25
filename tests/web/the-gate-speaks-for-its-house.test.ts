@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { theOneOnWatchAtTheGate } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { makeGameInWorld } from './harness';
+import { asksTheWay } from '../../src/web/asking-the-way';
 
 async function aStrangerAtAGate(seed: string) {
     const { game, repos } = await makeGameInWorld({ seed, worldSeed: 'a-xianxia-run' });
@@ -38,7 +39,7 @@ describe('the gate speaks for its house', () => {
         expect(read.narration).toContain(at.house.name);
         // Nothing of the board itself reaches somebody outside it.
         expect(read.narration).not.toMatch(/posts this to its own|is not being put to you/);
-        expect(read.narration).toMatch(/goes up as notices on the town walls|has nothing up for outsiders/);
+        expect(read.narration).toMatch(/names what .* has up for outsiders now, on the town walls|has nothing up for outsiders/);
     }, 240_000);
 
     it('answers the watch asked by name, and the watch asked by what they are', async () => {
@@ -62,4 +63,17 @@ describe('the gate speaks for its house', () => {
         const read = await at.game.act('what duties are there');
         expect(read.narration).not.toMatch(THE_BOARD_IS_INSIDE);
     }, 240_000);
+});
+
+/**
+ * Played blind at the Azure Dew gate: "i came all the way from sweet spring island. i want to join
+ * the azure dew sect, how do i get in?" was asked as the way to "coming from sweet spring island".
+ */
+describe('getting in at a gate is joining, not the way', () => {
+    it('reads "how do i get in" as no question of the road, and "how do i get to" as one', () => {
+        expect(asksTheWay('i want to join the azure dew sect, how do i get in?')).toBe(false);
+        expect(asksTheWay('how do i get to the azure dew sect?')).toBe(true);
+        expect(asksTheWay('how do we get there from here')).toBe(true);
+        expect(asksTheWay('where is the azure dew sect')).toBe(true);
+    });
 });

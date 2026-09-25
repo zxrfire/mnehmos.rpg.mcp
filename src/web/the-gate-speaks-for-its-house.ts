@@ -104,10 +104,12 @@ export function whatTheGateSaysOfItsWork(
         + 'Nobody outside the gate reads it.'
     ];
     if (asks.length === 0) {
-        lines.push(`${house.factionName} has nothing up for outsiders.`);
+        lines.push(`${who} says ${house.factionName} has nothing up for outsiders.`);
     } else {
-        lines.push(`What ${house.factionName} asks of outsiders goes up as notices on the town walls`
-            + `${province ? ` of ${province}` : ''}. What is up now:`);
+        // Said by the watch, not remembered: played, a bare "what is up" was narrated as the
+        // player's own memory of walls they had walked past.
+        lines.push(`${who} names what ${house.factionName} has up for outsiders now, on the town walls`
+            + `${province ? ` of ${province}` : ''}:`);
         const said = new Set<string>();
         for (const ask of asks) {
             const first = !said.has(ask.kind);

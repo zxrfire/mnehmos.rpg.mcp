@@ -6,9 +6,13 @@
 /** The topic a question about the way travels under: `the way to <X>`. */
 export const THE_WAY_TO = 'the way to ';
 
-/** Whether a sentence asks where something is or how to get there. */
+/**
+ * Whether a sentence asks where something is or how to get there. "Get" and "go" want a "to" or a
+ * "there": played blind at a gate, "i want to join the azure dew sect, how do i get in?" is
+ * joining, and it was asked as the way to "coming from sweet spring island".
+ */
 const ASKS_THE_WAY =
-    /\b(?:where\s+(?:is|are|lies|would|could|can|do|does|might|should)|how\s+(?:do|can|would|should)\s+(?:i|we)\s+(?:get|go)|how\s+to\s+(?:get|go)|which\s+way|the\s+way\s+to|directions?\s+to)\b/i;
+    /\b(?:where\s+(?:is|are|lies|would|could|can|do|does|might|should)|how\s+(?:do|can|would|should)\s+(?:i|we)\s+(?:get|go)\s+(?:to|there)|how\s+to\s+(?:get|go)\s+(?:to|there)|which\s+way|the\s+way\s+to|directions?\s+to)\b/i;
 
 export function asksTheWay(sentence: string): boolean {
     return ASKS_THE_WAY.test(sentence);
