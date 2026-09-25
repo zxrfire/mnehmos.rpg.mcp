@@ -189,9 +189,11 @@ import { thePlacesOnTheSheet, type APlaceOnTheSheet } from './places-on-the-shee
 import { whatABeastPartTakes, whereAKillIsLeft, whereAPartGoes } from '../engine/world/what-a-beast-part-takes.js';
 import {
     isADelivery,
+    theConsignmentOnTheEntry,
     theGoodsSignedFor,
     whatAHouseSendsItsSisters,
     whatALateDeliveryCosts,
+    whatAWrittenOffDeliveryCosts,
     type WhatItWants
 } from '../engine/world/what-a-house-sends-its-sisters.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
@@ -651,6 +653,7 @@ import {
     type RequestCosting
 } from './what-asking-this-person-for-this-would-cost-them.js';
 import {
+    createGrudge,
     createObligation,
     settleObligation,
     type OathCause,
@@ -3135,6 +3138,16 @@ export class GameService {
                 summary: `${taught} place(s) or house(s) learned off where they stand and their house's roll.`,
                 ok: true
             });
+        }
+
+        // AND A DELIVERY THE HOUSE HAS STOPPED WAITING ON. See `theDeliveriesWrittenOff`.
+        {
+            const now = this.currentRun();
+            const writtenOff = this.theDeliveriesWrittenOff(now.run, now.cultivator);
+            if (writtenOff) {
+                execution.calls.push({ name: 'world.theDeliveriesWrittenOff', action: 'duty', summary: writtenOff.structure, ok: true });
+                for (const line of writtenOff.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+            }
         }
 
         const issued = settleWhatYourHouseHasIssuedYou(this, this.currentRun().cultivator);
@@ -11312,7 +11325,9 @@ ${line}`;
             tags: goods.tags.filter(tag => tag !== 'consignment').concat('delivered') };
         this.theWorldMoved();
 
-        const cost = whatALateDeliveryCosts({ wants: goods.data.wants as WhatItWants, contribution: Number(goods.data.contribution) }, daysLate);
+        // The duty's own contribution, which the board gives only to the house's members: anybody
+        // else carried it for stones, and has no merit with the house to lose.
+        const cost = whatALateDeliveryCosts({ wants: goods.data.wants as WhatItWants, contribution: duty.contribution }, daysLate);
         const ledger: DutyLedgerInput = {
             repos: this.repos, cultivator,
             duty: cost === null ? duty : { ...duty, contribution: 0, stones: 0 },
@@ -11346,6 +11361,72 @@ ${line}`;
         facts.structure.push(`handOverADelivery: ${goods.id} to ${toHouseId}, ${daysLate > 0 ? `${daysLate} day(s) late, face ${cost?.face}, `
             + `contribution -${cost?.contribution}` : 'on time'}; completeDuty ${settled.obligation.id}.`);
         return this.freeAction(run, 'carry', facts);
+    }
+
+    /**
+     * Deliveries never handed over, written off once the house stops waiting: the oath broken,
+     * the house's grudge for it, the pay taken back from a member, and word of it going round -
+     * a step worse where the goods are gone. Read at the end of every turn, so no delivery sits
+     * open for ever. See `whatAWrittenOffDeliveryCosts`.
+     */
+    private theDeliveriesWrittenOff(run: Run, cultivator: Cultivator): { lines: string[]; structure: string } | null {
+        const world = this.atHand;
+        if (!world) return null;
+        const today = Math.floor(run.elapsedDays);
+        const open = ledgerAbout(this.db as unknown as ObligationDb, cultivator.id).filter(row =>
+            row.kind === 'oath' && row.status === 'open' && row.holderId === cultivator.id
+            && row.tags.includes('duty') && row.tags.some(tag => isADelivery(tag)) && row.dueOnDay !== null);
+        const lines: string[] = [];
+        const notes: string[] = [];
+        for (const oath of open) {
+            const entryId = oath.tags.find(tag => isADelivery(tag))!;
+            const houseId = oath.subjectId;
+            if (!houseId) continue;
+            const at = world.objects.findIndex(row => row.tags.includes('consignment') && row.data.oathId === oath.id);
+            const goods = at >= 0 ? world.objects[at]! : null;
+            const consignment = theConsignmentOnTheEntry(world, houseId, entryId);
+            const wants = (goods?.data.wants as WhatItWants | undefined) ?? consignment?.wants;
+            if (!wants) continue;
+            const member = cultivator.sectId === houseId;
+            const pay = member ? Number(goods?.data.contribution ?? consignment?.contribution ?? 0) : 0;
+            const cost = whatAWrittenOffDeliveryCosts({ wants, contribution: pay }, today - oath.dueOnDay!, goods !== null);
+            if (!cost) continue;
+
+            const what = goods?.name ?? consignment?.goods ?? 'the goods';
+            const toHouse = String(goods?.data.toHouseName ?? consignment?.toHouseName ?? 'the house they were for');
+            const house = world.factions.find(row => row.id === houseId)?.name ?? 'the house that sent them';
+            writeOneObligation(this.db as unknown as DatabaseHandle, settleObligation(oath, {
+                resolution: 'broken', onDay: today, byId: houseId,
+                note: `${what} for ${toHouse} ${cost.lost ? 'lost' : 'never handed over'}; written off on day ${today}.`
+            }));
+            writeOneObligation(this.db as unknown as DatabaseHandle, createGrudge({
+                holderId: houseId, subjectId: cultivator.id, cause: 'broken_oath', severity: cost.face, onDay: today,
+                description: `${cultivator.name} signed for ${what} for ${toHouse} and ${cost.lost ? 'lost them' : 'never brought them'}.`,
+                terms: null, dueOnDay: null, tags: ['duty', 'delivery', entryId, cost.lost ? 'lost' : 'lapsed']
+            }));
+            if (cost.contribution > 0) this.repos.sects.addContribution(houseId, cultivator.id, -cost.contribution);
+            if (goods) {
+                world.objects[at] = { ...goods, tags: goods.tags.filter(tag => tag !== 'consignment').concat('written-off') };
+            }
+            aDeedEntersTheWorld(world, {
+                kind: 'said_in_public',
+                weight: cost.face,
+                day: Math.floor(world.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [{ id: cultivator.id, name: cultivator.name, role: cost.lost ? 'lost the goods' : 'never brought the goods' }],
+                factionIds: [houseId],
+                summary: `${cultivator.name} signed for ${what} for ${toHouse} and ${cost.lost ? 'lost them' : 'never brought them'}.`,
+                unattributed: `A delivery for ${toHouse} never came.`
+            });
+            lines.push(`${house} has written off ${what} for ${toHouse}: `
+                + `${cost.lost ? 'they are lost' : 'they were never brought'}, ${humanDays(today - oath.dueOnDay!)} past due. `
+                + `Your word to carry them is broken${cost.contribution > 0 ? `, and ${cost.contribution} contribution is taken back` : ''}.`);
+            notes.push(`${entryId}: ${cost.lost ? 'lost' : 'lapsed'}, face ${cost.face}, contribution -${cost.contribution}, oath ${oath.id} broken.`);
+        }
+        if (lines.length === 0) return null;
+        this.theWorldMoved();
+        return { lines, structure: `theDeliveriesWrittenOff: ${notes.join(' ')}` };
     }
 
     /**

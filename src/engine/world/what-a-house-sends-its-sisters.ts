@@ -243,3 +243,48 @@ export function whatALateDeliveryCosts(goods: { wants: WhatItWants; contribution
         contribution: Math.round(goods.contribution * share)
     };
 }
+
+/** How long past due a house waits on a delivery before it writes it off. */
+export const A_HOUSE_WAITS_ON_A_LATE_DELIVERY = 30;
+
+/** Goods lost outright are one step worse than goods brought late. */
+const ONE_STEP_GRAVER: Readonly<Record<Severity, Severity>> = {
+    slight: 'serious', serious: 'grave', grave: 'grave', unforgivable: 'unforgivable'
+};
+
+export interface WhatAWrittenOffDeliveryCosts extends WhatALateDeliveryCosts {
+    /** The goods are gone, not only late. */
+    lost: boolean;
+}
+
+/**
+ * What a delivery never handed over costs, once the house has stopped waiting on it: the whole
+ * of the pay taken back, and face by the size of the load, a step worse where the goods are gone.
+ * Null while the house still waits. The owner: "maybe lose merit (if the goods are still there)?
+ * DEFINITELY lose face".
+ */
+export function whatAWrittenOffDeliveryCosts(
+    goods: { wants: WhatItWants; contribution: number },
+    daysLate: number,
+    stillInHand: boolean
+): WhatAWrittenOffDeliveryCosts | null {
+    if (daysLate <= A_HOUSE_WAITS_ON_A_LATE_DELIVERY) return null;
+    const late = whatALateDeliveryCosts(goods, daysLate)!;
+    return { face: stillInHand ? late.face : ONE_STEP_GRAVER[late.face], contribution: late.contribution, lost: !stillInHand };
+}
+
+/**
+ * The consignment a board entry was, found again from its id: the season and the draw are in it,
+ * and the house that sent it is the oath's. For goods that are gone, where nothing else is left to
+ * read their size off.
+ */
+export function theConsignmentOnTheEntry(
+    world: Pick<WorldState, 'locations' | 'factions'>,
+    fromHouseId: string,
+    entryId: string
+): AConsignment | null {
+    const season = /-(\d+)-\d+$/.exec(entryId)?.[1];
+    if (season === undefined) return null;
+    return whatAHouseSendsItsSisters(world, fromHouseId, Number(season) * A_SEASON)
+        .find(row => row.id === entryId) ?? null;
+}

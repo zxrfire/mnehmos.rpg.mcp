@@ -11,7 +11,8 @@ import { makeGameInWorld } from './harness.js';
 describe('the one who raised you', () => {
     it('keeps the tie when they answer, and is not introduced', async () => {
         const { game } = await makeGameInWorld({ seed: 'raised-by', worldSeed: 'a-fresh-start' });
-        const { cultivator, run } = await game.newRun('Wen Qiu');
+        await game.newRun('Wen Qiu');
+        const { cultivator, run } = game.currentRun();
         const people = game.knowledge.awareness(cultivator.id, 'cultivator');
         const raiser = people.find(row => /raised you/.test(row.statement));
         expect(raiser).toBeDefined();
