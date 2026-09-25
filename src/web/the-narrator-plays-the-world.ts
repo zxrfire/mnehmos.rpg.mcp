@@ -16,6 +16,7 @@ import { getMember } from '../data/cultivation/members.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import { getSect } from '../data/cultivation/sects.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
+import type { SomethingTheyRemember } from '../engine/world/what-somebody-remembers.js';
 import type { Company, SomebodyInTheSquare } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
 import { AN_AMBITION_IS_ANSWERED_AS_THINKING } from './the-lanes-a-sentence-can-go-down.js';
@@ -708,6 +709,35 @@ export function howTheyLeftTheChair(
 }
 
 /**
+ * What somebody remembers, one line each, for their card: how they came to know it, how long
+ * ago, what it was to them, then the thing. Anybody in it the player cannot name is said the way
+ * this person would say who it was ("their master", "an Elder of their house"), because a name
+ * that reaches the page only inside a paragraph is one the player can never type back.
+ */
+export function whatTheyRememberOnTheirCard(
+    remembered: readonly SomethingTheyRemember[],
+    playerCanName: (id: string) => boolean
+): string[] {
+    return remembered.map(thing => {
+        let what = thing.what;
+        for (const person of [...thing.named].sort((a, b) => b.name.length - a.name.length)) {
+            if (!playerCanName(person.id)) what = what.split(person.name).join(person.otherwise);
+        }
+        const how = thing.keptToThemselves ? 'kept to themselves, told to nobody'
+            : thing.how === 'lived' ? 'lived through it'
+                : thing.how === 'heard' ? 'heard it'
+                    : `told it by ${thing.toldBy ?? 'their house'}`;
+        const when = thing.yearsAgo === 0 ? 'this year'
+            : `${thing.yearsAgo} year${thing.yearsAgo === 1 ? '' : 's'} ago`;
+        return `${how}, ${when}`
+            + (thing.beforeTheyJoined ? ', before they were on the roll' : '')
+            + (thing.itWasTheir ? `, and it was ${thing.itWasTheir}` : '')
+            + (thing.withThePlayer ? ', and the player was in it' : '')
+            + `: ${what.charAt(0).toUpperCase()}${what.slice(1)}.`;
+    });
+}
+
+/**
  * The person present whom this turn's act was put to, from the targets the plan carried.
  *
  * A target naming somebody here is matched to them. A description ("the old man") is left to the
@@ -845,6 +875,15 @@ function aPersonsCard(
         if (mind.mayNotSay) lines.push(`      will not say: ${mind.mayNotSay}`);
         if (mind.houseGrievance) lines.push(`      their house's grievance, which they share: ${mind.houseGrievance}`);
         if (mind.houseIsWrongAbout) lines.push(`      what their house is wrong about, and they believe it: ${mind.houseIsWrongAbout}`);
+    }
+    // WHAT THEY REMEMBER, and the same rule: only the one spoken to. The owner: "a sect is its
+    // people", so what a house went through reaches the page as what this one person has of it.
+    const remembered = addressed ? person.remembers ?? [] : [];
+    if (remembered.length > 0) {
+        lines.push('    What they remember - theirs to bring up when the talk turns to their house, the dead or '
+            + 'the past, or the player names somebody in it, and not before; one thing at a time, told the way '
+            + 'they came to know it, never the list:');
+        for (const line of remembered) lines.push(`      ${line}`);
     }
     return lines.join('\n');
 }

@@ -1557,6 +1557,12 @@ export interface SomebodyInTheSquare {
         houseIsWrongAbout?: string;
     } | null;
     /**
+     * What they remember, one line each, how they came to know it first: what their house went
+     * through, what was theirs, what the player did in front of them. Said only by the person
+     * spoken to, and only when the talk turns to it. See `whatSomebodyRemembers`.
+     */
+    remembers?: readonly string[] | null;
+    /**
      * What somebody cornered reaches for first: who stands behind them, by title and never by
      * name, and what they have on them. A name the player was never given cannot enter the prose,
      * and "our house's master is my father" needs none. Theirs to say, never something a stranger

@@ -2742,6 +2742,13 @@ a-catalog-person-and-their-world-row.ts
                  cannot drift. The reverse is a catalog LOOKUP and never a
                  prefix strip - `npc-95` is a procedural NPC
 memory.ts        durable memories, search, and the LLM-driven compression write path
+what-somebody-remembers.ts
+                 what one person remembers, read and never stored: their own
+                 memory rows, their house's losses (lived if they were on the
+                 roll or it was somebody of theirs, told if somebody who lived
+                 it is left to tell it or it carried past the house), and what
+                 the player did where they were standing. The card of the
+                 person spoken to carries it; a house remembers nothing itself
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
 time.ts          advanceTime: what fell due, what was running, what was missed
 manuals.ts       who holds a book, what shelf a house actually has, and who it

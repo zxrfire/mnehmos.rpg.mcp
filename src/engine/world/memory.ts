@@ -9,7 +9,7 @@
  *
  *   what happened            history.ts, ground truth
  *   what can be recovered    history.ts, `fidelity`
- *   what a person carries    here
+ *   what a person carries    here, read in conversation by `what-somebody-remembers.ts`
  *   what a person believes   the social layer's `knowledge.ts`
  *
  * The player remembers a mountain. Someone born later says there has never been

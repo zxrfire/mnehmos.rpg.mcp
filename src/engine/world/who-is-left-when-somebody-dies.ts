@@ -35,6 +35,15 @@ const WHO_CARRIES_IT: Readonly<Partial<Record<RelationshipKind, InheritanceRelat
     });
 
 /**
+ * Whether a tie of this kind leaves somebody holding a death. The same six
+ * kinds from either end, because each has its reciprocal in the table, so it
+ * reads right off the living person's row as well as off the dead one's.
+ */
+export function aDeathLeavesThemHoldingIt(kind: RelationshipKind): boolean {
+    return WHO_CARRIES_IT[kind] !== undefined;
+}
+
+/**
  * Everybody who is left, heirs first.
  *
  * `stillHere` drops anybody the world has already buried. Heirs keep their own

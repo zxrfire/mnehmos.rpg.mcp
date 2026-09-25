@@ -1063,7 +1063,8 @@ import {
     composeStateSummary,
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
-import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { whatSomebodyRemembers } from '../engine/world/what-somebody-remembers.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -1695,6 +1696,12 @@ const TECHNIQUES_SHOWN = 8;
 
 /** And for the wall. Offers and refusals are counted separately. */
 const DUTIES_SHOWN = 8;
+
+/**
+ * How much of what somebody remembers their card carries, strongest first. Material for one
+ * thing said at a time, not a history: the card says so, and a longer list is read as one.
+ */
+const WHAT_A_CARD_REMEMBERS = 3;
 
 /**
  * What a FULL month of mortal care puts back, as a flat quantity of HP.
@@ -19772,6 +19779,17 @@ ${fit.line}`;
                         ? getSect(person.sectId)?.name ?? null
                         : null,
                     ownMind: whatSomebodyHoldsPrivately(person.id, person.sectId ?? null),
+                    // What they remember of their house, of their own and of the player,
+                    // for the card of whoever is spoken to. See `what-somebody-remembers.ts`.
+                    remembers: this.atHand === null
+                        ? null
+                        : whatTheyRememberOnTheirCard(
+                            whatSomebodyRemembers(this.atHand, person.id, {
+                                player: { id: cultivator.id, name: cultivator.name },
+                                limit: WHAT_A_CARD_REMEMBERS
+                            }),
+                            id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)
+                        ),
                     toReachFor: row === null
                         ? null
                         : whatTheyHaveToReachFor(row, byId, this.atHand?.objects ?? []),
