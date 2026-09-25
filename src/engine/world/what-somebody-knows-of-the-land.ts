@@ -273,6 +273,41 @@ export function whatSomebodyKnowsOfTheLand(
 }
 
 /**
+ * What standing somewhere shows anybody who arrives, without a word asked. The owner: "ensure you
+ * can travel the world, broaden your horizons", and "you expand your horizons as you go further".
+ * The roads out of a town are signed for where they go, so those can be found; the province's other
+ * settlements are names a traveller hears inside a day; every town signs the road to its capital;
+ * and a city's roads leave for the capitals of the provinces next door, which a town only names.
+ * Nothing further than that is handed over: the rest is asked for, or walked to.
+ */
+export function whatStandingHereShows(
+    world: Pick<WorldState, 'locations'>,
+    here: string | null
+): { name: string; stage: 'placed' | 'named' }[] {
+    const province = provinceOf(world, here);
+    if (!province || !here) return [];
+    const shown = new Map<string, 'placed' | 'named'>();
+    const show = (name: string | null | undefined, stage: 'placed' | 'named') => {
+        if (!name || name === here) return;
+        if (shown.get(name) !== 'placed') shown.set(name, stage);
+    };
+    for (const name of settlementsOf(province)) show(name, 'named');
+    show(PROVINCIAL_CAPITALS[province], 'placed');
+    // The roads out of here, whichever end of the road the catalog wrote them on.
+    for (const place of PLACES.filter(row => row.regionId === province)) {
+        if (place.name === here) for (const road of place.connections ?? []) show(road.otherPlaceName, 'placed');
+        if ((place.connections ?? []).some(road => road.otherPlaceName === here)) show(place.name, 'placed');
+    }
+    const tier = whatKindOfPlace(here);
+    const aCity = tier === 'city' || tier === 'provincial capital';
+    for (const id of nextDoor(province)) {
+        show(REGIONS.find(row => row.id === id)?.name, 'named');
+        show(PROVINCIAL_CAPITALS[id], aCity ? 'placed' : 'named');
+    }
+    return [...shown.entries()].map(([name, stage]) => ({ name, stage }));
+}
+
+/**
  * Which of a crowd knows the way to a house, as an index into `people`, or -1 when nobody here
  * could be expected to. The one whose own knowledge reaches it, the furthest-reaching first. And
  * past that, the size of the place decides whether somebody in the crowd has been anyway: "AT

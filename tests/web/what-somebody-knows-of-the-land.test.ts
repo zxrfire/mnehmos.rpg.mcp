@@ -98,6 +98,20 @@ describe('what somebody knows of the land', () => {
         }
     }, 180_000);
 
+    it('widens as the player goes: a capital signs its roads to the next provinces', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'the-land-goes-further', worldSeed: 'a-xianxia-run' });
+        const { cultivator } = await game.newRun('Ke Yan');
+        repos.cultivators.update(cultivator.id, { location: PLACE.CLOUD_GATE });
+        await game.act('I look around');
+        const stageOf = (name: string) => stageRank(game.knowledge.stageOf(cultivator.id, 'place', name));
+        // Its own province's settlements, heard of at least.
+        expect(stageOf(PLACE.THREE_WALLS)).toBeGreaterThanOrEqual(stageRank('named'));
+        expect(stageOf('Old River Village')).toBeGreaterThanOrEqual(stageRank('named'));
+        // And the capitals next door, which a capital's roads are signed for.
+        expect(stageOf(PLACE.GREEN_FALL)).toBeGreaterThanOrEqual(stageRank('placed'));
+        expect(stageOf(PLACE.SILVER_ISLE)).toBeGreaterThanOrEqual(stageRank('placed'));
+    }, 180_000);
+
     it('starts the player knowing the way to a house they can walk to, and where their life had taken them', async () => {
         const { game } = await makeGameInWorld({ seed: 'the-land-player', worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');

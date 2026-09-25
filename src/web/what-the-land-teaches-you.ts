@@ -1,15 +1,18 @@
 /**
- * What the player knows of the land: what people where they were raised know, and the world once
- * they are on a house's roll. See `what-somebody-knows-of-the-land.ts` for the ladder.
+ * What the player knows of the land: what people where they were raised know, what standing
+ * wherever they have got to shows them, and the world once they are on a house's roll. See
+ * `what-somebody-knows-of-the-land.ts` for the ladder.
  *
- * Nothing else is handed over. The owner: "you should make the player work for it"; the rest is
- * asked of the people they meet. Learned into the knowledge gate as told, and only ever upward.
+ * Nothing else is handed over. The owner: "you should make the player work for it", and the work
+ * is going further and asking: "you expand your horizons as you go further". Learned into the
+ * knowledge gate, and only ever upward.
  */
 
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
 import {
     theRoadAnUpbringingSaw,
     whatSomebodyKnowsOfTheLand,
+    whatStandingHereShows,
     whereALifeBeforeTookThem
 } from '../engine/world/what-somebody-knows-of-the-land.js';
 import type { Cultivator } from '../schema/cultivation.js';
@@ -29,11 +32,24 @@ export interface AnUpbringing {
  * their upbringing: the owner, "in a 16 year life you probably have seen at least a few sect
  * disciples", so at least one or two houses by name, where each is a matter of luck, and a name
  * is something to ask after: "if you know 1-2 sects, you can figure out where they are". On a
- * turn, only once they are on a house's roll.
+ * turn, what standing where they are shows them, and the world once they are on a house's roll.
  */
 export function learnWhatTheLandTeachesThem(game: GameService, cultivator: Cultivator, raised?: AnUpbringing): number {
     const world = game.atHand;
-    if (!world || (raised === undefined && cultivator.sectId === null)) return 0;
+    if (!world) return 0;
+    const onDay = Math.floor(world.currentDay);
+    let learned = 0;
+    // What the roads out of here are signed for, and the names a traveller hears in a day.
+    for (const place of whatStandingHereShows(world, cultivator.location)) {
+        if (game.knowledge.learnIfNew({
+            holderId: cultivator.id, kind: 'place', id: place.name, name: place.name, onDay,
+            sourceKind: place.stage === 'placed' ? 'witnessed' : 'overheard', stage: place.stage,
+            sourceNote: place.stage === 'placed'
+                ? `The road out of ${cultivator.location} is signed for it.`
+                : `A name you heard said in ${cultivator.location}.`
+        })) learned++;
+    }
+    if (raised === undefined && cultivator.sectId === null) return learned;
     const rankIndex = cultivator.sectId ? theRungTheyHold(game, cultivator) : -1;
     const known = whatSomebodyKnowsOfTheLand(world, {
         id: cultivator.id,
@@ -43,8 +59,6 @@ export function learnWhatTheLandTeachesThem(game: GameService, cultivator: Culti
         travelled: raised ? theRoadAnUpbringingSaw(raised.origin) : 0,
         aWayToOneHouse: true
     });
-    const onDay = Math.floor(world.currentDay);
-    let learned = 0;
     // The places their life had already taken them, stood in rather than heard of.
     for (const name of raised ? whereALifeBeforeTookThem(world, { origin: raised.origin, from: raised.at, houseId: raised.houseId }) : []) {
         if (game.knowledge.learnIfNew({

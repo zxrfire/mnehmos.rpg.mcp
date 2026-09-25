@@ -3089,13 +3089,14 @@ export class GameService {
         // are standing now the turn is over, so every way of arriving, joining,
         // rising or leaving reaches it. After the room, which can put them off a
         // roll; before the estate, which is only for the dead.
-        // AND THE WORLD, once they are on a house's roll. See `what-the-land-teaches-you.ts`.
+        // AND WHAT THE LAND HAS SHOWN THEM: where they stand, and their house's world once on a
+        // roll. See `what-the-land-teaches-you.ts`.
         const taught = learnWhatTheLandTeachesThem(this, this.currentRun().cultivator);
         if (taught > 0) {
             execution.calls.push({
                 name: 'knowledge.whatTheLandTeaches',
                 action: 'learn',
-                summary: `${taught} place(s) or house(s) learned off their house's roll.`,
+                summary: `${taught} place(s) or house(s) learned off where they stand and their house's roll.`,
                 ok: true
             });
         }

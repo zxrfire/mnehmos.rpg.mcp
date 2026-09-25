@@ -145,7 +145,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
 | [`child`](#child) | `days` `target` `intent` | time | yes | - | [2](#child) |
-| [`carry`](#carry) | `target` `intent` | varies | yes | - | [6](#carry) |
+| [`carry`](#carry) | `target` `intent` | varies | yes | - | [13](#carry) |
 | [`conceal`](#conceal) | `intent` | varies | yes | - | [3](#conceal) |
 | [`unclear`](#unclear) | - | nothing | fallback | - | - |
 
@@ -450,13 +450,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `destinations`
 
-where they could go, with what the journey costs, what the qi is like there and how far that province carries anybody. Passes no time. Use it for "where can I go", "what is nearby" and "where is there better spiritual energy". Distinct from recall, which reads their own head; distinct from move, which goes somewhere they have already named.
+where they could go, with what the journey costs, what the qi is like there and how far that province carries anybody. Passes no time. Use it for "where can I go", "what is nearby", "what is past this province", "what lies beyond" and "where is there better spiritual energy". Distinct from recall, which reads their own head; distinct from move, which goes somewhere they have already named.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'destinations'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.destinations` · the deterministic parser reaches it · passes no time.
 
 ### `roads`
 
-the dao grounds within reach: ground that teaches something, what each one teaches, and precisely what the cultivator is short by where it will not have them. Passes no time, reads only what they have heard of, and cannot teach them a name. The other half of destinations - that one is where they could go, this one is what standing there would be worth. Use it for "where can I comprehend something" and "what roads are open to me".
+the dao grounds within reach: ground that teaches something, what each one teaches, and precisely what the cultivator is short by where it will not have them. Passes no time, reads only what they have heard of, and cannot teach them a name. The other half of destinations - that one is where they could go, this one is what standing there would be worth. Use it for "where can I comprehend something" and "what daos could I take up". A road HERE is a dao, a way of understanding, and never a road you walk: "the road to Cloud Gate" and "what is past this province" are about travel, and are asked of somebody or are destinations.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'roads'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.loadWorld` · the deterministic parser reaches it · passes no time.
 
@@ -676,13 +676,13 @@ Intents: `have`, `place`.
 
 ### `carry`
 
-what is on this body and what is in its hands. "intent" says which: "wear" puts robes on (and says whose they are and what a house's people make of somebody in them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away" returns it, "drop" lets it go on the ground, "show" offers the house token as proof of what you are - which is what a robe is not. "target" is what was named, in the player's own words. No day passes and nothing is rolled. NOT for attacking: "I draw my sword on him" is attack. Inside a fight none of this applies - dropping a sword there is a surrender, and the fight reads it.
+what is on this body and what is in its hands. "intent" says which: "wear" puts robes on (and says whose they are and what a house's people make of somebody in them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away" returns it, "drop" lets it go on the ground, "show" offers the house token as proof of what you are - which is what a robe is not. "store" puts the thing named into the storage ring on their hand, "retrieve" takes it back out, "unmark" breaks somebody else's mark on a ring so it will open. "load" puts a thing into their cart, carriage or boat and "unload" takes it out; "leave_behind" leaves the vehicle where it stands and "take_along" takes it with them again. "target" is what was named, in the player's own words. No day passes and nothing is rolled. NOT for attacking: "I draw my sword on him" is attack. Inside a fight none of this applies - dropping a sword there is a surrender, and the fight reads it.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'carry'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
 Takes `target`, `intent`.
 
-Intents: `wear`, `take_off`, `draw`, `put_away`, `drop`, `show`.
+Intents: `wear`, `take_off`, `draw`, `put_away`, `drop`, `show`, `store`, `retrieve`, `unmark`, `load`, `unload`, `leave_behind`, `take_along`.
 
 ### `conceal`
 

@@ -520,7 +520,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         takes: [],
         says: `where they could go, with what the journey costs, what the qi is like there and
             how far that province carries anybody. Passes no time. Use it for "where can I go",
-            "what is nearby" and "where is there better spiritual energy". Distinct from
+            "what is nearby", "what is past this province", "what lies beyond" and "where is
+            there better spiritual energy". Distinct from
             recall, which reads their own head; distinct from move, which goes somewhere they
             have already named.`
     },
@@ -531,7 +532,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             Passes no time, reads only what they have heard of, and cannot teach them a name.
             The other half of destinations - that one is where they could go, this one is what
             standing there would be worth. Use it for "where can I comprehend something" and
-            "what roads are open to me".`
+            "what daos could I take up". A road HERE is a dao, a way of understanding, and never
+            a road you walk: "the road to Cloud Gate" and "what is past this province" are about
+            travel, and are asked of somebody or are destinations.`
     },
     wait: {
         takes: ['days', 'target'],
