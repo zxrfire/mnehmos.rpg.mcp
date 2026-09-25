@@ -79,6 +79,14 @@ import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import { boughtFromItsOwner } from '../engine/world/ownership-transfer.js';
+import { hadAs } from '../engine/world/possessions.js';
+import { whatABodyCanCarry, whatAllOfThatTakes } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
+import {
+    howManyHeld,
+    together,
+    whatTheirThingsTake,
+    whereItWouldGo
+} from '../engine/world/what-somebody-is-carrying-takes.js';
 import {
     type SomebodyWithGoals,
     type TheClocksSomebodyIsUnder,
@@ -95,6 +103,7 @@ import type {
 } from '../schema/cultivation.js';
 import {
     addToPouch,
+    everythingInThePouch,
     listCarriedArtifacts,
     listPouch,
     readFlag,
@@ -719,7 +728,13 @@ export const askingVerbs = {
                     ? `${lifted.thing.object.name} `
                       + (lifted.thing.because === 'moored'
                           ? 'comes off its mooring and is standing where you are. '
-                          : 'is out of their hands and into yours. ')
+                          : lifted.thing.landed === 'held'
+                              ? 'is out of their hands and in yours, and it will not go in your pack. '
+                              : lifted.thing.landed === 'too_heavy'
+                                  ? 'comes off them and is on the ground at your feet: it is more than you can carry. '
+                                  : lifted.thing.landed === 'hands_full'
+                                      ? 'comes off them and is on the ground at your feet: it will not go in your pack and your hands are full. '
+                                      : 'is out of their hands and into your pack. ')
                       + `It is still ${party.name}'s - taking a thing does not make it yours - `
                       + 'and the record of how it came to you travels with it.'
                     : lifted.taken === 0
@@ -854,6 +869,23 @@ ${unnamed}`;
                 onDay,
                 here: cultivator.location
             });
+            // WHERE IT GOES: the inventory if there is room, held if not, and at your feet if the
+            // body cannot take it or both hands are full. See `what-somebody-is-carrying-takes.ts`.
+            const landed = whereItWouldGo(
+                together(
+                    whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id)),
+                    whatTheirThingsTake(this.atHand!.objects, cultivator.id)
+                ),
+                lifted.object,
+                whatABodyCanCarry(cultivator.realmOrdinal),
+                howManyHeld(this.atHand!.objects, cultivator.id)
+            );
+            lifted.landed = landed;
+            lifted.object = landed === 'held'
+                ? hadAs(lifted.object, 'held')
+                : landed === 'inventory'
+                    ? lifted.object
+                    : { ...lifted.object, possessorId: null, locationId: this.worldPlaceOf(cultivator) ?? lifted.object.locationId };
             const at = this.atHand!.objects.findIndex(row => row.id === reach.object.id);
             if (at >= 0) this.atHand!.objects[at] = lifted.object;
             this.theWorldMoved();

@@ -105,6 +105,7 @@ import {
     type ObjectRecord
 } from '../engine/world/possessions.js';
 import type { Severity } from '../engine/social/grudges.js';
+import { isAGarment } from '../engine/world/what-somebody-stands-up-in.js';
 import type { WorldState } from '../engine/world/world-state.js';
 
 /** A tracked thing this person has, and how they have it. */
@@ -130,7 +131,10 @@ export function whatIsWithinReachOf(
     if (!world) return [];
     const found: WithinReach[] = [];
     for (const object of world.objects) {
-        if (!isTracked(object) || isRuined(object)) continue;
+        // Clothes and robes are mundane, so counted rather than tracked, and they are still
+        // the thing somebody takes off a body to walk into a house in. See
+        // `what-somebody-stands-up-in.ts`.
+        if ((!isTracked(object) && !isAGarment(object)) || isRuined(object)) continue;
         if (object.possessorId === holderId) {
             found.push({ object, because: 'carried' });
             continue;
@@ -202,6 +206,12 @@ export interface LiftedThing {
     /** How badly it will be missed, off the row's own `significance`. */
     severity: Severity;
     because: 'carried' | 'moored';
+    /**
+     * Where it ended up on the one who took it: in their inventory, held because it did not fit,
+     * or at their feet because they could not carry it. Set by the caller, which knows what they
+     * are already carrying; absent means the inventory.
+     */
+    landed?: 'inventory' | 'held' | 'too_heavy' | 'hands_full';
 }
 
 /**

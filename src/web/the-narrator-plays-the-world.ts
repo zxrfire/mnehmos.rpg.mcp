@@ -753,6 +753,11 @@ function aPersonsCard(
 
     const lines = [`- ${person.name}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
     if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
+    // A fact, and the narrator plays what follows from it. See `theClothesTakenOffThem`.
+    if (person.clothesTakenOffThem && person.clothesTakenOffThem.length > 0) {
+        lines.push(`    Has nothing on: their ${person.clothesTakenOffThem.join(' and ')} were taken off them.`);
+    }
+    if (person.didAboutWhatTheyWore) lines.push(`    ${person.didAboutWhatTheyWore}`);
     // A FACE IS NOT A NAME. The owner: "you don't know their name, you just see a jade beauty in
     // red... hide the name unless the player is sure this is them, cuz otherwise, they introduce
     // themselves". The card keeps the name, because the rulings use it; the prose never does. And

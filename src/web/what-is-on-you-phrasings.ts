@@ -63,7 +63,9 @@ const TAKING_IT_OFF = new RegExp(
     + String.raw`strip(?:s|ping)?\s+(?:off|out\s+of)|shed(?:s|ding)?|get(?:s|ting)?\s+out\s+of|`
     + String.raw`change(?:s|ing)?\s+out\s+of)\s+`
     + String.raw`(?:the\s+|my\s+|a\s+|an\s+|some\s+|their\s+|his\s+|her\s+|its\s+)?[\w' -]{0,30}?${WORN}\b`
-    + String.raw`|\btake(?:s|n)?\s+(?:the|my|a|an|some|their|his|her|its)\s+[\w' -]{0,30}?${WORN}\s+off\b`,
+    // Off SOMEBODY is a theft, not undressing: "I take the robes off him" takes his robes.
+    + String.raw`|\btake(?:s|n)?\s+(?:the|my|a|an|some|their|his|her|its)\s+[\w' -]{0,30}?${WORN}\s+off\b`
+    + String.raw`(?!\s+(?:of\b|him\b|her\b|them\b|somebody\b|someone\b|the\s+\w+|a\s+\w+|an\s+\w+|[\w-]+'s\b))`,
     'i'
 );
 

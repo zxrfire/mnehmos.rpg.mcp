@@ -78,7 +78,7 @@ import {
     whereTheyGoBackTo,
     type NpcRecord
 } from './npc-state.js';
-import { makeObject, type ObjectRecord } from './possessions.js';
+import { isWorn, makeObject, WORN_TAG, type ObjectRecord } from './possessions.js';
 import { handBackTheirSlips } from './a-communication-talisman-carries-word-home.js';
 import type { WorldState } from './world-state.js';
 import {
@@ -102,8 +102,22 @@ function uniformIdFor(memberId: string, houseId: string, onDay: number): string 
     return `uniform-${houseId}-${memberId}-${Math.floor(onDay)}`;
 }
 
-/** Whether this person is wearing this house's robes. Asked of the possessions, never of an id. */
+/**
+ * Whether this person has this house's robes ON. Asked of the possessions, never of an id. A set
+ * in their bag is `holdsTheRobesOf`: it reads as nobody's disciple until it is put on.
+ */
 export function wearsTheRobesOf(
+    objects: readonly Pick<ObjectRecord, 'possessorId' | 'ownerId' | 'tags'>[],
+    personId: string,
+    houseId: string
+): boolean {
+    return objects.some(object =>
+        object.possessorId === personId && object.ownerId === houseId && object.tags.includes('uniform')
+        && isWorn(object));
+}
+
+/** Whether this person has a set of this house's robes at all, on them or in their bag. */
+export function holdsTheRobesOf(
     objects: readonly Pick<ObjectRecord, 'possessorId' | 'ownerId' | 'tags'>[],
     personId: string,
     houseId: string
@@ -136,7 +150,8 @@ export function aUniformFor(input: {
         possessorId: input.memberId,
         ownerId: input.houseId,
         ownerName: input.houseName,
-        tags: ['uniform', 'issued', `house:${input.houseId}`, `member:${input.memberId}`],
+        // Handed over to be put on, and put on.
+        tags: ['uniform', 'issued', `house:${input.houseId}`, `member:${input.memberId}`, WORN_TAG],
         data: { memberId: input.memberId, issuedOnDay: input.onDay }
     });
 }

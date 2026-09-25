@@ -39,7 +39,7 @@ import {
     holdsTheTokenOf,
     isInsideTheCompound,
     theInternalAffairsElderIn,
-    wearsTheRobesOf,
+    holdsTheRobesOf,
     whatTheHouseGivesThem,
     whereThisHouseBurnsItsLamps
 } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
@@ -51,6 +51,7 @@ import {
     theCommunicationTalismansOnYou
 } from './sending-word-on-a-communication-talisman.js';
 import { upsertObject } from '../engine/world/world-state.js';
+import { hadAs } from '../engine/world/possessions.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
 import { rankIndexOf, theHouseTakesYourWord } from './walking-up-to-a-house.js';
@@ -117,7 +118,7 @@ export function settleWhatYourHouseHasIssuedYou(
     // NEVER ENTERED IS ENTERED ON THE HOUSE'S WORD, as it is for everybody in
     // the yearly pass: robed already, or let in on what the house makes of
     // them, which is what the gate reads too. See `theHouseTakesYourWord`.
-    const robedAlready = house !== null && wearsTheRobesOf(world.objects, cultivator.id, house.id);
+    const robedAlready = house !== null && holdsTheRobesOf(world.objects, cultivator.id, house.id);
     if (house && seat && here && isInsideTheCompound(byId, here, seat)
         && (robedAlready || theHouseTakesYourWord(game, cultivator, house))) {
         const roll = world.npcs.filter(n => n.status === 'alive' && n.factionId === house.id);
@@ -129,7 +130,7 @@ export function settleWhatYourHouseHasIssuedYou(
                 name: cultivator.name,
                 rankIndex: rankIndexOf(game, cultivator.id, house.ranks.length)
             },
-            wearsItsRobes: wearsTheRobesOf(world.objects, cultivator.id, house.id),
+            wearsItsRobes: holdsTheRobesOf(world.objects, cultivator.id, house.id),
             holdsItsToken: holdsTheTokenOf(world.objects, cultivator.id, house.id),
             canCut: thisHouseCanIssue(roll.map(n => n.cultivation.realmOrdinal)),
             lampRoomId,
@@ -139,10 +140,12 @@ export function settleWhatYourHouseHasIssuedYou(
             onDay: Math.floor(world.currentDay)
         });
         if (given.robes) {
-            Object.assign(world, upsertObject(world, given.robes));
+            // Handed over, not put on: they go into your inventory, and changing into them is
+            // yours to do ("I put on the robes").
+            Object.assign(world, upsertObject(world, hadAs(given.robes, 'inventory')));
             theyAreEntered(world, house.id, cultivator.id);
-            lines.push(`Entered on the roll of ${house.name} at its seat: robes with the house's `
-                + 'mark on them are yours to wear.');
+            lines.push(`Entered on the roll of ${house.name} at its seat: you are handed robes with the `
+                + "house's mark on them, and they are in your pack.");
             structure.push(`whatTheHouseGivesThem: robes ${given.robes.id}.`);
         }
         if (given.token && given.lamp) {

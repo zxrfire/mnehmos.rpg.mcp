@@ -181,6 +181,18 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { howItIsHad } from '../engine/world/possessions.js';
+import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
+import {
+    theyDoSomethingAboutWhatTheyWore,
+    whatTheyDidAboutWhatTheyWore
+} from './somebody-robbed-of-what-they-wore.js';
+import {
+    theClothesTakenOffThem,
+    theClothesTheyStandUpIn,
+    theLineForWhatTheyHaveOn,
+    whatTheyHaveOn
+} from '../engine/world/what-somebody-stands-up-in.js';
 import {
     howTheyComeToKnowIt,
     whatTheyCouldPlaceForYou,
@@ -2240,6 +2252,16 @@ export class GameService {
         // now, and the gate is closed. Needs the world, which the call above has
         // just brought into being.
         this.seedTheGroundAroundHome(created.cultivator);
+
+        // AND WHAT THEY STAND UP IN, which is an item like everything else on them: worn, and
+        // theirs to lose. See `what-somebody-stands-up-in.ts`.
+        // A game with no world has no object table to put them in.
+        this.atHand?.objects.push(theClothesTheyStandUpIn({
+            personId: created.cultivator.id,
+            personName: created.cultivator.name,
+            onDay: this.atHand.currentDay,
+            among: this.atHand.objects
+        }));
 
         // AND THE WORLD IS COMMITTED AFTER THE TIES, NOT BEFORE THEM.
         //
@@ -4653,7 +4675,18 @@ ${noticedWaiting}`;
                 // is the reverse, and "it will not fit" and "you cannot lift
                 // it" send somebody to do two different things. See
                 // `what-a-body-can-carry-and-what-a-ring-holds.ts`.
-                const load = whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id));
+                // AND WHAT THEY HAVE ON. The owner: "what am i wearing should just route to
+                // status". See `what-somebody-stands-up-in.ts`.
+                const wearing = theLineForWhatTheyHaveOn(
+                    whatTheyHaveOn(this.atHand?.objects ?? [], cultivator.id));
+                sheet.facts.lines.push(wearing);
+                sheet.facts.prose = `${sheet.facts.prose}\n\n${wearing}`;
+                // The pouch AND every thing held: a sword or a spare robe takes room too. What is
+                // worn or held weighs and takes no room. See `what-somebody-is-carrying-takes.ts`.
+                const load = together(
+                    whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id)),
+                    whatTheirThingsTake(this.atHand?.objects ?? [], cultivator.id)
+                );
                 const carrying = whatCarryingThatIsLike(
                     load, whatABodyCanCarry(cultivator.realmOrdinal)
                 );
@@ -13326,9 +13359,13 @@ ${opened.text}` : receipt,
         // thing that stands where it was made is not on anybody, which is what
         // `never-carried` and the two never-held kinds say.
         this.atHand = this.atHand ?? await this.loadWorld();
-        const carriedRows = this.whatYouAreCarrying(cultivator).rows.filter(row =>
+        const everyRow = this.whatYouAreCarrying(cultivator).rows.filter(row =>
             row.kind !== 'formation' && row.kind !== 'territory'
             && !row.tags.includes('never-carried'));
+        // WORN, HELD, INVENTORY. The owner: "i need to know what's on me", in three states.
+        const wornRows = everyRow.filter(row => howItIsHad(row) === 'worn');
+        const heldRows = everyRow.filter(row => howItIsHad(row) === 'held');
+        const carriedRows = everyRow.filter(row => howItIsHad(row) === 'inventory');
 
         // AND WHAT IS IN THE YARD
         const yard = countedConveyancesHeld(this.whatIsInTheirYard(cultivator));
@@ -13378,6 +13415,8 @@ ${opened.text}` : receipt,
         const fedFor = Number.isFinite(perRation) ? rations * perRation + bellyCovers : Infinity;
 
         const lines: string[] = [];
+        lines.push(theLineForWhatTheyHaveOn(wornRows));
+        if (heldRows.length > 0) lines.push(`Holding: ${heldRows.map(row => row.name).join(', ')}.`);
         if (rations > 0) {
             lines.push(
                 `Food: ${rations} ration${rations === 1 ? '' : 's'}`
@@ -13397,8 +13436,8 @@ ${opened.text}` : receipt,
             // it is exactly the lie this read was ruled against: technically
             // true, and it sends the player away.
             lines.push(
-                `Nothing in the pouch${elsewhere.length > 0 ? '' : ' at all'}. What is on you is `
-                + `what you are standing in and ${stones} spirit stone${stones === 1 ? '' : 's'}.`
+                `Nothing in the pouch${elsewhere.length > 0 ? '' : ' at all'}, and `
+                + `${stones} spirit stone${stones === 1 ? '' : 's'} in the purse.`
             );
         } else {
             if (books.length > 0) {
@@ -18780,6 +18819,24 @@ ${fit.line}`;
         const houseIds = new Set((this.atHand?.factions ?? []).map(house => house.id));
         const nameOf = (id: string): string => byId.get(id)?.name ?? 'somebody';
 
+        // Somebody robbed of what they wore acts on it when next seen. See
+        // `somebody-robbed-of-what-they-wore.ts`.
+        const today = Math.floor(this.repos.runs.getActiveRun()?.elapsedDays ?? 0);
+        for (const person of here) {
+            const robbed = byId.get(person.id);
+            if (this.atHand && robbed && theyDoSomethingAboutWhatTheyWore({
+                world: this.atHand,
+                person: {
+                    id: robbed.id,
+                    name: robbed.name,
+                    realmOrdinal: robbed.cultivation.realmOrdinal,
+                    houseId: robbed.factionId
+                },
+                takenByOrdinal: cultivator.realmOrdinal,
+                today
+            })) this.theWorldMoved();
+        }
+
         for (const person of here) {
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
                 const row = byId.get(person.id) ?? null;
@@ -18809,6 +18866,12 @@ ${fit.line}`;
                     leftTheChair: row === null || this.atHand === null
                         ? null
                         : howTheyLeftTheChair(row, this.atHand.currentDay),
+                    clothesTakenOffThem: this.atHand === null
+                        ? null
+                        : theClothesTakenOffThem(this.atHand.objects, person.id)?.map(o => o.name) ?? null,
+                    didAboutWhatTheyWore: this.atHand === null
+                        ? null
+                        : whatTheyDidAboutWhatTheyWore(this.atHand.objects, person.id, today),
                     at: doing === null ? null : whatThatLooksLike(doing, alongside),
                     // Whether the square would hand this person to somebody
                     // walking into it, and how sure they would be of it. Both

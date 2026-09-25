@@ -457,6 +457,50 @@ export interface TransferInput {
 /**
  * Move a thing.
  */
+/**
+ * The tag on a thing somebody has ON rather than in their bag: clothes, robes, anything worn.
+ * The owner: clothes are "an equipment/item", and there is an "equipped, inventory
+ * distinction". A thing held without it is carried.
+ */
+export const WORN_TAG = 'worn';
+
+/**
+ * The tag on a thing somebody is HOLDING: a drawn blade, or a thing too big for the bag. The
+ * owner: "so 3 states: held, worn and inventory", "weapons would use held state too, it's not
+ * bespoke", and a stolen thing that does not fit "would be in your hand".
+ */
+export const HELD_TAG = 'held';
+
+/** How many things a pair of hands holds at once. */
+export const WHAT_TWO_HANDS_HOLD = 2;
+
+/** Whether this thing is on its holder rather than in their hand or their bag. */
+export function isWorn(object: Pick<ObjectRecord, 'tags'>): boolean {
+    return object.tags.includes(WORN_TAG);
+}
+
+/** Whether this thing is in its holder's hand. */
+export function isHeld(object: Pick<ObjectRecord, 'tags'>): boolean {
+    return object.tags.includes(HELD_TAG);
+}
+
+/** The three ways a thing somebody has can be had: worn, held, or in their inventory. */
+export type HowItIsHad = 'worn' | 'held' | 'inventory';
+
+/** Which of the three this thing is. */
+export function howItIsHad(object: Pick<ObjectRecord, 'tags'>): HowItIsHad {
+    return isWorn(object) ? 'worn' : isHeld(object) ? 'held' : 'inventory';
+}
+
+/** The same thing, moved to one of the three. Nothing else about it moves. */
+export function hadAs(object: ObjectRecord, how: HowItIsHad): ObjectRecord {
+    const tags = object.tags.filter(tag => tag !== WORN_TAG && tag !== HELD_TAG);
+    return {
+        ...object,
+        tags: how === 'worn' ? [...tags, WORN_TAG] : how === 'held' ? [...tags, HELD_TAG] : tags
+    };
+}
+
 export function transferPossession(object: ObjectRecord, input: TransferInput): ObjectRecord {
     const entry: ProvenanceEntry = {
         onDay: input.onDay,
@@ -472,6 +516,9 @@ export function transferPossession(object: ObjectRecord, input: TransferInput): 
     return {
         ...object,
         possessorId: input.toHolderId,
+        // A thing that changes hands arrives in the new holder's inventory, never on their body
+        // or in their hand. Where it did not fit, the caller moves it to `held` with `hadAs`.
+        tags: object.tags.filter(tag => tag !== WORN_TAG && tag !== HELD_TAG),
         ownerId: input.transfersOwnership ? input.toHolderId : object.ownerId,
         ownerName: input.transfersOwnership ? input.toHolderName : object.ownerName,
         provenance: object.provenance.concat(entry)

@@ -49,7 +49,7 @@ import {
     THE_INTERNAL_AFFAIRS_ELDER,
     whoHasALampBurningIn
 } from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token';
-import { wearsTheRobesOf } from '../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house';
+import { holdsTheRobesOf, wearsTheRobesOf } from '../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house';
 import {
     doesTheHouseExpect,
     theHouseExpects,
@@ -129,7 +129,7 @@ describe('your house issues you its robes and token at its seat', () => {
         repos.sects.addMember(faction.id, cultivator.id, 1);
         await game.act('I look around');
         let world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed before arriving').toBe(false);
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed before arriving').toBe(false);
         expect(tokenOf(world, cultivator.id), 'a token before arriving').toBeNull();
 
         // NOBODY'S WORD: stopped, and not entered.
@@ -139,7 +139,7 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(prose, 'the gate did not ask for a token').toMatch(/no token to read/);
         expect(prose, 'the gate did not say it had no word of them').toMatch(/Nobody at the gate was told to expect you/);
         world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'entered on nobody\'s word').toBe(false);
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id), 'entered on nobody\'s word').toBe(false);
 
         // THE HOUSE'S WORD: the gate lets them in, and the seat enters them.
         const recruiter = theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
@@ -151,7 +151,9 @@ describe('your house issues you its robes and token at its seat', () => {
         const entered = await game.act('I look around');
         expect(entered.narration ?? '', 'being entered was not said').toMatch(/Entered on the roll/);
         world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(true);
+        // Handed over, not put on: "they give you the item and YOU change".
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(true);
+        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(false);
         expect(tokenOf(world, cultivator.id)).toBe(faction.id);
         expect(whoHasALampBurningIn(world.objects, faction.id).has(cultivator.id)).toBe(true);
         expect(doesTheHouseExpect(world.factions.find(f => f.id === faction.id)!, cultivator.id),
@@ -165,7 +167,7 @@ describe('your house issues you its robes and token at its seat', () => {
         repos.sects.removeMember(faction.id, cultivator.id);
         const left = await game.act('I look around');
         world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(false);
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(false);
         expect(tokenOf(world, cultivator.id)).toBeNull();
         expect(left.narration ?? '').toMatch(/went back to it/);
         expect(whatTheGateOfThisHouseSays(game, repos.cultivators.getById(cultivator.id)!, house).way)
@@ -182,7 +184,7 @@ describe('your house issues you its robes and token at its seat', () => {
         await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'robes at the seat').toBe(true);
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id), 'robes at the seat').toBe(true);
         expect(tokenOf(world, cultivator.id), 'a token below the rung that carries one').toBeNull();
 
         repos.sects.setRank(faction.id, cultivator.id, 1);
@@ -225,8 +227,10 @@ describe('your house issues you its robes and token at its seat', () => {
         repos.sects.addMember(faction.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
         await game.act('I look around');
+        expect(holdsTheRobesOf(game.atHand!.objects, cultivator.id, faction.id), 'entered at the seat').toBe(true);
+        await game.act('I put on the robes');
         const world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'entered at the seat').toBe(true);
+        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'in the robes').toBe(true);
         expect(tokenOf(world, cultivator.id), 'rung 0 carries a token').toBeNull();
 
         const current = repos.cultivators.getById(cultivator.id)!;
@@ -275,7 +279,7 @@ describe('your house issues you its robes and token at its seat', () => {
         await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed off the roll').toBe(false);
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed off the roll').toBe(false);
 
         // ARRANGED: one of the house at the gate is out looking for disciples.
         // Nobody joins a house out of thin air; see
@@ -303,6 +307,6 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(said, 'who took them on was not said').toMatch(/took you on for/);
         expect(said, 'being entered was not said').toMatch(/Entered on the roll/);
         world = game.atHand!;
-        expect(wearsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(true);
+        expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(true);
     }, 240_000);
 });

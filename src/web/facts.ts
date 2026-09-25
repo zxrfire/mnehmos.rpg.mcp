@@ -1455,6 +1455,13 @@ export interface SomebodyInTheSquare {
      */
     leftTheChair?: string | null;
     /**
+     * What was taken off them, when they now have nothing on. A fact the narrator plays, and
+     * the person acts on. See `theClothesTakenOffThem`.
+     */
+    clothesTakenOffThem?: readonly string[] | null;
+    /** What they did about it, on the day they did it. See `whatTheyDidAboutWhatTheyWore`. */
+    didAboutWhatTheyWore?: string | null;
+    /**
      * What they are at, in one clause, or null where the world has no row.
      *
      * The design owner: *"they ought to all be doing something. (or doing

@@ -5,31 +5,17 @@
  * sweep: `I put on the robes`, `I wear the robes`, `I draw my sword` and `I
  * drop the sword`, every one of them reached nothing.
  *
- * ── THE ROBES ARE NOT A NEW RULE ─────────────────────────────────────────
+ * ── WORN, HELD, INVENTORY ────────────────────────────────────────────────
  *
- * The owner's ruling about walking into a house you do not belong to is that
- * you break in, and that either you blend in as a disciple or you are thrown
- * out. Blending in is the robes, and the engine has read them since the lamp
- * file was written: `wearsTheRobesOf` answers off the POSSESSIONS, and
- * `howTheirPeopleSeeYourFace` hands `inTheRobes` to the face read that the gate
- * and the lecture hall both use.
+ * The owner: "so 3 states: held, worn and inventory", clothes are "an equipment/item", and one
+ * outfit at a time: "if they did wear plain clothes they'd unequip the sect robes". So `wear` is
+ * an act: it changes the player into the thing named, and whatever they had on goes into their
+ * inventory (`changeInto`). A house hands its robes over and does not dress anybody: "they give
+ * you the item and YOU change". `take_off` puts a thing in the inventory, not on the ground.
  *
- * So possession IS wearing, by that file's own design, and the design is
- * deliberate: *"A robe or a token in somebody else's hands is the seam the lamp
- * file keeps open on purpose - a genuine tag in the wrong hands still reads as
- * the house's."* A `worn` bit of my own would be a second opinion about a
- * question that file already answers, and it would answer it one way for the
- * player and another for everybody else in the world.
- *
- * What was missing was a way to SAY it and be told what it buys. That is what
- * `wear` is: a read, priced at nothing, that states whose robes are on the
- * player, that the house's people read them as one of its own because of it,
- * and the one thing that undoes it - the token, which is the proof a robe is
- * not.
- *
- * Taking them off is the act with a consequence, and it is the only write on
- * that side: the robes leave the player's hands onto the ground where they
- * stand, and the house's people read them as a stranger from that moment.
+ * The robes are still read where they always were: `wearsTheRobesOf`, which now asks whether they
+ * are ON, feeds `howTheirPeopleSeeYourFace`, the face read the gate and the lecture hall use. A
+ * set in the pack reads as nobody's disciple. The token is still the proof a robe is not.
  *
  * ── AND THE BLADE ────────────────────────────────────────────────────────
  *
@@ -49,11 +35,9 @@ import {
     THE_RUNG_A_HOUSE_ISSUES_AT,
     tokenIdFor
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
-import {
-    holdsTheTokenOf,
-    wearsTheRobesOf
-} from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
-import type { ObjectRecord } from '../engine/world/possessions.js';
+import { holdsTheTokenOf } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
+import { hadAs, isWorn, type ObjectRecord } from '../engine/world/possessions.js';
+import { changeInto, isAGarment, whatTheyHaveOn } from '../engine/world/what-somebody-stands-up-in.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
@@ -115,7 +99,7 @@ export function whatIsInTheirHand(
     };
 }
 
-/** Every set of robes this cultivator is holding, and whose they are. */
+/** Every set of robes this cultivator has, on them or in their pack, and whose they are. */
 export function theRobesOnThem(
     world: WorldState,
     cultivatorId: string
@@ -134,8 +118,44 @@ const WHERE_ROBES_COME_FROM =
     'A house hands its robes to its own, at its seat, once they are on the roll and standing '
     + 'inside its walls. The other way to be holding a set is to take one off somebody who was.';
 
+/** A sentence that named robes, and one that named plain clothes. */
+const NAMES_ROBES = /\brobes?\b|\buniform\b/;
+const NAMES_CLOTHES = /\bclothes\b|\bclothing\b/;
+
 /**
- * Putting robes on, which is a read: whose they are, and what that buys.
+ * The garment the player meant, among what they have. Robes when they said robes, their plain
+ * clothes when they said clothes, and otherwise the first that fits `wanted`, robes first.
+ */
+function theGarmentMeant(
+    objects: readonly ObjectRecord[],
+    cultivatorId: string,
+    named: string | undefined,
+    wanted: (object: ObjectRecord) => boolean
+): ObjectRecord | null {
+    const theirs = objects.filter(o => o.possessorId === cultivatorId && isAGarment(o) && wanted(o))
+        .sort((a, b) => Number(b.tags.includes('uniform')) - Number(a.tags.includes('uniform')));
+    const said = (named ?? '').toLowerCase();
+    const robes = NAMES_ROBES.test(said);
+    const clothes = NAMES_CLOTHES.test(said);
+    return theirs.find(o => (robes ? o.tags.includes('uniform') : clothes ? !o.tags.includes('uniform') : true))
+        ?? null;
+}
+
+/** What a house's people make of the robes on somebody, or nothing for plain clothes. */
+function whatTheRobesBuy(world: WorldState, cultivatorId: string, row: ObjectRecord): string | null {
+    if (!row.tags.includes('uniform') || row.ownerId === null) return null;
+    // THE TOKEN IS THE PROOF AND THE ROBE IS NOT, which is the lamp file's own line and the
+    // whole shape of the seam: a robe reads at a distance and does not survive being asked.
+    const token = holdsTheTokenOf(world.objects, cultivatorId, row.ownerId);
+    return `The people of ${row.ownerName} read you as one of their own on sight`
+        + (token
+            ? ', and you carry its token, so being asked changes nothing.'
+            : ', and you carry no token of it, so the first one of them who asks you for one has you.');
+}
+
+/**
+ * Putting something on: the act. The player changes into it, and whatever they had on goes into
+ * their inventory. Already on, it is the read it always was.
  */
 export function whatWearingThemBuys(
     game: GameService,
@@ -143,47 +163,32 @@ export function whatWearingThemBuys(
     named: string | undefined
 ): Execution {
     const world = game.atHand;
-    const on = world === null || world === undefined ? [] : theRobesOnThem(world, cultivator.id);
-    if (world === null || world === undefined || on.length === 0) {
+    const row = world ? theGarmentMeant(world.objects, cultivator.id, named, () => true) : null;
+    if (world === null || world === undefined || row === null) {
+        const askedForRobes = named === undefined || NAMES_ROBES.test(named.toLowerCase());
         return refused('engine.wear', 'carry', factsForRefusal(
             named === undefined ? 'You have no robes.' : `You have no ${named}.`,
-            `You are not holding any house's robes. ${WHERE_ROBES_COME_FROM}`,
-            'carry/wear: no object tagged `uniform` with this cultivator as possessor. '
-            + 'Nothing was written and no day passed.'
+            askedForRobes ? `You are not holding any house's robes. ${WHERE_ROBES_COME_FROM}` : `You have no ${named}.`,
+            'carry/wear: no garment with this cultivator as possessor matched. Nothing was written and no day passed.'
         ));
     }
-
-    const lines: string[] = [];
-    const structure: string[] = [];
-    for (const { houseId, houseName, row } of on) {
-        // THE TOKEN IS THE PROOF AND THE ROBE IS NOT, which is the lamp file's
-        // own line and the whole shape of the seam: a robe reads at a distance
-        // and does not survive being asked.
-        const token = holdsTheTokenOf(world.objects, cultivator.id, houseId);
-        lines.push(
-            `You are in the robes of ${houseName}. Its people read you as one of its own on sight`
-            + (token
-                ? ', and you carry its token, so being asked changes nothing.'
-                : ', and you carry no token of it, so the first one of them who asks you for '
-                    + 'one has you.')
-        );
-        structure.push(
-            `carry/wear: ${row.id}, owned by ${houseId}, possessor ${cultivator.id}. `
-            + `wearsTheRobesOf -> ${wearsTheRobesOf(world.objects, cultivator.id, houseId)}; `
-            + `holdsTheTokenOf -> ${token}. Read by howTheirPeopleSeeYourFace as \`inTheRobes\`. `
-            + 'Nothing written and no day passed.'
-        );
-    }
-    return done(
-        'engine.wear',
-        saidAndNoted(lines, structure.join(' ')),
-        structure.join(' ')
-    );
+    const already = isWorn(row);
+    const cameOff = already ? [] : changeInto(world.objects, cultivator.id, row.id);
+    if (!already) game.theWorldMoved();
+    const buys = whatTheRobesBuy(world, cultivator.id, row);
+    const lines = [
+        (already ? `You are already in ${row.name}.` : `You change into ${row.name}.`)
+        + (cameOff.length > 0 ? ` Your ${cameOff.map(o => o.name).join(' and ')} go into your pack.` : ''),
+        ...(buys === null ? [] : [buys])
+    ];
+    const structure = `carry/wear: ${row.id} worn${already ? ' already' : ''}; off into the inventory: `
+        + `${cameOff.map(o => o.id).join(', ') || 'nothing'}. wearsTheRobesOf reads it as ON.`;
+    return done('engine.wear', saidAndNoted(lines, structure), structure);
 }
 
 /**
- * Taking them off, which is the act: the house's people read the player as a
- * stranger from this moment.
+ * Taking something off: into the inventory, not onto the ground. The robes read as a stranger's
+ * from this moment.
  */
 export function theyTakeTheRobesOff(
     game: GameService,
@@ -191,36 +196,27 @@ export function theyTakeTheRobesOff(
     named: string | undefined
 ): Execution {
     const world = game.atHand;
-    const on = world === null || world === undefined ? [] : theRobesOnThem(world, cultivator.id);
-    if (world === null || world === undefined || on.length === 0) {
+    const row = world ? theGarmentMeant(world.objects, cultivator.id, named, isWorn) : null;
+    if (world === null || world === undefined || row === null) {
         return refused('engine.takeOff', 'carry', factsForRefusal(
             named === undefined ? 'You have no robes on.' : `You have no ${named} on.`,
-            `You are not in any house's robes. ${WHERE_ROBES_COME_FROM}`,
-            'carry/take_off: no object tagged `uniform` with this cultivator as possessor. '
-            + 'Nothing was written and no day passed.'
+            named === undefined || NAMES_ROBES.test(named.toLowerCase())
+                ? `You are not in any house's robes. ${WHERE_ROBES_COME_FROM}`
+                : `You have no ${named} on.`,
+            'carry/take_off: nothing worn with this cultivator as possessor matched. Nothing was written and no day passed.'
         ));
     }
-    const put = on[0]!;
-    const at = world.objects.findIndex(o => o.id === put.row.id);
-    if (at >= 0) {
-        // Out of their hands and onto the ground they are standing on. Not
-        // destroyed: a genuine set of robes can be picked up again, which is
-        // how a player comes by one that was never theirs.
-        world.objects[at] = {
-            ...world.objects[at]!,
-            possessorId: null,
-            locationId: game.worldPlaceOf(cultivator) ?? world.objects[at]!.locationId
-        };
-    }
-    const line = `The robes of ${put.houseName} are off you. Its people read you as a stranger `
-        + 'again.';
+    const at = world.objects.findIndex(o => o.id === row.id);
+    if (at >= 0) world.objects[at] = hadAs(world.objects[at]!, 'inventory');
+    game.theWorldMoved();
+    const nothingOn = whatTheyHaveOn(world.objects, cultivator.id).length === 0;
+    const line = `${row.name} ${/s$/.test(row.name) ? 'are' : 'is'} off you and in your pack.`
+        + (row.tags.includes('uniform') ? ` The people of ${row.ownerName} read you as a stranger again.` : '')
+        + (nothingOn ? ' You have nothing on.' : '');
     return done(
         'engine.takeOff',
-        saidAndNoted([line],
-            `carry/take_off: ${put.row.id} possessor cleared, left at `
-            + `${game.worldPlaceOf(cultivator) ?? 'where they stand'}. `
-            + `wearsTheRobesOf(${put.houseId}) -> false.`),
-        `${put.row.id} off ${cultivator.id}; no longer reads as ${put.houseId}'s.`
+        saidAndNoted([line], `carry/take_off: ${row.id} worn -> inventory. wearsTheRobesOf(${row.ownerId}) -> false.`),
+        `${row.id} off ${cultivator.id}, into the inventory.`
     );
 }
 

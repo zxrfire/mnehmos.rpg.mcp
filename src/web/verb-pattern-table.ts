@@ -628,7 +628,10 @@ export const A_PORTABLE_THING =
     // list could not see, so "Wei Lanya's spirit boat" resolved to nobody and "the
     // spirit boat" was handed to a resolver looking for a face.
     + 'carriage|carriages|cart|carts|wagon|wagons|waggon|waggons|coach|coaches|'
-    + 'boat|boats|ship|ships|barge|barges|skiff|skiffs|hull|hulls';
+    + 'boat|boats|ship|ships|barge|barges|skiff|skiffs|hull|hulls|'
+    // And what somebody has on, which comes off a person as readily as a purse: robes
+    // taken to walk into a house in. See `what-somebody-stands-up-in.ts`.
+    + 'robe|robes|clothes|clothing|garment|garments|uniform|uniforms';
 
 /**
  * WHO A THEFT IS AIMED AT, WHICH IS NEVER THE THING BEING TAKEN.
@@ -7002,7 +7005,9 @@ function planIntent(input: string): PlannedAction {
     // the cultivator asking about themselves
     if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)
         || /\b(?:how long (?:will|can|do|have) i (?:live|got|got left|have left)|how (?:long|much longer) have i got|how many years (?:do i have|have i got|are left|left)|what(?:'s| is) my (?:lifespan|life ?span|age)|how old am i|when (?:will|do) i die|years left)\b/.test(text)
-        || A_QUESTION_ABOUT_MY_OWN_BODY.test(text)) {
+        || A_QUESTION_ABOUT_MY_OWN_BODY.test(text)
+        // What they have on is on the sheet. The owner: "what am i wearing should just route to status".
+        || /\bwhat(?:'s| is| am)? (?:i|am i) (?:wearing|dressed in|in)\b|\bwhat do i have on\b|\bwhat(?:'s| is) on me\b/.test(text)) {
         return { action: 'status' };
     }
 

@@ -320,6 +320,30 @@ how a war was going, and a second approval path for handing out weapons, beside 
 The rewrite deleted both and added ONE fact - a war moves what a person will part with -
 entering through the same door the ledger enters by.
 
+### A trait reads every fact
+
+A person's traits are drawn once, from their id, each on a stream of its own
+(`openHandednessOf`, `reticenceOf`, `faceOf`), and every trait is a lens on everything
+that happens to them, never a rule for one situation. The design owner: *"this is true for
+EVERYTHING ... don't make it bespoke ... every trait should be like this."* The shape is a
+cannibal in a colony sim: one fact, a meal of human meat, and most of the colony is sickened
+by it while the one whose trait reads it the other way enjoys it.
+
+Both ways to get it wrong are bespoke:
+
+- **A trait made for one situation** - a "robe shame" flag - says nothing about every other
+  fact it should colour.
+- **A situation that hand-codes who reacts how** instead of reading the fact through the
+  traits the person already has.
+
+When adding a fact, ask which traits read it. When adding a trait, ask what else it reads:
+how much somebody's face matters reads a stolen robe, a duel lost in front of the hall, an
+insult and a refusal alike.
+
+**A trait moves the odds of what might happen; it does not decide it.** A threshold that says
+the proud never report is a rule wearing a trait's name. Weight the draw instead: the proud
+report less often, and one of them still sometimes does.
+
 ### One store, and the reads are computed
 
 Redux keeps a single store with pure reducers and computes the rest in selectors, and
