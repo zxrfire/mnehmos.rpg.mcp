@@ -944,6 +944,8 @@ export function composeNarrationUser(
         theWayItIsDoneHere?: readonly { when: string; text: string }[];
         /** The province's sensory bed, every turn in it. See `whatThisProvinceIsLikeLines`. */
         whatThisProvinceIsLike?: WhatThisProvinceIsLike | null;
+        /** The area's own sensory bed, where it has one; it leads the province's. */
+        whatThisAreaIsLike?: WhatThisProvinceIsLike | null;
     },
     /**
      * Whether this is the first turn in this place, and whether the air is new since the last one.
@@ -989,7 +991,7 @@ export function composeNarrationUser(
         `Place: ${scene.place}`,
         `The ground: ${describeAmbientPerceived(scene.ambient)}`
             + (!arrived && told.ambientIsNews === false ? ' (Unchanged since last turn.)' : ''),
-        ...whatThisProvinceIsLikeLines(scene.whatThisProvinceIsLike, arrived),
+        ...whatThisProvinceIsLikeLines(scene.whatThisProvinceIsLike, arrived, scene.whatThisAreaIsLike),
         ...(scene.standing?.dayOfTheRun === undefined
             ? []
             : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. Set the weather by it on arriving `
@@ -1452,20 +1454,40 @@ export interface WhatThisProvinceIsLike {
  * over the way the ground's qi is: in full on the turn the player arrives, one line after that,
  * and never as material - it colours a moment, it is not described or listed.
  */
-function whatThisProvinceIsLikeLines(province: WhatThisProvinceIsLike | null | undefined, arrived: boolean): string[] {
-    if (!province) return [];
+function whatThisProvinceIsLikeLines(
+    province: WhatThisProvinceIsLike | null | undefined,
+    arrived: boolean,
+    area: WhatThisProvinceIsLike | null | undefined = null
+): string[] {
+    const areaSaid = theSensesSaid(area);
+    const provinceSaid = theSensesSaid(province);
+    // The area is what the player is standing in and the province is what is around it, so the
+    // area leads - a jungle basin inside a gorge province smells of the jungle first.
+    const lines: string[] = [];
+    if (areaSaid) {
+        lines.push(arrived
+            ? `The area you are standing in: ${areaSaid}. Let it colour the moment, never describe or list it.`
+            : `The area, as before: ${areaSaid}.`);
+    }
+    if (provinceSaid) {
+        lines.push(arrived
+            ? areaSaid
+                ? `Around it, the province: ${provinceSaid}.`
+                : `The province: ${provinceSaid}. True of everywhere in it; let it colour the moment, never describe or list it.`
+            : `The province, as before: ${provinceSaid}.`);
+    }
+    return lines;
+}
+
+function theSensesSaid(bed: WhatThisProvinceIsLike | null | undefined): string | null {
+    if (!bed) return null;
     const senses: [string, string][] = [];
     for (const [what, it] of [
-        ['colour', province.colour], ['light', province.light], ['sound', province.sound],
-        ['smell', province.smell], ['food', province.food]
+        ['colour', bed.colour], ['light', bed.light], ['sound', bed.sound], ['smell', bed.smell], ['food', bed.food]
     ] as const) {
         if (it && it.trim().length > 0) senses.push([what, it]);
     }
-    if (senses.length === 0) return [];
-    const said = senses.map(([what, it]) => `${what}: ${it.trim().replace(/\.$/, '')}`).join('; ');
-    return arrived
-        ? [`The province: ${said}. True of everywhere in it; let it colour the moment, never describe or list it.`]
-        : [`The province, as before: ${said}.`];
+    return senses.length === 0 ? null : senses.map(([what, it]) => `${what}: ${it.trim().replace(/\.$/, '')}`).join('; ');
 }
 
 /**

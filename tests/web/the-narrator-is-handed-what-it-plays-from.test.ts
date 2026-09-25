@@ -205,6 +205,19 @@ describe('the way a place does things arrives when it is touched, and not as new
         expect(later).toContain('The province, as before: colour: grey slate and rust;');
         expect(composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin' })).not.toContain('The province');
     });
+
+    /** An area inside a province is what the player stands in; the province is around it. */
+    it('leads with the area and puts the province around it', () => {
+        const message = composeNarrationUser(facts, {
+            place: 'Iron Ridge', ambient: 'thin',
+            whatThisProvinceIsLike: { colour: 'green-grey' },
+            whatThisAreaIsLike: { smell: 'wet canopy and rot' }
+        });
+        const area = message.indexOf('The area you are standing in: smell: wet canopy and rot.');
+        const around = message.indexOf('Around it, the province: colour: green-grey.');
+        expect(area).toBeGreaterThan(-1);
+        expect(around).toBeGreaterThan(area);
+    });
 });
 
 /**

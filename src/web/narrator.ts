@@ -463,6 +463,8 @@ export interface NarratorScene {
     theWayItIsDoneHere?: readonly TheWayItIsDoneHere[];
     /** The province's colour, light, sound, smell and food, every turn in it. */
     whatThisProvinceIsLike?: { colour?: string; light?: string; sound?: string; smell?: string; food?: string } | null;
+    /** The area's own colour, light, sound, smell and food, where it has them; they lead the province's. */
+    whatThisAreaIsLike?: { colour?: string; light?: string; sound?: string; smell?: string; food?: string } | null;
 }
 
 /** One authored custom of a place, handed over on the turn its situation happens. */
