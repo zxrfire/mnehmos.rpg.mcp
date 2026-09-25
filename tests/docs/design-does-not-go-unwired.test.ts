@@ -177,7 +177,12 @@ const DEAD = 0;
 // 178 -> 102: engine/world - 11 wired, 49 deleted, 24 moved into their tests
 // or tests/support, counting names a removal surfaced; 50 left, each named with
 // its reason in the commit that lowered this.
-const TEST_ONLY = 102;
+// 102 -> 81: outside the world simulation - 5 wired, 16 deleted or folded into
+// the live read that did the same job, 1 moved into its test, and 1 re-counted
+// as prose once the classifier stopped reading "functions" in a sentence as
+// code; counting names a removal surfaced, 31 left outside engine/world, each
+// named with its reason in the commit that lowered this.
+const TEST_ONLY = 81;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
