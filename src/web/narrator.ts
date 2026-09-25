@@ -440,11 +440,21 @@ const A_GOING_WORD_BEFORE_IT = new RegExp(
 function aGoingWordLeadsTo(input: string, target: string | undefined): boolean {
     const plain = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim()} `;
     const named = plain(target ?? '').replace(/^ the /, ' ');
-    const at = plain(input).indexOf(named);
-    if (named.trim().length < 3 || at < 0 || !A_GOING_WORD_BEFORE_IT.test(plain(input).slice(0, at + 1))) return false;
-    const first = named.trim().split(' ')[0]!;
-    const written = new RegExp(String.raw`\b${first.replace(/[^a-z0-9]/g, '')}`, 'i').exec(input);
-    return written !== null && /[A-Z]/.test(written[0][0]!);
+    const goesTo = (said: string) => {
+        const at = plain(input).indexOf(said);
+        return said.trim().length >= 3 && at >= 0 && A_GOING_WORD_BEFORE_IT.test(plain(input).slice(0, at + 1));
+    };
+    if (goesTo(named)) {
+        const first = named.trim().split(' ')[0]!;
+        const written = new RegExp(String.raw`\b${first.replace(/[^a-z0-9]/g, '')}`, 'i').exec(input);
+        if (written !== null && /[A-Z]/.test(written[0][0]!)) return true;
+    }
+    // OR A NAME SHORTENED THE WAY PEOPLE SAY IT. Played: "heading to green water then" - the model
+    // read move(Green Water City), and the name is only written back capitalised when it is typed
+    // whole. The model gave a name, capitalised, and the sentence goes straight to its first words.
+    const short = named.replace(/ (?:city|village|town|hamlet) $/, ' ');
+    return short !== named && short.trim().length >= 5
+        && /^[A-Z]/.test((target ?? '').trim().replace(/^the\s+/i, '')) && goesTo(short);
 }
 
 /**
