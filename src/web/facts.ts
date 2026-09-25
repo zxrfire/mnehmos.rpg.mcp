@@ -875,7 +875,7 @@ function timeSkipProse(
         closing.push(`Spirit stones: ${after.spiritStones}, a change of ${signed(skip.deltas.spiritStones)}.`);
     }
     if (after.satiety <= LOW_SATIETY && after.alive) {
-        closing.push(`The belly is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
+        closing.push(`You are hungry: the belly is down to ${after.satiety} of 100.`);
     }
     // The edge, marked. See `nearlyGone`: an empty belly has said so on this
     // surface for a long time and an empty body never has.
@@ -3107,7 +3107,7 @@ function whatTheStretchCostTheBody(after: Cultivator, skip: TimeSkipResult): str
         if (event.kind === 'resource_depleted') said.push(event.summary);
     }
     if (after.satiety <= LOW_SATIETY && after.alive) {
-        said.push(`The belly is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
+        said.push(`You are hungry: the belly is down to ${after.satiety} of 100.`);
     }
     if (nearlyGone(after)) said.push(theBodyIsNearlyGone(after, after.spiritStones));
     if (skip.died) said.push(theDeathSentence(after.name, skip.deathCause, after.realmOrdinal));
