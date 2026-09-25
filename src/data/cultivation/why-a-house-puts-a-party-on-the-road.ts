@@ -294,8 +294,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-for-materials',
         name: 'After materials',
-        what: 'Out after what is on the ground and in the bodies on it, because it '
-            + 'is the one thing at that grade nobody already owns.',
+        what: 'Out gathering herbs, ore and beast parts, because at that grade they are '
+            + 'the one thing nobody already owns.',
         needs: 'nothing',
         ceilingOrdinal: BEAST_CHANGE_ORDINAL,
         floorOrdinal: null,

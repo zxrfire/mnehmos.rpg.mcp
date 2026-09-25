@@ -1414,11 +1414,14 @@ export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard, Seen>(
     const first = calls[0];
     if (!first) throw new Error('a turn folded no calls at all, which cannot happen');
 
+    // A fact two steps both reached is said once. Played blind: look/bills and work/board
+    // both reached the gate, and the narrator was handed the same answer twice.
+    const once = (texts: readonly string[]): string[] => texts.filter((text, at) => text.trim() === '' || texts.indexOf(text) === at);
     const facts: EngineFacts = {
         headline: headline ?? first.facts.headline,
-        lines: calls.flatMap(call => call.facts.lines),
-        structure: calls.flatMap(call => call.facts.structure),
-        prose: calls.map(call => call.facts.prose).filter(text => text.length > 0).join('\n\n')
+        lines: once(calls.flatMap(call => call.facts.lines)),
+        structure: once(calls.flatMap(call => call.facts.structure)),
+        prose: once(calls.map(call => call.facts.prose).filter(text => text.length > 0)).join('\n\n')
     };
 
     const required = calls.flatMap(call => call.facts.required ?? []);

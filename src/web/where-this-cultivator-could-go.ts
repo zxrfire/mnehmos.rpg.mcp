@@ -272,12 +272,11 @@ function theNamesHeldAndUnplaceable(
           + `${leavable === 1 ? 'is' : 'are'} somewhere other than the ground underfoot and `
           + `so can be set out for.`)
         + (input.localCeilingOrdinal >= MAX_ORDINAL
-            ? ` ${input.regionName} has no ceiling: ${theRung(MAX_ORDINAL)} is the top `
-              + 'of the ladder and this province stops nobody. Every row below shares that '
-              + 'unless it says otherwise.'
-            : ` ${input.regionName} carries nobody past `
-              + `${theRung(input.localCeilingOrdinal)}, and every row below shares that `
-              + 'ceiling unless it says otherwise.')
+            ? ` The qi of ${input.regionName} takes a cultivator as far as they can go; `
+              + 'the places below are the same unless one says otherwise.'
+            : ` The qi of ${input.regionName} takes nobody's cultivation past `
+              + `${theRung(input.localCeilingOrdinal)}; the places below are the same unless `
+              + 'one says otherwise.')
         + (held > 0
             ? ` ${held} further name${held === 1 ? ' is' : 's are'} held at a stage below `
               + `placed - the word without a direction - so ${held === 1 ? 'it' : 'they'} `
@@ -351,9 +350,10 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
     lines.push(
         `You are in ${where}, standing at ${standing}. `
         + (uncapped
-            ? `${input.regionName} has no ceiling: the ground here carries anybody `
-              + 'as far as they can go.'
-            : `${input.regionName} carries nobody past ${rankName(input.localCeilingOrdinal)}.`)
+            ? `The qi of ${input.regionName} takes a cultivator as far as they can go.`
+            // Played: "carries nobody past" was voiced as nobody here being strong enough.
+            : `The qi of ${input.regionName} takes nobody's cultivation past `
+              + `${rankName(input.localCeilingOrdinal)}.`)
     );
 
     // The crowding clause, said once where it is the same everywhere.

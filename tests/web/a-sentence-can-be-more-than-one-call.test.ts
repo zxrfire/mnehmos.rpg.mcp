@@ -1110,3 +1110,20 @@ describe('a clause that is already the topic of a step', () => {
         expect(whole.backfilled).toHaveLength(0);
     });
 });
+
+/** Played blind: look/bills and work/board both reached the gate, and the answer was handed over twice. */
+describe('two steps that reached the same fact', () => {
+    it('say it once', () => {
+        const call = (lines: string[], prose: string) => ({
+            facts: { headline: 'h', lines, structure: ['s'], prose },
+            events: [], timeSkip: null, breakthrough: null, outcome: 'executed' as const, calls: [], hearing: null
+        });
+        const folded = foldTheCallsIntoOneTurn([
+            call(['Our board is inside.', '', 'A notice.'], 'The gate answers.'),
+            call(['Our board is inside.', '', 'Another notice.'], 'The gate answers.')
+        ] as never);
+        expect(folded.facts.lines).toEqual(['Our board is inside.', '', 'A notice.', '', 'Another notice.']);
+        expect(folded.facts.structure).toEqual(['s']);
+        expect(folded.facts.prose).toBe('The gate answers.');
+    });
+});
