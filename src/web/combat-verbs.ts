@@ -1408,11 +1408,12 @@ export const combatVerbs = {
         let theRiteKilledYou = false;
         if (held.cameAtYou?.wanted === 'furnace' && result.outcome === 'submission'
             && result.winnerId === held.opponent.id && !theRunClosed) {
-            theRiteKilledYou = theFurnaceRiteWorkedOnYou(this, run, cultivator, held, execution).died;
+            const rite = theFurnaceRiteWorkedOnYou(this, run, cultivator, held, execution);
+            theRiteKilledYou = rite.died;
             if (theRiteKilledYou) {
                 this.repos.cultivators.markDead(
                     cultivator.id, 'combat_defeat', run.turn + 1,
-                    `Drawn off as a cultivation furnace by ${held.party.name}, and it killed them.`
+                    rite.how ?? `Drawn off as a cultivation furnace by ${held.party.name}, and it killed them.`
                 );
             }
         }

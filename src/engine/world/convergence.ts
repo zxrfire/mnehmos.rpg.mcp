@@ -461,6 +461,11 @@ export function attemptRescue(
         day: number;
         /** Everybody is at the place already. See {@link rescuersFor}. */
         standingThere?: { theyMustOutmatchRealm: number };
+        /**
+         * An operator forcing it: the likeliest in reach comes. Nobody in reach
+         * is still nobody - who is there and able is not a roll.
+         */
+        landing?: boolean;
     },
     rng: CultivationRNG
 ): RescueResult {
@@ -488,7 +493,7 @@ export function attemptRescue(
     // One attempt per qualifying party, best odds first. They are separate
     // people making separate decisions; nothing here coordinates them.
     for (const pledge of inReach) {
-        if (!rng.chance(pledge.chance)) continue;
+        if (input.landing !== true && !rng.chance(pledge.chance)) continue;
 
         const note = `Came into ${input.location.name} for them before it shut.`;
         const at = indexById(state.npcs, input.subject.id);
