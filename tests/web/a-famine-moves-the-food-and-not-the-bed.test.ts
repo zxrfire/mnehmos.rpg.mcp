@@ -36,6 +36,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import type Database from 'better-sqlite3';
+import { clearFlag } from '../../src/server/consolidated/cultivation-support';
 
 import { makeGameInWorld } from './harness';
 import { worldForRun } from '../../src/server/state/cultivation-world';
@@ -152,6 +154,8 @@ describe('a famine moves the food and does not move the bed the same way', () =>
 
         const mealBefore = quoted(await at.game.act(A_CULTIVATORS_MEAL));
         const bedBefore = quoted(await at.game.act(A_MONTH_INDOORS));
+        // A month's lodging rents the room; let it go, so the second quote is a quote again.
+        clearFlag((at.game as unknown as { db: Database.Database }).db, at.cultivatorId, 'lodged_at');
 
         somethingBecomesTrueHere(
             at.world, at.place.id, at.day, 'status-test-famine', 'famine',
@@ -279,6 +283,7 @@ describe('a famine moves the food and does not move the bed the same way', () =>
         const at = await standingSomewhereOrdinary();
 
         expect(saidBy(await at.game.act(A_MONTH_INDOORS))).not.toMatch(/quiet ground/);
+        clearFlag((at.game as unknown as { db: Database.Database }).db, at.cultivatorId, 'lodged_at');
 
         somethingBecomesTrueHere(
             at.world, at.place.id, at.day, 'status-test-famine', 'famine',
