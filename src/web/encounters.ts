@@ -418,7 +418,28 @@ export interface SpanCutShort {
     cause: 'somebody_arrived' | 'an_encounter' | 'the_world' | 'the_body';
     /** What cut in, stated. Not narrated - the narrator writes the prose. */
     what: string;
+    /** The encounter's own summary, for the engine channel only. */
+    detail?: string;
 }
+
+/**
+ * What stopped a span, in plain words from the encounter's kind. Played: the
+ * catalog summary reached the player whole - "Severity: serious. Cause: an
+ * unpaid toll", a day on another clock, and "during cultivation" on a road -
+ * and "toll" read as a road fee rather than the Toll at a realm boundary.
+ */
+const WHAT_STOPPED_IT: Readonly<Record<string, string>> = {
+    bandits: 'bandits stopped the way',
+    rival_cultivator: 'another cultivator stopped you',
+    spirit_beast: 'a spirit beast stopped you',
+    ruin: 'you came on a ruin',
+    grave: 'you came on a grave',
+    dao_house: 'you came on a dao house\'s ground',
+    opportunity: 'you came on something worth stopping for',
+    commerce: 'you stopped to trade',
+    sect_event: 'a house\'s business stopped you',
+    misfortune: 'something went wrong with you and you had to stop'
+};
 
 export function whatCutTheSpanShort(span: {
     /** What the player's sentence asked for. */
@@ -431,7 +452,7 @@ export function whatCutTheSpanShort(span: {
         firstInterruptDay: number | null;
         /** What the window produced, so the one that stopped the span can be named. */
         occurrences?: ReadonlyArray<{
-            interrupts: boolean; absoluteDay: number; kind: string; event: { summary: string };
+            interrupts: boolean; absoluteDay: number; kind: string; event: { summary: string; kind?: string };
         }>;
     } | null;
     /**
@@ -481,15 +502,16 @@ export function whatCutTheSpanShort(span: {
         // road was reported as "somebody reached you". A find is not a person.
         const stopper = span.arrival?.occurrences?.find(o =>
             o.interrupts && o.absoluteDay === span.arrival!.firstInterruptDay);
-        const said = stopper?.event.summary.trim().replace(/\.+$/, '') ?? '';
         const somebody = stopper === undefined || stopper.kind === 'arrival' || stopper.kind === 'contact';
+        const plain = stopper?.event.kind === 'qi_deviation'
+            ? 'your qi turned against you'
+            : stopper === undefined ? undefined : WHAT_STOPPED_IT[stopper.kind];
         return {
             askedDays: asked,
             livedDays,
             cause: somebody ? 'somebody_arrived' : 'an_encounter',
-            what: said.length > 0
-                ? said
-                : somebody ? 'somebody reached you before the stretch was done' : 'something on the way stopped it'
+            what: plain ?? (somebody ? 'somebody reached you' : 'something on the way stopped you'),
+            ...(stopper ? { detail: stopper.event.summary } : {})
         };
     }
     if (span.world !== null) {
@@ -507,8 +529,7 @@ export function whatCutTheSpanShort(span: {
  * The span was cut short, stated for the player. One sentence, no inference.
  */
 export function sayingWhatEndedTheSpan(cut: SpanCutShort, humanise: (days: number) => string): string {
-    return `${humanise(cut.livedDays)} of the ${humanise(cut.askedDays)} were spent: `
-        + `${cut.what}.`;
+    return `After ${humanise(cut.livedDays)} of ${humanise(cut.askedDays)}, ${cut.what}.`;
 }
 
 /**
@@ -528,7 +549,8 @@ export function theRowForASpanCutShort(
         name: 'engine.spanCutShort',
         action,
         summary: `${cut.livedDays} of the ${cut.askedDays} day(s) asked for were spent. `
-            + `Cut short by ${cut.cause}: ${cut.what}.`,
+            + `Cut short by ${cut.cause}: ${cut.what}.`
+            + (cut.detail ? ` Encounter: ${cut.detail}` : ''),
         // The span ran and what it reached came off. Nothing failed.
         ok: true
     };

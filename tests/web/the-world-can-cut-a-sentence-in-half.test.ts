@@ -31,7 +31,7 @@ import { makeGame, makeGameInWorld, type Harness } from './harness';
 import { advanceTime, whenTheWorldWouldInterrupt } from '../../src/engine/world/time.js';
 import { createWorld, schedule, type WorldState } from '../../src/engine/world/world-state.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
-import { whatCutTheSpanShort, whatReachesSomebodySpendingASpanHere } from '../../src/web/encounters.js';
+import { sayingWhatEndedTheSpan, theRowForASpanCutShort, whatCutTheSpanShort, whatReachesSomebodySpendingASpanHere } from '../../src/web/encounters.js';
 import { thisPlaceAndWhatContainsIt } from '../../src/web/turn-engine.js';
 
 /** The catalog's shortest manual. Without one every long sitting is refused. */
@@ -231,6 +231,26 @@ describe('three systems, one answer about what ended the span', () => {
         expect(cut?.livedDays).toBe(12);
         expect(cut?.askedDays).toBe(3650);
         expect(cut?.what).toContain('starvation begun');
+    });
+
+    /**
+     * Played: a qi deviation stopped a road, and the line quoted the catalog
+     * summary whole - "Severity: serious. Cause: an unpaid toll", a day on
+     * another clock - where "toll" read as a road fee.
+     */
+    it('says what stopped it in plain words, and keeps the catalog summary for the engine', () => {
+        const summary = 'Circulating qi reverses during cultivation on day 69. Severity: serious. Cause: an unpaid toll.';
+        const cut = whatCutTheSpanShort({
+            asked: 4, lived: 1, skip: skipThatRan(1),
+            arrival: {
+                firstInterruptDay: 16,
+                occurrences: [{ interrupts: true, absoluteDay: 16, kind: 'misfortune', event: { summary, kind: 'qi_deviation' } }]
+            },
+            world: null, startDay: 15
+        })!;
+        const said = sayingWhatEndedTheSpan(cut, days => `${days} day${days === 1 ? '' : 's'}`);
+        expect(said).toBe('After 1 day of 4 days, your qi turned against you.');
+        expect(theRowForASpanCutShort('move', cut).summary).toContain('Severity: serious');
     });
 
     it('otherwise blames whichever of the two outer cuts landed first', () => {
