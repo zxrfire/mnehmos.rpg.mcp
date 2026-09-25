@@ -21,7 +21,7 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { manualCeilingOf } from '../src/engine/world/manuals.js';
 import { THE_DEEPEST_ROADS } from '../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { getTechnique } from '../src/data/cultivation/techniques.js';

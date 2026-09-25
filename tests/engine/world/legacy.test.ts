@@ -11,7 +11,7 @@ import {
     worldRuns,
     type WorldRun
 } from '../../../src/engine/world/legacy.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { evaluateAccess } from '../../../src/engine/world/locations.js';
 import { queryFacts } from '../../../src/engine/world/history.js';
 import { searchMemories } from '../../../src/engine/world/memory.js';

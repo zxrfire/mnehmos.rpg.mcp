@@ -30,7 +30,7 @@ import {
     sendAcross,
     thingsMadeAbove
 } from '../../../src/engine/world/immortal-world.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { buildPlayerDigest, simpleAccess } from '../../../src/engine/world/digest.js';
 import { queryFacts } from '../../../src/engine/world/history.js';
 import { addLineageEdge, ancestorsOf, createLineageRecord } from '../../../src/engine/world/lineage.js';

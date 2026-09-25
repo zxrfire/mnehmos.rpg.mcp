@@ -13,7 +13,7 @@
  * Run: npx tsx scripts/probe-what-a-failed-sending-costs.ts [label]
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { howStrongThisHouseIsNow } from '../src/engine/world/how-strong-a-house-actually-is.js';
 import { cloneWorld, type WorldState } from '../src/engine/world/world-state.js';

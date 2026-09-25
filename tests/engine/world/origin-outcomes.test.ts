@@ -22,7 +22,7 @@ import { describe, it, expect } from 'vitest';
 import {
     measureOriginOutcomes,
     simulateLife
-} from '../../../src/engine/world/origin-odds.js';
+} from '../../support/origin-odds.js';
 import { ORIGIN_TIERS, openingPosition } from '../../../src/engine/cultivation/origin.js';
 
 // One sweep, shared. It is the expensive thing in this file.

@@ -74,7 +74,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { seedWorld } from '../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import { couldHostAGuest } from '../src/engine/world/standing-at-the-gate-of-a-house.js';

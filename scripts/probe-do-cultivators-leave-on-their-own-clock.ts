@@ -30,7 +30,7 @@
  */
 import { appendFileSync, writeFileSync } from 'node:fs';
 import { seedWorld } from '../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import { theSpeciesItIs } from '../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';

@@ -300,7 +300,7 @@ export const MAX_COMPLETION_CHANCE = 0.25;
  * The fractional lift of the strongest pill reading, as a bare fraction. Under
  * the multiplicative reading this is "+35%", not "+35 points" - the same number,
  * a different meaning - and {@link MAX_PILL_MULTIPLIER} is the clearer way to
- * say it. Retained under this name because `engine/world/origin-odds.ts` and
+ * say it. Retained under this name because `tests/support/origin-odds.ts` and
  * `engine/world/seeding.ts` scale a 0..1 preparation quality by it.
  */
 export const MAX_PILL_BONUS = 0.35;
@@ -567,7 +567,7 @@ export interface ConsumedPill {
     /**
      * Legacy strength, as a FRACTIONAL lift rather than percentage points: 0.35
      * means x1.35, not +35 points. Read only when no `grade` is given -
-     * `engine/world/origin-odds.ts` and `engine/world/seeding.ts` synthesise a pill
+     * `tests/support/origin-odds.ts` and `engine/world/seeding.ts` synthesise a pill
      * from a 0..1 preparation quality and have no catalog row to grade. Clamped to
      * MAX_PILL_BONUS.
      */

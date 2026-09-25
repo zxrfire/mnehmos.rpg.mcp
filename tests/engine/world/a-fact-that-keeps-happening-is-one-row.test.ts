@@ -10,7 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { makeFact, type PendingFact } from '../../../src/engine/world/history.js';
 import { createWorld } from '../../../src/engine/world/world-state.js';
 import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';

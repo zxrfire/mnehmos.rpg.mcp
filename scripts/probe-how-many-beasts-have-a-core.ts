@@ -10,7 +10,7 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { beastsOnThisGround } from '../src/engine/world/hunting-a-spirit-beast.js';
 import { BEAST_CORE_ORDINAL, BEAST_CHANGE_ORDINAL } from '../src/data/cultivation/beasts.js';
 import type { WorldState } from '../src/engine/world/world-state.js';

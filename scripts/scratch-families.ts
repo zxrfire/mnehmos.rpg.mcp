@@ -1,7 +1,7 @@
 /** What a lineage record holds today, and whether its members are kin at all. */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { heirsOf } from '../src/engine/world/lineage.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 

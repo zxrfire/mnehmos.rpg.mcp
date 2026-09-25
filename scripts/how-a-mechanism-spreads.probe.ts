@@ -43,11 +43,11 @@
  *
  * ── WHERE THE LIST OF MECHANISMS COMES FROM, AND WHICH OF TWO LISTS ──────
  *
- * `pressureTemplates()`, which is the table itself rather than a copy of it. A
+ * `PRESSURE_TEMPLATES`, which is the table itself rather than a copy of it. A
  * list maintained beside a checker drifts and then agrees with itself, which is
  * the defect the passes probe has and the reason this one does not repeat it.
  *
- * THERE ARE TWO LISTS AND THEY ANSWER DIFFERENT QUESTIONS. `pressureTemplates()`
+ * THERE ARE TWO LISTS AND THEY ANSWER DIFFERENT QUESTIONS. `PRESSURE_TEMPLATES`
  * is what is WIRED: the kinds that have a template behind them. The union
  * `PressureKind` is what was PROMISED: every kind the type says exists, wired or
  * not. They are one word apart and they give opposite answers on the case that
@@ -115,7 +115,7 @@ import { describe, it } from 'vitest';
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { applyPressure, pressureTemplates } from '../src/engine/world/the-world-changing-on-its-own.js';
+import { applyPressure, PRESSURE_TEMPLATES } from '../src/engine/world/the-world-changing-on-its-own.js';
 import type { PressureEvent } from '../src/engine/world/the-world-changing-on-its-own.js';
 
 const YEAR = 365;
@@ -149,12 +149,12 @@ function share(counts: Map<string, number>, total: number): string {
 describe('how a mechanism spreads', () => {
     it('reports every pressure kind by count and by spread', async () => {
         const catalog = await loadCultivationCatalog();
-        const kinds = pressureTemplates().map(t => t.kind);
+        const kinds = PRESSURE_TEMPLATES.map(t => t.kind);
         // The derived list has to fail when its source moves. An empty table
         // here would print a clean report about nothing, which is the shape of
         // defect this probe exists to find.
         if (kinds.length === 0) {
-            throw new Error('pressureTemplates() returned nothing: the table moved, and this probe is blind.');
+            throw new Error('PRESSURE_TEMPLATES is empty: the table moved, and this probe is blind.');
         }
         const fired = new Map<string, number>();
         const targets = new Map<string, Map<string, number>>();

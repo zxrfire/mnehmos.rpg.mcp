@@ -31,7 +31,7 @@ import { A_BLOW_MEANT_TO_END_IT } from '../src/engine/cultivation/how-a-blow-was
 import { forStream } from '../src/engine/cultivation/rng.js';
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 import type { WorldState } from '../src/engine/world/world-state.js';

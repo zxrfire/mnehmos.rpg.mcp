@@ -25,11 +25,15 @@
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { markDead, setExistence } from '../../../src/engine/world/npc-state.js';
 import { isBelowTheLid } from '../../../src/engine/world/layers.js';
 import { isExpelledFromBelow } from '../../../src/engine/cultivation/realms.js';
-import { readTies } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
+import { readTie } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
+import type { NpcRecord } from '../../../src/engine/world/npc-state.js';
+
+/** Every tie this person holds, each read against the roster. */
+const readTies = (state: WorldState, npc: NpcRecord) => npc.relationships.map(tie => readTie(state, tie));
 import { ordinaryWoundFor } from '../../../src/engine/cultivation/which-wound-an-ordinary-injury-is.js';
 import { getWoundType } from '../../../src/data/cultivation/wounds.js';
 import {

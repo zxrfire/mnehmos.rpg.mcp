@@ -596,7 +596,7 @@ function share(did: number, calls: number): string {
 it('counts what every watched pass did', async () => {
     // AFTER the mocks, or the board holds the real functions and counts nothing.
     const { seedWorld } = await import('../src/engine/world/seeding.js');
-    const { advanceWorldYears } = await import('../src/engine/world/driver.js');
+    const { advanceWorldYears } = await import('../tests/support/advance-world-years.js');
     const { loadCultivationCatalog } = await import('../src/engine/world/catalog.js');
 
     const catalog = await loadCultivationCatalog();

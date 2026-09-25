@@ -2,41 +2,65 @@
  * What being born somewhere is actually worth, measured.
  */
 
-import { forStream, type CultivationRNG } from '../cultivation/rng.js';
-import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
-import { bestReadable } from '../cultivation/manual-quality.js';
+import { forStream, type CultivationRNG } from '../../src/engine/cultivation/rng.js';
+import { DAYS_PER_YEAR, computeCultivationRate } from '../../src/engine/cultivation/cultivation.js';
+import { bestReadable } from '../../src/engine/cultivation/manual-quality.js';
 import {
     MAX_ORDINAL,
     lifespanForOrdinal,
     progressRequiredForOrdinal,
     type ImmortalStatus
-} from '../cultivation/realms.js';
+} from '../../src/engine/cultivation/realms.js';
 import {
     MAX_PILL_BONUS,
     attemptBreakthrough,
     canAttemptBreakthrough
-} from '../cultivation/breakthrough.js';
-import { treatWorstInjuries } from '../cultivation/injuries.js';
-import { rollAttributes, rollSpiritRoot } from '../cultivation/spirit-roots.js';
+} from '../../src/engine/cultivation/breakthrough.js';
+import { treatWorstInjuries } from '../../src/engine/cultivation/injuries.js';
+import { rollAttributes, rollSpiritRoot } from '../../src/engine/cultivation/spirit-roots.js';
 import {
     discoverableInsights,
     integrateInsight,
     recordAchievement
-} from '../cultivation/understanding.js';
+} from '../../src/engine/cultivation/understanding.js';
 import {
-    FOUNDATION_PILL_STONES,
+    BREAKTHROUGH_PILL_STONES,
+    MAX_EXPEDITION_MARGIN,
     ORIGIN_TIERS,
     PRICE_GROWTH_PER_ORDINAL,
     STONES_PER_YEAR_OF_SECLUSION,
     affordablePillPotency,
-    breakthroughPillPrice,
-    expeditionSurvival,
     injuryTreatmentPrice,
     getOrigin,
     originProbability,
     withOriginAccess,
     type OriginTierKey
-} from '../cultivation/origin.js';
+} from '../../src/engine/cultivation/origin.js';
+
+// THE SWEEP'S OWN PRICES AND ODDS. These lived in `origin.ts` and only this
+// sweep read them, so they are here beside it: the game prices a breakthrough
+// pill off the market (`seeding.ts` reads `BREAKTHROUGH_PILL_STONES` flat), and
+// nothing in play sends a supplied expedition yet.
+
+/** Stones for a foundation-grade pill at full potency. A different market. */
+export const FOUNDATION_PILL_STONES = 1_200;
+
+/** What a breakthrough pill for this rank costs, in this sweep. */
+export function breakthroughPillPrice(ordinal: number): number {
+    return BREAKTHROUGH_PILL_STONES * Math.pow(PRICE_GROWTH_PER_ORDINAL, Math.max(0, ordinal));
+}
+
+/** Survival odds for a supplied expedition into somewhere lethal. */
+export function expeditionSurvival(
+    key: OriginTierKey,
+    baseSurvival: number,
+    supplied: boolean
+): number {
+    const base = Math.max(0, Math.min(1, baseSurvival));
+    if (!supplied) return base;
+    const margin = Math.min(MAX_EXPEDITION_MARGIN, getOrigin(key).expeditions.survivalMargin);
+    return Math.max(0, Math.min(1, base + margin));
+}
 import {
     AMBIENT_QI_RATE_MULTIPLIER,
     AMBIENT_QI_WEIGHTS,
@@ -46,7 +70,7 @@ import {
     type Injury,
     type Insight,
     type ManualQuality
-} from '../../schema/cultivation.js';
+} from '../../src/schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE MODEL OF A LIFE

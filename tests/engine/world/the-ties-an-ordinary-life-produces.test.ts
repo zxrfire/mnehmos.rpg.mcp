@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { createNpc, isActing, upsertRelationship } from '../../../src/engine/world/npc-state.js';

@@ -71,7 +71,7 @@ import {
 } from '../../../src/engine/world/npc-state.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { THE_LINE_AT_OLD_RIVER } from '../../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { MEMBERS } from '../../../src/data/cultivation/members.js';

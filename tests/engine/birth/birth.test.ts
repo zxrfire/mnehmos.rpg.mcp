@@ -41,7 +41,7 @@ import {
 import { seedWorld, sectGroundId } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { AMBIENT_QI_RATE_MULTIPLIER } from '../../../src/schema/cultivation.js';
-import { measureOriginOutcomes } from '../../../src/engine/world/origin-odds.js';
+import { measureOriginOutcomes } from '../../support/origin-odds.js';
 
 const world = catalogBirthWorld();
 

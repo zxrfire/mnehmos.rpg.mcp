@@ -25,7 +25,7 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import {
     reachableCeilingFor, shelfOf, shelfReach, suitsRoot, manualCeilingOf, BOOKLESS_CEILING
 } from '../src/engine/world/manuals.js';

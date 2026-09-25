@@ -339,12 +339,3 @@ function absencesToAdvance(state: WorldState, opts: AdvanceForPlayOptions): Abse
     return own.concat(extra);
 }
 
-/** The same, phrased in years. */
-export function advanceWorldYears(
-    state: WorldState,
-    years: number,
-    opts: Omit<AdvanceForPlayOptions, 'days'> = {}
-): PlayAdvanceResult {
-    return advanceWorldForPlay(state, { ...opts, days: Math.round(years * DAYS_PER_YEAR) });
-}
-

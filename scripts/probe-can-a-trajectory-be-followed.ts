@@ -22,7 +22,7 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { DAYS_PER_YEAR } from '../src/engine/cultivation/cultivation.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import { isExpelledFromBelow } from '../src/engine/cultivation/realms.js';

@@ -16,8 +16,6 @@ import {
     ORIGIN_TIERS,
     ORIGIN_WEIGHT_TOTAL,
     affordablePillPotency,
-    breakthroughPillPrice,
-    expeditionSurvival,
     getOrigin,
     injuryTreatmentPrice,
     isOriginTierKey,
@@ -30,6 +28,7 @@ import {
     withOriginAccess,
     type OriginTierKey
 } from '../../../src/engine/cultivation/origin.js';
+import { breakthroughPillPrice, expeditionSurvival } from '../../support/origin-odds.js';
 import { discoverableInsights } from '../../../src/engine/cultivation/understanding.js';
 import { MAX_SECT_PROTECTION } from '../../../src/engine/cultivation/toll.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';

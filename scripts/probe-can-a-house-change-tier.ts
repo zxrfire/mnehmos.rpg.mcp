@@ -15,7 +15,7 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { tierOf, chainToApex } from '../src/data/cultivation/governance-and-water-rights.js';
 
 const YEARS = Number(process.argv[2] ?? 1000);

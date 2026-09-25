@@ -21,7 +21,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { seedWorld } from '../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { getSect } from '../src/data/cultivation/sects.js';
 import { aRollWorthModelling } from '../src/engine/world/a-house-raises-its-own.js';

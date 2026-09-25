@@ -23,7 +23,7 @@ import {
 } from '../src/engine/world/a-door-with-a-count-on-it.js';
 import { applyDoorsAndTheirPlaces } from '../src/engine/world/a-year-at-the-doors.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { seedWorld } from '../src/engine/world/seeding.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 

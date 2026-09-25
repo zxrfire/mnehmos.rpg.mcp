@@ -26,7 +26,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { seedWorld } from '../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { isElderRank } from '../src/engine/cultivation/leadership.js';
 import { whereTheyAreHeldBack } from '../src/engine/world/being-held-back-in-a-house.js';

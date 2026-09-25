@@ -16,7 +16,7 @@
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { trajectoryOf } from '../../../src/engine/world/who-was-there-when-it-happened.js';
 import { worthRecordingRank } from '../../../src/engine/world/recording-where-somebody-stands-in-a-house.js';
 import { describeCrossing } from '../../../src/engine/world/recording-what-a-crossing-did.js';

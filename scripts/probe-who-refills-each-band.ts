@@ -25,7 +25,7 @@ import { forStream } from '../src/engine/cultivation/rng.js';
 import { MAX_ORDINAL } from '../src/engine/cultivation/realms.js';
 import type { OriginTierKey } from '../src/engine/cultivation/origin.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { shelfOf, reachableCeilingFor, BOOKLESS_CEILING } from '../src/engine/world/manuals.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import type { WorldState } from '../src/engine/world/world-state.js';

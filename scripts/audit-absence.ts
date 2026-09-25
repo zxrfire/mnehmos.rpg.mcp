@@ -30,7 +30,7 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { cloneWorld } from '../src/engine/world/world-state.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 import { createNpc, isActing, upsertRelationship, type NpcRecord } from '../src/engine/world/npc-state.js';

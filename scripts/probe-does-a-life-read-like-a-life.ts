@@ -19,11 +19,11 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { yearOfDay } from '../src/engine/world/history.js';
 import { trajectoryOf } from '../src/engine/world/who-was-there-when-it-happened.js';
 import { lastOccurrenceOf, occurrencesOf } from '../src/engine/world/a-fact-that-keeps-happening-is-one-row.js';
-import { readTies } from '../src/engine/world/reading-a-tie-against-the-roster.js';
+import { readTie } from '../src/engine/world/reading-a-tie-against-the-roster.js';
 import type { NpcRecord } from '../src/engine/world/npc-state.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
@@ -64,7 +64,7 @@ function printLife(state: WorldState, npc: NpcRecord): void {
     line();
     line(`  about them: ${personal} / ${facts.length}` +
         ` (${facts.length === 0 ? 0 : Math.round((personal / facts.length) * 100)}%)`);
-    const ties = readTies(state, npc).slice(0, 8);
+    const ties = npc.relationships.map(tie => readTie(state, tie)).slice(0, 8);
     if (ties.length > 0) {
         line('  ties:');
         for (const t of ties) line(`    ${t.tie.kind} ${t.tie.standing.toFixed(2)} -> ${t.description}`);

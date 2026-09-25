@@ -31,7 +31,7 @@ import { BEASTS, BEAST_CHANGE_ORDINAL } from '../src/data/cultivation/beasts.js'
 import { hasACore } from '../src/engine/world/hunting-a-spirit-beast.js';
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 
 const SEED = process.argv[2] ?? 'beast-climb-probe';

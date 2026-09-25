@@ -17,11 +17,11 @@
 import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
-    breakthroughPillPrice,
     ORIGIN_TIERS,
     ORIGIN_WEIGHT_TOTAL,
     rollOrigin
 } from '../src/engine/cultivation/origin.js';
+import { breakthroughPillPrice } from '../tests/support/origin-odds.js';
 import { deriveLife, earningsPerYear, type CrossingAttemptObservation } from '../src/engine/world/seeding.js';
 import { rollAttributes, rollSpiritRoot } from '../src/engine/cultivation/spirit-roots.js';
 import { forStream } from '../src/engine/cultivation/rng.js';

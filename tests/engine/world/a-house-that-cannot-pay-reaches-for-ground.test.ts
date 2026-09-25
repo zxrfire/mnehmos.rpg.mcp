@@ -62,7 +62,7 @@
 import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import {
     A_YEAR_OF_WAGES,
     WHAT_A_HOUSE_KEEPS_IN_HAND,

@@ -4759,7 +4759,7 @@ function applyFactionEconomy(state: WorldState): void {
  * Draw a template, bind it, apply it.
  */
 function fireOne(state: WorldState, day: number, rng: CultivationRNG): PressureEvent | null {
-    const table = TEMPLATES;
+    const table = PRESSURE_TEMPLATES;
     const total = table.reduce((sum, t) => sum + t.weight, 0);
 
     for (let attempt = 0; attempt < 6; attempt++) {
@@ -4778,16 +4778,11 @@ function fireOne(state: WorldState, day: number, rng: CultivationRNG): PressureE
     return null;
 }
 
-interface Template {
+export interface Template {
     kind: PressureKind;
     weight: number;
     /** Returns null when the world offers nothing for this template to act on. */
     apply(state: WorldState, day: number, rng: CultivationRNG): PressureEvent | null;
-}
-
-/** One event template by kind, for a test that has to fire it on a world it arranged. */
-export function aPressureTemplate(kind: PressureKind): Pick<Template, 'apply'> | undefined {
-    return TEMPLATES.find(t => t.kind === kind);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -5595,7 +5590,11 @@ function clamp(n: number, lo: number, hi: number): number {
 // ending is rare; a region turning forbidden is rarer still.
 // ─────────────────────────────────────────────────────────────────────────
 
-const TEMPLATES: Template[] = [
+/**
+ * Exported for a test that has to fire one on a world it arranged, or read the
+ * table's weights; the yearly pass draws from it through `fireOne`.
+ */
+export const PRESSURE_TEMPLATES: readonly Template[] = [
     // A house is ended by another house, and then the survivors choose.
     {
         kind: 'house_destroyed',
@@ -7441,7 +7440,4 @@ function isLeverageFact(state: WorldState, factId: string): boolean {
     return fact?.data?.pressure === 'leverage_applied';
 }
 
-/** The table, for tests and for tuning. Read-only. */
-export function pressureTemplates(): { kind: PressureKind; weight: number }[] {
-    return TEMPLATES.map(t => ({ kind: t.kind, weight: t.weight }));
-}
+

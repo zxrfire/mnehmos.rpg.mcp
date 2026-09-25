@@ -20,7 +20,9 @@ import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { canReproduce, manualCeilingOf, newlyEntitled } from '../../../src/engine/world/manuals.js';
-import { aPressureTemplate } from '../../../src/engine/world/the-world-changing-on-its-own.js';
+import { PRESSURE_TEMPLATES } from '../../../src/engine/world/the-world-changing-on-its-own.js';
+
+const aPressureTemplate = (kind: string) => PRESSURE_TEMPLATES.find(t => t.kind === kind);
 import { standsOnAnUnreachableClock } from '../../../src/engine/world/whether-a-house-is-dying-or-simply-has-few-people.js';
 import { aRoomHearsIt } from '../../../src/engine/world/bringing-what-you-know-about-somebody-to-the-room.js';
 import { makeFact } from '../../../src/engine/world/history.js';

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
-import { applyPressure, pressureTemplates } from '../../../src/engine/world/pressure.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
+import { applyPressure, PRESSURE_TEMPLATES } from '../../../src/engine/world/pressure.js';
 import {
     MARKET_MAGNITUDE,
     buildPlayerDigest,
@@ -290,7 +290,7 @@ describe('pressure: the world changes on its own', () => {
     });
 
     it('has a table nobody has quietly emptied', () => {
-        const table = pressureTemplates();
+        const table = PRESSURE_TEMPLATES;
         expect(table.length).toBeGreaterThanOrEqual(12);
         expect(table.every(t => t.weight > 0)).toBe(true);
     });

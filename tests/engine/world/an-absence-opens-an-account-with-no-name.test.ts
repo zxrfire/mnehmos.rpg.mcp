@@ -38,7 +38,7 @@ import {
     beginAbsence,
     openAbsencesForTheUnaccountedFor
 } from '../../../src/engine/world/when-somebody-does-not-come-back.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { NO_NAME_TAG, hasANameOnIt } from '../../../src/engine/social/accounts-with-no-name.js';
 
 const YEAR = 365;

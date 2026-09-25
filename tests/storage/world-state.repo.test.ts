@@ -4,7 +4,7 @@ import { migrate } from '../../src/storage/migrations';
 import { WorldStateRepository } from '../../src/storage/repos/world-state.repo';
 import { fixtureCatalog } from '../engine/world/fixtures';
 import { seedWorld } from '../../src/engine/world/seeding';
-import { advanceWorldYears } from '../../src/engine/world/driver';
+import { advanceWorldYears } from '../support/advance-world-years';
 import { enshrineRun, recordRun, runSeedFor, type WorldRun } from '../../src/engine/world/legacy';
 import { addGoal, setRealm, upsertRelationship } from '../../src/engine/world/npc-state';
 import { cloneWorld, type WorldState } from '../../src/engine/world/world-state';

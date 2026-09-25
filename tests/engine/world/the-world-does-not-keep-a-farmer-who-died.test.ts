@@ -71,7 +71,7 @@
 import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldYears } from '../../../src/engine/world/driver';
+import { advanceWorldYears } from '../../support/advance-world-years';
 import { theWorldForgetsTheMortalDead } from '../../../src/engine/world/world-state';
 import { markDead, somebodyTheCatalogWrote } from '../../../src/engine/world/npc-state';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms';

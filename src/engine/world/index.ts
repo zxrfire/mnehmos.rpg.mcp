@@ -165,7 +165,7 @@
  *                    constants IMPLY, and what a seeded sweep through the real
  *                    breakthrough engine MEASURES. Admin sees all three.
  *
- *   origin-odds.ts   the same discipline applied to the third dealt thing:
+ *   origin-odds.ts   (tests/support/, a measurement only a test runs) the same discipline applied to the third dealt thing:
  *                    whole lives run through the real engine, once per origin
  *                    tier, to measure whether being well-born is visible in the
  *                    outcome distribution or only in the opening position. It
@@ -224,5 +224,4 @@ export * from './driver.js';
 export * from './legacy.js';
 export * from './immortal-world.js';
 export * from './ladder-odds.js';
-export * from './origin-odds.js';
 export * from './a-child-their-own-house-will-not-keep.js';

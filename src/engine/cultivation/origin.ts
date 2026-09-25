@@ -556,9 +556,6 @@ export const STONES_PER_YEAR_OF_SECLUSION = 60;
 /** Stones for a breakthrough pill at full potency, at ordinal zero. */
 export const BREAKTHROUGH_PILL_STONES = 500;
 
-/** Stones for a foundation-grade pill at full potency. A different market. */
-export const FOUNDATION_PILL_STONES = 1_200;
-
 /** Stones a healer wants for one torn meridian, at ordinal zero. */
 export const TREATMENT_STONES = 120;
 
@@ -571,7 +568,7 @@ export const TREATMENT_STONES = 120;
 // `buying-and-bartering-pills.ts` is read off exactly this ratio.
 //
 // A SECOND COPY OF THIS CURVE EXISTS, and it is a different curve.
-// `engine/world/origin-odds.ts` has its own `earningsPerYear` at
+// `tests/support/origin-odds.ts` has its own `earningsPerYear` at
 // `6 * PRICE_GROWTH_PER_ORDINAL^ordinal` - exponential from a base of six,
 // deliberately tied to the price growth so that affordability is scale-
 // invariant. This one is linear from a base of fifty-four and caps. They
@@ -618,11 +615,6 @@ export function netEarningsPerYear(
  * How steeply the price of everything climbs with the rank it is for.
  */
 export const PRICE_GROWTH_PER_ORDINAL = 1.35;
-
-/** What a breakthrough pill for this rank actually costs. */
-export function breakthroughPillPrice(ordinal: number): number {
-    return BREAKTHROUGH_PILL_STONES * Math.pow(PRICE_GROWTH_PER_ORDINAL, Math.max(0, ordinal));
-}
 
 /** What clearing one torn meridian at this rank actually costs. */
 export function injuryTreatmentPrice(ordinal: number): number {
@@ -713,20 +705,10 @@ export function placementsWithinReach(
 }
 
 // WHAT IT BUYS: SURVIVABLE RISK
-
-/**
- * Survival odds for a supplied expedition into somewhere lethal.
- */
-export function expeditionSurvival(
-    key: OriginTierKey,
-    baseSurvival: number,
-    supplied: boolean
-): number {
-    const base = Math.max(0, Math.min(1, baseSurvival));
-    if (!supplied) return base;
-    const margin = Math.min(MAX_EXPEDITION_MARGIN, getOrigin(key).expeditions.survivalMargin);
-    return Math.max(0, Math.min(1, base + margin));
-}
+//
+// `expeditions.survivalMargin`, capped at `MAX_EXPEDITION_MARGIN`, is what a
+// supplied expedition adds to the odds of coming back. Nothing in play sends
+// one yet; `tests/support/origin-odds.ts` prices it in the life sweep.
 
 // THE OPENING POSITION
 //
@@ -763,7 +745,7 @@ export function openingPosition(key: OriginTierKey): OpeningPosition {
     return {
         origin: tier.key,
         name: tier.name,
-        probability: tier.weight / ORIGIN_WEIGHT_TOTAL,
+        probability: originProbability(tier.key),
         spiritStones: tier.spiritStones,
         provisionedYears: provisionedYears(tier.spiritStones),
         ground: tier.ground,

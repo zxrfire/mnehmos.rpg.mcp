@@ -21,7 +21,7 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { FALSE_IMMORTAL_ORDINAL, realmForOrdinal, REALM_TIERS } from '../src/engine/cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../src/engine/cultivation/cultivation.js';
 import type { NpcRecord } from '../src/engine/world/npc-state.js';

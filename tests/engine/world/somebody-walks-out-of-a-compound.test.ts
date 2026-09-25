@@ -53,7 +53,7 @@ import { describe, it, expect } from 'vitest';
 import { isLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import {
     A_FEW_PEOPLE,

@@ -29,7 +29,7 @@ import {
 } from '../../../src/engine/social/grudges.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 /**

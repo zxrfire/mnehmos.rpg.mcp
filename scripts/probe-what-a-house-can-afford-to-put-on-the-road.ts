@@ -35,7 +35,7 @@
  * Run: npx tsx scripts/probe-what-a-house-can-afford-to-put-on-the-road.ts
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import { requireConveyance } from '../src/data/cultivation/what-a-house-moves-its-people-on.js';

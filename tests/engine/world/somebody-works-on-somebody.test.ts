@@ -28,7 +28,7 @@ import { describe, expect, it } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { applyPressure } from '../../../src/engine/world/pressure.js';
-import { pressureTemplates } from '../../../src/engine/world/pressure.js';
+import { PRESSURE_TEMPLATES } from '../../../src/engine/world/pressure.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 const YEAR = 365;
@@ -49,7 +49,7 @@ function runCenturies(seed: string, centuries: number) {
 
 describe('the world runs manoeuvres on people, and not at zero', () => {
     it('has both templates in the table', () => {
-        const kinds = pressureTemplates().map(t => t.kind);
+        const kinds = PRESSURE_TEMPLATES.map(t => t.kind);
         expect(kinds).toContain('leverage_applied');
         expect(kinds).toContain('leverage_understood');
     });

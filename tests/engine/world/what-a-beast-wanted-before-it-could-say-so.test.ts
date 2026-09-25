@@ -48,7 +48,7 @@ import {
 } from '../../../src/engine/world/a-beast-climbs-by-sitting-where-it-is.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { advanceWorldYears } from '../../support/advance-world-years.js';
 
 const catalog = await loadCultivationCatalog();
 

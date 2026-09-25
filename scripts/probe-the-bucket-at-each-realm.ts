@@ -50,7 +50,7 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { REALM_TIERS, realmForOrdinal } from '../src/engine/cultivation/realms.js';
 import { isHalted } from '../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { woundsCarriedBy } from '../src/engine/world/npc-state.js';

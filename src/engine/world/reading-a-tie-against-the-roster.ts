@@ -145,7 +145,3 @@ export function readTie(state: WorldState, tie: NpcRelationship): ResolvedTie {
     return { tie, target, ...whoTheyAreNow(target, tie.targetName, lostTrackOn) };
 }
 
-/** Every tie this person holds, each read against the roster. */
-export function readTies(state: WorldState, npc: NpcRecord): ResolvedTie[] {
-    return npc.relationships.map(tie => readTie(state, tie));
-}

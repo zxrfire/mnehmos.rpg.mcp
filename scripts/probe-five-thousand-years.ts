@@ -11,7 +11,7 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../src/engine/world/driver.js';
+import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 
 const catalog = await loadCultivationCatalog();
 console.log('seed'.padEnd(8) + 'at 41+'.padStart(8) + 'at 37+'.padStart(8)
