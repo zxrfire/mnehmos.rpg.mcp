@@ -133,7 +133,11 @@ export function whatComesToLightThisYear(state: WorldState, year: number, day: n
         const victim = state.npcs[indexById(state.npcs, victimId)];
         if (!killer || !victim) continue;
         out.stillHidden++;
-        const asking = whoIsAskingAbout(state, victim);
+        // Never the killer, who can be one of the dead's own people or a senior
+        // of their house. Asking, they counted toward it coming out, and when
+        // it did they were handed an enemy tie to themselves. Seen as npc-494
+        // on `pass-a` at year 110 once every world stood on the written ages.
+        const asking = whoIsAskingAbout(state, victim).filter(n => n.id !== killer.id);
         const place = state.locations.find(l => l.id === fact.locationId) ?? null;
         const chance = whetherItComesOut({
             yearsSince: (day - fact.day) / DAYS_PER_YEAR,

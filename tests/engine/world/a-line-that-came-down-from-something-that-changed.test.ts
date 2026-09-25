@@ -125,9 +125,19 @@ describe('and the birth pass keeps writing it', () => {
      * The bar is still "the world must go on producing carriers". It is simply
      * no longer asked of a single draw. See AGENTS.md, pool the sample and
      * never widen the bar.
+     *
+     * AND THE POOL DOUBLED WHEN EVERY WORLD CAME TO STAND ON THE WRITTEN AGES.
+     * That moved every seeded world, and on these eight seeds it moved the line
+     * to one seed producing. Measured over sixteen at 200 years: 15 carriers
+     * born, in 6 of 16 seeds (p4, p11, p12, p13, p14, p15) - fewer than the 29
+     * in 6 of 8 before, so the line comes down less often in the written world,
+     * and still in several worlds rather than one. The bar is the same three.
      */
     it('produces carriers who were not seeded', async () => {
-        const SEEDS = ['line-run', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'];
+        const SEEDS = [
+            'line-run', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7',
+            'p8', 'p9', 'p10', 'p11', 'p12', 'p13', 'p14', 'p15'
+        ];
         let carriers: NpcRecord[] = [];
         let born: NpcRecord[] = [];
         let seedsThatProduced = 0;
