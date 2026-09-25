@@ -21,9 +21,18 @@ import {
     composeIntentUser,
     composeNarrationUser,
     narrationSystemPrompt,
+    type SaidAloud,
     theOneSpokenTo,
     whatWasSaidAloud
 } from './prompt.js';
+import {
+    A_CONVERSATION_RECORD_WORDS,
+    A_RECORD_IS_KEPT,
+    THE_STORY_RECORD_WORDS,
+    composeConversationRecord,
+    composeStoryRecord,
+    theRecordAsWritten
+} from './what-the-narrator-remembers.js';
 import {
     readyTheTier,
     theTableMeantIt,
@@ -1164,11 +1173,36 @@ export interface ProviderNarratorOptions {
 export const ENOUGH_ROOM_FOR_A_WHOLE_PLAN = 1200;
 
 
+/** One narrated turn: what the player said, what they read, and who it was put to. */
+interface Exchange {
+    said: string | null;
+    shown: string;
+    with: string | null;
+}
+
+/** A turn as the words said on it, which is all of it an earlier-turns block carries. */
+function theWordsOf(exchange: Exchange): SaidAloud {
+    return { said: exchange.said, spoken: whatWasSaidAloud(exchange.shown) };
+}
+
 /**
- * How many recent turns the narrator holds on to. A conversation that stepped aside for a few
- * turns with somebody else is still found; one from a dozen turns ago has gone cold.
+ * When this many turns wait behind the turn before, they are folded into the story's record in
+ * one call. Several at a time rather than every turn, because a record rewritten every turn
+ * drifts a little each time.
  */
-const EXCHANGES_KEPT = 12;
+const TURNS_FOLDED_AT_ONCE = 4;
+
+/**
+ * When a conversation's unfolded exchanges pass this many, all but the last
+ * `EXCHANGES_REMEMBERED` are folded into its record.
+ */
+const A_CONVERSATION_FOLDS_PAST = 6;
+
+/** A fold that failed keeps its turns to try again next turn, up to this many; past it the oldest go. */
+const AT_MOST_WAITING = 24;
+
+/** Room for a record of `THE_STORY_RECORD_WORDS`, with some over. */
+const A_RECORDS_TOKENS = 600;
 
 export class ProviderNarrator implements Narrator {
     readonly kind = 'provider' as const;
@@ -1473,12 +1507,20 @@ export class ProviderNarrator implements Narrator {
     private lastSceneTold: { place: string; ambient: AmbientQi } | null = null;
 
     /**
-     * What the player said on each recent turn, what they were shown, and who it was put to, so a
-     * conversation carries over: with nothing of the turn before, somebody asked a follow-up
-     * answers as a stranger. The last is the turn before; the ones put to the same person before
-     * it are that conversation's earlier words.
+     * The turns read since the story's record was last written, so a conversation carries over:
+     * with nothing of the turn before, somebody asked a follow-up answers as a stranger. The last
+     * is the turn before. See `what-the-narrator-remembers.ts` for what happens to the rest.
      */
-    private exchanges: { said: string | null; shown: string; with: string | null }[] = [];
+    private exchanges: Exchange[] = [];
+
+    /** The story so far, folded from turns that no longer come back whole. */
+    private story: string | null = null;
+
+    /** Each person spoken to: that conversation's record, and its exchanges not yet folded in. */
+    private conversations = new Map<string, { record: string | null; exchanges: Exchange[] }>();
+
+    /** A record still being written. The next narration waits for it rather than lose it. */
+    private folding: Promise<void> = Promise.resolve();
 
     /**
      * Who has voiced what is on their mind in this place, so it is said once. Played: a senior
@@ -1504,15 +1546,24 @@ export class ProviderNarrator implements Narrator {
     async narrate(facts: EngineFacts, scene: NarratorScene): Promise<Narration> {
         // The first turn somewhere describes it in full; later turns there remind in a clause.
         const arrived = this.lastSceneTold === null || this.lastSceneTold.place !== scene.place;
-        // A new life has no turn before it.
-        if (scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0) this.exchanges = [];
+        await this.folding;
+        // A new life has no turn before it, and remembers nothing of the last one.
+        if (scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0) {
+            this.exchanges = [];
+            this.story = null;
+            this.conversations = new Map();
+        }
         const previous = this.exchanges.at(-1) ?? null;
         const spokenTo = theOneSpokenTo(scene);
-        const earlier = spokenTo === null ? [] : this.exchanges.slice(0, -1)
-            .filter(exchange => exchange.with === spokenTo)
-            .slice(-EXCHANGES_REMEMBERED)
-            .map(exchange => ({ said: exchange.said, spoken: whatWasSaidAloud(exchange.shown) }))
+        const conversation = spokenTo === null ? undefined : this.conversations.get(spokenTo);
+        const inWords = (exchanges: readonly Exchange[]) => exchanges
+            .filter(exchange => exchange !== previous)
+            .map(theWordsOf)
             .filter(exchange => exchange.said !== null || exchange.spoken.length > 0);
+        const earlier = inWords(conversation?.exchanges ?? []);
+        // What was said to anybody else since the story's record, where the conversation block
+        // does not already carry it.
+        const since = inWords(this.exchanges.filter(exchange => spokenTo === null || exchange.with !== spokenTo));
         const ambientIsNews = arrived || this.lastSceneTold!.ambient !== scene.ambient;
         // WEEKS IN ONE PLACE ARE A NEW SCENE THERE. Played: after three months sitting in a village
         // square the narration closed on "Bai Shuxue is still eating standing up", because his card
@@ -1545,7 +1596,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, earlier, alreadySaid, alreadyShown, wornOut, noTimePassed, acts: this.actsPlanned }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, earlier, withThem: conversation?.record ?? null, story: this.story, since, alreadySaid, alreadyShown, wornOut, noTimePassed, acts: this.actsPlanned }) }
                 ]
             });
 
@@ -1595,8 +1646,7 @@ export class ProviderNarrator implements Narrator {
             // And anything the engine says the player must read, whether or not
             // the model felt like including it.
             const whole = withRequiredLines(text, facts.required).slice(0, MAX_NARRATION_CHARS);
-            this.exchanges = [...this.exchanges, { said: scene.playerSaid ?? null, shown: whole, with: spokenTo }]
-                .slice(-EXCHANGES_KEPT);
+            this.remember({ said: scene.playerSaid ?? null, shown: whole, with: spokenTo });
             for (const person of scene.company?.named ?? []) {
                 if (!whole.includes(person.name)) continue;
                 this.shownHere.set(person.name, (this.shownHere.get(person.name) ?? 0) + 1);
@@ -1609,6 +1659,58 @@ export class ProviderNarrator implements Narrator {
                 source: 'fallback',
                 note: `provider unavailable (${errorLabel(err)}); engine account rendered directly`
             };
+        }
+    }
+
+    /**
+     * Keeps a narrated turn, and folds whatever no longer comes back whole into its record. The
+     * fold is not awaited here: it runs while the player reads, and the next narration waits
+     * for it.
+     */
+    private remember(exchange: Exchange): void {
+        this.exchanges.push(exchange);
+        if (exchange.with !== null) {
+            const conversation = this.conversations.get(exchange.with) ?? { record: null, exchanges: [] };
+            conversation.exchanges.push(exchange);
+            this.conversations.set(exchange.with, conversation);
+        }
+        this.folding = this.fold(exchange.with);
+    }
+
+    /** A record that fails to be written keeps its turns, so nothing is lost to a slow model. */
+    private async fold(spokenTo: string | null): Promise<void> {
+        const waiting = this.exchanges.slice(0, -1);
+        if (waiting.length >= TURNS_FOLDED_AT_ONCE) {
+            const story = await this.writeARecord(composeStoryRecord(this.story, waiting), THE_STORY_RECORD_WORDS);
+            this.exchanges = story === null ? this.exchanges.slice(-AT_MOST_WAITING) : this.exchanges.slice(-1);
+            if (story !== null) this.story = story;
+        }
+        const conversation = spokenTo === null ? undefined : this.conversations.get(spokenTo);
+        if (conversation && conversation.exchanges.length > A_CONVERSATION_FOLDS_PAST) {
+            const older = conversation.exchanges.slice(0, -EXCHANGES_REMEMBERED).map(theWordsOf);
+            const record = await this.writeARecord(
+                composeConversationRecord(conversation.record, older), A_CONVERSATION_RECORD_WORDS);
+            conversation.exchanges = conversation.exchanges.slice(record === null ? -AT_MOST_WAITING : -EXCHANGES_REMEMBERED);
+            if (record !== null) conversation.record = record;
+        }
+    }
+
+    private async writeARecord(user: string, words: number): Promise<string | null> {
+        try {
+            const result = await this.provider.call({
+                model: this.options.model,
+                // A record is kept, not written up: no room for invention.
+                temperature: 0,
+                maxTokens: A_RECORDS_TOKENS,
+                signal: this.budget(),
+                messages: [
+                    { role: 'system', content: A_RECORD_IS_KEPT },
+                    { role: 'user', content: user }
+                ]
+            });
+            return theRecordAsWritten(result.text ?? '', words);
+        } catch {
+            return null;
         }
     }
 }

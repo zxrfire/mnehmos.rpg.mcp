@@ -79,6 +79,65 @@ describe('what was said aloud with somebody', () => {
     });
 });
 
+/**
+ * The owner: "it's gonna start dropping old messages and i'd rather it compacts and takes longer".
+ * Nothing drops: what no longer comes back whole is folded into a record first.
+ */
+describe('what no longer comes back whole is folded, not dropped', () => {
+    const turn = (n: number) => `Turn ${n} happened. "Line ${n}," somebody says.`;
+
+    it('folds the turns behind the turn before into the story so far', async () => {
+        const provider = new ScriptedProvider({ narrations: [1, 2, 3, 4, 5, 6].map(turn) });
+        const narrator = new ProviderNarrator(provider, { model: 'test' });
+        for (let n = 1; n <= 6; n++) await narrator.narrate(FACTS, at(null, `act ${n}`));
+
+        expect(provider.records).toHaveLength(1);
+        const asked = provider.records[0]!.messages.find(m => m.role === 'user')!.content;
+        for (const n of [1, 2, 3, 4]) expect(asked).toContain(turn(n));
+        expect(asked).not.toContain(turn(5));
+
+        const sixth = narrationPrompts(provider)[5]!;
+        expect(sixth).toContain('THE STORY SO FAR');
+        expect(sixth).toContain('The record, folded 1 times.');
+        expect(sixth).not.toContain('act 1');
+        expect(sixth).toContain(turn(5));
+    });
+
+    it('folds a long conversation into its record and keeps the last words whole', async () => {
+        const provider = new ScriptedProvider({ narrations: [1, 2, 3, 4, 5, 6, 7, 8].map(turn) });
+        const narrator = new ProviderNarrator(provider, { model: 'test' });
+        for (let n = 1; n <= 8; n++) await narrator.narrate(FACTS, at('Lu Hanbo', `question ${n}`));
+
+        const eighth = narrationPrompts(provider)[7]!;
+        const earlier = eighth.slice(eighth.indexOf('EARLIER WITH THE ONE BEING SPOKEN TO'), eighth.indexOf('THE TURN BEFORE'));
+        expect(earlier).toMatch(/Longer ago, in short: The record, folded \d+ times\./);
+        expect(earlier).not.toContain('question 4');
+        expect(earlier).toContain('question 5');
+        expect(earlier).toContain('question 6');
+        const conversationFold = provider.records.map(call => call.messages.find(m => m.role === 'user')!.content)
+            .find(asked => asked.startsWith('THE RECORD OF ONE CONVERSATION'))!;
+        expect(conversationFold).toContain('- The player: "question 1"');
+        expect(conversationFold).toContain('"Line 1,"');
+        expect(conversationFold).not.toContain('Lu Hanbo');
+    });
+
+    it('keeps the turns when a record cannot be written, rather than lose them', async () => {
+        class NoRecords extends ScriptedProvider {
+            override async call(opts: Parameters<ScriptedProvider['call']>[0]) {
+                if (opts.messages[0]!.content.startsWith('You keep the record')) throw new Error('down');
+                return super.call(opts);
+            }
+        }
+        const provider = new NoRecords({ narrations: [1, 2, 3, 4, 5, 6].map(turn) });
+        const narrator = new ProviderNarrator(provider, { model: 'test' });
+        for (let n = 1; n <= 6; n++) await narrator.narrate(FACTS, at(null, `act ${n}`));
+
+        const sixth = narrationPrompts(provider)[5]!;
+        expect(sixth).toContain('- The player: "act 1"');
+        expect(sixth).toContain('"Line 1,"');
+    });
+});
+
 describe('the words said aloud in a turn', () => {
     it('keeps the latest lines when a turn said more than fits', () => {
         const long = 'x'.repeat(400);

@@ -959,6 +959,11 @@ export function composeNarrationUser(
         previous?: { said: string | null; shown: string } | null;
         /** What was said aloud with the one spoken to, before the turn before. See `earlierWithThem`. */
         earlier?: readonly SaidAloud[];
+        /** That conversation's record, where its older exchanges were folded into one. */
+        withThem?: string | null;
+        /** The story's record, and the words of the turns read since it was written. See `theStorySoFar`. */
+        story?: string | null;
+        since?: readonly SaidAloud[];
         /** Who has already voiced what is on their mind in this place. See `thePeopleHere`. */
         alreadySaid?: ReadonlySet<string>;
         /** Who has already been on the page in this place, so their picture is spent. */
@@ -1031,7 +1036,8 @@ export function composeNarrationUser(
         ...theLifeBehindThemBlock(scene.theLifeBehindThem ?? []),
         ...heldByTheWorldBlock(scene.heldByTheWorldAndNotByThem),
         ...theWayItIsDoneHereBlock(scene.theWayItIsDoneHere),
-        ...earlierWithThem(told.earlier ?? []),
+        ...theStorySoFar(told.story ?? null, told.since ?? []),
+        ...earlierWithThem(told.withThem ?? null, told.earlier ?? []),
         ...theTurnBefore(told.previous ?? null),
         '',
         ...(scene.playerSaid ? [`THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`, ''] : []),
@@ -1079,7 +1085,7 @@ export interface SaidAloud {
     spoken: readonly string[];
 }
 
-/** How many exchanges with one person, before the turn before, are handed back. */
+/** How many exchanges with one person are kept word for word when the older ones are folded. */
 export const EXCHANGES_REMEMBERED = 3;
 
 /** The most of one earlier exchange's spoken lines handed back. The latest lines are kept. */
@@ -1104,27 +1110,48 @@ export function whatWasSaidAloud(shown: string): string[] {
     return kept;
 }
 
+/** Earlier exchanges as the player's words and the lines said aloud, one pair to an exchange. */
+export function saidAloudLines(exchanges: readonly SaidAloud[]): string[] {
+    return exchanges.flatMap(exchange => [
+        ...(exchange.said ? [`- The player: "${exchange.said}"`] : []),
+        ...(exchange.spoken.length > 0
+            ? [`  Said aloud then: ${exchange.spoken.map(line => `"${line}"`).join(' ')}`]
+            : [])
+    ]);
+}
+
 /**
- * THE CONVERSATION BEFORE THE TURN BEFORE, with the one being spoken to.
+ * THE CONVERSATION BEFORE THE TURN BEFORE, with the one being spoken to: its record, where older
+ * exchanges have been folded into one, and the exchanges since.
  *
  * With only the turn before, a conversation longer than two turns has no beginning: whoever is
- * being spoken to cannot refer back to what they said three turns ago. The last few exchanges
- * with them are handed over, and the room's are not. No name is written on it, because the
- * player may not know it yet; see `thePlayerIsSureItIsThem`.
+ * being spoken to cannot refer back to what they said three turns ago. No name is written on it,
+ * because the player may not know it yet; see `thePlayerIsSureItIsThem`.
  */
-function earlierWithThem(earlier: readonly SaidAloud[]): string[] {
-    if (earlier.length === 0) return [];
+function earlierWithThem(record: string | null, earlier: readonly SaidAloud[]): string[] {
+    if (record === null && earlier.length === 0) return [];
     return [
         '',
-        'EARLIER WITH THE ONE BEING SPOKEN TO, oldest first - what was said aloud on the turns before',
-        'the turn before. Both of them remember it: it can be referred back to, answered or built on,',
-        'and nobody says any of it again.',
-        ...earlier.flatMap(exchange => [
-            ...(exchange.said ? [`- The player: "${exchange.said}"`] : []),
-            ...(exchange.spoken.length > 0
-                ? [`  Said aloud then: ${exchange.spoken.map(line => `"${line}"`).join(' ')}`]
-                : [])
-        ])
+        'EARLIER WITH THE ONE BEING SPOKEN TO - before the turn before. Both of them remember it: it',
+        'can be referred back to, answered or built on, and nobody says any of it again.',
+        ...(record === null ? [] : [`Longer ago, in short: ${record}`]),
+        ...(earlier.length === 0 ? [] : ['Then, oldest first:', ...saidAloudLines(earlier)])
+    ];
+}
+
+/**
+ * THE STORY SO FAR: a record of the turns the player has read that no longer come back whole,
+ * and the words said on the few since it was last written. See `what-the-narrator-remembers.ts`.
+ */
+function theStorySoFar(story: string | null, since: readonly SaidAloud[]): string[] {
+    if (story === null && since.length === 0) return [];
+    return [
+        '',
+        'THE STORY SO FAR - what the player has already read, kept short. Nothing in it is retold;',
+        'it is here so this turn does not contradict it. Where it and the rulings differ, the rulings',
+        'are true.',
+        ...(story === null ? [] : [story]),
+        ...(since.length === 0 ? [] : ['Since then, oldest first:', ...saidAloudLines(since)])
     ];
 }
 

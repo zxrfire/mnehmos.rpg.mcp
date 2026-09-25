@@ -13,6 +13,7 @@ import type { ProviderName } from '../../src/agent/provider/config';
 import { GameService } from '../../src/web/game';
 import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator';
 import type { Narrator } from '../../src/web/narrator';
+import { A_RECORD_IS_KEPT } from '../../src/web/what-the-narrator-remembers';
 import { createApp, type ProviderStatus } from '../../src/web/server';
 import { announceMode } from '../../src/web/which-mode-this-session-is-playing-in';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
@@ -124,9 +125,20 @@ export class ScriptedProvider implements LLMProvider {
         this.name = name;
     }
 
+    /**
+     * The narrator's own record-keeping calls (see `what-the-narrator-remembers.ts`), kept apart
+     * from `calls` so a script's narrations and its call indexes mean what they did before.
+     */
+    readonly records: ProviderCallOpts[] = [];
+
     async call(opts: ProviderCallOpts): Promise<ProviderCallResult> {
-        this.calls.push(opts);
         const system = opts.messages.find(m => m.role === 'system')?.content ?? '';
+        if (system === A_RECORD_IS_KEPT) {
+            this.records.push(opts);
+            const text = `The record, folded ${this.records.length} times.`;
+            return { text, raw: text, durationMs: 0 };
+        }
+        this.calls.push(opts);
         const isIntent = system.startsWith('You are the intent router');
 
         const queue = isIntent ? this.plans : this.narrations;
