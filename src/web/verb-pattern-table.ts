@@ -2853,12 +2853,16 @@ export const RIDING = new RegExp([
     // mention a blade three ideas later.
     '\\b(?:fly|flies|flying|flew)\\b[^.!?]{0,40}?\\bon\\s+(?:my|his|her|the)\\s+(?:sword|blade)\\b',
     '\\b(?:fly|flies|flying|flew)\\s+(?:there\\s+)?on\\s+(?:my|his|her|the)\\s+(?:sword|blade)\\b',
-    '\\bsword[- ]flight\\b'
+    '\\bsword[- ]flight\\b',
+    // A BOAT IS FLOWN, PILOTED OR SAILED. Played: "I fly my spirit boat to Silver Island" was
+    // unclear, where "I take my spirit boat" rode.
+    '\\b(?:fly|flies|flying|flew|pilot|pilots|piloting|piloted|sail|sails|sailing|sailed|steer|steers|steering|steered)\\s+'
+        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|his\\s+|her\\s+)?(?:spirit\\s+)?(?:boat|craft|hull|barge)\\b'
 ].join('|'));
 
 /** What is under them, when the sentence says. Matched against `CONVEYANCES`. */
 export const WHAT_IS_BEING_RIDDEN =
-    /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|sword|blade))\b/i;
+    /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride|fly|flies|flying|flew|pilot|pilots|piloting|piloted|sail|sails|sailing|sailed|steer|steers|steering|steered)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|sword|blade))\b/i;
 
 /**
  * The tail that says what you are ON rather than where you are going.

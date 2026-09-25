@@ -48,4 +48,26 @@ describe('what a carriage and a spirit boat hold', () => {
         expect(intoTheBoat.outcome).toBe('executed');
         expect(whatIsInTheVehicle(game.atHand!.objects, 'boat').map(o => o.id)).toEqual(['carcass']);
     }, 180_000);
+
+    /** The owner: "try piloting a spirit boat too / you burn spirit stones as fuel". */
+    it('burns spirit stones to fly a spirit boat, and does not lift on an empty purse', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'a-boat-that-burns', worldSeed: 'a-xianxia-run' });
+        const { cultivator } = await game.newRun('Ke Yan');
+        const here = game.worldPlaceOf(cultivator);
+        game.atHand!.objects.push(aVehicleOf({ id: 'boat', conveyanceId: 'conv-spirit-boat',
+            ownerId: cultivator.id, ownerName: 'Ke Yan', at: here }));
+        const where = () => repos.cultivators.getById(cultivator.id)!;
+        const from = where().location;
+
+        repos.cultivators.update(cultivator.id, { spiritStones: 0 });
+        const grounded = await game.act('I fly my spirit boat to Silver Island');
+        expect(grounded.toolCalls.some(call => call.action === 'ride' && !call.ok)).toBe(true);
+        expect(where().location).toBe(from);
+
+        repos.cultivators.update(cultivator.id, { spiritStones: 100 });
+        const flown = await game.act('I fly my spirit boat to Silver Island');
+        expect(where().location).toBe('Silver Island');
+        expect(flown.narration).toMatch(/\d+ spirit stones burned in its chest/);
+        expect(where().spiritStones).toBeLessThan(100);
+    }, 180_000);
 });

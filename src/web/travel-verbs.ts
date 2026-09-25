@@ -1680,6 +1680,17 @@ export const travelVerbs = {
             power: chosen.power,
             heads
         });
+        // THE CHEST BURNS SPIRIT STONES, and they are the rider's. The owner: "you burn spirit
+        // stones as fuel". Priced here all along (`whatTheChestBurns`) and never taken, so a spirit
+        // boat flew for nothing.
+        if (journey.stonesBurned > cultivator.spiritStones) {
+            return refused('engine.priceJourney', 'ride', factsForRefusal(
+                'Not enough to fly on.',
+                `${chosen.conveyance.name} burns ${journey.stonesBurned} spirit stones on this road, and you `
+                + `carry ${cultivator.spiritStones}. Nothing is spent, and it does not lift.`,
+                `ride: ${chosen.conveyance.id} burns ${journey.stonesBurned} over ${journey.daysOneWay} day(s), `
+                + `heads ${heads}, trips ${journey.trips}; purse ${cultivator.spiritStones}. Location unchanged, no time passed.`));
+        }
         // Ridden, it goes with them, whether it was going with them already or left standing here.
         const rowId = available.find(a => a.conveyance.id === chosen.conveyance.id && a.power === chosen.power)?.rowId;
         const ridden = rowId ? this.atHand?.objects.find(o => o.id === rowId) : undefined;
@@ -1691,9 +1702,16 @@ export const travelVerbs = {
             );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
         const nights = A_ROOF_ON_THE_ROAD.has(chosen.conveyance.id) ? 'under_a_roof' as const : 'in_the_open' as const;
+        // Taken as a delta once the days are spent, so nothing the road wrote is undone by it.
+        const burned = journey.stonesBurned > 0
+            ? this.repos.cultivators.applyDeltas(applied.cultivator.id, { spiritStones: -journey.stonesBurned })
+            : null;
 
         const lines: string[] = [
             `${chosen.conveyance.name}, from ${placeName(cultivator)} to ${arrivedAt}.`,
+            ...(burned
+                ? [`${journey.stonesBurned} spirit stones burned in its chest on the way; ${burned.spiritStones} left in the purse.`]
+                : []),
             road === null
                 ? 'Nothing in the catalog prices a road inside one province, so this is the '
                     + 'short journey everything else in the game is: a day, and the day is spent.'
