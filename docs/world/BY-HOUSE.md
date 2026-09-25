@@ -110,7 +110,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 23 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 10 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
   …and 20 more files.
 
-**Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 6 more
+**Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 5 more
 
 ### Thousand Relic Pavilion
 
@@ -128,7 +128,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) 3
   …and 15 more files.
 
-**Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `HOUSE_MISSIONS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, and 3 more
+**Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, `SEA_CARGO`, and 2 more
 
 ### Ashen Anvil Clan
 
