@@ -159,6 +159,7 @@ import {
     type AVoyage
 } from './a-ship-at-sea.js';
 import { goingByShipInstead, theWayThereIsByShip } from './the-way-there-is-by-ship.js';
+import { theCrewIsWhereTheShipIs } from './the-crew-of-a-ship.js';
 import { theRestOfTheFight } from './when-somebody-comes-at-you.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
 import { SATIETY_MAX } from '../schema/cultivation.js';
@@ -2423,6 +2424,11 @@ export const travelVerbs = {
                 starvationTurns: -applied.cultivator.starvationTurns
             }) ?? applied.cultivator;
         const world = await this.advanceWorld(skip.simulatedDays, fed, applied.run);
+        // THE CREW GO WHERE THE SHIP GOES, after the world's days so nothing moves them off it.
+        if (voyage && !skip.died && (arrived || atSea)) {
+            theCrewIsWhereTheShipIs(this, voyage.lane, arrived ? trip.to : atSea!, cultivator.id,
+                Math.floor(this.atHand?.currentDay ?? applied.run.elapsedDays), !arrived);
+        }
         const onTheWay = recordEncounters(this.knowledge, fed, applied.run.elapsedDays, happened, this.repos);
         const rationsLeft = everythingInThePouch(this.db, fed.id)
             .find(entry => entry.kind === 'ration')?.quantity ?? 0;

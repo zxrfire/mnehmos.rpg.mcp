@@ -41,6 +41,7 @@ import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
 import {
     ACTIONS_PER_FULL_SATIETY,
     assessProvisioning,
+    daysPerRation,
     satietyBurnMultiplier,
     stillNeedsToEat,
     type ProvisioningAssessment
@@ -364,7 +365,7 @@ import {
     writeTheWorldNow
 } from '../server/state/cultivation-world.js';
 import { somebodyDidThis } from '../engine/world/estate-at-death.js';
-import { aShipSailsOn, sayWhereTheShipIs, theRationsAboard, theVoyageUnderWay } from './a-ship-at-sea.js';
+import { aShipSailsOn, sayWhereTheShipIs, takeFromTheHull, theRationsAboard, theVoyageUnderWay } from './a-ship-at-sea.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_ERRAND,
@@ -12331,7 +12332,7 @@ ${opened.text}` : receipt,
         // WHERE THE FOOD COMES FROM: bought where somebody sells it, and out of the pack anywhere
         // else. See `where-food-is-sold.ts`.
         const food = whereFoodComesFromHere(this, cultivator);
-        if (!food.sold) return this.eatFromThePack(run, cultivator);
+        if (!food.sold) return food.hullDays ? this.eatFromTheHull(run, cultivator) : this.eatFromThePack(run, cultivator);
         if (cultivator.spiritStones < MEAL_COST_STONES) {
             return refused('cultivator.applyDeltas', 'eat', factsForRefusal(
                 'Nothing to buy it with.',
@@ -12379,6 +12380,43 @@ ${opened.text}` : receipt,
         coffers.resources.spirit_stones = putIntoTheHouse(
             Number(coffers.resources.spirit_stones ?? 0), MEAL_COST_STONES, 'refectory').after;
         this.theWorldMoved();
+    }
+
+    /** A meal aboard a ship at sea, out of the hull's rations, as much as fills the belly. See `a-ship-at-sea.ts`. */
+    private eatFromTheHull(run: Run, cultivator: Cultivator): Execution {
+        const perRation = daysPerRation(cultivator.realmOrdinal, cultivator.injuries);
+        const counted = Number.isFinite(perRation) && perRation > 0;
+        const wanted = counted ? Math.max(1, Math.ceil((SATIETY_MAX - cultivator.satiety) * perRation / SATIETY_MAX)) : 1;
+        const taken = takeFromTheHull(this.db, cultivator, wanted);
+        const restored = Math.min(SATIETY_MAX - cultivator.satiety,
+            counted ? Math.ceil(taken * SATIETY_MAX / perRation) : SATIETY_MAX);
+        const after = this.db.transaction((): Cultivator => {
+            const updated = this.repos.cultivators.applyDeltas(cultivator.id, {
+                satiety: restored,
+                starvationTurns: -cultivator.starvationTurns
+            });
+            if (!updated) throw new GameError('Cultivator vanished mid-meal.', 500);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+        const left = theRationsAboard(this.db, after);
+        const line = left > 0
+            ? `You eat from the ship's rations, which now cover ${howMany(left, 'more day')} of the passage.`
+            : "You eat from the ship's rations, and that was the last of them; the rest of the passage comes out of the pack.";
+        return {
+            facts: observable('Fed from the hull.', [line], line,
+                [`eatFromTheHull: satiety +${restored} to ${after.satiety}/100, ${taken} day(s) of the hull's rations eaten, ${left} left. No stones spent.`]),
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'cultivator.applyDeltas',
+                action: 'eat',
+                summary: `Satiety +${restored} to ${after.satiety}/100 out of the hull; ${left} day(s) of its rations left.`,
+                ok: true
+            }]
+        };
     }
 
     /** A ration opened where nobody sells food, or the refusal that says where somebody does. */

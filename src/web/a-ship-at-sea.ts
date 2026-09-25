@@ -5,8 +5,8 @@
  * stand on a row of open water: the stretch the lane names past its commit point (the Bitter
  * Crossing on the eastern passage), and otherwise the row of the province that is sea
  * (`openWater` in the catalog). Open water's areas are a hull's decks
- * (`where-in-a-place-somebody-is-standing.ts`), so the people the world has on it are read in
- * three at a time like anywhere else. No row is written for a voyage: a new row moves the
+ * (`where-in-a-place-somebody-is-standing.ts`), so the people the world has on it, the ship's own
+ * crew among them (`the-crew-of-a-ship.ts`), are read in three at a time like anywhere else. No row is written for a voyage: a new row moves the
  * demography (`the-town-at-the-foot-of-a-house.ts`), and every lane is on the one sea.
  *
  * WHAT THE VOYAGE IS lives in a flag, like a stopped road: the port it sailed from, where it is
@@ -88,6 +88,19 @@ export function endTheVoyage(db: Db, cultivatorId: string): void {
 export function theRationsAboard(db: Db, cultivator: Cultivator): number {
     const voyage = theVoyageUnderWay(db, cultivator);
     return voyage ? Math.max(0, voyage.hullRationDays - voyage.sailed) : 0;
+}
+
+/**
+ * Take days of the hull's rations for somebody aboard, eaten ahead of the passage: the days the
+ * hull covers are counted from the quay, so the passage runs out of them that much sooner. The
+ * days actually taken, which is fewer where the hull has fewer left, and 0 ashore.
+ */
+export function takeFromTheHull(db: Db, cultivator: Cultivator, days: number): number {
+    const voyage = theVoyageUnderWay(db, cultivator);
+    if (!voyage) return 0;
+    const taken = Math.max(0, Math.min(Math.floor(days), voyage.hullRationDays - voyage.sailed));
+    if (taken > 0) writeTheVoyage(db, cultivator.id, { ...voyage, hullRationDays: voyage.hullRationDays - taken });
+    return taken;
 }
 
 /** What the water is called. */
