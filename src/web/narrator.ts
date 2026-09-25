@@ -15,11 +15,14 @@ import {
     type PlannedAction
 } from './actions.js';
 import {
+    EXCHANGES_REMEMBERED,
     INTENT_SYSTEM_PROMPT,
     type WhereTheyStandNow,
     composeIntentUser,
     composeNarrationUser,
-    narrationSystemPrompt
+    narrationSystemPrompt,
+    theOneSpokenTo,
+    whatWasSaidAloud
 } from './prompt.js';
 import {
     readyTheTier,
@@ -1161,6 +1164,12 @@ export interface ProviderNarratorOptions {
 export const ENOUGH_ROOM_FOR_A_WHOLE_PLAN = 1200;
 
 
+/**
+ * How many recent turns the narrator holds on to. A conversation that stepped aside for a few
+ * turns with somebody else is still found; one from a dozen turns ago has gone cold.
+ */
+const EXCHANGES_KEPT = 12;
+
 export class ProviderNarrator implements Narrator {
     readonly kind = 'provider' as const;
     readonly providerName: string;
@@ -1464,10 +1473,12 @@ export class ProviderNarrator implements Narrator {
     private lastSceneTold: { place: string; ambient: AmbientQi } | null = null;
 
     /**
-     * What the player said last turn and what they were shown, so a conversation carries over:
-     * with nothing of the turn before, somebody asked a follow-up answers as a stranger.
+     * What the player said on each recent turn, what they were shown, and who it was put to, so a
+     * conversation carries over: with nothing of the turn before, somebody asked a follow-up
+     * answers as a stranger. The last is the turn before; the ones put to the same person before
+     * it are that conversation's earlier words.
      */
-    private lastExchange: { said: string | null; shown: string } | null = null;
+    private exchanges: { said: string | null; shown: string; with: string | null }[] = [];
 
     /**
      * Who has voiced what is on their mind in this place, so it is said once. Played: a senior
@@ -1494,9 +1505,14 @@ export class ProviderNarrator implements Narrator {
         // The first turn somewhere describes it in full; later turns there remind in a clause.
         const arrived = this.lastSceneTold === null || this.lastSceneTold.place !== scene.place;
         // A new life has no turn before it.
-        const previous = scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0
-            ? null
-            : this.lastExchange;
+        if (scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0) this.exchanges = [];
+        const previous = this.exchanges.at(-1) ?? null;
+        const spokenTo = theOneSpokenTo(scene);
+        const earlier = spokenTo === null ? [] : this.exchanges.slice(0, -1)
+            .filter(exchange => exchange.with === spokenTo)
+            .slice(-EXCHANGES_REMEMBERED)
+            .map(exchange => ({ said: exchange.said, spoken: whatWasSaidAloud(exchange.shown) }))
+            .filter(exchange => exchange.said !== null || exchange.spoken.length > 0);
         const ambientIsNews = arrived || this.lastSceneTold!.ambient !== scene.ambient;
         // WEEKS IN ONE PLACE ARE A NEW SCENE THERE. Played: after three months sitting in a village
         // square the narration closed on "Bai Shuxue is still eating standing up", because his card
@@ -1529,7 +1545,7 @@ export class ProviderNarrator implements Narrator {
                 signal: this.budget(),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, alreadySaid, alreadyShown, wornOut, noTimePassed, acts: this.actsPlanned }) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { arrived, ambientIsNews, previous, earlier, alreadySaid, alreadyShown, wornOut, noTimePassed, acts: this.actsPlanned }) }
                 ]
             });
 
@@ -1579,7 +1595,8 @@ export class ProviderNarrator implements Narrator {
             // And anything the engine says the player must read, whether or not
             // the model felt like including it.
             const whole = withRequiredLines(text, facts.required).slice(0, MAX_NARRATION_CHARS);
-            this.lastExchange = { said: scene.playerSaid ?? null, shown: whole };
+            this.exchanges = [...this.exchanges, { said: scene.playerSaid ?? null, shown: whole, with: spokenTo }]
+                .slice(-EXCHANGES_KEPT);
             for (const person of scene.company?.named ?? []) {
                 if (!whole.includes(person.name)) continue;
                 this.shownHere.set(person.name, (this.shownHere.get(person.name) ?? 0) + 1);

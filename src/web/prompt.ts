@@ -957,6 +957,8 @@ export function composeNarrationUser(
         ambientIsNews?: boolean;
         /** The turn before this one, as the player saw it. See `theTurnBefore`. */
         previous?: { said: string | null; shown: string } | null;
+        /** What was said aloud with the one spoken to, before the turn before. See `earlierWithThem`. */
+        earlier?: readonly SaidAloud[];
         /** Who has already voiced what is on their mind in this place. See `thePeopleHere`. */
         alreadySaid?: ReadonlySet<string>;
         /** Who has already been on the page in this place, so their picture is spent. */
@@ -975,7 +977,7 @@ export function composeNarrationUser(
         .filter(person => !thePlayerIsSureItIsThem(person.name, scene.awareness ?? [], scene.playerSaid ?? null))
         .map(person => person.name));
     const nameable = nameableNames(scene.awareness ?? []).filter(name => !facesWithoutTheirNames.has(name));
-    const addressing = scene.addressing ?? whoThePlayerNamed(scene.playerSaid, scene.company);
+    const addressing = theOneSpokenTo(scene);
     const alone = scene.company?.total === 0;
     const somebodyToPlay = !alone && (scene.company?.named.length ?? 0) > 0;
     const arrived = told.arrived ?? told.ambientIsNews ?? true;
@@ -1029,6 +1031,7 @@ export function composeNarrationUser(
         ...theLifeBehindThemBlock(scene.theLifeBehindThem ?? []),
         ...heldByTheWorldBlock(scene.heldByTheWorldAndNotByThem),
         ...theWayItIsDoneHereBlock(scene.theWayItIsDoneHere),
+        ...earlierWithThem(told.earlier ?? []),
         ...theTurnBefore(told.previous ?? null),
         '',
         ...(scene.playerSaid ? [`THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`, ''] : []),
@@ -1060,6 +1063,69 @@ export function composeNarrationUser(
             aSittingAndNothingElse(told.acts),
             (told.acts ?? []).some(act => A_JOURNEY.has(act)))
     ].join('\n');
+}
+
+/**
+ * Who this turn is put to: the person the engine resolved, or the one the player named.
+ * Null for a word to the room, or a turn that is not put to anybody.
+ */
+export function theOneSpokenTo(scene: { addressing?: string | null; playerSaid?: string | null; company?: Company | null }): string | null {
+    return scene.addressing ?? whoThePlayerNamed(scene.playerSaid, scene.company);
+}
+
+/** What the player said on an earlier turn with somebody, and the lines spoken aloud on it. */
+export interface SaidAloud {
+    said: string | null;
+    spoken: readonly string[];
+}
+
+/** How many exchanges with one person, before the turn before, are handed back. */
+export const EXCHANGES_REMEMBERED = 3;
+
+/** The most of one earlier exchange's spoken lines handed back. The latest lines are kept. */
+const SPOKEN_CHARS_PER_EXCHANGE = 600;
+
+/**
+ * The lines in a turn's prose that somebody said aloud, in order, latest kept within the cap.
+ *
+ * Only the quoted words, not the prose around them. The model copies its own earlier turns: a
+ * gesture handed back is a gesture written again, where a line somebody said is a thing they
+ * remember saying.
+ */
+export function whatWasSaidAloud(shown: string): string[] {
+    const lines = [...shown.matchAll(/"([^"\n]{2,})"/g)].map(match => match[1]!.trim());
+    const kept: string[] = [];
+    let chars = 0;
+    for (const line of lines.reverse()) {
+        if (chars + line.length > SPOKEN_CHARS_PER_EXCHANGE && kept.length > 0) break;
+        kept.unshift(line);
+        chars += line.length;
+    }
+    return kept;
+}
+
+/**
+ * THE CONVERSATION BEFORE THE TURN BEFORE, with the one being spoken to.
+ *
+ * With only the turn before, a conversation longer than two turns has no beginning: whoever is
+ * being spoken to cannot refer back to what they said three turns ago. The last few exchanges
+ * with them are handed over, and the room's are not. No name is written on it, because the
+ * player may not know it yet; see `thePlayerIsSureItIsThem`.
+ */
+function earlierWithThem(earlier: readonly SaidAloud[]): string[] {
+    if (earlier.length === 0) return [];
+    return [
+        '',
+        'EARLIER WITH THE ONE BEING SPOKEN TO, oldest first - what was said aloud on the turns before',
+        'the turn before. Both of them remember it: it can be referred back to, answered or built on,',
+        'and nobody says any of it again.',
+        ...earlier.flatMap(exchange => [
+            ...(exchange.said ? [`- The player: "${exchange.said}"`] : []),
+            ...(exchange.spoken.length > 0
+                ? [`  Said aloud then: ${exchange.spoken.map(line => `"${line}"`).join(' ')}`]
+                : [])
+        ])
+    ];
 }
 
 /** The most of the last turn's prose handed back. Its end is what this turn continues from. */
