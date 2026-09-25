@@ -312,7 +312,7 @@ import {
 // Type-only in the other direction, so no cycle: that module takes a
 // `GameService` as a type and imports nothing from here at runtime.
 import { theHouseThisNameReaches, theHouseWhoseGateThisIs, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
-import { aWorkTopic, theGateAStrangerStandsAt, theGateIsAsked, whatTheGateSaysOfItsWork } from './the-gate-speaks-for-its-house.js';
+import { aWorkTopic, theGateAStrangerStandsAt, theGateIsAsked, theTownBelowTheGate, whatTheGateSaysOfItsWork } from './the-gate-speaks-for-its-house.js';
 import { whereFoodComesFromHere, whereFoodIsSoldInstead } from './where-food-is-sold.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
@@ -5616,6 +5616,20 @@ ${line}`;
                         looking.facts.prose = `${looking.facts.prose}
 
 ${line}`;
+                    }
+                }
+                // AND THE TOWN BELOW A HOUSE'S WALL, to anybody outside its gate: the one thing a
+                // stranger standing there can use. See `theTownBelowTheGate`.
+                {
+                    const below = theTownBelowTheGate(this, cultivator);
+                    if (below) {
+                        for (const line of below.lines) {
+                            looking.facts.lines.push(line);
+                            looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                        }
+                        looking.facts.structure.push(below.structure);
                     }
                 }
                 // ── AND WHAT IS BUILT ON IT ─────────────────────────────

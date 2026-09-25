@@ -34,6 +34,11 @@ import { theAreaTheyAreIn } from './walking-across-a-place.js';
 import { theHouseWhoseGateThisIs } from './walking-up-to-a-house.js';
 import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 import { aCrowdIsAsked } from './asking-the-way.js';
+import {
+    howBigTheTownBelowIs,
+    whatTheTownIsBelow,
+    whatTradesBelow
+} from '../engine/world/the-town-at-the-foot-of-a-house.js';
 
 /** A topic asking after a house's work: its board, its notices, a job going. */
 const A_WORK_TOPIC = /\b(?:work|jobs?|board|notices?|postings?|posted|duties|errands?|hir(?:e|ing)|missions?|tasks?|bount(?:y|ies))\b/i;
@@ -129,4 +134,28 @@ export function whatTheGateSaysOfItsWork(
         ok: true
     }];
     return execution;
+}
+
+/**
+ * The town below a house's wall, said on every look from outside its gate and not only on
+ * arriving. Played blind: a starving stranger at the Azure Dew gate asked "is there anywhere near
+ * here i can get food?", the look said nothing of the inn and the market below the wall, and the
+ * model had the watch answer "There is nothing for you here."
+ */
+export function theTownBelowTheGate(
+    game: GameService,
+    cultivator: Cultivator
+): { lines: string[]; structure: string } | null {
+    const here = theAreaTheyAreIn(game.atHand, cultivator);
+    if (!game.atHand || !here || here.area.for !== 'gate') return null;
+    const house = theHouseWhoseGateThisIs(game.atHand, here.place.name);
+    const reading = house ? whatTheTownIsBelow(house.factionId) : null;
+    if (!house || !reading) return null;
+    const trades = whatTradesBelow(reading);
+    return {
+        lines: [`Outside the wall there is a ${howBigTheTownBelowIs(reading)}, and it is here because the `
+            + `house is: ${trades.map(trade => trade.name).join(', ')}.`],
+        structure: `theTownBelowTheGate(${house.factionId}): ${trades.map(trade => trade.id).join(', ')}. `
+            + 'Read only, nothing spent.'
+    };
 }

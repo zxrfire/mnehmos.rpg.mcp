@@ -56,6 +56,12 @@ describe('the gate speaks for its house', () => {
         expect(read.narration).not.toMatch(/^\s*Deliver /m);
     }, 240_000);
 
+    it('says the town below the wall, its inn and market, on a look from outside the gate', async () => {
+        const at = await aStrangerAtAGate('gate-look');
+        const looked = await at.game.act('I look around');
+        expect(looked.narration).toMatch(/Outside the wall there is a .*the grain and salt market, the inn/);
+    }, 240_000);
+
     it('leaves the house own on its board', async () => {
         const at = await aStrangerAtAGate('gate-own');
         at.repos.sects.addMember(at.house.id, at.cultivator.id, 0);
