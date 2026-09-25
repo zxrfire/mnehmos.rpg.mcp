@@ -10,6 +10,7 @@ import {
     isWithThem,
     leaveItHere,
     takeItAlong,
+    theVehiclesLeftElsewhere,
     whatAVehicleHolds,
     whatIsInTheVehicle,
     whereItStands
@@ -105,7 +106,11 @@ export function whatTheVehicleDoes(
 
     const vehicle = theOneNamed(theirs.filter(o => isWithThem(o, cultivator.id, here)), vehicleNamed);
     if (vehicle === null) {
-        const elsewhere = theirs[0]!;
+        // The one they named, where it is standing somewhere else - not merely
+        // the first thing they own, which may be the one they are with.
+        const elsewhere = theOneNamed(
+            theVehiclesLeftElsewhere(world.objects, cultivator.id, here), vehicleNamed
+        ) ?? theirs[0]!;
         return no('It is not here.', `${elsewhere.name} is not with you, and nothing in it can be reached from here.`,
             `${intent}: ${elsewhere.id} stands at ${whereItStands(elsewhere)}.`);
     }

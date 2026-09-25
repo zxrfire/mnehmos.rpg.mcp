@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { aVehicleOf, whatAVehicleHolds, whatIsInTheVehicle } from '../../src/engine/world/a-vehicle';
+import { aVehicleOf, leaveItHere, whatAVehicleHolds, whatIsInTheVehicle } from '../../src/engine/world/a-vehicle';
 import { makeObject } from '../../src/engine/world/possessions';
 import { whatABodyCanCarry, whatStopsThemCarryingIt } from '../../src/engine/world/what-a-body-can-carry-and-what-a-ring-holds';
 import { whatTheirThingsTake } from '../../src/engine/world/what-somebody-is-carrying-takes';
@@ -69,5 +69,34 @@ describe('what a carriage and a spirit boat hold', () => {
         expect(where().location).toBe('Silver Island');
         expect(flown.narration).toMatch(/\d+ spirit stones burned in its chest/);
         expect(where().spiritStones).toBeLessThan(100);
+    }, 180_000);
+
+    /**
+     * THE ONE THEY MEANT, WHERE IT IS. With a carriage left at one place and a
+     * boat moored at another, "load it into the boat" was refused naming
+     * whichever vehicle they owned first - the carriage. `theVehiclesLeftElsewhere`
+     * had no caller; it is what finds the boat they named.
+     */
+    it('names the vehicle they meant when it is standing somewhere else', async () => {
+        const { game } = await makeGameInWorld({ seed: 'a-boat-left-behind', worldSeed: 'a-xianxia-run' });
+        const { cultivator } = await game.newRun('Ke Yan');
+        const objects = game.atHand!.objects;
+        const here = game.worldPlaceOf(cultivator);
+        const [one, two] = game.atHand!.locations
+            .filter(l => l.id !== here && l.kind === 'settlement').map(l => l.id);
+        const carriage = aVehicleOf({ id: 'carriage', conveyanceId: 'conv-carriage-mortal',
+            ownerId: cultivator.id, ownerName: 'Ke Yan', at: one! });
+        const boat = aVehicleOf({ id: 'boat', conveyanceId: 'conv-spirit-boat',
+            ownerId: cultivator.id, ownerName: 'Ke Yan', at: two! });
+        objects.push(carriage, boat);
+        leaveItHere(objects, carriage, one!);
+        leaveItHere(objects, boat, two!);
+        objects.push(makeObject({ id: 'sack', name: 'a sack of millet', kind: 'other',
+            volume: 2, weight: 2, possessorId: cultivator.id, ownerId: cultivator.id }));
+
+        const out = whatTheVehicleDoes(game, cultivator, 'load', 'sack', 'boat');
+        expect(out.outcome).toBe('refused');
+        expect(out.facts.prose).toContain(boat.name);
+        expect(out.facts.prose).not.toContain('carriage');
     }, 180_000);
 });

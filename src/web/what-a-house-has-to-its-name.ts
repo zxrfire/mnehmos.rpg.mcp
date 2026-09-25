@@ -42,6 +42,11 @@ import {
 } from '../engine/world/what-a-house-is-made-of-and-what-brings-it-down.js';
 import { HALLS_DOWN } from '../engine/world/what-a-year-of-war-does-to-a-compound.js';
 import { territoryOfSect } from '../data/cultivation/sects.js';
+import { getFactionCharacter } from '../data/cultivation/faction-character.js';
+import {
+    howStrongThisHouseIsNow,
+    type WhatAHouseCanField
+} from '../engine/world/how-strong-a-house-actually-is.js';
 import type { FactionRecord, WorldState } from '../engine/world/world-state.js';
 
 /** One thing a house is sitting on. */
@@ -184,12 +189,37 @@ export function whatAHouseHasToItsName(input: {
         ? 'There is nothing on its shelves that anybody would come for.'
         : `On its shelves: ${things.map(saidPlainly).join(', ')}.`);
 
+    // ── AND WHETHER IT IS STILL MAKING PEOPLE, TO SOMEBODY WHO DEALS AT ITS LEVEL
+    //
+    // Not its strongest member, which is `powerOrdinal`: whether the house is
+    // still producing the quality it once produced, read off the roll as it
+    // stands today. `howStrongThisHouseIsNow` decides it; the decline it needs
+    // is authored history and comes off the catalog.
+    const fields = reach === 'what_it_costs_them' && input.world !== null && input.house !== null
+        ? howStrongThisHouseIsNow(input.world, input.house, (production => ({
+            peakOrdinal: production?.peakOrdinal ?? 0,
+            yearsSinceLastPeak: production?.yearsSinceLastPeak ?? 0
+        }))(getFactionCharacter(input.factionId)?.production))
+        : null;
+    if (fields !== null) lines.push(WHAT_IT_IS_STILL_MAKING[fields.condition](input.houseName));
+
     return {
         factionId: input.factionId, houseName: input.houseName, reach,
         stones, things, seat, hallsDown, lines,
         structure: theStructure(input.factionId, reach, stones, things.length, seat)
+            + (fields === null ? '' : ` Fields as one body at ${fields.rungsItCouldField}; `
+                + `index ${fields.index}; ${fields.condition}, `
+                + `${fields.inheritanceGap} rung(s) between what it has and what it still makes.`)
     };
 }
+
+/** Whether a house is still making the people it once made, said plainly. */
+const WHAT_IT_IS_STILL_MAKING: Readonly<Record<WhatAHouseCanField['condition'], (house: string) => string>> = {
+    'still making them': house => `${house} is still making people of the quality it made at its height.`,
+    'living on the inheritance': house => `${house} is living on its inheritance. The people it has at the top `
+        + 'were made long ago, and it is not making their like now.',
+    'spent': house => `${house} is spent. What it has is what it made, and it is not making more.`
+};
 
 /**
  * A figure said the way a person would say it.

@@ -46,7 +46,7 @@ import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.
 import { whereAComplaintGoes } from '../social-leverage/reporting-what-you-saw.js';
 import { whatTheRoomDecides } from '../social-leverage/what-a-room-decides-about-one-of-its-own.js';
 import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
-import { makeFact, type HistoricalFact } from './history.js';
+import { explainFact, makeFact, type HistoricalFact } from './history.js';
 import { upsertRelationship, relationshipWith, type NpcRecord } from './npc-state.js';
 import {
     REMOVED_FROM_OFFICE,
@@ -158,8 +158,10 @@ function itComesOut(
     day: number
 ): { factId: string; killerId: string; victimId: string; sentence: string; place: string } {
     // The row stops being secret, and says when.
+    // Somebody found out, which is `explainFact`: the cause is known from
+    // today and the record is at least as good as what was learned.
     fact.visibility = 'regional';
-    fact.causeKnown = true;
+    explainFact(state.history, fact.id, []);
     fact.data = { ...fact.data, [CAME_TO_LIGHT]: day };
 
     const said = appendWorldFact(state, makeFact({

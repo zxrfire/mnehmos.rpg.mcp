@@ -22,6 +22,7 @@ import {
     prospectingEffortIn
 } from './how-the-world-keeps-finding-more-ruins.js';
 import type { NpcRecord } from './npc-state.js';
+import { characterOf } from './what-a-ruin-has-on-its-shelves.js';
 import { getLocation, indexById, type WorldState } from './world-state.js';
 import {
     whatAHouseAsksOf,
@@ -608,7 +609,7 @@ export function applyRoadsComprehended(
         if (location.tags.includes(DAO_GROUND_TAG)) continue;
         if (Number(location.data.foundInYear ?? -1) !== year) continue;
         if (Number(location.data.depthBand ?? 0) < ROAD_TEACHING_GROUND_STARTS_AT_BAND) continue;
-        const domain = ROAD_TAUGHT_BY_CHARACTER[String(location.data.ruinCharacter ?? '')];
+        const domain = ROAD_TAUGHT_BY_CHARACTER[characterOf(location) ?? ''];
         if (!domain) continue;
         if (!rng.chance(FOUND_GROUND_TEACHES_A_ROAD)) continue;
 

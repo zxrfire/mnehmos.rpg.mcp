@@ -163,9 +163,20 @@ export function theyTaughtWhatTheySworeNotTo(
     return { settled, opened };
 }
 
-/** Whether this person has ever broken their word to this house. */
-export function theyBrokeTheirWordTo(state: WorldState, personId: string, houseId: string): boolean {
-    return (state.obligations ?? []).some(o =>
-        o.kind === 'oath' && o.holderId === personId && o.subjectId === houseId
-        && o.settlement?.resolution === 'broken');
+/**
+ * Everybody who gave this house their word and did not keep it.
+ *
+ * The ceiling a house puts on how loyal anybody reads to it, and one read of
+ * the world's ledger: the promotion pass and a house covering an empty chair
+ * both ask it, and both used to spell the filter out.
+ */
+export function whoBrokeTheirWordTo(
+    state: Pick<WorldState, 'obligations'>,
+    houseId: string
+): Set<string> {
+    return new Set((state.obligations ?? [])
+        .filter(o => o.kind === 'oath' && o.subjectId === houseId
+            && o.settlement?.resolution === 'broken')
+        .map(o => o.holderId));
 }
+

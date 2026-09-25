@@ -51,7 +51,10 @@
  * between the two numbers.
  */
 
-import { formationsStandingAt } from './a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
+import {
+    formationsStandingAt,
+    whatItsBuilderMustHaveBeen
+} from './a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
 import { effectiveWardOrdinal } from './how-far-gone-a-formation-is.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { ObjectRecord } from './possessions.js';
@@ -127,7 +130,7 @@ export function whatAHouseIsMadeOf(
     // was more impressive when it was laid.
     let best: { answersAt: number; setAt: number; name: string } | null = null;
     for (const ward of wards) {
-        const setAt = Number(ward.data?.ratedWhole ?? ward.power ?? 0);
+        const setAt = whatItsBuilderMustHaveBeen(ward) ?? 0;
         if (!(setAt > 0)) continue;
         const raisedOn = Number(ward.data?.raisedOnDay ?? 0);
         const answersAt = effectiveWardOrdinal({

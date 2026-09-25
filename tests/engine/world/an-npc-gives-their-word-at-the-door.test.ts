@@ -26,9 +26,9 @@ import Database from 'better-sqlite3';
 import {
     theOathOnTheWayOut,
     theWordTheyGave,
-    theyBrokeTheirWordTo,
     theyTaughtWhatTheySworeNotTo,
-    whetherTheySwear
+    whetherTheySwear,
+    whoBrokeTheirWordTo
 } from '../../../src/engine/world/the-word-an-npc-gave.js';
 import { createNpc, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { createWorld, makeFaction, type FactionRecord, type WorldState } from '../../../src/engine/world/world-state.js';
@@ -134,7 +134,7 @@ describe('teaching what you swore not to', () => {
 
         // And the ledger holds both, with nothing open under the oath any more.
         expect(theWordTheyGave(state, leaver.id, house.id)).toBeNull();
-        expect(theyBrokeTheirWordTo(state, leaver.id, house.id)).toBe(true);
+        expect(whoBrokeTheirWordTo(state, house.id).has(leaver.id)).toBe(true);
         expect(state.obligations.filter(o => o.status === 'open')).toHaveLength(1);
     });
 
@@ -146,7 +146,7 @@ describe('teaching what you swore not to', () => {
             state, stranger, house.id, house.name, 900, 'Lone Spring Breathing'
         )).toBeNull();
         expect(state.obligations).toHaveLength(0);
-        expect(theyBrokeTheirWordTo(state, stranger.id, house.id)).toBe(false);
+        expect(whoBrokeTheirWordTo(state, house.id).has(stranger.id)).toBe(false);
     });
 });
 

@@ -54,6 +54,7 @@ import {
     type GroundRecourse
 } from '../engine/social-leverage/ground-trust.js';
 import {
+    whoCollectsHere,
     whoHoldsTheGround,
     type GroundHolding
 } from '../engine/world/ground-holder.js';
@@ -102,6 +103,13 @@ export interface GroundHolderReading {
     lines: string[];
     /** What somebody who asked gets. Always said, whichever of the four it is. */
     answer: string;
+    /**
+     * What this town pays its holder in a year, where it is a town somebody
+     * holds and the reader may be told who. Zero otherwise. `whoCollectsHere`
+     * decides it; a hall inside a compound inside a city is never charged the
+     * city's tax.
+     */
+    stonesAYear: number;
     /** One factual line for the mechanical channel. */
     structure: string;
 }
@@ -185,12 +193,22 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
 
     const volunteers = input.standingHere && VOLUNTEERED.has(holding.holding);
 
+    // WHAT THE TOWN PAYS, which a person standing in it can be told as soon as
+    // they can be told who it is paid to - the one follows from the other.
+    const stonesAYear = mayBeToldTheName
+        ? whoCollectsHere(input.locations, input.locationId).stonesAYear
+        : 0;
+    const whatItPays = stonesAYear > 0
+        ? ` The people here pay them ${stonesAYear.toLocaleString()} spirit stones a year.`
+        : '';
+
     return {
         holding: holding.holding,
         holderName: holding.holderName,
         placeName: holding.placeName,
         lines: volunteers ? [holding.why, route] : [],
-        answer: `${ground.why} ${route}`,
+        answer: `${ground.why}${whatItPays} ${route}`,
+        stonesAYear,
         // The mechanical channel keeps the world's own answer. What is gated is
         // what the player is TOLD, exactly as it is at the door.
         structure:
@@ -198,6 +216,7 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
             + (read.holderName ? `, held by ${read.holderName}` : '')
             + (mayBeToldTheName ? '' : ', and the name of who holds it is above what this'
                 + ' cultivator can be told')
+            + (stonesAYear > 0 ? `, and the town pays it ${stonesAYear} stones a year` : '')
             + `. Being wronged here: ${String(ground.recourse).replace(/_/g, ' ')}.`
     };
 }

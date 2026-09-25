@@ -85,6 +85,7 @@ import { elderRungOf, isElderRank } from '../cultivation/leadership.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { roomAuthorityOf } from './architecture.js';
 import { howManyPeopleAHouseHas } from './how-many-people-a-house-has.js';
+import { whoBrokeTheirWordTo } from './the-word-an-npc-gave.js';
 
 /**
  * How many people a house will seat at each rank.
@@ -381,10 +382,7 @@ export function assessPromotions(state: WorldState): {
             // And who gave this house their word and did not keep it, which is
             // a ceiling on how loyal anybody reads to it. The world's ledger:
             // `the-word-an-npc-gave.ts`.
-            brokeTheirWordToIt: new Set((state.obligations ?? [])
-                .filter(o => o.kind === 'oath' && o.subjectId === house.id
-                    && o.settlement?.resolution === 'broken')
-                .map(o => o.holderId))
+            brokeTheirWordToIt: whoBrokeTheirWordTo(state, house.id)
         };
         const admission = Number(house.resources.admission_ordinal ?? 0);
         const power = Number(house.resources.power_ordinal ?? admission);

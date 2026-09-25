@@ -36,6 +36,8 @@ import { parseIntent } from '../../src/web/actions';
 import { makeObject } from '../../src/engine/world/possessions';
 import { theThingsAHouseIsSittingOn, whatAHouseHasToItsName } from '../../src/web/what-a-house-has-to-its-name';
 import { makeGameInWorld } from './harness';
+import { loadCultivationCatalog } from '../../src/engine/world/catalog';
+import { seedWorld } from '../../src/engine/world/seeding';
 
 function said(result: unknown): string {
     return String((result as { narration?: string }).narration ?? '');
@@ -249,4 +251,37 @@ describe('played', () => {
         const answer = await harness.game.act('what is in their vault');
         expect(said(answer)).toMatch(/on nobody's roll|no house it would be/i);
     }, 200_000);
+});
+
+/**
+ * WHETHER IT IS STILL MAKING PEOPLE, to somebody who deals with houses.
+ *
+ * `howStrongThisHouseIsNow` had no caller: the composite reading of a house -
+ * its roll today against the height it once made people at - was built and
+ * never asked. It is not the house's strongest member, which is what every
+ * other read of a house says, and it is gated where the purse is gated.
+ */
+const { state } = seedWorld({
+    seed: 'still-making-them', catalog: await loadCultivationCatalog(), population: 200
+});
+
+describe('whether a house is still making the people it once made', () => {
+    const house = state.factions.find(f => f.dissolvedOnDay === null && f.seatLocationId !== null)!;
+    const read = (readerOrdinal: number) => whatAHouseHasToItsName({
+        world: state, house, houseName: house.name, factionId: house.id,
+        readerOrdinal, today: state.currentDay
+    });
+    const CONDITION = /still making people|living on its inheritance|is spent/;
+
+    it('says it to somebody who deals with houses at that level', () => {
+        const high = read(40);
+        expect(high.lines.join(' ')).toMatch(CONDITION);
+        expect(high.structure).toMatch(/Fields as one body at \d+/);
+    });
+
+    it('says nothing of it to somebody in the market', () => {
+        const low = read(0);
+        expect(low.lines.join(' ')).not.toMatch(CONDITION);
+        expect(low.structure).not.toMatch(/Fields as one body/);
+    });
 });

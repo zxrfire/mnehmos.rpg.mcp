@@ -24,7 +24,7 @@ import { describe, it, expect } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
 import { whoAnswersForThisGround } from '../../src/web/ground-holder-lines';
 import { TOLD_THE_NAME_AT } from '../../src/engine/world/ruin-gatekeepers';
-import { makeLocation } from '../../src/engine/world/locations';
+import { makeLocation, whatATownPaysItsHolder } from '../../src/engine/world/locations';
 
 const LOW_FALL = makeLocation({ id: 'r', name: 'The Jade Gorge', kind: 'region' });
 const DROWNED = makeLocation({
@@ -264,5 +264,39 @@ describe('what a reader is told about who holds this', () => {
     /** An absent ordinal is the world asking about its own records. */
     it('does not gate a caller that named no reader', () => {
         expect(at(undefined).holderName).toBe('Azure Cloud Pavilion');
+    });
+});
+
+/**
+ * What a held town pays, said to whoever may be told who it is paid to.
+ *
+ * `whoCollectsHere` had no caller: a verb at a town could say who held it and
+ * never what holding it was worth, though the yearly economy collects it every
+ * year. The figure is the town's own and never an ancestor's.
+ */
+describe('what a town pays whoever holds it', () => {
+    const town = GROUNDS.held[1];
+    const read = (readerOrdinal?: number) => whoAnswersForThisGround({
+        locations: GROUNDS.held, locationId: 'g', standingHere: true, readerOrdinal
+    });
+
+    it('says the town pays, and how much, to somebody who may be told the holder', () => {
+        const pays = whatATownPaysItsHolder(town);
+        expect(pays).toBeGreaterThan(0);
+        const told = read(TOLD_THE_NAME_AT);
+        expect(told.stonesAYear).toBe(pays);
+        expect(told.answer).toContain(`${pays.toLocaleString()} spirit stones a year`);
+    });
+
+    it('says nothing of it below the bar, since the figure names whose it is', () => {
+        const low = read(TOLD_THE_NAME_AT - 1);
+        expect(low.stonesAYear).toBe(0);
+        expect(low.answer).not.toMatch(/stones a year/);
+    });
+
+    it('charges nothing for ground nobody holds', () => {
+        expect(whoAnswersForThisGround({
+            locations: GROUNDS.no_holder_of_record, locationId: 'g', standingHere: true
+        }).stonesAYear).toBe(0);
     });
 });

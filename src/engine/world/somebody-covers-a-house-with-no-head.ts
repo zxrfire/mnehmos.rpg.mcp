@@ -94,6 +94,7 @@ import type { WorldState } from './world-state.js';
 import type { ObligationRecord } from '../social/grudges.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { byStanding, meritNeededFor, type HouseAndItsPeople } from './promotion-inside-a-house.js';
+import { whoBrokeTheirWordTo } from './the-word-an-npc-gave.js';
 
 /** The tag a covering elder carries, suffixed with the house they cover. */
 export const COVERING_THE_CHAIR = 'covering-the-chair';
@@ -228,10 +229,7 @@ export function coverTheEmptyChairs(state: WorldState, day: number): number {
         // the loyalty term the same way the promotion pass scales it.
         const forTheLoyaltyRead: HouseAndItsPeople = {
             memberIds: new Set(members.map(m => m.id)),
-            brokeTheirWordToIt: new Set((state.obligations ?? [])
-                .filter(o => o.kind === 'oath' && o.subjectId === house.id
-                    && o.settlement?.resolution === 'broken')
-                .map(o => o.holderId))
+            brokeTheirWordToIt: whoBrokeTheirWordTo(state, house.id)
         };
         const needed = meritNeededFor(rankCount - 1);
         // THE GRAND ELDER FIRST, THEN THE HOUSE'S OWN ORDER. The grand elder is
