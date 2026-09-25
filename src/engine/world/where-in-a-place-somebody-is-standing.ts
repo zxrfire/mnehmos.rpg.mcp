@@ -50,7 +50,7 @@ import {
 export const AT_MOST_IN_AN_AREA = 3;
 
 /** What an area of a place is for. */
-export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'here' | 'room';
+export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room';
 
 export interface AnAreaOfAPlace {
     /** `<place id>#<kind>#<slug>`. */
@@ -99,6 +99,11 @@ const WHAT_ANY_OTHER_TOWN_HAS = { market: ['the market', 'the stalls'], table: [
 const THE_STREETS = ['the street', 'the lane behind the street', 'the square', 'the well', 'the bridge', 'the temple steps'];
 const OUTSIDE_THE_GATE = ['outside the gate', 'along the wall', 'the foot of the steps'];
 const THE_FORECOURT = ['the forecourt', 'the far side of the forecourt', 'the steps of the hall', 'the corner of the forecourt'];
+/**
+ * Where a house's missions hang, inside its walls. A thing and not a person, so nobody is dealt
+ * into it and it takes none of the three places. See `the-mission-board-inside-a-house.ts`.
+ */
+const THE_MISSION_BOARD = ['the mission board'];
 
 /** What each activity is done at in a town. Anything not here is in the street. */
 const WHERE_A_THING_IS_DONE_IN_A_TOWN: Readonly<Partial<Record<ActivityKind, WhatAnAreaIsFor>>> = {
@@ -131,7 +136,7 @@ function theHouseOfTheSeat(place: Pick<LocationRecord, 'kind' | 'data' | 'contro
 /** The kinds of area a place has, the one a road arrives in first. */
 function theKindsOf(place: Pick<LocationRecord, 'kind' | 'data' | 'controllingFactionId'>): WhatAnAreaIsFor[] {
     if (isATown(place)) return ['street', 'market', 'table'];
-    if (theHouseOfTheSeat(place) !== null) return ['gate', 'forecourt'];
+    if (theHouseOfTheSeat(place) !== null) return ['gate', 'forecourt', 'board'];
     return ['here'];
 }
 
@@ -150,6 +155,7 @@ function theNamesFor(place: Pick<LocationRecord, 'name' | 'tags'>, what: WhatAnA
         case 'table': return town.table;
         case 'gate': return OUTSIDE_THE_GATE;
         case 'forecourt': return THE_FORECOURT;
+        case 'board': return THE_MISSION_BOARD;
         case 'here': {
             const own = itsOwnName(place);
             return [own, `the far side of ${own}`, `further along ${own}`, `the edge of ${own}`];

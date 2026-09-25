@@ -799,6 +799,13 @@ import {
     whichPostingTheyMeant
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
 import { theContractBehind } from '../engine/encounters/paper-on-a-town-wall.js';
+import { whoPostedIt } from '../engine/encounters/how-a-task-is-worded.js';
+import { HOUSE_MISSIONS } from '../data/cultivation/what-a-house-posts-for-its-own.js';
+import {
+    theBoardTheyStandAt,
+    theWallWhereTheyStand,
+    walkOverToTheBoard
+} from './the-mission-board-inside-a-house.js';
 import type {
     ArrivableFact,
     DutyCandidate
@@ -1624,9 +1631,60 @@ function aTermCutShort(served: number, asked: number, dueOnDay: number): string 
 function theNameOfTheWork(entryId: string): string {
     return getEncounter(entryId)?.name
         ?? theReasonBehind(entryId)?.name
-        ?? theContractBehind(entryId)?.name
-        ?? theMissionBehind(entryId)?.name
+        ?? theContractBehind(entryId)?.said
+        ?? theMissionBehind(entryId)?.said
         ?? 'What the house asked for';
+}
+
+/** What kind of line on a board this is, missions by the rung they are posted to. */
+function whatKindOfLine(id: string): string {
+    if (isADelivery(id)) return 'deliveries';
+    const mission = theMissionBehind(id);
+    if (mission) return `missions:${mission.rung}`;
+    if (theContractBehind(id)) return 'contracts';
+    return theReasonBehind(id) ? 'sendings' : 'commissions';
+}
+
+/**
+ * What of a board fits in `room` lines. The board is sorted by pay, so a cut taken straight off
+ * the top dropped every delivery and every lower rung's mission from a full board. Each kind
+ * present keeps its best line, the rest of the room goes in board order, and each kind with lines
+ * left over is counted.
+ */
+function whatFitsOnTheBoard<T>(
+    lines: readonly T[],
+    room: number,
+    idOf: (line: T) => string
+): { shown: T[]; notShown: string[] } {
+    const kept = new Set<T>();
+    const kinds = new Set<string>();
+    for (const line of lines) {
+        const kind = whatKindOfLine(idOf(line));
+        if (!kinds.has(kind)) { kinds.add(kind); kept.add(line); }
+    }
+    const size = Math.max(room, kept.size);
+    for (const line of lines) {
+        if (kept.size >= size) break;
+        kept.add(line);
+    }
+    const shown = lines.filter(line => kept.has(line));
+    const left = new Map<string, number>();
+    for (const line of lines) {
+        if (kept.has(line)) continue;
+        const noun = whatKindOfLine(idOf(line)).split(':')[0]!;
+        left.set(noun, (left.get(noun) ?? 0) + 1);
+    }
+    return { shown, notShown: [...left].map(([noun, n]) => `  And ${n} more ${n === 1 ? ONE_OF_A_KIND[noun] ?? noun : noun}.`) };
+}
+
+const ONE_OF_A_KIND: Readonly<Record<string, string>> = {
+    deliveries: 'delivery', missions: 'mission', contracts: 'contract', sendings: 'sending', commissions: 'commission'
+};
+
+/** The term, for a board line whose title does not already state it. */
+function theTermUnlessTheTitleSaysIt(offer: DutyCandidate): string {
+    const term = humanDays(offer.terms.days);
+    return offer.entry.name.includes(term) ? '' : `${term}, `;
 }
 
 /** Words that name nothing on their own, so a shared one means nothing. */
@@ -7608,9 +7666,14 @@ ${noticed}`;
         // each carries its own term and its own risk, and "any work" choosing a
         // lethal contract for somebody would be the engine making their
         // decision. Unnamed, the listing below shows what is on the wall.
+        // Matched on the row's handle, which every printed title contains. A
+        // mission is taken at the board, which `duty` walks them over to, and
+        // one posted to a rung above theirs is refused with the rung it is for.
         if (!readingTheBoard && named === undefined) {
-            const paper = onTheWall.find(line => names(line.row.name));
+            const paper = onTheWall.find(line => names(line.row.said));
             if (paper) return this.duty(run, cultivator, ambient, paper.offer.entry.name);
+            const above = HOUSE_MISSIONS.find(mission => names(mission.said));
+            if (above) return this.duty(run, cultivator, ambient, above.said);
         }
         // Reading the board is not taking anything off it, so no occupation
         // reaches `handleWork` - which is the branch that already answers
@@ -7677,9 +7740,9 @@ ${noticed}`;
     /** The contracts and missions posted where they stand, for their rung. */
     private async whatIsPostedOnTheWallHere(cultivator: Cultivator): Promise<readonly DutyCandidate[]> {
         this.atHand = this.atHand ?? await this.loadWorld();
-        return sectBoardFor(
+        return theWallWhereTheyStand(this, cultivator, sectBoardFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand }, cultivator
-        ).offers.filter(offer =>
+        )).offers.filter(offer =>
             (theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id)) !== null);
     }
 
@@ -7691,9 +7754,9 @@ ${noticed}`;
         const contracts = offers.filter(offer => theContractBehind(offer.entry.id) !== null);
         const missions = offers.filter(offer => theMissionBehind(offer.entry.id) !== null);
         const lineFor = (offer: DutyCandidate): string => {
-            const title = offer.entry.name.split(', for ')[0] ?? offer.entry.name;
+            const title = offer.entry.name;
             this.nameWhatTheyGot(title);
-            return `  ${title}: ${humanDays(offer.terms.days)}, ${offer.terms.stones} spirit stone`
+            return `  ${title}: ${theTermUnlessTheTitleSaysIt(offer)}${offer.terms.stones} spirit stone`
                 + `${offer.terms.stones === 1 ? '' : 's'} on completion`
                 + (offer.terms.contribution > 0 ? ` and ${offer.terms.contribution} contribution` : '')
                 + '.';
@@ -7706,8 +7769,9 @@ ${noticed}`;
             lines.push('No contract is posted on the wall here for somebody at your rung.');
         }
         if (missions.length > 0) {
+            const fits = whatFitsOnTheBoard(missions, DUTIES_SHOWN, offer => offer.entry.id);
             lines.push('And what your house sends its own on:');
-            lines.push(...missions.slice(0, DUTIES_SHOWN).map(lineFor));
+            lines.push(...fits.shown.map(lineFor), ...fits.notShown);
         }
         done.facts.lines.push(...lines);
         done.facts.prose = `${done.facts.prose}\n${lines.join('\n')}`;
@@ -16969,6 +17033,10 @@ ${fit.line}`;
     /**
      * The mission board, and taking a line off it.
      */
+    /**
+     * The board, read or taken from. Somebody inside a house's walls is walked over to its
+     * mission board first, and the line saying so leads. See `the-mission-board-inside-a-house.ts`.
+     */
     private async duty(
         run: Run,
         cultivator: Cultivator,
@@ -16981,8 +17049,23 @@ ${fit.line}`;
         // `the-gate-speaks-for-its-house.ts`.
         const atTheGate = theGateAStrangerStandsAt(this, cultivator);
         if (atTheGate) return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
+        const walked = walkOverToTheBoard(this, cultivator);
+        const done = await this.dutyWhereTheyStand(run, walked?.cultivator ?? cultivator, ambient, target);
+        if (walked) {
+            shownFirstWithNoModel(done.facts, walked.line);
+            done.facts.structure.push(walked.structure);
+        }
+        return done;
+    }
+
+    private async dutyWhereTheyStand(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Promise<Execution> {
         const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
-        const board = sectBoardFor(deps, cultivator);
+        const board = theWallWhereTheyStand(this, cultivator, sectBoardFor(deps, cultivator));
         const wanted = (target ?? '').trim();
 
         // WHAT THE BOARD CALLS IT
@@ -17002,14 +17085,18 @@ ${fit.line}`;
         // Word for word but the title. What a group of postings shares is a
         // fact about the house's standing offer, so it is said once above them,
         // and each line says only what that line asks and pays.
+        // A task title carries its house in a tag; a row still titled
+        // "<what>, for <house>" carries it after the comma.
         const HOUSE_ON_THE_NOTICE = ', for ';
         const whoPosted = (offer: DutyCandidate): string | null => {
+            const tagged = whoPostedIt(offer.entry);
+            if (tagged !== null) return tagged;
             const at = offer.entry.name.lastIndexOf(HOUSE_ON_THE_NOTICE);
             return at < 0 ? null : offer.entry.name.slice(at + HOUSE_ON_THE_NOTICE.length);
         };
         const titleOf = (offer: DutyCandidate): string => {
             const at = offer.entry.name.lastIndexOf(HOUSE_ON_THE_NOTICE);
-            return at < 0 ? offer.entry.name : offer.entry.name.slice(0, at);
+            return whoPostedIt(offer.entry) !== null || at < 0 ? offer.entry.name : offer.entry.name.slice(0, at);
         };
         const sameTermsAs = (offer: DutyCandidate): string => {
             const house = whoPosted(offer);
@@ -17020,7 +17107,7 @@ ${fit.line}`;
                 + `${rankName(offer.terms.pitchOrdinal)}, ${stones}:`;
         };
         const whatItAsks = (offer: DutyCandidate): string =>
-            `  ${titleOf(offer)}: ${humanDays(offer.terms.days)}, `
+            `  ${titleOf(offer)}: ${theTermUnlessTheTitleSaysIt(offer)}`
             + `${offer.terms.contribution} contribution`
             + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
             // A DELIVERY SAYS WHAT IT PAYS AND WHAT IT WANTS TO CARRY IT, as a fact and never a bar.
@@ -17069,8 +17156,11 @@ ${fit.line}`;
                 || wanted.length < 3
                 || GameService.BOARD_IN_GENERAL.test(wanted))) {
             const lines: string[] = [];
+            // A house's missions are internal, and a rung above theirs is not their wall.
+            const withheld = board.refusals.filter(refused => !refused.notOnTheirWall);
+            const fits = whatFitsOnTheBoard(board.offers, DUTIES_SHOWN, offer => offer.entry.id);
             if (board.offers.length === 0) {
-                const wallHasThingsOnIt = board.refusals.length > 0;
+                const wallHasThingsOnIt = withheld.length > 0;
                 lines.push(board.membership
                     ? 'Nothing on the wall is being put to somebody at this rank. That is not the '
                       + 'same as an empty wall, and everyone who walks past it knows the difference.'
@@ -17084,16 +17174,18 @@ ${fit.line}`;
                     ? 'What the house is asking for, and what it pays:'
                     : 'What is being contracted out, and what it pays. None of it touches anybody\'s '
                       + 'ledger, because you are on nobody\'s:');
-                lines.push(...theBoardAsLines(board.offers.slice(0, DUTIES_SHOWN)));
+                lines.push(...theBoardAsLines(fits.shown), ...fits.notShown);
             }
             // Under a heading of their own: the offers above are grouped by the
             // terms they share and indented under those, so a refusal pushed in
             // at the same indent read as another line of the last group.
-            if (board.refusals.length > 0) {
+            if (withheld.length > 0) {
+                const fitsWithheld = whatFitsOnTheBoard(withheld, DUTIES_SHOWN, row => row.entryId);
                 lines.push('And what is on the wall that is not being put to you:');
-                for (const refused of board.refusals.slice(0, DUTIES_SHOWN)) {
+                for (const refused of fitsWithheld.shown) {
                     lines.push(`  ${refused.name}. ${refused.reason}`);
                 }
+                lines.push(...fitsWithheld.notShown);
             }
 
             const facts = factsForToolResult(
@@ -17112,7 +17204,7 @@ ${fit.line}`;
             // recruiting bills: a listing this game prints is a listing the
             // next sentence should be able to name, and `namedThisTurn` is what
             // the reference resolver reads.
-            for (const offer of board.offers.slice(0, DUTIES_SHOWN)) {
+            for (const offer of fits.shown) {
                 this.nameWhatTheyGot(titleOf(offer));
             }
 
@@ -17132,19 +17224,50 @@ ${fit.line}`;
         const theHouses = board.membership && !/\bcontracts?\b/i.test(wanted)
             ? matchedPosting(wanted, board.offers.filter(offer => whoPosted(offer) !== null))
             : undefined;
+        // A contract or a mission by its handle, which its printed title contains.
+        const saysTheHandleOf = (entryId: string): boolean => {
+            const handle = theMissionBehind(entryId)?.said ?? theContractBehind(entryId)?.said;
+            return handle !== undefined && new RegExp(String.raw`\b${handle}\b`, 'i').test(wanted);
+        };
         const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
             ? board.offers[0]
             : theHouses
+                ?? board.offers.find(offer => saysTheHandleOf(offer.entry.id))
                 ?? board.offers.find(offer => matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD)
                 ?? board.offers.find(offer => sharesADistinctivePhrase(wanted, offer.entry.name))
                 // AND THE HOUSE'S OWN POSTINGS, by the reason they were posted
                 // for. Both matchers above refuse a single word naming a
                 // multi-word title, correctly - but "I take the escort" against
-                // "An escort at Autumn Gate, for Azure Cloud Pavilion" is a
-                // player naming a thing off a closed table of seven reasons,
-                // not guessing. See `whichPostingTheyMeant`.
+                // "Escort a charge of Azure Cloud Pavilion to Autumn Gate within
+                // 2 months" is a player naming a thing off a closed table of
+                // reasons, not guessing. See `whichPostingTheyMeant`.
                 ?? matchedPosting(wanted, board.offers);
         if (!chosen) {
+            // NAMED, AND WITHHELD: the wall's own reason, a rung above theirs
+            // included, rather than a claim that it is not there.
+            const withheld = board.refusals.find(row =>
+                saysTheHandleOf(row.entryId) || matchScore(wanted, row.name) > MATCH_THRESHOLD);
+            if (withheld) {
+                return refused('encounters.sectBoardFor', 'sect', factsForRefusal(
+                    'Not yours to take.',
+                    `${withheld.name}. ${withheld.reason}`,
+                    `Duty "${wanted}" matched withheld ${withheld.entryId}. Nothing accepted, nothing written.`
+                ));
+            }
+            // A MISSION NAMED AWAY FROM THE BOARD: it hangs inside a house's walls.
+            const aMission = HOUSE_MISSIONS.find(mission => new RegExp(String.raw`\b${mission.said}\b`, 'i').test(wanted));
+            if (aMission && theBoardTheyStandAt(this.atHand, cultivator) === null) {
+                const theirs = board.membership
+                    ? this.atHand?.locations.find(row =>
+                        row.id === this.atHand?.factions.find(f => f.id === board.membership!.factionId)?.seatLocationId)?.name
+                    : undefined;
+                return refused('encounters.sectBoardFor', 'sect', factsForRefusal(
+                    'The mission board is not here.',
+                    'A house\'s missions hang on the mission board inside its walls, and are taken standing '
+                    + `at it.${theirs ? ` ${board.membership!.factionName}'s is at ${theirs}.` : ''}`,
+                    `Duty "${wanted}" names ${aMission.id}; theBoardTheyStandAt is null. Nothing accepted.`
+                ));
+            }
             const going = board.offers.map(offer => offer.entry.name).join(', ');
             return refused('encounters.sectBoardFor', 'sect', factsForRefusal(
                 `Nothing on the wall called ${wanted}.`,

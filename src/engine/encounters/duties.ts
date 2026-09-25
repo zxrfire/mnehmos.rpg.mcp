@@ -15,6 +15,7 @@ import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
 import type { SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import type { HouseAsItStands } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { theReasonBehind, whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
+import { ORDINARY_DUTY_DAYS, daysATermRuns, scaleFor, type DutyScale } from './how-long-a-duty-runs.js';
 import type { Membership } from './types.js';
 import { CASH_PER_STONE, DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
 
@@ -36,16 +37,7 @@ export type DutyPosture =
     /** Asked what should be done about it. */
     | 'consulted';
 
-/**
- * How big the thing is.
- */
-export type DutyScale =
-    /** One road, one village, one nest. Days. */
-    | 'local'
-    /** A province notices. A beast tide, a contested vein, a secret realm. */
-    | 'regional'
-    /** The house is at war. Everybody ranked is on the list. */
-    | 'total';
+export { ORDINARY_DUTY_DAYS, scaleFor, type DutyScale };
 
 /**
  * What being sent gets you that you could not have got.
@@ -167,16 +159,6 @@ export const CONTRIBUTION_BASE = 8;
 /** Added contribution per rung the duty is pitched at. */
 export const CONTRIBUTION_PER_ORDINAL = 1.6;
 
-/**
- * The span an ordinary errand runs to, and the span every duty's contribution
- * is measured against.
- *
- * One number doing both jobs, which is why it is named rather than typed three
- * times: {@link daysFor} returns it for a row carrying no scale tag, and
- * {@link dutyTermsFor} divides by it, so a duty of this length credits exactly
- * its base. It is the unit of work on a board.
- */
-export const ORDINARY_DUTY_DAYS = 20;
 
 /**
  * Stones the board pays for one errand's worth of contribution.
@@ -271,7 +253,7 @@ export function dutyTermsFor(
     const tags = new Set(entry.tags);
 
     const scale = scaleFor(tags);
-    const days = daysFor(tags, scale);
+    const days = daysATermRuns(tags);
     const posture = postureFor(membership, givenBy);
 
     const yieldScale = yieldScaleFor(regard);
@@ -357,15 +339,6 @@ export function dutyTermsAtAMonthlyRate(input: {
 }
 
 /**
- * How big, off the tags.
- */
-export function scaleFor(tags: ReadonlySet<string>): DutyScale {
-    if (tags.has('war')) return 'total';
-    if (tags.has('tide') || tags.has('regional') || tags.has('competition')) return 'regional';
-    return 'local';
-}
-
-/**
  * Who else was sent.
  */
 function cohortFor(scale: DutyScale, membership: Membership | null): number {
@@ -390,22 +363,6 @@ function accessFor(tags: ReadonlySet<string>, membership: Membership | null): Du
         note: `${membership.factionName} is what gets them through the gate. ` +
             'Nobody arriving on their own account is admitted.'
     };
-}
-
-/**
- * How long it takes. Off the tags, because the catalog already says which things
- * are urgent, which are campaigns and which are errands. Fixed rather than
- * rolled: the terms of an offer do not change while you think about it.
- */
-function daysFor(tags: ReadonlySet<string>, scale: DutyScale): number {
-    // A war is not a long errand. It is the thing that happens instead of the
-    // decade the cultivator had planned, and the term says so.
-    if (scale === 'total') return 720;
-    if (scale === 'regional') return 90;
-    if (tags.has('obligation')) return 60;
-    if (tags.has('timed')) return 12;
-    if (tags.has('quest')) return 30;
-    return ORDINARY_DUTY_DAYS;
 }
 
 /**

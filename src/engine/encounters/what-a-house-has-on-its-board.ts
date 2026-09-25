@@ -56,10 +56,15 @@ import {
 } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
 import {
     HOUSE_MISSIONS,
+    MISSION_RUNGS,
     getHouseMission,
-    type HouseMission
+    type HouseMission,
+    type MissionRung
 } from '../../data/cultivation/what-a-house-posts-for-its-own.js';
-import { MAX_ORDINAL, clampOrdinal } from '../cultivation/realms.js';
+import { MAX_ORDINAL, clampOrdinal, realmForOrdinal } from '../cultivation/realms.js';
+import { elderRungOf } from '../cultivation/leadership.js';
+import { aTaskAsPosted, postedForTag } from './how-a-task-is-worded.js';
+import { daysATermRuns } from './how-long-a-duty-runs.js';
 import type { RoomPurpose } from '../world/architecture.js';
 
 /**
@@ -129,7 +134,7 @@ const WHAT_IT_READS_AS: Readonly<Record<AtStake, EncounterEntry['simEventKind']>
 /**
  * The tags a posting carries into the pricing.
  *
- * `scaleFor` and `daysFor` read these, so the reason's own `scale` is what
+ * `scaleFor` and `daysATermRuns` read these, so the reason's own `scale` is what
  * decides whether this is an errand, a season or a campaign. The reason's
  * `days` is deliberately NOT carried across: that number is how long a party
  * of the house's own is gone, and what a commission runs to is the board's
@@ -165,14 +170,17 @@ export function aPostingAsAnOffer(input: {
     const pitch = clampOrdinal(
         ceiling === null ? input.pitchOrdinal : Math.min(input.pitchOrdinal, ceiling)
     );
-    const place = input.placeName ?? null;
+    const tags = tagsFor(input.reason);
     return {
         // Stable for the same house, reason and rung, so a player who reads the
         // board twice in an afternoon is looking at the same notice both times.
         id: `posted-${input.house.id}-${input.reason.id}-${pitch}`,
-        name: place === null
-            ? `${input.reason.name}, for ${input.house.name}`
-            : `${input.reason.name} at ${place}, for ${input.house.name}`,
+        // Worded with the term the board will price it at, off the same tags.
+        name: aTaskAsPosted(
+            input.reason.task,
+            { house: input.house.name, place: input.placeName ?? null },
+            daysATermRuns(new Set(tags))
+        ),
         kind: WHAT_IS_AT_STAKE_MAKES_IT[input.reason.atStake] ?? 'sect_event',
         simEventKind: WHAT_IT_READS_AS[input.reason.atStake] ?? 'sect_event',
         weight: input.reason.weight,
@@ -185,7 +193,7 @@ export function aPostingAsAnOffer(input: {
         threatOrdinal: pitch,
         summaryTemplate: input.reason.what,
         tokens: [],
-        tags: tagsFor(input.reason)
+        tags: [...tags, postedForTag(input.house.name)]
     };
 }
 
@@ -287,10 +295,10 @@ export function theReasonBehind(entryId: string): SendingReason | null {
 }
 
 /**
- * Which posted duty somebody meant, off the reason rather than the title.
+ * Which posted duty somebody meant, off the reason's handle rather than the title.
  *
- * A generated title reads "An escort at Autumn Gate, for Azure Cloud Pavilion"
- * and a player says "I take the escort". The board's ordinary matcher refuses
+ * A generated title reads "Escort a charge of Azure Cloud Pavilion to Autumn
+ * Gate within 2 months" and a player says "I take the escort". The board's ordinary matcher refuses
  * that on purpose - `matchScore` will not let ONE WORD name a multi-word thing,
  * because "it" inside "B-it-ter" once resolved to Bitter Frost Needle - and
  * `sharesADistinctivePhrase` wants two consecutive words in common, which one
@@ -312,8 +320,7 @@ export function whichPostingTheyMeant(
     const said = wanted.toLowerCase();
     const hits: EncounterEntry[] = [];
     for (const reason of SENDING_REASONS) {
-        const core = reason.name.toLowerCase().replace(/^(?:an?|the)\s+/, '');
-        if (core.length < 6 || !said.includes(core)) continue;
+        if (!new RegExp(String.raw`\b${reason.said}\b`).test(said)) continue;
         for (const offer of offers) {
             if (offer.id.startsWith(`posted-`) && offer.id.includes(reason.id)) hits.push(offer);
         }
@@ -330,9 +337,40 @@ export function whichPostingTheyMeant(
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * Which band of a house's ladder a rung stands in. Off the ladder the roll
+ * uses: the elder band starts at `elderRungOf`, and the disciple rungs under it
+ * are counted down from there - core just under the elders where the ladder has
+ * four disciple rungs, then inner, and outer for the rest, a servant rung
+ * included.
+ */
+function theBandOfARung(rankIndex: number, rankCount: number): MissionRung {
+    const elders = elderRungOf(rankCount);
+    if (rankIndex >= elders) return 'elder';
+    const hasACoreRung = elders >= 4;
+    const under = elders - rankIndex;
+    if (hasACoreRung && under === 1) return 'core';
+    if (under === (hasACoreRung ? 2 : 1)) return 'inner';
+    return 'outer';
+}
+
+/** The lowest rung of a band on this ladder, or null where the ladder has none. */
+export function theFirstRungOf(band: MissionRung, rankCount: number): number | null {
+    for (let rung = 0; rung < rankCount; rung++) {
+        if (theBandOfARung(rung, rankCount) === band) return rung;
+    }
+    return null;
+}
+
+/** Whether somebody on this rung may take a mission posted to that band: their own or below. */
+export function aRungMayTake(rankIndex: number, rankCount: number, band: MissionRung): boolean {
+    return MISSION_RUNGS.indexOf(theBandOfARung(rankIndex, rankCount)) >= MISSION_RUNGS.indexOf(band);
+}
+
+/**
  * The missions this house posts: those it has the need for, read by the same
  * predicates its reasons are, and pitched no higher than somebody on its roll
- * stands.
+ * stands. Which rung of its ladder each is posted to is read where the board
+ * is read.
  */
 export function theMissionsAHousePosts(house: HouseAsItStands, reachOfTheHouse: number): HouseMission[] {
     return HOUSE_MISSIONS.filter(mission =>
@@ -340,13 +378,21 @@ export function theMissionsAHousePosts(house: HouseAsItStands, reachOfTheHouse: 
 }
 
 /**
- * A mission as a line on the house's board. Named the way a house's postings
- * are, `<what>, for <house>`, so the board groups it under the house.
+ * A mission as a line on the house's board, worded as the task: the house, the
+ * place where the caller knows it, and the term.
  */
-export function aMissionAsAnOffer(mission: HouseMission, house: { id: string; name: string }): EncounterEntry {
+export function aMissionAsAnOffer(
+    mission: HouseMission,
+    house: { id: string; name: string },
+    placeName: string | null = null
+): EncounterEntry {
     return {
         id: `${mission.id}@${house.id}`,
-        name: `${mission.name}, for ${house.name}`,
+        name: aTaskAsPosted(mission.task, {
+            house: house.name,
+            place: placeName,
+            realm: mission.realmCrossedInto === undefined ? null : realmForOrdinal(mission.realmCrossedInto).name
+        }, mission.days),
         kind: 'sect_event',
         simEventKind: 'sect_event',
         weight: 1,
@@ -356,7 +402,7 @@ export function aMissionAsAnOffer(mission: HouseMission, house: { id: string; na
         threatOrdinal: clampOrdinal(mission.minOrdinal),
         summaryTemplate: mission.note,
         tokens: [],
-        tags: ['mission']
+        tags: ['mission', postedForTag(house.name)]
     };
 }
 

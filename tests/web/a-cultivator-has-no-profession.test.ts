@@ -46,7 +46,7 @@ describe('asking for work at a wall', () => {
         const read = await game.act('is there work');
         const board = read.narration ?? '';
         expect(board).toMatch(/Contracts on the wall here/);
-        expect(board).toContain('Spirit-beast culling');
+        expect(board).toContain('spirit beast culling');
         expect(board).not.toMatch(PROFESSION_WORDS);
         for (const trade of MORTAL_TRADES) expect(board, trade).not.toContain(`  ${trade}`);
     }, 240_000);
@@ -60,18 +60,22 @@ describe('asking for work at a wall', () => {
             names.some(name => /completeDuty|recordDaysServed|refuseDuty/.test(name)),
             names.join(', ')
         ).toBe(true);
-        expect(took.toolCalls.map(call => call.summary).join(' ')).toContain('Spirit-beast culling');
+        expect(took.toolCalls.map(call => call.summary).join(' ')).toContain('spirit beast culling');
         expect((await game.state()).run!.elapsedDays).toBeGreaterThan(before);
         expect(took.narration ?? '').not.toMatch(PROFESSION_WORDS);
     }, 240_000);
 
-    it('lists what their own house sends its own on, to a member', async () => {
+    // A house's missions hang on a board inside its walls, so a member in a town
+    // reads the town's wall and nothing of theirs. See
+    // `the-mission-board-stands-inside-the-walls.test.ts` for the board itself.
+    it('does not mix a member\'s own house\'s missions into a town\'s wall', async () => {
         const { game, repos, db, cultivatorId } = await standingInATown('sent-on-a-mission', 25);
         repos.sects.addMember(A_HOUSE, cultivatorId, 0);
         db.prepare('UPDATE cultivators SET realm_ordinal = 25 WHERE id = ?').run(cultivatorId);
         const board = (await game.act('is there work')).narration ?? '';
-        expect(board).toMatch(/And what your house sends its own on/);
-        expect(board).toContain('Outer disciple chores');
+        expect(board).toMatch(/Contracts on the wall here/);
+        expect(board).not.toMatch(/And what your house sends its own on/);
+        expect(board).not.toMatch(/\bchores\b/i);
     }, 240_000);
 });
 

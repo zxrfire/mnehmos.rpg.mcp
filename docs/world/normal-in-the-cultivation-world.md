@@ -90,11 +90,16 @@ paid for is something done, not something they are.
   merchant's child, a boundary arbitration, being a retained deterrent. `CONTRACTS` in
   [`rogues.ts`](../../src/data/cultivation/rogues.ts), beside the bounties. A disciple may
   take one on their own time, and it credits their house nothing.
-- **A disciple is sent on a mission.** The standing work a house posts for its own: outer
-  disciple chores, a vein warden, a pill convoy escort, a surge breaker, a formation
-  keeper, acting as dao protector, a sigil inspection, a sky survey. `HOUSE_MISSIONS` in
+- **A disciple is sent on a mission.** The standing work a house posts for its own, each to
+  a rung: chores and errands of days to months for outer disciples, posts of years for inner
+  and core disciples, and the long standing posts for elders - keeping the pass watch,
+  acting as dao protector, a sigil inspection. `HOUSE_MISSIONS` in
   [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts),
-  posted only where the house has the need and somebody on its roll could do it.
+  posted only where the house has the need and somebody on its roll could do it. They hang
+  on the mission board inside the house's walls; a rung takes its own and every rung's below.
+- **Both are worded as the task**: the job, for whom, where, and for how long - "Keep the
+  quay watch at <town> for the next 30 days". Each carries a short handle, the words a
+  player uses for it ("the quay watch"), and the title contains it.
 - **Both are served the same way**, taken off the wall through the one duty every board
   line is served by, and the `work` verb lists them beside the mortal work.
 - **A standing is not work.** A high house paying for somebody's presence under its roof

@@ -84,11 +84,12 @@ describe('a posting says where it goes', () => {
         let carried = 0;
         for (const ordinal of [2, 14, 26]) {
             for (const notice of everyNoticeOn(reading.boardAt(ordinal))) {
-                const at = / at (.+), for /.exec(notice.name)?.[1];
-                if (at === undefined) continue;
-                carried += 1;
-                expect(places.has(at), `${at} is not a place this world holds`).toBe(true);
-                expect(ids.has(at), `${notice.name} printed a row id`).toBe(false);
+                // A title is a task - "Escort a charge of <house> to <place> within
+                // 2 months" - so the place is found in it rather than cut out of it.
+                expect([...ids].some(id => notice.name.includes(id)), `${notice.name} printed a row id`).toBe(false);
+                if ([...places].some(place => notice.name.includes(` ${place} `) || notice.name.includes(` ${place},`))) {
+                    carried += 1;
+                }
             }
         }
         expect(carried, 'no posting on any wall said where it went').toBeGreaterThan(0);

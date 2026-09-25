@@ -324,7 +324,7 @@ describe('and somebody can say which one they meant', () => {
         // Named in full, both of them: a reason is matched on its own name, so
         // "the materials" is not the escort competing with anything - it is a
         // sentence that names one job and a word.
-        expect(whichPostingTheyMeant('the escort and after materials', offers)).toBeNull();
+        expect(whichPostingTheyMeant('the escort and the materials trip', offers)).toBeNull();
     });
 
     it('and nothing at all for a sentence naming no reason', () => {

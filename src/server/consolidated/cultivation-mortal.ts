@@ -460,8 +460,9 @@ function describeRegard(regard: Regard): Record<string, unknown> {
 /** The contracts on the wall where they stand that they may take, priced at their rung. */
 function contractsOnTheWallFor(cultivator: Cultivator, standing: Standing): Record<string, unknown>[] {
     return contractsPostedAt(standing.settlementKind).flatMap(contract => {
+        const entry = aContractAsAnOffer(contract, cultivator.location?.trim() || null);
         const terms = dutyTermsAtAMonthlyRate({
-            entry: aContractAsAnOffer(contract),
+            entry,
             cashPerMonth: contract.cashPerMonth,
             days: contract.days,
             ordinal: cultivator.realmOrdinal,
@@ -471,7 +472,8 @@ function contractsOnTheWallFor(cultivator: Cultivator, standing: Standing): Reco
         if (!takeableOffAWall(terms.regard.band)) return [];
         return [{
             id: contract.id,
-            name: contract.name,
+            name: entry.name,
+            said: contract.said,
             minOrdinal: contract.minOrdinal,
             minRank: rankName(contract.minOrdinal),
             cashPerMonth: contract.cashPerMonth,

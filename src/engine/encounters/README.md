@@ -61,7 +61,14 @@ activity.ts     exposure, reach, place bias, cadence constants, the door rule
 select.ts       the pool and the two-stage draw
 tokens.ts       filling {token} slots, and the discovery rule as code
 resolve.ts      stance, deltas, the confrontation descriptor, the SimEvent
-duties.ts       the summons, the board, scale, the cohort, what refusing costs
+duties.ts       the summons, the board, the cohort, what refusing costs
+how-long-a-duty-runs.ts
+                a duty's scale and term off its tags, apart so the board can
+                word a posting with the term it will be priced at
+how-a-task-is-worded.ts
+                a posted row's title as the task: the job, for whom, where, for
+                how long. Every row has a handle (`said`) its title contains,
+                and the handle is what a player's words are matched on
 passing-a-duty-down-to-somebody-else.ts
                 a member hiring their errand out. The board gate is untouched:
                 what makes it a trade is that contribution is worth nothing
@@ -437,6 +444,13 @@ the room could exist at all. Three changes, all in `architecture.ts` and
 `THE_ROOM_WORK_IS_POSTED_IN` sits beside the board for the same reason
 `THE_ROOM_COMPLAINTS_GO_TO` sits beside the reporting module: which room is a
 system's front door is that system's fact, not the architecture table's.
+
+### A mission is posted to a rung
+
+`theBandOfARung` reads a house's ladder into outer, inner, core and elder off
+`elderRungOf`, and a mission is taken by its own band and every band above it
+(`aRungMayTake`). The board a player reads it on stands in one area of the seat
+(`web/the-mission-board-inside-a-house.ts`), and that is where the rung is read.
 
 ### And an elder is asked to go out with the juniors
 

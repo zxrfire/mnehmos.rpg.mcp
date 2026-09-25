@@ -85,7 +85,7 @@ describe('a house has somewhere its work is posted', () => {
     it('and a taken mission is said to whoever the hall answers with', async () => {
         // PLAYED, because the whole ruling is about what the player is told.
         const at = await anElderOfAHouseWithAWall();
-        const said = (await at.game.act('i take after materials') as unknown as {
+        const said = (await at.game.act('i take the materials trip') as unknown as {
             narration?: string;
         }).narration ?? '';
 

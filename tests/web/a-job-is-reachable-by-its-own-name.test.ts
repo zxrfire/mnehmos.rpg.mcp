@@ -76,9 +76,12 @@ describe('a job is reachable by its own name', () => {
         // Not a hand-written list. Every trade the board prints is reachable by
         // its printed name inside a work frame, which is the property that
         // cannot go stale against `mortal-world.ts`, and the same holds for the
-        // contracts and missions the work verb lists beside the mortal work.
-        for (const job of [...OCCUPATIONS, ...CONTRACTS, ...HOUSE_MISSIONS]) {
-            const printed = job.name.replace(/\s*\([^)]*\)\s*/g, ' ').split(',')[0]!.trim();
+        // contracts and missions the work verb lists beside the mortal work, by
+        // the handle their printed titles carry.
+        for (const printed of [
+            ...OCCUPATIONS.map(job => job.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim()),
+            ...[...CONTRACTS, ...HOUSE_MISSIONS].map(job => job.said)
+        ]) {
             if (printed.length < 4) continue;
             expect(
                 tradeNamedIn(`i take work as a ${printed.toLowerCase()}`),
@@ -127,7 +130,7 @@ describe('and a trade name is also a person', () => {
 
     it('needs a work frame before a bare trade noun counts', () => {
         expect(tradeNamedIn('i speak to the courier')).toBeUndefined();
-        expect(tradeNamedIn('i take work as a courier')).toBe('Courier');
+        expect(tradeNamedIn('i take work as a courier')).toBe('courier');
         // A verb phrase is unambiguous on its own and needs no frame.
         expect(tradeNamedIn('i carry water')).toBe('Water carrier');
     });

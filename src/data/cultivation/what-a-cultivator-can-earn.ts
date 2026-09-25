@@ -34,8 +34,9 @@ const asATerm = (paidAs: PaidAs) =>
 /** Every row of all three tables, a mortal's trade included, for lookup by id. */
 const EVERY_ROW: readonly APaidTerm[] = [
     ...OCCUPATIONS.map(asATerm('mortal work')),
-    ...CONTRACTS.map(asATerm('a contract')),
-    ...HOUSE_MISSIONS.map(asATerm('a mission'))
+    // A contract or a mission is called by its handle; its title is a task with slots.
+    ...CONTRACTS.map(row => asATerm('a contract')({ ...row, name: row.said })),
+    ...HOUSE_MISSIONS.map(row => asATerm('a mission')({ ...row, name: row.said }))
 ];
 
 /** What a cultivator may be put to: a mortal's own trade is not among it. */

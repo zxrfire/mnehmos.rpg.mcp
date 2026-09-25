@@ -61,7 +61,10 @@ const NOT_A_COLLISION: ReadonlyMap<string, string> = new Map([
     ['cultivator', 'the type noun of every person on the road, the player included'],
     // The owner's own genre word: "spirit boat = genre flying boat". A player types it
     // to mean exactly the thing, and it is not to be renamed away.
-    ['boat', 'the owner\'s term for the flying vessel, "spirit boat"']
+    ['boat', 'the owner\'s term for the flying vessel, "spirit boat"'],
+    // "Act as dao protector" is the owner's verb and heads the mission's title. The guard verb
+    // wins the sentence and routes it to the mission by id, so the shared word is the point.
+    ['protector', 'the owner\'s idiom: acting as dao protector is the guard verb, which takes the mission']
 ]);
 
 /**
@@ -87,7 +90,13 @@ const NOT_NAMES: ReadonlyMap<string, string> = new Map([
 /** A name that is a sentence about somebody nobody can name is not a name either. */
 const A_DESCRIPTION = /^a |\b(?:[Ww]ho|[Ww]hose|[Ww]hoever|[Ww]hich|[Nn]obody)\b|,/;
 
-const NAME_KEYS = new Set(['name', 'title', 'called', 'rank']);
+const NAME_KEYS = new Set(['name', 'title', 'called', 'rank', 'said']);
+
+/**
+ * `said` is the handle a player names a posted piece of work by, so it is a name
+ * even on a row whose own `name` is a description.
+ */
+const A_HANDLE = new Set(['said']);
 
 /** The words the verb table acts on, out of what players are recorded saying. */
 function theVerbWords(): Set<string> {
@@ -106,24 +115,26 @@ function theVerbWords(): Set<string> {
 }
 
 /** Every `name`, `title`, `called` and `rank`, and every rank ladder, in one catalog value. */
-function namesIn(value: unknown, where: string, into: Map<string, string>, seen = new Set<unknown>()): void {
+function namesIn(
+    value: unknown, where: string, into: Map<string, string>, seen = new Set<unknown>(), keys: ReadonlySet<string> = NAME_KEYS
+): void {
     if (!value || typeof value !== 'object' || seen.has(value)) return;
     seen.add(value);
     if (value instanceof Map) {
-        for (const v of value.values()) namesIn(v, where, into, seen);
+        for (const v of value.values()) namesIn(v, where, into, seen, keys);
         return;
     }
     if (Array.isArray(value)) {
-        for (const v of value) namesIn(v, where, into, seen);
+        for (const v of value) namesIn(v, where, into, seen, keys);
         return;
     }
     for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
-        if (typeof v === 'string' && NAME_KEYS.has(key)) {
+        if (typeof v === 'string' && keys.has(key)) {
             if (!into.has(v)) into.set(v, `${where}.${key}`);
-        } else if (key === 'ranks' && Array.isArray(v)) {
+        } else if (key === 'ranks' && Array.isArray(v) && keys === NAME_KEYS) {
             for (const rank of v) if (typeof rank === 'string' && !into.has(rank)) into.set(rank, `${where}.ranks`);
-            namesIn(v, where, into, seen);
-        } else namesIn(v, where, into, seen);
+            namesIn(v, where, into, seen, keys);
+        } else namesIn(v, where, into, seen, keys);
     }
 }
 
@@ -146,8 +157,9 @@ async function everyName(): Promise<Map<string, string>> {
     for (const file of catalogFiles(root)) {
         const module = await import(pathToFileURL(file).href) as Record<string, unknown>;
         for (const [exported, value] of Object.entries(module)) {
-            if (NOT_NAMES.has(exported)) continue;
-            namesIn(value, `${relative(root, file)}:${exported}`, names);
+            const where = `${relative(root, file)}:${exported}`;
+            if (NOT_NAMES.has(exported)) namesIn(value, where, names, new Set(), A_HANDLE);
+            else namesIn(value, where, names);
         }
     }
 

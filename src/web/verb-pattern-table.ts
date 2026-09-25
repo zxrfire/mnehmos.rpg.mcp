@@ -2131,25 +2131,19 @@ const TRADE_PHRASES: readonly TradePhrase[] = (() => {
         // metacharacter can ever reach the pattern below.
         const key = said.toLowerCase().replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim();
         if (key.length < 4 || rows.some(r => r.said === key)) return;
-        // A hyphen is a space. `Spirit-beast culling` is printed with one and
-        // typed either way, and the sanitiser above turns it into a space - so
-        // without this the one trade name the catalog hyphenates was the one
-        // name the parser would not accept back.
+        // A hyphen is a space: "spirit-beast culling" is printed with one and
+        // typed either way.
         const between = key.split(' ').join('[\\s-]+');
         rows.push({ said: key, name, kind, matches: new RegExp(`\\b${between}s?\\b`) });
     };
-    for (const job of [...OCCUPATIONS, ...CONTRACTS, ...HOUSE_MISSIONS]) {
+    // A contract or a mission is named by its handle, and the handle is what is
+    // handed on: its printed title is a whole task and nobody types it all.
+    for (const paper of [...CONTRACTS, ...HOUSE_MISSIONS]) add(paper.said, paper.said, 'name');
+    for (const job of OCCUPATIONS) {
         const printed = job.name.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
         add(printed, job.name, 'name');
-        // "Herb gathering, guarded ground" - the clause after the comma says
-        // WHERE, and nobody types it.
-        const beforeTheComma = printed.split(',')[0]!.trim();
-        add(beforeTheComma, job.name, 'name');
-        // "Spirit-beast culling" is said "the beast culling".
-        const spiritDropped = beforeTheComma.replace(/^spirit[\s-]+/i, '');
-        if (spiritDropped !== beforeTheComma && spiritDropped.includes(' ')) add(spiritDropped, job.name, 'name');
 
-        const shaped = /^(.+?)\s+([a-z]+)$/i.exec(beforeTheComma);
+        const shaped = /^(.+?)\s+([a-z]+)$/i.exec(printed);
         const verb = shaped
             ? AN_AGENT_NOUN_AND_ITS_VERB.find(([agent]) => agent === shaped[2]!.toLowerCase())
             : undefined;
@@ -2175,12 +2169,20 @@ export function tradeNamedIn(text: string): string | undefined {
  */
 export function theKindOfWorkNamed(text: string): string | undefined {
     const words: readonly string[] = text.toLowerCase().match(/[a-z']+/g) ?? [];
+    // The row that shares the most with the sentence: a whole word counts twice,
+    // a word on the same stem ("culler" for "culling") once. "The spirit-beast
+    // culler contract" shares "spirit" with the spirit paddies too.
+    let best: { name: string; score: number } | undefined;
     for (const row of TRADE_PHRASES) {
+        let score = 0;
         for (const part of row.said.split(' ')) {
-            if (part.length >= 5 && words.includes(part)) return row.name;
+            if (part.length < 5) continue;
+            if (words.includes(part)) score += 2;
+            else if (words.some(word => word.length >= 5 && word.slice(0, 4) === part.slice(0, 4))) score += 1;
         }
+        if (score >= 2 && (best === undefined || score > best.score)) best = { name: row.name, score };
     }
-    return undefined;
+    return best?.name;
 }
 
 /**
@@ -2216,26 +2218,21 @@ const DUTY_PHRASES: readonly string[] = [...new Set(
 /**
  * The same for a posted duty, as patterns rather than phrases.
  *
- * A generated title reads "An escort at Willow Village, for Azure Dew Sect",
- * and a player says "I take the escort". So the reason's own leading article is
- * dropped and any article is allowed in its place - matching on the part of the
- * name that is actually the job.
+ * A generated title reads "Escort a charge of Azure Dew Sect to Willow Village
+ * within 2 months", and a player says "I take the escort". So a posting is
+ * matched by its reason's handle, which is contained in the title, with any
+ * article in front of it.
  *
- * The length guard the phrase list uses is applied to what is left after the
- * article, at a lower bar: these are a small curated set of multi-word names
- * rather than the whole catalogue, and they are only ever consulted when a
- * taking verb is already in verb position. "I take the escort" is a duty. "I
- * escort the merchant" is not a taking verb and never reaches here.
+ * Only consulted when a taking verb is already in verb position. "I take the
+ * escort" is a duty. "I escort the merchant" is not a taking verb and never
+ * reaches here. The handles are distinctive phrases for the same reason: "I take
+ * a stand to defend her" is not the standing to.
  */
-const POSTED_DUTY_PHRASES: readonly RegExp[] = [...new Set(
-    SENDING_REASONS.map(reason => reason.name.toLowerCase().replace(/^(?:an?|the)\s+/, ''))
-)]
-    .filter(name => name.length >= 6)
+const POSTED_DUTY_PHRASES: readonly RegExp[] = [...new Set(SENDING_REASONS.map(reason => reason.said))]
     .sort((a, b) => b.length - a.length)
-    // The names are words and spaces - that table is authored, not user
-    // input - so nothing needs escaping here, and a name that stops being
-    // words and spaces should be fixed there rather than escaped here.
-    .map(name => new RegExp(String.raw`\b(?:an?|the)?\s*` + name + String.raw`\b`));
+    // The handles are words and spaces - that table is authored, not user
+    // input - so nothing needs escaping here.
+    .map(said => new RegExp(String.raw`\b(?:an?|the)?\s*` + said + String.raw`\b`));
 
 // WHAT AM I CARRYING IN MY HEAD
 

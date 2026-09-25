@@ -239,7 +239,15 @@ export type AtStake = z.infer<typeof AtStakeSchema>;
 
 export const SendingReasonSchema = z.object({
     id: z.string().min(1),
+    /** The reason in the world's prose: "out on an escort". */
     name: z.string().min(1),
+    /** What a player calls the posting. Contained, word for word, in `task`. */
+    said: z.string().min(4),
+    /**
+     * The posting as a board words it. Slots: `{house}`, `{place}` and `{term}`,
+     * which is the term the board prices. See `aTaskAsPosted`.
+     */
+    task: z.string().min(1),
     /** What the party is for. One line, factual, no adjectives. */
     what: z.string().min(60),
     needs: ReasonNeedSchema,
@@ -294,6 +302,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-for-materials',
         name: 'After materials',
+        said: 'materials trip',
+        task: 'Make the materials trip to {place} for {house} for the next {term}',
         what: 'Out gathering herbs, ore and beast parts, because at that grade they are '
             + 'the one thing nobody already owns.',
         needs: 'nothing',
@@ -310,6 +320,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-stand-to',
         name: 'Standing to',
+        said: 'standing to',
+        task: 'Hold the standing to over the settlements under {place} for {house} for the next {term}',
         what: 'Something is moving toward the settlements under the vein, and the '
             + 'house that holds the vein is the only body that can read the ground.',
         needs: 'ground',
@@ -326,6 +338,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-recruit',
         name: 'Looking for disciples',
+        said: 'recruiting trip',
+        task: 'Make the recruiting trip to the villages around {place} for {house} for the next {term}',
         what: 'Two people walking village rolls and county assessments for anybody '
             + 'worth the cost of feeding for forty years.',
         needs: 'nothing',
@@ -342,6 +356,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-an-escort',
         name: 'An escort',
+        said: 'escort',
+        task: 'Escort a charge of {house} to {place} for the next {term}',
         what: 'Somebody or something has to arrive somewhere, and the house has '
             + 'said it will arrive.',
         needs: 'nothing',
@@ -358,6 +374,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-collect-tribute',
         name: 'Collecting on a grant',
+        said: 'grant collection',
+        task: 'Make the grant collection owed to {house} at {place} for the next {term}',
         what: 'A subsidiary owes what its terms say it owes, and somebody has to '
             + 'go down and be the person the terms are collected by.',
         needs: 'a_subsidiary',
@@ -374,6 +392,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-open-an-inheritance',
         name: 'Opening what was found',
+        said: 'opening party',
+        task: 'Join the opening party for what was found at {place} for {house} for the next {term}',
         what: 'Somebody has found a door, a cache or a seat, and the house is going '
             + 'to be the body that opens it rather than the body that hears about it.',
         needs: 'a_find',
@@ -390,6 +410,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-answer-a-call',
         name: 'Answering a call',
+        said: 'levy',
+        task: 'Answer the levy made on {house} at {place} for the next {term}',
         what: 'Something above the house has asked for people, and the house holds '
             + 'what it holds on terms that make refusing a different conversation.',
         needs: 'a_parent',
@@ -406,6 +428,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-a-marriage',
         name: 'To a marriage',
+        said: 'bridal party',
+        task: 'Travel with the bridal party to {place} for {house} for the next {term}',
         what: 'A match between two houses, and the party is the half of it that '
             + 'travels, with everything the house wants seen travelling alongside.',
         needs: 'an_ally',
@@ -422,6 +446,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-after-a-quiet-subsidiary',
         name: 'Finding out why it went quiet',
+        said: 'went quiet',
+        task: 'Look into why the house at {place} went quiet, for {house}, for the next {term}',
         what: 'A body below has stopped sending what it sends, and nobody at this '
             + 'house knows whether that is a refusal or a funeral.',
         needs: 'a_subsidiary',
@@ -438,6 +464,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-dispel-a-leak',
         name: 'Dispelling a leak',
+        said: 'leak duty',
+        task: 'Take the leak duty at the seal by {place} for {house} for the next {term}',
         what: 'Something sealed is letting go of what it holds, a little at a '
             + 'time, and the people posted over it walk it down before it reaches '
             + 'the perimeter.',
@@ -460,6 +488,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-be-received',
         name: 'A visit to another house',
+        said: 'house visit',
+        task: 'Go on the house visit to {place} for {house} for the next {term}',
         what: 'Another house has said it will receive a party from this one, and '
             + 'the party is the house as far as anybody there is concerned.',
         needs: 'a_counterpart',
@@ -476,6 +506,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-a-friendly-competition',
         name: 'A friendly competition',
+        said: 'friendly competition',
+        task: 'Compete in the friendly competition at {place} for {house} for the next {term}',
         what: 'Another house is putting its juniors up against this one\'s, on a day '
             + 'both houses named, with the elders of both standing at the edge of it.',
         needs: 'a_counterpart',
@@ -497,6 +529,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-the-edge-of-forbidden-ground',
         name: 'To the edge of forbidden ground',
+        said: 'forbidden ground',
+        task: 'Walk out to the edge of the forbidden ground at {place} for {house} for the next {term}',
         what: 'Ground in the province stopped being ground, and the house walks its '
             + 'own out to the line to see what is there before somebody walks into it.',
         needs: 'forbidden_ground',
@@ -518,6 +552,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-a-war',
         name: 'To a war',
+        said: 'campaign',
+        task: 'Join the campaign of {house} at {place} for the next {term}',
         what: 'The house is at war, the list is everybody ranked, and the thing '
             + 'that was going to happen this decade is not going to happen.',
         needs: 'a_rival',
@@ -534,6 +570,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-take-the-ground-that-pays',
         name: 'Taking what pays',
+        said: 'paying ground',
+        task: 'Take the paying ground at {place} for {house} for the next {term}',
         what: 'The house has not paid its own people this year, and the ground that '
             + 'would pay them is a fortnight away with somebody else standing on it.',
         needs: 'ground_that_pays_somebody_else',
@@ -555,6 +593,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-look-in-on-a-posting',
         name: 'Looking in on a posting',
+        said: 'posting check',
+        task: 'Make the posting check at {place} for {house} for the next {term}',
         what: 'Somebody of the house has been in a town for years, and the house sends one person '
             + 'with a fresh stack of communication talismans to see how they are.',
         needs: 'somebody_out_on_a_posting',
@@ -576,6 +616,8 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     {
         id: 'sending-to-cut-communication-talismans',
         name: 'Cutting communication talismans',
+        said: 'cutting communication talismans',
+        task: 'Take a turn cutting communication talismans at {place} for {house} for the next {term}',
         what: 'The house has handed out more of its communication talismans than it has left, and '
             + 'somebody at Foundation or above sits down at the house and cuts more.',
         needs: 'communication_talismans_running_low',

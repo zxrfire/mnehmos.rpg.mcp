@@ -11,6 +11,7 @@ import type { EncounterEntry } from '../../data/cultivation/encounters.js';
 import type { Settlement } from '../../data/cultivation/mortal-world.js';
 import { CONTRACTS, getContract, type Contract } from '../../data/cultivation/rogues.js';
 import { MAX_ORDINAL, clampOrdinal } from '../cultivation/realms.js';
+import { aTaskAsPosted } from './how-a-task-is-worded.js';
 
 /** The contracts up on a wall in a place of this kind. None off a settlement. */
 export function contractsPostedAt(settlementKind: Settlement['kind'] | null | undefined): readonly Contract[] {
@@ -21,12 +22,13 @@ export function contractsPostedAt(settlementKind: Settlement['kind'] | null | un
 /**
  * A contract as a line on the wall, pitched at its own rung. Its id is the
  * contract's, so the same paper in two towns is the same paper, and a term
- * broken off in one is taken up again in the other.
+ * broken off in one is taken up again in the other. Worded with the town the
+ * wall is in, where the caller knows it.
  */
-export function aContractAsAnOffer(contract: Contract): EncounterEntry {
+export function aContractAsAnOffer(contract: Contract, placeName: string | null = null): EncounterEntry {
     return {
         id: contract.id,
-        name: contract.name,
+        name: aTaskAsPosted(contract.task, { place: placeName }, contract.days),
         kind: 'opportunity',
         simEventKind: 'opportunity',
         weight: 1,

@@ -41,7 +41,8 @@ const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
     [/^(?:market|markets|marketplace|market place|stalls?|stall row|row)$/, 'market'],
     [/^(?:inn|teahouse|tea house|tavern|wine shop|wineshop|eating house|restaurant|downstairs|common room)$/, 'table'],
     [/^(?:gate|gates|outside the gate|out|outside)$/, 'gate'],
-    [/^(?:forecourt|courtyard|yard|in|inside)$/, 'forecourt']
+    [/^(?:forecourt|courtyard|yard|in|inside)$/, 'forecourt'],
+    [/^(?:board|mission board|missions board)$/, 'board']
 ];
 
 /**
@@ -205,8 +206,8 @@ export async function aWalkAcrossThePlace(
         ));
     }
 
-    // THE FORECOURT IS BEHIND THE GATE, and the gate is asked.
-    if (destination.for === 'forecourt') {
+    // THE FORECOURT AND THE BOARD ARE BEHIND THE GATE, and the gate is asked.
+    if (destination.for === 'forecourt' || destination.for === 'board') {
         const shut = theGateBetweenThemAndIt(game, cultivator);
         if (shut) {
             return refused('engine.walkAcrossThePlace', 'move', factsForRefusal(
@@ -272,7 +273,7 @@ export function crossToWhoeverTheyNamed(
         .sort((a, b) => b.name.length - a.name.length)[0];
     const theirs = named ? areas.find(area => area.id === whereIs.get(named.id)) : undefined;
     if (!named || !theirs || theirs.id === here.area.id) return null;
-    if (theirs.for === 'forecourt' && theGateBetweenThemAndIt(game, cultivator)) return null;
+    if ((theirs.for === 'forecourt' || theirs.for === 'board') && theGateBetweenThemAndIt(game, cultivator)) return null;
     game.repos.cultivators.standIn(cultivator.id, theirs.id);
     return {
         cultivator: game.repos.cultivators.getById(cultivator.id) ?? cultivator,

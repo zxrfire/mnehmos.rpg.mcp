@@ -47,6 +47,7 @@ import type { WhereTheyStandOnARoll }
     from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import type { ClaimVerdict } from '../engine/world/recognising-whose-art-you-just-watched.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
+import { humanDays, wholeDays } from '../engine/encounters/how-a-task-is-worded.js';
 import { PLACE } from '../data/cultivation/place-names.js';
 
 // The band a person standing here reads is the engine's to own - `facts.ts`
@@ -372,20 +373,7 @@ export function placeName(
     return cultivator.location?.trim() || PLACE.BURNT_EARTH;
 }
 
-/** "10 years", "3 months", "18 days" - whichever unit reads plainest. */
-export function humanDays(days: number): string {
-    const d = Math.max(0, Math.round(days));
-    if (d >= DAYS_PER_YEAR) {
-        const years = d / DAYS_PER_YEAR;
-        const shown = years >= 10 ? Math.round(years) : Math.round(years * 10) / 10;
-        return `${shown} year${shown === 1 ? '' : 's'}`;
-    }
-    if (d >= 60) {
-        const months = Math.round(d / 30);
-        return `${months} month${months === 1 ? '' : 's'}`;
-    }
-    return wholeDays(d);
-}
+export { humanDays };
 
 /**
  * Two spans set against each other, in a unit that can tell them apart.
@@ -410,10 +398,6 @@ export function twoSpansToldApart(a: number, b: number): [string, string] | null
     return inDays[0] === inDays[1] ? null : inDays;
 }
 
-function wholeDays(days: number): string {
-    const d = Math.max(0, Math.round(days));
-    return `${d} day${d === 1 ? '' : 's'}`;
-}
 
 function signed(n: number, digits = 0): string {
     const v = Number(n.toFixed(digits));

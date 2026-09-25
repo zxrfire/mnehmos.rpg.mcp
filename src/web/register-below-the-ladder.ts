@@ -59,6 +59,7 @@ import {
     unbackedMonthlyFor
 } from '../data/cultivation/rogues.js';
 import { HOUSE_MISSIONS } from '../data/cultivation/what-a-house-posts-for-its-own.js';
+import { aTaskAsPosted } from '../engine/encounters/how-a-task-is-worded.js';
 import { FALLEN } from '../data/cultivation/cultivators-the-road-finished.js';
 import {
     WHAT_THE_END_OF_A_TERM_LEAVES,
@@ -172,8 +173,8 @@ function pricesSection(): string {
     const PAID_AS_ORDER = ["a mortal's trade", 'menial work', 'a contract', 'a mission'];
     const work = [
         ...OCCUPATIONS.map(o => ({ ...o, paidAs: o.kind === 'mortal' ? "a mortal's trade" : 'menial work' })),
-        ...CONTRACTS.map(c => ({ ...c, paidAs: 'a contract' })),
-        ...HOUSE_MISSIONS.map(m => ({ ...m, paidAs: 'a mission' }))
+        ...CONTRACTS.map(c => ({ ...c, name: aTaskAsPosted(c.task, {}, c.days), paidAs: 'a contract' })),
+        ...HOUSE_MISSIONS.map(m => ({ ...m, name: `${aTaskAsPosted(m.task, {}, m.days)} - ${m.rung} rung`, paidAs: 'a mission' }))
     ]
         .sort((a, b) => PAID_AS_ORDER.indexOf(a.paidAs) - PAID_AS_ORDER.indexOf(b.paidAs)
             || a.minOrdinal - b.minOrdinal || b.cashPerMonth - a.cashPerMonth)
