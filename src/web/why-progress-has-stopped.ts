@@ -25,7 +25,7 @@
  *                     it and adds the two numbers the sentence implies.
  *   the region axis   is `canAdvanceHere(regionId, ordinal)` and the region's
  *                     own `localCeilingOrdinal`.
- *   the rank axis     is `requiredOrdinalForRank` / `requiredContributionForRank`,
+ *   the rank axis     is `theRealmARungAsks` / `requiredContributionForRank`,
  *                     which is what `handlePromote` ITSELF gates on - so the
  *                     answer and the gate cannot drift apart.
  *   the qi axis       is the ambient band already rolled for where they stand.
@@ -127,7 +127,7 @@ export interface RankStanding {
     rankTitle: string;
     /** Null when they are on the top rung and there is nothing above it. */
     nextRankTitle: string | null;
-    /** `requiredOrdinalForRank(admissionOrdinal, nextIndex)`. */
+    /** `theRealmARungAsks(sect, nextIndex)`. */
     requiredOrdinal: number;
     /** `requiredContributionForRank(nextIndex)`. */
     requiredContribution: number;

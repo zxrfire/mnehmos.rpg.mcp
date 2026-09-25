@@ -20,7 +20,7 @@ import {
     AlchemyManageTool,
     handleAlchemyManage
 } from '../../src/server/consolidated/alchemy-manage.js';
-import { SectManageTool, handleSectManage } from '../../src/server/consolidated/sect-manage.js';
+import { SectManageTool, handleSectManage, theRealmARungAsks } from '../../src/server/consolidated/sect-manage.js';
 import { AdminManageTool, adminResult, handleAdminManage } from '../../src/server/consolidated/admin-manage.js';
 import { ConsolidatedTools } from '../../src/server/consolidated/index.js';
 import { closeDb, getDb } from '../../src/storage/index.js';
@@ -1338,7 +1338,14 @@ describe('cultivation MCP tool surface', () => {
             expect(standing.member).toBe(true);
             expect(standing.sect.compound).toBeDefined();
             expect(standing.nextRank.requiredContribution).toBeGreaterThan(0);
-            expect(standing.nextRank.ordinalShortfall).toBeGreaterThan(0);
+            // The realm a rung asks is the world's own rule for promoting an
+            // insider, the one `handlePromote` gates on. This asserted a
+            // shortfall above nothing, which held only because the player's bar
+            // was the admission bar plus four a rung while the world's was the
+            // rank's band, and at this house's rung 1 the band asks nothing more.
+            expect(standing.nextRank.requiredOrdinal)
+                .toBe(theRealmARungAsks(getSect(target.id)!, standing.nextRank.index));
+            expect(standing.nextRank.ordinalShortfall).toBeGreaterThanOrEqual(0);
         });
     });
 

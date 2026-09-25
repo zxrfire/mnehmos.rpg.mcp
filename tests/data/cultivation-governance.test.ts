@@ -5,8 +5,12 @@
  * The load-bearing assertions here are the ones a tool could otherwise get
  * wrong quietly:
  *
- *   - nothing carries across an upward move, and `arrivalStateFor` returns
- *     zeroes rather than the cultivator's existing standing
+ *   - nothing carries across an upward move: the door every joiner goes
+ *     through (`offerAtTheDoorOf`) seats them at the bottom rung of an apex as
+ *     of any house, whatever they held below. `arrivalStateFor` said this of
+ *     the apexes alone, read the Azure Cloud apex's top-down ladder as if it
+ *     ran bottom-up (its "lowest rank" came back as Pavilion Master), and had
+ *     no caller; it went when the owner ruled every house alike
  *   - apex rank ladders are not ordinal-derived, and are marked as such
  *   - a starting cultivator is `unaware` of every apex, so nothing above the
  *     map may be named in narration to them
@@ -15,6 +19,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { offerAtTheDoorOf } from '../../src/engine/social-leverage/entry-offer.js';
 
 import {
     SECTS,
@@ -60,7 +65,6 @@ import {
     getGuestElders,
     mayBeNamed,
     unattributedEffectsOf,
-    arrivalStateFor
 } from '../../src/data/cultivation/hierarchy.js';
 
 describe('the pyramid', () => {
@@ -390,19 +394,15 @@ describe('the feeder and arrival', () => {
         expect(ARRIVAL_RULES.doesNotCarry.length).toBeGreaterThanOrEqual(5);
         for (const line of ARRIVAL_RULES.doesNotCarry) expect(line.length).toBeGreaterThan(40);
 
-        const arrival = arrivalStateFor('sect-azure-cloud-pavilion', 'apex-earth-vein-tower');
-        expect(arrival.rankIndex).toBe(0);
-        expect(arrival.rankTitle).toBe('Unplaced');
-        expect(arrival.contributionCarried).toBe(0);
-        expect(arrival.reputationCarried).toBe(0);
-        expect(arrival.seniorityCarried).toBe(0);
-        expect(arrival.titlesRecognised).toEqual([]);
-
-        // The same, from anywhere, including the most prestigious sect there is.
-        for (const from of ['sect-hollow-bell-wanderers', 'sect-nine-peaks-ascetic-order', 'sect-ancient-bough-grove']) {
-            const a = arrivalStateFor(from, 'apex-earth-vein-tower');
-            expect(a.rankIndex).toBe(0);
-            expect(a.contributionCarried).toBe(0);
+        // THE LIVE DOOR, at the Survey. Whoever walks up below the bar for an
+        // elder from outside is Unplaced, however high they stood where they
+        // came from, and the door has no input for where that was.
+        const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-earth-vein-tower')!;
+        const door = offerAtTheDoorOf(survey.factionId, 0)!;
+        for (let ordinal = 0; ordinal < door.elderBar!; ordinal++) {
+            const offer = offerAtTheDoorOf(survey.factionId, ordinal)!;
+            expect(offer.offered).toBe(ARRIVAL_RULES.entryRankIndex);
+            expect(getSect(survey.factionId)!.ranks[offer.offered!]).toBe('Unplaced');
         }
     });
 

@@ -1,154 +1,115 @@
 /**
- * WHAT A HOUSE OFFERS SOMEBODY JOINING IT.
+ * WHERE A HOUSE SEATS SOMEBODY JOINING IT.
  *
- * The played defect this file pins: a cultivator at ordinal 25 walked into the
- * Azure Cloud Pavilion and was seated as Sword Elder, the fifth rank of six,
- * over a house whose own Core Disciple stands at ordinal 20 and earned it by
- * years inside. `entryRankIndexFor` did exactly what it says - the promotion
- * ladder read backwards - and what it reads is the asker's rung and nothing
- * else.
+ * THE RULING THIS FILE PINS NOW, from the design owner, on every house alike,
+ * the top ones included: *"same lore. join as outer disciple or external elder.
+ * if you're overqualified you promote FAST cuz you can take merit missions and
+ * do them easily."* Two seats: the bottom rung, or the house's lowest elder
+ * rung for somebody who clears the bar a house asks of an elder from outside
+ * (`whatAnOutsiderMustStandAt`, which the world's own houses already take
+ * elders in by). Nothing between, and nobody seated by their standing.
  *
- * Measured across the catalog before the change: 442 probes, 337 at a rung
- * where the house has somebody of its own, and the old lookup sits above the
- * ordinary offer in 234 of them, level in 98, below in 5. Mean overshoot 0.89
- * ranks. That number is the justification for a change that makes seven offers
- * in ten meaner, so it is asserted here rather than only written down.
+ * WHAT IT REPLACED, AND WHY THAT IS RECORDED RATHER THAN DELETED. This file
+ * used to pin a different ruling of the owner's: *"they might offer something
+ * one rung below what their own cultivators have at 29... or if you are
+ * renowned they might offer sword elder regardless"*. A newcomer was seated one
+ * rung under the house's own people at their height, and a renowned one level
+ * with or above them. It was measured against the lookup before it (442 probes
+ * across the catalog, the lookup above the peer offer in 234, mean overshoot
+ * 0.89 ranks) and it was a real improvement on that lookup. The new ruling
+ * removes seating by standing altogether, so the peer reference, the renown
+ * bands and the silent-roster cases went with it, and so did the old lookup
+ * (`entryRankIndexFor`) and the catalog's `arrivalStateFor`, which said the
+ * bottom-rung rule of the apexes alone and had no caller. Renown still decides
+ * one thing, whether the door opens at all.
+ *
+ * AND WHY THE OVERQUALIFIED ARE NOT HELD BACK BY IT: the board offers work by
+ * the strength of whoever takes it, not by their rung, and pays by that
+ * strength. `a-newcomer-rises-by-merit.test.ts` measures how fast.
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { getSect } from '../../../src/data/cultivation/sects';
-import { getMembersOf } from '../../../src/data/cultivation/members';
-import { entryRankIndexFor } from '../../../src/engine/cultivation/what-each-rung-of-a-house-ladder-requires';
+import { SECTS, getSect } from '../../../src/data/cultivation/sects';
+import { ARRIVAL_RULES } from '../../../src/data/cultivation/governance-and-water-rights';
+import { elderRungOf } from '../../../src/engine/cultivation/leadership';
+import { whatAnOutsiderMustStandAt } from '../../../src/engine/world/promotion-inside-a-house';
 import {
-    NEAR_WINDOW,
     entryOfferFor,
-    renownReading,
-    type PeerOnTheRoll
+    offerAtTheDoorOf,
+    renownReading
 } from '../../../src/engine/social-leverage/entry-offer';
 
-/** The house's own roll, as the catalog holds it. */
-const rollOf = (factionId: string): PeerOnTheRoll[] =>
-    getMembersOf(factionId).map(m => ({
-        rankIndex: m.rankIndex,
-        realmOrdinal: m.realmOrdinal
-    }));
+const RECRUITING = SECTS.filter(s => s.recruits);
 
-const offerAt = (factionId: string, ordinal: number, leaning?: number | null) => {
-    const sect = getSect(factionId)!;
-    return entryOfferFor({
-        ranks: sect.ranks,
-        admissionOrdinal: sect.admissionOrdinal,
-        roll: rollOf(factionId),
-        askerOrdinal: ordinal,
-        leaning
+// ─────────────────────────────────────────────────────────────────────────
+// THE TWO SEATS
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the seat a newcomer is given', () => {
+    it('is the bottom rung or the elder\'s seat, at every house and every height, and nothing between', () => {
+        let bottom = 0;
+        let elder = 0;
+        for (const sect of RECRUITING) {
+            for (let ordinal = 0; ordinal <= 44; ordinal++) {
+                const offer = offerAtTheDoorOf(sect.id, ordinal)!;
+                expect(offer.offered === ARRIVAL_RULES.entryRankIndex || offer.offered === offer.elderRung,
+                    `${sect.id} seated ordinal ${ordinal} at ${offer.offered}`).toBe(true);
+                if (offer.offered === ARRIVAL_RULES.entryRankIndex) bottom++; else elder++;
+            }
+        }
+        // Both seats are reached, or this asserts one of them away.
+        expect(bottom).toBeGreaterThan(0);
+        expect(elder).toBeGreaterThan(0);
     });
-};
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE PLAYED CASE
-// ─────────────────────────────────────────────────────────────────────────
+    it('does not seat anybody by their standing: below the elder\'s bar, the strongest starts where the weakest does', () => {
+        for (const sect of RECRUITING) {
+            const door = offerAtTheDoorOf(sect.id, 0)!;
+            const ceiling = door.elderBar ?? 45;
+            for (let ordinal = sect.admissionOrdinal; ordinal < ceiling; ordinal++) {
+                expect(offerAtTheDoorOf(sect.id, ordinal)!.offered, `${sect.id} at ${ordinal}`)
+                    .toBe(ARRIVAL_RULES.entryRankIndex);
+            }
+        }
+    });
 
-describe('the offer the Pavilion actually makes at ordinal 25', () => {
-    it('is one rung under its own people, not the rank the ladder computes', () => {
+    it('takes in somebody past the outsider\'s bar as an elder, with no merit in it', () => {
         const sect = getSect('sect-azure-cloud-pavilion')!;
-        const offer = offerAt('sect-azure-cloud-pavilion', 25);
+        const rung = elderRungOf(sect.ranks.length);
+        const bar = whatAnOutsiderMustStandAt(
+            sect.id, rung, sect.ranks.length, sect.admissionOrdinal, sect.powerOrdinal);
 
-        // Xiang Yuwei stands at ordinal 24 and is a Sword Elder.
-        expect(offer.peerRank).toBe(sect.ranks.indexOf('Sword Elder'));
-        expect(offer.anchor).toBe('peers_near');
-        // And the offer is the rank under her.
-        expect(offer.offered).toBe(sect.ranks.indexOf('Core Disciple'));
-        expect(offer.band).toBe('under_their_own');
-
-        // The defect, stated as the gap rather than as a rank name: the old
-        // lookup seats them higher, and HOW MUCH higher is a property of the
-        // ladder rather than of this rule. When the Grand Sword Elder rung was
-        // inserted between the elders and the head, the lookup went from
-        // offering a stranger at 25 the Sword Elder's seat to offering them the
-        // Grand Sword Elder's - the arithmetic reading one rung further up a
-        // longer ladder, which is the same defect getting worse. Pinning the
-        // rank name here would have made that read as a failure of this rule.
-        const old = entryRankIndexFor(sect.ranks, sect.admissionOrdinal, 25);
-        expect(offer.offered!).toBeLessThan(old);
-        // And it is the house's own standard that decides, not the ladder's
-        // length: Xiang Yuwei stands at 24 as a Sword Elder either way.
-        expect(sect.ranks[offer.peerRank!]).toBe('Sword Elder');
+        const under = offerAtTheDoorOf(sect.id, bar - 1)!;
+        const past = offerAtTheDoorOf(sect.id, bar)!;
+        expect(under.band).toBe('outer_disciple');
+        expect(under.offered).toBe(ARRIVAL_RULES.entryRankIndex);
+        expect(past.band).toBe('external_elder');
+        expect(past.offered).toBe(rung);
+        expect(past.line).toContain('with no merit in it');
     });
 
-    it('says the slight out loud on the mechanical channel', () => {
-        const offer = offerAt('sect-azure-cloud-pavilion', 25);
-        expect(offer.line).toContain('the cultivation without the standing');
+    it('never seats anybody at the head of a house', () => {
+        for (const sect of RECRUITING) {
+            const offer = offerAtTheDoorOf(sect.id, 45, 1)!;
+            expect(offer.offered!).toBeLessThan(sect.ranks.length - 1);
+        }
+    });
+
+    it('says the seat and the elder\'s bar on the mechanical channel', () => {
+        const bar = offerAtTheDoorOf('sect-azure-cloud-pavilion', 0)!.elderBar!;
+        const offer = offerAtTheDoorOf('sect-azure-cloud-pavilion', bar - 1)!;
+        expect(offer.line).toContain('Nobody from outside is seated by what they stand at');
+        expect(offer.line).toContain(`from ordinal ${offer.elderBar}`);
     });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// THE REFERENCE POINT
-// ─────────────────────────────────────────────────────────────────────────
-
-describe('what the reference is taken from', () => {
-    it('takes the median, so one exceptional insider cannot inflate it', () => {
-        // Three peers at the asker's rung: two juniors and somebody who was
-        // raised early. The maximum would offer rank 3; the median offers 1.
-        const offer = entryOfferFor({
-            ranks: ['a', 'b', 'c', 'd', 'e', 'head'],
-            admissionOrdinal: 0,
-            roll: [
-                { rankIndex: 1, realmOrdinal: 20 },
-                { rankIndex: 2, realmOrdinal: 20 },
-                { rankIndex: 4, realmOrdinal: 21 }
-            ],
-            askerOrdinal: 20
-        });
-        expect(offer.peerRank).toBe(2);
-        expect(offer.offered).toBe(1);
-    });
-
-    it('never lets the head of a house be the peer', () => {
-        // The Burnt Earth Temple's Abbot stands at ordinal 20, and any rule
-        // reading the whole roll makes him the reference for somebody at 21 -
-        // which then offers the rank below the headship.
-        const sect = getSect('sect-sweptground-temple')!;
-        const abbot = sect.ranks.length - 1;
-        expect(getMembersOf('sect-sweptground-temple')
-            .some(m => m.rankIndex === abbot && Math.abs(m.realmOrdinal - 21) <= NEAR_WINDOW))
-            .toBe(true);
-
-        const offer = offerAt('sect-sweptground-temple', 21);
-        expect(offer.peerRank).not.toBe(abbot);
-        expect(offer.offered!).toBeLessThan(abbot - 1);
-    });
-
-    it('falls back to the nearest person below when nobody is at the rung', () => {
-        const offer = entryOfferFor({
-            ranks: ['a', 'b', 'c', 'd', 'head'],
-            admissionOrdinal: 0,
-            roll: [
-                { rankIndex: 1, realmOrdinal: 5 },
-                { rankIndex: 3, realmOrdinal: 18 }
-            ],
-            // Far enough above 18 that nobody is a peer and near enough that
-            // they can still be read. Beyond nine rungs the reference stops
-            // being usable at all, which the `beyond_reading` case covers.
-            askerOrdinal: 22
-        });
-        expect(offer.anchor).toBe('nearest_below');
-        expect(offer.peerRank).toBe(3);
-        expect(offer.offered).toBe(2);
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// THE SCALE - FOUR BANDS ON ONE NUMBER
+// HOW BADLY THEY WANT YOU DECIDES THE DOOR, AND ONLY THE DOOR
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('how badly they want you', () => {
-    const house = {
-        ranks: ['a', 'b', 'c', 'd', 'e', 'head'],
-        admissionOrdinal: 0,
-        roll: [{ rankIndex: 3, realmOrdinal: 20 }],
-        askerOrdinal: 20
-    };
+    const house = { ranks: ['a', 'b', 'c', 'd', 'e', 'head'], askerOrdinal: 20, elderBar: 30 };
 
     it('shuts the door on somebody they do not want', () => {
         const offer = entryOfferFor({ ...house, leaning: -0.9 });
@@ -158,119 +119,36 @@ describe('how badly they want you', () => {
     });
 
     it('shuts it just as firmly on somebody they BARELY want', () => {
-        // The correction that collapsed the bottom of the scale. A house
-        // carrying a titled stranger with no room is carrying bloat, and no
-        // house does that for somebody it is merely lukewarm about - so a mild
+        // A house does not carry a stranger it is lukewarm about, so a mild
         // dislike is a refusal rather than a lesser offer.
         const offer = entryOfferFor({ ...house, leaning: -0.3 });
         expect(offer.band).toBe('closed_door');
         expect(offer.offered).toBeNull();
     });
 
-    it('makes the ordinary offer when the body has no opinion', () => {
-        expect(entryOfferFor({ ...house, leaning: 0 }).band).toBe('under_their_own');
-        expect(entryOfferFor({ ...house, leaning: 0 }).offered).toBe(2);
-        // And with no council read at all, which is the same answer and must
-        // never quietly become the old lookup.
-        expect(entryOfferFor(house).band).toBe('under_their_own');
-        expect(entryOfferFor(house).offered).toBe(2);
+    it('opens it with no council read, and on no opinion', () => {
+        expect(entryOfferFor(house).offered).toBe(0);
+        expect(entryOfferFor({ ...house, leaning: 0 }).offered).toBe(0);
     });
 
-    it('seats them level with their own for a body that wants them', () => {
-        const offer = entryOfferFor({ ...house, leaning: 0.3 });
-        expect(offer.band).toBe('level_with_their_own');
-        expect(offer.offered).toBe(3);
-    });
-
-    it('goes above the arithmetic for a name that has travelled', () => {
-        const offer = entryOfferFor({ ...house, leaning: 0.9 });
-        expect(offer.band).toBe('above_their_own');
-        expect(offer.offered).toBe(4);
-    });
-
-    it('never seats anybody in the head of the house, at any leaning', () => {
-        for (const leaning of [0.6, 0.9, 1]) {
-            const offer = entryOfferFor({
-                ...house,
-                roll: [{ rankIndex: 4, realmOrdinal: 20 }],
-                leaning
-            });
-            expect(offer.offered!).toBeLessThan(house.ranks.length - 1);
+    it('seats a name that travelled exactly where it seats a stranger', () => {
+        // The seat was once raised for renown; the owner's "same lore" took
+        // that out. Renown is a door, not a rung.
+        for (const leaning of [0, 0.3, 0.9, 1]) {
+            expect(entryOfferFor({ ...house, leaning }).offered).toBe(0);
+            expect(entryOfferFor({ ...house, askerOrdinal: 30, leaning }).offered).toBe(3);
         }
     });
-});
 
-// ─────────────────────────────────────────────────────────────────────────
-// A SILENT ROSTER DECIDES NOTHING
-// ─────────────────────────────────────────────────────────────────────────
-
-describe('when the house has nobody to measure against', () => {
-    const thin = {
-        ranks: ['a', 'b', 'c', 'd', 'e', 'head'],
-        admissionOrdinal: 3,
-        askerOrdinal: 25
-    };
-
-    it('cannot use a reference who is too far beneath to read the candidate', () => {
-        // A rung is observable within range and not beyond it: REGARD_BANDS
-        // calls a gap of nine or more unreachable, so somebody that far under a
-        // candidate makes out the gap and not the height. They cannot be the
-        // reference for placing them.
-        const roll = [{ rankIndex: 2, realmOrdinal: 5 }];
-        const readable = entryOfferFor({ ...thin, askerOrdinal: 12, roll });
-        const not = entryOfferFor({ ...thin, askerOrdinal: 30, roll });
-
-        expect(readable.anchor).toBe('nearest_below');
-        expect(not.anchor).toBe('beyond_reading');
-        expect(not.peerRank).toBeNull();
-        expect(not.line).toContain('the gap and not the height');
-    });
-
-    it('tells the two silences apart, because they say opposite things', () => {
-        // Nobody on the roll but the head: the house cannot judge you.
-        expect(entryOfferFor({ ...thin, roll: [{ rankIndex: 5, realmOrdinal: 40 }] }).anchor)
-            .toBe('nobody_near_you');
-        // Everybody stands above you: there is nobody to be placed over.
-        expect(entryOfferFor({ ...thin, roll: [{ rankIndex: 2, realmOrdinal: 40 }] }).anchor)
-            .toBe('nobody_under_you');
-    });
-
-    it('still opens the door when they are wanted, with nothing behind the title', () => {
-        const offer = entryOfferFor({ ...thin, roll: [{ rankIndex: 2, realmOrdinal: 40 }] });
-        expect(offer.offered).not.toBeNull();
-        expect(offer.peerRank).toBeNull();
-        expect(offer.line).toContain('nothing behind it');
-    });
-
-    it('shuts it anyway if they are not wanted, which is the same rule', () => {
-        // The silence removes the reference point. It does not decide the
-        // outcome, and this is the assertion that keeps it that way.
-        const offer = entryOfferFor({
-            ...thin,
-            roll: [{ rankIndex: 2, realmOrdinal: 40 }],
-            leaning: -0.9
-        });
-        expect(offer.band).toBe('closed_door');
+    it('shuts the door on somebody past the elder\'s bar just the same', () => {
+        const offer = entryOfferFor({ ...house, askerOrdinal: 40, leaning: -0.9 });
         expect(offer.offered).toBeNull();
     });
 
-    it('finds a grander title for somebody they want', () => {
-        // Lower down the ladder, where there is headroom under the cap: at
-        // ordinal 25 in this house the arithmetic title is already the highest
-        // rank anybody may be offered, so the bands have nowhere to go and
-        // asserting a difference there would be asserting the cap away.
-        const roll = [{ rankIndex: 2, realmOrdinal: 40 }];
-        const wanted = entryOfferFor({ ...thin, askerOrdinal: 12, roll, leaning: 0.9 });
-        const ordinary = entryOfferFor({ ...thin, askerOrdinal: 12, roll, leaning: 0 });
-        expect(ordinary.anchor).toBe('nobody_under_you');
-        expect(wanted.offered!).toBeGreaterThan(ordinary.offered!);
-    });
-
-    it('caps an empty title one below the head like any other', () => {
-        const offer = entryOfferFor({
-            ...thin, roll: [{ rankIndex: 2, realmOrdinal: 40 }], leaning: 0.9
-        });
-        expect(offer.offered).toBe(thin.ranks.length - 2);
+    it('has no elder\'s door on a ladder too short to hold one below its head', () => {
+        const offer = entryOfferFor({ ranks: ['a', 'b', 'head'], askerOrdinal: 44, elderBar: 0 });
+        expect(offer.elderRung).toBeNull();
+        expect(offer.offered).toBe(0);
     });
 });
 
@@ -304,127 +182,5 @@ describe('renown as a reading rather than a score', () => {
         const once = renownReading([{ deciderId: 'a', heard: 1, saidToBe: 'ill spoken of' }]);
         const often = renownReading([{ deciderId: 'a', heard: 40, saidToBe: 'ill spoken of' }]);
         expect(once('a')).toBe(often('a'));
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// THE MEASUREMENT THAT JUSTIFIES THE CHANGE
-// ─────────────────────────────────────────────────────────────────────────
-
-describe('the overshoot the old lookup was carrying', () => {
-    it('is a mean of about nine tenths of a rank, over the whole catalog', () => {
-        let higher = 0, level = 0, lower = 0, total = 0;
-        for (const sect of [...new Set(
-            getMembersOf('') // force the catalog to load; the sweep below uses ids
-                .length >= 0 ? [] : []
-        )]) { void sect; }
-
-        const ids = [
-            'sect-azure-cloud-pavilion', 'sect-the-severed', 'sect-frostmirror-court',
-            'sect-sweptground-temple', 'sect-nine-peaks-ascetic-order', 'sect-lantern-hall',
-            'sect-azure-mist-court', 'sect-stone-marrow-hall', 'sect-clear-river-alliance',
-            'sect-verdant-spring-valley', 'sect-crimson-abyss-fortress', 'sect-nine-abyss-flame-sect',
-            'sect-storm-tyrant-court', 'sect-cinnabar-crucible-sect', 'sect-ashen-forge-clan',
-            'sect-ancient-bough-grove', 'sect-clearwater-ward', 'sect-bone-lantern-cult'
-        ];
-        for (const id of ids) {
-            const sect = getSect(id);
-            if (!sect) continue;
-            for (let o = sect.admissionOrdinal; o <= Math.min(40, sect.powerOrdinal); o += 2) {
-                const offer = offerAt(id, o);
-                if (offer.peerRank === null || offer.offered === null) continue;
-                const old = entryRankIndexFor(sect.ranks, sect.admissionOrdinal, o);
-                total += old - offer.offered;
-                if (old > offer.offered) higher++;
-                else if (old === offer.offered) level++;
-                else lower++;
-            }
-        }
-
-        const n = higher + level + lower;
-        expect(n).toBeGreaterThan(100);
-        // The direction is the claim, and it is overwhelming rather than marginal.
-        expect(higher).toBeGreaterThan(lower * 10);
-        // And the size of it: the old lookup carried the better part of a rank
-        // of standing nobody had earned.
-        expect(total / n).toBeGreaterThan(0.5);
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// THE EXCEPTION, AND WHY IT STAYS RARE
-// ─────────────────────────────────────────────────────────────────────────
-
-describe('a name big enough to out-offer the house\'s own', () => {
-    // The design owner's worked case: somebody who quit as an apex head's
-    // personal disciple, asking elsewhere for admission, ought to get a better
-    // offer than that house's own personal disciple - "but that's an exception
-    // rather than the rule".
-    //
-    // Nothing here encodes it. The magnitude is carried by HOW MUCH OF THE
-    // ROOM the name reached, because `whatTheBodyWants` takes a weighted mean
-    // across deciders and `renownReading` returns per decider. A name every
-    // decider has heard well of averages near +1; a locally liked person whose
-    // name reached two of five averages a fraction of that. So the ordering
-    // falls out of reach rather than out of a clause, and it is rare for the
-    // right reason: reaching every decider in a house you have never served is
-    // what being one of a handful of people in the world buys.
-    const DECIDERS = ['a', 'b', 'c', 'd', 'e'];
-    const meanOver = (read: (id: string) => number): number =>
-        DECIDERS.reduce((sum, id) => sum + read(id), 0) / DECIDERS.length;
-
-    /** The house's own best student, at the asker's rung. */
-    const house = {
-        ranks: ['servant', 'outer', 'inner', 'core', 'elder', 'head'],
-        admissionOrdinal: 3,
-        roll: [{ rankIndex: 3, realmOrdinal: 25 }],
-        askerOrdinal: 25
-    };
-
-    it('clears the house\'s own top student when the name reached everybody', () => {
-        const everybodyHeard = renownReading(
-            DECIDERS.map(id => ({ deciderId: id, heard: 4, saidToBe: 'well spoken of' as const }))
-        );
-        const offer = entryOfferFor({ ...house, leaning: meanOver(everybodyHeard) });
-
-        expect(offer.band).toBe('above_their_own');
-        // Strictly above the rank the house's own person at this rung holds,
-        // which is the whole of what the ruling asks for.
-        expect(offer.offered!).toBeGreaterThan(offer.peerRank!);
-    });
-
-    it('does not, for somebody only part of the room has heard of', () => {
-        // The guard on the exception staying an exception. If any prior
-        // association beat local standing, every wanderer with a name would
-        // outrank people who have served for decades.
-        const twoOfFive = renownReading([
-            { deciderId: 'a', heard: 2, saidToBe: 'well spoken of' },
-            { deciderId: 'b', heard: 1, saidToBe: 'well spoken of' }
-        ]);
-        const offer = entryOfferFor({ ...house, leaning: meanOver(twoOfFive) });
-
-        expect(offer.band).toBe('level_with_their_own');
-        expect(offer.offered).toBe(offer.peerRank);
-    });
-
-    it('leaves the ordinary stranger under the house\'s own people', () => {
-        // Nobody has heard of them, which is the overwhelmingly common case.
-        const nobodyHeard = renownReading(
-            DECIDERS.map(id => ({ deciderId: id, heard: 0, saidToBe: 'nothing said' as const }))
-        );
-        const offer = entryOfferFor({ ...house, leaning: meanOver(nobodyHeard) });
-
-        expect(offer.band).toBe('under_their_own');
-        expect(offer.offered!).toBeLessThan(offer.peerRank!);
-    });
-
-    it('shuts the door on a name that travelled badly', () => {
-        const illSpoken = renownReading(
-            DECIDERS.map(id => ({ deciderId: id, heard: 3, saidToBe: 'ill spoken of' as const }))
-        );
-        const offer = entryOfferFor({ ...house, leaning: meanOver(illSpoken) });
-
-        expect(offer.band).toBe('closed_door');
-        expect(offer.offered).toBeNull();
     });
 });

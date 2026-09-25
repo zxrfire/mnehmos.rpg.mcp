@@ -9,10 +9,13 @@
  * this, a house that wanted somebody badly offered them two rungs over the
  * ordinary offer whatever they stood at.
  *
- * Measured over every catalog house at ordinals 0 to 44 (1,710 asks): the
- * ordinary offer, one under the house's own people, is never lowered by it. A
- * house leaning 0.3 towards the asker had 353 offers lowered, by one rung each;
- * leaning 0.8, 402, by 1.86 rungs on average.
+ * Measured when it landed, over every catalog house at ordinals 0 to 44 (1,710
+ * asks): a house leaning 0.3 towards the asker had 353 offers lowered by it, by
+ * one rung each; leaning 0.8, 402, by 1.86 rungs on average. Since the owner's
+ * later ruling - *"join as outer disciple or external elder"* - the door asks
+ * it of one rung only, the house's lowest elder rung, and seats everybody who
+ * does not clear it at the bottom (`entry-offer.test.ts`). The
+ * highest-rung-cleared read that capped the old offer went with the offer.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -22,9 +25,9 @@ import { rankRealmBand } from '../../../src/data/cultivation/members';
 import { offerAtTheDoorOf } from '../../../src/engine/social-leverage/entry-offer';
 import {
     AN_OUTSIDER_STANDS_PAST_THE_BAR_BY,
-    theHighestRungAnOutsiderClears,
     whatAnOutsiderMustStandAt
 } from '../../../src/engine/world/promotion-inside-a-house';
+import { elderRungOf } from '../../../src/engine/cultivation/leadership';
 
 const HOUSE = SECTS.find(s => s.recruits && s.ranks.length >= 6 && rankRealmBand(s.id, 1) !== undefined)!;
 
@@ -45,21 +48,16 @@ describe('the bar somebody from outside clears', () => {
         )).toBe(0);
     });
 
-    it('seats somebody standing exactly at an insider bar one rung lower than an insider would be', () => {
-        const rank = 2;
-        const atTheBar = rankRealmBand(HOUSE.id, rank)!.minOrdinal;
-        expect(theHighestRungAnOutsiderClears(
-            HOUSE.id, atTheBar, rank, HOUSE.ranks.length, HOUSE.admissionOrdinal, HOUSE.powerOrdinal
-        )).toBeLessThan(rank);
-        expect(theHighestRungAnOutsiderClears(
-            HOUSE.id, atTheBar + AN_OUTSIDER_STANDS_PAST_THE_BAR_BY, rank,
-            HOUSE.ranks.length, HOUSE.admissionOrdinal, HOUSE.powerOrdinal
-        )).toBe(rank);
+    it('seats somebody standing exactly at the insider bar of the elder rung at the bottom, not as an elder', () => {
+        const rung = elderRungOf(HOUSE.ranks.length);
+        const atTheBar = rankRealmBand(HOUSE.id, rung)!.minOrdinal;
+        expect(offerAtTheDoorOf(HOUSE.id, atTheBar)!.offered).toBe(0);
+        expect(offerAtTheDoorOf(HOUSE.id, atTheBar + AN_OUTSIDER_STANDS_PAST_THE_BAR_BY)!.offered).toBe(rung);
     });
 });
 
 describe('what a house offers at its door', () => {
-    it('never offers above the highest rung the asker clears from outside, however warm', () => {
+    it('never seats anybody above the bottom who does not clear the bar from outside, however warm', () => {
         for (const sect of SECTS) {
             for (let ordinal = 0; ordinal <= 44; ordinal++) {
                 const offer = offerAtTheDoorOf(sect.id, ordinal, 0.8)!;
@@ -72,13 +70,11 @@ describe('what a house offers at its door', () => {
         }
     });
 
-    it('says so when the bar is what lowered it', () => {
+    it('says what the elder\'s seat asks when it is not given', () => {
         const sect = getSect(HOUSE.id)!;
-        let said = false;
-        for (let ordinal = 0; ordinal <= 44 && !said; ordinal++) {
-            const offer = offerAtTheDoorOf(sect.id, ordinal, 0.8)!;
-            if (offer.line.includes('asks more of somebody from outside')) said = true;
-        }
-        expect(said).toBe(true);
+        const offer = offerAtTheDoorOf(sect.id, sect.admissionOrdinal, 0.8)!;
+        expect(offer.offered).toBe(0);
+        expect(offer.line).toContain(`An elder from outside is taken in as`);
+        expect(offer.line).toContain(`from ordinal ${offer.elderBar}`);
     });
 });

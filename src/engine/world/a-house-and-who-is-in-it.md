@@ -135,8 +135,11 @@ and none of which is one:
    promotion."* Somebody from outside has no merit with this house, so height
    stands in for it: `AN_OUTSIDER_STANDS_PAST_THE_BAR_BY` ordinals past the
    rung's insider bar (`whatAnOutsiderMustStandAt`, beside `barFor` in
-   `promotion-inside-a-house.ts`), at every rung above the bottom. A house's
-   door offer (`entry-offer.ts`) is capped at it.
+   `promotion-inside-a-house.ts`). The owner, on every house alike: *"join as
+   outer disciple or external elder. if you're overqualified you promote FAST
+   cuz you can take merit missions and do them easily."* So the door
+   (`entry-offer.ts`) seats a newcomer at the bottom rung, or as an elder at
+   the house's lowest elder rung when they clear that bar, and nowhere between.
 
    **But joining is gated, and the gate is the arts.** A sect has arts it
    prefers - `teaches` on its catalog row - and an elder teaches juniors, so

@@ -1224,9 +1224,11 @@ describe('a closing question mark means this is not an action', () => {
  * enrols you for free walks past all of it.
  *
  * THE RANK WAS NOT THE BUG. Seating a cultivator at ordinal 25 near the top of
- * a ladder that admits from 3 is the system working, ruled by the design owner:
- * *"you might enter as a sword elder too, they wouldn't offer an outer disciple
- * to a 29"*. `entryRankIndexFor` is untouched.
+ * a ladder that admits from 3 was the system working, under the owner's ruling
+ * then: *"you might enter as a sword elder too, they wouldn't offer an outer
+ * disciple to a 29"*. The owner has since ruled every house alike - the bottom
+ * rung or an external elder, by the outsider's bar (`entry-offer.ts`) - and at
+ * 25 against a house admitting far below that is still an elder's seat.
  */
 describe('a conditional is not a commitment', () => {
     /**
@@ -1314,11 +1316,10 @@ describe('a conditional is not a commitment', () => {
      * The read and the door may never disagree, and this is the assertion that
      * keeps them honest at the rung where it would hurt.
      *
-     * `handleList` seats its answer with `entryRankIndexFor`, the same function
-     * `handleJoin` seats by - that function's docstring exists to keep entry and
-     * promotion from disagreeing, and this extends the property to the read. At
-     * ordinal 25 against a house admitting far below, that is an elder-tier
-     * seat, which is exactly the case that produced the report.
+     * `handleList` seats its answer with `offerAtTheDoorOf`, the same door
+     * `handleJoin` seats by, and this keeps the read and the door from
+     * disagreeing. At ordinal 25 against a house admitting far below, that is an
+     * elder's seat, which is exactly the case that produced the report.
      */
     it('promises the rank the door actually gives', async () => {
         const { db, game } = await makeGameInWorld({ worldSeed: 'the-read-and-the-door' });

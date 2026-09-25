@@ -60,10 +60,10 @@ import {
 import { GuestSchema, handleGuest } from './sect-guest.js';
 import {
     requiredContributionForRank,
-    requiredOrdinalForRank,
     STIPEND_PERIOD_DAYS
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import { offerAtTheDoorOf } from '../../engine/social-leverage/entry-offer.js';
+import { whatAnInsiderMustStandAt } from '../../engine/world/promotion-inside-a-house.js';
 import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
 import {
     houseElementalCharacterOf,
@@ -160,10 +160,29 @@ export {
     ORDINALS_PER_SECT_RANK,
     BASE_PROMOTION_CONTRIBUTION,
     STIPEND_PERIOD_DAYS,
-    requiredOrdinalForRank,
-    requiredContributionForRank,
-    entryRankIndexFor
+    requiredContributionForRank
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
+
+/**
+ * The realm a rung of this house asks of somebody promoted to it from inside.
+ *
+ * THE WORLD'S OWN RULE, and not a second one. This was `requiredOrdinalForRank`,
+ * the house's admission bar plus four ordinals a rung, while the world promoted
+ * its own people by the rank's realm band (`whatAnInsiderMustStandAt`) - so the
+ * player's bar at the Azure Cloud Pavilion's Sword Elder rung was ordinal 19
+ * where the Pavilion's own disciples were promoted to it at 10, and somebody
+ * the door would take in from outside as a Sword Elder at 14 could not be
+ * promoted to it from inside until 19. The owner: *"the bar for hiring an
+ * external elder is higher than an internal promotion"*, and a rule that binds
+ * the player and not the world is the defect AGENTS.md names.
+ */
+export function theRealmARungAsks(
+    sect: { id: string; ranks: readonly string[]; admissionOrdinal: number; powerOrdinal: number },
+    rankIndex: number
+): number {
+    return whatAnInsiderMustStandAt(
+        sect.id, rankIndex, sect.ranks.length, sect.admissionOrdinal, sect.powerOrdinal);
+}
 
 // ON THE ROLL, AT NO RANK IN IT
 
@@ -583,7 +602,8 @@ export async function handleJoin(
         );
     }
 
-    // The rung they come in at
+    // The rung they come in at: the bottom, or an elder's seat by the outsider's
+    // bar. Nobody is seated by their standing; see `entry-offer.ts`.
     const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal, house?.leaning);
 
     // AND A CLOSED DOOR IS A REFUSAL, NEVER A FALLBACK
@@ -653,7 +673,7 @@ export async function handleJoin(
                     + 'either end had a decision to make.'
             }
             : null,
-        entryRequiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, entryIndex),
+        entryRequiredOrdinal: theRealmARungAsks(sect, entryIndex),
         seatedAboveTheDoor: entryIndex > 0,
         // ARRANGED, and it says so where anybody reading the result can see it.
         // The bar was cleared for real and the rank is the rank the house would
@@ -683,8 +703,8 @@ export async function handleJoin(
             cappedByReturn,
             note: cappedByReturn
                 ? `${sect.name} has had ${cultivator.name} before, and takes them back at the rank `
-                  + `they left: ${before.rankTitle}. What a stranger is seated by is what they `
-                  + 'visibly are; somebody who walked out last week is not a stranger. The '
+                  + `they left: ${before.rankTitle}, and not above it. Somebody who walked out `
+                  + 'last week is not a stranger. The '
                   + `${before.contribution} contribution they gave up on the way out is gone, and `
                   + 'the way back up is the way everybody else goes.'
                 : `${sect.name} has had ${cultivator.name} before, at ${before.rankTitle}, and `
@@ -788,7 +808,7 @@ export async function handlePromote(args: z.infer<typeof PromoteSchema>): Promis
         );
     }
 
-    const needOrdinal = requiredOrdinalForRank(sect.admissionOrdinal, nextIndex);
+    const needOrdinal = theRealmARungAsks(sect, nextIndex);
     const needContribution = requiredContributionForRank(nextIndex);
     const unmet: string[] = [];
     if (cultivator.realmOrdinal < needOrdinal) {
@@ -1199,12 +1219,12 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
             : {
                 index: nextIndex,
                 title: sect.ranks[nextIndex],
-                requiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, nextIndex),
-                requiredRank: rankName(requiredOrdinalForRank(sect.admissionOrdinal, nextIndex)),
+                requiredOrdinal: theRealmARungAsks(sect, nextIndex),
+                requiredRank: rankName(theRealmARungAsks(sect, nextIndex)),
                 requiredContribution: requiredContributionForRank(nextIndex),
                 ordinalShortfall: Math.max(
                     0,
-                    requiredOrdinalForRank(sect.admissionOrdinal, nextIndex) - cultivator.realmOrdinal
+                    theRealmARungAsks(sect, nextIndex) - cultivator.realmOrdinal
                 ),
                 contributionShortfall: Math.max(
                     0,

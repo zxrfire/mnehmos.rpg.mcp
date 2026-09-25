@@ -1,67 +1,56 @@
 /**
- * What a house offers somebody joining it, and how badly it wants them. The design
- * owner: *"they might offer something one rung below what their own cultivators
- * have at 29... or if you are renowned they might offer sword elder regardless...
- * it might also give a closed door, depends how badly they want you"*, and *"an
- * elder with no office should be rare... so no and barely are both NO."*
+ * Where a house seats somebody joining it, and whether it opens the door at all.
+ *
+ * THE DESIGN OWNER, ON EVERY HOUSE ALIKE: *"same lore. join as outer disciple
+ * or external elder. if you're overqualified you promote FAST cuz you can take
+ * merit missions and do them easily."* So there are two seats and no third:
+ *
+ *   the bottom rung   where everybody from outside starts, whatever they stand
+ *                     at. `ARRIVAL_RULES` in the catalog says it of the apexes
+ *                     and it is true of every house: rank, reputation,
+ *                     contribution and titles do not travel.
+ *   an elder's seat   the external-elder door, for somebody standing past the
+ *                     bar a house asks of an elder it takes in from outside
+ *                     (`whatAnOutsiderMustStandAt`, the same bar the world's
+ *                     own houses take elders in by, in
+ *                     `a-house-takes-in-an-elder-from-outside.ts`).
+ *
+ * This used to seat a newcomer one rung under the house's own people at their
+ * height, and a renowned one level with or above them. That was the owner's
+ * earlier reading, and it is the one this replaces: nobody is seated by their
+ * standing now. What standing buys an overqualified newcomer is speed - the
+ * board prices a duty by the strength of whoever takes it, not by their rung
+ * (`commissionBoard` in `encounters/duties.ts`), and every rung above is bought
+ * with contribution the same way a disciple raised inside buys it.
+ *
+ * How badly the house wants them still decides one thing: whether the door
+ * opens. The owner: *"it might also give a closed door, depends how badly they
+ * want you"*.
  */
 
-import { getMembersOf } from '../../data/cultivation/members.js';
+import { ARRIVAL_RULES } from '../../data/cultivation/governance-and-water-rights.js';
 import { getSect } from '../../data/cultivation/sects.js';
-import { entryRankIndexFor } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
-import { heightAloneWouldHideThem } from '../social/presence-recognition.js';
-import { theHighestRungAnOutsiderClears } from '../world/promotion-inside-a-house.js';
+import { elderRungOf } from '../cultivation/leadership.js';
+import { whatAnOutsiderMustStandAt } from '../world/promotion-inside-a-house.js';
 import type { Standing } from '../social/what-is-said-about-somebody.js';
 
-/** One person already on the house's roll, as the roster holds them. */
-export interface PeerOnTheRoll {
-    rankIndex: number;
-    realmOrdinal: number;
-}
-
 /**
- * How far either side of the asker's rung counts as "at your cultivation".
- * MEASURED, not chosen: a peer within two rungs exists in 65% of catalog cases
- * against 76% within four, and the extra eleven points are bought by calling
- * somebody a realm boundary away a peer.
+ * Which door, or none. `closed_door` covers both NOT wanting somebody and BARELY
+ * wanting them: a house does not carry a stranger it is lukewarm about.
  */
-export const NEAR_WINDOW = 2;
-
-/**
- * Which silence left the offer with no ordinary reference point. REPORTED, never
- * acted on: none of the three decides an outcome, and all three are worth telling a
- * player because they say opposite things about the house.
- */
-export type SilentRoster = 'nobody_near_you' | 'nobody_under_you' | 'beyond_reading';
-
-/**
- * How badly they wanted them. `closed_door` covers both NOT wanting somebody and
- * BARELY wanting them - a house does not carry a titled stranger it is lukewarm
- * about, so a rank in name only sits at the other end of the scale entirely.
- */
-export type OfferBand =
-    | 'closed_door'
-    | 'under_their_own'
-    | 'level_with_their_own'
-    | 'above_their_own';
+export type OfferBand = 'closed_door' | 'outer_disciple' | 'external_elder';
 
 export interface EntryOffer {
     band: OfferBand;
-    /** Median rank of the house's own people at the asker's rung. Null if silent. */
-    peerRank: number | null;
-    /** Which reference answered, or which silence there was instead. */
-    anchor: 'peers_near' | 'nearest_below' | SilentRoster;
-    /** How many of the house's own people the reference was taken from. */
-    peerCount: number;
-    /**
-     * The rung the bands count from: one under the peers, or where the roster is
-     * silent the ladder's own arithmetic title. The lookup is too generous
-     * everywhere the roster can judge and exactly right where it cannot, because
-     * a title with nothing under it costs the house nothing to give.
-     */
-    baseline: number;
-    /** What the house offers. Null only for a closed door. */
+    /** The rung they would be seated at. Null only for a closed door. */
     offered: number | null;
+    /**
+     * The house's lowest elder rung, where it seats an elder from outside. Null
+     * where the ladder has no elder rung below its head.
+     */
+    elderRung: number | null;
+    /** The ordinal an elder from outside must stand at. Null with `elderRung`. */
+    elderBar: number | null;
     /** The council's reading, echoed so a caller can say why. */
     leaning: number | null;
     /** One factual line for the mechanical channel. Never narration. */
@@ -94,153 +83,72 @@ export function renownReading(
 }
 
 /**
- * Where the bands sit on a leaning normalised to -1..+1. NOT SYMMETRIC, and the
- * asymmetry is the ruling: anything at or below a mild dislike is a closed door,
- * while a mild warmth is only the ordinary offer. Harsh at the bottom and slow
- * at the top, which is what makes the outsider's slight the common experience.
+ * At or below this leaning the door stays shut. NOT SYMMETRIC with anything:
+ * a mild dislike shuts it, and no warmth opens a seat the height does not.
  */
-const BANDS: readonly { upTo: number; band: OfferBand; rungs: number }[] = [
-    { upTo: -0.15, band: 'closed_door', rungs: 0 },
-    { upTo: 0.15, band: 'under_their_own', rungs: 0 },
-    { upTo: 0.5, band: 'level_with_their_own', rungs: 1 },
-    { upTo: Infinity, band: 'above_their_own', rungs: 2 }
-];
-
-function bandFor(leaning: number): { band: OfferBand; rungs: number } {
-    for (const row of BANDS) if (leaning <= row.upTo) return row;
-    return BANDS[BANDS.length - 1];
-}
-
-function median(xs: readonly number[]): number {
-    const sorted = [...xs].sort((a, b) => a - b);
-    return sorted[Math.floor(sorted.length / 2)];
-}
+const A_CLOSED_DOOR_AT = -0.15;
 
 /**
  * What this house would seat this cultivator at, if they asked today. `leaning`
- * is optional: with none supplied the answer is the ordinary offer, and it is
- * never the arithmetic lookup unless the roster is silent.
+ * is optional: with none supplied the door is open.
  */
 export function entryOfferFor(input: {
     /** The house's own rank ladder. Its last entry is the head. */
     ranks: readonly string[];
-    /** The rung the house admits at, for the arithmetic title. */
-    admissionOrdinal: number;
-    /** The whole roll. The head's rank is filtered out here, not by the caller. */
-    roll: readonly PeerOnTheRoll[];
     askerOrdinal: number;
     /** `WhereTheBodyLands.leaning`, when the caller has read the council. */
     leaning?: number | null;
     /**
-     * The highest rung this asker clears as somebody from outside
-     * (`theHighestRungAnOutsiderClears`). Nothing is offered above it. Omitted,
-     * nothing caps the offer.
+     * The ordinal an elder from outside must stand at, for the house's lowest
+     * elder rung. Omitted or null, the house has no elder's door.
      */
-    clearsUpTo?: number | null;
+    elderBar?: number | null;
 }): EntryOffer {
     const rankCount = input.ranks.length;
-    // The head is not a peer. This line stops the Burnt Earth Temple's Abbot at
-    // ordinal 20 setting the reference for somebody at 21.
-    const headIndex = Math.max(0, rankCount - 1);
-    const topOffer = Math.max(0, headIndex - 1);
-    const peers = input.roll.filter(p => p.rankIndex < headIndex);
     const leaning = input.leaning ?? null;
-    const { band, rungs } = bandFor(leaning ?? 0);
+    const bottom = ARRIVAL_RULES.entryRankIndex;
+    // An elder's seat below the head, or none: a house whose ladder is too short
+    // to have one seats everybody at the bottom.
+    const rung = rankCount > 0 ? Math.min(elderRungOf(rankCount), rankCount - 1) : 0;
+    const hasElderDoor = rung > bottom && rung < rankCount - 1
+        && input.elderBar !== undefined && input.elderBar !== null;
+    const elderRung = hasElderDoor ? rung : null;
+    const elderBar = hasElderDoor ? input.elderBar! : null;
 
-    const near = peers.filter(
-        p => Math.abs(p.realmOrdinal - input.askerOrdinal) <= NEAR_WINDOW
-    );
-    // The nearest below, and only ever ONE person: a median of everybody underneath
-    // would answer about the whole lower half of the house rather than about the
-    // rung the asker stands on.
-    const canRead = (p: PeerOnTheRoll): boolean =>
-        !heightAloneWouldHideThem(input.askerOrdinal, p.realmOrdinal);
-    const anyBelow = peers.filter(p => p.realmOrdinal < input.askerOrdinal);
-    const below = anyBelow.filter(canRead);
-    const nearest = below.length > 0
-        ? below.reduce((a, b) => (b.realmOrdinal > a.realmOrdinal ? b : a))
-        : null;
+    const shut = leaning !== null && leaning <= A_CLOSED_DOOR_AT;
+    const asElder = !shut && elderBar !== null && input.askerOrdinal >= elderBar;
+    const band: OfferBand = shut ? 'closed_door' : asElder ? 'external_elder' : 'outer_disciple';
+    const offered = shut ? null : asElder ? elderRung! : bottom;
 
-    let peerRank: number | null = null;
-    let anchor: EntryOffer['anchor'];
-    let peerCount = 0;
-    if (near.length > 0) {
-        peerRank = median(near.map(p => p.rankIndex));
-        anchor = 'peers_near';
-        peerCount = near.length;
-    } else if (nearest !== null) {
-        peerRank = nearest.rankIndex;
-        anchor = 'nearest_below';
-        peerCount = 1;
-    } else if (anyBelow.length > 0) {
-        // People below, and not one can see how high the candidate stands.
-        anchor = 'beyond_reading';
-    } else {
-        anchor = peers.length === 0 ? 'nobody_near_you' : 'nobody_under_you';
-    }
-
-    // One under their peers - THE WHOLE RULE - or, with nobody to be one under,
-    // the ladder's own arithmetic title.
-    const baseline = peerRank !== null
-        ? Math.max(0, peerRank - 1)
-        : Math.min(topOffer, entryRankIndexFor(
-            input.ranks, input.admissionOrdinal, input.askerOrdinal
-        ));
-
-    const wanted = band === 'closed_door'
-        ? null
-        : Math.min(topOffer, Math.max(0, baseline + rungs));
-    // THE OUTSIDER'S BAR. A rung above the bottom is taken from outside only by
-    // somebody standing past the bar an insider is promoted at.
-    const clearsUpTo = input.clearsUpTo ?? null;
-    const offered = wanted === null || clearsUpTo === null
-        ? wanted
-        : Math.min(wanted, Math.max(0, clearsUpTo));
-
-    const reference = peerRank !== null
-        ? `${peerCount} of the house's own ${anchor === 'peers_near'
-            ? `within ${NEAR_WINDOW} rungs of ordinal ${input.askerOrdinal}`
-            : `below ordinal ${input.askerOrdinal}, the nearest of them,`} hold rank `
-          + `${peerRank} (${input.ranks[peerRank] ?? '?'}) by the median, so the ordinary `
-          + `offer is one under that at ${baseline} (${input.ranks[baseline] ?? '?'}) - `
-          + 'the cultivation without the standing.'
-        : `${anchor === 'nobody_near_you'
-            ? 'The roll holds nobody but whoever heads it, so this house has no standard of '
-              + 'its own to measure a newcomer against'
-            : anchor === 'beyond_reading'
-                ? `All ${anyBelow.length} on this roll who stand beneath ordinal `
-                  + `${input.askerOrdinal} are far enough beneath it to make out the gap and `
-                  + 'not the height, so nobody here can place this candidate by looking'
-                : `All ${peers.length} on the roll stand above ordinal ${input.askerOrdinal}, so `
-                  + 'there is nobody here for them to be placed over'}`
-          + `. With no reference the rungs are counted from the ladder's own arithmetic at `
-          + `${baseline} (${input.ranks[baseline] ?? '?'}), which costs the house nothing to `
-          + 'give because there is nothing behind it.';
+    const title = (index: number): string => input.ranks[index] ?? '?';
+    const theElderDoor = elderRung === null
+        ? 'The ladder has no elder rung below its head, so there is no elder\'s door.'
+        : `An elder from outside is taken in as ${title(elderRung)} (${elderRung}) from ordinal `
+          + `${elderBar}, and they stand at ${input.askerOrdinal}.`;
+    const seat = asElder
+        ? `They stand at ordinal ${input.askerOrdinal}, past the ${elderBar} the house asks of an `
+          + `elder from outside, so it takes them in as ${title(elderRung!)} (${elderRung}), its `
+          + 'lowest elder rung, with no merit in it.'
+        : 'Nobody from outside is seated by what they stand at: the door opens at '
+          + `${title(bottom)} (${bottom}), the bottom rung, and every rung above is bought with `
+          + `merit off the house's board. ${theElderDoor}`;
 
     return {
         band,
-        peerRank,
-        anchor,
-        peerCount,
-        baseline,
         offered,
+        elderRung,
+        elderBar,
         leaning,
-        line:
-            `${reference} ${leaning === null
-                ? 'No council was read, so the ordinary offer stands.'
-                : `The body reads them at ${leaning.toFixed(2)}, which is ${band}`}`
-            + `${offered === null
-                ? ' and the door does not open.'
-                : `, seating them at ${offered} (${input.ranks[offered] ?? '?'}).`}`
-            + `${offered !== null && wanted !== null && offered < wanted
-                ? ` Rank ${wanted} (${input.ranks[wanted] ?? '?'}) asks more of somebody from outside `
-                  + 'than of a disciple promoted to it, and they do not stand that high.'
-                : ''}`
+        line: shut
+            ? `The body reads them at ${leaning!.toFixed(2)}, which is ${band}, and the door does not open.`
+            : `${seat} ${leaning === null
+                ? 'No council was read, so the door is open.'
+                : `The body reads them at ${leaning.toFixed(2)}, and the door is open.`}`
     };
 }
 
 /**
- * What this house would seat this cultivator at, off the catalog roster. THE ONLY
+ * What this house would seat this cultivator at, off the catalog. THE ONLY
  * THING IN THIS FILE THAT READS A CATALOG.
  */
 export function offerAtTheDoorOf(
@@ -250,17 +158,13 @@ export function offerAtTheDoorOf(
 ): EntryOffer | null {
     const sect = getSect(factionId);
     if (!sect) return null;
+    const rankCount = sect.ranks.length;
+    const rung = Math.min(elderRungOf(rankCount), rankCount - 1);
     return entryOfferFor({
         ranks: sect.ranks,
-        admissionOrdinal: sect.admissionOrdinal,
-        roll: getMembersOf(factionId).map(m => ({
-            rankIndex: m.rankIndex,
-            realmOrdinal: m.realmOrdinal
-        })),
         askerOrdinal,
         leaning,
-        clearsUpTo: theHighestRungAnOutsiderClears(
-            factionId, askerOrdinal, sect.ranks.length - 1, sect.ranks.length,
-            sect.admissionOrdinal, sect.powerOrdinal)
+        elderBar: whatAnOutsiderMustStandAt(
+            factionId, rung, rankCount, sect.admissionOrdinal, sect.powerOrdinal)
     });
 }

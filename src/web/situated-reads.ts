@@ -59,7 +59,7 @@ import { copyNamesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
     handleList,
     requiredContributionForRank,
-    requiredOrdinalForRank
+    theRealmARungAsks
 } from '../server/consolidated/sect-manage.js';
 import { theDoorIsShutTo } from '../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { holdsACopyOf } from '../server/consolidated/technique-manage.js';
@@ -249,7 +249,7 @@ export const situatedReads = {
                     nextRankTitle: atTop ? null : sect.ranks[next],
                     requiredOrdinal: atTop
                         ? 0
-                        : requiredOrdinalForRank(sect.admissionOrdinal, next),
+                        : theRealmARungAsks(sect, next),
                     requiredContribution: atTop ? 0 : requiredContributionForRank(next),
                     contribution: membership.contribution
                 };
@@ -292,7 +292,7 @@ export const situatedReads = {
                 `${read.gates.length} gate(s) read, `
                 + `${read.gates.filter(g => g.hard).length} hard. `
                 + `Every figure restated from techniqueCeiling, canAdvanceHere, `
-                + `requiredOrdinalForRank, canAttemptBreakthrough and `
+                + `theRealmARungAsks, canAttemptBreakthrough and `
                 + `stagnationYearsForOrdinal. Nothing computed here.`,
             ok: true
         }];

@@ -37,7 +37,7 @@ import { getSect } from '../src/data/cultivation/sects.js';
 import { IMMORTAL_ITEMS, getHoldingsOf } from '../src/data/cultivation/immortal-items.js';
 import {
     requiredContributionForRank,
-    requiredOrdinalForRank
+    theRealmARungAsks
 } from '../src/server/consolidated/sect-manage.js';
 import {
     SATIETY_COST_PER_ACTION,
@@ -336,7 +336,7 @@ async function disciple(): Promise<void> {
     sub('3. climbing the ranks, typed the way a player would type it');
     const top = sect.ranks.length - 1;
     for (let target = 1; target <= top; target++) {
-        const needOrdinal = requiredOrdinalForRank(sect.admissionOrdinal, target);
+        const needOrdinal = theRealmARungAsks(sect, target);
         const needContribution = requiredContributionForRank(target);
 
         // The realm is the player's own work; admin stands in for the decades.

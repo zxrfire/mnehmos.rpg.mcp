@@ -9,10 +9,12 @@
  * An entry offer is not that question, and the wrong answer does not fail
  * loudly. Measured on a four-person roll while wiring the council: an
  * indifferent council read +0.37 purely because the head's id happened to draw
- * high, and +0.37 bands as `level_with_their_own`. Every walk-up would have
- * been seated at their peers' rank rather than one under it, and the whole
- * 299/140/3 correction would have been undone BY WIRING IT - a regression
- * arriving through a feature, with every test still green.
+ * high. When the seat followed the leaning that would have seated every
+ * walk-up a rung higher. The seat no longer follows it - the owner ruled
+ * newcomers in at the bottom rung or as an external elder, by height - but the
+ * door still does: a council whose ids happened to draw low would shut the
+ * door on a stranger nobody had an opinion of, which is the same regression
+ * pointing the other way.
  *
  * So this file pins the two properties that keep it from happening:
  *
@@ -37,12 +39,11 @@ const ROLL = [
     { id: 'e3', rankIndex: 3 },
     { id: 'head', rankIndex: 5 }
 ];
-/** One of the house's own at the asker's rung, holding rank 3. */
+/** A stranger below the bar for an elder from outside. */
 const HOUSE = {
     ranks: RANKS,
-    admissionOrdinal: 3,
-    roll: [{ rankIndex: 3, realmOrdinal: 25 }],
-    askerOrdinal: 25
+    askerOrdinal: 25,
+    elderBar: 30
 };
 
 const councilOn = (readingOf?: (id: string) => number) => whatTheBodyWants({
@@ -55,13 +56,13 @@ const councilOn = (readingOf?: (id: string) => number) => whatTheBodyWants({
 });
 
 describe('the reading an entry offer runs on', () => {
-    it('gives an unknown stranger the ordinary offer, one under their peers', () => {
+    it('opens the door to an unknown stranger, at the bottom rung', () => {
         const council = councilOn(renownReading([]));
         expect(council.leaning).toBe(0);
 
         const offer = entryOfferFor({ ...HOUSE, leaning: council.leaning });
-        expect(offer.band).toBe('under_their_own');
-        expect(offer.offered).toBe(offer.peerRank! - 1);
+        expect(offer.band).toBe('outer_disciple');
+        expect(offer.offered).toBe(0);
     });
 
     it('does not answer the same as the generosity default, which is the trap', () => {
@@ -83,16 +84,16 @@ describe('the reading an entry offer runs on', () => {
         expect(openHandednessOf('head')).toBeGreaterThan(0.15);
     });
 
-    it('still lets a travelled name clear the house\'s own people', () => {
+    it('still lets a name that travelled badly shut the door', () => {
         // The other half: zeroing the default must not have zeroed the axis.
         const heard = renownReading(
-            ROLL.map(p => ({ deciderId: p.id, heard: 3, saidToBe: 'well spoken of' as const }))
+            ROLL.map(p => ({ deciderId: p.id, heard: 3, saidToBe: 'ill spoken of' as const }))
         );
         const council = councilOn(heard);
-        expect(council.leaning).toBeGreaterThan(0.5);
+        expect(council.leaning).toBeLessThan(-0.5);
 
         const offer = entryOfferFor({ ...HOUSE, leaning: council.leaning });
-        expect(offer.band).toBe('above_their_own');
-        expect(offer.offered!).toBeGreaterThan(offer.peerRank!);
+        expect(offer.band).toBe('closed_door');
+        expect(offer.offered).toBeNull();
     });
 });

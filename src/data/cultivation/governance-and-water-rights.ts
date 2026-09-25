@@ -3061,7 +3061,10 @@ export const FEEDER = {
 // ─────────────────────────────────────────────────────────────────────────
 // ARRIVAL
 // Encoded so a tool cannot accidentally carry standing across, and stated
-// without softening anywhere.
+// without softening anywhere. True of every house, not only the apexes: the
+// door every joiner goes through (`engine/social-leverage/entry-offer.ts`)
+// seats them at `entryRankIndex`, or as an elder from outside by the bar the
+// world's own houses take elders in by, and never by what they held below.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const ARRIVAL_RULES = {
@@ -3085,32 +3088,6 @@ export const ARRIVAL_RULES = {
     unapologetic:
         'Nobody at the receiving institution considers this harsh, explains it, or softens it. It is simply how intake works, it has worked this way for longer than the province has existed, and being asked about it produces mild confusion rather than sympathy.'
 } as const;
-
-/**
- * The arrival state, as numbers, so nothing can leak across by accident. Any
- * tool that promotes a cultivator upward must take its values from here rather
- * than carrying the cultivator's existing standing.
- */
-export function arrivalStateFor(_fromFactionId: string, toInstitutionId: string): {
-    institutionId: string;
-    rankIndex: number;
-    rankTitle: string;
-    contributionCarried: 0;
-    reputationCarried: 0;
-    seniorityCarried: 0;
-    titlesRecognised: readonly string[];
-} {
-    const apex = APEX_INSTITUTIONS.find(a => a.id === toInstitutionId);
-    return {
-        institutionId: toInstitutionId,
-        rankIndex: ARRIVAL_RULES.entryRankIndex,
-        rankTitle: apex ? apex.ranks[ARRIVAL_RULES.entryRankIndex].title : 'lowest rank',
-        contributionCarried: 0,
-        reputationCarried: 0,
-        seniorityCarried: 0,
-        titlesRecognised: []
-    };
-}
 
 // -------------------------------------------------------------------------
 // DIRECT RULE

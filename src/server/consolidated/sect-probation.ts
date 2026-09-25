@@ -117,8 +117,8 @@ export function applyProbation(
             placedAt = judgement.factionId;
         } else if (judgement.outcome === 'kept') {
             // HARD ZERO, and not the entry rule. Somebody kept on did not cross,
-            // and seating them by what they visibly are would promote a washout for
-            // having got some of the way. Rank 0 is the menial and probationary
+            // and the entry rule's elder door would seat a washout who happened to
+            // stand past its bar. Rank 0 is the menial and probationary
             // tier that `FIRST_RANK_THE_BAR_GOVERNS` in `members.ts` already
             // exempts from the admission bar - which is exactly where
             // `member-yan-shuling` stands, Sword Servant at ordinal 5, and that row

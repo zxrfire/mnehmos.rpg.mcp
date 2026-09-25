@@ -198,7 +198,7 @@ export function abundanceOf(house: FactionRecord): number {
  * The height a rank expects, for a house the catalog does not know.
  *
  * FALLBACK ONLY - `rankRealmBand` is the authority for anything seeded. See
- * `barFor`.
+ * `whatAnInsiderMustStandAt`.
  *
  * Interpolated between what the house admits at and what its strongest member
  * actually stands at, so a high house's inner disciples are stronger than a
@@ -217,7 +217,9 @@ export function ordinalExpectedAt(
 }
 
 /**
- * The height this rank of this house actually wants.
+ * The height this rank of this house actually wants of somebody promoted to it
+ * from inside: the world's own people in `assessPromotions`, and the player in
+ * `handlePromote`, by the one rule.
  *
  * DEFERS TO `rankRealmBand`, which is the authority and was here first. I wrote
  * `ordinalExpectedAt` below without checking, and it was a second opinion beside
@@ -238,7 +240,7 @@ export function ordinalExpectedAt(
  * Falls back to interpolation only for a faction the catalog does not know,
  * which is a runtime splinter rather than a seeded house.
  */
-function barFor(
+export function whatAnInsiderMustStandAt(
     factionId: string,
     rankIndex: number,
     rankCount: number,
@@ -253,15 +255,16 @@ function barFor(
  * How far past a rung's bar somebody from OUTSIDE must stand to be seated on it.
  *
  * Ruled by the design owner: *"the bar for hiring an external elder is higher
- * than an internal promotion."* An insider is promoted at the bar (`barFor`)
+ * than an internal promotion."* An insider is promoted at the bar (`whatAnInsiderMustStandAt`)
  * with the rung's merit behind them (`meritNeededFor`). Somebody taken in above
  * the bottom rung has served this house not at all, so the height has to stand
- * in for the service: a realm's width of ordinals past the same bar. The whole
- * of the proof of worth beyond that is how badly the house wants them, which
- * is the council's reading in `entry-offer.ts` and not a second figure here.
+ * in for the service: a realm's width of ordinals past the same bar.
  *
- * Every rung above the bottom, not only the elder rungs: nobody enters above
- * where a stranger starts without clearing it.
+ * Asked only of the house's lowest elder rung in play: the owner ruled that
+ * somebody from outside joins at the bottom or as an external elder, and
+ * nothing between (`entry-offer.ts` for the door, `a-house-takes-in-an-elder-
+ * from-outside.ts` for the world's own houses). Whether the house wants them at
+ * all is the council's reading at the door and not a second figure here.
  */
 export const AN_OUTSIDER_STANDS_PAST_THE_BAR_BY = 4;
 
@@ -274,25 +277,8 @@ export function whatAnOutsiderMustStandAt(
     powerOrdinal: number
 ): number {
     if (rankIndex <= 0) return 0;
-    return barFor(factionId, rankIndex, rankCount, admissionOrdinal, powerOrdinal)
+    return whatAnInsiderMustStandAt(factionId, rankIndex, rankCount, admissionOrdinal, powerOrdinal)
         + AN_OUTSIDER_STANDS_PAST_THE_BAR_BY;
-}
-
-/** The highest rung somebody from outside at this ordinal clears, never above `atMost`. */
-export function theHighestRungAnOutsiderClears(
-    factionId: string,
-    ordinal: number,
-    atMost: number,
-    rankCount: number,
-    admissionOrdinal: number,
-    powerOrdinal: number
-): number {
-    for (let rank = Math.min(atMost, rankCount - 1); rank > 0; rank--) {
-        if (ordinal >= whatAnOutsiderMustStandAt(factionId, rank, rankCount, admissionOrdinal, powerOrdinal)) {
-            return rank;
-        }
-    }
-    return 0;
 }
 
 export interface Promotion {
@@ -396,7 +382,7 @@ export function assessPromotions(state: WorldState): {
         const peopleItHas = howManyPeopleAHouseHas(state, house.id);
         for (let rank = rankCount - 1; rank >= 1; rank--) {
             const seats = seatsAtRank(rank, rankCount, members.length, abundance, peopleItHas);
-            const bar = barFor(house.id, rank, rankCount, admission, power);
+            const bar = whatAnInsiderMustStandAt(house.id, rank, rankCount, admission, power);
 
             const tall = members
                 .filter(m => m.factionRankIndex === rank - 1)
