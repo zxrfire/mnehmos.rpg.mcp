@@ -184,6 +184,7 @@ import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-
 import { howItIsHad } from '../engine/world/possessions.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
+import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
 import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
 import { aVehicleOf, isAVehicle } from '../engine/world/a-vehicle.js';
 import {
@@ -2673,7 +2674,10 @@ export class GameService {
                     + 'answers it off the record. No model read this line.'
             }
             : await this.narrator.plan(
-                trimmed,
+                // Names they know, as spelled, wherever they typed them near enough: the model and
+                // the fallback table both read "Cao Nanshan" for "cao nansan". See
+                // `names-as-they-are-spelled.ts`.
+                inTheSpellingOfTheNamesTheyKnow(trimmed, this.awarenessOf(cultivator).map(row => row.name)),
                 composeStateSummary({
                     cultivator,
                     run,

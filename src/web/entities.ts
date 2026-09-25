@@ -52,6 +52,7 @@ import {
     readTheRollFor
 } from '../engine/world/reading-a-lineage-off-a-name.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { aTypoAway } from './names-as-they-are-spelled.js';
 import {
     theNamesThisOneAnswersTo
 } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
@@ -266,6 +267,10 @@ export function matchScore(query: string, candidate: string): number {
 function scoreOfNames(q: string, c: string): number {
     if (q.length === 0 || c.length === 0) return 0;
     if (q === c) return 100;
+
+    // A TYPO IS THE NAME. The owner: "if i have a typo, you know what i mean", for every action.
+    // A whole name an edit or two away, by length, below an exact match and above a partial one.
+    if (aTypoAway(q, c)) return 70;
 
     // ONE WORD IS NOT A NAME
     const oneWordAgainstAName = !q.includes(' ') && c.includes(' ');

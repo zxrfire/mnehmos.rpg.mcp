@@ -177,8 +177,11 @@ export function whatSomebodyHereWouldAsk(input: {
     // who IS here, because that is the one thing they are certain of, and it is
     // the sentence a person actually says: not that you are wrong, but that
     // this is what there is.
+    // PEOPLE, when what they offer is who you might have meant. Played: "There is only a Qi
+    // Condensation cultivator and this island. Is that who you meant?" - the ground and the
+    // houses were in the list, and an island is not a who.
     const here = input.theyCanPlace.inFrontOfThem
-        .filter(who => who.id !== input.asker.id)
+        .filter(who => who.id !== input.asker.id && who.kind === 'person')
         .map(who => who.name);
 
     // AND THE CASE WITH NO CANDIDATE OF ANY KIND, which is a word rather than a
@@ -192,10 +195,11 @@ export function whatSomebodyHereWouldAsk(input: {
         };
     }
 
+    // A FACT, NOT A LINE. The closing question here was spoken back word for word ("Is that who
+    // you meant, or is it none of them?"); what they ask, and how, is the narrator's.
     return {
-        said: `${input.asker.name} does not follow, and asks what you mean by it. They tell `
-            + `you what is here instead - ${theNames(here)} - and leave you to say which of `
-            + 'it you meant, or that it was none of it.',
+        said: `${input.asker.name} does not know what you mean by it. The people here: `
+            + `${theNames(here)}.`,
         offered: []
     };
 }

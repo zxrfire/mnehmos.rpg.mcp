@@ -361,6 +361,8 @@ Rules:
   resolves the interaction from state. Say what was attempted, not what succeeded.
 - "target" must name something that actually exists in this world. If you are not sure the
   person or place is real, prefer "investigate" to find out over "interact" with an invention.
+  Players misspell and lower-case names: a near miss of a name you were given IS that name,
+  and you answer with it as it is written there.
 - A pointing phrase that means ONE person - "him", "the man", "whoever is nearest",
   "the strongest person here", "the oldest one" - means somebody under STANDING HERE.
   Bind it: answer with a name off that list rather than echoing the phrase back,
