@@ -113,9 +113,10 @@ export function whoAnswersTo(houseId: string): string[] {
  *
  * Standing is two half-edges - each house keeps its own map - so the two can
  * disagree. The answer is the colder of the two, because a relation is only as
- * warm as the wariest end of it. A half nobody wrote is not a zero: seeding
- * warms a house toward its parent and writes nothing back, and reading the
- * silent half as 0 made a feeder school and its patron neutral houses.
+ * warm as the wariest end of it. A half nobody wrote is not a zero: reading a
+ * silent half as 0 once made a feeder school and its patron neutral houses.
+ * Seeding now writes both halves; a pass that moves only one still leaves the
+ * other silent.
  */
 export function standingBetweenRows(
     a: Pick<FactionRecord, 'id' | 'standing'> | null,

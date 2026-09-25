@@ -1226,8 +1226,7 @@ function seedFactions(
             ]
         });
 
-        // Rivalries are symmetric in the catalog, so recording one side is
-        // enough; the other faction's own pass records the mirror.
+        // The other end of each is written after the loop.
         for (const rivalId of cf.rivalIds) faction.standing[rivalId] = -0.6;
         // THE STRUCTURE IS NOT THIS LINE. Who a house holds from is
         // `FACTION_PARENTAGE`, and it stays there: what is written here is only
@@ -1288,6 +1287,18 @@ function seedFactions(
             magnitude: 0.5,
             data: { governance: cf.governance }
         }));
+    }
+
+    // EVERY RELATION SEEDED FROM BOTH ENDS. A subsidiary writes its warmth
+    // toward its parent and the parent wrote nothing back, and the killing read
+    // takes the colder half. The catalog states no separate figure for a parent
+    // toward its subsidiary, so the silent half gets the same warmth.
+    const byId = new Map(state.factions.map(f => [f.id, f] as const));
+    for (const faction of out) {
+        for (const [otherId, warmth] of Object.entries(faction.standing)) {
+            const other = byId.get(otherId);
+            if (other && other.standing[faction.id] === undefined) other.standing[faction.id] = warmth;
+        }
     }
 
     return out;

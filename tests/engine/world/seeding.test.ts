@@ -93,6 +93,21 @@ describe('seeding: a world that is already running', () => {
         expect(grove.tags).toContain('closed');
     });
 
+    // The killing read takes the colder half, so a half seeding left silent
+    // was the other house's warmth standing in for it.
+    it('seeds every relation from both ends', () => {
+        const { state } = seeded();
+        const byId = new Map(state.factions.map(f => [f.id, f] as const));
+        const sill = byId.get('court-third-sill')!;
+        expect(sill.standing['sect-azure-cloud']).toBe(byId.get('sect-azure-cloud')!.standing['court-third-sill']);
+        for (const house of state.factions) {
+            for (const otherId of Object.keys(house.standing)) {
+                const other = byId.get(otherId);
+                if (other) expect(other.standing[house.id], `${otherId} -> ${house.id}`).toBeDefined();
+            }
+        }
+    });
+
     it('gives vein-holding factions an actual vein location they control', () => {
         const { state } = seeded();
         const veins = state.locations.filter(l => l.kind === 'vein');

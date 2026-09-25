@@ -49,8 +49,8 @@ describe('the four factors', () => {
         expect(howTheyStandToEachOther(state, fresh, two, houses).value).toBeLessThan(0.05);
         a!.standing[b!.id] = 0.6; b!.standing[a!.id] = 0.6;
         expect(howTheyStandToEachOther(state, fresh, two, houses).value).toBe(0);
-        // A half nobody wrote is not a zero: seeding warms a house toward the one
-        // it holds from and writes nothing back, and a patron is not a neutral.
+        // A half nobody wrote is not a zero: a pass that warms one end only
+        // leaves the other silent, and a patron is not a neutral.
         delete b!.standing[a!.id];
         expect(howTheyStandToEachOther(state, fresh, two, houses).value).toBe(0);
         a!.standing[b!.id] = -0.8; b!.standing[a!.id] = -0.8;

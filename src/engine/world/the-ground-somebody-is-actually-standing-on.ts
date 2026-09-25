@@ -54,35 +54,36 @@
  * ═════════════════════════════════════════════════════════════════════════
  *
  * WHICH HOUSE YOU ARE IN SETS YOUR FLOOR. An apex holds more ground and better
- * ground and has more of it to spare, so its outer disciples are meaningfully
- * better placed than a village sect's - being in an apex is already very good,
- * at the floor and not only at the top. That is `budget / demand`: what the
- * house's rooms carry, divided by the draw of everybody in it.
+ * ground, and its lesser ground is still good (`houseFallbackRate`), so being
+ * in an apex is already very good at the floor and not only at the top.
  *
- * YOUR STANDING SETS HOW FAR ABOVE THAT FLOOR YOU SIT. Rank, and favour ahead
- * of rank, exactly as `shelfReach` and `chooseTheChosen` already allocate the
- * shelf.
- *
- * So a senior figure in a minor sect and a junior in an apex come out roughly
- * comparable, which is the outcome that makes joining, leaving and rising all
- * worth reasoning about.
+ * YOUR STANDING DECIDES WHETHER YOU GET A SEAT. Rank, and favour ahead of rank,
+ * exactly as `shelfReach` and `chooseTheChosen` already allocate the shelf.
  *
  * ═════════════════════════════════════════════════════════════════════════
- * AND IT CANNOT RUN AWAY, WITHOUT A CAP ANYBODY CHOSE
+ * A ROOM SEATS ONE, TWO AT MOST, AND A SECOND HALVES IT
  * ═════════════════════════════════════════════════════════════════════════
  *
- * The floor is a quotient with the house's own membership underneath it, so a
- * house cannot solve its problem by being generous: every extra member lowers
- * everybody's share. That is also, exactly, why the Hollow Court rations its
- * intake - its ground is finite and every additional member lowers the odds of
- * every existing one ascending, so admitting somebody spends the thing the
- * Court is made of. Its selectivity needs no special rule; it is a house with
- * the best ground in the world doing the arithmetic that ground forces on it.
+ * The owner's rule for a cultivation room: one person, two at most (dual
+ * cultivation, or a half sold for cash), and a second person halves what each
+ * of them draws. So a room is one person's year of qi, whoever it is split
+ * between, and a house seats at most two per room on its best ground. Members
+ * are seated by standing; while there are rooms to spare each seat is a room
+ * alone, past that the lowest seated double up, and past two a room the rest
+ * have no time on it at all. This replaced a budget counted at each room's
+ * carrying capacity in mortal draws, which seated far more than two.
+ *
+ * A pair's half is taken as half the year (share 0.5), not half the rate all
+ * year: two keyholders who take turns get the same qi from the room as two who
+ * sit together, and spend their other half on the house's lesser ground.
+ *
+ * It still cannot run away without a cap anybody chose: seats are rooms, so a
+ * house that admits past its seats admits people who will not sit on its vein.
+ * That is why the Hollow Court can afford nobody it does not choose.
  */
 
 import { AMBIENT_QI_RATE_MULTIPLIER } from '../../schema/cultivation.js';
-import { carryingCapacityFor, realmIntakeMultiplier } from '../cultivation/cultivation.js';
-import { ordinaryBandFor, qiFraction } from './qi-scale.js';
+import { ordinaryBandFor } from './qi-scale.js';
 import type { LocationRecord } from './locations.js';
 
 /** The standing of one member, as the allocation reads it. */
@@ -133,67 +134,59 @@ export function roomsHeldBy(
         .sort((a, b) => (b.qiDensity ?? 0) - (a.qiDensity ?? 0));
 }
 
+/** People a cultivation room seats at once. The owner's rule; see the header. */
+export const A_ROOM_SEATS = 2;
+
+/** What each of two in one room gets of it: one room's qi split two ways. */
+export const A_SHARED_ROOM_GIVES = 0.5;
+
 /**
- * What a house's BEST GROUND carries, in mortal-equivalent draws.
+ * The rooms on a house's BEST GROUND - the top band only.
  *
- * The rooms in the top band only, not every room the house controls. A house
- * has one or two chambers on its vein and a great many ordinary halls, and it
- * is the vein people compete for - summing everything gave every house a budget
- * so large that the whole world sat on spirit tide all year, which is the
- * flattening this allocation exists to prevent.
- *
- * AND THE HOLLOW COURT EXEMPTION FALLS OUT OF THIS RATHER THAN BEING WRITTEN.
- * Counted off the seeded world: almost every house holds one to four rooms in
- * its best band, and the Court holds TWENTY-THREE OF TWENTY-THREE at spirit
- * tide. It sits on the best vein on the planet and has built against it, so its
- * budget is enormous and it rations nobody - which is the ruling, arrived at by
- * counting rooms rather than by naming the Court anywhere in this file. Take
- * the chambers away and the privilege goes with them.
- *
- * NOT YET RECONCILED WITH THE OWNER'S RULE FOR A ROOM: one person in it at a
- * time, two at most (for dual cultivation or a sold half), and a second person
- * halves what each draws. This budget counts a room at its carrying capacity,
- * which is more than one draw, and nothing models who is in which room on a day.
+ * A house has one or two chambers on its vein and a great many ordinary halls,
+ * and it is the vein people compete for. The Hollow Court holds every one of
+ * its rooms at spirit tide, so it seats far more than anybody else, and that
+ * falls out of counting rooms rather than naming the Court.
  */
-export function groundBudgetOf(rooms: readonly LocationRecord[]): number {
+function roomsOnTheBestGround(rooms: readonly LocationRecord[]): number {
     if (rooms.length === 0) return 0;
     const bestBand = ordinaryBandFor(rooms[0].qiDensity ?? 0);
-    return rooms.reduce((sum, r) => {
-        if (ordinaryBandFor(r.qiDensity ?? 0) !== bestBand) return sum;
-        const usable = r.environment?.spiritualDensity ?? qiFraction(r.qiDensity ?? 0);
-        return sum + carryingCapacityFor(usable);
-    }, 0);
+    return rooms.filter(r => ordinaryBandFor(r.qiDensity ?? 0) === bestBand).length;
+}
+
+/** Seats on a house's best ground: two a room. */
+export function groundBudgetOf(rooms: readonly LocationRecord[]): number {
+    return A_ROOM_SEATS * roomsOnTheBestGround(rooms);
+}
+
+/** Standing first, then realm, then id, so the order never depends on the caller's. */
+function byStanding(a: GroundClaimant, b: GroundClaimant): number {
+    return standingWeight(b) - standingWeight(a)
+        || b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
+        || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
 
 /**
  * The share of the year each member spends on the house's best ground.
  *
- * `budget / demand` is the house floor and `weight / meanWeight` is the
- * standing gradient; the product is clamped into a fraction. A house with no
- * priced rooms allocates nothing and everybody stays on ordinary ground, which
- * is the honest answer rather than an error.
+ * Seated by standing: a room alone is the whole year, a shared room half of
+ * it, and nobody past the seats gets any. A house with no priced rooms
+ * allocates nothing and everybody stays on ordinary ground.
  */
 export function groundTimeShares(
     members: readonly GroundClaimant[],
     rooms: readonly LocationRecord[]
 ): ReadonlyMap<string, number> {
     const out = new Map<string, number>();
-    if (rooms.length === 0 || members.length === 0) return out;
+    const roomCount = roomsOnTheBestGround(rooms);
+    if (roomCount === 0 || members.length === 0) return out;
 
-    const budget = groundBudgetOf(rooms);
-    // What the house asks of it. A Void Tribulation elder draws what a great
-    // many mortals do, which is the intake curve doing exactly what it is for.
-    const demand = members.reduce(
-        (sum, m) => sum + realmIntakeMultiplier(m.cultivation.realmOrdinal), 0);
-    if (budget <= 0 || demand <= 0) return out;
-
-    const floor = budget / demand;
-    const weights = members.map(standingWeight);
-    const meanWeight = weights.reduce((a, b) => a + b, 0) / members.length;
-    if (meanWeight <= 0) return out;
-
-    members.forEach((m, i) => {
-        out.set(m.id, Math.max(0, Math.min(1, floor * (weights[i] / meanWeight))));
+    const queue = [...members].sort(byStanding);
+    const seated = Math.min(queue.length, groundBudgetOf(rooms));
+    // The seats past one a room are second people in a room somebody holds.
+    const alone = roomCount - Math.max(0, seated - roomCount);
+    queue.forEach((m, i) => {
+        out.set(m.id, i < alone ? 1 : i < seated ? A_SHARED_ROOM_GIVES : 0);
     });
     return out;
 }
