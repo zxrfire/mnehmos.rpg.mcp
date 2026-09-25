@@ -156,7 +156,7 @@ export function theHousesTakeInEldersFromOutside(state: WorldState, day: number)
             ...moved,
             factionId: house.id,
             factionRankIndex: rung,
-            merit: null,
+            merit: undefined,
             // SOMEBODY ABOVE THE HOUSE'S OWN CEILING STAYS A GUEST. The owner,
             // on what leaving costs: you learn the new house's arts unless you
             // come in as a guest elder. Below the ceiling the tag is spent on

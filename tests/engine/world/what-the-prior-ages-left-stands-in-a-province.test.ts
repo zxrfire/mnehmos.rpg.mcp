@@ -1,7 +1,7 @@
 /**
  * A ruin the world was seeded with is somewhere on the map.
  *
- * THE DEFECT. `seedPriorAges` writes three ages of history before any province
+ * THE DEFECT. `seedPriorAges` writes the prior ages of history before any province
  * exists, so `locationFromRuin` and `locationFromScar` had no province to name
  * and minted their records with `parentId: null`. The id carries the AGE the
  * house fell in - `ruin-<age>-<n>` - which reads like a province and is not

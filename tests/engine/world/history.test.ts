@@ -10,7 +10,6 @@ import {
     explainFact,
     makeFact,
     nearMisses,
-    openEra,
     queryFacts,
     recordUnresolved,
     resolveFact,
@@ -21,6 +20,8 @@ import {
     type Observer
 } from '../../../src/engine/world/history.js';
 import { RUIN_NAMES, SCAR_NAMES } from '../../../src/data/cultivation/regions.js';
+import { AGES, AGE_FIDELITY } from '../../../src/data/cultivation/history.js';
+import { createWorld } from '../../../src/engine/world/world-state.js';
 
 const CONSEQUENCE_TEST_QUESTIONS: readonly { key: keyof EventConsequences; question: string }[] = [
     { key: 'immediate', question: 'What changed immediately?' },
@@ -88,7 +89,7 @@ function causalChain(
 
 function ledgerWithEra(): HistoryLedger {
     const ledger = createLedger();
-    openEra(ledger, { id: 'era-now', name: 'the present age', startDay: 0, qiDensity: 0.3, note: '' });
+    ledger.eras.push({ id: 'era-now', name: 'the present age', startDay: 0, endDay: null, qiDensity: 0.3, note: '' });
     return ledger;
 }
 
@@ -315,7 +316,8 @@ describe('history: seeding prior ages', () => {
         expect(JSON.stringify(a)).toBe(JSON.stringify(b));
         expect(JSON.stringify(seedPriorAges('seed-beta', { presentYear: 0 }))).not.toBe(JSON.stringify(a));
 
-        expect(a.ledger.eras.length).toBe(3);
+        // Laid on the written ages, every one of them and nothing else.
+        expect(a.ledger.eras.map(e => e.id)).toEqual(AGES.map(age => age.id));
         expect(a.ruins.length).toBeGreaterThan(0);
         expect(a.lostTechniques.length).toBeGreaterThan(0);
 
@@ -331,12 +333,96 @@ describe('history: seeding prior ages', () => {
         }
     });
 
+    /**
+     * The oldest age is remembered as the written history says it is: by rumour,
+     * which is the worst fidelity the record holds. The generator used to call
+     * it `lost`; the written age is the one kept.
+     */
     it('leaves the oldest age unexplained', () => {
         const prior = seedPriorAges('seed-alpha', { presentYear: 0 });
-        const oldest = prior.ledger.facts.filter(f => f.eraId === 'era-0');
+        const oldest = prior.ledger.facts.filter(f => f.eraId === AGES[0].id);
         expect(oldest.length).toBeGreaterThan(0);
-        expect(oldest.every(f => f.fidelity === 'lost' || f.fidelity === 'partial')).toBe(true);
+        expect(oldest.every(f => f.fidelity === AGE_FIDELITY[AGES[0].id])).toBe(true);
         expect(unexplained(prior.ledger).length).toBeGreaterThan(0);
+    });
+});
+
+/**
+ * EVERY WORLD IS LAID ON THE WRITTEN AGES.
+ *
+ * The design owner, reversing an earlier ruling that the written history stay
+ * unwired while the schema moved: *"we need the history to be used as well to
+ * keep it in sync with the schema migrations"*, and *"so always use the history
+ * on a fresh template"*. Before this, `seedPriorAges` made up three ages of 900
+ * years with drawn names, and `historyEras` in the catalog - the Open Gate,
+ * True Weight, Hundred Schools and Beacon Ages and the Lasting Peace - was read
+ * only by its own test. A schema change could break the written ages and no
+ * world would notice.
+ *
+ * What the seed generates now happens INSIDE the written ages, and where the
+ * two disagreed the written age won. Each assertion below is one of those
+ * disagreements, pinned from the catalog's own row rather than restated.
+ */
+describe('history: the written ages are the template', () => {
+    const SEEDS = ['seed-alpha', 'seed-beta', 'seed-gamma', 'seed-delta', 'seed-epsilon', 'seed-zeta'];
+    const priors = SEEDS.map(seed => seedPriorAges(seed, { presentYear: 1000 }));
+    const byAge = (prior: ReturnType<typeof seedPriorAges>, kind: string) =>
+        new Map(AGES.map(age => [age.id, prior.ledger.facts.filter(f => f.eraId === age.id && f.kind === kind).length]));
+
+    it('opens the world in the Lasting Peace, 1,517 years after it began, with no generated age anywhere', () => {
+        for (const prior of priors) {
+            const present = prior.ledger.eras.find(e => e.endDay === null)!;
+            expect(present.id).toBe(AGES[AGES.length - 1].id);
+            expect(present.startDay).toBe(dayOfYear(1000 - AGES[AGES.length - 1].beganYearsAgo!));
+            expect(present.qiDensity).toBe(AGES[AGES.length - 1].qiDensity);
+        }
+    });
+
+    it('is laid on a bare world too: skipping the generated past does not skip the ages', () => {
+        const bare = createWorld({ seed: 'bare', skipPriorAges: true, presentYear: 1000 });
+        expect(bare.history.eras.map(e => e.id)).toEqual(AGES.map(age => age.id));
+        expect(bare.history.facts).toHaveLength(0);
+    });
+
+    it('holds as many great powers in an age as its row says, where it says', () => {
+        for (const prior of priors) {
+            const founded = byAge(prior, 'faction_founded');
+            for (const age of AGES) {
+                if (age.record?.greatPowers) expect(founded.get(age.id), age.id).toBe(age.record.greatPowers);
+            }
+        }
+    });
+
+    it('fights no war in an age whose row says it fought none, and scars only the ground its row says was scarred', () => {
+        let wars = 0;
+        let scars = 0;
+        for (const prior of priors) {
+            const warred = byAge(prior, 'war');
+            const scarred = byAge(prior, 'tribulation_scar');
+            for (const age of AGES) {
+                if (!age.record?.wars) expect(warred.get(age.id), age.id).toBe(0);
+                if (!age.record?.scars) expect(scarred.get(age.id), age.id).toBe(0);
+                wars += warred.get(age.id)!;
+                scars += scarred.get(age.id)!;
+            }
+        }
+        // And the ages that did, did: otherwise these assert nothing.
+        expect(wars).toBeGreaterThan(0);
+        expect(scars).toBeGreaterThan(0);
+    });
+
+    it('puts more crossings in the Hundred Schools Age than in every other age combined', () => {
+        for (const prior of priors) {
+            const crossed = byAge(prior, 'ascension');
+            const most = AGES.filter(age => age.record?.crossings === 'every_power');
+            const rest = AGES.filter(age => age.record?.crossings !== 'every_power');
+            const inMost = most.reduce((n, age) => n + crossed.get(age.id)!, 0);
+            const inRest = rest.reduce((n, age) => n + crossed.get(age.id)!, 0);
+            expect(inMost).toBeGreaterThan(inRest);
+            for (const age of AGES) {
+                if (age.record?.crossings === 'none') expect(crossed.get(age.id), age.id).toBe(0);
+            }
+        }
     });
 });
 

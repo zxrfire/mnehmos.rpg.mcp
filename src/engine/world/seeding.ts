@@ -158,9 +158,8 @@ export interface SeedWorldOptions {
      * do not compare; that is true of `population` too.
      */
     rollWorthModelling?: number;
-    /** Qi density of the present age. */
+    /** Qi density of the ground the world's own regions are made with. */
     qiDensity?: number;
-    priorAges?: { ages?: number; yearsPerAge?: number; factionsPerAge?: number };
 }
 
 export interface SeedStats {
@@ -333,8 +332,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
         seed: opts.seed,
         presentYear,
         qiDensity,
-        regionCount: 0,
-        priorAges: opts.priorAges
+        regionCount: 0
     });
     const priorFacts = state.history.facts.length;
 

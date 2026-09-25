@@ -179,16 +179,28 @@ export function uniformsForEverybodyAlreadyOnARoll(state: WorldState): ObjectRec
     return out;
 }
 
-/** The day the world opened: the start of the age still running, which `createWorld` opens and nothing else does. */
-export function theDayTheWorldOpened(state: Pick<WorldState, 'history'>): number {
-    return state.history.eras.find(era => era.endDay === null)?.startDay ?? -Infinity;
+/**
+ * The day the world opened: the day the first robes in it were issued, because
+ * the seeding robes every house's founding roll at once. This read the start of
+ * the age still running, which was the same day until every world came to open
+ * 1,517 years into the Lasting Peace (`historyEras`). -Infinity where nobody
+ * has ever been robed, so nobody is a founder.
+ */
+export function theDayTheWorldOpened(state: Pick<WorldState, 'objects'>): number {
+    let opened = Infinity;
+    for (const thing of state.objects) {
+        if (!thing.tags.includes('uniform')) continue;
+        const day = thing.data.issuedOnDay;
+        if (typeof thing.data.memberId === 'string' && typeof day === 'number') opened = Math.min(opened, day);
+    }
+    return Number.isFinite(opened) ? opened : -Infinity;
 }
 
 /**
  * Who this house robed on or before the day the world opened: its founders.
  * They hold the house's memory of a loss.
  */
-export function theFoundersOf(state: Pick<WorldState, 'history' | 'objects'>, houseId: string): ReadonlySet<string> {
+export function theFoundersOf(state: Pick<WorldState, 'objects'>, houseId: string): ReadonlySet<string> {
     const opened = theDayTheWorldOpened(state);
     const founders = new Set<string>();
     for (const thing of state.objects) {

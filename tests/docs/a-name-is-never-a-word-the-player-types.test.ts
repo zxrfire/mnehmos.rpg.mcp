@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
 import {
-    ERA_ADJ, FACTION_ADJ, FACTION_FORM, GIVEN_HEAD_FEMALE, GIVEN_HEAD_MALE, GIVEN_TAIL_FEMALE,
+    FACTION_ADJ, FACTION_FORM, GIVEN_HEAD_FEMALE, GIVEN_HEAD_MALE, GIVEN_TAIL_FEMALE,
     GIVEN_TAIL_MALE, PLACE_HEAD, PLACE_TAIL, SURNAMES
 } from '../../src/engine/world/history.js';
 import { PHYSIQUES } from '../../src/engine/cultivation/physiques.js';
@@ -169,7 +169,7 @@ async function everyName(): Promise<Map<string, string>> {
     for (const root of SPIRIT_ROOTS) names.set(root.name, 'spirit root');
 
     const lists: Record<string, readonly string[]> = {
-        PLACE_HEAD, PLACE_TAIL, FACTION_ADJ, FACTION_FORM, ERA_ADJ, HOUSE_FORMS
+        PLACE_HEAD, PLACE_TAIL, FACTION_ADJ, FACTION_FORM, HOUSE_FORMS
     };
     for (const [list, words] of Object.entries(lists)) {
         for (const word of words) if (!names.has(word)) names.set(word, `generator ${list}`);

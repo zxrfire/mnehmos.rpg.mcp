@@ -49,9 +49,9 @@ import {
     WHAT_THE_OFFSET_HIDES,
     WHY_THE_RECONCILIATION_IS_NOT_MADE,
     WHY_ACCOUNTS_DISAGREE,
-    historyEras,
     type Claim
 } from '../../src/data/cultivation/history.js';
+import { historyEras } from '../../src/engine/world/history.js';
 import { SECTS, DESTROYED_DAO_HOUSES, getSect } from '../../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
@@ -246,7 +246,7 @@ describe('the ages', () => {
     });
 
     it('builds engine era records that carry the same shape', () => {
-        const eras = historyEras();
+        const eras = historyEras(0);
         expect(eras.length).toBe(AGES.length);
         for (let i = 0; i < eras.length; i++) {
             expect(eras[i].id).toBe(AGES[i].id);

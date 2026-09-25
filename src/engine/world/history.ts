@@ -7,6 +7,7 @@ import type { Sex } from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { RUIN_NAMES, SCAR_NAMES } from '../../data/cultivation/regions.js';
+import { AGES, AGE_FIDELITY } from '../../data/cultivation/history.js';
 import { QI_DENSITY_MAX, clampQiDensity } from './qi-scale.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -276,13 +277,6 @@ export function yearOfDay(day: number): number {
 
 export function dayOfYear(year: number): number {
     return year * DAYS_PER_YEAR;
-}
-
-export function openEra(ledger: HistoryLedger, era: Omit<Era, 'endDay'> & { endDay?: number | null }): void {
-    for (const e of ledger.eras) {
-        if (e.endDay === null) e.endDay = era.startDay;
-    }
-    ledger.eras.push({ ...era, endDay: era.endDay ?? null });
 }
 
 export function eraForDay(ledger: HistoryLedger, day: number): Era | null {
@@ -658,8 +652,9 @@ export interface PriorAges {
     /** Everybody who finished, and the ground each of them lent something to. */
     crossings: Crossing[];
     /**
-     * The year the present age opens, carried so a consumer can price how long
-     * ago something was without being told separately and getting it wrong.
+     * The year the world opens on, carried so a consumer can price how long ago
+     * something was without being told separately and getting it wrong. The
+     * present AGE opened long before it: see `historyEras`.
      */
     presentYear: number;
     lostTechniques: RemnantDescriptor[];
@@ -787,11 +782,6 @@ export const FACTION_ADJ = [
 
 export const FACTION_FORM = ['Sect', 'Hall', 'Pavilion', 'Court', 'Stone Marrow Hall'] as const;
 
-export const ERA_ADJ = [
-    'Standing', 'Bright', 'Drowned', 'Iron', 'Counting', 'Quiet', 'Burning',
-    'Broad', 'Last', 'Middle', 'Broken', 'Waking'
-] as const;
-
 /**
  * A person's name, unique within `taken` when one is supplied.
  */
@@ -855,34 +845,67 @@ export function factionName(rng: CultivationRNG): string {
     return `${rng.pick(FACTION_ADJ)} ${rng.pick(FACTION_FORM)}`;
 }
 
-export function eraName(rng: CultivationRNG): string {
-    return `The ${rng.pick(ERA_ADJ)} Age`;
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // SEEDING THE PAST
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface PriorAgesOptions {
-    /** How many ages to generate before the present. Three is the default shape. */
-    ages?: number;
-    /** In-world years each prior age spans. */
-    yearsPerAge?: number;
-    /** Year the present age begins. Prior ages are laid out backwards from here. */
+    /** The year the world opens on. The written ages are laid out backwards from here. */
     presentYear?: number;
-    /** Great factions founded and destroyed per prior age. */
-    factionsPerAge?: number;
 }
 
-const DEFAULT_PRIOR_AGES: Required<PriorAgesOptions> = {
-    ages: 3,
-    yearsPerAge: 900,
-    presentYear: 0,
-    factionsPerAge: 4
-};
+/**
+ * Great powers founded and destroyed in an age whose row gives no count. The
+ * generator's own figure, kept where the written history says nothing.
+ */
+const GREAT_POWERS_IN_AN_AGE = 4;
+
+/** The chance a great power of an age that had `some` crossings produced one. */
+const A_GREAT_POWER_CROSSED = 0.45;
 
 /**
- * Generate several prior ages of real history.
+ * THE WRITTEN AGES, AS THE LEDGER'S ERAS, ENDING ON THE DAY THE WORLD OPENS.
+ *
+ * Every world is laid on them. The design owner: *"we need the history to be
+ * used as well to keep it in sync with the schema migrations"*, and *"so always
+ * use the history on a fresh template"*. The ages are authored in
+ * `data/cultivation/history.ts` in years before the present; `presentYear` is
+ * the year the world opens on, so the Lasting Peace, which began 1,517 years
+ * before it, is the era still running and the others are closed behind it.
+ *
+ * The oldest age has no dateable beginning, so its start is a placeholder twice
+ * as far back as its end, and the note says so, so nobody quotes it as a date.
+ */
+export function historyEras(presentYear: number): Era[] {
+    const out: Era[] = [];
+    for (const age of AGES) {
+        const endYearsAgo = age.endedYearsAgo;
+        const beganYearsAgo = age.beganYearsAgo ?? (endYearsAgo === null ? 0 : endYearsAgo * 2);
+        out.push({
+            id: age.id,
+            name: age.name,
+            startDay: dayOfYear(presentYear - beganYearsAgo),
+            endDay: endYearsAgo === null ? null : dayOfYear(presentYear - endYearsAgo),
+            qiDensity: age.qiDensity,
+            note:
+                age.beganYearsAgo === null
+                    ? `${age.note} The beginning is not dateable; the start day here is a placeholder and must not be quoted as a date.`
+                    : age.note
+        });
+    }
+    return out;
+}
+
+/**
+ * Generate what happened inside the written ages.
+ *
+ * The ages themselves are the catalog's - their names, spans, qi and how well
+ * each is remembered (`AGE_FIDELITY`) - and so is what each one's record holds
+ * (`record` on the age row): how many great powers, whether they warred,
+ * whether a failed crossing scarred the ground, whether they went through the
+ * Lid. The seed fills in who, where and when, inside those. Where the two used
+ * to disagree the written age won; the commit that laid this down lists each
+ * place they did.
  */
 /**
  * Take a name off a table without repeating one inside a world.
@@ -904,8 +927,9 @@ function drawPlaceName(
 export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorAges {
     const ruinNames = new Set<string>();
     const scarNames = new Set<string>();
-    const o = { ...DEFAULT_PRIOR_AGES, ...opts };
+    const presentYear = opts.presentYear ?? 0;
     const ledger = createLedger();
+    ledger.eras.push(...historyEras(presentYear));
     const ruins: Ruin[] = [];
     const scars: Scar[] = [];
     const crossings: Crossing[] = [];
@@ -913,32 +937,22 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
     const buriedTreasures: RemnantDescriptor[] = [];
     const deadFactionNames: string[] = [];
 
-    const firstYear = o.presentYear - o.ages * o.yearsPerAge;
-
-    for (let ageIndex = 0; ageIndex < o.ages; ageIndex++) {
-        const ageStart = firstYear + ageIndex * o.yearsPerAge;
-        const ageEnd = ageStart + o.yearsPerAge;
-        const rng = forStream(seed, 'prior-age', ageIndex);
-
-        // Qi thins monotonically toward the present. The current age is not
-        // unlucky; it is late. Most places have already been used.
-        const qiDensity = Number((0.95 - ageIndex * (0.65 / Math.max(1, o.ages))).toFixed(4));
-        // The further back, the less survives.
-        const fidelity: RecordFidelity =
-            ageIndex === 0 ? 'lost' : ageIndex === 1 ? 'rumour' : 'partial';
-        const causeKnown = ageIndex >= o.ages - 1;
-
-        const era: Era = {
-            id: `era-${ageIndex}`,
-            name: eraName(rng),
-            startDay: dayOfYear(ageStart),
-            endDay: dayOfYear(ageEnd),
-            qiDensity,
-            note:
-                `Qi density ${qiDensity.toFixed(2)}. ` +
-                `${o.factionsPerAge} great powers held the region; none of them still stand.`
-        };
-        ledger.eras.push(era);
+    // The ages before the present, oldest first. The present is filled by the
+    // world's own houses and has no generated powers.
+    const prior = AGES.filter(age => age.record !== null);
+    for (let ageIndex = 0; ageIndex < prior.length; ageIndex++) {
+        const age = prior[ageIndex];
+        const record = age.record!;
+        const era = ledger.eras.find(e => e.id === age.id)!;
+        const ageStart = yearOfDay(era.startDay);
+        const ageEnd = yearOfDay(era.endDay ?? dayOfYear(presentYear));
+        const yearsPerAge = ageEnd - ageStart;
+        const qiDensity = era.qiDensity;
+        const fidelity: RecordFidelity = AGE_FIDELITY[age.id] ?? 'rumour';
+        // Only the latest age before the present still knows why things
+        // happened in it.
+        const causeKnown = ageIndex >= prior.length - 1;
+        const powers = record.greatPowers ?? GREAT_POWERS_IN_AN_AGE;
 
         const openFact = appendFact(ledger, makeFact({
             day: dayOfYear(ageStart),
@@ -955,14 +969,14 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
             data: { qiDensity }
         }));
 
-        for (let s = 0; s < o.factionsPerAge; s++) {
+        for (let s = 0; s < powers; s++) {
             const srng = forStream(seed, 'prior-faction', ageIndex, s);
             const name = factionName(srng);
             const seat = placeName(srng);
             const factionId = `dead-faction-${ageIndex}-${s}`;
             deadFactionNames.push(name);
 
-            const foundedYear = ageStart + srng.int(5, Math.floor(o.yearsPerAge * 0.4));
+            const foundedYear = ageStart + srng.int(5, Math.floor(yearsPerAge * 0.4));
             const founder = personName(srng);
             const foundFact = appendFact(ledger, makeFact({
                 day: dayOfYear(foundedYear),
@@ -983,8 +997,10 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
 
             // Somebody got out. It is remembered as a golden year by people
             // whose great-grandparents were not born for it.
-            if (srng.chance(0.45)) {
-                const ascendedYear = foundedYear + srng.int(50, Math.floor(o.yearsPerAge * 0.4));
+            const crossed = record.crossings === 'every_power'
+                || (record.crossings === 'some' && srng.chance(A_GREAT_POWER_CROSSED));
+            if (crossed) {
+                const ascendedYear = foundedYear + srng.int(50, Math.floor(yearsPerAge * 0.4));
                 const who = personName(srng);
                 const ascFact = appendFact(ledger, makeFact({
                     day: dayOfYear(ascendedYear),
@@ -1039,8 +1055,8 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
             }
 
             // Failed tribulations leave dead ground the qi never returns to.
-            if (srng.chance(0.5)) {
-                const scarYear = foundedYear + srng.int(20, Math.floor(o.yearsPerAge * 0.5));
+            if (record.scars && srng.chance(0.5)) {
+                const scarYear = foundedYear + srng.int(20, Math.floor(yearsPerAge * 0.5));
                 const failed = personName(srng);
                 const scarSite = placeName(srng);
                 const scarFact = appendFact(ledger, makeFact({
@@ -1081,27 +1097,30 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 });
             }
 
-            // War over something scarce, then the fall.
-            const warYear = foundedYear + srng.int(60, Math.floor(o.yearsPerAge * 0.6));
-            const rival = factionName(srng);
-            const contested = placeName(srng);
-            const warFact = appendFact(ledger, makeFact({
-                day: dayOfYear(warYear),
-                eraId: era.id,
-                kind: 'war',
-                scale: 'regional',
-                place: contested,
-                factionIds: [factionId],
-                summary:
-                    `The ${name} and the ${rival} fought over the ${contested} vein for ` +
-                    `${srng.int(2, 40)} years. Both counted it worth the cost at the time.`,
-                causes: [foundFact.id],
-                visibility: 'public',
-                fidelity,
-                causeKnown,
-                magnitude: 0.8,
-                data: { rival, resource: contested }
-            }));
+            // War over something scarce, then the fall - or, in an age that
+            // fought none, the fall alone.
+            const warYear = foundedYear + srng.int(60, Math.floor(yearsPerAge * 0.6));
+            const warFact = record.wars ? (() => {
+                const rival = factionName(srng);
+                const contested = placeName(srng);
+                return appendFact(ledger, makeFact({
+                    day: dayOfYear(warYear),
+                    eraId: era.id,
+                    kind: 'war',
+                    scale: 'regional',
+                    place: contested,
+                    factionIds: [factionId],
+                    summary:
+                        `The ${name} and the ${rival} fought over the ${contested} vein for ` +
+                        `${srng.int(2, 40)} years. Both counted it worth the cost at the time.`,
+                    causes: [foundFact.id],
+                    visibility: 'public',
+                    fidelity,
+                    causeKnown,
+                    magnitude: 0.8,
+                    data: { rival, resource: contested }
+                }));
+            })() : null;
 
             const fallYear = Math.min(ageEnd - 1, warYear + srng.int(5, 200));
             const fallFact = appendFact(ledger, makeFact({
@@ -1112,9 +1131,9 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 place: seat,
                 factionIds: [factionId],
                 summary:
-                    `The ${name} ended at ${seat}. ` +
+                    `The ${name} ended at ${seat}${warFact ? '' : ' without a war'}. ` +
                     `The compound is still standing; nobody alive can work its formations.`,
-                causes: [warFact.id],
+                causes: [(warFact ?? foundFact).id],
                 visibility: 'public',
                 fidelity,
                 causeKnown,
@@ -1136,7 +1155,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 lostTechniques.push({
                     id,
                     name: artName,
-                    gradeBand: Math.min(4, 3 - ageIndex + srng.int(0, 1)),
+                    gradeBand: Math.max(0, Math.min(4, 3 - ageIndex + srng.int(0, 1))),
                     originFactId: fallFact.id,
                     year: fallYear
                 });
@@ -1149,7 +1168,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                     name: `${srng.pick(PLACE_HEAD)} ${srng.pick([
                         'Cauldron', 'Bell', 'Needle', 'Rope', 'Mirror', 'Ledger', 'Key'
                     ] as const)}`,
-                    gradeBand: Math.min(4, 2 - ageIndex + srng.int(0, 2)),
+                    gradeBand: Math.max(0, Math.min(4, 2 - ageIndex + srng.int(0, 2))),
                     originFactId: fallFact.id,
                     year: fallYear
                 });
@@ -1198,11 +1217,11 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
         }
     }
 
-    openTheShallowestRuin(seed, o.presentYear, ledger, ruins);
+    openTheShallowestRuin(seed, presentYear, ledger, ruins);
 
     return {
         ledger, ruins, scars, crossings, lostTechniques, buriedTreasures, deadFactionNames,
-        presentYear: o.presentYear
+        presentYear
     };
 }
 

@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { dayOfYear, type Era, type FactTruth, type RecordFidelity } from '../../engine/world/history.js';
+import type { FactTruth, RecordFidelity } from '../../engine/world/history.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SHARED SHAPES
@@ -72,7 +72,24 @@ export const AgeSchema = z.object({
     howItEnded: ClaimSchema,
     /** What the present would recognise, if it could read the record. */
     whatSurvives: z.array(z.string().min(40)).min(2),
-    note: z.string().min(100)
+    note: z.string().min(100),
+    /**
+     * What the age's own record holds, said as values, for the seeding that
+     * fills a prior age in: every world is laid on these ages, and what the
+     * seed generates happens inside them (`seedPriorAges`). Each value is a
+     * sentence of the row above, and a comment beside it quotes which. Null on
+     * the present, which the world's own houses fill.
+     */
+    record: z.object({
+        /** How many great powers held the ground. Null where the row gives no count. */
+        greatPowers: z.number().int().positive().nullable(),
+        /** Whether it fought wars over what was scarce. */
+        wars: z.boolean(),
+        /** Whether a failed crossing left dead ground in it. */
+        scars: z.boolean(),
+        /** Whether its great powers went through the Lid: none of them, some, or every one. */
+        crossings: z.enum(['none', 'some', 'every_power'])
+    }).nullable()
 });
 export type Age = z.infer<typeof AgeSchema>;
 
@@ -118,7 +135,17 @@ export const AGES: readonly Age[] = [
             'the Bird-Scratch Hand: a script on the terminal frames of which three sign groups are agreed and one of the three is agreed to be a number'
         ],
         note:
-            'The Open Gate Age is the reason the world is late, and almost nothing in the present points at it. It spent the arterial system on ordinary administration over a span of time nobody can measure, and left a road network, a distance table and a silence.'
+            'The Open Gate Age is the reason the world is late, and almost nothing in the present points at it. It spent the arterial system on ordinary administration over a span of time nobody can measure, and left a road network, a distance table and a silence.',
+        record: {
+            // "A single order held ground from one end of the continent to the other."
+            greatPowers: 1,
+            // "no scar, no dead ground and no tribulation signature anywhere in the
+            // terminal survey, which is the wrong evidence for a war"
+            wars: false,
+            scars: false,
+            // The row says nothing either way, so the generator's own chance stands.
+            crossings: 'some'
+        }
     },
     {
         id: 'age-true-weight',
@@ -156,7 +183,16 @@ export const AGES: readonly Age[] = [
             'the Boundary Hand, whose numerals are fully readable because the weights and the distance table kept them in continuous use, and whose prose is not readable at all'
         ],
         note:
-            'The True Weight Age is the age the present is actually squatting in. A vein grant is a grant of ground plus works, the works are the works of that age, and the reason a sect holds its vein at sufferance is that the thing being granted was built by somebody else and cannot be replaced.'
+            'The True Weight Age is the age the present is actually squatting in. A vein grant is a grant of ground plus works, the works are the works of that age, and the reason a sect holds its vein at sufferance is that the thing being granted was built by somebody else and cannot be replaced.',
+        record: {
+            greatPowers: null,
+            // "The True Weight Age ended without a war", and "no scar layer, no burned
+            // seats and no mass graves anywhere in the survey of record".
+            wars: false,
+            scars: false,
+            // "fewer crossings than any age in the record"
+            crossings: 'none'
+        }
     },
     {
         id: 'age-hundred-schools',
@@ -193,7 +229,16 @@ export const AGES: readonly Age[] = [
             'six crossings from the Empyrean Court alone, and the channels that still answer because of them'
         ],
         note:
-            'The Hundred Schools Age is the world the present is nostalgic for and the world that caused the present. It measured honestly, published, and could not have predicted that an honest number would be read as a starting pistol.'
+            'The Hundred Schools Age is the world the present is nostalgic for and the world that caused the present. It measured honestly, published, and could not have predicted that an honest number would be read as a starting pistol.',
+        record: {
+            greatPowers: null,
+            wars: true,
+            // "Every scar ... date[s] from" the Beacon Age.
+            scars: false,
+            // "More cultivators went through the Lid in the Hundred Schools Age than in
+            // every age before and after it combined."
+            crossings: 'every_power'
+        }
     },
     {
         id: 'age-beacon-fire',
@@ -235,7 +280,18 @@ export const AGES: readonly Age[] = [
             'the standing grievances of every institution founded before it against every institution founded before it'
         ],
         note:
-            'The Beacon Age is why the map is not on fire now. Everything stabilising about the present arrangement was invented by parties who had just spent nine centuries proving the alternative, and the arrangement holds because all of them remember what it is an alternative to.'
+            'The Beacon Age is why the map is not on fire now. Everything stabilising about the present arrangement was invented by parties who had just spent nine centuries proving the alternative, and the arrangement holds because all of them remember what it is an alternative to.',
+        record: {
+            greatPowers: null,
+            // "Nine hundred years of taking."
+            wars: true,
+            // "Every scar, every dead province, every forbidden perimeter and most of
+            // the sealed sites in both provinces date from it."
+            scars: true,
+            // "almost nobody who attempted one in it was left alone": an attempt
+            // interrupted is a failed crossing, and those are the scars above.
+            crossings: 'none'
+        }
     },
     {
         id: 'age-present',
@@ -267,7 +323,8 @@ export const AGES: readonly Age[] = [
             'one confirmed crossing in four hundred years, and the institution that produced it is the strongest in the world on the strength of it'
         ],
         note:
-            'The present is not unlucky. It is late, and the four things that made it late are all still visible if anybody puts the four surveys on the same table, which no two of the parties holding them will do.'
+            'The present is not unlucky. It is late, and the four things that made it late are all still visible if anybody puts the four surveys on the same table, which no two of the parties holding them will do.',
+        record: null
     }
 ];
 
@@ -1526,36 +1583,6 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The phrase collapses ascension, disappearance and death into one expression, which is not a metaphor at the mortal end of the world but a description of the available evidence: from a village, all three look identical, and the village is not wrong about that.'
     }
 ];
-
-// ─────────────────────────────────────────────────────────────────────────
-// ERA RECORDS
-// The one builder in the file. It turns the authored age table into the
-// engine's `Era` shape so a ledger can be opened on the canonical past
-// instead of a generated one. Still inert: it computes days and copies text.
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * The authored ages as engine `Era` records, oldest first.
- */
-export function historyEras(): Era[] {
-    const out: Era[] = [];
-    for (const age of AGES) {
-        const endYearsAgo = age.endedYearsAgo;
-        const beganYearsAgo = age.beganYearsAgo ?? (endYearsAgo === null ? 0 : endYearsAgo * 2);
-        out.push({
-            id: age.id,
-            name: age.name,
-            startDay: dayOfYear(-beganYearsAgo),
-            endDay: endYearsAgo === null ? null : dayOfYear(-endYearsAgo),
-            qiDensity: age.qiDensity,
-            note:
-                age.beganYearsAgo === null
-                    ? `${age.note} The beginning is not dateable; the start day here is a placeholder and must not be quoted as a date.`
-                    : age.note
-        });
-    }
-    return out;
-}
 
 /** Record fidelity by age, oldest to most recent. Used for seeding facts. */
 export const AGE_FIDELITY: Readonly<Record<string, RecordFidelity>> = {

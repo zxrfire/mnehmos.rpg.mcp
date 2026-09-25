@@ -44,12 +44,11 @@ import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import {
     createLedger,
     dayOfYear,
-    openEra,
+    historyEras,
     placeName,
     seedPriorAges,
     type HistoricalFact,
-    type HistoryLedger,
-    type PriorAgesOptions
+    type HistoryLedger
 } from './history.js';
 import { forStream } from '../cultivation/rng.js';
 import {
@@ -301,25 +300,32 @@ export const WORLD_STATE_VERSION = 1;
 export interface CreateWorldOptions {
     id?: string;
     seed: string;
-    /** Year the present age begins. Prior ages are laid out behind it. */
+    /** The year the world opens on. The written ages are laid out behind it. */
     presentYear?: number;
-    /** Qi density of the present age. Low by default; the world is late. */
+    /** Qi density of the ground the world's own regions are made with. */
     qiDensity?: number;
     /** Ordinary inhabited regions to create alongside the seeded remnants. */
     regionCount?: number;
-    priorAges?: PriorAgesOptions;
-    /** Skip the seeded past entirely. Used by tests that want a bare world. */
+    /**
+     * Skip what the seed GENERATES inside the written ages - the dead powers,
+     * their ruins, scars and crossings. The ages themselves are laid either
+     * way: every fresh world stands on the written history, and a test that
+     * wants none of it builds its own state by hand.
+     */
     skipPriorAges?: boolean;
 }
 
 /**
  * Build a world with a past.
  *
- * `seedPriorAges` writes several ages of real history first, and the ruins and
- * scars it leaves become locations whose `originFactId` points back at the
- * dated event that produced them. Nothing in the world is decorative: a sealed
- * compound is sealed because a specific power ended on a specific day, and the
- * layered location history says so.
+ * The written ages (`historyEras`) are the template: every world opens in the
+ * Lasting Peace, 1,517 years after it began, with the four ages before it
+ * closed behind. The design owner: *"always use the history on a fresh
+ * template"*. `seedPriorAges` then writes what happened inside them, and the
+ * ruins and scars it leaves become locations whose `originFactId` points back at
+ * the dated event that produced them. Nothing in the world is decorative: a
+ * sealed compound is sealed because a specific power ended on a specific day,
+ * and the layered location history says so.
  */
 export function createWorld(opts: CreateWorldOptions): WorldState {
     const presentYear = opts.presentYear ?? 0;
@@ -327,20 +333,11 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
     const qiDensity = opts.qiDensity ?? 0.34;
     const regionCount = opts.regionCount ?? 6;
 
-    const prior = opts.skipPriorAges
-        ? null
-        : seedPriorAges(opts.seed, { presentYear, ...(opts.priorAges ?? {}) });
+    const prior = opts.skipPriorAges ? null : seedPriorAges(opts.seed, { presentYear });
 
-    const history: HistoryLedger = prior ? prior.ledger : createLedger();
-    openEra(history, {
-        id: `era-${history.eras.length}`,
-        name: 'the present age',
-        startDay: presentDay,
-        qiDensity,
-        note:
-            `Ambient qi stands at ${qiDensity.toFixed(2)} of the richest ground ` +
-            `the world has carried. No confirmed ascension in living memory.`
-    });
+    const history: HistoryLedger = prior
+        ? prior.ledger
+        : { ...createLedger(), eras: historyEras(presentYear) };
 
     const unplaced: LocationRecord[] = prior ? locationsFromPriorAges(prior) : [];
     for (let i = 0; i < regionCount; i++) {

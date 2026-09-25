@@ -531,6 +531,21 @@ Every significant thing that happens is appended as a dated, attributed, located
 `truth` can say **unresolved**, which is what stops the database secretly knowing
 everything. See [`../social/README.md`](../social/README.md).
 
+### Every world is laid on the written ages
+
+The design owner: *"always use the history on a fresh template"*. `historyEras` turns the
+ages authored in [`data/cultivation/history.ts`](../../data/cultivation/history.ts) into the
+ledger's eras, ending on the day the world opens: every world opens 1,517 years into the
+Lasting Peace, with the Open Gate, True Weight, Hundred Schools and Beacon Ages closed behind
+it. `createWorld` lays them whether or not it generates anything inside them, so a schema
+change that breaks the written history breaks a world, not only its own test.
+
+`seedPriorAges` fills them in. The ages, their spans, qi and fidelity are the catalog's, and
+so is what each one's record holds (`record` on the age row: how many great powers, whether
+they warred, whether a failed crossing scarred the ground, whether they went through the
+Lid). The seed decides who, where and when. **Where the two disagree the written age wins**;
+`history.test.ts` pins each place they used to.
+
 ### The prior ages happen before the map, and have to be put on it
 
 `seedPriorAges` runs first, so the ruins and scars it leaves are minted before any province
