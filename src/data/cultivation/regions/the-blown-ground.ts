@@ -178,7 +178,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         howLong:
             'A season at the short end and about nine years at the long. The average is two or three, nobody has kept the figures long enough for the average to mean anything, and every finder alive will tell you a different number with complete confidence.',
         againstTheGrantCycle:
-            'A grant is twelve years, everywhere in the world that has one, and it is twelve years because that is how long a surveyed vein can be relied on to still be a surveyed vein. Not one show in living memory has run a full grant cycle. Long Vein is nineteen years and is the exception the whole province argues about: two parties have quietly asked whether it could be granted, both of them asked a court that has no jurisdiction here, and both were told the ground would have to be certified first, which returns the question to the Immovable Mountain Temple and to a datum that walks a li a year.',
+            'A grant is twelve years, everywhere in the world that has one, and it is twelve years because that is how long a surveyed vein can be relied on to still be a surveyed vein. Not one show in living memory has run a full grant cycle. Stubborn Pit is nineteen years and is the exception the whole province argues about: two parties have quietly asked whether it could be granted, both of them asked a court that has no jurisdiction here, and both were told the ground would have to be certified first, which returns the question to the Immovable Mountain Temple and to a datum that walks a li a year.',
         whatAFinderDoes:
             'Sells the location once, on the spot, in cash or stones, to whoever is at Wind Turn that week, and does not lead the buyer to it. The buyer takes the direction and the distance and finds it themselves or does not. There is no warranty, no recourse and no second sale, and a finder who sells the same show twice is not punished, they are simply never bought from again in a province with one market in it.'
     },
@@ -338,7 +338,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             connections: [
                 {
                     kind: 'path',
-                    otherPlaceName: PLACE.LONG_VEIN,
+                    otherPlaceName: PLACE.STUBBORN_PIT,
                     description:
                         'Out to the show that has stayed open nineteen years, four days, which is the whole of why it can be held at all.',
                     travelDays: 4
@@ -352,7 +352,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 }
             ]
         },
-        { name: PLACE.LONG_VEIN, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
+        { name: PLACE.STUBBORN_PIT, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
         { name: PLACE.THE_SHORT_ROAD, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
         { name: PLACE.TUOS_WALL, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
         {

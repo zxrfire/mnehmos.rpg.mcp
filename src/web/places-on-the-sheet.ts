@@ -38,7 +38,6 @@ export function thePlacesOnTheSheet(input: {
     /** Their awareness rows of kind `place`. */
     places: readonly AwarenessRow[];
     here: string | null;
-    /** Their own abode, by name, or null. */
     abode: string | null;
     /** Their house's seat, by name, or null. */
     seat: string | null;

@@ -462,7 +462,10 @@ junior sister*, *martial uncle*. *Outer Disciple*, *Inner Disciple*, *Core Disci
 *Elder*, *Grand Elder*, *Hall Master*, *Sect Master*, *Ancestor*. *Fellow Daoist* (道友)
 between strangers of rough parity, *dao partner* for the other half of a paired cultivation,
 *Young Master* / *Young Miss* for the child of a house. *This one*, *this old man*, *this
-young master* where somebody is standing on their own dignity.
+young master* where somebody is standing on their own dignity. The word goes by the years
+they have lived, not by their face: NOT a girl of sixteen calling herself *this old one*, BUT
+*this one* or *this junior*; an old cultivator with a young face says *this old one*, and the
+gap between the face and the word is worth a line.
 
 **What people are called.** A beautiful woman is a **jade beauty**, a **fairy** (仙子), an
 **immortal maiden**, a **peerless beauty**, and the address is *Fairy* plus her surname. A

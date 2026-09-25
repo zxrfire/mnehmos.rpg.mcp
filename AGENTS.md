@@ -589,6 +589,19 @@ Before naming anything, check every word of the new name against every existing 
 the catalog: houses, ranks, places, regions, arts, items, beasts, people. A match is a
 collision even when it is a different part of speech (`grain` and `Grains`).
 
+And the fourth, which the third does not catch because the letters differ:
+
+> **No two names share a meaning, in either language.** The design owner: *"don't mix dragon
+> and long please, or other synonyms"*.
+
+`Long Vein` stood in the Burial Sands beside `Dragonvein Rock` in the Pearl Ocean. *Long* is
+the pinyin for dragon, so to a reader who has the word, and to a model that has it, the two
+are one name, and the narrator was taken to have translated one into the other. The names
+are English, so a pinyin word inside one is a translation waiting to collide with its own
+meaning somewhere else. Surnames (`Tuo's Wall`) and units (`Six Li`) are not translations and
+are fine. A synonym is the same failure in one language: a `Pit` and a `Shaft` in two
+provinces, or a `Ravine` beside `The Jade Gorge`. Long Vein is now `Stubborn Pit`.
+
 What is NOT a collision: the words that are forms of address as much as names. *Elder*,
 *Master*, *Servant*, *Disciple* and their kin repeat across every rank ladder, and the owner
 ruled on it: *"elder master and servant aren't collisions. they're pronouns as well as rank

@@ -24,7 +24,6 @@ export interface TheThingsOnTheSheet {
     inventory: string[];
     /** A ring worn, what is in it, or null when it will not open to them. */
     rings: { name: string; inside: string[] | null }[];
-    /** A vehicle with them, and what it holds. */
     vehicles: { name: string; inside: string[] }[];
 }
 

@@ -162,7 +162,7 @@ export const PLACE = {
     // season that convenes it - which is the register `Grain Rain` is in.
     WIND_MARKET: 'Wind Turn',
     SAND_WELL: 'Sand Well',
-    LONG_VEIN: 'Long Vein',
+    STUBBORN_PIT: 'Stubborn Pit',
     THE_SHORT_ROAD: 'The Short Road',
     TUOS_WALL: 'Tuo\'s Wall',
     HALFWAY_GATE: 'Halfway Gate'
