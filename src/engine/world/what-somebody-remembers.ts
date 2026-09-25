@@ -46,6 +46,7 @@
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { HistoricalActor, HistoricalFact } from './history.js';
 import { LID_CHANNEL_TAG } from './immortal-world.js';
+import { theDayTheWorldOpened } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { recallAbout, searchMemories, type MemoryKind, type MemoryRecord } from './memory.js';
 import type { NpcRecord, RelationshipKind } from './npc-state.js';
 import { worthRecordingRank } from './recording-where-somebody-stands-in-a-house.js';
@@ -300,9 +301,7 @@ function whenTheyWereEntered(state: WorldState, houseId: string): Map<string, nu
         if (typeof member !== 'string' || typeof day !== 'number') continue;
         robed.set(member, Math.min(robed.get(member) ?? Infinity, day));
     }
-    // The age still running opened the day the world did: `createWorld` opens
-    // it, and nothing opens another.
-    const opened = state.history.eras.find(era => era.endDay === null)?.startDay ?? -Infinity;
+    const opened = theDayTheWorldOpened(state);
     const entered = new Map<string, number>();
     for (const [member, day] of robed) {
         const row = state.npcs.find(npc => npc.id === member);

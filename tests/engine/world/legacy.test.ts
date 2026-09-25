@@ -15,6 +15,7 @@ import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import { evaluateAccess } from '../../../src/engine/world/locations.js';
 import { queryFacts } from '../../../src/engine/world/history.js';
 import { searchMemories } from '../../../src/engine/world/memory.js';
+import { aUniformFor } from '../../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { addGoal, setRealm, upsertRelationship } from '../../../src/engine/world/npc-state.js';
 import { addLineageEdge, createLineageRecord } from '../../../src/engine/world/lineage.js';
 import {
@@ -156,6 +157,31 @@ describe('legacy: the world outlives the run', () => {
         const faction = state.factions.find(f => f.id === npc.factionId)!;
         expect(faction.resources.ancestral_names).toBe(1);
         expect(queryFacts(state.history, { actorId: npc.id }).length).toBeGreaterThan(0);
+    });
+
+    it('gives the loss to every founder still on the roll, and not to somebody taken on since', () => {
+        const state = world();
+        const { npc } = protagonist(state);
+        const house = state.factions.find(f => f.id === npc.factionId)!;
+        const founders = state.npcs
+            .filter(n => n.factionId === house.id && n.status === 'alive' && n.id !== npc.id)
+            .map(n => n.id);
+        // More than six, so a cap on who remembers would show.
+        expect(founders.length).toBeGreaterThan(6);
+
+        state.currentDay += YEAR;
+        const at = state.npcs.findIndex(n => n.status === 'alive' && n.factionId === null);
+        state.npcs[at] = { ...state.npcs[at], factionId: house.id, factionRankIndex: 0 };
+        const recruit = state.npcs[at];
+        state.objects.push(aUniformFor({
+            memberId: recruit.id, houseId: house.id, houseName: house.name, onDay: state.currentDay
+        }));
+
+        const out = enshrineRun(state, { npcId: npc.id, onDay: state.currentDay, causeNote: 'Died.' });
+
+        expect([...out.rememberedBy].sort()).toEqual([...founders].sort());
+        expect(out.rememberedBy).not.toContain(recruit.id);
+        expect(searchMemories(state.memories, { ownerId: recruit.id, actorIds: [npc.id] })).toHaveLength(0);
     });
 
     it('hands the unfinished goal and the open account to the heir', () => {

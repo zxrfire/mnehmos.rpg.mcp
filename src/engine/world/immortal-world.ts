@@ -39,6 +39,7 @@ import {
 } from './locations.js';
 import { addLineageEdge, ancestorsOf, createLineageRecord } from './lineage.js';
 import { storeMemory } from './memory.js';
+import { theFoundersOf } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import {
     addGoal,
     createNpc,
@@ -1112,9 +1113,11 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
         faction.resources.last_ascension_day = onDay;
         Object.assign(state, upsertFaction(state, faction));
 
+        // The house's founders hold what it remembers of a loss.
+        const founders = theFoundersOf(state, faction.id);
         const witnesses = state.npcs
-            .filter(n => n.factionId === faction.id && n.status === 'alive' && n.id !== npc.id)
-            .slice(0, 6);
+            .filter(n => n.factionId === faction.id && n.status === 'alive' && n.id !== npc.id
+                && founders.has(n.id));
         for (const witness of witnesses) {
             storeMemory(state.memories, {
                 ownerId: witness.id,

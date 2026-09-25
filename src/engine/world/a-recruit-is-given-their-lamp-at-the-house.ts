@@ -179,6 +179,27 @@ export function uniformsForEverybodyAlreadyOnARoll(state: WorldState): ObjectRec
     return out;
 }
 
+/** The day the world opened: the start of the age still running, which `createWorld` opens and nothing else does. */
+export function theDayTheWorldOpened(state: Pick<WorldState, 'history'>): number {
+    return state.history.eras.find(era => era.endDay === null)?.startDay ?? -Infinity;
+}
+
+/**
+ * Who this house robed on or before the day the world opened: its founders.
+ * They hold the house's memory of a loss.
+ */
+export function theFoundersOf(state: Pick<WorldState, 'history' | 'objects'>, houseId: string): ReadonlySet<string> {
+    const opened = theDayTheWorldOpened(state);
+    const founders = new Set<string>();
+    for (const thing of state.objects) {
+        if (thing.ownerId !== houseId || !thing.tags.includes('uniform')) continue;
+        const member = thing.data.memberId;
+        const day = thing.data.issuedOnDay;
+        if (typeof member === 'string' && typeof day === 'number' && day <= opened) founders.add(member);
+    }
+    return founders;
+}
+
 /** Room, precinct, seat: the three links a compound is. */
 const HOW_FAR_UP_A_ROOM_SITS = 3;
 

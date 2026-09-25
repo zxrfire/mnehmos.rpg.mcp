@@ -54,6 +54,7 @@ import {
     upsertRelationship
 } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
+import { theFoundersOf } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { storeMemory } from './memory.js';
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
 import { indexById, type WorldState } from './world-state.js';
@@ -317,11 +318,13 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
                 }
             })));
 
-            // The people who were there remember them. This is the row a later
+            // The house's founders remember them: everybody it robed on the day
+            // the world opened who is still on its roll. This is the row a later
             // run runs into when it asks the sect about the name on the grave.
+            const founders = theFoundersOf(state, faction.id);
             const survivors = state.npcs
-                .filter(n => n.factionId === faction.id && n.status === 'alive' && n.id !== deceased.id)
-                .slice(0, 6);
+                .filter(n => n.factionId === faction.id && n.status === 'alive' && n.id !== deceased.id
+                    && founders.has(n.id));
             for (const survivor of survivors) {
                 const idx = indexById(state.npcs, survivor.id);
                 if (idx < 0) continue;
