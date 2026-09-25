@@ -564,6 +564,12 @@ export const travelVerbs = {
         // anywhere else is. The one case that does not become a name is the
         // abode on the other side of the Lid, which is not walked to.
         let said = target;
+        // CARRYING ON IS THE ROAD THAT STOPPED. "keep going" names nowhere, and
+        // with a road stopped where they stand there is only one way it means.
+        if ((said ?? '').trim().length === 0) {
+            const stopped = readJsonFlag<StoppedRoad>(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
+            if (stopped !== null && stopped.from === placeName(cultivator)) said = stopped.to;
+        }
         if (HOME_RATHER_THAN_A_PLACE_NAME.test((target ?? '').trim())) {
             this.atHand = this.atHand ?? await this.loadWorld();
             const home = whereHomeIs(this, this.atHand, cultivator);

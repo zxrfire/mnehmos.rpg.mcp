@@ -1123,6 +1123,10 @@ function theReferenceToAPaper(text: string): string | undefined {
     return noun === undefined ? undefined : `the ${noun.toLowerCase()}`;
 }
 
+/** Carrying on down the road, said as a whole sentence. */
+const CARRYING_ON =
+    /^(?:(?:i|we)\s+)?(?:(?:keep|carry|press|push|continue|walk|move|head)\s+(?:on(?:wards?)?|going|walking|moving|ahead|forward|north|south|east|west)(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road))?|continue(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road|walk))?|onwards?|on we go)\s*[.!?]*$/;
+
 export const RECRUITING_BILL_PATTERN = new RegExp([
     String.raw`\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b`,
     // `notices?` was on three of the rows below and missing from this one, so
@@ -4616,6 +4620,17 @@ function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
+    // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────
+    //
+    // "I keep going" and "I go back" both reached nothing, while `descend`
+    // already owns "I return the way I came". The first is the commonest
+    // thing anybody says on a road and the second is the second commonest.
+    // First in the table and anchored to the whole sentence: "press on" was
+    // read as pressing somebody, and "continue onwards" and "I carry on"
+    // reached nothing. With a road stopped where they stand, the move carries
+    // on down it.
+    if (CARRYING_ON.test(text)) return { action: 'move', intent: 'travel' };
+
     // ── A BOW IS AIMED AT SOMEBODY ───────────────────────────────────────
     //
     // The genre's ordinary greeting, and it shared every word with
@@ -7427,15 +7442,6 @@ function planIntent(input: string): PlannedAction {
                 ...(placed ? { target: asked!.trim() } : {})
             };
         }
-    }
-
-    // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────
-    //
-    // "I keep going" and "I go back" both reached nothing, while `descend`
-    // already owns "I return the way I came". The first is the commonest
-    // thing anybody says on a road and the second is the second commonest.
-    if (/^(?:i\s+)?(?:keep|carry on|press on|continue)\s+(?:going|on|walking|moving|north|south|east|west)\s*[.!?]*$/.test(text)) {
-        return { action: 'move', intent: 'travel' };
     }
 
     // ── HOW BADLY AM I HURT, AND HOW IS HE DOING ─────────────────────────

@@ -415,7 +415,7 @@ export interface SpanCutShort {
     askedDays: number;
     /** What was lived before something ended it. */
     livedDays: number;
-    cause: 'somebody_arrived' | 'the_world' | 'the_body';
+    cause: 'somebody_arrived' | 'an_encounter' | 'the_world' | 'the_body';
     /** What cut in, stated. Not narrated - the narrator writes the prose. */
     what: string;
 }
@@ -427,7 +427,13 @@ export function whatCutTheSpanShort(span: {
     lived: number;
     skip: { requestedDays: number; simulatedDays: number; interrupted: boolean; interruptReason: string | null; died: boolean };
     /** The arrival window, if one was rolled. Days are in the RUN's frame. */
-    arrival: { firstInterruptDay: number | null } | null;
+    arrival: {
+        firstInterruptDay: number | null;
+        /** What the window produced, so the one that stopped the span can be named. */
+        occurrences?: ReadonlyArray<{
+            interrupts: boolean; absoluteDay: number; kind: string; event: { summary: string };
+        }>;
+    } | null;
     /**
      * What the world said it would do, if it was asked.
      *
@@ -471,11 +477,19 @@ export function whatCutTheSpanShort(span: {
     const worldIn = span.world?.inDays ?? null;
     const arrivalWins = arrivedIn !== null && (worldIn === null || arrivedIn <= worldIn);
     if (arrivalWins) {
+        // WHAT STOPPED IT, SAID AS WHAT IT WAS. Played: a grave found on the
+        // road was reported as "somebody reached you". A find is not a person.
+        const stopper = span.arrival?.occurrences?.find(o =>
+            o.interrupts && o.absoluteDay === span.arrival!.firstInterruptDay);
+        const said = stopper?.event.summary.trim().replace(/\.+$/, '') ?? '';
+        const somebody = stopper === undefined || stopper.kind === 'arrival' || stopper.kind === 'contact';
         return {
             askedDays: asked,
             livedDays,
-            cause: 'somebody_arrived',
-            what: 'somebody reached you before the stretch was done'
+            cause: somebody ? 'somebody_arrived' : 'an_encounter',
+            what: said.length > 0
+                ? said
+                : somebody ? 'somebody reached you before the stretch was done' : 'something on the way stopped it'
         };
     }
     if (span.world !== null) {

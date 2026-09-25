@@ -284,7 +284,7 @@ describe('a sentence the world cut in half', () => {
         // AND THE SPAN'S OWN ROW SAYS WHICH OF THE THREE DID IT.
         const span = rows.find(r => r.name === 'engine.spanCutShort');
         expect(span, 'the span filed its own row').toBeDefined();
-        expect(span!.summary).toMatch(/Cut short by (somebody_arrived|the_world|the_body):/);
+        expect(span!.summary).toMatch(/Cut short by (somebody_arrived|an_encounter|the_world|the_body):/);
     }, 120_000);
 
     it('leaves the run somewhere the next sentence works from', async () => {

@@ -83,6 +83,27 @@ describe('a road has things on it', () => {
     }, 120_000);
 
     /**
+     * CARRYING ON IS THAT ROAD. "keep going" names nowhere; with a road stopped
+     * where they stand, it walks the rest of it.
+     */
+    it.each(['keep going', 'press on', 'continue onwards'])(
+        'walks the rest of a stopped road on "%s"', async said => {
+            const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+            await game.newRun('Traveller');
+            const before = game.state();
+
+            const stopped = await game.act(WHERE);
+            // What stopped it is said as what it was, not as a stranger arriving.
+            expect(stopped.narration).not.toMatch(/somebody reached you/i);
+            const stoppedAt = game.state();
+
+            await game.act(said);
+            const after = game.state();
+            expect(after.run.elapsedDays - stoppedAt.run.elapsedDays).toBe(2);
+            expect(after.cultivator.location).not.toBe(before.cultivator.location);
+        }, 120_000);
+
+    /**
      * AND IT WAITS WHILE THEY STAND THERE. Dealing with whatever stopped the
      * road - here, a look round - does not undo the days already walked.
      */
