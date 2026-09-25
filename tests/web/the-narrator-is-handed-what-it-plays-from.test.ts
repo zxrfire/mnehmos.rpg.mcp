@@ -116,12 +116,12 @@ describe('the narrator is told whether the player is a woman or a man', () => {
     };
 
     it('says so on the standing line', () => {
-        expect(whereTheyStandNow({ ...standing, sex: 'female' })).toContain('- a woman, Qi Condensation Layer 1, 16 years old, no house behind them');
-        expect(whereTheyStandNow({ ...standing, sex: 'male' })).toContain('- a man, Qi Condensation Layer 1, 16 years old, no house behind them');
+        expect(whereTheyStandNow({ ...standing, sex: 'female' })).toContain('- The player: a woman, Qi Condensation Layer 1, 16 years old, no house behind them');
+        expect(whereTheyStandNow({ ...standing, sex: 'male' })).toContain('- The player: a man, Qi Condensation Layer 1, 16 years old, no house behind them');
     });
 
     it('says nothing when the caller did not know', () => {
-        expect(whereTheyStandNow(standing)).toContain('- Qi Condensation Layer 1, 16 years old, no house behind them');
+        expect(whereTheyStandNow(standing)).toContain('- The player: Qi Condensation Layer 1, 16 years old, no house behind them');
     });
 });
 

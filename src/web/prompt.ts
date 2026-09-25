@@ -646,7 +646,11 @@ export function whereTheyStandNow(state: WhereTheyStandNow | null | undefined): 
         : `${state.untreatedInjuries} thing${state.untreatedInjuries === 1 ? '' : 's'} open inside `
           + 'and not closing';
     return [
-        'WHERE THEY STAND, standing background and NOT news. It is here so that the prose',
+        // THE PLAYER, NAMED AS THE PLAYER. Played: "- a woman, 16 years old, no house behind them"
+        // was read as somebody else in the square, and a girl of sixteen with no house colours
+        // stood watching the player and then spoke.
+        'WHERE THE PLAYER STANDS - the player themselves, nobody else in the scene -',
+        'standing background and NOT news. It is here so that the prose',
         'cannot contradict what they are holding or what they can do. Do not report it, do not',
         'open on it, do not list it back: unless the player asked about their own state, the',
         'state never becomes a line of its own. It becomes DETAIL:',
@@ -660,10 +664,10 @@ export function whereTheyStandNow(state: WhereTheyStandNow | null | undefined): 
         '  method".',
         '  no house - nobody\'s colours on them where everyone else is wearing some. NOT "you',
         '  serve no house".',
-        `- ${state.sex ? `${state.sex === 'female' ? 'a woman' : 'a man'}, ` : ''}${state.rank}, `
+        `- The player: ${state.sex ? `${state.sex === 'female' ? 'a woman' : 'a man'}, ` : ''}${state.rank}, `
             + `${state.age} years old, ${state.house ?? 'no house behind them'}`,
-        `- ${state.spiritStones} spirit stone${state.spiritStones === 1 ? '' : 's'}, ${carrying}`,
-        `- ${practising}; ${body}`
+        `- The player has ${state.spiritStones} spirit stone${state.spiritStones === 1 ? '' : 's'}, ${carrying}`,
+        `- The player ${practising}; ${body}`
     ];
 }
 

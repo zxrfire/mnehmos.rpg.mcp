@@ -20026,6 +20026,13 @@ ${fit.line}`;
      * False where the player already had them that well.
      */
     theyGaveTheirName(cultivator: Cultivator, run: Run, person: { id: string; name: string }): boolean {
+        // NOBODY THE PLAYER GREW UP WITH INTRODUCES THEMSELVES. Played: the woman who raised the
+        // player answered a question, this wrote "gave you their name" over the row that said she
+        // raised them, and the next card handed her over as a stranger ("I am Duan Shuping, in case
+        // you have forgotten").
+        const alreadyTheirs = this.knowledge.provenanceOf(cultivator.id, 'cultivator', person.id)
+            .some(row => row.sourceKind === 'witnessed' && !!row.statement && row.statement !== `${person.name} exists.`);
+        if (alreadyTheirs) return false;
         const where = placeName(cultivator);
         const learned = this.knowledge.learnIfNew({
             holderId: cultivator.id,
