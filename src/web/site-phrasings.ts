@@ -129,6 +129,10 @@ export const SITE_FACE_NOUNS =
     // file makes when it is trying to be helpful.
     /\bthe (?:old |ancient |ruined |broken |sealed )?(?:door|doorway|gate frame|gateway|gate\b|threshold|marker|headstone|entrance|shaft|plate|standing stone)\b/;
 
+/** A paper put up on a wall or a gate: what somebody reads there, which is never the site. */
+const A_POSTED_PAPER =
+    /\b(?:notices?|bills?|posters?|postings?|papers?|notice ?boards?|placards?)\b[^.!?]{0,30}?\b(?:pinned|nailed|posted|pasted|hung|hanging|put up|up)\b|\bthe (?:notices?|bills?|posters?|postings?|notice ?boards?|placards?)\b/;
+
 /** What is behind the door, referred to without naming the site. */
 export const SITE_PRIZE_NOUNS =
     // `the manuals` is PLURAL here, and the singular was a measured misroute.
@@ -254,6 +258,10 @@ export function siteStep(text: string, input: string): PlannedAction | null {
     if (WEIGHING_RATHER_THAN_GOING.test(text)) return null;
 
     const named = siteNamed(text);
+    // A PAPER POSTED BY A GATE IS THE PAPER, NOT THE GATE. Played: "I read the
+    // notice pinned by the gate" read the gate from outside as a ruin, and
+    // answered that no site had been approached. The wall's own read has it.
+    if (named === undefined && A_POSTED_PAPER.test(text)) return null;
     // A CATEGORY NOUN INSIDE A NAME IS NOT A CATEGORY. See `outsideAnyName`.
     const noun = SITE_NOUNS.test(outsideAnyName(input));
     const face = SITE_FACE_NOUNS.test(text);

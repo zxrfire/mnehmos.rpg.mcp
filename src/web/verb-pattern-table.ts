@@ -1132,6 +1132,9 @@ export const RECRUITING_BILL_PATTERN = new RegExp([
     // here attached.
     String.raw`\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|notices?|posters?|placards?|walls?)\b`,
     String.raw`\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b`,
+    // A PAPER is only a bill once it is said to be up somewhere: "I read the
+    // paper nailed to the gate" went to `investigate`.
+    String.raw`\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\bpapers?\b[^.!?]{0,20}\b(?:posted|nailed|pinned|pasted|put up|hanging|hung)\b`,
     String.raw`\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b`,
     // ── ASKING FOR THE WALL WITHOUT A READING VERB ───────────────────────
     //
