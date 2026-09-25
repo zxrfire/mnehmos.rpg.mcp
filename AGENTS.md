@@ -799,6 +799,12 @@ by a sentence somebody would type - and then ask it again about the version of t
 mechanic somebody would use to get ahead at another person's expense. If only one of
 the two is reachable, the engine has an opinion.
 
+**And an agent playtesting the game plays both.** In xianxia everything is permitted. A
+live run that plays the dao partner and skips the furnace has the same opinion as a
+vocabulary that can only say the polite version. Put the hard move in the ordinary run
+and judge it like any turn: the consequence fires, the prose carries it, the other side
+of it plays. Never set it apart as a check on whether it is too dark.
+
 ---
 
 ## Measuring, and being honest about what you measured
