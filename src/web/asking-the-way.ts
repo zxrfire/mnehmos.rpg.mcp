@@ -14,6 +14,29 @@ export function asksTheWay(sentence: string): boolean {
     return ASKS_THE_WAY.test(sentence);
 }
 
+/** Words that put a question to whoever is standing here rather than to one of them. */
+const A_CROWD =
+    /^(?:every(?:one|body)|any(?:one|body)|some(?:one|body)|people|folks?|them|y'?all|the (?:crowd|locals|people|folk)|you (?:all|guys|lot|people)|(?:any|all) of (?:you|them|u)(?: guys)?|u guys)(?:\s+(?:here|around|around here|about))?$/i;
+
+export function aCrowdIsAsked(target: string): boolean {
+    return A_CROWD.test(target.trim());
+}
+
+/**
+ * "Anyone know the way to X?", "does anybody know how to get to X", "can someone tell me where X
+ * is": the way, put to whoever is standing here. Only the first question in the line is read, so
+ * "anyone know the way to the white stair? the mountain province" asks after the first.
+ */
+const THE_WAY_ASKED_OF_A_CROWD =
+    /^(?:(?:hey|so|um+|ok(?:ay)?)\s*,?\s*)?(?:(?:does|do|can|could|would)\s+)?(?:any(?:one|body)|some(?:one|body)|(?:any|all) of (?:you|u)(?: guys)?|you guys|u guys|y'?all)(?:\s+(?:here|around here))?\s*,?\s+(?:know|knows|tell me|show me)\s+(?:the (?:way|road) to|how (?:to|i can|do i|we can|one can) (?:get|go) to|where)\s+(.+?)(?:\s+(?:is|are|lies))?(?:\s+from here)?\s*[.!]*$/i;
+
+/** The place a crowd was asked the way to, or null when the sentence is not that. */
+export function theWayAskedOfACrowd(sentence: string): string | null {
+    const first = sentence.trim().split('?')[0] ?? '';
+    const place = THE_WAY_ASKED_OF_A_CROWD.exec(first.trim())?.[1]?.trim();
+    return place && place.length >= 2 ? place : null;
+}
+
 /** The place a way-topic asks after, or null for any other topic. */
 export function theWayAskedFor(topic: string): string | null {
     const said = topic.trim();

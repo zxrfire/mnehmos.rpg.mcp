@@ -172,6 +172,17 @@ export function placeRoadDays(
  * reasoning `placeRoadDays` gives above, one scale up, and a road is walked either way.
  */
 export function provinceRoadDays(fromRegionId: string, toRegionId: string): number | null {
+    return theRoadBetweenProvinces(fromRegionId, toRegionId)?.days ?? null;
+}
+
+/**
+ * The same road with the provinces it crosses on the way, in order, so an answer can say which way
+ * to set out: "the White Stair is over the pass from the Jade Gorge".
+ */
+export function theRoadBetweenProvinces(
+    fromRegionId: string,
+    toRegionId: string
+): { days: number; through: string[] } | null {
     if (fromRegionId === toRegionId) return null;
     const roads = new Map<string, Map<string, number>>();
     const join = (a: string, b: string, days: number) => {
@@ -186,6 +197,7 @@ export function provinceRoadDays(fromRegionId: string, toRegionId: string): numb
         }
     }
     const best = new Map<string, number>([[fromRegionId, 0]]);
+    const cameFrom = new Map<string, string>();
     const settled = new Set<string>();
     for (;;) {
         let at: string | null = null;
@@ -194,10 +206,19 @@ export function provinceRoadDays(fromRegionId: string, toRegionId: string): numb
             if (!settled.has(region) && days < cost) { at = region; cost = days; }
         }
         if (at === null) return null;
-        if (at === toRegionId) return cost;
+        if (at === toRegionId) {
+            const through: string[] = [];
+            for (let step = cameFrom.get(at); step !== undefined && step !== fromRegionId; step = cameFrom.get(step)) {
+                through.unshift(step);
+            }
+            return { days: cost, through };
+        }
         settled.add(at);
         for (const [next, days] of roads.get(at) ?? []) {
-            if (cost + days < (best.get(next) ?? Infinity)) best.set(next, cost + days);
+            if (cost + days < (best.get(next) ?? Infinity)) {
+                best.set(next, cost + days);
+                cameFrom.set(next, at);
+            }
         }
     }
 }

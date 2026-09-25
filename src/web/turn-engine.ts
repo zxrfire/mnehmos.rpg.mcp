@@ -543,7 +543,14 @@ import {
     pillCashPrice
 } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout, whetherTheyHoldIt } from './asked.js';
-import { asksTheWay, THE_WAY_TO, theWayAskedFor, theWayTo } from './the-way-to-somewhere-asked-of-somebody.js';
+import {
+    aCrowdIsAsked,
+    asksTheWay,
+    THE_WAY_TO,
+    theWayAskedFor,
+    theWayAskedOfTheCrowd,
+    theWayTo
+} from './the-way-to-somewhere-asked-of-somebody.js';
 import {
     isACourtesy,
     isAGreeting,
@@ -6495,6 +6502,15 @@ ${noticed}`;
         }
 
         const query = (target ?? '').trim();
+
+        // THE WAY, PUT TO A CROWD, is answered by whoever in it knows. See `theWayAskedOfTheCrowd`.
+        {
+            const wayAsked = topic ? theWayAskedFor(topic) : null;
+            if (wayAsked !== null && (query.length < 2 || aCrowdIsAsked(query))) {
+                const answered = theWayAskedOfTheCrowd(this, run, cultivator, wayAsked);
+                if (answered) return answered;
+            }
+        }
 
         // A SET IS NOT ONE PERSON, AND THAT IS TRUE OF EVERY VERB
         //
@@ -18204,20 +18220,26 @@ ${fit.line}`;
         const bought = Math.min(wanted, affordable, fits);
 
         if (bought === 0 && affordable > 0) {
+            // What they already carry, said first: a player who asks for a week of food while
+            // holding fifty days of it was told only that a sack would not fit, and the narrator
+            // played the sale anyway.
+            const held = this.rationsHeld(cultivator);
             return refused('cultivator.applyDeltas', 'provision', factsForRefusal(
                 'No room on your back.',
-                'You heft a sack of dry food and there is nowhere on you left to put it. What you '
-                + 'already carry is all a body can walk under; more would want a cart.',
+                (held > 0
+                    ? `You already carry ${held === 1 ? 'a sack' : `${held} sacks`} of dry food, `
+                      + `${humanDays(held * ACTIONS_PER_FULL_SATIETY)} of eating, and another will not go on your back. `
+                    : 'What you already carry is all a body can walk under, and a sack of dry food will not go on top of it. ')
+                + 'More would want a cart. Nothing is bought.',
                 `Provisions: no room for another ration (${WHAT_A_RATION_TAKES.volume} room, `
-                + `${WHAT_A_RATION_TAKES.weight} weight each). Nothing bought, nothing spent.`
+                + `${WHAT_A_RATION_TAKES.weight} weight each); ${held} held. Nothing bought, nothing spent.`
             ));
         }
 
         if (bought === 0) {
             return refused('cultivator.applyDeltas', 'provision', factsForRefusal(
                 'Not for what you have.',
-                'You price a month of dry rations and put it back. The seller does not comment, ' +
-                'which is its own kind of comment.',
+                'You price a month of dry rations and cannot pay for them. Nothing is bought.',
                 `Provisions: ${PROVISION_COST_STONES} spirit stones per ration; purse holds ` +
                 `${cultivator.spiritStones}. Nothing bought, nothing spent.`
             ));

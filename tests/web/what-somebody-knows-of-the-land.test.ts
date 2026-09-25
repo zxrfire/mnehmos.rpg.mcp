@@ -15,8 +15,10 @@ import {
     whatKindOfPlace,
     whatSomebodyKnowsOfTheLand,
     whoAmongThemKnowsTheWay,
+    whoAmongThemKnowsTheWayToAPlace,
     type WhoTheyAre
 } from '../../src/engine/world/what-somebody-knows-of-the-land.js';
+import { parseIntent } from '../../src/web/actions.js';
 import { makeGameInWorld } from './harness.js';
 
 describe('what kind of place it is', () => {
@@ -96,6 +98,39 @@ describe('what somebody knows of the land', () => {
         for (const house of jade) {
             expect(whoAmongThemKnowsTheWay(world, PLACE.GREEN_FALL, crowd(PLACE.GREEN_FALL), house.id)).toBeGreaterThanOrEqual(0);
         }
+    }, 180_000);
+
+    it('finds somebody in a capital who knows the road to any province, and nobody owes it in a village', async () => {
+        const { game } = await makeGameInWorld({ seed: 'the-land-far-off', worldSeed: 'a-xianxia-run' });
+        await game.newRun('Ke Yan');
+        const world = game.atHand!;
+        const crowd = (from: string): WhoTheyAre[] => [1, 2, 3].map(n => ({ id: `npc-far-${n}`, from, ordinal: 0 }));
+        // Two borders off, over the Jade Gorge: a provincial capital's roads come from everywhere.
+        expect(whoAmongThemKnowsTheWayToAPlace(world, PLACE.IRON_GATE, crowd(PLACE.IRON_GATE), 'The White Stair')).toBeGreaterThanOrEqual(0);
+        expect(whoAmongThemKnowsTheWayToAPlace(world, 'Willow Village', crowd('Willow Village'), 'The White Stair')).toBe(-1);
+        // A province is found by the road toward it: anybody knows the way to the one next door.
+        const villager = whatSomebodyKnowsOfTheLand(world, { id: 'npc-far-v', from: 'Willow Village', ordinal: 0 });
+        expect(villager.places.find(place => place.name === 'The Jade Gorge')?.stage).toBe('placed');
+    }, 180_000);
+
+    it('reads the way put to a crowd however it is said', () => {
+        for (const said of [
+            'anyone know the way to the white stairs? the mountain province',
+            'does anybody know how to get to the white stair',
+            'can someone tell me how to get to the white stair',
+            'any of u guys know the road to the white stair'
+        ]) {
+            expect(parseIntent(said), said).toMatchObject({ action: 'interact', intent: 'talk', topic: expect.stringMatching(/^the way to (?:the )?white stairs?$/) });
+        }
+    });
+
+    it('answers the way when the crowd is asked, with the provinces the road crosses', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'the-land-asked', worldSeed: 'a-xianxia-run' });
+        const { cultivator } = await game.newRun('Ke Yan');
+        repos.cultivators.update(cultivator.id, { location: PLACE.IRON_GATE });
+        const turn = await game.act('anyone know the way to the white stairs?');
+        expect(turn.narration).toMatch(/gives the way to The White Stair: .*days on the road through The Jade Gorge/);
+        expect(stageRank(game.knowledge.stageOf(cultivator.id, 'place', 'The White Stair'))).toBeGreaterThanOrEqual(stageRank('placed'));
     }, 180_000);
 
     it('widens as the player goes: a capital signs its roads to the next provinces', async () => {

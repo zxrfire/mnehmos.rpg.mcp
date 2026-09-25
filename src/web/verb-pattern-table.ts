@@ -109,7 +109,7 @@ import {
     A_TOPIC_ABOUT_THE_HOUSES_THEY_KNOW,
     asksWhichHousesTheyKnow
 } from './which-houses-somebody-could-name.js';
-import { THE_WAY_TO as THE_WAY_TOPIC } from './asking-the-way.js';
+import { THE_WAY_TO as THE_WAY_TOPIC, theWayAskedOfACrowd } from './asking-the-way.js';
 import {
     ASKING_FOR_GUIDANCE,
     askingWhatSomebodyIsAfter,
@@ -4549,6 +4549,12 @@ export function parseIntent(rawInput: string): PlannedAction {
 
 /** One full pass of the table, mood included. Run twice: as typed, then respelt. */
 function readTheSentence(input: string): PlannedAction {
+    // THE WAY, PUT TO A CROWD, before any row reads "know" or "where" off it. See
+    // `theWayAskedOfACrowd`.
+    const wayOfACrowd = cleanPlace(theWayAskedOfACrowd(input) ?? '');
+    if (wayOfACrowd) {
+        return { action: 'interact', intent: 'talk', target: 'everyone here', topic: `${THE_WAY_TOPIC}${wayOfACrowd}` };
+    }
     const plan = planIntent(input);
     // The mood is decided last, on the whole sentence, rather than by a hundred
     // vetoes scattered through the table below. Doing it as a post-pass is what

@@ -77,6 +77,17 @@ describe('a lane is a choice a model can make', () => {
         if (said.ok) expect(said.action.action).toBe('inventory');
     });
 
+    /**
+     * Asking the way is a question whatever word the model put to it. Played: speak/ask_them_for
+     * on "the way to The White Stair" was a request, and the guard threw it away.
+     */
+    it('reads asking the way as a question, not a request', () => {
+        const asked = validatePlan({ lane: 'speak', intent: 'ask_them_for', target: 'everyone here', topic: 'the way to The White Stair' });
+        expect(asked.ok && asked.action.action).toBe('interact');
+        const wanted = validatePlan({ lane: 'speak', intent: 'ask_them_for', target: 'Elder Hu', topic: 'a sword' });
+        expect(wanted.ok && wanted.action.action).toBe('request');
+    });
+
     /** A response that named a verb outright still works, table readings included. */
     it('leaves a plan that named its verb alone', () => {
         const said = validatePlan({ action: 'cultivate', days: 30, reason: 'sat down' });

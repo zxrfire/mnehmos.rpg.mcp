@@ -229,6 +229,14 @@ export function whatSomebodyKnowsOfTheLand(
         if (way >= 3) for (const id of near) for (const name of settlementsOf(id)) know(name, 'placed');
     }
     if (way >= 5) for (const region of REGIONS) for (const name of settlementsOf(region.id)) know(name, 'placed');
+    // A PROVINCE IS FOUND BY THE ROAD TOWARD IT. Next door, the border road is signed for it; further
+    // off, whoever could find a town in it knows which way to set out. Played: asked the way to the
+    // White Stair in a provincial capital, nobody could give it, because a province was only ever a
+    // name.
+    for (const region of REGIONS) {
+        if (region.id === home || near.includes(region.id)
+            || settlementsOf(region.id).some(name => places.get(name) === 'placed')) know(region.name, 'placed');
+    }
 
     // THE HOUSES, nearest first and by standing.
     const seats = theSeatedHouses(world);
@@ -323,8 +331,7 @@ export function whoAmongThemKnowsTheWay(
     houseId: string
 ): number {
     if (people.length === 0) return -1;
-    const byReach = people.map((who, i) => ({ i, reach: howFarTheirKnowledgeReaches(world, who) }))
-        .sort((a, b) => b.reach - a.reach);
+    const byReach = theFurthestReachingFirst(world, people);
     for (const { i } of byReach) {
         if (whatSomebodyKnowsOfTheLand(world, people[i]!).houses.some(row => row.id === houseId && row.stage === 'placed')) return i;
     }
@@ -341,6 +348,44 @@ export function whoAmongThemKnowsTheWay(
         : tier === 'town' ? inProvince && !apex
         : false;
     return somebodyHasBeen ? byReach[0]!.i : -1;
+}
+
+/**
+ * The same for a place or a province, by name. A town's crowd has walked its own province and
+ * knows the roads over its borders; a city's has been next door; and a provincial capital, where
+ * the roads of every province come in, can set anybody on the road to any province, and to the
+ * towns of its own and the ones next door.
+ */
+export function whoAmongThemKnowsTheWayToAPlace(
+    world: Pick<WorldState, 'locations' | 'factions'>,
+    here: string | null,
+    people: readonly WhoTheyAre[],
+    name: string
+): number {
+    if (people.length === 0) return -1;
+    const byReach = theFurthestReachingFirst(world, people);
+    for (const { i } of byReach) {
+        if (whatSomebodyKnowsOfTheLand(world, people[i]!).places.some(row => row.name === name && row.stage === 'placed')) return i;
+    }
+    const province = provinceOf(world, here);
+    const itsProvince = provinceOf(world, name);
+    const tier = whatKindOfPlace(here);
+    if (!province || !itsProvince || !tier) return -1;
+    const aProvince = REGIONS.some(row => row.name === name);
+    const inProvince = itsProvince === province;
+    const nextDoorToIt = nextDoor(province).includes(itsProvince);
+    const somebodyHasBeen =
+        tier === 'provincial capital' ? inProvince || nextDoorToIt || aProvince
+        : tier === 'city' ? inProvince || nextDoorToIt
+        : tier === 'town' ? inProvince || (aProvince && nextDoorToIt)
+        : false;
+    return somebodyHasBeen ? byReach[0]!.i : -1;
+}
+
+/** A crowd in order of how far each one's knowledge reaches, the furthest first. */
+function theFurthestReachingFirst(world: Pick<WorldState, 'factions'>, people: readonly WhoTheyAre[]) {
+    return people.map((who, i) => ({ i, reach: howFarTheirKnowledgeReaches(world, who) }))
+        .sort((a, b) => b.reach - a.reach);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

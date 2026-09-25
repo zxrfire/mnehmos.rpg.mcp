@@ -71,9 +71,9 @@ describe('a name they hold, whose bearer is not standing here', () => {
         const inFront = await game.act(`I look at ${who.name}`);
         expect(engineCalls(inFront).find(c => c.action === 'investigate')?.ok).toBe(true);
 
-        // One town over, they are not here - and the read that used to be a
+        // Over the border, they are not here - and the read that used to be a
         // place-shaped denial of a record it listed is now about the person.
-        await game.act('I travel to Four Names');
+        const went = await game.act('I travel to Four Names');
         const before = knowledgeRows(db);
         const away = await game.act(`I look at ${who.name}`);
 
@@ -94,7 +94,8 @@ describe('a name they hold, whose bearer is not standing here', () => {
         // Nothing was learned by remembering. This is the guarantee: a
         // `witnessed` row here would promote the stage and falsify the axis.
         expect(knowledgeRows(db), 'a look at somebody absent wrote a record').toBe(before);
-        expect(away.state.run.elapsedDays).toBe(1);
+        // And the look cost no time: the road there is whatever it is, and the look adds nothing.
+        expect(away.state.run.elapsedDays).toBe(went.state.run.elapsedDays);
     }, 200_000);
 
     /**

@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { ApproachLeverageSchema } from '../schema/cultivation.js';
 import { isALane, theVerbForThisLane } from './the-lanes-a-sentence-can-go-down.js';
+import { theWayAskedFor } from './asking-the-way.js';
 import {
     type SomebodyStandingHere,
     theNameTheVerbDropped
@@ -279,7 +280,14 @@ function theLaneExpanded(raw: unknown): unknown {
     if (!isALane(lane)) return raw;
 
     const intent = typeof said.intent === 'string' ? said.intent : undefined;
-    return { ...said, action: theVerbForThisLane(lane, intent) };
+    const action = theVerbForThisLane(lane, intent);
+    // THE WAY IS A QUESTION, whatever word the model put to it. Played: "anyone know the way to the
+    // white stairs?" came back speak / ask_them_for, which is a request and can spend days, so the
+    // guard threw the right reading away for the list of destinations.
+    if (action === 'request' && typeof said.topic === 'string' && theWayAskedFor(said.topic) !== null) {
+        return { ...said, action: 'interact', intent: 'talk' };
+    }
+    return { ...said, action };
 }
 
 export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } | { ok: false; reason: string } {

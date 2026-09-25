@@ -14,15 +14,19 @@ import type { GameService } from './turn-engine.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import { factsForToolResult, placeName } from './facts.js';
 import { loosePlaceKey } from './knowledge.js';
-import { REGIONS, requireRegion } from '../data/cultivation/regions.js';
+import { REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import {
     howMuchOfTheRoadALifeHasSeen,
     theRoadAnUpbringingSaw,
-    whatSomebodyKnowsOfTheLand
+    whatSomebodyKnowsOfTheLand,
+    whoAmongThemKnowsTheWay,
+    whoAmongThemKnowsTheWayToAPlace,
+    type WhoTheyAre
 } from '../engine/world/what-somebody-knows-of-the-land.js';
 import { theHouseNamed } from './asking-to-be-let-in-at-a-gate.js';
-export { asksTheWay, THE_WAY_TO, theWayAskedFor } from './asking-the-way.js';
+export { aCrowdIsAsked, asksTheWay, THE_WAY_TO, theWayAskedFor } from './asking-the-way.js';
 
 /** The province a world row stands in, off its parents, as a catalog region id. */
 function provinceOf(game: GameService, locationId: string | null): string | null {
@@ -35,17 +39,77 @@ function provinceOf(game: GameService, locationId: string | null): string | null
     return null;
 }
 
-/** "in this province", or the province and the days of road to it. */
-function howFar(fromRegionId: string, toRegionId: string | null): string {
+/**
+ * "in this province", or the province, the days of road to it and the provinces it crosses on the
+ * way. Said of the province itself, it is only the road.
+ */
+function howFar(fromRegionId: string, toRegionId: string | null, isTheProvince = false): string {
     if (toRegionId === null) return 'somewhere they cannot put a province to';
     if (toRegionId === fromRegionId) return 'in this province';
     const to = REGIONS.find(region => region.id === toRegionId);
-    const days = requireRegion(fromRegionId).connections
-        .filter(link => link.otherRegionId === toRegionId)
-        .map(link => link.travelDays)
-        .sort((a, b) => a - b)[0];
-    return `in ${to?.name ?? 'another province'}, ${to?.bearing ? `to the ${to.bearing}, ` : ''}`
-        + (days !== undefined ? `${days} days on the road` : 'with no road they can put days to');
+    const road = theRoadBetweenProvinces(fromRegionId, toRegionId);
+    const through = (road?.through ?? []).map(id => REGIONS.find(region => region.id === id)?.name)
+        .filter((name): name is string => !!name);
+    return `${isTheProvince ? '' : `in ${to?.name ?? 'another province'}, `}${to?.bearing ? `to the ${to.bearing}, ` : ''}`
+        + (road ? `${road.days} days on the road${through.length > 0 ? ` through ${through.join(' and ')}` : ''}`
+            : 'with no road they can put days to');
+}
+
+/**
+ * The world row a name asks after, loosely: "white stairs" is the White Stair. A plural said of a
+ * singular name is the commonest slip in asking the way.
+ */
+function thePlaceNamed(world: Pick<WorldState, 'locations'> | null, where: string) {
+    const key = loosePlaceKey(where);
+    const rows = world?.locations ?? [];
+    return rows.find(row => loosePlaceKey(row.name) === key)
+        ?? rows.find(row => loosePlaceKey(row.name) === key.replace(/s$/, ''))
+        ?? null;
+}
+
+/** Who somebody standing here is, as far as what they know of the land goes. */
+function whoTheyAreOf(world: Pick<WorldState, 'locations' | 'npcs'>, asked: RosterEntry): WhoTheyAre {
+    const them = world.npcs.find(row => row.id === asked.id) ?? null;
+    return {
+        id: asked.id,
+        from: world.locations.find(row => row.id === (them?.locationId ?? null))?.name ?? asked.location,
+        ordinal: asked.realmOrdinal,
+        house: asked.sectId ? { id: asked.sectId, rankIndex: them?.factionRankIndex ?? 0 } : null,
+        ...(them
+            ? {
+                travelled: Math.max(
+                    theRoadAnUpbringingSaw(them.identity.origin),
+                    howMuchOfTheRoadALifeHasSeen(them.identity.occupation)
+                )
+            }
+            : {})
+    };
+}
+
+/**
+ * The way somewhere, put to everybody standing here: whoever of them knows it answers, and past
+ * that the size of the place decides whether somebody here has been. The owner: "AT LEAST 1
+ * PERSON OUGHT TO KNOW THE WAY", and "going further to the provincial capital will basically
+ * guarantee it". Null when nobody is here to ask.
+ */
+export function theWayAskedOfTheCrowd(
+    game: GameService,
+    run: Run,
+    cultivator: Cultivator,
+    where: string
+): Execution | null {
+    const world = game.atHand;
+    const present = game.present(cultivator);
+    if (!world || present.length === 0) return null;
+    const people = present.map(asked => whoTheyAreOf(world, asked));
+    const here = standingOf(cultivator).placeName ?? cultivator.location;
+    const house = theHouseNamed(game, where);
+    const place = house ? null : thePlaceNamed(world, where);
+    const found = house
+        ? whoAmongThemKnowsTheWay(world, here, people, house.factionId)
+        : place ? whoAmongThemKnowsTheWayToAPlace(world, here, people, place.name) : -1;
+    const asked = present[found] ?? present[present.length - 1]!;
+    return theWayTo(game, run, cultivator, asked, where, found >= 0);
 }
 
 export function theWayTo(
@@ -53,43 +117,29 @@ export function theWayTo(
     run: Run,
     cultivator: Cultivator,
     asked: RosterEntry,
-    where: string
+    where: string,
+    /** Asked of a crowd, and somebody in it has been: see `theWayAskedOfTheCrowd`. */
+    somebodyHereHasBeen = false
 ): Execution {
     const world = game.atHand;
     const knownAlready = game.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
-    const who = knownAlready ? asked.name : 'The one nearest to hand';
+    const who = knownAlready ? asked.name : somebodyHereHasBeen ? 'Somebody here' : 'The one nearest to hand';
     const them = world?.npcs.find(row => row.id === asked.id) ?? null;
 
     const house = theHouseNamed(game, where);
-    const key = loosePlaceKey(where);
-    const place = house ? house.seat
-        : world?.locations.find(row => loosePlaceKey(row.name) === key) ?? null;
+    const place = house ? house.seat : thePlaceNamed(world ?? null, where);
     const name = house?.factionName ?? place?.name ?? where;
     const called = house && !/^the\s/i.test(name) ? `the ${name}` : name;
 
-    const land = world
-        ? whatSomebodyKnowsOfTheLand(world, {
-            id: asked.id,
-            from: world.locations.find(row => row.id === (them?.locationId ?? null))?.name ?? asked.location,
-            ordinal: asked.realmOrdinal,
-            house: asked.sectId ? { id: asked.sectId, rankIndex: them?.factionRankIndex ?? 0 } : null,
-            ...(them
-                ? {
-                    travelled: Math.max(
-                        theRoadAnUpbringingSaw(them.identity.origin),
-                        howMuchOfTheRoadALifeHasSeen(them.identity.occupation)
-                    )
-                }
-                : {})
-        })
-        : null;
+    const land = world ? whatSomebodyKnowsOfTheLand(world, whoTheyAreOf(world, asked)) : null;
     const stage: 'placed' | 'named' | null =
-        house
+        somebodyHereHasBeen && (house || place) ? 'placed'
+        : house
             ? (asked.sectId === house.factionId ? 'placed'
                 : land?.houses.find(row => row.id === house.factionId)?.stage ?? null)
             : place
                 ? (them?.locationId === place.id ? 'placed'
-                    : land?.places.find(row => loosePlaceKey(row.name) === key)?.stage ?? null)
+                    : land?.places.find(row => row.name === place.name)?.stage ?? null)
                 : null;
 
     const calls: ToolCallRecord[] = [{
@@ -105,7 +155,7 @@ export function theWayTo(
         lines.push(house
             ? `${who} gives the way to ${called}: its gate is at ${place.name}, `
                 + `${howFar(here, provinceOf(game, place.id))}.`
-            : `${who} gives the way to ${name}: ${howFar(here, provinceOf(game, place.id))}.`);
+            : `${who} gives the way to ${name}: ${howFar(here, provinceOf(game, place.id), place.kind === 'region')}.`);
         if (house && game.noteEncounter(cultivator, run,
             { kind: 'sect', id: house.factionId, name: house.factionName }, 'told',
             `${asked.name} gave the way to it at ${placeName(cultivator)}.`)) {

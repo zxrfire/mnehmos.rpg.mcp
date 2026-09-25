@@ -958,6 +958,10 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I take my cart with me',
             'I bring the mule along'
         ],
+        'carry/deliver': [
+            'i hand over the goods',
+            'I deliver the strongbox'
+        ],
         'carry/unmark': [
             'I break the mark on the ring',
             "I erase the owner's mark on this storage ring"
