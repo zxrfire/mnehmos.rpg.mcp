@@ -186,7 +186,8 @@ const DEAD = 0;
 // and `trajectoryOf` are read by `what-somebody-remembers.ts`.
 // 79 -> 76: war money leaves a treasury (whetherTheVaultOpens, whatItWouldSpend, whyItLeftTheTreasury).
 // 76 -> 73: a thing holed short of breaking stays holed (writeBack, isHoled, describeTheLoss).
-const TEST_ONLY = 73;
+// 73 -> 70: a ship seat sails the lane on the hull's rations (provisionForLane wired; waterCupsAboard and canTurnBack deleted).
+const TEST_ONLY = 70;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

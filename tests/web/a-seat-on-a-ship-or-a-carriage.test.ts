@@ -102,6 +102,30 @@ describe('a seat on a ship or a carriage', () => {
         expect(game.state().cultivator.location).toBe('Emerald Water City');
     }, 120_000);
 
+    it('feeds a ship from the hull\'s rations, and opens the pack when the passage outruns them', async () => {
+        // The capes in their open month. `ship-2` runs 64 days against the 46
+        // the hull loads for a 34-day quote.
+        const { game, db } = await makeGameInWorld({ seed: 'ship-2', worldSeed: WORLD });
+        await game.newRun('Rider');
+        const id = game.state().cultivator.id;
+        db.prepare("UPDATE cultivators SET location = 'Salt Fields', spirit_stones = 500, satiety = 10 WHERE id = ?").run(id);
+        db.prepare('UPDATE runs SET elapsed_days = 160 WHERE cultivator_id = ?').run(id);
+        db.prepare(`
+            INSERT INTO cultivator_flags (cultivator_id, key, value, updated_at)
+            VALUES (?, 'rations_held', '1', datetime('now'))
+            ON CONFLICT(cultivator_id, key) DO UPDATE SET value = excluded.value
+        `).run(id);
+
+        const done = await game.act('I take the ship to Moraine Gate');
+
+        expect(game.state().cultivator.location).toBe('Moraine Gate');
+        expect(done.narration).toMatch(/64 days by ship from Salt Fields to Moraine Gate, against the 34 days quoted/);
+        expect(done.narration).toMatch(/The ship's rations ran out on day 46 of 64; [1-9]\d* rations? came out of the pack/);
+        const held = db.prepare("SELECT value FROM cultivator_flags WHERE cultivator_id = ? AND key = 'rations_held'")
+            .get(id) as { value: string };
+        expect(Number(held.value)).toBe(0);
+    }, 120_000);
+
     it('says when a lane is not worked, and on what day it is', async () => {
         const { game, db } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Rider');

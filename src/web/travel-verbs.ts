@@ -132,7 +132,13 @@ import type { GameService } from './turn-engine.js';
 import { foldTheFightIn, theyCameAtYou } from './when-somebody-comes-at-you.js';
 import { accountsComingDue } from './who-comes-to-settle-an-account.js';
 import { chargeTheNightsInTheOpen, sayWhatTheNightsCost } from './where-the-nights-were-spent.js';
-import { whatTheRoadAte, whatWasEatenOnBoard, whetherThePackCoversTheRoad } from './what-a-journey-eats.js';
+import {
+    whatTheHullFed,
+    whatTheRoadAte,
+    whatWasEatenOnBoard,
+    whetherThePackCoversTheRoad
+} from './what-a-journey-eats.js';
+import { daysPerRation } from '../engine/cultivation/survival.js';
 import {
     aSeatOnAShipOrACarriage,
     theLineTo,
@@ -2258,8 +2264,10 @@ export const travelVerbs = {
      * The fare is paid first. The road's encounters roll as they do on foot and
      * the escort reads them (`an-escort-on-the-road.ts`): a band that withdraws is
      * a line, and a band big enough to take the escort on is a fight, played with
-     * its leader and the rest said (`theRestOfTheFight`). The fare includes board,
-     * so the pack is not opened, and the nights are under a roof.
+     * its leader and the rest said (`theRestOfTheFight`). A carriage fare includes
+     * board, so the pack is not opened. A ship feeds its passengers the hull's
+     * rations for `sea.hullRationDays`, and past them the pack is opened. The
+     * nights are under a roof.
      */
     async takeTheSeat(
         this: GameService,
@@ -2273,6 +2281,8 @@ export const travelVerbs = {
             stones: number;
             escort: number;
             bought: string;
+            /** A ship's passage: the days quoted, and the days the hull's rations cover. */
+            sea?: { quotedDays: number; hullRationDays: number };
         }
     ): Promise<Execution> {
         const paid = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -trip.stones }) ?? cultivator;
@@ -2307,6 +2317,12 @@ export const travelVerbs = {
             : trip.days;
         const happened = cutTo(met.roll, startDay, lived);
         const setOut = withEncounterDeltas(paid, happened);
+        // The hull's share is eaten before the pack, so only the pack's part of
+        // what is left goes back.
+        const perRation = daysPerRation(paid.realmOrdinal, paid.injuries);
+        const hullRations = trip.sea && Number.isFinite(perRation)
+            ? Math.ceil(trip.sea.hullRationDays / perRation) : 0;
+        const packRations = trip.sea ? this.drawFromPack(paid, lived) : 0;
         const skip = simulateTimeSkip(setOut, lived, {
             seed: run.seed,
             rollIdentity: PLAYER_ROLL_IDENTITY,
@@ -2319,20 +2335,21 @@ export const travelVerbs = {
                 ground: this.groundFor(paid)
             },
             understanding: this.understandingFor(run, paid),
-            // The fare includes board: the pack is not opened on the way.
-            rations: 0,
-            grainAbstinence: true,
+            rations: hullRations + packRations,
+            grainAbstinence: !trip.sea,
             autoBreakthrough: false,
             randomEvents: true,
             spanIsASitting: false,
             ...daoHeartConditions(this.repos.db, paid, startDay),
             toll: tollConditionsFor(this.repos, paid)
         });
+        const packLeft = Math.min(packRations, skip.endState.rationsRemaining);
+        if (trip.sea) this.putBackWhatWasNotEaten(paid, { endState: { rationsRemaining: packLeft } });
         const arrived = !skip.died && stoppedBy === null && skip.simulatedDays >= lived;
         const applied = applyTimeSkip(this.repos, {
             before: setOut, run, skip, ...(arrived ? { location: trip.to } : {})
         });
-        const fed = skip.died
+        const fed = skip.died || trip.sea
             ? applied.cultivator
             : this.repos.cultivators.applyDeltas(applied.cultivator.id, {
                 satiety: SATIETY_MAX - applied.cultivator.satiety,
@@ -2373,8 +2390,12 @@ export const travelVerbs = {
             const introduced = whatArrivingIntroduces(this, fed);
             lines.push(
                 `${howMany(skip.simulatedDays, 'day')} by ${vehicle} from ${from} to ${trip.to}, `
-                + `${howMany(trip.walkingDays, 'day')} on foot.`,
-                whatWasEatenOnBoard(fed, rationsLeft),
+                + (trip.sea
+                    ? `against the ${howMany(trip.sea.quotedDays, 'day')} quoted.`
+                    : `${howMany(trip.walkingDays, 'day')} on foot.`),
+                trip.sea
+                    ? whatTheHullFed(fed, trip.sea.hullRationDays, skip.simulatedDays, packRations - packLeft, rationsLeft)
+                    : whatWasEatenOnBoard(fed, rationsLeft),
                 ...onTheWay.lines, ...applied.tollLines, ...world.lines
             );
             const came = this.theyArrivedWithYou(fed, trip.to);
@@ -2384,7 +2405,10 @@ export const travelVerbs = {
             if (came) facts.required = [...(facts.required ?? []), came.line];
             facts.structure.push(
                 `takeTheSeat: ${vehicle}, escort ${trip.escort}, ${met.withdrew.length} band(s) withdrew; `
-                + 'fed on board, nights under a roof.',
+                + (trip.sea
+                    ? `hull rations for ${trip.sea.hullRationDays} of ${skip.simulatedDays} day(s), `
+                        + `${packRations - packLeft} ration(s) from the pack, nights under a roof.`
+                    : 'fed on board, nights under a roof.'),
                 ...onTheWay.structure, ...world.structure, ...introduced.structure,
                 ...(came ? [came.structure] : [])
             );

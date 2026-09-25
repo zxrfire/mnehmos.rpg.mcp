@@ -2804,7 +2804,7 @@ immortal-world.ts the far side: arrival, standing, perils, and its own clock
 what-a-sea-crossing-costs.ts
                  a crossing is not a road with a different number on it: a
                  commit point, a season that closes it, a duration that is a
-                 distribution, water as the binding constraint, and a chest
+                 distribution, a hull's rations fixed at the quay, and a chest
                  that is the only ground there is
 what-a-body-shows-when-somebody-walks-up.ts
                  the one wound that decides how somebody reads, and the
@@ -2829,9 +2829,10 @@ different numbers on them.
 The five differences that make a crossing its own kind are now mechanisms rather than
 atmosphere - a commit point past which turning back is not shorter, a season that shuts
 the route without anybody deciding to, a duration that is sampled rather than fixed,
-water counted by the cup rather than food, and a stone burn that is the whole of
-cultivation because there is no vein under open water. None of them is reached by
-ordinary travel today.
+rations loaded at the quay that a long passage outruns, and a stone burn that is the
+whole of cultivation because there is no vein under open water. A ship seat bought at a
+landing (`src/web/a-seat-on-a-ship-or-a-carriage.ts`) reads the season, the duration and
+the rations; `move` over a sea connection still walks it as a road.
 
 What it would take is two lines in files that conflict badly when shared: one `crossing`
 member on `LinkKind`, and one ternary at the `linkLocations` call in `seeding.ts` that

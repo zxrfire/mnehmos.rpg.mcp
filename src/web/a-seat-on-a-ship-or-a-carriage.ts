@@ -13,11 +13,14 @@
  * A carriage seat is the board's caravan passage, quoted per hundred li, at
  * {@link LI_WALKED_IN_A_DAY} li a walked day. Both at the local rate. A hired
  * carriage comes in the grades a station lets ({@link A_HIRED_CARRIAGE_BY_GRADE})
- * and costs every seat it holds, times the grade's figure. The fare includes
- * board, so the pack is not opened on the way.
+ * and costs every seat it holds, times the grade's figure. A carriage fare
+ * includes board, so the pack is not opened on the way. A ship's fare buys a
+ * share of the hull's rations, loaded at the customary margin
+ * (`provisionForLane`); a passage that runs past them opens the pack.
  *
- * HOW FAST IS THE CATALOG'S. A carriage goes at its conveyance row's speed; a
- * ship takes the lane's own expected days.
+ * HOW FAST IS THE CATALOG'S. A carriage goes at its conveyance row's speed. A
+ * ship is quoted the lane's expected days and takes what the weather makes of
+ * them (`resolveCrossing`).
  *
  * A SEAT CARRIES THE PASSENGER AND WHAT THEY CARRY ON THEIR PERSON. More than a
  * body can carry (a carcass, a heavy load) is refused a seat, and the answer is a
@@ -42,7 +45,12 @@ import {
     whatStopsThemCarryingIt
 } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import { daysByConveyance } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
-import { laneIsOpenInMonth, type SeaLane } from '../engine/world/what-a-sea-crossing-costs.js';
+import {
+    laneIsOpenInMonth,
+    provisionForLane,
+    resolveCrossing,
+    type SeaLane
+} from '../engine/world/what-a-sea-crossing-costs.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
@@ -85,6 +93,8 @@ export interface ALine {
     cashPerSeat: number;
     /** Null where it runs today; otherwise the first run day it does. */
     runsFromDay: number | null;
+    /** The lane a ship sails; null for a carriage. */
+    lane: SeaLane | null;
 }
 
 /** What a word in the sentence asks for. "Boat" at a landing is the ship, since no water boat exists. */
@@ -170,7 +180,8 @@ export function whatRunsFromHere(game: GameService, cultivator: Cultivator, toda
             walkingDays: lane.expectedDays,
             days: lane.expectedDays,
             cashPerSeat: theSeatFare(regionId, 'ship', lane.expectedDays, lane),
-            runsFromDay: runs === today ? null : runs
+            runsFromDay: runs === today ? null : runs,
+            lane
         });
     }
 
@@ -199,7 +210,8 @@ export function whatRunsFromHere(game: GameService, cultivator: Cultivator, toda
             walkingDays,
             days: daysByConveyance(walkingDays, carriage),
             cashPerSeat: theSeatFare(regionId, 'carriage', walkingDays, null),
-            runsFromDay: null
+            runsFromDay: null,
+            lane: null
         });
     }
     return lines;
@@ -387,10 +399,15 @@ export async function aSeatOnAShipOrACarriage(
     }
 
     const keeper = line.service === 'ship' ? landing : station;
+    const hold = line.lane ? provisionForLane(line.lane, 1) : null;
+    const sailed = line.lane && hold
+        ? resolveCrossing(`${run.seed}:${today}`, line.lane, hold, monthOf(today))
+        : null;
     return game.takeTheSeat(run, cultivator, {
         service: line.service,
         to: line.to,
-        days: hired ? hired.days : line.days,
+        days: sailed ? sailed.daysTaken : hired ? hired.days : line.days,
+        ...(sailed && hold ? { sea: { quotedDays: line.days, hullRationDays: hold.rationDaysAboard } } : {}),
         walkingDays: line.walkingDays,
         stones,
         escort: line.service === 'ship' ? THE_ESCORT.ship : hired ? THE_ESCORT.hired_carriage : THE_ESCORT.seat_carriage,

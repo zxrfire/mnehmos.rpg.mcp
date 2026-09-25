@@ -13,15 +13,12 @@ import {
     ADVANCING_BURN_MULTIPLIER,
     CUSTOMARY_PROVISIONING_MARGIN,
     STONES_BURNED_PER_HEAD_PER_DAY,
-    WATER_CUPS_PER_HEAD_PER_DAY,
-    canTurnBack,
     commitDayOf,
     laneIsOpenInMonth,
     provisionForLane,
     quotePassage,
     resolveCrossing,
     stoneBurnFor,
-    waterCupsAboard,
     type SeaLane
 } from '../../../src/engine/world/what-a-sea-crossing-costs.js';
 import { SEA_LANES, getSeaLane } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
@@ -47,9 +44,6 @@ describe('you cannot stop where you like', () => {
         // On a road any village is an exit. The whole difference is that a
         // crossing has a middle, and past it turning back is not shorter.
         expect(commitDayOf(NOWHERE_TO_STOP)).toBe(10);
-        expect(canTurnBack(NOWHERE_TO_STOP, 9)).toBe(true);
-        expect(canTurnBack(NOWHERE_TO_STOP, 10)).toBe(false);
-        expect(canTurnBack(NOWHERE_TO_STOP, 19)).toBe(false);
     });
 
     it('makes a rock in the middle a different lane at the same length', () => {
@@ -61,7 +55,6 @@ describe('you cannot stop where you like', () => {
         expect(commitDayOf(ROCK_IN_THE_MIDDLE)).toBe(8);
         expect(commitDayOf(ROCK_IN_THE_MIDDLE))
             .toBeLessThan(commitDayOf(NOWHERE_TO_STOP));
-        expect(canTurnBack(ROCK_IN_THE_MIDDLE, 9)).toBe(false);
     });
 
     it('puts a landfall inside the commit point on exactly one authored lane', () => {
@@ -100,7 +93,7 @@ describe('the weather closes it, and nobody can appeal to the weather', () => {
         expect(out.daysTaken).toBe(0);
         // Nothing ran out, because nothing left. A road in a bad season is a
         // longer road; a crossing in a shut season is not a route at all.
-        expect(out.waterShortDays).toBe(0);
+        expect(out.rationShortDays).toBe(0);
         expect(out.ranShortSideOfCommit).toBe('never');
     });
 });
@@ -130,7 +123,7 @@ describe('it takes what it takes', () => {
         const manifest = provisionForLane(lane, 8);
         let short = 0;
         for (let i = 0; i < 200; i++) {
-            if (resolveCrossing(`cape-${i}`, lane, manifest, 6).waterShortDays > 0) short++;
+            if (resolveCrossing(`cape-${i}`, lane, manifest, 6).rationShortDays > 0) short++;
         }
         expect(short, 'the worst lane in the world never runs short').toBeGreaterThan(0);
         expect(short, 'nobody would ever sail it').toBeLessThan(200);
@@ -150,14 +143,23 @@ describe('it takes what it takes', () => {
     });
 });
 
-describe('water is the constraint, and the ground gives nothing', () => {
-    it('counts water in the unit the province says aloud', () => {
+describe('the hull carries rations, and the ground gives nothing', () => {
+    it('loads rations for the expected passage at the customary margin', () => {
         const lane = getSeaLane('lane-eastern-passage')!;
         const manifest = provisionForLane(lane, 10);
-        expect(manifest.waterDaysAboard)
+        expect(manifest.rationDaysAboard)
             .toBe(Math.ceil(lane.expectedDays * (1 + CUSTOMARY_PROVISIONING_MARGIN)));
-        expect(waterCupsAboard(manifest))
-            .toBe(manifest.waterDaysAboard * 10 * WATER_CUPS_PER_HEAD_PER_DAY);
+        // Rations only: water is not counted apart.
+        expect(Object.keys(manifest).some(key => /water/i.test(key))).toBe(false);
+    });
+
+    it('reports the days a passage ran past its rations', () => {
+        const lane = getSeaLane('lane-the-northern-capes')!;
+        const manifest = provisionForLane(lane, 1);
+        for (let i = 0; i < 50; i++) {
+            const out = resolveCrossing(`r-${i}`, lane, manifest, 6);
+            expect(out.rationShortDays).toBe(Math.max(0, out.daysTaken - manifest.rationDaysAboard));
+        }
     });
 
     it('burns the same figure for a Core Formation cultivator and a porter', () => {

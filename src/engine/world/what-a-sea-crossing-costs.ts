@@ -36,10 +36,11 @@
  *      against a figure somebody worked out ashore. `THE ARITHMETIC IS THE
  *      HAZARD` below.
  *
- *   4. WATER IS THE BINDING CONSTRAINT, NOT FOOD. A rail dries fish for the
- *      whole passage and the fresh water is carried in sealed jars and cannot
- *      be made. `waterDaysAboard` is what actually kills people, and it is the
- *      reason the map of the Pearl Ocean is a list of wells.
+ *   4. THE HULL'S STORES ARE FIXED AT THE QUAY. On a road there is a village
+ *      to buy from; at sea there is what was loaded. Provisions are counted in
+ *      rations, the one unit the engine tracks for food and drink together;
+ *      water is not counted apart. `rationDaysAboard` runs out when the
+ *      passage outruns it, and then passengers eat from their own packs.
  *
  *   5. THE GROUND GIVES NOTHING. There is no vein under open water, so a Drawn
  *      cultivator does not slow down, they stop. Every day of progress out
@@ -74,16 +75,6 @@ import { forStream } from '../cultivation/rng.js';
 // them is a survival threshold, and `schema/cultivation.ts` stays the
 // authority for anything that decides whether somebody lives.
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Cups of fresh water per person per day, counted aloud at the same hour.
- *
- * The unit is a cup rather than a volume because that is the unit the province
- * actually uses - the ration is called out and everybody stops to hear it -
- * and a figure a narrator can say is worth more here than a figure that is
- * merely correct.
- */
-export const WATER_CUPS_PER_HEAD_PER_DAY = 3;
 
 /**
  * What a careful shipmaster loads over the expected passage, as a fraction.
@@ -168,11 +159,6 @@ export function commitDayOf(lane: SeaLane): number {
     return Math.max(...behind);
 }
 
-/** Whether a hull this many days out still has a shorter way back than on. */
-export function canTurnBack(lane: SeaLane, daysElapsed: number): boolean {
-    return daysElapsed < commitDayOf(lane);
-}
-
 /** Whether the lane is worked at all in a given month, 1-12. */
 export function laneIsOpenInMonth(lane: SeaLane, month: number): boolean {
     // Seasons are centred rather than counted from January, because the closed
@@ -192,10 +178,8 @@ export function laneIsOpenInMonth(lane: SeaLane, month: number): boolean {
 
 export interface CrossingManifest {
     heads: number;
-    /** Days of water actually aboard, at the standing ration. */
-    waterDaysAboard: number;
-    /** Days of food aboard. Rarely the constraint; carried for honesty. */
-    foodDaysAboard: number;
+    /** Days of rations aboard for every head, food and water together. */
+    rationDaysAboard: number;
     /** Assayed stones in the chest, for everybody aboard together. */
     stonesInChest: number;
     /** Heads aboard who are trying to gain rather than hold. */
@@ -220,16 +204,10 @@ export function provisionForLane(
     const advancing = Math.max(0, Math.min(safeHeads, Math.floor(advancingHeads)));
     return {
         heads: safeHeads,
-        waterDaysAboard: days,
-        foodDaysAboard: days,
+        rationDaysAboard: days,
         stonesInChest: stoneBurnFor(days, safeHeads, advancing),
         advancingHeads: advancing
     };
-}
-
-/** Cups of fresh water a manifest represents, for the ration called aloud. */
-export function waterCupsAboard(manifest: CrossingManifest): number {
-    return manifest.waterDaysAboard * manifest.heads * WATER_CUPS_PER_HEAD_PER_DAY;
 }
 
 /**
@@ -259,9 +237,8 @@ export interface CrossingOutcome {
     daysTaken: number;
     /** Days added by storms, separately, because it is the story. */
     stormDays: number;
-    /** Days short of water. Zero means the sum was right. */
-    waterShortDays: number;
-    foodShortDays: number;
+    /** Days the passage ran past the hull's rations. Zero means the sum was right. */
+    rationShortDays: number;
     /** Stones short. A hull with an empty chest is standing on nothing. */
     stonesShort: number;
     /**
@@ -280,7 +257,7 @@ export interface CrossingOutcome {
  *
  * The only stochastic term is the duration. Everything else is subtraction,
  * and that is on purpose: nothing here decides that somebody dies, it reports
- * how many days of water a hull was short, and what that costs a body is the
+ * how many days of rations a hull was short, and what that costs a body is the
  * survival system's question and is asked in the ordinary place.
  */
 export function resolveCrossing(
@@ -295,8 +272,7 @@ export function resolveCrossing(
             laneId: lane.id,
             daysTaken: 0,
             stormDays: 0,
-            waterShortDays: 0,
-            foodShortDays: 0,
+            rationShortDays: 0,
             stonesShort: 0,
             ranShortSideOfCommit: 'never',
             laneWasShut: true
@@ -317,15 +293,14 @@ export function resolveCrossing(
     }
 
     const daysTaken = Math.max(1, Math.round(base + stormDays));
-    const waterShortDays = Math.max(0, daysTaken - manifest.waterDaysAboard);
-    const foodShortDays = Math.max(0, daysTaken - manifest.foodDaysAboard);
+    const rationShortDays = Math.max(0, daysTaken - manifest.rationDaysAboard);
     const needed = stoneBurnFor(daysTaken, manifest.heads, manifest.advancingHeads);
     const stonesShort = Math.max(0, needed - manifest.stonesInChest);
 
-    // Which side of the commit point the first shortage falls on. Water first,
-    // because water is what the province counts and what it dies of.
-    const firstShortDay = waterShortDays > 0
-        ? manifest.waterDaysAboard
+    // Which side of the commit point the first shortage falls on. Rations
+    // first, because an empty store is what a hull dies of.
+    const firstShortDay = rationShortDays > 0
+        ? manifest.rationDaysAboard
         : (stonesShort > 0 ? manifest.stonesInChest / Math.max(1, manifest.heads) : null);
     const ranShortSideOfCommit = firstShortDay === null
         ? 'never'
@@ -335,8 +310,7 @@ export function resolveCrossing(
         laneId: lane.id,
         daysTaken,
         stormDays,
-        waterShortDays,
-        foodShortDays,
+        rationShortDays,
         stonesShort,
         ranShortSideOfCommit,
         laneWasShut: false
@@ -361,7 +335,7 @@ export interface PassageQuote {
     heads: number;
     /** Days quoted. A shipmaster quotes the expected passage, never the tail. */
     quotedDays: number;
-    /** Cash for the berth, food and water at the standing ration. */
+    /** Cash for the berth and the hull's rations. */
     fareCash: number;
     /** Stones the passenger burns themselves. Never included in the fare. */
     stonesBurned: number;
@@ -404,8 +378,9 @@ export function quotePassage(
  *
  * `LinkKind` in `locations.ts` is `road|path|tunnel|gate|portal|seam` and
  * `seeding.ts` links every region connection as `'road'`, so a seeded world
- * still cannot tell a crossing from a cart track - which means nothing above
- * is reached by ordinary travel today. `regions.ts` already argues that a
+ * still cannot tell a crossing from a cart track, and `move` over a sea
+ * connection walks it as a road. Only a seat bought at a landing
+ * (`a-seat-on-a-ship-or-a-carriage.ts`) sails a lane. `regions.ts` argues that a
  * `crossing` kind would be the only link whose `open` flag is set by the world
  * rather than by a holder or a key, and `laneIsOpenInMonth` is now the
  * function that would answer it.
@@ -415,7 +390,7 @@ export function quotePassage(
  * here, and this is the record of that.
  */
 export const SEA_CROSSING_ENGINE_GAP = {
-    what: 'A sea crossing is still seeded as a road, so no route in a live world reads any of the arithmetic above.',
+    what: 'A sea crossing is still seeded as a road, so moving over one walks it; only a ship seat bought at a landing sails the lane.',
     whereItWouldGo: 'LinkKind in src/engine/world/locations.ts, and the linkLocations call in src/engine/world/seeding.ts.',
     whatItWouldTake: 'One union member `crossing`, and one ternary choosing it for a connection whose kind is `sea_crossing`.',
     whyItIsNotDoneHere: 'Both are somebody else\'s file, and a link kind is a shared contract that conflicts badly when two agents touch it at once.'

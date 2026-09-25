@@ -3,8 +3,9 @@
  *
  * Only the player's own pack is counted; the world's people are not fed by
  * arithmetic. Days of food are `whatFeedingThisStretchCosts`'s, the one copy of
- * that sum, with nothing bought. A paid seat feeds its passengers, so a trip on
- * one eats nothing from the pack.
+ * that sum, with nothing bought. A carriage seat feeds its passengers, so a
+ * trip on one eats nothing from the pack. A ship feeds them from the hull's
+ * rations, and a passage that outruns those opens the pack.
  */
 
 import { SATIETY_MAX, type Cultivator } from '../schema/cultivation.js';
@@ -25,6 +26,20 @@ export function whetherThePackCoversTheRoad(
 /** A paid seat's meals, which is why the pack was not opened. */
 export function whatWasEatenOnBoard(after: Cultivator, rationsLeft: number): string {
     return `Meals were taken on board; nothing came out of the pack, which holds ${howMany(rationsLeft, 'ration')}. `
+        + `The belly is at ${after.satiety} of ${SATIETY_MAX}.`;
+}
+
+/** A ship's meals: the hull's rations, and the pack once the passage outran them. */
+export function whatTheHullFed(
+    after: Cultivator,
+    hullRationDays: number,
+    daysAtSea: number,
+    packEaten: number,
+    rationsLeft: number
+): string {
+    if (daysAtSea <= hullRationDays) return whatWasEatenOnBoard(after, rationsLeft);
+    return `The ship's rations ran out on day ${hullRationDays} of ${daysAtSea}; `
+        + `${howMany(packEaten, 'ration')} came out of the pack, ${rationsLeft} left. `
         + `The belly is at ${after.satiety} of ${SATIETY_MAX}.`;
 }
 
