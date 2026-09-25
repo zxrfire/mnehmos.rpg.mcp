@@ -26,8 +26,14 @@ import { RECIPES } from '../../src/data/cultivation/recipes';
 import type { WorldState } from '../../src/engine/world/world-state';
 import { makeObject, transferPossession } from '../../src/engine/world/possessions';
 import { whatHoldingItMeans } from '../../src/engine/world/a-house-holds-its-own';
+import { REGIONS } from '../../src/data/cultivation/regions';
+import { disciplineWorksIn } from '../../src/data/cultivation/regions/the-map';
 
 const WORLD = 'a-vessel-you-carry';
+
+/** A market town where a refinement sets: some provinces refuse alchemy outright. */
+const WHERE_REFINING_WORKS = REGIONS.filter(region => disciplineWorksIn(region.id, 'alchemy'))
+    .flatMap(region => region.places).find(place => place.kind === 'market_town')!.name;
 
 describe('the board sells vessels', () => {
     const vessels = PRICES.filter(row => row.gives.kind === 'a_vessel');
@@ -66,6 +72,7 @@ describe('the vessel you carry', () => {
         cultivatorId = cultivator.id;
         h.db.prepare('UPDATE cultivators SET realm_ordinal = ?, spirit_stones = 50000 WHERE id = ?')
             .run(refiningOrdinalFor('earth'), cultivatorId);
+        h.repos.cultivators.update(cultivatorId, { location: WHERE_REFINING_WORKS });
         await h.game.act('I look around');
     }, 300_000);
 
