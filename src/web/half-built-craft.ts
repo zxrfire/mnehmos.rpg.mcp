@@ -120,11 +120,9 @@ import { getBeastMaterial } from '../data/cultivation/beasts.js';
 import {
     CONVEYANCE_RECIPES,
     getConveyanceRecipe,
-    countedHoldingKey,
     requireConveyance
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 import {
-    addToPouch,
     clearFlag,
     listPouch,
     readJsonFlag,
@@ -680,6 +678,11 @@ export interface BuildOutcome {
     calls: { name: string; summary: string }[];
     /** A tracked craft that was minted, for the caller to put in the world. */
     minted: ObjectRecord | null;
+    /**
+     * A counted conveyance that was finished, for the caller to make the vehicle it is: an item
+     * that goes with its builder and can be left behind (`a-vehicle.ts`). Null otherwise.
+     */
+    builtCounted?: string | null;
     /** Whether the slip is now empty, either finished or lost. */
     slipCleared: boolean;
 }
@@ -823,20 +826,17 @@ export function landTheBuild(input: LandInput): BuildOutcome {
         return { lines, structure, calls, minted, slipCleared: true };
     }
 
-    // Counted. A number goes up by one, on the same row a bought cart lands on.
+    // Counted grade, and still a vehicle: it goes with its builder and can be left behind, which
+    // a count in the pouch cannot. The caller makes it, where there is a world to stand it in.
     const conveyanceId = recipe.producesConveyanceId;
-    addToPouch(db, cultivator.id, conveyanceId, 'artifact', 1);
     lines.push(
-        `${requireConveyance(conveyanceId).name} stands in the yard. Say where you are going and `
-        + 'that you are riding, and it will be under you.'
+        `${requireConveyance(conveyanceId).name} is yours, and it goes with you. Say where you are `
+        + 'going and that you are riding, and it will be under you.'
     );
-    structure.push(
-        `${countedHoldingKey(conveyanceId)} +1 on ${cultivator.id}. Counted, not tracked - there `
-        + 'is nothing to recognise and nobody to be asked about it.'
-    );
+    structure.push(`${conveyanceId} finished by ${cultivator.id}, ${recipe.grade} grade; the caller makes the vehicle.`);
     calls.push({
-        name: 'world.adjustCountedHolding',
-        summary: `${conveyanceId} +1 on ${cultivator.id} (${recipe.grade} grade, counted).`
+        name: 'world.aVehicleOf',
+        summary: `${conveyanceId} finished by ${cultivator.id} (${recipe.grade} grade).`
     });
-    return { lines, structure, calls, minted: null, slipCleared: true };
+    return { lines, structure, calls, minted: null, slipCleared: true, builtCounted: conveyanceId };
 }

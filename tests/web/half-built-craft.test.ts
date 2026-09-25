@@ -30,7 +30,7 @@ import {
     whichBillTheyMeant
 } from '../../src/web/half-built-craft';
 import { addToPouch, pouchQuantity } from '../../src/server/consolidated/cultivation-support';
-import { getConveyanceRecipe, countedHoldingKey } from '../../src/data/cultivation/what-a-house-moves-its-people-on';
+import { getConveyanceRecipe } from '../../src/data/cultivation/what-a-house-moves-its-people-on';
 import type { Cultivator } from '../../src/schema/cultivation';
 
 /** Ten mortal-grade pieces off ordinary animals: the drawn carriage's whole bill. */
@@ -161,8 +161,10 @@ describe('beginning something, and coming back to it', () => {
 
         const launched = two.lines.join(' ').includes('Everything that went into it');
         if (launched) {
-            expect(heldCarriages(db, fresh().id)).toBe(1);
-            expect(two.structure.join(' ')).toContain(countedHoldingKey('conv-carriage-mortal'));
+            // Finished, and handed to the caller to make the vehicle it is (`a-vehicle.ts`): an
+            // item that goes with its builder, not a count in the pouch.
+            expect(two.builtCounted).toBe('conv-carriage-mortal');
+            expect(heldCarriages(db, fresh().id)).toBe(0);
         } else {
             // A failure consumes the materials and leaves nothing, which is the
             // honest price. What must never happen is a carriage appearing

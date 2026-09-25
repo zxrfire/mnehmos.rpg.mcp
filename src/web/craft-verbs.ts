@@ -60,6 +60,8 @@ import {
 } from './half-built-craft.js';
 import { landTheMaking, planTheMaking } from './making-a-thing-at-your-own-bench.js';
 import { forStream } from '../engine/cultivation/rng.js';
+import { aVehicleOf } from '../engine/world/a-vehicle.js';
+import { addToPouch } from '../server/consolidated/cultivation-support.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
 import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
@@ -214,6 +216,23 @@ export const craftVerbs = {
         // a player could finish a spirit boat, be told it was theirs, and own
         // nothing - the narration asserting an outcome the database never took,
         // which is the one thing this package exists to make impossible.
+        // A counted-grade conveyance finished at the bench is a vehicle too: it goes with them, and
+        // with no world to stand it in it is a count in the pouch as it was.
+        if (landed.builtCounted) {
+            this.atHand = this.atHand ?? await this.loadWorld();
+            if (this.atHand) {
+                this.atHand.objects.push(aVehicleOf({
+                    id: `vehicle-${cultivator.id}-${run.turn}-${landed.builtCounted}`,
+                    conveyanceId: landed.builtCounted,
+                    ownerId: cultivator.id,
+                    ownerName: cultivator.name,
+                    at: this.worldPlaceOf(after)
+                }));
+                this.theWorldMoved();
+            } else {
+                addToPouch(this.db, cultivator.id, landed.builtCounted, 'artifact', 1);
+            }
+        }
         if (landed.minted) {
             this.atHand = this.atHand ?? await this.loadWorld();
             if (this.atHand) {
