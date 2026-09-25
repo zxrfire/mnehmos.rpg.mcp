@@ -390,7 +390,9 @@ delivery is never a notice, because "that requires risking the sects own propert
 **A notice is first come, first paid.** Nobody signs on for a notice. You do what it asks and
 turn it in at the house, and "first person to turn it in gets it, and they retract the notice.
 if you're second, tough luck". So the paper comes down everywhere it was posted, and the world
-is racing the player for it. The wall in the town below a house's gate carries that house's
+is racing the player for it. A notice names one thing and a set count, and a second thing is a
+second notice; what it pays is fixed by the thing's tier. Demonic houses craft from human bone,
+so what they ask for is bone. The wall in the town below a house's gate carries that house's
 notices, and the disciple on the gate can say them too: "they also know so they can also just
 tell you".
 
