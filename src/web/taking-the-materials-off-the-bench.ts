@@ -47,7 +47,8 @@ import type Database from 'better-sqlite3';
 
 import { whatAnIngredientIs } from '../engine/cultivation/what-a-cauldron-will-take.js';
 import {
-    whatTheRecipeSpends
+    whatTheRecipeSpends,
+    type Recipe
 } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import {
     howAGradeIsStored,
@@ -91,6 +92,8 @@ export interface TakingTheMaterials {
     onDay: number;
     /** What it went into, for the provenance line on a row that ended. */
     intoWhat: string;
+    /** A recipe other than the grade's own: mending takes `whatMendingAHoleTakes`. */
+    recipe?: Recipe | null;
 }
 
 /**
@@ -106,7 +109,9 @@ export interface TakingTheMaterials {
 export function takeWhatTheRecipeNames(
     input: TakingTheMaterials
 ): WhatCameOffTheBench | null {
-    const spend = whatTheRecipeSpends(input.grade, theIdsOnTheBench(input.bench));
+    const spend = input.recipe === undefined
+        ? whatTheRecipeSpends(input.grade, theIdsOnTheBench(input.bench))
+        : whatTheRecipeSpends(input.grade, theIdsOnTheBench(input.bench), input.recipe);
     if (spend === null) return null;
 
     // ── WHAT WOULD COME OFF, AND FROM WHERE ──────────────────────────────

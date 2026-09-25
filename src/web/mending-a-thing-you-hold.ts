@@ -9,13 +9,22 @@
  * finds the thing, spends the days and writes the row.
  *
  * THE DAYS are what making a thing of that grade takes this hand
- * (`daysAtTheWork`), for one hole. Mending is the work, not new material.
+ * (`daysAtTheWork`), for one hole. THE MATERIAL is one piece that fills the
+ * first slot of its grade's recipe (`whatMendingAHoleTakes`), off their own
+ * bench, taken when the hole is closed and checked before a day is spent.
  */
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
-import { gradeForOrdinal } from '../data/cultivation/techniques.js';
+import { theGradeItWasMadeAt } from '../engine/world/a-house-mends-what-it-owns.js';
+import {
+    whatMendingAHoleTakes,
+    whatTheRecipeSpends,
+    whatWouldFill
+} from '../data/cultivation/what-an-artifact-is-made-of.js';
+import { takeWhatTheRecipeNames } from './taking-the-materials-off-the-bench.js';
+import { theIdsOnTheBench, whatThisPersonHasOnTheBench } from './what-is-on-the-bench.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
-import { isHoled, mend, ratedWhole, theConditionItIsIn } from '../engine/world/object-damage.js';
+import { isHoled, mend, theConditionItIsIn } from '../engine/world/object-damage.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import { whatIsWithinReachOf, whichThingTheyMeant, type WithinReach } from './object-theft.js';
 import { isRuined } from '../engine/world/possessions.js';
@@ -75,8 +84,20 @@ export async function mendingAThingYouHold(
         ));
     }
 
-    const whole = ratedWhole(found) ?? found.power ?? 0;
-    const days = daysAtTheWork(gradeForOrdinal(whole), cultivator.realmOrdinal);
+    const grade = theGradeItWasMadeAt(found);
+    const recipe = whatMendingAHoleTakes(grade);
+    const bench = whatThisPersonHasOnTheBench(service.db, world?.objects ?? [], cultivator.id);
+    if (whatTheRecipeSpends(grade, theIdsOnTheBench(bench), recipe) === null) {
+        const slot = recipe![0]!;
+        const would = whatWouldFill(slot).slice(0, 4).map(row => row.name);
+        return refused('object-damage.mendingTakesMaterial', 'craft', factsForRefusal(
+            `${found.name} is not mended.`,
+            `Closing a hole in ${grade}-grade work takes ${slot.what}, and you carry none. `
+            + `${would.join(', ')} would each do.`,
+            `mend: ${found.id} at ${grade} grade wants one of ${slot.what}; bench held ${bench.length} piece(s).`
+        ));
+    }
+    const days = daysAtTheWork(grade, cultivator.realmOrdinal);
     const spent = await service.shortSkip(
         run, cultivator, service.ambientFor(cultivator, run), BENCH_FOCUS,
         `Mending ${found.name}`, days
@@ -95,12 +116,23 @@ export async function mendingAThingYouHold(
         facts.structure.push(`mend: ${lived} of ${days} day(s); nothing written.`);
         return { facts, events: spent.events, timeSkip: spent.timeSkip, breakthrough: null, outcome: 'executed', calls: spent.calls };
     }
-    const done = mend(rows[at]!, {
-        byOrdinal: after.realmOrdinal,
-        onDay: Math.floor(service.repos.runs.getById(run.id)?.elapsedDays ?? onDay + days),
-        byId: after.id,
-        byName: after.name
-    });
+    const today = Math.floor(service.repos.runs.getById(run.id)?.elapsedDays ?? onDay + days);
+    let done = mend(rows[at]!, { byOrdinal: after.realmOrdinal, onDay: today, byId: after.id, byName: after.name });
+    // The material comes off when the hole is closed, and not before.
+    const paid = done.mended
+        ? takeWhatTheRecipeNames({
+            db: service.db,
+            objects: rows,
+            grade,
+            bench: whatThisPersonHasOnTheBench(service.db, rows, after.id),
+            onDay: today,
+            intoWhat: `mending ${found.name}`,
+            recipe
+        })
+        : null;
+    if (done.mended && paid === null) {
+        done = { ...done, mended: false, account: `What the mending needed is not on you any more. ${found.name} is as it was.` };
+    }
     if (done.mended) {
         rows[at] = done.row;
         service.theWorldMoved();
@@ -108,11 +140,13 @@ export async function mendingAThingYouHold(
     const facts = factsForToolResult(`${found.name}: ${done.mended ? 'mended' : 'not mended'}.`, [
         ...spent.facts.lines,
         `${days} day${days === 1 ? '' : 's'} at the work.`,
+        ...(paid?.lines ?? []),
         done.account
     ]);
     facts.structure.push(
-        `mend: ${found.id}, daysAtTheWork(${gradeForOrdinal(whole)}, ordinal ${cultivator.realmOrdinal}) `
-        + `= ${days}. ${done.account}`
+        `mend: ${found.id}, daysAtTheWork(${grade}, ordinal ${cultivator.realmOrdinal}) `
+        + `= ${days}. ${done.account}`,
+        ...(paid?.structure ?? [])
     );
     facts.required = [done.account];
     return { facts, events: spent.events, timeSkip: spent.timeSkip, breakthrough: null, outcome: 'executed', calls: spent.calls };

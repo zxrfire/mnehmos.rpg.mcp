@@ -135,6 +135,17 @@ export function whatItIsMadeOf(grade: TechniqueGrade): Recipe | null {
     return isAWorkedGrade(grade) ? WHAT_AN_ARTIFACT_IS_MADE_OF[grade] : null;
 }
 
+/**
+ * What closing one hole in a thing of this grade takes: the first slot of the
+ * recipe that made it, which is the slot its grade is. Null where the grade
+ * has no recipe - mortal work asks for nothing, and immortal and chaos are
+ * made nowhere below the Lid. Owner ruling 2026-09-25: mending costs material.
+ */
+export function whatMendingAHoleTakes(grade: TechniqueGrade): Recipe | null {
+    const recipe = whatItIsMadeOf(grade);
+    return recipe === null ? null : recipe.slice(0, 1);
+}
+
 /** Everything that fills this slot, cheapest first. */
 export function whatWouldFill(slot: ASlot): readonly WhatTheCauldronIsBeingHanded[] {
     return everyIngredientThatIs({
@@ -193,10 +204,9 @@ export interface ASlotSomethingFills {
  * refusing over a thing you took or taking a thing you refused over.
  */
 function howTheBenchReadsAgainst(
-    grade: TechniqueGrade,
+    recipe: Recipe | null,
     materialsToHand: readonly string[]
 ): { filled: readonly ASlotSomethingFills[]; short: readonly ASlotNobodyFilled[] } {
-    const recipe = whatItIsMadeOf(grade);
     if (recipe === null) return { filled: [], short: [] };
     const spent = new Set<number>();
     const filled: ASlotSomethingFills[] = [];
@@ -220,7 +230,7 @@ export function whatTheBenchIsShortOf(
     grade: TechniqueGrade,
     materialsToHand: readonly string[]
 ): readonly ASlotNobodyFilled[] {
-    return howTheBenchReadsAgainst(grade, materialsToHand).short;
+    return howTheBenchReadsAgainst(whatItIsMadeOf(grade), materialsToHand).short;
 }
 
 /**
@@ -238,9 +248,11 @@ export function whatTheBenchIsShortOf(
  */
 export function whatTheRecipeSpends(
     grade: TechniqueGrade,
-    materialsToHand: readonly string[]
+    materialsToHand: readonly string[],
+    /** A recipe other than the grade's own, such as `whatMendingAHoleTakes`. */
+    recipe: Recipe | null = whatItIsMadeOf(grade)
 ): readonly ASlotSomethingFills[] | null {
-    const read = howTheBenchReadsAgainst(grade, materialsToHand);
+    const read = howTheBenchReadsAgainst(recipe, materialsToHand);
     return read.short.length > 0 ? null : read.filled;
 }
 

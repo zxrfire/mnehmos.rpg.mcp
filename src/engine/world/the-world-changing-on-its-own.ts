@@ -370,6 +370,7 @@ import {
     type AreaStatus
 } from './what-is-true-of-a-place-right-now.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
+import { housesMendWhatTheyOwn } from './a-house-mends-what-it-owns.js';
 import {
     theMakerThisIs,
     whatCuttingForTheHouseLands,
@@ -885,6 +886,10 @@ export function applyPressure(
         // year's work can go into - a hull is a schedule, and a house hunts
         // for it the whole time it is building it.
         applyConveyanceBuilding(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
+        // And a house closes the holes in what it owns, out of its own stores,
+        // after the yard so the year's haul is on the shelf. See
+        // `a-house-mends-what-it-owns.ts`.
+        housesMendWhatTheyOwn(state, withinSpan(year * 365 + 178, fromDay, toDay));
         // And whoever is on no roll moves on, to a road, a ruin or a market.
         // See `where-somebody-with-no-house-goes.ts`.
         peopleWithNoHouseMoveOn(state, year, withinSpan(year * 365 + 178, fromDay, toDay));

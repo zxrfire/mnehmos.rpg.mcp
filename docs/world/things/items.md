@@ -448,8 +448,9 @@ may hole it, from two it certainly does, and from three it breaks.
 Two things follow that this file already believes:
 
 - **Breaking is not one outcome, and it is not an ending.** A thing can be *holed* - worth a rung
-  less, carrying a dated scar, and mendable by a hand that reaches its rung. The third hole
-  breaks it. A *broken* thing is still there,
+  less, carrying a dated scar, and mendable by a hand that reaches its rung, for one piece of the
+  first material its grade's recipe asks for. A house mends what it owns once a year, out of its
+  stores, while the material lasts. The third hole breaks it. A *broken* thing is still there,
   still the grade it was made at, and still works, at half - a broken heaven-grade sword is a
   heaven-grade sword at half - and nothing damaged works below that half. (Owner ruling,
   2026-09-25.)
