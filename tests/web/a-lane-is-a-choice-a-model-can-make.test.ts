@@ -115,6 +115,8 @@ describe('a lane is a choice a model can make', () => {
     it('looks for an inn here, and does not list the roads out for it', () => {
         expect(THE_LANES.perceive.says).toMatch(/an inn/);
         expect(THE_LANES.consult.says).toMatch(/never what is here/);
+        // And going up to the room is walking, never a site: that is ruins and sealed ground.
+        expect(THE_LANES.site.says).toMatch(/never an inn, a room or a house/);
     });
 
     /** A response that named a verb outright still works, table readings included. */

@@ -290,7 +290,10 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'sect'
     },
     site: {
-        says: 'a place with a way in',
+        // Played: "ok head up to my room" at an inn came back site/enter on the inn's name, and a
+        // site is ruins and sealed ground.
+        says: 'ruins, tombs and sealed ground with a way in - never an inn, a room or a house, which '
+            + 'are walked into (travel)',
         intents: { enter: 'site' },
         otherwise: 'site'
     },

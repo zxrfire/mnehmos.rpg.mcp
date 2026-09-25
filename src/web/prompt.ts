@@ -349,6 +349,7 @@ Rules:
     "is this place safe"           -> perceive.    Weighing a place is looking at it.
     "is there an inn here"         -> perceive.    What a place has in it is looked at, not
                                                    travelled to.
+    "I go up to my room"           -> travel.      A room is walked to, never a site.
     "I sense the qi here"          -> perceive.    The ground, not a person.
     "I sit down"                   -> cultivate.   Sitting is how this world cultivates.
   The pronoun settles whose a thing is: a player says "I" and "my" about themselves and never

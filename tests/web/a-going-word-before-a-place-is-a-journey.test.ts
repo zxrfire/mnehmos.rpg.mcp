@@ -36,6 +36,22 @@ describe('a going word before a place', () => {
         expect(plan.action.target).toBe('Emerald Water City');
     });
 
+    // Played: "ugh. keep going to iron ridge" read as a wait, and "ok head up to my room" as
+    // nothing, where the same sentences without the word in front were a walk.
+    it.each([
+        ['ugh. keep going to iron crest', 'iron crest'],
+        ['keep going to Iron Crest', 'iron crest'],
+        ['ok head up to my room', 'my room'],
+        ['sweet, I head to Silver Island', 'Silver Island']
+    ])('reads the walk past a word that only fills the front: %s', (said, where) => {
+        expect(parseIntent(said)).toMatchObject({ action: 'move', target: where });
+    });
+
+    it('leaves a word that is the whole answer, or means something, alone', () => {
+        expect(parseIntent('ok').action).not.toBe('move');
+        expect(parseIntent('right hook to his jaw').action).not.toBe('move');
+    });
+
     it('does not turn going over to the market into a journey', async () => {
         const plan = await modelSaying('{"action":"move","target":"the market"}').plan('i go to the market', '');
         expect(plan.action.action).not.toBe('move');

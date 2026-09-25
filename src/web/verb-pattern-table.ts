@@ -1149,6 +1149,10 @@ const UP_OR_DOWN =
 const CARRYING_ON =
     /^(?:(?:i|we)\s+)?(?:(?:keep|carry|press|push|continue|walk|move|head)\s+(?:on(?:wards?)?|going|walking|moving|ahead|forward|north|south|east|west)(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road))?|continue(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road|walk))?|onwards?|on we go)\s*[.!?]*$/;
 
+/** "keep going to X", "carry on to X", "press on towards X": the road, with where it ends. */
+const CARRYING_ON_TO =
+    /^(?:(?:i|we)\s+)?(?:keep|carry|press|push|continue|walk|move|head)\s+(?:on(?:wards?)?|going|walking|moving|ahead|forward)\s+(?:on\s+)?(?:to|towards?|for)\s+(.{2,60}?)[\s.!?]*$/;
+
 export const RECRUITING_BILL_PATTERN = new RegExp([
     String.raw`\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b`,
     // `notices?` was on three of the rows below and missing from this one, so
@@ -4532,8 +4536,23 @@ function isAWayOfAddressingSomebody(said: string): boolean {
     return words.every(word => /^[A-Z][a-z'-]+$/.test(word));
 }
 
+/**
+ * Words that open a sentence and do nothing in it: "ok head up to my room", "sweet, ill grab a
+ * room". Played: "ok head up to my room" read as nothing where "head up to my room" is a walk, so
+ * the guard had nothing to weigh the model's reading against. The plain fillers go bare; a word
+ * that means something else ("cool off", "right hook") goes only with a comma after it. Off the
+ * front only, and never when it is the whole sentence: "ok" alone answers a question.
+ */
+const WHAT_ONLY_FILLS_THE_FRONT =
+    /^(?:(?:ok(?:ay)?|kk?|alright|aight|sweet|yo|hey|ugh|um+|uh+|hmm+)\b[\s,.!]*|(?:cool|nice|well|so|right|fine|great)\s*,\s*)+/i;
+
+function withoutWhatOnlyFillsTheFront(input: string): string {
+    const rest = input.replace(WHAT_ONLY_FILLS_THE_FRONT, '');
+    return rest.trim().length > 0 ? rest : input;
+}
+
 export function parseIntent(rawInput: string): PlannedAction {
-    const input = inTheCharactersThePatternsUse(rawInput);
+    const input = withoutWhatOnlyFillsTheFront(inTheCharactersThePatternsUse(rawInput));
     const plan = readTheSentence(input);
     if (plan.action !== FALLBACK_ACTION) return plan;
 
@@ -4772,6 +4791,12 @@ function planIntent(input: string): PlannedAction {
     // reached nothing. With a road stopped where they stand, the move carries
     // on down it.
     if (CARRYING_ON.test(text)) return { action: 'move', intent: 'travel' };
+    // AND CARRYING ON TO SOMEWHERE NAMED. Played: "ugh. keep going to iron ridge" read as a wait.
+    {
+        const onTo = CARRYING_ON_TO.exec(text);
+        const place = onTo ? cleanPlace(onTo[1] ?? '') : undefined;
+        if (place) return { action: 'move', intent: 'travel', target: place };
+    }
 
     // UP TO A ROOM, AND DOWN AGAIN. Played: "head up to my room" reached nothing,
     // and "I go upstairs" the same; the walk across a place reads what they name.
