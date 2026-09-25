@@ -360,11 +360,17 @@ describe('move', () => {
     it('moves the cultivator and re-reads the ambient qi at the destination', async () => {
         const { game } = makeGame();
         await game.newRun('Walker');
+        // Somewhere other than where the birth put them: a run can open at the ferry.
+        const destination = game.state().cultivator.location === 'Clear River Ferry'
+            ? 'Iron Crest' : 'Clear River Ferry';
 
-        const result = await game.act('I travel to Clear River Ferry.');
+        const result = await game.act(`I travel to ${destination}.`);
         expect(planned(result).action).toBe('move');
         expect(refusedCall(result)).toBeNull();
-        expect(result.state.cultivator.location).toBe('Clear River Ferry');
+        // The road can be stopped short by what is on it; then they are told so.
+        if (result.state.cultivator.location !== destination) {
+            expect(result.narration).toMatch(/stopped short/);
+        }
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(result.state.ambient);
     });
 
