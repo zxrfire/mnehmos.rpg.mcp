@@ -1662,7 +1662,7 @@ function renderSheet() {
       <h3 class="sheet__label">Places</h3>
       ${d.places.length
         ? raw(html`<ul class="places">${d.places.map((p) => raw(html`<li class="place place--${p.known}">
-            <span class="place__name">${p.name}</span>
+            <span class="place__name">${p.name}${p.kind ? raw(html`<span class="place__kind">${p.kind}</span>`) : ''}</span>
             <span class="place__marks">${[p.here ? 'here' : '', p.home ? 'home' : '', p.house ? 'your house' : '', p.known === 'heard' ? 'heard of' : ''].filter(Boolean).join(' · ')}</span>
           </li>`))}</ul>`)
         : raw(html`<p class="empty">You know of nowhere yet.</p>`)}

@@ -186,6 +186,7 @@ import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
 import { thePlacesOnTheSheet, type APlaceOnTheSheet } from './places-on-the-sheet.js';
+import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
 import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
 import { aVehicleOf, isAVehicle } from '../engine/world/a-vehicle.js';
@@ -2251,6 +2252,12 @@ export class GameService {
         // reorder these two lines, that is the one that goes red.
         this.atHand = this.atHand ?? await this.loadWorld();
         this.refreshThePlayerRow(created.cultivator);
+        // What people where they were raised know of the land. See `what-the-land-teaches-you.ts`.
+        learnWhatTheLandTeachesThem(this, created.cultivator, {
+            at: birth.place.name,
+            origin: birth.origin,
+            houseId: birth.raisedInside?.house.id ?? birth.house?.id ?? null
+        });
 
         const faces = await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
 
@@ -3081,6 +3088,17 @@ export class GameService {
         // are standing now the turn is over, so every way of arriving, joining,
         // rising or leaving reaches it. After the room, which can put them off a
         // roll; before the estate, which is only for the dead.
+        // AND THE WORLD, once they are on a house's roll. See `what-the-land-teaches-you.ts`.
+        const taught = learnWhatTheLandTeachesThem(this, this.currentRun().cultivator);
+        if (taught > 0) {
+            execution.calls.push({
+                name: 'knowledge.whatTheLandTeaches',
+                action: 'learn',
+                summary: `${taught} place(s) or house(s) learned off their house's roll.`,
+                ok: true
+            });
+        }
+
         const issued = settleWhatYourHouseHasIssuedYou(this, this.currentRun().cultivator);
         if (issued) {
             execution.calls.push({

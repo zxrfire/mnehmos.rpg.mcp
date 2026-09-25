@@ -957,6 +957,7 @@ kbd {
 .places { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
 .place { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--paper-dim); }
 .place__marks { font-size: 11px; color: var(--jade-300); white-space: nowrap; }
+.place__kind { margin-left: 6px; font-size: 10.5px; color: var(--paper-far); }
 .place--heard { color: var(--paper-far); }
 .place--heard .place__marks { color: var(--paper-far); font-style: italic; }
 

@@ -14,6 +14,7 @@
  */
 
 import { stageRank } from '../engine/social/discovery.js';
+import { whatKindOfPlace, type ASettlementTier } from '../engine/world/what-somebody-knows-of-the-land.js';
 import type { AwarenessRow } from './knowledge.js';
 
 export interface APlaceOnTheSheet {
@@ -24,6 +25,8 @@ export interface APlaceOnTheSheet {
     home: boolean;
     /** Their house's seat. */
     house: boolean;
+    /** Village, town, city, provincial capital; null for anything that is not a settlement. */
+    kind: ASettlementTier | null;
 }
 
 /** Stood in: encountered or known. Below that, heard of. */
@@ -51,7 +54,8 @@ export function thePlacesOnTheSheet(input: {
             known: had?.known === 'been' || known === 'been' ? 'been' : 'heard',
             here: (had?.here ?? false) || (mark.here ?? false),
             home: (had?.home ?? false) || (mark.home ?? false),
-            house: (had?.house ?? false) || (mark.house ?? false)
+            house: (had?.house ?? false) || (mark.house ?? false),
+            kind: whatKindOfPlace(name)
         });
     };
 
