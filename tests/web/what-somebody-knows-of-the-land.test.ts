@@ -124,6 +124,16 @@ describe('what somebody knows of the land', () => {
         }
     });
 
+    it('tells a town crowd that owes no road where somebody would know it', async () => {
+        // Autumn Gate, a town of the Yellow Plain, with people standing in it: the White Stair is
+        // two borders off, which a town owes nobody and a capital owes everybody.
+        const { game } = await makeGameInWorld({ seed: 'hint-2', worldSeed: 'a-xianxia-run' });
+        await game.newRun('Ke Yan');
+        expect(game.currentRun().cultivator.location).toBe('Autumn Gate');
+        const nobody = await game.act('anyone know the way to the white stairs?');
+        expect(nobody.narration).toMatch(/Nobody here knows the road to it\. In Cloud Gate, somebody would\./);
+    }, 180_000);
+
     it('answers the way when the crowd is asked, with the provinces the road crosses', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'the-land-asked', worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');

@@ -25,6 +25,7 @@ import {
     whatSomebodyKnowsOfTheLand,
     whoAmongThemKnowsTheWay,
     whoAmongThemKnowsTheWayToAPlace,
+    PROVINCIAL_CAPITALS,
     type WhatTheyKnowOfTheLand,
     type WhoTheyAre
 } from '../engine/world/what-somebody-knows-of-the-land.js';
@@ -144,7 +145,24 @@ export function theWayAskedOfTheCrowd(
         ? whoAmongThemKnowsTheWay(world, here, people, house.factionId)
         : place ? whoAmongThemKnowsTheWayToAPlace(world, here, people, place.name) : -1;
     const asked = present[found] ?? present[present.length - 1]!;
-    return theWayTo(game, run, cultivator, asked, where, found >= 0);
+    const answered = theWayTo(game, run, cultivator, asked, where, found >= 0);
+    // AND WHERE SOMEBODY WOULD KNOW, where nobody here does. Played blind: a fish-market town did
+    // not know the road to a house a province away, which is the rule, and the player was left
+    // with nowhere to take the question. "going further to the provincial capital will basically
+    // guarantee it", so the capital is named where it would.
+    if (found < 0) {
+        const capital = PROVINCIAL_CAPITALS[standingOf(cultivator).regionId];
+        const somebodyThere = [{ id: 'somebody-in-the-capital', from: capital ?? null, ordinal: 0 }];
+        const knownThere = capital && capital !== here && (house
+            ? whoAmongThemKnowsTheWay(world, capital, somebodyThere, house.factionId) >= 0
+            : place ? whoAmongThemKnowsTheWayToAPlace(world, capital, somebodyThere, place.name) >= 0 : false);
+        if (knownThere) {
+            const line = `Nobody here knows the road to it. In ${capital}, somebody would.`;
+            answered.facts.lines.push(line);
+            answered.facts.prose = `${answered.facts.prose}\n\n${line}`;
+        }
+    }
+    return answered;
 }
 
 export function theWayTo(
