@@ -28,7 +28,7 @@ export function aCrowdIsAsked(target: string): boolean {
  * "anyone know the way to the white stair? the mountain province" asks after the first.
  */
 const THE_WAY_ASKED_OF_A_CROWD =
-    /^(?:(?:hey|so|um+|ok(?:ay)?)\s*,?\s*)?(?:(?:does|do|can|could|would)\s+)?(?:any(?:one|body)|some(?:one|body)|(?:any|all) of (?:you|u)(?: guys)?|you guys|u guys|y'?all)(?:\s+(?:here|around here))?\s*,?\s+(?:know|knows|tell me|show me)\s+(?:the (?:way|road) to|how (?:to|i can|do i|we can|one can) (?:get|go) to|where)\s+(.+?)(?:\s+(?:is|are|lies))?(?:\s+from here)?\s*[.!]*$/i;
+    /^(?:(?:hey|yo|so|um+|ok(?:ay)?)\s*,?\s*)?(?:(?:does|do|can|could|would)\s+)?(?:any(?:one|body)|some(?:one|body)|(?:any|all) of (?:you|u)(?: guys)?|you guys|u guys|y'?all)(?:\s+(?:here|around here))?\s*,?\s+(?:know|knows|tell me|show me)\s+(?:the (?:way|road) to|how (?:to|i can|do i|we can|one can) (?:get|go) to|where)\s+(.+?)(?:\s+(?:is|are|lies))?(?:\s+from here)?\s*[.!]*$/i;
 
 /** The place a crowd was asked the way to, or null when the sentence is not that. */
 export function theWayAskedOfACrowd(sentence: string): string | null {
@@ -37,10 +37,16 @@ export function theWayAskedOfACrowd(sentence: string): string | null {
     return place && place.length >= 2 ? place : null;
 }
 
+/**
+ * A topic that asks the way, however a reader wrote it down: "the way to X", "road to X",
+ * "directions to X", "how to get to X". Played: the model filed "road to Green Water City", and
+ * a topic read only as `the way to` sent the question to the list of destinations.
+ */
+const A_WAY_TOPIC =
+    /^(?:the\s+)?(?:(?:way|road|route|path)\s+(?:to|towards?)|directions?\s+(?:to|for)|how\s+to\s+(?:get|go)\s+to)\s+(?!(?:the\s+)?(?:immortality|foundation|breakthrough|break(?:ing)?|enlightenment|ascension|dao|heavens?|power|strength|golden core|a core|nascent|mastery|the top)\b)(.+)$/i;
+
 /** The place a way-topic asks after, or null for any other topic. */
 export function theWayAskedFor(topic: string): string | null {
-    const said = topic.trim();
-    return said.toLowerCase().startsWith(THE_WAY_TO) && said.length > THE_WAY_TO.length + 1
-        ? said.slice(THE_WAY_TO.length).trim()
-        : null;
+    const place = A_WAY_TOPIC.exec(topic.trim())?.[1]?.trim();
+    return place && place.length >= 2 ? place : null;
 }
