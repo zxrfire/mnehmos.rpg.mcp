@@ -15,10 +15,14 @@
  * turn this question fires - including the turns where the split is correct.
  */
 
-import {
-    everyVerbTheQuestionCouldName,
-    whatThisStepIsCalled
-} from '../../src/web/a-sentence-can-be-more-than-one-call';
+import { whatThisStepIsCalled } from '../../src/web/a-sentence-can-be-more-than-one-call';
+import { ACTION_NAMES, type ActionName } from '../../src/web/actions';
+import { costsTheAskerNothing } from '../../src/web/asking-is-not-doing';
+
+/** Every verb the which-comes-first question could ever have to name: the ones that cost something. */
+const everyVerbTheQuestionCouldName = (): ActionName[] =>
+    ACTION_NAMES.filter(name => !costsTheAskerNothing({ action: name }));
+
 
 const named = (action: string, target?: string) => whatThisStepIsCalled(
     { action: { action, ...(target ? { target } : {}) } } as never

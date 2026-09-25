@@ -7,7 +7,6 @@ import { forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
 import { settleEstate, whereTheyFell } from './estate-at-death.js';
 import {
-    classifyForObserver,
     concurrentEventsFor,
     makeFact,
     type EventScale,
@@ -1088,20 +1087,6 @@ export function scheduleConcurrentEvent(
         }
     });
     return { state: booked.state, effectId: booked.effect.id };
-}
-
-/**
- * How an observer stands in relation to everything in a window.
- */
-export function classifyWindow(
-    state: WorldState,
-    observer: Observer,
-    fromDay: number,
-    toDay: number
-): { fact: HistoricalFact; relation: ReturnType<typeof classifyForObserver> }[] {
-    return state.history.facts
-        .filter(f => f.day >= fromDay && f.day < toDay)
-        .map(f => ({ fact: f, relation: classifyForObserver(f, observer) }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

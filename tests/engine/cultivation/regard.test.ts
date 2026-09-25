@@ -23,6 +23,7 @@ import {
     gateOrdinalOf,
     narrowToOffered,
     offeredTo,
+    refusalsFor,
     regardFor,
     regardOf
 } from '../../../src/engine/cultivation/regard.js';
@@ -355,6 +356,15 @@ describe('the boards answer by height', () => {
             const exists = workExistingFor(ordinal).length;
             expect(findWorkForOrdinal(ordinal).length + workWithheldFrom(ordinal).length)
                 .toBe(exists);
+        }
+    });
+
+    it('withholds exactly what refusalsFor drops, with its reason', () => {
+        for (const ordinal of [0, 13, 21, 33, 45]) {
+            const dropped = refusalsFor(workExistingFor(ordinal), ordinal);
+            expect(workWithheldFrom(ordinal)).toEqual(dropped.map(({ record, regard }) => ({
+                occupation: record, reason: regard.reaction, band: regard.band
+            })));
         }
     });
 });

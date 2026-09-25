@@ -43,11 +43,6 @@ export interface MasteryCeiling {
 const ANCIENT_BY_TECHNIQUE: ReadonlyMap<string, AncientArt> =
     new Map(ANCIENT_ARTS.map(a => [a.techniqueId, a]));
 
-/** True where practising this art consumes something the world is short of. */
-export function hasUpkeep(techniqueId: string): boolean {
-    return (ANCIENT_BY_TECHNIQUE.get(techniqueId)?.upkeepHerbId ?? null) !== null;
-}
-
 /**
  * How far the supply carries somebody into this art.
  */

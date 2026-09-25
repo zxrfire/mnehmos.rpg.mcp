@@ -149,6 +149,11 @@ export function roomsHeldBy(
  * budget is enormous and it rations nobody - which is the ruling, arrived at by
  * counting rooms rather than by naming the Court anywhere in this file. Take
  * the chambers away and the privilege goes with them.
+ *
+ * NOT YET RECONCILED WITH THE OWNER'S RULE FOR A ROOM: one person in it at a
+ * time, two at most (for dual cultivation or a sold half), and a second person
+ * halves what each draws. This budget counts a room at its carrying capacity,
+ * which is more than one draw, and nothing models who is in which room on a day.
  */
 export function groundBudgetOf(rooms: readonly LocationRecord[]): number {
     if (rooms.length === 0) return 0;

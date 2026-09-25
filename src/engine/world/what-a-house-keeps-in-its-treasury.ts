@@ -681,55 +681,6 @@ function howManyOfACommonThing(acting: number): number {
 }
 
 /**
- * What this house holds, read off the one possessions table.
- *
- * A FILTER AND NOT A STORED LIST. `WhatAHouseHolds.holds` is a shape for
- * answering the question, not a field anybody writes: the moment a house's
- * inventory is kept in two places, the copy is what goes stale the first time
- * something is lent out, sold or walked off with. `ownerId` is already the
- * answer and it is already maintained by every path that moves a thing.
- *
- * Owned and not held: a furnace a disciple has been lent is still the house's,
- * and still in this list. Which is the point of `whoseThisIs` reading two
- * fields rather than one.
- */
-export function whatThisHouseHolds(
-    objects: readonly ObjectRecord[],
-    factionId: string
-): ObjectRecord[] {
-    return objects.filter(row => row.ownerId === factionId);
-}
-
-/**
- * Everything a house owns, sorted into the rooms it is in.
- *
- * THE READ THE LEDGER OWES. *"It's just in different places"* - so the answer
- * to *what does this house have* is a list per room, which is the way a
- * quartermaster, a thief and a disciple asking to borrow something all want it.
- *
- * The owner, on why this matters beyond bookkeeping: *"that gives NPCs a reason
- * to go to diff areas."* A compound whose rooms hold nothing is a compound
- * nobody has an errand in.
- *
- * Keyed on `RoomPurpose` and null for the things that stand in the ground.
- * Derived every time and cached nowhere, which is why it is right about rows
- * this file never wrote.
- */
-export function whatIsInEachRoom(
-    objects: readonly ObjectRecord[],
-    factionId: string
-): Map<RoomPurpose | null, ObjectRecord[]> {
-    const rooms = new Map<RoomPurpose | null, ObjectRecord[]>();
-    for (const row of whatThisHouseHolds(objects, factionId)) {
-        const room = whereInTheHouseItSits(row.kind, row.significance, row.tags);
-        const held = rooms.get(room) ?? [];
-        held.push(row);
-        rooms.set(room, held);
-    }
-    return rooms;
-}
-
-/**
  * WHERE A THING ACTUALLY IS, which is not the same question as whose it is.
  *
  * The design owner: *"where an object is needs to be tracked. I should be able

@@ -293,16 +293,6 @@ export function bestReadable(best: ManualQuality, reader: ManualReader): ManualQ
     return chosen;
 }
 
-/** The rate multiplier alone. 1 when no manual was declared. */
-export function manualRateMultiplier(
-    manual: { quality?: ManualQuality | null } | null | undefined,
-    reader: ManualReader,
-    relevance?: Partial<RelevanceContext>
-): number {
-    if (!manual) return 1;
-    return readManual(manual, reader, relevance).rateMultiplier;
-}
-
 function round1(n: number): number {
     return Math.round(n * 10) / 10;
 }

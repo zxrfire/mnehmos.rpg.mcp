@@ -57,7 +57,7 @@
  */
 
 import { z } from 'zod';
-import { REGIONS, getRegionForFaction, SOUTH_REGION_ID } from './regions.js';
+import { getRegionForFaction, SOUTH_REGION_ID } from './regions.js';
 import { PLACE } from './place-names.js';
 import type { SeaLane } from '../../engine/world/what-a-sea-crossing-costs.js';
 
@@ -497,9 +497,4 @@ export function lanesTouchingWater(): { laneId: string; days: number; landfalls:
         days: l.expectedDays,
         landfalls: l.intermediateLandfallDays.length
     }));
-}
-
-/** Every province's export list, which is the artisan fallback made visible. */
-export function whatEachProvinceMakes(): { regionId: string; name: string; makes: readonly string[] }[] {
-    return REGIONS.map(r => ({ regionId: r.id, name: r.name, makes: r.exports }));
 }

@@ -111,7 +111,7 @@ import {
     getPrice
 } from '../data/cultivation/mortal-world.js';
 import {
-    localPrice, requireRegion, REGIONS
+    localPrice, regionIdOfPlace, requireRegion, REGIONS
 } from '../data/cultivation/regions.js';
 import {
     createInjury,
@@ -699,7 +699,7 @@ import { READS_A_VEIN, groundAsPerceivedRead } from './what-you-can-tell-about-t
 // The world uncovers closed ground and nothing player-facing read it.
 import {
     groundUnderfoot,
-    howAPlayerStands,
+    howAPlayerHolds,
     thingsCarriedThatTeachARoad
 } from './ground-that-teaches-a-road.js';
 import {
@@ -744,6 +744,7 @@ import { unattributedTextOf } from '../engine/world/digest.js';
 import { type RosterEntry } from '../storage/repos/cultivator.repo.js';
 import {
     advanceWorldForCultivator,
+    endRunInWorld,
     worldForRun
 } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
@@ -841,6 +842,7 @@ import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX } from '../engine/world/qi-scale.js'
 import { whatDidNotHappen } from './unresolved-attempt-denials.js';
 import {
     isASocialIntent,
+    theSentenceCalledItAThing,
     whatCameOfTryingIt
 } from './an-act-that-is-coherent-and-stupid.js';
 import {
@@ -913,9 +915,10 @@ import {
 } from '../engine/world/immortal-world.js';
 import { daoOf } from '../engine/cultivation/dao.js';
 import { effectiveCapOf } from '../engine/cultivation/escapes.js';
-import { stagesHeldBy } from './stages.js';
+import { stagesHeldBy, stagesOf } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
-import type { Narrator } from './narrator.js';
+import type { Narrator, NarratorScene, TheWayItIsDoneHere } from './narrator.js';
+import { INTERACT_SETTLES_NOTHING } from './action-set.js';
 import type { WhereTheyStandNow } from './prompt.js';
 // One sentence can contain a plan. The law that bounds how much of the player's
 // life it may spend lives in this module, not here; what `game.ts` owns is
@@ -995,7 +998,7 @@ import {
     composeStateSummary,
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
-import { whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { howTheyLeftTheChair, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -1111,10 +1114,7 @@ import { crossingVerb } from './crossing.js';
 // is. Re-exported so this module's export surface is what it was.
 export { doorScaleOverStretch } from './seclusion-verbs.js';
 import { combatVerbs } from './combat-verbs.js';
-import {
-    theirHalfOfTheRite,
-    whyTheRiteWillNotOpen
-} from './an-art-that-needs-both-of-them.js';
+import { whyTheFurnaceRiteIsRefused } from './the-furnace-rite-once-somebody-has-yielded.js';
 // 护法 - standing over somebody else's crossing. The giving half of the verb
 // surface, and the whole of `standing-guard-over-somebody-elses-crossing.ts`,
 // which had no caller anywhere in `src/`.
@@ -1921,6 +1921,10 @@ export class GameService {
      * Things this turn named to the player, being collected for {@link lastTurn}.
      */
     private namedThisTurn: ThingNamed[] = [];
+    /** Whether somebody gave the player their name this turn. Read for the naming custom. */
+    private introducedThisTurn = false;
+    /** Names given by somebody spoken to this turn, said on the page as a ruling. */
+    private namesGivenThisTurn: string[] = [];
 
     /**
      * NAME A THING THIS TURN ACTUALLY PUT IN THEIR HANDS.
@@ -2532,6 +2536,8 @@ export class GameService {
         this.lastTurn = null;
         this.ranThisTurn = [];
         this.namedThisTurn = [];
+        this.introducedThisTurn = false;
+        this.namesGivenThisTurn = [];
         this.namedOutOfThisTurn = null;
 
         // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
@@ -3116,6 +3122,7 @@ export class GameService {
 
         // AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD
         const died = this.settleTheEstateIfTheyDied();
+        if (died) await this.closeThisLifeInTheWorld('died');
         if (died) {
             execution.calls.push({
                 name: 'world.settleWhatTheyWereCarrying',
@@ -3180,6 +3187,14 @@ export class GameService {
             };
         }
 
+        // A NAME GIVEN IS A RULING, so the page may name the face from here on.
+        // A plain line and not a required one: the narrator writes the
+        // introduction inside the scene, and a required line it did not quote
+        // would be appended after it in the engine's voice.
+        for (const name of this.namesGivenThisTurn) {
+            execution.facts.lines.push(`${name} gives you their name.`);
+        }
+
         const company = this.company(after.cultivator);
         const scene = {
             place: placeName(after.cultivator),
@@ -3209,7 +3224,15 @@ export class GameService {
             // What they ARE and HOLD, whatever this turn did. See
             // `theStandingStateOf`: the model told somebody carrying a manual
             // that the manual was what they lacked.
-            standing: this.theStandingStateOf(after.cultivator)
+            standing: this.theStandingStateOf(after.cultivator),
+            ...this.howThisPlaceIs(after.cultivator, {
+                somebodyDied: !after.cultivator.alive
+                    || squareBefore.some(p => {
+                        const status = this.atHand?.npcs.find(n => n.id === p.id)?.status;
+                        return status !== undefined && status !== 'alive';
+                    }),
+                onTheRoad: after.cultivator.location !== cultivator.location
+            })
         };
 
         // ── phase 3 ──
@@ -4475,27 +4498,21 @@ export class GameService {
                 //
                 // Before the resolver, because a furnace use that cannot open
                 // is not a fight somebody lost - it is a thing that was never
-                // available, and saying so is the answer. See
-                // `an-art-that-needs-both-of-them.ts`.
+                // available, and saying so is the answer. The adult gate is
+                // here too. See `the-furnace-rite-once-somebody-has-yielded.ts`.
                 if (action.intent === 'furnace') {
-                    const whoWith = this.somebodyAtHand(action.target ?? '', cultivator)
-                        ?? (action.target
-                            ? this.present(cultivator).find(row =>
-                                row.name.toLowerCase() === action.target!.trim().toLowerCase())
-                            : undefined);
-                    const why = whyTheRiteWillNotOpen(
-                        theirHalfOfTheRite(this.repos, cultivator.id),
-                        whoWith
-                            ? theirHalfOfTheRite(this.repos, whoWith.id)
-                            : { takingArt: null, spendingArt: null, stage: 0 },
-                        whoWith?.name ?? 'them'
-                    );
+                    const why = whyTheFurnaceRiteIsRefused(this, cultivator, action.target);
                     if (why) {
                         return this.freeAction(run, 'coerce', factsForRefusal(
                             why.headline, why.said, why.account
                         ));
                     }
                 }
+                // The same resolver as `attack`, at a different goal. Hands
+                // rather than words, and the aggressor wants them complying and
+                // still standing rather than stopped - see the header on
+                // `coerce` in `actions.ts` for why it is its own verb and not a
+                // second door onto `threaten`.
                 return this.attack(
                     run, cultivator, ambient, action.target, action.thrown, true,
                     action.withArt, 'open',
@@ -4506,17 +4523,6 @@ export class GameService {
                     action.topic
                 );
             }
-
-                // The same resolver as `attack`, at a different goal. Hands
-                // rather than words, and the aggressor wants them complying and
-                // still standing rather than stopped - see the header on
-                // `coerce` in `actions.ts` for why it is its own verb and not a
-                // second door onto `threaten`.
-                return this.attack(
-                    run, cultivator, ambient, action.target, action.thrown, true,
-                    action.withArt, 'open',
-                    action.opening ?? 'open', action.intent ?? 'submit'
-                );
 
             case 'interact':
                 return this.interact(
@@ -5143,7 +5149,7 @@ ${noticedWaiting}`;
                 // WHAT THIS GROUND MAKES AND WHAT LEAVES IT ON THE WATER.
                 if (action.intent === 'what_is_made_here') {
                     this.atHand = this.atHand ?? await this.loadWorld();
-                    return this.whatIsMadeHere(run, cultivator);
+                    return this.whatIsMadeHere(run, cultivator, action.target);
                 }
 
                 // WHO ANSWERS FOR THIS GROUND, ASKED FOR DELIBERATELY.
@@ -6174,6 +6180,8 @@ ${noticed}`;
         action: ActionName,
         /** The social intent, where the sentence carried one. */
         intent?: string,
+        /** The player's sentence, for their own phrase for the target. */
+        rawInput?: string
     ): Execution {
         const here = this.present(cultivator);
 
@@ -6216,7 +6224,7 @@ ${noticed}`;
         // a name got slightly wrong is the commonest mistake there is.
         const look = this.blankLook(cultivator, query);
         const wanted = !look.offeredAName && intent !== undefined && isASocialIntent(intent)
-            ? ` ${whatCameOfTryingIt(intent, nameable)}`
+            ? ` ${whatCameOfTryingIt(intent, nameable, theSentenceCalledItAThing(rawInput ?? '', query))}`
             : '';
 
         const nextMove = nameable.length > 0
@@ -6317,7 +6325,10 @@ ${noticed}`;
                         + 'own answer.',
                     note: 'Nothing was put to anybody.'
                 },
-                false
+                false,
+                // Words put to a room: three answer. A threat or a theft still
+                // lands on every one of them.
+                INTERACT_SETTLES_NOTHING.has(intent) ? 3 : undefined
             );
         }
 
@@ -6412,12 +6423,19 @@ ${noticed}`;
             }
         }
         if (!party) {
-            return this.nobodyByThatName(cultivator, query, scope, 'interact', intent);
+            return this.nobodyByThatName(cultivator, query, scope, 'interact', intent, rawInput);
         }
 
         this.noteEncounter(
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
         );
+        // SPOKEN TO, THEY GIVE A NAME. A face the player cannot yet be sure of
+        // introduces itself on a word that settles nothing; a threat, a bribe or
+        // a theft gets no introduction.
+        if (party.kind === 'cultivator' && INTERACT_SETTLES_NOTHING.has(intent)
+            && this.theyGaveTheirName(cultivator, run, party)) {
+            this.namesGivenThisTurn.push(party.name);
+        }
 
         // A question was asked of a person, so a person answers it. This
         // used to reach the sect register instead, which replied with a
@@ -7309,11 +7327,7 @@ ${noticed}`;
         // hears you out and goes back to work has not, and that asymmetry is
         // the cheapest introduction in the game: it costs a question.
         const met = answer.introduces && !knownAlready
-            ? this.noteEncounter(
-                cultivator, run,
-                { kind: 'cultivator', id: asked.id, name: asked.name },
-                'told',
-                `Answered a question at ${placeName(cultivator)}, and gave a name doing it.`)
+            ? this.theyGaveTheirName(cultivator, run, asked)
             : false;
 
         // ── AND SOMETIMES THE HOUSE THEY GIVE IS NOT THEIRS ──────────────
@@ -11097,6 +11111,7 @@ ${line}`;
             this.atHand = this.atHand ?? await this.loadWorld();
             // The death is its own transition and writes the world inside it.
             estate = this.settleTheEstateIfTheyDied();
+            if (estate) await this.closeThisLifeInTheWorld('died');
         }
 
         const told = response.changed
@@ -11156,6 +11171,7 @@ ${line}`;
             `Reset by the operator on turn ${run.turn}. Not a death.`,
             'dead'
         );
+        await this.closeThisLifeInTheWorld('abandoned', { run, cultivator });
 
         // `newRun` writes the birth, seeds the world around it and narrates the
         // opening into the NEW run's log. Nothing here re-narrates: a second
@@ -13864,8 +13880,18 @@ ${opened.text}` : receipt,
         // The world's ceiling against this holder's, when they differ. A good
         // sentence to have available and one no single number can say.
         if (reach.worldWrittenTo !== null && reach.cap !== null && reach.worldWrittenTo > reach.cap) {
+            // WHEN, and not who: every stage is written by a player's own life,
+            // this one or an earlier one, and no life knows another's name.
+            const last = stagesOf(this.repos, manual.id).at(-1);
+            const today = Math.floor(this.atHand?.currentDay ?? run.elapsedDays);
+            const yearsSince = last?.writtenOnDay == null
+                ? null
+                : Math.floor((today - last.writtenOnDay) / DAYS_PER_YEAR);
             lines.push(
-                `It has been written as far as ${rankName(reach.worldWrittenTo)} by somebody. `
+                `It has been written as far as ${rankName(reach.worldWrittenTo)} by somebody`
+                + (yearsSince === null ? '. '
+                    : yearsSince < 1 ? ', the last of it within the year. '
+                    : `, the last of it ${howMany(yearsSince, 'year')} ago. `)
                 + `It goes further than you can follow it, and the difference is `
                 + `${reach.worldWrittenTo - reach.cap} rung`
                 + `${reach.worldWrittenTo - reach.cap === 1 ? '' : 's'} of somebody else's work.`
@@ -16962,12 +16988,7 @@ ${fit.line}`;
             // The sentence `whoWouldTeach` ends on, answered. A name arrives
             // through the ordinary knowledge gate, at the stance somebody holds
             // for a face they have been walked up to, with its source on it.
-            const learned = this.noteEncounter(
-                cultivator, run,
-                { kind: 'cultivator', id: meeting.id, name: meeting.name },
-                'told',
-                `Introduced by ${party.name} at ${placeName(cultivator)}.`
-            );
+            const learned = this.theyGaveTheirName(cultivator, run, meeting);
             lines.push(
                 learned
                     ? `${party.name} walks you over and says your name to ${meeting.name}, and `
@@ -17467,15 +17488,12 @@ ${fit.line}`;
         // AND WHAT THEY ARE CARRYING
         const world = this.atHand;
         if (!world) return context;
-        const carried = thingsCarriedThatTeachARoad(world, {
-            ...howAPlayerStands(
-                world,
-                groundUnderfoot(world, cultivator.location, loosePlaceKey)
-                    ?? worldLocationFor(world, cultivator.location),
-                { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) }
-            ),
-            id: cultivator.id
-        }).filter(thing => thing.standing.inReach);
+        const carried = thingsCarriedThatTeachARoad(world, howAPlayerHolds(
+            world,
+            groundUnderfoot(world, cultivator.location, loosePlaceKey)
+                ?? worldLocationFor(world, cultivator.location),
+            { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) }
+        )).filter(thing => thing.standing.inReach);
         if (carried.length === 0) return context;
 
         return {
@@ -18786,6 +18804,11 @@ ${fit.line}`;
                     sex: person.sex ?? null,
                     age: person.age,
                     rank: person.sectRank ?? null,
+                    // A head who left the chair sits on the rung below it; only the
+                    // tag says they once held it.
+                    leftTheChair: row === null || this.atHand === null
+                        ? null
+                        : howTheyLeftTheChair(row, this.atHand.currentDay),
                     at: doing === null ? null : whatThatLooksLike(doing, alongside),
                     // Whether the square would hand this person to somebody
                     // walking into it, and how sure they would be of it. Both
@@ -19050,6 +19073,21 @@ ${fit.line}`;
      * If this turn ended the life, put the death and the estate into the world. ──
      * WHY IT IS HERE AND NOT AT EACH DEATH SITE ────────────────────────
      */
+    /**
+     * Close this life's entry in the world's record of runs.
+     *
+     * The entry was opened at birth and never closed, so every run stayed
+     * `active` and `lastFinishedRun` - what the next life inherits from -
+     * found nothing: no life was ever anybody's predecessor.
+     */
+    private async closeThisLifeInTheWorld(
+        outcome: 'died' | 'abandoned',
+        life: { run: Run; cultivator: Cultivator } = this.currentRun()
+    ): Promise<void> {
+        if (!this.worldEnabled) return;
+        await endRunInWorld(life.run, outcome, life.cultivator.realmOrdinal);
+    }
+
     settleTheEstateIfTheyDied(): EstateOutcome | null {
         const now = this.currentRun();
         if (now.cultivator.alive || !now.cultivator.deathCause) return null;
@@ -19789,7 +19827,7 @@ ${fit.line}`;
         if (kind === 'cultivator') {
             writeFlag(this.db, cultivator.id, FLAG_LAST_ADDRESSED, entity.id);
         }
-        return this.knowledge.learnIfNew({
+        const learned = this.knowledge.learnIfNew({
             holderId: cultivator.id,
             kind,
             id: entity.id,
@@ -19805,6 +19843,56 @@ ${fit.line}`;
             // you plainly can.
             stage: sourceKind === 'witnessed' ? 'encountered' : 'placed'
         });
+        if (learned && kind === 'cultivator' && sourceKind === 'told') this.introducedThisTurn = true;
+        return learned;
+    }
+
+    /**
+     * Somebody gave the player their name, face to face.
+     *
+     * Witnessed and at `known` - they have dealt with each other - with a
+     * statement of its own, which is what lets the narrator name the face.
+     * False where the player already had them that well.
+     */
+    theyGaveTheirName(cultivator: Cultivator, run: Run, person: { id: string; name: string }): boolean {
+        const where = placeName(cultivator);
+        const learned = this.knowledge.learnIfNew({
+            holderId: cultivator.id,
+            kind: 'cultivator',
+            id: person.id,
+            name: person.name,
+            onDay: Math.floor(run.elapsedDays),
+            sourceKind: 'witnessed',
+            sourceNote: `Gave their name at ${where}.`,
+            statement: `${person.name} gave you their name at ${where}.`,
+            stage: 'known'
+        });
+        if (learned) this.introducedThisTurn = true;
+        return learned;
+    }
+
+    /**
+     * The province's senses and the customs this turn's situation touches, for the
+     * narrator's scene. A custom is handed over only on the turn it applies: the
+     * death custom when somebody died, the naming custom when somebody gave a
+     * name, the road's threat when the player covered ground.
+     */
+    private howThisPlaceIs(
+        cultivator: Cultivator,
+        situation: { somebodyDied: boolean; onTheRoad: boolean }
+    ): Pick<NarratorScene, 'whatThisProvinceIsLike' | 'theWayItIsDoneHere'> {
+        const regionId = regionIdOfPlace(cultivator.location);
+        const region = regionId ? REGIONS.find(r => r.id === regionId) : undefined;
+        if (!region) return { whatThisProvinceIsLike: null };
+        const customs: TheWayItIsDoneHere[] = [];
+        if (situation.somebodyDied) customs.push({ when: 'death', text: region.customs.death });
+        if (this.introducedThisTurn) customs.push({ when: 'naming', text: region.customs.naming });
+        if (situation.onTheRoad) customs.push({ when: 'threat', text: region.customs.threatModel });
+        const said: Pick<NarratorScene, 'whatThisProvinceIsLike' | 'theWayItIsDoneHere'> = {
+            whatThisProvinceIsLike: region.register
+        };
+        if (customs.length > 0) said.theWayItIsDoneHere = customs;
+        return said;
     }
 
     /** True once a crossing has taken this cultivator's name. */

@@ -38,8 +38,6 @@ import {
     elapsedYears,
     groundOf,
     liftGoods,
-    oddsGoneIn,
-    oddsHolderFailsIn,
     readCache,
     readDeposit,
     recordWrongPhrase,
@@ -65,7 +63,8 @@ import {
     custodyTermsFor,
     feeForTerm
 } from '../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead';
-import { standingOf } from '../../src/engine/world/whether-a-house-still-honours-a-deposit';
+import { cumulativeFailureOdds, standingOf } from '../../src/engine/world/whether-a-house-still-honours-a-deposit';
+import { cumulativeDiscoveryOdds } from '../../src/engine/world/whether-a-buried-cache-is-still-there';
 import { getSect } from '../../src/data/cultivation/sects';
 import { usedAsVerb } from '../../src/web/actions';
 import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation';
@@ -306,34 +305,34 @@ describe('both routes lose, and they lose differently', () => {
     it('a cache in a city is far worse than a cache off the map', () => {
         const inTown = { ground: 'city' as const, daysSpent: 7, burierOrdinal: 6, anchored: false, watchers: 0 };
         const offMap = { ...inTown, ground: 'unplaceable' as const };
-        expect(oddsGoneIn(inTown, 200)).toBeGreaterThan(oddsGoneIn(offMap, 200) * 3);
+        expect(cumulativeDiscoveryOdds(inTown, 200)).toBeGreaterThan(cumulativeDiscoveryOdds(offMap, 200) * 3);
     });
 
     it('digging longer, standing higher and paying the Immovable Mountain Temple all help', () => {
         const base = { ground: 'village' as const, daysSpent: 1, burierOrdinal: 0, anchored: false, watchers: 0 };
-        expect(oddsGoneIn({ ...base, daysSpent: 60 }, 200)).toBeLessThan(oddsGoneIn(base, 200));
-        expect(oddsGoneIn({ ...base, burierOrdinal: 30 }, 200)).toBeLessThan(oddsGoneIn(base, 200));
-        expect(oddsGoneIn({ ...base, anchored: true }, 200)).toBeLessThan(oddsGoneIn(base, 200));
+        expect(cumulativeDiscoveryOdds({ ...base, daysSpent: 60 }, 200)).toBeLessThan(cumulativeDiscoveryOdds(base, 200));
+        expect(cumulativeDiscoveryOdds({ ...base, burierOrdinal: 30 }, 200)).toBeLessThan(cumulativeDiscoveryOdds(base, 200));
+        expect(cumulativeDiscoveryOdds({ ...base, anchored: true }, 200)).toBeLessThan(cumulativeDiscoveryOdds(base, 200));
     });
 
     it('somebody watching you dig is the worst thing that can happen to a cache', () => {
         const base = { ground: 'hamlet' as const, daysSpent: 30, burierOrdinal: 20, anchored: true, watchers: 0 };
-        expect(oddsGoneIn({ ...base, watchers: 1 }, 100)).toBeGreaterThan(oddsGoneIn(base, 100) * 2);
+        expect(cumulativeDiscoveryOdds({ ...base, watchers: 1 }, 100)).toBeGreaterThan(cumulativeDiscoveryOdds(base, 100) * 2);
     });
 
     it('concealment decays, so a very good burial is not a permanent one', () => {
         const good = { ground: 'village' as const, daysSpent: 90, burierOrdinal: 30, anchored: false, watchers: 0 };
         const bare = { ...good, daysSpent: 1, burierOrdinal: 0 };
         // At fifty years the careful burial is worth a great deal.
-        const earlyGap = oddsGoneIn(bare, 50) / oddsGoneIn(good, 50);
+        const earlyGap = cumulativeDiscoveryOdds(bare, 50) / cumulativeDiscoveryOdds(good, 50);
         // At a thousand it has been spent down and the ground is carrying it.
-        const lateGap = oddsGoneIn(bare, 1_000) / oddsGoneIn(good, 1_000);
+        const lateGap = cumulativeDiscoveryOdds(bare, 1_000) / cumulativeDiscoveryOdds(good, 1_000);
         expect(earlyGap).toBeGreaterThan(lateGap);
     });
 
     it('no cache is certain to survive a long enough wait', () => {
         const best = { ground: 'unplaceable' as const, daysSpent: 90, burierOrdinal: 45, anchored: true, watchers: 0 };
-        expect(oddsGoneIn(best, 2_000)).toBeGreaterThan(0.1);
+        expect(cumulativeDiscoveryOdds(best, 2_000)).toBeGreaterThan(0.1);
     });
 
     it('an old house is a better bet than a young one and the player can see it first', () => {
@@ -341,7 +340,7 @@ describe('both routes lose, and they lose differently', () => {
         const pavilion = standingOf('sect-thousand-treasure-pavilion', false)!;
         expect(ledger.yearsStanding).toBeGreaterThan(3_000);
         expect(pavilion.yearsStanding).toBeNull();
-        expect(oddsHolderFailsIn(ledger, 500)).toBeLessThan(oddsHolderFailsIn(pavilion, 500));
+        expect(cumulativeFailureOdds(ledger, 500)).toBeLessThan(cumulativeFailureOdds(pavilion, 500));
 
         // And the pre-deposit read orders them without printing a rate.
         const listed = counters();
@@ -355,8 +354,8 @@ describe('both routes lose, and they lose differently', () => {
 
     it('no house is certain either, and the risk grows with time rather than sitting still', () => {
         const best = standingOf('house-shrinking-earth', true)!;
-        expect(oddsHolderFailsIn(best, 100)).toBeLessThan(oddsHolderFailsIn(best, 800));
-        expect(oddsHolderFailsIn(best, 2_000)).toBeGreaterThan(0.1);
+        expect(cumulativeFailureOdds(best, 100)).toBeLessThan(cumulativeFailureOdds(best, 800));
+        expect(cumulativeFailureOdds(best, 2_000)).toBeGreaterThan(0.1);
     });
 
     it('a house that has quietly stopped doing its job is a worse holder', () => {
@@ -694,6 +693,35 @@ describe('one life puts it aside and another life collects it', () => {
         expect(right.refused).toBe(false);
         expect(h.purses.get('b')).toBeGreaterThan(50_000);
         expect(right.facts.lines.join(' ')).toContain('not them');
+    });
+
+    it('a claim on a burned vault leaves the goods in the ground at the seat, once', () => {
+        // A seed whose draw burns the house and leaves the vault, as the bridge
+        // test above finds one: the weights are the subject, not the seed.
+        const late = 1_000 + 4_000 * DAYS_PER_YEAR;
+        let seed: string | null = null;
+        for (let i = 0; i < 200 && seed === null; i += 1) {
+            if (readDeposit(deposit(), `burn-${i}`, late)?.fate?.fate === 'destroyed_vault_intact') seed = `burn-${i}`;
+        }
+        expect(seed, 'no seed in 200 produced a burned vault').not.toBeNull();
+
+        const h = harness(seed!);
+        h.ledger.write(deposit(), 'A deposit', 1_000);
+        const at = h.deps({
+            cultivator: { id: 'b', spiritStones: 0, realmOrdinal: 2 } as never,
+            runId: 'run-b',
+            worldDay: late,
+            seatOf: () => 'Green Water City'
+        });
+
+        const said = handleLegacy(at, 'claim', 'the Ninefold Karma Palace', 'the third stone by the ford', 0);
+        expect(said.refused).toBe(true);
+        expect(said.facts.lines.join(' ')).toContain('in the ground at Green Water City');
+        const holes = () => h.ledger.cachesAt('Green Water City').filter(c => c.fromDepositId === deposit().id);
+        expect(holes()).toHaveLength(1);
+
+        handleLegacy(at, 'claim', 'the Ninefold Karma Palace', 'the third stone by the ford', 0);
+        expect(holes()).toHaveLength(1);
     });
 
     it('a fraud who guesses badly enough destroys the entry for whoever could have collected it', () => {

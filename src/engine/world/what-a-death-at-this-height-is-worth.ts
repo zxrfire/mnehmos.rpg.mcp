@@ -163,23 +163,12 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
 /**
- * Where somebody is at the end of themselves: the share of their own span spent.
+ * How often the yearly draw takes somebody with an old wound: an untreated
+ * injury that finally kills them.
  *
- * The one cause of an ordinary death that exists on the row before anybody
- * draws for it. A Tribulation Transcender at five thousand four hundred years
- * of a hundred thousand has spent five hundredths of themselves and is not old,
- * which is the whole reason the top of the world was dying of age in a world
- * where nobody at the top is old.
- */
-export const WHEN_A_LIFE_IS_SPENT = 0.85;
-
-/**
- * How often a death that found nobody at the end of their span is an old wound
- * instead: somebody carrying an untreated injury that finally takes them.
- *
- * The second cause that exists before the draw. There is no third: a
- * breakthrough that did not hold was the invented one, and the world already
- * kills people at walls for real in `applyAdvancement`.
+ * The one cause that exists on the row before the draw. A span running out is
+ * `time.ts`'s, on the day, and a breakthrough that did not hold is
+ * `applyAdvancement`'s.
  */
 export const WHEN_IT_IS_AN_OLD_WOUND = 0.25;
 

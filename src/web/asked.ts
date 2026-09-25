@@ -120,67 +120,30 @@ export interface Answer {
     couldKnow: boolean;
 }
 
-// WHAT THEY DID, IN WORDS
+// WHAT THEY DID, AS A FACT
+//
+// One plain line each: what happened, as the player could see it. HOW it is
+// said is the narrator's. These sat under WHAT THE ENGINE RULED with a manner
+// written into them - a look, a tone, an uncle - and a ruling is played every
+// time, so one person opened five answers in seven with the same uncle.
 
 /** Attached, and the question named something they are placed to say nothing about. */
-const BLANK_LINES: readonly string[] = [
-    '{who} hears the question out and does not answer it, with the ease of somebody who ' +
-    'has been asked a great many things.',
-    '{who} lets the question sit, looks at something behind you, and does not pick it up.',
-    '{who} waits until it is clear no answer is coming, and then asks what you wanted here.'
-];
+const BLANK = '{who} does not answer the question.';
 
 /** Attached, and the question landed on nothing they could place. */
-const UNPLACEABLE_LINES: readonly string[] = [
-    '{who} turns "{topic}" over once, says something true about the weather on that road, ' +
-    'and lets it go.',
-    '{who} says they could not tell you, in the tone of somebody who could tell you a great ' +
-    'deal about something adjacent, and does not.',
-    '{who} asks who told you that, does not wait for the answer, and moves the conversation ' +
-    'somewhere easier.'
-];
+const UNPLACEABLE = '{who} cannot place "{topic}" and says nothing about it.';
 
 /** Attached, knows it, and the account they owe costs more than the telling. */
-const DEFLECT_LINES: readonly string[] = [
-    '{who} gives an answer general enough to contain nothing, and moves the conversation ' +
-    'somewhere easier.',
-    '{who} agrees that it is a good question, agrees that people do ask it, and has finished ' +
-    'speaking.',
-    '{who} answers a slightly different question, thoroughly, and looks pleased to have helped.'
-];
+const DEFLECT = '{who} answers without saying anything about it.';
 
 /** Unattached, above their stratum, and nothing at all stopping them. */
-const GUESS_LINES: readonly string[] = [
-    '{who} answers straight away and at length, and none of it sits with anything else you ' +
-    'have been told.',
-    '{who} has a view on it, delivers the whole view, and is quite certain throughout.',
-    '{who} starts with what their uncle said, and by the end of it has settled several things ' +
-    'nobody asked about.'
-];
+const GUESS = '{who} answers with confidence, and none of it matches anything you have been told.';
 
 /** Unattached, and the question named nothing anybody could answer. */
-const UNATTACHED_UNPLACEABLE_LINES: readonly string[] = [
-    '{who} has never heard "{topic}" said before, and answers anyway, at some length.',
-    '{who} is fairly sure they know what you mean by "{topic}", and is not.',
-    '{who} takes "{topic}" for something else entirely and tells you about that instead.'
-];
+const UNATTACHED_UNPLACEABLE = '{who} has not heard of "{topic}" and answers anyway, as if they had.';
 
-/**
- * Which line this person gives, decided once and for ever.
- */
-function pick(lines: readonly string[], who: string, topic: string, askedId: string): string {
-    let hash = 2166136261;
-    for (const text of [askedId, topic.trim().toLowerCase()]) {
-        for (let i = 0; i < text.length; i++) {
-            hash ^= text.charCodeAt(i);
-            hash = Math.imul(hash, 16777619);
-        }
-        hash ^= 0x5f;
-    }
-    const chosen = lines[Math.abs(hash) % lines.length];
-    return chosen
-        .replace('{who}', who)
-        .replace('{topic}', topic.trim() || 'it');
+function saying(line: string, who: string, topic: string): string {
+    return line.replace('{who}', who).replace('{topic}', topic.trim() || 'it');
 }
 
 /**
@@ -329,7 +292,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
                 return {
                     reach: 'deflects',
                     couldKnow: false,
-                    lines: [pick(UNPLACEABLE_LINES, who, input.rawTopic, asked.id)],
+                    lines: [saying(UNPLACEABLE, who, input.rawTopic)],
                     structure: [
                         ...structure,
                         'Reach: deflects. Nothing in the question they could place, and a position ' +
@@ -342,7 +305,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
             return {
                 reach: 'blank',
                 couldKnow: false,
-                lines: [pick(BLANK_LINES, who, input.rawTopic, asked.id)],
+                lines: [saying(BLANK, who, input.rawTopic)],
                 structure: [...structure, 'Reach: blank. Above their stratum, and placed to say nothing.'],
                 teaches: false,
                 introduces: false
@@ -351,7 +314,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
         return {
             reach: 'guesses',
             couldKnow: false,
-            lines: [pick(GUESS_LINES, who, input.rawTopic, asked.id)],
+            lines: [saying(GUESS, who, input.rawTopic)],
             structure: [...structure, 'Reach: guesses. Above their stratum, nothing to protect, so they fill it.'],
             teaches: false,
             introduces: true
@@ -366,7 +329,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
         return {
             reach: 'deflects',
             couldKnow: true,
-            lines: [pick(DEFLECT_LINES, who, input.rawTopic, asked.id)],
+            lines: [saying(DEFLECT, who, input.rawTopic)],
             structure: [...structure, 'Reach: deflects. Knows it; the account they owe costs more than the telling.'],
             teaches: false,
             introduces: false
@@ -416,7 +379,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
         return {
             reach: 'guesses',
             couldKnow: true,
-            lines: [pick(UNATTACHED_UNPLACEABLE_LINES, who, input.rawTopic, asked.id)],
+            lines: [saying(UNATTACHED_UNPLACEABLE, who, input.rawTopic)],
             structure: [
                 ...structure,
                 'Reach: guesses. Nothing was named that anybody could answer, and nothing ' +

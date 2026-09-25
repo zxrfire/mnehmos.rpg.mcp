@@ -18,7 +18,6 @@ import {
 import {
     fateOfACache,
     groundFor,
-    cumulativeDiscoveryOdds,
     GROUND_READS,
     type BurialGround,
     type CacheBurial,
@@ -419,10 +418,6 @@ export function readCache(
     };
 }
 
-/** The odds a cache in this ground with this burial is gone in `years`. */
-export function oddsGoneIn(burial: CacheBurial, years: number): number {
-    return cumulativeDiscoveryOdds(burial, years);
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // READING A DEPOSIT
@@ -507,10 +502,6 @@ export function readDeposit(
     return { record, terms, standing, years, fate, payable: !failed && !lapsed, refusal, lapsed, structure };
 }
 
-/** The odds a house has stopped honouring claims in `years`. For the pre-read. */
-export function oddsHolderFailsIn(standing: HolderStanding, years: number): number {
-    return cumulativeFailureOdds(standing, years);
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // RESOLUTION
@@ -1141,6 +1132,8 @@ export interface LegacyDeps {
     /** What the pouch holds, as stacks. */
     pouch: GoodStack[];
     road?: OutOfRoad;
+    /** The place a house is seated at, by name, or null. */
+    seatOf?: (factionId: string) => string | null;
 }
 
 export interface LegacyOutcome {
@@ -1372,6 +1365,24 @@ function lodge(deps: LegacyDeps, target: string | undefined, phrase: string | un
     };
 }
 
+/**
+ * A deposit whose house burned with the vault intact is a cache at the seat.
+ *
+ * Written once, the first time the claim finds it, so a later dig at the seat
+ * reaches the goods through the ordinary cache read.
+ */
+function theVaultUnderTheAsh(deps: LegacyDeps, reading: DepositReading): CacheRecord | null {
+    if (!reading.fate || !leavesAHoleInTheGround(reading.fate.fate)) return null;
+    const seat = deps.seatOf?.(reading.record.factionId) ?? null;
+    if (!seat) return null;
+    const already = deps.ledger.cachesAt(seat).find(c => c.fromDepositId === reading.record.id);
+    if (already) return already;
+    const cache = vaultAsACache(reading.record, reading.fate, seat, deps.ledger.nextId(deps.runId, 'cache'));
+    if (!cache) return null;
+    deps.ledger.write(cache, `A burned vault at ${seat}`, deps.worldDay);
+    return cache;
+}
+
 function claim(
     deps: LegacyDeps,
     seed: string,
@@ -1408,10 +1419,13 @@ function claim(
     for (const reading of readings) {
         if (!phrase || !phraseOpens(reading.record.sealed, reading.record.id, phrase)) continue;
         if (!reading.payable) {
+            const buried = theVaultUnderTheAsh(deps, reading);
+            const facts = factsForClaim(reading, {
+                paid: false, refusal: reading.refusal, hintLines: [], attemptsLeft: 0
+            });
+            if (buried) facts.lines.push(`What was lodged is in the ground at ${buried.place}.`);
             return {
-                facts: factsForClaim(reading, {
-                    paid: false, refusal: reading.refusal, hintLines: [], attemptsLeft: 0
-                }),
+                facts,
                 calls: [{ name: 'engine.legacyLedger', action: 'legacy', summary: reading.structure, ok: false }],
                 refused: true,
                 daysSpent: 0

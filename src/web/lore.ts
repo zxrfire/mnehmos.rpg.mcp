@@ -91,13 +91,6 @@ export type LoreCatalog =
     | 'places'
     | 'auction-venues';
 
-/** Every catalog this module draws from. The regression test's checklist. */
-export const LORE_CATALOGS: readonly LoreCatalog[] = [
-    'sects', 'destroyed-houses', 'courts', 'guest-elders', 'members',
-    'wanderers', 'sealed-held', 'sealed-unowned', 'immortal-channels',
-    'immortal-items', 'ages', 'dead-civilisations', 'lid-theories',
-    'origin-accounts', 'regions', 'places', 'auction-venues'
-] as const;
 
 /**
  * One name, and the conditions under which somebody would say it.

@@ -12,6 +12,7 @@
  * combat power, and has to cultivate something else to fight with.
  */
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
+import { getTechnique } from '../data/cultivation/index.js';
 
 /** The taker's fuel: an art that runs on another person. */
 export const RUNS_ON_ANOTHER = 'the_others';
@@ -32,18 +33,26 @@ export interface HalfOfTheRite {
  *
  * Read off `runsOn` rather than a named id. Three arts carry it today and a
  * fourth added tomorrow is covered without this file being edited.
+ *
+ * `runsOn` is read from the CATALOG. The repo row never carries it - the table
+ * has no column and the parse defaults it to `'self'` - so reading it off the
+ * row refused every rite for everybody. `alsoHolds` is the technique list on a
+ * world row, for somebody who has no `cultivators` row to list.
  */
-export function theirHalfOfTheRite(repos: CultivationRepos, personId: string): HalfOfTheRite {
-    const known = repos.techniques.listKnown(personId);
-    const fuel = (row: typeof known[number]) => (row as unknown as { runsOn?: string }).runsOn;
-    const taking = known.find(row => fuel(row) === RUNS_ON_ANOTHER) ?? null;
-    const spending = known.find(row => fuel(row) === RUNS_ON_OWN_LIFESPAN) ?? null;
-    const held = taking ?? spending;
-    const stage = held ? Number((held as unknown as { stage?: number }).stage ?? 1) : 0;
+export function theirHalfOfTheRite(
+    repos: CultivationRepos,
+    personId: string,
+    alsoHolds: readonly string[] = []
+): HalfOfTheRite {
+    const ids = [...repos.techniques.listKnown(personId).map(row => row.id), ...alsoHolds];
+    const fuel = (id: string) => getTechnique(id)?.runsOn;
+    const taking = ids.find(id => fuel(id) === RUNS_ON_ANOTHER) ?? null;
+    const spending = ids.find(id => fuel(id) === RUNS_ON_OWN_LIFESPAN) ?? null;
+    // No stored stage exists for an art yet, so holding one is stage 1.
     return {
-        takingArt: taking?.id ?? null,
-        spendingArt: spending?.id ?? null,
-        stage: Number.isFinite(stage) ? Math.max(0, stage) : 0
+        takingArt: taking,
+        spendingArt: spending,
+        stage: (taking ?? spending) !== null ? 1 : 0
     };
 }
 
@@ -98,11 +107,9 @@ export function whyTheRiteWillNotOpen(
  * grown in them, which is what makes keeping one a long road rather than an
  * afternoon.
  *
- * NOT YET REACHABLE: the half a subject cultivates has no row in
- * `techniques.ts`, so this reads zero for everybody. See the design note in
- * `docs/world/normal-in-the-cultivation-world.md` - splitting the rite into two
- * linked arts is the design owner's ruling and the second row is the missing
- * half of it.
+ * Read by `the-furnace-rite-once-somebody-has-yielded.ts`, multiplied with the
+ * physique's `drawnOff`. No stored stage exists yet, so it reads 1 for anybody
+ * holding the half (the Lotus-Nurturing Canon is its row).
  */
 export function whatThisFurnaceIsWorth(subject: HalfOfTheRite): number {
     return subject.spendingArt === null ? 0 : subject.stage;

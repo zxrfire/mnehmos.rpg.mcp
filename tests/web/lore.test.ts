@@ -30,7 +30,6 @@ import {
     COMMON_CURRENCY_ORDINAL,
     INSIDER_ONLY_FLOOR,
     LORE,
-    LORE_CATALOGS,
     OVERHEARD_BAND_WEIGHTS,
     TOLD_BAND_WEIGHTS,
     WORKING_KNOWLEDGE_MARGIN,
@@ -43,6 +42,14 @@ import {
     type LoreCatalog,
     type Mentionable
 } from '../../src/web/lore';
+
+/** Every catalog the lore module draws from - this test's checklist. */
+const LORE_CATALOGS: readonly LoreCatalog[] = [
+    'sects', 'destroyed-houses', 'courts', 'guest-elders', 'members',
+    'wanderers', 'sealed-held', 'sealed-unowned', 'immortal-channels',
+    'immortal-items', 'ages', 'dead-civilisations', 'lid-theories',
+    'origin-accounts', 'regions', 'places', 'auction-venues'
+];
 import {
     REACH_NAME_CHANCE,
     SPOKEN_NAME_CHANCE,

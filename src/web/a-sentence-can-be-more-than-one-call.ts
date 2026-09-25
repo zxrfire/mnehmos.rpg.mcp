@@ -3,7 +3,6 @@
  */
 
 import {
-    ACTION_NAMES,
     TARGETED_ACTIONS,
     carryWhatOnlyTheSentenceKnows,
     costsTheAskerNothing,
@@ -1105,13 +1104,6 @@ function plainNameOf(action: ActionName): string {
 }
 
 /**
- * Every verb this question could ever have to name, for the guard test.
- */
-export function everyVerbTheQuestionCouldName(): ActionName[] {
-    return ACTION_NAMES.filter(name => !costsTheAskerNothing({ action: name }));
-}
-
-/**
  * The question, in the player's own terms, answerable in one word.
  */
 export function whatTheQuestionAsks(fork: WhichComesFirst): string {
@@ -1263,16 +1255,6 @@ export interface ToolCallRecordish {
     action: string;
     summary: string;
     ok: boolean;
-}
-
-/**
- * Whether the world stopped the plan here.
- */
-export function theWorldStoppedHere(
-    call: Pick<OneCall, 'outcome' | 'calls'>,
-    step: PlanStep
-): boolean {
-    return howTheStepWent(call, step) === 'did_not_come_off';
 }
 
 /**

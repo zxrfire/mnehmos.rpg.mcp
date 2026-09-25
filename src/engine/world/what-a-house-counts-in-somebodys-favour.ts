@@ -43,13 +43,6 @@ export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null)
     return npc.merit.find(row => row.houseId === houseId)?.points ?? 0;
 }
 
-/** Every house that counts something in their favour, most first. */
-export function whoCountsThemFavourably(
-    npc: Pick<NpcRecord, 'merit'>
-): readonly { houseId: string; points: number }[] {
-    return [...(npc.merit ?? [])].sort((a, b) => b.points - a.points);
-}
-
 /**
  * The same row with this much more counted by a named house.
  *

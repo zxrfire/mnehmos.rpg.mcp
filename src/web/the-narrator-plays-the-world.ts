@@ -8,8 +8,10 @@
  * measurements behind them live in `docs/world/writing/`.
  */
 
+import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { realmIndexOf } from '../engine/cultivation/realms.js';
 import { catalogPersonBehind } from '../engine/world/a-catalog-person-and-their-world-row.js';
+import { whyTheyLeftTheChair } from '../engine/world/a-house-changes-who-leads-it.js';
 import { getMember } from '../data/cultivation/members.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -688,6 +690,24 @@ export function whatTheyHaveToReachFor(
 }
 
 /**
+ * That somebody once held their house's chair: how long ago they left it, why, and whether the
+ * elders put them out. Null for anybody who never sat in it.
+ */
+export function howTheyLeftTheChair(
+    row: Pick<NpcRecord, 'tags' | 'factionId'>,
+    today: number
+): string | null {
+    if (row.factionId === null) return null;
+    const left = whyTheyLeftTheChair(row, row.factionId);
+    if (left === null) return null;
+    const years = Math.max(0, Math.floor((today - left.day) / DAYS_PER_YEAR));
+    const when = years === 0 ? 'this year' : `${years} year${years === 1 ? '' : 's'} ago`;
+    return left.putOut
+        ? `once head of their house; the elders put them out of the chair ${when} (${left.why})`
+        : `once head of their house; stepped down ${when} (${left.why})`;
+}
+
+/**
  * The person present whom this turn's act was put to, from the targets the plan carried.
  *
  * A target naming somebody here is matched to them. A description ("the old man") is left to the
@@ -732,6 +752,7 @@ function aPersonsCard(
     ].filter((part): part is string => part !== null).join(', ');
 
     const lines = [`- ${person.name}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
+    if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
     // A FACE IS NOT A NAME. The owner: "you don't know their name, you just see a jade beauty in
     // red... hide the name unless the player is sure this is them, cuz otherwise, they introduce
     // themselves". The card keeps the name, because the rulings use it; the prose never does. And

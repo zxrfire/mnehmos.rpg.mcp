@@ -173,14 +173,6 @@ export async function activeWorld(): Promise<WorldHandle> {
     return loaded.get(created.id)!;
 }
 
-/** Point new runs at a different existing world. */
-export async function setActiveWorld(worldId: string): Promise<WorldSummary | null> {
-    const handle = await open(worldId);
-    if (!handle) return null;
-    activeId = handle.id;
-    return summarise(handle, true);
-}
-
 export function activeWorldId(): string | null {
     return activeId;
 }

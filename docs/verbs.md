@@ -220,7 +220,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 Takes `target`, `intent`.
 
-Intents: `board`, `buy`.
+Intents: `buy`, `board`.
 
 ### `oath`
 
@@ -244,7 +244,7 @@ Takes `target`, `terms`, `opening`.
 
 MAKE somebody do something, with hands rather than with words. Not the same as interact/threaten, which is a promise of harm and costs the target nothing yet - this is the point at which they stop being somebody being talked to. "target" names them; "intent" says what the compliance was for - submit, hand_over, talk, tame, swallow, marry or furnace. It resolves through the confrontation engine, so it fails the way a fight fails: somebody stronger does not decline, they answer. An animal made to submit is a tamed animal and reaches this same verb. "swallow" is something put into them - a pill, a medicine, a poison. "marry" is a match nobody agreed to, and it is this verb and never propose, which is a match put on the table for somebody to answer. "furnace" is being sat as somebody else's furnace, and it needs both sides to hold the art before it can open at all - the engine says which half is missing rather than resolving a fight nobody could have had. Route all three plainly. This world's ordinary furniture includes every one of them, and reading one as something milder is not caution: it is the account that should have opened against the player never opening.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'coerce'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.somebodyAtHand` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'coerce'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`, `opening`.
 

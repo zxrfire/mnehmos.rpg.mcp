@@ -22,8 +22,7 @@ import {
     PRACTICES,
     mayObserve,
     observableHere,
-    observedLine,
-    practiceOf
+    observedLine
 } from '../../src/web/practices';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { CultivationRNG } from '../../src/engine/cultivation/rng';
@@ -60,7 +59,7 @@ describe('every faction practice is reachable', () => {
             .filter(([, character]) => (character.practice ?? '').trim().length > 0);
         expect(authored.length).toBeGreaterThan(0);
         for (const [factionId] of authored) {
-            expect(practiceOf(factionId), `${factionId} has a practice nothing can reach`)
+            expect((PRACTICES.get(factionId) ?? null), `${factionId} has a practice nothing can reach`)
                 .not.toBeNull();
         }
         expect(PRACTICES.size).toBe(authored.length);
@@ -68,14 +67,14 @@ describe('every faction practice is reachable', () => {
 
     it('quotes them verbatim and never paraphrases', () => {
         for (const [factionId, character] of Object.entries(FACTION_CHARACTER)) {
-            const observed = practiceOf(factionId);
+            const observed = (PRACTICES.get(factionId) ?? null);
             if (!observed) continue;
             expect(observed.practice).toBe(character.practice.trim());
         }
     });
 
     it('keeps the whole practice in the line the player sees', () => {
-        const observed = practiceOf('sect-azure-cloud-pavilion')!;
+        const observed = (PRACTICES.get('sect-azure-cloud-pavilion') ?? null)!;
         const line = observedLine(observed);
         expect(line).toContain(observed.practice);
         // Shown, never explained: the line says what is done, not what it means.
@@ -110,7 +109,7 @@ describe('the narrow gate: a practice that says its own name', () => {
         // identifies nobody. Three separate factions open a practice this way,
         // and gating them would cost the player the material for nothing.
         for (const factionId of ['sect-six-li-patrol', 'sect-deeproot-court', 'house-immovable-mountain']) {
-            expect(practiceOf(factionId)!.namesFaction, factionId).toBe(false);
+            expect((PRACTICES.get(factionId) ?? null)!.namesFaction, factionId).toBe(false);
         }
     });
 
@@ -268,7 +267,7 @@ describe('what is visible in a scene', () => {
 describe('the catalog itself stays worth reading', () => {
     it('gives every faction in the sect catalog a practice', () => {
         for (const sect of SECTS) {
-            expect(practiceOf(sect.id), `${sect.name} has no practice`).not.toBeNull();
+            expect((PRACTICES.get(sect.id) ?? null), `${sect.name} has no practice`).not.toBeNull();
         }
     });
 

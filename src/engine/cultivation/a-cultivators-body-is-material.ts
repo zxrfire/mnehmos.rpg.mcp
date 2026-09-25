@@ -76,15 +76,6 @@ export function couldUseItThemselves(harvest: Harvest, holderOrdinal: number): b
 }
 
 /**
- * What carrying it says about the person carrying it, in plain words.
- */
-export function whatHoldingItSays(harvest: Harvest): string {
-    return `${harvest.grade} grade, off ${harvest.fromName}, who stood at ordinal `
-        + `${harvest.fromOrdinal}. Anybody who could work it can read all of that off it, and `
-        + 'anybody who knew them can read the rest.';
-}
-
-/**
  * How much of somebody a harvest cost them, for the deed layer.
  */
 export const WHAT_A_HARVEST_COSTS_THE_BODY = 1;

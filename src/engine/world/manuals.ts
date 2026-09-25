@@ -635,15 +635,6 @@ export function chosenCount(topCopies: number, memberCount: number): number {
 }
 
 /**
- * A book nobody here can copy is a treasure, not a resource.
- */
-export function isTreasureTo(members: readonly NpcRecord[], techniqueId: string): boolean {
-    const t = getTechnique(techniqueId);
-    if (t === undefined || t.cap == null) return false;
-    return !members.some(m => m.status === 'alive' && m.cultivation.realmOrdinal >= Number(t.cap));
-}
-
-/**
  * How many arts somebody of this height has picked up.
  */
 export function artsKnownAt(ordinal: number): number {

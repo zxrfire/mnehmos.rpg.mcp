@@ -51,7 +51,7 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
-import type { FactVisibility, HistoricalEventKind, HistoricalFact } from './history.js';
+import type { HistoricalEventKind, HistoricalFact } from './history.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // ACCESS
@@ -576,6 +576,3 @@ export function namesPermitted(digest: PlayerDigest): { factions: Set<string>; n
     }
     return { factions, npcs };
 }
-
-/** Visibilities that can never reach somebody who was not involved. */
-export const PRIVATE_VISIBILITIES: readonly FactVisibility[] = ['secret'];

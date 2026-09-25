@@ -436,7 +436,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // tracked above, and both off the standing the ward is rated on.
     //
     // NO SECOND LIST. What a house holds is `state.objects` filtered by
-    // `ownerId`, read through `whatThisHouseHolds`. A stored list of ids on the
+    // `ownerId`, filtered where it is asked. A stored list of ids on the
     // faction would be a second copy of a fact the one possessions table
     // already owns, and the copy is what goes stale the first time something is
     // lent, sold or taken. See `what-a-house-keeps-in-its-treasury.ts`.

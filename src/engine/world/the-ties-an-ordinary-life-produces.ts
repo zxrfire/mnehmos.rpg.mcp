@@ -98,11 +98,6 @@ export const HOUSEHOLD_MIN_AGE = 18;
 export const HOUSEHOLD_PER_YEAR = 0.03;
 
 /**
- * Students one person is carrying at a time.
- */
-export const STUDENTS_AT_ONCE = 3;
-
-/**
  * Master ties one student may hold at once.
  */
 export const MASTERS_AT_ONCE = 3;

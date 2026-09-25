@@ -350,21 +350,6 @@ export const RuinAccessSchema = z.discriminatedUnion('admits', [
 ]);
 export type RuinAccess = z.infer<typeof RuinAccessSchema>;
 
-/**
- * Whether the body that goes in is the body that gains.
- */
-export function entrantIsTheBeneficiary(access: RuinAccess): boolean {
-    return access.admits === 'anyone_who_survives_it';
-}
-
-/** The band of ordinal this ground admits at all, inclusive. */
-export function admittedBand(access: RuinAccess): { floor: number; ceiling: number | null } {
-    return {
-        floor: access.floorOrdinal,
-        ceiling: access.admits === 'nobody_above_the_line' ? access.ceilingOrdinal : null
-    };
-}
-
 export interface AdmissionReading {
     /** True when the ground will let this body in at all. */
     admitted: boolean;
@@ -3030,11 +3015,6 @@ export function getTrial(id: string): InheritanceTrial | undefined {
 export function getGrave(id: string): Grave | undefined {
     const s = SITE_BY_ID.get(id);
     return s && s.kind === 'grave' ? s : undefined;
-}
-
-/** Every gate on a site, in the order they are met. */
-export function gatesOf(site: Site): readonly Gate[] {
-    return site.interior.gates;
 }
 
 /** Sites carrying at least one gate of this kind. */

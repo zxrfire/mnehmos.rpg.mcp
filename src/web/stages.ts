@@ -75,7 +75,8 @@ export interface WrittenStage {
     manualId: string;
     stageNumber: number;
     authorId: string;
-    writtenOnDay: number;
+    /** Null for a stage the world was seeded with, whose day nobody kept. */
+    writtenOnDay: number | null;
     opacity: number;
 }
 
@@ -173,7 +174,7 @@ export function stagesOf(repos: CultivationRepos, manualId: string): WrittenStag
         manualId: row.manual_id,
         stageNumber: row.stage_number,
         authorId: row.author_id ?? '',
-        writtenOnDay: row.written_on_day ?? 0,
+        writtenOnDay: row.written_on_day,
         opacity: row.opacity
     }));
 }

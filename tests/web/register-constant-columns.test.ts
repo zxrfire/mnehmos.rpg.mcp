@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { hoistConstantColumns, hoistedLine } from '../../src/web/register-constant-columns';
-import { renderRegister } from '../../src/web/register';
+import { buildRegister, renderRegisterHtml } from '../../src/web/register';
 
 describe('a constant column is lifted out of the grid', () => {
     it('takes the columns that never vary and leaves the ones that do', () => {
@@ -84,7 +84,7 @@ describe('a constant column is lifted out of the grid', () => {
 });
 
 describe('the register stopped printing its constants per row', () => {
-    const HTML = renderRegister();
+    const HTML = renderRegisterHtml(buildRegister());
 
     it('says the comprehension materials are all alike once, not seven times', () => {
         // Measured before this pass: four of the six columns identical on all

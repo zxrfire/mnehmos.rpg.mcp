@@ -335,6 +335,10 @@ export const siteVerbs = {
                 // burial rather than re-decided whenever somebody asks.
                 watchers: this.present(cultivator).length,
                 pouch: pouchStacks(this.db, cultivator.id),
+                seatOf: factionId => {
+                    const seat = this.seatOf(factionId);
+                    return this.atHand?.locations.find(l => l.id === seat)?.name ?? null;
+                },
                 // Why they are at the counter. Settling is not a mood - it is
                 // the allowance running down at a rung they are not leaving.
                 road: {

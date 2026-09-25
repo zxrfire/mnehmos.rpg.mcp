@@ -51,25 +51,6 @@ import {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Everybody the world has standing over this person, by id: the masters they
- * knelt to and the people of their house carrying them through a manual.
- *
- * Both, because guidance is attention and a lesson is a lesson whoever gives it.
- * What the two are NOT the same at is the ledger: only a bond somebody took on
- * writes an oath to teach. See `RelationshipKind`.
- */
-export function masterIdsOf(npc: NpcRecord): string[] {
-    // People, once each: rows are keyed by the pair and the kind, so somebody
-    // who is both a master and the person carrying them through a book holds
-    // two rows and is still one person standing over them.
-    const ids = new Set<string>();
-    for (const tie of npc.relationships) {
-        if (tie.kind === 'master' || tie.kind === 'teacher') ids.add(tie.targetId);
-    }
-    return [...ids];
-}
-
-/**
  * The attention somebody is being given RIGHT NOW, where they stand.
  *
  * Guidance is attention. A master with one disciple, a master with several and

@@ -325,8 +325,3 @@ export function contingenciesHeldBy(factionId: string): Contingency[] {
 export function contingenciesAgainst(factionId: string): Contingency[] {
     return CONTINGENCIES.filter(c => c.targetFactionId === factionId);
 }
-
-/** Parties who have reached the observation without the means to use it. */
-export function noticedWithoutMeans(): readonly { factionId: string }[] {
-    return OTHERS_WHO_NOTICED;
-}

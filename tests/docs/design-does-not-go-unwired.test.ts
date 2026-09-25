@@ -152,7 +152,13 @@ import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-expo
 // look for them; the other two were a count nothing read and a note about a
 // harness printing two numbers. No slack left on this one - the design owner
 // has asked for this number to go to zero.
-const DEAD = 85;
+// 85 -> 0. Each went one of three ways: wired where the design was real (a
+// house's craft answers "what does it make", a burned vault leaves its goods
+// in the ground at the seat, a life that ends is closed in the world so the
+// next life has a predecessor, a head who left the chair is known for it),
+// deleted where a live path already did the job, or turned back into a
+// comment where it was a ruling. Nothing may be added to it now.
+const DEAD = 0;
 // Raised by one, for the same reason and under the same discipline as `DEAD`
 // above: one name from the same session is pinned by its own test and has no
 // caller in the game yet.
@@ -160,7 +166,10 @@ const DEAD = 85;
 // and not yet called by the game. Same discipline as `DEAD` above - this
 // number is meant to come DOWN, and nobody may raise it without saying here
 // what pushed it.
-const TEST_ONLY = 447;
+// 447 -> 406: wrappers only a test called went (the test calls the real read
+// now), research corpora moved into tests/ where only a test ever read them,
+// and some were wired. Down from here, not up.
+const TEST_ONLY = 406;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

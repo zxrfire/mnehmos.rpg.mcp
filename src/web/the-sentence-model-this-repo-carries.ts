@@ -205,11 +205,6 @@ export async function loadTheModel(directory: string = MODEL_DIRECTORY): Promise
     );
 }
 
-/** True once the weights are open. */
-export function theModelIsOpen(): boolean {
-    return session !== null;
-}
-
 /**
  * One sentence, one unit-length vector.
  *

@@ -12,6 +12,7 @@ import { type DaoAssessment, daoDistance } from '../cultivation/dao.js';
 import type { InsightDomain } from '../../schema/cultivation.js';
 import type { DayIndex } from '../social/common.js';
 import type { ObligationInput } from '../social/grudges.js';
+import { HOUSEHOLD_MIN_AGE } from '../world/the-ties-an-ordinary-life-produces.js';
 
 /**
  * Whether an art of this kind could work between two people, on sex alone.
@@ -62,6 +63,17 @@ export interface FurnaceUseInput {
     subjects: readonly OneBeingDrawnOff[];
     onDay: DayIndex;
     type: FurnaceUseType;
+}
+
+/**
+ * Nobody under this age is worked on, willing or not. The same age the world
+ * pairs anybody off at, so the two adult gates cannot drift apart.
+ */
+export const FURNACE_MIN_AGE = HOUSEHOLD_MIN_AGE;
+
+/** Whether somebody is old enough to be the subject of the rite. */
+export function oldEnoughForTheRite(ageYears: number): boolean {
+    return Number.isFinite(ageYears) && ageYears >= FURNACE_MIN_AGE;
 }
 
 /** Base chance a single use conceives, once the art has worked. One number, here. */

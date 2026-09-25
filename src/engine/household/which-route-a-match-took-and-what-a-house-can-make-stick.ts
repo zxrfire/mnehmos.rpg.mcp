@@ -4,7 +4,6 @@
  */
 
 import type { DayIndex } from '../social/common.js';
-import type { ObligationInput } from '../social/grudges.js';
 import {
     whatADeedLeaves,
     type Party,
@@ -91,11 +90,6 @@ export function whatRefusingAMatchTheyAlreadyMadeLeaves(input: {
         subject: input.theSuitor,
         reach: input.reach
     });
-}
-
-/** The records that refusal opens, or an empty list. */
-export function accountsARefusalOpens(left: WhatADeedLeaves | null): readonly ObligationInput[] {
-    return left?.opens ?? [];
 }
 
 // WHAT A HOUSE CAN MAKE STICK

@@ -740,14 +740,6 @@ export function locationHistory(location: LocationRecord): LocationHistoryEntry[
     return rows;
 }
 
-export function changesBetween(
-    location: LocationRecord,
-    fromDay: number,
-    toDay: number
-): LocationChange[] {
-    return location.changes.filter(c => c.onDay >= fromDay && c.onDay < toDay);
-}
-
 /** Changes to this place whose true cause is not on record. */
 export function unexplainedChanges(location: LocationRecord): LocationChange[] {
     return location.changes.filter(c => !c.causeKnown || c.fidelity === 'lost');
@@ -1538,25 +1530,6 @@ export function forbidZone(
             addTags: ['forbidden']
         }
     });
-}
-
-/**
- * Something large broke.
- */
-export function recordCatastrophe(
-    location: LocationRecord,
-    input: {
-        onDay: number;
-        kind: LocationChangeKind;
-        summary: string;
-        patch: LocationPatch;
-        causeFactId?: string | null;
-        causeKnown?: boolean;
-        witnessed?: boolean;
-        fidelity?: LocationChange['fidelity'];
-    }
-): ChangeResult {
-    return applyLocationChange(location, input);
 }
 
 /** A place is not deleted when it ends. It becomes the next thing. */

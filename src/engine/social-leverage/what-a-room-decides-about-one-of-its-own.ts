@@ -85,7 +85,6 @@ import { SEVERITY_IN_WORDS, severityRank, type Severity } from '../social/grudge
 import type { WhatHappensNext } from './reporting-what-you-saw.js';
 import type { WhoseCallItIs } from './what-an-elder-is-in-charge-of.js';
 import {
-    howFarUpTheLadder,
     whereTheOfferLanded,
     type WhatTheyWillTake
 } from './what-they-will-take-instead-of-money.js';
@@ -342,16 +341,4 @@ function howTheWordLanded(brought: WhatWasBrought): HowTheWordLanded {
     return whereTheOfferLanded(asked.wants, asked.offered).theRightKindOfThing
         ? 'it moved one rung'
         : 'the wrong kind of thing';
-}
-
-/**
- * How far above what they wanted an offer stood, for a caller reporting on one.
- *
- * Exported because the rung is the thing a player learns from - an offer that
- * was two rungs short reads differently from one that was refused outright - and
- * because deriving it a second time at the call site is how the two readings
- * would come to disagree.
- */
-export function howFarTheOfferStood(asked: AnIntercession): number {
-    return howFarUpTheLadder(asked.offered) - howFarUpTheLadder(asked.wants);
 }

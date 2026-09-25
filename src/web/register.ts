@@ -8486,8 +8486,3 @@ document.querySelectorAll('[data-fold]').forEach(function (button) {
 </script>
 </body></html>`)));
 }
-
-/** One call: read the catalogs, return the sheet. */
-export function renderRegister(): string {
-    return renderRegisterHtml(buildRegister());
-}

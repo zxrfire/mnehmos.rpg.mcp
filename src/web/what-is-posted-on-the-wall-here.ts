@@ -356,21 +356,11 @@ export function readTheWall(
 }
 
 /**
- * The house a `the intake` points at, read off the wall in front of the player.
- *
- * Returns undefined for anything that is not a paper reference, and for a wall
- * holding none or holding more than one - a phrase with two things to point at
- * points at neither, which is the ruling `whichOfTheNamedThings` keeps.
- */
-export function theWallAnswersThis(
-    target: string | undefined,
-    wall: () => { bills: readonly { houseName: string }[] }
-): string | undefined {
-    return whichHouseThePaperMeans(target, wall).house;
-}
-
-/**
- * The same read, with the candidates kept when it could not settle.
+ * The house a `the intake` points at, read off the wall in front of the player,
+ * with the candidates kept when it could not settle. `house` is undefined for
+ * anything that is not a paper reference, and for a wall holding none or more
+ * than one - a phrase with two things to point at points at neither, which is
+ * the ruling `whichOfTheNamedThings` keeps.
  *
  * A player who says `the intake` at a wall holding two of them is owed the two
  * names rather than a catalogue of every house in the province: the phrase

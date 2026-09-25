@@ -134,21 +134,6 @@ function isHere(npc: NpcRecord): boolean {
 }
 
 /**
- * Somebody, as the deed layer wants them, read off the world's own record.
- *
- * Exported because the world's own killings are priced the same way this pass
- * prices the ones it writes, and `the-world-changing-on-its-own.ts` should not
- * hold a second reading of the same row. See {@link whatAKillingLeaves}.
- */
-export function asTheDeedLayerReadsThem(
-    state: WorldState,
-    npc: NpcRecord,
-    withKin: boolean
-): Party {
-    return partyFor(state, npc, withKin);
-}
-
-/**
  * What a killing leaves, or null where nobody is left to carry it.
  *
  * ── THIS PASS'S OWN RULE, ASKED AT THE GRAVE ─────────────────────────────

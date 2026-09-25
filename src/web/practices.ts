@@ -108,11 +108,6 @@ export const PRACTICES: ReadonlyMap<string, Observation> = (() => {
     return out;
 })();
 
-/** The practice for one faction, when the catalog carries one. */
-export function practiceOf(factionId: string): Observation | null {
-    return PRACTICES.get(factionId) ?? null;
-}
-
 /**
  * Whether this holder is allowed to see this one.
  *

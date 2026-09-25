@@ -15,11 +15,11 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { renderRegister } from '../../src/web/register.js';
+import { buildRegister, renderRegisterHtml } from '../../src/web/register.js';
 import { relationshipBetween } from '../../src/data/cultivation/faction-relationships.js';
 import { contentionBetween } from '../../src/data/cultivation/what-two-houses-both-have-a-hand-on.js';
 
-const HTML = renderRegister();
+const HTML = renderRegisterHtml(buildRegister());
 
 /**
  * The slice of the sheet belonging to one body's entry.

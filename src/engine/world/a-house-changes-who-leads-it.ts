@@ -63,8 +63,9 @@
  * No chronicle fact. The REASON is carried on a tag, which is state and cheap;
  * what the world remembers about a leadership changing hands is a separate
  * decision from whether it changed, and inventing a fact kind here would
- * duplicate somebody else's sentence. A narrator reading the tag has what it
- * needs to say which of the four happened.
+ * duplicate somebody else's sentence. The person's card in a scene reads the
+ * tag back (`howTheyLeftTheChair`), so the narrator can say which of the four
+ * happened.
  *
  * No absence door. *"You don't steal their chair if they are in seclusion"* and
  * *"i mean if nobody holds it."* A head who is away still holds the chair, and
@@ -216,11 +217,14 @@ export function steppedDownTag(houseId: string, why: WhyTheyWouldGo, onDay: numb
     return `${STEPPED_DOWN}${houseId}:${WHAT_TO_CALL_IT[why]}:${Math.floor(onDay)}`;
 }
 
-/** Why this person left that house's chair, and when, or null where they never did. */
+/**
+ * Why this person left that house's chair, when, and whether the elders put
+ * them out of it. Null where they never sat in it.
+ */
 export function whyTheyLeftTheChair(
     npc: Pick<NpcRecord, 'tags'>,
     houseId: string
-): { why: string; day: number } | null {
+): { why: WhyTheyWouldGo; day: number; putOut: boolean } | null {
     const prefix = `${STEPPED_DOWN}${houseId}:`;
     for (const tag of npc.tags) {
         if (!tag.startsWith(prefix)) continue;
@@ -228,8 +232,13 @@ export function whyTheyLeftTheChair(
         const at = rest.lastIndexOf(':');
         if (at <= 0) continue;
         const day = Number(rest.slice(at + 1));
-        if (!Number.isFinite(day)) continue;
-        return { why: rest.slice(0, at), day };
+        const key = rest.slice(0, at);
+        const why = (Object.keys(WHAT_TO_CALL_IT) as WhyTheyWouldGo[])
+            .find(reason => WHAT_TO_CALL_IT[reason] === key);
+        if (!Number.isFinite(day) || why === undefined) continue;
+        // A removal writes both tags on the same day; see `theTopOfAHouseChangesHands`.
+        const putOut = npc.tags.includes(`${REMOVED_FROM_OFFICE}${houseId}:${day}`);
+        return { why, day, putOut };
     }
     return null;
 }
@@ -357,11 +366,6 @@ export function theRoomIsUnanimousAgainst(
 
     if (room.length === 0) return false;
     return room.every(say => say.reading < 0);
-}
-
-/** Whether this rung is one the elders sit on, for a caller outside this file. */
-export function isAnElderSeat(rankIndex: number, rankCount: number): boolean {
-    return isElderRank(rankIndex, rankCount) && rankIndex < rankCount - 1;
 }
 
 function moveTo(state: WorldState, npcId: string, rankIndex: number, onDay: number): void {

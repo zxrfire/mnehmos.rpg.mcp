@@ -720,11 +720,6 @@ export function fallenInRegion(regionId: string): Fallen[] {
     return FALLEN.filter(f => f.place.regionId === regionId);
 }
 
-/** Who is actually about, in a place of this size. Most of them are common. */
-export function fallenInSettlement(kind: Fallen['place']['settlements'][number]): Fallen[] {
-    return FALLEN.filter(f => f.place.settlements.includes(kind));
-}
-
 /** The ones it would be a mistake to write off, and why. */
 export function dangerousFallen(opts: { underestimatedOnly?: boolean } = {}): Fallen[] {
     return FALLEN.filter(f =>

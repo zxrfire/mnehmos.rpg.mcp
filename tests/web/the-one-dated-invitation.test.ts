@@ -56,7 +56,6 @@ import {
     type WhatTheLastTurnDid
 } from '../../src/web/last-turn-memory';
 import {
-    theWallAnswersThis,
     whichHouseThePaperMeans
 } from '../../src/web/what-is-posted-on-the-wall-here';
 
@@ -173,16 +172,16 @@ describe('the wall answers for itself', () => {
     const noBills = () => ({ bills: [] as { houseName: string }[] });
 
     it('names the house when one paper is up', () => {
-        expect(theWallAnswersThis('the intake', oneBill)).toBe('Cold Sword Sect');
-        expect(theWallAnswersThis('that notice', oneBill)).toBe('Cold Sword Sect');
+        expect(whichHouseThePaperMeans('the intake', oneBill).house).toBe('Cold Sword Sect');
+        expect(whichHouseThePaperMeans('that notice', oneBill).house).toBe('Cold Sword Sect');
     });
 
     it('names nobody when two are up', () => {
-        expect(theWallAnswersThis('the intake', twoBills)).toBeUndefined();
+        expect(whichHouseThePaperMeans('the intake', twoBills).house).toBeUndefined();
     });
 
     it('names nobody when the wall is bare', () => {
-        expect(theWallAnswersThis('the intake', noBills)).toBeUndefined();
+        expect(whichHouseThePaperMeans('the intake', noBills).house).toBeUndefined();
     });
 
     /**
@@ -193,12 +192,12 @@ describe('the wall answers for itself', () => {
      */
     it.each(['Azure Dew Sect', '', 'a sect', 'the sect', 'the nearest house'])(
         'does not answer for %j', said => {
-            expect(theWallAnswersThis(said, oneBill)).toBeUndefined();
+            expect(whichHouseThePaperMeans(said, oneBill).house).toBeUndefined();
         }
     );
 
     it('does not answer for an absent target', () => {
-        expect(theWallAnswersThis(undefined, oneBill)).toBeUndefined();
+        expect(whichHouseThePaperMeans(undefined, oneBill).house).toBeUndefined();
     });
 });
 

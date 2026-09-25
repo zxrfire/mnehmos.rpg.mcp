@@ -317,11 +317,6 @@ export function custodyTermsFor(factionId: string): CustodyTerms | undefined {
     return TERMS_BY_FACTION.get(factionId);
 }
 
-/** The house behind a set of terms, out of the ordinary sect catalog. */
-export function custodyHouse(terms: CustodyTerms): SectEntry | undefined {
-    return getSect(terms.factionId);
-}
-
 /** Terms plus the house, for every taker whose faction the catalog still holds. */
 export function custodyTakers(): { terms: CustodyTerms; house: SectEntry }[] {
     const out: { terms: CustodyTerms; house: SectEntry }[] = [];

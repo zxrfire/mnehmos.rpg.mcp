@@ -23,14 +23,40 @@
  * below is the check that it stayed fixed: the late age should be the large
  * majority and must never again be unanimous.
  */
-import {
-    FACTION_CHARACTER,
-    productionState,
-    productionConstraint,
-    type ProductionState
-} from '../src/data/cultivation/faction-character.js';
+import { FACTION_CHARACTER } from '../src/data/cultivation/faction-character.js';
 import { SECTS } from '../src/data/cultivation/sects.js';
 import { getTechnique } from '../src/data/cultivation/techniques.js';
+
+// The five states and the shelf-or-stores diagnosis are an authoring check on
+// the catalog, so they live here. The game reads a house's condition live, off
+// its roll, in `how-strong-a-house-actually-is.ts`.
+
+/** Which of the five states a house is in, derived rather than declared. */
+type ProductionState = 'declining' | 'at-peak' | 'complete' | 'ascending' | 'well-stocked';
+
+function productionState(factionId: string, powerOrdinal: number): ProductionState | undefined {
+    const p = FACTION_CHARACTER[factionId]?.production;
+    if (!p) return undefined;
+    if (p.climbingToward !== undefined && p.climbingToward > p.reliableOrdinal) {
+        return p.waitingOn === 'time' ? 'well-stocked' : 'ascending';
+    }
+    if (p.peakOrdinal > p.reliableOrdinal) return 'declining';
+    return p.reliableOrdinal >= powerOrdinal ? 'complete' : 'at-peak';
+}
+
+/**
+ * A manual's `cap` is `realmEnd + 1`, so the top rung of a book is a handoff to
+ * the next book. A house delivering `cap - 1` has delivered everything its shelf
+ * holds, and one more rung needs a different book rather than more pills.
+ */
+const HANDOFF_RUNG = 1;
+
+/** Whether a house is held back by its shelf or by its stores. */
+function productionConstraint(factionId: string, shelfCapOrdinal: number): 'manual' | 'resource' | undefined {
+    const p = FACTION_CHARACTER[factionId]?.production;
+    if (!p) return undefined;
+    return p.reliableOrdinal >= shelfCapOrdinal - HANDOFF_RUNG ? 'manual' : 'resource';
+}
 
 /** The cap of the best cultivation manual a house teaches. Zero when it teaches none. */
 function shelfCapOf(sect: any): number {

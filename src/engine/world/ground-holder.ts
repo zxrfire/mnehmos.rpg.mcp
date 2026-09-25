@@ -148,28 +148,6 @@ function chainFrom(
 }
 
 /**
- * Whether this ground sits at, or anywhere under, that ground.
- *
- * The same chain `whoHoldsTheGround` walks, read in the other direction, and
- * the inverse question is the one somebody standing in a town actually asks:
- * that read answers *whose ground am I on* by looking UPWARD for a holder, and
- * a settlement is where the chain used to stop: measured on a pinned world, 988
- * of 1063 location records carried a holder and 0 of the 12 places a player's
- * `location` can be did, because the held ones were the compounds, precincts
- * and vaults sitting under those names. The settlements carry their own holder
- * now where the catalog names one, and the twelve that do not are unheld ground
- * rather than an unasked question.
- */
-export function sitsWithin(
-    locations: readonly LocationRecord[],
-    locationId: string | null | undefined,
-    containerId: string | null | undefined
-): boolean {
-    if (!locationId || !containerId) return false;
-    return chainFrom(locations, locationId).some(step => step.id === containerId);
-}
-
-/**
  * The province this ground is in, as a location id.
  *
  * The nearest `region` ancestor, which is the level `seedRegions` creates and

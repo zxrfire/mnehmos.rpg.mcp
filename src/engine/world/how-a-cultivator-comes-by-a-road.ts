@@ -720,11 +720,3 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
     }
     return spent;
 }
-
-/**
- * What a house is still sitting on. For probes and the standing register;
- * nothing in the simulation reads it.
- */
-export function unspentMaterialsHeldBy(state: WorldState, factionId: string): ObjectRecord[] {
-    return state.objects.filter(o => o.ownerId === factionId && isUnspent(o));
-}

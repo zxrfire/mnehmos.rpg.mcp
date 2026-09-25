@@ -42,6 +42,7 @@ import {
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
+import { whatTheyCallARogue } from '../data/cultivation/rogues.js';
 import type { WhereTheyStandOnARoll }
     from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import type { ClaimVerdict } from '../engine/world/recognising-whose-art-you-just-watched.js';
@@ -490,9 +491,13 @@ export function standingLines(
                 text: `On the roll of ${onTheRoll?.factionName ?? sectNameFor(cultivator.sectId!)}`
                     + `${onTheRoll ? `, ranked ${onTheRoll.rungName}` : ''}.`
             }
+            // And what a province calls somebody unbacked at this height, which
+            // is the only rank vocabulary somebody with no house has.
             : {
-                text: 'Serves no house. Nothing is owed to them and nothing is asked of them.',
-                toThePlayer: 'You serve no house. Nothing is owed to you and nothing is asked of you.'
+                text: 'Serves no house. Nothing is owed to them and nothing is asked of them. '
+                    + `At this height a province calls somebody with no house ${whatTheyCallARogue(cultivator.realmOrdinal).called}.`,
+                toThePlayer: 'You serve no house. Nothing is owed to you and nothing is asked of you. '
+                    + `At your height a province calls somebody with no house ${whatTheyCallARogue(cultivator.realmOrdinal).called}.`
             },
         { text: describeAmbientPerceived(ambient) }
     ];
@@ -1444,6 +1449,11 @@ export interface SomebodyInTheSquare {
     age: number;
     /** Their rank in their house, where they wear one visibly. */
     rank: string | null;
+    /**
+     * That they once held their house's chair, when they left it and why, off
+     * the tag succession writes. Absent for nearly everybody.
+     */
+    leftTheChair?: string | null;
     /**
      * What they are at, in one clause, or null where the world has no row.
      *

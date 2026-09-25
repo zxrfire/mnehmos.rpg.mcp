@@ -8,14 +8,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { renderRegister, buildRegister } from '../../src/web/register';
+import { buildRegister, renderRegisterHtml } from '../../src/web/register';
 import { ARCHIVE_COPIES, MEDICINE_HOLDINGS, LOST_MATERIALS, ANCIENT_ARTS } from '../../src/data/cultivation/lost-ages';
 import { ARTERIALS, PROVINCES } from '../../src/data/cultivation/regions';
 import { COURTS, APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy';
 import { HERBS } from '../../src/data/cultivation/herbs';
 import { IMMORTAL_ITEMS } from '../../src/data/cultivation/immortal-items';
 
-const HTML = renderRegister();
+const HTML = renderRegisterHtml(buildRegister());
 
 describe('the techniques split on era, not labelled with it', () => {
     it('prints each age as its own head', () => {

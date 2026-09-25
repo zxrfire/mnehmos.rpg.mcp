@@ -201,10 +201,3 @@ const BY_FACTION = new Map(NO_PLACE_FOR_THEIR_OWN.map(x => [x.factionId, x]));
 export function noPlaceForTheirOwn(factionId: string): NoPlaceForTheirOwn | undefined {
     return BY_FACTION.get(factionId);
 }
-
-/** The three, grouped by which of the two opposite reasons applies. */
-export function noPlaceByReason(
-    reason: NoPlaceForTheirOwn['reason']
-): readonly NoPlaceForTheirOwn[] {
-    return NO_PLACE_FOR_THEIR_OWN.filter(x => x.reason === reason);
-}

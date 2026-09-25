@@ -83,23 +83,3 @@ export function getEnvironmentModifier(atmospherics: string[]): number {
 export function isDeafened(character: Character | NPC): boolean {
     return character.conditions?.some(c => c.name === 'DEAFENED') || false;
 }
-
-/** One speaker against many listeners. Deafened listeners are absent, not false. */
-export function batchRollStealthVsPerception(
-    speaker: Character | NPC,
-    listeners: Array<Character | NPC>,
-    environmentModifier: number = 0
-): Map<string, OpposedRollResult> {
-    const results = new Map<string, OpposedRollResult>();
-
-    for (const listener of listeners) {
-        if (isDeafened(listener)) {
-            continue;
-        }
-
-        const result = rollStealthVsPerception(speaker, listener, environmentModifier);
-        results.set(listener.id, result);
-    }
-
-    return results;
-}

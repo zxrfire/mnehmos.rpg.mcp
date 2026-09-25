@@ -108,6 +108,7 @@ import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
+import { theFurnaceRiteOnSomebodyWhoYielded } from './the-furnace-rite-once-somebody-has-yielded.js';
 import { whatIsInTheirHand } from './what-is-on-you-and-in-your-hands.js';
 import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 
@@ -768,7 +769,12 @@ export const combatVerbs = {
          * leaves one, and the rest of the set is named rather than resolved
          * behind the player's back.
          */
-        stopsOnAHeldFight: boolean
+        stopsOnAHeldFight: boolean,
+        /**
+         * At most this many answer, where the set is the room. A room is capped
+         * at three: past that the rest are a count, not turns of their own.
+         */
+        answeredBy?: number
     ): Promise<Execution> {
         const known = this.theSetAsYouKnowIt(cultivator, set);
         if (known === null) {
@@ -791,9 +797,15 @@ export const combatVerbs = {
             ));
         }
 
+        const aRoom = set.kind === 'everyone_here' || set.kind === 'role_here';
+        const listening = aRoom && answeredBy !== undefined && known.reached.length > answeredBy
+            ? known.reached.length - answeredBy
+            : 0;
+        const reached = listening > 0 ? known.reached.slice(0, answeredBy) : known.reached;
+
         const done: Execution[] = [];
         let heldOn: string | null = null;
-        for (const member of known.reached) {
+        for (const member of reached) {
             const now = this.currentRun();
             if (!now.cultivator.alive) break;
             done.push(await runOne(member));
@@ -803,10 +815,10 @@ export const combatVerbs = {
 
         const reachedButNotYet = heldOn === null
             ? []
-            : known.reached.slice(known.reached.findIndex(one => one.name === heldOn) + 1);
+            : reached.slice(reached.findIndex(one => one.name === heldOn) + 1);
 
         const folded = foldTheCallsIntoOneTurn(done, `${set.word}: ${done.length} of `
-            + `${known.reached.length} standing here.`);
+            + `${reached.length} standing here.`);
 
         // ── AND WHAT WAS THE SAME FOR ALL OF THEM IS SAID ONCE ───────────
         //
@@ -816,7 +828,7 @@ export const combatVerbs = {
         // of sixty words, four facts stated ten times each.
         const account = theAccountOfASetAct(
             done.map((one, at) => ({
-                who: known.reached[at]?.name ?? '',
+                who: reached[at]?.name ?? '',
                 lines: one.facts.lines
             }))
         );
@@ -834,7 +846,7 @@ export const combatVerbs = {
         // and then said it again, ten times, under ten names.
         const requiredOfAll = saidOnceForEverybodyItHappenedTo(
             done.map((one, at) => ({
-                who: known.reached[at]?.name ?? '',
+                who: reached[at]?.name ?? '',
                 lines: one.facts.required ?? []
             }))
         );
@@ -849,7 +861,7 @@ export const combatVerbs = {
             // who stopped it, and who is untouched. The narrator turns that
             // into a swing and a block; nothing here should try to.
             //
-            // The names are `known.reached`, so they are people the player can
+            // The names are `reached`, so they are people the player can
             // already name. Somebody they have never met is a head in the
             // crowd, not a name in a list.
             // ── AND THE SECOND FACT IS A SENTENCE, NOT A LABEL ───────────
@@ -863,7 +875,13 @@ export const combatVerbs = {
                 ? `${heldOn} is still standing, and stopped it there. `
                   + `${whoWasNeverReached(reachedButNotYet.map(one => one.name))}.`
                 : null,
-            remainder
+            remainder,
+            listening > 0
+                // Said as what they do, not what they do not - a ruling that
+                // says "say nothing" comes back as that phrase in the prose -
+                // and named rather than counted.
+                ? 'Whoever else is here hears it and goes on with what they were doing.'
+                : null
         ].filter((line): line is string => line !== null);
 
         if (tail.length > 0) {
@@ -1327,6 +1345,7 @@ export const combatVerbs = {
         }
 
         // -- SOMEBODY KNELT, AND THAT HAS TO OUTLIVE THE SENTENCE --------
+        let theRiteKilledThem = false;
         if (held.verb === 'coerce' && result.outcome === 'submission') {
             writeFlag(
                 this.db, cultivator.id, FLAG_YIELDING_TO_YOU,
@@ -1345,6 +1364,11 @@ export const combatVerbs = {
             if (held.wanted === 'swallow') {
                 this.whatWasPutDownTheirThroat(run, cultivator, held, execution);
             }
+            if (held.wanted === 'furnace') {
+                theRiteKilledThem = theFurnaceRiteOnSomebodyWhoYielded(
+                    this, run, cultivator, held, execution
+                ).died;
+            }
         }
 
         // AND WHAT LETTING SOMEBODY GO OPENS
@@ -1358,7 +1382,14 @@ export const combatVerbs = {
         // to find them. This adds a row for every ending rather than for the rare
         // one, so writing it first would put it in front of the row that test is
         // about and hide a real assertion behind an ordering accident.
-        const done = this.afterAFight(run, cultivator, held, settled, execution);
+        //
+        // A furnace rite that killed hands the result on as `finished`, so the
+        // death runs the same killing path a finishing blow does.
+        const done = this.afterAFight(
+            run, cultivator, held,
+            theRiteKilledThem ? { ...(settled as object), finished: true } : settled,
+            execution
+        );
         this.whatTheLoserNowHoldsAboutYou(run, cultivator, held, result, done);
         return done;
     },
@@ -2029,7 +2060,8 @@ export const combatVerbs = {
             execution.facts.prose = [execution.facts.prose, line].join('\n');
             execution.facts.structure.push(
                 `coerce: intent label "${wanted ?? 'submit'}", goal handed to the resolver `
-                + '"coerce". Nothing in the engine branches on the label.'
+                + '"coerce". The resolver never reads it; a submission acts on hand_over, '
+                + 'swallow and furnace, and the rest are a label.'
             );
         }
 

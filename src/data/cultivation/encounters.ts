@@ -9,7 +9,6 @@ import {
 import { MAX_ORDINAL, TOTAL_RANKS } from '../../engine/cultivation/realms.js';
 import {
     regardFor,
-    regardOf,
     type Regard,
     type RegardAskerInput
 } from '../../engine/cultivation/regard.js';
@@ -1860,17 +1859,7 @@ function clampOrdinal(ordinal: number): number {
     return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
 }
 
-/**
- * Fill a `summaryTemplate` from a token map. Unknown tokens are left in place
- * rather than blanked, so a missing fact is loud in the log instead of quietly
- * becoming an empty string the agent then narrates around.
- */
 // WHAT AN ENCOUNTER COSTS
-
-/** How the entry itself is pitched: is it still being drawn for this asker. */
-export function encounterRegard(entry: EncounterEntry, asker: RegardAskerInput): Regard {
-    return regardOf(entry, asker);
-}
 
 /**
  * How the hostile half is pitched. Null when the entry is not a fight, which
@@ -1900,6 +1889,11 @@ export function encounterDamage(
     return Math.max(0, Math.round(baseDamage * regard.damageMultiplier));
 }
 
+/**
+ * Fill a `summaryTemplate` from a token map. Unknown tokens are left in place
+ * rather than blanked, so a missing fact is loud in the log instead of quietly
+ * becoming an empty string the agent then narrates around.
+ */
 export function fillSummary(entry: EncounterEntry, values: Record<string, string | number>): string {
     return entry.summaryTemplate.replace(/\{(\w+)\}/gu, (whole, token: string) => {
         const value = values[token];

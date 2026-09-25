@@ -138,8 +138,6 @@ import {
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import {
     narrowToOffered,
-    regardOf,
-    type Regard,
     type RegardAskerInput
 } from '../../engine/cultivation/regard.js';
 import { HerbBiomeSchema, type HerbBiome } from './herbs.js';
@@ -3922,22 +3920,6 @@ export function findThreatsAboveOrdinal(ordinal: number, biome?: HerbBiome): Bea
     const floor = clampOrdinal(ordinal);
     const pool = biome ? getBeastsByBiome(biome) : BEASTS;
     return pool.filter(b => b.ordinal > floor);
-}
-
-/**
- * What meeting this thing costs, against a base the caller owns.
- *
- * Same resolver as everything else; the beast's `ordinal` is its gate and the
- * damage multiplier comes straight off the band. A four-rank gap is not a hard
- * fight, it is a death, and this is the arithmetic that says so outside combat
- * as well as inside it.
- */
-export function beastRegard(beast: Beast, asker: RegardAskerInput): Regard {
-    return regardOf(beast, asker);
-}
-
-export function beastDamage(beast: Beast, baseDamage: number, asker: RegardAskerInput): number {
-    return Math.max(0, Math.round(baseDamage * beastRegard(beast, asker).damageMultiplier));
 }
 
 /** Things that are a competing draw on, or sitting on top of, a vein. */

@@ -7,7 +7,7 @@
  * disagree about what they are doing - and NOTHING IN THE GAME REACHED ANY OF
  * IT. Every reader in that file had no caller outside the catalog's own index:
  * `artisansOf`, `cargoMadeBy`, `cargoCarriedBy`, `cargoOnLane`, `getSeaLane`,
- * `housesWithAWrittenCraft`, `lanesTouchingWater`, `whatEachProvinceMakes`.
+ * `housesWithAWrittenCraft`, `lanesTouchingWater`.
  *
  * That file's own header says the trade layer exists so that goods have a
  * SOURCE - *merchants who conjure stock out of nowhere would be exactly the
@@ -45,8 +45,7 @@ import {
     cargoMadeBy,
     getSeaLane,
     housesWithAWrittenCraft,
-    lanesTouchingWater,
-    whatEachProvinceMakes
+    lanesTouchingWater
 } from '../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 
 /** One workshop's answer, whether the row was written or derived. */
@@ -155,12 +154,6 @@ export function whatThisGroundMakes(ground: GroundToRead): WhatThisGroundMakes {
         crossings,
         carriers
     };
-}
-
-/** The province's own list, for a caller that has only an id. */
-export function whatAProvinceMakes(provinceId: string | null): readonly string[] {
-    if (provinceId === null) return [];
-    return whatEachProvinceMakes().find(p => p.regionId === provinceId)?.makes ?? [];
 }
 
 /**

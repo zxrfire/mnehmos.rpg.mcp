@@ -265,23 +265,3 @@ export function spend(object: ObjectRecord, byId: string, onDay: number): Object
         data: { ...object.data, spent: true, spentBy: byId, spentOnDay: onDay }
     };
 }
-
-/**
- * How high the materials somebody can actually reach will carry them.
- *
- * Zero when they can reach none, and zero is not a rounding of "a little" - it
- * is the state of most cultivators in the world, and it is why the upper ladder
- * is thin regardless of how good anybody's book is.
- */
-export function materialCeilingFor(
-    state: WorldState,
-    factionId: string | null
-): number {
-    if (!factionId) return 0;
-    let best = 0;
-    for (const o of state.objects) {
-        if (!isUnspent(o) || o.ownerId !== factionId) continue;
-        best = Math.max(best, Number(o.data?.forOrdinal ?? 0));
-    }
-    return best;
-}

@@ -1350,65 +1350,6 @@ export function inheritanceGap(factionId: string, powerOrdinal: number): number 
 }
 
 /**
- * Which of the five states a house is in, derived rather than declared.
- */
-export type ProductionState =
-    | 'declining'
-    | 'at-peak'
-    | 'complete'
-    | 'ascending'
-    | 'well-stocked';
-
-export function productionState(factionId: string, powerOrdinal: number): ProductionState | undefined {
-    const p = FACTION_CHARACTER[factionId]?.production;
-    if (!p) return undefined;
-    if (p.climbingToward !== undefined && p.climbingToward > p.reliableOrdinal) {
-        return p.waitingOn === 'time' ? 'well-stocked' : 'ascending';
-    }
-    if (p.peakOrdinal > p.reliableOrdinal) return 'declining';
-    return p.reliableOrdinal >= powerOrdinal ? 'complete' : 'at-peak';
-}
-
-/**
- * Whether a house is held back by its shelf or by its stores.
- */
-export type ProductionConstraint = 'manual' | 'resource';
-
-/**
- * A manual's `cap` is `realmEnd + 1`, so the top rung of a book is a HANDOFF to
- * wherever the next book opens rather than somewhere the house puts people.
- * A house delivering `cap - 1` has therefore delivered everything its shelf
- * holds, and one more rung needs a different book rather than more pills.
- */
-const HANDOFF_RUNG = 1;
-
-export function productionConstraint(
-    factionId: string,
-    shelfCapOrdinal: number
-): ProductionConstraint | undefined {
-    const p = FACTION_CHARACTER[factionId]?.production;
-    if (!p) return undefined;
-    return p.reliableOrdinal >= shelfCapOrdinal - HANDOFF_RUNG ? 'manual' : 'resource';
-}
-
-/** Everything working toward a named target today, and what each one waits on. */
-export function ascendingFactions(): {
-    factionId: string;
-    climbingToward: number;
-    waitingOn: NonNullable<ProductionTier['waitingOn']>;
-}[] {
-    return Object.entries(FACTION_CHARACTER)
-        .filter(([, c]) =>
-            c.production.climbingToward !== undefined
-            && c.production.climbingToward > c.production.reliableOrdinal)
-        .map(([factionId, c]) => ({
-            factionId,
-            climbingToward: c.production.climbingToward!,
-            waitingOn: c.production.waitingOn ?? 'access'
-        }));
-}
-
-/**
  * Factions that have lost ground - `peak` above `reliable` - worst first.
  */
 export function decliningFactions(): { factionId: string; lost: number; yearsSinceLastPeak: number }[] {

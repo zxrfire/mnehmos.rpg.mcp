@@ -267,7 +267,7 @@ export const LETTING_SOMEBODY_GO = new RegExp(`\\b(?:${SOMEBODY_IS_LET_GO})\\b`,
  * and this is stopping; and `spare` is the same act from the other end, so
  * every phrasing here is about the speaker's OWN knees. That is why the object
  * forms are excluded: `make him kneel` is a coercion and belongs to
- * `how-a-player-says-each-coercion.ts`, which owns it and had all of it.
+ * `tests/web/exemplars/how-a-player-says-each-coercion.ts`, which owns it and had all of it.
  */
 export const THE_ANSWER_IS_TO_YIELD =
     /\b(?:i )?(?:yield(?:s|ing)?|surrender(?:s|ing)?|submit(?:s|ting)?|give(?:s)? (?:up|in)|giving (?:up|in)|stand(?:s|ing)? down|kneel(?:s|ing)?|go(?:es|ing)? down on (?:one|my) knee|beg(?:s|ging)? for (?:mercy|my life)|throw(?:s|ing)? (?:down )?my (?:sword|blade|weapon)|drop(?:s|ping)? my (?:sword|blade|weapon)|ask(?:s|ing)? for mercy|plead(?:s|ing)? for (?:mercy|my life)|spare me|let me live|i (?:am|'m) beaten|you win)\b/i;
@@ -291,7 +291,7 @@ export const AN_ASK_FOLLOWS_THE_KNEE =
 /**
  * Somebody else's knees, which is the opposite act and shares every word.
  *
- * "I make him kneel" is a coercion, `how-a-player-says-each-coercion.ts` owns
+ * "I make him kneel" is a coercion, `tests/web/exemplars/how-a-player-says-each-coercion.ts` owns
  * it, and it read as a surrender until this was here - the sentence is about
  * kneeling and the reader had no way to tell whose.
  */

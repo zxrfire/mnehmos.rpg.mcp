@@ -195,11 +195,6 @@ export function seedPillStock(state: WorldState): ObjectRecord[] {
     return out;
 }
 
-/** A barter pill nobody has swallowed yet. */
-export function isUnspentPill(object: ObjectRecord): boolean {
-    return object.kind === 'pill' && object.tags.includes('barter') && object.data?.spent !== true;
-}
-
 /**
  * Swallowing one, which is the only thing you can do with it.
  *
@@ -216,12 +211,4 @@ export function swallow(object: ObjectRecord, byId: string, onDay: number): Obje
         tags: [...object.tags, 'spent'],
         data: { ...object.data, spent: true, spentBy: byId, spentOnDay: onDay }
     };
-}
-
-/** How many of an ordinary pill this house has on the shelf. */
-export function stockHeld(
-    holder: { resources: Record<string, number> },
-    pillId: string
-): number {
-    return Number(holder.resources[pillStockKey(pillId)] ?? 0);
 }

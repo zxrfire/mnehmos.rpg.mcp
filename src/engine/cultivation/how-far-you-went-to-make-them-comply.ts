@@ -139,22 +139,6 @@ export function whatALevelLeaves(input: {
     }
 }
 
-/**
- * The facts `whatItWasWorth` in the deed model asks for, from a level.
- */
-export function theDeedFactsFor(input: {
-    level: PressureLevel;
-    permanentWound?: boolean;
-    wordGivenFirst?: boolean;
-}): { cause: ObligationCause; irreversible: boolean; promised: boolean } {
-    const leaves = whatALevelLeaves(input);
-    return {
-        cause: leaves.cause,
-        irreversible: leaves.irreversible,
-        promised: input.wordGivenFirst === true
-    };
-}
-
 // WHETHER THEY YIELD AT ALL
 //
 // Design owner: **"depending on some character traits some would rather die.

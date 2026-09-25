@@ -139,25 +139,6 @@ export function remitOf(input: {
 }
 
 /**
- * The remit as a fact, for the mechanical channel.
- *
- * Names the room and the line, and stops. What somebody would ask for and what
- * it would take to get it is a scene, and the scene is the narrator's.
- */
-export function whatAPostReaches(remit: Remit, purpose: RoomPurpose): string {
-    switch (remit) {
-        case 'decides_about_the_room':
-            return `${purpose} is theirs. What happens there is settled by them.`;
-        case 'handles_what_passes_through':
-            return `They are posted to ${purpose}. A post reaches what passes through the room `
-                + 'and not what is decided about it.';
-        case 'nothing_here':
-            return `They have no standing in ${purpose}: they neither decide about it nor work `
-                + 'in it.';
-    }
-}
-
-/**
  * Who a report about this room's business is made to.
  *
  * The design owner, on taking board work: *"EITHER REPORT TO THAT ELDER OR TO A

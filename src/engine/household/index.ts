@@ -45,7 +45,6 @@ export {
 } from './what-declining-somebody-leaves.js';
 
 export {
-    accountsARefusalOpens,
     aRefusalOpensAnAccount,
     theSuitorIsPastWhatTheyCouldReach,
     whatRefusingAMatchTheyAlreadyMadeLeaves,

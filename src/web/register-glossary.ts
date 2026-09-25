@@ -1062,7 +1062,3 @@ export function glossaryGroups(): GlossaryGroup[] {
     return GLOSSARY.map(g => ({ ...g, entries: [...g.entries] }));
 }
 
-/** Every term on the sheet, flattened - for tests and for search. */
-export function glossaryTerms(): { group: string; term: string; meaning: string }[] {
-    return GLOSSARY.flatMap(g => g.entries.map(e => ({ group: g.group, ...e })));
-}

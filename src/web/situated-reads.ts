@@ -80,6 +80,7 @@ import {
     groundThatTeachesARoad,
     groundUnderfoot,
     housesGladToSeeYou,
+    howAPlayerHolds,
     howAPlayerStands,
     thingsCarriedThatTeachARoad,
     whatThisGroundTeaches,
@@ -119,6 +120,7 @@ import {
 } from './what-you-can-see-from-up-there.js';
 import {
     theLinesForWhatIsMadeHere,
+    whatThisHouseMakes,
     theStructureOfWhatIsMadeHere,
     whatThisGroundMakes
 } from './what-this-ground-makes-and-what-leaves-it.js';
@@ -1387,15 +1389,12 @@ export const situatedReads = {
     thingsTheyHoldThatTeach(this: GameService, cultivator: Cultivator): ThingThatTeaches[] {
         const world = this.atHand;
         if (!world) return [];
-        return thingsCarriedThatTeachARoad(world, {
-            ...howAPlayerStands(
-                world,
-                groundUnderfoot(world, cultivator.location, loosePlaceKey)
-                    ?? worldLocationFor(world, cultivator.location),
-                { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) }
-            ),
-            id: cultivator.id
-        });
+        return thingsCarriedThatTeachARoad(world, howAPlayerHolds(
+            world,
+            groundUnderfoot(world, cultivator.location, loosePlaceKey)
+                ?? worldLocationFor(world, cultivator.location),
+            { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) }
+        ));
     },
 
     /**
@@ -1637,7 +1636,23 @@ export const situatedReads = {
      * this says where they come from, which is the same kind of answer
      * `whoAnswersHere` gives about a claim.
      */
-    whatIsMadeHere(this: GameService, run: Run, cultivator: Cultivator): Execution {
+    whatIsMadeHere(this: GameService, run: Run, cultivator: Cultivator, named?: string): Execution {
+        // ONE NAMED HOUSE, asked about wherever it sits.
+        if (named && named.trim().length >= 3) {
+            const house = this.factionMeant(named, cultivator);
+            if (!house) {
+                return this.noPartyNamed(
+                    'look', named, cultivator,
+                    'You have no house of that name.',
+                    'You go to ask what they make and cannot say who they are.'
+                );
+            }
+            return this.freeAction(run, 'look', factsForToolResult(
+                `${house.name}, and what it makes.`,
+                whatThisHouseMakes(house.id, house.name)
+            ));
+        }
+
         const regionId = regionIdOfPlace(cultivator.location) ?? null;
         const region = regionId === null ? undefined : REGIONS.find(r => r.id === regionId);
         if (!region) {

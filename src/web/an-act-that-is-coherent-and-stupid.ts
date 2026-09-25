@@ -75,9 +75,12 @@ const WHAT_THE_ACT_NEEDED: Readonly<Record<InteractIntent, string>> = {
  */
 export function whatCameOfTryingIt(
     intent: InteractIntent,
-    watching: readonly string[]
+    watching: readonly string[],
+    /** The player's own phrase for it, from `theSentenceCalledItAThing`. */
+    theThing: string | null = null
 ): string {
-    return `That wants ${WHAT_THE_ACT_NEEDED[intent]}, and nothing here is that.`
+    return `That wants ${WHAT_THE_ACT_NEEDED[intent]}, and `
+        + `${theThing === null ? 'nothing here is that' : `${theThing} is not that`}.`
         + ` ${whoSawIt(watching)}`;
 }
 

@@ -74,8 +74,7 @@ import {
     pickNarrowed
 } from './dao.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
-import { aggregateInjuryPenalties, createInjury, untreatedInjuryCount } from './injuries.js';
-import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
+import { aggregateInjuryPenalties, untreatedInjuryCount } from './injuries.js';
 import {
     bleedOut,
     burnSatiety,
@@ -1802,24 +1801,6 @@ function daysUntilYear(limit: number, current: number): number {
 
 function deathSummary(cause: DeathCause, name: string, ordinal: number, age: number): string {
     return `${name} died at ${rankName(ordinal)}, age ${Math.floor(age)}: ${cause.replace(/_/g, ' ')}.`;
-}
-
-/**
- * Create the injury record for an out-of-band event during a skip. Exported
- * because the encounter and sect layers above this module need to mint
- * injuries on the same seeded, replayable basis.
- */
-export function skipInjury(
-    seed: string,
-    absDay: number,
-    turn: number,
-    severity: Injury['severity'],
-    source: Injury['source']
-): Injury {
-    return createInjury(
-        { severity, source, turn, woundType: ordinaryWoundFor(source, severity) },
-        forStream(seed, 'skip_injury', absDay)
-    );
 }
 
 /** Ambient band governing a given absolute day of a skip. For UI preview. */

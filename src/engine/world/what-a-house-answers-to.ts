@@ -45,7 +45,7 @@
  */
 
 import { FACTION_PARENTAGE } from '../../data/cultivation/governance-and-water-rights.js';
-import type { FactionRecord, WorldState } from './world-state.js';
+import type { FactionRecord } from './world-state.js';
 
 /**
  * How warmly a house starts out toward the one it holds from.
@@ -99,16 +99,6 @@ export const INSIDE_THE_SAME_ARRANGEMENT = 0.8;
 /** And one that pays for what it holds, which is correct rather than close. */
 export const AT_ARMS_LENGTH = 0.4;
 
-/** Who this house holds from, or null where it answers to nobody. */
-export function whoTheyAnswerTo(houseId: string): string | null {
-    return FACTION_PARENTAGE[houseId]?.parentFactionId ?? null;
-}
-
-/** Whether this house answers to that one, directly. */
-export function theyAnswerTo(houseId: string, otherId: string): boolean {
-    return whoTheyAnswerTo(houseId) === otherId;
-}
-
 /** Every house that answers to this one, directly. */
 export function whoAnswersTo(houseId: string): string[] {
     const out: string[] = [];
@@ -119,45 +109,14 @@ export function whoAnswersTo(houseId: string): string[] {
 }
 
 /**
- * Whether a grant stands between these two, in either direction.
+ * How warmly two houses stand to each other, as one answer.
  *
- * The question a pass actually has: are these two in the relation at all, and
- * which way round. Null where they are not.
+ * Standing is two half-edges - each house keeps its own map - so the two can
+ * disagree. The answer is the colder of the two, because a relation is only as
+ * warm as the wariest end of it. A half nobody wrote is not a zero: seeding
+ * warms a house toward its parent and writes nothing back, and reading the
+ * silent half as 0 made a feeder school and its patron neutral houses.
  */
-export function theGrantBetween(
-    aId: string,
-    bId: string
-): { answers: string; holds: string } | null {
-    if (theyAnswerTo(aId, bId)) return { answers: aId, holds: bId };
-    if (theyAnswerTo(bId, aId)) return { answers: bId, holds: aId };
-    return null;
-}
-
-/**
- * How warmly these two stand to each other, as one answer.
- *
- * THE COMPATIBILITY READ. Standing is two half-edges - each house keeps its own
- * map - so `A.standing[B]` and `B.standing[A]` can disagree, and the killing
- * read has been taking the minimum of them out of distrust rather than because
- * the minimum means anything. This is the one place that distrust lives now: the
- * colder of the two, because a relation is only as warm as the wariest end of
- * it, and callers stop each deciding for themselves.
- *
- * Reads the scalar today and takes no view on what it ought to be. When the 38
- * sites that ask the scalar directly move, they move to here.
- */
-export function standingBetween(
-    state: WorldState,
-    aId: string,
-    bId: string
-): number {
-    const houses = state.factions;
-    const a = houses.find(f => f.id === aId) ?? null;
-    const b = houses.find(f => f.id === bId) ?? null;
-    return colderOf(a, b, aId, bId);
-}
-
-/** The same, where the caller already holds both rows. */
 export function standingBetweenRows(
     a: Pick<FactionRecord, 'id' | 'standing'> | null,
     b: Pick<FactionRecord, 'id' | 'standing'> | null

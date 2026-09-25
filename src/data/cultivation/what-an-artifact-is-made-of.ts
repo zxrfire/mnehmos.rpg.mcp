@@ -300,19 +300,3 @@ export function whyTheBenchIsShort(
         + `${short.length} of ${whatItIsMadeOf(grade)?.length ?? 0}. ${lines.join(' ')}`;
 }
 
-/**
- * Every material any recipe reaches, for anybody stocking a room.
- *
- * A house's stores and the recipes have to be built against each other or the
- * gate is correct and useless - it would name materials nobody in the world
- * holds. This is the one read both sides go through.
- */
-export function everyMaterialARecipeReaches(): readonly WhatTheCauldronIsBeingHanded[] {
-    const seen = new Map<string, WhatTheCauldronIsBeingHanded>();
-    for (const recipe of Object.values(WHAT_AN_ARTIFACT_IS_MADE_OF)) {
-        for (const slot of recipe) {
-            for (const row of whatWouldFill(slot)) seen.set(row.id, row);
-        }
-    }
-    return [...seen.values()].sort((a, b) => a.value - b.value || (a.id < b.id ? -1 : 1));
-}

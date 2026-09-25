@@ -173,15 +173,10 @@ export function believedStatement(realm: RealmKey): string {
 // THE TOP OF THE TABLE IS A STOCK, NOT A SHARE
 
 /**
- * Years of record the two regions can actually date a crossing across.
- *
- * The oldest entry anybody can put a year on is the Hollow Court's first, and
- * everything before that is a tradition rather than a record.
- */
-export const CROSSING_RECORD_YEARS = 4_400;
-
-/**
  * Crossings ATTEMPTED per thousand years, in the present age.
+ *
+ * The record a rate like this is read off runs about 4,400 years, back to the
+ * Hollow Court's first crossing; anything older is tradition, not record.
  */
 export const CROSSINGS_ATTEMPTED_PER_MILLENNIUM = 6;
 

@@ -61,6 +61,8 @@ import {
     type ActionName
 } from './actions.js';
 import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
+import { MOVE_INTENTS } from './planned-action.js';
+import { PASSAGE_INTENTS } from './verb-pattern-table.js';
 
 /**
  * The fields of a plan this verb reads.
@@ -205,7 +207,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     move: {
         takes: ['target', 'intent'],
-        intents: ['travel', 'flee', 'approach', 'enter', 'follow'],
+        intents: MOVE_INTENTS,
         says: `go somewhere on foot. "target" is the destination; "intent" is how - travel,
             flee, approach, enter, follow. "flee" is leaving the scene rather than naming
             somewhere to go - "I leave", "I back off" - which is also how somebody answers being
@@ -227,7 +229,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     passage: {
         takes: ['target', 'intent'],
-        intents: ['board', 'buy'],
+        intents: PASSAGE_INTENTS,
         says: `a Shrinking Earth Pavilion counter. "intent" is "board" to read what runs from here and
             what each costs, or "buy" to take a place on one; "target" is where to. Reading
             the board is free and is how somebody who has never left their province finds out

@@ -27,7 +27,10 @@ import {
     useAFurnaceTechnique
 } from '../engine/social-leverage/an-art-that-needs-two-people.js';
 import type { Sex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
-import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
+import {
+    BYSTANDERS_AT_MOST,
+    appendWorldFact
+} from '../engine/world/who-was-there-when-it-happened.js';
 import { makeFact } from '../engine/world/history.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { SectAlignment } from '../schema/cultivation.js';
@@ -73,6 +76,13 @@ export interface FurnaceUseRequest {
      * instead.
      */
     subjectHouse?: { alignment: SectAlignment | null; ranked: boolean } | null;
+    /**
+     * People who stood there and watched, beyond the parties. A coerced use is
+     * `secret`, which records the parties and nobody else; a rite worked in
+     * front of a room is not, and those people are its witnesses. Capped at
+     * `BYSTANDERS_AT_MOST`, the same bound `whoWasThere` uses.
+     */
+    watchedBy?: readonly string[];
 }
 
 export interface FurnaceUseOutcome extends FurnaceUseResult {
@@ -110,11 +120,20 @@ export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome
         return { ...outcome, groundResponse: 'nothing', factionVerdict: null };
     }
 
+    const watched = (input.watchedBy ?? []).slice(0, BYSTANDERS_AT_MOST);
     appendWorldFact(input.world, makeFact({
         day: input.onDay,
         kind: 'grudge_opened',
         locationId: input.locationId,
         summary: outcome.line,
+        // Empty leaves it to `whoWasThere`, exactly as before.
+        witnessIds: watched.length === 0
+            ? []
+            : [
+                input.actorId,
+                ...outcome.each.filter(row => row.eligible).map(row => row.personId),
+                ...watched
+            ],
         actors: [
             { id: input.actorId, name: input.actorName, role: 'actor' },
             // Everybody it was worked on, not only the first: a witness record

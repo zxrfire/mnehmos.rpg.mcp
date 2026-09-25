@@ -140,16 +140,6 @@ function realmsBetween(sealer: number, subject: number): number {
 }
 
 /**
- * The gap at which a seal simply goes on.
- *
- * At or above it, nothing is contested because nothing had to be overcome. Below
- * it the subject is close enough to hold, and at zero or worse they hold every
- * time - a person cannot seal their own equal, which is why an elder does this
- * and a senior disciple cannot.
- */
-export const A_SEAL_GOES_ON_UNCONTESTED_AT = 2;
-
-/**
  * The longest a seal of a given gap will hold, in days.
  *
  * ONE TABLE OVER ONE GAP. The same number that decides whether it lands decides
@@ -157,6 +147,13 @@ export const A_SEAL_GOES_ON_UNCONTESTED_AT = 2;
  * A gap of one is a seal that has to be renewed and is the commonest kind a
  * house actually lays; a gap of three or more is a seal nobody in the house can
  * take off but the person who laid it.
+ *
+ * At a gap of two or more nothing had to be overcome. At a gap of one the seal
+ * still goes on, and the subject's closeness shows only in the shorter term -
+ * never a roll: one major realm is decisive, and to a Foundation cultivator a
+ * Qi Condensation one is nothing (the owner's ruling; the same holds Core over
+ * Foundation). At zero or worse they hold every time - a person cannot seal
+ * their own equal, which is why an elder does this and a senior disciple cannot.
  */
 export function howLongASealOfThisGapHolds(realmGap: number): number | null {
     if (realmGap <= 0) return 0;

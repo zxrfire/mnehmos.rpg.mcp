@@ -292,8 +292,3 @@ const BY_FACTION = new Map(DEMONIC_STANDINGS.map(d => [d.factionId, d]));
 export function demonicStandingOf(factionId: string): DemonicStanding | undefined {
     return BY_FACTION.get(factionId);
 }
-
-/** Every demonic body of one kind. The apex doctrine only reaches the sects. */
-export function demonicOfKind(kind: DemonicStanding['kind']): readonly DemonicStanding[] {
-    return DEMONIC_STANDINGS.filter(d => d.kind === kind);
-}

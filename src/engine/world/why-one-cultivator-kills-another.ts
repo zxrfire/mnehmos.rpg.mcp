@@ -81,6 +81,7 @@ import {
     type NpcRecord
 } from './npc-state.js';
 import { areAtWarWithEachOther } from './war-melee.js';
+import { standingBetweenRows } from './what-a-house-answers-to.js';
 import { insideSomebodysWalls } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
@@ -191,7 +192,7 @@ export function howTheyStandToEachOther(
         if (areAtWarWithEachOther(state, kh.id, vh.id)) {
             between = { value: carried, why: 'at war' };
         } else {
-            const standing = Math.min(kh.standing[vh.id] ?? 0, vh.standing[kh.id] ?? 0);
+            const standing = standingBetweenRows(kh, vh);
             between = standing <= HOSTILE_STANDING
                 ? { value: carried * Math.min(1, 0.3 + (-standing - 0.3)), why: 'hostile houses' }
                 : standing >= -HOSTILE_STANDING

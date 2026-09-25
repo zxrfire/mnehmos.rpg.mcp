@@ -263,11 +263,6 @@ export function couldBeCalledBackIn(whose: WhoseThisIs): boolean {
     return whose === 'lent_by_their_house';
 }
 
-/** Whether the house has something here to ask somebody about. */
-export function isSomethingTheHouseWouldAskAbout(whose: WhoseThisIs): boolean {
-    return whose === 'taken_from_their_house' || whose === 'unaccounted_for';
-}
-
 // ═════════════════════════════════════════════════════════════════════════
 // AND WHAT PUTTING IT BACK UP COSTS
 // ═════════════════════════════════════════════════════════════════════════

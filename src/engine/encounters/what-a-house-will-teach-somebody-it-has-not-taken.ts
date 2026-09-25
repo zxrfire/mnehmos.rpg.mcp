@@ -182,13 +182,6 @@ export function publishedDoorOf(factionId: string): PublishedDoor | null {
 }
 
 /**
- * Every house whose guest door is advertised rather than arranged.
- */
-export function housesWithAPublishedDoor(): string[] {
-    return housesWithTwoDoors().map(d => d.factionId).sort();
-}
-
-/**
  * What the house will show a guest. Two clauses and no third: a road is open when
  * the house holds it in quantity ({@link WORKING_ROAD_CAP}); an art with no cap is
  * open when it is shallow enough to be shown at the house's own door. The deepest

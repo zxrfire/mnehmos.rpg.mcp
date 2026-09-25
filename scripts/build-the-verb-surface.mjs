@@ -114,6 +114,9 @@ const HANDLERS = [
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
+/** Where an intent list named by identifier in the glossary is declared. */
+const INTENT_CONSTANT_HOMES = ['src/web/planned-action.ts', 'src/web/verb-pattern-table.ts'];
+
 /** A path relative to `docs/`, which is where the document sits. */
 const up = rel => `../${rel}`;
 
@@ -245,15 +248,24 @@ function verbSurface(surface) {
 /**
  * The members behind an identifier used in place of an intent list.
  *
- * Only `REQUEST_KINDS` uses this today: the request shapes have no exported
- * constant to compare against, so the module builds them from a mapped type the
- * compiler forces to be complete.
+ * `REQUEST_KINDS` is built from a mapped type the compiler forces to be
+ * complete, so its members are read off that. Any other name is an exported
+ * array literal in one of `INTENT_CONSTANT_HOMES`, where the engine declares
+ * what it dispatches on.
  */
 function namedConstant(surface, name) {
-    if (name !== 'REQUEST_KINDS') return [];
-    const start = surface.indexOf('const EVERY_REQUEST_KIND');
-    const end = surface.indexOf('};', start);
-    return [...surface.slice(start, end).matchAll(/^ {4}([a-z_]+): true/gm)].map(m => m[1]);
+    if (!name) return [];
+    if (name === 'REQUEST_KINDS') {
+        const start = surface.indexOf('const EVERY_REQUEST_KIND');
+        const end = surface.indexOf('};', start);
+        return [...surface.slice(start, end).matchAll(/^ {4}([a-z_]+): true/gm)].map(m => m[1]);
+    }
+    const declared = new RegExp(`export const ${name}\\b[^=]*=\\s*(\\[[^\\]]*\\])`);
+    for (const home of INTENT_CONSTANT_HOMES) {
+        const list = read(home).match(declared)?.[1];
+        if (list) return [...list.matchAll(/'([a-z_]+)'/g)].map(m => m[1]);
+    }
+    return [];
 }
 
 // ─── where it resolves ───────────────────────────────────────────────────

@@ -240,19 +240,6 @@ export const CARRIAGES_BY_GRADE: readonly string[] = [
 ];
 
 /**
- * The counted conveyance a transport line on the price board actually is.
- */
-export const CONVEYANCE_ON_THE_PRICE_BOARD: Readonly<Record<string, string>> = Object.freeze({
-    'price-mule': 'conv-mount-mortal',
-    'price-cart': 'conv-carriage-mortal'
-});
-
-export function conveyanceSoldAs(priceId: string): Conveyance | undefined {
-    const id = CONVEYANCE_ON_THE_PRICE_BOARD[priceId];
-    return id === undefined ? undefined : getConveyance(id);
-}
-
-/**
  * The words somebody actually says when they want one.
  */
 const WHAT_PEOPLE_CALL_THEM: Readonly<Record<string, string>> = Object.freeze({
@@ -525,23 +512,9 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
     })
 ];
 
-const CRAFT_BY_ID: ReadonlyMap<string, ObjectRecord> =
-    new Map(TRACKED_CRAFT.map(c => [c.id, c]));
-
-export function getTrackedCraft(id: string): ObjectRecord | undefined {
-    return CRAFT_BY_ID.get(id);
-}
-
 /** Everything a body owns outright. A null owner is nobody's and returns for none. */
 export function craftOwnedBy(ownerId: string): readonly ObjectRecord[] {
     return TRACKED_CRAFT.filter(c => c.ownerId !== null && c.ownerId === ownerId);
-}
-
-/** Houses with a name to say. Sorted, so the list is stable to read. */
-export function housesWithACraft(): readonly string[] {
-    return [...new Set(
-        TRACKED_CRAFT.map(c => c.ownerId).filter((id): id is string => id !== null)
-    )].sort();
 }
 
 /**

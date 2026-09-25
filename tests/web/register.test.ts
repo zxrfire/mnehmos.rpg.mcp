@@ -50,7 +50,10 @@ import {
     intakeRouteOf,
     sectThreat
 } from '../../src/data/cultivation/sects';
-import { glossaryTerms } from '../../src/web/register-glossary';
+import { glossaryGroups } from '../../src/web/register-glossary';
+
+/** Every term on the sheet, flattened. */
+const glossaryTerms = () => glossaryGroups().flatMap(g => g.entries.map(e => ({ group: g.group, ...e })));
 
 const reg: WorldRegister = buildRegister();
 const html: string = renderRegisterHtml(reg);

@@ -644,19 +644,9 @@ export const SEALED_ANCESTOR_PATTERN = {
 // ─────────────────────────────────────────────────────────────────────────
 
 const HELD_BY_ID: ReadonlyMap<string, HeldInstrument> = new Map(HELD_INSTRUMENTS.map(h => [h.id, h]));
-const UNOWNED_BY_ID: ReadonlyMap<string, UnownedAncestor> = new Map(UNOWNED_ANCESTORS.map(u => [u.id, u]));
 
 export function getHeldInstrument(id: string): HeldInstrument | undefined {
     return HELD_BY_ID.get(id);
-}
-
-export function getUnownedAncestor(id: string): UnownedAncestor | undefined {
-    return UNOWNED_BY_ID.get(id);
-}
-
-/** What a faction is holding, which is at most one thing. */
-export function instrumentHeldBy(factionId: string): HeldInstrument | undefined {
-    return HELD_INSTRUMENTS.find(h => h.holderFactionId === factionId);
 }
 
 /**

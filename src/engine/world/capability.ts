@@ -8,8 +8,7 @@ import {
     environmentalCompatibility,
     isOpenOn,
     type ActorEnvironmentProfile,
-    type LocationRecord,
-    type ThresholdModifier
+    type LocationRecord
 } from './locations.js';
 import {
     passageStoppedInArea,
@@ -384,28 +383,6 @@ export function makeCapabilityModifier(
         subjectTags: init.subjectTags ?? [],
         note: init.note ?? '',
         ...init
-    };
-}
-
-/**
- * Adapter for the location layer's threshold modifiers.
- */
-export function fromThresholdModifier(mod: ThresholdModifier): CapabilityModifier {
-    return {
-        id: mod.id,
-        source: mod.source as CapabilityModifierSource,
-        sourceId: mod.sourceId,
-        label: mod.label,
-        offsets: {
-            attempt: mod.offsets.entry,
-            survive: mod.offsets.survival,
-            succeed: mod.offsets.operational,
-            force: mod.offsets.mastery
-        },
-        hazards: mod.hazards.slice(),
-        subjectIds: mod.locationIds.slice(),
-        subjectTags: [],
-        note: mod.note
     };
 }
 

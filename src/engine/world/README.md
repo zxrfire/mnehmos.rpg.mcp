@@ -1736,8 +1736,8 @@ A world where everybody has twenty friends is worse than one with six.
 
 - A household stops at `SIBLINGS_PER_HOUSEHOLD` children, read off the parent's own
   relationship rows. Unbounded, one long-lived cultivator became the parent of forty.
-- A teacher carries `STUDENTS_AT_ONCE`, counted against students still alive and still in
-  the house. `members.ts` gives every teaching figure three limits and the third - what a
+- A teacher carries `studentsAtOnce(gap)` - fewer the further down they reach - counted
+  against students still alive and still in the house. `members.ts` gives every teaching figure three limits and the third - what a
   straight answer costs them - is the one that binds.
 - The marriage and service rolls are per-year chances, not sweeps, and service deepens an
   existing tie before opening a new one.

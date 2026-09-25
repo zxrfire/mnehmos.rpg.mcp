@@ -305,7 +305,13 @@ export function whatTheVerbSurfaceNames() {
 function theListBehindTheName(src, name) {
     if (name === '') return [];
     const declared = new RegExp(`const\\s+${name}\\b[^=]*=\\s*`).exec(src);
-    if (!declared) return [];
+    if (!declared) {
+        // Imported: `MOVE_INTENTS` is declared where the engine dispatches on it.
+        const from = new RegExp(`import\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from\\s*'\\./([\\w-]+)\\.js'`).exec(src);
+        return from
+            ? theListBehindTheName(withoutComments(fs.readFileSync(path.join(WEB, `${from[1]}.ts`), 'utf8')), name)
+            : [];
+    }
     const at = declared.index + declared[0].length;
     if (src[at] === '[') return [...balanced(src, at, '[', ']').matchAll(/'([a-z_]+)'/g)].map(x => x[1]);
     if (src[at] === '{') return [...balanced(src, at, '{', '}').matchAll(/([a-z_]+):\s*true/g)].map(x => x[1]);

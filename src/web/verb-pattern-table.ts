@@ -1875,6 +1875,23 @@ export const WHAT_A_HOUSE_HAS = new RegExp(
 );
 
 /**
+ * Asking what a named house MAKES - "what does the Cinnabar Crucible Sect
+ * make". The ground read answers where the player is standing; this one
+ * answers about a house wherever it sits, out of the same trade catalog.
+ */
+const WHAT_A_HOUSE_MAKES = new RegExp(
+    String.raw`\bwhat (?:do(?:es)?)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:make|produce|craft|forge|refine|sell|export|ship)\b`,
+    'i'
+);
+
+/** The house named in a what-do-they-make question, with the verb taken off. */
+function theHouseAskedWhatItMakes(input: string): string | undefined {
+    return theHouseBeingAskedAbout(input)
+        ?.replace(/\s+(?:make|produce|craft|forge|refine|sell|export|ship)\b.*$/i, '')
+        .trim() || undefined;
+}
+
+/**
  * Asking what a house TEACHES, which is the other half of asking what it has.
  *
  * The holdings question is what you ask about a house you mean to rob and this
@@ -2913,15 +2930,6 @@ export const FOLDING_SPACE = new RegExp([
     '\\binstant\\s+(?:transmission|travel)\\b'
 ].join('|'));
 
-/**
- * A counter, a board, and a place on somebody else's span.
- */
-export const A_SPAN_COUNTER = new RegExp([
-    '\\b(?:passage|ticket|fare|berth)\\b',
-    '\\b(?:measured\\s+)?span\\b',
-    '\\b(?:gate\\s+station|terminal|waystation)\\b'
-].join('|'));
-
 /** Whether the sentence is about a journey at all, as against a house's board. */
 export const A_COUNTER_NOT_A_MISSION_BOARD = new RegExp([
     '\\b(?:passage|ticket|fare|berth)\\b',
@@ -3775,6 +3783,10 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['marry', /\b(?:force|forces|forcing|forced|make|makes|making|made|compel|compels|compelling)\b[^.!?]*\b(?:marry|marries|marrying|wed|weds|wedding|take me as (?:his|her|their) (?:dao )?partner|be my (?:dao )?partner|into (?:a |the )?(?:match|marriage|betrothal|union))\b|\b(?:marry|marries|marrying|wed|weds)\b[^.!?]*(?:\bwhether (?:he|she|they) (?:wants?|likes?) (?:it|to) or not\b|\bagainst (?:his|her|their) will\b)/],
     // BEING SAT AS SOMEBODY ELSE'S FURNACE
     ['furnace', /\b(?:as|for) (?:a|my|his|her|their) (?:furnace|cauldron)\b|\bfurnace (?:art|arts|technique|techniques|method|methods|rite)\b|\bdraw(?:s|ing)? off (?:his|her|their) cultivation\b/],
+    // "I make him my furnace" reached nothing, and "my cauldron" reached
+    // `refine`. A person between the verb and the noun is what tells it from
+    // making a vessel: "I make him a cauldron" stays a commission.
+    ['furnace', /\b(?:make|makes|making)\s+(?:him|her|them|[a-z'-]+(?:\s+[a-z'-]+){0,2})\s+(?:my|into (?:a|my)) (?:furnace|cauldron)\b/],
     // TAKEN AND HELD. "I kidnap her", "I tie him up", "I take him prisoner"
     // all reached nothing, and all three are the same act the yielding path
     // already prices: somebody is made to go where they were not going and
@@ -3816,7 +3828,7 @@ const COERCE_SUBJECT_VERBS =
  * over the ledger" names a merchant, not a merchant-to-hand- over-the-ledger.
  */
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
-    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as|up|down|prisoner|captive|hostage|go|goes|going|walk|walks|walking|step|steps|stepping|enter|enters|entering|climb|climbs|head|heads)\b.*$/i;
+    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|(?:my|a)\s+(?:furnace|cauldron)|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as|up|down|prisoner|captive|hostage|go|goes|going|walk|walks|walking|step|steps|stepping|enter|enters|entering|climb|climbs|head|heads)\b.*$/i;
 
 /**
  * The thing a coercion names, when the sentence names one.
@@ -6631,6 +6643,11 @@ function planIntent(input: string): PlannedAction {
     // off it as well - a sentence that says both is asking about the goods.
     if (WHAT_THIS_GROUND_MAKES.test(text)) {
         return { action: 'look', intent: 'what_is_made_here' };
+    }
+    // And about one named house, wherever it sits.
+    if (WHAT_A_HOUSE_MAKES.test(text)) {
+        const house = theHouseAskedWhatItMakes(input);
+        if (house) return { action: 'look', intent: 'what_is_made_here', target: house };
     }
 
     // WHAT A HOUSE TEACHES. Beside the holdings read and before it, because a

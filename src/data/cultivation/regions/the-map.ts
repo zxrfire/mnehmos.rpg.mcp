@@ -245,15 +245,6 @@ export function disciplineWorksIn(regionId: string, discipline: string): boolean
         .some(m => m.discipline.toLowerCase() === discipline.trim().toLowerCase());
 }
 
-/** Ambient states present in a region at all, commonest first. */
-export function ambientStatesIn(regionId: string): AmbientQi[] {
-    const profile = requireRegion(regionId).ambientProfile;
-    return (Object.entries(profile) as [AmbientQi, number][])
-        .filter(([, share]) => share > 0)
-        .sort((a, b) => b[1] - a[1])
-        .map(([state]) => state);
-}
-
 // THE MAP
 
 /**

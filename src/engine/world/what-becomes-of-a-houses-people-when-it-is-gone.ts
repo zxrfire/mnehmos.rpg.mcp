@@ -201,14 +201,6 @@ export function whatTakingInSomebodysCastOffStirs(
     }));
 }
 
-/** The rung they stood on when they came off a roll, or null where nothing says. */
-export function whereTheyStoodWhenTheyCameOff(npc: Pick<NpcRecord, 'tags'>): number | null {
-    const tag = npc.tags.find(t => t.startsWith(CAME_OFF_A_ROLL_AT));
-    if (tag === undefined) return null;
-    const at = Number(tag.slice(CAME_OFF_A_ROLL_AT.length));
-    return Number.isFinite(at) ? at : null;
-}
-
 /**
  * Whether a register would show a house why not to take this person on.
  *

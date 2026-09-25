@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { RegardProfileSchema } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
-import { offeredTo, regardOf, type RegardAskerInput } from '../../engine/cultivation/regard.js';
+import { offeredTo, refusalsFor, type RegardAskerInput } from '../../engine/cultivation/regard.js';
 import { DAO_HOUSES } from './sects.js';
 
 /** Cash to the spirit stone. The one conversion the whole file rests on. */
@@ -751,13 +751,8 @@ export function workWithheldFrom(
     settlement?: Settlement['kind']
 ): { occupation: Occupation; reason: string; band: string }[] {
     const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
-    const out: { occupation: Occupation; reason: string; band: string }[] = [];
-    for (const occupation of workExistingFor(rung, settlement)) {
-        const regard = regardOf(occupation, ordinal);
-        if (regard.offered) continue;
-        out.push({ occupation, reason: regard.reaction, band: regard.band });
-    }
-    return out;
+    return refusalsFor(workExistingFor(rung, settlement), ordinal)
+        .map(({ record, regard }) => ({ occupation: record, reason: regard.reaction, band: regard.band }));
 }
 
 /**

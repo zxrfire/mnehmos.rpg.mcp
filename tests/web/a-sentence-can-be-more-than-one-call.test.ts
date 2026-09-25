@@ -20,7 +20,6 @@ import {
     stepsInTheResponse,
     anyClauseReadsAsThisVerb,
     carryingTheReferentForward,
-    everyVerbTheQuestionCouldName,
     theClausesNoStepAccountsFor,
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
@@ -33,7 +32,6 @@ import {
     stepsOfThePlan,
     theClauseThisStepQuotes,
     theQuestionStillStands,
-    theWorldStoppedHere,
     whatThisStepIsCalled,
     whatTheQuestionAsks,
     whatThisTurnMayRun,
@@ -42,7 +40,8 @@ import {
     type PlanStep,
     type WhichComesFirst
 } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
-import { parseIntent, type ActionName, type PlannedAction } from '../../src/web/actions.js';
+import { ACTION_NAMES, parseIntent, type ActionName, type PlannedAction } from '../../src/web/actions.js';
+import { costsTheAskerNothing } from '../../src/web/asking-is-not-doing.js';
 
 function step(action: ActionName, extra: Partial<PlanStep['action']> = {}, said?: string): PlanStep {
     return { action: { action, ...extra }, ...(said ? { said } : {}) };
@@ -52,6 +51,15 @@ const THEFT = step('interact', { target: 'Cao Antao', intent: 'steal' }, "take C
 const HANDOFF = step('interact', { target: 'Shen Liefeng', intent: 'give' }, 'press it into his hand');
 const WALK = step('move', { target: 'the far gate' }, 'walk away');
 const LOOK = step('look');
+
+
+/** Every verb the which-comes-first question could ever have to name: the ones that cost something. */
+const everyVerbTheQuestionCouldName = (): ActionName[] =>
+    ACTION_NAMES.filter(name => !costsTheAskerNothing({ action: name }));
+
+/** Whether the world stopped the plan at this step. */
+const theWorldStoppedHere = (call: Pick<OneCall, 'outcome' | 'calls'>, step: PlanStep): boolean =>
+    howTheStepWent(call, step) === 'did_not_come_off';
 
 describe('which steps cost the player something', () => {
     it('reads the cost off the plan and not off the verb', () => {

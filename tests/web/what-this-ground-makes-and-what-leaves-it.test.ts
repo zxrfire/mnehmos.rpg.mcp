@@ -32,7 +32,6 @@ import { REGIONS } from '../../src/data/cultivation/regions';
 import {
     theLinesForWhatIsMadeHere,
     theStructureOfWhatIsMadeHere,
-    whatAProvinceMakes,
     whatThisGroundMakes,
     whatThisHouseMakes
 } from '../../src/web/what-this-ground-makes-and-what-leaves-it';
@@ -180,13 +179,40 @@ describe('asked about a house rather than about the ground', () => {
     });
 });
 
-describe('the province list, by id', () => {
-    it('answers for a real province and is empty for none', () => {
-        const anyRegion = REGIONS.find(r => r.exports.length > 0)!;
-        expect(whatAProvinceMakes(anyRegion.id).length).toBeGreaterThan(0);
-        expect(whatAProvinceMakes(null)).toEqual([]);
-        expect(whatAProvinceMakes('no-such-province')).toEqual([]);
+describe('asked about a house by name', () => {
+    it('reads the house off the sentence', () => {
+        const parsed = parseIntent('what does the Cinnabar Crucible Sect make?');
+        expect(parsed.action).toBe('look');
+        expect(parsed.intent).toBe('what_is_made_here');
+        expect(parsed.target).toBe('Cinnabar Crucible Sect');
+        // The ground question names no house and stays the ground question.
+        expect(parseIntent('what does this region export').target).toBeUndefined();
     });
+
+    it('is answered out of the trade catalog, and spends nothing', async () => {
+        const { game, repos } = await makeGameInWorld({
+            seed: 'made-by-a-house', worldSeed: 'world-made-here'
+        });
+        const { cultivator } = await game.newRun('Factor');
+
+        // A house nobody has told them of cannot be asked about by name.
+        const unheard = await game.act('what does the Cinnabar Crucible Sect make?');
+        expect(unheard.narration).not.toMatch(/Refining/i);
+
+        game.knowledge.learnIfNew({
+            holderId: cultivator.id, kind: 'sect', id: THE_CRUCIBLE, name: 'Cinnabar Crucible Sect',
+            onDay: 0, sourceKind: 'told', sourceNote: 'told of it', stage: 'named',
+            statement: 'The Cinnabar Crucible Sect is a house.'
+        });
+        const before = repos.cultivators.getById(cultivator.id)!;
+        const dayBefore = game.state().run.elapsedDays;
+        const said = await game.act('what does the Cinnabar Crucible Sect make?');
+        const after = repos.cultivators.getById(cultivator.id)!;
+
+        expect(said.narration).toMatch(/Refining/i);
+        expect(after.spiritStones).toBe(before.spiritStones);
+        expect(game.state().run.elapsedDays).toBe(dayBefore);
+    }, 200_000);
 });
 
 describe('played', () => {

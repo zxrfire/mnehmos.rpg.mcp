@@ -784,10 +784,11 @@ it is not the same thing as judgement.
 **Where this bites in practice.** Two measurements, both from the same afternoon:
 
 - `furnace-technique.ts` is a complete pipeline - the act, the ledger, what the house
-  does when it catches you, the conception handed to `birth.ts` - and it had no caller
-  anywhere in `src/web/`. Its wholesome counterpart, `what-a-dao-partner-is-for.ts`,
-  had just been wired. One mechanic, two signs, and only the comfortable one was
-  reachable by a sentence.
+  does when it catches you - and it had no caller anywhere in `src/web/`. Its wholesome
+  counterpart, `what-a-dao-partner-is-for.ts`, had just been wired. One mechanic, two
+  signs, and only the comfortable one was reachable by a sentence. (Wired since, by
+  `the-furnace-rite-once-somebody-has-yielded.ts`. Its `conceived` still reaches no
+  birth: nothing in `engine/birth/` takes a conception from outside a birth draw.)
 - "I force her to marry me" reached `propose` at every tier. Not because a reader
   flinched: `COERCION_INTENT_PATTERNS` has rows for swallowing, handing over and
   submitting, and no row for marriage, so `propose` was the only marriage-shaped verb
@@ -1102,7 +1103,7 @@ src/                      # README.md - the index. Every folder below has one to
 │   ├── social-leverage/  # what moves somebody, what a deed leaves, what a house does
 │   ├── encounters/       # what the world puts in front of somebody
 │   ├── birth/, household/  # who is born, and what a match costs
-│   └── {spatial,worldgen,strategy,perception,dsl}/  # retained substrate
+│   └── {spatial,worldgen,perception,dsl}/  # retained substrate
 ├── data/cultivation/     # the catalogs: sects, people, places, techniques, beasts
 │   └── regions/          # one file per region of the map
 ├── schema/               # the shapes that cross a boundary. Zod, and the balance

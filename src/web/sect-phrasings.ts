@@ -427,7 +427,7 @@ export const SIPHON_PACE_PATTERNS: ReadonlyArray<[string, RegExp]> = [
  *     I give 2000 stones to the sect treasury   ->   sect/siphon
  *
  * A player paying INTO the house was answered by the engine reading it as a
- * robbery. That is the inversion `questions-a-sentence-cannot-carry.ts` names
+ * robbery. That is the inversion `tests/web/exemplars/questions-a-sentence-cannot-carry.ts` names
  * as the dangerous shape - *the confident opposite* - arriving by a different
  * route than the one that file guards.
  *

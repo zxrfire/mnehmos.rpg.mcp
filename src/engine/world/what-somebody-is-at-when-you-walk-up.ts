@@ -107,42 +107,6 @@ export function groundUnderThem(kind: string | null | undefined): GroundUnderThe
 }
 
 /**
- * How many people a cultivation room holds, and what a second one costs.
- *
- * The design owner: *"those are limited to 1 person using it at a time don't
- * forget"*, then *"i mean you might fit 2, for dual cultivation, but having
- * someone in there drops the qi by 50%."*
- *
- * A plain capacity, the way a car has five seats, and hardcoded as one. Two is
- * the wall; usually it is one, because sharing halves what each of them draws.
- *
- * WHICH MAKES THE SECOND SEAT A THING WITH A PRICE. The owner: *"it also
- * doesn't mean you HAVE to be dual cultivating [...] maybe you sell your half
- * of your room for cash."* A pair working an art that needs two is one reason
- * to double up - `dual_cultivation` and `requiresPeople: 2` already say which
- * arts those are - and the other is that somebody paid you for the space. Both
- * fall out of the halving rather than needing a rule: what you are giving up is
- * exactly half your qi, so what you charge is whatever that is worth to you,
- * and the engine already knows how to trade.
- *
- * It is also one honest answer to a square holding a single person: most
- * chambers hold exactly one because that is what one is worth.
- */
-export const A_ROOM_HOLDS = 2;
-
-/**
- * What each of them draws when a room is shared. Halved, and it is not a
- * penalty for crowding - it is one room's worth of qi divided by the people in
- * it, which is why the figure is exactly a half and not a tuned number.
- */
-export const A_SHARED_ROOM_GIVES = 0.5;
-
-/** What somebody in this room actually draws, as a multiplier. */
-export function whatASharedRoomGives(occupants: number): number {
-    return Math.max(1, Math.round(occupants)) > 1 ? A_SHARED_ROOM_GIVES : 1;
-}
-
-/**
  * How often somebody who holds an office is at the front of a hall rather than
  * at their office.
  *

@@ -182,7 +182,8 @@ export function whatARingIsMadeOf(ringClass: TechniqueGrade): TechniqueGrade {
  * So that is the measurement, and it turns out to be a rule rather than a
  * number: A RING OF A GRADE HOLDS A CONVEYANCE OF THAT GRADE. `A spirit boat`
  * in `what-a-house-moves-its-people-on.ts` is heaven grade and carries thirty
- * heads, which at `WHAT_ONE_BERTH_TAKES` is a hundred and twenty thousand
+ * heads. A berth - a person, their gear, and their share of deck, hull and rail
+ * - is about 4,000 litres, so the boat is a hundred and twenty thousand
  * litres of hull - so the heaven-grade ring is set above that with room to
  * spare, and the rich man gets his boat out. The grades below fall in the same
  * relation to the conveyances of their own grade.
@@ -210,20 +211,6 @@ export const WHAT_A_RING_HOLDS: Readonly<Record<TechniqueGrade, number>> = {
     immortal: 4_000_000,
     chaos: 100_000_000
 };
-
-/**
- * Litres of hull one berth on a conveyance amounts to.
- *
- * A person, their gear, and the share of deck, hull and rail that carries them.
- * Used to say how big a conveyance is without putting a volume on every row of
- * a catalog that has never needed one.
- */
-export const WHAT_ONE_BERTH_TAKES = 4_000;
-
-/** How much room a conveyance of this many heads takes up, folded or not. */
-export function howBigAConveyanceIs(heads: number): number {
-    return Math.max(1, Math.round(heads)) * WHAT_ONE_BERTH_TAKES;
-}
 
 /**
  * Whether this hand could make one at all.

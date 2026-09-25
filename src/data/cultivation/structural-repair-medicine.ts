@@ -434,16 +434,6 @@ export function getStructuralRepairMedicine(
     return BY_ID.get(id) ?? null;
 }
 
-/** Every medicine that names this wound key as one it mends. */
-export function medicinesNaming(woundKey: string): StructuralRepairMedicine[] {
-    return STRUCTURAL_REPAIR_MEDICINES.filter(m => m.mends.includes(woundKey));
-}
-
-/** The authored opening holdings of one faction. Not the live answer. */
-export function openingHoldingsOf(factionId: string): RepairHolding[] {
-    return STRUCTURAL_REPAIR_HOLDINGS.filter(h => h.factionId === factionId);
-}
-
 /** Every faction that starts the world holding any of one medicine. */
 export function openingHoldersOf(medicineId: string): RepairHolding[] {
     return STRUCTURAL_REPAIR_HOLDINGS.filter(h => h.medicineId === medicineId);

@@ -88,27 +88,22 @@ export interface AncientArt {
     whyTheEraStopped: string;
     /** When the modern art at the same rung is plainly the better thing. */
     whenTheModernArtWins: string;
-    /** Who actually practises it, which follows from the cost. */
+    /**
+     * Who actually practises it, which follows from the cost.
+     *
+     * The old, everywhere, and no rule says so. The price is years, and years
+     * are worth what is left of them: ruinous to somebody with a career ahead,
+     * nearly free to somebody without one. A young practitioner is paying full
+     * price in plain view, so either something extraordinary happened to them
+     * or a house is spending on them. A rung is lifespan, so an old one who
+     * advances now holds the art at a discount. Some old practitioners never
+     * took it up late - they learned it when it was how cultivation was done -
+     * and nobody can tell the two kinds apart. A house with a sealed ancestor
+     * of the older era and a thousand-year medicine could wake her and feed
+     * her; nobody has, and several could.
+     */
     whoPractisesIt: string;
 }
-
-/**
- * WHY THE OLD PRACTISE THESE, and it is not a rule anywhere.
- */
-export const THE_OLD_ARE_THE_PRACTITIONERS = {
-    theMechanism:
-        'The price is years, and years are worth what is left of them. The same art is ruinous to somebody with a career ahead of them and nearly free to somebody without one.',
-    whatItProduces:
-        'Ancient arts belong to the elderly, everywhere, without a rule saying so. Practitioners skew old the way debtors skew poor: it is the cost function, not a custom.',
-    theYoungPractitioner:
-        'Somebody young holding one is paying at full price, visibly, which is why it reads as a statement about them rather than about the art. Either something extraordinary happened to them or a house is spending on them, and both of those are worth finding out.',
-    theWayOut:
-        'A rung is lifespan. An old practitioner who advances has reset the clock they were spending, and now holds at a discount a thing they can afford to keep.',
-    theOtherKindOfOldPractitioner:
-        'Not everybody old holding an ancient art took it up late. Some of them learned it when it was simply how cultivation was done, and never stopped: the era changed around them and they did not. They are not eccentric and they did not choose anything; they are old. And the world cannot tell the two apart - an elder with a strange art may be a survivor of the prosperous age or somebody who found a manual in a ruin two centuries ago, and there is no test that separates them, which is why asking is rude and being told is worth a great deal.',
-    theThingAHouseCanDoAboutIt:
-        'Wake one, and feed her. A sect with a sealed ancestor from the older era, a thousand-year medicine, and a reason has all three parts of the same act: the ancestor comes out holding an art nobody living has seen, the medicine buys her the span to use it, and the house has spent the two most irreplaceable things it owns in one afternoon. See `sealed-ancestors.ts`, where waking is generally the end of the ancestor, and `standoff.ts`, which treats unsealing as the most serious thing a house can do. Nobody has done it. Several houses could.'
-} as const;
 
 export const ANCIENT_ARTS: readonly AncientArt[] = [
     {
@@ -678,10 +673,6 @@ export function absenceTierOf(techniqueId: string): AbsenceTier {
     return ancient.upkeepHerbId ? 'lost' : 'abandoned';
 }
 
-export function getAncientArt(techniqueId: string): AncientArt | undefined {
-    return ANCIENT_ARTS.find(a => a.techniqueId === techniqueId);
-}
-
 /** The technique rows themselves, for anything that wants the mechanics. */
 export function ancientTechniques(): TechniqueEntry[] {
     return ANCIENT_ARTS
@@ -730,17 +721,6 @@ export function sitesHoldingAncientMaterial(): string[] {
 
 export function getLostMaterial(herbId: string): LostMaterial | undefined {
     return LOST_MATERIALS.find(m => m.herbId === herbId);
-}
-
-/** Everything a faction is recorded as holding out of the ancient tier. */
-export function ancientHoldingsOf(factionId: string): {
-    medicine: MedicineHolding | undefined;
-    copies: ArchiveCopy[];
-} {
-    return {
-        medicine: MEDICINE_HOLDINGS.find(h => h.factionId === factionId),
-        copies: ARCHIVE_COPIES.filter(c => c.factionId === factionId)
-    };
 }
 
 /** Houses that still have their one, including the one nobody can confirm. */

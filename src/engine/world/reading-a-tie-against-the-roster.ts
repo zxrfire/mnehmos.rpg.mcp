@@ -149,13 +149,3 @@ export function readTie(state: WorldState, tie: NpcRelationship): ResolvedTie {
 export function readTies(state: WorldState, npc: NpcRecord): ResolvedTie[] {
     return npc.relationships.map(tie => readTie(state, tie));
 }
-
-/**
- * The ties that are still a live account with a live person.
- *
- * For callers that want who somebody has to deal with TODAY. Everything else is
- * still on the record; this is a question, not a pruning.
- */
-export function livingTies(state: WorldState, npc: NpcRecord): ResolvedTie[] {
-    return readTies(state, npc).filter(r => r.standing === 'living');
-}

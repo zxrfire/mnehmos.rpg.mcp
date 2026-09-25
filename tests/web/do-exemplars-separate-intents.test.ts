@@ -64,16 +64,16 @@ import {
     COERCIONS_NOBODY_WROTE_AN_EXEMPLAR_FOR,
     HOW_A_PLAYER_SAYS_EACH_COERCION,
     type CoercionIntent
-} from '../../src/web/how-a-player-says-each-coercion.js';
+} from './exemplars/how-a-player-says-each-coercion.js';
 import {
     HOW_A_PLAYER_SAYS_EACH_MOVE,
     HOW_A_PLAYER_SAYS_EACH_SECT_ASK
-} from '../../src/web/how-a-player-says-each-intent.js';
+} from './exemplars/how-a-player-says-each-intent.js';
 import {
     onlyWhatTheWordsCanDecide,
     QUESTIONS_A_SENTENCE_CANNOT_CARRY,
     theSentenceMayDecide
-} from '../../src/web/questions-a-sentence-cannot-carry.js';
+} from './exemplars/questions-a-sentence-cannot-carry.js';
 import { WHAT_EACH_VERB_IS_FOR } from '../../src/web/what-each-verb-is-for-in-the-players-words.js';
 import {
     embed,

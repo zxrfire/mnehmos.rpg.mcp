@@ -154,5 +154,10 @@ describe('one command, three costs', () => {
         // `writtenTo` call, because `EffectiveCap.writtenTo` reports whatever
         // stage count it was handed.
         expect(result.narration).toMatch(/goes further than you can follow it/i);
+        // And WHEN the last of it was written, read off the stage rows. Never
+        // who: every author is some player's own life, and no life knows
+        // another's name.
+        expect(result.narration).toMatch(/the last of it (?:within the year|\d+ years? ago)/i);
+        expect(result.narration).not.toMatch(/some-other-cultivator/);
     });
 });

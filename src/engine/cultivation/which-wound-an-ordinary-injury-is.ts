@@ -3,7 +3,6 @@
  */
 
 import type { InjurySeverity, InjurySource } from '../../schema/cultivation.js';
-import { getWoundType } from '../../data/cultivation/wounds.js';
 
 /**
  * A channel opened along its length. The general case, and the only ordinary
@@ -37,18 +36,4 @@ const BURNS: ReadonlySet<InjurySource> = new Set<InjurySource>([
 export function ordinaryWoundFor(source: InjurySource, severity: InjurySeverity): string {
     if (BURNS.has(source) && severity !== 'crippling') return SCORCHED;
     return TORN;
-}
-
-/**
- * Every key this module can return, for the test that keeps it honest.
- *
- * The invariant worth asserting is not which key comes back but that none of
- * them is permanent and all of them exist - see the rule above.
- */
-export const ORDINARY_WOUND_KEYS: readonly string[] = [TORN, SCORCHED];
-
-/** True where this key names something this module would hand out. */
-export function isOrdinaryWound(key: string | null | undefined): boolean {
-    return key !== null && key !== undefined && ORDINARY_WOUND_KEYS.includes(key)
-        && getWoundType(key) !== null;
 }

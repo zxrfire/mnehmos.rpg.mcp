@@ -5,10 +5,7 @@
 import { makeObject, type ObjectRecord } from '../../engine/world/possessions.js';
 import { NASCENT_SOUL_ORDINAL } from '../../engine/cultivation/existence.js';
 import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import {
-    theSameCultivationIn,
-    type ACountOfBodies
-} from '../../engine/cultivation/how-much-cultivation-a-body-carries.js';
+import type { ACountOfBodies } from '../../engine/cultivation/how-much-cultivation-a-body-carries.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { idsForFaction } from './hierarchy.js';
 import type { Awareness } from './governance-and-water-rights.js';
@@ -511,17 +508,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     })
 ];
 
-
-
-/**
- * The lowest rung that carries anything at all.
- *
- * Not the floor itself: somebody who has never advanced has spent nothing, so
- * no quantity of them adds up to a working. One rung up is the cheapest fuel
- * that is fuel.
- */
-const THE_BOTTOM_OF_THE_LADDER = REALM_TIERS[0]!.ordinalStart + 1;
-
 /** The rung the whole vessel's recipe is written at. */
 const VOID_TRIBULATION_ORDINAL =
     REALM_TIERS.find(t => t.key === 'void_tribulation')!.ordinalStart;
@@ -558,6 +544,23 @@ export const THE_ROOT_CAULDRON = {
     half: { bodies: 10, ordinal: NASCENT_SOUL_ORDINAL } as ACountOfBodies,
     /** Eight hundred and eighty-eight years between firings. */
     restsForYears: 888,
+    /**
+     * What each tier of awareness can be told of it. `unaware` is told nothing,
+     * which means say nothing rather than hedge. Every tier below the last is
+     * true and complete as far as it goes; only the last joins the execution
+     * notices to the object, and `encountered` is told what `known` is.
+     * Nothing lets a player learn it yet.
+     */
+    whatIsSaidOfItAt: {
+        whisper: 'There is an order on the deep vein that lights every node it holds, '
+            + 'draws nothing, and has turned away everybody who ever walked up to it.',
+        named: 'They are not eccentric and they are not local. They are staff, posted, '
+            + 'doing an assigned job on ground they do not own.',
+        placed: 'What they are posted over is one object in two pieces, and the other '
+            + 'piece is four provinces away under the other power.',
+        known: 'It is a refining vessel. What the execution notices name is what goes '
+            + 'into it, and the sword and the shield are what comes out.'
+    } satisfies Partial<Record<Awareness, string>>,
     yields:
         'The whole vessel returns one sword and shield that are a single heaven-grade object. The belly alone returns an earth-grade blade and the lid alone an earth-grade shield. Nothing else in the world makes any of the three.',
     andTheyAreTheSameObjectEveryTime:
@@ -625,87 +628,6 @@ export const THE_ROOT_CAULDRON = {
 } as const;
 
 /**
- * The most times a vessel COULD have fired in this many years.
- *
- * A ceiling and nothing else. How many times it actually fired is a small
- * authored number that sits under this, because each firing needed somebody to
- * assemble the fuel and that has almost never been possible - the rest has
- * never been the binding constraint and dividing history by it would invent a
- * cadence the world does not have.
- */
-export function mostFiringsIn(years: number): number {
-    return Math.max(0, Math.floor(years / THE_ROOT_CAULDRON.restsForYears));
-}
-
-/** Years still to run before a vessel last fired this long ago may fire again. */
-export function yearsUntilItMayFireAgain(yearsSinceItLastFired: number): number {
-    return Math.max(0, THE_ROOT_CAULDRON.restsForYears - yearsSinceItLastFired);
-}
-
-/** Whether a vessel that last fired this long ago is ready. */
-export function itMayFireAgain(yearsSinceItLastFired: number): boolean {
-    return yearsUntilItMayFireAgain(yearsSinceItLastFired) <= 0;
-}
-
-/**
- * What each recipe costs paid at the floor of the ladder, which is how it would
- * actually be paid: above Nascent Soul a cultivator resists, so the fuel has to
- * come from underneath and there are far more people underneath.
- *
- * Both figures are massacres and they differ in scale rather than in kind. The
- * split capped the larger one; it disarmed nothing. Computed off
- * `powerMultiplierForOrdinal` so no figure here can be typed wrong or go stale.
- */
-export function whatTheCauldronCostsAtTheBottom(): { half: number; whole: number } {
-    return {
-        half: theSameCultivationIn(THE_ROOT_CAULDRON.half, THE_BOTTOM_OF_THE_LADDER),
-        whole: theSameCultivationIn(THE_ROOT_CAULDRON.whole, THE_BOTTOM_OF_THE_LADDER)
-    };
-}
-
-/**
- * What anybody at this awareness can be told about the Root Cauldron.
- *
- * The reveal sits UNDER the one the apex material already builds - a strange
- * order guarding a vein it draws nothing from is the evidence in plain view
- * that the province is a tenancy, and this is the next layer on the same
- * bodies. So every tier below the last is true, boring and complete as far as
- * it goes, and none of them is the sentence that joins the execution notices to
- * the object.
- *
- * The public record is available the whole way down: a high-realm cultivator
- * was caught and sentenced, which surprises nobody. What is held back is where
- * the body went.
- *
- * Null means say nothing rather than say a hedge - `actsWithoutAttribution` is
- * the register at that tier, and the narrator has effects to use without names.
- */
-export function whatIsSaidOfTheCauldronAt(awareness: Awareness): string | null {
-    switch (awareness) {
-        case 'unaware':
-            return null;
-        case 'whisper':
-            return 'There is an order on the deep vein that lights every node it holds, '
-                + 'draws nothing, and has turned away everybody who ever walked up to it.';
-        case 'named':
-            return 'They are not eccentric and they are not local. They are staff, posted, '
-                + 'doing an assigned job on ground they do not own.';
-        case 'placed':
-            return 'What they are posted over is one object in two pieces, and the other '
-                + 'piece is four provinces away under the other power.';
-        case 'encountered':
-        case 'known':
-            return 'It is a refining vessel. What the execution notices name is what goes '
-                + 'into it, and the sword and the shield are what comes out.';
-    }
-}
-
-/** Everything the Root Cauldron has ever produced, by the mark it leaves. */
-export function cameOutOfTheRootCauldron(): readonly ObjectRecord[] {
-    return ARTIFACTS.filter(a => a.tags.includes('from:the-root-cauldron'));
-}
-
-/**
  * Everything a given party owns. Not artifact-tier-specific in any way.
  */
 export function artifactsOwnedBy(ownerId: string): readonly ObjectRecord[] {
@@ -721,11 +643,6 @@ export function artifactsOwnedBy(ownerId: string): readonly ObjectRecord[] {
  */
 export function containmentHeldBy(ownerId: string): readonly ObjectRecord[] {
     return artifactsOwnedBy(ownerId).filter(a => a.tags.includes('containment'));
-}
-
-/** Everything a given person or house is physically holding right now. */
-export function artifactsHeldBy(possessorId: string): readonly ObjectRecord[] {
-    return ARTIFACTS.filter(a => a.possessorId === possessorId);
 }
 
 /** Power levels a party could put on the ground, strongest first. */

@@ -13,12 +13,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-import { renderRegister } from '../dist/web/register.js';
+import { buildRegister, renderRegisterHtml } from '../dist/web/register.js';
 
 const out = resolve(process.argv[2] ?? 'build/standing-register.html');
 mkdirSync(dirname(out), { recursive: true });
 
-const html = renderRegister();
+const html = renderRegisterHtml(buildRegister());
 writeFileSync(out, html, 'utf-8');
 
 console.log(`standing register -> ${out} (${(html.length / 1024).toFixed(1)} kB)`);

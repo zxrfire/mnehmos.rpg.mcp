@@ -20,8 +20,7 @@ import {
     MAX_ORDINAL,
     REALM_TIERS,
     isRealmBoundary,
-    rankName,
-    realmForOrdinal
+    rankName
 } from './realms.js';
 import { foundationEffect, foundationOf } from './foundation.js';
 import type { CultivationRNG } from './rng.js';
@@ -534,11 +533,6 @@ export function computeTollRisk(
 export function boundariesCrossed(ordinal: number): number {
     if (ordinal < FOUNDATION_ORDINAL) return 0;
     return TOLL_BOUNDARY_ORDINALS.filter(b => b < ordinal).length;
-}
-
-/** The realm a cultivator lands in when this boundary is crossed. */
-export function realmEnteredAt(fromOrdinal: number): string {
-    return realmForOrdinal(Math.min(MAX_ORDINAL, fromOrdinal + 1)).name;
 }
 
 function clamp01(n: number): number {
