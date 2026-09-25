@@ -26,6 +26,8 @@ import {
 } from '../cultivation/what-you-refine-in.js';
 import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { isRuined, type ObjectRecord } from './possessions.js';
+import { isBroken } from './object-damage.js';
+import { BROKEN_THING_WORKS_AT } from '../cultivation/whether-a-weapon-survives-being-used.js';
 
 /** A vessel somebody has to hand, and what it adds for them. */
 export interface AVesselToHand {
@@ -87,7 +89,8 @@ export function theBestVesselToHand(
             name: row.name,
             kind,
             grade,
-            adds: whatThisVesselAddsFor(kind, grade, ordinal)
+            // A broken vessel keeps its grade and adds half of what it would.
+            adds: whatThisVesselAddsFor(kind, grade, ordinal) * (isBroken(row) ? BROKEN_THING_WORKS_AT : 1)
         };
         if (best === null
             || one.adds > best.adds

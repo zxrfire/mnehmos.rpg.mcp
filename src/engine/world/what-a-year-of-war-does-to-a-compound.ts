@@ -57,7 +57,7 @@ import {
 import type { FactionRecord, WorldState } from './world-state.js';
 import { combatPowerForOrdinal } from '../cultivation/combat.js';
 import { forStream } from '../cultivation/rng.js';
-import { whatBecomesOfIt, writeBack } from './object-damage.js';
+import { isBroken, whatBecomesOfIt, writeBack } from './object-damage.js';
 
 /**
  * How many buildings a seated house has.
@@ -123,7 +123,7 @@ export function whatTheYearDidToTheGround(
     if (!could.couldFlattenIt) {
         // PAST THE WARD AND STOPPED AT THE WALLS. The ward took the year's
         // force and did not keep them out, so what that did to it is asked of
-        // the one resolver: nothing, a hole, or the end of it.
+        // the one resolver: nothing, a hole, or a break.
         if (could.couldGetIn && seat.formationStandsAt !== null) {
             whatTheYearDidToTheWard(state, input, seatId);
         }
@@ -131,30 +131,11 @@ export function whatTheYearDidToTheGround(
     }
 
     // ── THE WARD, WHICH IS THE THING THAT WAS KEEPING THEM OUT ───────────
-    let wardBroken: string | null = null;
-    if (seat.formationStandsAt !== null) {
-        for (let at = 0; at < state.objects.length; at++) {
-            const row = state.objects[at]!;
-            if (row.kind !== 'formation' || row.locationId !== seatId) continue;
-            if (isRuined(row)) continue;
-            // Through the world's own breaking door, so a ward beaten down in
-            // a siege reaches the record the same way anything else broken
-            // does. `ruin` was called straight here with no `factId`, and a
-            // house losing the formation over its own seat was known only to
-            // the engagement report.
-            aBreakingEntersTheWorld(state, {
-                actor: { id: input.winner.id, name: input.winner.name, role: 'brought it down' },
-                object: row,
-                day: input.day,
-                locationId: seatId,
-                factionIds: [input.winner.id, input.loser.id],
-                how:
-                    `beaten in the field year of the war with ${input.winner.name}, who could `
-                    + 'reach past it. What it was keeping out is inside.'
-            });
-            wardBroken = row.name;
-        }
-    }
+    // Asked of the one resolver as on the other path: a hole short of three
+    // realms past it, a break beyond (owner ruling 2026-09-25).
+    const ward = seat.formationStandsAt === null ? [] : whatTheYearDidToTheWard(state, input, seatId);
+    const wardBroken = ward.find(w => w.state === 'broken')?.name ?? null;
+    const wardHoled = wardBroken === null ? ward.find(w => w.state === 'holed')?.name ?? null : null;
 
     // ── AND THE HALLS, OF WHICH ONLY THE STANDING ONES CAN FALL ──────────
     const alreadyDown = Math.max(
@@ -185,9 +166,11 @@ export function whatTheYearDidToTheGround(
         scale: 'local',
         summary:
             `${input.winner.name} reached the ${input.loser.name} compound. `
-            + (wardBroken === null
-                ? 'There was nothing over it. '
-                : `${wardBroken.charAt(0).toUpperCase()}${wardBroken.slice(1)} is spent. `)
+            + (wardBroken !== null
+                ? `${wardBroken.charAt(0).toUpperCase()}${wardBroken.slice(1)} is broken, and answers at half. `
+                : wardHoled !== null
+                    ? `${wardHoled.charAt(0).toUpperCase()}${wardHoled.slice(1)} is holed. `
+                    : 'There was nothing over it that gave. ')
             + (down === 0
                 ? 'There was nothing left standing in it to bring down.'
                 : `${down} of its halls came down.`)
@@ -218,21 +201,28 @@ export function whatTheYearDidToTheGround(
 }
 
 /**
- * A year's force put through the ward over a seat it did not keep them out of.
+ * A year's force put through the ward over a seat it did not keep them out of,
+ * and what each ward there is afterwards. A ward already broken stays broken.
  *
  * On its own stream, so no draw anywhere else moves. A hole takes a rung off
  * what the ward answers at (`rungsTheHolesTake`, read by `whatAHouseIsMadeOf`);
- * an ending goes through the world's own breaking door, as a flattening does.
+ * a break goes through the world's own breaking door, as a flattening does,
+ * and leaves the ward answering at half.
  */
 function whatTheYearDidToTheWard(
     state: WorldState,
     input: { winner: FactionRecord; loser: FactionRecord; winnerReach: number; day: number },
     seatId: string
-): void {
+): { name: string; state: 'held' | 'holed' | 'broken' }[] {
     const reach = Math.max(0, input.winnerReach);
+    const out: { name: string; state: 'held' | 'holed' | 'broken' }[] = [];
     for (let at = 0; at < state.objects.length; at++) {
         const row = state.objects[at]!;
         if (row.kind !== 'formation' || row.locationId !== seatId || isRuined(row)) continue;
+        if (isBroken(row)) {
+            out.push({ name: row.name, state: 'broken' });
+            continue;
+        }
         const cause = `the war with ${input.winner.name}`;
         const harmed = whatBecomesOfIt(row, {
             standing: combatPowerForOrdinal(reach),
@@ -243,10 +233,10 @@ function whatTheYearDidToTheWard(
             cause,
             standingOf: combatPowerForOrdinal
         }, forStream(state.seed, 'a-ward-under-force', row.id, input.day));
+        out.push({ name: row.name, state: harmed.state });
         if (harmed.state === 'held') continue;
-        if (harmed.state === 'holed' || harmed.state === 'inert') {
-            const written = writeBack(row, harmed, { onDay: input.day, source: cause });
-            if (written.row) state.objects[at] = written.row;
+        if (harmed.state === 'holed') {
+            state.objects[at] = writeBack(row, harmed, { onDay: input.day, source: cause }).row;
             continue;
         }
         aBreakingEntersTheWorld(state, {
@@ -258,4 +248,5 @@ function whatTheYearDidToTheWard(
             how: `beaten in the field year of ${cause}. ${harmed.exposure.cause}`
         });
     }
+    return out;
 }

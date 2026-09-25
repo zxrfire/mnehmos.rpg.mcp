@@ -2,10 +2,10 @@
  * Durability is damage, not wear.
  *
  * The owner: items have durability, *"but not the usage kind, the partial
- * damage kind"*. A thing a force reaches past what it is made for either ends
- * or comes out holed, stays holed until mended, and works a rung worse while it
- * is: a blade prices a rung lower in a fight, a ward answers a rung lower over
- * its ground. Nothing is worn by ordinary use.
+ * damage kind"*. A thing a force reaches past what it is made for comes out
+ * holed or, far enough past, broken. A hole stays until mended and works a rung
+ * worse while it is: a blade prices a rung lower in a fight, a ward answers a
+ * rung lower over its ground. Nothing is worn by ordinary use.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -24,14 +24,11 @@ import {
 } from '../../../src/engine/world/object-damage.js';
 import { makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
 import { whatAHouseIsMadeOf } from '../../../src/engine/world/what-a-house-is-made-of-and-what-brings-it-down.js';
-import {
-    atTheRungItStandsAt,
-    theWeaponTheyFightWith
-} from '../../../src/engine/world/what-somebody-fights-with.js';
+import { theWeaponTheyFightWith } from '../../../src/engine/world/what-somebody-fights-with.js';
 
 const BLADE_AT = 20;
 
-/** A swing of a blade rated 20 into a body `realms` realms above it. */
+/** A swing of a blade rated 20 into a body `realms` realms above it; a drawn roll that did not break it holed it. */
 function aSwing(realms: number, roll: number | null, broke = false) {
     const exposure = weaponExposure({
         weaponPower: BLADE_AT,
@@ -41,7 +38,7 @@ function aSwing(realms: number, roll: number | null, broke = false) {
         metByOrdinal: 40,
         standingOf: combatPowerForOrdinal
     });
-    return { objectId: 'blade', objectName: 'the blade', exposure, roll, broke };
+    return { objectId: 'blade', objectName: 'the blade', exposure, roll, broke, holed: roll !== null && !broke };
 }
 
 const exchange = (weapon: ReturnType<typeof aSwing> | null) =>
@@ -57,7 +54,7 @@ function blade(): ObjectRecord {
 const nameOf = (id: string) => (id === 'wu' ? 'Wu' : 'the tall one');
 
 describe('a fight marks what it does not end', () => {
-    it('a swing that was at risk and came through leaves a hole, one rung down', () => {
+    it('a swing that was at risk and marked it leaves a hole, one rung down', () => {
         const swing = aSwing(1.5, 0.99);
         expect(swing.exposure.chance).toBeGreaterThan(0);
         expect(swing.exposure.chance).toBeLessThan(1);
@@ -119,8 +116,8 @@ describe('a holed blade cuts a rung worse', () => {
         expect(theWeaponTheyFightWith(objects, 'wu')?.power).toBe(BLADE_AT - 1);
         // The pouch keeps the catalog's rating; the row keeps the hole.
         const fromThePouch = { id: 'blade', name: 'the blade', power: BLADE_AT };
-        expect(atTheRungItStandsAt(fromThePouch, objects)?.power).toBe(BLADE_AT - 1);
-        expect(atTheRungItStandsAt(fromThePouch, [])?.power).toBe(BLADE_AT);
+        expect(theWeaponTheyFightWith(objects, 'somebody-else', fromThePouch)?.power).toBe(BLADE_AT - 1);
+        expect(theWeaponTheyFightWith([], 'somebody-else', fromThePouch)?.power).toBe(BLADE_AT);
     });
 });
 
@@ -149,23 +146,24 @@ describe('and it stays holed until a hand at its rung mends it', () => {
 });
 
 describe('a holed ward answers lower over its ground', () => {
-    const ward = (power: number, scars: number): ObjectRecord => makeObject({
-        id: 'ward', name: 'the ward', kind: 'formation', power, locationId: 'seat',
-        tags: scars > 0 ? ['damaged', 'holed'] : [],
-        data: { ratedWhole: 25, raisedOnDay: 0, ...(scars > 0 ? { scars } : {}) }
-    });
+    const ward = (power: number, scars: number, tags: string[] = scars > 0 ? ['damaged', 'holed'] : []): ObjectRecord =>
+        makeObject({
+            id: 'ward', name: 'the ward', kind: 'formation', power, locationId: 'seat', tags,
+            data: { ratedWhole: 27, raisedOnDay: 0, ...(scars > 0 ? { scars } : {}) }
+        });
 
     it('a rung for every rung its holes took, and nothing for a whole one', () => {
-        const whole = whatAHouseIsMadeOf([ward(25, 0)], 'seat', 0).formationStandsAt!;
-        const holed = whatAHouseIsMadeOf([ward(23, 2)], 'seat', 0).formationStandsAt!;
+        const whole = whatAHouseIsMadeOf([ward(27, 0)], 'seat', 0).formationStandsAt!;
+        const holed = whatAHouseIsMadeOf([ward(25, 2)], 'seat', 0).formationStandsAt!;
         expect(whole - holed).toBe(2);
     });
 
-    it('and a ward the qi has gone out of answers not at all', () => {
-        const spent = makeObject({
-            id: 'ward', name: 'the ward', kind: 'formation', power: null, locationId: 'seat',
-            tags: ['damaged', 'inert'], data: { ratedWhole: 25, raisedOnDay: 0, scars: 3 }
-        });
-        expect(whatAHouseIsMadeOf([spent], 'seat', 0).formationStandsAt).toBeNull();
+    it('and a broken ward still answers, at the rung worth half of what it was made at', () => {
+        const whole = whatAHouseIsMadeOf([ward(27, 0)], 'seat', 0).formationStandsAt!;
+        const broken = whatAHouseIsMadeOf([ward(27, 3, ['damaged', 'broken'])], 'seat', 0).formationStandsAt;
+        expect(broken).not.toBeNull();
+        expect(broken!).toBeLessThan(whole);
+        expect(combatPowerForOrdinal(broken!)).toBeLessThanOrEqual(combatPowerForOrdinal(whole) / 2);
+        expect(combatPowerForOrdinal(broken! + 1)).toBeGreaterThan(combatPowerForOrdinal(whole) / 2);
     });
 });

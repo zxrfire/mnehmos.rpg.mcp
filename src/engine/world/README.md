@@ -2642,17 +2642,21 @@ object-damage.ts THE ONE ANSWER to "is this thing damaged, and how badly". A
                  is one the signature makes unwriteable. The arithmetic is
                  `cultivation/whether-a-weapon-survives-being-used.ts`'s and is
                  not repeated; what is added is that breaking is not binary -
-                 held / holed / inert / ruined / shattered / gone - and that a
-                 COUNTED thing can only be held or gone, because there is no
-                 row to write a scar onto. `mend` gives a rung back, gated by
-                 the same `canUnmake` that governs making and unmaking
+                 held / holed / broken. A hole takes a rung and `mend` gives it
+                 back, gated by the same `canUnmake` that governs making and
+                 unmaking. A break keeps the thing at the rung it was made at,
+                 working at half (`BROKEN_THING_WORKS_AT`), and nothing
+                 damaged works below that floor (`whatItStillDoes`,
+                 `theRungItWorksAt`); owner ruling 2026-09-25. A COUNTED thing
+                 carries no scar, because there is no row to write one onto
 sheltering.ts    what being inside something is worth, and it is not a bonus.
                  `canUnmake` read with the thing in the way: a hull rated 29
                  stands between its passengers and everybody below 29,
                  categorically. Covers a hull, a vault, a hall and a formation
                  off the same field and knows about none of them, and the
                  degradation is free - a holed hull is rated a rung lower, so
-                 it shelters a rung less with no code. NOT a second opinion
+                 it shelters a rung less with no code; a broken one shelters
+                 at the rung worth half of what it was made at. NOT a second opinion
                  about `how-far-gone-a-formation-is.ts`, which prices somebody
                  WORKING AT a door over time; this is force put through a thing
                  now, and the two answer different acts

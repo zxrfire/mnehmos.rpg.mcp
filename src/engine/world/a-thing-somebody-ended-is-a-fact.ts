@@ -1,5 +1,10 @@
 /**
- * A thing stopped existing, and the world hears about it.
+ * A thing was broken, and the world hears about it.
+ *
+ * A BREAK DOES NOT END A RATED THING (owner ruling 2026-09-25). A row with a
+ * rung is kept, at the rung it was made at, working at half (`breakIt` in
+ * `object-damage.ts`). A row with no rung - a manual, a slip, a token - has no
+ * half to work at, and is ruined as before.
  *
  * ANYBODY CAN END A THING. The design owner, on who this is for: *"it's not
  * restricted to only me. it's ANYONE can destroy (including me)."* So this
@@ -46,6 +51,7 @@ import {
     type ObjectRecord,
     type ObjectSignificance
 } from './possessions.js';
+import { breakIt, isBroken } from './object-damage.js';
 import type { Severity } from '../social/grudges.js';
 import type { WorldState } from './world-state.js';
 
@@ -80,8 +86,10 @@ export interface ABreaking {
 export interface TheThingIsGone {
     fact: HistoricalFact;
     weight: Severity;
-    /** The ruined row, already written back into `state`. Null for a counted thing. */
+    /** The broken or ruined row, already written back into `state`. Null for a counted thing. */
     row: ObjectRecord | null;
+    /** Whether the row is still there, broken and working at half. */
+    kept: boolean;
     /** Whether this is a thing anybody can ask about by name afterwards. */
     addressable: boolean;
     /** Engine truth, one line, for the mechanical channel. Never narration. */
@@ -89,11 +97,11 @@ export interface TheThingIsGone {
 }
 
 /**
- * End one thing, and put the ending into the world's own record.
+ * Break one thing, and put the breaking into the world's own record.
  *
- * Mutates `state` in place. Returns null for a row that was already ruined -
- * a thing cannot end twice, and a caller that files a second fact about the
- * same wreck has written the world two events where there was one.
+ * Mutates `state` in place. Returns null for a row already broken or ruined -
+ * a thing does not break twice, and a caller that files a second fact about
+ * the same break has written the world two events where there was one.
  */
 export function aBreakingEntersTheWorld(
     state: WorldState,
@@ -102,13 +110,16 @@ export function aBreakingEntersTheWorld(
     const at = input.object
         ? state.objects.findIndex(row => row.id === input.object!.id)
         : -1;
-    if (input.object && at >= 0 && isRuined(state.objects[at])) return null;
+    if (input.object && at >= 0 && (isRuined(state.objects[at]) || isBroken(state.objects[at]))) {
+        return null;
+    }
 
     const name = input.object ? input.object.name : input.counted!.name;
     const significance = input.object
         ? input.object.significance
         : input.counted!.significance;
     const addressable = input.object !== undefined && keptAs(significance) === 'tracked';
+    const kept = at >= 0 && state.objects[at].power !== null;
 
     const deed = aDeedEntersTheWorld(state, {
         kind: 'object_destroyed',
@@ -118,10 +129,10 @@ export function aBreakingEntersTheWorld(
         actors: [input.actor],
         factionIds: input.factionIds ?? [],
         weight: howBadlyItsEndingIsTaken({ significance }),
-        summary: `${input.actor.name} destroyed ${name}: ${input.how}`,
+        summary: `${input.actor.name} ${kept ? 'broke' : 'destroyed'} ${name}: ${input.how}`,
         unattributed: addressable
-            ? 'Something nobody alive can make another of has stopped existing, and the '
-              + 'people who would know are not saying whose it was.'
+            ? `Something nobody alive can make another of has been ${kept ? 'broken' : 'destroyed'}, `
+              + 'and the people who would know are not saying whose it was.'
             : 'Somebody broke something in the street and left the pieces where they fell.',
         ...(input.workedOut === false ? { workedOut: false } : {}),
         // READ BACK BY THE RUMOUR LAYER. `sentenceFor` composes what a teller
@@ -137,12 +148,8 @@ export function aBreakingEntersTheWorld(
 
     let row: ObjectRecord | null = null;
     if (input.object && at >= 0) {
-        state.objects[at] = ruin(state.objects[at], {
-            onDay: input.day,
-            source: input.actor.name,
-            note: input.how,
-            factId: deed.fact.id
-        });
+        const written = { onDay: input.day, source: input.actor.name, note: input.how, factId: deed.fact.id };
+        state.objects[at] = kept ? breakIt(state.objects[at], written) : ruin(state.objects[at], written);
         row = state.objects[at];
     }
 
@@ -150,9 +157,12 @@ export function aBreakingEntersTheWorld(
         fact: deed.fact,
         weight: deed.weight,
         row,
+        kept,
         addressable,
-        line: addressable
-            ? `${name} is finished. The row stays, ruined, and it carries the day and the name.`
-            : `${name} is gone, and there is no row left for anybody to ask about.`
+        line: kept
+            ? `${name} is broken. It stays where it was, keeps its grade and works at half.`
+            : addressable
+                ? `${name} is finished. The row stays, ruined, and it carries the day and the name.`
+                : `${name} is gone, and there is no row left for anybody to ask about.`
     };
 }

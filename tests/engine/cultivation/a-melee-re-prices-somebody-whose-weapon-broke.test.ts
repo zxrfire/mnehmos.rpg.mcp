@@ -1,5 +1,8 @@
 /**
- * A melee re-prices somebody the moment their weapon goes.
+ * A melee re-prices somebody the moment their weapon breaks.
+ *
+ * Owner ruling 2026-09-25: a broken weapon is kept and works at half, so the
+ * re-price is to the broken blade, not to bare hands.
  *
  * ── The gap this closes ──────────────────────────────────────────────────
  *
@@ -100,9 +103,9 @@ describe('a blade that breaks, breaks once', () => {
 
             // The fixture is only worth anything if the object actually went.
             expect(broke.length, `${seed}: nothing broke, fixture is wrong`).toBe(1);
-            // And nothing was at risk afterwards, because there was nothing to
-            // put at risk. Before the fix every subsequent swing re-broke the
-            // same sabre.
+            // And nothing was at risk afterwards: a broken thing is at the
+            // floor and is not put at risk again. Before the fix every
+            // subsequent swing re-broke the same sabre.
             const after = swings.slice(swings.indexOf(broke[0]) + 1);
             for (const swing of after) {
                 expect(swing.result.weapon, `${seed}: a second breakage`).toBeNull();
@@ -110,16 +113,14 @@ describe('a blade that breaks, breaks once', () => {
         }
     });
 
-    it('prices the rest of the fight without it', () => {
+    it('prices the rest of the fight with it broken', () => {
         for (const seed of SEEDS) {
             const result = fight(seed);
             const armed = result.combatants.find(c => c.id === 'armed')!;
-            const unarmed = assessPower(body('armed', null), { ambient: 'normal' });
+            const broken = assessPower(body('armed', { ...DOOMED, broken: true }), { ambient: 'normal' });
 
-            // Reported at what they are now, which is what they would have been
-            // priced at had they never picked it up.
-            expect(armed.power.total, seed).toBeCloseTo(unarmed.total, 6);
-            expect(armed.power.weapon, seed).toBeNull();
+            expect(armed.power.total, seed).toBeCloseTo(broken.total, 6);
+            expect(armed.power.weapon?.broken, seed).toBe(true);
         }
     });
 

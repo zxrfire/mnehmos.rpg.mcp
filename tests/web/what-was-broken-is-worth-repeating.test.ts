@@ -38,7 +38,7 @@ import { addToPouch } from '../../src/server/consolidated/cultivation-support.js
 import { mintCraft } from '../../src/engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
 import { getConveyanceRecipe } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { buildPlayerDigest, MARKET_MAGNITUDE } from '../../src/engine/world/digest.js';
-import { isRuined } from '../../src/engine/world/possessions.js';
+import { isBroken } from '../../src/engine/world/object-damage.js';
 import { getPill } from '../../src/data/cultivation/pills.js';
 import { howBadlyItsEndingIsTaken } from '../../src/engine/world/what-a-change-of-hands-leaves.js';
 
@@ -140,12 +140,11 @@ describe('a heaven-grade thing ending is something people know about', () => {
         expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
         const after = reloaded!;
         const row = after.objects.find(object => object.id === 'obj-craft-checked-boat')!;
-        expect(isRuined(row)).toBe(true);
+        expect(isBroken(row)).toBe(true);
         // THE FIELD NOBODY SUPPLIED. The last provenance entry now carries the
         // id of the fact the world is repeating, so the row and the rumour are
         // one event seen from two ends rather than two memories of it.
         const last = row.provenance[row.provenance.length - 1];
-        expect(last.how).toBe('lost');
         expect(last.factId).toBeTruthy();
         expect(after.history.facts.some(fact => fact.id === last.factId)).toBe(true);
     });

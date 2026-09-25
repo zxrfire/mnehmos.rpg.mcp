@@ -107,11 +107,21 @@
 import { canUnmake, type UnmakingReach } from '../cultivation/whether-a-weapon-survives-being-used.js';
 import {
     UNRATED_STANDS_AT,
-    isInert,
+    isBroken,
+    ratedWhole,
     scarsOn,
+    theRungItWorksAt,
     type ForceApplied,
     type ThingUnderForce
 } from './object-damage.js';
+
+/** The rung a shelter keeps things off at: its own, or half of what it was made at once broken. */
+function theRungItShelters(shelter: ThingUnderForce): number {
+    const standsAt = shelter.power ?? UNRATED_STANDS_AT;
+    return standsAt <= 0
+        ? standsAt
+        : theRungItWorksAt(standsAt, ratedWhole(shelter) ?? standsAt, isBroken(shelter));
+}
 // ═════════════════════════════════════════════════════════════════════════
 // WHERE THE FORCE IS
 // ═════════════════════════════════════════════════════════════════════════
@@ -173,11 +183,10 @@ export function whatGettingPastItTakes(
     force: Pick<ForceApplied, 'ordinal' | 'byName'>,
     standing: Standing = 'outside'
 ): ShelterReading {
-    // `isRuined` and `isInert` are the two stored marks, read here rather than
-    // inferred from a null rating: a thing can stand at nothing and still be an
-    // object, and only the tag says which of the two happened to it.
-    const spent = shelter.tags.includes('ruined') || isInert(shelter);
-    const standsAt = shelter.power ?? UNRATED_STANDS_AT;
+    // `ruined` is the stored mark of a thing used up. A broken shelter still
+    // stands, at half of what it was made at.
+    const spent = shelter.tags.includes('ruined');
+    const standsAt = theRungItShelters(shelter);
     const scars = scarsOn(shelter);
     const through = canUnmake(force.ordinal, standsAt);
 
@@ -282,10 +291,10 @@ export function bestShelterAmong(
 ): ThingUnderForce | null {
     let best: ThingUnderForce | null = null;
     for (const s of shelters) {
-        if (s.tags.includes('ruined') || isInert(s)) continue;
-        const rung = s.power ?? UNRATED_STANDS_AT;
+        if (s.tags.includes('ruined')) continue;
+        const rung = theRungItShelters(s);
         if (rung <= 0) continue;
-        if (best === null || rung > (best.power ?? UNRATED_STANDS_AT)) best = s;
+        if (best === null || rung > theRungItShelters(best)) best = s;
     }
     return best;
 }

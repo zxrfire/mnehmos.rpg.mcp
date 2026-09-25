@@ -29,7 +29,6 @@ import {
     isTracked,
     shardPower,
     makeObject,
-    shatter,
     type ObjectSignificance
 } from '../../../src/engine/world/possessions.js';
 import { ARTIFACTS } from '../../../src/data/cultivation/artifacts.js';
@@ -252,34 +251,5 @@ describe('grade is fixed when a thing is made, and the only movement is downward
         expect(shardPower(6)).toBe(5);
         expect(shardPower(0)).toBe(0);
         expect(shardPower(null)).toBeNull();
-    });
-
-    /**
-     * Breaking a thing produces new individuals rather than promoting anything.
-     * The pieces are new ids, they are worth a rung less, and no piece is ever
-     * more significant than what it came off.
-     */
-    it('mints new individuals when a thing comes apart, and promotes none of them', () => {
-        const whole = makeObject({
-            id: 'whole', name: 'A Blade', kind: 'artifact',
-            significance: 'legendary', power: 46
-        });
-        const pieces = shatter(whole);
-        expect(pieces.length).toBe(2);
-        for (const piece of pieces) {
-            expect(piece.id).not.toBe(whole.id);
-            expect(piece.power).toBe(45);
-            expect(piece.significance).toBe('significant');
-        }
-    });
-
-    it('does not promote a counted thing into a tracked one by breaking it', () => {
-        const kind = makeObject({
-            id: 'sabre', name: 'A Notched Sabre', kind: 'artifact',
-            significance: 'mundane', power: 4
-        });
-        for (const piece of shatter(kind)) {
-            expect(keptAs(piece.significance)).toBe('counted');
-        }
     });
 });

@@ -110,7 +110,7 @@ describe('the openings, all four of them', () => {
             ordinal: 34, byId: 'x', byName: 'somebody', cause: 'a raid',
             standingOf: combatPowerForOrdinal
         };
-        const harmed = whatBecomesOfIt(row, force, { next: () => 0.999999 });
+        const harmed = whatBecomesOfIt(row, force, { next: () => 0 });
         expect(harmed.state).toBe('holed');
         row = writeBack(row, harmed, { onDay: 1, source: 'a raid' }).row as ObjectRecord;
 
@@ -159,11 +159,18 @@ describe('shelters do not stack', () => {
         expect(best?.id).toBe('formation');
     });
 
-    it('an ended or emptied thing is not among them, and nor is an unrated one', () => {
+    it('a used-up thing is not among them, and nor is an unrated one', () => {
         expect(bestShelterAmong([
             hull(40, { id: 'gone', name: 'a gone thing', tags: ['ruined'] }),
-            hull(38, { id: 'empty', name: 'an empty thing', tags: ['inert'] }),
             hull(null, { id: 'plain', name: 'a plain door' })
         ])).toBeNull();
+    });
+
+    it('a broken one is, at the rung worth half of what it was made at', () => {
+        // 38 at half is worth rung 36, which still stands over a whole 30.
+        const broken = hull(38, { id: 'broken', name: 'a broken hull', tags: ['broken'] });
+        expect(bestShelterAmong([hull(30), broken])?.id).toBe('broken');
+        expect(whatGettingPastItTakes(broken, at(35)).reachesThem).toBe(false);
+        expect(whatGettingPastItTakes(broken, at(36)).reachesThem).toBe(true);
     });
 });

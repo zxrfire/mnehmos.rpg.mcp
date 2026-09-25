@@ -18,7 +18,7 @@ import {
     whatIsLeftInTheHold
 } from '../../../src/engine/world/war-spoils.js';
 import { isRuined, makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
-import { isInert } from '../../../src/engine/world/object-damage.js';
+import { isBroken } from '../../../src/engine/world/object-damage.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 // A world small enough to reason about: two houses, one hold, some people.
@@ -74,11 +74,11 @@ describe('what a settlement can move is the complement of what the fighting reac
         expect(ids).not.toContain('obj-blade');
     });
 
-    it('anything already ended or emptied is not there to move', () => {
+    it('anything used up is not there to move, and a broken thing still is', () => {
         const state = twoHouses();
         state.objects[0] = { ...state.objects[0], tags: ['ruined'] };
-        state.objects[1] = { ...state.objects[1], tags: ['inert'] };
-        expect(whatIsLeftInTheHold(state, 'loser')).toHaveLength(0);
+        state.objects[1] = { ...state.objects[1], tags: ['broken'] };
+        expect(whatIsLeftInTheHold(state, 'loser').map(o => o.id)).toEqual([state.objects[1].id]);
     });
 });
 
@@ -97,7 +97,7 @@ describe('the ordinary ending is that somebody else has it', () => {
         // NOTHING was destroyed. This is the whole point of the file.
         for (const o of state.objects) {
             expect(isRuined(o)).toBe(false);
-            expect(isInert(o)).toBe(false);
+            expect(isBroken(o)).toBe(false);
         }
         // And nothing lost a rung. Capture is not damage.
         expect(state.objects.find(o => o.id === 'obj-relic')!.power).toBe(28);

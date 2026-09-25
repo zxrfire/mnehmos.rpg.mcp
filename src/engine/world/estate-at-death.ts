@@ -78,7 +78,7 @@ import type { DeathCause } from '../../schema/cultivation.js';
 import { contiguousRun } from '../cultivation/acquisition.js';
 import { forStream } from '../cultivation/rng.js';
 import type { LocationRecord } from './locations.js';
-import { ratedWhole } from './object-damage.js';
+import { breakIt, ratedWhole } from './object-damage.js';
 import {
     makeObject,
     ruin,
@@ -151,8 +151,11 @@ export function whereTheyFell(
     return { id: location.id, name: location.name, danger: location.environment.danger };
 }
 
-/** What state a thing was in when it came off the body. */
-export type ConditionAtDeath = 'unchanged' | 'damaged' | 'ruined';
+/**
+ * What state a thing was in when it came off the body. `broken` is the ruined
+ * band reaching a thing with a rung: it is kept, at half (`breakIt`).
+ */
+export type ConditionAtDeath = 'unchanged' | 'damaged' | 'broken' | 'ruined';
 
 /**
  * The share of an ordered work that has to survive from the beginning for what
@@ -492,7 +495,11 @@ function whatThePlaceLeft(input: EstateInput): MarkAtDeath[] {
         // every way of losing the opening of a work: `contiguousRun` would
         // return zero for those anyway, so the category agrees with the
         // arithmetic instead of offering a row that looks salvageable.
+        const stands = thing.worldRow?.power ?? thing.power;
         if (share < NOTHING_USABLE_BELOW) {
+            if (!parts && stands !== null && stands > 0) {
+                return { itemId: thing.itemId, condition: 'broken', theWork: null };
+            }
             return { itemId: thing.itemId, condition: 'ruined', theWork: parts ? 'ruined' : null };
         }
 
@@ -514,7 +521,6 @@ function whatThePlaceLeft(input: EstateInput): MarkAtDeath[] {
         // NO RUNG, NOTHING TO LOSE - which is `theMark`'s own ruling in
         // `object-damage.ts` for exactly this case, not a second answer to it.
         // A token or a key that came through a bad place came through it.
-        const stands = thing.worldRow?.power ?? thing.power;
         return stands === null || stands <= 0
             ? whole
             : { itemId: thing.itemId, condition: 'damaged', theWork: null };
@@ -611,7 +617,15 @@ function moveOneThing(
             note: input.causeNote
         });
     }
-    const marked = condition === 'damaged' ? markedByThePlace(onTheBody, input) : onTheBody;
+    const marked = condition === 'damaged'
+        ? markedByThePlace(onTheBody, input)
+        : condition === 'broken'
+            ? breakIt(onTheBody, {
+                onDay: input.onDay,
+                source: whatThePlaceDidToIt(input.fell?.name ?? 'nowhere anybody named'),
+                note: input.causeNote
+            })
+            : onTheBody;
 
     // Link three: where it went.
     if (taker) {

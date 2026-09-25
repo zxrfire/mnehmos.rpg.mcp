@@ -37,6 +37,7 @@ import { addToPouch } from '../../src/server/consolidated/cultivation-support.js
 import { mintCraft } from '../../src/engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
 import { getConveyanceRecipe } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { isRuined } from '../../src/engine/world/possessions.js';
+import { isBroken } from '../../src/engine/world/object-damage.js';
 import { getPill } from '../../src/data/cultivation/pills.js';
 
 const WORLD = 'a-thing-is-unmade';
@@ -124,8 +125,8 @@ describe('a player can break what they are carrying', () => {
     });
 });
 
-describe('a tracked thing keeps its row and the row says it ended', () => {
-    it('ruins the craft rather than deleting it', async () => {
+describe('a tracked thing keeps its row and the row says it broke', () => {
+    it('breaks the craft and keeps it, at the rung it was made at', async () => {
         const harness = await makeGameInWorld({ seed: 'break-a-boat', worldSeed: WORLD });
         const { cultivator } = await harness.game.newRun('Wright');
         const loaded = await harness.game.loadWorld();
@@ -151,11 +152,12 @@ describe('a tracked thing keeps its row and the row says it ended', () => {
         const reloaded = await harness.game.loadWorld();
         expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
         const after = reloaded!.objects.find(object => object.id === 'obj-craft-own-boat');
-        // The row survives. `items.md` is emphatic that a thing which stops
-        // existing must still be answerable for, and `ruin` is what says so.
+        // The row survives, broken and working at half: owner ruling
+        // 2026-09-25, a break never ends a rated thing.
         expect(after).toBeDefined();
-        expect(isRuined(after!)).toBe(true);
-        expect(after!.power).toBeNull();
+        expect(isRuined(after!)).toBe(false);
+        expect(isBroken(after!)).toBe(true);
+        expect(after!.power).toBe(boat.power);
     });
 });
 

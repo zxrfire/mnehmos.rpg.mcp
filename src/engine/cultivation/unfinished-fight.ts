@@ -781,7 +781,7 @@ function theRoundAsItHappened(
               + 'its own.'
             : '';
         const broke = exchange.result.weapon?.broke
-            ? ` ${exchange.result.weapon.objectName} did not survive it. `
+            ? ` ${exchange.result.weapon.objectName} broke. `
               + exchange.result.weapon.narrationHint
             : '';
         return `${cost}${opened}${broke}`;

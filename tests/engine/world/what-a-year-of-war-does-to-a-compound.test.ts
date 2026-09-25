@@ -37,7 +37,7 @@ import {
     whatTheYearDidToTheGround
 } from '../../../src/engine/world/what-a-year-of-war-does-to-a-compound';
 import { isRuined, makeObject } from '../../../src/engine/world/possessions';
-import { isHoled } from '../../../src/engine/world/object-damage';
+import { isBroken, isHoled } from '../../../src/engine/world/object-damage';
 import type { FactionRecord, WorldState } from '../../../src/engine/world/world-state';
 
 /** The strongest house in the world at war with the weakest, so the ground gives. */
@@ -88,12 +88,12 @@ describe('a year of war that reaches the ground', () => {
             expect(ground, 'the year did nothing to the ground at all').not.toBeNull();
 
             // THE WARD GOES FIRST, because it is the thing that was keeping
-            // them out, and it is spent on the row like every other broken
-            // thing in this world.
+            // them out. It is broken on the row and still answers, at half.
             expect(ground!.wardBroken).not.toBeNull();
             const ward = state.objects.find(o =>
                 o.kind === 'formation' && o.ownerId === weak.id);
-            expect(ward && isRuined(ward)).toBe(true);
+            expect(ward && isBroken(ward)).toBe(true);
+            expect(ward && isRuined(ward)).toBe(false);
 
             // AND THE HALLS, AND THE BILL.
             expect(ground!.buildingsDown).toBeGreaterThan(0);
@@ -185,11 +185,11 @@ describe('a year that got past the ward and stopped at the walls', () => {
         expect(below.ground).toBeNull();
         expect(below.ward.power).toBe(WARD_AT);
 
-        // Within a realm of it the ward is what it was made for, and a reach
-        // one to two realms past it is a chance of ending it; a year's roll
-        // that spares it leaves a hole. Pooled over years, both happen.
+        // Within a realm of it the ward is what it was made for; one to three
+        // realms past it the year's force holes it, and past three it breaks
+        // it. Pooled over years, both happen.
         let holed = 0;
-        let ended = 0;
+        let broke = 0;
         for (let year = 0; year < 12; year++) {
             for (let reach = WARD_AT; reach < 29; reach++) {
                 const { ground, ward } = at(withAWard(), reach, day + year * 365);
@@ -198,12 +198,13 @@ describe('a year that got past the ward and stopped at the walls', () => {
                 if (isHoled(ward)) {
                     expect(ward.power).toBe(WARD_AT - 1);
                     holed++;
-                } else if (isRuined(ward)) {
-                    ended++;
+                } else if (isBroken(ward)) {
+                    expect(ward.power).toBe(WARD_AT);
+                    broke++;
                 }
             }
         }
         expect(holed).toBeGreaterThan(0);
-        expect(ended).toBeGreaterThan(0);
+        expect(broke).toBeGreaterThan(0);
     });
 });

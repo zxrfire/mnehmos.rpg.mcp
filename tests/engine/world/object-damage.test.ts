@@ -5,20 +5,22 @@
  * the same way that a sword breaks.* So the load-bearing test here is not that
  * a boat breaks - it is that a boat, a sabre, a carriage, a formation plate and
  * a manual with identical rows get IDENTICAL answers, which is the property a
- * `breakSpiritBoat` would destroy.
+ * `breakSpiritBoat` would destroy. The owner's ruling of 2026-09-25 is pinned
+ * here too: damage lands as holes first, and a broken thing is kept, working
+ * at half.
  */
 import { describe, it, expect } from 'vitest';
 import {
-    SCARS_BEFORE_THE_QI_GOES,
+    SCARS_BEFORE_IT_BREAKS,
     describeTheLoss,
-    doesNotComeBack,
+    isBroken,
     isHoled,
-    isInert,
     mend,
     ratedWhole,
     scarsOn,
+    theConditionItIsIn,
+    theRungItWorksAt,
     whatBecomesOfIt,
-    whatItCostThem,
     writeBack,
     type ForceApplied,
     type ThingUnderForce
@@ -48,6 +50,7 @@ function hand(ordinal: number, init: Partial<ForceApplied> = {}): ForceApplied {
     };
 }
 
+/** A draw that lands inside any odds, and one that lands outside all of them. */
 const always = { next: () => 0 };
 const never = { next: () => 0.999999 };
 
@@ -72,9 +75,6 @@ describe('the same call answers for every kind of thing', () => {
     });
 
     it('nothing about what the thing is reaches the resolver', () => {
-        // The type has no `kind`, so this is a statement about the source. The
-        // check is mechanical rather than rhetorical: the module must not name
-        // a single kind of object in a way that could steer an outcome.
         const boat = whatBecomesOfIt(
             { id: 'x', name: 'a spirit boat', power: 20, significance: 'significant', tags: [], data: {} },
             hand(34), always
@@ -98,13 +98,14 @@ describe('the gap is the whole story, and it runs both ways', () => {
         expect(out.account).toMatch(/does not reach/);
     });
 
-    it('the same call with the arguments swapped is not close to futile', () => {
+    it('the same call with the arguments swapped breaks it, and the break keeps it', () => {
         const hull = { id: 'h', name: 'a mortal-grade hull', power: 2, significance: 'significant' as const, tags: [], data: {} };
         const out = whatBecomesOfIt(hull, hand(34), always);
         expect(out.exposure.reach.reaches).toBe(true);
         expect(out.exposure.chance).toBe(1);
         expect(out.roll).toBeNull();          // certainty is not rolled for
-        expect(doesNotComeBack(out.state)).toBe(true);
+        expect(out.state).toBe('broken');
+        expect(out.ratedAfter).toBe(2);       // it keeps the rung it was made at
     });
 
     it('a thing at its own grade holds, at any odds', () => {
@@ -117,110 +118,104 @@ describe('the gap is the whole story, and it runs both ways', () => {
     });
 });
 
-describe('breaking is not binary', () => {
-    it('the near miss holes it rather than doing nothing', () => {
-        // Inside the uncertain band and the draw missed. Before this state
-        // existed, that was silently nothing at all.
+describe('damage lands as holes before anything breaks', () => {
+    it('inside the uncertain band a draw that lands holes it, and one that misses leaves it', () => {
+        const hull = { id: 'h', name: 'a hull', power: 25, significance: 'significant' as const, tags: [], data: {} };
+        const hit = whatBecomesOfIt(hull, hand(30), always);
+        expect(hit.exposure.chance).toBeGreaterThan(0);
+        expect(hit.exposure.chance).toBeLessThan(1);
+        expect(hit.state).toBe('holed');
+        expect(hit.ratedAfter).toBe(24);        // one rung, the only distance anything moves
+        expect(hit.mendable).toBe(true);
+
+        const missed = whatBecomesOfIt(hull, hand(30), never);
+        expect(missed.state).toBe('held');
+        expect(missed.scars).toBe(0);
+    });
+
+    it('between two and three realms it is holed for certain, and nothing is rolled', () => {
+        // 40 against 29 is two and a half realms, which was a certain break
+        // before the owner's ruling of 2026-09-25.
         const out = whatBecomesOfIt(
-            { id: 'h', name: 'a hull', power: 25, significance: 'significant', tags: [], data: {} },
-            hand(30), never
+            { id: 'h', name: 'a hull', power: 29, significance: 'significant', tags: [], data: {} },
+            hand(40), never
         );
-        expect(out.exposure.chance).toBeGreaterThan(0);
-        expect(out.exposure.chance).toBeLessThan(1);
+        expect(out.exposure.chance).toBe(1);
+        expect(out.exposure.breaksOutright).toBe(false);
+        expect(out.roll).toBeNull();
         expect(out.state).toBe('holed');
-        expect(out.ratedAfter).toBe(24);        // one rung, the only distance anything moves
-        expect(out.mendable).toBe(true);
-        expect(doesNotComeBack(out.state)).toBe(false);
     });
 
-    it('a hole costs exactly one rung, which is `shardPower` and not a new rule', () => {
+    it('past three realms it breaks outright', () => {
         const out = whatBecomesOfIt(
-            { id: 'h', name: 'a hull', power: 25, significance: 'significant', tags: [], data: {} },
-            hand(30), never
-        );
-        expect((out.ratedBefore ?? 0) - (out.ratedAfter ?? 0)).toBe(1);
-    });
-
-    it('holed enough times and the qi goes out of it', () => {
-        let row = thing({ id: 'h', name: 'a spirit tool', kind: 'artifact', power: 25 });
-        let seen = 0;
-        for (let i = 0; i < SCARS_BEFORE_THE_QI_GOES; i++) {
-            const out = whatBecomesOfIt(row, hand(30), never);
-            const back = writeBack(row, out, { onDay: 100 + i, source: 'a raid' });
-            expect(back.row).not.toBeNull();
-            row = back.row as ObjectRecord;
-            seen = out.scars;
-            if (i < SCARS_BEFORE_THE_QI_GOES - 1) expect(out.state).toBe('holed');
-            else expect(out.state).toBe('inert');
-        }
-        expect(seen).toBe(SCARS_BEFORE_THE_QI_GOES);
-        expect(isInert(row)).toBe(true);
-        expect(row.power).toBeNull();
-        // Still an object. Still on the shelf. Worth nothing.
-        expect(isRuined(row)).toBe(false);
-        expect(row.provenance).toHaveLength(SCARS_BEFORE_THE_QI_GOES);
-    });
-
-    it('a thing at or above the fragment rung leaves pieces; everything under it does not', () => {
-        const high = whatBecomesOfIt(
-            { id: 'h', name: 'an immortal weapon', power: 46, significance: 'legendary', tags: [], data: {} },
-            hand(46, { standing: combatPowerForOrdinal(46) * 40, bare: combatPowerForOrdinal(46) * 40 }),
-            always
-        );
-        expect(high.state).toBe('shattered');
-        expect(high.piecePower).toBe(45);
-
-        const low = whatBecomesOfIt(
-            { id: 'l', name: 'a notched sabre', power: 6, significance: 'notable', tags: [], data: {} },
+            { id: 'h', name: 'a notched sabre', power: 6, significance: 'notable', tags: [], data: {} },
             hand(30), always
         );
-        expect(low.state).toBe('ruined');
-        expect(low.piecePower).toBeNull();
+        expect(out.exposure.breaksOutright).toBe(true);
+        expect(out.state).toBe('broken');
+    });
+
+    it('the last hole it can take breaks it, and the broken thing stays at the rung it was made at', () => {
+        let row = thing({ id: 'h', name: 'a spirit tool', kind: 'artifact', power: 25 });
+        for (let i = 0; i < SCARS_BEFORE_IT_BREAKS; i++) {
+            const out = whatBecomesOfIt(row, hand(30), always);
+            row = writeBack(row, out, { onDay: 100 + i, source: 'a raid' }).row;
+            expect(out.state).toBe(i < SCARS_BEFORE_IT_BREAKS - 1 ? 'holed' : 'broken');
+        }
+        expect(isBroken(row)).toBe(true);
+        expect(isHoled(row)).toBe(false);
+        expect(row.power).toBe(25);
+        expect(isRuined(row)).toBe(false);
+        expect(row.provenance).toHaveLength(SCARS_BEFORE_IT_BREAKS);
+        expect(theConditionItIsIn(row)).toBe('broken, works at half');
     });
 });
 
-describe('counted and tracked are different answers and both are correct', () => {
-    it('a counted carriage cannot be damaged - it can only stop existing', () => {
-        const counted = { id: 'c', name: 'a drawn carriage', power: 4, significance: 'mundane' as const, tags: [], data: {} };
-        const ended = whatBecomesOfIt(counted, hand(30), always);
-        expect(ended.keptAs).toBe('counted');
-        expect(ended.state).toBe('gone');
-
-        const survived = whatBecomesOfIt(
-            { ...counted, power: 25 }, hand(30), never
-        );
-        expect(survived.state).toBe('held');   // never 'holed'
-        expect(survived.scars).toBe(0);
-    });
-
-    it('a counted thing that stopped existing writes nothing anywhere', () => {
-        const row = thing({ id: 'c', name: 'a drawn carriage', kind: 'other', significance: 'mundane', power: 4 });
-        const out = whatBecomesOfIt(row, hand(30), always);
-        const back = writeBack(row, out, { onDay: 10, source: 'the fighting' });
-        expect(back.row).toBeNull();
-        expect(back.pieces).toHaveLength(0);
-    });
-
-    it('a tracked thing that ended keeps its row, its owner and its whole chain', () => {
+describe('a broken thing is kept, keeps its grade, and works at half', () => {
+    it('keeps its row, its holder, its owner and its whole chain', () => {
         const row = thing({
             id: 't', name: 'the Nine Vane', kind: 'artifact', power: 20,
-            ownerId: 'sect-a', ownerName: 'Crimson Abyss Fortress'
+            possessorId: 'npc-holder', ownerId: 'sect-a', ownerName: 'Crimson Abyss Fortress'
         });
         const out = whatBecomesOfIt(row, hand(34), always);
-        const back = writeBack(row, out, { onDay: 900, source: 'the war with the Tripod Clan' });
-        expect(back.row).not.toBeNull();
-        expect(isRuined(back.row as ObjectRecord)).toBe(true);
-        expect((back.row as ObjectRecord).ownerId).toBe('sect-a');
-        expect((back.row as ObjectRecord).provenance.at(-1)?.onDay).toBe(900);
+        expect(out.state).toBe('broken');
+        const broken = writeBack(row, out, { onDay: 900, source: 'the war with the Tripod Clan' }).row;
+        expect(isRuined(broken)).toBe(false);
+        expect(isBroken(broken)).toBe(true);
+        expect(broken.power).toBe(20);
+        expect(broken.possessorId).toBe('npc-holder');
+        expect(broken.ownerId).toBe('sect-a');
+        expect(broken.provenance.at(-1)?.onDay).toBe(900);
+    });
+
+    it('a counted thing is never holed, and a break keeps it too', () => {
+        const counted = { id: 'c', name: 'a drawn carriage', power: 25, significance: 'mundane' as const, tags: [], data: {} };
+        const marked = whatBecomesOfIt(counted, hand(30), always);
+        expect(marked.keptAs).toBe('counted');
+        expect(marked.state).toBe('held');
+        expect(marked.scars).toBe(0);
+
+        const ended = whatBecomesOfIt({ ...counted, power: 4 }, hand(30), always);
+        expect(ended.state).toBe('broken');
+        expect(ended.ratedAfter).toBe(4);
+    });
+
+    it('answers in rungs at the rung worth half of what it was made at, and never lower for holes', () => {
+        // A realm is four times the one below and the peak of a realm is twice
+        // its floor, so half of a realm's floor is the rung below it.
+        expect(theRungItWorksAt(29, 29, true)).toBe(28);
+        expect(theRungItWorksAt(29, 29, false)).toBe(29);
+        // Two holes at a realm's floor would put it under that half; it stops there.
+        expect(theRungItWorksAt(27, 29, false)).toBe(28);
+        expect(theRungItWorksAt(34, 35, false)).toBe(34);
     });
 });
 
 describe('being broken and being mended are events in the thing\'s history', () => {
     it('a hole is a link in the chain with a date and a cause on it', () => {
         const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25, ownerName: 'the Tripod Clan' });
-        const out = whatBecomesOfIt(row, hand(30), never);
-        const back = writeBack(row, out, { onDay: 4242, source: 'the war with Crimson Abyss Fortress' });
-        const marked = back.row as ObjectRecord;
+        const out = whatBecomesOfIt(row, hand(30), always);
+        const marked = writeBack(row, out, { onDay: 4242, source: 'the war with Crimson Abyss Fortress' }).row;
         expect(isHoled(marked)).toBe(true);
         expect(scarsOn(marked)).toBe(1);
         expect(ratedWhole(marked)).toBe(25);
@@ -231,15 +226,14 @@ describe('being broken and being mended are events in the thing\'s history', () 
 
     it('mending gives back a rung, and never more than it was made at', () => {
         const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25 });
-        const holed = writeBack(row, whatBecomesOfIt(row, hand(30), never),
-            { onDay: 1, source: 'a raid' }).row as ObjectRecord;
+        const holed = writeBack(row, whatBecomesOfIt(row, hand(30), always),
+            { onDay: 1, source: 'a raid' }).row;
         const fixed = mend(holed, { byOrdinal: 30, onDay: 40, byId: 'npc-w', byName: 'a wright' });
         expect(fixed.mended).toBe(true);
         expect(fixed.row.power).toBe(25);
         expect(fixed.scars).toBe(0);
         expect(isHoled(fixed.row)).toBe(false);
 
-        // And it cannot be mended past whole.
         const again = mend(fixed.row, { byOrdinal: 40, onDay: 41, byId: 'npc-w', byName: 'a wright' });
         expect(again.mended).toBe(false);
         expect(again.row.power).toBe(25);
@@ -247,8 +241,8 @@ describe('being broken and being mended are events in the thing\'s history', () 
 
     it('mending is gated by the same rung that unmaking is', () => {
         const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 29 });
-        const holed = writeBack(row, whatBecomesOfIt(row, hand(34), never),
-            { onDay: 1, source: 'a raid' }).row as ObjectRecord;
+        const holed = writeBack(row, whatBecomesOfIt(row, hand(34), always),
+            { onDay: 1, source: 'a raid' }).row;
         const tooLow = mend(holed, { byOrdinal: 12, onDay: 2, byId: 'x', byName: 'a village smith' });
         expect(tooLow.mended).toBe(false);
         expect(tooLow.account).toMatch(/does not reach/);
@@ -258,46 +252,26 @@ describe('being broken and being mended are events in the thing\'s history', () 
         expect(highEnough.mended).toBe(true);
     });
 
-    it('a thing whose qi has gone cannot be mended, and the refusal says why', () => {
-        let row = thing({ id: 'h', name: 'a spirit tool', kind: 'artifact', power: 25 });
-        for (let i = 0; i < SCARS_BEFORE_THE_QI_GOES; i++) {
-            row = writeBack(row, whatBecomesOfIt(row, hand(30), never),
-                { onDay: i, source: 'a raid' }).row as ObjectRecord;
-        }
-        const out = mend(row, { byOrdinal: 46, onDay: 99, byId: 'z', byName: 'an ancestor' });
+    it('a broken thing is not mended, and the refusal says why', () => {
+        const row = thing({ id: 'h', name: 'a spirit tool', kind: 'artifact', power: 6 });
+        const broken = writeBack(row, whatBecomesOfIt(row, hand(30), always),
+            { onDay: 1, source: 'a raid' }).row;
+        const out = mend(broken, { byOrdinal: 46, onDay: 99, byId: 'z', byName: 'an ancestor' });
         expect(out.mended).toBe(false);
-        expect(out.account).toMatch(/qi has gone out of/);
+        expect(out.account).toMatch(/a break cannot/);
     });
 
-    it('a thing that already ended is not broken twice', () => {
+    it('a thing already broken is not broken again', () => {
         const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 20 });
-        const ended = writeBack(row, whatBecomesOfIt(row, hand(34), always),
-            { onDay: 1, source: 'a raid' }).row as ObjectRecord;
-        const again = whatBecomesOfIt(ended, hand(40), always);
+        const broken = writeBack(row, whatBecomesOfIt(row, hand(34), always),
+            { onDay: 1, source: 'a raid' }).row;
+        const again = whatBecomesOfIt(broken, hand(40), always);
         expect(again.state).toBe('held');
         expect(again.roll).toBeNull();
     });
 });
 
 describe('a broken thing is a wrong done to a person', () => {
-    it('the same loss is worth everything to one house and nothing to another', () => {
-        const poor = whatItCostThem({ ratedBefore: 29, ratedAfter: null }, [], combatPowerForOrdinal);
-        const rich = whatItCostThem(
-            { ratedBefore: 29, ratedAfter: null },
-            [40, 40, 41, 38, 39, 40], combatPowerForOrdinal
-        );
-        expect(poor).toBe(1);
-        expect(rich).toBeLessThan(0.05);
-        expect(rich).toBeGreaterThan(0);
-    });
-
-    it('a hole costs the share of the rung it took, not the whole thing', () => {
-        const holed = whatItCostThem({ ratedBefore: 29, ratedAfter: 28 }, [], combatPowerForOrdinal);
-        const ended = whatItCostThem({ ratedBefore: 29, ratedAfter: null }, [], combatPowerForOrdinal);
-        expect(holed).toBeGreaterThan(0);
-        expect(holed).toBeLessThan(ended);
-    });
-
     it('every result carries who did it, so somebody can be answered for it', () => {
         const out = whatBecomesOfIt(
             { id: 'h', name: 'the Nine Vane', power: 20, significance: 'significant', tags: [], data: {} },
@@ -305,7 +279,7 @@ describe('a broken thing is a wrong done to a person', () => {
         );
         expect(out.byId).toBe('npc-breaker');
         expect(out.byName).toBe('Yun Shu');
-        expect(describeTheLoss(out, 'the Nine Vane', 'the war')).toMatch(/Yun Shu ended the Nine Vane/);
+        expect(describeTheLoss(out, 'the Nine Vane', 'the war')).toMatch(/Yun Shu broke the Nine Vane/);
     });
 });
 

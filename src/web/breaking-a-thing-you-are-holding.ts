@@ -34,8 +34,11 @@ import { whatIsWithinReachOf, whichThingTheyMeant } from './object-theft.js';
 import { aBreakingEntersTheWorld } from '../engine/world/a-thing-somebody-ended-is-a-fact.js';
 import {
     howMuchAGradeIsWorthTracking,
+    makeObject,
+    type ObjectRecord,
     type ObjectSignificance
 } from '../engine/world/possessions.js';
+import { isBroken } from '../engine/world/object-damage.js';
 import { removeFromPouch } from '../server/consolidated/cultivation-support.js';
 import { getPill } from '../data/cultivation/pills.js';
 import { getHerb } from '../data/cultivation/herbs.js';
@@ -152,6 +155,46 @@ export function countedHoldings(db: Database.Database, holderId: string): Counte
     return held;
 }
 
+/**
+ * The world row a rated thing in a pouch breaks on. A pouch artifact the world
+ * keeps a row for is that row. Otherwise one comes off the stack and becomes a
+ * row in the same hands, so the break has somewhere to be written. Null where
+ * the item has no rung, no world is loaded, or the pouch is short.
+ */
+export function aRowForOneOutOfThePouch(
+    service: GameService,
+    holder: { id: string; name: string },
+    itemId: string,
+    onDay: number
+): ObjectRecord | null {
+    const record = getArtifact(itemId);
+    const world = service.atHand;
+    if (!record || record.power === null || !world) return null;
+    const kept = world.objects.find(o => o.id === itemId);
+    if (kept) return kept;
+    if (!removeFromPouch(service.db, holder.id, itemId, 1)) return null;
+    let n = 1;
+    while (world.objects.some(o => o.id === `${itemId}-of-${holder.id}-${n}`)) n++;
+    const row = makeObject({
+        ...record,
+        id: `${itemId}-of-${holder.id}-${n}`,
+        possessorId: holder.id,
+        ownerId: holder.id,
+        ownerName: holder.name,
+        locationId: null,
+        claims: [],
+        knownOwnershipBy: [],
+        provenance: [{
+            onDay, holderId: holder.id, holderName: holder.name, how: 'unknown',
+            source: 'their pouch', previousHolderId: null, previousHolderName: null,
+            factId: null, note: `One ${record.name} out of what ${holder.name} was carrying.`
+        }],
+        data: { ...record.data, fromThePouch: itemId }
+    });
+    world.objects.push(row);
+    return row;
+}
+
 export function whichHoldingTheyNamed(
     held: readonly CountedHolding[],
     said: string
@@ -219,17 +262,25 @@ export const destroyVerbs = {
         }
 
         const name = tracked ? tracked.object.name : stack!.name;
+        const day = world ? Math.floor(world.currentDay) : 0;
+        // A rated thing out of the pouch breaks as a row, and the row stays
+        // with them. Anything without a rung is used up as before.
+        const asARow = tracked?.object
+            ?? (stack && stack.kind === 'artifact'
+                ? aRowForOneOutOfThePouch(this, cultivator, stack.itemId, day)
+                : null);
+        const alreadyBroken = asARow !== null && isBroken(asARow);
 
         // ── THE WORLD'S OWN PRIMITIVE, WITH THE PLAYER AS THE ACTOR ──────
         //
         // The same call a war makes and a fight makes. Nothing about this
         // branch knows that the actor is the player, which is the point: a
-        // heaven-grade thing ending has to be news whoever ended it.
+        // heaven-grade thing broken has to be news whoever broke it.
         const gone = world
             ? aBreakingEntersTheWorld(world, {
                 actor: { id: cultivator.id, name: cultivator.name, role: 'broke it' },
-                ...(tracked ? { object: tracked.object } : {}),
-                ...(stack
+                ...(asARow ? { object: asARow } : {}),
+                ...(stack && !asARow
                     ? {
                         counted: {
                             itemId: stack.itemId,
@@ -238,7 +289,7 @@ export const destroyVerbs = {
                         }
                     }
                     : {}),
-                day: Math.floor(world.currentDay),
+                day,
                 locationId: this.worldPlaceOf(cultivator),
                 place: placeName(cultivator),
                 how: 'broken on purpose, by somebody who meant it'
@@ -248,10 +299,13 @@ export const destroyVerbs = {
         const lines: string[] = [];
         const structure: string[] = [];
 
-        if (tracked) {
-            // A row already ruined is a thing that ended once. `destroy` is
-            // idempotent by the primitive's own gate rather than by a check
-            // here, and there is nothing left to say about it.
+        if (alreadyBroken) {
+            lines.push(`${name} is already broken. It works at half, and breaking it again does nothing.`);
+        } else if (gone?.kept) {
+            this.theWorldMoved();
+            lines.push(`${name} is broken. It stays with you, keeps its grade and works at half.`);
+            if (stack) structure.push(`pouch item ${stack.itemId} broken as world row ${asARow!.id}.`);
+        } else if (tracked) {
             if (world) this.theWorldMoved();
             lines.push(
                 `${name} is finished. What is left of it is a record with your name on it, and `

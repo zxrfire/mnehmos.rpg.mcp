@@ -58,7 +58,7 @@ import {
 import { effectiveWardOrdinal } from './how-far-gone-a-formation-is.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { ObjectRecord } from './possessions.js';
-import { isInert, rungsTheHolesTake } from './object-damage.js';
+import { isBroken, rungsTheHolesTake, theRungItWorksAt } from './object-damage.js';
 
 /**
  * What a building made of ordinary materials stands at.
@@ -132,14 +132,18 @@ export function whatAHouseIsMadeOf(
     let best: { answersAt: number; setAt: number; name: string } | null = null;
     for (const ward of wards) {
         const setAt = whatItsBuilderMustHaveBeen(ward) ?? 0;
-        if (!(setAt > 0) || isInert(ward)) continue;
+        if (!(setAt > 0)) continue;
         const raisedOn = Number(ward.data?.raisedOnDay ?? 0);
-        // A holed ward answers a rung lower for every rung its holes took off
-        // it, until somebody mends it.
-        const answersAt = effectiveWardOrdinal({
+        const made = effectiveWardOrdinal({
             setByOrdinal: setAt,
             yearsSince: Math.max(0, (today - raisedOn) / DAYS_PER_YEAR)
-        }) - rungsTheHolesTake(ward);
+        });
+        // A holed ward answers a rung lower for every rung its holes took off
+        // it, until somebody mends it; never below half of what it was made
+        // to answer, which is where a broken one answers.
+        const answersAt = made <= 0
+            ? made
+            : theRungItWorksAt(made - rungsTheHolesTake(ward), made, isBroken(ward));
         // A ward entirely gone is not a ward. `how-far-gone-a-formation-is.ts`
         // says what it is instead - *a wall, and a wall is still something a
         // person has to climb* - and a wall is the buildings, which are counted

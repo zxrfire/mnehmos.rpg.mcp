@@ -442,21 +442,22 @@ without widening a signature somebody would have to argue for.
 What it reads is what any thing has: the rung it was made at, and the rung of whatever was put
 through it. The gap between the two is the whole answer, and it is
 [`whether-a-weapon-survives-being-used.ts`](../../../src/engine/cultivation/whether-a-weapon-survives-being-used.ts)'s
-arithmetic rather than a second copy of it - within a realm it holds, past two it is not a
-chance, and the band between is a roll.
+arithmetic rather than a second copy of it - within a realm it holds, between one and two a blow
+may hole it, from two it certainly does, and from three it breaks.
 
 Two things follow that this file already believes:
 
-- **Breaking is not one outcome.** A thing can be *holed* - worth a rung less, carrying a dated
-  scar, and mendable by a hand that reaches its rung. A thing holed more often than anybody
-  mended it ends as *a spirit tool with the qi long gone out of it*, which is the Late Age's own
-  phrase and is the state a child's toy is in. Past that it is *ruined*, and only at the very top
-  of the ladder does it leave pieces.
-- **Counted things cannot be damaged.** They stop existing. There is nowhere to write the scar,
-  because a holder with three carriages does not have three carriages one of which has a hole in
-  it - which is [Does it have a history](#does-it-have-a-history) arriving at its own conclusion
-  rather than being set aside. A tracked hull carries the hole, the date and the cause, and
-  [Spent is not gone](#spent-is-not-gone) applies in full: the row outlives the object either way.
+- **Breaking is not one outcome, and it is not an ending.** A thing can be *holed* - worth a rung
+  less, carrying a dated scar, and mendable by a hand that reaches its rung. The third hole
+  breaks it. A *broken* thing is still there,
+  still the grade it was made at, and still works, at half - a broken heaven-grade sword is a
+  heaven-grade sword at half - and nothing damaged works below that half. (Owner ruling,
+  2026-09-25.)
+- **Counted things carry no scar.** There is nowhere to write one, because a holder with three
+  carriages does not have three carriages one of which has a hole in it - which is
+  [Does it have a history](#does-it-have-a-history) arriving at its own conclusion. A counted
+  thing that breaks comes off the count and is written as a row in the same hands, broken, because
+  a break has to be written somewhere. A tracked hull carries the hole, the date and the cause.
 
 And breaking somebody's thing is a wrong done to a person, priced by
 [`what-a-deed-leaves.ts`](../../../src/engine/social-leverage/what-a-deed-leaves.ts) from what it

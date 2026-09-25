@@ -2,29 +2,29 @@
  * Whether a thing survives what was put through it, and what state it is left in.
  *
  * Durability here is DAMAGE, never wear (the owner: *"not the usage kind, the
- * partial damage kind"*). A force past what a thing is made for ends it or
- * holes it; a hole takes a rung off `power` and stays until `mend` closes it.
- * The forces that reach it in play: a fight's swings (`whatAFightMarked`, from
- * a war, a bout and the player's own fight) and a war year's force on a ward
- * it got past (`what-a-year-of-war-does-to-a-compound.ts`).
+ * partial damage kind"*). A force past what a thing is made for holes it, and
+ * far enough past breaks it. A hole takes a rung off `power` and stays until
+ * `mend` closes it. A break keeps the thing, at the rung it was made at,
+ * working at `BROKEN_THING_WORKS_AT` of what it did: owner ruling 2026-09-25,
+ * nothing is destroyed by a break. The forces that reach it in play: a fight's
+ * swings (`whatAFightMarked`, from a war, a bout and the player's own fight)
+ * and a war year's force on a ward it got past
+ * (`what-a-year-of-war-does-to-a-compound.ts`).
  */
 
 import {
-    CERTAIN_ABOVE_REALMS,
-    FIT_WITHIN_REALMS,
-    FRAGMENTS_AT_OR_ABOVE,
+    BROKEN_THING_WORKS_AT,
+    canUnmake,
     weaponExposure,
+    whatItStillDoes,
     type WeaponExposure
 } from '../cultivation/whether-a-weapon-survives-being-used.js';
-import {
-    canUnmake
-} from '../cultivation/whether-a-weapon-survives-being-used.js';
+import { combatPowerForOrdinal } from '../cultivation/combat.js';
+import { MAX_ORDINAL } from '../cultivation/realms.js';
 import {
     isRuined,
     keptAs,
-    ruin,
     shardPower,
-    shatter,
     type KeptAs,
     type ObjectRecord,
     type ObjectSignificance,
@@ -36,14 +36,22 @@ import {
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
- * How many holes a thing takes before the qi goes out of it.
+ * How many holes a thing takes before the last one breaks it.
  */
-export const SCARS_BEFORE_THE_QI_GOES = 3;
+export const SCARS_BEFORE_IT_BREAKS = 3;
 
 /**
  * Where a thing with no rating stands on the ladder.
  */
 export const UNRATED_STANDS_AT = 0;
+
+/** The tag a broken thing carries. Stored, never inferred. */
+const BROKEN_TAG = 'broken';
+
+/** `BROKEN_THING_WORKS_AT` as a sheet says it. */
+const WORKS_AT_SAID = BROKEN_THING_WORKS_AT === 0.5
+    ? 'half'
+    : `${Math.round(BROKEN_THING_WORKS_AT * 100)} in a hundred`;
 
 // ═════════════════════════════════════════════════════════════════════════
 // WHAT GOES IN
@@ -59,7 +67,7 @@ export interface ThingUnderForce {
     power: number | null;
     /** Which of the two stored tiers it is in. Read through {@link keptAs}. */
     significance: ObjectSignificance;
-    /** Scars, the `ruined` mark and the `inert` mark all live here. */
+    /** Scars, the `ruined` mark and the `broken` mark all live here. */
     tags: readonly string[];
     /** Where the scar count and the rung it was whole at are kept. */
     data: Readonly<Record<string, string | number | boolean | null>>;
@@ -103,18 +111,12 @@ export interface ForceApplied {
  * What state the thing is in afterwards.
  */
 export type ThingState =
-    /** Nothing happened to it. The gate refused, or it was fit for this. */
+    /** Nothing happened to it: the gate refused, it was fit for this, or the draw missed. */
     | 'held'
     /** Worth a rung less, carrying a dated scar, and mendable. */
     | 'holed'
-    /** Still an object; the qi has gone out of it. Rated nothing, forever. */
-    | 'inert'
-    /** It ended. The row and the whole provenance chain stay. */
-    | 'ruined'
-    /** It ended and left pieces, each an ordinary object one rung down. */
-    | 'shattered'
-    /** It stopped existing. There was no row, so there is no record of it. */
-    | 'gone';
+    /** Still there, still rated what it was made at, working at half. */
+    | 'broken';
 
 export interface ThingHarmed {
     /** The one quantity, unchanged and unwrapped, so a caller can show it. */
@@ -128,23 +130,19 @@ export interface ThingHarmed {
     roll: number | null;
     /** The rung it stood at going in, with any earlier scars already off it. */
     ratedBefore: number | null;
-    /** The rung it stands at coming out. Null once the qi has gone. */
+    /** The rung it stands at coming out. A broken thing stands at what it was made at. */
     ratedAfter: number | null;
     /** Scars it carries now, this one included. */
     scars: number;
     /** Whether a hand at the right rung could put it back. */
     mendable: boolean;
-    /** True only at `shattered`. Almost never - see `FRAGMENTS_AT_OR_ABOVE`. */
-    leavesPieces: boolean;
-    piecePower: number | null;
-    /** Whose it was. The party with standing to be aggrieved. */
-    ownerId: string | null;
-    ownerName: string;
     byId: string | null;
     byName: string;
     /** Engine-authored. Names the thing, the cause, and what would have held. */
     account: string;
 }
+
+type Base = Omit<ThingHarmed, 'state' | 'roll' | 'ratedAfter' | 'scars' | 'mendable' | 'account'>;
 
 // ═════════════════════════════════════════════════════════════════════════
 // THE ONE RESOLVER
@@ -175,58 +173,42 @@ export function whatBecomesOfIt(
         standingOf: force.standingOf
     });
 
-    // A thing already ended, or already emptied, is not broken again. Said
-    // here rather than left to the caller because every caller would otherwise
-    // have to remember it, and one of them would not.
-    const spent = isRuined(thing as unknown as ObjectRecord) || isInert(thing);
+    // A broken thing is at the floor and nothing takes it lower; a ruined row
+    // was used up and is not there to be struck.
+    const spent = isRuined(thing as unknown as ObjectRecord) || isBroken(thing);
 
-    const base = {
+    const base: Base = {
         exposure,
         keptAs: tier,
         ratedBefore,
-        ownerId: null as string | null,
-        ownerName: '',
         byId: force.byId,
-        byName: force.byName,
-        leavesPieces: false,
-        piecePower: null as number | null
+        byName: force.byName
     };
+    const unmarked = (roll: number | null, account: string): ThingHarmed => ({
+        ...base,
+        state: 'held',
+        roll,
+        ratedAfter: ratedBefore,
+        scars: scarsAlready,
+        mendable: scarsAlready > 0 && !spent,
+        account
+    });
 
     if (spent || exposure.chance <= 0) {
-        return {
-            ...base,
-            state: 'held',
-            roll: null,
-            ratedAfter: ratedBefore,
-            scars: scarsAlready,
-            mendable: scarsAlready > 0 && !spent,
-            account: spent
-                ? `${thing.name} is already past being broken. ${exposure.cause}`
-                : `${thing.name}: ${exposure.cause}`
-        };
+        return unmarked(null, spent
+            ? `${thing.name} is already broken. ${exposure.cause}`
+            : `${thing.name}: ${exposure.cause}`);
     }
 
     let roll: number | null = null;
-    let ended: boolean;
-    if (exposure.chance >= 1) {
-        ended = true;
-    } else if (rng === null) {
+    if (exposure.chance < 1) {
         // Preview. Nothing is drawn and nothing is decided.
-        return {
-            ...base,
-            state: 'held',
-            roll: null,
-            ratedAfter: ratedBefore,
-            scars: scarsAlready,
-            mendable: scarsAlready > 0,
-            account: `${thing.name}: ${exposure.cause} Nothing has been resolved.`
-        };
-    } else {
+        if (rng === null) return unmarked(null, `${thing.name}: ${exposure.cause} Nothing has been resolved.`);
         roll = rng.next();
-        ended = roll < exposure.chance;
+        if (roll >= exposure.chance) return unmarked(roll, `${thing.name} came through it. ${exposure.cause}`);
     }
 
-    if (ended) return theEnd(thing, base, roll, scarsAlready, standsAt, tier);
+    if (exposure.breaksOutright) return theBreak(thing, base, roll, scarsAlready);
     return theMark(thing, base, roll, scarsAlready, standsAt, tier);
 }
 
@@ -244,6 +226,7 @@ interface ASwingsAnswer {
     exposure: WeaponExposure;
     roll: number | null;
     broke: boolean;
+    holed: boolean;
 }
 
 /** A thing a fight put at risk that came out of it, and who was carrying it. */
@@ -255,12 +238,8 @@ interface AMarkAFightLeft {
 }
 
 /**
- * The things a fight marked without ending.
- *
- * A swing was rolled for only where the thing was outclassed past what it is
- * made for and short of certain, and a roll it came through is the case
- * {@link whatBecomesOfIt} answers `holed`. The resolver already drew that roll,
- * so this draws nothing.
+ * The things a fight holed without breaking. The combat resolver already drew
+ * for them, so this draws nothing.
  *
  * ONE MARK A FIGHT, not one a swing. Durability here is damage, not wear: a
  * fight is the force, and a blade that came through three exchanges against a
@@ -281,7 +260,7 @@ export function whatAFightMarked(
     const marked = new Map<string, AMarkAFightLeft>();
     for (const exchange of exchanges) {
         const swing = exchange.result.weapon;
-        if (!swing || swing.broke || swing.roll === null) continue;
+        if (!swing || !swing.holed) continue;
         if (broke.has(swing.objectId) || marked.has(swing.objectId)) continue;
         marked.set(swing.objectId, {
             carrierId: exchange.attackerId,
@@ -295,8 +274,7 @@ export function whatAFightMarked(
 /**
  * Write what a fight left on the rows it reached, in place.
  *
- * `objects` is the world's own table. A thing with no row is a counted thing,
- * which carries no scar (see `theMark`), and is passed over.
+ * `objects` is the world's own table. A thing with no row is passed over.
  */
 export function writeBackWhatAFightLeft(
     objects: ObjectRecord[],
@@ -323,7 +301,6 @@ export function writeBackWhatAFightLeft(
             source: input.fight,
             note: describeTheLoss(harmed, row.name, input.fight)
         });
-        if (written.row === null) continue;
         objects[at] = written.row;
         out.push({
             objectId: row.id,
@@ -343,24 +320,20 @@ export function writeBackWhatAFightLeft(
  */
 function whatComingThroughLeft(
     thing: ThingUnderForce,
-    swing: Pick<ASwingsAnswer, 'exposure' | 'roll' | 'broke'>,
+    swing: Pick<ASwingsAnswer, 'exposure' | 'roll' | 'broke' | 'holed'>,
     by: { byId: string | null; byName: string }
 ): ThingHarmed {
     const tier = keptAs(thing.significance);
     const scarsAlready = scarsOn(thing);
-    const base = {
+    const base: Base = {
         exposure: swing.exposure,
         keptAs: tier,
         ratedBefore: thing.power,
-        ownerId: null as string | null,
-        ownerName: '',
         byId: by.byId,
-        byName: by.byName,
-        leavesPieces: false,
-        piecePower: null as number | null
+        byName: by.byName
     };
-    const spent = isRuined(thing as unknown as ObjectRecord) || isInert(thing);
-    if (spent || swing.broke || swing.roll === null) {
+    const spent = isRuined(thing as unknown as ObjectRecord) || isBroken(thing);
+    if (spent || swing.broke || !swing.holed) {
         return {
             ...base,
             state: 'held',
@@ -375,52 +348,24 @@ function whatComingThroughLeft(
 }
 
 /**
- * It did not come out the other side.
- *
- * Three answers, and the one that applies is decided by the tier and by the
- * rung. Nothing about what the thing was for.
+ * It broke. It stays where it is, at the rung it was made at, and works at half.
  */
-function theEnd(
+function theBreak(
     thing: ThingUnderForce,
-    base: Omit<ThingHarmed, 'state' | 'roll' | 'ratedAfter' | 'scars' | 'mendable' | 'account'>,
+    base: Base,
     roll: number | null,
-    scarsAlready: number,
-    standsAt: number,
-    tier: KeptAs
+    scars: number
 ): ThingHarmed {
-    // A counted thing has no row, so it has no ending anybody can be asked
-    // about. It stops existing and the holder's line goes down by one.
-    if (tier === 'counted') {
-        return {
-            ...base,
-            state: 'gone',
-            roll,
-            ratedAfter: null,
-            scars: scarsAlready,
-            mendable: false,
-            account: `${thing.name} is not there any more. ${base.exposure.cause} `
-                + 'There is no row for it and there never was, so nothing is left to ask about: '
-                + 'what the holder had was a number, and the number is one lower.'
-        };
-    }
-
-    const leavesPieces = standsAt >= FRAGMENTS_AT_OR_ABOVE;
-    const piecePower = leavesPieces ? shardPower(standsAt) : null;
+    const madeAt = ratedWhole(thing);
     return {
         ...base,
-        state: leavesPieces ? 'shattered' : 'ruined',
+        state: 'broken',
         roll,
-        ratedAfter: null,
-        scars: scarsAlready,
+        ratedAfter: madeAt,
+        scars,
         mendable: false,
-        leavesPieces,
-        piecePower,
-        account: `${thing.name} did not survive it. ${base.exposure.cause}`
-            + (leavesPieces
-                ? ` What is left is worth ${piecePower}, which is the ordinary rule for a piece of `
-                  + 'anything meeting the one band where a piece is still worth writing down.'
-                : ' Nothing is left of it worth carrying away. The record of it stands; '
-                  + 'the object does not.')
+        account: `${thing.name} is broken. ${base.exposure.cause} It is still rated `
+            + `${madeAt ?? 'nothing'} and works at ${WORKS_AT_SAID}.`
     };
 }
 
@@ -429,7 +374,7 @@ function theEnd(
  */
 function theMark(
     thing: ThingUnderForce,
-    base: Omit<ThingHarmed, 'state' | 'roll' | 'ratedAfter' | 'scars' | 'mendable' | 'account'>,
+    base: Base,
     roll: number | null,
     scarsAlready: number,
     standsAt: number,
@@ -446,27 +391,11 @@ function theMark(
             scars: scarsAlready,
             mendable: false,
             account: `${thing.name} came through it. ${base.exposure.cause}`
-                + (tier === 'counted'
-                    ? ' Nothing is written down about it, because nothing about it is written down.'
-                    : '')
         };
     }
 
     const scars = scarsAlready + 1;
-    if (scars >= SCARS_BEFORE_THE_QI_GOES) {
-        return {
-            ...base,
-            state: 'inert',
-            roll,
-            ratedAfter: null,
-            scars,
-            mendable: false,
-            account: `The qi has gone out of ${thing.name}. ${base.exposure.cause} `
-                + `It has been holed ${scars} times and mended fewer, and a thing that far under `
-                + 'what it was made at stops answering the hand holding it. The object is still '
-                + 'there. It is worth nothing.'
-        };
-    }
+    if (scars >= SCARS_BEFORE_IT_BREAKS) return theBreak(thing, base, roll, scars);
 
     const after = shardPower(standsAt);
     return {
@@ -476,10 +405,8 @@ function theMark(
         ratedAfter: after,
         scars,
         mendable: true,
-        account: `${thing.name} is holed but not finished. ${base.exposure.cause} `
-            + `It stood at ${standsAt} and stands at ${after}, which is a rung, which is the only `
-            + 'distance anything in this world ever moves. A hand that reaches its rung can put '
-            + 'it back.'
+        account: `${thing.name} is holed. ${base.exposure.cause} It stood at ${standsAt} and `
+            + `stands at ${after}. A hand at its rung can close the hole.`
     };
 }
 
@@ -499,9 +426,9 @@ export function ratedWhole(thing: Pick<ThingUnderForce, 'data' | 'power'>): numb
     return Number.isFinite(n) ? n : thing.power;
 }
 
-/** Whether the qi has gone out of it. Stored, never inferred - as `isRuined`. */
-export function isInert(thing: Pick<ThingUnderForce, 'tags'>): boolean {
-    return thing.tags.includes('inert');
+/** Whether it is broken. Stored, never inferred - as `isRuined`. */
+export function isBroken(thing: Pick<ThingUnderForce, 'tags'>): boolean {
+    return thing.tags.includes(BROKEN_TAG);
 }
 
 /**
@@ -510,15 +437,13 @@ export function isInert(thing: Pick<ThingUnderForce, 'tags'>): boolean {
 export function isHoled(thing: Pick<ThingUnderForce, 'tags' | 'data'>): boolean {
     return thing.tags.includes('holed')
         && scarsOn(thing) > 0
-        && !isInert(thing)
+        && !isBroken(thing)
         && !thing.tags.includes('ruined');
 }
 
 /**
  * Rungs the open holes have taken off it: what it was made at, less what it
- * stands at. Zero for a whole thing. Every read that prices a thing off
- * `power` already pays this; a read that prices it off what it was MADE at
- * (a ward's answering rung) subtracts it here.
+ * stands at. Zero for a whole thing.
  */
 export function rungsTheHolesTake(thing: Pick<ThingUnderForce, 'tags' | 'data' | 'power'>): number {
     if (!isHoled(thing)) return 0;
@@ -526,20 +451,47 @@ export function rungsTheHolesTake(thing: Pick<ThingUnderForce, 'tags' | 'data' |
     return whole === null || thing.power === null ? 0 : Math.max(0, whole - thing.power);
 }
 
+/** The highest rung worth no more than `worth` on the combat scale. */
+function theRungWorth(worth: number): number {
+    let rung = 0;
+    while (rung < MAX_ORDINAL && combatPowerForOrdinal(rung + 1) <= worth + 1e-9) rung++;
+    return rung;
+}
+
+/**
+ * The rung a thing standing at `standsAt` and made at `madeAt` works at, for a
+ * reader that answers in rungs (a ward, a hull): the same arithmetic a fight
+ * prices a blade by (`whatItStillDoes`), read back onto the ladder.
+ */
+export function theRungItWorksAt(standsAt: number, madeAt: number, broken: boolean): number {
+    const worth = whatItStillDoes({ power: standsAt, madeAt, broken }, combatPowerForOrdinal);
+    return broken ? theRungWorth(worth) : Math.max(standsAt, theRungWorth(worth));
+}
+
+/** A row as a fight carries it: its rung, what it was made at, and whether it is broken. */
+export function asCarried(row: Pick<ObjectRecord, 'id' | 'name' | 'power' | 'tags' | 'data'>): {
+    id: string; name: string; power: number; madeAt?: number; broken?: boolean;
+} {
+    const power = row.power ?? 0;
+    const whole = ratedWhole(row) ?? power;
+    return {
+        id: row.id,
+        name: row.name,
+        power,
+        ...(whole !== power ? { madeAt: whole } : {}),
+        ...(isBroken(row) ? { broken: true } : {})
+    };
+}
+
 /**
  * The condition a thing is in, as somebody holding it can see it. Null for a
  * whole thing, which says nothing.
- *
- * What a hole costs is the rung: a holed blade prices as a blade a rung lower
- * in a fight, a holed hull shelters against one rung less, a holed ward
- * answers a rung lower. Stated as the rung, because that is the one quantity
- * all of those read.
  */
 export function theConditionItIsIn(
     thing: Pick<ThingUnderForce, 'tags' | 'data' | 'power'>
 ): string | null {
     if (thing.tags.includes('ruined')) return null;
-    if (isInert(thing)) return 'the qi has gone out of it, and it is rated at nothing';
+    if (isBroken(thing)) return `broken, works at ${WORKS_AT_SAID}`;
     if (!isHoled(thing)) return null;
     const scars = scarsOn(thing);
     const whole = ratedWhole(thing);
@@ -551,14 +503,32 @@ export function theConditionItIsIn(
 }
 
 export interface WrittenBack {
-    /**
-     * The row afterwards, or null where there is no row - a counted thing that
-     * stopped existing. The caller decrements its line.
-     */
-    row: ObjectRecord | null;
-    /** Pieces minted, which is almost never. Ordinary objects, one rung down. */
-    pieces: ObjectRecord[];
+    row: ObjectRecord;
     lines: string[];
+}
+
+/**
+ * Break a row. It stays with whoever has it, at the rung it was made at, and a
+ * link in its chain says when and by what.
+ */
+export function breakIt(
+    object: ObjectRecord,
+    input: { onDay: number; source: string; note?: string; factId?: string | null; scars?: number }
+): ObjectRecord {
+    const whole = ratedWhole(object);
+    return {
+        ...object,
+        power: whole,
+        tags: withTags(object.tags.filter(t => t !== 'holed'), ['damaged', BROKEN_TAG]),
+        data: {
+            ...object.data,
+            scars: input.scars ?? scarsOn(object),
+            ratedWhole: whole ?? null,
+            brokenOnDay: input.onDay
+        },
+        provenance: object.provenance.concat(scarLink(object, input,
+            `${object.name} broke. It works at ${WORKS_AT_SAID}.`))
+    };
 }
 
 /**
@@ -571,66 +541,42 @@ export function writeBack(
 ): WrittenBack {
     switch (harmed.state) {
         case 'held':
-            return { row: object, pieces: [], lines: [] };
+            return { row: object, lines: [] };
 
-        case 'gone':
+        case 'broken':
             return {
-                row: null,
-                pieces: [],
-                lines: [`${object.name} is not there any more.`]
+                row: breakIt(object, { ...input, note: input.note ?? harmed.account, scars: harmed.scars }),
+                lines: [`${object.name} is broken, and works at ${WORKS_AT_SAID}.`]
             };
 
-        case 'ruined':
-            return {
-                row: ruin(object, input),
-                pieces: [],
-                lines: [`${object.name} did not survive it.`]
-            };
-
-        case 'shattered': {
-            const ended = ruin(object, input);
-            return {
-                row: ended,
-                pieces: shatter(object),
-                lines: [`${object.name} came apart, and the pieces are worth writing down.`]
-            };
-        }
-
-        case 'holed':
-        case 'inert': {
+        case 'holed': {
             const whole = ratedWhole(object) ?? object.power;
-            const tag = harmed.state === 'inert' ? 'inert' : 'holed';
             return {
                 row: {
                     ...object,
                     power: harmed.ratedAfter,
-                    tags: withTags(object.tags, ['damaged', tag]),
+                    tags: withTags(object.tags, ['damaged', 'holed']),
                     data: {
                         ...object.data,
                         scars: harmed.scars,
                         ratedWhole: whole ?? null,
                         lastHoledOnDay: input.onDay
                     },
-                    provenance: object.provenance.concat(scarLink(object, harmed, input))
+                    provenance: object.provenance.concat(scarLink(object, input, harmed.account))
                 },
-                pieces: [],
-                lines: [
-                    harmed.state === 'inert'
-                        ? `The qi has gone out of ${object.name}.`
-                        : `${object.name} is holed.`
-                ]
+                lines: [`${object.name} is holed.`]
             };
         }
     }
 }
 
 /**
- * The link a scar leaves in the chain.
+ * The link a scar or a break leaves in the chain.
  */
 function scarLink(
     object: ObjectRecord,
-    harmed: ThingHarmed,
-    input: { onDay: number; source: string; note?: string; factId?: string | null }
+    input: { onDay: number; source: string; note?: string; factId?: string | null },
+    account: string
 ): ProvenanceEntry {
     return {
         onDay: input.onDay,
@@ -641,7 +587,7 @@ function scarLink(
         previousHolderId: object.possessorId,
         previousHolderName: object.ownerName || null,
         factId: input.factId ?? null,
-        note: input.note ?? harmed.account
+        note: input.note ?? account
     };
 }
 
@@ -667,7 +613,8 @@ export interface Mending {
 }
 
 /**
- * Close one hole.
+ * Close one hole: the rung gate and the write. The material it takes is the
+ * caller's to spend.
  */
 export function mend(
     object: ObjectRecord,
@@ -677,12 +624,12 @@ export function mend(
     const whole = ratedWhole(object);
 
     if (isRuined(object)) {
-        return refuse(object, scars, `${object.name} ended. There is nothing to mend.`);
+        return refuse(object, scars, `${object.name} was used up. There is nothing to mend.`);
     }
-    if (isInert(object)) {
+    if (isBroken(object)) {
         return refuse(object, scars,
-            `The qi has gone out of ${object.name}. It is rated at nothing, so there is no rung `
-            + 'to give back to it and nothing a hand at any rung can do about that.');
+            `${object.name} is broken. A hole can be closed and a break cannot; it works at `
+            + `${WORKS_AT_SAID}.`);
     }
     if (scars === 0 || object.power === null || whole === null) {
         return refuse(object, scars, `${object.name} has nothing open on it.`);
@@ -731,39 +678,8 @@ function refuse(object: ObjectRecord, scars: number, why: string): Mending {
 }
 
 // ═════════════════════════════════════════════════════════════════════════
-// WHAT IT COST THE PERSON IT BELONGED TO
+// THE RECORD
 // ═════════════════════════════════════════════════════════════════════════
-
-/**
- * What losing this was worth to whoever owned it, against what they had.
- */
-export function whatItCostThem(
-    lost: { ratedBefore: number | null; ratedAfter: number | null },
-    stillHeld: readonly (number | null)[],
-    standingOf: (ordinal: number) => number
-): number {
-    const before = lost.ratedBefore === null ? 0 : standingOf(lost.ratedBefore);
-    const after = lost.ratedAfter === null ? 0 : standingOf(lost.ratedAfter);
-    const taken = Math.max(0, before - after);
-    if (taken <= 0) return 0;
-    // The denominator is WHAT THEY HAD, which includes the whole of this thing
-    // and not merely the part of it that was taken. Otherwise a hole in the
-    // only rated thing a house owns prices identically to losing it outright,
-    // and the distinction the state vocabulary exists to carry is thrown away
-    // at the last step.
-    const rest = stillHeld.reduce<number>(
-        (sum, p) => sum + (p === null ? 0 : standingOf(p)), 0
-    );
-    const had = before + Math.max(0, rest);
-    return had <= 0 ? 0 : Math.max(0, Math.min(1, taken / had));
-}
-
-/**
- * Whether this is a thing that does not come back.
- */
-export function doesNotComeBack(state: ThingState): boolean {
-    return state === 'ruined' || state === 'shattered' || state === 'gone' || state === 'inert';
-}
 
 /**
  * The words for what happened, for a ledger entry somebody reads in a century.
@@ -773,13 +689,6 @@ export function describeTheLoss(harmed: ThingHarmed, thingName: string, cause: s
     switch (harmed.state) {
         case 'held': return `${thingName} came through ${cause} unmarked.`;
         case 'holed': return `${who} holed ${thingName}, in ${cause}. It can be put back.`;
-        case 'inert': return `${who} put the last of the qi out of ${thingName}, in ${cause}.`;
-        case 'ruined': return `${who} ended ${thingName}, in ${cause}.`;
-        case 'shattered': return `${who} broke ${thingName} apart, in ${cause}, and the pieces are worth having.`;
-        case 'gone': return `${thingName} did not come out of ${cause}.`;
+        case 'broken': return `${who} broke ${thingName}, in ${cause}. It works at ${WORKS_AT_SAID}.`;
     }
 }
-
-// Re-exported so a caller reading this file's answers does not have to reach
-// into the cultivation layer for the two thresholds the answers are built on.
-export { CERTAIN_ABOVE_REALMS, FIT_WITHIN_REALMS, FRAGMENTS_AT_OR_ABOVE };

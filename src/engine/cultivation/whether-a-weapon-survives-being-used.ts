@@ -12,7 +12,6 @@
  */
 
 import { MAX_ORDINAL, OBJECT_CEILING_BELOW_THE_LID, REALM_TIERS } from './realms.js';
-import { shardPower } from '../world/possessions.js';
 
 // TUNING
 
@@ -30,17 +29,38 @@ export const REALM_POWER_STEP: number =
 export const FIT_WITHIN_REALMS = 1;
 
 /**
- * How far a weapon can be outclassed before the answer stops being a chance and
- * becomes a certainty. Where the design owner's own example lands - "swing a sword
- * at someone two realms above and they shatter it" - which is the calibration
- * check for this number.
+ * How far a weapon can be outclassed before being marked stops being a chance
+ * and becomes a certainty.
  */
 export const CERTAIN_ABOVE_REALMS = 2;
 
 /**
- * The rung at and above which a broken object leaves fragments worth tracking.
+ * How far a thing can be outclassed and still come out holed rather than
+ * broken. Between `FIT_WITHIN_REALMS` and this, whatever reaches it is a hole;
+ * from here up it breaks outright. Owner ruling 2026-09-25: more damage lands
+ * as holes before anything breaks.
  */
-export const FRAGMENTS_AT_OR_ABOVE = 45;
+export const BREAKS_OUTRIGHT_ABOVE_REALMS = 3;
+
+/**
+ * The share of what it was made at that a broken thing still does, and the
+ * floor nothing damaged goes below. Owner ruling 2026-09-25: a broken thing
+ * keeps its grade and still works, at half.
+ */
+export const BROKEN_THING_WORKS_AT = 0.5;
+
+/**
+ * What a thing still does, on the scale `standingOf` prices rungs on: its
+ * rung's worth, never below half of what it was made at, and exactly that half
+ * once it is broken. A whole thing is its rung's worth.
+ */
+export function whatItStillDoes(
+    thing: { power: number; madeAt?: number | null; broken?: boolean },
+    standingOf: (ordinal: number) => number
+): number {
+    const floor = BROKEN_THING_WORKS_AT * standingOf(thing.madeAt ?? thing.power);
+    return thing.broken ? floor : Math.max(standingOf(thing.power), floor);
+}
 
 // THE GATE
 
@@ -120,10 +140,15 @@ export interface WeaponExposure {
     realmsByBodyAlone: number;
     /** Realms the weapon is outclassed by, counting everything. */
     realmsInFull: number;
-    /** Odds the body alone would break it with nobody doing anything, 0..1. */
+    /** Odds the body alone would mark it with nobody doing anything, 0..1. */
     passiveChance: number;
-    /** Odds this blow ends the weapon, 0..1. Zero whenever the gate refuses. */
+    /**
+     * Odds this blow does anything to it, 0..1: a hole, or past
+     * `BREAKS_OUTRIGHT_ABOVE_REALMS` a break. Zero whenever the gate refuses.
+     */
     chance: number;
+    /** Whether what reaches it breaks it rather than holing it. */
+    breaksOutright: boolean;
     /**
      * True when the body alone accounts for the whole of it.
      */
@@ -157,6 +182,7 @@ export function weaponExposure(input: WeaponExposureInput): WeaponExposure {
 
     const chance = reach.reaches ? rawFull : 0;
     const passiveChance = reach.reaches ? rawBody : 0;
+    const breaksOutright = chance > 0 && realmsInFull >= BREAKS_OUTRIGHT_ABOVE_REALMS;
     // Passive is "nothing they did contributed", which is a comparison and not
     // a threshold. Certainty is a separate property and lives in `chance`.
     const bodyAlone = chance > 0 && passiveChance >= chance;
@@ -170,6 +196,7 @@ export function weaponExposure(input: WeaponExposureInput): WeaponExposure {
         realmsInFull,
         passiveChance,
         chance,
+        breaksOutright,
         bodyAlone,
         carriedBy,
         heldAt: rungThatWouldHold(input),
@@ -205,8 +232,8 @@ function describeExposure(
 
     const gap =
         `Rated ${input.weaponPower} against something ${realmsInFull.toFixed(2)} realms above it. ` +
-        `Past ${FIT_WITHIN_REALMS} realm a weapon starts coming apart, and at ${CERTAIN_ABOVE_REALMS} ` +
-        `it is not a chance.` + remedy;
+        `Past ${FIT_WITHIN_REALMS} realm a weapon can be holed, at ${CERTAIN_ABOVE_REALMS} it is ` +
+        `certain to be, and at ${BREAKS_OUTRIGHT_ABOVE_REALMS} it breaks.` + remedy;
 
     if (bodyAlone) {
         return gap + ' Nothing was done to it: it met a body harder than it was, which is not an ' +
@@ -248,26 +275,20 @@ function largestLine(factors: readonly { source: string; factor: number }[] | un
 
 export interface WeaponUnmade {
     exposure: WeaponExposure;
-    /** Whether the weapon ended here. */
+    /** Whether it broke here. A broken thing is kept and works at half. */
     broke: boolean;
+    /** Whether it came out holed. */
+    holed: boolean;
     /**
      * The sample that decided it, or null when nothing was uncertain.
      */
     roll: number | null;
-/**
- * Whether anything is left. Almost always false: ruled by the design owner,
- * everything below the immortal grade is simply ruined, because fragments are
- * TRACKED objects with holders and provenance and a world where every broken sabre
- * mints two rows is a ledger full of rubble.
- */
-    leavesFragments: boolean;
-    /** The rung of what is left, or null when nothing is. */
-    fragmentPower: number | null;
     narrationHint: string;
 }
 
 /**
- * Decide it.
+ * Decide it. One draw, only where being marked is in doubt; whether a mark is
+ * a hole or a break is the gap's, not the draw's.
  */
 export function resolveWeaponAgainstBody(
     input: WeaponExposureInput,
@@ -276,31 +297,24 @@ export function resolveWeaponAgainstBody(
     const exposure = weaponExposure(input);
 
     let roll: number | null = null;
-    let broke: boolean;
+    let marked: boolean;
     if (exposure.chance <= 0) {
-        broke = false;
+        marked = false;
     } else if (exposure.chance >= 1) {
-        broke = true;
+        marked = true;
     } else {
         roll = rng.next();
-        broke = roll < exposure.chance;
+        marked = roll < exposure.chance;
     }
-
-    const leavesFragments = broke && input.weaponPower >= FRAGMENTS_AT_OR_ABOVE;
-    const fragmentPower = leavesFragments ? shardPower(input.weaponPower) : null;
+    const broke = marked && exposure.breaksOutright;
 
     return {
         exposure,
         broke,
+        holed: marked && !broke,
         roll,
-        leavesFragments,
-        fragmentPower,
         narrationHint: broke
-            ? exposure.cause +
-              (leavesFragments
-                  ? ` What is left is worth ${fragmentPower}, which is the ordinary rule for a piece of ` +
-                    'anything, meeting the one band where a piece is still worth somebody writing down.'
-                  : ' Nothing is left of it worth carrying away. The record of it stands; the object does not.')
+            ? `${exposure.cause} It is broken, keeps its grade, and works at half.`
             : exposure.cause
     };
 }

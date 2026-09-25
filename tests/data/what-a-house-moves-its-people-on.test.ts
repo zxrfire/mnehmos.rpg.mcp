@@ -36,7 +36,6 @@ import {
 } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { refiningOrdinalFor } from '../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { OBJECT_CEILING_BELOW_THE_LID } from '../../src/engine/cultivation/realms.js';
-import { FRAGMENTS_AT_OR_ABOVE } from '../../src/engine/cultivation/whether-a-weapon-survives-being-used.js';
 import { BEAST_MATERIALS, BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
 
@@ -175,24 +174,6 @@ describe('the craft that are objects', () => {
             expect(craft.power, `${craft.id} has no rating`).not.toBeNull();
             expect(craft.power!).toBeGreaterThanOrEqual(HEAVEN_FLOOR);
             expect(craft.power!).toBeLessThanOrEqual(OBJECT_CEILING_BELOW_THE_LID);
-        }
-    });
-
-    /**
-     * A wreck must obey the ordinary rule and mint nothing.
-     *
-     * `FRAGMENTS_AT_OR_ABOVE` is 45 and everything under it is ruined outright,
-     * so as long as no craft is rated at or above that line a wrecked hull is
-     * `ruin` and there is no need for a rule about broken boats. If a later
-     * pass rates one at 45 this test goes red, and the correct response is to
-     * decide deliberately whether a wrecked hull should leave salvage.
-     */
-    it('is rated under the rung where breaking something leaves pieces', () => {
-        for (const craft of TRACKED_CRAFT) {
-            expect(
-                craft.power!,
-                `${craft.id} would leave salvage when wrecked, which is a new rule nobody has taken`
-            ).toBeLessThan(FRAGMENTS_AT_OR_ABOVE);
         }
     });
 

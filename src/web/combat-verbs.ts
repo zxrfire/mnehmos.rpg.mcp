@@ -101,6 +101,7 @@ import { whoTheyCarryFor } from './what-a-telling-lands-on.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { resolveCultivator, resolvePill } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, theRung } from './facts.js';
+import { aRowForOneOutOfThePouch } from './breaking-a-thing-you-are-holding.js';
 import { type HeldBack, type StandingFight, theFightStillStands } from './fight-answers.js';
 import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
 import { loosePlaceKey } from './knowledge.js';
@@ -1746,44 +1747,46 @@ export const combatVerbs = {
         execution: Execution
     ): void {
         for (const loss of result.brokenObjects) {
-            // Theirs is the world's to write, and `whatItDidToThem` is where
-            // an opponent's row is reached. This is the player's half only.
-            if (loss.carrierId !== cultivator.id) continue;
-
-            removeFromPouch(this.db, cultivator.id, loss.broke.objectId, 1);
-
-            const at = this.atHand
-                ? this.atHand.objects.findIndex(o => o.id === loss.broke.objectId)
-                : -1;
-            // THE SAME DOOR THE `destroy` VERB GOES THROUGH. This called `ruin`
-            // straight and supplied no `factId`, so a blade breaking in a fight
-            // wrote nothing to `state.history.facts` and reached nobody who was
-            // not standing there. `aBreakingEntersTheWorld` files the fact
-            // first and ruins the row with its id, and grades how far the news
-            // goes off the thing's own significance.
-            let gone: TheThingIsGone | null = null;
-            if (this.atHand && at >= 0) {
-                gone = aBreakingEntersTheWorld(this.atHand, {
-                    actor: { id: cultivator.id, name: cultivator.name, role: 'broke it' },
-                    object: this.atHand.objects[at],
+            // Theirs: the world row is broken and stays in their hands. Said
+            // on the row for whoever looks at it, as their holes are below.
+            if (loss.carrierId !== cultivator.id) {
+                const theirs = this.atHand?.objects.find(o => o.id === loss.broke.objectId);
+                if (this.atHand && theirs && aBreakingEntersTheWorld(this.atHand, {
+                    actor: { id: loss.carrierId, name: held.party.name, role: 'broke it' },
+                    object: theirs,
                     day: Math.floor(this.atHand.currentDay),
                     locationId: this.worldPlaceOf(cultivator),
                     place: placeName(cultivator),
-                    how: `swung at ${held.party.name} and did not survive it: `
-                        + loss.broke.exposure.cause
+                    how: `swung at ${cultivator.name} and broke: ` + loss.broke.exposure.cause
+                })) this.theWorldMoved();
+                continue;
+            }
+
+            // THE SAME DOOR THE `destroy` VERB GOES THROUGH: the fact is filed
+            // and the row is broken, kept in their hands at half. A pouch thing
+            // with no world row becomes one (`aRowForOneOutOfThePouch`).
+            const day = this.atHand ? Math.floor(this.atHand.currentDay) : 0;
+            const row = this.atHand
+                ? this.atHand.objects.find(o => o.id === loss.broke.objectId)
+                    ?? aRowForOneOutOfThePouch(this, cultivator, loss.broke.objectId, day)
+                : null;
+            let gone: TheThingIsGone | null = null;
+            if (this.atHand && row) {
+                gone = aBreakingEntersTheWorld(this.atHand, {
+                    actor: { id: cultivator.id, name: cultivator.name, role: 'broke it' },
+                    object: row,
+                    day,
+                    locationId: this.worldPlaceOf(cultivator),
+                    place: placeName(cultivator),
+                    how: `swung at ${held.party.name} and broke: ` + loss.broke.exposure.cause
                 });
                 // `act` persists on this flag before anything is narrated, so a
-                // restart cannot lose the loss - the same guarantee a killing
-                // gets one method down.
+                // restart cannot lose the break.
                 if (gone) this.theWorldMoved();
             }
 
-            // AND SAY WHAT IS LEFT, NOT WHAT ALREADY HAPPENED
-            const owner = at >= 0 ? this.atHand!.objects[at].ownerName : '';
-            const line = `You are not carrying ${loss.broke.objectName} any more.`
-                + (owner
-                    ? ` What is left of it is a record, and ${owner} still owns that.`
-                    : '');
+            const line = `${loss.broke.objectName} broke. You still have it; it keeps its grade and `
+                + 'works at half.';
             execution.facts.lines.push(line);
             execution.facts.required = [...(execution.facts.required ?? []), line];
             execution.facts.prose = [execution.facts.prose, line].join('\n');
@@ -1795,16 +1798,12 @@ export const combatVerbs = {
                 + (loss.broke.roll === null
                     ? ' - certain, so nothing was rolled'
                     : ` against a roll of ${loss.broke.roll.toFixed(3)}`)
-                + `. Pouch row removed; world row ${at >= 0 ? 'ruined and kept' : 'absent - a counted thing has none'}.`
+                + `. World row ${row ? `${row.id} broken and kept` : 'absent - no world loaded'}.`
             );
             execution.calls.push({
-                name: 'world.ruin',
+                name: 'world.breakIt',
                 action: held.verb,
-                summary:
-                    `${loss.broke.objectId} broke in ${cultivator.name}'s hand. Pouch row removed. `
-                    + (at >= 0
-                        ? 'World row ruined, keeping its owner, its claims and its whole provenance chain.'
-                        : 'No world row: a counted thing has none, and there is nowhere to write the scar.'),
+                summary: `${loss.broke.objectId} broke in ${cultivator.name}'s hand and is kept at half.`,
                 ok: true
             });
         }

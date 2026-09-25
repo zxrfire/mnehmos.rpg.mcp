@@ -56,6 +56,7 @@ import {
     type WhereTheyFell
 } from '../../../src/engine/world/estate-at-death';
 import { isRuined, makeObject } from '../../../src/engine/world/possessions';
+import { isBroken } from '../../../src/engine/world/object-damage';
 import { contiguousRun, effectiveCapOf } from '../../../src/engine/cultivation/acquisition';
 import { makeEnvironment, makeLocation } from '../../../src/engine/world/locations';
 
@@ -268,12 +269,14 @@ describe('a rated thing worth less than whole', () => {
         expect(isRuined(damaged!.objects[0])).toBe(false);
     });
 
-    it('is ruined outright when nothing usable is left of it', () => {
-        const ruined = Array.from({ length: 200 }, (_, i) => offABody(`blade-${i}`))
-            .find(e => e.marks[0].condition === 'ruined');
+    it('is broken, kept at the rung it was made at, when the place leaves it at its worst', () => {
+        // Owner ruling 2026-09-25: a rated thing is never ended by damage.
+        const broken = Array.from({ length: 200 }, (_, i) => offABody(`blade-${i}`))
+            .find(e => e.marks[0].condition === 'broken');
 
-        expect(ruined).toBeDefined();
-        expect(isRuined(ruined!.objects[0])).toBe(true);
+        expect(broken).toBeDefined();
+        expect(isRuined(broken!.objects[0])).toBe(false);
+        expect(isBroken(broken!.objects[0])).toBe(true);
     });
 });
 

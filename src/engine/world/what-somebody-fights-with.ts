@@ -16,15 +16,25 @@
  */
 
 import { isHeld, isWorn, type ObjectRecord } from './possessions.js';
+import { asCarried } from './object-damage.js';
+import { combatPowerForOrdinal, type CarriedObject } from '../cultivation/combat.js';
+import { whatItStillDoes } from '../cultivation/whether-a-weapon-survives-being-used.js';
 
 /** Whether this is something to fight with: a made thing with a rating, not something worn. */
 export function isAWeapon(object: Pick<ObjectRecord, 'kind' | 'power' | 'tags'>): boolean {
     return object.kind === 'artifact' && object.power !== null && object.power !== undefined && !isWorn(object);
 }
 
+/** What a carried thing adds in a fight, which is what "best" is measured by. */
+export function whatItAddsInAFight(carried: CarriedObject): number {
+    return whatItStillDoes(carried, combatPowerForOrdinal);
+}
+
 function best(rows: readonly ObjectRecord[]): ObjectRecord | null {
     let top: ObjectRecord | null = null;
-    for (const row of rows) if (top === null || (row.power ?? 0) > (top.power ?? 0)) top = row;
+    for (const row of rows) {
+        if (top === null || whatItAddsInAFight(asCarried(row)) > whatItAddsInAFight(asCarried(top))) top = row;
+    }
     return top;
 }
 
@@ -33,27 +43,35 @@ export function theBladeInTheirHand(objects: readonly ObjectRecord[], personId: 
     return best(objects.filter(object => object.possessorId === personId && isHeld(object) && isAWeapon(object)));
 }
 
-/** What a fight swings for them: the best weapon in hand, else the best on them, or null. */
+/**
+ * What a fight swings for them: the best weapon in hand, else the best on them,
+ * or null. `pouch` is the best rated thing in their pouch, when they have one,
+ * and counts as on them.
+ */
 export function theWeaponTheyFightWith(
     objects: readonly ObjectRecord[],
-    personId: string
-): { id: string; name: string; power: number } | null {
-    const row = theBladeInTheirHand(objects, personId)
-        ?? best(objects.filter(object => object.possessorId === personId && isAWeapon(object)));
-    return row === null ? null : { id: row.id, name: row.name, power: row.power ?? 0 };
+    personId: string,
+    pouch: CarriedObject | null = null
+): CarriedObject | null {
+    const inHand = theBladeInTheirHand(objects, personId);
+    if (inHand !== null) return asCarried(inHand);
+    const row = best(objects.filter(object => object.possessorId === personId && isAWeapon(object)));
+    const onThem = row === null ? null : asCarried(row);
+    const pouched = atTheRungItStandsAt(pouch, objects);
+    if (onThem === null || pouched === null) return onThem ?? pouched;
+    return whatItAddsInAFight(pouched) > whatItAddsInAFight(onThem) ? pouched : onThem;
 }
 
 /**
  * A thing carried in the pouch under an id the world also keeps a row for is
- * that row, and the row says the rung it stands at now: a hole takes one off
- * (`object-damage.ts`). The pouch keeps only the catalog's rating, so without
- * this a holed blade carried in the pouch would fight as if whole.
+ * that row: its rung, its holes and whether it is broken (`object-damage.ts`).
+ * The pouch keeps only the catalog's rating.
  */
-export function atTheRungItStandsAt<T extends { id: string; power: number }>(
-    carried: T | null,
+function atTheRungItStandsAt(
+    carried: CarriedObject | null,
     objects: readonly ObjectRecord[]
-): T | null {
+): CarriedObject | null {
     if (carried === null) return null;
     const row = objects.find(object => object.id === carried.id);
-    return row === undefined || row.power === null ? carried : { ...carried, power: row.power };
+    return row === undefined || row.power === null ? carried : asCarried(row);
 }

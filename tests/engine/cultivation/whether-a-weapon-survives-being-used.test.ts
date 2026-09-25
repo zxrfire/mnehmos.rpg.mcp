@@ -9,9 +9,9 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+    BREAKS_OUTRIGHT_ABOVE_REALMS,
     CERTAIN_ABOVE_REALMS,
     FIT_WITHIN_REALMS,
-    FRAGMENTS_AT_OR_ABOVE,
     REALM_POWER_STEP,
     canUnmake,
     realmsBetween,
@@ -26,7 +26,7 @@ import {
 } from '../../../src/engine/cultivation/combat.js';
 import { pillBandOrdinal } from '../../../src/engine/cultivation/breakthrough.js';
 import { MAX_ORDINAL, OBJECT_CEILING_BELOW_THE_LID } from '../../../src/engine/cultivation/realms.js';
-import { makeObject, ruin, isRuined, shardPower } from '../../../src/engine/world/possessions.js';
+import { makeObject, ruin, isRuined } from '../../../src/engine/world/possessions.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
@@ -151,10 +151,9 @@ describe('the odds are one subtraction on the ladder', () => {
         }
     });
 
-    it('two realms under what it is swung into and it is not a chance', () => {
-        // The design owner's own example: swing at somebody two realms above
-        // and they shatter it. Two realms is also `HELPLESS_REALM_GAP`, which
-        // is the calibration rather than a coincidence.
+    it('two realms under what it is swung into and being marked is not a chance', () => {
+        // Two realms is also `HELPLESS_REALM_GAP`. Whether the mark is a hole
+        // or a break is the next realm's question (owner ruling 2026-09-25).
         const e = exposureOf(18, 29);
         expect(e.realmsInFull).toBeGreaterThan(CERTAIN_ABOVE_REALMS);
         expect(e.chance).toBe(1);
@@ -259,13 +258,16 @@ describe('inside what a realm reaches, ability decides', () => {
         expect(e.chance).toBeLessThan(1);
 
         // Over many seeds the rate is the reported chance, which is the whole
-        // claim of showing a player the number before they swing.
-        let broke = 0;
+        // claim of showing a player the number before they swing. Under two
+        // realms what the chance buys is a hole, never a break.
+        let holed = 0;
         const runs = 4000;
         for (let seed = 0; seed < runs; seed++) {
-            if (resolveWeaponAgainstBody(input, makeRNG(seed)).broke) broke++;
+            const out = resolveWeaponAgainstBody(input, makeRNG(seed));
+            expect(out.broke).toBe(false);
+            if (out.holed) holed++;
         }
-        expect(broke / runs).toBeCloseTo(e.chance, 1);
+        expect(holed / runs).toBeCloseTo(e.chance, 1);
     });
 });
 
@@ -273,9 +275,9 @@ describe('inside what a realm reaches, ability decides', () => {
 // 4. WHAT IS LEFT
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('everything below the immortal grade is ruined, not shattered', () => {
-    it('mints no fragments for anything anybody down here can swing', () => {
-        for (const rung of [4, 9, 14, 18, 22, 26, 29, 34, 38, 41, 43, 44]) {
+describe('a broken weapon is kept, and works at half', () => {
+    it('breaks only past three realms, at every rung, and leaves nothing behind but itself', () => {
+        for (const rung of [4, 9, 14, 18, 22, 26, 29, 34, 38, 41, 43, 44, 46]) {
             const out = resolveWeaponAgainstBody(
                 {
                     weaponPower: rung,
@@ -286,29 +288,11 @@ describe('everything below the immortal grade is ruined, not shattered', () => {
                 },
                 makeRNG(1)
             );
+            expect(out.exposure.realmsInFull, `rung ${rung}`).toBeGreaterThanOrEqual(BREAKS_OUTRIGHT_ABOVE_REALMS);
             expect(out.broke, `rung ${rung}`).toBe(true);
-            expect(out.leavesFragments, `rung ${rung}`).toBe(false);
-            expect(out.fragmentPower, `rung ${rung}`).toBeNull();
-            expect(out.narrationHint).toContain('The record of it stands');
+            expect(out.holed, `rung ${rung}`).toBe(false);
+            expect(out.narrationHint).toContain('works at half');
         }
-    });
-
-    it('and a forty-six leaves forty-fives, which is the world\'s one recorded case', () => {
-        const out = resolveWeaponAgainstBody(
-            {
-                weaponPower: MAX_ORDINAL,
-                weaponStanding: combatPowerForOrdinal(MAX_ORDINAL),
-                metBy: combatPowerForOrdinal(MAX_ORDINAL) * 1000,
-                metByBodyAlone: combatPowerForOrdinal(MAX_ORDINAL) * 1000,
-                metByOrdinal: MAX_ORDINAL
-            },
-            makeRNG(1)
-        );
-        expect(out.broke).toBe(true);
-        expect(out.leavesFragments).toBe(true);
-        expect(out.fragmentPower).toBe(OBJECT_CEILING_BELOW_THE_LID);
-        expect(out.fragmentPower).toBe(shardPower(MAX_ORDINAL));
-        expect(FRAGMENTS_AT_OR_ABOVE).toBeLessThanOrEqual(MAX_ORDINAL);
     });
 
     it('spent is not gone: a ruined object keeps its row, its owner and its history', () => {
@@ -328,7 +312,7 @@ describe('everything below the immortal grade is ruined, not shattered', () => {
             }]
         });
 
-        const after = ruin(blade, { onDay: 400, source: 'swung at somebody three realms above' });
+        const after = ruin(blade, { onDay: 400, source: 'worked into a furnace' });
 
         expect(isRuined(after)).toBe(true);
         expect(after.possessorId).toBeNull();
@@ -340,7 +324,7 @@ describe('everything below the immortal grade is ruined, not shattered', () => {
         expect(after.provenance).toHaveLength(2);
         expect(after.provenance[0]).toEqual(blade.provenance[0]);
         expect(after.provenance[1].previousHolderId).toBe('npc-somebody');
-        expect(after.provenance[1].source).toContain('three realms above');
+        expect(after.provenance[1].source).toContain('furnace');
     });
 });
 
@@ -349,7 +333,7 @@ describe('everything below the immortal grade is ruined, not shattered', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('through the resolver a player actually reaches', () => {
-    it('a weapon far under the rung it is swung into does not come home', () => {
+    it('a weapon far under the rung it is swung into breaks, and comes home broken', () => {
         const result = resolveConfrontation(
             body(29, { weapon: { id: 'artifact-notched-sabre', name: 'A Notched Sabre', power: 4 } }),
             body(30),
@@ -360,7 +344,8 @@ describe('through the resolver a player actually reaches', () => {
         expect(gone.broke.objectId).toBe('artifact-notched-sabre');
         expect(gone.carrierId).toBe('body-29');
         expect(gone.breakerId).toBe('body-30');
-        expect(gone.broke.leavesFragments).toBe(false);
+        expect(result.aggressor.weapon?.id).toBe('artifact-notched-sabre');
+        expect(result.aggressor.weapon?.broken).toBe(true);
     });
 
     it('the same fight with a weapon of the right grade keeps it', () => {
@@ -378,22 +363,24 @@ describe('through the resolver a player actually reaches', () => {
         expect(armed.total).toBeGreaterThan(assessPower(body(29), AMBIENT).total);
     });
 
-    it('losing it mid-fight makes them weaker for the rest of it', () => {
-        // "Bring a dogshit weapon and you brought nothing" has to be true after
-        // the first exchange as well as before it.
+    it('breaking it mid-fight makes them weaker for the rest of it, and not bare', () => {
         const result = resolveConfrontation(
             body(29, { weapon: { id: 'artifact-notched-sabre', name: 'A Notched Sabre', power: 4 } }),
             body(30),
             { rng: makeRNG(11), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.brokenObjects.length).toBeGreaterThan(0);
-        // The aggressor is re-priced without it, so their line reads as bare.
+        // Re-priced with it broken: at half of what it was, still carried.
         const artifacts = result.aggressor.factors.find(f => f.source === 'artifacts');
-        expect(artifacts?.note).toContain('Carrying nothing graded');
-        expect(result.aggressor.weapon).toBeNull();
+        expect(artifacts?.note).toContain('it is broken and works at half');
+        const sabre = { id: 'artifact-notched-sabre', name: 'A Notched Sabre', power: 4 };
+        const whole = assessPower(body(29, { weapon: sabre }), AMBIENT).total;
+        const bare = assessPower(body(29), AMBIENT).total;
+        expect(result.aggressor.total).toBeLessThan(whole);
+        expect(result.aggressor.total).toBeGreaterThan(bare);
     });
 
-    it('swinging at somebody two realms above is refused AND costs the sword', () => {
+    it('swinging at somebody two realms above is refused AND marks the sword', () => {
         // The gap being categorical is a statement about what the aggressor can
         // do to the defender. It says nothing about what the defender's body
         // does to the metal, and the owner's headline example is exactly this.
@@ -403,7 +390,11 @@ describe('through the resolver a player actually reaches', () => {
             { rng: makeRNG(3), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.outcome).toBe('no_contest');
-        expect(result.brokenObjects).toHaveLength(1);
+        // The swing is on the record as the one exchange that reached nobody,
+        // and it holed or broke the blade.
+        const swung = result.exchanges[0]?.result.weapon;
+        expect(swung?.objectId).toBe('artifact-a-fair-blade');
+        expect(Boolean(swung?.holed) || Boolean(swung?.broke)).toBe(true);
         expect(result.narrationHint).toContain('A Fair Blade');
     });
 

@@ -35,7 +35,8 @@ import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
 import { aBreakingEntersTheWorld } from '../../src/engine/world/a-thing-somebody-ended-is-a-fact.js';
-import { makeObject, isRuined } from '../../src/engine/world/possessions.js';
+import { makeObject } from '../../src/engine/world/possessions.js';
+import { isBroken } from '../../src/engine/world/object-damage.js';
 import { whatTheySay } from '../../src/engine/world/what-people-are-saying.js';
 import { buildPlayerDigest, MARKET_MAGNITUDE } from '../../src/engine/world/digest.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
@@ -58,7 +59,7 @@ async function aWorld() {
 }
 
 describe('an NPC ending a thing is the same event as a player ending one', () => {
-    it('files the fact and ruins the row, with nobody playing', async () => {
+    it('files the fact and breaks the row, keeping it, with nobody playing', async () => {
         const world = await aWorld();
         const breaker = theTallestPersonAlive(world);
         const blade = makeObject({
@@ -82,7 +83,9 @@ describe('an NPC ending a thing is the same event as a player ending one', () =>
 
         expect(gone).not.toBeNull();
         const row = world.objects.find(object => object.id === blade.id)!;
-        expect(isRuined(row)).toBe(true);
+        expect(isBroken(row)).toBe(true);
+        expect(row.possessorId).toBe(breaker.id);
+        expect(row.power).toBe(40);
         // The field nobody had ever supplied.
         expect(row.provenance[row.provenance.length - 1].factId).toBe(gone!.fact.id);
         expect(gone!.addressable).toBe(true);

@@ -311,7 +311,7 @@ export interface ObjectRecord {
 }
 
 /**
- * What is left of a broken object.
+ * One rung down: what a hole takes off a thing.
  */
 export function shardPower(power: number | null): number | null {
     if (power === null) return null;
@@ -319,23 +319,9 @@ export function shardPower(power: number | null): number | null {
 }
 
 /**
- * Break an object into pieces, as ordinary records.
- */
-export function shatter(object: ObjectRecord, pieces = 2): ObjectRecord[] {
-    return Array.from({ length: Math.max(2, pieces) }, (_, i) => makeObject({
-        ...object,
-        id: `${object.id}-shard-${i + 1}`,
-        name: `A piece of ${object.name}`,
-        power: shardPower(object.power),
-        significance: object.significance === 'legendary' ? 'significant' : object.significance,
-        possessorId: null,
-        claims: [],
-        tags: [...object.tags.filter(t => t !== 'never-carried'), 'shard', `from:${object.id}`]
-    }));
-}
-
-/**
- * End an object without leaving anything to pick up.
+ * End an object without leaving anything to pick up: a thing used up, worked
+ * into something else, or with no rung to be broken at. A rated thing that
+ * breaks is kept instead (`breakIt` in `object-damage.ts`).
  */
 export function ruin(
     object: ObjectRecord,

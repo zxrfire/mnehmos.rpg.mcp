@@ -18,7 +18,7 @@ import { makeFact, type HistoricalFact } from './history.js';
 import { elderRungOf } from '../cultivation/leadership.js';
 import { theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { isRuined } from './possessions.js';
-import { whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
+import { isBroken, whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
 import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
 import type { ObligationInput } from '../social/grudges.js';
 import { oneAccountEach } from './what-a-change-of-hands-leaves.js';
@@ -190,7 +190,7 @@ export interface WarEngagement {
     fell: string[];
     /** Everybody who broke off, by name, both sides. */
     brokeOff: string[];
-    /** Objects that did not survive being swung, off `exchanges`. */
+    /** Objects that broke being swung, off `exchanges`. Each is kept, at half. */
     thingsBroken: { objectId: string; objectName: string; carrierId: string }[];
     deaths: DeathHandoff[];
     /**
@@ -481,7 +481,7 @@ function writeBackWhatBroke(
         if (!weapon || !weapon.broke || done.has(weapon.objectId)) continue;
         done.add(weapon.objectId);
         const at = state.objects.findIndex(o => o.id === weapon.objectId);
-        if (at < 0 || isRuined(state.objects[at])) continue;
+        if (at < 0 || isRuined(state.objects[at]) || isBroken(state.objects[at])) continue;
         // Through the world's own breaking door, so a blade broken in a war
         // reaches the record the same way one broken by a player does. Before
         // this it called `ruin` straight with no `factId`, and nothing outside
@@ -504,9 +504,8 @@ function writeBackWhatBroke(
             carrierId: exchange.attackerId
         });
     }
-    // AND WHAT CAME THROUGH IT HOLED. A thing swung into a body past what it
-    // is made for either ends or is marked, and the mark stays on the row
-    // until somebody mends it. See `object-damage.ts`.
+    // AND WHAT CAME THROUGH IT HOLED. The hole stays on the row until
+    // somebody mends it. See `object-damage.ts`.
     writeBackWhatAFightLeft(state.objects, whatAFightMarked(result.exchanges), {
         onDay: day,
         fight: 'a year of war',

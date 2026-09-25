@@ -38,6 +38,7 @@ import {
 } from './tradition.js';
 import {
     resolveWeaponAgainstBody,
+    whatItStillDoes,
     type WeaponUnmade
 } from './whether-a-weapon-survives-being-used.js';
 import {
@@ -258,6 +259,10 @@ export interface CarriedObject {
     id: string;
     name: string;
     power: number;
+    /** The rung it was made at, where holes have taken it below that. */
+    madeAt?: number;
+    /** Broken: it works at half of what it was made at (`whatItStillDoes`). */
+    broken?: boolean;
 }
 
 /**
@@ -571,7 +576,9 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     const ratedOrdinal = combatant.artifactOrdinal ?? weapon?.power;
     const ratedShare = ratedOrdinal === undefined
         ? 0
-        : combatPowerForOrdinal(ratedOrdinal) / realmBase;
+        : (combatant.artifactOrdinal === undefined && weapon
+            ? whatItStillDoes(weapon, combatPowerForOrdinal)
+            : combatPowerForOrdinal(ratedOrdinal)) / realmBase;
     factors.push({
         source: 'artifacts',
         factor: gradeFactor * (1 + ratedShare),
@@ -582,7 +589,8 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             (ratedOrdinal === undefined
                 ? ''
                 : `, and ${weapon ? weapon.name : 'an object'} rated ${rankName(ratedOrdinal)} - worth a ` +
-                  `second body of that rank, standing beside them, that nothing can be done about`)
+                  `second body of that rank, standing beside them, that nothing can be done about` +
+                  (weapon?.broken ? '; it is broken and works at half' : ''))
     });
 
     // BATTLE EXPERIENCE
@@ -1074,9 +1082,7 @@ export function resolveExchange(
     // Nothing here is gated on who anybody is. The reason a Core Formation
     // cultivator is not walking around with an object rated forty-five is not a
     // rule; it is that somebody stronger wants it. This module has no opinion.
-    const weaponAtRisk = attacker.weapon === null
-        ? null
-        : atRisk(attacker.weapon, defender, ctx.rng);
+    const weaponAtRisk = atRisk(attacker.weapon, defender, ctx.rng);
 
     return {
         damage,
@@ -1092,18 +1098,20 @@ export function resolveExchange(
             `${attacker.rank} strikes at ${defender.rank}${vector === 'soul' ? ', at the soul' : ''}. ` +
             `Advantage ${advantage.toFixed(2)}; ${damage} damage` +
             (injury ? `, and a ${injury.severity} meridian injury that will not close on its own.` : '.') +
-            (weaponAtRisk?.broke ? ` ${weaponAtRisk.objectName} did not survive it. ${weaponAtRisk.narrationHint}` : '')
+            (weaponAtRisk?.broke ? ` ${weaponAtRisk.objectName} broke. ${weaponAtRisk.narrationHint}` : '')
     };
 }
 
 /**
- * Put one named object through the body it was swung into.
+ * Put one named object through the body it was swung into. A broken thing is
+ * at the floor and is not put at risk again, so it draws nothing.
  */
 function atRisk(
-    object: CarriedObject,
+    object: CarriedObject | null,
     metBy: CombatantPower,
     rng: CultivationRNG
-): WeaponAtRisk {
+): WeaponAtRisk | null {
+    if (object === null || object.broken) return null;
     const unmade = resolveWeaponAgainstBody(
         {
             weaponPower: object.power,
@@ -1282,7 +1290,8 @@ export interface ConfrontationResult {
     /** Set when the body went and the person did not: 'soul' or 'seam'. */
     remnant: 'soul' | 'seam' | null;
     /**
-     * Objects that did not survive the fight, in the order they went.
+     * Objects that broke in the fight, in the order they broke. Each is still
+     * in its holder's hand, working at half.
      */
     brokenObjects: Array<{ carrierId: string; breakerId: string; broke: WeaponAtRisk }>;
     obligations: ObligationSeed[];
@@ -1341,16 +1350,30 @@ export function theGapDecidesItAlone(
         // The gap being categorical is a statement about what the aggressor can
         // do to the DEFENDER. It is not a statement about what the defender's
         // body does to a piece of metal swung into it, and at this distance
-        // `weaponExposure` reaches certainty on the body alone, so nothing is
-        // rolled here either: it is not luck, it is what happens.
-        const swung = aggressor.weapon === null ? null : atRisk(aggressor.weapon, defender, ctx.rng);
+        // `weaponExposure` is certain to mark it on the body alone, so nothing
+        // is rolled: a hole short of `BREAKS_OUTRIGHT_ABOVE_REALMS`, a break
+        // past it.
+        const swung = atRisk(aggressor.weapon, defender, ctx.rng);
         const broken = swung?.broke
             ? [{ carrierId: aggressorInput.id, breakerId: defenderInput.id, broke: swung }]
             : [];
         const struck = `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}`
             + (swung?.broke
-                ? ` ${swung.objectName} did not survive the attempt. ${swung.narrationHint}`
-                : '');
+                ? ` ${swung.objectName} broke on the attempt. ${swung.narrationHint}`
+                : swung?.holed ? ` ${swung.objectName} was holed on the attempt.` : '');
+        // The swing as an exchange that reached nobody, so a hole it left is
+        // written by the same one-mark-a-fight reader as any other.
+        const swings: ExchangeRecord[] = swung === null ? [] : [{
+            index: 0,
+            attackerId: aggressorInput.id,
+            defenderId: defenderInput.id,
+            result: {
+                damage: 0, injury: null, nullified: true, nullifiedReason: 'out_of_reach',
+                vector: 'body', advantage: 0, roll: 0, modifiers: [], weapon: swung,
+                narrationHint: struck
+            },
+            defenderHpAfter: defenderInput.hp
+        }];
 
         // AND THEN THEY DECIDE, WHICH IS THE HALF THAT WAS MISSING.
         //
@@ -1375,7 +1398,7 @@ export function theGapDecidesItAlone(
             // acts on it.
             return {
                 ...noContest(aggressor, defender, gap, hp, injuries,
-                    aggressorInput.id, defenderInput.id, `${struck} ${decided}`, broken),
+                    aggressorInput.id, defenderInput.id, `${struck} ${decided}`, broken, swings),
                 theirDecision: decision
             };
         }
@@ -1401,7 +1424,7 @@ export function theGapDecidesItAlone(
         return {
             ...noContest(aggressor, defender, gap, after, hurt,
                 aggressorInput.id, defenderInput.id,
-                `${struck} ${decided} ${answered.narrationHint ?? ''}`.trim(), broken),
+                `${struck} ${decided} ${answered.narrationHint ?? ''}`.trim(), broken, swings),
             // `lethal` is the outcome for a finishing requirement actually
             // met, and that is what this is. It stays `no_contest` otherwise,
             // because it still was not a fight - it was a decision, and one
@@ -1410,8 +1433,8 @@ export function theGapDecidesItAlone(
             winnerId: left <= 0 ? defenderInput.id : null,
             loserId: left <= 0 ? aggressorInput.id : null,
             finished: left <= 0,
-            exchanges: [{
-                index: 0,
+            exchanges: [...swings, {
+                index: swings.length,
                 attackerId: defenderInput.id,
                 defenderId: aggressorInput.id,
                 result: answered,
@@ -1549,15 +1572,19 @@ export function resolveConfrontationRound(
         hp[target.input.id] = Math.max(0, hp[target.input.id] - result.damage);
         if (result.injury) injuries[target.input.id].push(result.injury);
 
-        // The object went. Take it off the person who was swinging it and price
-        // them again, so the rest of the fight is fought without it.
+        // The object broke. It stays in their hand at half, and they are priced
+        // again so the rest of the fight is fought with it broken.
         if (result.weapon?.broke) {
             brokenObjects.push({
                 carrierId: striker.input.id,
                 breakerId: target.input.id,
                 broke: result.weapon
             });
-            const stripped = { ...striker.input, weapon: null, artifactOrdinal: undefined };
+            const stripped = {
+                ...striker.input,
+                weapon: striker.input.weapon ? { ...striker.input.weapon, broken: true } : null,
+                artifactOrdinal: undefined
+            };
             const repriced: RoundParty = {
                 ...striker,
                 input: stripped,
@@ -1602,10 +1629,9 @@ export function resolveConfrontation(
     ctx: ConfrontationContext
 ): ConfrontationResult {
     const powerCtx: PowerContext = { ambient: ctx.ambient };
-    // Re-priced, not constant. A cultivator who loses their weapon mid-fight is
-    // a weaker cultivator for the rest of it - which is the whole content of
-    // "bring a bad weapon and you brought nothing", and it would be a claim the
-    // engine made and did not honour if the price were taken once at the top.
+    // Re-priced, not constant. A cultivator whose weapon breaks mid-fight is a
+    // weaker cultivator for the rest of it, and it would be a claim the engine
+    // made and did not honour if the price were taken once at the top.
     let aggressor = assessPower(aggressorInput, powerCtx);
     let defender = assessPower(defenderInput, powerCtx);
     const gap = assessGap(aggressor, defender);
@@ -1640,7 +1666,7 @@ export function resolveConfrontation(
 
     // The inputs are re-read rather than captured, because a broken weapon
     // changes them. `aggressorLive` and `defenderLive` are the same rows with
-    // whatever they have lost taken off.
+    // whatever broke marked broken.
     let aggressorLive = aggressorInput;
     let defenderLive = defenderInput;
 
@@ -2076,7 +2102,8 @@ function noContest(
     _aggressorId: string,
     _defenderId: string,
     hint: string,
-    brokenObjects: ConfrontationResult['brokenObjects'] = []
+    brokenObjects: ConfrontationResult['brokenObjects'] = [],
+    exchanges: ExchangeRecord[] = []
 ): ConfrontationResult {
     return {
         outcome: 'no_contest',
@@ -2086,7 +2113,7 @@ function noContest(
         defender,
         gap,
         brokenObjects,
-        exchanges: [],
+        exchanges,
         hp,
         injuries,
         finished: false,
@@ -3039,14 +3066,14 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                     hp[target.input.id] = 0;
                 }
 
-                // The object went. Take it off the person who was swinging it
-                // and price them again, so the rest of the melee is fought
-                // without it. Identical to the two-party path, deliberately:
-                // this used to be a stated gap, and a combatant who lost a
-                // blade in round one went on being priced as though they held
-                // it for every round after.
+                // The object broke. It stays in their hand at half and they
+                // are priced again, identically to the two-party path.
                 if (result.weapon?.broke) {
-                    striker.input = { ...striker.input, weapon: null, artifactOrdinal: undefined };
+                    striker.input = {
+                        ...striker.input,
+                        weapon: striker.input.weapon ? { ...striker.input.weapon, broken: true } : null,
+                        artifactOrdinal: undefined
+                    };
                     striker.power = assessPower(striker.input, powerCtx);
                 }
 

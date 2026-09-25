@@ -6,7 +6,6 @@ import type { CultivationRNG } from '../cultivation/rng.js';
 import type { HistoricalFact } from './history.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import {
-    isInert,
     type ForceApplied,
     type ThingUnderForce
 } from './object-damage.js';
@@ -87,7 +86,6 @@ export function whatIsLeftInTheHold(state: WorldState, factionId: string): Objec
         o.ownerId === factionId
         && o.possessorId === factionId
         && !isRuined(o)
-        && !isInert(o)
     );
 }
 

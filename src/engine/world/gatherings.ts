@@ -64,8 +64,9 @@ import {
 } from './what-a-contest-is-worth-to-the-people-in-it.js';
 import { theBoardAsItIsCalledOut } from './how-an-entrant-is-announced.js';
 import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
-import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
-import { whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
+import { isRuined, isSomethingYouWouldSwing } from './possessions.js';
+import { asCarried, breakIt, isBroken, whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
+import { whatItAddsInAFight } from './what-somebody-fights-with.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE NUMBERS
@@ -745,6 +746,16 @@ function runChallenge(
         const winner = result.winnerId === a.id ? a : result.winnerId === b.id ? b : null;
         const loser = result.loserId === a.id ? a : result.loserId === b.id ? b : null;
 
+        // What it did to what they were holding, whether or not it was a
+        // contest: a swing at somebody out of reach still meets their body.
+        // A thing that broke goes home broken; one holed goes home holed.
+        lines.push(...applyBoutBreakages(state, result.brokenObjects, day));
+        for (const marked of writeBackWhatAFightLeft(state.objects, whatAFightMarked(result.exchanges), {
+            onDay: day,
+            fight: 'a bout',
+            nameOf: id => (id === a.id ? a.name : id === b.id ? b.name : 'somebody')
+        })) lines.push(marked.line);
+
         if (result.outcome === 'no_contest') {
             // The interesting half of this whole kind. Somebody just measured
             // themselves against a peer and the answer was categorical.
@@ -767,17 +778,6 @@ function runChallenge(
             applyWounds(state, person, result.injuries[person.id] ?? [], day);
         }
 
-        // And what it did to what they were holding. A bout is a real swing:
-        // somebody who stood up against a peer a realm and a half above them
-        // with a blade that could not take it goes home without the blade, and
-        // the house's shelf is one row poorer in a way somebody can look up.
-        lines.push(...applyBoutBreakages(state, result.brokenObjects, day));
-        // And what came through it holed rather than ended. See `object-damage.ts`.
-        for (const marked of writeBackWhatAFightLeft(state.objects, whatAFightMarked(result.exchanges), {
-            onDay: day,
-            fight: 'a bout',
-            nameOf: id => (id === a.id ? a.name : id === b.id ? b.name : 'somebody')
-        })) lines.push(marked.line);
 
         // HOW IT LOOKED. Intent first and the damage second: somebody who came
         // to end it went past the mark whatever the fight then did, and a bout
@@ -1679,9 +1679,8 @@ function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['we
         if (object.possessorId !== npc.id) continue;
         if (object.power === null || isRuined(object)) continue;
         if (!isSomethingYouWouldSwing(object)) continue;
-        if (best === null || object.power > best.power) {
-            best = { id: object.id, name: object.name, power: object.power };
-        }
+        const carried = asCarried(object);
+        if (best === null || whatItAddsInAFight(carried) > whatItAddsInAFight(best)) best = carried;
     }
     return best;
 }
@@ -1697,14 +1696,14 @@ function applyBoutBreakages(
     const lines: string[] = [];
     for (const loss of broken) {
         const object = state.objects.find(o => o.id === loss.broke.objectId);
-        if (!object) continue;
+        if (!object || isBroken(object)) continue;
         const at = state.objects.indexOf(object);
-        state.objects[at] = ruin(object, {
+        state.objects[at] = breakIt(object, {
             onDay: day,
-            source: `swung at somebody it was not fit for, and did not survive it`,
+            source: 'swung at somebody it was not fit for, in a bout',
             note: loss.broke.exposure.cause
         });
-        lines.push(`${object.name} did not survive the bout`);
+        lines.push(`${object.name} broke in the bout, and works at half`);
     }
     return lines;
 }

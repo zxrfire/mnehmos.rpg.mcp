@@ -30,7 +30,6 @@
  * depends on who wants it.
  */
 
-import { isInert } from '../engine/world/object-damage.js';
 import { isRuined, type ObjectRecord } from '../engine/world/possessions.js';
 import {
     type HowMuchTheyKnow,
@@ -106,8 +105,7 @@ export function theThingsAHouseIsSittingOn(
         .filter(row =>
             row.ownerId === factionId
             && (row.possessorId === factionId || row.possessorId === null)
-            && !isRuined(row)
-            && !isInert(row))
+            && !isRuined(row))
         .map(row => ({
             id: row.id,
             name: row.name,
