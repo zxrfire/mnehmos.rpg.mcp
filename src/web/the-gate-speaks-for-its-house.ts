@@ -102,7 +102,7 @@ export function whatTheGateSaysOfItsWork(
     const asking = world
         ? everythingEachHouseIsAsking(whoEachHouseIsLookingFor(world), whatEachHouseHasAPriceOn(world))
         : new Map();
-    const speaking = housesWithSomethingToSay(asking).find(row => row.id === house.factionId) ?? null;
+    const speaking = housesWithSomethingToSay(asking, onDay).find(row => row.id === house.factionId) ?? null;
     // A notice somebody has turned in is down, and the gate does not name it.
     const isDown = theNoticesThatAreDown({
         runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS,

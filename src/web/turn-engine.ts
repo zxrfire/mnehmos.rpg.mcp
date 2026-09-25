@@ -8475,7 +8475,7 @@ ${noticed}`;
                 // paid. See `turning-in-what-a-notice-asks.ts`.
                 this.atHand = this.atHand ?? await this.loadWorld();
                 const atTheGate = theGateAStrangerStandsAt(this, cultivator);
-                if (atTheGate) return turnInWhatANoticeAsks(this, run, cultivator, atTheGate);
+                if (atTheGate) return turnInWhatANoticeAsks(this, run, cultivator, atTheGate, target);
                 return this.handItInToTheHouse(run, cultivator, target);
             }
 

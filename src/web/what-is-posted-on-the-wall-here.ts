@@ -50,7 +50,7 @@ import {
     type TheAsk
 } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
 import { whoAnswersTo } from '../engine/world/what-a-house-answers-to.js';
-import { theNoticesThatAreDown, whatANoticeWantsBrought } from '../engine/encounters/a-notice-is-turned-in.js';
+import { theNoticesThatAreDown, whatAHouseWantsBrought } from '../engine/encounters/a-notice-is-turned-in.js';
 import { freeToTakeWork } from '../engine/world/a-disciple-takes-work-off-the-board.js';
 import {
     reasonsOpenTo,
@@ -132,8 +132,11 @@ const WHAT_A_REASON_PUTS_ON_A_WALL: Record<AtStake, TheAsk['kind'] | null> = {
  *                      carry the hiring notice.
  */
 export function housesWithSomethingToSay(
-    alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map()
+    alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map(),
+    /** The day read on: what a house wants brought changes as its paper is put up again. */
+    onDay = 0
 ): HouseWithSomethingToSay[] {
+    const window = Math.floor(Math.max(0, onDay) / A_BILL_STAYS_UP_FOR_DAYS);
     return SECTS.map(sect => {
         const standing: HouseAsItStands = {
             id: sect.id,
@@ -152,21 +155,18 @@ export function housesWithSomethingToSay(
         const hasVassals = whoAnswersTo(sect.id).length > 0;
         for (const reason of reasonsOpenTo(standing)) {
             const kind = WHAT_A_REASON_PUTS_ON_A_WALL[reason.atStake];
-            if (kind === 'work') {
-                if (hasVassals) continue;
-                // ONLY WHAT CAN BE TURNED IN. A notice is first come, first paid, so work with
-                // nothing to bring is never paper: the owner, of the opening party, "stop it from
-                // being a notice". See `a-notice-is-turned-in.ts`.
-                if (!whatANoticeWantsBrought(reason)) continue;
-                asks.push({
-                    kind,
-                    what: reason.what,
-                    days: reason.days,
-                    hands: reason.hands,
-                    reasonId: reason.id
-                });
-            } else if (kind === 'warning') {
+            // ONLY WHAT CAN BE TURNED IN goes up as work, and that is one thing and how many, below.
+            // A sending with nothing to bring is never paper: the owner, of the opening party,
+            // "stop it from being a notice".
+            if (kind === 'warning') {
                 asks.push({ kind, what: reason.what });
+            }
+        }
+        // WHAT IT WANTS BROUGHT, one notice a thing: "a notice is per herb and for a speciifc count,
+        // if they want a second herb its a new notice". See `a-notice-is-turned-in.ts`.
+        if (!hasVassals) {
+            for (const item of whatAHouseWantsBrought(sect, window)) {
+                asks.push({ kind: 'work', what: `${item.count} ${item.name}`, days: A_BILL_STAYS_UP_FOR_DAYS, hands: item.count, item });
             }
         }
         asks.push(...(alsoAsking.get(sect.id) ?? []));
@@ -357,7 +357,7 @@ export function readTheWall(
     };
     const notices = noticesOnTheWall({
         ...wall,
-        speaking: housesWithSomethingToSay(alsoAsking),
+        speaking: housesWithSomethingToSay(alsoAsking, onDay),
         // FIRST COME, FIRST PAID: a notice somebody turned in is down. See `a-notice-is-turned-in.ts`.
         isDown: theNoticesThatAreDown({ runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS, turnedIn })
     });

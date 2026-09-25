@@ -28,8 +28,7 @@ import { realmForOrdinal } from '../cultivation/realms.js';
 // are rather than passed in by a caller that would have to be edited to carry it.
 import type { WhatTheHouseWants } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whatThisHouseHasOnPaper } from './a-competition-anybody-may-enter.js';
-import { whatANoticeWantsBrought } from '../encounters/a-notice-is-turned-in.js';
-import { SENDING_REASONS } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import type { WhatIsBrought } from '../encounters/a-notice-is-turned-in.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE FIELD
@@ -420,10 +419,10 @@ export type TheAsk =
         wants: WhatTheHouseWants;
     }
     /**
-     * Work it would rather hire than send its own on. `reasonId` is the sending it is hired out of,
-     * whose task and handle a taker says it by; a notice without one is read and not taken.
+     * Work it would rather hire than send its own on. `item` is the one thing it wants brought and
+     * how many, which the first to bring them is paid for; see `a-notice-is-turned-in.ts`.
      */
-    | { kind: 'work'; what: string; days: number; hands: number; reasonId?: string }
+    | { kind: 'work'; what: string; days: number; hands: number; item?: WhatIsBrought }
     /** Ground it answers for, and what is happening on it. */
     | { kind: 'warning'; what: string }
     /**
@@ -467,8 +466,8 @@ export interface Notice {
     houseId: string;
     houseName: string;
     placeName: string;
-    /** The sending a work notice is hired out of, where it names one: what taking it takes. */
-    reasonId?: string;
+    /** What a work notice wants brought, where it names one. */
+    item?: WhatIsBrought;
     /** What the paper says. Engine-authored fact, not narration. */
     saying: string;
     /**
@@ -533,15 +532,12 @@ export function whatThePaperSays(
                     : 'The lamp lit for them has gone out, and the house wants '
                         + 'what is left of them brought back.');
         case 'work': {
-            // FIRST COME, FIRST PAID. The owner: "first person to turn it in gets it, and they
-            // retract the notice". Where the sending asks something brought, the paper says what,
-            // and what it pays. See `a-notice-is-turned-in.ts`.
-            const reason = ask.reasonId ? SENDING_REASONS.find(row => row.id === ask.reasonId) : undefined;
-            const brought = reason ? whatANoticeWantsBrought(reason) : null;
-            if (brought) {
-                return `${house.name} will pay ${brought.purse} spirit stones to the first who brings `
-                    + `${brought.lots} lots of herbs or beast parts to its gate, and takes the notice `
-                    + `down when somebody does. ${ask.what}`;
+            // FIRST COME, FIRST PAID, one thing and how many. The owner: "first person to turn it
+            // in gets it, and they retract the notice". See `a-notice-is-turned-in.ts`.
+            if (ask.item) {
+                return `${house.name} will pay ${ask.item.purse} spirit stones to the first who brings `
+                    + `${ask.item.count} ${ask.item.name}, ${ask.item.grade} grade, to its gate, and `
+                    + 'takes the notice down when somebody does.';
             }
             return `${house.name} is paying for hands and is not asking whose disciple you are. `
                 + `${ask.what} About ${ask.days} days, and it wants ${ask.hands} of them.`;
@@ -638,7 +634,7 @@ export function noticesOnTheWall(input: WallInput & {
             houseName: house.name,
             placeName: input.placeName,
             saying: whatThePaperSays(house, ask, input.onDay),
-            ...(ask.kind === 'work' && ask.reasonId ? { reasonId: ask.reasonId } : {}),
+            ...(ask.kind === 'work' && ask.item ? { item: ask.item } : {}),
             andWhatItIsNot: WHAT_A_NOTICE_DOES_NOT_BUY[ask.kind],
             // A DATE ONLY WHERE THE PAPER GENUINELY HAS ONE. Three of the four
             // asks are not appointments and carry none; the open competition
