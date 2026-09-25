@@ -587,6 +587,9 @@ export function factsForTimeSkip(
     }
 
     for (const event of skip.events) {
+        // A ceiling on what sitting accumulates says nothing about a road or a
+        // night's sleep, and read beside one the narrator played a sitting.
+        if (!aSitting(label) && event.kind === 'method_ceiling') continue;
         // The same stamp the prose digest uses. This built its own inline
         // `Day ${n}:` and so the two surfaces disagreed about how to say when.
         const line = `${howFarIn(event.dayOffset)}: ${event.summary}`;
@@ -692,7 +695,7 @@ function timeSkipHeadline(
 ): string {
     if (skip.died) return `${before.name} did not come out of it.`;
     if (skip.deltas.realmOrdinal > 0) return `${rankName(before.realmOrdinal)} to ${rankName(after.realmOrdinal)}.`;
-    const sitting = !aSpanSpentOnItsFeet(label);
+    const sitting = aSitting(label);
     if (skip.interrupted) {
         return sitting
             ? `Seclusion broken after ${humanDays(skip.simulatedDays)}.`
@@ -703,11 +706,15 @@ function timeSkipHeadline(
         : `${humanDays(skip.simulatedDays)} of it, and nothing came for you.`;
 }
 
-/** A road, a posting, or a household. Anything but sitting down to breathe. */
-function aSpanSpentOnItsFeet(label: string): boolean {
-    return /travel|journey|road|walk/i.test(label)
-        || /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label)
-        || /rais(?:e|ing)|child|marriage|household/i.test(label);
+/**
+ * Sitting down to breathe: a seclusion, open or closed-door. Said positively,
+ * because everything else - a road, a posting, a household, a night's sleep at
+ * an inn - is not one. Played: a paid night at the inn read as "1 day of
+ * seclusion" with the method-ceiling line, and the narrator played the player
+ * drawing qi in bed.
+ */
+function aSitting(label: string): boolean {
+    return /seclusion|cultivat|meditat/i.test(label);
 }
 
 /**
@@ -727,8 +734,7 @@ function timeSkipProse(
     const where = placeName(before);
 
     // NOT EVERY SPAN IS SPENT SITTING DOWN.
-    // The three tests `aSpanSpentOnItsFeet` is the union of. Kept separate
-    // here because each picks a different opening sentence.
+    // Each picks a different opening sentence.
     const travelling = /travel|journey|road|walk/i.test(label);
     const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
     const livedWithSomebody = /rais(?:e|ing)|child|marriage|household/i.test(label);
@@ -792,17 +798,19 @@ function timeSkipProse(
     // "Nothing found you. 1.7 years went by in the ordinary way." The player
     // planned thirty years, got 1.7, and was told nothing happened, which is
     // strictly worse than either outcome.
-    if (skip.events.length === 0 && asked > skip.requestedDays) {
+    // The ceiling on a sitting is not news on a road or at an inn. See `aSitting`.
+    const events = aSitting(label) ? skip.events : skip.events.filter(e => e.kind !== 'method_ceiling');
+    if (events.length === 0 && asked > skip.requestedDays) {
         paragraphs.push(
             `${humanDays(skip.simulatedDays)} of it were quiet, and then the stretch ended `
             + 'because the thing that was coming arrived.'
         );
-    } else if (skip.events.length === 0) {
+    } else if (events.length === 0) {
         paragraphs.push(
             `Nothing found you. ${humanDays(skip.simulatedDays)} went by in the ordinary way.`
         );
     } else {
-        const beats = skip.events.map(e => `${dayStamp(e)} - ${e.summary}`);
+        const beats = events.map(e => `${dayStamp(e)} - ${e.summary}`);
         paragraphs.push(beats.join('\n'));
     }
 

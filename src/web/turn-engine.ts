@@ -4729,7 +4729,10 @@ export class GameService {
                     }
                 }
                 const waiting = await this.shortSkip(
-                    run, waiter, ambient, WAITING_FOCUS, 'Waiting', waitingDays
+                    run, waiter, ambient, WAITING_FOCUS,
+                    // Under the inn's roof it is rest, and it is said as rest.
+                    room !== null || whereTheyAreLodged(this, waiter) !== null ? 'Rest at the inn' : 'Waiting',
+                    waitingDays
                 );
                 if (room) {
                     waiting.facts.lines.unshift(...room.facts.lines);

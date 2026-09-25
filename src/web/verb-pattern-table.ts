@@ -7473,9 +7473,10 @@ function planIntent(input: string): PlannedAction {
         // Anything naming a technique is caught above this line, so a bare
         // `train` here is training at nothing in particular - which is what
         // cultivating is.
-        || /\b(?:train|trains|training|rest|rests|resting)\s+for\b/.test(text)
-        || /\b(?:make|makes|making|set|sets|setting)\s+(?:up\s+)?camp\b/.test(text)
-        || /\b(?:go|goes|going)\s+to\s+sleep\b/.test(text))) {
+        // Resting and going to sleep are not here: they are resting up, never a
+        // sitting (the owner: "you do rest up"), and the recovery row reads them.
+        || /\b(?:train|trains|training)\s+for\b/.test(text)
+        || /\b(?:make|makes|making|set|sets|setting)\s+(?:up\s+)?camp\b/.test(text))) {
         // -- AND WHETHER SOMEBODY IS WATCHING THEM DO IT ------------------
         //
         // "I cultivate under Elder Hu's guidance for a year" names a person whose
@@ -7506,7 +7507,9 @@ function planIntent(input: string): PlannedAction {
         // silently did a thousandth of what was asked - "Waiting of 1 day was
         // intended", to somebody who had just typed ten years. Bare "I wait"
         // still costs a day, so a misparse is no more expensive than before.
-        const waited = parseDuration(text);
+        // Nights are a span here and only here: "sleep for 3 nights" is three
+        // days, where "at night" elsewhere is no span at all.
+        const waited = parseDuration(text) ?? nightsAskedFor(text);
         if (waited !== null) return { action: 'wait', days: waited };
         // AND WAITING UNTIL A THING THE WORLD HAS A DATE FOR, which is the same
         // defect one line up with an event in place of a span: "I wait until

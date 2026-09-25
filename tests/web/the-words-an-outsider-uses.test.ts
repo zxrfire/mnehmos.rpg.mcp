@@ -52,7 +52,8 @@ const OUTSIDER: Array<[string, string]> = [
     ['I run away', 'move'],
     ['I retreat', 'move'],
     ['I make camp', 'cultivate'],
-    ['I go to sleep', 'cultivate'],
+    // Sleep is resting up, never a sitting (the owner: "you do rest up").
+    ['I go to sleep', 'wait'],
     ['I chat with him', 'interact'],
     ['I make small talk', 'interact'],
     ['I haggle with the merchant', 'interact'],
