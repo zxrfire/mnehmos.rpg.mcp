@@ -108,7 +108,11 @@ import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
-import { theFurnaceRiteOnSomebodyWhoYielded } from './the-furnace-rite-once-somebody-has-yielded.js';
+import {
+    type WhoAnswersForTheRite,
+    theFurnaceRiteOnSomebodyWhoYielded,
+    theyAnswerForTheRite
+} from './the-furnace-rite-once-somebody-has-yielded.js';
 import { whatIsInTheirHand } from './what-is-on-you-and-in-your-hands.js';
 import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 
@@ -1345,6 +1349,7 @@ export const combatVerbs = {
 
         // -- SOMEBODY KNELT, AND THAT HAS TO OUTLIVE THE SENTENCE --------
         let theRiteKilledThem = false;
+        let theRiteIsAnswered: WhoAnswersForTheRite | null = null;
         if (held.verb === 'coerce' && result.outcome === 'submission') {
             writeFlag(
                 this.db, cultivator.id, FLAG_YIELDING_TO_YOU,
@@ -1364,9 +1369,11 @@ export const combatVerbs = {
                 this.whatWasPutDownTheirThroat(run, cultivator, held, execution);
             }
             if (held.wanted === 'furnace') {
-                theRiteKilledThem = theFurnaceRiteOnSomebodyWhoYielded(
+                const rite = theFurnaceRiteOnSomebodyWhoYielded(
                     this, run, cultivator, held, execution
-                ).died;
+                );
+                theRiteKilledThem = rite.died;
+                theRiteIsAnswered = rite.answering;
             }
         }
 
@@ -1390,6 +1397,9 @@ export const combatVerbs = {
             execution
         );
         this.whatTheLoserNowHoldsAboutYou(run, cultivator, held, result, done);
+        // AFTER the aftermath, which writes the loser's tie for a submission;
+        // the rite's own tie has to land over it, not under it.
+        if (theRiteIsAnswered) theyAnswerForTheRite(this, cultivator, theRiteIsAnswered, done);
         return done;
     },
 

@@ -1507,6 +1507,15 @@ answer to the finding in it. The rule the whole file holds:
 Births write theirs inside `applyDemography`, which has the parent in hand. The other four
 run once a year off `applyOrdinaryLifeTies`.
 
+**A child an act conceived comes through the same loop.** `aChildIsConceived`
+(`a-child-an-act-conceived.ts`) is the one way a conception from outside the draw reaches the
+world: a tag on the carrier, a `birth` fact on the due day if they lived to it, and on the first
+pass after the child's sixteenth birthday `applyDemography` makes the row after the year's drawn
+births, with the carrier as the parent it would have drawn and the other parent's lineage edge
+beside it. Sixteen, not the due day, because the world holds nobody younger than its births
+arrive at and its passes - recruitment, moving on, the wars - are written for that. A world with
+no such tag runs the loop exactly as before.
+
 ---
 
 ## What a world opens holding

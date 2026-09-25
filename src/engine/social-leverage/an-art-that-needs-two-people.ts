@@ -66,12 +66,13 @@ export interface FurnaceUseInput {
 }
 
 /**
- * Nobody under this age is worked on, willing or not. The same age the world
- * pairs anybody off at, so the two adult gates cannot drift apart.
+ * Nobody under this age works the rite or is worked on, willing or not. The
+ * same age the world pairs anybody off at, so the two adult gates cannot drift
+ * apart.
  */
 export const FURNACE_MIN_AGE = HOUSEHOLD_MIN_AGE;
 
-/** Whether somebody is old enough to be the subject of the rite. */
+/** Whether somebody is old enough to be either party to the rite. */
 export function oldEnoughForTheRite(ageYears: number): boolean {
     return Number.isFinite(ageYears) && ageYears >= FURNACE_MIN_AGE;
 }
@@ -153,7 +154,7 @@ function worthOfABody(drawnOff: number | undefined): number {
 /**
  * Work a furnace technique, on however many people it takes. Pure: the caller
  * writes the grudges, applies the days, runs the death pipeline and hands a
- * `conceived` to `birth.ts`.
+ * `conceived` to `aChildIsConceived` (`world/a-child-an-act-conceived.ts`).
  */
 export function useAFurnaceTechnique(input: FurnaceUseInput): FurnaceUseResult {
     const coerced = input.type === 'coerced';

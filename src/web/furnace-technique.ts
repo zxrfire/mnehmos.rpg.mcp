@@ -14,10 +14,10 @@
  *                                 like any other deed
  *
  * `conceived` is handed back to the caller rather than turned into a person
- * here. Making somebody exist is `birth.ts`'s job, on its own timeline, and a
- * conception this file created directly would be a second place a child comes
- * from - the exact defect `what-sex-somebody-is-and-what-it-is-for.ts` warns
- * about for the routes that already exist.
+ * here. The caller hands it to `aChildIsConceived`
+ * (`engine/world/a-child-an-act-conceived.ts`), and the world's demography
+ * makes the child on its own timeline: a conception this file turned into a
+ * person directly would be a second place a child comes from.
  */
 
 import {
@@ -93,6 +93,11 @@ export interface FurnaceUseOutcome extends FurnaceUseResult {
      * holds the ground - the same two failure modes theft already has.
      */
     groundResponse: IfCaught;
+    /**
+     * Whoever holds the ground it happened on, or null where nobody does. Handed
+     * back so the caller can put the answer on the holder's account.
+     */
+    groundHolder: { id: string; name: string; alignment: SectAlignment | null } | null;
     /** What the subject's own house does about it, or null where none was given. */
     factionVerdict: HouseVerdict | null;
 }
@@ -103,8 +108,9 @@ export interface FurnaceUseOutcome extends FurnaceUseResult {
  * Mutates nothing: it appends one fact to `world.history` through the ordinary
  * witness pipeline and returns everything else for the caller to write -
  * `createGrudge(outcome.grudge)` onto the ledger, and, where `conceived` is
- * true, a `LineageEdge` for both parents once `birth.ts` decides the child is
- * real. The world fact is written regardless of `conceived`: a coerced use
+ * true, the conception to `aChildIsConceived`, which writes both parents'
+ * lineage edges when the world counts the child. The world fact is written
+ * regardless of `conceived`: a coerced use
  * that did not take is still a wrong that was done, and a witness who saw it
  * does not need to wait nine months to have something to say.
  */
@@ -117,7 +123,7 @@ export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome
     });
 
     if (!outcome.happened) {
-        return { ...outcome, groundResponse: 'nothing', factionVerdict: null };
+        return { ...outcome, groundResponse: 'nothing', groundHolder: null, factionVerdict: null };
     }
 
     const watched = (input.watchedBy ?? []).slice(0, BYSTANDERS_AT_MOST);
@@ -154,7 +160,7 @@ export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome
     }));
 
     if (input.type === 'offered') {
-        return { ...outcome, groundResponse: 'nothing', factionVerdict: null };
+        return { ...outcome, groundResponse: 'nothing', groundHolder: null, factionVerdict: null };
     }
 
     // ── COERCED, AND SEEN: WHOEVER HAS A CLAIM ANSWERS IT ────────────────
@@ -184,5 +190,13 @@ export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome
         })
         : null;
 
-    return { ...outcome, groundResponse, factionVerdict };
+    const groundHolder = ground.holding === 'held' && ground.holderFactionId !== null
+        ? {
+            id: ground.holderFactionId,
+            name: ground.holderName ?? ground.holderFactionId,
+            alignment: ground.alignment
+        }
+        : null;
+
+    return { ...outcome, groundResponse, groundHolder, factionVerdict };
 }

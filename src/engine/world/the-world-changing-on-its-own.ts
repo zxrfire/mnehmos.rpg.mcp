@@ -157,6 +157,11 @@ import { theTopOfAHouseChangesHands } from './a-house-changes-who-leads-it.js';
 import { theConclavesAreContested } from './a-conclave-seat-is-won-in-a-tournament.js';
 import { theChallengesThisYear } from './a-challenge-is-answered-on-the-yard.js';
 import { aChildTakesTheirParentsLine } from './a-child-takes-their-parents-line.js';
+import {
+    theChildrenAnActConceived,
+    theOtherBloodParent,
+    whoRaisesThem
+} from './a-child-an-act-conceived.js';
 import { getOrigin } from '../cultivation/origin.js';
 import {
     groundRateAt, groundTimeShares, houseFallbackRate, rateOverTheYear, roomsHeldBy,
@@ -986,17 +991,21 @@ function applyDemography(
     day: number,
     rng: CultivationRNG
 ): NpcRecord[] {
+    // AND THE CHILDREN SOMEBODY'S ACT CONCEIVED, counted after the year's drawn
+    // births and through the same loop, so a world holding none is untouched.
+    // See `a-child-an-act-conceived.ts`.
+    const owed = theChildrenAnActConceived(state, day);
     const target = state.populationTarget;
-    if (target <= 0) return [];
+    if (target <= 0 && owed.length === 0) return [];
 
     let living = 0;
     for (const npc of state.npcs) if (npc.status === 'alive' && isBelowTheLid(npc)) living++;
     const deficit = target - living;
-    if (deficit <= 0) return [];
+    if (deficit <= 0 && owed.length === 0) return [];
 
     // A fraction of the gap each year, so a plague is felt for a generation
     // rather than papered over the following spring.
-    const count = Math.min(24, Math.max(1, Math.round(deficit * 0.08)));
+    const count = deficit <= 0 ? 0 : Math.min(24, Math.max(1, Math.round(deficit * 0.08)));
     const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
     if (regions.length === 0) return [];
     // Who took each of the year's children on, where anybody did.
@@ -1009,11 +1018,21 @@ function applyDemography(
     const roster = rosterOf(state);
 
     const born: NpcRecord[] = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count + owed.length; i++) {
+        // A child an act conceived is raised where the one who carried them
+        // lives, born on the day they were due, with that parent as the one a
+        // drawn birth would have drawn.
+        const handed = i < count ? null : owed[i - count]!;
+        const raisedBy = handed ? whoRaisesThem(state, handed) : null;
+        const raisedAt = raisedBy?.locationId ? getLocation(state, raisedBy.locationId) : null;
+        const raisedIn = raisedAt
+            ? regions.find(r => r.id === regionOf(state, raisedAt.id)) ?? null
+            : null;
+
         const id = `npc-${state.nextNpcSeq++}`;
         const own = forStream(state.seed, 'birth', id);
-        const region = regions[own.int(0, regions.length - 1)];
-        const age = own.int(16, 22);
+        const region = raisedIn ?? regions[own.int(0, regions.length - 1)];
+        const age = handed ? Math.floor((day - handed.bornOnDay) / 365) : own.int(16, 22);
 
         // A place, not the container - and never the container.
         const habitable = birthplacesIn(state, region);
@@ -1027,7 +1046,8 @@ function applyDemography(
                 return null;
             })();
         if (!somewhere) break;
-        const home = drawBirthplace(somewhere.places, own) ?? somewhere.places[0];
+        const home = (raisedAt && somewhere.places.find(p => p.id === raisedAt.id))
+            || (drawBirthplace(somewhere.places, own) ?? somewhere.places[0]);
         const under = locationIdsUnder(state, somewhere.region.id);
         // Read off the province they are actually born in, not the one first
         // drawn - a child born in the next province over grows up under its
@@ -1037,7 +1057,7 @@ function applyDemography(
 
         let npc = createNpc(state.seed, {
             id,
-            bornOnDay: day - years(age),
+            bornOnDay: handed ? handed.bornOnDay : day - years(age),
             onDay: day,
             locationId: home.id,
             occupation: 'unknown',
@@ -1064,17 +1084,20 @@ function applyDemography(
 
         // A parent, where the world has one to offer: same region, old enough, and
         // alive. Lineage is what long time-skips land on.
-        const oldEnough = (n: NpcRecord) => day - n.identity.bornOnDay >= years(age + 18);
-        const here = couldParent(
-            roster.living.filter(n => oldEnough(n) && n.locationId === home.id), age, day);
-        const candidates = here.length > 0
-            ? here
-            : couldParent(
-                roster.living.filter(n =>
-                    oldEnough(n) && n.locationId !== null && under.has(n.locationId)), age, day);
-        const parent = candidates.length > 0
-            ? candidates[own.int(0, candidates.length - 1)]
-            : null;
+        let parent: NpcRecord | null = raisedBy;
+        if (!handed) {
+            const oldEnough = (n: NpcRecord) => day - n.identity.bornOnDay >= years(age + 18);
+            const here = couldParent(
+                roster.living.filter(n => oldEnough(n) && n.locationId === home.id), age, day);
+            const candidates = here.length > 0
+                ? here
+                : couldParent(
+                    roster.living.filter(n =>
+                        oldEnough(n) && n.locationId !== null && under.has(n.locationId)), age, day);
+            parent = candidates.length > 0
+                ? candidates[own.int(0, candidates.length - 1)]
+                : null;
+        }
         if (parent) {
             // WHAT THE LINE COMES TO IN THIS CHILD. See `a-child-takes-their-parents-line.ts`.
             npc = aChildTakesTheirParentsLine(state, npc, parent, roster);
@@ -1151,6 +1174,8 @@ function applyDemography(
         if (parent && !fostered) {
             npc = bindNewbornToHousehold(state, npc, parent.id, day, roster).child;
         }
+        // And the other blood parent, whom no household draw would name.
+        if (handed) npc = theOtherBloodParent(state, npc, handed, parent);
 
         roster.at.set(npc.id, state.npcs.length);
         roster.living.push(npc);
