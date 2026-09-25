@@ -129,15 +129,23 @@ function isDesignStatedAsProse(text, name) {
     } else {
         body = text.slice(i, i + 400);
     }
-    if (body.indexOf('=>') >= 0 || body.indexOf('function') >= 0) return false;
-
-    // Characters sitting inside a string literal. A plain scanner rather than a
-    // regex, because the escape for an escape does not survive every editor.
+    // Characters sitting inside a string literal, and what is left outside
+    // them. A plain scanner rather than a regex, because the escape for an
+    // escape does not survive every editor.
+    //
+    // FUNCTION SYNTAX IS LOOKED FOR OUTSIDE THE STRINGS. It used to be looked
+    // for across the whole body, so a sentence using the word - "the office
+    // has two functions" - classed 16,000 characters of prose about the
+    // present False Immortals as code.
     const BACKSLASH = String.fromCharCode(92);
     let quoted = 0;
+    let outside = '';
     for (let k = 0; k < body.length; k++) {
         const c = body[k];
-        if (c !== "'" && c !== '"' && c !== '`') continue;
+        if (c !== "'" && c !== '"' && c !== '`') {
+            outside += c;
+            continue;
+        }
         k++;
         while (k < body.length && body[k] !== c) {
             if (body[k] === BACKSLASH) k++;
@@ -145,6 +153,7 @@ function isDesignStatedAsProse(text, name) {
             k++;
         }
     }
+    if (outside.indexOf('=>') >= 0 || /\bfunction\b/.test(outside)) return false;
     return quoted > 200 && quoted / body.length > 0.7;
 }
 
