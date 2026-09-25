@@ -1,9 +1,10 @@
 /**
- * Delivery missions: a house sends goods to a house under the same apex, anybody may carry them,
- * and a late handover costs the pay, merit and face. The owner: "you can imagine sects sending out
- * delivery missions too, especially amongst sects under the same apex", "you can take any job, you
- * figure out how to do it ... DEFINITELY lose face", "the larger the fumble the greater the loss
- * of face".
+ * Delivery missions: a house sends goods to a house under the same apex, any rung of its own may
+ * carry them, and a late handover costs the pay, merit and face. The owner: "you can imagine sects
+ * sending out delivery missions too, especially amongst sects under the same apex", "you can take
+ * any job, you figure out how to do it ... DEFINITELY lose face", "the larger the fumble the
+ * greater the loss of face". And never a stranger: "a sect doesn't give delivery missions to
+ * outsiders", "cuz that requires risking the sects own property".
  */
 import { describe, expect, it } from 'vitest';
 
@@ -17,8 +18,9 @@ import {
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { faceOf } from '../../src/engine/world/what-a-face-is-worth';
 import { makeGameInWorld } from './harness';
+import { sectBoardFor } from '../../src/web/encounters';
 
-async function standingAtAHouseThatSends(seed: string) {
+async function standingAtAHouseThatSends(seed: string, onTheRoll = true) {
     const { game, repos, db } = await makeGameInWorld({ seed, worldSeed: 'a-xianxia-run' });
     const { cultivator } = await game.newRun('Ke Yan');
     const world = game.atHand!;
@@ -30,16 +32,22 @@ async function standingAtAHouseThatSends(seed: string) {
     expect(sending, 'no house sends anything a back can carry').toBeDefined();
     const seat = world.locations.find(row => row.id === sending.house.seatLocationId)!;
     repos.cultivators.update(cultivator.id, { location: seat.name });
+    if (onTheRoll) {
+        repos.sects.addMember(sending.house.id, cultivator.id, 0);
+        repos.cultivators.update(cultivator.id, { sectId: sending.house.id });
+    }
     return { game, repos, db, cultivator, consignment: sending.goods!, seat };
 }
 
 describe('a house sends goods to its sisters', () => {
-    it('is on the wall, signed for onto a back, and paid for on time at the house it was for', async () => {
+    it('is on the board, signed for onto a back, and paid for on time at the house it was for', async () => {
         const { game, repos, cultivator, consignment } = await standingAtAHouseThatSends('a-delivery');
-        const read = await game.act('what duties are there');
-        const board = read.narration ?? '';
-        expect(board).toContain(consignment.goods);
-        expect(board).toMatch(/wants a back to carry it/);
+        // Read off the board itself: how many lines a read prints is the board's, not the job's.
+        const board = sectBoardFor({ repos, knowledge: game.knowledge, world: game.atHand },
+            repos.cultivators.getById(cultivator.id)!);
+        const offered = board.offers.find(offer => offer.entry.id === consignment.id);
+        expect(offered?.entry.name).toMatch(new RegExp(`^Deliver ${consignment.goods} to the .* by day \\d+$`));
+        expect(offered?.entry.tags).toContain('wants:a back');
 
         const took = await game.act(`I take the ${consignment.goods.replace(/^(?:an?|the) /, '')} delivery`);
         expect(took.narration).toMatch(/You sign for/);
@@ -51,6 +59,16 @@ describe('a house sends goods to its sisters', () => {
         await game.act('i hand over the goods');
         expect(goods()?.tags).toContain('delivered');
         expect(repos.cultivators.getById(cultivator.id)!.spiritStones).toBe(stones + consignment.stones);
+    }, 240_000);
+
+    it('is never handed to a stranger, who reads why and what would change it', async () => {
+        const { game, repos, cultivator, consignment } = await standingAtAHouseThatSends('a-delivery-for-its-own', false);
+        const board = sectBoardFor({ repos, knowledge: game.knowledge, world: game.atHand },
+            repos.cultivators.getById(cultivator.id)!);
+        expect(board.offers.some(offer => offer.entry.id === consignment.id)).toBe(false);
+        const refused = board.refusals.find(row => row.entryId === consignment.id);
+        expect(refused?.name).toMatch(new RegExp(`^Deliver ${consignment.goods} to .* by day \\d+$`));
+        expect(refused?.reason).toMatch(/sends its goods with its own.*a place on its roll/);
     }, 240_000);
 
     it('writes off a delivery never brought, once, and breaks the word given for it', async () => {

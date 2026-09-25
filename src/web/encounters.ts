@@ -3,7 +3,7 @@
  */
 
 import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
-import { aDeliveryAsAnOffer, whatAHouseSendsItsSisters } from '../engine/world/what-a-house-sends-its-sisters.js';
+import { aDeliveryAsAnOffer, aStrangerIsNotHandedTheGoods, whatAHouseSendsItsSisters } from '../engine/world/what-a-house-sends-its-sisters.js';
 import {
     rollEncounters,
     arrivableFromUnheard,
@@ -102,7 +102,6 @@ import type { ObligationRecord } from '../engine/social/grudges.js';
 import type { TheDoorTheySitBehind } from '../engine/encounters/at-a-sealed-door.js';
 import { othersPresent } from './hearsay.js';
 import { worldLocationFor } from './entities.js';
-import { theProvinceAround } from '../engine/world/ground-holder.js';
 import {
     isInTheAirFor,
     regionOf,
@@ -1057,7 +1056,15 @@ export function theHouseAsItStands(
     if (!deps.world || !membership) return null;
     const faction = deps.world.factions.find(f => f.id === membership.factionId);
     if (!faction || faction.dissolvedOnDay !== null) return null;
+    return aHouseAsItStands(deps.world, faction, cultivator.realmOrdinal);
+}
 
+/** A house as it stands; `onTheRoll` is the reader's rung where they are its own, else null. */
+function aHouseAsItStands(
+    world: WorldState,
+    faction: WorldState['factions'][number],
+    onTheRoll: number | null
+): TheHouseAndItsReach {
     // The reader counts toward the reach only when the reader is on the roll.
     // A stranger reading somebody else's wall is not one of the people that
     // house could send, however high they stand.
@@ -1067,47 +1074,47 @@ export function theHouseAsItStands(
     // first; where its WALL tops out reads the second, and a wall pitched off a
     // reach the reader themselves supplied is a wall written for one person.
     let reachOfTheRest = 0;
-    for (const npc of deps.world.npcs) {
+    for (const npc of world.npcs) {
         if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
         if (npc.cultivation.realmOrdinal > reachOfTheRest) {
             reachOfTheRest = npc.cultivation.realmOrdinal;
         }
     }
-    const reach = Math.max(reachOfTheRest, membership ? cultivator.realmOrdinal : 0);
+    const reach = Math.max(reachOfTheRest, onTheRoll ?? 0);
 
     // What THIS house has standing open, asked rather than decided here: the
     // world's own sendings read the same function, so the board and the world
     // cannot disagree about whether it has one - or about which one it is.
     const find = aFindThisHouseKnowsOf(
-        deps.world,
+        world,
         faction,
-        whereTheOpenGroundIs(deps.world.locations),
-        howTheGroundIsKnownIn(deps.world)
+        whereTheOpenGroundIs(world.locations),
+        howTheGroundIsKnownIn(world)
     );
 
     return {
         house: {
             id: faction.id,
             name: faction.name,
-            holdsGround: deps.world.locations.some(l => l.controllingFactionId === faction.id),
+            holdsGround: world.locations.some(l => l.controllingFactionId === faction.id),
             standing: faction.standing,
             hasAFind: find !== null,
             // WHO THIS HOUSE WOULD SIT DOWN WITH, and it is asked rather than
             // decided here: a visit and a friendly competition both need a body
             // on the other end, and the world already answers that question when
             // it decides who it holds a gathering between.
-            sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
+            sitsDownWith: circleCandidatesFor(world, faction).map(f => f.id),
             standsNearForbiddenGround:
-                forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId),
+                forbiddenGroundInTheProvinceOf(world.locations, faction.seatLocationId),
             // Its communication talismans, off the reading the world's own board takes.
             itsCommunicationTalismansRunLow: itsCommunicationTalismansRunLow(
-                deps.world, faction.id,
-                deps.world.npcs.filter(n => n.factionId === faction.id && n.status === 'alive').length),
+                world, faction.id,
+                world.npcs.filter(n => n.factionId === faction.id && n.status === 'alive').length),
             // WHAT ITS PURSE SAYS, off the world's own reading rather than a
             // second one. A house that could not pay its people this year posts
             // an errand nobody else in the world has, and a player standing at
             // the wall is the person who finds out first.
-            ...howAHouseStandsForMoney(deps.world, faction)
+            ...howAHouseStandsForMoney(world, faction)
         },
         reach,
         reachOfTheRest,
@@ -1130,6 +1137,10 @@ export function theHouseAsItStands(
  *
  * A refusal carries what is actually there, why it is not yours, and what would
  * change that. An empty list carries none of the three.
+ *
+ * AND THE BOARD IS INSIDE. Somebody off the roll reads it only standing at the
+ * seat, never from a town; outside the walls what a house says to them is its
+ * notices and its gate. See `theHousesWhoseWallThisIs`.
  */
 interface TheWall {
     offers: DutyCandidate[];
@@ -1137,25 +1148,17 @@ interface TheWall {
 }
 
 /**
- * Every house whose wall this is: your own where you have one, and otherwise
- * the houses SEATED where you are standing.
+ * Every house whose board this is: your own where you have one, and otherwise the house whose
+ * seat you are standing in.
  *
- * IN THE SAME PROVINCE, and the two readings that are not it are both measured.
+ * THE BOARD IS INSIDE. The owner: "a sects board is internal", "i mean they can't see the board",
+ * "the board is INSIDE", "they are outside". This read walked every house seated in the province
+ * and handed a stranger in a market town each house's postings as refusals, which is the board
+ * read from outside the walls. What a house wants from outsiders goes up as a notice (see
+ * `what-is-posted-on-the-wall-here.ts`), and the disciple on its gate speaks for it.
  *
- * `whoHoldsTheGround` answers *whose ground is this* by walking UPWARD from
- * where you stand looking for a holder. Right inside a compound, wrong in a
- * town: 988 of 1063 location records on a pinned world carry a holder and NONE
- * of the twelve places a player's `location` can be does, because the held ones
- * are the compounds nested under those names.
- *
- * Nesting the other way does not work either. `seedFactions` hangs a house's
- * seat off the REGION rather than off a settlement - `seedSectGround(state, cf,
- * region, ...)` - so a sect's ground is a sibling of the towns and not inside
- * one, and asking which houses sit within this town answers none, everywhere.
- *
- * So the province is the join, which is also the one the recruiting wall
- * already uses: a notice board in a market town carries the work of the houses
- * whose gates are in that province, and that is what a notice board is for.
+ * So a stranger's board is only ever the one where they stand, and which area of the seat they
+ * stand in - at the gate or at the board - is read before this, upstream of `sectBoardFor`.
  */
 function theHousesWhoseWallThisIs(
     deps: EncounterDeps,
@@ -1164,49 +1167,13 @@ function theHousesWhoseWallThisIs(
 ): TheHouseAndItsReach[] {
     const own = theHouseAsItStands(deps, cultivator, membership);
     if (own) return [own];
-    if (!deps.world) return [];
-
-    const here = worldLocationFor(deps.world, cultivator.location);
-    const province = theProvinceAround(deps.world.locations, here?.id);
-    if (province === null) return [];
-
-    // Both built once for the whole walk. The reading below is per house per
-    // ruin, and each half of it walks something long: the ledger of a
-    // long-lived world, and every location in it.
-    const known = howTheGroundIsKnownIn(deps.world);
-    const openGround = whereTheOpenGroundIs(deps.world.locations);
-
-    const out: TheHouseAndItsReach[] = [];
-    for (const faction of deps.world.factions) {
-        if (faction.dissolvedOnDay !== null) continue;
-        if (theProvinceAround(deps.world.locations, faction.seatLocationId) !== province) continue;
-        let reach = 0;
-        for (const npc of deps.world.npcs) {
-            if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
-            if (npc.cultivation.realmOrdinal > reach) reach = npc.cultivation.realmOrdinal;
-        }
-        const find = aFindThisHouseKnowsOf(deps.world, faction, openGround, known);
-        out.push({
-            house: {
-                id: faction.id,
-                name: faction.name,
-                holdsGround: faction.controlledLocationIds.length > 0,
-                standing: faction.standing,
-                hasAFind: find !== null,
-                sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
-                standsNearForbiddenGround:
-                    forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId),
-                ...howAHouseStandsForMoney(deps.world, faction)
-            },
-            reach,
-            // Nobody off the roll is counted into a house's reach, so a
-            // stranger's reading of the wall is the whole house either way.
-            reachOfTheRest: reach,
-            seatLocationId: faction.seatLocationId,
-            find
-        });
-    }
-    return out;
+    const world = deps.world;
+    if (!world) return [];
+    return world.factions
+        .filter(faction => faction.dissolvedOnDay === null
+            && standsAtItsSeat(world, cultivator.location, faction.id))
+        // Nobody off the roll is counted into a house's reach.
+        .map(faction => aHouseAsItStands(world, faction, null));
 }
 
 /**
@@ -1363,17 +1330,23 @@ function whatTheHouseItselfNeedsDone(
             else wall.refusals.push({ entryId: entry.id, name: entry.name, reason: why });
         }
 
-        // AND WHAT THE HOUSE IS SENDING ITS SISTERS, which anybody may carry: "you can take any
-        // job, you figure out how to do it". Contribution is for its own; the stones are for
-        // anybody. See `what-a-house-sends-its-sisters.ts`.
+        // AND WHAT THE HOUSE IS SENDING ITS SISTERS, carried by its own. The owner: "a sect doesn't
+        // give delivery missions to outsiders", "cuz that requires risking the sects own property".
+        // Whoever stands at the board reads them; only the house's own is handed one. See
+        // `what-a-house-sends-its-sisters.ts`.
         // Posted at the sending house's own seat, where the goods are: they are picked up there.
         if (world !== null && world !== undefined && standsAtItsSeat(world, cultivator.location, standing.house.id)) {
-            for (const consignment of whatAHouseSendsItsSisters(world, standing.house.id, Math.floor(world.currentDay))) {
-                const entry = aDeliveryAsAnOffer(consignment, cultivator.realmOrdinal);
+            const today = Math.floor(world.currentDay);
+            for (const consignment of whatAHouseSendsItsSisters(world, standing.house.id, today)) {
+                const entry = aDeliveryAsAnOffer(consignment, cultivator.realmOrdinal, today);
+                if (membership?.factionId !== consignment.fromHouseId) {
+                    wall.refusals.push({ entryId: entry.id, name: entry.name, reason: aStrangerIsNotHandedTheGoods(consignment) });
+                    continue;
+                }
                 const terms = {
                     ...dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission'),
                     days: consignment.days,
-                    contribution: membership?.factionId === consignment.fromHouseId ? consignment.contribution : 0,
+                    contribution: consignment.contribution,
                     stones: consignment.stones,
                     cohort: 0
                 };

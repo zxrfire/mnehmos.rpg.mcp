@@ -1,6 +1,6 @@
 /**
  * What a house sends to the houses it stands with under one apex: goods on a trade and credit
- * footing, carried by whoever takes the job off the wall.
+ * footing, carried by one of its own.
  *
  * The owner: "you can imagine sects sending out delivery missions too, especially amongst sects
  * under the same apex", "they send out resources to each other (on some sorta trade/credit
@@ -8,9 +8,13 @@
  * figure out how to do it. if you don't complete it by the deadline then you compensate some way.
  * maybe lose merit (if the goods are still there)? DEFINITELY lose face".
  *
- * So a delivery is posted whatever the reader could carry. Its size is a fact on the notice: a
+ * So a delivery is posted whatever the reader could carry. Its size is a fact on the board: a
  * case that goes on a back, bales that want a carriage, a season's stock that wants a spirit boat.
  * How it gets there is the carrier's to solve.
+ *
+ * "Any job" is any job of the house's own, whatever their rung. The owner: "a sect doesn't give
+ * delivery missions to outsiders", "cuz that requires risking the sects own property". A house
+ * asks a stranger only for what it hands nothing over for first, so a delivery is never a notice.
  */
 
 import type { EncounterEntry } from '../../data/cultivation/encounters.js';
@@ -147,16 +151,23 @@ export function isADelivery(entryId: string): boolean {
     return entryId.startsWith('delivery-');
 }
 
+/** A house by name as a sentence says it: "the Azure Dew Sect". */
+function theHouse(name: string): string {
+    return /^the\s/i.test(name) ? name : `the ${name}`;
+}
+
 /**
- * A consignment as a notice on the wall: what, where to, and what it asks of whoever carries it,
- * stated as a fact and never a bar. Pitched at the reader, since anybody may take it.
+ * A consignment as a line on the house's board: the task, where to, by when, and what it asks of
+ * whoever carries it, stated as a fact and never a bar. Pitched at the reader, since any rung of
+ * the house may take it.
  */
-export function aDeliveryAsAnOffer(consignment: AConsignment, readerOrdinal: number): EncounterEntry {
+export function aDeliveryAsAnOffer(consignment: AConsignment, readerOrdinal: number, onDay: number): EncounterEntry {
     const pitch = clampOrdinal(readerOrdinal);
     return {
         id: consignment.id,
-        name: `${consignment.goods} to ${consignment.toHouseName} at ${consignment.toPlace}, `
-            + `for ${consignment.fromHouseName}`,
+        // The title is the task: what, for whom, where, and by when.
+        name: `Deliver ${consignment.goods} to ${theHouse(consignment.toHouseName)} at ${consignment.toPlace} `
+            + `by day ${onDay + consignment.days}`,
         kind: 'sect_event',
         simEventKind: 'sect_event',
         weight: 1,
@@ -170,6 +181,15 @@ export function aDeliveryAsAnOffer(consignment: AConsignment, readerOrdinal: num
         tokens: [],
         tags: ['posted', 'delivery', 'errand', `wants:${consignment.wants}`, `from:${consignment.fromHouseId}`]
     } as EncounterEntry;
+}
+
+/**
+ * Why somebody off the sending house's roll is not handed its goods, with what would change it.
+ */
+export function aStrangerIsNotHandedTheGoods(consignment: AConsignment): string {
+    return `${consignment.fromHouseName} sends its goods with its own. A stranger is never handed `
+        + `them, because it is the house's property on the road, and a place on its roll is what `
+        + `changes that.`;
 }
 
 /** The goods themselves, signed for: the sending house's, in the carrier's charge. */

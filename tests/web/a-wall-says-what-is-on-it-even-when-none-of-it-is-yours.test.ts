@@ -1,62 +1,26 @@
 /**
- * A wall says what is on it even when none of it is yours.
+ * A board says what is on it even when none of it is yours, to whoever stands at it.
  *
  * ── THE RULE ─────────────────────────────────────────────────────────────
  *
  * NOT HAVING THE STANDING TO DO SOMETHING IS NOT THE SAME AS SEEING NOTHING.
- * A gate decides what somebody may DO. It must not decide what they may KNOW
- * ABOUT. The design owner, on this board specifically: *"the board is never
- * empty, you just aren't qualified to take a job from the missions elder."*
+ * The design owner, on this board specifically: *"the board is never empty, you
+ * just aren't qualified to take a job from the missions elder."* So whoever
+ * stands at a board reads all of it, and what is not theirs is refused with what
+ * is there, why it is not theirs, and what would change that.
  *
- * ── WHAT WAS MEASURED ────────────────────────────────────────────────────
+ * ── AND THE BOARD IS INSIDE ──────────────────────────────────────────────
  *
- * The affordance probe swept 36 squares over three band floors of a pinned
- * world and read the duty channel at each:
- *
- *     duty  at the bottom        12 advertised, 12 reachable
- *     duty  through the middle   36 advertised,  0 reachable
- *     duty  at the top            0 advertised   NOTHING IS ADVERTISED AT ALL
- *
- * Two silences in that table, and both are this rule being broken.
- *
- * `whatTheHouseItselfNeedsDone` returned an empty array for anybody not on a
- * roll, so a house's own work was invisible to everybody it was not offered to,
- * and it dropped any posting whose band the reader did not clear with a bare
- * `continue` - so the one channel built to say *here, and not yours*
- * (`boardRefusals`) only ever carried the hand-authored catalogue, which itself
- * runs out at ordinal 17. Above that the wall said nothing at all, and a wall
- * saying nothing reads as a world with nothing in it rather than as a world
- * that has not opened to you yet.
- *
- * ── AND WHOSE WALL A TOWN'S WALL IS ──────────────────────────────────────
- *
- * THE PROVINCE, and the two readings that are not it are both measured.
- *
- * `whoHoldsTheGround` answers *whose ground is this* by walking UPWARD looking
- * for a holder. Right inside a compound, wrong in a town: on a pinned world 988
- * of 1063 location records carry a holder and NONE of the twelve places a
- * player's `location` can be does, because the held ones are the compounds.
- *
- * Nesting the other way answers none, everywhere. `seedFactions` hangs a seat
- * off the REGION rather than off a settlement, so a house's ground is a sibling
- * of the towns and is inside none of them.
- *
- * So the province is the join, which is the one the recruiting wall already
- * uses: a board in a market town carries the work of the houses whose gates are
- * in that province.
- *
- * ── WHAT A REFUSAL HAS TO CARRY ──────────────────────────────────────────
- *
- * What is actually here, why it is not yours, and what would change that. An
- * empty list carries none of the three, which is why it is the defect and not
- * merely a thin answer.
+ * The owner: "a sects board is internal", "i mean they can't see the board",
+ * "the board is INSIDE", "they are outside". This read used to join a town to
+ * every house seated in its province and hand a rogue in the market each
+ * house's postings as refusals, which is the board read from outside the walls.
+ * What a house wants from outsiders is its notices, on the town's wall, and the
+ * disciple on its gate. So a rogue in a town reads none of a house's board, and
+ * one standing at the seat reads it all.
  *
  * ── WHAT WENT RED FIRST ──────────────────────────────────────────────────
  *
- *   x a rogue standing where a house is seated reads its wall
- *       -> board.refusals held 0 rows naming that house
- *   x and is told why none of it is theirs, and what would change that
- *       -> no such row existed to carry a reason
  *   x a member reads the work their own house has that is not for them
  *       -> the out-of-band postings were dropped with a bare continue
  */
@@ -70,15 +34,13 @@ import { makeGameInWorld } from './harness';
 const A_WORLD = 'a-wall-is-never-empty';
 
 /**
- * Standing in a settlement in a province a house has its gate in, which is the
- * square a player is actually in.
+ * Standing in a settlement in a province a house has its gate in, or at that
+ * house's seat.
  *
  * Read out of the world rather than named: which house sits where is the
- * worldgen's business and moves when it does. And the settlement rather than
- * the seat, because that is where somebody who has not been admitted stands -
- * inside the gate is a different problem with a different answer.
+ * worldgen's business and moves when it does.
  */
-async function standingWhereAHouseIsSeated(seed: string, ordinal: number) {
+async function standingWhereAHouseIsSeated(seed: string, ordinal: number, atTheSeat = false) {
     const { game, repos, db } = await makeGameInWorld({
         seed, worldSeed: A_WORLD, worldEnabled: true
     });
@@ -96,11 +58,13 @@ async function standingWhereAHouseIsSeated(seed: string, ordinal: number) {
     const town = world.locations.find(l =>
         l.id !== province
         && l.kind !== 'region'
+        && l.kind !== 'sect_seat'
         && theProvinceAround(world.locations, l.id) === province);
     expect(town, 'that province holds nowhere to stand').toBeDefined();
+    const seat = world.locations.find(l => l.id === holder!.seatLocationId)!;
 
     db.prepare('UPDATE cultivators SET location = ?, realm_ordinal = ? WHERE id = ?')
-        .run(town!.name, ordinal, cultivator.id);
+        .run(atTheSeat ? seat.name : town!.name, ordinal, cultivator.id);
 
     const deps = {
         repos, world,
@@ -113,35 +77,28 @@ async function standingWhereAHouseIsSeated(seed: string, ordinal: number) {
     };
 }
 
-describe('a wall says what is on it even when none of it is yours', () => {
-    it('shows a rogue the work the house whose gate is here has', async () => {
+describe('a board says what is on it even when none of it is yours', () => {
+    it('shows a rogue in a town none of a house board, which is inside its walls', async () => {
         const at = await standingWhereAHouseIsSeated('wall-rogue', 8);
         const board = sectBoardFor(at.deps, at.cultivator);
 
         expect(board.membership).toBeNull();
-        const theirs = board.refusals.filter(row => row.entryId.startsWith('posted-'));
-        expect(theirs.length).toBeGreaterThan(0);
-        // What is actually here: the house's name is on it, because that is
-        // what makes it a thing somebody could go and want.
-        expect(theirs.some(row => row.name.includes(at.holder.name))).toBe(true);
+        expect(board.refusals.filter(row => row.entryId.startsWith('posted-'))).toEqual([]);
+        expect(board.offers.filter(row => row.entry.id.startsWith('posted-'))).toEqual([]);
     }, 300_000);
 
-    it('and says why none of it is theirs, and what would change that', async () => {
-        const at = await standingWhereAHouseIsSeated('wall-rogue-why', 8);
+    it('shows a stranger at the seat all of it, and why none of it is theirs', async () => {
+        const at = await standingWhereAHouseIsSeated('wall-rogue-why', 8, true);
         const board = sectBoardFor(at.deps, at.cultivator);
         const theirs = board.refusals.filter(row => row.entryId.startsWith('posted-'));
 
         expect(theirs.length).toBeGreaterThan(0);
+        // What is actually here: the house's name is on it.
+        expect(theirs.some(row => row.name.includes(at.holder.name))).toBe(true);
         for (const row of theirs) {
-            // Why it is not yours, and the honest route. Asserted as content
-            // rather than as a sentence: the route has to name A ROAD, and the
-            // house it leads into.
-            //
-            // TWO ROADS, BECAUSE TWO KINDS OF BODY. Most houses have a roll and
-            // earning a place on it is the answer. The posting bodies have no
-            // roll to earn a place on - nobody applies, people are appointed -
-            // so their honest answer names the nomination instead. Pinning
-            // `roll` alone made the better refusal the failing one.
+            // Why it is not yours, and the honest route. TWO ROADS, BECAUSE TWO
+            // KINDS OF BODY: most houses have a roll to earn a place on, and the
+            // posting bodies, which appoint, name the nomination instead.
             expect(row.reason.toLowerCase()).toMatch(/roll|nomination/);
         }
         expect(theirs.some(row => row.reason.includes(at.holder.name))).toBe(true);

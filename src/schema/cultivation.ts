@@ -730,8 +730,8 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 2,
         damageMultiplier: 3,
         reaction:
-            'Pitched {gap} rungs above where you stand. It is within reach of a hand and the margin '
-            + 'is against you; nobody offers it, and nobody stops you either.'
+            'Pitched {gap} rungs above where you stand: within reach of a hand, with the margin '
+            + 'against you. Nobody offers it, and nobody stops you either.'
     },
     {
         band: 'stretch',

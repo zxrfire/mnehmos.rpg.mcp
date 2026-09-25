@@ -377,6 +377,16 @@ exactly the work a house is willing to give a stranger, said plainly, with the f
 buys no place on the roll said just as plainly. That is where a whole early career comes
 from in this genre, and the player never has to be let in to start one.
 
+**The board is inside, and the gate speaks for the house.** The owner put it plainly: "a sects
+board is internal", "the board is INSIDE", "they are outside", "they post NOTICES for
+external". The board is a thing in the seat's inner area. Whoever stands at it reads all of
+it, and taking from it is for the house's own, by rung. Nobody outside the walls sees any of
+it, not even as a list of what they may not take. What reaches a stranger is the paper on the
+town walls and the disciple on the gate, who "represent the sect to outsiders" and know
+everything it has put up. A notice asks only for what the house hands nothing over for first:
+"a sect asks for things from people where a sect doesn't need to put stuff upfront". So a
+delivery is never a notice, because "that requires risking the sects own property".
+
 **A date on paper is a date.** Whatever a notice states as a day is fixed for the life of
 the paper, so walking toward an intake brings it closer rather than pushing it away. Most
 notices name no day at all, which is the cheapest way to keep that promise.
