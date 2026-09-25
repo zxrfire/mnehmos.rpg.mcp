@@ -14,7 +14,8 @@ import type { RegardBand } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
 import type { SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import type { HouseAsItStands } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
-import { theReasonBehind, whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
+import { isHeldAsAPost, theReasonBehind, whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { ORDINARY_DUTY_DAYS, daysATermRuns, scaleFor, type DutyScale } from './how-long-a-duty-runs.js';
 import type { Membership } from './types.js';
 import { CASH_PER_STONE, DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
@@ -325,17 +326,33 @@ export function dutyTermsAtAMonthlyRate(input: {
 }): DutyTerms {
     const terms = dutyTermsFor(input.entry, input.ordinal, input.membership, 'commission');
     const yieldScale = yieldScaleFor(terms.regard);
+    const meritDays = isHeldAsAPost(input.entry.id) ? theDaysAPostsMeritCounts(input.days) : input.days;
     return {
         ...terms,
         days: input.days,
         contribution: input.creditsTheHouse
-            ? contributionFor(terms.pitchOrdinal, yieldScale, input.days, input.membership)
+            ? contributionFor(terms.pitchOrdinal, yieldScale, meritDays, input.membership)
             : 0,
         stones: Math.max(1, Math.round(
             input.cashPerMonth * (input.days / DAYS_PER_MONTH) * yieldScale / CASH_PER_STONE
         )),
         cohort: 0
     };
+}
+
+/** A post's first year counts in full toward merit, and every year after at this share of it. */
+const WHAT_A_LATER_YEAR_OF_A_POST_COUNTS = 0.1;
+
+/**
+ * The days of a post's term its contribution is counted over. The owner: "sects want people who
+ * have done more aspects of the sect". So the first year of a post counts in full and every
+ * year after it at a tenth: a longer post earns more in all and less per year, and the same
+ * years spent on different tasks earn more than one post. Stones are not touched; the house
+ * pays for the time at the full rate.
+ */
+export function theDaysAPostsMeritCounts(days: number): number {
+    const held = Math.max(0, days);
+    return Math.min(held, DAYS_PER_YEAR) + Math.max(0, held - DAYS_PER_YEAR) * WHAT_A_LATER_YEAR_OF_A_POST_COUNTS;
 }
 
 /**

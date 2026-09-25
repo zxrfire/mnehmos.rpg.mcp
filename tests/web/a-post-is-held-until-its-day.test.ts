@@ -14,6 +14,7 @@ import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-
 import { faceOf } from '../../src/engine/world/what-a-face-is-worth';
 import { REGIONS, HOME_REGION_ID } from '../../src/data/cultivation/regions';
 import { clearPendingSummons, readPendingSummons } from '../../src/web/pending-summons';
+import { theDaysAPostsMeritCounts } from '../../src/engine/encounters/duties';
 import { makeGameInWorld } from './harness';
 
 const A_HOUSE = 'sect-azure-cloud-pavilion';
@@ -106,7 +107,9 @@ describe('a post held until its day', () => {
         expect(left).toContain('Foundation Establishment');
         expect(left).toContain(`pays for the ${served} days served`);
         expect(at.face()).toBe(before);
-        expect(at.repos.sects.getMembership(at.id)!.contribution - merit).toBe(Math.round(termPay! * served / due));
+        // Contribution on the post's own curve, the first year in full; stones at the full rate.
+        expect(at.repos.sects.getMembership(at.id)!.contribution - merit)
+            .toBe(Math.round(termPay! * theDaysAPostsMeritCounts(served) / theDaysAPostsMeritCounts(due)));
         expect(at.repos.cultivators.getById(at.id)!.spiritStones - stones).toBe(Math.round(termStones! * served / due));
     }, 240_000);
 

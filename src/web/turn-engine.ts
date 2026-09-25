@@ -797,6 +797,7 @@ import {
 } from '../engine/world/what-somebody-standing-here-would-part-with.js';
 import { assessAcquisition, extensionOption, type AcquisitionRoute } from '../engine/encounters/index.js';
 import {
+    isHeldAsAPost,
     theMissionBehind,
     theReasonBehind,
     whichPostingTheyMeant
@@ -811,7 +812,6 @@ import {
     walkOverToTheBoard
 } from './the-mission-board-inside-a-house.js';
 import {
-    isHeldAsAPost,
     leaveTheMissionPost,
     settleTheMissionPostTheyHold,
     takeUpTheMissionPost,

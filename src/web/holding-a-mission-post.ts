@@ -27,7 +27,7 @@ import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { realmForOrdinal, realmIndexOf, REALM_TIERS } from '../engine/cultivation/realms.js';
 import { aMissionAsAnOffer, theMissionBehind } from '../engine/encounters/what-a-house-has-on-its-board.js';
-import type { DutyCandidate } from '../engine/encounters/duties.js';
+import { theDaysAPostsMeritCounts, type DutyCandidate } from '../engine/encounters/duties.js';
 import type { Duty } from '../engine/encounters/types.js';
 import { settleObligation, type ObligationRecord } from '../engine/social/grudges.js';
 import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
@@ -47,12 +47,6 @@ const MERIT = 'post-merit:';
 const PAYS = 'post-pays:';
 /** Set once they have stood at the post. Before it, being elsewhere is still getting there. */
 const ARRIVED = 'post-arrived';
-
-/** Whether a board line is a mission held as a post rather than spent in one act. */
-export function isHeldAsAPost(entryId: string): boolean {
-    const mission = theMissionBehind(entryId);
-    return mission !== null && mission.rung !== 'outer';
-}
 
 /** The mission post this cultivator holds, or null. */
 export function theMissionPostTheyHold(game: Pick<GameService, 'repos'>, cultivatorId: string): ObligationRecord | null {
@@ -187,6 +181,9 @@ function thePostIsLeft(
     const termDays = Math.max(1, due - record.incurredOnDay);
     const daysLeft = Math.max(0, due - leftFrom);
     const [contribution, stones] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
+    // The share of the term's contribution a stretch of it earns, on the post's own curve.
+    const meritFor = (days: number): number =>
+        Math.round(contribution! * theDaysAPostsMeritCounts(days) / theDaysAPostsMeritCounts(termDays));
     const merit = game.repos.sects.getMembership(cultivator.id)?.contribution ?? 0;
     const then = aNumber(tagged(record, REALM));
     const pending = readPendingSummons(game.repos, cultivator.id);
@@ -199,17 +196,17 @@ function thePostIsLeft(
                 && pending.spokenOnDay >= record.incurredOnDay)
             || (theirOpenPosting(game, cultivator.id)?.incurredOnDay ?? -1) >= record.incurredOnDay,
         meritSinceTaken: Math.max(0, merit - aNumber(tagged(record, MERIT))),
-        whatTheRestWasWorth: Math.round(contribution! * daysLeft / termDays),
+        whatTheRestWasWorth: contribution! - meritFor(termDays - daysLeft),
         daysLeft,
         termDays
     });
     const db = game.repos.db as unknown as DatabaseHandle;
     const what = `${title.charAt(0).toLowerCase()}${title.slice(1)}`;
     if (verdict.welcome) {
-        // PAID FOR THE DAYS SERVED. The term's pay is the monthly rate times the days, so the
-        // share of it the served days make is the same arithmetic run over fewer of them.
+        // PAID FOR THE DAYS SERVED: stones at the monthly rate, and contribution on the same
+        // curve the whole term was priced on (`theDaysAPostsMeritCounts`).
         const served = Math.max(0, termDays - daysLeft);
-        const paidContribution = Math.round(contribution! * served / termDays);
+        const paidContribution = meritFor(served);
         const paidStones = Math.round(stones! * served / termDays);
         game.repos.db.transaction(() => {
             writeOneObligation(db, settleObligation(record, {

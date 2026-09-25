@@ -411,3 +411,12 @@ export function theMissionBehind(entryId: string): HouseMission | null {
     const at = entryId.indexOf('@');
     return at < 0 ? null : getHouseMission(entryId.slice(0, at)) ?? null;
 }
+
+/**
+ * Whether a board line is a mission held as a post rather than spent in one act: anything above
+ * the outer rung. See `web/holding-a-mission-post.ts`.
+ */
+export function isHeldAsAPost(entryId: string): boolean {
+    const mission = theMissionBehind(entryId);
+    return mission !== null && mission.rung !== 'outer';
+}
