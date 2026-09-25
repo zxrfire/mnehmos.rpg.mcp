@@ -24,7 +24,11 @@ import {
     type WorldState
 } from '../../engine/world/index.js';
 import { WorldStateRepository } from '../../storage/repos/world-state.repo.js';
-import { writeObligations } from '../../storage/repos/obligation.repo.js';
+import { ledgerAbout, writeObligations } from '../../storage/repos/obligation.repo.js';
+import {
+    accountsHousesHoldAgainstThem,
+    housesPutUpTheirPaper
+} from '../../engine/world/a-house-puts-a-price-on-somebody.js';
 import { createObligation } from '../../engine/social/grudges.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
@@ -477,6 +481,20 @@ export async function advanceWorldForCultivator(
         stopOnInterrupt: false,
         digest: { limit: options.limit ?? 12, factionRankIndex: rungOf(cultivator, handle.state) }
     });
+
+    // AND WHAT A HOUSE HOLDS AGAINST THE ONE BEING PLAYED, put up on its walls
+    // where it would put it up for anybody. The yearly pass reads the world's
+    // own killings; the player's accounts are on the ledger, which only this
+    // side can read. See `a-house-puts-a-price-on-somebody.ts`.
+    const began = handle.state.runs.find(r => r.id === run.id);
+    if (began) {
+        housesPutUpTheirPaper(handle.state, accountsHousesHoldAgainstThem({
+            rows: ledgerAbout(getDb(), cultivator.id),
+            subject: { id: cultivator.id, name: cultivator.name, houseId: cultivator.sectId ?? null },
+            houseIds: new Set(handle.state.factions.map(f => f.id)),
+            runStartedOnDay: began.startedOnDay
+        }), handle.state.currentDay);
+    }
 
     // A tick, not a checkpoint: the append path skips the chronicle and memory
     // bulk below its high-water mark, which is the difference between a

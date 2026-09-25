@@ -61,6 +61,7 @@ import {
     whoHasALampBurningIn
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import type { KnowledgeGate } from './knowledge.js';
+import { thePricesStanding } from '../engine/world/a-house-puts-a-price-on-somebody.js';
 
 /**
  * WHAT A REASON A HOUSE ALREADY HAS PUTS ON A PUBLIC WALL.
@@ -243,6 +244,42 @@ export function whoEachHouseIsLookingFor(
             unseenForDays: row.unseenForDays,
             wants: row.wants
         })));
+    }
+    return out;
+}
+
+/**
+ * The prices each house has standing on somebody, as asks for its walls. Like a
+ * search, only the world holds these, and with no world there are none.
+ */
+export function whatEachHouseHasAPriceOn(
+    world: WorldState | null | undefined
+): Map<string, readonly TheAsk[]> {
+    const out = new Map<string, TheAsk[]>();
+    if (!world) return out;
+    for (const paper of thePricesStanding(world, world.currentDay)) {
+        if (!paper.posterFactionId) continue;
+        const asks = out.get(paper.posterFactionId) ?? [];
+        asks.push({
+            kind: 'wanted',
+            whoId: paper.targetId,
+            who: paper.targetName,
+            purseStones: paper.purseStones,
+            proof: paper.evidence,
+            forWhat: paper.forWhat
+        });
+        out.set(paper.posterFactionId, asks);
+    }
+    return out;
+}
+
+/** Two maps of asks as one, each house keeping everything either said. */
+export function everythingEachHouseIsAsking(
+    ...maps: readonly ReadonlyMap<string, readonly TheAsk[]>[]
+): Map<string, readonly TheAsk[]> {
+    const out = new Map<string, TheAsk[]>();
+    for (const map of maps) {
+        for (const [houseId, asks] of map) out.set(houseId, [...(out.get(houseId) ?? []), ...asks]);
     }
     return out;
 }

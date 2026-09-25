@@ -738,8 +738,10 @@ import {
     thingsCarriedThatTeachARoad
 } from './ground-that-teaches-a-road.js';
 import {
+    everythingEachHouseIsAsking,
     postingGroundOf,
     readTheWall,
+    whatEachHouseHasAPriceOn,
     whichHouseThePaperMeans,
     whoEachHouseIsLookingFor
 } from './what-is-posted-on-the-wall-here.js';
@@ -1174,6 +1176,7 @@ import {
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
+import { priceVerbs } from './taking-up-a-price-on-somebody.js';
 import { seenToFromTheHouseShelf } from './house-medicine-for-a-member.js';
 import { theyGiveInWithNoFightStanding } from './giving-in-with-no-fight-standing.js';
 import {
@@ -3507,7 +3510,12 @@ export class GameService {
      * searches - the honest answer rather than a missing one.
      */
     private whoIsBeingLookedFor(): ReturnType<typeof whoEachHouseIsLookingFor> {
-        return this.atHand === null ? new Map() : whoEachHouseIsLookingFor(this.atHand);
+        // AND WHO EACH HOUSE HAS PUT A PRICE ON, which is the other thing only
+        // the world knows. See `a-house-puts-a-price-on-somebody.ts`.
+        return this.atHand === null
+            ? new Map()
+            : everythingEachHouseIsAsking(
+                whoEachHouseIsLookingFor(this.atHand), whatEachHouseHasAPriceOn(this.atHand));
     }
 
     /** Strike the barrier now. Refuses loudly when the engine says it is not legal. */
@@ -5347,10 +5355,18 @@ ${noticedWaiting}`;
                     // resolver reads. Same write-side gap as the work board,
                     // and the same fix.
                     for (const bill of wall.bills) this.nameWhatTheyGot(bill.houseName);
+                    // A NAME ON A PAPER IS READ BY THE PERSON IT NAMES TOO. The
+                    // paper is what they see; that it is them is the one thing
+                    // reading it tells them that it tells nobody else.
+                    const onThem = wall.notices.filter(notice => notice.wantedId === cultivator.id);
                     return this.freeAction(run, 'look', wall.lines.length > 0
                         ? factsForToolResult(
                             `There is paper up in ${placeName(cultivator)}.`,
-                            wall.lines
+                            [
+                                ...wall.lines,
+                                ...onThem.map(notice =>
+                                    `The name on ${notice.houseName}'s price is yours.`)
+                            ]
                         )
                         : factsForRefusal(
                             'Nothing is posted here.',
@@ -8068,6 +8084,12 @@ ${noticed}`;
             // A THING rather than money. See `handing-a-thing-in-to-your-house.ts`.
             case 'hand_in':
                 return this.handItInToTheHouse(run, cultivator, target);
+
+            // A price any house put on somebody. See `taking-up-a-price-on-somebody.ts`.
+            case 'bounty':
+                return topic === 'claim'
+                    ? this.bringInAPrice(run, cultivator, target)
+                    : this.takeUpAPrice(run, cultivator, target);
 
             case 'standing': {
                 // ── A HOUSE THAT IS NOT YOURS IS A QUESTION ABOUT THE HOUSE ──
@@ -20733,3 +20755,7 @@ Object.assign(GameService.prototype, handingInVerbs);
 export interface GameService extends PostingVerbs {}
 type PostingVerbs = typeof postingVerbs;
 Object.assign(GameService.prototype, postingVerbs);
+// And a price on somebody's head.
+export interface GameService extends PriceVerbs {}
+type PriceVerbs = typeof priceVerbs;
+Object.assign(GameService.prototype, priceVerbs);

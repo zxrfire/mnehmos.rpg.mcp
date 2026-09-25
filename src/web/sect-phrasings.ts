@@ -87,7 +87,12 @@ export type SectIntent =
      * decides it. The other end of `complaints`: one is deciding a case and this
      * is asking somebody else to decide it differently.
      */
-    | 'plead';
+    | 'plead'
+    /**
+     * A price a house put on somebody's head: taking it up, or with `topic`
+     * `claim`, bringing the house what it asked for. See `price-phrasings.ts`.
+     */
+    | 'bounty';
 
 /**
  * Which sect verb a sentence is asking for.

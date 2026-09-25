@@ -3,8 +3,8 @@
  *
  * `whoIsComingForYou` has always said who may act and thinks it worth doing; it
  * only filled the sheet. This hands the same list to the encounter draw, with
- * the person who would actually arrive: the holder, or somebody on the roll of
- * a house that holds one.
+ * the person who would actually arrive: the holder, somebody on the roll of a
+ * house that holds one, or somebody who took up a price a house put on them.
  */
 
 import type { AnAccountComingDue } from '../engine/encounters/types.js';
@@ -18,6 +18,7 @@ import type { ObligationDb } from '../storage/repos/obligation.repo.js';
 import { type APersonsRecord, whatTheWorldHoldsAbout } from './personal-record.js';
 import type { GameService } from './turn-engine.js';
 import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { thePricesStanding, whoTakesUpThePrice } from '../engine/world/a-house-puts-a-price-on-somebody.js';
 
 /**
  * Who an id on the ledger is: a world person, a `cultivators` row, or a house,
@@ -126,6 +127,36 @@ export function accountsComingDue(service: GameService, cultivator: Cultivator):
             what: pursuer.what,
             carried: pursuer.carriedRatherThanSettled
         });
+    }
+
+    // AND WHOEVER TOOK UP A PRICE ON THEM. Somebody who read the paper and
+    // thought the purse worth the walk arrives the way anybody with an account
+    // does, holding nothing against the cultivator but the purse. Weighed as
+    // the house's own account is, so a paper roughly doubles how soon somebody
+    // comes. See `a-house-puts-a-price-on-somebody.ts`.
+    if (world) {
+        for (const paper of thePricesStanding(world, world.currentDay)) {
+            if (paper.targetId !== cultivator.id || !paper.posterFactionId) continue;
+            const taker = whoTakesUpThePrice(world, paper, {
+                id: cultivator.id, realmOrdinal: cultivator.realmOrdinal, houseId: cultivator.sectId ?? null
+            });
+            if (!taker || out.has(taker.id)) continue;
+            const sent = { id: taker.id, name: taker.name, realmOrdinal: taker.cultivation.realmOrdinal };
+            // At a sealed door they are anybody who came: the same strength and
+            // the same temperament every other arrival is read by.
+            out.set(taker.id, {
+                holderId: taker.id,
+                holderName: taker.name,
+                holderIsAHouse: false,
+                sent: { ...sent, strength: whatTheyCouldBreakADoorWith(world, sent) },
+                push: whatSomebodyIsLike(taker).push,
+                weight: WHAT_A_RECORD_COUNTS_FOR[paper.severity],
+                severity: paper.severity,
+                what: `${paper.purseStones} spirit stones, ${paper.forWhat}.`,
+                carried: false,
+                forAPurse: { houseId: paper.posterFactionId, houseName: paper.posterName, purseStones: paper.purseStones }
+            });
+        }
     }
     return [...out.values()];
 }

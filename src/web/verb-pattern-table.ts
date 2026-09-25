@@ -309,6 +309,7 @@ import {
     somebodyIsPutOffTheRoll
 } from './sect-phrasings.js';
 import type { SectIntent } from './sect-phrasings.js';
+import { aPriceOnSomebody } from './price-phrasings.js';
 import { theThingBeingHandedIn } from './handing-in-phrasings.js';
 import { aThingWornOrHeld } from './what-is-on-you-phrasings.js';
 import { whatIsBeingKeptOutOfSight } from './keeping-out-of-sight-phrasings.js';
@@ -4753,6 +4754,18 @@ function planIntent(input: string): PlannedAction {
     // GOODS HANDED OVER where they were sent: a delivery off a house's wall. Ahead of giving,
     // which "hand over" also reaches. See `what-a-house-sends-its-sisters.ts`.
     if (A_DELIVERY_HANDED_OVER.test(text)) return { action: 'carry', intent: 'deliver' };
+
+    // ── A PRICE ON SOMEBODY'S HEAD ───────────────────────────────────────
+    //
+    // Ahead of every taking verb, because "I take the bounty on Wen Shu" is
+    // otherwise a theft of something called a bounty. See `price-phrasings.ts`.
+    // A board's own work is named with the same word - "I put my name down for
+    // A Bounty at the Old Price" is a duty - so a sentence naming one stays the
+    // board's.
+    if (!dutyNamed(text)) {
+        const price = aPriceOnSomebody(input);
+        if (price) return price;
+    }
 
     // ── A BOW IS AIMED AT SOMEBODY ───────────────────────────────────────
     //

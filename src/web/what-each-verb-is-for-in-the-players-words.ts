@@ -599,7 +599,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // officer intents do not come from a table at all.
             'take', 'authority', 'decree',
             // Handing a THING in, which the house credits where it wants it.
-            'hand_in'
+            'hand_in',
+            // A price a house put on somebody's head, which anybody may take up.
+            'bounty'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
@@ -631,6 +633,11 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             the player actually runs. "take" is putting a hand on a thing the house owns -
             "target" names it - which is not stow, where the room is the player's own and nothing
             is being taken from anybody.
+
+            "bounty" is a price a house has put on somebody's head, and it is any house's, not
+            only the player's own: "target" names the person on the paper, and with no topic
+            it takes the price up; "topic" "claim" brings the house the proof and asks to be
+            paid. With nobody named it reads the prices up where the player is standing.
 
             Default to the read - "standing" - unless the player plainly asked
             for a step, because joining is a life's worth of allegiance and cannot be unsaid.`
