@@ -54,9 +54,9 @@ export function howTheirPeopleSeeYourFace<W extends AWitness>(
     // both are things a stranger sees without being told. Read HERE rather than
     // passed in, exactly as the robes are, so that neither caller - the gate
     // nor the lecture hall - has to remember to ask, and the two cannot come to
-    // read one face differently. See `FLAG_BLADE_IN_HAND`, whose header has
-    // asked for this since the flag was written.
-    const bladeInHand = whatIsInTheirHand(game.db, cultivator.id) !== null;
+    // read one face differently. A drawn blade is a weapon in the held state; see
+    // `what-somebody-fights-with.ts`.
+    const bladeInHand = whatIsInTheirHand(world.objects, cultivator.id) !== null;
     const houseSize = howManyAHouseReallyHas(world, input.houseId);
     const strongestOfTheHouse = world.npcs
         .filter(npc => npc.status === 'alive' && npc.factionId === input.houseId)

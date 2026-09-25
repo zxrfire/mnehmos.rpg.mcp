@@ -504,18 +504,17 @@ export const combatVerbs = {
             : null;
         const techniqueId = namedArt ?? this.artTheyWouldFightWith(cultivator) ?? null;
         const selfBody = combatantFromCultivator(
-            cultivator, this.repos, techniqueId ?? undefined
+            cultivator, this.repos, techniqueId ?? undefined, this.atHand?.objects ?? []
         );
 
         // ── A BLADE ALREADY OUT IS NOT AN AMBUSH ─────────────────────────
         //
-        // The one reader of `FLAG_BLADE_IN_HAND`, and the whole reason that
-        // flag is a fact rather than a line of prose. A concealed opening is
+        // Read off the held state of a weapon (`what-somebody-fights-with.ts`). A concealed opening is
         // worth the ambush edge and the target's first swing; somebody standing
         // in front of the person they are about to hit with their sword already
         // drawn has given both of those away, and everybody present watched
         // them do it. See `what-is-on-you-and-in-your-hands.ts`.
-        const inTheHand = whatIsInTheirHand(this.db, cultivator.id);
+        const inTheHand = whatIsInTheirHand(this.atHand?.objects ?? [], cultivator.id);
         const howItOpened = inTheHand === null ? opening : 'open';
 
         // AND NOW IT IS A FIGHT RATHER THAN A RESULT
@@ -610,9 +609,9 @@ export const combatVerbs = {
         );
         if (inTheHand !== null && opening === 'from_concealment') {
             first.facts.structure.push(
-                `The opening was not a concealed one: ${inTheHand.what} has been in this `
-                + `cultivator's hand since turn ${inTheHand.onTurn} and everybody here could `
-                + 'see it. FLAG_BLADE_IN_HAND closed the ambush edge.'
+                `The opening was not a concealed one: ${inTheHand.what} was in this `
+                + "cultivator's hand and everybody here could see it. A held weapon closed the "
+                + 'ambush edge.'
             );
         }
         return first;

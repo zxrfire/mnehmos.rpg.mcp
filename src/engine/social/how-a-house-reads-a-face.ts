@@ -160,8 +160,8 @@ export function whetherAFaceIsRemarkable(
     // the house already knows is still better answered with "they know you",
     // which is why that clause keeps its place above this one.
     //
-    // Read off `FLAG_BLADE_IN_HAND`, which the player sets by saying so and
-    // clears by saying so. Nothing here decides what a drawn blade is worth -
+    // Read off a weapon in the held state, which the player draws and puts away by saying so
+    // (`what-somebody-fights-with.ts`). Nothing here decides what a drawn blade is worth -
     // it decides only that it is seen, which is what this whole function is.
     if (face.bladeInHand === true) {
         return {

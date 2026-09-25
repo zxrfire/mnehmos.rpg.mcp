@@ -19,9 +19,10 @@
  *
  * ── AND THE BLADE ────────────────────────────────────────────────────────
  *
- * A blade out of its sheath is a fact about a body that the engine had no place
- * for, so it gets the machinery every other such fact uses: a flag.
- * {@link FLAG_BLADE_IN_HAND} holds what was drawn and the turn it was drawn on.
+ * A drawn blade is the held state of a weapon, like anything else in a hand: "weapons would use
+ * held state too, it's not bespoke". Drawing takes a free hand, and a player holding two things
+ * is told what they are holding, so the question of which to put down is theirs. See
+ * `what-somebody-fights-with.ts`.
  *
  * IT IS READ, AND BY SOMETHING THAT ALREADY EXISTED. `attack` takes an
  * `opening` of `open` or `from_concealment`, and the resolver gives a concealed
@@ -36,13 +37,15 @@ import {
     tokenIdFor
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { holdsTheTokenOf } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
-import { hadAs, isWorn, type ObjectRecord } from '../engine/world/possessions.js';
+import { hadAs, isHeld, isWorn, WHAT_TWO_HANDS_HOLD, type ObjectRecord } from '../engine/world/possessions.js';
+import { whatABodyCanCarry, whatAllOfThatTakes } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
+import { isAWeapon, theBladeInTheirHand } from '../engine/world/what-somebody-fights-with.js';
+import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { changeInto, isAGarment, whatTheyHaveOn } from '../engine/world/what-somebody-stands-up-in.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
-import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
+import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
 import { factsForRefusal, observable, type EngineFacts } from './facts.js';
-import { FLAG_BLADE_IN_HAND } from './flag-keys.js';
 import { refused } from './tool-result-prose.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
@@ -84,19 +87,13 @@ function done(name: string, facts: EngineFacts, summary: string): Execution {
     };
 }
 
-/** What is in this cultivator's hand, or null. The ONE read of the flag. */
+/** The blade in this cultivator's hand, or null. The one read of a drawn weapon. */
 export function whatIsInTheirHand(
-    db: GameService['db'],
+    objects: readonly ObjectRecord[],
     cultivatorId: string
-): { what: string; onTurn: number } | null {
-    const noted = readFlag(db, cultivatorId, FLAG_BLADE_IN_HAND);
-    if (noted === null) return null;
-    const at = noted.lastIndexOf(':');
-    const turn = at < 0 ? Number.NaN : Number.parseInt(noted.slice(at + 1), 10);
-    return {
-        what: at < 0 ? noted : noted.slice(0, at),
-        onTurn: Number.isFinite(turn) ? turn : 0
-    };
+): { what: string } | null {
+    const blade = theBladeInTheirHand(objects, cultivatorId);
+    return blade === null ? null : { what: blade.name };
 }
 
 /** Every set of robes this cultivator has, on them or in their pack, and whose they are. */
@@ -220,12 +217,32 @@ export function theyTakeTheRobesOff(
     );
 }
 
+/** Words for a weapon that do not name one in particular: "my blade" means the best one. */
+const ANY_WEAPON = /\b(?:blade|sword|sabre|saber|dagger|spear|weapon|steel)s?\b/i;
+
+/** The thing of theirs a sentence names, among `rows`, or the first when it names nothing in particular. */
+function theOneNamed(rows: readonly ObjectRecord[], named: string | undefined): ObjectRecord | null {
+    if (rows.length === 0) return null;
+    const said = (named ?? '').toLowerCase().replace(/^(?:my|the|a|an|his|her|their)\s+/, '').trim();
+    if (said.length === 0 || ANY_WEAPON.test(said)) return rows[0]!;
+    const words = said.split(/\s+/).filter(word => word.length > 2);
+    return rows.find(row => words.some(word => row.name.toLowerCase().includes(word))) ?? null;
+}
+
+/** Nothing to do, and said as what is true of their hands. */
+function refusedInHand(intent: 'draw' | 'put_away' | 'drop', headline: string, prose: string, structure: string): Execution {
+    return refused(
+        intent === 'draw' ? 'engine.draw' : intent === 'drop' ? 'engine.drop' : 'engine.putAway',
+        'carry',
+        factsForRefusal(headline, prose, `carry/${intent}: ${structure} Nothing written and no day passed.`)
+    );
+}
+
 /**
- * The blade out, away, or onto the ground.
+ * The blade out, away, or onto the ground, and anything else held, put away or put down.
  *
- * All three write the same fact and none of them spends a day. What a drawn
- * blade costs is paid where it is read: an opening that cannot be a concealed
- * one while it stands.
+ * None of them spends a day. What a drawn blade costs is paid where it is read: an opening that
+ * cannot be a concealed one while it stands.
  */
 export function whatTheirHandsDo(
     game: GameService,
@@ -234,57 +251,76 @@ export function whatTheirHandsDo(
     intent: 'draw' | 'put_away' | 'drop',
     named: string | undefined
 ): Execution {
-    const held = whatIsInTheirHand(game.db, cultivator.id);
+    const world = game.atHand;
+    const objects = world?.objects ?? [];
+    const mine = objects.filter(o => o.possessorId === cultivator.id);
+    const inHand = mine.filter(o => isHeld(o))
+        .sort((a, b) => Number(isAWeapon(b)) - Number(isAWeapon(a)) || (b.power ?? 0) - (a.power ?? 0));
 
     if (intent === 'draw') {
-        if (held !== null) {
-            return refused('engine.draw', 'carry', factsForRefusal(
-                `${held.what} is already out.`,
-                `You are already standing with ${held.what} in your hand.`,
-                `carry/draw: FLAG_BLADE_IN_HAND already holds "${held.what}" from turn `
-                + `${held.onTurn}. Nothing written and no day passed.`
-            ));
+        const weapons = mine.filter(isAWeapon).sort((a, b) => (b.power ?? 0) - (a.power ?? 0));
+        const blade = theOneNamed(weapons, named);
+        if (world === null || world === undefined || blade === null) {
+            return refusedInHand(intent, `You have no ${named?.replace(/^(?:my|the)\s+/i, '') ?? 'blade'}.`,
+                'Nothing you carry is a blade to draw.', 'no weapon with this cultivator as possessor matched.');
         }
-        const what = named ?? 'your blade';
-        writeFlag(game.db, cultivator.id, FLAG_BLADE_IN_HAND, `${what.slice(0, 40)}:${run.turn}`);
-        // THE PLAYER'S OWN WORDS, MID-SENTENCE. Capitalising them to open a
-        // sentence produced *"My sword is in your hand"* - the engine saying
-        // `my` about the player's blade, because what it echoed back was the
-        // possessive they typed. Putting the phrase where it was said keeps
-        // their words and drops the clash.
-        const line = `You have ${what} in your hand, and anybody standing here can see it. `
+        if (isHeld(blade)) {
+            return refusedInHand(intent, `${blade.name} is already out.`,
+                `You are already standing with ${blade.name} in your hand.`, `${blade.id} is already held.`);
+        }
+        // A FREE HAND, or the question of what to put down is the player's. The owner: if you try,
+        // the narrator plays "which should I drop".
+        if (inHand.length >= WHAT_TWO_HANDS_HOLD) {
+            const names = inHand.map(o => o.name).join(' and ');
+            return refusedInHand(intent, 'Your hands are full.',
+                `Your hands are full: ${names}. One of them has to go down before ${blade.name} comes out.`,
+                `both hands hold something (${inHand.map(o => o.id).join(', ')}).`);
+        }
+        const at = world.objects.findIndex(o => o.id === blade.id);
+        world.objects[at] = hadAs(blade, 'held');
+        game.theWorldMoved();
+        const line = `You have ${blade.name} in your hand, and anybody standing here can see it. `
             + 'Nobody is ambushed by somebody who is already holding a blade.';
-        return done(
-            'engine.draw',
-            saidAndNoted([line],
-                `carry/draw: FLAG_BLADE_IN_HAND = "${what}" on turn ${run.turn}. Read by attack, `
-                + 'which cannot open from concealment while it stands.'),
-            `${cultivator.id} drew ${what} on turn ${run.turn}.`
-        );
+        return done('engine.draw', saidAndNoted([line],
+            `carry/draw: ${blade.id} held on turn ${run.turn}. Read by attack, which cannot open from `
+            + 'concealment while it stands, and by the face a house reads.'),
+            `${cultivator.id} drew ${blade.name} on turn ${run.turn}.`);
     }
 
-    if (held === null) {
-        return refused(
-            intent === 'drop' ? 'engine.drop' : 'engine.putAway',
-            'carry',
-            factsForRefusal(
-                'Your hands are empty.',
-                'You have nothing out to put down. Drawing puts it in your hand, and it stays '
-                + 'there until you put it away or let it go.',
-                `carry/${intent}: FLAG_BLADE_IN_HAND is empty. Nothing written and no day passed.`
-            )
-        );
+    const thing = theOneNamed(inHand, named);
+    if (world === null || world === undefined || thing === null) {
+        return refusedInHand(intent, 'Your hands are empty.',
+            'You have nothing out to put down. Drawing puts it in your hand, and it stays there '
+            + 'until you put it away or let it go.', 'nothing held matched.');
     }
-    clearFlag(game.db, cultivator.id, FLAG_BLADE_IN_HAND);
+    const at = world.objects.findIndex(o => o.id === thing.id);
+    if (intent === 'put_away') {
+        // Away is the inventory, and a thing that did not fit there when it was taken still does not.
+        const carrying = together(
+            whatAllOfThatTakes(everythingInThePouch(game.db, cultivator.id)),
+            whatTheirThingsTake(world.objects, cultivator.id)
+        );
+        if (carrying.volume + thing.volume > whatABodyCanCarry(cultivator.realmOrdinal).volume) {
+            return refusedInHand(intent, `${thing.name} will not go in your pack.`,
+                `${thing.name} will not go in your pack. It stays in your hand until you let it go.`,
+                `${thing.id} does not fit in the inventory.`);
+        }
+        world.objects[at] = hadAs(thing, 'inventory');
+    } else {
+        world.objects[at] = {
+            ...hadAs(thing, 'inventory'),
+            possessorId: null,
+            locationId: game.worldPlaceOf(cultivator) ?? thing.locationId
+        };
+    }
+    game.theWorldMoved();
     const line = intent === 'drop'
-        ? `${held.what} is on the ground at your feet, and everybody here watched you let it go.`
-        : `${held.what} is away. Nothing about you is drawn.`;
+        ? `${thing.name} is on the ground at your feet, and everybody here watched you let it go.`
+        : `${thing.name} is away. ${theBladeInTheirHand(world.objects, cultivator.id) === null ? 'Nothing about you is drawn.' : ''}`.trim();
     return done(
         intent === 'drop' ? 'engine.drop' : 'engine.putAway',
-        saidAndNoted([line],
-            `carry/${intent}: FLAG_BLADE_IN_HAND cleared (held "${held.what}" since turn `
-            + `${held.onTurn}).`),
-        `${cultivator.id} ${intent === 'drop' ? 'dropped' : 'put away'} ${held.what}.`
+        saidAndNoted([line], `carry/${intent}: ${thing.id} ${intent === 'drop' ? 'put down where they stand' : 'into the inventory'}.`),
+        `${cultivator.id} ${intent === 'drop' ? 'dropped' : 'put away'} ${thing.name}.`
     );
 }
 

@@ -26,6 +26,7 @@ import { whatTheyDoAboutALoss } from '../engine/social-leverage/what-somebody-do
 import { realmIndexOf, whatTheyCanDoAboutIt } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import { isInsideTheCompound } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import type { LocationRecord } from '../engine/world/locations.js';
+import { isAWeapon } from '../engine/world/what-somebody-fights-with.js';
 import { hadAs, makeObject, type ObjectRecord } from '../engine/world/possessions.js';
 import { isAGarment, theClothesTheyStandUpIn, whatTheyHaveOn } from '../engine/world/what-somebody-stands-up-in.js';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -37,7 +38,7 @@ export type ANeed = 'something_to_wear' | 'something_to_fight_with' | 'proof_of_
 export function theNeedItServes(object: Pick<ObjectRecord, 'tags' | 'power' | 'kind'>): ANeed | null {
     if (isAGarment(object)) return 'something_to_wear';
     if (object.tags.includes('token')) return 'proof_of_who_they_are';
-    if (object.kind === 'artifact' && object.power !== null) return 'something_to_fight_with';
+    if (isAWeapon(object)) return 'something_to_fight_with';
     return null;
 }
 

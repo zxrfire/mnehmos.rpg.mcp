@@ -3,6 +3,8 @@
  */
 
 import { z } from 'zod';
+import type { ObjectRecord } from '../../engine/world/possessions.js';
+import { theWeaponTheyFightWith } from '../../engine/world/what-somebody-fights-with.js';
 import { AN_ORDINARY_SWING } from '../../engine/cultivation/how-a-blow-was-thrown.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
@@ -280,7 +282,12 @@ export function opponentRollIdentity(opponent: CombatantInput): string {
 export function combatantFromCultivator(
     cultivator: Cultivator,
     repos: CultivationRepos,
-    techniqueId?: string
+    techniqueId?: string,
+    /**
+     * The world's object table, where every live way of coming by a weapon writes. A weapon in
+     * hand, else the best on them; the pouch's counted artifacts only where neither is.
+     */
+    objects: readonly ObjectRecord[] = []
 ): CombatantInput {
     const known = techniqueId ? repos.techniques.getKnown(cultivator.id, techniqueId) : null;
 
@@ -313,7 +320,7 @@ export function combatantFromCultivator(
         qi: cultivator.qi,
         maxQi: cultivator.maxQi,
         battlesSurvived: cultivator.battlesSurvived,
-        weapon: carriedArtifact(repos.db, cultivator.id),
+        weapon: theWeaponTheyFightWith(objects, cultivator.id) ?? carriedArtifact(repos.db, cultivator.id),
         technique: art,
         techniqueMastery: known?.mastery ?? 0
     };

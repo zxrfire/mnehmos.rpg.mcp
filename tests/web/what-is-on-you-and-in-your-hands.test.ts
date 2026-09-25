@@ -21,9 +21,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions.js';
-import { makeGame } from './harness.js';
-import { readFlag } from '../../src/server/consolidated/cultivation-support.js';
-import { FLAG_BLADE_IN_HAND } from '../../src/web/flag-keys.js';
+import { makeGame, makeGameInWorld } from './harness.js';
+import { hadAs, makeObject } from '../../src/engine/world/possessions.js';
 import { whatIsInTheirHand } from '../../src/web/what-is-on-you-and-in-your-hands.js';
 import { theirWeightIsPutAway } from '../../src/web/keeping-yourself-out-of-sight.js';
 import { whetherAFaceIsRemarkable } from '../../src/engine/social/how-a-house-reads-a-face.js';
@@ -69,16 +68,24 @@ describe('what a sentence about your own body reaches', () => {
 });
 
 describe('the blade is a fact, and something reads it', () => {
-    it('is in the hand until it is put away, and will not be drawn twice', async () => {
-        const { game, db } = makeGame({ seed: 'blade-in-hand' });
+    /** A sword of their own, in their inventory: a weapon is had like anything else. */
+    async function withASword(seed: string) {
+        const { game } = await makeGameInWorld({ seed, worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');
+        game.atHand!.objects.push(makeObject({
+            id: `sword-${cultivator.id}`, name: 'an iron sword', kind: 'artifact', power: 2,
+            possessorId: cultivator.id, ownerId: cultivator.id
+        }));
+        return { game, cultivator };
+    }
 
-        expect(whatIsInTheirHand(db, cultivator.id)).toBeNull();
+    it('is in the hand until it is put away, and will not be drawn twice', async () => {
+        const { game, cultivator } = await withASword('blade-in-hand');
+        expect(whatIsInTheirHand(game.atHand!.objects, cultivator.id)).toBeNull();
 
         const drawn = await game.act('I draw my sword');
         expect(drawn.toolCalls.some(c => c.action === 'carry' && c.ok)).toBe(true);
-        expect(readFlag(db, cultivator.id, FLAG_BLADE_IN_HAND)).not.toBeNull();
-        expect(whatIsInTheirHand(db, cultivator.id)?.what).toBe('my sword');
+        expect(whatIsInTheirHand(game.atHand!.objects, cultivator.id)?.what).toBe('an iron sword');
 
         // Drawing a sword that is already out is not an act; it is a sentence
         // about a state that already holds, and it says so.
@@ -87,7 +94,27 @@ describe('the blade is a fact, and something reads it', () => {
 
         const away = await game.act('I sheathe my blade');
         expect(away.toolCalls.some(c => c.action === 'carry' && c.ok)).toBe(true);
-        expect(readFlag(db, cultivator.id, FLAG_BLADE_IN_HAND)).toBeNull();
+        expect(whatIsInTheirHand(game.atHand!.objects, cultivator.id)).toBeNull();
+    }, 120_000);
+
+    it('will not come out with both hands full, and says what is in them', async () => {
+        const { game, cultivator } = await withASword('hands-full');
+        for (const n of [1, 2]) {
+            game.atHand!.objects.push(hadAs(makeObject({
+                id: `chest-${n}`, name: `a lacquered chest ${n}`, kind: 'other', possessorId: cultivator.id
+            }), 'held'));
+        }
+        const tried = await game.act('I draw my sword');
+        expect(tried.toolCalls.some(c => c.action === 'carry' && !c.ok)).toBe(true);
+        expect(tried.narration ?? '').toMatch(/hands are full/i);
+        expect(whatIsInTheirHand(game.atHand!.objects, cultivator.id)).toBeNull();
+    }, 120_000);
+
+    it('will not draw a blade they do not have', async () => {
+        const { game } = makeGame({ seed: 'no-blade' });
+        await game.newRun('Ke Yan');
+        const tried = await game.act('I draw my sword');
+        expect(tried.toolCalls.some(c => c.action === 'carry' && !c.ok)).toBe(true);
     });
 
     it('says where robes come from rather than that the words failed', async () => {
@@ -102,11 +129,10 @@ describe('the blade is a fact, and something reads it', () => {
     });
 
     it('will not put down what is not out', async () => {
-        const { game, db } = makeGame({ seed: 'empty-hands' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { game } = makeGame({ seed: 'empty-hands' });
+        await game.newRun('Ke Yan');
         const dropped = await game.act('I drop the sword');
         expect(dropped.toolCalls.some(c => c.action === 'carry' && !c.ok)).toBe(true);
-        expect(readFlag(db, cultivator.id, FLAG_BLADE_IN_HAND)).toBeNull();
     });
 });
 
