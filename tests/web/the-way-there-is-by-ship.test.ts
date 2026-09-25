@@ -68,28 +68,42 @@ describe('the way there is by ship', () => {
         expect(done.narration).toMatch(/Silver Island by ship/);
     }, 120_000);
 
-    it.each([
-        ['Dragonvein Rock', 'Silver Island'],
-        ['Silver Island Hall', 'Sweet Spring Island']
-    ])('somewhere on open water with no quay is a seat to the port that serves it: %s, from %s', async (named, from) => {
+    it('every place on open water has its own dock, and none of them is walked to', async () => {
+        // The owner: "all island places have a dock". Read off the world, so a house's grounds and a
+        // ruin the seed put on the water are asked about as much as a port town.
         const { game } = await atSweetSpringIsland();
-        if (from !== 'Sweet Spring Island') await game.act(`I take the ship to ${from}`);
-        const docked = game.state().run.elapsedDays;
+        const world = game.atHand!;
+        const sea = world.locations.find(row => row.kind === 'region' && row.name === 'The Pearl Ocean')!;
+        const onTheWater = world.locations.filter(row => row.parentId === sea.id).map(row => row.name);
+        expect(onTheWater.length).toBeGreaterThan(9);
 
-        const done = await game.act(`I go to ${named}`);
+        const board = (await game.act('what ships are there')).narration;
+        for (const name of onTheWater.filter(one => one !== 'Sweet Spring Island')) {
+            expect(board, `no ship to ${name}`).toContain(`${name} by ship:`);
+            const asked = await game.act(`I go to ${name}`);
+            expect(asked.narration, name).toMatch(/is by ship, not on foot\./);
+            expect(asked.narration, name).not.toMatch(/From .+ the way goes on to/);
+            expect(game.state().cultivator.location).toBe('Sweet Spring Island');
+        }
+        expect(game.state().run.elapsedDays).toBe(0);
+    }, 300_000);
 
-        const port = /From (.+?) the way goes on to /.exec(done.narration)?.[1];
-        expect(port, done.narration).toBeDefined();
-        expect(done.narration).toMatch(/is by ship, not on foot\./);
-        expect(done.narration).toContain(`${port} by ship:`);
-        expect(game.state().cultivator.location).toBe(from);
-        expect(game.state().run.elapsedDays).toBe(docked);
+    it.each(['Dragonvein Rock', 'Silver Island Hall grounds'])('a ship sails straight to %s and puts in at its dock', async named => {
+        const { game } = await atSweetSpringIsland();
 
-        await game.act(`I take the ship to ${port}`);
-        expect(game.state().cultivator.location).toBe(port);
-        // At the port that serves it, the rest is the short way it always was.
-        await game.act(`I go to ${named}`);
-        expect(game.state().cultivator.location).toContain(named);
+        await game.act(`I take the ship to ${named}`);
+
+        expect(game.state().cultivator.location).toBe(named);
+        expect(game.state().run.elapsedDays).toBeGreaterThan(0);
+    }, 120_000);
+
+    it('riding a mount or a cart to open water is a ship from the landing too', async () => {
+        const { game } = await atSweetSpringIsland();
+
+        const done = await game.act('I ride to Silver Island');
+
+        expect(done.narration).toMatch(/The way to Silver Island is by ship, not on foot\./);
+        expect(game.state().cultivator.location).toBe('Sweet Spring Island');
     }, 120_000);
 
     it('reads sailing somewhere as going there, and sailing on as carrying on', () => {

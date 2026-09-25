@@ -7,28 +7,18 @@
  * Pearl Ocean's place connections are `road` only because that is the engine's `LinkKind`, and
  * every sea crossing in the catalog has an end on open water, so an end there is the whole test.
  *
- * The landing is the port from which ships reach the place (or, for somewhere inland, a port of
- * its province), the walk to it and the sailing counted together. `move` walks to it, or at it
- * says what the seat costs and who sells it; no ship leaves without a seat bought.
- *
- * A place on open water with no quay (a house's grounds, a ruin, a rock) is reached from the port
- * that serves it ({@link thePortThatServes}), and the short way between the two is the move it
- * always was. How that last stretch is crossed is not modelled.
+ * Every place on open water has its own dock (`where-a-ship-puts-in.ts`), so a ship sails to it
+ * directly and nothing there is walked to. The landing is where the player boards: the dock they
+ * stand at, or from somewhere inland the port on land the walk and the sailing together make
+ * nearest. `move` walks to it, or at it says what the seat costs and who sells it; no ship leaves
+ * without a seat bought.
  */
 
-import { isOpenWater, placeRoadDays, regionIdOfPlace, requireRegion } from '../data/cultivation/regions.js';
-import { regionCatalogIdOf } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
+import { isOpenWater, regionIdOfPlace } from '../data/cultivation/regions.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/where-a-cultivator-is-standing.js';
 import { theCountersHere } from './a-room-at-an-inn.js';
-import {
-    sayTheLine,
-    theBoothsHere,
-    thePortsShipsPutInAt,
-    theShipsFrom,
-    type ALine
-} from './a-seat-on-a-ship-or-a-carriage.js';
-import { worldLocationFor } from './entities.js';
+import { sayTheLine, theBoothsHere, theShipsFrom, type ALine } from './a-seat-on-a-ship-or-a-carriage.js';
 import { factsForRefusal, factsForToolResult, placeName, shownWithNoModelAfter } from './facts.js';
 import { loosePlaceKey } from './knowledge.js';
 import { refused } from './tool-result-prose.js';
@@ -36,45 +26,14 @@ import { SHORT_ACTION_DAYS } from './turn-constants.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { theKeeperAsTheyAreKnown, whoKeepsTheCounter } from './who-keeps-a-counter-here.js';
+import { theDockOf, thePortsShipsPutInAt, theProvinceOf } from './where-a-ship-puts-in.js';
 
 export interface TheWayByShip {
     bound: string;
     /** Where the ship is boarded; null where no ship reaches it from anywhere they could walk to. */
     landing: string | null;
-    /** The first ship from the landing; null where the landing is itself the port that serves the place. */
+    /** The first ship from the landing. */
     line: ALine | null;
-}
-
-/** The province a place is in, by the catalog or the world's row. */
-function theProvinceOf(game: GameService, place: string): string | null {
-    const named = regionIdOfPlace(place);
-    if (named) return named;
-    const row = game.atHand ? worldLocationFor(game.atHand, place) : null;
-    return row && game.atHand ? regionCatalogIdOf(game.atHand, row.id) : null;
-}
-
-/**
- * The port a place on open water is reached from: its own name where it is a port, the port its
- * house holds for a house's grounds, the nearest port by the catalog's passages, and otherwise
- * the port the province's roads end at.
- */
-function thePortThatServes(game: GameService, place: string, province: string): string | null {
-    const ports = thePortsShipsPutInAt().filter(port => regionIdOfPlace(port) === province);
-    const named = ports.find(port => loosePlaceKey(port) === loosePlaceKey(place));
-    if (named || ports.length === 0) return named ?? null;
-    const row = game.atHand ? worldLocationFor(game.atHand, place) : null;
-    const house = row?.kind === 'sect_seat' ? (row.data as { factionId?: unknown }).factionId : null;
-    const held = typeof house === 'string'
-        ? requireRegion(province).places.find(one => one.heldByFactionId === house && ports.includes(one.name))
-        : undefined;
-    if (held) return held.name;
-    const nearest = ports
-        .map(port => ({ port, days: placeRoadDays(place, port) }))
-        .filter((one): one is { port: string; days: number } => one.days !== null)
-        .sort((a, b) => a.days - b.days || a.port.localeCompare(b.port))[0];
-    if (nearest) return nearest.port;
-    const chief = game.whereTheRoadEndsIn(requireRegion(province).name).name;
-    return ports.find(port => loosePlaceKey(port) === loosePlaceKey(chief)) ?? ports[0]!;
 }
 
 /** The way to somewhere by ship, or null where it is walked. */
@@ -84,25 +43,24 @@ export function theWayThereIsByShip(
     destination: string,
     today: number
 ): TheWayByShip | null {
+    const world = game.atHand;
     const here = placeName(cultivator);
     if (loosePlaceKey(here) === loosePlaceKey(destination)) return null;
-    const fromProvince = theProvinceOf(game, here) ?? standingOf(cultivator).regionId;
-    const toProvince = theProvinceOf(game, destination);
+    const fromProvince = theProvinceOf(world, here) ?? standingOf(cultivator).regionId;
+    const toProvince = theProvinceOf(world, destination);
     if (!isOpenWater(fromProvince) && !isOpenWater(toProvince)) return null;
 
-    const ports = thePortsShipsPutInAt();
-    const isPort = (place: string) => ports.find(port => loosePlaceKey(port) === loosePlaceKey(place)) ?? null;
-    const servesThere = isOpenWater(toProvince) ? thePortThatServes(game, destination, toProvince!) : null;
-    const servesHere = isOpenWater(fromProvince) ? thePortThatServes(game, here, fromProvince) : null;
-    // BETWEEN A PLACE WITH NO QUAY AND ITS PORT is the short way it always was.
-    if (servesThere && loosePlaceKey(servesThere) === loosePlaceKey(here)) return null;
-    if (servesHere && loosePlaceKey(servesHere) === loosePlaceKey(destination)) return null;
-    const targets = servesThere ? [servesThere]
+    const ports = thePortsShipsPutInAt(world);
+    const dockThere = theDockOf(world, destination);
+    const dockHere = theDockOf(world, here);
+    // Inside the same walls on open water is a walk across a compound, not a passage.
+    if (dockThere && dockHere && loosePlaceKey(dockThere) === loosePlaceKey(dockHere)) return null;
+    const targets = dockThere ? [dockThere]
         : isOpenWater(toProvince) ? []
         : ports.filter(port => regionIdOfPlace(port) === toProvince);
-    const starts = servesHere ? [{ port: servesHere, walk: isPort(here) ? 0 : SHORT_ACTION_DAYS }]
+    const starts = dockHere ? [{ port: dockHere, walk: 0 }]
         : isOpenWater(fromProvince) ? []
-        : ports.filter(port => !isOpenWater(regionIdOfPlace(port)))
+        : ports.filter(port => !isOpenWater(theProvinceOf(world, port)))
             .map(port => ({ port, walk: game.daysOnTheRoadTo(cultivator, port) ?? SHORT_ACTION_DAYS }));
 
     // Every start at once, each port reached remembering the landing it was reached from.
@@ -117,7 +75,10 @@ export function theWayThereIsByShip(
         if (at === null) break;
         settled.add(at);
         const from = best.get(at)!;
-        for (const line of theShipsFrom(at, today)) {
+        // A dock only the world names is a place to put in, not a stop on the way: its passages
+        // are the unpriced flat day, and chaining them would undercut every priced one.
+        if (from.first !== null && !regionIdOfPlace(at)) continue;
+        for (const line of theShipsFrom(game, at, today)) {
             const cost = from.cost + line.days;
             if (cost < (best.get(line.to)?.cost ?? Infinity)) {
                 best.set(line.to, { cost, landing: from.landing, first: from.first ?? line });
@@ -179,4 +140,22 @@ export function theWayOnIsByShip(game: GameService, cultivator: Cultivator, walk
     shownWithNoModelAfter(walked.facts, said);
     walked.facts.required = [...(walked.facts.required ?? []), said];
     return walked;
+}
+
+/**
+ * A journey whose way is by ship: no ship reaches it, or at the landing the seat is offered, or
+ * the move walks to the landing and says the way on.
+ */
+export async function goingByShipInstead(
+    game: GameService,
+    run: Run,
+    cultivator: Cultivator,
+    way: TheWayByShip,
+    walkToTheLanding: (landing: string) => Promise<Execution>
+): Promise<Execution> {
+    if (way.landing === null) return noShipGoesThere(way, placeName(cultivator));
+    if (way.line && loosePlaceKey(way.landing) === loosePlaceKey(placeName(cultivator))) {
+        return aSeatIsBoughtHere(game, run, cultivator, way);
+    }
+    return theWayOnIsByShip(game, cultivator, await walkToTheLanding(way.landing), way);
 }

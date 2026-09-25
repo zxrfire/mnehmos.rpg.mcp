@@ -158,12 +158,7 @@ import {
     writeTheVoyage,
     type AVoyage
 } from './a-ship-at-sea.js';
-import {
-    aSeatIsBoughtHere,
-    noShipGoesThere,
-    theWayOnIsByShip,
-    theWayThereIsByShip
-} from './the-way-there-is-by-ship.js';
+import { goingByShipInstead, theWayThereIsByShip } from './the-way-there-is-by-ship.js';
 import { theRestOfTheFight } from './when-somebody-comes-at-you.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
 import { SATIETY_MAX } from '../schema/cultivation.js';
@@ -930,12 +925,8 @@ export const travelVerbs = {
         // landing says what the seat costs. See `the-way-there-is-by-ship.ts`.
         const byShip = theWayThereIsByShip(this, cultivator, arrivedAt, Math.floor(run.elapsedDays));
         if (byShip) {
-            if (byShip.landing === null) return noShipGoesThere(byShip, placeName(cultivator));
-            if (byShip.line && loosePlaceKey(byShip.landing) === loosePlaceKey(placeName(cultivator))) {
-                return aSeatIsBoughtHere(this, run, cultivator, byShip);
-            }
-            return theWayOnIsByShip(this, cultivator,
-                await this.move(run, cultivator, ambient, byShip.landing, intent), byShip);
+            return goingByShipInstead(this, run, cultivator, byShip,
+                landing => this.move(run, cultivator, ambient, landing, intent));
         }
 
         // ── AND THE ROAD IS AS LONG AS THE CATALOG SAYS IT IS ────────────
@@ -1780,6 +1771,15 @@ export const travelVerbs = {
             ? flyable.find(a => a.conveyance.id === asked.id)!
             : bestForThisRoad(flyable, walkingDays, heads))
             ?? flyable[0] ?? available[0];
+        // NOTHING THAT GOES ON GROUND GOES OVER WATER: a mount or a cart to open water is a ship
+        // from the landing, as walking is. See `the-way-there-is-by-ship.ts`.
+        if (!chosen.conveyance.crossesGroundThatCannotBeWalked) {
+            const byShip = theWayThereIsByShip(this, cultivator, arrivedAt, Math.floor(run.elapsedDays));
+            if (byShip) {
+                return goingByShipInstead(this, run, cultivator, byShip,
+                    landing => this.move(run, cultivator, this.ambientFor(cultivator, run), landing, 'travel'));
+            }
+        }
 
         const journey = priceJourney({
             walkingDays,

@@ -35,7 +35,6 @@ import {
     REGIONS,
     isOpenWater,
     localPrice,
-    placeRoadDays,
     placesNextTo,
     provinceRoadDays,
     regionIdOfPlace,
@@ -66,7 +65,13 @@ import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { theKeeperAsTheyAreKnown, whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
 import { theCountersHere, theInnAsSeenHere } from './a-room-at-an-inn.js';
-import type { AVoyage } from './a-ship-at-sea.js';
+import { theVoyageUnderWay, type AVoyage } from './a-ship-at-sea.js';
+import {
+    daysOfSailingBetween,
+    theLandfall,
+    thePortsShipsPutInAt,
+    theProvinceOf
+} from './where-a-ship-puts-in.js';
 
 export type AService = 'ship' | 'carriage';
 
@@ -127,20 +132,6 @@ function aPassageBetween(from: string, to: string, days: number): SeaLane {
     };
 }
 
-/** The catalog place a lane's landfall names, where it names one. */
-function theLandfall(named: string): string | null {
-    const wanted = named.trim().toLowerCase();
-    let best: string | null = null;
-    for (const region of REGIONS) {
-        for (const place of region.places) {
-            const name = place.name.toLowerCase();
-            if (name === wanted) return place.name;
-            if (wanted.includes(name) && (best === null || name.length > best.length)) best = place.name;
-        }
-    }
-    return best;
-}
-
 /** The run day's month, 1 to 12. */
 function monthOf(day: number): number {
     const inTheYear = ((Math.floor(day) % 365) + 365) % 365;
@@ -170,7 +161,8 @@ function theSeatFare(regionId: string, service: AService, walkingDays: number, l
 /** The inn, the landing and the carriage station as a look round sees them. */
 export function theCountersAsSeenHere(game: GameService, cultivator: Cultivator, today: number): string[] {
     const inn = theInnAsSeenHere(game, cultivator);
-    const runs = whatRunsFromHere(game, cultivator, today);
+    // Aboard a ship at sea, the water under it has a dock only for ships that put in.
+    const runs = theVoyageUnderWay(game.repos.db, cultivator) ? [] : whatRunsFromHere(game, cultivator, today);
     const ships = runs.some(line => line.service === 'ship');
     const carriages = runs.some(line => line.service === 'carriage');
     return [
@@ -181,25 +173,14 @@ export function theCountersAsSeenHere(game: GameService, cultivator: Cultivator,
     ];
 }
 
-/** Every place a ship puts in at: each lane's landfalls, and the ports of open water. */
-export function thePortsShipsPutInAt(): string[] {
-    const ports = new Set<string>();
-    for (const lane of SEA_LANES) {
-        for (const end of [theLandfall(lane.fromPlace), theLandfall(lane.toPlace)]) if (end) ports.add(end);
-    }
-    for (const region of REGIONS.filter(one => isOpenWater(one.id))) {
-        for (const place of region.places) if (place.kind !== 'site') ports.add(place.name);
-    }
-    return [...ports];
-}
-
 /**
- * The ships from a port: each lane with a landfall here, then across open water every other
- * port a passage reaches, nearest first. Nothing from anywhere a ship does not put in.
+ * The ships from a dock: each lane with a landfall here, then across open water to every other
+ * dock of the province, nearest first (`where-a-ship-puts-in.ts`). Nothing from anywhere a ship
+ * does not put in.
  */
-export function theShipsFrom(here: string, today: number): ALine[] {
-    const regionId = regionIdOfPlace(here);
-    const ports = thePortsShipsPutInAt();
+export function theShipsFrom(game: GameService, here: string, today: number): ALine[] {
+    const regionId = theProvinceOf(game.atHand, here);
+    const ports = thePortsShipsPutInAt(game.atHand);
     if (!regionId || !ports.includes(here)) return [];
     const lines: ALine[] = [];
     for (const lane of SEA_LANES) {
@@ -220,10 +201,9 @@ export function theShipsFrom(here: string, today: number): ALine[] {
         });
     }
     if (!isOpenWater(regionId)) return lines;
-    const across = requireRegion(regionId).places
-        .filter(place => place.name !== here && ports.includes(place.name) && !lines.some(line => line.to === place.name))
-        .map(place => ({ to: place.name, days: placeRoadDays(here, place.name) }))
-        .filter((one): one is { to: string; days: number } => one.days !== null && one.days > 0)
+    const across = ports
+        .filter(port => port !== here && theProvinceOf(game.atHand, port) === regionId && !lines.some(line => line.to === port))
+        .map(port => ({ to: port, days: daysOfSailingBetween(here, port) }))
         .sort((a, b) => a.days - b.days || a.to.localeCompare(b.to));
     for (const { to, days } of across) {
         const lane = aPassageBetween(here, to, days);
@@ -246,8 +226,8 @@ export function theShipsFrom(here: string, today: number): ALine[] {
 export function whatRunsFromHere(game: GameService, cultivator: Cultivator, today: number): ALine[] {
     const here = placeName(cultivator);
     const regionId = standingOf(cultivator).regionId;
-    const lines: ALine[] = theShipsFrom(here, today);
-    if (isOpenWater(regionId)) return lines;
+    const lines: ALine[] = theShipsFrom(game, here, today);
+    if (isOpenWater(regionId) || isOpenWater(theProvinceOf(game.atHand, here))) return lines;
 
     const carriage = requireConveyance(THE_DRAWN_CARRIAGE);
     const byRoad = new Map<string, number>();
@@ -343,8 +323,10 @@ export function theLineTo(lines: readonly ALine[], wanted: string, service: ASer
     const bare = (name: string) => name.toLowerCase().replace(/^the\s+/, '').trim();
     const said = bare(wanted);
     const matches = lines.filter(line => said.length >= 2
-        && (bare(line.to) === said || bare(line.to).includes(said) || said.includes(bare(line.to))));
-    return matches.find(line => service === null || line.service === service) ?? null;
+        && (bare(line.to) === said || bare(line.to).includes(said) || said.includes(bare(line.to))))
+        .filter(line => service === null || line.service === service);
+    // The place named, before a longer name that has it inside: Silver Island, not Silver Island Hall grounds.
+    return matches.find(line => bare(line.to) === said) ?? matches[0] ?? null;
 }
 
 /**
