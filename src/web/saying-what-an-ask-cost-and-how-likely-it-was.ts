@@ -320,7 +320,7 @@ export interface AnAskThatWasPut {
      *
      * A whole sentence rather than a fragment, so it is said as its own
      * sentence rather than spliced into the term clause the way `theNeed` is -
-     * *"Nobody holds The Drowned Sea, and everybody has noticed"* is not a
+     * *"Nobody holds The Pearl Ocean, and everybody has noticed"* is not a
      * phrase that fits inside "the ground this is happening on cost 12 points".
      *
      * Absent is the ordinary case and costs nothing: the term still appears in

@@ -13,7 +13,7 @@
  * ── WHAT HE DOES, AND THE CATALOG LINE EACH FIGURE ANSWERS TO ───────────
  *
  *   walks        the two provinces the catalog describes, Low Fall and the
- *                Silent Cliffs: `keeps-to:` tags on his row.
+ *                Buddha Precipice: `keeps-to:` tags on his row.
  *   the Court    *"He goes back to the Hollow Court - not often, on no schedule"*
  *                and gives dao lectures to the four; the lecture floor holds
  *                *"perhaps forty separate afternoons ... over the last two

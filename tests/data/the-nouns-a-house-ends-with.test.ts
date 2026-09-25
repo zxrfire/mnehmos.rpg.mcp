@@ -89,7 +89,7 @@ describe('what a house is called', () => {
  *
  *   TEN reached no intent at all, because `WHAT_A_HOUSE_HAS` carried fifteen
  *   house words of its own and the catalog has twenty-seven - Clearwater Ward,
- *   Six Li Patrol, Fallen Grain Caravan, Waterman Caravan, Hollow Bell
+ *   Six Li Patrol, Bountiful Sheaf Sect, Tranquil Oasis Sect, Hollow Bell
  *   Wanderers, Still Blade Peak, Flowing Light Tower, Earth Vein Tower, Bone
  *   Lantern Cult - and The Severed, whose whole name is one word, went to the
  *   market board on `what does the \w+ have`.

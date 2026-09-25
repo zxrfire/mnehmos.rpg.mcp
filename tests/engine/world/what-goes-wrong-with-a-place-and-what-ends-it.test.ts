@@ -182,7 +182,7 @@ describe('what goes wrong with a place', () => {
             // sentence: a little under once a generation per province - rare
             // enough to be remembered, common enough that a five-century world
             // has had a run of them.
-            const region = makeLocation({ id: 'reg', name: 'The Silent Cliffs', kind: 'region' });
+            const region = makeLocation({ id: 'reg', name: 'The Buddha Precipice', kind: 'region' });
             let failures = 0;
             const tries = 2000;
             for (let i = 0; i < tries; i++) {
@@ -194,7 +194,7 @@ describe('what goes wrong with a place', () => {
         });
 
         it('stops the food and blames nobody', () => {
-            const region = makeLocation({ id: 'reg', name: 'The Silent Cliffs', kind: 'region' });
+            const region = makeLocation({ id: 'reg', name: 'The Buddha Precipice', kind: 'region' });
             // Draw until one lands rather than pinning a stream to a coincidence.
             let famine = null;
             for (let i = 0; i < 500 && famine === null; i++) {

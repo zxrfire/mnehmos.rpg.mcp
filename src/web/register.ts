@@ -2373,7 +2373,7 @@ function claim(s: string, max: number, minUseful = 25): string {
         ? cut.slice(0, boundary)
         // No clause boundary to cut at, so cut back to the last whole word -
         // and then keep going while the tail is a word no sentence can end on.
-        // Without this the Fallen Grain Caravan' unit of value came out "honoured after a".
+        // Without this the Bountiful Sheaf Sect' unit of value came out "honoured after a".
         : cut.replace(/\s+\S*$/, '')
             .replace(/(\s+(?:of|with|and|the|a|an|to|in|on|that|which|is|was|by|from|at|after|before))+$/i, '');
     return trimmed.trim();

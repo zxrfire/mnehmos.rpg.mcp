@@ -28,7 +28,7 @@ import { makeLocation } from '../../src/engine/world/locations';
 
 const LOW_FALL = makeLocation({ id: 'r', name: 'The Jade Gorge', kind: 'region' });
 const DROWNED = makeLocation({
-    id: 'sea', name: 'The Drowned Sea', kind: 'region', data: { politics: 'no_authority' }
+    id: 'sea', name: 'The Pearl Ocean', kind: 'region', data: { politics: 'no_authority' }
 });
 
 /** The four grounds, read through the real chain rather than fabricated. */

@@ -623,7 +623,7 @@ export function worldRosterRow(
         sectName: factionNameFor(npc.factionId),
         // The faction's OWN title for the rank, not the index into its ladder.
         // The roster was printing raw integers beside the player's real title,
-        // so one column held `5` and `Barrow Hand` and meant the same thing.
+        // so one column held `5` and `Chaff Hand` and meant the same thing.
         sectRank: factionRankTitle(world, npc.factionId, npc.factionRankIndex),
         age,
         alive: npc.status === 'alive',

@@ -4,7 +4,7 @@
  * FOUND BY PLAYING BLIND, two sentences apart:
  *
  *     > how far is Nine Peaks
- *     You are in Six Li, The Silent Cliffs... Iron Ridge: a market town...
+ *     You are in Six Li, The Buddha Precipice... Iron Ridge: a market town...
  *     Nine Hundred Paces: site... The Jade Face: site... Willow Village: a
  *     village... There are 2 further names you are carrying that you cannot
  *     place.

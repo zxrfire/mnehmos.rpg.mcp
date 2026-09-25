@@ -150,7 +150,7 @@ export const THE_WHITE_STAIR: Region = {
         missingDisciplines: [
             {
                 discipline: 'formations',
-                reason: 'An array is laid on ground that stays where it is put, and ice does not: stones set in ice go out of square inside a decade and out of use inside two. The exception is the one the Silent Cliffs already uses - a node cut into rock holds - so the two courts that predate the retreat have working perimeters on stone and nobody has laid a new array in the province in four hundred years. Nothing can be laid at the working face at all, which is the part that matters, because the face is where the qi is and it is the one place in the province a formation could not be worth having.'
+                reason: 'An array is laid on ground that stays where it is put, and ice does not: stones set in ice go out of square inside a decade and out of use inside two. The exception is the one the Buddha Precipice already uses - a node cut into rock holds - so the two courts that predate the retreat have working perimeters on stone and nobody has laid a new array in the province in four hundred years. Nothing can be laid at the working face at all, which is the part that matters, because the face is where the qi is and it is the one place in the province a formation could not be worth having.'
             }
         ],
         strongDisciplines: [

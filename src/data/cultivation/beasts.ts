@@ -647,7 +647,7 @@ export const ESTIMATING_A_BEAST = {
     standardError:
         'Reading it a rank low, from size or from an old district survey. Culling notices are written from surveys and surveys are not redrawn when a beast has a good century, so the price on the notice is the price for what used to be there.',
     whoGetsItRight:
-        'Fallen Grain Caravan, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
+        'Bountiful Sheaf Sect, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
 } as const;
 
 /**
@@ -1079,7 +1079,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It comes through a working face into an occupied gallery, which is a fight in the dark in a space nobody can swing in. The carvers lose two a year to them and price the grant accordingly.',
         materialIds: ['mat-mole-claw'],
-        note: 'Every carver in the Silent Cliffs would rather follow one than a surveyor, and every grant ledger says a face is opened on the survey.',
+        note: 'Every carver in the Buddha Precipice would rather follow one than a surveyor, and every grant ledger says a face is opened on the survey.',
         changedManner: 'Blunt about what will not work and vague about everything else, and says the wall is bad without ever explaining how it knows.'
     },
     {
@@ -1234,7 +1234,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Nothing individually. Twenty of them moving in one direction is a landscape event, and the villages between are not a consideration to them.',
         materialIds: ['mat-ox-horn'],
-        note: 'Placid for decades and then, once, not. Silent Cliffs herds are half the size of the ones in the old Jade Gorge surveys and about as heavy, which nobody has explained.',
+        note: 'Placid for decades and then, once, not. Buddha Precipice herds are half the size of the ones in the old Jade Gorge surveys and about as heavy, which nobody has explained.',
         changedManner: 'Literal. Answers the question that was asked and not the one that was meant, and does the thing it agreed to do exactly, including the part everybody assumed was a figure of speech.'
     },
     {
@@ -1513,7 +1513,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It has to be fought where it lives, which is where nobody else can stand, and a party that draws one onto firm ground has spent longer arranging that than the fight is worth.',
         materialIds: ['mat-buffalo-horn'],
-        note: 'Herded rather than hunted by two marsh clans who will not say how, and sold on at the Drowned Sea ports as though it had been taken wild.',
+        note: 'Herded rather than hunted by two marsh clans who will not say how, and sold on at the Pearl Ocean ports as though it had been taken wild.',
         changedManner: 'Says little, agrees to less, and once it has agreed cannot be talked out of it by anybody, including the person who talked it in.'
     },
     {
@@ -2226,7 +2226,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It goes through a hill rather than along the galleries, so it cannot be cut off, trapped in a face or starved out, and a working it has taken an interest in is a working with a new opening every week.',
         materialIds: ['mat-borer-scale', 'mat-borer-core'],
-        note: 'Sheds plates the length of a hand into its own runs. Every pill hall in the province buys them and every carver in the Silent Cliffs knows which runs to walk.',
+        note: 'Sheds plates the length of a hand into its own runs. Every pill hall in the province buys them and every carver in the Buddha Precipice knows which runs to walk.',
         changedManner: 'Shrugs off an insult and a compliment the same way, and cannot be got at by either, which most people read as not listening.'
     },
     {
@@ -2512,7 +2512,7 @@ export const BEASTS: readonly Beast[] = [
             what:
                 'Has grown into the working face itself, so anything done to it is done to nine hundred years of mountain first.'
         },
-        hard: 'It is walled into a working face on the Silent Cliffs side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
+        hard: 'It is walled into a working face on the Buddha Precipice side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
         materialIds: ['mat-sleeper-seam-core'],
         note: 'Clearwater Ward has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.',
         changedManner: 'Asks who holds the district now, and then who held it before that, and works forward through nine hundred years of it before it will discuss anything else.'
@@ -2817,7 +2817,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 180,
         rarityWeight: 48,
         harvestOrdinal: 11,
-        description: 'The one beast material the Silent Cliffs can supply in quantity, and the reason Iron Ridge has a horn market at all.'
+        description: 'The one beast material the Buddha Precipice can supply in quantity, and the reason Iron Ridge has a horn market at all.'
     },
     {
         id: 'mat-core-taker-jaw',
@@ -3046,7 +3046,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 260,
         rarityWeight: 42,
         harvestOrdinal: 15,
-        description: 'Sold at the Drowned Sea ports as taken wild, by two marsh clans who herd them and will not say how.'
+        description: 'Sold at the Pearl Ocean ports as taken wild, by two marsh clans who herd them and will not say how.'
     },
     {
         id: 'mat-squid-ink',
@@ -3632,7 +3632,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 120_000,
         rarityWeight: 1,
         harvestOrdinal: 30,
-        description: 'A core that has grown into worked stone rather than sitting in a body, which no Jade Gorge alchemist has a method for and no Silent Cliffs carver will sell. Both facts are the entire market.'
+        description: 'A core that has grown into worked stone rather than sitting in a body, which no Jade Gorge alchemist has a method for and no Buddha Precipice carver will sell. Both facts are the entire market.'
     }
 ] as const;
 
@@ -3703,7 +3703,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         whoAbsorbsIt:
             'Iron Ridge, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
         aftermath:
-            'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Silent Cliffs actually gets, and it is not a story anybody tells.'
+            'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Buddha Precipice actually gets, and it is not a story anybody tells.'
     }
 ] as const;
 

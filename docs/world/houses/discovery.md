@@ -498,7 +498,7 @@ Two elders talking on the other side of a courtyard wall. Not to the player, not
 player, and not moderated for an audience. They use names, shorthand, half-sentences and a
 shared history neither is going to summarise. One of them is annoyed.
 
-> "- and if the Silent Cliffs send another, we send it back with the same answer."
+> "- and if the Buddha Precipice send another, we send it back with the same answer."
 >
 > "You will not be the one answering. Ninefold has already been asked."
 >

@@ -75,7 +75,7 @@ export const PLACE = {
     SMOKE_RIDGE: 'Smoke Ridge',
     PINE_SPRING: 'Pine Spring',
 
-    // ─── The Silent Cliffs ───────────────────────────────────────────────
+    // ─── The Buddha Precipice ───────────────────────────────────────────────
     IRON_GATE: 'Iron Ridge',
     GRAVE_MARKET: 'Willow Village',
     SIX_LI: 'Six Li',
@@ -141,7 +141,7 @@ export const PLACE = {
     // Court is the house on it - and this now follows it.
     ORCHID_TERRACE: 'Orchid Terrace',
 
-    // ─── The Drowned Sea ───────────────────────────────────────────────
+    // ─── The Pearl Ocean ───────────────────────────────────────────────
     SWEETSPRING_ISLE: 'Sweet Spring Island',
     BRONZE_BELL_CAPE: 'Bronze Bell Cliff',
     DRAGONVEIN_ROCK: 'Dragonvein Rock',
@@ -185,10 +185,10 @@ export const PLACE_NAMES: readonly PlaceName[] = Object.freeze(
  */
 export const REGION_NAME = {
     JADE_GORGE: 'The Jade Gorge',
-    SILENT_CLIFFS: 'The Silent Cliffs',
+    SILENT_CLIFFS: 'The Buddha Precipice',
     YELLOW_PLAIN: 'The Yellow Plain',
     WHITE_STAIR: 'The White Stair',
-    DROWNED_SEA: 'The Drowned Sea',
+    DROWNED_SEA: 'The Pearl Ocean',
     BURIAL_SANDS: 'The Burial Sands'
 } as const;
 

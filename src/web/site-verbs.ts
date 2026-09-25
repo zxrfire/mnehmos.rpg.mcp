@@ -424,7 +424,7 @@ export const siteVerbs = {
         //
         // The same argument the found-ground branch below makes: a room thirty
         // paces away is a real place, and *there is no thing you meant* is
-        // false about it. Played - standing in the Waterman Caravan's
+        // false about it. Played - standing in the Tranquil Oasis Sect's
         // forecourt, with the only two seniors in reach inside its mission
         // hall - "I go to the mission hall" was read as a site and refused.
         //

@@ -2,7 +2,7 @@
  * "I wait until the intake" waited one day, with the date three lines above it.
  *
  * FOUND BY PLAYING, engine-only, at Wind Turn on world `a-xianxia-run`. The
- * wall in that square carries two dated bills - Waterman Caravan in 24 days,
+ * wall in that square carries two dated bills - Tranquil Oasis Sect in 24 days,
  * Cold Sword Sect in 64 - and both of these spent a single day:
  *
  *     > I wait until the intake     Waiting of 1 day was intended.
@@ -81,8 +81,8 @@ describe('the sentence carries what is being waited for', () => {
     it('takes a named event off "until" and off "for"', () => {
         expect(parseIntent('I wait until the intake').target).toBe('the intake');
         expect(parseIntent('I wait for the intake').target).toBe('the intake');
-        expect(parseIntent('I wait until the Waterman Caravan intake').target)
-            .toBe('the waterman caravan intake');
+        expect(parseIntent('I wait until the Tranquil Oasis Sect intake').target)
+            .toBe('the tranquil oasis sect intake');
     });
 
     /** And a named event is not a span, so neither is read as one. */

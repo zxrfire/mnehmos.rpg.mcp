@@ -286,7 +286,7 @@ describe('the question never requires a player to know a string', () => {
  *
  * FOUND BY PLAYING, on turn 2 of a life:
  *
- *     "Grandfather, the Waterman Caravan is holding an intake here in thirteen
+ *     "Grandfather, the Tranquil Oasis Sect is holding an intake here in thirteen
  *      days. I mean to go before them and become a cultivator."
  *
  * A boy telling the man who raised him what he intends. The turn ran the
@@ -309,10 +309,10 @@ describe('the question never requires a player to know a string', () => {
 describe('what follows an intention is still the intention', () => {
     it('drops the clauses hanging off it rather than running them', () => {
         expect(theClausesOf(
-            'Grandfather, the Waterman Caravan is holding an intake here in thirteen days. '
+            'Grandfather, the Tranquil Oasis Sect is holding an intake here in thirteen days. '
             + 'I mean to go before them and become a cultivator.'
         )).toEqual([
-            'the Waterman Caravan is holding an intake here in thirteen days. '
+            'the Tranquil Oasis Sect is holding an intake here in thirteen days. '
             + 'I mean to go before them'
         ]);
     });

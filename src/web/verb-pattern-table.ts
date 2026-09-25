@@ -1852,7 +1852,7 @@ function theHouseBeingAskedAbout(input: string): string | undefined {
  *
  * Fifteen house words were written out here, and the catalog has twenty-seven.
  * Measured over every row of `SECTS`: NINE houses could not be asked this
- * question at all - Clearwater Ward, Six Li Patrol, Fallen Grain Caravan, Sand
+ * question at all - Clearwater Ward, Six Li Patrol, Bountiful Sheaf Sect, Sand
  * Well Caravan, Hollow Bell Wanderers, Still Blade Peak, Flowing Light Tower,
  * Earth Vein Tower, Bone Lantern Cult - because their type noun was not on the
  * line, and a tenth, The Severed, because its name is one word. A birth that
@@ -2706,7 +2706,7 @@ const THE_SCENE_ITSELF =
  * sentence with its proper names removed, so "I leave Verdant Spring Valley"
  * reaches an anchor as "i leave" - and the resignation became a flight. The
  * anchor is the whole point of the rule: "I leave the sect" is a resignation and
- * "I go to Barrow Hand" is a journey, and only a sentence with nothing after the
+ * "I go to Chaff Hand" is a journey, and only a sentence with nothing after the
  * verb is this.
  */
 const NOTHING_BUT_A_GOING = /^\s*(?:i\s+)?(?:runs?|leaves?|go(?:es)?)\s*[.!?]*$/i;
@@ -3377,7 +3377,7 @@ export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
  *
  * A determiner is required, and it is the whole of what keeps this narrow. "I
  * wait for a while" and "I wait for him" carry no determiner and stay the
- * one-day wait they have always been; `the intake` and `the Waterman Caravan
+ * one-day wait they have always been; `the intake` and `the Tranquil Oasis Sect
  * intake` are references to something the world has a date for, and the handler
  * is the only layer that can tell which.
  *
@@ -4403,7 +4403,7 @@ const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|
  * Somebody addressed by name or title before the rest of the sentence.
  *
  * *Lu Nuoming, what do you know about the Caravan?* - *Senior sister, where do
- * the Sand Servants sleep?* A xianxia player writes this constantly and the table had
+ * the Cistern Servants sleep?* A xianxia player writes this constantly and the table had
  * no rule for it, so the sentences fell past every verb to whatever their TAIL
  * looked like: a question about a house became `investigate` on the house, a
  * question about the dormitory became `assess`, and *Lu Nuoming, hello* became

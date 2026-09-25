@@ -29,7 +29,7 @@
  *
  *   A SOURCE     the player learns of a ground from somebody who could point at
  *                it - which is to say from a person whose own life puts it in
- *                front of them. Everybody in the Silent Cliffs can tell you
+ *                front of them. Everybody in the Buddha Precipice can tell you
  *                where the Grinding Ford is; the carts have been crossing it for
  *                six hundred years. Almost none of them has ever taken anything
  *                from it. That gap is the whole content of the channel, and it

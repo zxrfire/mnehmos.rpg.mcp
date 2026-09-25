@@ -1682,7 +1682,7 @@ describe('asking what I know', () => {
             'what do I know of Lu Sheng',
             'what do I know of the Hollow Court',
             'what have I heard of the Ninth Stone',
-            'what do I know about the Fallen Grain Caravan',
+            'what do I know about the Bountiful Sheaf Sect',
             'have I ever heard of the Clearwater Ward',
             'remind me what I know about Elder Fang',
             'what do I have on the Moving Hoard',

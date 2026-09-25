@@ -159,7 +159,7 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
     // volunteers are precisely the two where nobody holds the ground - so a
     // player below the bar standing on The Burial Sands, which is where a fresh
     // run opens, was about to be told "somebody holds this ground and nobody is
-    // going to say who" over the top of "nobody holds The Drowned Sea, and
+    // going to say who" over the top of "nobody holds The Pearl Ocean, and
     // everybody has noticed", with the route line still telling them to take it
     // to whoever keeps the place running. Withholding a name the world does not
     // have is not discretion, it is a different world.

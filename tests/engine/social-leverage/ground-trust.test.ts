@@ -55,11 +55,11 @@ function held(factionId: string) {
     );
 }
 
-/** The vacuum. A region that declares nobody holds it - the Drowned Sea. */
+/** The vacuum. A region that declares nobody holds it - the Pearl Ocean. */
 function noAuthority() {
     return reading(
         [
-            makeLocation({ id: 'r', name: 'The Drowned Sea', kind: 'region', data: { politics: 'no_authority' } }),
+            makeLocation({ id: 'r', name: 'The Pearl Ocean', kind: 'region', data: { politics: 'no_authority' } }),
             makeLocation({ id: 'g', name: 'Bronze Bell Cliff', kind: 'settlement', parentId: 'r' })
         ],
         'g'

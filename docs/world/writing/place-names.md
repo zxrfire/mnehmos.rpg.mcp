@@ -346,7 +346,7 @@ The short version:
 
   | house | ground it collided with |
   |---|---|
-  | ~~Sand Well Caravan~~ **Waterman Caravan** | Sand Well (wilds) - **done** |
+  | ~~Sand Well Caravan~~ ~~Waterman Caravan~~ **Tranquil Oasis Sect** | Sand Well (wilds) - **done** |
   | Burnt Earth Temple | Burnt Earth (settlement) |
   | Nine Peaks Ascetic Order | Nine Peaks (settlement) |
   | Silver Island Market | Silver Island (settlement) |
@@ -360,7 +360,8 @@ The short version:
   holds the parser's list of the words a house name ends with against the catalog, so
   moving the noun - *the Caravan of Sand Well* - makes the house unparseable. Change the
   words in FRONT of it. Take them from the house's own vocabulary rather than inventing:
-  the Caravan's head is a Waterman.
+  the Caravan's head was a Waterman. (Later the owner ruled *"a sect is not a caravan"*, and the
+  house became the Tranquil Oasis Sect, its head the Oasis Master.)
 
   **No apostrophes.** *Waterman's Caravan* broke a single-quoted literal in a region file
   on the first pass.

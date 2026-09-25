@@ -567,9 +567,9 @@ interface RawPrefecture {
  *
  * A basin is ground and a face district is WORK - "there is nothing in the air,
  * so a holding is not ground, it is work. Every one of these is held by an
- * office or by nobody", which is the banner over the Silent Cliffs rows. So
+ * office or by nobody", which is the banner over the Buddha Precipice rows. So
  * holding a face district says who cuts the stone, not who governs the village
- * beside it: the Fallen Grain Caravan holds a salvage contract over a worked-out
+ * beside it: the Bountiful Sheaf Sect holds a salvage contract over a worked-out
  * face and the Clearwater Ward administers two faces "on the Myriad Course
  * Hall's behalf", and `DIRECT_RULE` states in one word - `noSkim` - that nothing
  * is taken by an intermediate tier. Reading either as a town's holder would put

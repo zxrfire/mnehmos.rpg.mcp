@@ -34,9 +34,9 @@ export function standingOf(cultivator: Cultivator): Standing {
         }
     }
     // STANDING ON A PROVINCE ITSELF, which is an ordinary thing to do: the world
-    // holds a row for each one and "I travel to The Silent Cliffs" lands the player
+    // holds a row for each one and "I travel to The Buddha Precipice" lands the player
     // on it. Without this the loop above found no place, fell through to the home
-    // region, and reported somebody standing in the Silent Cliffs as being in the
+    // region, and reported somebody standing in the Buddha Precipice as being in the
     // Jade Gorge - so `where can I go` listed the wrong province's towns and could
     // not name the gate of a house they had just been told about, in the province
     // they were actually in.

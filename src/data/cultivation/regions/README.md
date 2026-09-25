@@ -15,13 +15,13 @@ OPEN, so a mismatch answers with the wrong province rather than throwing.
 | file | what it is |
 |---|---|
 | [`arterials.ts`](./arterials.ts) | The four arterials: one per Surveyor, and the administrative spine under the Jade Gorge's grant book. |
-| [`drowned-reach.ts`](./drowned-reach.ts) | The Drowned Sea: open water, no ground under it, so no vein under it, so nothing in the air. |
+| [`drowned-reach.ts`](./drowned-reach.ts) | The Pearl Ocean: open water, no ground under it, so no vein under it, so nothing in the air. |
 | [`local-rank-names.ts`](./local-rank-names.ts) | How a province relabels the one shared ladder, band for band. |
 | [`low-fall.ts`](./low-fall.ts) | The Jade Gorge: the centre, the only province with a road to every other one, and the only one in the world with no ceiling on it. |
 | [`map-by-bearing.ts`](./map-by-bearing.ts) | Reading the world as five columns instead of one list: what sits at each bearing, which houses are seated there, and where the apexes actually stand. |
 | [`prefectures.ts`](./prefectures.ts) | What a prefecture is, and every prefecture in the world assembled from the two provinces that have any. |
 | [`provinces.ts`](./provinces.ts) | The provinces as a political layer - who holds from whom, and where - plus every lookup over that layer and the prefectures and arterials beneath it. |
-| [`quiet-marches.ts`](./quiet-marches.ts) | The Silent Cliffs: driven stone cut with tools, the last of the five driven provinces, and the one people leave. |
+| [`quiet-marches.ts`](./quiet-marches.ts) | The Buddha Precipice: driven stone cut with tools, the last of the five driven provinces, and the one people leave. |
 | [`rank-translation.ts`](./rank-translation.ts) | Who translates one province's rank vocabulary into another's, what they have riding on the answer, and what being wrong about it costs. |
 | [`region-ids.ts`](./region-ids.ts) | The stable ids of every province and of the ground between them. |
 | [`region-schema.ts`](./region-schema.ts) | The Region contract: every Zod shape a province row is built out of. |

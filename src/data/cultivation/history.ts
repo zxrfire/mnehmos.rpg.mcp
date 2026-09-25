@@ -244,7 +244,7 @@ export const AGES: readonly Age[] = [
         endedYearsAgo: null,
         qiDensity: 0.22,
         whatItWas:
-            'The present, and nobody living in it calls it an age. The Jade Gorge calls the period the Great Peace because that is the name of its calendar, the Silent Cliffs does not name it at all, and the term the two archivist institutions use between themselves for the whole situation is not in general circulation. It is fifteen centuries of granting rather than taking, on ground that has continued to fall the entire time, with no construction, no new discipline and one confirmed crossing in the last four hundred years.',
+            'The present, and nobody living in it calls it an age. The Jade Gorge calls the period the Great Peace because that is the name of its calendar, the Buddha Precipice does not name it at all, and the term the two archivist institutions use between themselves for the whole situation is not in general circulation. It is fifteen centuries of granting rather than taking, on ground that has continued to fall the entire time, with no construction, no new discipline and one confirmed crossing in the last four hundred years.',
         whatItBuilt:
             'Institutions inside inherited buildings. The present age has built ferry towns, market towns, sorting yards, register houses, a counter register, a courier network laid over somebody else\'s roads, and one complete formation of six weak nodes at the Burnt Earth Temple, which is the only entirely new working formation in the province and is cited by everybody on all sides of every argument about whether the age can build anything.',
         livingThere:
@@ -437,7 +437,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         howItIsDiscoverable: [
             'counting nodes in two compounds held by unrelated sects and finding the same spacing and the same node families',
             'the Burnt Earth Temple, whose six self-cut nodes are the only complete modern formation in the province and are all weak',
-            'a Fallen Grain Caravan salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
+            'a Bountiful Sheaf Sect salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
             'the Immovable Mountain Temple\'s own numerals, which any careful person can learn to read in a season, at which point every one of their documents becomes a readable table of quantities inside an unreadable sentence'
         ],
         note:
@@ -509,8 +509,8 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
     evidence: [
         'the Clearwater Ward\'s flood works have nodes cut into stone rather than laid on ground, which is the only place in either province where an inherited node and a carved seam are the same operation on the same site',
         'the Cut Road was reconstructed from nothing in nine hundred years by people with no manuals, which is a plausible span for rediscovering a technique and a very short one for inventing a road',
-        'driven ground is not confined to the Silent Cliffs and predates it by ages, so the weir inversion made a province of a thing that already existed rather than making the thing',
-        'a carver can work an inherited node out of a wall and does not find it different in kind from a face, which several Fallen Grain Caravan crews will confirm and no Immovable Mountain Temple Warden will discuss'
+        'driven ground is not confined to the Buddha Precipice and predates it by ages, so the weir inversion made a province of a thing that already existed rather than making the thing',
+        'a carver can work an inherited node out of a wall and does not find it different in kind from a face, which several Bountiful Sheaf Sect crews will confirm and no Immovable Mountain Temple Warden will discuss'
     ],
     claimedOutcomes: [],
     fidelity: 'partial'
@@ -520,7 +520,7 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
 export const WHY_THE_RECONCILIATION_IS_NOT_MADE = [
     'Immovable Mountain Temple holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing the work of the Ten Thousand Works is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
     'The Drawn will not hear it, because it makes carving older and more legitimate than the Drawn Road\'s own account of itself, and the standing Jade Gorge position is that carving is quarrying with extra steps.',
-    'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Silent Cliffs account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
+    'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Buddha Precipice account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
     'And it would change what a vein lease is. If a node and a seam are the same thing, then a Drawn sect holding lit nodes and a carver holding a face are holding the same asset under two entirely different bodies of law, which is a question no arbitration in the world currently has a forum for.'
 ] as const;
 
@@ -743,7 +743,7 @@ export const LID_THEORIES: readonly LidTheory[] = [
             'the crossing cannot be attempted early or late, only when the convergence has arrived, which every practitioner reports and which is a statement about possibility and not about geography'
         ],
         cannotAnswer:
-            'Objects come down. Golden pills, talismans, the Standing Edge, a nail driven through from above and still sitting in the Myriad Course Hall\'s seat chamber. A narrowing does not send freight. There is a physical object in a room in the Silent Cliffs that somebody on the other side put there, which is the plainest possible refutation of a theory that says there is no other side to put things from.',
+            'Objects come down. Golden pills, talismans, the Standing Edge, a nail driven through from above and still sitting in the Myriad Course Hall\'s seat chamber. A narrowing does not send freight. There is a physical object in a room in the Buddha Precipice that somebody on the other side put there, which is the plainest possible refutation of a theory that says there is no other side to put things from.',
         theirAnswerToThat:
             'That the objects are evidence of something and not necessarily of a place, and that a sighting cannot be cast on a thing that is not a party, so the House has no instrument that reaches the question. Everybody including the House regards this as weak. The Open Hall faction has argued for two centuries that the House should either obtain a reading on the Ninth Nail or stop holding the theory.',
         ifItIsTrue:
@@ -1084,7 +1084,7 @@ export const CALENDARS: readonly Calendar[] = [
             fidelity: 'full'
         },
         note:
-            'The Silent Cliffs does not name the present age and does not consider the question interesting. It has a schedule, the schedule has years on it, and a carver dates a contract by the face and the year and nothing else.'
+            'The Buddha Precipice does not name the present age and does not consider the question interesting. It has a schedule, the schedule has years on it, and a carver dates a contract by the face and the year and nothing else.'
     },
     {
         id: 'calendar-seat-years',

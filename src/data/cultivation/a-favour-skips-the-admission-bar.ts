@@ -17,7 +17,7 @@
  *   - A Dao house's name reaches perhaps thirty houses, and the ones it can
  *     actually use on a seven-year-old are EXACTLY THE FIVE THAT ADMIT AT 0 -
  *     the Burnt Earth Temple, the Azure Dew, the Hollow Bell Wanderers, the
- *     Six Li Patrol and the Fallen Grain Caravan. All five take anybody. So the
+ *     Six Li Patrol and the Bountiful Sheaf Sect. All five take anybody. So the
  *     greatest name in the province buys a place at a house that would have
  *     taken a farmer's child that morning, which makes the name worth nothing
  *     at the only moment it should be worth everything.

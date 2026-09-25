@@ -444,7 +444,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: null,
         work: {
             occupationId: null,
-            doing: 'It is used. Crews treat the greeting as a gauge: if it speaks the shaft is as they left it, and if it is silent the edge has moved and nobody goes in. Four generations of Fallen Grain Caravan have worked off that reading.',
+            doing: 'It is used. Crews treat the greeting as a gauge: if it speaks the shaft is as they left it, and if it is silent the edge has moved and nobody goes in. Four generations of Bountiful Sheaf Sect have worked off that reading.',
             quotesPriceId: null
         },
         place: {
@@ -679,7 +679,7 @@ export const FALLEN: readonly Fallen[] = [
         lastOrdinal: 6,
         currentOrdinal: 6,
         stillClimbs: false,
-        what: 'Cut faces on other people\'s grants for eighteen years and inhaled the reason Silent Cliffs carvers die at forty. He is thirty-nine and entirely clear about the arithmetic.',
+        what: 'Cut faces on other people\'s grants for eighteen years and inhaled the reason Buddha Precipice carvers die at forty. He is thirty-nine and entirely clear about the arithmetic.',
         unexplained: null,
         existenceState: 'alive',
         identityContinuity: null,

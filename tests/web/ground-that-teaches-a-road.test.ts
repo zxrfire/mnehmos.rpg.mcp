@@ -95,7 +95,7 @@ const nobody = (over: Partial<SomebodyStanding> = {}): SomebodyStanding => ({
 
 describe('one rule decides who a ground teaches, and what it is short of', () => {
     it('separates knowing where a landmark is from being able to read it', () => {
-        // The cart drivers of the Silent Cliffs have crossed the ford for six
+        // The cart drivers of the Buddha Precipice have crossed the ford for six
         // hundred years and nobody there thinks of it as cultivation. They can
         // all point at it. Almost none of them takes anything off it - and that
         // gap is what makes them a source the player can be told by.
@@ -228,7 +228,7 @@ describe('the refusal names what would work', () => {
             who
         )!;
         expect(wants.shortBy).toBe('somewhere_else');
-        expect(wants.wouldWork).toMatch(/Silent Cliffs/);
+        expect(wants.wouldWork).toMatch(/Buddha Precipice/);
     });
 });
 
@@ -534,7 +534,7 @@ function tinyWorld(): WorldState {
     }
     state.locations.push(makeLocation({
         id: 'loc-town-marches',
-        name: 'A town in the Silent Cliffs',
+        name: 'A town in the Buddha Precipice',
         kind: 'settlement',
         parentId: 'loc-region-quiet-marches'
     }));

@@ -27,7 +27,7 @@ import { ADJACENT_REGION_ID, HOME_REGION_ID } from './region-ids.js';
 //   east      the Yellow Plain, nine cities, and every body whose business is
 //             a counter: the assay, the auction, the register, the reading
 //             hall, the cutting house
-//   west      the Silent Cliffs, the driven ground, and the bodies that work
+//   west      the Buddha Precipice, the driven ground, and the bodies that work
 //             it or work its edge
 //   north     the White Stair, two courts and nothing else, which is not an
 //             oversight - the province is emptying and two is what is left
@@ -70,7 +70,7 @@ export function bearingOfFaction(factionId: string): Bearing | undefined {
  * arrangement rather than an untidiness: the Earth Vein Tower administers the
  * arterial system the eleven Jade Gorge veins branch from, the Pavilion holds
  * the gorge outright, and the Myriad Course Hall holds driven ground of which the
- * Silent Cliffs is one province and not the largest. Nothing seats an apex in the
+ * Buddha Precipice is one province and not the largest. Nothing seats an apex in the
  * north or the east, and both absences are load-bearing - the Yellow Plain is
  * the province where nobody holds land, and the White Stair is administered
  * from over a pass by a body seated somewhere else.
@@ -110,7 +110,7 @@ export function apexSeats(): {
             name: 'The Myriad Course Hall',
             bearing: 'west',
             seatedIn: ADJACENT_REGION_ID,
-            why: 'It administers driven ground face by face, across five provinces of which the Silent Cliffs is the nearest and the smallest. It has no client sects, no leases and no vassals, so what is seated in the Silent Cliffs is the Hall itself: a schedule, a roll of everybody working a face, and a seat built around something that cannot be moved.'
+            why: 'It administers driven ground face by face, across five provinces of which the Buddha Precipice is the nearest and the smallest. It has no client sects, no leases and no vassals, so what is seated in the Buddha Precipice is the Hall itself: a schedule, a roll of everybody working a face, and a seat built around something that cannot be moved.'
         }
     ];
 }

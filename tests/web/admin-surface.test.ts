@@ -59,7 +59,7 @@ describe('the ADMIN prefix is made of the characters it appears to be made of', 
  * line was split on whitespace and a value taken up to the next space, so
  * `location=The Jade Face` set the location to "The" and quoting it set it to
  * `"The`. MOST OF THIS WORLD'S GAZETTEER IS MULTI-WORD - The Jade Face, Nine
- * Peaks, The Jade Gorge, The Drowned Sea, Salt Fields - so most of the map was
+ * Peaks, The Jade Gorge, The Pearl Ocean, Salt Fields - so most of the map was
  * unreachable from the admin surface and no environmental gating could be
  * exercised at all.
  */

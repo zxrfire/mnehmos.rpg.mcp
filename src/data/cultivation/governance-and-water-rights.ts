@@ -13,7 +13,7 @@
  *                 courts, no leases. Nothing is skimmed and it gets its own
  *                 reports, but it does all the work, owns every act by name,
  *                 and has no feeder - so it recruits directly. This is the
- *                 Silent Cliffs, and it is taut: five provinces on a posted
+ *                 Buddha Precipice, and it is taut: five provinces on a posted
  *                 staff small enough to name.
  *
  *   unbacked      holds from nobody and pays for that continuously. The
@@ -178,12 +178,12 @@ export const UnbackedReasonSchema = z.enum([
     'arrangement_that_is_not_patronage',
     'not_worth_the_trouble_yet',
     /**
-     * Added for Waterman Caravan, and the existing six could not carry it.
+     * Added for Tranquil Oasis Sect, and the existing six could not carry it.
      *
      * Every other reason here is about the BODY - too poor, too far, too
      * useful, holding something nobody wants to disturb. This one is about
      * the GROUND, and the distinction is the whole of why the Burial Sands
-     * is a different object from the Drowned Sea: a grant runs twelve years
+     * is a different object from the Pearl Ocean: a grant runs twelve years
      * and a surfacing is open for one season to about nine, so there is
      * nothing there that could be the subject of the instrument. Nobody has
      * declined to take the Caravan. Nobody has had anything to take, and
@@ -1270,7 +1270,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             description:
                 'Three sealed cases in the seat chamber, and the Myriad Course Hall publishes the count. It has published a decreasing count for eleven hundred years, which is the most honest thing any institution in the setting does and also an extremely effective deterrent.',
             buys:
-                'Three emergencies, and everyone knows it is three, so the Silent Cliffs has arranged itself carefully around never being the fourth.',
+                'Three emergencies, and everyone knows it is three, so the Buddha Precipice has arranged itself carefully around never being the fourth.',
             cannotRestock:
                 'The founder drove the Nail through and did not come back. What is in the cases is what there is.'
         },
@@ -1288,7 +1288,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         whetherItsWordSkipsABar:
             'It will, and it prices it honestly, which is the difference between the two of them. The Myriad Course Hall employs rather than grants so it cannot lean on a tenant - what it has is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Myriad Course Hall regards as evidence that it sets them correctly rather than as evidence that nobody dares.',
         howItConductsItselfWithTheOtherApexes:
-            'Patient in the specific way of a body that keeps records. The Myriad Course Hall does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Silent Cliffs\' silent arrangements legible by contrast, and the Myriad Course Hall has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
+            'Patient in the specific way of a body that keeps records. The Myriad Course Hall does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Buddha Precipice\' silent arrangements legible by contrast, and the Myriad Course Hall has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
         instability:
             'The Nail cannot be moved, so the Myriad Course Hall cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         whatItHasTakenFromOtherPatrons:
@@ -1303,13 +1303,13 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             id: 'sent-ninth-nail',
             name: 'The Ninth Nail',
             description:
-                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Myriad Course Hall drove through from the other side rather than sent. It is the only object in the Silent Cliffs that does not move, and every perimeter in five provinces is surveyed off it.',
+                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Myriad Course Hall drove through from the other side rather than sent. It is the only object in the Buddha Precipice that does not move, and every perimeter in five provinces is surveyed off it.',
             uses: [
                 'comprehension at the last realm - it was driven through the Lid from above, so it is a worked example of the crossing that can be held in the hand, and the Cut tradition holds this to be worth more than any manual',
                 'a channel upward, in one direction only: things can be said along it, and nothing has ever been said back'
             ],
             asAnArtifact:
-                'It is a fixed point in a world where nothing else is fixed, which sounds academic until somebody tries to move, fold or unmake ground near it and finds that they cannot. The Silent Cliffs has never lost a perimeter within sight of it. Anyone holding it holds ground absolutely, which is worth having whether or not they ever intend to look upward.',
+                'It is a fixed point in a world where nothing else is fixed, which sounds academic until somebody tries to move, fold or unmake ground near it and finds that they cannot. The Buddha Precipice has never lost a perimeter within sight of it. Anyone holding it holds ground absolutely, which is worth having whether or not they ever intend to look upward.',
             reserveTerms:
                 'The Myriad Course Hall cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
             ifUncovered:
@@ -1318,7 +1318,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             intact: true
         },
         holds:
-            'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Silent Cliffs is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
+            'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Buddha Precipice is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
         holdsProvinceIds: [
             'province-quiet-marches',
             'province-coldwater-cut',
@@ -1345,16 +1345,16 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         startingAwareness: 'unaware',
         awarenessSources: [
             'the Clearwater Ward grant book, whose renewals are countersigned by an office it never names',
-            'a Fallen Grain Caravan salvage crew that opened something and found the schedule already written on the wall in a hand nobody uses',
+            'a Bountiful Sheaf Sect salvage crew that opened something and found the schedule already written on the wall in a hand nobody uses',
             'a Myriad Course Hall inspection, which happens roughly twice a century and is mistaken locally for a rich merchant party'
         ],
         actsWithoutAttribution: [
             'the Clearwater Ward abruptly stops issuing grants for a season and gives no reason, having been given none',
-            'a burn zone the Fallen Grain Caravan have worked for forty years is suddenly staked and posted, and the stakes are not Six Li work',
+            'a burn zone the Bountiful Sheaf Sect have worked for forty years is suddenly staked and posted, and the stakes are not Six Li work',
             'a face nobody could work is found open, worked out and abandoned, with the spoil stacked in courses too neat for a local crew'
         ],
         description:
-            'The other apex, over the other tradition, and it does not do any of this the way the Earth Vein Tower does. The Myriad Course Hall grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Silent Cliffs. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
+            'The other apex, over the other tradition, and it does not do any of this the way the Earth Vein Tower does. The Myriad Course Hall grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Buddha Precipice. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
     },
     {
         id: 'apex-azure-cloud',
@@ -1769,7 +1769,7 @@ export const COURTS: readonly Court[] = [
         name: 'The Ninth Face Court',
         apexId: 'apex-myriad-course-hall',
         // The Ninth Face Court's tenants are small - the Clearwater Ward at Nascent Soul
-        // Early - so this is far above what the Silent Cliffs requires. A court of the
+        // Early - so this is far above what the Buddha Precipice requires. A court of the
         // Myriad Course Hall is not sized against its province.
         powerOrdinal: 37,
         highWaterMark: {
@@ -1777,9 +1777,9 @@ export const COURTS: readonly Court[] = [
             ordinal: 44,
             yearsAgo: 90,
             end: 'attempted',
-            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Silent Cliffs, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Myriad Course Hall has not authorised a candidate since.'
+            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Buddha Precipice, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Myriad Course Hall has not authorised a candidate since.'
         },
-        administers: 'The driven ground of the Silent Cliffs and four provinces beyond it that the Silent Cliffs has never heard named.',
+        administers: 'The driven ground of the Buddha Precipice and four provinces beyond it that the Buddha Precipice has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
         // Every district in the province, because there is nobody to delegate
         // to. A federated court grants to sects; this one schedules faces.
@@ -1793,7 +1793,7 @@ export const COURTS: readonly Court[] = [
         ],
         embodiedByFactionId: null,
         officesNote:
-            'The Myriad Course Hall ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Clearwater Ward book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Silent Cliffs has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Myriad Course Hall has never seen why one would.',
+            'The Myriad Course Hall ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Clearwater Ward book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Buddha Precipice has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Myriad Course Hall has never seen why one would.',
         roster: [
             {
                 id: 'court-officer-qiao-shendu',
@@ -1810,10 +1810,10 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-chi-yuanru',
                 name: 'Chi Yuanru',
                 title: 'Assessor of the Four Faces',
-                office: 'Rates driven ground across the four provinces the Silent Cliffs has never heard named, and decides which faces enter the course at all.',
+                office: 'Rates driven ground across the four provinces the Buddha Precipice has never heard named, and decides which faces enter the course at all.',
                 realmOrdinal: 33,
                 apexRank: 'Face Master',
-                wants: 'the Silent Cliffs promoted out of the schedule\'s bottom band, where it has sat for two hundred years',
+                wants: 'the Buddha Precipice promoted out of the schedule\'s bottom band, where it has sat for two hundred years',
                 fears: 'that the Jade Face figure she has is the right one',
                 detail: 'Has the Clearwater Ward\'s own unpublished survey of how much workable stone is left at Jade Face, obtained by asking for it, and the Ward does not know she kept the copy.'
             },
@@ -1821,7 +1821,7 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-mo-xingzhi',
                 name: 'Mo Xingzhi',
                 title: 'Face Master of the Eleven Li',
-                office: 'Holds a face that cannot be worked: eleven li of high Silent Cliffs that has not held qi in ninety years. She walks it four times a year and records that it is unchanged.',
+                office: 'Holds a face that cannot be worked: eleven li of high Buddha Precipice that has not held qi in ninety years. She walks it four times a year and records that it is unchanged.',
                 realmOrdinal: 30,
                 apexRank: 'Face Master',
                 wants: 'the face struck off the course, which she has never requested',
@@ -2419,7 +2419,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             andAfterwards:
                 'They go back higher, into an arrangement of the Hall\'s that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Deeproot Court is closer to being a career here than it is four provinces away, and the roll is why.',
             andBeingPassedOver:
-                'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Silent Cliffs that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
+                'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Buddha Precipice that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
             andWhatTheTermIsWorthAfterwards:
                 'The same precedence, and a sharper version of it, because the Myriad Course Hall ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Myriad Course Hall has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
         },
@@ -2437,7 +2437,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         note: 'Not a faction. A posting, and since the schism a posting under a different apex. It holds the roll and the founding posting order that names the first four Wardens; the ground, the datum, the nine hundred nodes and the perimeter stayed behind with the half that accepted the reposting, and the two have had no correspondence since. Every unexplained thing about the Wardens - the lit nodes, the refusal to recruit, the absent grievance, the nine hundred years without a single recorded exchange - is what an outside observer sees when they mistake staff for an institution.'
     },
 
-    // ── the Silent Cliffs stack ───────────────────────────────────────
+    // ── the Buddha Precipice stack ───────────────────────────────────────
     'sect-clearwater-ward': {
         factionId: 'sect-clearwater-ward',
         governance: 'administered',
@@ -2461,7 +2461,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Not a sect and not a tenant: a bureau. The Ward issues grants because the Myriad Course Hall has delegated the counter work to a local staff of eleven, and its famous discretion extends exactly as far as the schedule it is given. The absolute hegemon of the Silent Cliffs is a clerk\'s office with a stamp, and every carver in the region has organised their entire life around the stamp without once asking whose it is.'
+        note: 'Not a sect and not a tenant: a bureau. The Ward issues grants because the Myriad Course Hall has delegated the counter work to a local staff of eleven, and its famous discretion extends exactly as far as the schedule it is given. The absolute hegemon of the Buddha Precipice is a clerk\'s office with a stamp, and every carver in the region has organised their entire life around the stamp without once asking whose it is.'
     },
     'sect-fallen-grain-caravan': {
         factionId: 'sect-fallen-grain-caravan',
@@ -3118,7 +3118,7 @@ export function arrivalStateFor(_fromFactionId: string, toInstitutionId: string)
 // DIRECT RULE
 // No feeder, so it recruits itself. The Myriad Course Hall commits to the wide option:
 // it tests everybody, on a schedule, and the schedule is the most ordinary
-// and most frightening document in the Silent Cliffs.
+// and most frightening document in the Buddha Precipice.
 // -------------------------------------------------------------------------
 
 export const DIRECT_RULE = {
@@ -3128,7 +3128,7 @@ export const DIRECT_RULE = {
     intake:
         'Every child in every administered province is tested at seven, in the village, by a clerk with a register and a piece of driven stone. It takes a morning. The results are written down, the register goes back to the Ninth Face, and about one child in nine hundred is collected within the year.',
     intakeNote:
-        'There is no competition, no tournament, no sponsor and no recommendation, because there is no subsidiary to run one. The Silent Cliffs does not have a route upward; it has an appointment it was given at seven and either passed or did not, and adults who were not collected can look up their own entry.',
+        'There is no competition, no tournament, no sponsor and no recommendation, because there is no subsidiary to run one. The Buddha Precipice does not have a route upward; it has an appointment it was given at seven and either passed or did not, and adults who were not collected can look up their own entry.',
     staffing:
         'About forty posted staff for five provinces, plus local bureaus like the Clearwater Ward. It is not enough, everyone in the administration knows it is not enough, and the schedule is written to be survivable rather than adequate.',
     brittleness:
@@ -3432,7 +3432,7 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
         provides:
             'The only carver the Stone Marrow Hall has ever retained: he reads driven stone the assay house cannot price, which is how the Iron Ridge branch stopped being cheated on salvage lots within a season of his arrival.',
         receives:
-            'Stones, in quantity, paid weekly rather than by grant day - the only arrangement in the Silent Cliffs that lets a carver cultivate without the Clearwater Ward - and passage on Stone Marrow Hall carts.',
+            'Stones, in quantity, paid weekly rather than by grant day - the only arrangement in the Buddha Precipice that lets a carver cultivate without the Clearwater Ward - and passage on Stone Marrow Hall carts.',
         term: 'A written agreement of five years, the only guest arrangement in either province that has ever been put on paper, and it names no penalty for either side.',
         hostRisk:
             'He is Keystone, immune to every soul-directed art the Stone Marrow Hall\'s own guards know, and the Stone Marrow Hall\'s insurance table reads him a rank low, which means it has systematically underpriced its own guest elder.',
@@ -3594,7 +3594,7 @@ export function getSubsidiariesOf(parentId: string): Parentage[] {
 
 /**
  * Walk upward from a faction to whatever is at the top. Returns the chain of
- * ids, which for a third-tier subsidiary in the Silent Cliffs is four long and for
+ * ids, which for a third-tier subsidiary in the Buddha Precipice is four long and for
  * an unaffiliated league is one.
  */
 export function chainToApex(factionId: string): string[] {

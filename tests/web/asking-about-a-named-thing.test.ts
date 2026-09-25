@@ -58,7 +58,7 @@ import { engineCalls, makeGameInWorld } from './harness';
 
 describe('asking about a named thing reaches the verb that reads one', () => {
     it.each([
-        ['tell me about the Fallen Grain Caravan', 'Fallen Grain Caravan'],
+        ['tell me about the Bountiful Sheaf Sect', 'Bountiful Sheaf Sect'],
         ['tell me about Shen Wanshi', 'Shen Wanshi'],
         ['tell me about Four Names', 'Four Names'],
         ['tell me about the Lesser Qi-Gathering Manual', 'Lesser Qi-Gathering Manual'],
@@ -198,8 +198,8 @@ describe('asking who would take you reaches the register of who would', () => {
     });
 
     it('still carries a house the sentence actually names', () => {
-        expect(parseIntent('I ask about joining the Fallen Grain Caravan').target)
-            .toBe('Fallen Grain Caravan');
+        expect(parseIntent('I ask about joining the Bountiful Sheaf Sect').target)
+            .toBe('Bountiful Sheaf Sect');
         expect(parseIntent('I apply to the Thousand Treasure Pavilion').target)
             .toBe('Thousand Treasure Pavilion');
         expect(parseIntent('I join the Azure Dew Sect').target).toBe('Azure Dew Sect');
@@ -211,7 +211,7 @@ describe('asking who would take you reaches the register of who would', () => {
         expect(namesNoHouse('the houses near here')).toBe(true);
         expect(namesNoHouse('house that posted the notice')).toBe(true);
         expect(namesNoHouse('the intake in two days')).toBe(true);
-        expect(namesNoHouse('Fallen Grain Caravan')).toBe(false);
+        expect(namesNoHouse('Bountiful Sheaf Sect')).toBe(false);
         expect(namesNoHouse('Azure Dew Sect')).toBe(false);
         expect(namesNoHouse('Silver Island Market')).toBe(false);
     });
@@ -333,7 +333,7 @@ describe('played, through the whole service', () => {
         // `no-engine-voice-in-a-played-turn`. What this was ever asserting is
         // that the name resolved to a HOUSE rather than to a person or a place,
         // and that is what it asserts now.
-        expect(await resolved('tell me about the Fallen Grain Caravan'))
+        expect(await resolved('tell me about the Bountiful Sheaf Sect'))
             .toMatch(/to a sect/);
         // The ground underfoot.
         expect(await resolved('tell me about this place')).toMatch(/to a place/);

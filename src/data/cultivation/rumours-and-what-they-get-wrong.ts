@@ -180,7 +180,7 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
         aboutId: null,
         aboutName: null,
         accuracy: 'invented',
-        underneath: 'A spirit stone is compressed qi and nothing is dug for it. The confusion runs the other way in the Silent Cliffs, where qi is in the stone and getting it out is genuinely a trade with tools and a death rate, which is where the story came from before it travelled.',
+        underneath: 'A spirit stone is compressed qi and nothing is dug for it. The confusion runs the other way in the Buddha Precipice, where qi is in the stone and getting it out is genuinely a trade with tools and a death rate, which is where the story came from before it travelled.',
         consequence: 'Mortal miners in the Jade Gorge are hired at the wrong wage by people who think they are buying a skill, and resent it enough that the correction is now a set speech.',
         floorOrdinal: 0,
         regionId: 'region-low-fall',
@@ -233,7 +233,7 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
         aboutName: null,
         accuracy: 'invented',
         underneath: 'Nothing whatever. It is a hawker\'s line and the hawkers know it is a hawker\'s line. What it is doing is selling pig\'s blood at the price of medicine to people whose alternative is a splint and a month.',
-        consequence: 'A recurring and ugly small crime in the Drowned Sea, and the reason two market towns will now not let a stranger sell anything red.',
+        consequence: 'A recurring and ugly small crime in the Pearl Ocean, and the reason two market towns will now not let a stranger sell anything red.',
         floorOrdinal: 0,
         regionId: 'region-drowned-reach',
         insiderFactionId: null
@@ -254,12 +254,12 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
     {
         id: 'rumour-the-realms-are-stories',
         saying: 'There are the ones you see and then there is the rest of it, and the rest of it is a story people tell. Nobody has ever met one.',
-        saidBy: 'a Silent Cliffs carver, dismissing the question',
+        saidBy: 'a Buddha Precipice carver, dismissing the question',
         aboutId: 'region-quiet-marches',
         aboutName: null,
         accuracy: 'true_and_wrong_about_why',
-        underneath: 'The Silent Cliffs has a low local ceiling and it is genuinely true that almost nobody there has met anybody from the upper bands. The conclusion drawn from that - that the upper bands are a fiction - is wrong, and it is a reasonable inference from a complete absence of evidence.',
-        consequence: 'A high visitor to the Silent Cliffs is not disbelieved so much as not understood, and the Silent Cliffs has twice made a serious political misjudgement by assuming an outside body was bluffing.',
+        underneath: 'The Buddha Precipice has a low local ceiling and it is genuinely true that almost nobody there has met anybody from the upper bands. The conclusion drawn from that - that the upper bands are a fiction - is wrong, and it is a reasonable inference from a complete absence of evidence.',
+        consequence: 'A high visitor to the Buddha Precipice is not disbelieved so much as not understood, and the Buddha Precipice has twice made a serious political misjudgement by assuming an outside body was bluffing.',
         floorOrdinal: 0,
         regionId: 'region-quiet-marches',
         insiderFactionId: null
@@ -393,7 +393,7 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
     {
         id: 'rumour-ledger-holds-a-name',
         saying: 'They have the name written down and they will not say it. Asked twice by somebody who could have made them, and refused both times on a form.',
-        saidBy: 'a Silent Cliffs placer, who was there for one of the refusals',
+        saidBy: 'a Buddha Precipice placer, who was there for one of the refusals',
         aboutId: 'house-ninefold-karma',
         aboutName: 'the Ninefold',
         accuracy: 'true',
@@ -484,7 +484,7 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
     {
         id: 'rumour-gleaners-lost-a-man-on-a-bet',
         saying: 'He went in on a wager. Company sealed it up after and raised the wager, which tells you what the Caravan is.',
-        saidBy: 'every Gleaner, as a joke about the Silent Cliffs',
+        saidBy: 'every Gleaner, as a joke about the Buddha Precipice',
         aboutId: 'sect-fallen-grain-caravan',
         aboutName: 'the Caravan',
         accuracy: 'true',
@@ -619,7 +619,7 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         aboutName: 'the Wardens',
         accuracy: 'true',
         underneath: 'The Wardens are the smallest standing body in either province and the assessment is accurate. They still come, which is the part the farmer is not saying and the reason he rings.',
-        consequence: 'The Silent Cliffs\' entire beast-culling arrangement at the low end rests on a body everybody has written off, and it has not failed yet.',
+        consequence: 'The Buddha Precipice\' entire beast-culling arrangement at the low end rests on a body everybody has written off, and it has not failed yet.',
         floorOrdinal: 0,
         regionId: 'region-quiet-marches',
         insiderFactionId: 'sect-six-li-patrol'
@@ -731,11 +731,11 @@ const ABOUT_PLACES: readonly Rumour[] = [
     {
         id: 'rumour-dead-verge-is-a-boundary',
         saying: 'Go to the Verge and stop. Not because of anything in it. Because the ones who go past it come back wrong or they do not come back, and either way you have lost a man.',
-        saidBy: 'a Silent Cliffs carver, giving directions',
+        saidBy: 'a Buddha Precipice carver, giving directions',
         aboutId: 'region-quiet-marches',
         aboutName: 'the Verge',
         accuracy: 'true',
-        underneath: 'The practice is correct and the reasoning is empirical rather than explanatory. Nobody in the Silent Cliffs can say what the site is and the rule about it has held for long enough that nobody needs to.',
+        underneath: 'The practice is correct and the reasoning is empirical rather than explanatory. Nobody in the Buddha Precipice can say what the site is and the rule about it has held for long enough that nobody needs to.',
         consequence: 'The most reliable safety rule in the province is held by people who cannot justify it, and a visiting cultivator who asks for the reason and is given none frequently decides there is none.',
         floorOrdinal: 0,
         regionId: 'region-quiet-marches',
@@ -749,7 +749,7 @@ const ABOUT_PLACES: readonly Rumour[] = [
         aboutName: 'the Jade Face',
         accuracy: 'unresolved',
         underneath: 'Whether a face is worked out is exactly the question the grant price is supposed to answer and exactly the question the carvers cutting it are best placed to answer, and the two answers have disagreed for a decade. Nobody has an instrument that settles it.',
-        consequence: 'Carvers pay a day-rate they believe is fraudulent for ground they believe is empty, because the alternative is not cultivating, and this is what the Silent Cliffs means by work.',
+        consequence: 'Carvers pay a day-rate they believe is fraudulent for ground they believe is empty, because the alternative is not cultivating, and this is what the Buddha Precipice means by work.',
         floorOrdinal: 0,
         regionId: 'region-quiet-marches',
         insiderFactionId: null
@@ -757,12 +757,12 @@ const ABOUT_PLACES: readonly Rumour[] = [
     {
         id: 'rumour-dryrun-drank-a-river',
         saying: 'There was water there. My grandmother drew from it. Then something upstream took it and the bed is dry and the name is all that is left of the river.',
-        saidBy: 'a Drowned Sea villager, pointing',
+        saidBy: 'a Pearl Ocean villager, pointing',
         aboutId: 'region-drowned-reach',
         aboutName: 'The Bitter Crossing',
         accuracy: 'unresolved',
         underneath: 'The bed is dry, the name records a river, and no record in either province says what happened to it. Water moves for reasons the world has plenty of and no evidence survives that points at any of them.',
-        consequence: 'Every dispute about water rights in the Drowned Sea eventually cites The Bitter Crossing as precedent for something, and it is cited for opposite conclusions by both sides.',
+        consequence: 'Every dispute about water rights in the Pearl Ocean eventually cites The Bitter Crossing as precedent for something, and it is cited for opposite conclusions by both sides.',
         floorOrdinal: 0,
         regionId: 'region-drowned-reach',
         insiderFactionId: null
@@ -775,7 +775,7 @@ const ABOUT_PLACES: readonly Rumour[] = [
         aboutName: 'the Sounding',
         accuracy: 'unresolved',
         underneath: 'The site is named for the phenomenon and no competent body has ever published on it. The boys are the most numerous observers and their evidence is the evidence of boys on a dare.',
-        consequence: 'The single most-attested strange thing in the Drowned Sea rests entirely on the testimony of children, which is why no institution has ever looked at it.',
+        consequence: 'The single most-attested strange thing in the Pearl Ocean rests entirely on the testimony of children, which is why no institution has ever looked at it.',
         floorOrdinal: 0,
         regionId: 'region-drowned-reach',
         insiderFactionId: null

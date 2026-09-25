@@ -517,7 +517,7 @@ export const situatedReads = {
 
             // A PROVINCE, which is the scale the catalog actually prices. This half
             // was missing from the first build and it was the whole of the travel
-            // answer: "The Jade Gorge" and "The Drowned Sea" are names in the
+            // answer: "The Jade Gorge" and "The Pearl Ocean" are names in the
             // knowledge table like any other, they are the only names with a stated
             // `travelDays` beside them, and looking up settlements only dropped
             // every one of them on the floor. The read listed five towns in the
@@ -669,7 +669,7 @@ export const situatedReads = {
         // FOUND BY PLAYING BLIND:
         //
         //     > how far is Nine Peaks
-        //     You are in Six Li, The Silent Cliffs... Iron Ridge: a market
+        //     You are in Six Li, The Buddha Precipice... Iron Ridge: a market
         //     town... Nine Hundred Paces: site... The Jade Face: site...
         //     Willow Village: a village...
         //

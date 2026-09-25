@@ -76,7 +76,7 @@ function places(): LocationRecord[] {
         makeLocation({
             id: 'loc-elsewhere', name: 'Willow Village', kind: 'settlement', parentId: 'loc-province'
         }),
-        makeLocation({ id: 'loc-far', name: 'The Silent Cliffs', kind: 'region' })
+        makeLocation({ id: 'loc-far', name: 'The Buddha Precipice', kind: 'region' })
     ];
 }
 

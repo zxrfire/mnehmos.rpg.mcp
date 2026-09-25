@@ -469,7 +469,7 @@ describe('members catalog', () => {
     it('names people the way their region names people', () => {
         // regions.ts customs.naming: both regions name people Surname + given
         // name, and they draw the surnames from DIFFERENT STOCK. The tell is
-        // that no Silent Cliffs surname appears in the Jade Gorge pool.
+        // that no Buddha Precipice surname appears in the Jade Gorge pool.
         //
         // It used to be tool-names and face-numbers against clan names, which
         // the design owner cut: *"i don't like tool names and face numbers."*
@@ -481,7 +481,7 @@ describe('members catalog', () => {
         // The Hollow Court's Seats are carried as positions - `First Seat` is
         // what stands in for a name, because no name of theirs leaves those
         // mountains - so feeding them in would put `First` and `Third` into the
-        // Jade Gorge clan pool and make the Silent Cliffs surname in `Luo
+        // Jade Gorge clan pool and make the Buddha Precipice surname in `Luo
         // Zhaowu` read as somebody's clan. Keyed off `WITHDRAWN_POWERS` rather than off
         // one sect id: withholding is what produces positions-instead-of-names,
         // and any house that ever did it would do the same thing here.
@@ -494,10 +494,10 @@ describe('members catalog', () => {
             const first = member.name.split(' ')[0];
             expect(
                 lowFallSurnames.has(first),
-                `${member.name} is a Silent Cliffs person carrying a Jade Gorge clan name`
+                `${member.name} is a Buddha Precipice person carrying a Jade Gorge clan name`
             ).toBe(false);
         }
-        // And every Silent Cliffs person is seated in a Silent Cliffs faction.
+        // And every Buddha Precipice person is seated in a Buddha Precipice faction.
         for (const member of getMembersInRegion(ADJACENT_REGION_ID)) {
             expect(getRegionForFaction(member.factionId)?.id).toBe(ADJACENT_REGION_ID);
         }

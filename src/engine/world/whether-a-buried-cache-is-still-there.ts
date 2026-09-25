@@ -88,7 +88,7 @@ export type BurialGround =
  *
  * `site` is deliberately not the safest. A named site in the region catalog is
  * a place with something at it, which is why it has a name, and the people who
- * go there are grave-readers and Fallen Grain Caravan rather than farmers. Burying a cache
+ * go there are grave-readers and Bountiful Sheaf Sect rather than farmers. Burying a cache
  * next to an inheritance ground is burying it where the professionals work.
  *
  * `unplaceable` is the floor and is the honest reading of ground the catalog

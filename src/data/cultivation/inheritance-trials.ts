@@ -616,7 +616,7 @@ export const WHAT_THE_LIGHTNING_TOOK = {
     whyProvenIsWorthMore:
         'Because there is no other way to get the claim. A forge states what it intended, an assay house states what it measured, and both are opinions about behaviour under conditions nobody applied. An object that was on a body through a tribulation and is still an object has been through the only test that is not an opinion, and the people who understand this will pay a multiple for it that looks insane to anybody reading the inventory count.',
     whoKnowsThis:
-        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Fallen Grain Caravan know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Treasure Pavilion catalogues by count because count is what buyers ask for.',
+        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Bountiful Sheaf Sect know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Treasure Pavilion catalogues by count because count is what buyers ask for.',
     theExceptionIsNotAnException:
         'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Karma Palace has established in four centuries were exactly this.',
     andAFailedCrossingLeavesNoBody:
@@ -645,7 +645,7 @@ export const A_RESTING_PLACE_IS_NOT_A_GRAVE = {
         'resting place: occupied. Not this file. Opening it wakes somebody, and what happens next is a conversation rather than a recovery.'
     ],
     theOverlapThatIsRealAnyway:
-        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Fallen Grain Caravan\' sealed part, and the Caravan sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
+        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Bountiful Sheaf Sect\' sealed part, and the Caravan sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
     howToTell:
         'The marker. A resting place has maintenance on it - a swept floor, a repaired channel, a schedule somebody keeps - because somebody is keeping something alive. A grave has weather on it.'
 } as const;
@@ -1288,11 +1288,11 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         factionIds: ['sect-bone-lantern-cult', 'sect-lantern-hall'],
         outside: {
-            marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Silent Cliffs has ever been able to state.',
-            rumour: 'Fallen Grain Caravan say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Bone Lantern Cult has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
+            marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Buddha Precipice has ever been able to state.',
+            rumour: 'Bountiful Sheaf Sect say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Bone Lantern Cult has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
             attributedTo: null,
             lastPartySaid: 'Six people have walked into the circle in recorded memory. Five of them walked out, unhurt, within a minute, and reported that there was nothing there. The sixth did not come out and there is no body.',
-            whatAKnowledgeablePartyReads: 'Five out of six is not a hazard and it is not a trial either. It is a filter with a very narrow acceptance, and the one who did not come out was the one it accepted. Everything the Fallen Grain Caravan avoid it for is wrong, and the reason it is not more dangerous is that it is almost never interested.',
+            whatAKnowledgeablePartyReads: 'Five out of six is not a hazard and it is not a trial either. It is a filter with a very narrow acceptance, and the one who did not come out was the one it accepted. Everything the Bountiful Sheaf Sect avoid it for is wrong, and the reason it is not more dangerous is that it is almost never interested.',
             whatAnIgnorantPartyConcludes: 'That the five who walked out prove it is empty and the sixth had bad luck, which is the reading five of the six themselves gave and is why the Cult has stopped sending parties.',
             startingAwareness: 'whisper',
             advertisedOrdinal: null
@@ -1431,7 +1431,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         factionIds: ['apex-myriad-course-hall', 'court-ninth-face'],
         outside: {
             marker: 'A ring of boundary stones on high open ground, set at a spacing nobody local uses, enclosing about two hundred paces of ground on which nothing grows and nothing has for a very long time. Four of the stones are cut on the faces that point inward. From outside the ring the four faces cannot be seen at all.',
-            rumour: 'The Silent Cliffs will tell you it is where the authorisations are taken, and that a person is walked up there and left, and that whoever walks up does not walk down. All three parts are true and none of them is what the stones are for.',
+            rumour: 'The Buddha Precipice will tell you it is where the authorisations are taken, and that a person is walked up there and left, and that whoever walks up does not walk down. All three parts are true and none of them is what the stones are for.',
             attributedTo: 'The Myriad Course Hall',
             lastPartySaid: 'Nobody organises an entry. Herders cross the ring every season on the shortest line between two grazings and have done for centuries, and not one of them has ever had a reason to walk to a stone and look at the side facing away from them.',
             whatAKnowledgeablePartyReads: 'A ring is an enclosure and an enclosure has an inside. Cutting on the inward faces means the cutting was done by somebody who was already inside and expected the reader to be inside too, and the only people who have ever been inside that ring on purpose are candidates who were walked up there to attempt the last crossing. Four faces means four of them stopped on the way to their own death and cut something, which is not a thing a person does casually.',
@@ -1906,9 +1906,9 @@ export const GRAVES: readonly Grave[] = [
         burial: 'scar_field',
         outside: {
             marker: 'Eleven li of high ground that has not held qi in ninety years and will not again. There is no stone, no name and no mound, because there is nothing to put one over. The boundary of it is exact and visible from a distance in the way the vegetation stops.',
-            rumour: 'The Silent Cliffs knows what it is. It is the most recent attempt anybody in either province can date and everybody local can point at it, and what they will tell you is that a person went up there alone one spring and the sky came down on her.',
+            rumour: 'The Buddha Precipice knows what it is. It is the most recent attempt anybody in either province can date and everybody local can point at it, and what they will tell you is that a person went up there alone one spring and the sky came down on her.',
             attributedTo: 'Yun Baiheng',
-            lastPartySaid: 'Nobody has organised an entry, because there is no entry. Fallen Grain Caravan walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
+            lastPartySaid: 'Nobody has organised an entry, because there is no entry. Bountiful Sheaf Sect walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
             whatAKnowledgeablePartyReads: 'A failed crossing leaves no body and almost no goods, and everything still lying on that ground went through the heaviest event that occurs anywhere in the world and is still an object. There are perhaps three things on eleven li of ground. Each of them is warranted by the only test that is not somebody\'s opinion, and no forge, no assay house and no auction in either province can issue the equivalent claim about anything.',
             whatAnIgnorantPartyConcludes: 'That eleven li of dead ground with three things on it is a poor site, which by count and by weight it is, and that the interment forty days south with a maintained stone front is where the money is. Every party that has had to choose between the two has chosen the interment.',
             startingAwareness: 'named',
@@ -2258,7 +2258,7 @@ export const GRAVES: readonly Grave[] = [
             floorOrdinal: 8,
             ceilingOrdinal: 24,
             whatReadsThePerson: 'The gap the Caravan left when it put the wall back by hand, which is a crawl about the width of a sorting hatch and was never meant to be a door at all.',
-            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Fallen Grain Caravan have died going in the correct way round and one very strong outsider has died going in sideways.',
+            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Bountiful Sheaf Sect have died going in the correct way round and one very strong outsider has died going in sideways.',
             soWhoGoesInstead: 'The Caravan sends its own small people, which is a sentence the Caravan would object to and is exactly what the wager board records: everybody whose name is on it went in at Foundation or under, and the amount is still written next to his.'
         },
         factionIds: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
@@ -2268,8 +2268,8 @@ export const GRAVES: readonly Grave[] = [
         burial: 'left_where_they_fell',
         outside: {
             marker: 'The resealed part of the sorting-yard ruin at Willow Village, which is a wall the Caravan put back thirty years ago with its own hands and works alongside every day. There is no marker. His name is on the Caravan\'s wager board, which was never taken down, with the amount still written next to it.',
-            rumour: 'Every Gleaner knows. He went in on a wager and did not come back, the Caravan sealed it again and raised the wager, and that is the whole of the region\'s risk assessment and is told as a joke about the Silent Cliffs.',
-            attributedTo: 'Deep Gleaner Xun',
+            rumour: 'Every Gleaner knows. He went in on a wager and did not come back, the Caravan sealed it again and raised the wager, and that is the whole of the region\'s risk assessment and is told as a joke about the Buddha Precipice.',
+            attributedTo: 'Winnower Xun',
             lastPartySaid: 'Nobody has gone in after him in thirty years. Two crews have discussed it seriously and both stopped at the same place, which is that a recovery is indistinguishable from an entry and the Caravan would have to decide which it was afterwards.',
             whatAKnowledgeablePartyReads: 'That there is a grave immediately behind the wall and something else deeper in, and that they are two different things. He is a man who died thirty years ago carrying a full deep-diving kit; what is further in is not a grave and is not his and is not in this catalog. Confusing the two is the specific error that gets a recovery crew killed, because a party that has decided it is going in to fetch a body treats the far chambers as background.',
             whatAnIgnorantPartyConcludes: 'That the sealed part is one thing with one hazard in it, and that thirty years is long enough for whatever took him to have moved on. Outsiders do not know the sealed part exists, so this is a conclusion available only to the Caravan itself, and two crews have reached it.',
@@ -2277,13 +2277,13 @@ export const GRAVES: readonly Grave[] = [
             advertisedOrdinal: null
         },
         interior: {
-            scene: 'Six paces behind the wall, in the fourth chamber, on the floor. He got that far in and no further and he was not moved afterwards. His lamp is beside him, burned out. Everything he took in is on him, because he was thirty years dead in a sealed room and nothing in the Silent Cliffs has been in there since.',
+            scene: 'Six paces behind the wall, in the fourth chamber, on the floor. He got that far in and no further and he was not moved afterwards. His lamp is beside him, burned out. Everything he took in is on him, because he was thirty years dead in a sealed room and nothing in the Buddha Precipice has been in there since.',
             arrangedForAFinder: false,
             gates: [
                 {
                     kind: 'strength',
                     ordinal: 24,
-                    test: 'Whatever is in the fourth chamber is still in the fourth chamber and did to him what it does. The Caravan has never established what it is, and the only measurement anybody has is that it went through a Deep Gleaner at Qi Condensation Layer 13 in less time than it took him to get his lamp lit twice.',
+                    test: 'Whatever is in the fourth chamber is still in the fourth chamber and did to him what it does. The Caravan has never established what it is, and the only measurement anybody has is that it went through a Winnower at Qi Condensation Layer 13 in less time than it took him to get his lamp lit twice.',
                     below: 'The same thing happens. It has happened once in living memory and the sample is one, which is the entirety of what anybody knows and is why the two crews that discussed it stopped: there is no way to size it from outside and the only party who could report is on the floor.',
                     noWorkaround: 'The wall is the Caravan\'s own and can be taken down in a morning by anybody with a hammer, which is what makes this a strength gate rather than a sealed one. Nothing is stopping entry. Something is stopping exit.'
                 }
@@ -2298,7 +2298,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'A full deep-diving kit, thirty years old, complete, of the quality a Company Deep Gleaner buys with his own money.',
+                    what: 'A full deep-diving kit, thirty years old, complete, of the quality a Company Winnower buys with his own money.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2319,7 +2319,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'Two pills he did not take, still in the case, of a grade a Deep Gleaner does not usually carry.',
+                    what: 'Two pills he did not take, still in the case, of a grade a Winnower does not usually carry.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2369,7 +2369,7 @@ export const GRAVES: readonly Grave[] = [
             attributedTo: null,
             lastPartySaid: 'Nobody. There is no attempt record, no camp, no pit and no path. Whoever finds it will be the first party to stand there in six hundred years.',
             whatAKnowledgeablePartyReads: 'That everything about the site is wrong for a planted one. A forgery is placed where people look, because a forgery has to be found; this is four days from a track on a spur with no reason to be walked. The correct reading is available only to somebody standing there, which is the whole difficulty with the category.',
-            whatAnIgnorantPartyConcludes: 'That a body under an overhang with a full pouch is the ordinary grave the Silent Cliffs is full of, worth a fair price, and that the small unlabelled box in the middle of the inventory is a curio. This is also what two of the three parties who have handled a genuine one concluded.',
+            whatAnIgnorantPartyConcludes: 'That a body under an overhang with a full pouch is the ordinary grave the Buddha Precipice is full of, worth a fair price, and that the small unlabelled box in the middle of the inventory is a curio. This is also what two of the three parties who have handled a genuine one concluded.',
             startingAwareness: 'unaware',
             advertisedOrdinal: null
         },

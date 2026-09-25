@@ -157,12 +157,12 @@ export function intoTheRoomTheWorkIsDoneIn(
  *
  * ── WHY THE SCENE NEEDS IT, MEASURED ─────────────────────────────────────
  *
- * Played: a Sand Servant of the Waterman Caravan stood on its ground for eleven turns
+ * Played: a Cistern Servant of the Tranquil Oasis Sect stood on its ground for eleven turns
  * and met one person. The house had eleven living members; five were on the
  * road, and of the six at home four were in the mission hall, the scripture
  * pavilion and the route elder's precinct, a walk inside a gate the player
  * could pass at any time. The walk below already admitted them. The scene said
- * `Place: Waterman Caravan grounds` and named the one person standing in the
+ * `Place: Tranquil Oasis Sect grounds` and named the one person standing in the
  * yard, so nothing in front of the player said there was anywhere to walk to.
  *
  * THE SAME GATE THE WALK APPLIES, and deliberately the same call: a door this

@@ -194,14 +194,14 @@ describe('provinces, arterials and prefectures', () => {
     it('CONTRAST BEATS ADDITION: a prefecture is a different kind of object in each province', () => {
         // The claim `making-places-different.md` makes and the one this whole
         // section is most likely to violate. A Jade Gorge holding is a surveyed
-        // basin; a Silent Cliffs holding is a face district. If somebody ever
-        // adds a basin to the Silent Cliffs, the two provinces have started to
+        // basin; a Buddha Precipice holding is a face district. If somebody ever
+        // adds a basin to the Buddha Precipice, the two provinces have started to
         // blur and this is where it shows.
         for (const pref of prefecturesOf(LOW_FALL_PROVINCE_ID)) {
             expect(pref.kind, `${pref.id} is in the Jade Gorge and is not a basin`).toBe('basin');
         }
         for (const pref of prefecturesOf(QUIET_MARCHES_PROVINCE_ID)) {
-            expect(pref.kind, `${pref.id} is in the Silent Cliffs and is not a face district`)
+            expect(pref.kind, `${pref.id} is in the Buddha Precipice and is not a face district`)
                 .toBe('face_district');
         }
     });
@@ -209,7 +209,7 @@ describe('provinces, arterials and prefectures', () => {
     it('NO SECTS IN THE MARCHES: every district holder is staff or a contractor, never a tenant', () => {
         // The region claims there is no intermediate institution of any kind.
         // That claim is now territorial and therefore checkable: nothing in
-        // the Silent Cliffs may hold ground as a `subsidiary`, which is the relation
+        // the Buddha Precipice may hold ground as a `subsidiary`, which is the relation
         // a leased sect has.
         for (const pref of prefecturesOf(QUIET_MARCHES_PROVINCE_ID)) {
             const holders = [
@@ -306,7 +306,7 @@ describe('provinces, arterials and prefectures', () => {
         expect(court.apexId).not.toBe(getProvince(LOW_FALL_PROVINCE_ID)!.heldByApexId);
     });
 
-    it('the driven schedule covers exactly the Myriad Course Hall provinces, with the Silent Cliffs last', () => {
+    it('the driven schedule covers exactly the Myriad Course Hall provinces, with the Buddha Precipice last', () => {
         const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-myriad-course-hall')!;
         expect([...DRIVEN_PROVINCE_SCHEDULE_ORDER].sort())
             .toEqual([...longCut.holdsProvinceIds].sort());

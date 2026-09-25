@@ -31,7 +31,7 @@
  *   - THE PEOPLE IT DID NOT GO TO. The seats are counted: the Kiln takes four.
  *     A name that goes up is a name that did not go to somebody who expected it,
  *     and the catalog already records what that leaves - two untraced grievances
- *     in the Silent Cliffs, one of them inherited twice. `blocked_advancement`
+ *     in the Buddha Precipice, one of them inherited twice. `blocked_advancement`
  *     is the row the ledger already has for it, and it is held against the
  *     NOMINATOR rather than against the person whose name went up.
  *

@@ -767,7 +767,7 @@ export const travelVerbs = {
         // ── THE NAME WE STORE IS THE WORLD'S, NOT THE PLAYER'S ───────────
         //
         // `extractSubject` consumes an optional leading article after the verb,
-        // so "I travel to The Silent Cliffs" arrives here as "Silent Cliffs" -
+        // so "I travel to The Buddha Precipice" arrives here as "Buddha Precipice" -
         // and every province in the world is named "The" something. Matching
         // survives that, because `somewhereReal` compares on `loosePlaceKey`
         // and the comment there says exactly why. STORING did not: the run then

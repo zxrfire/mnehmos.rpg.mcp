@@ -200,7 +200,7 @@ describe('how a body is backed', () => {
         expect(REGION_GOVERNANCE['region-quiet-marches'].joining).toMatch(/process/i);
 
         // Every faction seated in a region uses a model consistent with it:
-        // the Silent Cliffs has no federated leases anywhere.
+        // the Buddha Precipice has no federated leases anywhere.
         const marches = getRegion('region-quiet-marches')!;
         for (const id of marches.factionIds) {
             expect(getParentage(id)!.governance, `${id} is leased inside a directly ruled province`)
@@ -215,7 +215,7 @@ describe('how a body is backed', () => {
         expect(DIRECT_RULE.staffing.length).toBeGreaterThan(80);
         expect(DIRECT_RULE.brittleness.length).toBeGreaterThan(80);
         expect(DIRECT_RULE.legalism.length).toBeGreaterThan(100);
-        // No client sects: nothing in the Silent Cliffs holds a lease from the apex.
+        // No client sects: nothing in the Buddha Precipice holds a lease from the apex.
         const marchesLeases = Object.values(FACTION_PARENTAGE)
             .filter(p => p.governance === 'administered' && p.relation === 'subsidiary');
         expect(marchesLeases.length, 'a direct ruler has no subsidiaries').toBe(0);

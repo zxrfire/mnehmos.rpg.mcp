@@ -369,7 +369,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'An arrangement with nobody in it to be responsible is not an answer to the objection, it is a way of not having to hear it. The Pavilion says so out loud, in a room where saying it out loud is read as a tell.',
             andSoTheyDo:
-                'Publishes its own standard and refuses on it, which makes the silent arrangements in the Silent Cliffs legible by contrast without a word of it being addressed to anybody.',
+                'Publishes its own standard and refuses on it, which makes the silent arrangements in the Buddha Precipice legible by contrast without a word of it being addressed to anybody.',
             grievance: null
         },
         b: {

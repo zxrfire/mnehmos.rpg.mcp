@@ -1904,9 +1904,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Bone Disciple',
         realmOrdinal: 12,
         role: 'rival',
-        wants: 'the Fallen Grain Caravan driven off the border sites entirely',
+        wants: 'the Bountiful Sheaf Sect driven off the border sites entirely',
         fears: 'the Caravan\'s factor at Clear River Ford, personally and by name',
-        detail: 'Has killed two Fallen Grain Caravan in six years, can name them both, and does, at length, when drinking.',
+        detail: 'Has killed two Bountiful Sheaf Sect in six years, can name them both, and does, at length, when drinking.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2227,7 +2227,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 12,
         role: 'peer',
         wants: 'to be moved off placement work and onto debt arbitration',
-        fears: 'placing a Silent Cliffs carver low and reading about the outcome',
+        fears: 'placing a Buddha Precipice carver low and reading about the outcome',
         detail: 'Has one placement she got wrong four years ago; the man who relied on it is dead, and she keeps the case note in her own desk.',
         outlier: false,
         outlierReason: null,
@@ -2306,7 +2306,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'master',
         wants: 'an apprentice who will still be here in forty years',
         fears: 'the discipline dying with the eleven',
-        detail: 'Is the house\'s only reader in the Silent Cliffs, has refused to publish a rank table eleven times, and can list the eleven occasions in order.',
+        detail: 'Is the house\'s only reader in the Buddha Precipice, has refused to publish a rank table eleven times, and can list the eleven occasions in order.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2812,7 +2812,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'nothing to change',
         fears: 'the Jade Gorge working out what the two faces are worth',
-        detail: 'Is the strongest thing anybody in the Silent Cliffs has seen, has never left the region, and has been told what he would count for outside it and did not believe it.',
+        detail: 'Is the strongest thing anybody in the Buddha Precipice has seen, has never left the region, and has been told what he would count for outside it and did not believe it.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2888,7 +2888,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: true,
         rivalry: null,
         teaching: {
-            knows: 'Every safe route through the Silent Cliffs, and how to read ground that looks like ordinary heath and is not.',
+            knows: 'Every safe route through the Buddha Precipice, and how to read ground that looks like ordinary heath and is not.',
             mayNotSay: 'She will not let the survey out of the shed, because there is one copy of it and nine hundred stakes depend on it.',
             costsThem: 'A day spent teaching is a day the stakes are not repainted, and the burn edge moves about a pace a year regardless of who is busy.'
         }
@@ -2911,13 +2911,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Fallen Grain Caravan ------------------------------------------------
+    // --- Bountiful Sheaf Sect ------------------------------------------------
     {
         id: 'member-barrow-nine',
         name: 'Yao Lanyi',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 0,
-        rank: 'Barrow Hand',
+        rank: 'Chaff Hand',
         realmOrdinal: 2,
         role: 'peer',
         wants: 'one season without a loss in her crew',
@@ -2934,7 +2934,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Tian Hengshan',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 0,
-        rank: 'Barrow Hand',
+        rank: 'Chaff Hand',
         realmOrdinal: 4,
         role: 'peer',
         wants: 'never to go into a hole again',
@@ -2951,7 +2951,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Guo Minchen',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 1,
-        rank: 'Gleaner',
+        rank: 'Sheaf Binder',
         realmOrdinal: 7,
         role: 'peer',
         wants: 'eleven days\' cart fare to Clear River Ford and a start on the other side',
@@ -2968,7 +2968,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Teng Kefeng',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 2,
-        rank: 'Deep Gleaner',
+        rank: 'Winnower',
         // 11 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
@@ -2992,7 +2992,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Zhai Anming',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 3,
-        rank: 'Caravan Factor',
+        rank: 'Sheaf Elder',
         // 14 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
@@ -3103,9 +3103,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Waterman Caravan ----------------------------------------------------
+    // --- Tranquil Oasis Sect ----------------------------------------------------
     //
-    // Silent Cliffs naming throughout: local surnames, none of them Jade Gorge
+    // Buddha Precipice naming throughout: local surnames, none of them Jade Gorge
     // clan names, so the roll places every one of them to the district without
     // a clan in sight. Every one is priced by the same four-day figure, which
     // is the shed's real gate and not the three questions at the door.
@@ -3119,7 +3119,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Xi Zhenhe',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 0,
-        rank: 'Sand Servant',
+        rank: 'Cistern Servant',
         realmOrdinal: 1,
         role: 'peer',
         wants: 'to be counted back in nine times running, which is what the shed calls a season',
@@ -3136,7 +3136,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Lian Wukuan',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
-        rank: 'Carrier',
+        rank: 'Yoke Bearer',
         realmOrdinal: 3,
         role: 'peer',
         wants: 'a route that ends somewhere with a roof on it, having been promised one four times',
@@ -3153,7 +3153,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Yi Bochen',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
-        rank: 'Carrier',
+        rank: 'Yoke Bearer',
         // 6 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
@@ -3177,7 +3177,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Zou Wanqing',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 2,
-        rank: 'String Head',
+        rank: 'Karez Keeper',
         realmOrdinal: 8,
         role: 'peer',
         wants: 'forty-one skins on the next string instead of forty, and has asked four times',
@@ -3194,20 +3194,20 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Zheng Tianbo',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 3,
-        rank: 'Route Elder',
+        rank: 'Oasis Elder',
         realmOrdinal: 11,
         role: 'master',
         wants: 'water at the nine-day point, and has four dry soundings and a carver he is still paying',
-        fears: 'that the Waterman is right, and a fixed point on that ground is a debt that outlives the thing it buys',
-        detail: 'Pays a Silent Cliffs carver out of his own share to sound nine days out, has four holes and no water, and has not told the shed - nor has the other Route Elder paying.',
+        fears: 'that the Oasis Master is right, and a fixed point on that ground is a debt that outlives the thing it buys',
+        detail: 'Pays a Buddha Precipice carver out of his own share to sound nine days out, has four holes and no water, and has not told the shed - nor has the other Oasis Elder paying.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
         rivalry: null,
         teaching: {
             knows: 'The route in the only form it exists in: what the sand did last season, where the cover stood, and which points on it a string can still find in a blow.',
-            mayNotSay: 'Where the sounding party has been working, because the Waterman has not been told and telling one carrier is telling the shed by the end of the week.',
-            costsThem: 'Every hour teaching is an hour off the walk, and a Route Elder who is not walking is fifty skins going out under somebody who has not seen this season\'s sand.'
+            mayNotSay: 'Where the sounding party has been working, because the Oasis Master has not been told and telling one carrier is telling the shed by the end of the week.',
+            costsThem: 'Every hour teaching is an hour off the walk, and a Oasis Elder who is not walking is fifty skins going out under somebody who has not seen this season\'s sand.'
         }
     },
 
@@ -3588,10 +3588,10 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-company-master-xun-erlang',
-        name: 'Caravan Master Xun Erlang',
+        name: 'Sheaf Master Xun Erlang',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 5,
-        rank: 'Caravan Master',
+        rank: 'Sheaf Master',
         realmOrdinal: 17,
         role: 'senior',
         wants: 'a season without a death on the yard',
@@ -3636,7 +3636,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Shao Mingchen',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 5,
-        rank: 'Waterman',
+        rank: 'Oasis Master',
         realmOrdinal: 19,
         role: 'senior',
         wants: 'the loss figure up at the door every season in the same hand, whatever the figure is',

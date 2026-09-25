@@ -158,7 +158,7 @@ function aWrongDoneTo(
  * them wrong:
  *
  *   A REGION IS NOT A SQUARE. The first cut took the smallest place holding
- *   enough people and landed on The Drowned Sea, a `region` row. `npcsAt`
+ *   enough people and landed on The Pearl Ocean, a `region` row. `npcsAt`
  *   treats a region as a CONTAINER nobody stands in - the finding
  *   `getting-in-front-of-somebody-worth-asking` opens with - so the deed went
  *   onto ground the teller could not be said to have been on.

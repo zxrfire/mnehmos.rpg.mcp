@@ -38,7 +38,7 @@
  *                 qi circulates; a Cut cultivator's qi is held still, and a
  *                 room notices.
  *
- *   HISTORY       A war, nine hundred years ago, which is why the Silent Cliffs
+ *   HISTORY       A war, nine hundred years ago, which is why the Buddha Precipice
  *                 is the way it is. Both sides teach a different account of who
  *                 started it and both accounts are wrong in the same direction.
  *
@@ -123,7 +123,7 @@ export const TRADITIONS: readonly Tradition[] = [
         id: 'tradition-drawn',
         name: 'The Drawn Road',
         endonym: 'cultivators, who do not think of themselves as having a tradition at all',
-        exonym: 'drawers, or in the Silent Cliffs simply "the breathers", which is not affectionate',
+        exonym: 'drawers, or in the Buddha Precipice simply "the breathers", which is not affectionate',
         method:
             'Take ambient qi in, refine it in the body, build a foundation from it, condense that into a core, and let the core birth a soul that can outlive the body. Every step is internal, every step needs air with something in it, and the road is impossible on ground where the qi has been driven out.',
         seatRegionId: 'region-low-fall',
@@ -147,7 +147,7 @@ export const TRADITIONS: readonly Tradition[] = [
             whatFinishesThem:
                 'Ending the soul. A destroyed body is a serious injury and an enormous expense above Nascent Soul; it is not a death, and treating it as one is how feuds continue after a funeral.',
             cannotDo:
-                'They cannot take another body. The door does not exist for them, whatever the Silent Cliffs teaches about it, and every attempt on record has ended the soul that tried.',
+                'They cannot take another body. The door does not exist for them, whatever the Buddha Precipice teaches about it, and every attempt on record has ended the soul that tried.',
             recovery:
                 'Re-embodiment: a prepared vessel grown for the purpose, months of seclusion and a price that beggars most sects. It works, it is rare, and the cultivator who comes back is themselves - which is the one advantage this road has that the other does not.'
         },
@@ -158,7 +158,7 @@ export const TRADITIONS: readonly Tradition[] = [
         ],
         weaknesses: [
             'a soul is a target, and everyone above Nascent Soul is carrying one',
-            'the road stops entirely on ground with nothing in the air, which is most of the Silent Cliffs',
+            'the road stops entirely on ground with nothing in the air, which is most of the Buddha Precipice',
             'dependence on pills, which means dependence on somebody else\'s hall'
         ],
         saysOfTheOther:
@@ -175,7 +175,7 @@ export const TRADITIONS: readonly Tradition[] = [
         bottleneckOrdinals: [12, 20, 24],
         deviationRiskModifier: 0.04,
         costNote:
-            'Costs grant time and lungs: forty stones a day for a workable face, a chisel a season, and dust that kills more carvers than every other cause combined. Nothing purchasable improves the odds, which is why the Silent Cliffs has no pill trade to speak of.',
+            'Costs grant time and lungs: forty stones a day for a workable face, a chisel a season, and dust that kills more carvers than every other cause combined. Nothing purchasable improves the odds, which is why the Buddha Precipice has no pill trade to speak of.',
         recognition: [
             'Their qi does not move at all. The room goes flat near a carver: sound arrives closer than it should and dust hangs where it was.',
             'A candle flame near a working carver stands perfectly straight, which is the single test every Drawn cultivator knows and the first thing they look for.',
@@ -184,15 +184,15 @@ export const TRADITIONS: readonly Tradition[] = [
         death: {
             persistsFromOrdinal: TRADITION_DEATH_RULES['tradition-cut'].persistsFromOrdinal,
             onBodyDestroyed:
-                'Usually final. There is no soul to leave. The exception is the seam: if a large enough seam-bearing piece survives intact, the carver can be regrown from it over years, and this is why the Silent Cliffs walls its dead into the faces they were working.',
+                'Usually final. There is no soul to leave. The exception is the seam: if a large enough seam-bearing piece survives intact, the carver can be regrown from it over years, and this is why the Buddha Precipice walls its dead into the faces they were working.',
             onSoulAttacked:
                 'Nothing. Soul-directed arts pass through a carver without finding a purchase, which is the single most dangerous fact about them and the one outsiders discover last.',
             whatFinishesThem:
-                'Breaking the seam and scattering the pieces. A carver who is merely killed may be back in nine years; a carver whose seam has been quarried out and dispersed is finished, and everyone in the Silent Cliffs knows the difference between a funeral and a scattering.',
+                'Breaking the seam and scattering the pieces. A carver who is merely killed may be back in nine years; a carver whose seam has been quarried out and dispersed is finished, and everyone in the Buddha Precipice knows the difference between a funeral and a scattering.',
             cannotDo:
                 'They cannot leave the body, ever, at any rank. A carver at the top of the ladder has no more of an exit than an apprentice does.',
             recovery:
-                'Regrowth from a seam fragment: years of it, in a sealed face, at enormous cost in grant time, and what comes back is not reliably the same person. The Silent Cliffs has eleven recorded regrowths and disputes the identity of four of them.'
+                'Regrowth from a seam fragment: years of it, in a sealed face, at enormous cost in grant time, and what comes back is not reliably the same person. The Buddha Precipice has eleven recorded regrowths and disputes the identity of four of them.'
         },
         strengths: [
             'immune to soul-directed arts, entirely and at every rank',
@@ -210,7 +210,7 @@ export const TRADITIONS: readonly Tradition[] = [
 ];
 
 /**
- * The war that made the Silent Cliffs, and the two accounts of it. Both official
+ * The war that made the Buddha Precipice, and the two accounts of it. Both official
  * versions blame the other tradition. The true version is worse for a third
  * party who is not mentioned in either.
  */
@@ -221,7 +221,7 @@ export const TRADITION_WAR = {
     lowFallAccount:
         'That the carvers did it to themselves: a working at the weir that went wrong, or was meant to deny the province to the Drawn and succeeded far past its brief. Taught in the Jade Gorge as an object lesson in what happens when a tradition refuses arbitration.',
     marchesAccount:
-        'That the Drawn drained the province deliberately to end the quarrel, and that the Cut Road exists because a few people learned to work what was left rather than die of it. Taught in the Silent Cliffs as the founding fact of the region.',
+        'That the Drawn drained the province deliberately to end the quarrel, and that the Cut Road exists because a few people learned to work what was left rather than die of it. Taught in the Buddha Precipice as the founding fact of the region.',
     trueAccount:
         'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Vermilion Seal Terrace\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
     discoverableTraces: [
@@ -288,7 +288,7 @@ export const CROSS_TRADITION_ERRORS: readonly {
         heldBy: 'tradition-cut',
         belief: 'That a cornered Drawn cultivator can take somebody else\'s body.',
         truth: 'That door does not exist for them. Every attempt on record ended the soul that tried it.',
-        consequence: 'Two Drawn envoys have been killed pre-emptively in Iron Ridge by people acting reasonably on a false premise, and the Silent Cliffs has never revised the teaching.'
+        consequence: 'Two Drawn envoys have been killed pre-emptively in Iron Ridge by people acting reasonably on a false premise, and the Buddha Precipice has never revised the teaching.'
     },
     {
         heldBy: 'tradition-drawn',
@@ -300,6 +300,6 @@ export const CROSS_TRADITION_ERRORS: readonly {
         heldBy: 'tradition-drawn',
         belief: 'That soul-directed arts work on everybody and merely work poorly on the strong.',
         truth: 'They do nothing at all to a carver, at any rank, including an apprentice.',
-        consequence: 'The commonest single cause of death among Jade Gorge cultivators who go into the Silent Cliffs for work, and the reason escort contracts there are underwritten separately.'
+        consequence: 'The commonest single cause of death among Jade Gorge cultivators who go into the Buddha Precipice for work, and the reason escort contracts there are underwritten separately.'
     }
 ];

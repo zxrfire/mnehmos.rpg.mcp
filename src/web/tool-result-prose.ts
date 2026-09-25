@@ -516,8 +516,8 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         const joinedSect = body.sect as { name?: string } | undefined;
         const membership = body.membership as { rankTitle?: string } | undefined;
         lines.push(
-            // "at ${rankTitle}" read as a place. Barrow Hand is the lowest
-            // rank in the Fallen Grain Caravan and it is also a town, so the line
+            // "at ${rankTitle}" read as a place. Chaff Hand is the lowest
+            // rank in the Bountiful Sheaf Sect and it is also a town, so the line
             // told a player standing in Burnt Earth that they were somewhere
             // else. A rank has to be named as a rank.
             `Taken on by ${joinedSect?.name ?? 'the sect'}` +
@@ -527,11 +527,11 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         );
         // AND WHERE THAT GROUND IS, WHICH THE LINE ABOVE MAKES THE PLAYER NEED.
         //
-        // Found by playing: a new Sand Servant of the Waterman Caravan was told they
+        // Found by playing: a new Cistern Servant of the Tranquil Oasis Sect was told they
         // were on the roll, and nothing told them where the Caravan was. They
         // walked four days to Sand Well, which is a well, and met nobody of
         // their own house. Naming the house is the sentence that takes them
-        // there - `I go to the Waterman Caravan` - and it lands them at its
+        // there - `I go to the Tranquil Oasis Sect` - and it lands them at its
         // gate; what was missing was anybody saying so.
         //
         // `territory` is already on the body, from `sectCatalogFacts`. Nothing

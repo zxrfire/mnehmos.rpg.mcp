@@ -82,7 +82,7 @@ describe('who holds the ground', () => {
     });
 
     it('reads a region that declares nobody holds it', () => {
-        const region = place('r', 'The Drowned Sea', {
+        const region = place('r', 'The Pearl Ocean', {
             kind: 'region',
             data: { politics: 'no_authority' }
         });
@@ -90,7 +90,7 @@ describe('who holds the ground', () => {
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(read.holding).toBe('no_authority');
-        expect(read.why).toContain('Drowned Sea');
+        expect(read.why).toContain('Pearl Ocean');
     });
 
     it('never reports unrecorded ground as unheld', () => {

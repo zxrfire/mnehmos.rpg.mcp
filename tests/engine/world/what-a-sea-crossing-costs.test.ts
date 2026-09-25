@@ -161,7 +161,7 @@ describe('water is the constraint, and the ground gives nothing', () => {
     });
 
     it('burns the same figure for a Core Formation cultivator and a porter', () => {
-        // The single most quoted fact the Drowned Sea has about itself, and
+        // The single most quoted fact the Pearl Ocean has about itself, and
         // it has to be true in code or it is prose. There is no realm argument
         // anywhere in the burn, so there is nowhere for one to creep in.
         expect(stoneBurnFor(21, 1)).toBe(21 * STONES_BURNED_PER_HEAD_PER_DAY);

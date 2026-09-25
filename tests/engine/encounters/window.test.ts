@@ -375,7 +375,7 @@ describe('the people seam', () => {
 describe('the discovery rule', () => {
     const factions = [
         { id: 'sect-a', name: 'The Lantern Hall' },
-        { id: 'sect-b', name: 'Ninefold Silent Cliffs', known: true }
+        { id: 'sect-b', name: 'Ninefold Buddha Precipice', known: true }
     ];
 
     it('says an unheard name only when a person said it, and records that they did', () => {

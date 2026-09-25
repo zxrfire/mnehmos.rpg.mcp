@@ -68,7 +68,7 @@ async function standingAt(place: string, seed: string) {
 describe('the road is as long as the catalog says it is', () => {
     /**
      * The figure this rests on, taken from the catalog rather than restated:
-     * the border road from the Jade Gorge to the Silent Cliffs. If somebody
+     * the border road from the Jade Gorge to the Buddha Precipice. If somebody
      * re-prices that road this test moves with it rather than going stale.
      */
     const BORDER_ROAD = requireRegion(HOME_REGION_ID).connections

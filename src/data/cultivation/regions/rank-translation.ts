@@ -36,7 +36,7 @@ export const TITLE_TRANSLATIONS: readonly TitleTranslation[] = [
     {
         party: 'Flowing Light Tower',
         mapping: 'Declines to publish a table on the grounds that a rank is a position in a convergence rather than a title, and that both other tables are answering a question nobody asked.',
-        interest: 'It has one reader in the Silent Cliffs, who has been asked for a mapping eleven times and has refused eleven times, and whose refusal is itself quoted in the Karma Palace\'s case notes.'
+        interest: 'It has one reader in the Buddha Precipice, who has been asked for a mapping eleven times and has refused eleven times, and whose refusal is itself quoted in the Karma Palace\'s case notes.'
     }
 ];
 

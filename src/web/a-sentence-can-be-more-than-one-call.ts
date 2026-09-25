@@ -172,7 +172,7 @@ export function theClausesOf(input: string): string[] {
  *
  * FOUND BY PLAYING, on turn 2 of a life:
  *
- *     "Grandfather, the Waterman Caravan is holding an intake here in thirteen
+ *     "Grandfather, the Tranquil Oasis Sect is holding an intake here in thirteen
  *      days. I mean to go before them and become a cultivator."
  *
  * A boy telling the man who raised him what he intends. The turn ran the

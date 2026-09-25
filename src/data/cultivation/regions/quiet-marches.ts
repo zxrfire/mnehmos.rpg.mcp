@@ -1,5 +1,5 @@
 /**
- * The Silent Cliffs: driven stone cut with tools, the last of the five driven
+ * The Buddha Precipice: driven stone cut with tools, the last of the five driven
  * provinces, and the one people leave.
  *
  * The map row, the vocabulary the Cut Road named for itself, and the six face
@@ -14,7 +14,7 @@ import type { Prefecture } from './prefectures.js';
 import { ADJACENT_REGION_ID, HOME_REGION_ID, QUIET_MARCHES_PROVINCE_ID } from './region-ids.js';
 
 /**
- * The Silent Cliffs counts the same rungs in cut stone. Every band below maps one
+ * The Buddha Precipice counts the same rungs in cut stone. Every band below maps one
  * to one onto `REALM_TIERS`; the argument is about what the rung is made of,
  * never about how many there are.
  */
@@ -38,7 +38,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
     {
         fromOrdinal: 17, toOrdinal: 20,
         standardName: 'Core Formation', localName: 'Keystone',
-        localTheory: 'A carver at Keystone has no golden core. What they have is a worked seam running through the body that holds load. The Silent Cliffs maintains this is a different thing entirely and will explain why at length; both traditions nonetheless agree instantly on who has crossed into the realm, because it is visible.',
+        localTheory: 'A carver at Keystone has no golden core. What they have is a worked seam running through the body that holds load. The Buddha Precipice maintains this is a different thing entirely and will explain why at length; both traditions nonetheless agree instantly on who has crossed into the realm, because it is visible.',
         localSubdivisions: 3, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
         subRankNote: 'Three courses again, and a Keystone carver will say which course they are on and mean something no Jade Gorge examiner can convert.'
@@ -49,7 +49,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'The carver opens a face inside themselves and can work it where there is no stone. The name is descriptive rather than metaphysical: there is no soul in it, and a carver told that the standard vocabulary calls this Nascent Soul will usually laugh.',
         localSubdivisions: 2, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'Two states, opened and worked, against four stages. The Silent Cliffs does not recognise a distinction between what the standard ladder calls Late and Perfection.'
+        subRankNote: 'Two states, opened and worked, against four stages. The Buddha Precipice does not recognise a distinction between what the standard ladder calls Late and Perfection.'
     },
     {
         fromOrdinal: 25, toOrdinal: 28,
@@ -57,12 +57,12 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'The body carries what the stone used to carry. Two carvers are recorded at Loadbearing in nine hundred years and both left for the Jade Gorge inside a decade.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'No subdivisions at all. The Silent Cliffs has two instances and no basis on which to divide them.'
+        subRankNote: 'No subdivisions at all. The Buddha Precipice has two instances and no basis on which to divide them.'
     },
     {
         fromOrdinal: 29, toOrdinal: 32,
         standardName: 'Void Tribulation', localName: 'Hollowing',
-        localTheory: 'Working out the last of the seam. The Silent Cliffs has the word and no instance of it.',
+        localTheory: 'Working out the last of the seam. The Buddha Precipice has the word and no instance of it.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
         subRankNote: 'A term from the inscription with nothing under it. Any local claim to a position inside this realm is fraud on its face.'
@@ -73,12 +73,12 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'Carver and face are one piece. Known from a single inscription in the sealed part of the sorting-yard ruin, which is where most of the vocabulary above Keystone comes from.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'Inscription vocabulary. The Silent Cliffs uses the word and could not recognise the state if it walked into Iron Ridge.'
+        subRankNote: 'Inscription vocabulary. The Buddha Precipice uses the word and could not recognise the state if it walked into Iron Ridge.'
     },
     {
         fromOrdinal: 37, toOrdinal: 40,
         standardName: 'Grand Ascension', localName: 'Capstone',
-        localTheory: 'The last course laid. Nobody in the Silent Cliffs can say what it means and the term is used anyway, because the inscription uses it.',
+        localTheory: 'The last course laid. Nobody in the Buddha Precipice can say what it means and the term is used anyway, because the inscription uses it.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
         subRankNote: 'Inscription vocabulary, undivided and unattested.'
@@ -89,7 +89,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'A cut that goes all the way through, with the sky on the far side of it.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'Inscription vocabulary. The Silent Cliffs assumes it is one state and the Jade Gorge knows it is four, and neither has met anyone to ask.'
+        subRankNote: 'Inscription vocabulary. The Buddha Precipice assumes it is one state and the Jade Gorge knows it is four, and neither has met anyone to ask.'
     },
     {
         fromOrdinal: 45, toOrdinal: 46,
@@ -97,7 +97,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'One word, no elaboration, and the inscription does not continue past it.',
         localSubdivisions: 0, standardSubdivisions: 2,
         subRankCorrespondence: 'none',
-        subRankNote: 'One word against two states, and they are not variations on each other - one of them is over the Lid and the other is through it. The Silent Cliffs has never had to tell them apart, which is a fact about the Silent Cliffs and not about the Lid.'
+        subRankNote: 'One word against two states, and they are not variations on each other - one of them is over the Lid and the other is through it. The Buddha Precipice has never had to tell them apart, which is a fact about the Buddha Precipice and not about the Lid.'
     }
 ];
 
@@ -109,7 +109,7 @@ export const THE_QUIET_MARCHES: Region = {
     bearing: 'west',
     traditionId: 'tradition-cut',
     summary:
-        'The province people leave: the western end of the world, the last of five driven provinces, and the only place in it where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Silent Cliffs does not breathe qi - it cuts it out of stone, and everything about the place follows from that. It has one road, it goes east, and there is nothing on the other side of the Silent Cliffs but four more provinces like it that nobody here has seen.',
+        'The province people leave: the western end of the world, the last of five driven provinces, and the only place in it where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Buddha Precipice does not breathe qi - it cuts it out of stone, and everything about the place follows from that. It has one road, it goes east, and there is nothing on the other side of the Buddha Precipice but four more provinces like it that nobody here has seen.',
     governingFact:
         'The qi is not gone; it was driven into the stone. There is nothing in the air and a great deal in the rock, and the only way to get at it is to cut.',
     derivations: [
@@ -127,7 +127,7 @@ export const THE_QUIET_MARCHES: Region = {
     customs: {
         socialPrinciple: 'Patronage. One holder, a public and wholly discretionary grant book, and no second party to defect to, so the only political question anyone asks is who is on the book.',
         death: 'Coffins go up, not down. They are set on stakes driven into the cliff face, as high as the family can pay to have them carried, and the height is the whole of the rank: a carver sits a few spans over the road, a house founder is a dark speck you have to be told is there, and nobody in the Marches is buried, because the ground is the work. A face with coffins on it is not cut, and the oldest districts are read from below like a roll.',
-        taboo: 'Never leave a cut unfinished. Locals hold that an open cut spreads the deadening, and a visitor who chips a souvenir off a face and walks away has committed the one offence the Silent Cliffs does not forgive.',
+        taboo: 'Never leave a cut unfinished. Locals hold that an open cut spreads the deadening, and a visitor who chips a souvenir off a face and walks away has committed the one offence the Buddha Precipice does not forgive.',
         threatModel: 'The ground. Dead zones that do not look dead, a burn edge that moves about a pace a year, and dust-lung, which kills more carvers than everything else combined.',
         naming: 'Surnames of its own, and none of them Jade Gorge clan names: Ma Qingru, Luo Zhaowu, Kang Shanhe, Bo Kuanchen. The stock is small and local, so a name here places somebody to the district the way a clan name places somebody downriver, and a person who turns up carrying a Jade Gorge surname is understood to have come from there rather than to have married into anything.',
         time: 'Counted in faces rather than years - a person is "four faces old" in the trade - and a working day ends when the dust has settled enough to see the far wall.'
@@ -142,7 +142,7 @@ export const THE_QUIET_MARCHES: Region = {
         missingDisciplines: [
             {
                 discipline: 'alchemy',
-                reason: 'A refinement needs ambient qi to hold its shape while it sets. In the Silent Cliffs it does not set: pills come out inert or come apart within the month, so every pill in the region is imported eleven days by cart.'
+                reason: 'A refinement needs ambient qi to hold its shape while it sets. In the Buddha Precipice it does not set: pills come out inert or come apart within the month, so every pill in the region is imported eleven days by cart.'
             },
             {
                 discipline: 'formations',
@@ -161,7 +161,7 @@ export const THE_QUIET_MARCHES: Region = {
     ambientProfile: { thin: 62, normal: 8, dense: 1, spirit_tide: 0 },
     localCeilingOrdinal: 6,
     ceilingNote:
-        'Outside the two rented faces a carver stops at about Qi Condensation Layer 7, because the loose stone within reach of an unfunded person is worked out. Nobody born in the Silent Cliffs has passed Chipping in living memory without buying grant time or leaving.',
+        'Outside the two rented faces a carver stops at about Qi Condensation Layer 7, because the loose stone within reach of an unfunded person is worked out. Nobody born in the Buddha Precipice has passed Chipping in living memory without buying grant time or leaving.',
     veinStatus:
         'The veins are not drawn down, they are driven: whatever happened here forced the qi out of the air into the rock and killed the ground above it, and the dead ground has been spreading about a pace a year ever since.',
     politics: 'single_hegemon',
@@ -183,7 +183,7 @@ export const THE_QUIET_MARCHES: Region = {
             parentSectId: 'sect-stone-marrow-hall',
             localName: 'The Iron Ridge Assay House',
             doesHere:
-                'Buys salvage, assays and cuts stones, sells them back at nineteen percent over Jade Gorge, and publishes the insurance table that reads every Silent Cliffs title one rank low. In a region where imported stones are the only alternative to grant time, the assay house is the second government.'
+                'Buys salvage, assays and cuts stones, sells them back at nineteen percent over Jade Gorge, and publishes the insurance table that reads every Buddha Precipice title one rank low. In a region where imported stones are the only alternative to grant time, the assay house is the second government.'
         },
         {
             parentSectId: 'sect-sweptground-temple',
@@ -249,7 +249,7 @@ export const THE_QUIET_MARCHES: Region = {
             // leased". A contractor paid by the administration does not govern
             // the village it works out of.
             heldByFactionId: 'sect-myriad-course-hall',
-            kind: 'village', ambient: 'thin', note: 'Fallen Grain Caravan\' sorting yard, where salvage is priced before it goes to Iron Ridge.',
+            kind: 'village', ambient: 'thin', note: 'Bountiful Sheaf Sect\' sorting yard, where salvage is priced before it goes to Iron Ridge.',
             connections: [
                 {
                     kind: 'path',
@@ -315,21 +315,21 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'refugee_flow',
             otherRegionId: HOME_REGION_ID,
             description:
-                'Everyone who can leave, leaves - perhaps two hundred a year for a century. It is why the Silent Cliffs sects are small, why its inheritance disputes are rare, and why the Jade Gorge has a word for the cough.',
+                'Everyone who can leave, leaves - perhaps two hundred a year for a century. It is why the Buddha Precipice sects are small, why its inheritance disputes are rare, and why the Jade Gorge has a word for the cough.',
             travelDays: 11
         },
         {
             kind: 'shared_feud',
             otherRegionId: HOME_REGION_ID,
             description:
-                'Fallen Grain Caravan and the Bone Lantern Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
+                'Bountiful Sheaf Sect and the Bone Lantern Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
             travelDays: 11
         },
         {
             kind: 'unsettled_border',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The last forty li before Iron Ridge are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Fallen Grain Caravan and the Still Blade Peak both use it, for opposite reasons.',
+                'The last forty li before Iron Ridge are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Bountiful Sheaf Sect and the Still Blade Peak both use it, for opposite reasons.',
             travelDays: 11
         }
     ],
@@ -352,7 +352,7 @@ export const THE_QUIET_MARCHES: Region = {
     ]
 };
 
-// ─── prefectures of the Silent Cliffs: face districts ────────────────────
+// ─── prefectures of the Buddha Precipice: face districts ────────────────────
 // A different kind of object, for a reason one sentence long: there is nothing
 // in the air, so a holding is not ground, it is work. Every one of these is
 // held by an office or by nobody. Not one is held by a sect, because there are
@@ -408,7 +408,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'Worked out, struck off the course, and carried on the Clearwater Ward register only as the annual salvage contract over the burn zones inside it.',
         onTheGround:
-            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. Fallen Grain Caravan will not cut a face that holds somebody without asking the family.',
+            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. Bountiful Sheaf Sect will not cut a face that holds somebody without asking the family.',
         discrepancy: 'none',
         note:
             'The plainest statement of what a face district is: the boundary is the work, the work is finished, and what is left is a cemetery with a contract over it.'
@@ -435,7 +435,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
             'Repainted every year by six people nobody pays, on ground the Myriad Course Hall has never scheduled, and leaving the stakes is how visitors die here.',
         discrepancy: 'no_holder_of_record',
         note:
-            'The Silent Cliffs answer to the Clear River Ford unsurvey, arrived at from the opposite direction: not ground too disputed to certify, but ground too worthless to schedule, kept alive by people who were never appointed to keep it.'
+            'The Buddha Precipice answer to the Clear River Ford unsurvey, arrived at from the opposite direction: not ground too disputed to certify, but ground too worthless to schedule, kept alive by people who were never appointed to keep it.'
     },
     {
         id: 'district-dead-verge',
@@ -468,7 +468,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'A face on the Hall\'s course that cannot be worked, held by a Face Master of the Ninth Face Court, with a quarterly return that has read unchanged three hundred and sixty times.',
         onTheGround:
-            'Eleven li of high Silent Cliffs that has not held qi in ninety years, since a woman went up alone in the spring and attempted the crossing. There is no body, because a failed crossing does not leave one.',
+            'Eleven li of high Buddha Precipice that has not held qi in ninety years, since a woman went up alone in the spring and attempted the crossing. There is no body, because a failed crossing does not leave one.',
         discrepancy: 'none',
         note:
             'The only prefecture in the catalog whose entire purpose is to be walked four times a year by somebody who does not want it struck off, and who writes the word out in full every time.'

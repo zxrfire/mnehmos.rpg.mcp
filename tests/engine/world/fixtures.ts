@@ -145,7 +145,7 @@ export function fixtureCatalog(): WorldCatalog {
             }),
             faction({
                 id: 'sect-fallen-grain-caravan',
-                name: "Fallen Grain Caravan",
+                name: "Bountiful Sheaf Sect",
                 powerOrdinal: 14,
                 admissionOrdinal: 0,
                 governance: 'unbacked',

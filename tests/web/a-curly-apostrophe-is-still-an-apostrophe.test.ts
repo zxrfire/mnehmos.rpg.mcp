@@ -12,7 +12,7 @@ import { parseIntent, inTheCharactersThePatternsUse } from '../../src/web/action
  * the half that does not.
  *
  * It matters here more than in most games: the houses are called things like
- * Fallen Grain Caravan, and a possessive is the natural way to ask about
+ * Bountiful Sheaf Sect, and a possessive is the natural way to ask about
  * nearly anything one of them owns.
  */
 describe('a curly apostrophe', () => {
@@ -27,7 +27,7 @@ describe('a curly apostrophe', () => {
     });
 
     it('does the same for a house whose own name carries one', () => {
-        const straight = "what do I know about Fallen Grain Caravan";
+        const straight = "what do I know about Bountiful Sheaf Sect";
         const curly = straight.replace("'", CURLY);
         expect(parseIntent(curly).action).toBe(parseIntent(straight).action);
     });

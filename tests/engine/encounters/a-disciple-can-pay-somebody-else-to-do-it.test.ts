@@ -134,9 +134,9 @@ describe('a disciple can pay somebody else to do it', () => {
     });
 
     it('leaves the failure on the member, whoever actually walks out of the gate', () => {
-        const said = whoAnswersForItAfterwards('Shao Mingchen', 'The Waterman Caravan');
+        const said = whoAnswersForItAfterwards('Shao Mingchen', 'The Tranquil Oasis Sect');
         expect(said).toContain('Shao Mingchen');
-        expect(said).toContain('The Waterman Caravan');
+        expect(said).toContain('The Tranquil Oasis Sect');
         expect(said.toLowerCase()).toContain('a stranger the house never heard of');
     });
 });

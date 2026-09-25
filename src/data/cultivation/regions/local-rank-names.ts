@@ -20,8 +20,8 @@ import type { LocalRankBand } from './region-schema.js';
 // Three of the five speak that vocabulary and two do not, and WHICH three is
 // content rather than economy: the Yellow Plain speaks it because every lease in
 // nine cities is written in it and no landlord signs a grade he cannot look up,
-// and the Drowned Sea speaks it because it has no locals to have a word of
-// its own. The Silent Cliffs and the White Stair each reached the same rungs by a
+// and the Pearl Ocean speaks it because it has no locals to have a word of
+// its own. The Buddha Precipice and the White Stair each reached the same rungs by a
 // different road, so each named them.
 // ─────────────────────────────────────────────────────────────────────────
 

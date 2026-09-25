@@ -63,8 +63,8 @@ describe('what is live is selected out of the place, never generated for the tur
         const town = whatIsLiveForYouHere({
             ...NOTHING,
             doorsPostedHere: [{
-                houseName: 'Waterman Caravan',
-                saying: 'Waterman Caravan is holding an intake at Orchid Terrace in 3 days.',
+                houseName: 'Tranquil Oasis Sect',
+                saying: 'Tranquil Oasis Sect is holding an intake at Orchid Terrace in 3 days.',
                 admissionOrdinal: 0,
                 inDays: 3
             }],
@@ -112,19 +112,19 @@ describe('what is live is selected out of the place, never generated for the tur
         const town: WhatIsLiveInput = {
             ...NOTHING,
             doorsPostedHere: [{
-                houseName: 'Waterman Caravan',
-                saying: 'Waterman Caravan is holding an intake at Orchid Terrace in 3 days.',
+                houseName: 'Tranquil Oasis Sect',
+                saying: 'Tranquil Oasis Sect is holding an intake at Orchid Terrace in 3 days.',
                 admissionOrdinal: 0,
                 inDays: 3
             }]
         };
         const first = whatIsLiveForYouHere(town);
-        expect(first.toldToThePlayer.join('\n')).toContain('Waterman Caravan');
+        expect(first.toldToThePlayer.join('\n')).toContain('Tranquil Oasis Sect');
         expect(first.keysSaid.length).toBeGreaterThan(0);
 
         const again = whatIsLiveForYouHere({ ...town, alreadySaidHereToday: first.keysSaid });
         expect(again.toldToThePlayer.join('\n'), 'the same door was stated twice')
-            .not.toContain('Waterman Caravan');
+            .not.toContain('Tranquil Oasis Sect');
 
         // And a day later the caller's stamp has moved, so nothing is withheld.
         const tomorrow = whatIsLiveForYouHere({
@@ -132,6 +132,6 @@ describe('what is live is selected out of the place, never generated for the tur
             doorsPostedHere: [{ ...town.doorsPostedHere[0], inDays: 2 }],
             alreadySaidHereToday: []
         });
-        expect(tomorrow.toldToThePlayer.join('\n')).toContain('Waterman Caravan');
+        expect(tomorrow.toldToThePlayer.join('\n')).toContain('Tranquil Oasis Sect');
     });
 });

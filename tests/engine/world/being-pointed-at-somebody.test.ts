@@ -165,7 +165,7 @@ describe('anything else they can place', () => {
 
         expect(placing({ id: 'loc-cloud-gate', name: 'Cloud Gate', kind: 'place' })?.because)
             .toBe('the ground they are standing on');
-        expect(placing({ id: 'loc-far', name: 'The Drowned Sea', kind: 'place' })).toBeNull();
+        expect(placing({ id: 'loc-far', name: 'The Pearl Ocean', kind: 'place' })).toBeNull();
     });
 
     it('never places a person the speaker has no line to', () => {

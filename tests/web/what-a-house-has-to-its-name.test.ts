@@ -85,7 +85,7 @@ async function somebodyAndAHouseTheyKnow(seed: string) {
 
     // The first one they were born knowing. It used to be filtered for whether
     // the question could be put about it at all - `holds-low` opens knowing the
-    // Six Li Patrol and the Fallen Grain Caravan, and neither could be asked -
+    // Six Li Patrol and the Bountiful Sheaf Sect, and neither could be asked -
     // and now every house can, so the filter is an assertion.
     const known = heardOf[0];
     expect(

@@ -41,7 +41,7 @@
  *   no_holder_of_record   the register carries the ground with nobody's name
  *                         against it. Clear River Ford, Six Li, Nine Hundred Paces
  *   no_authority          the region itself declares nobody holds it, which in
- *                         the catalog today is the Drowned Sea
+ *                         the catalog today is the Pearl Ocean
  *   unrecorded            nothing anywhere says. NOT the same as unheld, and
  *                         a caller that treats it as such has invented a
  *                         vacuum out of a missing row

@@ -118,7 +118,7 @@ export const THE_LOW_FALL: Region = {
             parentSectId: 'sect-fallen-grain-caravan',
             localName: 'The Willow Village Factor at Clear River Ford',
             doesHere:
-                'Sells Silent Cliffs salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Silent Cliffs has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
+                'Sells Buddha Precipice salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Buddha Precipice has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
         },
         {
             parentSectId: 'sect-stone-marrow-hall',
@@ -139,11 +139,11 @@ export const THE_LOW_FALL: Region = {
             name: PLACE.STONE_FORD,
             kind: 'market_town',
             ambient: 'thin',
-            note: 'The last ford before the border road, and where Silent Cliffs goods are sold.',
+            note: 'The last ford before the border road, and where Buddha Precipice goods are sold.',
             // THE LEG THE PROVINCE ROAD DOES NOT COVER, and it is the
             // reason this field exists rather than an illustration of it.
             //
-            // The `trade_route` to the Silent Cliffs below quotes its
+            // The `trade_route` to the Buddha Precipice below quotes its
             // eleven days as "the border road from Clear River Ford to Iron Ridge" -
             // so the figure starts at the ford, and the stretch from the
             // province town out to the ford has never been priced by
@@ -382,15 +382,15 @@ export const THE_LOW_FALL: Region = {
     // province ground list is what a square falls back to; the basin does not
     // need a fallback because it says what it is.
     exports: [
-        'refined pills and formulae, which the Silent Cliffs cannot make at all',
+        'refined pills and formulae, which the Buddha Precipice cannot make at all',
         'manuals to heaven grade, and living teachers for them',
         'assayed spirit stones, cut to the Stone Marrow standard',
         'arbitration, certification and oath witnessing, all of which travel'
     ],
     imports: [
-        'sealed-site salvage out of the Silent Cliffs burn zones',
+        'sealed-site salvage out of the Buddha Precipice burn zones',
         'scar-ground herbs that only fruit on dead ground',
-        'people: the Silent Cliffs sends its young, and nobody on this side calls it an import'
+        'people: the Buddha Precipice sends its young, and nobody on this side calls it an import'
     ],
     priceMultiplier: 1,
     hazards: [
@@ -409,14 +409,14 @@ export const THE_LOW_FALL: Region = {
             kind: 'refugee_flow',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'A steady drift of Silent Cliffs-born carvers arriving at Clear River Ford with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Fortress recruits the rest.',
+                'A steady drift of Buddha Precipice-born carvers arriving at Clear River Ford with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Fortress recruits the rest.',
             travelDays: 11
         },
         {
             kind: 'shared_institution',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Stone Marrow Hall and Burnt Earth Temple both hold Silent Cliffs outposts, and the Fallen Grain Caravan keeps a factor at Clear River Ford. Those three offices are the whole formal relationship between the regions.',
+                'The Stone Marrow Hall and Burnt Earth Temple both hold Buddha Precipice outposts, and the Bountiful Sheaf Sect keeps a factor at Clear River Ford. Those three offices are the whole formal relationship between the regions.',
             travelDays: 11
         },
         {
@@ -470,7 +470,7 @@ export const THE_LOW_FALL: Region = {
     ],
     crossingNotes: [
         'Coming in from anywhere, the noise is the first thing: sect patrols, courier traffic, and four separate parties claiming the same road.',
-        'The air is wet. A carver arriving from the Silent Cliffs usually stops within sight of the ford and has to be told what they are feeling.',
+        'The air is wet. A carver arriving from the Buddha Precipice usually stops within sight of the ford and has to be told what they are feeling.',
         'Medicine is purchasable. A Clear Meridian Pill is sixty stones and in stock, which no shop in three of the four provinces around this one can say.',
         'Somebody asks whose you are within an hour, and the question is not rude and is not idle: there is a book, your answer goes in it, and the answer decides which of eleven veins you are allowed to sit on.'
     ]
@@ -624,17 +624,17 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             },
             {
                 factionId: 'sect-fallen-grain-caravan',
-                holds: 'The Willow Village Factor at Clear River Ford, a shopfront for Silent Cliffs salvage.',
+                holds: 'The Willow Village Factor at Clear River Ford, a shopfront for Buddha Precipice salvage.',
                 delegatedFromId: 'sect-clearwater-ward'
             }
         ],
         onPaper:
-            'Surveyed by the Immovable Mountain Temple to the burn edge and no further, so the last forty li before the Silent Cliffs border sit on no certified survey and the basin has no closing line.',
+            'Surveyed by the Immovable Mountain Temple to the burn edge and no further, so the last forty li before the Buddha Precipice border sit on no certified survey and the basin has no closing line.',
         onTheGround:
             'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
         note:
-            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Fallen Grain Caravan and the Still Blade Peak both use, for opposite reasons.'
+            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Bountiful Sheaf Sect and the Still Blade Peak both use, for opposite reasons.'
     },
     {
         id: 'prefecture-sweptground',
@@ -655,7 +655,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'Carried on the apportionment with a nil figure against it, because there is no vein under it and never was, so the Keeper of the Eleven has nothing to apportion and has printed a zero for two hundred years.',
         onTheGround:
-            'A temple, a treaty vault, and the largest concentration of Silent Cliffs refugees in the province, on ground chosen for having nothing anybody needs to grant.',
+            'A temple, a treaty vault, and the largest concentration of Buddha Precipice refugees in the province, on ground chosen for having nothing anybody needs to grant.',
         discrepancy: 'none',
         note:
             'The one basin whose security is that it is worthless. Everything else in the province is defended by a document or by a belief; this is defended by a zero in a column.'

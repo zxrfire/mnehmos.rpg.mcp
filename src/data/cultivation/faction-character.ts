@@ -265,7 +265,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That the Thousand Treasure Pavilion prices tolls on routes the Alliance keeps open, and calls this commerce.',
         fear: 'That the ferry trade is what the Alliance is, and that a Shrinking Earth Pavilion station at Clear River Ford would end it in a decade.',
         lateness: 'Five of eight nodes lit, all of them on piers; half the river charts are copies of a survey two ages old and more accurate than anything the Alliance has produced since.',
-        disagreement: 'The Ford Masters want to federate the Silent Cliffs border road and become a regional carrier. The River Elders hold that the Alliance is river people and will drown on land.',
+        disagreement: 'The Ford Masters want to federate the Buddha Precipice border road and become a regional carrier. The River Elders hold that the Alliance is river people and will drown on land.',
         wrongAbout: 'It believes its pier pilings at Clear River Ford are Alliance work from three centuries back. They are two ages older than the Alliance and are the reason that ford has never moved.',
         unitOfValue: 'Crossings owed. A debt here is discharged by carrying somebody, and the Alliance will accept nothing else from its own.',
         production: {
@@ -751,7 +751,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         practice: 'Oathwrights never say "I promise" in casual speech, will not answer a yes-or-no question without qualifying it, and a witness signs their own name last, after every party, always.',
         grievance: 'That a founding oath forbids them witnessing for the Severed, and is costing them a fortune they can see and cannot touch.',
-        fear: 'The unpublished treaty of nine hundred years ago in its own vault, which permitted two traditions to work one vein simultaneously and is the likeliest explanation for the Silent Cliffs.',
+        fear: 'The unpublished treaty of nine hundred years ago in its own vault, which permitted two traditions to work one vein simultaneously and is the likeliest explanation for the Buddha Precipice.',
         lateness: 'Twenty-five of thirty-six nodes lit; a vault of treaties binding on people who have never read them; and a dissolution method for oaths whose parties are all dead that has never worked and is still taught.',
         disagreement: 'The Warden faction want the house to enforce as well as witness. The Strict Hall holds that a witness who enforces is a party, and a party cannot witness.',
         wrongAbout: 'It teaches that an oath binds the person and that ground is ceremony. Immovable Mountain Temple\'s figures show no oath sworn on unsurveyed ground has ever held, and the house has not tested it because testing it would cost it the fee.',
@@ -844,7 +844,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // ═══════════════════════════════════════════════════════════════════
     'sect-clearwater-ward': {
         knownFor: {
-            outside: 'Power. In the Silent Cliffs the Ward is simply what authority looks like: the grant book, the price of a day, and the man who can refuse you.',
+            outside: 'Power. In the Buddha Precipice the Ward is simply what authority looks like: the grant book, the price of a day, and the man who can refuse you.',
             actuallyGoodAt: 'Nothing anybody outside would recognise as strength. Three people at Standing Cut, no chisels, no arts worth the name, and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge.',
             theGap: 'This is the one entry where reputation runs ahead of capability rather than behind it. Everything the Ward has is positional, everybody local knows it, and nobody local can do anything about it.'
         },
@@ -858,7 +858,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         production: {
             reliableOrdinal: 13, currentCount: 3, peakOrdinal: 20, peakCount: 1, yearsSinceLastPeak: 60,
             climbingToward: 21, waitingOn: 'access',
-            note: 'The whole region\'s pipeline is three people at Standing Cut, one Keystone in two hundred years, and a ward that has started prospecting, which is not a thing wards do. Two survey parties have gone past Nine Hundred Paces in four years looking for a third workable face and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Silent Cliffs since the catastrophe and would let the Ward raise a Keystone out of its own ticketed instead of waiting sixty years for another accident. It ends if Jade Face runs out first, and the Ward is the only party that has measured how close that is and has never published the figure.'
+            note: 'The whole region\'s pipeline is three people at Standing Cut, one Keystone in two hundred years, and a ward that has started prospecting, which is not a thing wards do. Two survey parties have gone past Nine Hundred Paces in four years looking for a third workable face and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Buddha Precipice since the catastrophe and would let the Ward raise a Keystone out of its own ticketed instead of waiting sixty years for another accident. It ends if Jade Face runs out first, and the Ward is the only party that has measured how close that is and has never published the figure.'
         },
         distinctSentence: 'Rents the only two workable stone faces in a province by the day, prices them by a rank table it has never dared submit for certification, and none of its members have ever held a chisel.'
     },
@@ -871,19 +871,19 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         practice: 'Wardens carry paint and a brush at all times and stop mid-conversation to repaint a stake; they greet strangers by pointing at the nearest marker rather than speaking.',
         grievance: 'That the Clearwater Ward charges for grants and contributes nothing to the roads its grantees walk in on.',
         fear: 'That the burn edge is accelerating. Three Wardens have said so; the survey shed has the figures; nobody has recalculated them because nobody wants the answer.',
-        lateness: 'Nothing inherited at all, which in the Silent Cliffs is unusual: a shed, nine hundred stakes and a survey, all of it their own work, and the survey is the only complete map of safe ground in the region.',
+        lateness: 'Nothing inherited at all, which in the Buddha Precipice is unusual: a shed, nine hundred stakes and a survey, all of it their own work, and the survey is the only complete map of safe ground in the region.',
         disagreement: 'The Road Wardens want to charge a toll and fund replacement paint. The Warden of the Six Li holds that a paid road is a road people leave to avoid paying for.',
         wrongAbout: 'They believe the original survey is accurate because it has never been wrong. It has never been checked - the burn edge has moved nine hundred paces since it was drawn and the stakes have been moved to match by hand.',
         unitOfValue: 'Stakes standing. The Wardens count their own strength, their dead and their year in painted markers, and will trade labour for paint before stones.',
         production: {
             reliableOrdinal: 5, currentCount: 12, peakOrdinal: 14, peakCount: 1, yearsSinceLastPeak: 190,
-            note: 'The lowest production in the catalog: on unaided Silent Cliffs ground a Warden stops at Chipping, and the single Standing Cut in their history was the founder.'
+            note: 'The lowest production in the catalog: on unaided Buddha Precipice ground a Warden stops at Chipping, and the single Standing Cut in their history was the founder.'
         },
         distinctSentence: 'A militia that measures its dead in painted stakes, greets strangers by pointing at the nearest one, and owns the only complete map of where it is safe to walk.'
     },
     'sect-fallen-grain-caravan': {
         knownFor: {
-            outside: 'Dying. The best-paid work available in the Silent Cliffs, understood locally as a way of dying slightly later than the alternative.',
+            outside: 'Dying. The best-paid work available in the Buddha Precipice, understood locally as a way of dying slightly later than the alternative.',
             actuallyGoodAt: 'Keeping its word. A dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted once - which in a region administered by a bureau with eleven staff is the only reliable institution anybody deals with.',
             theGap: 'The pay is the thing everybody repeats, so the promise underneath it is treated as a detail of the pay.'
         },
@@ -891,7 +891,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That the Bone Lantern Cult undercuts them across a border neither region polices, using finds the Caravan located.',
         fear: 'The sealed part of their own sorting yard. Xun went in on a wager thirty years ago and the Caravan sealed it again and raised the wager, and nobody has taken it.',
         lateness: 'Three of fourteen nodes lit, all at the front of a ruin they have never fully entered; the yard is laid out inside somebody else\'s building; and the rotation they follow was justified by a note whose reasoning they have lost.',
-        disagreement: 'The Caravan Factors want to work live burn edges, which pays triple. The Caravan Master holds the nine-year rotation, and the argument reopens every time a face runs out.',
+        disagreement: 'The Sheaf Elders want to work live burn edges, which pays triple. The Sheaf Master holds the nine-year rotation, and the argument reopens every time a face runs out.',
         wrongAbout: 'They hold that the nine-year rotation lets a site recover. Bo Ai\'s founding note says it exists to let the previous crew\'s survivors die off before the next pass, and the Caravan reads the note as metaphor.',
         unitOfValue: 'Shares in a find, allocated before the shift and honoured after a death - a dead gleaner\'s share goes to their family, and the Caravan has never once defaulted on that.',
         production: {
@@ -935,7 +935,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That the Bone Lantern Cult works the ground behind its strings, waiting on the ones who did not make the return leg, and has twice been found doing it before the year was out.',
         fear: 'A season where the cover moves early and closes three shows at once. The Caravan can walk a string to a show that has shut; what they cannot do is walk three strings back on the water they left with.',
         lateness: 'It has nothing to be late about: no inheritance, no compound, no diagram, no hall. What it has instead is a shed that has been rebuilt four times around a stack of boards, which is the only continuity anybody there claims.',
-        disagreement: 'Whether to sound for a second well. Two Route Elders are paying a Silent Cliffs carver out of their own shares without telling the Waterman, who holds that a fixed point on that ground is a thing the cover reaches in a decade and a debt that outlives it.',
+        disagreement: 'Whether to sound for a second well. Two Oasis Elders are paying a Buddha Precipice carver out of their own shares without telling the Oasis Master, who holds that a fixed point on that ground is a thing the cover reaches in a decade and a debt that outlives it.',
         wrongAbout: 'That the three conditions are minimal. They are minimal at the door and the water is not, and the shed has never quite registered that it selects its people by who can afford to stay rather than by who it lets in - which is a harder filter than most gates in the world.',
         unitOfValue:
             'Returns. Not finds, not shares, not stones - the figure the shed keeps is how many went out and how many came back, and every argument inside it is ultimately conducted in that number. It is the only house in the catalog whose central measure counts nothing it owns.',
@@ -1007,7 +1007,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         highestOrdinal: 42,
         climbedYearsAgo: 700,
         climbedWhere:
-            'A face in the Silent Cliffs worked to completion in the ordinary way, and then the seat, which cannot be left. Nothing about the climb was unusual and the schedule records it between two other faces.',
+            'A face in the Buddha Precipice worked to completion in the ordinary way, and then the seat, which cannot be left. Nothing about the climb was unusual and the schedule records it between two other faces.',
         ageNote:
             'Late Age, on driven ground, which the Hall regards as the only interesting fact about it: the ground was not richer then and the method has not changed, so the difference between this climb and the ones that failed is time and the order they were taken in.',
         whyNobodyHasSince:

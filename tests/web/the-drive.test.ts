@@ -418,7 +418,7 @@ describe('the three questions reach the three reads', () => {
     it('does not steal a real journey from the move verb', () => {
         // The failure pointed the other way, which is the one a widening
         // introduces. A sentence that names a place is a journey.
-        expect(parseIntent('I travel to Barrow Hand').action).toBe('move');
+        expect(parseIntent('I travel to Chaff Hand').action).toBe('move');
         expect(parseIntent('I head north').action).toBe('move');
     });
 
@@ -483,7 +483,7 @@ describe('the three questions reach the three reads', () => {
      *
      * The choice this restores is a real one and the numbers are the catalog's:
      * from The Yellow Plain, The Jade Gorge is 6 days away and carries to the top
-     * of the ladder, and The Drowned Sea is 21 days away and carries nobody
+     * of the ladder, and The Pearl Ocean is 21 days away and carries nobody
      * past the second rung.
      */
     it('prices a province the player can place, in days off the catalog', async () => {

@@ -90,7 +90,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I read the inscription'
     ],
     move: [
-        'I travel to Barrow Hand',
+        'I travel to Chaff Hand',
         'I set out for Clear River Ford',
         'I head north',
         'I make my way to Clear River Ford'
@@ -131,7 +131,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     fold: [
         'I fold space to Clear River Ford',
         'I step through space to Iron Ridge',
-        'I fold to the Silent Cliffs',
+        'I fold to the Buddha Precipice',
         'I tear open space and go to Iron Ridge',
         'I cross the distance in one step'
     ],
@@ -250,7 +250,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I look for a sect that will take me',
         'I want to join a sect',
         'what sects are near here',
-        'I ask about joining the Fallen Grain Caravan'
+        'I ask about joining the Bountiful Sheaf Sect'
     ],
     look: [
         'I look around',
@@ -1560,7 +1560,7 @@ describe('asking somebody is not consulting a register', () => {
     it('leaves an application to the sect surface, where the act actually is', () => {
         // "ask about joining" names no person. It is not a question, it is an
         // application, and routing it to a conversation would lose the join.
-        expect(parseIntent('I ask about joining the Fallen Grain Caravan').action).toBe('sect');
+        expect(parseIntent('I ask about joining the Bountiful Sheaf Sect').action).toBe('sect');
     });
 
     it('leaves asking around for work to the verb that feeds them', () => {

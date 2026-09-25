@@ -1063,7 +1063,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'worked-seam-canon',
         specialities: ['cultivation', 'defense'],
         rivals: [],
-        territory: 'Driven ground across five provinces, administered face by face, and a seat in the Silent Cliffs built around a nail that cannot be moved.',
+        territory: 'Driven ground across five provinces, administered face by face, and a seat in the Buddha Precipice built around a nail that cannot be moved.',
         recruits: true,
         compound: {
             inherited: false,
@@ -1766,7 +1766,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'corpse-lantern-soul-forging',
         specialities: ['forbidden', 'defense'],
-        // Waterman Caravan are the third, and it is a quarrel about the same
+        // Tranquil Oasis Sect are the third, and it is a quarrel about the same
         // bodies from two directions: the sand keeps a corpse and gives it
         // back a decade later with its possessions on it, so a carrier who
         // does not make the return leg is Cult stock, and the Caravan count
@@ -1784,13 +1784,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'Old battlefields, worked in rotation, in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It teaches four arts and two of them are corpse work - the cross-meridian strike, bark armour, the tithe palm and corpse-lantern soul forging - which makes its people durable, patient and carrying something that righteous sects execute for possessing. What it is actually best at is ground-reading: they are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to. They hold that the hundred-and-forty-year rotation exists to let sites recover; the founding note says it exists to let the survivors die off first, and the Cult has forgotten the difference.',
         ambition: {
             wants:
-                'A rotation slot in the Silent Cliffs burn zones, which are the only unworked ground left within reach.',
+                'A rotation slot in the Buddha Precipice burn zones, which are the only unworked ground left within reach.',
             blockedBy: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
             wouldCost:
-                'Crossing a border neither region polices into ground the Fallen Grain Caravan have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Caravan located, which is the grievance from the other side.',
+                'Crossing a border neither region polices into ground the Bountiful Sheaf Sect have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Caravan located, which is the grievance from the other side.',
             contestedWith: ['sect-fallen-grain-caravan', 'sect-sand-well-caravan'],
             movedOn:
-                'Two Lantern Bearers have been working the Silent Cliffs edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
+                'Two Lantern Bearers have been working the Buddha Precipice edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
         }
     },
     {
@@ -1992,7 +1992,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'foundation-tempering-scripture',
         specialities: ['cultivation', 'defense'],
         rivals: ['sect-fallen-grain-caravan', 'sect-six-li-patrol'],
-        territory: 'Both live pockets in the Silent Cliffs, the weir works above Iron Ridge, and the grant book.',
+        territory: 'Both live pockets in the Buddha Precipice, the weir works above Iron Ridge, and the grant book.',
         recruits: true,
         compound: {
             inherited: true,
@@ -2001,7 +2001,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A flood-control works built to manage water by people who plainly also used it to manage qi, running seven of its twenty-six nodes and holding both of the region\'s remaining pockets between them.'
         },
         description:
-            'Both live pockets in the Silent Cliffs, the weir works above Iron Ridge, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Jade Gorge material and none of it carving, because Ward members do not touch a chisel: the Ward cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Karma Palace for certification.',
+            'Both live pockets in the Buddha Precipice, the weir works above Iron Ridge, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Jade Gorge material and none of it carving, because Ward members do not touch a chisel: the Ward cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Karma Palace for certification.',
         ambition: {
             wants: 'A third workable face found and brought into the grant book before Jade Face runs out.',
             blockedBy: ['court-ninth-face', 'sect-six-li-patrol'],
@@ -2030,7 +2030,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'swallow-skimming-step',
         specialities: ['movement', 'defense', 'support'],
         rivals: ['sect-clearwater-ward'],
-        territory: 'The marked roads: every route through the Silent Cliffs that does not cross dead ground.',
+        territory: 'The marked roads: every route through the Buddha Precipice that does not cross dead ground.',
         recruits: true,
         compound: {
             inherited: false,
@@ -2039,7 +2039,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nine hundred painted stakes and a shed at Six Li with the survey in it, which is the only complete map of where it is safe to walk.'
         },
         description:
-            'The marked roads: every route through the Silent Cliffs that does not cross dead ground, held by a shed, nine hundred painted stakes and a survey, all of it their own work. They teach the cheapest survivable list in the catalog - the cross-meridian strike, the skimming step, the iron shirt, the gathering manual, the mending palm - which is what a militia needs to walk somebody out of burn ground, and on unaided Silent Cliffs air a Warden stops at Chipping and stays there. Its strongest member would be an outer disciple in the Jade Gorge, it takes anyone, pays almost nothing, and loses two or three people a year to ground that moved. The province finds them mildly comic and they own the only complete record of where it is safe to walk in a region full of ground that kills, kept current at that cost, and they believe the original survey is accurate because it has never been checked.',
+            'The marked roads: every route through the Buddha Precipice that does not cross dead ground, held by a shed, nine hundred painted stakes and a survey, all of it their own work. They teach the cheapest survivable list in the catalog - the cross-meridian strike, the skimming step, the iron shirt, the gathering manual, the mending palm - which is what a militia needs to walk somebody out of burn ground, and on unaided Buddha Precipice air a Warden stops at Chipping and stays there. Its strongest member would be an outer disciple in the Jade Gorge, it takes anyone, pays almost nothing, and loses two or three people a year to ground that moved. The province finds them mildly comic and they own the only complete record of where it is safe to walk in a region full of ground that kills, kept current at that cost, and they believe the original survey is accurate because it has never been checked.',
         ambition: {
             wants:
                 'Clearwater Ward to pay for paint, and the burn-edge figures in the survey shed recalculated by somebody who is not a Warden.',
@@ -2053,10 +2053,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     },
     {
         id: 'sect-fallen-grain-caravan',
-        name: 'Fallen Grain Caravan',
+        name: 'Bountiful Sheaf Sect',
         alignment: 'neutral',
         powerOrdinal: 17,
-        ranks: ['Barrow Hand', 'Gleaner', 'Deep Gleaner', 'Caravan Factor', 'First Factor', 'Caravan Master'],
+        ranks: ['Chaff Hand', 'Sheaf Binder', 'Winnower', 'Sheaf Elder', 'Grand Sheaf Elder', 'Sheaf Master'],
         admissionOrdinal: 0,
         stipend: [2, 7, 26, 90, 160, 300],
         teaches: [
@@ -2078,13 +2078,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A sorting yard laid out inside a ruin the Caravan did not build and has never fully entered, working three nodes at the front of it and leaving the rest sealed on the reasonable grounds that they were sealed for a reason.'
         },
         description:
-            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Ridge. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Silent Cliffs also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Caravan brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted.',
+            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Ridge. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Buddha Precipice also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Caravan brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted.',
         ambition: {
             wants:
                 'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Caravan has misremembered.',
             blockedBy: ['sect-clearwater-ward', 'sect-bone-lantern-cult'],
             wouldCost:
-                'The Caravan Master holds the rotation and the argument reopens every time a face runs out. Working live edges would raise losses from one in nine to something nobody has costed, and the share promise is the only thing the Caravan has, so a season of unpaid families would end it.',
+                'The Sheaf Master holds the rotation and the argument reopens every time a face runs out. Working live edges would raise losses from one in nine to something nobody has costed, and the share promise is the only thing the Caravan has, so a season of unpaid families would end it.',
             contestedWith: ['sect-bone-lantern-cult'],
             movedOn:
                 'The Factors have worked two live edges without an entry and paid the shares out of the general fund, which is the first time the fund has been used for anything.'
@@ -2096,7 +2096,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     //
     // Every other house in this catalog holds from somebody. A Jade Gorge sect
     // holds a twelve-year grant, a Yellow Plain body holds a lease with a
-    // deposit on it, a Silent Cliffs district holds a face the Myriad Course Hall scheduled,
+    // deposit on it, a Buddha Precipice district holds a face the Myriad Course Hall scheduled,
     // a northern court holds an elevation and pays for the pass. The apexes
     // divide the land between them and nominate whoever holds the ground,
     // and the reason they prefer a bad holder to an empty seat is written out
@@ -2115,7 +2115,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     //                       power in the world is worse off the day it falls,
     //                       including the power that would take it.
     //
-    //   Waterman Caravan   are unowned because nothing on the Burial Sands
+    //   Tranquil Oasis Sect   are unowned because nothing on the Burial Sands
     //                       outlives the instrument that would hold it. A
     //                       grant runs twelve years and a surfacing is gone
     //                       inside nine, so there is nothing there that can
@@ -2193,10 +2193,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
 
     {
         id: 'sect-sand-well-caravan',
-        name: 'Waterman Caravan',
+        name: 'Tranquil Oasis Sect',
         alignment: 'neutral',
         powerOrdinal: 19,
-        ranks: ['Sand Servant', 'Carrier', 'String Head', 'Route Elder', 'Grand Route Elder', 'Waterman'],
+        ranks: ['Cistern Servant', 'Yoke Bearer', 'Karez Keeper', 'Oasis Elder', 'Grand Oasis Elder', 'Oasis Master'],
         admissionOrdinal: 0,
         stipend: [2, 6, 22, 75, 140, 260],
         teaches: [
@@ -2211,7 +2211,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'five-breath-circulation-scripture',
         specialities: ['defense', 'support', 'cultivation'],
         rivals: ['sect-bone-lantern-cult'],
-        territory: 'A shed and a stockyard a day past the last painted stake in the Silent Cliffs, and a route across the sand that has to be rewalked every season.',
+        territory: 'A shed and a stockyard a day past the last painted stake in the Buddha Precipice, and a route across the sand that has to be rewalked every season.',
         recruits: true,
         compound: {
             inherited: false,
@@ -2220,7 +2220,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A tally board under the shed roof with every string that has gone out on it, and the ones that did not come back left up rather than wiped, which is the only record of the dead anywhere on this ground.'
         },
         description:
-            'Water carried out onto the Burial Sands in strings of forty to sixty skins, from Sand Well to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because Sand Well is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Caravan publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the stone hide, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Route Elders regard as the only endorsement the shed has ever had.',
+            'Water carried out onto the Burial Sands in strings of forty to sixty skins, from Sand Well to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because Sand Well is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Caravan publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the stone hide, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Oasis Elders regard as the only endorsement the shed has ever had.',
         ambition: {
             wants:
                 'A second well. One dug, anywhere on the sand, of its own, so that the four-day figure stops being the thing that kills its people.',
@@ -2229,7 +2229,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'Everything the shed has and probably the shed. A well is a fixed point and a fixed point on the Burial Sands is a thing the cover reaches in a decade, so the Caravan would be spending the whole of what they have on something with a shorter life than the debt - which is the province\'s own argument for why nobody holds anything here, made against the only body that has ever wanted to.',
             contestedWith: ['sect-bone-lantern-cult'],
             movedOn:
-                'Two Route Elders have been paying a Silent Cliffs carver out of their own shares to sound for water at a point nine days out, without telling the Waterman, and have four soundings and no water.'
+                'Two Oasis Elders have been paying a Buddha Precipice carver out of their own shares to sound for water at a point nine days out, without telling the Oasis Master, and have four soundings and no water.'
         }
     }
 ] as const;
@@ -3398,7 +3398,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         requirement: 'There is no application. The Grove approaches perhaps one person a generation, having watched them for some years, and has approached nobody in forty-one.'
     },
 
-    // The Silent Cliffs. Note how low the bars are, and that the binding
+    // The Buddha Precipice. Note how low the bars are, and that the binding
     // requirement everywhere is stones rather than talent.
     'sect-clearwater-ward': {
         minOrdinal: 2,

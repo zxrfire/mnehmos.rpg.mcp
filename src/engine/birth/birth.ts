@@ -317,7 +317,7 @@ export function housesWithinEarshot(
  * houses admit at rung 2 or below and SEVEN ARE TIED AT ZERO, so the
  * alphabetical tie-break made `sect-azure-dew-sect` the winner and the other six
  * permanently unreachable in every run; it returned a global minimum, so a child
- * in the Silent Cliffs was told the name of a house in the Jade Gorge; and for
+ * in the Buddha Precipice was told the name of a house in the Jade Gorge; and for
  * nine births in ten it was the ENTIRE roll a life began with.
  *
  * Now: houses that would take anybody HERE (own region, at a bar somebody with

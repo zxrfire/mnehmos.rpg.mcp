@@ -254,7 +254,7 @@ describe('seeding the ground', () => {
         }));
         const seeded = seedPlacesThatTeachADao(state);
         // Only the provinces this world actually has. A ground is IN a province
-        // and a catalog with no Drowned Sea in it does not get the Salt Hall.
+        // and a catalog with no Pearl Ocean in it does not get the Salt Hall.
         expect(seeded.length).toBe(
             PLACES_THAT_TEACH_A_DAO.filter(
                 p => p.regionId === 'region-low-fall' || p.regionId === 'region-white-stair'

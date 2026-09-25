@@ -421,7 +421,7 @@ describe('the cure is read off the catalog, never invented', () => {
     /**
      * Affordability is a claim about a purse against a price, so it has to be
      * against the price actually asked. The same 500 stones that covers this
-     * cure at home does not cover it in the Drowned Sea, and the sentence has
+     * cure at home does not cover it in the Pearl Ocean, and the sentence has
      * to say so rather than promising "you are carrying enough for one".
      */
     it('decides affordability against the local figure', () => {

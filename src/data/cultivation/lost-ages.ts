@@ -125,7 +125,7 @@ export const ANCIENT_ARTS: readonly AncientArt[] = [
         whenTheModernArtWins:
             'Every journey, every pursuit, every retreat, and every fight. Qinggong at the same rung outruns this over any distance worth the name and costs nothing but qi.',
         whoPractisesIt:
-            'Salvage crews and the very old. It is the one ancient road with a working trade behind it: a Deep Gleaner who can step out of a collapsed shaft is worth four who cannot, and by the time somebody has done the work to hold it they are old enough for the price not to matter.'
+            'Salvage crews and the very old. It is the one ancient road with a working trade behind it: a Winnower who can step out of a collapsed shaft is worth four who cannot, and by the time somebody has done the work to hold it they are old enough for the price not to matter.'
     },
     {
         techniqueId: 'shut-hour-sealing-field',
@@ -464,7 +464,7 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
         factionId: 'apex-myriad-course-hall',
         standing: 'holds_one',
         howItIsKnown:
-            'One of the three sealed cases in the seat chamber, and the Myriad Course Hall publishes the count of the cases without ever saying what is in them. Everybody who has thought about it has worked out what one of the three probably is, which is a large part of why the Silent Cliffs has arranged itself so carefully around never being the fourth emergency.',
+            'One of the three sealed cases in the seat chamber, and the Myriad Course Hall publishes the count of the cases without ever saying what is in them. Everybody who has thought about it has worked out what one of the three probably is, which is a large part of why the Buddha Precipice has arranged itself so carefully around never being the fourth emergency.',
         whatBecameOfIt: null
     },
     {

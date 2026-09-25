@@ -433,7 +433,7 @@ describe('ungoverned ground is not a sixth province', () => {
         expect(ones[0].id).toBe(HOME_REGION_ID);
         // The two accounts must actually be written and must differ.
         expect(sand.whyItCannotBeHeld).not.toBe(sand.andWhyThatIsNotTheSeasReason);
-        expect(sand.andWhyThatIsNotTheSeasReason).toMatch(/Drowned Sea|water|sea/i);
+        expect(sand.andWhyThatIsNotTheSeasReason).toMatch(/Pearl Ocean|water|sea/i);
         // The mechanism is the term of the instrument, not strength.
         expect(sand.theShows.againstTheGrantCycle).toMatch(/twelve/i);
     });
@@ -447,7 +447,7 @@ describe('ungoverned ground is not a sixth province', () => {
         expect(why.whatItWouldReturn.length).toBeGreaterThan(80);
         // Two reasons, held by different parties, one of them unstated.
         expect(why.theInterestedReason).not.toBe(why.whatItWouldCost);
-        expect(why.whoBelievesWhich).toMatch(/Yellow Plain|Jade Gorge|Silent Cliffs/);
+        expect(why.whoBelievesWhich).toMatch(/Yellow Plain|Jade Gorge|Buddha Precipice/);
         // And the payoff: the vacuum is what makes the comparison a comparison.
         expect(THE_BLOWN_GROUND.whatItMakesTrue.length).toBeGreaterThan(150);
     });

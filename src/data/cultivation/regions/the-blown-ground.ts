@@ -167,9 +167,9 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         'People who cannot stand at a gate anywhere else can stand here, so the population is entirely arrivals with a reason, and everybody knows that about everybody'
     ],
     whyItCannotBeHeld:
-        'Not because it is too strong, too poor or too far. Because the thing that would be held has a shorter life than the instrument that would hold it. Every holding in this world is an instrument with a term: a Jade Gorge grant runs twelve years and is renewed on a twelve-year cycle, a Yellow Plain lease runs to a renewal calendar that is public, a Silent Cliffs face district exists for as long as there is work in it. A show is open for a season to about nine years. There is nothing here that can be the subject of a twelve-year document, so the apparatus that turns force into authority everywhere else - grant, renewal, apportionment, countersignature - has nothing to bite on. A party can occupy a show and hold it against all comers, and be holding a patch of ordinary sand at the end of it, having spent the whole term of a grant on something that expired inside it.',
+        'Not because it is too strong, too poor or too far. Because the thing that would be held has a shorter life than the instrument that would hold it. Every holding in this world is an instrument with a term: a Jade Gorge grant runs twelve years and is renewed on a twelve-year cycle, a Yellow Plain lease runs to a renewal calendar that is public, a Buddha Precipice face district exists for as long as there is work in it. A show is open for a season to about nine years. There is nothing here that can be the subject of a twelve-year document, so the apparatus that turns force into authority everywhere else - grant, renewal, apportionment, countersignature - has nothing to bite on. A party can occupy a show and hold it against all comers, and be holding a patch of ordinary sand at the end of it, having spent the whole term of a grant on something that expired inside it.',
     andWhyThatIsNotTheSeasReason:
-        'The Drowned Sea is ungoverned by subtraction. There is no ground under open water, so there is no vein, so there is nothing in the air, so a claim over a strait is a sentence in a document and a hull is standing on whatever is in its own chest. Nobody holds it because there is nothing there to hold and no reason to want it. This is the opposite failure: the ground is real, the vein is real, the air on a show is better than anything for sale in three provinces, and every party in the world would take it if taking it stayed taken. The water defeats authority by having nothing in it. The sand defeats authority by having a great deal in it that will not stay in one place. Which is why the sea is empty and this is crowded, and why the sea\'s ceiling is the lowest in the world and this one is higher than three of the five provinces.',
+        'The Pearl Ocean is ungoverned by subtraction. There is no ground under open water, so there is no vein, so there is nothing in the air, so a claim over a strait is a sentence in a document and a hull is standing on whatever is in its own chest. Nobody holds it because there is nothing there to hold and no reason to want it. This is the opposite failure: the ground is real, the vein is real, the air on a show is better than anything for sale in three provinces, and every party in the world would take it if taking it stayed taken. The water defeats authority by having nothing in it. The sand defeats authority by having a great deal in it that will not stay in one place. Which is why the sea is empty and this is crowded, and why the sea\'s ceiling is the lowest in the world and this one is higher than three of the five provinces.',
     theShows: {
         what:
             'A patch where the cover has thinned to nothing and the vein is at the surface. Anything from forty paces across to about the size of Autumn Gate\'s market, dense to spirit-tide the whole way over, and visible from a distance because nothing grows on it and the air above it stands wrong.',
@@ -192,7 +192,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         theInterestedReason:
             'Four roads meet in one gorge and there is no fifth. The Jade Gorge taxes the traffic of the whole world because the whole world has to pass through it, and the direct line between the western arm and the eastern one - eight days shorter, on every map, empty - runs across this ground. Order here is a fifth road, and a fifth road is the end of the centre\'s position. Nobody has ever written that down. Nobody has had to.',
         whoBelievesWhich:
-            'The Yellow Plain believes the interested reason flatly and says so at market, which the Jade Gorge reads as the usual eastern insinuation about paper. The Jade Gorge believes the honest one and is right about it, and has never noticed that being right about the reason does not make it disinterested. The Silent Cliffs has no opinion, because the Silent Cliffs has no opinion about anything it cannot get a grant for. And an apex that recognises whoever holds ground, without caring what they are, has both reasons available and has never been asked which it is using.'
+            'The Yellow Plain believes the interested reason flatly and says so at market, which the Jade Gorge reads as the usual eastern insinuation about paper. The Jade Gorge believes the honest one and is right about it, and has never noticed that being right about the reason does not make it disinterested. The Buddha Precipice has no opinion, because the Buddha Precipice has no opinion about anything it cannot get a grant for. And an apex that recognises whoever holds ground, without caring what they are, has both reasons available and has never been asked which it is using.'
     },
     whatItMakesTrue:
         'That "better than a power vacuum" is a comparison rather than a figure of speech. Every province bordering this ground can point at what the alternative looks like: nobody to write to, nobody who can be made to answer, nobody whose paper is worth taking, and a border that leaks people in both directions. A house on your border that eats its own disciples is a house that answers a letter, keeps a compound at a fixed address, can be arbitrated against, and can be leaned on through whatever it holds from whoever granted it. The neighbours are not tolerating demonic houses because they are broad-minded. They are tolerating them because they have seen eleven days of the other thing and would rather have a correspondent.',
@@ -234,7 +234,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'Everywhere else the dead belong to a family, a sect hall, a temple or an ice-form. Here they belong to whoever is standing over them, which is the whole of the Cult\'s procurement problem solved in one province.'
         },
         {
-            who: 'Fallen Grain Caravan',
+            who: 'Bountiful Sheaf Sect',
             factionId: 'sect-fallen-grain-caravan',
             holds: 'nothing',
             doesHere:
@@ -270,7 +270,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'It is not here. It is the reason a proportion of the people here cannot leave, which is a different kind of presence and is the one that shapes the population.'
         },
         {
-            who: 'Waterman Caravan',
+            who: 'Tranquil Oasis Sect',
             factionId: 'sect-sand-well-caravan',
             holds: 'nothing',
             doesHere:
@@ -295,7 +295,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         death: 'Left where they fell, and the cover takes them within the year and gives them back a decade later with their possessions still on them. Nobody is buried and nobody is burned, and the dead belong to whoever is standing over them when the sand puts them out again.',
         taboo: 'Never point. Indicating where a show is, in company, with your hand, is how a finder is killed, and a visitor who does it at Wind Turn has the conversation ended for them by somebody else before they have finished the gesture.',
         threatModel: 'People, and specifically people who have already been refused everywhere. There is no institution to answer for anyone and nothing to be taken away from anyone, so what a stranger will do is decided entirely by what they think they can get, and everybody plans on that being the whole of it.',
-        naming: 'The gate that refused you, given where a mainlander gives a county: Lian out of Three Walls, Zou out of Autumn Gate, Shao out of the Iron Ridge queue. Where the Drowned Sea names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
+        naming: 'The gate that refused you, given where a mainlander gives a county: Lian out of Three Walls, Zou out of Autumn Gate, Shao out of the Iron Ridge queue. Where the Pearl Ocean names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
         time: 'Counted in shows. "Two shows ago" is anything from a season to nine years and nobody converts it, and the only fixed calendar anybody here observes is the posting cycle at nine city gates, which is imported, resented and universally known.'
     },
     ambientProfile: { thin: 78, normal: 4, dense: 12, spirit_tide: 6 },
@@ -304,7 +304,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         'Twenty-eight, which is above both of the provinces anybody calls poor and fourteen times the water\'s, and is not a statement about the air - the air on a show is the best unowned ground in the world. It is where the road stops needing things that can be found and starts needing things that have to be made. A show is unowned dense ground, and unowned dense ground is the one place single-use material comes out of the earth rather than out of a house - which makes this the likeliest answer to the question `rogues.ts` says a province would dearly like to put to a solitary and cannot. What it cannot supply is a teacher or a refinement, and above Deity Transformation the road needs both. So the ground carries an unbacked cultivator to twenty-eight and stops, one rung below the height at which the world\'s word for them turns wary. It makes solitaries and it cannot keep one.',
     ambientRateMultiplier: 1,
     veinStatus:
-        'Shallow, rich, unmapped and unsurveyable in any way that lasts. It is one vein rather than several, it runs the length of the wedge, and what varies is not the vein but the depth of the cover over it - which is why the ground is worth more than the Silent Cliffs and less than nothing to anybody who wants to own it.',
+        'Shallow, rich, unmapped and unsurveyable in any way that lasts. It is one vein rather than several, it runs the length of the wedge, and what varies is not the vein but the depth of the cover over it - which is why the ground is worth more than the Buddha Precipice and less than nothing to anybody who wants to own it.',
     places: [
         {
             name: PLACE.WIND_MARKET,
@@ -376,7 +376,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     ],
     hazards: [
         'no water: four days between Sand Well and anything else, and the ordinary cause of death here is a sum somebody did before setting out',
-        'cover that moves about a li a year, so a route walked last season is not a route, and the stakes the Six Li Patrol paint stop at the Silent Cliffs survey',
+        'cover that moves about a li a year, so a route walked last season is not a route, and the stakes the Six Li Patrol paint stop at the Buddha Precipice survey',
         'other people, in a place where nobody can be complained about to anybody, and where a stranger has no institution behind them and nothing to lose',
         'shows that close while somebody is sitting on one, which is not dangerous in itself and strands people who provisioned for a season on ground they were being paid to guard',
         'buried caravans that are worth opening, which is how a proportion of the population arrived at the trade and how a proportion of it stopped'
@@ -398,7 +398,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         {
             regionId: ADJACENT_REGION_ID,
             what: 'People. The sand starts about a day past the last painted stake, and the carvers who cannot get onto the Jade Face queue do not all go east.',
-            cost: 'The Silent Cliffs loses about two hundred a year to the Jade Gorge and nobody counts what it loses this way, because the ones who go this way are the ones nobody at the Weir counter has a record of. Six Li Patrol repaint nine hundred stakes a year on ground the Myriad Course Hall has never scheduled, and the stakes stop where the sand starts, and the Wardens will tell a visitor once, free, that they stop there for a reason.'
+            cost: 'The Buddha Precipice loses about two hundred a year to the Jade Gorge and nobody counts what it loses this way, because the ones who go this way are the ones nobody at the Weir counter has a record of. Six Li Patrol repaint nine hundred stakes a year on ground the Myriad Course Hall has never scheduled, and the stakes stop where the sand starts, and the Wardens will tell a visitor once, free, that they stop there for a reason.'
         },
         {
             regionId: EAST_REGION_ID,
@@ -419,7 +419,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     ],
     crossingNotes: [
         'The stakes stop. Whichever side a traveller comes in from there is a last painted marker, a Warden or a Ledger boundary stone or the end of a lease line, and then there is not one, and the change is abrupt enough that most people stop walking without deciding to.',
-        'It is silent in a way the Silent Cliffs is not. The Silent Cliffs is loud and named for a silence that is about the air; here the air is fine in patches and the silence is literal, and a visitor notices within an hour that they can hear their own clothes.',
+        'It is silent in a way the Buddha Precipice is not. The Buddha Precipice is loud and named for a silence that is about the air; here the air is fine in patches and the silence is literal, and a visitor notices within an hour that they can hear their own clothes.',
         'The qi is wrong twice in one day. A cultivator crossing feels less than the thinnest ground they have ever sat on for most of a morning, and then walks onto a show and feels better ground than anything they have ever been allowed near, and both of those are the same province and neither belongs to anybody.',
         'Nobody asks what sect you are, what grant you hold, what your root is or where you came aboard. They ask which gate turned you down, they ask it early, and the answer is not idle: it is the only thing anybody here can check about anybody.',
         'There is no counter, no bench, no register, no bell and no queue. A visitor from any of the four provinces spends the first day looking for the thing that decides matters and finds that the answer is the person in front of them.'

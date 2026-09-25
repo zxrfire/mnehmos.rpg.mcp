@@ -42,7 +42,7 @@
  *           enough to read it takes what is there. The cost is geography - you
  *           are born where you are born, and four of these are one province
  *           each - and the consequence is that a province is a hand of roads
- *           dealt at birth. The Drowned Sea has no institution in it worth
+ *           dealt at birth. The Pearl Ocean has no institution in it worth
  *           the name and a cultivator raised there can still walk the road of
  *           life and death, because the water does not ask who sent you.
  *
@@ -226,7 +226,7 @@ export type PlaceThatTeachesADao = z.infer<typeof PlaceThatTeachesADaoSchema>;
 //     the world by holding its door. Specialisation is an advantage, never
 //     ownership - the same rule the Dao houses are held to.
 //   - every province has at least one open ground, so being born badly narrows
-//     what is in reach without emptying it. The Silent Cliffs, which is the
+//     what is in reach without emptying it. The Buddha Precipice, which is the
 //     province people leave, has exactly one and its floor is the lowest in
 //     the world.
 //   - the held grounds sit on houses that already have a reason to hold them,
@@ -425,7 +425,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         description:
             'The crossing every cart out of the western workings has used for six hundred years, where the driven stone comes up through the streambed in ridges and the water runs fast over it. It has ground four spans of rock away in living memory and it grinds anything standing in it.',
         what:
-            'Standing in it, which the quarry crews do because it is faster than going round. Nobody in the Silent Cliffs thinks of this as cultivation. What it teaches is what wear is, from underneath, and the Silent Cliffs produce a disproportionate number of people who cannot be worn down.'
+            'Standing in it, which the quarry crews do because it is faster than going round. Nobody in the Buddha Precipice thinks of this as cultivation. What it teaches is what wear is, from underneath, and the Buddha Precipice produce a disproportionate number of people who cannot be worn down.'
     },
     {
         id: 'dao-ground-glass-field',
@@ -537,7 +537,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         standingRequired: 0,
         admits: 'anybody',
         description:
-            'A pillared hall on the seabed four days out, upright, roofed, and standing on nothing - there is no rock under the Drowned Sea and there is none under this either. Whatever it was built on is not there and the hall has not fallen.',
+            'A pillared hall on the seabed four days out, upright, roofed, and standing on nothing - there is no rock under the Pearl Ocean and there is none under this either. Whatever it was built on is not there and the hall has not fallen.',
         what:
             'Getting to the floor of it and looking down through the joints. The Reach\'s whole governing fact is that there is no ground, and the hall is the one object in the world that argues with it, from the wrong side.'
     },

@@ -6,7 +6,7 @@
  *
  *   1. The spine - centre, west, east, north, south - was a comment at the top
  *      of `regions.ts` and nothing in the data, so nothing could group by it.
- *   2. The Drowned Sea was written as coasts. Every place in it was an edge,
+ *   2. The Pearl Ocean was written as coasts. Every place in it was an edge,
  *      and the busiest water in the world had nowhere on it a scene could go.
  *   3. A trade layer with no source would have been merchants conjuring stock,
  *      which is the parallel-system mistake AGENTS.md names. Every cargo row

@@ -371,7 +371,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         pay: {
             basis: 'monthly',
             cash: 1_125,
-            note: 'The listed formation-hand wage less the unbacked deduction, and the steadiest cash in this file. Impossible in the Silent Cliffs, where formations do not run.'
+            note: 'The listed formation-hand wage less the unbacked deduction, and the steadiest cash in this file. Impossible in the Buddha Precipice, where formations do not run.'
         },
         risk: 'moderate',
         whoPays: 'Any sect maintaining a compound it did not build, which is all of them. Node work is endless and no institution has enough hands for it.',
@@ -495,7 +495,7 @@ export const BOUNTIES: readonly Bounty[] = [
         purseCash: 8_000,
         evidence: 'A Warden walks it afterwards and signs.',
         honoured: 'reliably',
-        catch: 'Paid in grant days at the assay rate rather than cash, which is worth more and cannot be eaten. Silent Cliffs takers regard this as normal and Jade Gorge visitors do not.'
+        catch: 'Paid in grant days at the assay rate rather than cash, which is worth more and cannot be eaten. Buddha Precipice takers regard this as normal and Jade Gorge visitors do not.'
     },
     {
         id: 'bounty-consortium-road',
@@ -672,7 +672,7 @@ export const DEALERS: readonly Dealer[] = [
         regionId: 'region-low-fall',
         places: [PLACE.STONE_FORD],
         trust: 'sound',
-        stock: 'Her husband\'s stock, sold down over nine years, plus what she buys off diggers coming out of the Silent Cliffs at a price they accept because it is cash today.',
+        stock: 'Her husband\'s stock, sold down over nine years, plus what she buys off diggers coming out of the Buddha Precipice at a price they accept because it is cash today.',
         catch: 'The good half of the stock went first. What is left is the part nobody wanted in year one and she will tell you that if you ask.',
         factionIds: ['sect-clear-river-alliance']
     },
@@ -782,7 +782,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         protections: [
             'None whatsoever, stated openly by everybody present and understood as the price of no bond'
         ],
-        whatSells: 'Whatever the factor declined, sold fast by people who need cash before they walk back to the Silent Cliffs.',
+        whatSells: 'Whatever the factor declined, sold fast by people who need cash before they walk back to the Buddha Precipice.',
         sectlessNote: 'This is where most sectless cultivators actually sell, and where most of them are robbed. The robbery happens on the road out rather than at the kerb, which everybody knows and nobody has solved.'
     },
     {
@@ -798,7 +798,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
             'Every lot is assayed first, and the assay is published with the lot'
         ],
         whatSells: 'Forfeited grant days, the tools of people who did not come back, and salvage nobody claimed inside the year.',
-        sectlessNote: 'The cheapest way into the Silent Cliffs economy and the only auction in the world where a lot is routinely paid for in grant days rather than stones.'
+        sectlessNote: 'The cheapest way into the Buddha Precipice economy and the only auction in the world where a lot is routinely paid for in grant days rather than stones.'
     },
     {
         id: 'auction-hollowmarket-manifest',
@@ -864,7 +864,7 @@ export const ROAD_CUSTOMS: readonly RoadCustom[] = [
         id: 'custom-shares',
         custom: 'Equal shares to everyone who went in, one extra share to whoever brought the site, and a dead hand\'s share goes to whoever carried their pouch out.',
         keptBy: 'Independent crews, copied off the Caravan manifest rule and kept because it settles the argument before it starts.',
-        breakingIt: 'A crew that shorts a share does not get another crew. The Silent Cliffs is small and the sorting yard is one yard.'
+        breakingIt: 'A crew that shorts a share does not get another crew. The Buddha Precipice is small and the sorting yard is one yard.'
     },
     {
         id: 'custom-dead-pouch',

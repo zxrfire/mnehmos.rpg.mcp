@@ -192,8 +192,8 @@ describe('a title, which is how people are addressed here', () => {
     /**
      * SENIORITY AMONG DISCIPLES IS BY ENTRY, NOT BY RUNG.
      *
-     * Played: a just-joined Sand Servant said *"Senior sister, where do the Sand Servants
-     * sleep?"* to the one other person in the yard - a Sand Servant of the same house
+     * Played: a just-joined Cistern Servant said *"Senior sister, where do the Cistern Servants
+     * sleep?"* to the one other person in the yard - a Cistern Servant of the same house
      * who had been in it for years - and was told nobody standing there was
      * senior to them. The same-rung senior is the one a new disciple has most
      * of, and reading the title off the ladder makes them unreachable.
@@ -251,7 +251,7 @@ describe('what a description asked for, when nobody is it', () => {
      * A description that fits nobody used to reach the answer built for a NAME
      * that fits nobody, which asked the room who that was - about a phrase that
      * was never a name. Measured in play: *the elder*, in a room whose ranks
-     * were Sand Servant and Applicant, got `does not know the name, and asks who that
+     * were Cistern Servant and Applicant, got `does not know the name, and asks who that
      * is`.
      */
     const asked = (phrase: string): string =>

@@ -44,7 +44,7 @@ function place(over: {
         name: over.name ?? 'Iron Ridge',
         kind: 'market_town',
         ambient: 'thin' as const,
-        regionName: 'The Silent Cliffs',
+        regionName: 'The Buddha Precipice',
         travelDays: 4,
         localCeilingOrdinal: 12,
         hereNow: over.hereNow ?? false,
@@ -67,7 +67,7 @@ function read(rows: ReturnType<typeof place>[]) {
     const out = whereCouldTheyGo({
         ordinal: 0,
         placeName: 'Willow Village',
-        regionName: 'The Silent Cliffs',
+        regionName: 'The Buddha Precipice',
         localCeilingOrdinal: 12,
         reachable: rows,
         unplaceable: 0

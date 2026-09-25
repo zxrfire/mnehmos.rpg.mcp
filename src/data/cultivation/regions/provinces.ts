@@ -48,7 +48,7 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 //     are four Surveyors, one per arterial. So there are four arterials, and
 //     they are named here.
 //   - the Myriad Course Hall holds driven ground across FIVE provinces and the Ninth
-//     Face Court administers "the Silent Cliffs and four provinces beyond it".
+//     Face Court administers "the Buddha Precipice and four provinces beyond it".
 //     So there are five, and Chi Yuanru's schedule bands are what tells them
 //     apart.
 //   - `court-third-sill` administers the third arterial, sits in the Jade Gorge,
@@ -75,15 +75,15 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 //      being decorated on afterwards. The Jade Gorge's qi is in horizontal
 //      surveyable veins, so a Jade Gorge prefecture is a CATCHMENT: a line on a
 //      survey, held by a named institution with a gate, arbitrable, permanent,
-//      inheritable, and argued about in writing. The Silent Cliffs' qi is in the
-//      stone, so a Silent Cliffs prefecture is a FACE DISTRICT: a schedule entry
+//      inheritable, and argued about in writing. The Buddha Precipice' qi is in the
+//      stone, so a Buddha Precipice prefecture is a FACE DISTRICT: a schedule entry
 //      held by an OFFICE rather than by a sect, whose boundary is wherever the
 //      work currently is, which moves when the work moves and stops existing
 //      when the stone runs out. Crossing the border does not change what the
 //      places are called. It changes what a place IS.
 //
 //   2. THE PROVINCES NOBODY HAS BEEN TO ARE THIN ON PURPOSE. The four driven
-//      provinces past the Silent Cliffs carry a name, a holder and one fact each,
+//      provinces past the Buddha Precipice carry a name, a holder and one fact each,
 //      and the one fact is a band in a schedule kept by one woman - which is
 //      a single generic system telling five places apart, not five bespoke
 //      descriptions. Their thinness is also diegetic: it is exactly what
@@ -187,7 +187,7 @@ export const PROVINCES: readonly Province[] = [
         whatIsKnownOfIt: null,
         startingAwareness: 'known'
     },
-    // ── the four the Silent Cliffs has never heard named ────────────────────────
+    // ── the four the Buddha Precipice has never heard named ────────────────────────
     // One fact each, and the fact is a band in the Assessor's schedule. A
     // single generic system telling five places apart is worth more than five
     // descriptions, and it is the honest amount: this IS what anybody in
@@ -219,7 +219,7 @@ export const PROVINCES: readonly Province[] = [
         onPaper: 'Second band of five, and the only one that has ever moved up rather than down.',
         onTheGround: 'Unknown here. The Assessor of the Four Faces rates it annually and the figure is not circulated.',
         prefectureIds: [],
-        whatIsKnownOfIt: 'Nothing at all in the Silent Cliffs. The name appears once on the schedule the Twenty-Year Hand carries and nobody at the Clearwater Ward has ever asked what it is.',
+        whatIsKnownOfIt: 'Nothing at all in the Buddha Precipice. The name appears once on the schedule the Twenty-Year Hand carries and nobody at the Clearwater Ward has ever asked what it is.',
         startingAwareness: 'unaware'
     },
     {
@@ -231,9 +231,9 @@ export const PROVINCES: readonly Province[] = [
         administeredByCourtId: 'court-ninth-face',
         governingFact: 'Third band, and the only driven province where more than one face is open at a time, which is what the name is.',
         onPaper: 'Third band of five, and it has been third for two hundred years.',
-        onTheGround: 'Unknown here, and the Myriad Course Hall has never had reason to describe it to anybody in the Silent Cliffs.',
+        onTheGround: 'Unknown here, and the Myriad Course Hall has never had reason to describe it to anybody in the Buddha Precipice.',
         prefectureIds: [],
-        whatIsKnownOfIt: 'A name, and the fact that it is above the Silent Cliffs in the queue, which is the only comparative figure anybody in Iron Ridge has ever heard.',
+        whatIsKnownOfIt: 'A name, and the fact that it is above the Buddha Precipice in the queue, which is the only comparative figure anybody in Iron Ridge has ever heard.',
         startingAwareness: 'unaware'
     },
     {
@@ -243,9 +243,9 @@ export const PROVINCES: readonly Province[] = [
         regionId: null,
         heldByApexId: 'apex-myriad-course-hall',
         administeredByCourtId: 'court-ninth-face',
-        governingFact: 'Fourth band, one place above the Silent Cliffs, and it has been sliding for two centuries in the same direction the Silent Cliffs slid.',
+        governingFact: 'Fourth band, one place above the Buddha Precipice, and it has been sliding for two centuries in the same direction the Buddha Precipice slid.',
         onPaper: 'Fourth band of five, and it is the only one of the five that has ever moved downward twice.',
-        onTheGround: 'Unknown here, and the Assessor believes it will change places with the Silent Cliffs within her tenure and has not written that down.',
+        onTheGround: 'Unknown here, and the Assessor believes it will change places with the Buddha Precipice within her tenure and has not written that down.',
         prefectureIds: [],
         whatIsKnownOfIt:
             'The one name a Iron Ridge carver might have heard, because it is the province directly above them in a queue nobody has told them they are in.',
@@ -257,7 +257,7 @@ export const PROVINCES: readonly Province[] = [
  * The queue, which is the whole of what tells the five driven provinces apart.
  *
  * Not arithmetic and not a rule: a list, in the order the Assessor's schedule
- * puts them, kept because "the Silent Cliffs is last of five" is a fact a player can
+ * puts them, kept because "the Buddha Precipice is last of five" is a fact a player can
  * be told and a fact that explains everything about why nothing arrives.
  */
 export const DRIVEN_PROVINCE_SCHEDULE_ORDER: readonly string[] = [

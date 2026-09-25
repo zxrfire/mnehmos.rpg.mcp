@@ -103,7 +103,7 @@ const BELIEVED_BY_REALM: Partial<Record<RealmKey, BeliefRow>> = Object.fromEntri
     {
         realm: 'void_tribulation',
         count: 4,
-        statement: 'Four, if you count the one under the Silent Cliffs, and people argue about whether to.',
+        statement: 'Four, if you count the one under the Buddha Precipice, and people argue about whether to.',
         withinTier: 'Not distinguishable from outside, and asking is considered rude.'
     },
     {

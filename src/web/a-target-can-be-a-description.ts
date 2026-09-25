@@ -68,8 +68,8 @@ export interface ADescription {
      * most is at the same rung as themselves - the disciple who was sweeping
      * this yard a year before they arrived.
      *
-     * Played: a just-joined Sand Servant of the Waterman Caravan said *"Senior sister,
-     * where do the Sand Servants sleep?"* to a Sand Servant of that house who had been in it
+     * Played: a just-joined Cistern Servant of the Tranquil Oasis Sect said *"Senior sister,
+     * where do the Cistern Servants sleep?"* to a Cistern Servant of that house who had been in it
      * for years, and was told nobody standing there was senior to them. The
      * only other person in the yard, and the engine denied the bond existed.
      *

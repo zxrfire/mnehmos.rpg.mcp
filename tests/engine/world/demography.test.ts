@@ -15,7 +15,7 @@
  *   +50y    Burnt Earth  7   Green Water City  4   Iron Ridge  0   Six Li  1
  *
  * Total alive held at about 350 the whole time - nobody was dying off - and
- * "The Silent Cliffs (region)" went from 39 to 170. The encounter system draws
+ * "The Buddha Precipice (region)" went from 39 to 170. The encounter system draws
  * its cast from who is present, so the end state is person-free events forever.
  *
  * Three separate filters had the same defect: a newborn's home, a parent's

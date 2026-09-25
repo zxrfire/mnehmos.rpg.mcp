@@ -550,21 +550,21 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
     {
         id: 'sealed-the-sorting-yard',
         name: 'The sealed part of the sorting-yard ruin',
-        whereItIs: 'Behind the front three chambers of the ruin the Fallen Grain Caravan works out of at Willow Village, in the Silent Cliffs.',
+        whereItIs: 'Behind the front three chambers of the ruin the Bountiful Sheaf Sect works out of at Willow Village, in the Buddha Precipice.',
         sealedBy: 'The catastrophe, most likely, rather than by anybody - the driving of the qi into the stone closed a great deal that nobody chose to close, and this is one of the places that shut.',
         sealedFor: null,
         sealerFactionId: null,
         sealMaintained: false,
-        lastChecked: 'Thirty years ago, by Deep Gleaner Xun, who went in on a wager and did not come back. The Caravan sealed it again and raised the wager, which is the whole of the region\'s risk assessment.',
+        lastChecked: 'Thirty years ago, by Winnower Xun, who went in on a wager and did not come back. The Caravan sealed it again and raised the wager, which is the whole of the region\'s risk assessment.',
         awareness: 'rumoured',
         whoKnows:
-            'Every Gleaner, as a working fact rather than a secret: the Caravan lays out its sorting yard inside a building it has never fully entered, works three nodes at the front of it, and leaves the rest closed on the reasonable grounds that it was closed for a reason. Nobody outside the Silent Cliffs has ever been told, because nobody outside the Silent Cliffs asks the Fallen Grain Caravan anything.',
+            'Every Gleaner, as a working fact rather than a secret: the Caravan lays out its sorting yard inside a building it has never fully entered, works three nodes at the front of it, and leaves the rest closed on the reasonable grounds that it was closed for a reason. Nobody outside the Buddha Precipice has ever been told, because nobody outside the Buddha Precipice asks the Bountiful Sheaf Sect anything.',
         hazard:
             'A crew of nine to fifteen people sorts salvage every working day against a wall that has taken one person in living memory. The Caravan has no idea what is behind it, has never seen the inscription its own vocabulary above Keystone was copied from, and the highest-ranking authority in the province is a bureau with eleven staff and no procedure for this.',
         opportunity:
-            'The Silent Cliffs vocabulary for the upper realms came off an inscription in there, which means somebody in that ruin knew what those states are - and the Myriad Course Hall, which administers the province and would very much like a working account of the upper realms, has never been told the sealed part exists.',
+            'The Buddha Precipice vocabulary for the upper realms came off an inscription in there, which means somebody in that ruin knew what those states are - and the Myriad Course Hall, which administers the province and would very much like a working account of the upper realms, has never been told the sealed part exists.',
         ifSheWakes:
-            'This is the entry where the selection effect does not apply, because nobody chose her: the catastrophe shut the door and her own people sealed the front and walked out, and she has had four thousand years to think about that. She was a scholar of the upper realms and vain about it - the inscription the whole Silent Cliffs vocabulary was copied from is hers, and she wrote it in the register of somebody who expected to be read. What makes her dangerous is not power and not malice. It is that she cannot tell the difference between the people who left her and the people working her yard, because the Fallen Grain Caravan are sorting salvage in her building using her words, and the distinction between a successor and a stranger will not survive the first thirty seconds. A crew of nine would be talking to somebody who has already decided who they are.',
+            'This is the entry where the selection effect does not apply, because nobody chose her: the catastrophe shut the door and her own people sealed the front and walked out, and she has had four thousand years to think about that. She was a scholar of the upper realms and vain about it - the inscription the whole Buddha Precipice vocabulary was copied from is hers, and she wrote it in the register of somebody who expected to be read. What makes her dangerous is not power and not malice. It is that she cannot tell the difference between the people who left her and the people working her yard, because the Bountiful Sheaf Sect are sorting salvage in her building using her words, and the distinction between a successor and a stranger will not survive the first thirty seconds. A crew of nine would be talking to somebody who has already decided who they are.',
         nobodyIsResponsible:
             'The Caravan holds a salvage contract rather than a lease, and a contractor is not protected, arbitrated for, or spoken for. If it opened, the Clearwater Ward would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later.'
     },

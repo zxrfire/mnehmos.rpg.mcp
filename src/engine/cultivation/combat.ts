@@ -2063,7 +2063,7 @@ function describeOutcome(
                   'shortening every day it stays out. Anyone who walks away believing this was a killing is wrong, ' +
                   'and will find out.'
                 : 'The body is gone and the seam is not. A large enough seam-bearing piece regrows over years into ' +
-                  'somebody who remembers the argument, which is why the Silent Cliffs distinguishes a funeral from a scattering.';
+                  'somebody who remembers the argument, which is why the Buddha Precipice distinguishes a funeral from a scattering.';
         case 'withdrawal':
             return winnerWasHurt
                 ? 'Broken off. Both parties are worse than they were, the wounds are real, and nothing is settled.'

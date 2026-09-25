@@ -188,7 +188,7 @@ describe('everything that can be inspected', () => {
         // it and was a database key in front of a player; see
         // `no-engine-voice-in-a-played-turn`.
         expect(await reached(`I look at ${who.name}`)).toMatch(/to a cultivator/);
-        expect(await reached('I examine the Fallen Grain Caravan')).toMatch(/to a sect/);
+        expect(await reached('I examine the Bountiful Sheaf Sect')).toMatch(/to a sect/);
         expect(await reached('I examine the Lesser Qi-Gathering Manual')).toMatch(/to a technique/);
         expect(await reached('I examine this place')).toMatch(/to a place/);
         // The asker themselves, which is its own kind and not a cultivator row.

@@ -1068,7 +1068,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-clearwater-ward': {
         ancestors: [
             { name: 'Warden Qiu Shen', fate: 'dead', realmOrdinal: null, yearsAgo: 220, afterCrossing: null, rememberedFor: 'Took the weir works during the resettlement, wrote the grant book, and never explained why access was to be rented rather than shared.' },
-            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, afterCrossing: null, rememberedFor: 'Reached Core Formation on Ward grants, which remains the highest anyone has ever gone from inside the Silent Cliffs.' }
+            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, afterCrossing: null, rememberedFor: 'Reached Core Formation on Ward grants, which remains the highest anyone has ever gone from inside the Buddha Precipice.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1101,8 +1101,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-sand-well-caravan': {
         ancestors: [
-            { name: 'The Waterman who cut the first tally board', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Left the names of strings that did not come back up on the board instead of wiping them, and the board has never been wiped since. It is now nine boards and the shed was rebuilt around them.' },
-            { name: 'Route Elder Ma out of Iron Ridge', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
+            { name: 'The Oasis Master who cut the first tally board', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Left the names of strings that did not come back up on the board instead of wiping them, and the board has never been wiped since. It is now nine boards and the shed was rebuilt around them.' },
+            { name: 'Oasis Elder Ma out of Iron Ridge', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1128,8 +1128,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-fallen-grain-caravan': {
         ancestors: [
-            { name: 'Caravan Master Bo Ai', fate: 'dead', realmOrdinal: null, yearsAgo: 140, afterCrossing: null, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
-            { name: 'Deep Gleaner Xun', fate: 'lost', realmOrdinal: null, yearsAgo: 30, afterCrossing: null, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Caravan sealed it again and raised the wager.' }
+            { name: 'Sheaf Master Bo Ai', fate: 'dead', realmOrdinal: null, yearsAgo: 140, afterCrossing: null, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
+            { name: 'Winnower Xun', fate: 'lost', realmOrdinal: null, yearsAgo: 30, afterCrossing: null, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Caravan sealed it again and raised the wager.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,

@@ -480,7 +480,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         mostRecentCrossingYearsAgo: 2_600,
         mostRecentCrossingName: 'Bai Zhuo',
         mostRecentCrossingNote:
-            'Cut his own road, in the Silent Cliffs, on driven ground, with no patron and a posted staff that did not notice until it was over. The Nail was already there and had been for a long time.',
+            'Cut his own road, in the Buddha Precipice, on driven ground, with no patron and a posted staff that did not notice until it was over. The Nail was already there and had been for a long time.',
         roll: [
             // Both at twenty-six hundred years, which the Court's own schedule
             // records without comment and which nobody outside has ever been

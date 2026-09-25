@@ -286,7 +286,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-undercut-border',
         yearsAgo: 40,
         provinceId: null,
-        what: 'The Bone Lantern Cult began working burn-zone finds the Fallen Grain Caravan had located, across a border neither region polices, and selling them cheaper.',
+        what: 'The Bone Lantern Cult began working burn-zone finds the Bountiful Sheaf Sect had located, across a border neither region polices, and selling them cheaper.',
         parties: ['sect-bone-lantern-cult', 'sect-fallen-grain-caravan'],
         accounts: {
             'sect-bone-lantern-cult':
@@ -304,9 +304,9 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         parties: ['sect-clearwater-ward', 'house-ninefold-karma'],
         accounts: {
             'sect-clearwater-ward':
-                'Carving reaches ranks that drawing does not, every carver in the Silent Cliffs knows it, and the grant book has priced it that way since there was a grant book. The Court has not submitted its table because submitting a table invites a finding, and it has been running an administration on the difference for sixty years without anybody in the region asking to see the arithmetic.',
+                'Carving reaches ranks that drawing does not, every carver in the Buddha Precipice knows it, and the grant book has priced it that way since there was a grant book. The Court has not submitted its table because submitting a table invites a finding, and it has been running an administration on the difference for sixty years without anybody in the region asking to see the arithmetic.',
             'house-ninefold-karma':
-                'The certification is done, it is public, and it is band for band. The Karma Palace did not publish a conclusion about the Clearwater Ward because the Karma Palace certifies what it is asked to certify and nobody in the Silent Cliffs has asked - and it regards the Court\'s never submitting as the most legible thing in the region, on the reasoning that a bureau confident of its table submits it.'
+                'The certification is done, it is public, and it is band for band. The Karma Palace did not publish a conclusion about the Clearwater Ward because the Karma Palace certifies what it is asked to certify and nobody in the Buddha Precipice has asked - and it regards the Court\'s never submitting as the most legible thing in the region, on the reasoning that a bureau confident of its table submits it.'
         },
         explains: 'the reputation'
     },
@@ -412,7 +412,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-roads-and-the-grants',
         yearsAgo: 190,
         provinceId: 'province-quiet-marches',
-        what: 'Six Li Patrol surveyed and staked every route through the Silent Cliffs that does not cross dead ground. Clearwater Ward issues grants to holders who arrive on those roads and contributes nothing to them.',
+        what: 'Six Li Patrol surveyed and staked every route through the Buddha Precipice that does not cross dead ground. Clearwater Ward issues grants to holders who arrive on those roads and contributes nothing to them.',
         parties: ['sect-six-li-patrol', 'sect-clearwater-ward'],
         accounts: {
             'sect-six-li-patrol':
@@ -783,25 +783,25 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'event-the-storeroom-read-from-a-list'
         ]
     },
-    // ── the Silent Cliffs ─────────────────────────────────────────────
+    // ── the Buddha Precipice ─────────────────────────────────────────────
     'sect-clearwater-ward': {
         factionId: 'sect-clearwater-ward',
         origin:
             'Not a sect and not a tenant: a bureau of eleven with a counter, a register and a stamp, administering both workable faces of a province on somebody else\'s behalf. Its famous discretion extends exactly as far as the schedule it is given, and every carver in the region has organised their entire life around the stamp without once asking whose it is.',
         whyTheGapIs:
-            'The whole region\'s pipeline is three people at Standing Cut and one Keystone in two hundred years, and the Ward has started prospecting, which is not a thing bureaus do. Two survey parties have gone past Nine Hundred Paces in four years and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Silent Cliffs since the catastrophe. It ends if Jade Face runs out first, and the Ward is the only party that has measured how close that is.',
+            'The whole region\'s pipeline is three people at Standing Cut and one Keystone in two hundred years, and the Ward has started prospecting, which is not a thing bureaus do. Two survey parties have gone past Nine Hundred Paces in four years and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Buddha Precipice since the catastrophe. It ends if Jade Face runs out first, and the Ward is the only party that has measured how close that is.',
         whatTheUnlitNodesWere:
             'The weir works above Iron Ridge were built by whoever cut the seven surviving nodes into the stone rather than laying them on the ground, which is why those seven still run and the other nineteen do not. The Under-Warden retains a duty at the weir gates that has had no function since the water was diverted, and the diversion is older than the Court - so the bureau is administering the remains of a working it inherited without a description.',
         whereTheWrongBeliefComesFrom:
-            'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Silent Cliffs will tell you the same thing because the work genuinely is harder. Harder is not higher. The Karma Palace has certified band for band that it is one ladder, and the Ward has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
+            'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Buddha Precipice will tell you the same thing because the work genuinely is harder. Harder is not higher. The Karma Palace has certified band for band that it is one ladder, and the Ward has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
         sharedEvents: ['event-the-band-for-band-certification', 'event-the-roads-and-the-grants']
     },
     'sect-six-li-patrol': {
         factionId: 'sect-six-li-patrol',
         origin:
-            'A shed, nine hundred painted stakes and a survey, all of it their own work, and the only complete map of safe ground in the Silent Cliffs. They hold nothing from anybody and never have, and the burn edge does not care whose name is on a grant. They perform the single most useful public service in the region and are paid in paint.',
+            'A shed, nine hundred painted stakes and a survey, all of it their own work, and the only complete map of safe ground in the Buddha Precipice. They hold nothing from anybody and never have, and the burn edge does not care whose name is on a grant. They perform the single most useful public service in the region and are paid in paint.',
         whyTheGapIs:
-            'The lowest production in the catalog, and the reason is the absence of a grant rather than any failing of theirs. No grant means no vein, no vein means no pipeline, and on unaided Silent Cliffs ground a Warden stops at Chipping and stays there. The single exception in their history was the founder, which is what a house looks like when its ceiling is set by geology and its people are not the constraint.',
+            'The lowest production in the catalog, and the reason is the absence of a grant rather than any failing of theirs. No grant means no vein, no vein means no pipeline, and on unaided Buddha Precipice ground a Warden stops at Chipping and stays there. The single exception in their history was the founder, which is what a house looks like when its ceiling is set by geology and its people are not the constraint.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
             'They believe the original survey is accurate because it has never been wrong, and in the only sense they can test it never has: nobody has died following it. It has also never been checked. The burn edge has moved nine hundred paces since it was drawn and the stakes have been moved to match, by hand, one at a time, by people correcting the map to the ground and entering nothing - so the survey is now a record of nine hundred undocumented corrections that reads exactly like an accurate original.',
@@ -847,7 +847,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         origin:
             'A shed and a stockyard a day past the last painted stake, put up by people the Clearwater Ward had no record of, to carry water to people the eastern gates had a bounty on. The founding decision was the tally board: names counted out and counted in, and the ones that did not come back left up instead of wiped. It was not intended as a memorial and has become one, which is the only thing about the shed that was not deliberate.',
         whyTheGapIs:
-            'Not talent and not teaching. A carrier spends the season walking, and the ground with the good air on it is the ground they are delivering to rather than the ground they are sitting on - so the shed hands its people access to the best air in three provinces and gives them no hours in which to use it. The two who got past Core Formation in ninety years both did it in seasons the cover shut the routes early, which the Route Elders have noticed and have not been able to do anything with.',
+            'Not talent and not teaching. A carrier spends the season walking, and the ground with the good air on it is the ground they are delivering to rather than the ground they are sitting on - so the shed hands its people access to the best air in three provinces and gives them no hours in which to use it. The two who got past Core Formation in ninety years both did it in seasons the cover shut the routes early, which the Oasis Elders have noticed and have not been able to do anything with.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
             'The shed says its conditions are minimal and means it: three, at the door, no questions. What it has never registered is that the water is a fourth condition and a far harder one, bought by the cup at four days\' distance from the only well, so the body that prides itself on letting anybody in is in fact selecting hard - by who can afford to stay rather than by who it admits. Everybody outside reads the open door as charity and everybody inside reads it as the obvious way to run a carry, and neither has looked at who is actually still there after two seasons.',

@@ -71,7 +71,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-azure-mist-court` · its entry: [`sects.ts:844`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 1 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
   …and 4 more files.
 
 **Constants most about it:** `LOW_FALL_PREFECTURES`, `A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT`
@@ -80,7 +80,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-azure-dew-sect` · its entry: [`sects.ts:924`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 1 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
   …and 4 more files.
 
 **Constants most about it:** `AZURE_INTAKE`, `FOSTERAGE_TERMS`, `LOW_FALL_PREFECTURES`
@@ -89,7 +89,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-earth-vein-tower` · its entry: [`sects.ts:981`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 30 · [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) 25 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 12 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 30 · [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) 24 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 12 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6
   …and 25 more files.
 
 **Constants most about it:** `OPENLY_OR_IN_SECRET`, `APEX_INSTITUTIONS`, `AZURE_CLOUD_INTAKE`, `DEPARTURE_DESTINATIONS`, `FACTION_HISTORY`, `FACTION_PARENTAGE`, and 29 more
@@ -246,15 +246,15 @@ session somebody wrote down design that was already in the catalog.
 `sect-six-li-patrol` · its entry: [`sects.ts:2016`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 3 · [`postings-and-grant-houses.md`](../../docs/world/houses/postings-and-grant-houses.md) 2 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2
-  …and 10 more files.
+  …and 11 more files.
 
 **Constants most about it:** `CALENDARS`, `DRIVEN_PROVINCE_SCHEDULE_ORDER`, `THE_SENDING_PYRAMID`
 
-### Fallen Grain Caravan
+### Bountiful Sheaf Sect
 
 `sect-fallen-grain-caravan` · its entry: [`sects.ts:2055`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 7 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 5 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 5 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4
   …and 14 more files.
 
 **Constants most about it:** `A_RESTING_PLACE_IS_NOT_A_GRAVE`, `BOUNTIES`, `DEALERS`, `DRIVEN_GROUND_AND_THE_NODE`, `ESTIMATING_A_BEAST`, `GRAVE_CONTENTS_BANDS`, and 3 more
@@ -268,11 +268,11 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `FOUNDERS`, `HALFWATER_TERMS`, `SEA_CARGO`, `SEA_TRADERS`
 
-### Waterman Caravan
+### Tranquil Oasis Sect
 
 `sect-sand-well-caravan` · its entry: [`sects.ts:2195`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`place-names.md`](../../docs/world/writing/place-names.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
   …and 3 more files.
 
 **Constants most about it:** `FOUNDERS`

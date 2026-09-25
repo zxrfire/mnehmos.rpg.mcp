@@ -563,9 +563,9 @@ describe('what service actually buys', () => {
     });
 
     it('runs the same principle down to the poorest institution in the world', () => {
-        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Fallen Grain Caravan/);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Bountiful Sheaf Sect/);
         expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/not being kind/i);
-        // And the claim matches what the Fallen Grain Caravan entry actually says.
+        // And the claim matches what the Bountiful Sheaf Sect entry actually says.
         const gleaners = FACTION_CHARACTER['sect-fallen-grain-caravan']!;
         expect(gleaners.unitOfValue).toMatch(/share goes to their family/i);
         expect(gleaners.unitOfValue).toMatch(/never once defaulted/i);
