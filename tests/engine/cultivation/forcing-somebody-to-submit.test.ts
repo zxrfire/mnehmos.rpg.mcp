@@ -48,6 +48,8 @@ import {
     whatALevelLeaves,
     type PressureLevel
 } from '../../../src/engine/cultivation/how-far-you-went-to-make-them-comply.js';
+import { howBadItIsSaid } from '../../../src/engine/cultivation/injuries.js';
+import { woundsTheCultivation } from '../../../src/data/cultivation/wounds.js';
 
 /** The ladder, total and ordered: words, then hands, then the will. */
 const PRESSURE_ORDER: readonly PressureLevel[] = ['said', 'done', 'taken'];
@@ -115,12 +117,47 @@ describe('the pressure ladder is one act at a level', () => {
     });
 
     it('lets the WOUND decide whether coercion was irreversible, not the verb', () => {
-        const bruise = whatALevelLeaves({ level: 'done', permanentWound: false });
-        const maiming = whatALevelLeaves({ level: 'done', permanentWound: true });
+        const bruise = whatALevelLeaves({ level: 'done', wound: { woundType: 'torn-meridians' } });
+        const severed = whatALevelLeaves({ level: 'done', wound: { woundType: 'severed-meridian' } });
         expect(bruise.irreversible).toBe(false);
-        expect(maiming.irreversible).toBe(true);
+        expect(severed.irreversible).toBe(true);
         expect(bruise.cause).toBe('humiliation');
-        expect(maiming.cause).toBe('crippled');
+        expect(severed.cause).toBe('crippled');
+    });
+
+    /**
+     * The design owner: *"depends on the wound. losing an arm is not a crippled
+     * cultivator."* "Crippled" is a wound to the cultivation - its channels,
+     * foundation, core or soul. A lost limb (`severed-flesh`) is permanent and
+     * a step heavier, and the ledger calls it an injury. Before this the wound's
+     * permanence alone picked `crippled`, so a severed arm and a severed
+     * meridian were one record.
+     */
+    it('never calls somebody who lost a limb crippled', () => {
+        const arm = whatALevelLeaves({ level: 'done', wound: { woundType: 'severed-flesh' } });
+        expect(arm.irreversible).toBe(true);
+        expect(arm.cause).toBe('injury');
+        expect(arm.why).not.toMatch(/crippl/i);
+        expect(woundsTheCultivation('severed-flesh')).toBe(false);
+        expect(woundsTheCultivation('cracked-core')).toBe(true);
+
+        // And the word a sentence says the severity with: the stored value is
+        // still `crippling`, and it is said as a maiming.
+        expect(howBadItIsSaid({ severity: 'crippling', woundType: 'severed-flesh' })).toBe('maiming');
+        expect(howBadItIsSaid({ severity: 'crippling', woundType: 'torn-meridians' })).toBe('crippling');
+    });
+
+    it('calls the submission what the ladder calls hands laid on somebody', () => {
+        // Combat's submission seed reads `whatALevelLeaves` at `done`. A fight's
+        // ordinary wounds are torn channels, which heal, so what it leaves is a
+        // humiliation - the ledger's word for hands, not for a crippling.
+        const result = resolveConfrontation(
+            body(12, 'strong'), body(9, 'weak'),
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, yields: ORDINARILY_YIELDS } })
+        );
+        expect(result.outcome).toBe('submission');
+        const seed = result.obligations.find(o => o.holderId === 'weak')!;
+        expect(seed.cause).toBe(whatALevelLeaves({ level: 'done', wound: null }).cause);
     });
 
     it('makes good on a word cost a step, which is the threaten-then-do pair', () => {

@@ -10,7 +10,7 @@ import {
     type InjurySeverity,
     type InjurySource
 } from '../../schema/cultivation.js';
-import { getWoundType, isPermanentWound, woundNature } from '../../data/cultivation/wounds.js';
+import { getWoundType, isPermanentWound, woundNature, woundsTheCultivation } from '../../data/cultivation/wounds.js';
 import type { CultivationRNG } from './rng.js';
 
 // PENALTY CEILINGS
@@ -95,6 +95,18 @@ const SEVERITY_PHRASES: Record<InjurySeverity, string> = {
     serious: 'A serious meridian injury',
     crippling: 'A crippling meridian injury'
 };
+
+/**
+ * How bad a wound is, in the word a sentence says it with.
+ *
+ * `crippling` is the top of the severity scale and stays the stored value, but
+ * it is only SAID of a wound to the cultivation. A lost arm at that severity is
+ * a maiming: the design owner, *"losing an arm is not a crippled cultivator."*
+ */
+export function howBadItIsSaid(injury: Pick<Injury, 'severity' | 'woundType'>): string {
+    if (injury.severity === 'crippling' && !woundsTheCultivation(injury.woundType)) return 'maiming';
+    return injury.severity;
+}
 
 /** Factual, non-flowery. The narrator supplies the flourish. */
 export function defaultInjuryDescription(severity: InjurySeverity, source: InjurySource): string {

@@ -19,9 +19,9 @@ import {
     realmIndexOf,
     type ImmortalStatus
 } from './realms.js';
-import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
+import { aggregateInjuryPenalties, createInjury, howBadItIsSaid, scarTempering } from './injuries.js';
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
-import { isPermanentWound } from '../../data/cultivation/wounds.js';
+import { isPermanentWound, woundsTheCultivation } from '../../data/cultivation/wounds.js';
 import { blocksAdvancement, brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import { foundationEffect, foundationOf } from './foundation.js';
 import { understandingEffects, type RelevanceContext } from './understanding.js';
@@ -43,6 +43,7 @@ import {
 } from './whether-a-weapon-survives-being-used.js';
 import {
     ORDINARILY_YIELDS,
+    whatALevelLeaves,
     type WhetherTheyYield
 } from './how-far-you-went-to-make-them-comply.js';
 import {
@@ -1817,9 +1818,11 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
 
     // A crippling wound in the record turns a beating into something the loser
     // carries. Checked after the outcome so a withdrawal can still be the fight
-    // that ruined them.
+    // that ruined them. A wound to the CULTIVATION, and only that: a lost limb
+    // at the same severity is a maiming, and the owner: *"losing an arm is not
+    // a crippled cultivator"* (`woundsTheCultivation`).
     const loserInjuries = injuries[loserInput.id];
-    if (outcome === 'withdrawal' && loserInjuries.some(i => i.severity === 'crippling')) {
+    if (outcome === 'withdrawal' && loserInjuries.some(cripplesTheCultivation)) {
         outcome = 'crippled';
     }
 
@@ -1934,6 +1937,14 @@ const WHAT_THEY_WILL_SAY_WAS_DONE: Readonly<Record<HowMuchOffence, string>> = Ob
     contempt: 'was struck with an open hand, in front of whoever was there'
 });
 
+/**
+ * A crippling wound to the cultivation itself. The same severity on the flesh -
+ * a lost arm - leaves somebody maimed and not crippled.
+ */
+function cripplesTheCultivation(injury: Injury): boolean {
+    return injury.severity === 'crippling' && woundsTheCultivation(injury.woundType);
+}
+
 function seedObligations(
     outcome: ConfrontationOutcome,
     winnerId: string | null,
@@ -2004,7 +2015,7 @@ function seedObligations(
                 severity: 'grave',
                 description: `${loserName} was taken alive.`
             }];
-        case 'submission':
+        case 'submission': {
             // Heavier than a capture, and the reason is the whole difference
             // between the two. Being taken is something done to a body;
             // yielding is a thing the person themselves did, in front of
@@ -2016,16 +2027,33 @@ function seedObligations(
             // for how long is the obligation layer's, and holding a person for a
             // term is an indenture; this seeds the grievance that comes with it,
             // which is the half that outlives the term.
+            //
+            // WHAT IT IS CALLED IS THE LADDER'S, AND THE WOUND DECIDES IT: hands
+            // laid on somebody to make them comply (`whatALevelLeaves` at
+            // `done`). A humiliation where what was done heals; a crippling only
+            // where their cultivation will not mend; an injury where they are
+            // short a limb and whole in their cultivation. What does not heal is
+            // a step heavier.
+            const lasting = loserInjuries.find(i => isPermanentWound(i.woundType) && woundsTheCultivation(i.woundType))
+                ?? loserInjuries.find(i => isPermanentWound(i.woundType))
+                ?? null;
+            const left = whatALevelLeaves({ level: 'done', wound: lasting });
             return [{
                 kind: 'grudge',
                 holderId: loserId,
                 subjectId: winnerId,
-                cause: 'humiliation',
-                severity: 'grave',
+                cause: left.cause as ObligationSeed['cause'],
+                severity: left.irreversible ? 'unforgivable' : 'grave',
                 description:
                     `${loserName} was beaten and yielded rather than be finished, and is now `
                     + 'under the person who beat them.'
+                    + (left.cause === 'crippled'
+                        ? ` Their cultivation will not mend from it.`
+                        : left.irreversible
+                            ? ` They carry a wound from it that will not heal.`
+                            : '')
             }];
+        }
         case 'withdrawal':
             return [{
                 kind: 'grudge',
@@ -2276,7 +2304,7 @@ function oneSided(
             describeOneSided(outcome, requirement, outcome === 'body_destroyed' ? requirement.remnant : null) +
             ` ${defenderInput.name} is left at ${hp[defenderInput.id]}/${defenderInput.maxHp}` +
             (injuries[defenderInput.id].length > 0
-                ? ` and carrying a ${injuries[defenderInput.id][0].severity} wound that will not close on its own.`
+                ? ` and carrying a ${howBadItIsSaid(injuries[defenderInput.id][0])} wound that will not close on its own.`
                 : '.') +
             // "took nothing" for "was not hurt" was read in play as "took
             // nothing OFF THEM", which is a different sentence and now a
@@ -2434,7 +2462,7 @@ export function attemptFlight(
               + `back cost ${damage} of the body.`
             : `You did not get clear: ${(chance * 100).toFixed(0)} in a hundred was not enough. `
               + `${damage} of the body went on the attempt`
-              + (injury ? `, and a ${injury.severity} injury with it.` : '.')
+              + (injury ? `, and a ${howBadItIsSaid(injury)} injury with it.` : '.')
     };
 }
 
@@ -3223,7 +3251,7 @@ function assemble(
         if (f.state === 'standing') {
             fate = f.everEngaged ? 'standing' : 'bystander';
         } else if (f.state === 'withdrawn') {
-            fate = injuries[f.input.id].some(i => i.severity === 'crippling') ? 'crippled' : 'withdrew';
+            fate = injuries[f.input.id].some(cripplesTheCultivation) ? 'crippled' : 'withdrew';
         } else {
             const felledBy = f.felledBy !== null
                 ? fighters.find(o => o.input.id === f.felledBy)
@@ -3239,7 +3267,7 @@ function assemble(
                 : finishOutcome(intent.thrown, f.felledVector, requirement);
             fate = FATE_FOR_OUTCOME[outcome] ?? 'withdrew';
             if (fate === 'body_destroyed') remnant = requirement.remnant;
-            if (fate === 'withdrew' && injuries[f.input.id].some(i => i.severity === 'crippling')) {
+            if (fate === 'withdrew' && injuries[f.input.id].some(cripplesTheCultivation)) {
                 fate = 'crippled';
             }
         }

@@ -24,7 +24,7 @@ import {
     rollInjurySeverity,
     treatWorstInjury
 } from '../../engine/cultivation/index.js';
-import { INJURY_SEVERITY_ORDER } from '../../engine/cultivation/injuries.js';
+import { INJURY_SEVERITY_ORDER, howBadItIsSaid } from '../../engine/cultivation/injuries.js';
 import { currentWoundKey, getWoundType, isPermanentWound } from '../../data/cultivation/wounds.js';
 import {
     medicineNeededFor,
@@ -1106,7 +1106,7 @@ function resolvePillEffect(
                 summary:
                     `${reached.length} thing${reached.length === 1 ? '' : 's'} nothing closes, `
                     + `closed: ${reached.map(injury =>
-                        `${injury.severity} ${getWoundType(injury.woundType)?.name.toLowerCase()
+                        `${howBadItIsSaid(injury)} ${getWoundType(injury.woundType)?.name.toLowerCase()
                             ?? injury.woundType}`).join(', ')}. `
                     + 'A season of it, and the body has back what it had lost.'
             };

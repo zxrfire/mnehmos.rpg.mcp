@@ -2,6 +2,7 @@
  * Hitting somebody, and everything the world does about it afterwards.
  */
 
+import { howBadItIsSaid } from '../engine/cultivation/injuries.js';
 import {
     AN_ORDINARY_SWING,
     type HowTheBlowWasThrown
@@ -1136,7 +1137,7 @@ export const combatVerbs = {
                 `${sideName(x.attackerId)} against ${sideName(x.defenderId)}: advantage `
                 + `${x.result.advantage.toFixed(2)}, ${x.result.damage} damage, `
                 + `${x.defenderHpAfter} left`
-                + (x.result.injury ? `, a ${x.result.injury.severity} wound` : '')).join('. ')
+                + (x.result.injury ? `, a ${howBadItIsSaid(x.result.injury)} wound` : '')).join('. ')
             + `. Breaking off prices at ${(where.flight.chance * 100).toFixed(0)}%: `
             + where.flight.modifiers.map(m => `${inWords(m.source)} ${m.delta >= 0 ? '+' : ''}`
                 + m.delta.toFixed(2)).join(', ')

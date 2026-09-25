@@ -72,6 +72,13 @@ The useful shorthand is **body against cultivation**. A channel wound and a fles
 both damage to the body. A foundation or a core is damage to the cultivation itself. Both are
 injuries; only the second kind takes something the ladder already gave you.
 
+**"Crippled" is said of the cultivation and of nothing else.** The design owner: *"depends on
+the wound. losing an arm is not a crippled cultivator."* A cultivator is crippled when their
+channels, foundation, core or soul is damaged (`woundsTheCultivation` in
+`data/cultivation/wounds.ts`). Somebody who lost an arm is maimed: the stored severity may be
+`crippling`, and it is said as a maiming (`howBadItIsSaid`), and a submission that cost them the
+arm is an `injury` on the ledger, not a crippling (`whatALevelLeaves`).
+
 **The two must never be treated as one scale with a bigger number at the end.** A crippling
 torn meridian is still a channel wound and is still survivable; a cracked core is categorically
 worse than any amount of channel damage. That is why the medicine that mends the first is

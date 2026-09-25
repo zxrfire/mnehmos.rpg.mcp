@@ -388,6 +388,29 @@ export function isPermanentWound(key: string | null | undefined): boolean {
 }
 
 /**
+ * The wounds of the flesh: a covering off a body, or a part out of it.
+ * `docs/world/climbing/injuries.md` names them as the third family, beside the
+ * channels and the cultivation itself.
+ */
+const THE_FLESH: ReadonlySet<string> = new Set(['stripped-flesh', 'severed-flesh']);
+
+/**
+ * Whether this wound is done to the CULTIVATION - its channels, its foundation,
+ * its core, its soul - rather than to the flesh or the mind.
+ *
+ * It is what "crippled" means, and nothing else is. The design owner: *"depends
+ * on the wound. losing an arm is not a crippled cultivator."* A severed arm is
+ * `severed-flesh`, permanent and grave, and the person is exactly as able to
+ * cultivate as they were. An absent or unknown key reads as a channel wound,
+ * because every wound the engine wrote before this table existed was one.
+ */
+export function woundsTheCultivation(key: string | null | undefined): boolean {
+    const current = currentWoundKey(key);
+    if (current !== null && THE_FLESH.has(current)) return false;
+    return woundNature(key) === 'physical';
+}
+
+/**
  * The nature of a wound key. Physical when the key is absent or unknown,
  * because every wound the engine wrote before this table existed was one.
  */

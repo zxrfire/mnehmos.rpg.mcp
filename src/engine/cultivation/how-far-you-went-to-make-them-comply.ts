@@ -6,6 +6,7 @@
 // module borrows a word from it rather than minting a parallel one; a value
 // import would tie the cultivation package to the social package for nothing.
 import type { ObligationCause } from '../social/grudges.js';
+import { isPermanentWound, woundsTheCultivation } from '../../data/cultivation/wounds.js';
 
 // THE LEVEL
 
@@ -54,15 +55,27 @@ export interface WhatALevelLeaves {
 
 /**
  * What one level leaves behind.
+ *
+ * AT `done`, THE WOUND DECIDES, and it decides two things. Whether it heals
+ * decides whether the record is heavier by a step. WHAT it is decides what the
+ * ledger calls it: a crippling is a wound to the cultivation itself - its
+ * channels, foundation, core or soul - and never a lost limb. The design owner:
+ * *"depends on the wound. losing an arm is not a crippled cultivator."* Somebody
+ * who lost an arm carries an `injury` that does not heal.
  */
 export function whatALevelLeaves(input: {
     level: PressureLevel;
-    /** True when the harm actually applied does not heal. From the wound row. */
-    permanentWound?: boolean;
+    /**
+     * The worst lasting wound the harm left, by its wound key (`woundType` on the
+     * injury row). Absent or null: nothing that stays.
+     */
+    wound?: { woundType: string | null } | null;
     /** True when they were told first and refused. The escalation pair. */
     wordGivenFirst?: boolean;
 }): WhatALevelLeaves {
-    const permanent = input.permanentWound === true;
+    const wound = input.wound ?? null;
+    const permanent = wound !== null && isPermanentWound(wound.woundType);
+    const toTheCultivation = permanent && woundsTheCultivation(wound!.woundType);
     const promised = input.wordGivenFirst === true;
 
     switch (input.level) {
@@ -83,10 +96,10 @@ export function whatALevelLeaves(input: {
             return {
                 level: 'done',
                 // The ledger's own words, and the wound picks which. Somebody
-                // held down and let up carries a humiliation; somebody who does
-                // not walk right afterwards carries a crippling, and the ledger
-                // already has both rows.
-                cause: permanent ? 'crippled' : 'humiliation',
+                // held down and let up carries a humiliation; somebody whose
+                // cultivation will not mend carries a crippling; somebody short a
+                // limb carries an injury, and it is not a crippling.
+                cause: toTheCultivation ? 'crippled' : permanent ? 'injury' : 'humiliation',
                 // The wound decides, not the verb. A beating they walk off and a
                 // beating they never walk right again are the same act and are
                 // not the same record.
@@ -97,9 +110,13 @@ export function whatALevelLeaves(input: {
                 why:
                     'Hands. They complied because they were made to, and they know it can happen '
                     + 'again, which is why the compliance outlives the room. '
-                    + (permanent
-                        ? 'What was done to them does not heal, so the record is heavier by a step.'
-                        : 'What was done to them heals.')
+                    + (toTheCultivation
+                        ? 'What was done to their cultivation does not mend, so the record is heavier '
+                          + 'by a step.'
+                        : permanent
+                            ? 'What was done to their body does not heal, though their cultivation is '
+                              + 'whole, so the record is heavier by a step.'
+                            : 'What was done to them heals.')
                     + (promised
                         ? ' They were told first and refused, so this is somebody making good on '
                           + 'their word, which is worth another step.'
