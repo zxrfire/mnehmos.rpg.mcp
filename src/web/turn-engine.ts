@@ -1149,6 +1149,7 @@ import {
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { handingInVerbs } from './handing-a-thing-in-to-your-house.js';
+import { seenToFromTheHouseShelf } from './house-medicine-for-a-member.js';
 import { theyGiveInWithNoFightStanding } from './giving-in-with-no-fight-standing.js';
 import {
     theyPutTheirWeightAway,
@@ -11495,9 +11496,22 @@ ${opened.text}` : receipt,
     }
 
     /**
-     * Getting a wound seen to.
+     * Getting a wound seen to: the house's own medicine first, for a member at
+     * its seat (`house-medicine-for-a-member.ts`), and a physician otherwise.
      */
     private async treat(run: Run, cultivator: Cultivator, ambient: AmbientQi): Promise<Execution> {
+        const shelf = await seenToFromTheHouseShelf(this, run, cultivator);
+        if (shelf !== null && 'given' in shelf) return shelf.given;
+        const atAPhysician = await this.treatAtAPhysician(run, cultivator, ambient);
+        if (shelf !== null) {
+            atAPhysician.facts.lines.unshift(shelf.withheld.line);
+            atAPhysician.facts.prose = `${shelf.withheld.line}\n\n${atAPhysician.facts.prose}`;
+            atAPhysician.facts.structure.push(shelf.withheld.structure);
+        }
+        return atAPhysician;
+    }
+
+    private async treatAtAPhysician(run: Run, cultivator: Cultivator, ambient: AmbientQi): Promise<Execution> {
         const hurt = untreatedInjuries(cultivator.injuries);
         const visit = getPrice(GameService.PRICE_PHYSICIAN_VISIT)!;
         const course = getPrice(GameService.PRICE_COURSE_OF_CARE)!;

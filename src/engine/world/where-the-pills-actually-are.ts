@@ -37,6 +37,8 @@
  * `significance` is for: `mundane` rows deliberately carry no provenance, which
  * is `possessions.ts`'s own stated reason for the field existing.
  *
+ * Both are spent, and the counts refined back, in `house-wound-medicine.ts`.
+ *
  * The barter reasons are NOT reinvented here. `whyNotSold` in
  * `single-use-dao-comprehension-materials.ts` already enumerates them and is
  * called directly, so there is exactly one barter model in the engine and it is
@@ -85,11 +87,26 @@ export function theHeightAHouseWorksAt(
  * count of anything that is not a commodity, because a barter pill is a row.
  */
 function stockFor(reach: number, pill: Pill, rng: ReturnType<typeof forStream>): number {
-    const band = pillBandOrdinal(pill.grade);
-    // A house does not stock medicine pitched well above anybody in it.
-    if (reach + 4 < band) return 0;
-    const scale = Math.max(1, reach) / Math.max(1, pill.value / 20);
-    return Math.max(0, Math.round(rng.int(0, 40) * scale));
+    if (pitchedAboveTheHouse(reach, pill)) return 0;
+    return Math.max(0, Math.round(rng.int(0, 40) * shelfScale(reach, pill)));
+}
+
+/** A house does not stock medicine pitched well above anybody in it. */
+function pitchedAboveTheHouse(reach: number, pill: Pill): boolean {
+    return reach + 4 < pillBandOrdinal(pill.grade);
+}
+
+function shelfScale(reach: number, pill: Pill): number {
+    return Math.max(1, reach) / Math.max(1, pill.value / 20);
+}
+
+/**
+ * The shelf a house of this reach keeps of a counted pill: the middle of what
+ * `stockFor` seeds. What a house refines back up to (`house-wound-medicine.ts`).
+ */
+export function theShelfAHouseKeeps(reach: number, pill: Pill): number {
+    if (pitchedAboveTheHouse(reach, pill)) return 0;
+    return Math.round(20 * shelfScale(reach, pill));
 }
 
 /**

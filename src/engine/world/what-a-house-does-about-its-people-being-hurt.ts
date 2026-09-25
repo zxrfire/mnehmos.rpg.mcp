@@ -20,6 +20,10 @@
  *
  * ── WHAT CLOSES A WOUND, AND WHAT DOES NOT ───────────────────────────────
  *
+ *   the house's medicine      counted wound pills off its own shelf first, then
+ *                             a row it holds, which is spent only where the
+ *                             shelf and the purse closed nothing
+ *                             (`house-wound-medicine.ts`).
  *   a house sees to its own   the purse pays at `injuryTreatmentPrice`, the
  *                             figure the closed-form model already charges, and
  *                             the medicine it can source is what its own height
@@ -50,6 +54,14 @@
  */
 
 import { treatWorstInjuries, untreatedInjuryCount } from '../cultivation/injuries.js';
+import {
+    housesRefineTheirWoundMedicine,
+    seenToBefore,
+    seeToThemFromTheShelf,
+    standingOf,
+    swallowWhatTheyNeed,
+    woundMedicineByHolder
+} from './house-wound-medicine.js';
 import { isPermanentWound } from '../../data/cultivation/wounds.js';
 import { injuryTreatmentPrice } from '../cultivation/origin.js';
 import { medicineReaches, realmFloor } from '../cultivation/what-grade-of-medicine-a-wound-needs.js';
@@ -88,6 +100,14 @@ export interface WhatCareCameTo {
     closedOnTheirOwn: number;
     /** Stones the houses spent doing it. */
     spent: number;
+    /** Wounds closed by doses off a house's shelf, and the doses. */
+    fromTheShelf: number;
+    dosesFromTheShelf: number;
+    /** Wound-medicine rows swallowed. */
+    swallowed: number;
+    /** Doses refined back onto shelves, and the stones the ingredients cost. */
+    refined: number;
+    spentRefining: number;
 }
 
 /** The row with these injuries on it, and the count kept honest. */
@@ -110,17 +130,26 @@ function carrying(npc: NpcRecord, injuries: readonly { treated: boolean }[]): Np
  * what it could not reach is what time is left to work on.
  */
 export function woundsCloseThisYear(state: WorldState, year: number, day: number): WhatCareCameTo {
-    const out: WhatCareCameTo = { seenTo: 0, closedOnTheirOwn: 0, spent: 0 };
+    const out: WhatCareCameTo = {
+        seenTo: 0, closedOnTheirOwn: 0, spent: 0,
+        fromTheShelf: 0, dosesFromTheShelf: 0, swallowed: 0, refined: 0, spentRefining: 0
+    };
 
     // ── WHAT A HOUSE CAN BRING, ONCE, FOR ALL OF ITS OWN ─────────────────
     const reachOf = new Map<string, ReturnType<typeof realmFloor>>();
     const purse = new Map<string, number>();
+    const shelfOf = new Map<string, { resources: Record<string, number> }>();
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
         reachOf.set(house.id, realmFloor(Number(house.resources.power_ordinal ?? 0)));
         purse.set(house.id, Number(house.resources.spirit_stones ?? 0));
+        shelfOf.set(house.id, house);
     }
+    const rowsHeld = woundMedicineByHolder(state.objects);
 
+    // IN ORDER OF STANDING, so a house's last dose and last stones go to its
+    // elder before its outer disciple. See `seenToBefore`.
+    const order: number[] = [];
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i]!;
         if (npc.status !== 'alive' || !isTheWorldsToMove(npc)) continue;
@@ -128,11 +157,27 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
         if (injuries.length === 0 || npc.cultivation.untreatedInjuries <= 0) continue;
         // Nothing here ever touches the permanent family.
         if (!injuries.some(inj => !inj.treated && !isPermanentWound(inj.woundType))) continue;
+        order.push(i);
+    }
+    order.sort((a, b) => seenToBefore(standingOf(state.npcs[a]!), standingOf(state.npcs[b]!)) || a - b);
 
+    for (const i of order) {
+        const npc = state.npcs[i]!;
         let row = npc;
+        const houseId = npc.factionId;
+
+        // ── THE HOUSE'S OWN MEDICINE FIRST ───────────────────────────────
+        const shelf = houseId === null ? undefined : shelfOf.get(houseId);
+        if (shelf !== undefined) {
+            const dosed = seeToThemFromTheShelf(shelf, row);
+            if (dosed.closed > 0) {
+                row = carrying(row, dosed.injuries);
+                out.fromTheShelf += dosed.closed;
+                out.dosesFromTheShelf += dosed.doses;
+            }
+        }
 
         // ── THE HOUSE PAYS, WHILE IT CAN ─────────────────────────────────
-        const houseId = npc.factionId;
         if (houseId !== null && purse.has(houseId)) {
             const grade = reachOf.get(houseId)!;
             const price = whatSeeingToThemCosts(npc.cultivation.realmOrdinal);
@@ -149,6 +194,16 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
                     out.seenTo += done.treatedCount;
                     out.spent += cost;
                 }
+            }
+        }
+
+        // ── A ROW, ONLY FOR WHAT NOTHING ABOVE CLOSED ────────────────────
+        if (row.cultivation.injuries.some(inj => !inj.treated && !isPermanentWound(inj.woundType))) {
+            const swallowed = swallowWhatTheyNeed(
+                state, rowsHeld, row, shelf !== undefined ? houseId : null, day);
+            if (swallowed.swallowed > 0) {
+                row = carrying(row, swallowed.injuries);
+                out.swallowed += swallowed.swallowed;
             }
         }
 
@@ -181,6 +236,11 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
             house.resources.spirit_stones = left;
         }
     }
+
+    // And the houses refine back what they used, out of what the purse has left.
+    const refined = housesRefineTheirWoundMedicine(state, year);
+    out.refined = refined.set;
+    out.spentRefining = refined.stones;
 
     return out;
 }
