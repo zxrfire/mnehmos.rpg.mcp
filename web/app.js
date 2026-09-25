@@ -1658,12 +1658,43 @@ function renderSheet() {
         : raw(html`<p class="empty">No one is currently hunting you.</p>`)}
     </section>
 
+    ${!Array.isArray(d.places) ? '' : raw(html`<section class="sheet__group">
+      <h3 class="sheet__label">Places</h3>
+      ${d.places.length
+        ? raw(html`<ul class="places">${d.places.map((p) => raw(html`<li class="place place--${p.known}">
+            <span class="place__name">${p.name}</span>
+            <span class="place__marks">${[p.here ? 'here' : '', p.home ? 'home' : '', p.house ? 'your house' : '', p.known === 'heard' ? 'heard of' : ''].filter(Boolean).join(' · ')}</span>
+          </li>`))}</ul>`)
+        : raw(html`<p class="empty">You know of nowhere yet.</p>`)}
+    </section>`)}
+
     <section class="sheet__group">
       <h3 class="sheet__label">Techniques</h3>
       ${Array.isArray(c.knownTechniques) && c.knownTechniques.length
         ? raw(html`<div class="chips">${c.knownTechniques.map((t) => raw(html`<span class="chip chip--tech">${t}</span>`))}</div>`)
         : raw(html`<p class="empty">You know no arts. Breathing counts for very little.</p>`)}
-    </section>`;
+    </section>
+
+    ${!d.things ? '' : raw(html`<section class="sheet__group">
+      <h3 class="sheet__label">Equipment</h3>
+      ${d.things.worn.length || d.things.held.length
+        ? raw(html`<dl class="kv">
+            <dt>Wearing</dt><dd>${d.things.worn.length ? d.things.worn.join(', ') : 'Nothing'}</dd>
+            <dt>Holding</dt><dd>${d.things.held.length ? d.things.held.join(', ') : 'Nothing'}</dd>
+            ${d.things.rings.map((r) => raw(html`<dt>${r.name}</dt><dd>${r.inside === null ? 'Will not open to you' : (r.inside.length ? r.inside.join(', ') : 'Empty')}</dd>`))}
+          </dl>`)
+        : raw(html`<p class="empty">Nothing on you and nothing in your hands.</p>`)}
+    </section>
+
+    <section class="sheet__group">
+      <h3 class="sheet__label">Inventory</h3>
+      ${d.things.inventory.length || d.things.vehicles.length
+        ? raw(html`<ul class="things">
+            ${d.things.inventory.map((t) => raw(html`<li>${t}</li>`))}
+            ${d.things.vehicles.map((v) => raw(html`<li>${v.name}${v.inside.length ? `, holding ${v.inside.join(', ')}` : ''}</li>`))}
+          </ul>`)
+        : raw(html`<p class="empty">Nothing in the pouch.</p>`)}
+    </section>`)}`;
 }
 
 /* -- The Toll -----------------------------------------------------------

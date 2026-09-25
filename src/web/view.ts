@@ -22,6 +22,8 @@ import {
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import type { CrowdingRead } from './how-crowded-this-ground-is.js';
 import type { Affordance } from './what-is-worth-doing-standing-here.js';
+import type { APlaceOnTheSheet } from './places-on-the-sheet.js';
+import type { TheThingsOnTheSheet } from './things-on-the-sheet.js';
 import { getSect } from '../data/cultivation/sects.js';
 import { theRungsOfTheHouse }
     from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
@@ -265,6 +267,10 @@ export interface DerivedView {
      * What is live standing here, most pressing first.
      */
     standingHere: Affordance[];
+    /** Every place they know of, marked heard or been. See `places-on-the-sheet.ts`. */
+    places: APlaceOnTheSheet[];
+    /** Equipment and inventory. See `things-on-the-sheet.ts`. */
+    things: TheThingsOnTheSheet | null;
     /**
      * WHAT THE NEXT CROSSING WOULD EXPOSE THEM TO, 0..1, or null when the step
      * ahead is not a realm boundary and so charges nothing.
@@ -349,6 +355,8 @@ export interface DerivedContext {
     nameTaken?: boolean;
     ground?: CrowdingRead | null;
     standingHere?: Affordance[];
+    places?: APlaceOnTheSheet[];
+    things?: TheThingsOnTheSheet | null;
 }
 
 /** Everything the sheet needs that is a function of the cultivator, not a field of it. */
@@ -391,6 +399,8 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         nameTaken: context.nameTaken ?? false,
         ground: context.ground ?? null,
         standingHere: context.standingHere ?? [],
+        places: context.places ?? [],
+        things: context.things ?? null,
         // Null rather than zero off a boundary: "this step costs nothing" and
         // "this step is free of risk" are different sentences and only one of
         // them is true between sub-ranks.

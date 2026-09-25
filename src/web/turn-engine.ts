@@ -185,6 +185,8 @@ import { howItIsHad } from '../engine/world/possessions.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
+import { thePlacesOnTheSheet, type APlaceOnTheSheet } from './places-on-the-sheet.js';
+import { theThingsOnTheSheet } from './things-on-the-sheet.js';
 import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
 import { aVehicleOf, isAVehicle } from '../engine/world/a-vehicle.js';
 import {
@@ -292,7 +294,7 @@ import {
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 // Type-only in the other direction, so no cycle: that module takes a
 // `GameService` as a type and imports nothing from here at runtime.
-import { theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { theHouseThisNameReaches, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
 import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
@@ -1179,7 +1181,7 @@ import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
 // Whose the thing is, asked of the world before anything calls a taking a theft.
 import { takingVerbs } from './a-taking-is-decided-by-ownership.js';
-import { travelVerbs } from './travel-verbs.js';
+import { travelVerbs, whereHomeIs } from './travel-verbs.js';
 
 export {
     BASE_HP,
@@ -20160,6 +20162,19 @@ ${fit.line}`;
         return whoHoldsThisAccount(this.atHand, this.repos, id);
     }
 
+    /** Every place they know of, with home and their house's seat marked. */
+    private placesOnTheSheet(cultivator: Cultivator): APlaceOnTheSheet[] {
+        const home = whereHomeIs(this, this.atHand, cultivator);
+        const sectName = this.sectNameFor(cultivator);
+        return thePlacesOnTheSheet({
+            places: this.knowledge.awareness(cultivator.id, 'place'),
+            here: cultivator.location,
+            abode: home.kind === 'abode' ? home.name : null,
+            seat: this.atHand && sectName ? theHouseThisNameReaches(this.atHand, sectName)?.seat.name ?? null : null,
+            livesAtTheSeat: home.kind === 'quarters'
+        });
+    }
+
     private stateView(run: Run, cultivator: Cultivator): StateView {
         return {
             run: runView(run),
@@ -20184,7 +20199,19 @@ ${fit.line}`;
                 // computed once here - three copies of this would drift, and
                 // the player would be shown one set of options by the panel and
                 // a different set by the game a moment later.
-                standingHere: this.affordancesFor(cultivator, run)
+                standingHere: this.affordancesFor(cultivator, run),
+                // The places they know of, and what is on them. See `places-on-the-sheet.ts`
+                // and `things-on-the-sheet.ts`.
+                places: this.placesOnTheSheet(cultivator),
+                things: theThingsOnTheSheet({
+                    objects: this.atHand?.objects ?? [],
+                    personId: cultivator.id,
+                    here: this.worldPlaceOf(cultivator),
+                    pouch: listPouch(this.db, cultivator.id),
+                    artifacts: listCarriedArtifacts(this.db, cultivator.id),
+                    books: copiesHeldBy(this.db, cultivator.id),
+                    rations: this.rationsHeld(cultivator)
+                })
             }),
             // "You can look at the ledger and see the shape of who you used to
             // be" is a design requirement, so the ledger is on the wire.
