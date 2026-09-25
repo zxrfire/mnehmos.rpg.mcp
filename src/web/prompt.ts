@@ -347,6 +347,8 @@ Rules:
     "empty your pockets"           -> fight/force. A demand is coercion, not a blow. Nobody
                                                    has been struck.
     "is this place safe"           -> perceive.    Weighing a place is looking at it.
+    "is there a sect that'd have me" -> house.     Which house would take them is asked of the
+                                                   houses, never of who here teaches.
     "is there an inn here"         -> perceive.    What a place has in it is looked at, not
                                                    travelled to.
     "I go up to my room"           -> travel.      A room is walked to, never a site.
