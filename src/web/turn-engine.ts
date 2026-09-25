@@ -187,6 +187,7 @@ import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.j
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
 import { thePlacesOnTheSheet, type APlaceOnTheSheet } from './places-on-the-sheet.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
+import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
 import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
 import { aVehicleOf, isAVehicle } from '../engine/world/a-vehicle.js';
@@ -8678,8 +8679,14 @@ ${noticed}`;
 
         if (which === 'dao') return this.recallDao(run, cultivator);
 
-        const held = this.knowledge.awareness(cultivator.id);
-        const query = (target ?? '').trim();
+        const everything = this.knowledge.awareness(cultivator.id);
+        let query = (target ?? '').trim();
+        // A KIND IS NOT A NAME. Played: "which sects do I know of?" looked for a record called
+        // "sects", found none, and the player was told nobody had ever said a house's name to
+        // them - with their own family's house on the sheet. A kind word lists that kind.
+        const kind = WHICH_KIND_A_WORD_ASKS_FOR.find(([pattern]) => pattern.test(query))?.[1] ?? null;
+        const held = kind ? everything.filter(row => row.kind === kind) : everything;
+        if (kind) query = '';
 
         if (query.length < 2) {
             const facts = factsForHolding(
