@@ -169,7 +169,10 @@ const DEAD = 0;
 // 447 -> 406: wrappers only a test called went (the test calls the real read
 // now), research corpora moved into tests/ where only a test ever read them,
 // and some were wired. Down from here, not up.
-const TEST_ONLY = 406;
+// 406 -> 222: the catalogs' lookups - 155 wrappers deleted with each test
+// reading the catalog itself, 18 fixtures moved into their tests, 11 wired
+// into reads a player meets.
+const TEST_ONLY = 222;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
