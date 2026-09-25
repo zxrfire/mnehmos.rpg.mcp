@@ -1248,6 +1248,12 @@ There are two authoritative stores and they are both in the same SQLite file:
                      25 and re-inserts, so it is lifecycle-only and calling it to
                      "just save" destroys a world.
 
+**Old data can be deleted at any time.** The design owner: saved games are started fresh
+after a change, never carried forward (*"start fresh ... you can delete old data anytime"*).
+Do not write a data migration, a compatibility read or a fallback to keep an old save or
+world resolving after a rename or a reshape. A schema migration that makes a fresh
+database is still needed; one that rescues rows written under the old shape is not.
+
 **A person exists in both** (`Cultivator` and `NpcRecord`), which is drift being worked
 off, not a design. Do not add a third shape for one, and do not add a field to one that
 the other already carries.
