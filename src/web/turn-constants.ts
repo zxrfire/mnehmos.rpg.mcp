@@ -28,7 +28,7 @@ import { PLACE } from '../data/cultivation/place-names.js';
 // web deployment's own choices belong.
 // ─────────────────────────────────────────────────────────────────────────
 
-export const STARTING_AGE = 16;
+export const STARTING_AGE = 18;
 export const STARTING_LOCATION = PLACE.BURNT_EARTH;
 /** Base HP plus ten per point of Might: 30 to 50 at creation. */
 export const BASE_HP = 20;

@@ -231,7 +231,8 @@ describe('a conception from the rite is a child the world delivers', () => {
      */
     it.each([
         ['furnace-rite-birth-11', 'the subject carried'],
-        ['furnace-rite-birth-1', 'the player carried']
+        // Re-pinned from furnace-rite-birth-1 when the game began starting at 18.
+        ['furnace-rite-birth-5', 'the player carried']
     ])('%s: %s', async (seed) => {
         const at = await standingInFrontOfAFurnace(seed, 30);
         const acted = await at.game.act(`I make ${at.mark.name} my furnace`);
