@@ -349,6 +349,14 @@ async function theModelIsNotWhyThisTurnIsDangerous(
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
 
+    // AND A GOING WORD STRAIGHT BEFORE THAT DESTINATION WINS OVER A CHEAPER MISREADING. Played:
+    // "forget the board, i just walk to silver island myself" - the model read move(Silver
+    // Island), the table read the duty board off "board", and the walk was dropped. "I ask about
+    // Cold Peak" has no going word in front of the name, so it still reads cheaper.
+    if (GOES_TO_A_PLACE.has(fromModel.action) && aGoingWordLeadsTo(input, fromModel.target)) {
+        return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
+    }
+
     // The deterministic side read nothing rather than something cheaper, and a
     // second reader agrees with the model about what the sentence says. Two
     // readers agreeing is not a model inventing an act, which is the only thing
@@ -379,6 +387,31 @@ function theSentenceNamesIt(input: string, target: string | undefined): boolean 
     const plain = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim()} `;
     const named = plain(target ?? '').replace(/^ the /, ' ');
     return named.trim().length >= 3 && plain(input).includes(named);
+}
+
+/** A word of going, then "to" or "for", right before where the sentence ends up. */
+const A_GOING_WORD_BEFORE_IT = new RegExp(
+    String.raw`\b(?:go|goes|going|gonna go|walk|walks|walking|head|heads|heading|travel|travels|traveling|travelling|`
+    + String.raw`set off|set out|setting off|setting out|off|leave|leaving|ride|riding|sail|sailing|journey|`
+    + String.raw`make my way|making my way|return|returning|hike|trek|press on|carry on|continue|continuing)`
+    + String.raw`(?: (?:back|on|over|down|up|out|straight|all the way|myself|alone|on foot))*`
+    + String.raw` (?:to|for|towards|toward|into)(?: the)? $`
+);
+
+/**
+ * Whether the sentence walks, heads or sets off straight to the model's destination, and that
+ * destination is a NAME there: a name they know has been written back as it is spelled before
+ * this runs (`names-as-they-are-spelled.ts`), so "Silver Island" is capitalised in the sentence
+ * and "the market", which is somewhere to go over to and not a journey, is not.
+ */
+function aGoingWordLeadsTo(input: string, target: string | undefined): boolean {
+    const plain = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim()} `;
+    const named = plain(target ?? '').replace(/^ the /, ' ');
+    const at = plain(input).indexOf(named);
+    if (named.trim().length < 3 || at < 0 || !A_GOING_WORD_BEFORE_IT.test(plain(input).slice(0, at + 1))) return false;
+    const first = named.trim().split(' ')[0]!;
+    const written = new RegExp(String.raw`\b${first.replace(/[^a-z0-9]/g, '')}`, 'i').exec(input);
+    return written !== null && /[A-Z]/.test(written[0][0]!);
 }
 
 /**
