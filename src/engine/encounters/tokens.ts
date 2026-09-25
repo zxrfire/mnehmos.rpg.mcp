@@ -314,7 +314,7 @@ function takePerson(
 // row are two different events rather than the same sentence twice.
 
 const CAUSES = [
-    'a vein shifting upstream', 'a failed crossing', 'an unpaid toll',
+    'a vein shifting upstream', 'a failed crossing', 'an unpaid levy',
     'a claim nobody checked', 'a seal that gave out', 'a harvest that failed twice',
     'a debt inherited with a house', 'a road closed without notice'
 ] as const;

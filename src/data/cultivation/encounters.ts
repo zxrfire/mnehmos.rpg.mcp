@@ -1523,8 +1523,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'Circulating qi reverses during cultivation on day {days}. Severity: {severity}. Cause: {cause}. Cultivation is halted until the deviation is cleansed.',
-        tokens: ['days', 'severity', 'cause'],
+            'Circulating qi turns back on itself, a {severity} deviation. Cultivation is halted until it is cleansed.',
+        tokens: ['severity'],
         tags: ['injury', 'unavoidable', 'pill-solvable'],
         // Never outgrown, and this is where that is said. A gate of zero would
         // otherwise put a Nascent Soul cultivator seventeen rungs past it and
