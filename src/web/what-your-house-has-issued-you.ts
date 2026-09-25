@@ -52,6 +52,12 @@ import {
 } from './sending-word-on-a-communication-talisman.js';
 import { upsertObject } from '../engine/world/world-state.js';
 import { hadAs } from '../engine/world/possessions.js';
+import { aStorageRing, isAStorageRing } from '../engine/world/a-storage-ring.js';
+import { couldFoldARing } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
+import { whatServiceIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
+
+/** Service worth this many years at their height makes a disciple one a house gives a ring to. */
+const YEARS_OF_SERVICE_A_RING_REWARDS = 3;
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
 import { rankIndexOf, theHouseTakesYourWord } from './walking-up-to-a-house.js';
@@ -156,6 +162,28 @@ export function settleWhatYourHouseHasIssuedYou(
                 + `burns in ${hall}. A gate that asks for a token will read it.`);
             structure.push(`whatTheHouseGivesThem: token ${given.token.id}, lamp ${given.lamp.id} `
                 + `in ${lampRoomId}, cut by ${String(given.token.data.cutById ?? 'nobody holding the roll room')}.`);
+        }
+
+        // ── AND A RING, TO SOMEBODY IT FAVOURS ───────────────────────────
+        // The owner: storage rings are not sold ("too expensive, only bartered"), and a house
+        // gives one to a favoured disciple. Favoured is merit: service worth years at their
+        // height, which is the house's own unit (`whatServiceIsWorth`). Once, and only from a
+        // house with somebody in it who can fold one. See `a-storage-ring.ts`.
+        const merit = game.repos.sects.getMembership(cultivator.id)?.contribution ?? 0;
+        const givenBefore = world.objects.some(o => isAStorageRing(o) && o.tags.includes(`given-by:${house.id}`));
+        const aFolderHere = roll.some(n => couldFoldARing('mortal', n.cultivation.realmOrdinal));
+        if (!givenBefore && aFolderHere
+            && merit >= whatServiceIsWorth(cultivator.realmOrdinal, YEARS_OF_SERVICE_A_RING_REWARDS * 365)) {
+            const ring = aStorageRing({
+                id: `ring-${house.id}-${cultivator.id}`,
+                grade: 'mortal',
+                ownerId: cultivator.id,
+                ownerName: cultivator.name,
+                ownerOrdinal: cultivator.realmOrdinal
+            });
+            Object.assign(world, upsertObject(world, { ...ring, tags: [...ring.tags, `given-by:${house.id}`] }));
+            lines.push(`For your service, ${house.name} gives you ${ring.name}, marked to you. It is in your pack.`);
+            structure.push(`a ring for merit ${merit} with ${house.id}: ${ring.id}.`);
         }
     }
 

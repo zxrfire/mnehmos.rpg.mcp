@@ -50,6 +50,7 @@ import {
     whoHasALampBurningIn
 } from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token';
 import { holdsTheRobesOf, wearsTheRobesOf } from '../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house';
+import { whoCanFoldARing } from '../../src/engine/world/what-a-body-can-carry-and-what-a-ring-holds';
 import {
     doesTheHouseExpect,
     theHouseExpects,
@@ -172,6 +173,32 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(left.narration ?? '').toMatch(/went back to it/);
         expect(whatTheGateOfThisHouseSays(game, repos.cultivators.getById(cultivator.id)!, house).way)
             .toBe('turned away');
+    }, 240_000);
+
+    /**
+     * A storage ring is not sold; a house gives one to somebody it favours, and favour is merit
+     * worth years of service. The owner: rings are "only bartered", looted, or given.
+     */
+    it('gives a storage ring to a disciple with years of merit at a house that can fold one, once', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'a-ring-for-service', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Servant');
+        const opened = (await game.loadWorld())!;
+        const floor = whoCanFoldARing('mortal');
+        const faction = opened.factions.find(f => f.dissolvedOnDay === null && f.seatLocationId !== null
+            && opened.npcs.some(n => n.status === 'alive' && n.factionId === f.id && n.cultivation.realmOrdinal >= floor));
+        expect(faction, 'no house here can fold a ring').toBeTruthy();
+
+        repos.sects.addMember(faction!.id, cultivator.id, 0);
+        theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction!);
+        await game.act(`I travel to the ${faction!.name}`);
+        const rings = () => game.atHand!.objects.filter(o => o.possessorId === cultivator.id && o.tags.includes('storage-ring'));
+        expect(rings(), 'a ring with no service behind it').toHaveLength(0);
+
+        repos.sects.addContribution(faction!.id, cultivator.id, 1_000_000);
+        await game.act('I look around');
+        expect(rings()).toHaveLength(1);
+        await game.act('I look around');
+        expect(rings(), 'given once').toHaveLength(1);
     }, 240_000);
 
     it('cuts a token for somebody promoted onto the rung while at the seat', async () => {
