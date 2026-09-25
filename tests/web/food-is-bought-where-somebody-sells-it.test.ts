@@ -29,6 +29,21 @@ describe('food is bought where somebody sells it', () => {
         expect(at.repos.cultivators.getById(at.id)!.spiritStones).toBe(9);
     }, 240_000);
 
+    /** The owner: a bowl at a house's refectory is "1 spirit stone (goes into sect treasury)". */
+    it('is bought at the house refectory by its own, and the stone goes into the treasury', async () => {
+        const at = await hungry('food-refectory', world => world.locations.find(row => row.kind === 'sect_seat')!.name);
+        const world = at.game.atHand!;
+        const seat = world.locations.find(row => row.name === at.repos.cultivators.getById(at.id)!.location)!;
+        const house = world.factions.find(row => row.seatLocationId === seat.id)!;
+        at.repos.sects.addMember(house.id, at.id, 0);
+        at.repos.cultivators.update(at.id, { sectId: house.id });
+        const before = Number(house.resources.spirit_stones ?? 0);
+        const ate = await at.game.act('I eat');
+        expect(ate.narration).toMatch(/refectory/);
+        expect(at.repos.cultivators.getById(at.id)!.spiritStones).toBe(9);
+        expect(Number(at.game.atHand!.factions.find(row => row.id === house.id)!.resources.spirit_stones ?? 0)).toBe(before + 1);
+    }, 240_000);
+
     it('comes out of the pack where nobody sells it, and costs nothing', async () => {
         expect(A_WAYSTATION, 'the catalog has no waystation').toBeDefined();
         const at = await hungry('food-pack', () => A_WAYSTATION.name);

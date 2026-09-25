@@ -62,6 +62,8 @@ export type WhyItMoved =
     | 'rebuilding'
     | 'indemnity'
     | 'upkeep'
+    /** A meal its own bought at its refectory: a stone a bowl, into the treasury. */
+    | 'refectory'
     /**
      * Opened to reward somebody, which the elders had to agree to.
      *

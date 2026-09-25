@@ -12354,6 +12354,8 @@ ${opened.text}` : receipt,
             this.repos.runs.incrementTurn(run.id, 1);
             return updated;
         })();
+        // A bowl at a house's own refectory is paid into its treasury.
+        this.aMealPaysTheHouse(food.houseId);
 
         return {
             facts: factsForEat(after, restored, MEAL_COST_STONES, food.where),
@@ -12370,6 +12372,15 @@ ${opened.text}` : receipt,
                 ok: true
             }]
         };
+    }
+
+    /** A meal bought at a house's refectory, paid into its treasury. */
+    private aMealPaysTheHouse(houseId: string | undefined): void {
+        const coffers = houseId ? this.atHand?.factions.find(row => row.id === houseId) ?? null : null;
+        if (!coffers) return;
+        coffers.resources.spirit_stones = putIntoTheHouse(
+            Number(coffers.resources.spirit_stones ?? 0), MEAL_COST_STONES, 'refectory').after;
+        this.theWorldMoved();
     }
 
     /** A ration opened where nobody sells food, or the refusal that says where somebody does. */

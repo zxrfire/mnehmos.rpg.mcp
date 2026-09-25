@@ -17,8 +17,11 @@ import { whatTheTownIsBelow, whatTradesBelow } from '../engine/world/the-town-at
 import { theAreaTheyAreIn } from './walking-across-a-place.js';
 import { theHouseWhoseGateThisIs } from './walking-up-to-a-house.js';
 
-/** Food to be had here and where it is bought, or none. */
-export type WhereTheFoodIs = { sold: true; where: string } | { sold: false };
+/**
+ * Food to be had here and where it is bought, or none. `houseId` where the house itself sold it:
+ * the owner, "1 spirit stone (goes into sect treasury)".
+ */
+export type WhereTheFoodIs = { sold: true; where: string; houseId?: string } | { sold: false };
 
 /**
  * Where food is bought here. The one seam for what feeds somebody where they stand: a hull's
@@ -32,7 +35,7 @@ export function whereFoodComesFromHere(game: GameService, cultivator: Cultivator
     if (!house) return { sold: false };
     if (cultivator.sectId === house.factionId
         || game.repos.sects.getMembership(cultivator.id)?.sectId === house.factionId) {
-        return { sold: true, where: `at the ${house.factionName}'s refectory` };
+        return { sold: true, where: `at the ${house.factionName}'s refectory`, houseId: house.factionId };
     }
     const town = whatTheTownIsBelow(house.factionId);
     const trades = town ? whatTradesBelow(town).map(trade => trade.id) : [];

@@ -113,8 +113,10 @@ export function whatTheGateSaysOfItsWork(
     } else {
         // Said by the watch, not remembered: played, a bare "what is up" was narrated as the
         // player's own memory of walls they had walked past.
-        lines.push(`${who} names what ${house.factionName} has up for outsiders now, on the town walls`
-            + `${province ? ` of ${province}` : ''}:`);
+        // The owner: the wall below the gate carries the house's notices, "but they also know so
+        // they can also just tell you".
+        lines.push(`${who} names what ${house.factionName} has up for outsiders now, on the wall below `
+            + `the gate and on the town walls${province ? ` of ${province}` : ''}:`);
         const said = new Set<string>();
         for (const ask of asks) {
             const first = !said.has(ask.kind);

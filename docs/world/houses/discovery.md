@@ -387,6 +387,13 @@ everything it has put up. A notice asks only for what the house hands nothing ov
 "a sect asks for things from people where a sect doesn't need to put stuff upfront". So a
 delivery is never a notice, because "that requires risking the sects own property".
 
+**A notice is first come, first paid.** Nobody signs on for a notice. You do what it asks and
+turn it in at the house, and "first person to turn it in gets it, and they retract the notice.
+if you're second, tough luck". So the paper comes down everywhere it was posted, and the world
+is racing the player for it. The wall in the town below a house's gate carries that house's
+notices, and the disciple on the gate can say them too: "they also know so they can also just
+tell you".
+
 **A date on paper is a date.** Whatever a notice states as a day is fixed for the life of
 the paper, so walking toward an intake brings it closer rather than pushing it away. Most
 notices name no day at all, which is the cheapest way to keep that promise.

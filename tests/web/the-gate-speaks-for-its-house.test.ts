@@ -39,7 +39,7 @@ describe('the gate speaks for its house', () => {
         expect(read.narration).toContain(at.house.name);
         // Nothing of the board itself reaches somebody outside it.
         expect(read.narration).not.toMatch(/posts this to its own|is not being put to you/);
-        expect(read.narration).toMatch(/names what .* has up for outsiders now, on the town walls|has nothing up for outsiders/);
+        expect(read.narration).toMatch(/names what .* has up for outsiders now, on the wall below the gate and on the town walls|has nothing up for outsiders/);
     }, 240_000);
 
     it('answers the watch asked by name, and the watch asked by what they are', async () => {
