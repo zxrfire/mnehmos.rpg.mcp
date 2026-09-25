@@ -16,7 +16,7 @@ const WORLD = 'road-world';
 describe('a room at the inn', () => {
     it('is a walk up, with nobody in it, and the night there is rest', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        const { cultivator } = await game.newRun('Sleeper');
+        const { cultivator } = await game.newRun('Lu Qingmo');
         await game.act('I take a room at the inn for two nights');
         const before = game.state().run.elapsedDays;
 
@@ -32,7 +32,7 @@ describe('a room at the inn', () => {
 
     it('is somewhere else where no room was taken here', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const standing = game.state().cultivator.location;
 
         // Not lodged, "my room" is the home read's to answer - a house's quarters, or nowhere.
@@ -48,7 +48,7 @@ describe('a room at the inn', () => {
             plans: ['{"action":"buy","target":"The Eleven Beds"}'], narrations: ['The opening.', 'A room.']
         });
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD, provider });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         await game.act('sweet, ill grab a room for tonight then');
         expect(game.state().log.some(entry => entry.role === 'engine' && /^A room at /.test(entry.text))).toBe(true);
     }, 120_000);
@@ -56,7 +56,7 @@ describe('a room at the inn', () => {
     /** Played: a second "crash for the night" bought "0 night(s) for 0 cash" and the narrator slept it. */
     it('says a room already paid for is already yours, and spends nothing', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         await game.act('I take a room at the inn');
         const stones = game.state().cultivator.spiritStones;
 
@@ -69,7 +69,7 @@ describe('a room at the inn', () => {
     /** Played: "head back downstairs" came as move(the town they stood in) and spent a day on the road. */
     it('never spends a day going to the place they already stand in', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const town = game.state().cultivator.location;
         await game.act('I take a room at the inn');
         await game.act('I go up to my room');
@@ -103,7 +103,7 @@ describe('a room at the inn', () => {
     /** Played: the model handed "ok head up to my room" over as target "room". */
     it('takes a bare "room" as the room at the inn', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        const { cultivator } = await game.newRun('Sleeper');
+        const { cultivator } = await game.newRun('Lu Qingmo');
         await game.act('I take a room at the inn');
 
         const up = await game.act('I go to room');
@@ -117,7 +117,7 @@ describe('a room at the inn', () => {
     /** The owner: a room is an area "at an inn (or in your sect, or a cave)". */
     it('is their quarters at their own house\'s seat, and nobody else is in them', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        const { cultivator } = await game.newRun('Sleeper');
+        const { cultivator } = await game.newRun('Lu Qingmo');
         const world = (await game.loadWorld())!;
         const seat = world.locations.find(l => l.kind === 'sect_seat'
             && typeof (l.data as { factionId?: unknown }).factionId === 'string'
@@ -133,7 +133,7 @@ describe('a room at the inn', () => {
 
     it('comes back down to the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         await game.act('I take a room at the inn');
         await game.act('I go up to my room');
 

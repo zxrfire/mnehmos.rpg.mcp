@@ -24,7 +24,7 @@ const WORLD = 'road-world';
 describe('a night outdoors costs the body', () => {
     it('costs the body for days waited in the open, and says so', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const before = game.state().cultivator;
 
         const done = await game.act('I wait thirty days');
@@ -36,7 +36,7 @@ describe('a night outdoors costs the body', () => {
 
     it('costs nothing for the same nights under a room at the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const before = game.state().cultivator;
 
         const done = await game.act('I stay at the inn for thirty nights');
@@ -51,7 +51,7 @@ describe('a night outdoors costs the body', () => {
 
     it('takes a room without spending the nights, and the nights waited after are roofed', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const before = game.state().cultivator;
 
         const took = await game.act('I take a room at the inn for ten nights');
@@ -69,7 +69,7 @@ describe('a night outdoors costs the body', () => {
      */
     it('has somebody keeping the inn, said as the innkeeper by somebody with no name for them', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        const { cultivator } = await game.newRun('Sleeper');
+        const { cultivator } = await game.newRun('Lu Qingmo');
 
         const took = await game.act('I take a room at the inn');
         const keeper = /(\S+(?: \S+)?) keeps the inn/.exec(took.narration)?.[1];
@@ -94,7 +94,7 @@ describe('a night outdoors costs the body', () => {
         'I wait until The Eleven Beds'
     ])('sleeps the night where they stand: %s', async said => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         await game.act('I take a room at the inn');
         const before = game.state().run.elapsedDays;
 
@@ -106,7 +106,7 @@ describe('a night outdoors costs the body', () => {
     /** Played: "is there like an inn or somewhere i can crash tonight" was a look that never mentioned one. */
     it('shows the inn and its price to a look round', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
 
         const looked = await game.act('I look around');
         expect(looked.narration).toMatch(/An inn here lets rooms: \d+ cash a night, and a meal \d+\./);
@@ -114,7 +114,7 @@ describe('a night outdoors costs the body', () => {
 
     it('ends the room when they leave the place, so coming back is outdoors again', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
 
         await game.act('I take a room at the inn for thirty nights');
         await game.act('I book a carriage to Emerald Water City');
@@ -130,7 +130,7 @@ describe('a night outdoors costs the body', () => {
 
     it('never takes a body below the floor by weather alone', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const max = game.state().cultivator.maxHp;
 
         await game.act('I wait a year');
@@ -142,7 +142,7 @@ describe('a night outdoors costs the body', () => {
 
     it('costs nothing at Foundation Establishment', async () => {
         const { game, db } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
-        await game.newRun('Sleeper');
+        await game.newRun('Lu Qingmo');
         const id = game.state().cultivator.id;
         db.prepare('UPDATE cultivators SET realm_ordinal = 13 WHERE id = ?').run(id);
         const before = game.state().cultivator;
