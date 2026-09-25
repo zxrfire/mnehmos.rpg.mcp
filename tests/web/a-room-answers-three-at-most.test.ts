@@ -1,9 +1,9 @@
 /**
- * Words put to a whole room are answered by two at most.
+ * Words put to a whole room are answered by three at most.
  *
  * The set loop ran the act once per person standing there, so a question
  * put to a square of twenty-eight came back as twenty-eight answers. The
- * owner: at most two answers; the rest of the room is described in general. A threat or a theft still
+ * owner caps a room at three; the rest are a count. A threat or a theft still
  * lands on everybody, because what it does to each of them matters.
  */
 
@@ -27,12 +27,12 @@ async function putToTheRoom(intent: string) {
     return { standing, done, prompts };
 }
 
-describe('a room answers two at most', () => {
-    it('lets two answer a greeting and describes the rest in general', async () => {
+describe('a room answers three at most', () => {
+    it('lets three answer a greeting and counts the rest', async () => {
         const { standing, done, prompts } = await putToTheRoom('talk');
-        expect(standing).toBeGreaterThan(2);
+        expect(standing).toBeGreaterThan(3);
         const answered = done.toolCalls.filter(call => call.name === 'engine.resolveParty');
-        expect(answered).toHaveLength(2);
+        expect(answered).toHaveLength(3);
         expect(prompts).toContain('Whoever else is here hears it and goes on with what they were doing.');
     }, 300_000);
 });
