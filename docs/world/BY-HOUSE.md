@@ -101,7 +101,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 61 · [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) 24 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 14 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 12 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 12 · [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) 9 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 8 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 8
   …and 27 more files.
 
-**Constants most about it:** `WHY_NOBODY_MOVES`, `SENT_DOWN_SPENDINGS`, `SENT_DOWN_UNACCOUNTED`, `STRUCTURAL_REPAIR_HOLDINGS`, `ARTERIALS`, `FACTION_PARENTAGE`, and 20 more
+**Constants most about it:** `WHY_NOBODY_MOVES`, `SENT_DOWN_SPENDINGS`, `SENT_DOWN_UNACCOUNTED`, `STRUCTURAL_REPAIR_HOLDINGS`, `ARTERIALS`, `FACTION_PARENTAGE`, and 21 more
 
 ### Stone Marrow Hall
 

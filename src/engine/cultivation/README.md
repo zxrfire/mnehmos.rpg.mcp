@@ -128,7 +128,7 @@ removes the *risk* of a thin hillside. A sealed vein is found, not given.
 
 The claim that this axis lives or dies on - **visible in the opening position, and not in
 the outcome distribution except at the very top** - is measured rather than asserted, in
-[`../world/origin-odds.ts`](../world/origin-odds.ts).
+[`tests/support/origin-odds.ts`](../../../tests/support/origin-odds.ts).
 
 ### The four innate attributes, in-world
 

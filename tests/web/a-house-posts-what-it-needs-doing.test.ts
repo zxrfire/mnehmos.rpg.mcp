@@ -26,6 +26,8 @@
 import { describe, expect, it } from 'vitest';
 import { makeGame, makeGameInWorld } from './harness';
 import { writeFlag } from '../../src/server/consolidated/cultivation-support';
+import { theRealmARungAsks } from '../../src/server/consolidated/sect-manage';
+import { getSect } from '../../src/data/cultivation/sects';
 import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys';
 import { sectBoardFor } from '../../src/web/encounters';
 import { REALM_TIERS, rankName } from '../../src/engine/cultivation/realms';
@@ -365,14 +367,20 @@ describe('and the loop the board feeds turns', () => {
         expect(held().rankIndex).toBe(0);
 
         // And the rung is the other half of the ladder, so the promotion is
-        // refused until both are met and then granted.
+        // refused until both are met and then granted. The realm half is the
+        // bar the rung asks of somebody promoted from inside
+        // (`theRealmARungAsks`, the world's own rule); this used to read
+        // ordinals 6 and 8 off the old admission-plus-four rule, and at the
+        // Pavilion the world's bar for its first rung is its admission bar.
+        const bar = theRealmARungAsks(getSect(A_HOUSE)!, 1);
+        db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?').run(bar - 1, cultivator.id);
         const refused = await game.act('I ask to be promoted') as unknown as {
             toolCalls: { name: string; summary: string }[];
         };
         expect(refused.toolCalls.some(c => /requirements_unmet/.test(c.summary))).toBe(true);
         expect(held().rankIndex).toBe(0);
 
-        db.prepare('UPDATE cultivators SET realm_ordinal = 8 WHERE id = ?').run(cultivator.id);
+        db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?').run(bar, cultivator.id);
         await game.act('I ask to be promoted');
 
         expect(held().rankIndex).toBe(1);

@@ -734,11 +734,11 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 14 | 10 |
 | `BEAST_MATERIALS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 14 | 23 |
 | `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 19 |
-| `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 15 | 35 |
-| `AGES` | [`history.ts`](../../src/data/cultivation/history.ts) | 15 | 59 |
+| `AGES` | [`history.ts`](../../src/data/cultivation/history.ts) | 15 | 60 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 16 | 2 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 17 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 16 | 25 |
+| `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 35 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 18 | 44 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 19 | 33 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 27 |
@@ -746,7 +746,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 124 |
 | `THE_COMMUNICATION_TALISMAN` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 21 | 4 |
 | `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 21 | 30 |
-| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 23 | 50 |
+| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 23 | 51 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 98 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 96 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 33 | 130 |

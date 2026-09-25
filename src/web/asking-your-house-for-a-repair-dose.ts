@@ -140,17 +140,15 @@ export function askingYourHouseForARepairDose(
     game: GameService,
     run: Run,
     cultivator: Cultivator,
-    /** Who was asked, as said. */
-    asked: string,
-    /** What was asked for, as said. */
-    thing: string
+    whoWasAsked: string,
+    whatWasAskedFor: string
 ): Execution | null {
-    const medicine = theDoseNamed(thing);
+    const medicine = theDoseNamed(whatWasAskedFor);
     if (!medicine) return null;
 
     const membership = game.repos.sects.getMembership(cultivator.id);
-    const meant = game.factionMeant(asked, cultivator);
-    const toOwnHouse = ONES_OWN_HOUSE.test(asked.trim())
+    const meant = game.factionMeant(whoWasAsked, cultivator);
+    const toOwnHouse = ONES_OWN_HOUSE.test(whoWasAsked.trim())
         || (membership !== null && meant !== null && meant.id === membership.sectId);
     if (!toOwnHouse) return null;
 
