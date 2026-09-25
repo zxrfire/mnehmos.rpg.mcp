@@ -19,10 +19,10 @@
  */
 
 /** The label the `carry` verb dispatches on. */
-export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show';
+export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show' | 'store' | 'retrieve' | 'unmark';
 
 /** What a house puts on its own, and what anybody calls the rest of it. */
-const WORN = '(?:robes?|uniform|habit|garb|gown|outfit|disguise|clothes|clothing)';
+const WORN = '(?:robes?|uniform|habit|garb|gown|outfit|disguise|clothes|clothing|(?:storage\\s+|spatial\\s+)?ring)';
 
 /** What comes out of a sheath. Not `weapon` alone - see the `staff` note below. */
 const HELD = '(?:sword|blade|sabre|saber|knife|dagger|spear|staff|weapon|axe|whip|bow)';

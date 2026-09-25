@@ -930,6 +930,19 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I sheathe my blade',
             'I put my sword away'
         ],
+        // A thing into or out of a storage ring, and breaking a mark on one. See `a-storage-ring.ts`.
+        'carry/store': [
+            'I put the sword in my ring',
+            'I tuck the jade token into my storage ring'
+        ],
+        'carry/retrieve': [
+            'I take the sword out of my ring',
+            'I get the pills from my ring'
+        ],
+        'carry/unmark': [
+            'I break the mark on the ring',
+            "I erase the owner's mark on this storage ring"
+        ],
         'carry/show': [
             // The token, which is what the robe is not. The owner's intruder
             // ruling turns on the difference.

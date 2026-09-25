@@ -40,6 +40,7 @@ import { holdsTheTokenOf } from '../engine/world/a-recruit-is-given-their-lamp-a
 import { hadAs, isHeld, isWorn, WHAT_TWO_HANDS_HOLD, type ObjectRecord } from '../engine/world/possessions.js';
 import { whatABodyCanCarry, whatAllOfThatTakes } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import { isAWeapon, theBladeInTheirHand } from '../engine/world/what-somebody-fights-with.js';
+import { isAStorageRing, whoseMarkIsOn } from '../engine/world/a-storage-ring.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { changeInto, isAGarment, whatTheyHaveOn } from '../engine/world/what-somebody-stands-up-in.js';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -51,7 +52,7 @@ import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 
 /** The five things a player can say about what is on them. */
-export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show';
+export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show' | 'store' | 'retrieve' | 'unmark';
 
 /**
  * What the player reads, and what the operator reads, in their own channels.
@@ -150,6 +151,38 @@ function whatTheRobesBuy(world: WorldState, cultivatorId: string, row: ObjectRec
             : ', and you carry no token of it, so the first one of them who asks you for one has you.');
 }
 
+/** A sentence that named a ring. */
+const NAMES_A_RING = /\bring\b/i;
+
+/**
+ * A ring on or off the hand. Not an outfit: it goes on beside whatever is worn, and taking it off
+ * puts it in the pack, where nothing in it can be reached. See `a-storage-ring.ts`.
+ */
+function aRingOnOrOff(game: GameService, cultivator: Cultivator, on: boolean): Execution {
+    const world = game.atHand;
+    const ring = (world?.objects ?? []).find(o => o.possessorId === cultivator.id && isAStorageRing(o)
+        && isWorn(o) !== on);
+    if (world === null || world === undefined || ring === undefined) {
+        return refused(on ? 'engine.wear' : 'engine.takeOff', 'carry', factsForRefusal(
+            on ? 'You have no ring to put on.' : 'You have no ring on.',
+            on ? 'You have no ring to put on.' : 'You have no ring on.',
+            `carry/${on ? 'wear' : 'take_off'}: no storage ring in that state. Nothing was written and no day passed.`
+        ));
+    }
+    const at = world.objects.findIndex(o => o.id === ring.id);
+    world.objects[at] = hadAs(ring, on ? 'worn' : 'inventory');
+    game.theWorldMoved();
+    const mark = whoseMarkIsOn(ring);
+    const line = on
+        ? `${ring.name} is on your hand.` + (mark !== null && mark.by !== cultivator.id
+            ? " Somebody else's mark is on it, and it will not open for you until that is broken."
+            : '')
+        : `${ring.name} is off your hand and in your pack, and nothing in it can be reached until it is back on.`;
+    return done(on ? 'engine.wear' : 'engine.takeOff',
+        saidAndNoted([line], `carry/${on ? 'wear' : 'take_off'}: ${ring.id} ${on ? 'worn' : 'into the inventory'}.`),
+        `${ring.id} ${on ? 'on' : 'off'} ${cultivator.id}.`);
+}
+
 /**
  * Putting something on: the act. The player changes into it, and whatever they had on goes into
  * their inventory. Already on, it is the read it always was.
@@ -159,6 +192,7 @@ export function whatWearingThemBuys(
     cultivator: Cultivator,
     named: string | undefined
 ): Execution {
+    if (named !== undefined && NAMES_A_RING.test(named)) return aRingOnOrOff(game, cultivator, true);
     const world = game.atHand;
     const row = world ? theGarmentMeant(world.objects, cultivator.id, named, () => true) : null;
     if (world === null || world === undefined || row === null) {
@@ -192,6 +226,7 @@ export function theyTakeTheRobesOff(
     cultivator: Cultivator,
     named: string | undefined
 ): Execution {
+    if (named !== undefined && NAMES_A_RING.test(named)) return aRingOnOrOff(game, cultivator, false);
     const world = game.atHand;
     const row = world ? theGarmentMeant(world.objects, cultivator.id, named, isWorn) : null;
     if (world === null || world === undefined || row === null) {

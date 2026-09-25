@@ -89,7 +89,8 @@ import { isSentenceRefusal, ordinalNamed, readAdminSentence } from './admin-said
 import { KnowledgeGate, loosePlaceKey } from '../../web/knowledge.js';
 import { SiteLedger } from '../../web/trials.js';
 import { handleCultivate, RATION_COST_STONES } from './cultivation-manage.js';
-import { worldForRun } from '../state/cultivation-world.js';
+import { saveWorldForRun, worldForRun } from '../state/cultivation-world.js';
+import { aStorageRing } from '../../engine/world/a-storage-ring.js';
 import {
     AMBIENT_BLOCK_DAYS,
     addToPouch,
@@ -776,7 +777,9 @@ const GrantItemSchema = z.object({
      */
     ordinal: ordinalArg('ARTIFACTS ONLY: grant the catalogued object nearest this rung. This is how "a 45 weapon" is asked for.').optional(),
     /** Narrow what a name or an ordinal is searched against. */
-    kind: z.enum(['pill', 'herb', 'artifact', 'any']).optional().default('any'),
+    kind: z.enum(['pill', 'herb', 'artifact', 'ring', 'any']).optional().default('any'),
+    /** A storage ring's grade, for `kind=ring`. */
+    grade: TechniqueGradeSchema.optional(),
     /** A catalog entry by its own name, rather than by its id. */
     name: z.string().min(1).max(160).optional(),
     quantity: z.number().int().min(1).max(999).optional().default(1),
@@ -1690,6 +1693,27 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
     const { run, cultivator } = resolved;
     const want = args.kind ?? 'any';
     const asked = args.itemId ?? args.name;
+
+    // A STORAGE RING is a world object and not a pouch row: what is put in it is the ring's, and
+    // goes where it goes. Marked by whoever it is granted to. See `a-storage-ring.ts`.
+    if (want === 'ring') {
+        const grade = args.grade ?? 'mortal';
+        const world = await worldForRun(run as never);
+        const ring = aStorageRing({
+            id: `ring-${cultivator.id}-${world.objects.length}`,
+            grade,
+            ownerId: cultivator.id,
+            ownerName: cultivator.name,
+            ownerOrdinal: cultivator.realmOrdinal
+        });
+        world.objects.push(ring);
+        await saveWorldForRun(run as never);
+        writeAdminAudit(repos, 'grant_item', run.id, {
+            cultivatorId: cultivator.id, itemId: ring.id, kind: 'ring', quantity: 1,
+            selection: `grade ${grade}`, ratedAt: null
+        });
+        return { adminMode: true, granted: true, item: { kind: 'ring', id: ring.id, name: ring.name, grade } };
+    }
 
     // ── WHICH THING. Id beats name; name beats rung. ──────────────────────
     let pill = want === 'pill' || want === 'any' ? getPill(args.itemId ?? '') : undefined;

@@ -195,12 +195,14 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     carry: {
         takes: ['target', 'intent'],
-        intents: ['wear', 'take_off', 'draw', 'put_away', 'drop', 'show'],
+        intents: ['wear', 'take_off', 'draw', 'put_away', 'drop', 'show', 'store', 'retrieve', 'unmark'],
         says: `what is on this body and what is in its hands. "intent" says which: "wear" puts
             robes on (and says whose they are and what a house's people make of somebody in
             them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away"
             returns it, "drop" lets it go on the ground, "show" offers the house token as proof of
-            what you are - which is what a robe is not. "target" is what was named, in the
+            what you are - which is what a robe is not. "store" puts the thing named into the
+            storage ring on their hand, "retrieve" takes it back out, "unmark" breaks somebody
+            else's mark on a ring so it will open. "target" is what was named, in the
             player's own words. No day passes and nothing is rolled. NOT for attacking: "I
             draw my sword on him" is attack. Inside a fight none of this applies - dropping a
             sword there is a surrender, and the fight reads it.`

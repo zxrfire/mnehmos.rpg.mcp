@@ -62,7 +62,10 @@ describe('what a sentence about your own body reaches', () => {
 
     it('leaves the pouch and the gift where they were', () => {
         // Two sentences the new rows sit next to and must not take.
-        expect(parseIntent('I put the sword in my ring').action).toBe('inventory');
+        // A ring holds things now, and what is in it is the ring's (`a-storage-ring.ts`); the pouch
+        // is still a read.
+        expect(parseIntent('I put the sword in my ring')).toMatchObject({ action: 'carry', intent: 'store' });
+        expect(parseIntent('I put the pills in my pouch').action).toBe('inventory');
         expect(parseIntent('I give him my robes').action).toBe('give');
     });
 });

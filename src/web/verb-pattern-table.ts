@@ -4756,6 +4756,16 @@ function planIntent(input: string): PlannedAction {
     //
     // The pouch read is the honest answer: it says what is in the ring, which
     // is the only fact either sentence is about, and it costs nothing.
+    // A THING INTO OR OUT OF A RING is a movement with a state now: what is in a ring is the
+    // ring's, and goes where it goes. See `a-storage-ring.ts`. The pouch is still the read.
+    const intoOrOutOfARing = /^\s*(?:i\s+)?(?:put|place|slip|tuck|stash|store|take|pull|get|fetch)s?\s+(.+?)\s+(into|in|inside|out of|from)\s+(?:my|the)\s+(?:(?:storage|spatial)\s+)?ring\s*[.!?]?\s*$/i.exec(text);
+    if (intoOrOutOfARing) {
+        const into = /^(?:into|in|inside)$/i.test(intoOrOutOfARing[2]!);
+        return { action: 'carry', intent: into ? 'store' : 'retrieve', target: intoOrOutOfARing[1]!.trim() };
+    }
+    if (/\b(?:break|breaks|breaking|erase|erases|erasing|wipe|wipes|force|forces)\b[^.!?]{0,20}\b(?:mark|seal|imprint|brand)\b[^.!?]{0,30}\bring\b/i.test(text)) {
+        return { action: 'carry', intent: 'unmark' };
+    }
     if (A_CONTAINER_OF_YOUR_OWN.test(text)) {
         return { action: 'inventory' };
     }

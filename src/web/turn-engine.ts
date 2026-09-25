@@ -183,6 +183,7 @@ import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { howItIsHad } from '../engine/world/possessions.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
+import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
 import {
     theyDoSomethingAboutWhatTheyLost,
     whatTheCardSaysOfALoss
@@ -4872,6 +4873,10 @@ ${noticedWaiting}`;
                         return whatTheirHandsDo(
                             this, run, cultivator, action.intent, action.target
                         );
+                    case 'store':
+                    case 'retrieve':
+                    case 'unmark':
+                        return whatTheRingDoes(this, run, cultivator, action.intent, action.target);
                     default:
                         return whatWearingThemBuys(this, cultivator, action.target);
                 }
@@ -13416,6 +13421,8 @@ ${opened.text}` : receipt,
         const lines: string[] = [];
         lines.push(theLineForWhatTheyHaveOn(wornRows));
         if (heldRows.length > 0) lines.push(`Holding: ${heldRows.map(row => row.name).join(', ')}.`);
+        // AND WHAT IS IN A RING, which is the ring's and not in the pack. See `what-is-in-your-ring.ts`.
+        lines.push(...theLinesForTheirRings(this.atHand?.objects ?? [], cultivator.id));
         if (rations > 0) {
             lines.push(
                 `Food: ${rations} ration${rations === 1 ? '' : 's'}`
