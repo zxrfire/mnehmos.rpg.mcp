@@ -1,4 +1,5 @@
 <!-- tier: 3 -->
+<!-- no-catalog: the owner's rulings on what a turn is and who is on the page, not a description of a catalog -->
 
 # The shape of play
 
@@ -27,6 +28,23 @@ conversations first, and a change is judged by how they read.
 A sitting is the act a player repeats. With nothing to break it, it is a few short lines: the
 days going by, one detail of the place, what changed or did not. The engine interrupting it
 (provisions gone, somebody coming over, the world arriving) is the turn, and gets the room.
+
+**A road is the same shape.**
+
+> you can't just travel, you have to rest. if you sleep in the cold, you gain negative effects.
+> you meet other travellers, merchants, etc. maybe even a sect party or lucky or a spirit boat.
+> same shape as cultivation. bandits, whatever
+
+> once you get very powerful no more bandits. this isn't bespoke but your encounters scale on
+> your realm. just as a president would not buy groceries
+
+> just treat journey as a multi part action. if you get interrupted in a multi part action, you
+> stop
+
+A journey is days that can be interrupted. What meets you on it is pitched to your realm (see
+[`../climbing/capability-gaps-by-realm.md`](../climbing/capability-gaps-by-realm.md), encounters
+pitched in band). An interruption stops you where you stand: the days are spent, and the rest of
+the road is still ahead of you. An arrival opens on the road, then the place.
 
 > also make it so more places have just 1 person, this makes the game simplier i think
 
