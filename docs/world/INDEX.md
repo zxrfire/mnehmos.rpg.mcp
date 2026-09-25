@@ -732,15 +732,15 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 49 |
+| `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 14 | 10 |
 | `BEAST_MATERIALS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 14 | 23 |
 | `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 19 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 16 | 2 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 17 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 16 | 25 |
-| `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 7 |
+| `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 16 | 36 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 18 | 44 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 19 | 33 |
-| `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 19 | 33 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 27 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 45 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 124 |
@@ -753,7 +753,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 45 | 65 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 199 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 90 | 432 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 115 | 130 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 116 | 130 |
 
 <!-- END GENERATED: design-constants -->
 
