@@ -92,7 +92,7 @@ export interface TakingTheMaterials {
     onDay: number;
     /** What it went into, for the provenance line on a row that ended. */
     intoWhat: string;
-    /** A recipe other than the grade's own: mending takes `whatMendingAHoleTakes`. */
+    /** A recipe other than the grade's own: mending takes `whatMendingItTakes`. */
     recipe?: Recipe | null;
 }
 

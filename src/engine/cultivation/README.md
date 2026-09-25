@@ -305,7 +305,8 @@ The contract, in the order it binds:
    exhausted, fighting bare or standing on empty ground breaks fewer blades, and that is
    the point: a stronger opponent is not a machine that deletes your equipment.
 3. **One quantity, no table.** `realmsBetween(what it was swung into, what the weapon is
-   worth)`. Within a realm the weapon is fit; past two it is not a chance. A tenth case is
+   worth)`. Within a realm the weapon is fit; from one to two realms it may be holed, from
+   two it certainly is, and from three it breaks, kept at half. A tenth case is
    a tenth pair of numbers and must need no branch.
 4. **Passive and active are readings, not kinds.** The same subtraction against the body
    alone and against the whole person. `chance - passiveChance` is what they did. There is

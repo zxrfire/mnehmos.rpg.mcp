@@ -1,8 +1,9 @@
 /**
- * A house mends what it owns that was holed, once a year, for material.
+ * A house mends what it owns that was holed or broken, once a year, for material.
  *
  * Owner ruling 2026-09-25: houses close holes in their yearly pass, out of the
- * material they hold, and a house without it leaves the thing holed. Things are
+ * material they hold, and a house without it leaves the thing holed. A broken
+ * thing is restored to whole for the whole of its grade's recipe. Things are
  * taken in the order the world holds them while material lasts.
  */
 
@@ -11,13 +12,15 @@ import { isBroken, isHoled } from '../../../src/engine/world/object-damage.js';
 import { makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
 import { housesMendWhatTheyOwn } from '../../../src/engine/world/a-house-mends-what-it-owns.js';
 import { makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
-import { whatMendingAHoleTakes, whatWouldFill } from '../../../src/data/cultivation/what-an-artifact-is-made-of.js';
+import { whatMendingItTakes, whatWouldFill } from '../../../src/data/cultivation/what-an-artifact-is-made-of.js';
 
-const SLOT = whatMendingAHoleTakes('earth')![0]!;
+const SLOT = whatMendingItTakes('earth', false)![0]!;
 const MATERIAL = whatWouldFill(SLOT)[0]!;
+/** The rest of earth grade's recipe: what a break costs beyond a hole. */
+const THE_REST = whatMendingItTakes('earth', true)!.slice(1).map(slot => whatWouldFill(slot)[0]!);
 
 function aHouse(opts: {
-    handAt: number; pieces: number; scars?: number; tags?: string[]; carriedBy?: string;
+    handAt: number; pieces: number; scars?: number; tags?: string[]; carriedBy?: string; theRest?: boolean;
 }): WorldState {
     const scars = opts.scars ?? 1;
     const objects: ObjectRecord[] = [
@@ -34,6 +37,13 @@ function aHouse(opts: {
             ownerId: 'house', ownerName: 'the House', possessorId: null,
             data: { materialId: MATERIAL.id, quantity: opts.pieces, resource: MATERIAL.name }
         }));
+    }
+    if (opts.theRest) {
+        THE_REST.forEach((material, i) => objects.push(makeObject({
+            id: `rest-${i}`, name: `1 ${material.name}`, kind: 'material',
+            ownerId: 'house', ownerName: 'the House', possessorId: null,
+            data: { materialId: material.id, quantity: 1, resource: material.name }
+        })));
     }
     return {
         factions: [makeFaction({ id: 'house', name: 'the House' })],
@@ -82,7 +92,17 @@ describe('a house mends what it owns, out of its own stores', () => {
         expect(stock(state)!.data.quantity).toBe(2);
     });
 
-    it('does not mend a broken thing, and spends nothing on it', () => {
+    it('restores a broken thing to whole, for the whole recipe', () => {
+        const state = aHouse({ handAt: 30, pieces: 2, scars: 3, tags: ['damaged', 'broken'], theRest: true });
+        expect(housesMendWhatTheyOwn(state, 400)).toBe(1);
+        expect(isBroken(blade(state))).toBe(false);
+        expect(isHoled(blade(state))).toBe(false);
+        expect(blade(state).power).toBe(18);
+        expect(stock(state)!.data.quantity).toBe(1);
+        expect(state.objects.filter(o => o.id.startsWith('rest-')).every(o => o.tags.includes('ruined'))).toBe(true);
+    });
+
+    it('leaves a broken thing broken, and spends nothing, on a hole\'s worth of stock', () => {
         const state = aHouse({ handAt: 30, pieces: 2, scars: 3, tags: ['damaged', 'broken'] });
         expect(housesMendWhatTheyOwn(state, 400)).toBe(0);
         expect(isBroken(blade(state))).toBe(true);

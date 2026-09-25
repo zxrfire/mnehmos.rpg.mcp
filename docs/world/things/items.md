@@ -452,8 +452,9 @@ Two things follow that this file already believes:
   first material its grade's recipe asks for. A house mends what it owns once a year, out of its
   stores, while the material lasts. The third hole breaks it. A *broken* thing is still there,
   still the grade it was made at, and still works, at half - a broken heaven-grade sword is a
-  heaven-grade sword at half - and nothing damaged works below that half. (Owner ruling,
-  2026-09-25.)
+  heaven-grade sword at half - and nothing damaged works below that half. It can be restored
+  to whole by a hand at its rung, for the whole of its grade's recipe rather than a hole's one
+  piece, at the bench or in a house's yearly pass. (Owner rulings, 2026-09-25.)
 - **Counted things carry no scar.** There is nowhere to write one, because a holder with three
   carriages does not have three carriages one of which has a hole in it - which is
   [Does it have a history](#does-it-have-a-history) arriving at its own conclusion. A counted

@@ -141,9 +141,24 @@ export function whatItIsMadeOf(grade: TechniqueGrade): Recipe | null {
  * has no recipe - mortal work asks for nothing, and immortal and chaos are
  * made nowhere below the Lid. Owner ruling 2026-09-25: mending costs material.
  */
-export function whatMendingAHoleTakes(grade: TechniqueGrade): Recipe | null {
+function whatMendingAHoleTakes(grade: TechniqueGrade): Recipe | null {
     const recipe = whatItIsMadeOf(grade);
     return recipe === null ? null : recipe.slice(0, 1);
+}
+
+/**
+ * What restoring a broken thing of this grade to whole takes: the whole of its
+ * grade's recipe, one piece a slot, because a break is a remaking. It is always
+ * more than a hole, which is the first slot alone. Owner ruling 2026-09-25: a
+ * broken thing can be fully repaired, for more material than a hole.
+ */
+function whatRestoringABreakTakes(grade: TechniqueGrade): Recipe | null {
+    return whatItIsMadeOf(grade);
+}
+
+/** What mending this thing takes as it stands: a break's cost, else a hole's. */
+export function whatMendingItTakes(grade: TechniqueGrade, broken: boolean): Recipe | null {
+    return broken ? whatRestoringABreakTakes(grade) : whatMendingAHoleTakes(grade);
 }
 
 /** Everything that fills this slot, cheapest first. */

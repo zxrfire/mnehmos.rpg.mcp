@@ -613,8 +613,9 @@ export interface Mending {
 }
 
 /**
- * Close one hole: the rung gate and the write. The material it takes is the
- * caller's to spend.
+ * Close one hole, or restore a broken thing to whole: the rung gate and the
+ * write. The material it takes is the caller's to spend (a break costs more
+ * than a hole, `whatMendingItTakes`).
  */
 export function mend(
     object: ObjectRecord,
@@ -626,11 +627,7 @@ export function mend(
     if (isRuined(object)) {
         return refuse(object, scars, `${object.name} was used up. There is nothing to mend.`);
     }
-    if (isBroken(object)) {
-        return refuse(object, scars,
-            `${object.name} is broken. A hole can be closed and a break cannot; it works at `
-            + `${WORKS_AT_SAID}.`);
-    }
+    if (isBroken(object)) return restore(object, input, scars, whole);
     if (scars === 0 || object.power === null || whole === null) {
         return refuse(object, scars, `${object.name} has nothing open on it.`);
     }
@@ -670,6 +667,44 @@ export function mend(
         scars: left,
         account: `${object.name} stands at ${after} of the ${whole} it was made at`
             + (left > 0 ? `, with ${left} hole${left === 1 ? '' : 's'} still open.` : ', whole again.')
+    };
+}
+
+/** A broken thing put back whole: its rung, no scars, no break. */
+function restore(
+    object: ObjectRecord,
+    input: { byOrdinal: number; onDay: number; byId: string | null; byName: string; note?: string },
+    scars: number,
+    whole: number | null
+): Mending {
+    if (whole === null) return refuse(object, scars, `${object.name} has no rung to restore it to.`);
+    const reach = canUnmake(input.byOrdinal, whole);
+    if (!reach.reaches) {
+        return refuse(object, scars, `${object.name} was made at ${whole}. ${reach.cause}`);
+    }
+    return {
+        row: {
+            ...object,
+            power: whole,
+            tags: object.tags.filter(t => t !== BROKEN_TAG && t !== 'holed' && t !== 'damaged'),
+            data: { ...object.data, scars: 0, ratedWhole: whole, restoredOnDay: input.onDay },
+            provenance: object.provenance.concat({
+                onDay: input.onDay,
+                holderId: object.possessorId,
+                holderName: object.ownerName || 'unknown',
+                how: 'unknown',
+                source: input.byName,
+                previousHolderId: object.possessorId,
+                previousHolderName: object.ownerName || null,
+                factId: null,
+                note: input.note
+                    ?? `${input.byName}, standing at ${input.byOrdinal}, restored it. It stands at ${whole}, whole.`
+            })
+        },
+        mended: true,
+        ratedAfter: whole,
+        scars: 0,
+        account: `${object.name} is restored, and stands at the ${whole} it was made at, whole again.`
     };
 }
 

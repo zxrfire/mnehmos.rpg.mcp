@@ -5,24 +5,25 @@
  * and mending costs material. A hole is closed by the house's best living hand
  * when that hand reaches the rung the thing was made at (`mend`'s own gate),
  * and each hole costs one piece that fills the first slot of the thing's
- * grade's recipe (`whatMendingAHoleTakes`), taken from the material the house
+ * grade's recipe; a broken thing is restored to whole for the whole recipe
+ * (`whatMendingItTakes`). Both come from the material the house
  * keeps in its stores (`whatTheHouseKeepsToWorkWith` seeds it). A house short
  * of the material leaves the thing holed. Things are taken in the order the
  * world holds them, while material lasts; there is no priority.
  *
  * What it does not reach: a thing out of the house's hands (lent, carried off
- * or taken), which is mended when it is back; a thing a member owns in their
- * own name; and a broken thing, which `mend` refuses.
+ * or taken), which is mended when it is back, and a thing a member owns in
+ * their own name.
  */
 
 import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivation.js';
 import { gradeForOrdinal } from '../../data/cultivation/techniques.js';
 import {
     fillsTheSlot,
-    whatMendingAHoleTakes,
+    whatMendingItTakes,
     type Recipe
 } from '../../data/cultivation/what-an-artifact-is-made-of.js';
-import { isHoled, mend, ratedWhole } from './object-damage.js';
+import { isBroken, isHoled, mend, ratedWhole } from './object-damage.js';
 import { isRuined, ruin, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
 
@@ -89,8 +90,8 @@ function takeOne(objects: ObjectRecord[], at: number, onDay: number, intoWhat: s
 }
 
 /**
- * Every house closes the holes in what it owns, while its stock lasts. Returns
- * how many holes were closed. No draw.
+ * Every house closes the holes in what it owns and restores what is broken,
+ * while its stock lasts. Returns how many mends were made. No draw.
  */
 export function housesMendWhatTheyOwn(state: WorldState, day: number): number {
     let closed = 0;
@@ -109,11 +110,11 @@ export function housesMendWhatTheyOwn(state: WorldState, day: number): number {
             const row = state.objects[at]!;
             if (row.ownerId !== house.id) continue;
             if (row.possessorId !== null && row.possessorId !== house.id) continue;
-            while (isHoled(state.objects[at]!)) {
+            while (isHoled(state.objects[at]!) || isBroken(state.objects[at]!)) {
                 const thing = state.objects[at]!;
                 const done = mend(thing, { byOrdinal: hand.ordinal, onDay: day, byId: hand.id, byName: hand.name });
                 if (!done.mended) break;
-                const recipe = whatMendingAHoleTakes(theGradeItWasMadeAt(thing)) ?? [];
+                const recipe = whatMendingItTakes(theGradeItWasMadeAt(thing), isBroken(thing)) ?? [];
                 const paying = whatTheStoresWouldGive(state.objects, house.id, recipe);
                 if (paying === null) break;
                 for (const from of paying) takeOne(state.objects, from, day, `mending ${thing.name}`);

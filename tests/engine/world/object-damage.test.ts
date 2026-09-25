@@ -252,13 +252,25 @@ describe('being broken and being mended are events in the thing\'s history', () 
         expect(highEnough.mended).toBe(true);
     });
 
-    it('a broken thing is not mended, and the refusal says why', () => {
-        const row = thing({ id: 'h', name: 'a spirit tool', kind: 'artifact', power: 6 });
-        const broken = writeBack(row, whatBecomesOfIt(row, hand(30), always),
-            { onDay: 1, source: 'a raid' }).row;
-        const out = mend(broken, { byOrdinal: 46, onDay: 99, byId: 'z', byName: 'an ancestor' });
-        expect(out.mended).toBe(false);
-        expect(out.account).toMatch(/a break cannot/);
+    it('a broken thing is restored to whole by a hand at its rung, and refused below it', () => {
+        // Owner ruling 2026-09-25: it can be fully repaired.
+        let row = thing({ id: 'h', name: 'a spirit tool', kind: 'artifact', power: 25 });
+        for (let i = 0; i < SCARS_BEFORE_IT_BREAKS; i++) {
+            row = writeBack(row, whatBecomesOfIt(row, hand(30), always), { onDay: i, source: 'a raid' }).row;
+        }
+        expect(isBroken(row)).toBe(true);
+
+        const tooLow = mend(row, { byOrdinal: 24, onDay: 99, byId: 'x', byName: 'a village smith' });
+        expect(tooLow.mended).toBe(false);
+        expect(tooLow.account).toMatch(/does not reach/);
+
+        const restored = mend(row, { byOrdinal: 25, onDay: 99, byId: 'z', byName: 'a wright' });
+        expect(restored.mended).toBe(true);
+        expect(isBroken(restored.row)).toBe(false);
+        expect(isHoled(restored.row)).toBe(false);
+        expect(scarsOn(restored.row)).toBe(0);
+        expect(restored.row.power).toBe(25);
+        expect(theConditionItIsIn(restored.row)).toBeNull();
     });
 
     it('a thing already broken is not broken again', () => {

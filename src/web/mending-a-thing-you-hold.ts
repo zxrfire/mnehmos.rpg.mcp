@@ -1,5 +1,6 @@
 /**
- * Mending a thing you hold that has been holed: the `craft` verb's third half.
+ * Mending a thing you hold that has been holed or broken: the `craft` verb's
+ * third half.
  *
  * The owner: items have durability, of the partial-damage kind, and *"every
  * player is an artisan"*. A thing holed in a fight or a siege stands a rung
@@ -9,22 +10,24 @@
  * finds the thing, spends the days and writes the row.
  *
  * THE DAYS are what making a thing of that grade takes this hand
- * (`daysAtTheWork`), for one hole. THE MATERIAL is one piece that fills the
- * first slot of its grade's recipe (`whatMendingAHoleTakes`), off their own
- * bench, taken when the hole is closed and checked before a day is spent.
+ * (`daysAtTheWork`), for one hole or for restoring a break. THE MATERIAL is
+ * `whatMendingItTakes`: one piece of the first slot of its grade's recipe for a
+ * hole, the whole recipe for a break. Off their own bench, taken when the work
+ * is done and checked before a day is spent.
  */
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { theGradeItWasMadeAt } from '../engine/world/a-house-mends-what-it-owns.js';
 import {
-    whatMendingAHoleTakes,
+    whatMendingItTakes,
+    whatTheBenchIsShortOf,
     whatTheRecipeSpends,
     whatWouldFill
 } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import { takeWhatTheRecipeNames } from './taking-the-materials-off-the-bench.js';
 import { theIdsOnTheBench, whatThisPersonHasOnTheBench } from './what-is-on-the-bench.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
-import { isHoled, mend, theConditionItIsIn } from '../engine/world/object-damage.js';
+import { isBroken, isHoled, mend, theConditionItIsIn } from '../engine/world/object-damage.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import { whatIsWithinReachOf, whichThingTheyMeant, type WithinReach } from './object-theft.js';
 import { isRuined } from '../engine/world/possessions.js';
@@ -53,22 +56,22 @@ export async function mendingAThingYouHold(
                 && !reach.some(row => row.object.id === object.id))
             .map(object => ({ object, because: 'carried' as const }))
     ];
-    const holed = within.filter(row => isHoled(row.object));
+    const damaged = within.filter(row => isHoled(row.object) || isBroken(row.object));
     const named = said.replace(MENDING_WORDS, '').trim();
 
-    // A sentence naming nothing in particular reaches the one holed thing,
+    // A sentence naming nothing in particular reaches the one damaged thing,
     // where there is exactly one.
     const found = (named.length >= 2 && !/^(?:it|this|that|them)$/i.test(named)
         ? whichThingTheyMeant(within, named)
-        : holed.length === 1 ? holed[0]! : null)?.object ?? null;
+        : damaged.length === 1 ? damaged[0]! : null)?.object ?? null;
     if (!found) {
         return refused('engine.whichThingIsHoled', 'craft', factsForRefusal(
             named.length >= 2 ? `Nothing of yours is called ${named}.` : 'Nothing named.',
-            holed.length > 0
-                ? `What you have that is holed: ${holed.map(row =>
+            damaged.length > 0
+                ? `What you have that is holed or broken: ${damaged.map(row =>
                     `${row.object.name}, ${theConditionItIsIn(row.object)}`).join('; ')}.`
-                : 'Nothing you have on you is holed.',
-            `mend: "${said}" against ${within.length} tracked row(s), ${holed.length} holed.`
+                : 'Nothing you have on you is holed or broken.',
+            `mend: "${said}" against ${within.length} tracked row(s), ${damaged.length} damaged.`
         ));
     }
 
@@ -85,16 +88,21 @@ export async function mendingAThingYouHold(
     }
 
     const grade = theGradeItWasMadeAt(found);
-    const recipe = whatMendingAHoleTakes(grade);
+    const broken = isBroken(found);
+    const recipe = whatMendingItTakes(grade, broken);
     const bench = whatThisPersonHasOnTheBench(service.db, world?.objects ?? [], cultivator.id);
     if (whatTheRecipeSpends(grade, theIdsOnTheBench(bench), recipe) === null) {
-        const slot = recipe![0]!;
-        const would = whatWouldFill(slot).slice(0, 4).map(row => row.name);
+        const short = broken
+            ? whatTheBenchIsShortOf(grade, theIdsOnTheBench(bench)).map(missing => missing.slot)
+            : recipe!;
         return refused('object-damage.mendingTakesMaterial', 'craft', factsForRefusal(
             `${found.name} is not mended.`,
-            `Closing a hole in ${grade}-grade work takes ${slot.what}, and you carry none. `
-            + `${would.join(', ')} would each do.`,
-            `mend: ${found.id} at ${grade} grade wants one of ${slot.what}; bench held ${bench.length} piece(s).`
+            `${broken ? 'Restoring' : 'Closing a hole in'} ${grade}-grade work takes `
+            + `${recipe!.map(slot => slot.what).join('; ')}. You are short of `
+            + short.map(slot => `${slot.what} (${whatWouldFill(slot).slice(0, 4).map(row => row.name).join(', ')} `
+                + 'would each do)').join('; ') + '.',
+            `mend: ${found.id} at ${grade} grade, ${broken ? 'broken' : 'holed'}, short of ${short.length} `
+            + `slot(s); bench held ${bench.length} piece(s).`
         ));
     }
     const days = daysAtTheWork(grade, cultivator.realmOrdinal);

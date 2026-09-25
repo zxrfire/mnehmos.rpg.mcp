@@ -2650,10 +2650,11 @@ object-damage.ts THE ONE ANSWER to "is this thing damaged, and how badly". A
                  `theRungItWorksAt`); owner ruling 2026-09-25. A COUNTED thing
                  carries no scar, because there is no row to write one onto
 a-house-mends-what-it-owns.ts
-                 the yearly pass that closes the holes in what a house owns:
-                 its best living hand, one piece of stock per hole that fills
-                 the first slot of the thing's recipe (`whatMendingAHoleTakes`),
-                 in the order the world holds the rows, while stock lasts
+                 the yearly pass that closes the holes in what a house owns and
+                 restores what is broken: its best living hand, and stock by
+                 `whatMendingItTakes` (a hole is the first slot of the thing's
+                 recipe, a break the whole recipe), in the order the world
+                 holds the rows, while stock lasts
 sheltering.ts    what being inside something is worth, and it is not a bonus.
                  `canUnmake` read with the thing in the way: a hull rated 29
                  stands between its passengers and everybody below 29,
