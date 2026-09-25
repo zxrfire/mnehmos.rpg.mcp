@@ -44,8 +44,9 @@
  *                   sentence ("sneak in", "over the wall"). `reachThrough` with
  *                   `enteredAt` is where it lands, `concealmentHolds` in
  *                   `regard.ts` is whether a witness at or above your rung sees
- *                   you, and `what-a-house-does-when-it-catches-you.ts` is the
- *                   cost of being seen, on the wall or later inside. Wired in
+ *                   you, and `whatATrespassCosts` in
+ *                   `what-a-house-does-when-it-catches-you.ts` is the cost of
+ *                   being seen, by the house's alignment. Wired in
  *                   `src/web/inside-without-leave.ts`.
  *
  * NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING NOTHING. A

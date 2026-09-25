@@ -2479,8 +2479,10 @@ as seeing nothing**:
   declares the approach ("sneak in", "over the wall"); `reachThrough` with `enteredAt` is
   where it lands; `concealmentHolds` in `../cultivation/regard.ts` decides who sees it,
   since a declared approach holds unless a witness stands at or above your own rung; and
-  `what-a-house-does-when-it-catches-you.ts` is the cost of being seen, on the wall or
-  later inside. Being inside without leave is a standing fact, read at the end of every
+  `whatATrespassCosts` in `../social-leverage/what-a-house-does-when-it-catches-you.ts` is the
+  cost of being seen, on the wall or later inside, read off the house's alignment: a righteous
+  house warns and then wounds, a neutral one cripples or takes an arm, a demonic one may kill.
+  Being inside without leave is a standing fact, read at the end of every
   turn. The wiring is `src/web/inside-without-leave.ts`. `src/engine/perception/` and
   `src/engine/spatial/` are NOT where to look: both are retained D&D substrate with no
   player path.

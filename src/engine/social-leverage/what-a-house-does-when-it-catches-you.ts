@@ -551,6 +551,61 @@ export function ifCaughtAtSomethingTheHousePunishes(input: {
 }
 
 /**
+ * What a house does to somebody it caught inside its walls without leave: KEYED ON ALIGNMENT, the
+ * owner's ruling. A righteous house puts them out with a warning, and answers a second trespass the
+ * way a neutral house answers the first. A neutral house takes a crippling or a limb. A demonic
+ * house may kill, and otherwise cripples. A lost limb is not a crippling: the two are different
+ * wounds in `WOUND_TYPES`, at different severities.
+ */
+export type WhatATrespassCosts =
+    | { kind: 'warned'; line: string }
+    | { kind: 'wounded'; woundKey: string; severity: InjurySeverity; line: string }
+    | { kind: 'killed'; line: string };
+
+/**
+ * The share of the draw each "maybe" in the ruling gets. Even, because the ruling names two
+ * outcomes and nothing to weight either by.
+ */
+const A_TRESPASS_CRIPPLES_RATHER_THAN_TAKES_A_LIMB = 0.5;
+const A_DEMONIC_HOUSE_KILLS_A_TRESPASSER = 0.5;
+
+/** The limb wound, which is flesh and not cultivation. */
+const A_LIMB = 'severed-flesh';
+/** The cultivation wound for somebody with no crossing behind them to break. */
+const A_CHANNEL = 'severed-meridian';
+
+export function whatATrespassCosts(input: {
+    alignment: SectAlignment | null;
+    /** The house already holds a trespass against them. */
+    warnedBefore: boolean;
+    yourOrdinal: number;
+    /** One draw in [0, 1) off the caller's stream. */
+    draw: number;
+}): WhatATrespassCosts {
+    const alignment = input.alignment ?? 'neutral';
+    if (alignment === 'righteous' && !input.warnedBefore) {
+        return { kind: 'warned', line: 'You are warned not to come over the wall again.' };
+    }
+    const crippling = (): WhatATrespassCosts => {
+        const woundKey = theStructureTheyHave(input.yourOrdinal) ?? A_CHANNEL;
+        return {
+            kind: 'wounded', woundKey, severity: 'crippling',
+            line: woundKey === A_CHANNEL
+                ? 'A meridian of yours is cut and does not grow back.'
+                : 'What you climbed is broken, and it does not come back.'
+        };
+    };
+    if (alignment === 'demonic') {
+        return input.draw < A_DEMONIC_HOUSE_KILLS_A_TRESPASSER
+            ? { kind: 'killed', line: 'You are killed for coming over the wall.' }
+            : crippling();
+    }
+    return input.draw < A_TRESPASS_CRIPPLES_RATHER_THAN_TAKES_A_LIMB
+        ? crippling()
+        : { kind: 'wounded', woundKey: A_LIMB, severity: 'serious', line: 'An arm is taken off you.' };
+}
+
+/**
  * The record a house opens about one of its OWN, as the offender. THE DIRECTION IS
  * THE WHOLE OF THIS: `what-a-deed-leaves.ts` makes a house a holder only when its
  * member is the VICTIM, and this is the mirror.

@@ -13922,56 +13922,17 @@ ${opened.text}` : receipt,
             onDay
         });
 
-        return this.carryOutWhatAHouseDoes({
-            answer, deed, run, cultivator, mine, facts,
-            houseId: ownerFactionId,
-            houseName,
-            howItKnows: `knowing stage ${input.houseStage} (canPointAt ${canPointAt(input.houseStage)})`,
-            grudge: {
-                id: `grudge_${ownerFactionId}_${cultivator.id}_leaked_${art.id}`,
-                tags: [
-                    'leaked_an_art',
-                    `art:${art.id}`,
-                    `rung:${rung}`,
-                    ...(sellerIsOfTheHouse ? ['their_own_house'] : [])
-                ]
-            },
-            action: 'sell'
-        });
-    }
-
-    /**
-     * What `whatTheHouseDoesAboutIt` answered, carried out on the one being played: the line, the
-     * house's grudge, a crippling, a term of service, and the complaint that goes over their head.
-     * One place, so every road to being caught is charged the same way.
-     */
-    carryOutWhatAHouseDoes(input: {
-        answer: WhatTheHouseDoes;
-        deed: Deed;
-        run: Run;
-        cultivator: Cultivator;
-        /** The house the player is on, where the complaint goes. */
-        mine: string | null;
-        houseId: string;
-        houseName: string;
-        /** How the house came to know, for the mechanical channel. */
-        howItKnows: string;
-        grudge: { id?: string; tags: readonly string[] };
-        action: string;
-        facts: EngineFacts;
-    }): ToolCallRecord[] {
-        const { answer, deed, run, cultivator, mine, houseId, houseName, facts, action } = input;
-        const onDay = Math.floor(run.elapsedDays);
         facts.lines.push(answer.line);
         facts.prose = `${facts.prose}\n\n${answer.line}`;
         facts.structure.push(
-            `whatTheHouseDoesAboutIt: ${input.howItKnows}, acting ${answer.acting}, `
+            `whatTheHouseDoesAboutIt: knowing stage ${input.houseStage} `
+            + `(canPointAt ${canPointAt(input.houseStage)}), acting ${answer.acting}, `
             + `bother ${answer.bother}, weight ${answer.weight}, takes ${answer.takes}.`
         );
 
         const calls: ToolCallRecord[] = [{
             name: 'social.whatTheHouseDoesAboutIt',
-            action,
+            action: 'sell',
             summary: answer.line,
             ok: true
         }];
@@ -13983,20 +13944,26 @@ ${opened.text}` : receipt,
 
         const held = createObligation({
             kind: 'grudge',
-            ...(input.grudge.id ? { id: input.grudge.id } : {}),
-            holderId: houseId,
+            id: `grudge_${ownerFactionId}_${cultivator.id}_leaked_${art.id}`,
+            holderId: ownerFactionId,
             subjectId: cultivator.id,
             cause: deed.cause,
             severity: answer.weight,
             onDay,
             description: `${deed.description} ${answer.line}`,
-            participants: [houseId],
-            tags: [...input.grudge.tags, `takes:${answer.takes.replace(/\s+/g, '_')}`]
+            participants: [ownerFactionId],
+            tags: [
+                'leaked_an_art',
+                `art:${art.id}`,
+                `rung:${rung}`,
+                `takes:${answer.takes.replace(/\s+/g, '_')}`,
+                ...(sellerIsOfTheHouse ? ['their_own_house'] : [])
+            ]
         });
         writeOneObligation(this.db as unknown as DatabaseHandle, held);
         calls.push({
             name: 'social.createObligation',
-            action,
+            action: 'sell',
             summary:
                 `${houseName} now holds a ${held.severity} grudge about ${cultivator.name} for `
                 + `${held.cause}, open from day ${onDay}. It is what the house has whatever else `
@@ -14014,7 +13981,7 @@ ${opened.text}` : receipt,
             });
             calls.push({
                 name: 'cultivator.addInjury',
-                action,
+                action: 'sell',
                 summary:
                     `${answer.cripples.woundKey}, ${answer.cripples.severity}. The exact capability `
                     + 'that was misused, taken off them, and it does not come back on its own.',
@@ -14029,7 +13996,7 @@ ${opened.text}` : receipt,
             );
             calls.push({
                 name: 'social.createObligation',
-                action,
+                action: 'sell',
                 summary:
                     `A term of service, held by ${houseName}. `
                     + `${answer.indenture.termYears === null
@@ -14043,7 +14010,7 @@ ${opened.text}` : receipt,
         }
 
         calls.push(...this.whatYourOwnHouseDoesWhenItIsTold({
-            answer, run, cultivator, mine, deed, facts, action,
+            answer, run, cultivator, mine, deed, facts,
             complainant: houseName
         }));
 
@@ -14081,9 +14048,8 @@ ${opened.text}` : receipt,
         facts: EngineFacts;
         /** Who complained, so the line can say where it came from. */
         complainant: string;
-        action: string;
     }): ToolCallRecord[] {
-        const { answer, run, cultivator, mine, deed, facts, action } = input;
+        const { answer, run, cultivator, mine, deed, facts } = input;
         const onDay = Math.floor(run.elapsedDays);
         if (mine === null) return [];
 
@@ -14149,7 +14115,7 @@ ${opened.text}` : receipt,
         return [
             {
                 name: 'social.theComplaintYourHouseReceives',
-                action,
+                action: 'sell',
                 summary:
                     `${input.complainant} could not reach ${cultivator.name} and handed it to `
                     + `${myName} instead. Second pass at backing 'none'. What a house of this `
@@ -14158,7 +14124,7 @@ ${opened.text}` : receipt,
             },
             {
                 name: 'social.createObligation',
-                action,
+                action: 'sell',
                 summary:
                     `${record.id}: ${myName} holds a ${record.severity} grudge about its own `
                     + `member for ${record.cause}. Tagged ${AGAINST_THEIR_OWN}, which is the `

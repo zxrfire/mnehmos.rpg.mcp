@@ -11,7 +11,7 @@
  *                     on watch and the house's people in its yard
  *   where it lands    `reachThrough` from the seat with the walls gone around (`enteredAt`), and
  *                     then the forecourt in the areas read, where a member let in stands
- *   being caught      `whatTheHouseDoesAboutIt`, carried out by `carryOutWhatAHouseDoes`
+ *   being caught      `whatATrespassCosts`: what the house does, by its alignment
  *
  * Being inside without leave is a standing fact (`FLAG_INSIDE_WITHOUT_LEAVE`). At the end of every
  * turn it is read against whoever of the house is standing with them, and it lapses once they are
@@ -20,9 +20,13 @@
 
 import { getSect } from '../data/cultivation/sects.js';
 import { concealmentHolds } from '../engine/cultivation/regard.js';
-import { whatTheHouseDoesAboutIt } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
-import type { Deed } from '../engine/social-leverage/what-a-deed-leaves.js';
-import { shapeOf } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
+import { forStream } from '../engine/cultivation/rng.js';
+import { createObligation } from '../engine/social/grudges.js';
+import { whatATrespassCosts } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
+import {
+    severityOfTheWrong,
+    shapeOf
+} from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import { pathTo, reachThrough } from '../engine/world/architecture.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import {
@@ -38,6 +42,8 @@ import {
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { clearFlag, readJsonFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 import { guestPlaceHeldBy } from '../server/consolidated/sect-guest.js';
+import { ledgerAbout, writeOneObligation, type ObligationDb } from '../storage/repos/obligation.repo.js';
+import { PLAYER_ROLL_IDENTITY, type DatabaseHandle } from './encounters.js';
 import { factsForRefusal, factsForToolResult, type EngineFacts } from './facts.js';
 import { FLAG_INSIDE_WITHOUT_LEAVE } from './flag-keys.js';
 import { howThisCultivatorStandsInTheHouseHolding } from './how-this-cultivator-stands-on-this-ground.js';
@@ -178,7 +184,6 @@ export function goingOverTheWall(
             + `concealmentHolds fails against ${seer.id} at ${seer.cultivation.realmOrdinal}.`
         );
         const calls = theHouseCatchesThem(game, run, cultivator, house, seer, 'on its wall', facts);
-        alsoSay(facts, `You are outside the gate of the ${house.factionName}.`);
         return { facts, events: [], timeSkip: null, breakthrough: null, outcome: 'executed', calls };
     }
 
@@ -279,9 +284,8 @@ export function somebodyInsideSeesThem(
 }
 
 /**
- * The house has them: `whatTheHouseDoesAboutIt` over a trespass, carried out, and where that leaves
- * them. Put out through the gate where the house acted on them in person and did not take years
- * off them; left where they stand where the matter went over their head.
+ * The house has them: `whatATrespassCosts` for this house's alignment, drawn on the run's own stream,
+ * carried out, with the house's grudge written. Anybody left alive ends up outside the gate.
  */
 function theHouseCatchesThem(
     game: GameService,
@@ -293,65 +297,77 @@ function theHouseCatchesThem(
     facts: EngineFacts
 ): ToolCallRecord[] {
     const onDay = Math.floor(run.elapsedDays);
-    const mine = game.repos.sects.getMembership(cultivator.id)?.sectId ?? null;
-    const mySect = mine ? getSect(mine) : undefined;
-    const theirs = getSect(house.factionId);
-    const deed: Deed = {
-        cause: shapeOf('trespassed').cause,
-        // Nothing was taken off the house, so it cost the house nothing it had.
-        paidBy: 'subject',
-        cost: 0,
-        onDay,
-        description: `${cultivator.name} was found ${where} by ${seer.name}, and is not of ${house.factionName}.`,
-        knownTo: [house.factionId],
-        witnesses: 1,
-        participants: [seer.id],
-        tags: ['trespassed']
-    };
-    const answer = whatTheHouseDoesAboutIt({
-        deed,
-        offender: {
-            id: cultivator.id,
-            name: cultivator.name,
-            houseId: mine,
-            houseName: mySect?.name ?? mine,
-            alignment: mySect?.alignment ?? null,
-            ranked: mine !== null
-        },
-        answering: {
-            id: house.factionId,
-            name: house.factionName,
-            houseId: house.factionId,
-            houseName: house.factionName,
-            alignment: theirs?.alignment ?? null,
-            ranked: true
-        },
-        backing: mine !== null && mine !== house.factionId ? 'backed' : 'none',
-        // They have hands on the person, which is as far along knowing as there is short of a name.
-        stages: new Map([[house.factionId, 'encountered']]),
-        theirOrdinal: seer.cultivation.realmOrdinal,
-        yourOrdinal: cultivator.realmOrdinal,
-        worth: { wouldBeMissed: mine !== null },
-        onDay
-    });
-    const calls = game.carryOutWhatAHouseDoes({
-        answer, deed, run, cultivator, mine, facts,
-        houseId: house.factionId,
-        houseName: house.factionName,
-        howItKnows: `seen ${where} by ${seer.id}`,
-        grudge: { tags: ['trespassed', 'over_the_wall'] },
-        action: 'move'
-    });
-    clearFlag(game.repos.db, cultivator.id, FLAG_INSIDE_WITHOUT_LEAVE);
+    // WARNED IS A ROW THE HOUSE ALREADY HOLDS: a trespass by either road, over the wall or into a room.
+    const warnedBefore = ledgerAbout(game.repos.db as unknown as ObligationDb, cultivator.id)
+        .some(row => row.holderId === house.factionId && row.subjectId === cultivator.id
+            && row.tags.includes('trespassed'));
+    const alignment = getSect(house.factionId)?.alignment ?? null;
+    const draw = forStream(run.seed, 'a-house-answers-a-trespass', PLAYER_ROLL_IDENTITY, house.factionId, run.turn).next();
+    const cost = whatATrespassCosts({ alignment, warnedBefore, yourOrdinal: cultivator.realmOrdinal, draw });
 
-    const inHand = answer.acting === 'they_can_act' && answer.bother !== 'beyond_them' && answer.indenture === null;
+    const row = createObligation({
+        kind: 'grudge',
+        holderId: house.factionId,
+        subjectId: cultivator.id,
+        cause: shapeOf('trespassed').cause,
+        severity: severityOfTheWrong('trespassed'),
+        onDay,
+        description: `${cultivator.name} was found ${where} by ${seer.name}, and is not of `
+            + `${house.factionName}. ${cost.line}`,
+        participants: [house.factionId, seer.id],
+        tags: ['trespassed', 'over_the_wall', `answered:${cost.kind}`]
+    });
+    writeOneObligation(game.repos.db as unknown as DatabaseHandle, row);
+    clearFlag(game.repos.db, cultivator.id, FLAG_INSIDE_WITHOUT_LEAVE);
+    alsoSay(facts, cost.line);
+    facts.structure.push(
+        `whatATrespassCosts: ${alignment ?? 'no alignment, read as neutral'}, warned before ${warnedBefore}, `
+        + `draw ${draw.toFixed(3)}: ${cost.kind}${cost.kind === 'wounded' ? ` (${cost.woundKey}, ${cost.severity})` : ''}.`
+    );
+    const calls: ToolCallRecord[] = [{
+        name: 'social.whatATrespassCosts',
+        action: 'move',
+        summary: `${house.factionName} (${alignment ?? 'neutral'}) caught ${cultivator.name} ${where}: ${cost.kind}. `
+            + `Grudge ${row.id} written.`,
+        ok: true
+    }];
+
+    if (cost.kind === 'killed') {
+        game.repos.cultivators.markDead(cultivator.id, 'combat_defeat', run.turn, `${cost.line} ${row.description}`);
+        calls.push({
+            name: 'cultivator.markDead',
+            action: 'move',
+            summary: `${house.factionName} killed ${cultivator.name} for coming over its wall. The run is closed.`,
+            ok: true
+        });
+        return calls;
+    }
+    if (cost.kind === 'wounded') {
+        game.repos.cultivators.addInjury(cultivator.id, {
+            severity: cost.severity,
+            source: 'combat',
+            description: `${cost.line} ${house.factionName} did it for coming over its wall.`,
+            sustainedOnTurn: run.turn,
+            woundType: cost.woundKey
+        });
+        calls.push({
+            name: 'cultivator.addInjury',
+            action: 'move',
+            summary: `${cost.woundKey}, ${cost.severity}, by ${house.factionName}.`,
+            ok: true
+        });
+    }
+
+    // PUT OUT THROUGH THE GATE, whichever road they were caught on.
     const placeId = game.worldPlaceOf(cultivator);
     const alreadyOutside = placeId === house.seat.id && theAreaTheyAreIn(game.atHand, cultivator)?.area.for === 'gate';
-    if (inHand && !alreadyOutside) {
+    if (!alreadyOutside) {
         if (placeId !== house.seat.id) game.repos.cultivators.update(cultivator.id, { location: house.seat.name });
         standThemIn(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator, 'gate');
         alsoSay(facts, `You are put out through the gate of the ${house.factionName}.`);
         facts.structure.push(`Put out: ${placeId} to outside the gate of ${house.seat.id}.`);
+    } else {
+        alsoSay(facts, `You are outside the gate of the ${house.factionName}.`);
     }
     return calls;
 }
