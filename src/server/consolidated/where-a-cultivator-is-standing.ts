@@ -5,6 +5,7 @@
 import { HOME_REGION_ID, REGIONS, requireRegion } from '../../data/cultivation/regions.js';
 import type { Settlement } from '../../data/cultivation/mortal-world.js';
 import type { Cultivator } from '../../schema/cultivation.js';
+import { getSect } from '../../data/cultivation/sects.js';
 
 export interface Standing {
     regionId: string;
@@ -50,6 +51,24 @@ export function standingOf(cultivator: Cultivator): Standing {
             regionName: asProvince.name,
             settlementKind: null,
             placeName: asProvince.name
+        };
+    }
+
+    // A HOUSE'S GROUNDS, which the world names `<house> grounds` and the
+    // gazetteer does not name at all. They fell through to the home province,
+    // so somebody at a house's gate was priced, listed and supplied as if they
+    // stood at home. Played: Cold Peak to the Tranquil Oasis grounds was a day,
+    // and the same road back seventeen, from the wrong province.
+    const housesProvince = REGIONS.find(region => region.factionIds.some(id => {
+        const house = getSect(id)?.name.toLowerCase();
+        return house !== undefined && (needle === house || needle === `${house} grounds`);
+    }));
+    if (housesProvince) {
+        return {
+            regionId: housesProvince.id,
+            regionName: housesProvince.name,
+            settlementKind: null,
+            placeName: null
         };
     }
 

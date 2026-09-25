@@ -85,6 +85,7 @@ import {
     withEncounterDeltas
 } from './encounters.js';
 import { resolvePlace, worldLocationFor } from './entities.js';
+import { regionCatalogIdOf } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
 import { loosePlaceKey } from './knowledge.js';
 import {
     howStandingHerePutIt,
@@ -1110,6 +1111,12 @@ export const travelVerbs = {
     daysOnTheRoadTo(this: GameService, cultivator: Cultivator, destination: string): number | null {
         const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
         const from = requireRegion(standingOf(cultivator).regionId);
+        // A place only the world names - a house's grounds, a site - is in a
+        // province too, and the world's own row knows which.
+        const inTheWorld = (name: string): string | null => {
+            const row = this.atHand ? worldLocationFor(this.atHand, name) : null;
+            return row && this.atHand ? regionCatalogIdOf(this.atHand, row.id) : null;
+        };
 
         // The finer scale first, because it is the one that can answer at all
         // when both ends are in one province. It reads both directions off a
@@ -1119,7 +1126,7 @@ export const travelVerbs = {
 
         const toRegionId = regionIdOfPlace(destination)
             ?? REGIONS.find(region => bare(region.name) === bare(destination))?.id
-            ?? null;
+            ?? inTheWorld(destination);
         if (toRegionId === null || toRegionId === from.id) return null;
 
         let shortest: number | null = null;
