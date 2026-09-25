@@ -74,8 +74,8 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**63 verbs.** 17 of them take nothing from the player,
-28 spend in-world time and can therefore kill, and
+**64 verbs.** 17 of them take nothing from the player,
+29 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
 A verb the deterministic parser cannot reach is playable only where a provider is
@@ -93,6 +93,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [5](#oath) |
 | [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
 | [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [7](#coerce) |
+| [`insult`](#insult) | `target` | time | yes | - | - |
 | [`cultivate`](#cultivate) | `days` | time | yes | - | - |
 | [`seclude`](#seclude) | `days` | time | yes | - | - |
 | [`breakthrough`](#breakthrough) | - | time | yes | - | - |
@@ -248,6 +249,14 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 Takes `target`, `intent`, `opening`.
 
 Intents: `submit`, `hand_over`, `talk`, `tame`, `swallow`, `marry`, `furnace`.
+
+### `insult`
+
+say something to a room, or to one person in it, that they are entitled to take offence at: an insult, a sneer, a provocation. "target" names one of them where the player aimed it at somebody; leave it off and it was said to everybody standing there. It spends no time and nothing but standing.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'insult'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.present` · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`.
 
 ### `cultivate`
 

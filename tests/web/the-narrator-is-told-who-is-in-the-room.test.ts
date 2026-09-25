@@ -16,17 +16,16 @@ import { describe, it, expect } from 'vitest';
 
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
 import { howTheRoomReadsThem, howTheyReadToYou, thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
-import type { Company } from '../../src/web/facts';
+import type { Company, EngineFacts } from '../../src/web/facts';
 import { ProviderNarrator } from '../../src/web/narrator';
 import { ScriptedProvider } from './harness';
 
-const FACTS = {
+const FACTS: EngineFacts = {
     headline: 'two arts you could be taught',
     lines: ['A Lesser Qi-Gathering Manual is one a root like yours could take up.'],
     structure: [],
-    prose: '',
-    required: null
-} as const;
+    prose: ''
+};
 
 const SCENE = { place: 'Autumn Gate', ambient: 'thin' } as const;
 

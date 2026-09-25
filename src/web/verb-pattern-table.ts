@@ -4624,11 +4624,11 @@ function planIntent(input: string): PlannedAction {
             return {
                 action: 'interact',
                 target: addressed[1]!.trim(),
-                // A question is an asking; anything else said to somebody is
-                // talk. Both reach the same verb and the intent is what the
-                // engine reads to decide which.
-                intent: /\?\s*$|^(?:what|who|where|when|why|how|do|does|did|can|could|will|would|should|is|are|have|has)\b/i
-                    .test(rest) ? 'ask' : 'talk',
+                // A question put to somebody is talk. This emitted `ask`, which
+                // no interact intent is and nothing read - and which, not being
+                // in `INTERACT_SETTLES_NOTHING`, priced a question as an act
+                // that could go wrong. The sentence is in `topic`.
+                intent: 'talk',
                 topic: rest
             };
         }

@@ -111,6 +111,10 @@ const NOT_THE_GLOSSARYS_BUSINESS: Readonly<Record<string, string>> = {
         + 'type, and a label with no weight and no price would break the guarantee that '
         + 'every kind of ask is costed. Arguable: if it is ever wanted as a chosen read it '
         + 'belongs on `look` or `assess`, not here.',
+    'interact/insult':
+        'a second reading of one act, rewritten to the `insult` verb in the turn engine '
+        + 'before any resolver sees it, so the insult always lands on both the room and the '
+        + 'obligation ledger. `insult` is the verb the model should say and it is named.',
     'interact/take':
         'a label that never survives to a resolver. The interact handler asks whose the '
         + 'thing is first, and either rewrites it to `steal` with the holder on the target '

@@ -76,7 +76,8 @@ describe('a name says which they are', () => {
         for (let i = 0; i < 200; i++) {
             const npc = createNpc('a-name-says-which', {
                 id: `npc-${i}`,
-                bornOnDay: 0
+                bornOnDay: 0,
+                onDay: 0
             });
             const male = npc.identity.sex === 'male';
             expect(
