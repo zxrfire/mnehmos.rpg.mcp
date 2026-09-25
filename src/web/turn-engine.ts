@@ -1854,6 +1854,10 @@ const GENERIC_PILL_PHRASE =
  * here and the catalog ends houses with twenty-seven, which is the same defect
  * the shared list exists to close.
  */
+/** "as a disciple", "as an outer disciple", "at the bottom": the bottom rung, asked for by name. */
+const A_NEWCOMER_ASKS_FOR_THE_BOTTOM =
+    /\s*,?\s*\b(?:as an? (?:outer |ordinary |new )?disciple|at the (?:very )?bottom(?: rung)?|on the (?:lowest|bottom) rung|at the lowest rung)\b\s*$/i;
+
 const GENERIC_HOUSE_PHRASE = new RegExp(
     String.raw`^(?:any |some |a |an |one |another |new |good |strong |nearby |local )*`
     + String.raw`(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}|somewhere|somebody|someone|anyone|anybody)\b`,
@@ -8661,6 +8665,12 @@ ${noticed}`;
         //
         // Exactly one, or nothing. Two papers up and the phrase points at
         // neither, which is the ruling every other reference keeps.
+        // AND THE BOTTOM RUNG, WHEN THEY SAY SO. The design owner: somebody who
+        // clears the elder's bar may still come in as an outer disciple. The
+        // words ride in on the house's name ("the Pavilion as a disciple"), so
+        // they are read off it and the name goes on without them.
+        const askedForTheBottom = A_NEWCOMER_ASKS_FOR_THE_BOTTOM.test(target ?? '');
+        if (askedForTheBottom) target = (target ?? '').replace(A_NEWCOMER_ASKS_FOR_THE_BOTTOM, '').trim();
         const fromTheWall = whichHouseThePaperMeans(
             target,
             () => readTheWall(this.knowledge, cultivator, run, this.whoIsBeingLookedFor(),
@@ -8734,7 +8744,8 @@ ${noticed}`;
             const result = await handleJoin({
                 action: 'join',
                 sectId: named.id,
-                cultivatorId: cultivator.id
+                cultivatorId: cultivator.id,
+                ...(askedForTheBottom ? { atTheBottom: true } : {})
             }, {
                 leaning: council.leaning,
                 nobodyIsTakingPeopleOnHere: taking === null ? undefined

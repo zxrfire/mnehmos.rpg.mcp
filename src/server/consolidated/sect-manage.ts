@@ -171,10 +171,10 @@ export {
  * its own people by the rank's realm band (`whatAnInsiderMustStandAt`) - so the
  * player's bar at the Azure Cloud Pavilion's Sword Elder rung was ordinal 19
  * where the Pavilion's own disciples were promoted to it at 10, and somebody
- * the door would take in from outside as a Sword Elder at 14 could not be
- * promoted to it from inside until 19. The owner: *"the bar for hiring an
- * external elder is higher than an internal promotion"*, and a rule that binds
- * the player and not the world is the defect AGENTS.md names.
+ * the door would take in from outside as a Sword Elder could not be promoted
+ * to it from inside until 19. A rule that binds the player and not the world is
+ * the defect AGENTS.md names, and the owner ruled the outsider's bar the same
+ * one: *"it ought to be the same bar as internal elder, just external."*
  */
 export function theRealmARungAsks(
     sect: { id: string; ranks: readonly string[]; admissionOrdinal: number; powerOrdinal: number },
@@ -238,7 +238,13 @@ const ListSchema = z.object({
 const JoinSchema = z.object({
     action: z.literal('join'),
     sectId: z.string(),
-    cultivatorId: z.string().optional()
+    cultivatorId: z.string().optional(),
+    /**
+     * Come in at the bottom rung even where they clear the elder's bar. The
+     * design owner: a newcomer who could come in as an external elder may
+     * choose to come in as an outer disciple instead.
+     */
+    atTheBottom: z.boolean().optional()
 });
 
 const LeaveSchema = z.object({
@@ -604,7 +610,7 @@ export async function handleJoin(
 
     // The rung they come in at: the bottom, or an elder's seat by the outsider's
     // bar. Nobody is seated by their standing; see `entry-offer.ts`.
-    const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal, house?.leaning);
+    const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal, house?.leaning, args.atTheBottom === true);
 
     // AND A CLOSED DOOR IS A REFUSAL, NEVER A FALLBACK
     if (!offer) {

@@ -9,8 +9,9 @@
  * never built: the chair still empty after the year's promotions, and somebody
  * from outside taken in to it.
  *
- * WHO. Somebody standing past the bar an insider would be promoted at, by the
- * margin the owner ruled an outsider owes (`whatAnOutsiderMustStandAt`), free,
+ * WHO. Somebody standing at the bar an insider would be promoted to the rung at
+ * (`whatAnInsiderMustStandAt`; the owner: *"it ought to be the same bar as
+ * internal elder, just external"*), free,
  * of no house, and within reach: a guest of this house first (`GUEST_OF`, which
  * is where `GUEST_ELDERS` and the elder path meet), then anybody in the house's
  * province. Strongest first. They start at the house's lowest elder rung with no
@@ -38,7 +39,7 @@ import { theSpeciesItIs } from './a-beast-with-a-core-is-somebody-in-particular.
 import { makeFact } from './history.js';
 import { isBelowTheLid } from './layers.js';
 import { isTheWorldsToMove, setLocation, theCatalogStatesTheyAreStanding, type NpcRecord } from './npc-state.js';
-import { whatAnOutsiderMustStandAt } from './promotion-inside-a-house.js';
+import { whatAnInsiderMustStandAt } from './promotion-inside-a-house.js';
 import { GUEST_OF } from './the-wanderer-the-catalog-names-is-somebody.js';
 
 /**
@@ -112,7 +113,7 @@ export function theHousesTakeInEldersFromOutside(state: WorldState, day: number)
 
         const admission = Number(house.resources.admission_ordinal ?? 0);
         const power = Number(house.resources.power_ordinal ?? admission);
-        const bar = whatAnOutsiderMustStandAt(house.id, rung, rankCount, admission, power);
+        const bar = whatAnInsiderMustStandAt(house.id, rung, rankCount, admission, power);
         const province = regionOf(state, house.seatLocationId);
         const guestTag = `${GUEST_OF}${house.id}`;
         // AND HOW FAR ABOVE ITS OWN A HOUSE WILL REACH.

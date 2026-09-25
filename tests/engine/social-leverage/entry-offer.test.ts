@@ -5,9 +5,10 @@
  * the top ones included: *"same lore. join as outer disciple or external elder.
  * if you're overqualified you promote FAST cuz you can take merit missions and
  * do them easily."* Two seats: the bottom rung, or the house's lowest elder
- * rung for somebody who clears the bar a house asks of an elder from outside
- * (`whatAnOutsiderMustStandAt`, which the world's own houses already take
- * elders in by). Nothing between, and nobody seated by their standing.
+ * rung for somebody who clears the bar an insider is held to there
+ * (`whatAnInsiderMustStandAt`; the owner: *"it ought to be the same bar as
+ * internal elder, just external"*). Nothing between, and nobody seated by
+ * their standing - and somebody who clears it may still ask for the bottom.
  *
  * WHAT IT REPLACED, AND WHY THAT IS RECORDED RATHER THAN DELETED. This file
  * used to pin a different ruling of the owner's: *"they might offer something
@@ -33,7 +34,7 @@ import { describe, expect, it } from 'vitest';
 import { SECTS, getSect } from '../../../src/data/cultivation/sects';
 import { ARRIVAL_RULES } from '../../../src/data/cultivation/governance-and-water-rights';
 import { elderRungOf } from '../../../src/engine/cultivation/leadership';
-import { whatAnOutsiderMustStandAt } from '../../../src/engine/world/promotion-inside-a-house';
+import { whatAnInsiderMustStandAt } from '../../../src/engine/world/promotion-inside-a-house';
 import {
     entryOfferFor,
     offerAtTheDoorOf,
@@ -74,10 +75,10 @@ describe('the seat a newcomer is given', () => {
         }
     });
 
-    it('takes in somebody past the outsider\'s bar as an elder, with no merit in it', () => {
+    it('takes in somebody at the insider\'s elder bar as an elder, with no merit in it', () => {
         const sect = getSect('sect-azure-cloud-pavilion')!;
         const rung = elderRungOf(sect.ranks.length);
-        const bar = whatAnOutsiderMustStandAt(
+        const bar = whatAnInsiderMustStandAt(
             sect.id, rung, sect.ranks.length, sect.admissionOrdinal, sect.powerOrdinal);
 
         const under = offerAtTheDoorOf(sect.id, bar - 1)!;

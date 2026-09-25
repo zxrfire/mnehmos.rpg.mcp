@@ -251,35 +251,12 @@ export function whatAnInsiderMustStandAt(
         ?? ordinalExpectedAt(rankIndex, rankCount, admissionOrdinal, powerOrdinal);
 }
 
-/**
- * How far past a rung's bar somebody from OUTSIDE must stand to be seated on it.
- *
- * Ruled by the design owner: *"the bar for hiring an external elder is higher
- * than an internal promotion."* An insider is promoted at the bar (`whatAnInsiderMustStandAt`)
- * with the rung's merit behind them (`meritNeededFor`). Somebody taken in above
- * the bottom rung has served this house not at all, so the height has to stand
- * in for the service: a realm's width of ordinals past the same bar.
- *
- * Asked only of the house's lowest elder rung in play: the owner ruled that
- * somebody from outside joins at the bottom or as an external elder, and
- * nothing between (`entry-offer.ts` for the door, `a-house-takes-in-an-elder-
- * from-outside.ts` for the world's own houses). Whether the house wants them at
- * all is the council's reading at the door and not a second figure here.
- */
-export const AN_OUTSIDER_STANDS_PAST_THE_BAR_BY = 4;
-
-/** The ordinal somebody from outside must stand at to be seated at this rung. 0 at the bottom. */
-export function whatAnOutsiderMustStandAt(
-    factionId: string,
-    rankIndex: number,
-    rankCount: number,
-    admissionOrdinal: number,
-    powerOrdinal: number
-): number {
-    if (rankIndex <= 0) return 0;
-    return whatAnInsiderMustStandAt(factionId, rankIndex, rankCount, admissionOrdinal, powerOrdinal)
-        + AN_OUTSIDER_STANDS_PAST_THE_BAR_BY;
-}
+// SOMEBODY FROM OUTSIDE IS HELD TO THE SAME BAR. An elder taken in from
+// outside once stood four ordinals past the insider's bar, on the owner's ruling
+// that "the bar for hiring an external elder is higher than an internal
+// promotion". The owner has since ruled the other way: *"it ought to be the same
+// bar as internal elder, just external."* So the door and the world's own houses
+// both read `whatAnInsiderMustStandAt`, and there is no outsider's margin.
 
 export interface Promotion {
     npcId: string;

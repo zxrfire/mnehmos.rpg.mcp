@@ -1341,6 +1341,26 @@ describe('a conditional is not a commitment', () => {
     }, 120_000);
 
     /**
+     * The design owner: somebody who clears the elder's bar may choose to come
+     * in as an outer disciple instead. At ordinal 25 against the Azure Dew Sect
+     * the door would seat an elder; said "as a disciple", it seats the bottom
+     * rung. Red-checked by dropping the words before the door reads them.
+     */
+    it('seats somebody who clears the elder\'s bar at the bottom when they ask to come in as a disciple', async () => {
+        const { db, game } = await makeGameInWorld({ worldSeed: 'the-read-and-the-door' });
+        const { cultivator } = await game.newRun('Mo Qianshu');
+        db.prepare('UPDATE cultivators SET realm_ordinal = 25 WHERE id = ?').run(cultivator.id);
+
+        await aRecruiterOfTheHouseIsHere(game, 'Azure Dew Sect');
+        await game.act('I join the Azure Dew Sect as a disciple');
+
+        const held = db.prepare('SELECT rank_index FROM sect_members WHERE cultivator_id = ?')
+            .get(cultivator.id) as { rank_index: number } | undefined;
+        expect(held, 'asking to come in at the bottom did not enrol').toBeDefined();
+        expect(held!.rank_index).toBe(0);
+    }, 120_000);
+
+    /**
      * The other direction, and it is the half a widening would break silently.
      *
      * A trailing `if` is a trigger on a decision already taken. The actor comes

@@ -130,16 +130,17 @@ and none of which is one:
    guest-holding-a-post. Being a guest was only ever the state of having no
    posting, so taking one ends it and nothing converts.
 
-   **And the bar to be taken in is higher than the bar to be promoted.** The
-   owner: *"the bar for hiring an external elder is higher than an internal
-   promotion."* Somebody from outside has no merit with this house, so height
-   stands in for it: `AN_OUTSIDER_STANDS_PAST_THE_BAR_BY` ordinals past the
-   rung's insider bar (`whatAnOutsiderMustStandAt`, beside `barFor` in
-   `promotion-inside-a-house.ts`). The owner, on every house alike: *"join as
-   outer disciple or external elder. if you're overqualified you promote FAST
-   cuz you can take merit missions and do them easily."* So the door
-   (`entry-offer.ts`) seats a newcomer at the bottom rung, or as an elder at
-   the house's lowest elder rung when they clear that bar, and nowhere between.
+   **And the bar to be taken in is the bar to be promoted.** The owner: *"it
+   ought to be the same bar as internal elder, just external."* (An earlier
+   ruling put an outsider four ordinals past it; this one replaced it.) So an
+   elder from outside stands at `whatAnInsiderMustStandAt` for the house's
+   lowest elder rung, in `promotion-inside-a-house.ts`. The owner, on every
+   house alike: *"join as outer disciple or external elder. if you're
+   overqualified you promote FAST cuz you can take merit missions and do them
+   easily."* So the door (`entry-offer.ts`) seats a newcomer at the bottom rung,
+   or as an elder at the house's lowest elder rung when they clear that bar,
+   and nowhere between - and somebody who clears it may still ask to come in
+   at the bottom.
 
    **But joining is gated, and the gate is the arts.** A sect has arts it
    prefers - `teaches` on its catalog row - and an elder teaches juniors, so

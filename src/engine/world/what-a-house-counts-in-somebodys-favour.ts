@@ -48,7 +48,7 @@ export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null)
  *
  * FOR ANY HOUSE, INCLUDING ONE THEY DO NOT BELONG TO. A stranger who brings a
  * house its dead back has done it a service, and a house weighing that stranger
- * for a seat later reads this - `whatAnOutsiderMustStandAt` is a realm bar and
+ * for a seat later reads this - `whatAnInsiderMustStandAt` is a realm bar and
  * says the rest is how badly the house wants them, which is what a record of
  * service is evidence of.
  */

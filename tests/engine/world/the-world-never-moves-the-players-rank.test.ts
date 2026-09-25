@@ -27,7 +27,7 @@ import {
 import {
     theHousesTakeInEldersFromOutside
 } from '../../../src/engine/world/a-house-takes-in-an-elder-from-outside.js';
-import { whatAnOutsiderMustStandAt, assessPromotions } from '../../../src/engine/world/promotion-inside-a-house.js';
+import { whatAnInsiderMustStandAt, assessPromotions } from '../../../src/engine/world/promotion-inside-a-house.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { PLAYER_ROW_TAG, createNpc, setRealm, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
@@ -110,7 +110,7 @@ describe('the world never moves the player\'s rank', () => {
     });
 
     it('does not take them in from outside, however well they would fill the chair', () => {
-        const bar = whatAnOutsiderMustStandAt(
+        const bar = whatAnInsiderMustStandAt(
             HOUSE.id, ELDER, RANKS, HOUSE.admissionOrdinal, HOUSE.powerOrdinal);
         const state = world([
             person('head', RANKS - 1, HOUSE.powerOrdinal),

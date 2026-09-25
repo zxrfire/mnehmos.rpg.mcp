@@ -9,11 +9,13 @@
  *                     at. `ARRIVAL_RULES` in the catalog says it of the apexes
  *                     and it is true of every house: rank, reputation,
  *                     contribution and titles do not travel.
- *   an elder's seat   the external-elder door, for somebody standing past the
- *                     bar a house asks of an elder it takes in from outside
- *                     (`whatAnOutsiderMustStandAt`, the same bar the world's
- *                     own houses take elders in by, in
- *                     `a-house-takes-in-an-elder-from-outside.ts`).
+ *   an elder's seat   the external-elder door, for somebody standing at the
+ *                     bar an insider is held to at the house's lowest elder
+ *                     rung (`whatAnInsiderMustStandAt`). The owner: *"it ought
+ *                     to be the same bar as internal elder, just external."*
+ *                     The world's own houses take elders in by the same bar
+ *                     (`a-house-takes-in-an-elder-from-outside.ts`). And
+ *                     somebody who clears it may still ask for the bottom.
  *
  * This used to seat a newcomer one rung under the house's own people at their
  * height, and a renowned one level with or above them. That was the owner's
@@ -31,7 +33,7 @@
 import { ARRIVAL_RULES } from '../../data/cultivation/governance-and-water-rights.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import { elderRungOf } from '../cultivation/leadership.js';
-import { whatAnOutsiderMustStandAt } from '../world/promotion-inside-a-house.js';
+import { whatAnInsiderMustStandAt } from '../world/promotion-inside-a-house.js';
 import type { Standing } from '../social/what-is-said-about-somebody.js';
 
 /**
@@ -103,6 +105,8 @@ export function entryOfferFor(input: {
      * elder rung. Omitted or null, the house has no elder's door.
      */
     elderBar?: number | null;
+    /** They asked to come in at the bottom rung, whatever they clear. */
+    atTheBottom?: boolean;
 }): EntryOffer {
     const rankCount = input.ranks.length;
     const leaning = input.leaning ?? null;
@@ -116,7 +120,8 @@ export function entryOfferFor(input: {
     const elderBar = hasElderDoor ? input.elderBar! : null;
 
     const shut = leaning !== null && leaning <= A_CLOSED_DOOR_AT;
-    const asElder = !shut && elderBar !== null && input.askerOrdinal >= elderBar;
+    const clearsTheElderBar = elderBar !== null && input.askerOrdinal >= elderBar;
+    const asElder = !shut && clearsTheElderBar && input.atTheBottom !== true;
     const band: OfferBand = shut ? 'closed_door' : asElder ? 'external_elder' : 'outer_disciple';
     const offered = shut ? null : asElder ? elderRung! : bottom;
 
@@ -131,7 +136,9 @@ export function entryOfferFor(input: {
           + 'lowest elder rung, with no merit in it.'
         : 'Nobody from outside is seated by what they stand at: the door opens at '
           + `${title(bottom)} (${bottom}), the bottom rung, and every rung above is bought with `
-          + `merit off the house's board. ${theElderDoor}`;
+          + `merit off the house's board. ${clearsTheElderBar
+              ? `They clear the elder's bar at ${elderBar} and asked for the bottom rung instead.`
+              : theElderDoor}`;
 
     return {
         band,
@@ -154,7 +161,8 @@ export function entryOfferFor(input: {
 export function offerAtTheDoorOf(
     factionId: string,
     askerOrdinal: number,
-    leaning?: number | null
+    leaning?: number | null,
+    atTheBottom = false
 ): EntryOffer | null {
     const sect = getSect(factionId);
     if (!sect) return null;
@@ -164,7 +172,8 @@ export function offerAtTheDoorOf(
         ranks: sect.ranks,
         askerOrdinal,
         leaning,
-        elderBar: whatAnOutsiderMustStandAt(
+        atTheBottom,
+        elderBar: whatAnInsiderMustStandAt(
             factionId, rung, rankCount, sect.admissionOrdinal, sect.powerOrdinal)
     });
 }
