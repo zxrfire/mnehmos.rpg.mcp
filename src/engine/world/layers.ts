@@ -124,16 +124,14 @@ export const WORLD_LAYERS: readonly WorldLayer[] = [
 ] as const;
 
 /**
- * Why there is no third entry, stated where somebody would add one.
+ * WHY THERE IS NO THIRD ENTRY, stated where somebody would add one.
  *
- * The architecture permits `mortal -> immortal -> something further` and none
- * of it exists. Scale is not the thing this design is short of.
+ * One mortal world plus one immortal world is sufficient. Additional layers
+ * are not a way to increase scale - the world gains depth instead, through
+ * geography, ancient history, hidden regions and information the player does
+ * not have. The architecture permits `mortal -> immortal -> something further`
+ * and none of it exists; scale is not the thing this design is short of.
  */
-export const HIGHER_LAYERS_LATER_OR_NEVER =
-    'One mortal world plus one immortal world is sufficient. Additional layers are ' +
-    'not a way to increase scale - the world gains depth instead, through geography, ' +
-    'ancient history, hidden regions and information the player does not have. Add a ' +
-    'third only if this world\'s own history ever produces a reason for it.';
 
 export function isLayerKey(value: string): value is LayerKey {
     return WORLD_LAYERS.some(l => l.key === value);

@@ -184,20 +184,4 @@ export class ProviderFactory {
     }
 }
 
-// MODULE-LEVEL DEFAULT (mirrors setCombatPubSub pattern)
-// Wire-up happens once at server startup in src/server/index.ts
 
-let defaultFactory: ProviderFactory | null = null;
-
-export function setProviderFactory(factory: ProviderFactory): void {
-    defaultFactory = factory;
-}
-
-export function getProviderFactory(): ProviderFactory | null {
-    return defaultFactory;
-}
-
-/** Reset (test cleanup). */
-export function clearProviderFactory(): void {
-    defaultFactory = null;
-}

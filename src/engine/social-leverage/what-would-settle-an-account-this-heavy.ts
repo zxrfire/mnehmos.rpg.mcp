@@ -7,10 +7,9 @@ import type { DayIndex } from '../social/common.js';
 import type {
     ObligationInput,
     ObligationRecord,
-    Settlement,
-    Severity
+    Settlement
 } from '../social/grudges.js';
-import { SEVERITY_ORDER, severityRank } from '../social/grudges.js';
+import { severityRank } from '../social/grudges.js';
 
 /**
  * Who the two sides of a record are, as far as this question needs to know.
@@ -271,8 +270,5 @@ export function whatWalkingOutOfItCosts(input: {
     };
 }
 
-/**
- * The heaviest weight a binding can be used to close.
- */
-export const NO_CEILING_ON_WHAT_A_BINDING_CAN_CLOSE: Severity =
-    SEVERITY_ORDER[SEVERITY_ORDER.length - 1];
+// A binding can close an account of any weight, the heaviest included: there
+// is no ceiling on what one can be used to settle.

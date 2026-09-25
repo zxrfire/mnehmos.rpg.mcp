@@ -391,10 +391,8 @@ const STRONGER_OF: Record<AbilityTier, Record<AbilityTier, AbilityTier>> =
             [b, ORDER.indexOf(a) >= ORDER.indexOf(b) ? a : b])) as Record<AbilityTier, AbilityTier>
     ])) as Record<AbilityTier, Record<AbilityTier, AbilityTier>>;
 
-/**
- * WHAT IS DELIBERATELY NOT BUILT HERE, AND WHERE IT GOES.
- */
-export const theChangedBelongAmongThePeople = true;
+// A beast that has taken a shape is not hunted here. It is somebody, and it
+// belongs among the people - see `a-beast-that-took-a-shape-is-somebody.ts`.
 
 /**
  * The reading a cultivator gets across a valley, and the only one they get.

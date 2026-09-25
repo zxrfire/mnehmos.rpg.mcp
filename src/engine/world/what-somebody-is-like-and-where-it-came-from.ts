@@ -249,14 +249,6 @@ export function howTheyWantItSeen(room: number): string | null {
     return null;
 }
 
-/** Exported for the tests and probes that pin the bands. */
-export const HOW_A_PERSON_READS = Object.freeze({
-    WORTH_SAYING,
-    MARKED,
-    WHAT_A_BIRTH_IS_WORTH,
-    WHAT_NOTHING_EXPLAINS
-});
-
 /**
  * A derived lean, plus the part of a person nothing derives, clamped to -1..+1.
  *

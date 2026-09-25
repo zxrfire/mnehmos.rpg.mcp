@@ -27,7 +27,7 @@ export {
     type ActivityProfile
 } from './activity.js';
 
-export { valenceOf, valenceWeights } from './valence.js';
+export { valenceOf, } from './valence.js';
 
 export {
     locatabilityFrom,

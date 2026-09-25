@@ -30,8 +30,6 @@ import { z } from 'zod';
 export const SexSchema = z.enum(['female', 'male']);
 export type Sex = z.infer<typeof SexSchema>;
 
-export const SEXES: readonly Sex[] = SexSchema.options;
-
 /**
  * What a row written before this axis existed reads as.
  */

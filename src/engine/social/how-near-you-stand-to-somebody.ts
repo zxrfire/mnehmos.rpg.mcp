@@ -162,9 +162,3 @@ export function closeEnoughToKnow(input: {
     return atLeastAsNearAs(input.proximity, 'house');
 }
 
-/** Exported so a probe can print the bar without restating it. */
-export const PROXIMITY_CONSTANTS = Object.freeze({
-    A_TIE_THAT_MEANS_SOMETHING,
-    UNDER_THE_SAME_ROOF,
-    KNOWING_REQUIRES: 'house' as Nearness
-});

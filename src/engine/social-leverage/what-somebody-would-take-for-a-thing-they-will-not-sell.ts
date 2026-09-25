@@ -233,11 +233,3 @@ export function howTheyAreHoldingIt(
     };
 }
 
-/** Exported so a probe and a test can pin the shape without resolving one. */
-export const WHAT_IT_WOULD_TAKE_CONSTANTS = Object.freeze({
-    /**
-     * There is no threshold in this module and that is the point. Anything that
-     * appeared here would be a price somebody chose.
-     */
-    theBarIsTheObjectsOwnRung: true
-});

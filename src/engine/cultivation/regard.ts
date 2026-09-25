@@ -24,7 +24,7 @@ import {
     type RegardBandRow,
     type RegardProfile
 } from '../../schema/cultivation.js';
-import { MAX_ORDINAL, clampOrdinal, rankName } from './realms.js';
+import { clampOrdinal, rankName } from './realms.js';
 
 // THE ASKER
 
@@ -325,5 +325,3 @@ export function steepestGap(records: readonly unknown[], asker: RegardAskerInput
 /** Bands in ladder order, low to high. Exported for tests and for display. */
 export const REGARD_BAND_ORDER: readonly RegardBand[] = REGARD_BANDS.map(row => row.band);
 
-/** The top of the ladder, restated from realms so callers need one import. */
-export const REGARD_MAX_ORDINAL = MAX_ORDINAL;

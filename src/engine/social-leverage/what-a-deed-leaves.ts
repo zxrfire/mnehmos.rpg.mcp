@@ -420,9 +420,3 @@ function dedupe(ids: readonly string[]): string[] {
     return [...new Set(ids.filter(id => id.length > 0))];
 }
 
-/** Exported so a probe can print the bands without restating them. */
-export const DEED_CONSTANTS = Object.freeze({
-    A_REAL_COST,
-    MOST_OF_WHAT_THEY_HAD,
-    A_CROWD
-});

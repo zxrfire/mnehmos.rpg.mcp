@@ -171,11 +171,6 @@ export function buildRepairMedicineRegister(): RegisterRepairMedicine {
     };
 }
 
-/** Every medicine, for a caller that only wants the table. */
-export function repairMedicineTable(): RepairMedicineReading[] {
-    return readAllRepairMedicine();
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // RENDERING
 //

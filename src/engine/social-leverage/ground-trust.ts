@@ -240,11 +240,3 @@ export function groundWeight(input: {
 }
 
 
-/** Exported so a probe can print the bars without restating them. */
-export const GROUND_CONSTANTS = Object.freeze({
-    GROUND_MAX,
-    GROUND_UNDER_DURESS,
-    RECOURSE,
-    RECOURSE_AGAINST_A_THREAT,
-    GROUND_REACH
-});

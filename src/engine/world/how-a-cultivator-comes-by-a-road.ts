@@ -503,12 +503,9 @@ export function roadsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[]
  */
 export const BURIED_GROUND_FOUND_PER_PARTY_YEAR = 0.0005;
 
-/**
- * What the flat figure was, kept because the calibration argument above is
- * stated against it and a number nobody can trace is worth less than a number
- * with its history attached.
- */
-export const BURIED_GROUND_FOUND_PER_YEAR = 0.0015;
+// The flat figure the calibration argument above is stated against was 0.0015
+// buried ground found per year. Kept here as a number rather than a constant,
+// because a figure nobody can trace is worth less than one with its history.
 
 /**
  * The characters of ruin that can turn out to be ground that teaches a road, and

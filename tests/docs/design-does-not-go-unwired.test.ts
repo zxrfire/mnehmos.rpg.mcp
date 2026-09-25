@@ -142,7 +142,17 @@ import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-expo
 // (the `require*` and `get*By*` family, schema fragments, test-reset hooks),
 // `terrain-patterns.ts` went whole because nothing imported the module, and
 // `whatHoldingItMeans` was wired: the bench says whose a lent furnace is.
-const DEAD = 106;
+// 106 -> 85, MEASURED AT 85 with every other agent's work landed. It had
+// crept back to 111. Twenty-six went: eight constants whose own comment named
+// a reader that was never written ("exported so a probe can print the bars" -
+// no probe prints them), a dependency-injection seam nothing injected into, a
+// ridge primitive the heightmap never called, aliases of names already used
+// directly, and six design notes stated as constants. Four of those six were
+// rulings worth keeping and went back to being comments where somebody would
+// look for them; the other two were a count nothing read and a note about a
+// harness printing two numbers. No slack left on this one - the design owner
+// has asked for this number to go to zero.
+const DEAD = 85;
 // Raised by one, for the same reason and under the same discipline as `DEAD`
 // above: one name from the same session is pinned by its own test and has no
 // caller in the game yet.

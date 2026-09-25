@@ -185,12 +185,3 @@ function round4(n: number): number {
     return Math.round(n * 1e4) / 1e4;
 }
 
-/** Exported for tests and probes that pin the curve. */
-export const DISCOVERY_CONSTANTS = Object.freeze({
-    PER_YEAR_BASE,
-    PER_YEAR_UNRETURNED,
-    AUDIENCE_PER_YEAR,
-    ON_BEING_SPENT,
-    YEARLY_FLOOR,
-    YEARLY_CEILING
-});

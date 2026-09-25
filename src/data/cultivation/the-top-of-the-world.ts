@@ -360,8 +360,3 @@ export const MEASUREMENT_STATUS = {
         'Which is that the request that came out of the bad numbers was to tune the resolver until "one in a hundred" came back. That would have been tuning the fight that settles a tavern brawl to compensate for a metric that could not tell a beaten attacker from a clock running out, and it would have corrupted every other measurement in the repo to fix a sentence in this file. The instrument was wrong. The world was not.'
 } as const;
 
-/**
- * The harness prints `head 43, Datum Lamp 45` in one banner and `The Earth Vein Tower
- * (43+43)` in another, for the same object in the same run.
- */
-export const THE_LAMP_IS_RATED_FORTY_THREE = 43;

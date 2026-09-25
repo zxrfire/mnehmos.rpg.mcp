@@ -68,7 +68,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
-import { getSect, DESTROYED_DAO_HOUSES } from '../../data/cultivation/sects.js';
+import { getSect } from '../../data/cultivation/sects.js';
 import { getFactionCharacter } from '../../data/cultivation/faction-character.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -149,9 +149,6 @@ export function standingOf(
         successorKeepsRecord: successor !== undefined && 'civilReach' in successor
     };
 }
-
-/** How many destroyed houses the catalog holds. The precedent, counted. */
-export const HOUSES_THE_CATALOG_HAS_ALREADY_LOST = DESTROYED_DAO_HOUSES.length;
 
 // ─────────────────────────────────────────────────────────────────────────
 // HAZARD

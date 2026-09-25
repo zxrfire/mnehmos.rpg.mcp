@@ -89,11 +89,3 @@ function countIn(tags: ReadonlySet<string>, set: ReadonlySet<string>): number {
     return n;
 }
 
-/** Total draw weight per direction across a pool. Used by the design guards. */
-export function valenceWeights(
-    pool: readonly EncounterEntry[]
-): Record<EncounterValence, number> {
-    const out: Record<EncounterValence, number> = { good: 0, neutral: 0, bad: 0 };
-    for (const entry of pool) out[valenceOf(entry)] += entry.weight;
-    return out;
-}

@@ -233,9 +233,3 @@ export function theRollLands(decision: ForceableDecisionName): boolean {
     return true;
 }
 
-/**
- * The forced attempt in flight, for a caller that has to pass the answer on.
- */
-export function theAttemptIsBeingForced(decision: ForceableDecisionName): boolean {
-    return theRollLands(decision);
-}

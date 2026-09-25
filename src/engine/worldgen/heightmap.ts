@@ -173,61 +173,6 @@ function normalizeHeightmap(
 }
 
 /**
- * Add ridges/tectonic features to heightmap
- *
- * Inspired by Azgaar's "Range" primitive for mountain ranges.
- */
-export function addRidges(
-  heightmap: Uint8Array,
-  width: number,
-  height: number,
-  rng: seedrandom.PRNG,
-  count: number = 3
-): Uint8Array {
-  // Create copy
-  const result = new Uint8Array(heightmap);
-
-  for (let i = 0; i < count; i++) {
-    // Random ridge line
-    const startX = Math.floor(rng() * width);
-    const startY = Math.floor(rng() * height);
-    const angle = rng() * Math.PI * 2;
-
-    const length = Math.floor(width * 0.3 + rng() * width * 0.4);
-    const ridgeHeight = 40 + rng() * 30;
-    const ridgeWidth = 3 + Math.floor(rng() * 5);
-
-    // Draw ridge line
-    for (let step = 0; step < length; step++) {
-      const x = Math.floor(startX + Math.cos(angle) * step);
-      const y = Math.floor(startY + Math.sin(angle) * step);
-
-      if (x < 0 || x >= width || y < 0 || y >= height) continue;
-
-      // Add elevation in a radius around the line
-      for (let dy = -ridgeWidth; dy <= ridgeWidth; dy++) {
-        for (let dx = -ridgeWidth; dx <= ridgeWidth; dx++) {
-          const nx = x + dx;
-          const ny = y + dy;
-
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const falloff = Math.max(0, 1 - distance / ridgeWidth);
-          const elevation = ridgeHeight * falloff;
-
-          const idx = toIndex(nx, ny, width);
-          const newElev = result[idx] + elevation;
-          result[idx] = Math.min(100, newElev);
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
-/**
  * Smooth heightmap to reduce jaggedness
  *
  * Applies a simple averaging filter.

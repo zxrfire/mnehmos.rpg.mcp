@@ -368,9 +368,6 @@ function howTheFoldPricesOut(): number {
         / Math.log(WHAT_A_RING_HOLDS.heaven / WHAT_A_RING_HOLDS.mortal);
 }
 
-/** Exported so a test can pin the curve without recomputing the solve. */
-export const HOW_THE_FOLD_PRICES_OUT = howTheFoldPricesOut();
-
 // ═════════════════════════════════════════════════════════════════════════
 // AND HOW BIG THE THINGS IN A POUCH ARE
 // ═════════════════════════════════════════════════════════════════════════

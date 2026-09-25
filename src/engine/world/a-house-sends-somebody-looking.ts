@@ -39,9 +39,6 @@ const DAYS_PER_YEAR = 365;
  */
 export const YEARS_A_SEARCH_RUNS: readonly [number, number] = [1, 3];
 
-/** How many of its own a house will have out looking at once. */
-export const HOW_MANY_A_HOUSE_SENDS = 1;
-
 /** Carried by a house that has stopped looking, naming who it stopped looking for. */
 export const GAVE_UP_LOOKING_FOR = 'gave-up-looking-for|';
 

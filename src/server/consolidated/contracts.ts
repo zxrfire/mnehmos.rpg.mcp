@@ -69,6 +69,3 @@ export function defineToolContract(tool: ToolShape, handler: ToolHandler): ToolC
     };
 }
 
-export function getToolDescriptors(): Readonly<Record<string, ToolDescriptor>> {
-    return TOOL_DESCRIPTORS;
-}

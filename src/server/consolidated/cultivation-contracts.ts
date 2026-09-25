@@ -172,6 +172,3 @@ export function defineCultivationToolContract(tool: ToolShape, handler: Function
     };
 }
 
-export function getCultivationToolDescriptors(): Readonly<Record<string, ToolDescriptor>> {
-    return CULTIVATION_TOOL_DESCRIPTORS;
-}

@@ -88,11 +88,6 @@ export function twinsIdFor(houseId: string, senderId: string): string {
     return `communication-talisman-twins-${houseId}-${senderId}`;
 }
 
-/** The id of a stack: the treasury's blanks for no holder, or somebody's keyed half. */
-export function stackIdFor(houseId: string, holderId: string | null): string {
-    return holderId === null ? blanksIdFor(houseId) : keyedIdFor(houseId, holderId);
-}
-
 /** Whether a row is a stack of communication talismans of any kind. */
 export function isAStackOfCommunicationTalismans(o: Pick<ObjectRecord, 'tags'>): boolean {
     return o.tags.includes(A_STACK_OF_COMMUNICATION_TALISMANS);
