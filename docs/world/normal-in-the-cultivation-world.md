@@ -582,7 +582,7 @@ it when they close ground.
 
 So the missing piece is not a famine mechanic. It is that **no player act opens
 a status**, and the design owner's own example says which acts should: destroy
-the stores, stop the caravans, kill the hunters, buy up the food. Of those, the
+the stores, stop the caravans, kill the trappers, buy up the food. Of those, the
 engine holds robbery, killing, buying and `sect/siphon`. What it does not hold
 is a granary, and adding one to answer this sentence would be exactly the
 `kill_all_blacksmiths()` the quote warns against.

@@ -3505,7 +3505,7 @@ const LAYING_HANDS_ON_SOMEBODY = new RegExp([
     // "I punch him" routed and "I punch the thief" did not, so the same act
     // worked or failed on whether the player had been told a name.
     + String.raw`|thief|bandit|courier|clerk|steward|servant|attendant|beggar|boatman|driver`
-    + String.raw`|guardsman|soldier|hunter|smith|innkeeper|shopkeeper|stallholder|peddler`
+    + String.raw`|guardsman|soldier|trapper|smith|innkeeper|shopkeeper|stallholder|peddler`
     + String.raw`|apprentice|acolyte|patriarch|matriarch|abbot|chief|lord|lady|captain`
     + String.raw`|official|magistrate|scholar|physician|healer|cook|farmer|miner|porter)\b)`,
     // Or the verb and a part of somebody, which is the same act said the other

@@ -58,7 +58,7 @@ describe('the draw is for what has no core, and nothing else', () => {
         const found = whatIsOnThisGround(SEALED, MAX_ORDINAL, 0.5);
         expect(found.worthGoingAfter.length).toBeGreaterThan(0);
         for (const one of found.worthGoingAfter) expect(hasACore(one)).toBe(true);
-        // And never above the hunter: that half is `above`, which prices itself.
+        // And never above whoever is after it: that half is `above`, which prices itself.
         const low = whatIsOnThisGround(SEALED, 0, 0.5);
         expect(low.worthGoingAfter).toEqual([]);
         expect(low.above.length).toBeGreaterThan(0);
@@ -77,7 +77,7 @@ describe('what the ground holds is the individual, not its kind', () => {
         expect(asItIs.worthGoingAfter.find(b => b.id === one.id)?.ordinal).toBe(climbed);
     });
 
-    it('puts one that has climbed past the hunter above them rather than in reach', () => {
+    it('puts one that has climbed past whoever is after it above them rather than in reach', () => {
         const standingAt = new Map([[one.id, MAX_ORDINAL]]);
         const found = whatIsOnThisGround(SEALED, one.ordinal, 0.5, { standingAt });
         expect(found.worthGoingAfter.map(b => b.id)).not.toContain(one.id);

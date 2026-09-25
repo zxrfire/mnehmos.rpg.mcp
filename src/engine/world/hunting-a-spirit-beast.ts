@@ -97,17 +97,17 @@ function drawByFrequency(pool: readonly Beast[], sample: number): Beast | undefi
 }
 
 /**
- * What a hunter meets, and what was also here and is above them.
+ * What somebody after a beast meets, and what was also here and is above them.
  */
 export interface WhatIsOnThisGround {
     /** What the hunt actually turned up, or null for empty ground. */
     met: Beast | null;
-    /** Everything here standing above the hunter. Never drawn, always said. */
+    /** Everything here standing above them. Never drawn, always said. */
     above: readonly Beast[];
     /** The worst of `above`, priced by the ordinary resolver. Null if clear. */
     worst: Regard | null;
     /**
-     * The ones in particular here that the hunter could reach. Never drawn.
+     * The ones in particular here that they could reach. Never drawn.
      *
      * Said rather than offered, which is the whole of the core line applied to
      * the draw: below it a hunt turns up whatever is standing there, and at or

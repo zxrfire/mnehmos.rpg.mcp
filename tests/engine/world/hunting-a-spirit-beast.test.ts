@@ -79,7 +79,7 @@ describe('what ground carries what', () => {
 });
 
 describe('the ladder decides, and what is above you is always said', () => {
-    it('never draws anything above the hunter', () => {
+    it('never draws anything above whoever is after it', () => {
         for (const ordinal of [0, 5, 13, 20, 29, 40]) {
             for (const sample of [0, 0.25, 0.5, 0.75, 0.999999]) {
                 const found = whatIsOnThisGround(SEALED, ordinal, sample);

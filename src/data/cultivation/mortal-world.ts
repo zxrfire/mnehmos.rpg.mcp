@@ -404,7 +404,7 @@ export function whereThisIsActuallyDone(price: Pick<Price, 'name'>): string | nu
  *                  against it in the catalog.
  *
  * The spirit-beast meal stays, and that is not an oversight. It is a mortal
- * counter's cultivator-facing row - meat off something a hunter killed, priced
+ * counter's cultivator-facing row - meat off something a trapper killed, priced
  * for whoever can taste the difference - and a village butcher selling it to a
  * passing cultivator is the ordinary transaction it was written for.
  */

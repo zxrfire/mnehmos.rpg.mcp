@@ -62,7 +62,7 @@ interface Said { narration?: string; error?: string }
  */
 async function standingOnAHousesGround(seed: string) {
     const { game, db } = await makeGameInWorld({ seed, worldSeed: WORLD });
-    await game.newRun('Hunter');
+    await game.newRun('Tang Yue');
     const say = (s: string) => game.act(s) as Promise<Said>;
     await say('ADMIN set_realm ordinal=34');
 
@@ -117,7 +117,7 @@ describe('who answers for a beast you killed', () => {
         // Most of the hunting trade, and the reason it is a trade. A beast on
         // ground nobody holds is nobody's.
         const { game } = await makeGameInWorld({ seed: 'answer-b', worldSeed: WORLD });
-        await game.newRun('Hunter');
+        await game.newRun('Tang Yue');
         const say = (s: string) => game.act(s) as Promise<Said>;
         await say('ADMIN set_realm ordinal=34');
         const world = (game as unknown as { atHand: WorldState }).atHand;
