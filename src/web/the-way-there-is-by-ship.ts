@@ -75,9 +75,6 @@ export function theWayThereIsByShip(
         if (at === null) break;
         settled.add(at);
         const from = best.get(at)!;
-        // A dock only the world names is a place to put in, not a stop on the way: its passages
-        // are the unpriced flat day, and chaining them would undercut every priced one.
-        if (from.first !== null && !regionIdOfPlace(at)) continue;
         for (const line of theShipsFrom(game, at, today)) {
             const cost = from.cost + line.days;
             if (cost < (best.get(line.to)?.cost ?? Infinity)) {

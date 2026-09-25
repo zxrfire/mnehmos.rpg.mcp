@@ -7,12 +7,14 @@
  * world the catalog's own places there. A room inside a house's walls is reached through the dock
  * of the ground it stands in.
  *
- * How far apart two docks are is the catalog's chain of passages where it states one
- * (`placeRoadDays`), and otherwise the flat day an unpriced journey inside a province costs,
- * which is what walking between them charged before.
+ * How far apart two docks are is the catalog's chain of passages between them (`placeRoadDays`).
+ * A dock only the world knows (a house's grounds, a ruin, the vein) has no passages of its own,
+ * so it is a day out from the catalog port nearest it ({@link thePortADockIsNear}) and takes that
+ * port's days plus the one. Two catalog places no chain joins are the flat unpriced day apart.
  */
 
-import { REGIONS, isOpenWater, placeRoadDays, regionIdOfPlace } from '../data/cultivation/regions.js';
+import { REGIONS, isOpenWater, placeRoadDays, regionIdOfPlace, requireRegion } from '../data/cultivation/regions.js';
+import { forStream } from '../engine/cultivation/rng.js';
 import { SEA_LANES } from '../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { regionCatalogIdOf } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
 import type { LocationRecord } from '../engine/world/locations.js';
@@ -90,7 +92,27 @@ export function theDockOf(world: World, place: string): string | null {
     return null;
 }
 
+/**
+ * The catalog port a dock only the world knows lies near: the port its house holds, for a house's
+ * grounds; otherwise the one of its province's ports its own draw points at, since the world keeps
+ * no distance for it. A catalog place is its own.
+ */
+export function thePortADockIsNear(world: World, dock: string): string {
+    const province = regionIdOfPlace(dock);
+    if (province) return requireRegion(province).places.find(place => loosePlaceKey(place.name) === loosePlaceKey(dock))!.name;
+    const row = world ? worldLocationFor(world, dock) : null;
+    const regionId = row && world ? regionCatalogIdOf(world, row.id) : null;
+    const ports = regionId ? requireRegion(regionId).places.filter(place => place.kind !== 'site') : [];
+    if (!row || ports.length === 0) return dock;
+    const house = row.controllingFactionId ?? (row.data as { factionId?: unknown }).factionId;
+    const held = typeof house === 'string' ? ports.find(place => place.heldByFactionId === house) : undefined;
+    if (held) return held.name;
+    return ports[Math.floor(forStream(world!.seed, 'the-port-a-dock-is-near', row.id).next() * ports.length)]!.name;
+}
+
 /** Days of sailing between two docks of one open-water province. */
-export function daysOfSailingBetween(from: string, to: string): number {
-    return placeRoadDays(from, to) ?? SHORT_ACTION_DAYS;
+export function daysOfSailingBetween(world: World, from: string, to: string): number {
+    const [a, b] = [thePortADockIsNear(world, from), thePortADockIsNear(world, to)];
+    const out = (a === from ? 0 : 1) + (b === to ? 0 : 1);
+    return (a === b ? 0 : placeRoadDays(a, b) ?? SHORT_ACTION_DAYS) + out;
 }

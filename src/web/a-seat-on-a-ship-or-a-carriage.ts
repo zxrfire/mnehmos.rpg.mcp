@@ -203,7 +203,7 @@ export function theShipsFrom(game: GameService, here: string, today: number): AL
     if (!isOpenWater(regionId)) return lines;
     const across = ports
         .filter(port => port !== here && theProvinceOf(game.atHand, port) === regionId && !lines.some(line => line.to === port))
-        .map(port => ({ to: port, days: daysOfSailingBetween(here, port) }))
+        .map(port => ({ to: port, days: daysOfSailingBetween(game.atHand, here, port) }))
         .sort((a, b) => a.days - b.days || a.to.localeCompare(b.to));
     for (const { to, days } of across) {
         const lane = aPassageBetween(here, to, days);
