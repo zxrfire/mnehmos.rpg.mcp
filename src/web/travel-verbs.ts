@@ -118,7 +118,7 @@ import { getLocation, getNpc, type WorldState } from '../engine/world/world-stat
 import { populationWeightOf, type LocationRecord } from '../engine/world/locations.js';
 import { pathTo } from '../engine/world/architecture.js';
 import { layerOf, type LayerKey } from '../engine/world/layers.js';
-import { factsForMove, factsForRefusal, factsForTimeSkip, factsForToolResult, humanDays, placeName } from './facts.js';
+import { factsForMove, factsForRefusal, factsForTimeSkip, factsForToolResult, humanDays, placeName, shownWithNoModelAfter } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
@@ -1026,9 +1026,9 @@ export const travelVerbs = {
         //
         // This was the fourth site and the sweep that fixed the other three
         // missed it, because it builds the list a different way.
-        if (introduced.lines.length > 0) {
-            facts.lines.push(...introduced.lines);
-        }
+        // And in the prose, which is what a player with no model reads: on
+        // `lines` alone the gate and the door were for the narrator only.
+        for (const line of introduced.lines) shownWithNoModelAfter(facts, line);
 
         // AND THE PEOPLE WHO CAME WITH YOU. A road has no capacity: everybody
         // walks, and a party on foot costs what one person costs.

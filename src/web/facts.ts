@@ -144,6 +144,18 @@ ${facts.prose}` : said;
 }
 
 /**
+ * The same, at the BOTTOM: a fact that follows what the turn already said, such
+ * as what the gate of a place arrived at says. On `lines` for the narrator and
+ * in `prose` for a player with no model, never in `required`.
+ */
+export function shownWithNoModelAfter(facts: EngineFacts, said: string): void {
+    facts.lines.push(said);
+    facts.prose = facts.prose.length > 0 ? `${facts.prose}
+
+${said}` : said;
+}
+
+/**
  * The same, at the TOP of every channel rather than the bottom.
  *
  * For a fact that was true BEFORE the turn resolved and is only being written
