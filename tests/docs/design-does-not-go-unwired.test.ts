@@ -182,7 +182,9 @@ const DEAD = 0;
 // as prose once the classifier stopped reading "functions" in a sentence as
 // code; counting names a removal surfaced, 31 left outside engine/world, each
 // named with its reason in the commit that lowered this.
-const TEST_ONLY = 81;
+// 81 -> 79: the memory store's read side reaches conversation - `recallAbout`
+// and `trajectoryOf` are read by `what-somebody-remembers.ts`.
+const TEST_ONLY = 79;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
