@@ -6372,9 +6372,9 @@ ${noticed}`;
                     note: 'Nothing was put to anybody.'
                 },
                 false,
-                // Words put to a room: three answer. A threat or a theft still
-                // lands on every one of them.
-                INTERACT_SETTLES_NOTHING.has(intent) ? 3 : undefined
+                // Words put to a room: two answer at most (the owner). A threat
+                // or a theft still lands on every one of them.
+                INTERACT_SETTLES_NOTHING.has(intent) ? 2 : undefined
             );
         }
 
