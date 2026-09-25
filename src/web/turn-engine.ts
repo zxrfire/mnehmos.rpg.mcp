@@ -184,6 +184,8 @@ import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-
 import { howItIsHad } from '../engine/world/possessions.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
+import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
+import { aVehicleOf, isAVehicle } from '../engine/world/a-vehicle.js';
 import {
     theyDoSomethingAboutWhatTheyLost,
     whatTheCardSaysOfALoss
@@ -4896,6 +4898,11 @@ ${noticedWaiting}`;
                 // own words, and nothing downstream branches on what kind of
                 // thing it is. The list of what may go there is open.
                 return this.proposeAMatch(
+                    case 'load':
+                    case 'unload':
+                    case 'leave_behind':
+                    case 'take_along':
+                        return whatTheVehicleDoes(this, cultivator, action.intent, action.target);
                     run, cultivator, ambient, action.target, action.topic,
                     action.intent ?? 'propose', action.leverage, rawInput
                 );
@@ -12090,13 +12097,27 @@ ${opened.text}` : receipt,
                     + `${cultivator.spiritStones}.`
                 ));
             }
-            const before = this.whatIsInTheirYard(cultivator);
-            const after0 = adjustCountedHolding(before, rideable.id, 1);
-            addToPouch(
-                this.db, cultivator.id, rideable.id, 'artifact',
-                (after0[countedHoldingKey(rideable.id)] ?? 0)
-                    - (before[countedHoldingKey(rideable.id)] ?? 0)
-            );
+            // BOUGHT, IT GOES WITH YOU. The owner: "when you buy it, you take it with you". An item
+            // that stands where it is left, not a count in the pouch. See `a-vehicle.ts`. A game with
+            // no world keeps the count.
+            if (this.atHand) {
+                this.atHand.objects.push(aVehicleOf({
+                    id: `vehicle-${cultivator.id}-${run.turn}-${rideable.id}`,
+                    conveyanceId: rideable.id,
+                    ownerId: cultivator.id,
+                    ownerName: cultivator.name,
+                    at: this.worldPlaceOf(cultivator)
+                }));
+                this.theWorldMoved();
+            } else {
+                const before = this.whatIsInTheirYard(cultivator);
+                const after0 = adjustCountedHolding(before, rideable.id, 1);
+                addToPouch(
+                    this.db, cultivator.id, rideable.id, 'artifact',
+                    (after0[countedHoldingKey(rideable.id)] ?? 0)
+                        - (before[countedHoldingKey(rideable.id)] ?? 0)
+                );
+            }
             this.repos.cultivators.update(cultivator.id, {
                 spiritStones: cultivator.spiritStones - stones
             });
@@ -12115,11 +12136,8 @@ ${opened.text}` : receipt,
                 ]
             );
             facts.structure.push(
-                `adjustCountedHolding: ${rideable.id} `
-                + `${before[countedHoldingKey(rideable.id)] ?? 0} -> `
-                + `${after0[countedHoldingKey(rideable.id)] ?? 0} on ${cultivator.id}; `
-                + `${stones} stone(s) spent, ${after.spiritStones} left. Counted, not tracked - `
-                + 'there is nothing to recognise and nobody to be asked about it.'
+                `bought ${rideable.id} for ${cultivator.id}: ${this.atHand ? 'an item going with them' : 'a counted unit'}; `
+                + `${stones} stone(s) spent, ${after.spiritStones} left.`
             );
             const execution = this.freeAction(run, 'buy', facts);
             execution.calls = [{
@@ -13417,7 +13435,9 @@ ${opened.text}` : receipt,
         this.atHand = this.atHand ?? await this.loadWorld();
         const everyRow = this.whatYouAreCarrying(cultivator).rows.filter(row =>
             row.kind !== 'formation' && row.kind !== 'territory'
-            && !row.tags.includes('never-carried'));
+            && !row.tags.includes('never-carried')
+            // A vehicle has its own line below: with you, or left where it was left.
+            && !isAVehicle(row));
         // WORN, HELD, INVENTORY. The owner: "i need to know what's on me", in three states.
         const wornRows = everyRow.filter(row => howItIsHad(row) === 'worn');
         const heldRows = everyRow.filter(row => howItIsHad(row) === 'held');
@@ -13487,6 +13507,8 @@ ${opened.text}` : receipt,
                     : ', and a body at this rung has stopped needing them.')
             );
         }
+        // AND THEIR VEHICLES: with them, or left where they left them. See `your-vehicle.ts`.
+        lines.push(...theLinesForTheirVehicles(this, this.atHand?.objects ?? [], cultivator));
         const slips = theLineForCommunicationTalismans(
             theCommunicationTalismansOnYou(this.db, cultivator.id),
             houseId => this.atHand?.factions.find(f => f.id === houseId)?.name ?? houseId);
@@ -13497,7 +13519,10 @@ ${opened.text}` : receipt,
             // it is exactly the lie this read was ruled against: technically
             // true, and it sends the player away.
             lines.push(
-                `Nothing in the pouch${elsewhere.length > 0 ? '' : ' at all'}, and `
+                // "At all" only where nothing is anywhere: a mount with you or a room with things in
+                // it is something, and the lines for them are above.
+                `Nothing in the pouch${elsewhere.length > 0 || (this.atHand?.objects ?? []).some(o => isAVehicle(o)
+                    && (o.ownerId === cultivator.id || o.possessorId === cultivator.id)) ? '' : ' at all'}, and `
                 + `${stones} spirit stone${stones === 1 ? '' : 's'} in the purse.`
             );
         } else {

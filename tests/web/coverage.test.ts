@@ -939,6 +939,22 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I take the sword out of my ring',
             'I get the pills from my ring'
         ],
+        'carry/load': [
+            'I put the chest in my cart',
+            'I load the jade chest onto my boat'
+        ],
+        'carry/unload': [
+            'I take the chest out of my cart',
+            'I unload the jade chest from my boat'
+        ],
+        'carry/leave_behind': [
+            'I leave my cart here',
+            'I moor the boat'
+        ],
+        'carry/take_along': [
+            'I take my cart with me',
+            'I bring the mule along'
+        ],
         'carry/unmark': [
             'I break the mark on the ring',
             "I erase the owner's mark on this storage ring"

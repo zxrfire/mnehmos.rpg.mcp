@@ -18,6 +18,7 @@ import {
     whoseMarkIsOn
 } from '../engine/world/a-storage-ring.js';
 import { hadAs, isWorn, type ObjectRecord } from '../engine/world/possessions.js';
+import { isAVehicle, isWithThem } from '../engine/world/a-vehicle.js';
 import { whatABodyCanCarry, whatAllOfThatTakes } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import {
     howManyHeld,
@@ -104,8 +105,23 @@ export function whatTheRingDoes(
     }
 
     if (intent === 'store') {
-        const mine = world.objects.filter(object => object.possessorId === cultivator.id && object.id !== ring.id);
+        // What they carry, and a vehicle they are with: "unless you fit it in a storage ring".
+        const here = game.worldPlaceOf(cultivator);
+        const mine = world.objects.filter(object => object.id !== ring.id
+            && (object.possessorId === cultivator.id
+                || (isAVehicle(object) && object.ownerId === cultivator.id && isWithThem(object, cultivator.id, here))));
         const thing = theThingNamed(mine, named);
+        if (thing !== null && isAVehicle(thing)) {
+            const { holds, taken } = howFullTheRingIs(world.objects, ring);
+            if (taken + thing.volume > holds) {
+                return no('engine.ring', `${thing.name} will not fit.`,
+                    `${thing.name} will not go into ${ring.name}: it holds ${holds} litres and ${taken} of them are taken.`, 'store: no room.');
+            }
+            const at = world.objects.findIndex(object => object.id === thing.id);
+            world.objects[at] = { ...thing, possessorId: ring.id, data: { ...thing.data, withId: null } };
+            game.theWorldMoved();
+            return done('engine.ring', `${thing.name} is in ${ring.name}.`, `carry/store: vehicle ${thing.id} into ${ring.id}.`);
+        }
         if (thing === null) {
             return no('engine.ring', `You have no ${named ?? 'such thing'}.`, `You have no ${named ?? 'such thing'} to put in it.`, 'store: nothing named.');
         }
@@ -122,6 +138,19 @@ export function whatTheRingDoes(
     const thing = theThingNamed(whatIsInTheRing(world.objects, ring.id), named);
     if (thing === null) {
         return no('engine.ring', `There is no ${named ?? 'such thing'} in it.`, `There is no ${named ?? 'such thing'} in ${ring.name}.`, 'retrieve: not in it.');
+    }
+    if (isAVehicle(thing)) {
+        // Out of a ring, a vehicle stands where they are, going with them: never in a pack.
+        const at = world.objects.findIndex(object => object.id === thing.id);
+        world.objects[at] = {
+            ...thing,
+            possessorId: null,
+            locationId: game.worldPlaceOf(cultivator) ?? thing.locationId,
+            data: { ...thing.data, withId: cultivator.id }
+        };
+        game.theWorldMoved();
+        return done('engine.ring', `${thing.name} is out of ${ring.name} and standing beside you.`,
+            `carry/retrieve: vehicle ${thing.id} out of ${ring.id}, with ${cultivator.id}.`);
     }
     takeOutOfTheRing(world.objects, cultivator.id, ring, thing);
     // Out of a folded space and into the world: the inventory if it fits, held if not.

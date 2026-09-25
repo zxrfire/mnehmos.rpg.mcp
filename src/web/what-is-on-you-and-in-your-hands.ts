@@ -52,7 +52,8 @@ import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 
 /** The five things a player can say about what is on them. */
-export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show' | 'store' | 'retrieve' | 'unmark';
+export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show' | 'store' | 'retrieve' | 'unmark'
+    | 'load' | 'unload' | 'leave_behind' | 'take_along';
 
 /**
  * What the player reads, and what the operator reads, in their own channels.

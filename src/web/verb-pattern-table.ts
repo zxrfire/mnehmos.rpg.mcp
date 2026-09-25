@@ -4756,6 +4756,19 @@ function planIntent(input: string): PlannedAction {
     //
     // The pouch read is the honest answer: it says what is in the ring, which
     // is the only fact either sentence is about, and it costs nothing.
+    // A VEHICLE: things into and out of it, and leaving it or taking it along. Above leaving,
+    // which is fleeing: "I leave my cart here" leaves the cart. See `a-vehicle.ts`.
+    const intoOrOutOfAVehicle = /^\s*(?:i\s+)?(put|puts|load|loads|place|stow|stows|pack|packs|take|takes|get|gets|unload|unloads|fetch|fetches)\s+(.+?)\s+(into|in|onto|on|out of|from|off)\s+(?:my|the)\s+(?:cart|carriage|wagon|waggon|boat|ship|skiff|mount|mule|horse)s?\s*[.!?]?\s*$/i.exec(text);
+    if (intoOrOutOfAVehicle) {
+        const out = /^(?:out of|from|off)$/i.test(intoOrOutOfAVehicle[3]!);
+        return { action: 'carry', intent: out ? 'unload' : 'load', target: intoOrOutOfAVehicle[2]!.trim() };
+    }
+    if (/^\s*(?:i\s+)?(?:leave|leaves|park|parks|moor|moors|tie up|tether|tethers)\s+(?:my|the)\s+(?:cart|carriage|wagon|waggon|boat|ship|skiff|mount|mule|horse)\b/i.test(text)) {
+        return { action: 'carry', intent: 'leave_behind' };
+    }
+    if (/^\s*(?:i\s+)?(?:take|takes|bring|brings)\s+(?:my|the)\s+(?:cart|carriage|wagon|waggon|boat|ship|skiff|mount|mule|horse)\b[^.!?]*\b(?:with me|along)\b/i.test(text)) {
+        return { action: 'carry', intent: 'take_along' };
+    }
     // A THING INTO OR OUT OF A RING is a movement with a state now: what is in a ring is the
     // ring's, and goes where it goes. See `a-storage-ring.ts`. The pouch is still the read.
     const intoOrOutOfARing = /^\s*(?:i\s+)?(?:put|place|slip|tuck|stash|store|take|pull|get|fetch)s?\s+(.+?)\s+(into|in|inside|out of|from)\s+(?:my|the)\s+(?:(?:storage|spatial)\s+)?ring\s*[.!?]?\s*$/i.exec(text);

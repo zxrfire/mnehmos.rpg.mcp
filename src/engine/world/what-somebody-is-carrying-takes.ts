@@ -14,6 +14,7 @@
 
 import type { HowMuchRoomItTakes } from './what-a-body-can-carry-and-what-a-ring-holds.js';
 import { isHeld, isWorn, WHAT_TWO_HANDS_HOLD, type ObjectRecord } from './possessions.js';
+import { isAVehicle } from './a-vehicle.js';
 
 /** The kinds that are never on anybody, whoever the row names. */
 const NEVER_CARRIED_KINDS = new Set(['formation', 'territory']);
@@ -25,6 +26,8 @@ export function whatTheirThingsTake(objects: readonly ObjectRecord[], personId: 
     for (const object of objects) {
         if (object.possessorId !== personId) continue;
         if (NEVER_CARRIED_KINDS.has(object.kind) || object.tags.includes('never-carried')) continue;
+        // A vehicle is ridden and loaded, not carried, even one taken into their hands.
+        if (isAVehicle(object)) continue;
         weight += object.weight;
         if (!isWorn(object) && !isHeld(object)) volume += object.volume;
     }

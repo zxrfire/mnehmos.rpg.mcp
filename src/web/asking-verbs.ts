@@ -80,6 +80,7 @@ import type { NpcRecord } from '../engine/world/npc-state.js';
 import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import { boughtFromItsOwner } from '../engine/world/ownership-transfer.js';
 import { hadAs } from '../engine/world/possessions.js';
+import { isAVehicle } from '../engine/world/a-vehicle.js';
 import { whatABodyCanCarry, whatAllOfThatTakes } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import {
     howManyHeld,
@@ -880,8 +881,9 @@ ${unnamed}`;
                 whatABodyCanCarry(cultivator.realmOrdinal),
                 howManyHeld(this.atHand!.objects, cultivator.id)
             );
-            lifted.landed = landed;
-            lifted.object = landed === 'held'
+            // A vehicle is not carried: taken, it is with the one who took it. See `a-vehicle.ts`.
+            lifted.landed = isAVehicle(lifted.object) ? 'inventory' : landed;
+            lifted.object = isAVehicle(lifted.object) ? lifted.object : landed === 'held'
                 ? hadAs(lifted.object, 'held')
                 : landed === 'inventory'
                     ? lifted.object

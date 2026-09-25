@@ -217,7 +217,12 @@ export const craftVerbs = {
         if (landed.minted) {
             this.atHand = this.atHand ?? await this.loadWorld();
             if (this.atHand) {
-                this.atHand.objects.push(landed.minted);
+                // Built, it goes with them, as a bought one does. See `a-vehicle.ts`.
+                this.atHand.objects.push({
+                    ...landed.minted,
+                    locationId: this.worldPlaceOf(after) ?? landed.minted.locationId,
+                    data: { ...landed.minted.data, withId: cultivator.id }
+                });
                 this.theWorldMoved();
             }
         }

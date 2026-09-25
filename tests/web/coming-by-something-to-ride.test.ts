@@ -46,7 +46,7 @@ describe('coming by something to ride', () => {
     }, 300_000);
 
     it('takes the money and puts the thing in the yard', async () => {
-        const { say, db } = await withAPurse('ride-b');
+        const { say, db, game } = await withAPurse('ride-b');
         const before = (db as unknown as { prepare(q: string): { get(): { spirit_stones: number } } })
             .prepare('SELECT spirit_stones FROM cultivators LIMIT 1').get().spirit_stones;
         await say('I buy a mule');
@@ -54,15 +54,12 @@ describe('coming by something to ride', () => {
             .prepare('SELECT spirit_stones FROM cultivators LIMIT 1').get().spirit_stones;
         expect(after).toBeLessThan(before);
 
-        // Counted, and not tracked. A carriage leaving somebody is a number
-        // going down by one; there is nothing to recognise and nobody to be
-        // asked about it, which is why it is arithmetic on a holding rather
-        // than a row with a provenance chain.
-        const rows = (db as unknown as { prepare(q: string): { all(): { item_id: string; quantity: number }[] } })
-            .prepare("SELECT item_id, quantity FROM cultivator_pouch WHERE item_id LIKE 'conv-%'")
-            .all();
-        expect(rows).toHaveLength(1);
-        expect(rows[0].quantity).toBe(1);
+        // An item, going with them. The owner: "when you buy it, you take it with you", and it
+        // stands where it is left. See `a-vehicle.ts`.
+        const bought = game.atHand!.objects.filter(o => typeof o.data.conveyanceId === 'string'
+            && String(o.data.conveyanceId).startsWith('conv-mount'));
+        expect(bought).toHaveLength(1);
+        expect(bought[0]!.data.withId).toBeTruthy();
     }, 300_000);
 
     it('says what is in the yard when asked what you have', async () => {
@@ -73,7 +70,7 @@ describe('coming by something to ride', () => {
         const { say } = await withAPurse('ride-c');
         await say('I buy a horse');
         const held = await say('what am I carrying');
-        expect(held.narration ?? '').toMatch(/In the yard/);
+        expect(held.narration ?? '').toMatch(/With you: /);
         expect(held.narration ?? '').not.toMatch(/Nothing in the pouch at all/);
     }, 300_000);
 
