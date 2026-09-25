@@ -135,7 +135,12 @@ export function theSpanTheSentenceNames(input: string): ASpanNamedInASentence | 
     // "half a year" reads as one token to a scanner walking backwards from the
     // unit, and "a" means one. Normalising it up front is cheaper than teaching
     // the scanner to look two words back.
-    const text = input.toLowerCase().replace(/\bhalf\s+an?\b/g, '0.5');
+    // And "a couple" and "a few" are counts, not the article: "food for a couple months" read as
+    // one month, and "a few weeks" as one.
+    const text = input.toLowerCase()
+        .replace(/\bhalf\s+an?\b/g, '0.5')
+        .replace(/\ba\s+couple(?:\s+of)?\b/g, '2')
+        .replace(/\b(?:a\s+few|several)\b/g, '3');
 
     for (const [unitPattern, unitDays, unit] of DURATION_UNITS) {
         const match = unitPattern.exec(text);

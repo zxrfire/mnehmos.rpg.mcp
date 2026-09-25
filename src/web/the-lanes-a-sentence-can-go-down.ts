@@ -225,12 +225,15 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'craft'
     },
     sustain: {
-        says: 'the body: feeding it, provisioning it, mending it',
+        // FOOD IS THIS LANE HOWEVER IT IS BOUGHT. Played: "i buy food for a couple months" went
+        // to trade/buy and bought one bowl of millet.
+        says: 'the body: feeding it, provisioning it, mending it. Buying food of any kind is here - '
+            + 'one meal is eat, food for the road or for weeks or months is provision',
         intents: { eat: 'eat', provision: 'provision', treat: 'treat', pill: 'consume_pill' },
         otherwise: 'eat'
     },
     trade: {
-        says: 'stones for things and things for stones',
+        says: 'stones for things and things for stones, except food, which is sustain',
         // `give` is the player parting with THEIRS. A demand made of
         // somebody else is fight/make_them_comply, and the two collided.
         intents: { buy: 'buy', sell: 'sell', give_mine_away: 'give', prices: 'market' },

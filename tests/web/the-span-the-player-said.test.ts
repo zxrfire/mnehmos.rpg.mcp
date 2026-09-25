@@ -119,4 +119,10 @@ describe('a span the player said in so many words is the span that runs', () => 
         expect(parseDuration('i sit with twelve rations')).toBeNull();
         expect(parseDuration('twelve rations')).toBeNull();
     });
+
+    it('reads "a couple" and "a few" as counts, not as one', () => {
+        expect(parseDuration('food for a couple months')).toBe(60);
+        expect(parseDuration('food for a couple of months')).toBe(60);
+        expect(parseDuration('a few weeks of food')).toBe(21);
+    });
 });
