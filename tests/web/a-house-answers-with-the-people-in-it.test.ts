@@ -74,7 +74,10 @@ describe('asking a house what a match would take', () => {
         const spot = aPlaceWithAHousedPerson(world);
         expect(spot, 'no housed person anywhere in the world to propose to').toBeTruthy();
 
-        await game.act(`I travel to ${spot!.location.name}`);
+        // A road across a border is its real length, and can be stopped short: go on until there.
+        for (let leg = 0; leg < 6 && game.currentRun().cultivator.location !== spot!.location.name; leg++) {
+            await game.act(`I travel to ${spot!.location.name}`);
+        }
         // WHO IS STANDING THERE WHEN THE PLAYER ARRIVES, at the place they
         // arrived at. The journey spends days and people move; the busiest place
         // in the world after it is not necessarily where the player is.
@@ -120,7 +123,9 @@ describe('asking a house what a match would take', () => {
 
         const place = world.locations.find(l => l.id === loose!.locationId);
         expect(place, 'their location is not a place').toBeTruthy();
-        await game.act(`I travel to ${place!.name}`);
+        for (let leg = 0; leg < 6 && game.currentRun().cultivator.location !== place!.name; leg++) {
+            await game.act(`I travel to ${place!.name}`);
+        }
 
         const result = await game.act(`I propose a match to ${loose!.name}`);
         const said = JSON.stringify(result);

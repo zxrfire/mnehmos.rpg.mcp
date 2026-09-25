@@ -145,7 +145,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
 | [`child`](#child) | `days` `target` `intent` | time | yes | - | [2](#child) |
-| [`carry`](#carry) | `target` `intent` | varies | yes | - | [13](#carry) |
+| [`carry`](#carry) | `target` `intent` | varies | yes | - | [14](#carry) |
 | [`conceal`](#conceal) | `intent` | varies | yes | - | [3](#conceal) |
 | [`unclear`](#unclear) | - | nothing | fallback | - | - |
 
@@ -676,13 +676,13 @@ Intents: `have`, `place`.
 
 ### `carry`
 
-what is on this body and what is in its hands. "intent" says which: "wear" puts robes on (and says whose they are and what a house's people make of somebody in them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away" returns it, "drop" lets it go on the ground, "show" offers the house token as proof of what you are - which is what a robe is not. "store" puts the thing named into the storage ring on their hand, "retrieve" takes it back out, "unmark" breaks somebody else's mark on a ring so it will open. "load" puts a thing into their cart, carriage or boat and "unload" takes it out; "leave_behind" leaves the vehicle where it stands and "take_along" takes it with them again. "target" is what was named, in the player's own words. No day passes and nothing is rolled. NOT for attacking: "I draw my sword on him" is attack. Inside a fight none of this applies - dropping a sword there is a surrender, and the fight reads it.
+what is on this body and what is in its hands. "intent" says which: "wear" puts robes on (and says whose they are and what a house's people make of somebody in them), "take_off" takes them off, "draw" puts a blade in the hand, "put_away" returns it, "drop" lets it go on the ground, "show" offers the house token as proof of what you are - which is what a robe is not. "store" puts the thing named into the storage ring on their hand, "retrieve" takes it back out, "unmark" breaks somebody else's mark on a ring so it will open. "load" puts a thing into their cart, carriage or boat and "unload" takes it out; "leave_behind" leaves the vehicle where it stands and "take_along" takes it with them again. "deliver" hands over goods they signed for off a house's wall, at the house they are for. "target" is what was named, in the player's own words. No day passes and nothing is rolled. NOT for attacking: "I draw my sword on him" is attack. Inside a fight none of this applies - dropping a sword there is a surrender, and the fight reads it.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'carry'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
 Takes `target`, `intent`.
 
-Intents: `wear`, `take_off`, `draw`, `put_away`, `drop`, `show`, `store`, `retrieve`, `unmark`, `load`, `unload`, `leave_behind`, `take_along`.
+Intents: `wear`, `take_off`, `draw`, `put_away`, `drop`, `show`, `store`, `retrieve`, `unmark`, `load`, `unload`, `leave_behind`, `take_along`, `deliver`.
 
 ### `conceal`
 

@@ -3,6 +3,7 @@
  */
 
 import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
+import { aDeliveryAsAnOffer, whatAHouseSendsItsSisters } from '../engine/world/what-a-house-sends-its-sisters.js';
 import {
     rollEncounters,
     arrivableFromUnheard,
@@ -1220,6 +1221,19 @@ function whereAPostingWouldSendThem(
     };
 }
 
+/** Whether somebody standing at this place is at this house's seat, or inside it. */
+function standsAtItsSeat(world: WorldState, where: string | null, houseId: string): boolean {
+    const seat = world.factions.find(faction => faction.id === houseId)?.seatLocationId ?? null;
+    const named = (where ?? '').trim().toLowerCase();
+    if (seat === null || named.length === 0) return false;
+    const byId = new Map(world.locations.map(row => [row.id, row]));
+    let row = world.locations.find(location => location.name.toLowerCase() === named);
+    for (let steps = 0; row && steps < 8; steps++, row = row.parentId ? byId.get(row.parentId) : undefined) {
+        if (row.id === seat) return true;
+    }
+    return false;
+}
+
 function whatTheHouseItselfNeedsDone(
     deps: EncounterDeps,
     cultivator: Cultivator,
@@ -1288,6 +1302,24 @@ function whatTheHouseItselfNeedsDone(
                 continue;
             }
             wall.refusals.push({ entryId: entry.id, name: entry.name, reason: why });
+        }
+
+        // AND WHAT THE HOUSE IS SENDING ITS SISTERS, which anybody may carry: "you can take any
+        // job, you figure out how to do it". Contribution is for its own; the stones are for
+        // anybody. See `what-a-house-sends-its-sisters.ts`.
+        // Posted at the sending house's own seat, where the goods are: they are picked up there.
+        if (world !== null && world !== undefined && standsAtItsSeat(world, cultivator.location, standing.house.id)) {
+            for (const consignment of whatAHouseSendsItsSisters(world, standing.house.id, Math.floor(world.currentDay))) {
+                const entry = aDeliveryAsAnOffer(consignment, cultivator.realmOrdinal);
+                const terms = {
+                    ...dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission'),
+                    days: consignment.days,
+                    contribution: membership?.factionId === consignment.fromHouseId ? consignment.contribution : 0,
+                    stones: consignment.stones,
+                    cohort: 0
+                };
+                wall.offers.push({ entry, terms, weight: entry.weight });
+            }
         }
     }
     return wall;

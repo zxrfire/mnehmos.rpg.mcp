@@ -1179,7 +1179,8 @@ export const DUTY_TAKING_VERBS =
 // reached the board through `SECT_DUTY_PATTERN` and "I take THAT task" reached
 // nothing, which is the near-synonym rule at one word's distance: the failing
 // half is the sentence somebody types after the board has just named one.
-export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?|tasks?)\b/;
+// And a delivery off a house's wall is one. See `what-a-house-sends-its-sisters.ts`.
+export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?|tasks?|deliver(?:y|ies)|consignments?)\b/;
 
 /**
  * Swallowing, which is not buying and is not eating.
@@ -4695,6 +4696,9 @@ function whatIsSaidToTheirFace(said: string): PlannedAction | null {
     return null;
 }
 
+/** Handing over goods a house sent: the goods named, or a delivery said outright. */
+const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand in|hands in|hand off|turn over|drop off|drops off)\b[^.!?]*\b(?:goods|crates?|consignment|delivery|cargo|casket|strongbox|bales?|sacks?|pelts?|grain|ore|load|shipment)\b|^\s*(?:i\s+)?(?:deliver|make (?:the|my) delivery)\b/;
+
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
@@ -4708,6 +4712,10 @@ function planIntent(input: string): PlannedAction {
     // reached nothing. With a road stopped where they stand, the move carries
     // on down it.
     if (CARRYING_ON.test(text)) return { action: 'move', intent: 'travel' };
+
+    // GOODS HANDED OVER where they were sent: a delivery off a house's wall. Ahead of giving,
+    // which "hand over" also reaches. See `what-a-house-sends-its-sisters.ts`.
+    if (A_DELIVERY_HANDED_OVER.test(text)) return { action: 'carry', intent: 'deliver' };
 
     // ── A BOW IS AIMED AT SOMEBODY ───────────────────────────────────────
     //

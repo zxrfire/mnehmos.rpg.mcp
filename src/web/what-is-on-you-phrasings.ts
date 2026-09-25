@@ -20,7 +20,7 @@
 
 /** The label the `carry` verb dispatches on. */
 export type CarryIntent = 'wear' | 'take_off' | 'draw' | 'put_away' | 'drop' | 'show' | 'store' | 'retrieve' | 'unmark'
-    | 'load' | 'unload' | 'leave_behind' | 'take_along';
+    | 'load' | 'unload' | 'leave_behind' | 'take_along' | 'deliver';
 
 /** What a house puts on its own, and what anybody calls the rest of it. */
 const WORN = '(?:robes?|uniform|habit|garb|gown|outfit|disguise|clothes|clothing|(?:storage\\s+|spatial\\s+)?ring)';

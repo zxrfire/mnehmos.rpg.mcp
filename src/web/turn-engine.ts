@@ -187,6 +187,13 @@ import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.j
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
 import { thePlacesOnTheSheet, type APlaceOnTheSheet } from './places-on-the-sheet.js';
 import { whatABeastPartTakes, whereAKillIsLeft, whereAPartGoes } from '../engine/world/what-a-beast-part-takes.js';
+import {
+    isADelivery,
+    theGoodsSignedFor,
+    whatAHouseSendsItsSisters,
+    whatALateDeliveryCosts,
+    type WhatItWants
+} from '../engine/world/what-a-house-sends-its-sisters.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
@@ -4942,6 +4949,8 @@ ${noticedWaiting}`;
                     case 'leave_behind':
                     case 'take_along':
                         return whatTheVehicleDoes(this, cultivator, action.intent, action.target);
+                    case 'deliver':
+                        return this.handOverADelivery(run, cultivator);
                     default:
                         return whatWearingThemBuys(this, cultivator, action.target);
                 }
@@ -11034,6 +11043,146 @@ ${line}`;
     }
 
     /**
+     * Signing for a delivery off a house's wall: the goods are minted in the carrier's charge,
+     * wherever they fit - the pack, a vehicle with them, or waiting in the yard for something that
+     * can carry them - and no day passes. The owner: "you can take any job, you figure out how to
+     * do it". See `what-a-house-sends-its-sisters.ts`.
+     */
+    private signForADelivery(
+        run: Run,
+        cultivator: Cultivator,
+        chosen: DutyCandidate,
+        duty: ReturnType<typeof dutyFromOffer>,
+        sworn: ObligationRecord
+    ): Execution {
+        const world = this.atHand;
+        const from = chosen.entry.tags.find(tag => tag.startsWith('from:'))?.slice(5) ?? '';
+        const consignment = world
+            ? whatAHouseSendsItsSisters(world, from, Math.floor(world.currentDay)).find(row => row.id === chosen.entry.id)
+            : undefined;
+        if (!world || !consignment) {
+            return refused('engine.signForADelivery', 'sect', factsForRefusal(
+                'The notice is down.',
+                'The goods it was for have already gone out with somebody else.',
+                `No consignment ${chosen.entry.id} this season. The oath ${sworn.id} stands with nothing to carry.`));
+        }
+        const here = this.worldPlaceOf(cultivator);
+        const goes = whereAPartGoes({
+            part: { volume: consignment.volume, weight: consignment.weight },
+            carrying: together(whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id)),
+                whatTheirThingsTake(world.objects, cultivator.id)),
+            body: whatABodyCanCarry(cultivator.realmOrdinal),
+            vehicles: this.theVehiclesWithTheirFreeHold(cultivator)
+        });
+        world.objects.push(theGoodsSignedFor({
+            consignment,
+            carrierId: cultivator.id,
+            oathId: sworn.id,
+            dueOnDay: duty.dueOnDay,
+            possessorId: goes.where === 'pack' ? cultivator.id : goes.where === 'vehicle' ? goes.vehicleId : null,
+            locationId: goes.where === 'ground' ? here : null
+        }));
+        const at = world.objects.length - 1;
+        world.objects[at] = { ...world.objects[at]!, data: { ...world.objects[at]!.data, duty: JSON.stringify(duty) } };
+        this.theWorldMoved();
+
+        const lines = [
+            `You sign for ${consignment.goods}, for ${consignment.toHouseName} at ${consignment.toPlace}. `
+            + `It is due there in ${humanDays(consignment.days)}; the road is ${humanDays(consignment.roadDays)}.`,
+            goes.where === 'pack' ? 'It goes on your back.'
+                : goes.where === 'vehicle' ? `It goes into ${goes.vehicleName}.`
+                    : `It is more than you can carry, and it waits here for whatever you bring to carry `
+                      + `it: it wants ${consignment.wants}.`
+        ];
+        const facts = factsForToolResult('Signed for.', lines);
+        facts.structure.push(
+            `signForADelivery: ${consignment.id} (${consignment.volume} L, ${consignment.weight} weight, wants `
+            + `${consignment.wants}) to ${consignment.toHouseId}, due day ${duty.dueOnDay}; landed ${goes.where}. `
+            + `Oath ${sworn.id}.`);
+        return this.freeAction(run, 'sect', facts);
+    }
+
+    /**
+     * Handing goods over at the house they were sent to. On time, the duty is completed and paid.
+     * Late, it is paid nothing, merit is taken back and word goes round, scaled by how big the
+     * fumble was: "the larger the fumble the greater the loss of face".
+     */
+    private handOverADelivery(run: Run, cultivator: Cultivator): Execution {
+        const world = this.atHand;
+        const here = this.worldPlaceOf(cultivator);
+        const vehicles = new Set(theVehiclesTheyAreWith(world?.objects ?? [], cultivator.id, here).map(row => row.id));
+        const carried = (world?.objects ?? []).filter(row => row.tags.includes('consignment')
+            && row.data.carrierId === cultivator.id
+            && (row.possessorId === cultivator.id || (row.possessorId !== null && vehicles.has(row.possessorId))
+                || (row.possessorId === null && row.locationId === here && here !== null)));
+        if (!world || carried.length === 0) {
+            return refused('engine.handOverADelivery', 'carry', factsForRefusal(
+                'Nothing to hand over.', 'You are carrying nothing anybody sent you out with.',
+                'No consignment in their charge within reach.'));
+        }
+        const atTheSeat = (houseId: string) => {
+            const seat = world.factions.find(faction => faction.id === houseId)?.seatLocationId ?? null;
+            if (seat === null || here === null) return false;
+            const byId = new Map(world.locations.map(row => [row.id, row]));
+            for (let row = byId.get(here), steps = 0; row && steps < 8; steps++, row = row.parentId ? byId.get(row.parentId) : undefined) {
+                if (row.id === seat) return true;
+            }
+            return false;
+        };
+        const goods = carried.find(row => atTheSeat(String(row.data.toHouseId)));
+        if (!goods) {
+            const first = carried[0]!;
+            return refused('engine.handOverADelivery', 'carry', factsForRefusal(
+                'Not here.', `${first.name} is for ${first.data.toHouseName} at ${first.data.toPlace}, and this is not there.`,
+                `Consignment ${first.id} is for ${first.data.toHouseId}; standing at ${here}.`));
+        }
+
+        const today = Math.floor(run.elapsedDays);
+        const duty = JSON.parse(String(goods.data.duty)) as ReturnType<typeof dutyFromOffer>;
+        const daysLate = today - Number(goods.data.dueOnDay);
+        const toHouseId = String(goods.data.toHouseId);
+        const at = world.objects.findIndex(row => row.id === goods.id);
+        world.objects[at] = { ...goods, possessorId: toHouseId, ownerId: toHouseId, locationId: here,
+            tags: goods.tags.filter(tag => tag !== 'consignment').concat('delivered') };
+        this.theWorldMoved();
+
+        const cost = whatALateDeliveryCosts({ wants: goods.data.wants as WhatItWants, contribution: Number(goods.data.contribution) }, daysLate);
+        const ledger: DutyLedgerInput = {
+            repos: this.repos, cultivator,
+            duty: cost === null ? duty : { ...duty, contribution: 0, stones: 0 },
+            onDay: today, acceptedOnDay: duty.dueOnDay - duty.days, entryId: String(goods.data.entryId),
+            what: `${goods.name}, delivered to ${goods.data.toHouseName}.`, world
+        };
+        const settled = completeDuty(ledger);
+        const lines = [`${goods.name} handed over to ${goods.data.toHouseName}.`];
+        if (cost === null) {
+            lines.push(settled.line);
+        } else {
+            if (cost.contribution > 0 && duty.factionId) {
+                this.repos.sects.addContribution(duty.factionId, cultivator.id, -cost.contribution);
+            }
+            lines.push(`It is ${humanDays(daysLate)} late. Nothing is paid for it`
+                + (cost.contribution > 0 ? `, and ${cost.contribution} contribution is taken back` : '') + '.');
+            aDeedEntersTheWorld(world, {
+                kind: 'said_in_public',
+                weight: cost.face,
+                day: Math.floor(world.currentDay),
+                locationId: here,
+                place: placeName(cultivator),
+                actors: [{ id: cultivator.id, name: cultivator.name, role: 'came late with the goods' }],
+                factionIds: [goods.ownerId ?? '', toHouseId].filter(id => id.length > 0),
+                summary: `${cultivator.name} brought ${goods.name} to ${goods.data.toHouseName} `
+                    + `${daysLate} days late.`,
+                unattributed: `A delivery came late to ${goods.data.toHouseName}.`
+            });
+        }
+        const facts = factsForToolResult(cost === null ? 'Delivered.' : 'Delivered late.', lines);
+        facts.structure.push(`handOverADelivery: ${goods.id} to ${toHouseId}, ${daysLate > 0 ? `${daysLate} day(s) late, face ${cost?.face}, `
+            + `contribution -${cost?.contribution}` : 'on time'}; completeDuty ${settled.obligation.id}.`);
+        return this.freeAction(run, 'carry', facts);
+    }
+
+    /**
      * Where a part off a kill goes: the pack when it fits beside what is carried, a vehicle with
      * them that has the room, or the ground where the beast fell. See `whereAPartGoes`.
      */
@@ -16358,6 +16507,12 @@ ${fit.line}`;
             `  ${titleOf(offer)}: ${humanDays(offer.terms.days)}, `
             + `${offer.terms.contribution} contribution`
             + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
+            // A DELIVERY SAYS WHAT IT PAYS AND WHAT IT WANTS TO CARRY IT, as a fact and never a bar.
+            // See `what-a-house-sends-its-sisters.ts`.
+            + (isADelivery(offer.entry.id)
+                ? ` and ${offer.terms.stones} spirit stones, and it wants `
+                  + `${offer.entry.tags.find(tag => tag.startsWith('wants:'))?.slice(6) ?? 'a back'} to carry it`
+                : '')
             + '.';
         const theBoardAsLines = (offers: readonly DutyCandidate[]): string[] => {
             const groups = new Map<string, DutyCandidate[]>();
@@ -16500,6 +16655,9 @@ ${fit.line}`;
         // ends in the middle leaves a standing obligation somebody can read in
         // forty years, and `refuseDuty` is what settles it the other way.
         const sworn = acceptDuty(ledger);
+        // A DELIVERY IS SIGNED FOR AND CARRIED, not served out in a span of days. See
+        // `what-a-house-sends-its-sisters.ts`.
+        if (isADelivery(chosen.entry.id)) return this.signForADelivery(run, cultivator, chosen, duty, sworn);
 
         // ── AND YOU SAID SO TO SOMEBODY ──────────────────────────────────
         //
