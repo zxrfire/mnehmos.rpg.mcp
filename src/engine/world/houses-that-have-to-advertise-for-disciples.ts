@@ -427,7 +427,23 @@ export type TheAsk =
      * being null the moment one of these is on a wall. The day comes off
      * `whatThisHouseHasOnPaper` and never off the day the paper was read.
      */
-    | { kind: 'open_competition'; onDay: number };
+    | { kind: 'open_competition'; onDay: number }
+    /**
+     * A price the house has put on somebody. Only the world holds one, so it
+     * arrives through `alsoAsking` like a search does. See
+     * `a-house-puts-a-price-on-somebody.ts`.
+     */
+    | {
+        kind: 'wanted';
+        /** Who the paper names, by id, so a reader can tell it is them. */
+        whoId: string;
+        who: string;
+        purseStones: number;
+        /** What the house pays on. */
+        proof: string;
+        /** What the house says it is for. */
+        forWhat: string;
+    };
 
 export interface HouseWithSomethingToSay {
     id: string;
@@ -462,6 +478,8 @@ export interface Notice {
     onDay: number | null;
     /** The intake behind this notice, where it is one. */
     bill: RecruitingBill | null;
+    /** The person a price names, where the notice is one. */
+    wantedId?: string;
 }
 
 /**
@@ -485,7 +503,10 @@ export const WHAT_A_NOTICE_DOES_NOT_BUY: Record<TheAsk['kind'], string> = {
     open_competition:
         'Standing up is not a place on the roll and winning is not either. What an open '
         + 'competition hands out is a placing, said out loud in front of everybody, and what '
-        + 'that is worth afterwards is whatever the people who heard it make of it.'
+        + 'that is worth afterwards is whatever the people who heard it make of it.',
+    wanted:
+        'The purse is what the paper says, and whether it is paid is between the house and '
+        + 'whoever brings it what it asks for. Taking it up puts nobody on the roll.'
 };
 
 /** How the paper words one ask. */
@@ -509,6 +530,9 @@ function whatThePaperSays(
         case 'warning':
             return `${house.name} answers for ground in this province and has put up a warning. `
                 + ask.what;
+        case 'wanted':
+            return `${house.name} will pay ${ask.purseStones} spirit stones for ${ask.who}, `
+                + `${ask.forWhat}. It pays on ${ask.proof}.`;
         case 'open_competition':
             // ANNOUNCED BY NAME AND BY AFFILIATION, INCLUDING NONE, which is the
             // whole of what an open competition is for and is therefore what the
@@ -551,9 +575,10 @@ export function noticesOnTheWall(input: WallInput & {
         .filter(house => house.postsInPublic && reachesThisGround(house, input.placeProvinceId));
 
     // One paper per ask, so a house with two things to say takes two nails and
-    // competes with itself for them like anybody else.
+    // competes with itself for them like anybody else. A price is not in the
+    // pool: see the nails of its own below.
     const pool = reaching
-        .flatMap(house => house.asks.map(ask => ({ house, ask })))
+        .flatMap(house => house.asks.filter(ask => ask.kind !== 'wanted').map(ask => ({ house, ask })))
         .sort((a, b) => a.house.id.localeCompare(b.house.id)
             || a.ask.kind.localeCompare(b.ask.kind));
 
@@ -656,6 +681,33 @@ export function noticesOnTheWall(input: WallInput & {
         // nearest is the one somebody standing here could still get to.
         .sort((a, b) => a.onDay - b.onDay || a.house.id.localeCompare(b.house.id))
         .slice(0, A_DATED_PAPER_TAKES_ONE_NAIL);
+
+    // ── AND THE PRICES, ON NAILS OF THEIR OWN ────────────────────────────
+    //
+    // A house that puts a price on somebody nails it on every wall it reaches
+    // itself; it is not drawn against the standing business for a slot, which
+    // is the same reason the dated paper is not. As many as the wall carries
+    // standing business, largest purse first - measured on two seeded worlds
+    // over a century, a whole world stands between none and nine at once, so a
+    // province's wall rarely carries more than one.
+    const prices = reaching
+        .flatMap(house => house.asks.flatMap(ask => ask.kind === 'wanted' ? [{ house, ask }] : []))
+        .sort((a, b) => b.ask.purseStones - a.ask.purseStones
+            || a.house.id.localeCompare(b.house.id) || a.ask.whoId.localeCompare(b.ask.whoId))
+        .slice(0, slots);
+    for (const { house, ask } of prices) {
+        out.push({
+            kind: ask.kind,
+            houseId: house.id,
+            houseName: house.name,
+            placeName: input.placeName,
+            saying: whatThePaperSays(house, ask, input.onDay),
+            andWhatItIsNot: WHAT_A_NOTICE_DOES_NOT_BUY[ask.kind],
+            onDay: null,
+            bill: null,
+            wantedId: ask.whoId
+        });
+    }
 
     for (const { house, onDay } of dated) {
         const ask: TheAsk = { kind: 'open_competition', onDay };

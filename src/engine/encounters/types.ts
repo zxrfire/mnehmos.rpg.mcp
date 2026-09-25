@@ -384,6 +384,12 @@ export interface AnAccountComingDue {
     what: string;
     /** A blood feud: written to be carried rather than settled. */
     carried: boolean;
+    /**
+     * Where they came for a purse a house put on the cultivator, rather than
+     * over anything they hold themselves. The holder is then the one who came,
+     * and this names whose paper it was. See `a-house-puts-a-price-on-somebody.ts`.
+     */
+    forAPurse?: { houseId: string; houseName: string; purseStones: number };
 }
 
 /** Everything a window produced, chronologically. */

@@ -217,10 +217,37 @@ export interface TheStakes {
     evil: boolean;
     /** What they would carry off, for greed. */
     objectIds: readonly string[];
+    /** The paper a house put up on the victim, where that is what the greed is for. */
+    priceFactId?: string;
 }
 
 /** A purse worth stopping somebody for, in stones. */
 export const A_PURSE_WORTH_TAKING = 200;
+
+/** The most a purse weighs as a reason, carried or posted. */
+export const A_PURSE_AT_MOST = 0.6;
+
+/**
+ * What a price a house posted on somebody is worth as a reason to go after
+ * them, on the same scale as a purse they carry. Nothing to somebody already
+ * holding more than it: a price moves the people it would change something for.
+ */
+export function whatAPriceIsWorthTo(taker: Pick<NpcRecord, 'spiritStones'>, purseStones: number): number {
+    if (purseStones <= Number(taker.spiritStones ?? 0)) return 0;
+    return Math.min(A_PURSE_AT_MOST, purseStones / (10 * A_PURSE_WORTH_TAKING));
+}
+
+/**
+ * A price standing on somebody, as the yearly pass needs it. Built by the caller
+ * off `a-house-puts-a-price-on-somebody.ts`, which owns the papers.
+ */
+export interface APriceOnThem {
+    factId: string;
+    purseStones: number;
+    posterFactionId: string | null;
+    /** Whether the paper is on a wall at this place. */
+    hangsAt(placeName: string | null): boolean;
+}
 
 /**
  * What a stake has to be worth before somebody a realm further up has any
@@ -309,6 +336,11 @@ export function whatTheyWouldFightOver(input: {
     standsInTheirSeat: boolean;
     /** The facts the killer carries, for whether they know what the victim has. */
     killerKnows?: ReadonlySet<string>;
+    /**
+     * A price a house has put on the victim, on a wall the killer is standing
+     * by. See `a-house-puts-a-price-on-somebody.ts`.
+     */
+    priceOnThem?: { factId: string; purseStones: number } | null;
 }): TheStakes | null {
     const { killer, victim, place } = input;
     const options: TheStakes[] = [];
@@ -348,7 +380,7 @@ export function whatTheyWouldFightOver(input: {
         // somebody with a thousand.
         const purse = Number(victim.spiritStones ?? 0);
         if (knows !== null && purse > A_PURSE_WORTH_TAKING && purse > 2 * Number(killer.spiritStones ?? 0)) {
-            worth = Math.max(worth, Math.min(0.6, purse / (10 * A_PURSE_WORTH_TAKING)));
+            worth = Math.max(worth, Math.min(A_PURSE_AT_MOST, purse / (10 * A_PURSE_WORTH_TAKING)));
         }
         if (worth > 0) {
             const wronged = worst !== null && worst <= A_GRIEVANCE;
@@ -372,6 +404,15 @@ export function whatTheyWouldFightOver(input: {
 
     if (input.standsInTheirSeat) {
         options.push({ motive: 'a seat', weight: 0.6, evil: true, objectIds: [] });
+    }
+
+    // A PURSE A HOUSE HAS PUT ON THEM, which is greed and not an evil one: the
+    // house posted it in public and anybody may take it up.
+    if (input.priceOnThem) {
+        const worth = whatAPriceIsWorthTo(killer, input.priceOnThem.purseStones);
+        if (worth > 0) {
+            options.push({ motive: 'greed', weight: worth, evil: false, objectIds: [], priceFactId: input.priceOnThem.factId });
+        }
     }
 
     // AND IS ANY OF IT WORTH THEIR WHILE. Reaching down costs nothing to
@@ -600,7 +641,12 @@ export interface AReasonThisYear {
  * Every pair with a reason this year: people standing on the same ground, where
  * both factors are above nothing. No draw over the population picks anybody.
  */
-export function everybodyWithAReasonThisYear(state: WorldState, seatsTheyWant: ReadonlyMap<string, ReadonlySet<string>>): AReasonThisYear[] {
+export function everybodyWithAReasonThisYear(
+    state: WorldState,
+    seatsTheyWant: ReadonlyMap<string, ReadonlySet<string>>,
+    /** The largest price standing on each person, keyed by who it names. */
+    priced: ReadonlyMap<string, APriceOnThem> = new Map()
+): AReasonThisYear[] {
     const houses = new Map(state.factions.filter(f => f.dissolvedOnDay === null).map(f => [f.id, f] as const));
     const places = new Map(state.locations.map(l => [l.id, l] as const));
     const byPlace = new Map<string, NpcRecord[]>();
@@ -644,25 +690,33 @@ export function everybodyWithAReasonThisYear(state: WorldState, seatsTheyWant: R
         return found;
     };
 
-    const consider = (killer: NpcRecord, victim: NpcRecord): void => {
+    // `cameFor`: the killer read a paper and went to where the victim is, so
+    // the two need not have been standing on the same ground.
+    const consider = (killer: NpcRecord, victim: NpcRecord, cameFor = false): void => {
         if (killer.id === victim.id) return;
         // The cheap refusals first. Each reads only this year's fixed state, so
         // a pair they turn away would be turned away again, and skipping the
         // key for it changes nothing but the cost.
-        if (killer.locationId === null || killer.locationId !== victim.locationId) return;
+        if (killer.locationId === null || victim.locationId === null) return;
+        if (!cameFor && killer.locationId !== victim.locationId) return;
         if (!isTheWorldsToMove(killer) || !theWorldMayEnd(victim)) return;
         const pair = `${killer.id}|${victim.id}`;
         if (already.has(pair)) return;
         already.add(pair);
-        const place = places.get(killer.locationId) ?? null;
+        const place = places.get(victim.locationId) ?? null;
         const relation = howTheyStandToEachOther(state, killer, victim, houses, byId);
         if (relation.value <= 0) return;
         if (!knows.has(killer.id)) knows.set(killer.id, new Set(killer.historyFactIds));
+        const paper = priced.get(victim.id);
         const stakes = whatTheyWouldFightOver({
             state, killer, victim, place,
             carried: carriedBy.get(victim.id) ?? [],
             standsInTheirSeat: seatsTheyWant.get(killer.id)?.has(victim.id) ?? false,
-            killerKnows: knows.get(killer.id)!
+            killerKnows: knows.get(killer.id)!,
+            priceOnThem: paper && killer.factionId !== paper.posterFactionId
+                && paper.hangsAt(places.get(killer.locationId)?.name ?? null)
+                ? { factId: paper.factId, purseStones: paper.purseStones }
+                : null
         });
         if (stakes === null) return;
         const attackers = [killer, ...alliesHere(killer).filter(n => n.id !== victim.id)];
@@ -682,6 +736,27 @@ export function everybodyWithAReasonThisYear(state: WorldState, seatsTheyWant: R
             if (tie.standing > A_GRIEVANCE) continue;
             const victim = byId.get(tie.targetId);
             if (victim && couldBeEither(victim)) consider(killer, victim);
+        }
+    }
+    // A PRICE ON SOMEBODY, read off a wall by anybody standing where the paper
+    // hangs, who may go to where the person is. Before the going, 0 of 78 papers
+    // on `price-probe` and `afford-a` over a century each were ever brought in:
+    // the people a house puts paper up on are mostly home inside their own
+    // house's walls among their own, and nobody beside them wants the purse.
+    // After it, the same two centuries carry 56 papers, three to six standing
+    // at once, and about three people a year with a reason at ~0.5% each - a
+    // paper on another NPC is brought in roughly once in two centuries. That is
+    // the world's arithmetic rather than a gate: the named are mostly strong,
+    // and the few who could reach them already hold more than the purse.
+    for (const [targetId, paper] of priced) {
+        const victim = byId.get(targetId);
+        if (!victim || !couldBeEither(victim) || victim.locationId === null) continue;
+        for (const [placeId, standing] of byPlace) {
+            if (!paper.hangsAt(places.get(placeId)?.name ?? null)) continue;
+            for (const killer of standing) {
+                if (killer.factionId !== null && killer.factionId === victim.factionId) continue;
+                consider(killer, victim, true);
+            }
         }
     }
     // A seat somebody else is standing in.

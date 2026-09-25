@@ -69,6 +69,8 @@ import {
     type Motive
 } from './why-one-cultivator-kills-another.js';
 import { indexById, type WorldState } from './world-state.js';
+import { aPriceIsBroughtIn, thePaperHangsAt, thePaperPostedAs, thePricesStanding } from './a-house-puts-a-price-on-somebody.js';
+import type { APriceOnThem } from './why-one-cultivator-kills-another.js';
 
 /** How much an obeyed demand to leave costs the one sent away, in standing. The lowest slight there is. */
 export const BEING_TOLD_TO_LEAVE = 0.05;
@@ -183,6 +185,25 @@ export function whatItWasMadeToLookLike(place: LocationRecord | null): string {
     return `Died at ${place.name}, and nobody saw how.`;
 }
 
+/**
+ * The largest price standing on each person. A second paper on the same head is
+ * a second house, and whoever goes goes for the better purse.
+ */
+export function thePricesOnPeople(state: WorldState): Map<string, APriceOnThem> {
+    const out = new Map<string, APriceOnThem>();
+    for (const paper of thePricesStanding(state, state.currentDay)) {
+        const held = out.get(paper.targetId);
+        if (held && held.purseStones >= paper.purseStones) continue;
+        out.set(paper.targetId, {
+            factId: paper.id,
+            purseStones: paper.purseStones,
+            posterFactionId: paper.posterFactionId,
+            hangsAt: placeName => thePaperHangsAt(paper, placeName)
+        });
+    }
+    return out;
+}
+
 /** One year of it. */
 export function peopleActOnWhyTheyWouldKill(
     state: WorldState,
@@ -196,7 +217,8 @@ export function peopleActOnWhyTheyWouldKill(
         outcomes: {},
         written: []
     };
-    const reasons = everybodyWithAReasonThisYear(state, seatsTheyWant ?? seatsThePeopleHeldBackWant(state));
+    const reasons = everybodyWithAReasonThisYear(
+        state, seatsTheyWant ?? seatsThePeopleHeldBackWant(state), thePricesOnPeople(state));
     const spent = new Set<string>();
     const count = (k: string) => { out.outcomes[k] = (out.outcomes[k] ?? 0) + 1; WHAT_IT_HAS_COME_TO[k] = (WHAT_IT_HAS_COME_TO[k] ?? 0) + 1; };
 
@@ -366,6 +388,12 @@ function writeIt(
             }
         }));
         out.written.push({ fact, deaths: [handoff], npcs: [killer.id, victim.id] });
+        // AND WHOEVER CAME FOR A PURSE GOES TO BE PAID. A hidden killing is left
+        // out above: whoever made it look like something else gave up the proof.
+        const paper = r.stakes.priceFactId ? thePaperPostedAs(state, r.stakes.priceFactId) : null;
+        if (paper) {
+            aPriceIsBroughtIn(state, { paper, claimantId: killer.id, claimantName: killer.name, death: fact, day });
+        }
         return;
     }
 

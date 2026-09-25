@@ -110,8 +110,11 @@ export function attemptAnAccount(
         ...row,
         threatOrdinal: account.sent.realmOrdinal,
         interrupts: true,
-        tokens: ['name', 'holder', 'place', 'what', 'threatRank'],
-        summaryTemplate: account.holderIsAHouse
+        tokens: ['name', 'holder', 'place', 'what', 'threatRank', ...(account.forAPurse ? ['poster'] : [])],
+        summaryTemplate: account.forAPurse
+            ? '{name} has found the cultivator at {place}, come for the purse {poster} put on them: '
+              + '{what} {name} stands at {threatRank}. No terms offered.'
+            : account.holderIsAHouse
             ? '{name} of {holder} has found the cultivator at {place}, sent over the account '
               + '{holder} holds against them: {what} {name} stands at {threatRank}. No terms offered.'
             : '{name} has found the cultivator at {place}, over the account {name} holds against '
@@ -126,8 +129,25 @@ export function attemptAnAccount(
         sourceNote: `Came for them at ${input.place.name} on day ${Math.round(absoluteDay)}.`,
         stance: 'knows',
         confidence: 0.9,
-        statement: `${account.sent.name} came to settle an account.`
+        statement: account.forAPurse
+            ? `${account.sent.name} came for the purse ${account.forAPurse.houseName} put on them.`
+            : `${account.sent.name} came to settle an account.`
     }];
+    // WHOSE PAPER IT WAS, said by the one who came for it - the one channel a
+    // cultivator hears it through.
+    if (account.forAPurse) {
+        grants.push({
+            kind: 'sect',
+            id: account.forAPurse.houseId,
+            name: account.forAPurse.houseName,
+            sourceKind: 'told',
+            sourceNote: `Named by ${account.sent.name}, who came for its purse.`,
+            stance: 'knows',
+            confidence: 0.9,
+            statement: `${account.forAPurse.houseName} has put a price of `
+                + `${account.forAPurse.purseStones} spirit stones on them.`
+        });
+    }
     if (account.holderIsAHouse) {
         grants.push({
             kind: 'sect',
@@ -146,7 +166,8 @@ export function attemptAnAccount(
         holder: account.holderName,
         place: input.place.name,
         what: account.what.trim(),
-        threatRank: rankName(account.sent.realmOrdinal)
+        threatRank: rankName(account.sent.realmOrdinal),
+        ...(account.forAPurse ? { poster: account.forAPurse.houseName } : {})
     };
     const resolved = resolveOccurrence({
         entry,

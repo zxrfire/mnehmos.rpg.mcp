@@ -220,6 +220,7 @@ import {
 } from './what-being-seen-to-do-well-is-worth.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
 import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
+import { accountsHousesHoldForTheirDead, housesPutUpTheirPaper } from './a-house-puts-a-price-on-somebody.js';
 import { peopleBringWhatTheyKnowToTheRoom, theRoomWouldDealToThemAgain } from './bringing-what-you-know-about-somebody-to-the-room.js';
 import { whatComesToLightThisYear } from './what-comes-to-light-about-a-killing.js';
 import {
@@ -632,6 +633,13 @@ export function applyPressure(
                 touched: { factions: [...written.fact.factionIds], locations: written.fact.locationId ? [written.fact.locationId] : [], npcs: written.npcs },
                 deaths: written.deaths
             });
+        }
+        // AND A HOUSE THAT LOST ONE OF ITS OWN TO SOMEBODY PUTS A PRICE ON THEM,
+        // on its walls. After the year's killings, so a death this year is one
+        // a paper can be put up over. See `a-house-puts-a-price-on-somebody.ts`.
+        {
+            const onDay = withinSpan(year * 365 + 200, fromDay, toDay);
+            housesPutUpTheirPaper(state, accountsHousesHoldForTheirDead(state, onDay), onDay);
         }
         const war = fightTheWarsThisYear(
             state,

@@ -40,6 +40,11 @@ export type HistoricalEventKind =
     | 'grudge_opened'
     | 'grudge_inherited'
     | 'grudge_settled'
+    /**
+     * A house put a price on somebody's head: a paper on its walls. See
+     * `a-house-puts-a-price-on-somebody.ts`.
+     */
+    | 'bounty_posted'
     | 'gathering'
     | 'oath_sworn'
     | 'debt_incurred'
