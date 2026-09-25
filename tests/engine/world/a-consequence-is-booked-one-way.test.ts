@@ -19,7 +19,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { createWorld, schedule, type WorldState } from '../../../src/engine/world/world-state.js';
-import { advanceTime, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
+import { advanceTime } from '../../../src/engine/world/time.js';
+import { scheduleConcurrentEvent } from '../../support/a-concurrent-event.js';
 import { soakedWorld } from '../../support/soaked-world.js';
 
 /** Years, as the days `advanceTime` takes. */
