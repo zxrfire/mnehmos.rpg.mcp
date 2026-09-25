@@ -949,7 +949,7 @@ the social layer's belief store.
 
 ```text
 powerful beings fight -> a mountain is destroyed -> an old ruin is exposed
-  -> factions find it -> treasure hunters arrive -> a town grows to serve them
+  -> factions find it -> fortune seekers arrive -> a town grows to serve them
     -> a sect claims the territory -> conflict
 ```
 

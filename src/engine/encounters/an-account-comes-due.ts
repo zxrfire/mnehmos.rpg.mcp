@@ -33,7 +33,7 @@ import type {
  *     several heavy (4+)       ~51, the floor
  *
  * Behind a door the same curve is cut by `socialReach` - a private cave 0.45,
- * undiscovered ground 0.08 - because a hunter has to know where to look.
+ * undiscovered ground 0.08 - because somebody coming for you has to know where to look.
  * Activity exposure is NOT applied: exposure prices coincidences, and somebody
  * coming for you is not one.
  */
