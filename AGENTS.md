@@ -602,6 +602,23 @@ meaning somewhere else. Surnames (`Tuo's Wall`) and units (`Six Li`) are not tra
 are fine. A synonym is the same failure in one language: a `Pit` and a `Shaft` in two
 provinces, or a `Ravine` beside `The Jade Gorge`. Long Vein is now `Stubborn Pit`.
 
+And the fifth, which is a collision with the player's own sentences rather than with another
+name:
+
+> **No word of a name is a word the player types, or a typo of one.** The design owner: *"rename
+> all the place names to not conflict with verbs even fuzzy"*, and *"the fact that your name
+> conflicts with four names means four names must change to a xianxia noun"*.
+
+Names are matched with typo tolerance (`names-as-they-are-spelled.ts`), so a name built from
+everyday words is reachable from sentences that never meant it. "What is your name?" was read as
+a question about `Four Names`: *four* is one letter from *your*, *names* one from *name*. A name
+word must not be a verb the table acts on (`Ridge` reads as *ride*, `Market` is a verb), nor one
+edit from one (`Peak`/*speak*, `Ford`/*food*, `Bell`/*sell*, `Hollow`/*follow*), nor one edit
+from the words every question is made of (*your*, *what*, *where*, *here*). Build names from
+xianxia nouns a player only types when they mean the place. This applies to the generator's word
+lists as much as to the catalog. Replace a generated word one for one, so the seeded draws, and
+every pinned world, stay the same apart from the name.
+
 What is NOT a collision: the words that are forms of address as much as names. *Elder*,
 *Master*, *Servant*, *Disciple* and their kin repeat across every rank ladder, and the owner
 ruled on it: *"elder master and servant aren't collisions. they're pronouns as well as rank
