@@ -962,6 +962,10 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'i hand over the goods',
             'I deliver the strongbox'
         ],
+        'sect/bounty': [
+            'I take the bounty on Wen Qiu',
+            'I claim the bounty on Wen Qiu'
+        ],
         'carry/unmark': [
             'I break the mark on the ring',
             "I erase the owner's mark on this storage ring"

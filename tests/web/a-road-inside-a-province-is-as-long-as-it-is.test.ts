@@ -110,7 +110,9 @@ describe('a road inside a province costs what the catalog says', () => {
         // Absence has never meant unreachable. A house's grounds are a world
         // row rather than a catalog place, so nothing prices the walk out to
         // one - and the player goes, for the one day everything unpriced costs.
-        const { game } = await makeGameInWorld({ seed: 'place-road-none', worldSeed: WORLD });
+        // Re-pinned from place-road-none when roads across provinces were priced: the walk
+        // there became long enough for an encounter to stop it on that seed.
+        const { game } = await makeGameInWorld({ seed: 'place-road-none-0', worldSeed: WORLD });
         await game.newRun('Probe');
 
         const ground = `${PLACE.GREEN_FALL} grounds`;
