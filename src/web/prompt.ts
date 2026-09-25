@@ -1052,7 +1052,10 @@ export function composeNarrationUser(
             ? [
                 `THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`,
                 'An act they typed is DONE on the page, never said: NOT \'"I go to Cold Peak," you say\' BUT the '
-                + 'road under them. Words put to somebody, and questions, are theirs to say.',
+                + 'road under them. Words put to somebody, and questions, are theirs to say, in the story\'s own '
+                + 'voice: NOT \'"any of u guys know whats past here?"\' pasted in quotation marks BUT the question '
+                + 'asked the way the player would say it aloud, or reported - you ask whether anybody knows what '
+                + 'lies past the town.',
                 ''
             ]
             : []),
