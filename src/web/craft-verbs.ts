@@ -67,6 +67,8 @@ import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
 import { whatIsBeingCut } from './communication-talisman-phrasings.js';
 import { REINFORCING_A_DOOR, reinforcingYourDoor } from './seclusion-door.js';
+import { MENDING_WORDS } from './mending-phrasings.js';
+import { mendingAThingYouHold } from './mending-a-thing-you-hold.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
 import { BENCH_FOCUS } from './turn-constants.js';
@@ -115,6 +117,12 @@ export const craftVerbs = {
     ): Promise<Execution> {
         const today = Math.floor(run.elapsedDays);
         const said = (target ?? '').trim();
+
+        // A thing of theirs that has been holed, mended. The verb says so
+        // before any noun is asked: see `mending-a-thing-you-hold.ts`.
+        if (MENDING_WORDS.test(rawInput) || MENDING_WORDS.test(said)) {
+            return mendingAThingYouHold(this, run, cultivator, said);
+        }
 
         // A door worked with beast parts is its own small job, and the noun
         // says so before either the yard or the bench is asked.

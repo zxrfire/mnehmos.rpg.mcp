@@ -358,7 +358,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             fail, and a failure keeps the materials. Reinforcing a door of their own with a
             beast part they carry is here too - "target" is the door and what it is worked
             with, as in "the cave door with the hide I took" - and an inn's or a house's
-            door is not theirs to reinforce.`
+            door is not theirs to reinforce. Mending a thing of theirs that has been holed
+            is here too - "target" is the thing - and NOT treat, which is a wound.`
     },
     gather: {
         takes: ['target'],

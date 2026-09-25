@@ -116,6 +116,11 @@ import {
 } from './the-furnace-rite-once-somebody-has-yielded.js';
 import { theFurnaceRiteWorkedOnYou } from './the-furnace-rite-worked-on-you.js';
 import { whatIsInTheirHand } from './what-is-on-you-and-in-your-hands.js';
+import {
+    theConditionItIsIn,
+    whatAFightMarked,
+    writeBackWhatAFightLeft
+} from '../engine/world/object-damage.js';
 import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 
 /**
@@ -1802,6 +1807,32 @@ export const combatVerbs = {
                         : 'No world row: a counted thing has none, and there is nowhere to write the scar.'),
                 ok: true
             });
+        }
+
+        // AND WHAT CAME THROUGH IT HOLED, on both sides: a thing swung into a
+        // body past what it is made for and not ended by it. The player's own
+        // is said; the other side's is on its row for whoever looks at it.
+        if (!this.atHand) return;
+        const marked = writeBackWhatAFightLeft(
+            this.atHand.objects, whatAFightMarked(result.exchanges), {
+                onDay: Math.floor(this.atHand.currentDay),
+                fight: `the fight with ${held.party.name}`,
+                nameOf: id => (id === cultivator.id ? cultivator.name : held.party.name)
+            });
+        if (marked.length === 0) return;
+        this.theWorldMoved();
+        for (const mark of marked) {
+            if (mark.carrierId !== cultivator.id) continue;
+            const row = this.atHand.objects.find(o => o.id === mark.objectId);
+            const condition = row ? theConditionItIsIn(row) : null;
+            const line = `${row?.name ?? 'What you were swinging'} came through it`
+                + (condition ? `, ${condition}.` : '.');
+            execution.facts.lines.push(line);
+            execution.facts.required = [...(execution.facts.required ?? []), line];
+            execution.facts.structure.push(
+                `${mark.objectId}: ${mark.state} by the fight, written to the world row `
+                + '(writeBackWhatAFightLeft).'
+            );
         }
     },
 

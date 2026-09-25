@@ -16,6 +16,13 @@ import { whatAnIngredientIs } from '../engine/cultivation/what-a-cauldron-will-t
 import { canReachInto, isAStorageRing, whatIsInTheRing } from '../engine/world/a-storage-ring.js';
 import { isAVehicle, isWithThem, whatIsInTheVehicle } from '../engine/world/a-vehicle.js';
 import { howItIsHad, type ObjectRecord } from '../engine/world/possessions.js';
+import { theConditionItIsIn } from '../engine/world/object-damage.js';
+
+/** A row's name, with its condition where it is not whole. */
+const named = (row: ObjectRecord): string => {
+    const condition = theConditionItIsIn(row);
+    return condition ? `${row.name} (${condition})` : row.name;
+};
 
 export interface TheThingsOnTheSheet {
     worn: string[];
@@ -51,21 +58,27 @@ export function theThingsOnTheSheet(input: {
     const worn = theirs.filter(row => howItIsHad(row) === 'worn');
 
     const inventory = [
-        ...theirs.filter(row => howItIsHad(row) === 'inventory').map(row => row.name),
+        ...theirs.filter(row => howItIsHad(row) === 'inventory').map(named),
         ...input.pouch.map(entry => counted(
             entry.kind === 'pill'
                 ? getPill(entry.itemId)?.name ?? entry.itemId
                 : whatAnIngredientIs(entry.itemId)?.name ?? entry.itemId,
             entry.quantity
         )),
-        ...input.artifacts.map(entry => counted(getArtifact(entry.itemId)?.name ?? entry.itemId, entry.quantity)),
+        ...input.artifacts.map(entry => {
+            // A pouch artifact the world keeps a row for is that row, holes and all.
+            const row = objects.find(object => object.id === entry.itemId);
+            const name = getArtifact(entry.itemId)?.name ?? entry.itemId;
+            const condition = row ? theConditionItIsIn(row) : null;
+            return counted(condition ? `${name} (${condition})` : name, entry.quantity);
+        }),
         ...input.books.map(id => `A copy of ${getTechnique(id)?.name ?? id}`),
         ...(input.rations > 0 ? [counted('Ration', input.rations)] : [])
     ];
 
     return {
-        worn: worn.map(row => row.name),
-        held: theirs.filter(row => howItIsHad(row) === 'held').map(row => row.name),
+        worn: worn.map(named),
+        held: theirs.filter(row => howItIsHad(row) === 'held').map(named),
         inventory,
         rings: worn.filter(isAStorageRing).map(ring => ({
             name: ring.name,
@@ -74,7 +87,7 @@ export function theThingsOnTheSheet(input: {
         vehicles: objects.filter(row => isAVehicle(row)
             && (row.ownerId === personId || row.possessorId === personId)
             && isWithThem(row, personId, here)).map(vehicle => ({
-            name: vehicle.name,
+            name: named(vehicle),
             inside: whatIsInTheVehicle(objects, vehicle.id).map(row => row.name)
         }))
     };

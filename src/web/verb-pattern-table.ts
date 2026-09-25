@@ -138,6 +138,7 @@ import {
     inThePlayersOwnSpelling,
     respellForTheVerbTable
 } from './repairing-a-misspelt-word-before-the-verb-table-sees-it.js';
+import { whatIsBeingMended } from './mending-phrasings.js';
 
 // The day counts each verb spends. Re-exported so the module namespace this
 // file self-imports - and therefore the spelling repair's vocabulary - is
@@ -6592,6 +6593,11 @@ function planIntent(input: string): PlannedAction {
             )
         };
     }
+
+    // A THING OF YOURS MENDED. `craft` owns it; a wound named in the same
+    // words is `treat`'s and `whatIsBeingMended` leaves it alone.
+    const mending = whatIsBeingMended(input);
+    if (mending) return { action: 'craft', target: mending };
 
     // A DOOR WORKED WITH BEAST PARTS. `craft` owns it, ahead of the yard and
     // the bench, because the door is the noun; `seclusion-door.ts` does it.

@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import type { ObjectRecord } from '../../engine/world/possessions.js';
-import { theWeaponTheyFightWith } from '../../engine/world/what-somebody-fights-with.js';
+import { atTheRungItStandsAt, theWeaponTheyFightWith } from '../../engine/world/what-somebody-fights-with.js';
 import { AN_ORDINARY_SWING } from '../../engine/cultivation/how-a-blow-was-thrown.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
@@ -320,7 +320,8 @@ export function combatantFromCultivator(
         qi: cultivator.qi,
         maxQi: cultivator.maxQi,
         battlesSurvived: cultivator.battlesSurvived,
-        weapon: theWeaponTheyFightWith(objects, cultivator.id) ?? carriedArtifact(repos.db, cultivator.id),
+        weapon: theWeaponTheyFightWith(objects, cultivator.id)
+            ?? atTheRungItStandsAt(carriedArtifact(repos.db, cultivator.id), objects),
         technique: art,
         techniqueMastery: known?.mastery ?? 0
     };

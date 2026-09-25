@@ -33,9 +33,11 @@ import { seedWorld } from '../../../src/engine/world/seeding';
 import { fightTheWarsThisYear, whatAHouseCanPutOut } from '../../../src/engine/world/war-melee';
 import {
     HALLS_DOWN,
-    HOW_MANY_HALLS_A_COMPOUND_IS
+    HOW_MANY_HALLS_A_COMPOUND_IS,
+    whatTheYearDidToTheGround
 } from '../../../src/engine/world/what-a-year-of-war-does-to-a-compound';
-import { isRuined } from '../../../src/engine/world/possessions';
+import { isRuined, makeObject } from '../../../src/engine/world/possessions';
+import { isHoled } from '../../../src/engine/world/object-damage';
 import type { FactionRecord, WorldState } from '../../../src/engine/world/world-state';
 
 /** The strongest house in the world at war with the weakest, so the ground gives. */
@@ -141,5 +143,67 @@ describe('a year of war that reaches the ground', () => {
         const theirWard = state.objects.find(o =>
             o.kind === 'formation' && o.ownerId === strong.id);
         expect(theirWard && isRuined(theirWard)).toBe(false);
+    });
+});
+
+describe('a year that got past the ward and stopped at the walls', () => {
+    /**
+     * The ward took the year's force and did not keep them out, so what that
+     * did to it is the one damage resolver's answer: below its rung nothing,
+     * and past what it is made for a hole or its end. A hole is a rung off
+     * what it answers at, and it stays.
+     */
+    it('can leave the ward holed rather than spent, and never touches it from below', async () => {
+        const catalog = await loadCultivationCatalog();
+        const { state } = seedWorld({ seed: 'a-ward-holed', catalog });
+        const houses = state.factions.filter(f => f.dissolvedOnDay === null && f.seatLocationId !== null);
+        const [loser, winner] = [houses[0]!, houses[1]!];
+        const day = state.currentDay;
+        const WARD_AT = 12;
+        const withAWard = (): WorldState => {
+            const copy = JSON.parse(JSON.stringify(state)) as WorldState;
+            copy.objects = copy.objects.filter(o =>
+                !(o.kind === 'formation' && o.locationId === loser.seatLocationId));
+            copy.objects.push(makeObject({
+                id: 'a-ward', name: 'the ward', kind: 'formation', power: WARD_AT,
+                locationId: loser.seatLocationId, ownerId: loser.id,
+                data: { ratedWhole: WARD_AT, raisedOnDay: day }
+            }));
+            return copy;
+        };
+        const at = (copy: WorldState, reach: number, onDay: number) => {
+            const ground = whatTheYearDidToTheGround(copy, {
+                winner: copy.factions.find(f => f.id === winner.id)!,
+                loser: copy.factions.find(f => f.id === loser.id)!,
+                winnerReach: reach,
+                day: onDay
+            });
+            return { ground, ward: copy.objects.find(o => o.id === 'a-ward')! };
+        };
+
+        const below = at(withAWard(), WARD_AT - 1, day);
+        expect(below.ground).toBeNull();
+        expect(below.ward.power).toBe(WARD_AT);
+
+        // Within a realm of it the ward is what it was made for, and a reach
+        // one to two realms past it is a chance of ending it; a year's roll
+        // that spares it leaves a hole. Pooled over years, both happen.
+        let holed = 0;
+        let ended = 0;
+        for (let year = 0; year < 12; year++) {
+            for (let reach = WARD_AT; reach < 29; reach++) {
+                const { ground, ward } = at(withAWard(), reach, day + year * 365);
+                // The walls held, so nothing came down and no bill was paid.
+                expect(ground).toBeNull();
+                if (isHoled(ward)) {
+                    expect(ward.power).toBe(WARD_AT - 1);
+                    holed++;
+                } else if (isRuined(ward)) {
+                    ended++;
+                }
+            }
+        }
+        expect(holed).toBeGreaterThan(0);
+        expect(ended).toBeGreaterThan(0);
     });
 });

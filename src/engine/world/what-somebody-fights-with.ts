@@ -42,3 +42,18 @@ export function theWeaponTheyFightWith(
         ?? best(objects.filter(object => object.possessorId === personId && isAWeapon(object)));
     return row === null ? null : { id: row.id, name: row.name, power: row.power ?? 0 };
 }
+
+/**
+ * A thing carried in the pouch under an id the world also keeps a row for is
+ * that row, and the row says the rung it stands at now: a hole takes one off
+ * (`object-damage.ts`). The pouch keeps only the catalog's rating, so without
+ * this a holed blade carried in the pouch would fight as if whole.
+ */
+export function atTheRungItStandsAt<T extends { id: string; power: number }>(
+    carried: T | null,
+    objects: readonly ObjectRecord[]
+): T | null {
+    if (carried === null) return null;
+    const row = objects.find(object => object.id === carried.id);
+    return row === undefined || row.power === null ? carried : { ...carried, power: row.power };
+}

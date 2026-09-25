@@ -55,6 +55,9 @@ import {
     whatBringingItDownWouldTake
 } from './what-a-house-is-made-of-and-what-brings-it-down.js';
 import type { FactionRecord, WorldState } from './world-state.js';
+import { combatPowerForOrdinal } from '../cultivation/combat.js';
+import { forStream } from '../cultivation/rng.js';
+import { whatBecomesOfIt, writeBack } from './object-damage.js';
 
 /**
  * How many buildings a seated house has.
@@ -117,7 +120,15 @@ export function whatTheYearDidToTheGround(
 
     const seat = whatAHouseIsMadeOf(state.objects, seatId, input.day);
     const could = whatBringingItDownWouldTake({ seat, theirReach: input.winnerReach });
-    if (!could.couldFlattenIt) return null;
+    if (!could.couldFlattenIt) {
+        // PAST THE WARD AND STOPPED AT THE WALLS. The ward took the year's
+        // force and did not keep them out, so what that did to it is asked of
+        // the one resolver: nothing, a hole, or the end of it.
+        if (could.couldGetIn && seat.formationStandsAt !== null) {
+            whatTheYearDidToTheWard(state, input, seatId);
+        }
+        return null;
+    }
 
     // ── THE WARD, WHICH IS THE THING THAT WAS KEEPING THEM OUT ───────────
     let wardBroken: string | null = null;
@@ -204,4 +215,47 @@ export function whatTheYearDidToTheGround(
         leftDown,
         fact
     };
+}
+
+/**
+ * A year's force put through the ward over a seat it did not keep them out of.
+ *
+ * On its own stream, so no draw anywhere else moves. A hole takes a rung off
+ * what the ward answers at (`rungsTheHolesTake`, read by `whatAHouseIsMadeOf`);
+ * an ending goes through the world's own breaking door, as a flattening does.
+ */
+function whatTheYearDidToTheWard(
+    state: WorldState,
+    input: { winner: FactionRecord; loser: FactionRecord; winnerReach: number; day: number },
+    seatId: string
+): void {
+    const reach = Math.max(0, input.winnerReach);
+    for (let at = 0; at < state.objects.length; at++) {
+        const row = state.objects[at]!;
+        if (row.kind !== 'formation' || row.locationId !== seatId || isRuined(row)) continue;
+        const cause = `the war with ${input.winner.name}`;
+        const harmed = whatBecomesOfIt(row, {
+            standing: combatPowerForOrdinal(reach),
+            bare: combatPowerForOrdinal(reach),
+            ordinal: reach,
+            byId: input.winner.id,
+            byName: input.winner.name,
+            cause,
+            standingOf: combatPowerForOrdinal
+        }, forStream(state.seed, 'a-ward-under-force', row.id, input.day));
+        if (harmed.state === 'held') continue;
+        if (harmed.state === 'holed' || harmed.state === 'inert') {
+            const written = writeBack(row, harmed, { onDay: input.day, source: cause });
+            if (written.row) state.objects[at] = written.row;
+            continue;
+        }
+        aBreakingEntersTheWorld(state, {
+            actor: { id: input.winner.id, name: input.winner.name, role: 'brought it down' },
+            object: row,
+            day: input.day,
+            locationId: seatId,
+            factionIds: [input.winner.id, input.loser.id],
+            how: `beaten in the field year of ${cause}. ${harmed.exposure.cause}`
+        });
+    }
 }

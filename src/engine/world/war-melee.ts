@@ -18,6 +18,7 @@ import { makeFact, type HistoricalFact } from './history.js';
 import { elderRungOf } from '../cultivation/leadership.js';
 import { theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { isRuined } from './possessions.js';
+import { whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
 import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
 import type { ObligationInput } from '../social/grudges.js';
 import { oneAccountEach } from './what-a-change-of-hands-leaves.js';
@@ -503,6 +504,14 @@ function writeBackWhatBroke(
             carrierId: exchange.attackerId
         });
     }
+    // AND WHAT CAME THROUGH IT HOLED. A thing swung into a body past what it
+    // is made for either ends or is marked, and the mark stays on the row
+    // until somebody mends it. See `object-damage.ts`.
+    writeBackWhatAFightLeft(state.objects, whatAFightMarked(result.exchanges), {
+        onDay: day,
+        fight: 'a year of war',
+        nameOf: id => getNpc(state, id)?.name ?? 'somebody'
+    });
     return out;
 }
 

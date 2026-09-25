@@ -203,6 +203,7 @@ import { theirFaceMoves } from '../engine/world/what-a-face-is-worth.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
+import { theConditionItIsIn } from '../engine/world/object-damage.js';
 import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
 import { aVehicleOf, isAVehicle, theFreeHoldOf, theVehiclesTheyAreWith } from '../engine/world/a-vehicle.js';
 import {
@@ -14225,6 +14226,14 @@ ${opened.text}` : receipt,
         if (keptInTheRoom !== null) lines.push(keptInTheRoom);
         // AND THEIR VEHICLES: with them, or left where they left them. See `your-vehicle.ts`.
         lines.push(...theLinesForTheirVehicles(this, this.atHand?.objects ?? [], cultivator));
+        // AND WHAT IS DAMAGED, one fact a thing. See `theConditionItIsIn`. A
+        // pouch artifact the world keeps a row for is that row.
+        const carriedIds = new Set(carried.map(c => c.entry.itemId));
+        for (const row of [...everyRow, ...(this.atHand?.objects ?? []).filter(o => carriedIds.has(o.id)
+            || (isAVehicle(o) && (o.ownerId === cultivator.id || o.possessorId === cultivator.id)))]) {
+            const condition = theConditionItIsIn(row);
+            if (condition) lines.push(`${row.name}: ${condition}.`);
+        }
         if (rations > 0) {
             lines.push(
                 `Food: ${rations} ration${rations === 1 ? '' : 's'}`
@@ -14273,10 +14282,14 @@ ${opened.text}` : receipt,
             }
             if (carried.length > 0 || carriedRows.length > 0) {
                 lines.push('Carrying: ' + [
-                    ...carried.map(c =>
-                        `${c.record.name}${c.record.power !== null && c.record.power !== undefined
-                            ? ` (rated ${c.record.power}, ${rankName(c.record.power)})`
-                            : ''}`),
+                    ...carried.map(c => {
+                        // The world's row where it keeps one, which a hole has marked.
+                        const power = this.atHand?.objects.find(o => o.id === c.entry.itemId)?.power
+                            ?? c.record.power;
+                        return `${c.record.name}${power !== null && power !== undefined
+                            ? ` (rated ${power}, ${rankName(power)})`
+                            : ''}`;
+                    }),
                     ...carriedRows.map(row =>
                         `${row.name}${row.power !== null
                             ? ` (rated ${row.power}, ${rankName(row.power)})`

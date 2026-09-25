@@ -1,5 +1,12 @@
 /**
  * Whether a thing survives what was put through it, and what state it is left in.
+ *
+ * Durability here is DAMAGE, never wear (the owner: *"not the usage kind, the
+ * partial damage kind"*). A force past what a thing is made for ends it or
+ * holes it; a hole takes a rung off `power` and stays until `mend` closes it.
+ * The forces that reach it in play: a fight's swings (`whatAFightMarked`, from
+ * a war, a bout and the player's own fight) and a war year's force on a ward
+ * it got past (`what-a-year-of-war-does-to-a-compound.ts`).
  */
 
 import {
@@ -223,6 +230,150 @@ export function whatBecomesOfIt(
     return theMark(thing, base, roll, scarsAlready, standsAt, tier);
 }
 
+// ═════════════════════════════════════════════════════════════════════════
+// WHAT A FIGHT LEFT ON WHAT CAME THROUGH IT
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * One swing's answer, as the combat resolver hands it back: the same exposure
+ * this file prices, and the sample that decided it.
+ */
+interface ASwingsAnswer {
+    objectId: string;
+    objectName: string;
+    exposure: WeaponExposure;
+    roll: number | null;
+    broke: boolean;
+}
+
+/** A thing a fight put at risk that came out of it, and who was carrying it. */
+interface AMarkAFightLeft {
+    carrierId: string;
+    /** Whose body it was swung into. */
+    metById: string;
+    swing: ASwingsAnswer;
+}
+
+/**
+ * The things a fight marked without ending.
+ *
+ * A swing was rolled for only where the thing was outclassed past what it is
+ * made for and short of certain, and a roll it came through is the case
+ * {@link whatBecomesOfIt} answers `holed`. The resolver already drew that roll,
+ * so this draws nothing.
+ *
+ * ONE MARK A FIGHT, not one a swing. Durability here is damage, not wear: a
+ * fight is the force, and a blade that came through three exchanges against a
+ * body too hard for it came through one fight too hard for it. A thing that
+ * broke in the fight is the breaking's and is not here.
+ */
+export function whatAFightMarked(
+    exchanges: readonly {
+        attackerId: string;
+        defenderId: string;
+        result: { weapon: ASwingsAnswer | null };
+    }[]
+): AMarkAFightLeft[] {
+    const broke = new Set<string>();
+    for (const exchange of exchanges) {
+        if (exchange.result.weapon?.broke) broke.add(exchange.result.weapon.objectId);
+    }
+    const marked = new Map<string, AMarkAFightLeft>();
+    for (const exchange of exchanges) {
+        const swing = exchange.result.weapon;
+        if (!swing || swing.broke || swing.roll === null) continue;
+        if (broke.has(swing.objectId) || marked.has(swing.objectId)) continue;
+        marked.set(swing.objectId, {
+            carrierId: exchange.attackerId,
+            metById: exchange.defenderId,
+            swing
+        });
+    }
+    return [...marked.values()];
+}
+
+/**
+ * Write what a fight left on the rows it reached, in place.
+ *
+ * `objects` is the world's own table. A thing with no row is a counted thing,
+ * which carries no scar (see `theMark`), and is passed over.
+ */
+export function writeBackWhatAFightLeft(
+    objects: ObjectRecord[],
+    marks: readonly AMarkAFightLeft[],
+    input: {
+        onDay: number;
+        /** The fight, in the words its caller uses for it. */
+        fight: string;
+        nameOf: (personId: string) => string;
+    }
+): { objectId: string; carrierId: string; state: ThingState; line: string }[] {
+    const out: { objectId: string; carrierId: string; state: ThingState; line: string }[] = [];
+    for (const mark of marks) {
+        const at = objects.findIndex(o => o.id === mark.swing.objectId);
+        if (at < 0) continue;
+        const row = objects[at]!;
+        const harmed = whatComingThroughLeft(row, mark.swing, {
+            byId: mark.metById,
+            byName: input.nameOf(mark.metById)
+        });
+        if (harmed.state === 'held') continue;
+        const written = writeBack(row, harmed, {
+            onDay: input.onDay,
+            source: input.fight,
+            note: describeTheLoss(harmed, row.name, input.fight)
+        });
+        if (written.row === null) continue;
+        objects[at] = written.row;
+        out.push({
+            objectId: row.id,
+            carrierId: mark.carrierId,
+            state: harmed.state,
+            line: written.lines[0] ?? ''
+        });
+    }
+    return out;
+}
+
+/**
+ * What coming through a swing left on the thing, off the answer already drawn.
+ *
+ * The same `theMark` a fresh force reaches, so a hole put in a blade in a
+ * fight and a hole put in a hull by anything else are one state.
+ */
+function whatComingThroughLeft(
+    thing: ThingUnderForce,
+    swing: Pick<ASwingsAnswer, 'exposure' | 'roll' | 'broke'>,
+    by: { byId: string | null; byName: string }
+): ThingHarmed {
+    const tier = keptAs(thing.significance);
+    const scarsAlready = scarsOn(thing);
+    const base = {
+        exposure: swing.exposure,
+        keptAs: tier,
+        ratedBefore: thing.power,
+        ownerId: null as string | null,
+        ownerName: '',
+        byId: by.byId,
+        byName: by.byName,
+        leavesPieces: false,
+        piecePower: null as number | null
+    };
+    const spent = isRuined(thing as unknown as ObjectRecord) || isInert(thing);
+    if (spent || swing.broke || swing.roll === null) {
+        return {
+            ...base,
+            state: 'held',
+            roll: swing.roll,
+            ratedAfter: thing.power,
+            scars: scarsAlready,
+            mendable: scarsAlready > 0 && !spent,
+            account: `${thing.name}: ${swing.exposure.cause}`
+        };
+    }
+    return theMark(thing, base, swing.roll, scarsAlready, thing.power ?? UNRATED_STANDS_AT, tier);
+}
+
 /**
  * It did not come out the other side.
  *
@@ -361,6 +512,42 @@ export function isHoled(thing: Pick<ThingUnderForce, 'tags' | 'data'>): boolean 
         && scarsOn(thing) > 0
         && !isInert(thing)
         && !thing.tags.includes('ruined');
+}
+
+/**
+ * Rungs the open holes have taken off it: what it was made at, less what it
+ * stands at. Zero for a whole thing. Every read that prices a thing off
+ * `power` already pays this; a read that prices it off what it was MADE at
+ * (a ward's answering rung) subtracts it here.
+ */
+export function rungsTheHolesTake(thing: Pick<ThingUnderForce, 'tags' | 'data' | 'power'>): number {
+    if (!isHoled(thing)) return 0;
+    const whole = ratedWhole(thing);
+    return whole === null || thing.power === null ? 0 : Math.max(0, whole - thing.power);
+}
+
+/**
+ * The condition a thing is in, as somebody holding it can see it. Null for a
+ * whole thing, which says nothing.
+ *
+ * What a hole costs is the rung: a holed blade prices as a blade a rung lower
+ * in a fight, a holed hull shelters against one rung less, a holed ward
+ * answers a rung lower. Stated as the rung, because that is the one quantity
+ * all of those read.
+ */
+export function theConditionItIsIn(
+    thing: Pick<ThingUnderForce, 'tags' | 'data' | 'power'>
+): string | null {
+    if (thing.tags.includes('ruined')) return null;
+    if (isInert(thing)) return 'the qi has gone out of it, and it is rated at nothing';
+    if (!isHoled(thing)) return null;
+    const scars = scarsOn(thing);
+    const whole = ratedWhole(thing);
+    return `holed ${scars === 1 ? 'once' : scars === 2 ? 'twice' : `${scars} times`}`
+        + (whole !== null && thing.power !== null
+            ? `, standing at ${thing.power} of the ${whole} it was made at; a hand at ${whole} or `
+              + 'above can close a hole'
+            : '');
 }
 
 export interface WrittenBack {

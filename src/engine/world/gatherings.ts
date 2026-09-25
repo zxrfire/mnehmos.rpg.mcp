@@ -65,6 +65,7 @@ import {
 import { theBoardAsItIsCalledOut } from './how-an-entrant-is-announced.js';
 import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
 import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
+import { whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE NUMBERS
@@ -771,6 +772,12 @@ function runChallenge(
         // with a blade that could not take it goes home without the blade, and
         // the house's shelf is one row poorer in a way somebody can look up.
         lines.push(...applyBoutBreakages(state, result.brokenObjects, day));
+        // And what came through it holed rather than ended. See `object-damage.ts`.
+        for (const marked of writeBackWhatAFightLeft(state.objects, whatAFightMarked(result.exchanges), {
+            onDay: day,
+            fight: 'a bout',
+            nameOf: id => (id === a.id ? a.name : id === b.id ? b.name : 'somebody')
+        })) lines.push(marked.line);
 
         // HOW IT LOOKED. Intent first and the damage second: somebody who came
         // to end it went past the mark whatever the fight then did, and a bout
