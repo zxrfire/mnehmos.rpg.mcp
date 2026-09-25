@@ -46,7 +46,7 @@ describe('asking for work at a wall', () => {
         const read = await game.act('is there work');
         const board = read.narration ?? '';
         expect(board).toMatch(/Contracts on the wall here/);
-        expect(board).toContain('Spirit-beast culler');
+        expect(board).toContain('Spirit-beast culling');
         expect(board).not.toMatch(PROFESSION_WORDS);
         for (const trade of MORTAL_TRADES) expect(board, trade).not.toContain(`  ${trade}`);
     }, 240_000);
@@ -60,7 +60,7 @@ describe('asking for work at a wall', () => {
             names.some(name => /completeDuty|recordDaysServed|refuseDuty/.test(name)),
             names.join(', ')
         ).toBe(true);
-        expect(took.toolCalls.map(call => call.summary).join(' ')).toContain('Spirit-beast culler');
+        expect(took.toolCalls.map(call => call.summary).join(' ')).toContain('Spirit-beast culling');
         expect((await game.state()).run!.elapsedDays).toBeGreaterThan(before);
         expect(took.narration ?? '').not.toMatch(PROFESSION_WORDS);
     }, 240_000);

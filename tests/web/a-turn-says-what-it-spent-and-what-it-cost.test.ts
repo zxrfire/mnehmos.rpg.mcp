@@ -199,14 +199,30 @@ describe('a duty runs under the words a person uses for it', () => {
      */
     const TAKINGS = ['I take a duty', 'I take the duty', 'I accept the commission'];
 
+    // SEVERAL LINES, AND THE CHOICE IS THE PLAYER'S. Since cultivators took
+    // contracts rather than a profession (e4290c31) a town's wall offers more
+    // than one line at ordinal 0, so a taking that names none of them is put
+    // back as the list, spending nothing; naming one runs it.
     for (const said of TAKINGS) {
-        it(`"${said}" runs the only line on the wall`, async () => {
+        it(`"${said}" puts the choice back when the wall offers several lines`, async () => {
+            const h = await makeGameInWorld({ worldSeed: WORLD, seed: `duty-${said}` });
+            await h.game.newRun('Shen Wu');
+            const board = await h.game.act('what duties are there');
+            expect((board.narration.match(/: \d+ (?:days|months?)/g) ?? []).length).toBeGreaterThan(1);
+            const before = h.game.state();
+
+            const put = await h.game.act(said);
+            expect(h.game.state().run.elapsedDays).toBe(before.run.elapsedDays);
+            expect(put.narration).toContain('Culling Work in a Thin District');
+        }, 60_000);
+    }
+
+    for (const said of ['I take Culling Work in a Thin District']) {
+        it(`"${said}" runs the line it names`, async () => {
             const h = await makeGameInWorld({ worldSeed: WORLD, seed: `duty-${said}` });
             await h.game.newRun('Shen Wu');
 
-            const board = await h.game.act('what duties are there');
-            const offered = /: (\d+) days/.exec(board.narration);
-            expect(offered, 'the board has exactly one line at ordinal 0').toBeTruthy();
+            await h.game.act('what duties are there');
             const before = h.game.state();
 
             let { narration } = await h.game.act(said);

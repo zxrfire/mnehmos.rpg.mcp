@@ -2115,7 +2115,7 @@ const TRADE_PHRASES: readonly TradePhrase[] = (() => {
         // metacharacter can ever reach the pattern below.
         const key = said.toLowerCase().replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim();
         if (key.length < 4 || rows.some(r => r.said === key)) return;
-        // A hyphen is a space. `Spirit-beast culler` is printed with one and
+        // A hyphen is a space. `Spirit-beast culling` is printed with one and
         // typed either way, and the sanitiser above turns it into a space - so
         // without this the one trade name the catalog hyphenates was the one
         // name the parser would not accept back.
