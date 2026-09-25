@@ -1047,7 +1047,7 @@ import {
     composeStateSummary,
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
-import { howTheyLeftTheChair, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -5172,7 +5172,13 @@ ${noticedWaiting}`;
                 // is the one they would give, out of what they could place. The
                 // list below stays, because being asked what you meant and
                 // being told what is live are two different useful things.
-                const asking = this.whoWouldAsk(cultivator);
+                // SAID AS SOMEBODY UNLESS THE PLAYER HAS LIVED THE NAME. Played:
+                // "He Fulu asked what was meant" named a stranger, and the next
+                // turn the narrator introduced them by it.
+                const found = this.whoWouldAsk(cultivator);
+                const asking = found && !thePlayerIsSureItIsThem(found.asker.name, this.awarenessOf(cultivator))
+                    ? { ...found, asker: { ...found.asker, name: 'Somebody standing nearest' } }
+                    : found;
                 const question = asking
                     ? whatSomebodyHereWouldAsk({
                         askedFor: rawInput,

@@ -138,7 +138,9 @@ describe('a name nobody here holds is answered off the asker\'s own house roll',
         const answer = await game.act(`${surname} ${NOBODY_IS_CALLED_THIS}`) as
             { narration: string };
 
-        expect(answer.narration).toContain(askerName);
+        // The asker is somebody standing nearest until the player has lived their
+        // name: an examination is a look, and a look is not a name.
+        expect(answer.narration).toMatch(new RegExp(`${askerName}|Somebody standing nearest`));
         expect(answer.narration).toMatch(A_PERSON_ANSWERED);
 
         const offered = peopleNamedIn(answer.narration, [askerName]);
