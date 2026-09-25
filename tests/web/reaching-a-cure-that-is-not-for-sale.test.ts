@@ -143,9 +143,13 @@ describe('reaching a cure that is not for sale', () => {
          * which is what the admin surface is for. Nothing here asserts an
          * outcome.
          */
-        const standWithThem = (): void => {
+        // WHERE THEY ARE NOW. An offer spends days, and in them the person
+        // walks on; standing where they were before the first one left the
+        // player talking to an empty square from the second offer on.
+        const standWithThem = async (): Promise<void> => {
+            const now = (await game.loadWorld())?.npcs.find(n => n.name === willing!.name);
             db.prepare('update cultivators set location = ? where id = ?')
-                .run(willing!.locationId, cultivator.id);
+                .run(now?.locationId ?? willing!.locationId, cultivator.id);
         };
 
         // The refusal carries the figure, which is the whole point of the verb.
@@ -163,7 +167,7 @@ describe('reaching a cure that is not for sale', () => {
         // The sentence the design owner actually wrote. It names nobody, so it
         // lands on whoever the player could walk up to - which is the person
         // just spoken to, standing in the same square.
-        standWithThem();
+        await standWithThem();
         const nameless = heard(await game.act(
             "I need a Meridian Rebirth Pill, what's your price?"
         ));
@@ -173,7 +177,7 @@ describe('reaching a cure that is not for sale', () => {
         const outcomes: string[] = [];
         let took = false;
         for (let attempt = 0; attempt < 12 && !took; attempt++) {
-            standWithThem();
+            await standWithThem();
             const text = heard(await game.act(
                 `I offer ${speaker.name} the ${road!.name} for a Meridian Rebirth Pill`
             ));
