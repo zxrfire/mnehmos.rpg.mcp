@@ -940,6 +940,10 @@ export function composeNarrationUser(
         standing?: WhereTheyStandNow | null;
         /** What the engine filed: whether a crossing was attempted or won, and a death. */
         filed?: { breakthroughAttempted?: boolean; ranksGained?: number; died?: boolean } | null;
+        /** How this place does what the turn touches, set only on the turn it happens. */
+        theWayItIsDoneHere?: readonly { when: string; text: string }[];
+        /** The province's sensory bed, every turn in it. See `whatThisProvinceIsLikeLines`. */
+        whatThisProvinceIsLike?: WhatThisProvinceIsLike | null;
     },
     /**
      * Whether this is the first turn in this place, and whether the air is new since the last one.
@@ -985,6 +989,7 @@ export function composeNarrationUser(
         `Place: ${scene.place}`,
         `The ground: ${describeAmbientPerceived(scene.ambient)}`
             + (!arrived && told.ambientIsNews === false ? ' (Unchanged since last turn.)' : ''),
+        ...whatThisProvinceIsLikeLines(scene.whatThisProvinceIsLike, arrived),
         ...(scene.standing?.dayOfTheRun === undefined
             ? []
             : [`The season: ${theSeasonOn(scene.standing.dayOfTheRun)}. Set the weather by it on arriving `
@@ -1021,6 +1026,7 @@ export function composeNarrationUser(
         ...spokenBlock(scene.hearing ?? null),
         ...theLifeBehindThemBlock(scene.theLifeBehindThem ?? []),
         ...heldByTheWorldBlock(scene.heldByTheWorldAndNotByThem),
+        ...theWayItIsDoneHereBlock(scene.theWayItIsDoneHere),
         ...theTurnBefore(told.previous ?? null),
         '',
         ...(scene.playerSaid ? [`THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`, ''] : []),
@@ -1428,6 +1434,55 @@ function heldByTheWorldBlock(held: readonly string[] | undefined): string[] {
         'cutaway - somebody else, somewhere else, a sentence or two - and never as something the player',
         'notices, is told, works out or acts on:',
         ...held.map(line => `- ${line}`)
+    ];
+}
+
+/** A province's authored sensory bed: what it looks, sounds, smells and tastes like. */
+export interface WhatThisProvinceIsLike {
+    colour?: string;
+    light?: string;
+    sound?: string;
+    smell?: string;
+    food?: string;
+}
+
+/**
+ * THE PROVINCE, AS A STANDING FACT. Every region's colour, light, sound, smell and food were
+ * authored and read by nothing, so the narrator invented a province's senses every turn. Handed
+ * over the way the ground's qi is: in full on the turn the player arrives, one line after that,
+ * and never as material - it colours a moment, it is not described or listed.
+ */
+function whatThisProvinceIsLikeLines(province: WhatThisProvinceIsLike | null | undefined, arrived: boolean): string[] {
+    if (!province) return [];
+    const senses: [string, string][] = [];
+    for (const [what, it] of [
+        ['colour', province.colour], ['light', province.light], ['sound', province.sound],
+        ['smell', province.smell], ['food', province.food]
+    ] as const) {
+        if (it && it.trim().length > 0) senses.push([what, it]);
+    }
+    if (senses.length === 0) return [];
+    const said = senses.map(([what, it]) => `${what}: ${it.trim().replace(/\.$/, '')}`).join('; ');
+    return arrived
+        ? [`The province: ${said}. True of everywhere in it; let it colour the moment, never describe or list it.`]
+        : [`The province, as before: ${said}.`];
+}
+
+/**
+ * HOW THIS PLACE DOES WHAT THE TURN TOUCHES. A region's authored customs - how it buries, names,
+ * counts time, what it forbids, what it expects of a neighbour, what it fears on the road - set by
+ * the engine only on the turn the situation happens. Not a ruling: a ruling must reach the page,
+ * and a custom recited on every death turn is the recital the owner does not want. It shapes the
+ * moment - the coffins go up the cliff because that is what this place does with its dead - and is
+ * never explained.
+ */
+function theWayItIsDoneHereBlock(customs: readonly { when: string; text: string }[] | undefined): string[] {
+    if (!customs || customs.length === 0) return [];
+    return [
+        '',
+        'THE WAY IT IS DONE HERE - true of this place, and everybody here takes it for granted. Let it',
+        'shape the moment this turn touches; never recite it, explain it, or have anybody remark on it:',
+        ...customs.map(custom => `- ${custom.text}`)
     ];
 }
 

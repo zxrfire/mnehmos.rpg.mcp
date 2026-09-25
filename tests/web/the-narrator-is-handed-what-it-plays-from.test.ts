@@ -174,6 +174,40 @@ describe('a death is the last thing a turn says', () => {
 });
 
 /**
+ * A place's customs reach the narrator on the turn their situation happens, as a standing
+ * condition and never as a ruling: the owner's hanging coffins on a death turn, not a recital.
+ */
+describe('the way a place does things arrives when it is touched, and not as news', () => {
+    const facts = { headline: 'x', lines: ['Shen Wuyou is dead.'], structure: [], prose: '' };
+
+    it('hands the custom over as its own block, apart from the rulings', () => {
+        const message = composeNarrationUser(facts, {
+            place: 'Iron Ridge', ambient: 'thin',
+            theWayItIsDoneHere: [{ when: 'death', text: 'Coffins go up, not down, as high as the family can pay.' }]
+        });
+        expect(message).toContain('THE WAY IT IS DONE HERE');
+        expect(message).toContain('- Coffins go up, not down, as high as the family can pay.');
+        const rulings = message.slice(message.indexOf('WHAT THE ENGINE RULED'));
+        expect(rulings).not.toContain('Coffins go up');
+    });
+
+    it('says nothing when the engine set none', () => {
+        expect(composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin' })).not.toContain('THE WAY IT IS DONE HERE');
+    });
+
+    /** A province's senses were authored and read by nothing; the narrator invented them. */
+    it('hands a province over in full on arriving and in a line after', () => {
+        const province = { colour: 'grey slate and rust', smell: 'coal smoke.', food: 'millet and salted radish' };
+        const first = composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin', whatThisProvinceIsLike: province });
+        expect(first).toContain('The province: colour: grey slate and rust; smell: coal smoke; food: millet and salted radish.');
+        expect(first).toContain('never describe or list it');
+        const later = composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin', whatThisProvinceIsLike: province }, { arrived: false });
+        expect(later).toContain('The province, as before: colour: grey slate and rust;');
+        expect(composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin' })).not.toContain('The province');
+    });
+});
+
+/**
  * Played: the engine ran neither of two acts and asked which came first, and the narration read
  * out a task from the board anyway - a different invented task in each of three runs.
  */

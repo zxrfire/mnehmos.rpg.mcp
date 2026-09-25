@@ -455,6 +455,20 @@ export interface NarratorScene {
      * block and for why the instruction rides on the same lines as the facts.
      */
     standing?: WhereTheyStandNow | null;
+    /**
+     * How this place does the thing the turn touches - its death custom on a death, its naming
+     * custom at an introduction - set by the engine only on the turn the situation happens. A
+     * standing condition, not news: see `theWayItIsDoneHereBlock` in prompt.ts.
+     */
+    theWayItIsDoneHere?: readonly TheWayItIsDoneHere[];
+    /** The province's colour, light, sound, smell and food, every turn in it. */
+    whatThisProvinceIsLike?: { colour?: string; light?: string; sound?: string; smell?: string; food?: string } | null;
+}
+
+/** One authored custom of a place, handed over on the turn its situation happens. */
+export interface TheWayItIsDoneHere {
+    when: 'death' | 'naming' | 'taboo' | 'time' | 'social' | 'threat';
+    text: string;
 }
 
 export interface Narration {
