@@ -77,9 +77,7 @@ describe('the way there is by ship', () => {
         const onTheWater = world.locations.filter(row => row.parentId === sea.id).map(row => row.name);
         expect(onTheWater.length).toBeGreaterThan(9);
 
-        const board = (await game.act('what ships are there')).narration;
         for (const name of onTheWater.filter(one => one !== 'Sweet Spring Island')) {
-            expect(board, `no ship to ${name}`).toContain(`${name} by ship:`);
             const asked = await game.act(`I go to ${name}`);
             expect(asked.narration, name).toMatch(/is by ship, not on foot\./);
             expect(asked.narration, name).not.toMatch(/From .+ the way goes on to/);
@@ -88,15 +86,31 @@ describe('the way there is by ship', () => {
         expect(game.state().run.elapsedDays).toBe(0);
     }, 300_000);
 
+    it('the board shows the six nearest and says how many more, and one it does not show still sells', async () => {
+        // The owner: about six destinations, nearest first, then "and N more". Every dock sells
+        // passage to every other, so Sweet Spring Island's board ran to fifteen lines.
+        const { game } = await atSweetSpringIsland();
+
+        const board = (await game.act('what ships are there')).narration;
+
+        const shown = [...board.matchAll(/^(.+?) by ship: (\d+) days?/gm)];
+        expect(shown).toHaveLength(6);
+        const days = shown.map(line => Number(line[2]));
+        expect(days).toEqual([...days].sort((a, b) => a - b));
+        expect(board).toMatch(/And \d+ more, further off, sold by name\./);
+        expect(board).not.toContain('The Far Shore by ship');
+
+        await game.act('I take the ship to The Far Shore');
+        expect(game.state().cultivator.location).toBe('The Far Shore');
+    }, 120_000);
+
     it('a dock only the world knows is a day out from the catalog port nearest it', async () => {
         // Silver Island Hall holds Silver Island, so its grounds lie off that port. This was one day
         // from every dock, which made the house nearer Sweet Spring Island than its own port.
         const { game } = await atSweetSpringIsland();
 
-        const board = (await game.act('what ships are there')).narration;
-
-        const days = (to: string) => Number(new RegExp(`${to} by ship: (\\d+) days?`).exec(board)?.[1]);
-        expect(days('Silver Island Hall grounds')).toBe(days('Silver Island') + 1);
+        const days = async (to: string) => Number(/by ship: (\d+) days?/.exec((await game.act(`I go to ${to}`)).narration)?.[1]);
+        expect(await days('Silver Island Hall grounds')).toBe(await days('Silver Island') + 1);
     }, 120_000);
 
     it.each(['Dragonvein Rock', 'Silver Island Hall grounds'])('a ship sails straight to %s and puts in at its dock', async named => {

@@ -290,6 +290,18 @@ function theGradeAskedFor(said: string) {
     return /\b(?:shod|iron-rimmed|rimmed|earth)\b/i.test(said) ? A_HIRED_CARRIAGE_BY_GRADE[1]! : A_HIRED_CARRIAGE_BY_GRADE[0]!;
 }
 
+/**
+ * How many lines a board shows. Every dock on open water sells passage to every other, so a port's
+ * board would run to fifteen lines; it shows the nearest, and the rest are still sold by name.
+ */
+const ON_THE_BOARD = 6;
+
+/** The nearest lines, as many as a board shows, and how many more there are. */
+function theNearestOf(lines: readonly ALine[]): { shown: ALine[]; more: number } {
+    const nearest = [...lines].sort((a, b) => a.days - b.days || a.to.localeCompare(b.to));
+    return { shown: nearest.slice(0, ON_THE_BOARD), more: Math.max(0, nearest.length - ON_THE_BOARD) };
+}
+
 /** One line as the board says it. */
 export function sayTheLine(line: ALine): string {
     const when = line.runsFromDay === null ? 'runs today' : `the lane is next worked on day ${line.runsFromDay}`;
@@ -365,7 +377,8 @@ export async function aSeatOnAShipOrACarriage(
             `${what} ${here}.`,
             `${what} ${here}. `
             + (all.length > 0
-                ? `What does run: ${all.map(line => `${line.to} by ${line.service}`).join(', ')}.`
+                ? `What does run: ${theNearestOf(all).shown.map(line => `${line.to} by ${line.service}`).join(', ')}`
+                  + `${theNearestOf(all).more > 0 ? `, and ${theNearestOf(all).more} more` : ''}.`
                 : 'There is no landing on a sea lane here and no road a carriage runs; the way out is on foot.'),
             `a-seat-on-a-ship-or-a-carriage: ${all.length} line(s) from ${here}, ${lines.length} of `
             + `${service ?? 'either'} service. No time passed.`
@@ -379,7 +392,8 @@ export async function aSeatOnAShipOrACarriage(
         const board = [
             ...(landing ? [`${landing.name} keeps the landing.`] : []),
             ...(station ? [`${station.name} keeps the carriage station.`] : []),
-            ...lines.map(sayTheLine)
+            ...theNearestOf(lines).shown.map(sayTheLine),
+            ...(theNearestOf(lines).more > 0 ? [`And ${theNearestOf(lines).more} more, further off, sold by name.`] : [])
         ];
         if (!reading && wanted.length >= 2) {
             const other = theLineTo(all, wanted, null);
