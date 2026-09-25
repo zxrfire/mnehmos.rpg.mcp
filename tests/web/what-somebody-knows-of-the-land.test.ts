@@ -131,6 +131,9 @@ describe('what somebody knows of the land', () => {
         const turn = await game.act('anyone know the way to the white stairs?');
         expect(turn.narration).toMatch(/gives the way to The White Stair: .*days on the road through The Jade Gorge/);
         expect(stageRank(game.knowledge.stageOf(cultivator.id, 'place', 'The White Stair'))).toBeGreaterThanOrEqual(stageRank('placed'));
+        // Inside one province the answer is the walk itself, in days.
+        const near = await game.act('does anybody know how to get to willow village');
+        expect(near.narration).toMatch(/gives the way to Willow Village: in this province, \d+ days? on the road/);
     }, 180_000);
 
     it('widens as the player goes: a capital signs its roads to the next provinces', async () => {

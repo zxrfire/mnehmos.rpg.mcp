@@ -14,7 +14,7 @@ import type { GameService } from './turn-engine.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import { factsForToolResult, placeName } from './facts.js';
 import { loosePlaceKey } from './knowledge.js';
-import { REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
+import { placeRoadDays, REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import {
@@ -43,9 +43,15 @@ function provinceOf(game: GameService, locationId: string | null): string | null
  * "in this province", or the province, the days of road to it and the provinces it crosses on the
  * way. Said of the province itself, it is only the road.
  */
-function howFar(fromRegionId: string, toRegionId: string | null, isTheProvince = false): string {
+function howFar(
+    fromRegionId: string,
+    toRegionId: string | null,
+    isTheProvince = false,
+    /** The walk inside one province, off the catalog's own roads, where it has one. */
+    daysInside: number | null = null
+): string {
     if (toRegionId === null) return 'somewhere they cannot put a province to';
-    if (toRegionId === fromRegionId) return 'in this province';
+    if (toRegionId === fromRegionId) return `in this province${daysInside !== null ? `, ${daysInside} ${daysInside === 1 ? 'day' : 'days'} on the road` : ''}`;
     const to = REGIONS.find(region => region.id === toRegionId);
     const road = theRoadBetweenProvinces(fromRegionId, toRegionId);
     const through = (road?.through ?? []).map(id => REGIONS.find(region => region.id === id)?.name)
@@ -151,11 +157,13 @@ export function theWayTo(
     }];
     const lines: string[] = [];
     if (stage === 'placed' && place) {
-        const here = standingOf(cultivator).regionId;
+        const standing = standingOf(cultivator);
+        const here = standing.regionId;
+        const inside = placeRoadDays(standing.placeName ?? cultivator.location, place.name);
         lines.push(house
             ? `${who} gives the way to ${called}: its gate is at ${place.name}, `
-                + `${howFar(here, provinceOf(game, place.id))}.`
-            : `${who} gives the way to ${name}: ${howFar(here, provinceOf(game, place.id), place.kind === 'region')}.`);
+                + `${howFar(here, provinceOf(game, place.id), false, inside)}.`
+            : `${who} gives the way to ${name}: ${howFar(here, provinceOf(game, place.id), place.kind === 'region', inside)}.`);
         if (house && game.noteEncounter(cultivator, run,
             { kind: 'sect', id: house.factionId, name: house.factionName }, 'told',
             `${asked.name} gave the way to it at ${placeName(cultivator)}.`)) {
