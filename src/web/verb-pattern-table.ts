@@ -2813,7 +2813,10 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // nothing, while "I sneak INTO the compound" has always worked. The bare
     // forms are anchored so they cannot eat "I sneak in behind him" - which
     // names somebody, and is read where following is read.
-    ['enter', /\b(?:enter|go into|goes into|go inside|walk into|walks into|step into|climb into|breach|infiltrate|sneak into|slip into)\b|^\s*(?:i\s+)?(?:sneaks?|slips?|steals?|creeps?)\s+in(?:side)?(?:\s+(?:through|past|by|under|over)\s+[\w' -]{2,40})?\s*[.!?]*$/],
+    // Over a wall, and past or around a gate's watch, are the same road in: "I go over the wall"
+    // and "I scale the wall" reached nothing, and "I sneak past the guard" was talk to somebody
+    // called `past the guard`. See `inside-without-leave.ts`.
+    ['enter', /\b(?:enter|go into|goes into|go inside|walk into|walks into|step into|climb into|breach|infiltrate|sneak into|slip into)\b|^\s*(?:i\s+)?(?:sneaks?|slips?|steals?|creeps?)\s+in(?:side)?(?:\s+(?:through|past|by|under|over)\s+[\w' -]{2,40})?\s*[.!?]*$|\b(?:go(?:es)?|gets?|climbs?|clambers?|vaults?|hops?|jumps?|sneaks?|slips?|creeps?|scales?)\s+(?:up\s+)?over\s+(?:the|a|its|their)\s+walls?\b|\b(?:scales?|climbs?|hops?|jumps?|vaults?)\s+(?:the|a|its|their)\s+walls?\b|\b(?:sneaks?|slips?|creeps?|steals?)\s+(?:past|around|round)\s+(?:the\s+)?(?:gate|gates|guard|guards|watch|sentry|sentries|doorkeeper)\b|\b(?:go(?:es)?|gets?)\s+(?:around|round)\s+(?:the\s+)?gates?\b/],
     // `come to` followed by a verb is WHY somebody came, not where: "I have
     // come to ask to be taken in" walked the player toward a place called "ask".
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to(?!\s+(?:ask|beg|seek|request|petition|plead|join|apply|learn|study|serve|see|be|offer|pay|speak|talk|trade|buy|sell|find|terms)\b))\b/],
@@ -3939,6 +3942,9 @@ const WHAT_THEY_WERE_MADE_TO_TAKE =
 // `chase` and `go after` are how somebody says following when the other person
 // is already walking away, and the name has to come off them too or the verb
 // resolves against nobody.
+/** A wall gone over is the way in, not somewhere to go: "I go over the wall" names no place. */
+const OVER_A_WALL = /^\s*(?:(?:over|around|round)\s+(?:(?:the|a|its|their)\s+)?(?:walls?|gates?)|(?:(?:the|a|its|their)\s+)?walls?)\s*$/i;
+
 const MOVE_SUBJECT_VERBS = /flee|escape|run after|runs after|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|chase after|chases after|chase|chases|pursue|pursues|go after|goes after|travel|go|head|walk|journey|depart|move|ride/;
 
 /**
@@ -6889,6 +6895,7 @@ function planIntent(input: string): PlannedAction {
             };
         }
 
+        const going = destination ?? aPlaceAndNotAPerson(extractSubject(input, MOVE_SUBJECT_VERBS));
         return {
             action: 'move',
             // HOME IS ONE WORD WHATEVER WAS SAID AROUND IT. The three
@@ -6898,7 +6905,7 @@ function planIntent(input: string): PlannedAction {
             // the abode are.
             target: GOING_HOME.test(text)
                 ? 'home'
-                : destination ?? aPlaceAndNotAPerson(extractSubject(input, MOVE_SUBJECT_VERBS)),
+                : moveIntent === 'enter' && going !== undefined && OVER_A_WALL.test(going) ? undefined : going,
             intent: moveIntent
         };
     }

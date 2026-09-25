@@ -188,7 +188,7 @@ Takes `target`.
 
 ### `move`
 
-go somewhere on foot. "target" is the destination; "intent" is how - travel, flee, approach, enter, follow. "flee" is leaving the scene rather than naming somewhere to go - "I leave", "I back off" - which is also how somebody answers being told to get off ground other people are working.
+go somewhere on foot. "target" is the destination; "intent" is how - travel, flee, approach, enter, follow. "enter" is getting inside, through a gate or over a wall - "I sneak in", "I go over the wall". "flee" is leaving the scene rather than naming somewhere to go - "I leave", "I back off" - which is also how somebody answers being told to get off ground other people are working.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'move'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.move` · the deterministic parser reaches it · spends in-world time.
 

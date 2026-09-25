@@ -2475,17 +2475,15 @@ as seeing nothing**:
   ledger: an open `debt` or `favor` they hold toward you. An outer or inner disciple
   cannot host and can spend a favour upward; that second step has no verb yet and the
   gate says so rather than hiding it.
-- **you go around** - not wired, and **it needs no new subsystem**. Three of the four
-  pieces exist and are reachable. `reachThrough` takes `enteredAt` - somebody who arrived
-  inside, having gone around the walls - and has since it was written. `concealmentHolds`
-  in `../cultivation/regard.ts` is the concealment reading: a declared approach holds
-  unless a witness stands at or above your own rung, which is exactly the question the
-  people on a gate ask, and `../social/what-they-can-place-about-you.ts` already calls it.
-  `what-a-house-does-when-it-catches-you.ts` is the cost of failing.
-  `src/engine/perception/` and `src/engine/spatial/` are NOT where to look: both are
-  retained D&D substrate with no player path, perception has no concealment reading at
-  all, and spatial is grid A* waiting on the fold. What is missing is a verb that
-  declares the approach at a gate and spends the risk.
+- **you go around** - over the wall, and **it needed no new subsystem**. The sentence
+  declares the approach ("sneak in", "over the wall"); `reachThrough` with `enteredAt` is
+  where it lands; `concealmentHolds` in `../cultivation/regard.ts` decides who sees it,
+  since a declared approach holds unless a witness stands at or above your own rung; and
+  `what-a-house-does-when-it-catches-you.ts` is the cost of being seen, on the wall or
+  later inside. Being inside without leave is a standing fact, read at the end of every
+  turn. The wiring is `src/web/inside-without-leave.ts`. `src/engine/perception/` and
+  `src/engine/spatial/` are NOT where to look: both are retained D&D substrate with no
+  player path.
 
 ## A purse is a motive, and so is a ceiling
 

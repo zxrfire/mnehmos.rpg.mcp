@@ -215,7 +215,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         takes: ['target', 'intent'],
         intents: MOVE_INTENTS,
         says: `go somewhere on foot. "target" is the destination; "intent" is how - travel,
-            flee, approach, enter, follow. "flee" is leaving the scene rather than naming
+            flee, approach, enter, follow. "enter" is getting inside, through a gate or over a
+            wall - "I sneak in", "I go over the wall". "flee" is leaving the scene rather than naming
             somewhere to go - "I leave", "I back off" - which is also how somebody answers being
             told to get off ground other people are working.`
     },

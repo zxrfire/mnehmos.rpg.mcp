@@ -90,3 +90,10 @@ export const derivationDaysKey = (manualId: string): string =>
  * right. See `keeping-yourself-out-of-sight.ts`.
  */
 export const FLAG_WEIGHT_PUT_AWAY = 'weight_put_away';
+
+/**
+ * That this cultivator went over a house's wall and is inside it without its leave: the house and
+ * its seat, and the day. Stored because how somebody got in cannot be read off where they stand. A
+ * guest walked in behind a host stands in the same forecourt. See `inside-without-leave.ts`.
+ */
+export const FLAG_INSIDE_WITHOUT_LEAVE = 'inside_without_leave';

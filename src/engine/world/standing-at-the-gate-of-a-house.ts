@@ -40,13 +40,13 @@
  *                   reading and not a field: anybody the house lets give an
  *                   order can host, which is `authorityTier` above `ordered`.
  *                   An inner or outer disciple has to ask one of them first.
- *   you go around   over the wall, past the people on it. Not wired, and it needs
- *                   no new subsystem: `reachThrough` takes `enteredAt` for
- *                   exactly this, `concealmentHolds` in `regard.ts` already
- *                   answers whether a declared approach survives a witness at
- *                   or above your rung, and
- *                   `what-a-house-does-when-it-catches-you.ts` is the cost of
- *                   failing. What is missing is a verb that declares one.
+ *   you go around   over the wall, past the people on it, declared by the
+ *                   sentence ("sneak in", "over the wall"). `reachThrough` with
+ *                   `enteredAt` is where it lands, `concealmentHolds` in
+ *                   `regard.ts` is whether a witness at or above your rung sees
+ *                   you, and `what-a-house-does-when-it-catches-you.ts` is the
+ *                   cost of being seen, on the wall or later inside. Wired in
+ *                   `src/web/inside-without-leave.ts`.
  *
  * NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING NOTHING. A
  * refusal here always carries what is actually there, whose it is, and what
@@ -316,9 +316,8 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         // everything behind the next wall.
         facts.push('You are at the gate and in the forecourt, which is as far as the road goes. '
             + 'Every court behind this one is walled and calibrated.');
-        // THE THIRD ROAD IS SAID BECAUSE IT IS REAL. Every piece of it is built
-        // and reachable - `enteredAt`, `concealmentHolds`, and what a house does
-        // when it catches you. What is missing is a verb.
+        // THE THIRD ROAD IS SAID BECAUSE IT IS REAL: "sneak in" or "over the
+        // wall" takes it. See `src/web/inside-without-leave.ts`.
         facts.push('The wall is a wall. It is not watched along its whole length.');
     }
 
