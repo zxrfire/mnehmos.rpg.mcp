@@ -13,9 +13,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import {
     countedHolding,
@@ -66,12 +64,11 @@ describe('a house builds something out of what came back', () => {
      */
     let built: Promise<WorldState[]> | null = null;
     function worlds(): Promise<WorldState[]> {
+        // Kept and shared: see `tests/support/soaked-world.ts`.
         built ??= (async () => {
-            const catalog = await loadCultivationCatalog();
-            return ['yard-a', 'yard-b', 'yard-c'].map(seed => {
-                const { state } = seedWorld({ seed, catalog });
-                return advanceWorldYears(state, 500).state;
-            });
+            const out: WorldState[] = [];
+            for (const seed of ['yard-a', 'yard-b', 'yard-c']) out.push(await soakedWorld(seed, { years: 500 }));
+            return out;
         })();
         return built;
     }

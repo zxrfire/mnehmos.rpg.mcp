@@ -13,9 +13,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
@@ -271,11 +269,10 @@ describe('the world writes them, and then ends them', () => {
         // THE TEST THAT COULD NOT HAVE PASSED BEFORE. Not "the module
         // typechecks" and not "a candidate has the right shape" - a world
         // advanced the way a world is advanced, and rows in the table.
-        const catalog = await loadCultivationCatalog();
-        let { state } = seedWorld({ seed: WORLD_SEED, catalog });
-        expect(state.statuses).toHaveLength(0);
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        expect((await soakedWorld(WORLD_SEED, { years: 0 })).statuses).toHaveLength(0);
 
-        state = advanceWorldYears(state, 500).state;
+        const state = await soakedWorld(WORLD_SEED, { years: 500 });
         const day = Math.floor(state.currentDay);
 
         expect(state.statuses.length).toBeGreaterThan(20);

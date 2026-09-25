@@ -31,7 +31,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { populationWeightOf } from '../../../src/engine/world/locations.js';
 import { isAwayOnSomething } from '../../../src/engine/world/npc-state.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
@@ -66,10 +66,9 @@ describe('a journey has an end', () => {
     }, 120_000);
 
     it('and after the first year nobody alive holds an away activity with no term', async () => {
-        const catalog = await loadCultivationCatalog();
         for (const seed of SEEDS) {
-            const { state } = seedWorld({ seed, catalog });
-            advanceWorldYears(state, 1, { stopOnInterrupt: false });
+            // Kept and shared: see `tests/support/soaked-world.ts`.
+            const state = await soakedWorld(seed, { years: 1 });
             const left = termless(state);
             expect(left, `${seed}: ${left.join(', ')}`).toHaveLength(0);
         }

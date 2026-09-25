@@ -17,9 +17,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { createNpc, isActing, upsertRelationship } from '../../../src/engine/world/npc-state.js';
 import { FRIENDSHIP_STANDING } from '../../../src/engine/world/gatherings.js';
@@ -46,11 +45,8 @@ const WAITING_KINDS = ['spouse', 'kin', 'parent', 'child', 'master', 'disciple',
 let cached: Promise<WorldState> | null = null;
 async function worldAt120(): Promise<WorldState> {
     if (!cached) {
-        cached = (async () => {
-            const catalog = await loadCultivationCatalog();
-            const { state } = seedWorld({ seed: 'absence-audit', catalog });
-            return advanceWorldYears(state, 120).state;
-        })();
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        cached = soakedWorld('absence-audit', { years: 120 });
     }
     return cached;
 }
@@ -98,11 +94,9 @@ describe('the world produces people who matter to each other', () => {
         // with households in it can run away: measured before `settleNpcDeath`
         // skipped targets the heir already knew, the per-head figure climbed
         // every generation. It has to be FLAT.
-        const catalog = await loadCultivationCatalog();
-        const { state } = seedWorld({ seed: 'tie-drift', catalog });
-        const early = advanceWorldYears(state, 120).state;
+        const early = await soakedWorld('tie-drift', { years: 120 });
         const perHeadEarly = tieSupply(early, FRIENDSHIP_STANDING).perHead;
-        const late = advanceWorldYears(early, 380).state;
+        const late = await soakedWorld('tie-drift', { years: 500 });
         const perHeadLate = tieSupply(late, FRIENDSHIP_STANDING).perHead;
         expect(
             perHeadLate,

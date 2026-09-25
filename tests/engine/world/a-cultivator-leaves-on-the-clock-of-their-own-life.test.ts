@@ -59,7 +59,7 @@ import { createWorld, makeFaction, type WorldState } from '../../../src/engine/w
 import type { Blocked } from '../../../src/engine/world/promotion-inside-a-house.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { whatLeavingTheirHouseCosts } from '../../../src/engine/world/why-somebody-walks-out-of-a-compound.js';
 import { howLoudALeavingIs, whatTheirLeavingStirs } from '../../../src/engine/world/what-somebody-senior-leaving-stirs.js';
 import { WORTH_REPEATING } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
@@ -280,7 +280,8 @@ describe('somebody on no roll moves on', () => {
 
 describe('the wanderer the catalog names', () => {
     it('is somebody in the world at his catalog ordinal, a guest of the Court on no rung, and on no roll after the years pass', async () => {
-        const { state } = seedWorld({ seed: 'shape-a', catalog: await loadCultivationCatalog() });
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        let state = await soakedWorld('shape-a', { years: 0 });
         const lu = () => state.npcs.find(n => n.name === 'Lu Sheng');
         expect(lu()).toBeDefined();
         expect(lu()!.cultivation.realmOrdinal).toBe(45);
@@ -291,7 +292,7 @@ describe('the wanderer the catalog names', () => {
         const age = HOLLOW_COURT_ROSTER.find(m => m.name === 'Lu Sheng')!.ageYears;
         expect(Math.round((lu()!.cultivation.lifespanEndsOnDay - state.currentDay) / 365)).toBe(FALSE_IMMORTAL_LIFESPAN_YEARS - age);
         expect(theWorldMayEnd(lu()!)).toBe(false);
-        advanceWorldYears(state, 10, { stopOnInterrupt: false });
+        state = await soakedWorld('shape-a', { years: 10 });
         expect(lu()!.factionId).toBeNull();
     }, 300_000);
 

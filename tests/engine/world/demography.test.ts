@@ -25,11 +25,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldForPlay, worldShape } from '../../../src/engine/world/driver.js';
+import { worldShape } from '../../../src/engine/world/driver.js';
 import { npcsAt, type WorldState } from '../../../src/engine/world/world-state.js';
 
-const YEAR = 365;
 
 function headcount(state: WorldState, kind: string): number {
     return state.locations
@@ -71,15 +71,15 @@ function advancedWorld(years: number): Promise<AdvancedWorld> {
 type AdvancedWorld = Awaited<ReturnType<typeof buildTheWorld>>;
 
 async function buildTheWorld(years: number) {
-    const catalog = await loadCultivationCatalog();
-    const { state } = seedWorld({ seed: 'demography', catalog });
+    // Walked once and kept: see `tests/support/soaked-world.ts`.
+    const seeded = await soakedWorld('demography', { years: 0 });
+    const state = await soakedWorld('demography', { years });
     const before = {
-        alive: livingCount(state),
-        region: headcount(state, 'region'),
-        settlements: headcount(state, 'settlement'),
-        sectGround: headcount(state, 'sect_seat')
+        alive: livingCount(seeded),
+        region: headcount(seeded, 'region'),
+        settlements: headcount(seeded, 'settlement'),
+        sectGround: headcount(seeded, 'sect_seat')
     };
-    advanceWorldForPlay(state, { days: YEAR * years, stopOnInterrupt: false });
     return {
         state,
         before,
@@ -197,13 +197,8 @@ describe('a newborn is born somewhere somebody can stand', () => {
         // numbers for six hundred years of simulation.
         const marks = [100, 250, 400, 600];
         const counts: number[] = [];
-        const catalog = await loadCultivationCatalog();
-        const { state } = seedWorld({ seed: 'demography', catalog });
-        let walked = 0;
         for (const years of marks) {
-            advanceWorldForPlay(state, { days: YEAR * (years - walked), stopOnInterrupt: false });
-            walked = years;
-            counts.push(headcount(state, 'region'));
+            counts.push(headcount(await soakedWorld('demography', { years }), 'region'));
         }
         for (let i = 1; i < counts.length; i++) {
             expect(
@@ -356,10 +351,8 @@ describe('the top of the world survives its own clock', () => {
     let run: Promise<{ state: WorldState; before: number[]; after: number[] }> | null = null;
     function soaked() {
         run ??= (async () => {
-            const catalog = await loadCultivationCatalog();
-            const { state } = seedWorld({ seed: 'drift-guard', catalog });
-            const before = topOrdinals(state);
-            advanceWorldForPlay(state, { days: 365 * HORIZON_YEARS, stopOnInterrupt: false });
+            const before = topOrdinals(await soakedWorld('drift-guard', { years: 0 }));
+            const state = await soakedWorld('drift-guard', { years: HORIZON_YEARS });
             return { state, before, after: topOrdinals(state) };
         })();
         return run;
@@ -522,14 +515,13 @@ describe('a house may fall; the ladder may not', () => {
     ];
 
     it('lets its houses fall without letting its ladder collapse', async () => {
-        const catalog = await loadCultivationCatalog();
-        const { state } = seedWorld({ seed: 'drift-guard', catalog });
+        const seeded = await soakedWorld('drift-guard', { years: 0 });
         // Who and what the world started with, so a later count can tell a
         // survivor from an arrival. A band held entirely by people placed there
         // at seeding is a band that is dying, whatever its headcount reads.
-        const seededNpcIds = new Set(state.npcs.map(n => n.id));
-        const seededFactionIds = state.factions.map(f => f.id);
-        advanceWorldForPlay(state, { days: YEAR * HORIZON_YEARS, stopOnInterrupt: false });
+        const seededNpcIds = new Set(seeded.npcs.map(n => n.id));
+        const seededFactionIds = seeded.factions.map(f => f.id);
+        const state = await soakedWorld('drift-guard', { years: HORIZON_YEARS });
         const alive = state.npcs.filter(n => n.status === 'alive');
 
         // ── Decline, at the level decline belongs to. ──────────────────────

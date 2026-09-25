@@ -15,9 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { forStream } from '../../../src/engine/cultivation/rng.js';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { summonable } from '../../../src/engine/encounters/duties.js';
 import { regardFor } from '../../../src/engine/cultivation/regard.js';
 import {
@@ -68,11 +66,12 @@ describe('who goes', () => {
     });
 
     it('pitches an errand at what the ground asks, and sends the people that pitch is for', async () => {
-        const { state } = seedWorld({ seed: 'afford-a', catalog: await loadCultivationCatalog() });
-        const seats = new Set(state.npcs.filter(n => /^npc-hollow-court-(first|second|third|fourth)-seat$/.test(n.id)).map(n => n.id));
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        const seeded = await soakedWorld('afford-a', { years: 0 });
+        const seats = new Set(seeded.npcs.filter(n => /^npc-hollow-court-(first|second|third|fourth)-seat$/.test(n.id)).map(n => n.id));
         expect(seats.size).toBe(4);
-        const before = new Set(state.history.facts.map(f => f.id));
-        advanceWorldYears(state, 300, { stopOnInterrupt: false });
+        const before = new Set(seeded.history.facts.map(f => f.id));
+        const state = await soakedWorld('afford-a', { years: 300 });
 
         // THE PITCH IS THE GROUND'S, NOT THE HOUSE'S. Every errand onto ground
         // that asks anything of somebody standing on it is pitched at what it

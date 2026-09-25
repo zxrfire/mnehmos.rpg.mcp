@@ -44,9 +44,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import type { WorldState } from '../../../src/engine/world/world-state';
 import {
     settleEstate,
@@ -348,9 +346,8 @@ describe('a world left to itself marks what comes off its dead', () => {
     let lived: WorldState;
 
     beforeAll(async () => {
-        const catalog = await loadCultivationCatalog();
-        lived = seedWorld({ seed: 'estate-a', catalog }).state;
-        advanceWorldForPlay(lived, { days: 200 * 365, stopOnInterrupt: false });
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        lived = await soakedWorld('estate-a', { years: 200 });
     }, 600000);
 
     it('leaves marks nobody arranged', () => {

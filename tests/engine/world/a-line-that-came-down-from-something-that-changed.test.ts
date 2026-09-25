@@ -26,7 +26,7 @@
 import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import type { NpcRecord } from '../../../src/engine/world/npc-state.js';
 import {
     bloodlineForChild,
@@ -132,8 +132,8 @@ describe('and the birth pass keeps writing it', () => {
         let born: NpcRecord[] = [];
         let seedsThatProduced = 0;
         for (const seed of SEEDS) {
-            const { state } = seedWorld({ seed, catalog });
-            const after = advanceWorldYears(state, 200).state;
+            // Kept and shared: see `tests/support/soaked-world.ts`.
+            const after = await soakedWorld(seed, { years: 200 });
             const theirs = after.npcs.filter(n => n.identity.bloodline !== null);
             const theirsBorn = theirs.filter(n => !n.id.startsWith('npc-line-'));
             if (theirsBorn.length > 0) seedsThatProduced++;

@@ -16,10 +16,8 @@
  *   GRIEF        a master carries a dead disciple as a disciple carries a master
  */
 
-import { beforeAll, describe, expect, it } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { describe, expect, it } from 'vitest';
+import { soakedWorld } from '../../support/soaked-world.js';
 import {
     THE_OTHER_END,
     andLetGoAtTheOtherEnd,
@@ -33,13 +31,11 @@ import { makeGame } from '../../web/harness.js';
 import { recordContact, tieFrom } from '../../../src/web/encounters.js';
 
 describe('the world', () => {
-    let catalog: WorldCatalog;
-    beforeAll(async () => { catalog = await loadCultivationCatalog(); });
-
-    it('holds no tie without its other end, at world open and forty years on', () => {
-        let { state } = seedWorld({ seed: 'every-tie-has-two-ends', catalog });
-        expect(tiesWithNobodyAtTheOtherEnd(state.npcs)).toEqual([]);
-        state = advanceWorldYears(state, 40).state;
+    it('holds no tie without its other end, at world open and forty years on', async () => {
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        const seeded = await soakedWorld('every-tie-has-two-ends', { years: 0 });
+        expect(tiesWithNobodyAtTheOtherEnd(seeded.npcs)).toEqual([]);
+        const state = await soakedWorld('every-tie-has-two-ends', { years: 40 });
         const ties = state.npcs.reduce((n, npc) => n + npc.relationships.length, 0);
         expect(ties, 'the world wrote no ties to check').toBeGreaterThan(1000);
         expect(tiesWithNobodyAtTheOtherEnd(state.npcs).slice(0, 10)).toEqual([]);

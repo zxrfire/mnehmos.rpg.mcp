@@ -54,6 +54,7 @@ import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { createNpc, setRealm } from '../../../src/engine/world/npc-state.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
 import {
@@ -300,13 +301,11 @@ describe('the assessment, on the sending house\'s own terms', () => {
  */
 let soakedWorlds: Promise<WorldState[]> | null = null;
 function soaked(): Promise<WorldState[]> {
+    // Kept and shared: see `tests/support/soaked-world.ts`.
     soakedWorlds ??= (async () => {
-        const catalog = await loadCultivationCatalog();
-        return SEEDS.map(seed => {
-            const { state } = seedWorld({ seed, catalog }) as { state: WorldState };
-            advanceWorldYears(state, HORIZON, { stopOnInterrupt: false });
-            return state;
-        });
+        const out: WorldState[] = [];
+        for (const seed of SEEDS) out.push(await soakedWorld(seed, { years: HORIZON }));
+        return out;
     })();
     return soakedWorlds;
 }

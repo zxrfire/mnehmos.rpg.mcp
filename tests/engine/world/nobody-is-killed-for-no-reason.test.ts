@@ -17,7 +17,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import {
     NEUTRAL_HOUSES_DRAW_SWORDS,
@@ -105,9 +105,9 @@ describe('the four factors', () => {
 
 describe('a world that runs', () => {
     it('kills people, and every killing it writes names the reason', async () => {
-        const state = await world();
-        const before = new Set(state.history.facts.map(f => f.id));
-        advanceWorldYears(state, 150, { stopOnInterrupt: false });
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        const before = new Set((await soakedWorld('afford-a', { years: 0 })).history.facts.map(f => f.id));
+        const state = await soakedWorld('afford-a', { years: 150 });
         const killings = state.history.facts.filter(f => !before.has(f.id)
             && f.data?.pressure === 'killing' && f.actors.some(a => a.role === 'killer'));
         expect(killings.length).toBeGreaterThan(0);

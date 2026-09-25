@@ -283,9 +283,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
+import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { REALM_TIERS, realmForOrdinal, type RealmKey } from '../../../src/engine/cultivation/realms.js';
 
 const YEARS = 200;
@@ -343,12 +342,8 @@ const SIGMAS_FOR_CERTAINTY = 3;
 /** The ladder, bottom to top. Adjacent pairs are what the shape rule reads. */
 const LADDER: readonly RealmKey[] = REALM_TIERS.map(t => t.key);
 
-const catalog = await loadCultivationCatalog();
-
 /** Headcount standing in each realm after the world has run. */
-function pyramid(seed: string): { count: Map<RealmKey, number>; alive: number } {
-    const { state } = seedWorld({ seed, catalog });
-    const after = advanceWorldYears(state, YEARS).state;
+function pyramid(after: WorldState): { count: Map<RealmKey, number>; alive: number } {
     const count = new Map<RealmKey, number>(LADDER.map(k => [k, 0]));
     let alive = 0;
     for (const npc of after.npcs) {
@@ -360,7 +355,9 @@ function pyramid(seed: string): { count: Map<RealmKey, number>; alive: number } 
     return { count, alive };
 }
 
-const RUNS = SEEDS.map(s => ({ seed: s, ...pyramid(s) }));
+// Kept and shared: see `tests/support/soaked-world.ts`.
+const RUNS: { seed: string; count: Map<RealmKey, number>; alive: number }[] = [];
+for (const seed of SEEDS) RUNS.push({ seed, ...pyramid(await soakedWorld(seed, { years: YEARS })) });
 
 type Verdict = 'ordered' | 'noise' | 'structural_small' | 'structural_large' | 'too_few';
 

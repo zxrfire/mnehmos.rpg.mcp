@@ -20,9 +20,7 @@
 import { describe, it, expect } from 'vitest';
 import { whoTheHouseHasLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { daysByConveyance } from '../../../src/engine/world/what-a-conveyance-does-to-a-journey.js';
 import {
@@ -487,9 +485,8 @@ describe('the world actually sends people', () => {
         // module was zero-reference, so none of the above ever ran in a world:
         // no house ever put a party on the road, nobody was ever lost on one,
         // and nothing a house did became a fact anybody could repeat.
-        const catalog = await loadCultivationCatalog();
-        let { state } = seedWorld({ seed: 'sendings-are-wired', catalog });
-        state = advanceWorldYears(state, 500).state;
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        const state = await soakedWorld('sendings-are-wired', { years: 500 });
 
         const news = state.history.facts.filter(f => / sent \d+ on /.test(f.summary));
         expect(news.length).toBeGreaterThan(20);
@@ -620,10 +617,8 @@ describe('and the world writes nothing dated after its own clock', () => {
     // nothing. Three short ones on the real catalog go red on the reverted line
     // and pass on this one.
     it('at every horizon, not at one', async () => {
-        const catalog = await loadCultivationCatalog();
         for (const years of [17, 23, 30]) {
-            const { state } = seedWorld({ seed: `dated-inside-${years}`, catalog });
-            const out = advanceWorldYears(state, years).state;
+            const out = await soakedWorld(`dated-inside-${years}`, { years });
             const ahead = out.history.facts.filter(f => f.day > out.currentDay);
             expect({ years, ahead: ahead.map(f => f.summary) })
                 .toEqual({ years, ahead: [] });

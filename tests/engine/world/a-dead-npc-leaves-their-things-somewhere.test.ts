@@ -36,9 +36,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import type { WorldState } from '../../../src/engine/world/world-state';
 
 /**
@@ -69,14 +67,15 @@ let cached: Lived[] | null = null;
 
 async function worldsLived(): Promise<Lived[]> {
     if (cached) return cached;
-    const catalog = await loadCultivationCatalog();
-    cached = SEEDS.map(seed => {
-        const { state } = seedWorld({ seed, catalog });
-        const pursesAtSeeding = new Map(state.npcs.map(n => [n.id, n.spiritStones]));
-        const objectsAtSeeding = state.objects.length;
-        advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
-        return { state, pursesAtSeeding, objectsAtSeeding };
-    });
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    const lived: Lived[] = [];
+    for (const seed of SEEDS) {
+        const seeded = await soakedWorld(seed, { years: 0 });
+        const pursesAtSeeding = new Map(seeded.npcs.map(n => [n.id, n.spiritStones]));
+        const objectsAtSeeding = seeded.objects.length;
+        lived.push({ state: await soakedWorld(seed, { years: YEARS }), pursesAtSeeding, objectsAtSeeding });
+    }
+    cached = lived;
     return cached;
 }
 

@@ -17,12 +17,10 @@
  *                dated behind the day it opened on
  */
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createWorld, schedule } from '../../../src/engine/world/world-state.js';
 import { advanceYears, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 
 const YEAR = 365;
 
@@ -58,16 +56,14 @@ describe('booking a consequence', () => {
 });
 
 describe('a seeded world', () => {
-    let catalog: WorldCatalog;
-    beforeAll(async () => { catalog = await loadCultivationCatalog(); });
-
-    it('opens with every consequence ahead of it, and keeps one sequence of ids as it runs', () => {
-        const { state: opened } = seedWorld({ seed: 'booked-one-way', catalog });
+    it('opens with every consequence ahead of it, and keeps one sequence of ids as it runs', async () => {
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        const opened = await soakedWorld('booked-one-way', { years: 0 });
         const open = Math.floor(opened.currentDay);
         expect(opened.schedule.length).toBeGreaterThan(0);
         for (const effect of opened.schedule) expect(effect.dueOnDay, effect.id).toBeGreaterThan(open);
 
-        const ran = advanceWorldYears(opened, 40).state;
+        const ran = await soakedWorld('booked-one-way', { years: 40 });
         const ids = ran.schedule.map(effect => effect.id);
         expect(new Set(ids).size).toBe(ids.length);
     }, 300_000);

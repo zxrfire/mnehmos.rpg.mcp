@@ -22,14 +22,13 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { realmForOrdinal } from '../../../src/engine/cultivation/realms';
 import type { WorldState } from '../../../src/engine/world/world-state';
 import { applyGatherings, type Gathering } from '../../../src/engine/world/gatherings';
 
-const SEEDS = ['brk-a', 'brk-b'];
+// The pyramid's seeds at the same horizon, so the walks are shared: see `tests/support/soaked-world.ts`.
+const SEEDS = ['pyr-a', 'pyr-b'];
 const YEARS = 200;
 let cached: { state: WorldState; held: Gathering[] }[] | null = null;
 
@@ -44,10 +43,10 @@ let cached: { state: WorldState; held: Gathering[] }[] | null = null;
  */
 async function worldsLived() {
     if (cached) return cached;
-    const catalog = await loadCultivationCatalog();
-    cached = SEEDS.map(seed => {
-        const { state } = seedWorld({ seed, catalog });
-        advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    const lived: WorldState[] = [];
+    for (const seed of SEEDS) lived.push(await soakedWorld(seed, { years: YEARS }));
+    cached = lived.map(state => {
         // Keep driving until the circles actually hold something, so the
         // structured assertions below have rows to run over.
         const held: Gathering[] = [];

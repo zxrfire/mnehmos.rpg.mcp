@@ -31,9 +31,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import {
     getFaction,
     getLocation,
@@ -53,14 +51,10 @@ function positionByScan<T extends { id: string }>(rows: readonly T[], id: string
 
 let world: Promise<WorldState> | null = null;
 function lived(): Promise<WorldState> {
-    world ??= (async () => {
-        const catalog = await loadCultivationCatalog();
-        const { state } = seedWorld({ seed: 'a-lookup-is-a-memo', catalog });
-        // Long enough that people have died, houses have fallen and ruins have
-        // been minted, so the arrays have been pushed to and written over.
-        advanceWorldYears(state, 60, { stopOnInterrupt: false });
-        return state;
-    })();
+    // Long enough that people have died, houses have fallen and ruins have
+    // been minted, so the arrays have been pushed to and written over.
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    world ??= soakedWorld('a-lookup-is-a-memo', { years: 60 });
     return world;
 }
 

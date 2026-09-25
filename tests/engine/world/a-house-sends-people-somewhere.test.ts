@@ -16,25 +16,25 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { whereASendingGoes } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back';
 import type { WorldState } from '../../../src/engine/world/world-state';
 
-const SEEDS = ['sent-a', 'sent-b'];
+// The pyramid's seeds at the same horizon, so the walks are shared: see `tests/support/soaked-world.ts`.
+const SEEDS = ['pyr-a', 'pyr-b'];
 const YEARS = 200;
 let cached: { state: WorldState; before: Map<string, string | null> }[] | null = null;
 
 async function worldsLived() {
     if (cached) return cached;
-    const catalog = await loadCultivationCatalog();
-    cached = SEEDS.map(seed => {
-        const { state } = seedWorld({ seed, catalog });
-        const before = new Map(state.npcs.map(n => [n.id, n.locationId]));
-        advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
-        return { state, before };
-    });
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    const lived: { state: WorldState; before: Map<string, string | null> }[] = [];
+    for (const seed of SEEDS) {
+        const seeded = await soakedWorld(seed, { years: 0 });
+        const before = new Map(seeded.npcs.map(n => [n.id, n.locationId]));
+        lived.push({ state: await soakedWorld(seed, { years: YEARS }), before });
+    }
+    cached = lived;
     return cached;
 }
 

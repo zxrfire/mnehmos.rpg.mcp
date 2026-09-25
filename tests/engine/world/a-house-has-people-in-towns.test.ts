@@ -20,9 +20,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { isElderRank } from '../../../src/engine/cultivation/leadership';
 import { getSect } from '../../../src/data/cultivation/sects';
 import type { WorldState } from '../../../src/engine/world/world-state';
@@ -35,20 +33,22 @@ const atTheirSeatAtOpen = new Map<WorldState, Map<string, string>>();
 
 async function worldsLived(): Promise<WorldState[]> {
     if (cached) return cached;
-    const catalog = await loadCultivationCatalog();
-    cached = SEEDS.map(seed => {
-        const { state } = seedWorld({ seed, catalog });
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    const lived: WorldState[] = [];
+    for (const seed of SEEDS) {
+        const seeded = await soakedWorld(seed, { years: 0 });
         const home = new Map<string, string>();
-        const seatOf = new Map(state.factions.map(f => [f.id, f.seatLocationId]));
-        for (const n of state.npcs) {
+        const seatOf = new Map(seeded.factions.map(f => [f.id, f.seatLocationId]));
+        for (const n of seeded.npcs) {
             if (n.status !== 'alive' || n.factionId === null) continue;
             const seat = seatOf.get(n.factionId) ?? null;
             if (seat !== null && n.locationId === seat) home.set(n.id, n.factionId);
         }
-        advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
+        const state = await soakedWorld(seed, { years: YEARS });
         atTheirSeatAtOpen.set(state, home);
-        return state;
-    });
+        lived.push(state);
+    }
+    cached = lived;
     return cached;
 }
 

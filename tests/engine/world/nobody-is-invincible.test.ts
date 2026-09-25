@@ -33,9 +33,7 @@ import {
 import { forStream } from '../../../src/engine/cultivation/rng';
 import { realmIndexOf } from '../../../src/engine/cultivation/realms';
 import { DISPOSITION_BANDS } from '../../../src/engine/social-leverage/how-freely-somebody-parts-with-what-they-have';
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { circlesOf, holdGathering } from '../../../src/engine/world/gatherings';
 import {
     whetherItGoesOn,
@@ -496,10 +494,8 @@ describe('and the killer wears it', () => {
 let lived: WorldState | null = null;
 async function aLivedWorld(): Promise<WorldState> {
     if (lived) return lived;
-    const catalog = await loadCultivationCatalog();
-    const { state } = seedWorld({ seed: 'inv-rooms', catalog });
-    advanceWorldForPlay(state, { days: 150 * 365, stopOnInterrupt: false });
-    lived = state;
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    lived = await soakedWorld('inv-rooms', { years: 150 });
     return lived;
 }
 

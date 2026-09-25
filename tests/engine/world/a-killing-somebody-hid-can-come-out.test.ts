@@ -18,9 +18,7 @@
  */
 import { describe, it, expect } from 'vitest';
 
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldYears } from '../../../src/engine/world/driver.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import {
     CAME_TO_LIGHT,
     HOW_LONG_A_THING_CAN_COME_OUT,
@@ -51,8 +49,8 @@ describe('what would turn one up', () => {
 
 describe('and in a world that runs', () => {
     it('turns up a few of them and leaves most of them hidden', async () => {
-        const { state } = seedWorld({ seed: 'afford-a', catalog: await loadCultivationCatalog() });
-        advanceWorldYears(state, 300, { stopOnInterrupt: false });
+        // Kept and shared: see `tests/support/soaked-world.ts`.
+        const state = await soakedWorld('afford-a', { years: 300 });
 
         const hidden = state.history.facts.filter(f => f.data?.hidden === true);
         expect(hidden.length, 'nobody hid a killing in three centuries').toBeGreaterThan(5);

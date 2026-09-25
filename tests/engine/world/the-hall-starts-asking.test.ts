@@ -17,9 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { seedWorld } from '../../../src/engine/world/seeding';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver';
+import { soakedWorld } from '../../support/soaked-world.js';
 import type { WorldState } from '../../../src/engine/world/world-state';
 
 const SEEDS = ['asking-a', 'asking-b'];
@@ -28,12 +26,10 @@ let cached: WorldState[] | null = null;
 
 async function worldsLived(): Promise<WorldState[]> {
     if (cached) return cached;
-    const catalog = await loadCultivationCatalog();
-    cached = SEEDS.map(seed => {
-        const { state } = seedWorld({ seed, catalog });
-        advanceWorldForPlay(state, { days: YEARS * 365, stopOnInterrupt: false });
-        return state;
-    });
+    // Kept and shared: see `tests/support/soaked-world.ts`.
+    const lived: WorldState[] = [];
+    for (const seed of SEEDS) lived.push(await soakedWorld(seed, { years: YEARS }));
+    cached = lived;
     return cached;
 }
 
