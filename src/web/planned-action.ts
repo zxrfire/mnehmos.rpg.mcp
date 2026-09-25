@@ -281,9 +281,11 @@ function theLaneExpanded(raw: unknown): unknown {
 
     const intent = typeof said.intent === 'string' ? said.intent : undefined;
     const action = theVerbForThisLane(lane, intent);
+    // A QUESTION PUT TO SOMEBODY IS TALK to the engine, which reads its intents by that word.
+    if (lane === 'speak' && intent === 'ask_them_a_question') return { ...said, action, intent: 'talk' };
     // THE WAY IS A QUESTION, whatever word the model put to it. Played: "anyone know the way to the
-    // white stairs?" came back speak / ask_them_for, which is a request and can spend days, so the
-    // guard threw the right reading away for the list of destinations.
+    // white stairs?" came back as a request, which can spend days, so the guard threw the right
+    // reading away for the list of destinations.
     if (action === 'request' && typeof said.topic === 'string' && theWayAskedFor(said.topic) !== null) {
         return { ...said, action: 'interact', intent: 'talk' };
     }

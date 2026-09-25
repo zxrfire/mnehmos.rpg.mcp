@@ -252,7 +252,16 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     },
     speak: {
         says: 'anything done to or with a PERSON',
-        intents: { talk: 'interact', tell_them_something: 'tell', ask_them_for: 'request' },
+        // A QUESTION IS NOT A REQUEST. This intent was `ask_them_for`, and the model took it for
+        // any question put to somebody - "where is the Azure Dew Sect", "do you think they'd take
+        // me" - which reached `request`, a day spent pressing them, and the guard declined both.
+        // An intent word says what comes back: an answer, or a thing given or done.
+        intents: {
+            talk: 'interact',
+            ask_them_a_question: 'interact',
+            tell_them_something: 'tell',
+            ask_them_to_give_or_do_something: 'request'
+        },
         otherwise: 'interact'
     },
     fight: {
