@@ -187,7 +187,16 @@ const DEAD = 0;
 // 79 -> 76: war money leaves a treasury (whetherTheVaultOpens, whatItWouldSpend, whyItLeftTheTreasury).
 // 76 -> 73: a thing holed short of breaking stays holed (writeBack, isHoled, describeTheLoss).
 // 73 -> 70: a ship seat sails the lane on the hull's rations (provisionForLane wired; waterCupsAboard and canTurnBack deleted).
-const TEST_ONLY = 70;
+// 70 -> 60: three owner rulings and the harnesses. `historyEras` is how every
+// world is laid on the written ages; `arrivalStateFor` went when every house's
+// door came to seat a newcomer at the bottom rung or as an external elder;
+// `whatALevelLeaves` names combat's submission by its wound;
+// `willTheHouseSpendOnThem` answers a member asking their own house for a
+// repair dose. `advanceWorldYears`, the origin-odds sweep and a concurrent-event
+// booking moved to tests/support; the pressure-table and tie wrappers went
+// where the tests read the table. Counting names a move surfaced, the rest are
+// named with their reason in the commit that lowered this.
+const TEST_ONLY = 60;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
