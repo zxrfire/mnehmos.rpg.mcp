@@ -35,6 +35,20 @@ export function aTypoAway(typed: string, name: string): boolean {
     return editsApart(typed, name) <= (Math.max(typed.length, name.length) >= 9 ? 2 : 1);
 }
 
+/**
+ * A stretch that is a typo of a name. A name of several words may have ONE of
+ * them misspelt: "your name" is two edits from "Four Names", one in each word,
+ * and asking somebody their name was read as a question about a place.
+ */
+function nearlyThisName(typed: string, name: string, width: number): boolean {
+    if (width === 1) return aTypoAway(typed, name);
+    const typedWords = typed.split(/\s+/);
+    const nameWords = name.split(/\s+/);
+    if (typedWords.length !== nameWords.length) return false;
+    const misspelt = nameWords.map((_, i) => i).filter(i => typedWords[i] !== nameWords[i]);
+    return misspelt.length === 1 && aTypoAway(typedWords[misspelt[0]!]!, nameWords[misspelt[0]!]!);
+}
+
 /** The sentence, with every name they know written as it is spelled. */
 export function inTheSpellingOfTheNamesTheyKnow(said: string, names: readonly string[]): string {
     const known = [...new Set(names.filter(name => name.trim().length >= 4))]
@@ -53,7 +67,7 @@ export function inTheSpellingOfTheNamesTheyKnow(said: string, names: readonly st
             const bare = stretch.slice(0, stretch.length - tail.length);
             if (bare === name) continue;
             const candidate = bare.toLowerCase();
-            if (candidate === lower || aTypoAway(candidate, lower)) {
+            if (candidate === lower || nearlyThisName(candidate, lower, width)) {
                 words.splice(i, width * 2 - 1, name + tail);
             }
         }
