@@ -123,7 +123,7 @@ export const STORM_DELAY_DAYS = 3;
  */
 export interface SeaLane {
     id: string;
-    /** What the water is called, where it has a name: `the eastern passage`. */
+    /** What the water is called, where it has a name: `the Eastern Tideway`. */
     name?: string;
     /** The catalog place that is the open water past its commit point, where there is one. */
     water?: string;

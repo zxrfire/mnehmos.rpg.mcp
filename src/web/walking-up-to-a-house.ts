@@ -54,6 +54,7 @@ import { loosePlaceKey } from './knowledge.js';
 import { worldLocationFor } from './entities.js';
 import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import type { GameService } from './turn-engine.js';
+import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 
 /** A house and the ground its gate stands on, once a name has reached one. */
 export interface AHouseYouCouldWalkTo {
@@ -160,8 +161,16 @@ export function whatTheGateOfThisHouseSays(
             rankIndex: rankIndexOf(game, row.id, ranks.length)
         }))
         .filter(row => row.rankIndex >= 0);
+    // A stranger at the gate is said by their rung until the player knows their name.
+    const awareness = game.knowledge.awareness(cultivator.id);
     const theirPeopleHere: SomebodyOfTheHouse[] = presentOfTheHouse
-        .map(row => ({ id: row.id, name: row.name, rankIndex: row.rankIndex }));
+        .map(row => ({
+            id: row.id,
+            name: thePlayerIsSureItIsThem(row.name, awareness)
+                ? row.name
+                : `a ${ranks[row.rankIndex] ?? 'member'} of the ${house.factionName}`,
+            rankIndex: row.rankIndex
+        }));
 
     // WHOSE FACE THEY KNOW, read by the same trust reading a lecture hall uses.
     // No sentence is in hand at a gate, so no concealment is declared here.

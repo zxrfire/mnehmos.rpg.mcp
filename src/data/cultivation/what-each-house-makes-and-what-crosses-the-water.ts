@@ -229,7 +229,7 @@ export function housesWithAWrittenCraft(): readonly string[] {
 export const SEA_LANES: readonly SeaLane[] = [
     {
         id: 'lane-eastern-passage',
-        name: 'the eastern passage',
+        name: 'the Eastern Tideway',
         water: PLACE.THE_BITTER_CROSSING,
         fromPlace: PLACE.SWEETSPRING_ISLE,
         toPlace: PLACE.CLOUD_GATE,
@@ -244,7 +244,7 @@ export const SEA_LANES: readonly SeaLane[] = [
     },
     {
         id: 'lane-the-northern-capes',
-        name: 'the passage round the northern capes',
+        name: 'the Capes Tideway',
         water: PLACE.THE_BOUNDLESS,
         fromPlace: PLACE.THE_SALT_FIELDS,
         toPlace: 'Moraine Gate inlet',
@@ -259,7 +259,7 @@ export const SEA_LANES: readonly SeaLane[] = [
     },
     {
         id: 'lane-the-river-mouth',
-        name: 'the passage from the river mouth',
+        name: 'the Estuary Tideway',
         fromPlace: 'The river mouth below Emerald Water City',
         toPlace: PLACE.SWEETSPRING_ISLE,
         expectedDays: 9,
