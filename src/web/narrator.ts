@@ -1669,9 +1669,14 @@ export class ProviderNarrator implements Narrator {
         const day = scene.standing?.dayOfTheRun;
         const weeksWent = day !== undefined && this.lastDayTold !== null && day - this.lastDayTold >= 7;
         // A time-costing act the engine refused, on a turn where the day did not move at all. Only
-        // then, so a turn that travelled and was refused a sitting is not told nothing passed.
+        // then, so a turn that travelled and was refused a sitting is not told nothing passed. The
+        // structure lines too: played, "sleep till morning" at an inn was refused as "More than one
+        // of them, and you did not say which", with "no time passed" only in the structure, and the
+        // player was narrated waking up the next day.
+        // A read that says it cost nothing did happen, and is not this.
         const noTimePassed = day !== undefined && this.lastDayTold === day
-            && facts.lines.some(line => /\bno time passed\b/i.test(line));
+            && [...facts.lines, ...facts.structure].some(line => /\bno time passed\b/i.test(line)
+                && !/\bread only\b|\bcost nothing\b/i.test(line));
         if (day !== undefined) this.lastDayTold = day;
         if (arrived || weeksWent) {
             this.saidHere = new Set();

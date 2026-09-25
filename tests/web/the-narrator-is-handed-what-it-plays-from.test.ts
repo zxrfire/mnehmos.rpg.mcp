@@ -265,6 +265,19 @@ describe('a turn that ran nothing is written stopping at the start', () => {
         expect(last(1)).toContain('NO TIME PASSED THIS TURN');
         // Another step of the turn took the days, so it is not said.
         expect(last(2)).not.toContain('NO TIME PASSED THIS TURN');
+        // Played at an inn: the refusal's own line was about something else, and only the
+        // structure said the night did not happen.
+        await narrator.narrate({
+            headline: 'x', lines: ['More than one of them, and you did not say which.'],
+            structure: ['wait: "The Eleven Beds" reached 3 of 3 dated thing(s). Nothing written, no time passed.'], prose: ''
+        }, scene(40));
+        expect(last(3)).toContain('NO TIME PASSED THIS TURN');
+        // A read that cost nothing did happen.
+        await narrator.narrate({
+            headline: 'x', lines: ['The ground here is thin.'],
+            structure: ['Reading this cost nothing: no time passed, nothing spent, nothing learned.'], prose: ''
+        }, scene(40));
+        expect(last(4)).not.toContain('NO TIME PASSED THIS TURN');
     });
 });
 
