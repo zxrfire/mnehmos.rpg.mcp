@@ -4501,9 +4501,17 @@ export class GameService {
                 // player's own. Both live in `standing-guard.ts`, and the split is
                 // here rather than inside the verb so the free half never touches
                 // `loadWorld`.
-                return action.intent === GUARD_IS_A_QUESTION
-                    ? this.whoWouldStandOverYourCrossing(run, cultivator)
-                    : await this.standGuard(
+                if (action.intent === GUARD_IS_A_QUESTION) {
+                    return this.whoWouldStandOverYourCrossing(run, cultivator);
+                }
+                // Nobody named, and the house has posted the protecting as a
+                // mission for them: "I act as dao protector" takes it.
+                if (!action.target) {
+                    const posted = (await this.whatIsPostedOnTheWallHere(cultivator))
+                        .find(offer => theMissionBehind(offer.entry.id)?.id === 'mission-dao-protector');
+                    if (posted) return this.duty(run, cultivator, ambient, posted.entry.name);
+                }
+                return await this.standGuard(
                         run, cultivator, ambient, action.target, action.days
                     );
 
@@ -5446,6 +5454,22 @@ ${noticedWaiting}`;
                     // paper is what they see; that it is them is the one thing
                     // reading it tells them that it tells nobody else.
                     const onThem = wall.notices.filter(notice => notice.wantedId === cultivator.id);
+                    // The contracts are on the same wall. Played blind: the first look
+                    // showed intakes and no contracts, and the work read a turn later
+                    // showed three.
+                    const posted = await this.whatIsPostedOnTheWallHere(cultivator);
+                    if (posted.length > 0) {
+                        const done = this.freeAction(run, 'look', factsForToolResult(
+                            `There is paper up in ${placeName(cultivator)}.`,
+                            [
+                                ...wall.lines,
+                                ...onThem.map(notice =>
+                                    `The name on ${notice.houseName}'s price is yours.`)
+                            ]
+                        ));
+                        this.sayWhatIsOnTheWall(done, posted);
+                        return done;
+                    }
                     return this.freeAction(run, 'look', wall.lines.length > 0
                         ? factsForToolResult(
                             `There is paper up in ${placeName(cultivator)}.`,
@@ -7505,10 +7529,7 @@ ${noticed}`;
         // WHAT IS UP ON THE WALL HERE for somebody at this rung: the contracts,
         // and their own house's missions where they have one. The same board
         // the duty verb reads, so a line named here is a line that verb takes.
-        this.atHand = this.atHand ?? await this.loadWorld();
-        const onTheWall = sectBoardFor(
-            { repos: this.repos, knowledge: this.knowledge, world: this.atHand }, cultivator
-        ).offers.flatMap(offer => {
+        const onTheWall = (await this.whatIsPostedOnTheWallHere(cultivator)).flatMap(offer => {
             const row = theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id);
             return row ? [{ offer, row }] : [];
         });
@@ -7597,6 +7618,15 @@ ${noticed}`;
         const listedTheBoard = Array.isArray((result as { work?: unknown }).work);
         if (listedTheBoard) this.sayWhatIsOnTheWall(done, onTheWall.map(line => line.offer));
         return done;
+    }
+
+    /** The contracts and missions posted where they stand, for their rung. */
+    private async whatIsPostedOnTheWallHere(cultivator: Cultivator): Promise<readonly DutyCandidate[]> {
+        this.atHand = this.atHand ?? await this.loadWorld();
+        return sectBoardFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand }, cultivator
+        ).offers.filter(offer =>
+            (theContractBehind(offer.entry.id) ?? theMissionBehind(offer.entry.id)) !== null);
     }
 
     /**

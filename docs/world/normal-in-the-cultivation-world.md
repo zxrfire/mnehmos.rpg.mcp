@@ -92,7 +92,7 @@ paid for is something done, not something they are.
   take one on their own time, and it credits their house nothing.
 - **A disciple is sent on a mission.** The standing work a house posts for its own: outer
   disciple chores, a vein warden, a pill convoy escort, a surge breaker, a formation
-  keeper, a tribulation watch, a sigil inspection, a sky survey. `HOUSE_MISSIONS` in
+  keeper, acting as dao protector, a sigil inspection, a sky survey. `HOUSE_MISSIONS` in
   [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts),
   posted only where the house has the need and somebody on its roll could do it.
 - **Both are served the same way**, taken off the wall through the one duty every board

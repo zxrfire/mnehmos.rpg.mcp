@@ -2107,9 +2107,13 @@ const AN_AGENT_NOUN_AND_ITS_VERB: ReadonlyArray<readonly [string, string]> = [
  */
 type TradePhraseKind = 'activity' | 'name';
 
-/** What makes a trade NOUN a job rather than somebody standing there. */
+/**
+ * What makes a trade NOUN a job rather than somebody standing there. Played blind:
+ * "sign me up for the quay watch", "i'll do the quay watch" and "I accept the
+ * quay watch contract" all read as nothing.
+ */
 const TAKING_IT_AS_WORK =
-    /\b(?:takes?|taking|took|works?|working|hire|hires|hired|hiring|sign on|signs on|signed on|apply|applies|applied|applying|job|jobs|employment|wages?|paid|pay|pays|earn|earns|labour|labor)\b|\bas an?\b/;
+    /\b(?:takes?|taking|took|works?|working|hire|hires|hired|hiring|sign on|signs on|signed on|apply|applies|applied|applying|job|jobs|employment|wages?|paid|pay|pays|earn|earns|labour|labor|accepts?|accepted|accepting|contracts?|sign (?:me|us) up|put (?:me|us) down)\b|\bas an?\b|\b(?:i'?ll|i will|let me|i can|i could|i want to|i'd like to) do\b/;
 
 interface TradePhrase {
     readonly said: string;
@@ -2141,6 +2145,9 @@ const TRADE_PHRASES: readonly TradePhrase[] = (() => {
         // WHERE, and nobody types it.
         const beforeTheComma = printed.split(',')[0]!.trim();
         add(beforeTheComma, job.name, 'name');
+        // "Spirit-beast culling" is said "the beast culling".
+        const spiritDropped = beforeTheComma.replace(/^spirit[\s-]+/i, '');
+        if (spiritDropped !== beforeTheComma && spiritDropped.includes(' ')) add(spiritDropped, job.name, 'name');
 
         const shaped = /^(.+?)\s+([a-z]+)$/i.exec(beforeTheComma);
         const verb = shaped
@@ -6050,7 +6057,10 @@ function planIntent(input: string): PlannedAction {
             // here: `GameService.work` reads an unnamed trade as "take any
             // work" and picks the best-paying line on the board that is
             // actually being put to them.
+            // A whole name before a shared word: "the quay watch job" read as
+            // another row with "watch" in it.
             target: extractSubject(input, /work as|hire (?:myself )?(?:out )?as|take work as|job as/)
+                ?? tradeNamedIn(text)
                 ?? theKindOfWorkNamed(text)
         };
     }
@@ -6667,6 +6677,8 @@ function planIntent(input: string): PlannedAction {
         // An animal, or nothing named. A sentence naming work, a herb, a pill
         // or a person is somebody else's verb and it keeps it.
         && !/\b(?:work|a job|jobs|employment|hire|wages?)\b/.test(text)
+        // A board line named with a taking: "put me down for the beast culling".
+        && !(TAKING_IT_AS_WORK.test(text) && tradeNamedIn(text) !== undefined)
         && !/\b(?:herbs?|roots?|plants?|ingredients?|reagents?|flowers?|mushrooms?|grasses|moss)\b/.test(text)
         && !/\b(?:pills?|elixirs?|medicines?|formulae?|formulas?|recipes?)\b/.test(text)
         && !/\b(?:manual|book|scripture|technique|art|teacher|master|sect|house)\b/.test(text)) {
