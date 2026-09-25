@@ -53,20 +53,6 @@ export function theClothesTheyStandUpIn(input: {
     });
 }
 
-/**
- * What was taken off somebody who now has nothing on, or null if they have something on or
- * nothing of theirs is in anybody else's hands. What they wore is theirs by ownership (their own
- * clothes) or by issue (a house's robes, tagged with the member), so it can be found in a
- * thief's inventory.
- */
-export function theClothesTakenOffThem(objects: readonly ObjectRecord[], personId: string): ObjectRecord[] | null {
-    if (whatTheyHaveOn(objects, personId).length > 0) return null;
-    const taken = objects.filter(object => isAGarment(object)
-        && object.possessorId !== personId
-        && (object.ownerId === personId || object.tags.includes(`member:${personId}`)));
-    return taken.length > 0 ? taken : null;
-}
-
 /** The status line for what somebody has on. */
 export function theLineForWhatTheyHaveOn(on: readonly Pick<ObjectRecord, 'name'>[]): string {
     return on.length === 0

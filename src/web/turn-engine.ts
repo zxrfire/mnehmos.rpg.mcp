@@ -184,11 +184,10 @@ import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-
 import { howItIsHad } from '../engine/world/possessions.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import {
-    theyDoSomethingAboutWhatTheyWore,
-    whatTheyDidAboutWhatTheyWore
-} from './somebody-robbed-of-what-they-wore.js';
+    theyDoSomethingAboutWhatTheyLost,
+    whatTheCardSaysOfALoss
+} from './somebody-robbed-of-something-they-need.js';
 import {
-    theClothesTakenOffThem,
     theClothesTheyStandUpIn,
     theLineForWhatTheyHaveOn,
     whatTheyHaveOn
@@ -18819,18 +18818,19 @@ ${fit.line}`;
         const houseIds = new Set((this.atHand?.factions ?? []).map(house => house.id));
         const nameOf = (id: string): string => byId.get(id)?.name ?? 'somebody';
 
-        // Somebody robbed of what they wore acts on it when next seen. See
-        // `somebody-robbed-of-what-they-wore.ts`.
+        // Somebody robbed of a thing they need acts on it when next seen. See
+        // `somebody-robbed-of-something-they-need.ts`.
         const today = Math.floor(this.repos.runs.getActiveRun()?.elapsedDays ?? 0);
         for (const person of here) {
             const robbed = byId.get(person.id);
-            if (this.atHand && robbed && theyDoSomethingAboutWhatTheyWore({
+            if (this.atHand && robbed && theyDoSomethingAboutWhatTheyLost({
                 world: this.atHand,
                 person: {
                     id: robbed.id,
                     name: robbed.name,
                     realmOrdinal: robbed.cultivation.realmOrdinal,
-                    houseId: robbed.factionId
+                    houseId: robbed.factionId,
+                    locationId: robbed.locationId
                 },
                 takenByOrdinal: cultivator.realmOrdinal,
                 today
@@ -18866,12 +18866,9 @@ ${fit.line}`;
                     leftTheChair: row === null || this.atHand === null
                         ? null
                         : howTheyLeftTheChair(row, this.atHand.currentDay),
-                    clothesTakenOffThem: this.atHand === null
+                    whatTheyLost: this.atHand === null
                         ? null
-                        : theClothesTakenOffThem(this.atHand.objects, person.id)?.map(o => o.name) ?? null,
-                    didAboutWhatTheyWore: this.atHand === null
-                        ? null
-                        : whatTheyDidAboutWhatTheyWore(this.atHand.objects, person.id, today),
+                        : whatTheCardSaysOfALoss(this.atHand.objects, person.id, today),
                     at: doing === null ? null : whatThatLooksLike(doing, alongside),
                     // Whether the square would hand this person to somebody
                     // walking into it, and how sure they would be of it. Both

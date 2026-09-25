@@ -11,7 +11,6 @@ import { describe, expect, it } from 'vitest';
 import { aUniformFor } from '../../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { makeObject } from '../../../src/engine/world/possessions.js';
 import {
-    theClothesTakenOffThem,
     isAGarment,
     theClothesTheyStandUpIn,
     theLineForWhatTheyHaveOn,
@@ -44,15 +43,6 @@ describe('what somebody has on', () => {
             .toEqual(['Bountiful Sheaf Sect robes', 'plain clothes']);
         expect(theLineForWhatTheyHaveOn(whatTheyHaveOn([clothes], 'you'))).toBe('Wearing: plain clothes.');
         expect(theLineForWhatTheyHaveOn([])).toBe('You have nothing on.');
-    });
-});
-
-describe('nothing on', () => {
-    it('is what somebody is left with when what they had on was taken', () => {
-        expect(theClothesTakenOffThem([{ ...clothes, possessorId: 'thief' }], 'you')!.map(o => o.name)).toEqual(['plain clothes']);
-        expect(theClothesTakenOffThem([{ ...robes, possessorId: 'thief' }], 'wei')).not.toBeNull();
-        expect(theClothesTakenOffThem([clothes], 'you')).toBeNull();
-        expect(theClothesTakenOffThem([], 'you')).toBeNull();
     });
 });
 
