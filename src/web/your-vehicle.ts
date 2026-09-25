@@ -10,6 +10,7 @@ import {
     isWithThem,
     leaveItHere,
     takeItAlong,
+    whatAVehicleHolds,
     whatIsInTheVehicle,
     whereItStands
 } from '../engine/world/a-vehicle.js';
@@ -36,7 +37,11 @@ const A_VEHICLE_WORD = /\b(?:cart|carts|carriage|carriages|wagon|waggon|boat|boa
 function theOneNamed(rows: readonly ObjectRecord[], named: string | undefined): ObjectRecord | null {
     const said = (named ?? '').toLowerCase().replace(/^(?:my|the|a|an)\s+/, '').trim();
     if (rows.length === 0) return null;
-    if (said.length === 0 || A_VEHICLE_WORD.test(said)) return rows[0]!;
+    if (said.length === 0) return rows[0]!;
+    // "the boat" is the boat when there is a carriage too; any vehicle word is the first one only
+    // when none of them is called by it.
+    const word = A_VEHICLE_WORD.exec(said)?.[0];
+    if (word) return rows.find(row => row.name.toLowerCase().includes(word.replace(/s$/, ''))) ?? rows[0]!;
     const words = said.split(/\s+/).filter(word => word.length > 2);
     return rows.find(row => words.some(word => row.name.toLowerCase().includes(word))) ?? null;
 }
@@ -95,14 +100,17 @@ export function whatTheVehicleDoes(
         return no('It is not here.', `${elsewhere.name} is not with you, and nothing in it can be reached from here.`,
             `${intent}: ${elsewhere.id} stands at ${whereItStands(elsewhere)}.`);
     }
-    const holds = vehicle.volume;
+    // Its hold, not its size. See `whatAVehicleHolds`.
+    const holds = whatAVehicleHolds(vehicle);
     const inside = whatIsInTheVehicle(world.objects, vehicle.id);
     if (intent === 'load') {
         const thing = theOneNamed(world.objects.filter(o => o.possessorId === cultivator.id && !isWorn(o)), named);
         if (thing === null) return no(`You have no ${named ?? 'such thing'}.`, `You have no ${named ?? 'such thing'} to put in it.`, 'load: nothing named.');
         const taken = inside.reduce((sum, o) => sum + o.volume, 0);
-        if (taken + thing.volume > holds) {
-            return no(`${thing.name} will not fit.`, `${vehicle.name} holds ${holds} litres and ${taken} of them are taken.`, 'load: no room.');
+        const weighs = inside.reduce((sum, o) => sum + o.weight, 0);
+        if (taken + thing.volume > holds.volume || weighs + thing.weight > holds.weight) {
+            return no(`${thing.name} will not fit.`, `${vehicle.name} is full: what is in it already takes up its hold.`,
+                `load: no room (${taken} of ${holds.volume} litres, ${weighs} of ${holds.weight} weight).`);
         }
         const at = world.objects.findIndex(o => o.id === thing.id);
         world.objects[at] = { ...hadAs(thing, 'inventory'), possessorId: vehicle.id };

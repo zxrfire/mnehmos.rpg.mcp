@@ -6281,7 +6281,10 @@ function planIntent(input: string): PlannedAction {
         + '(?:food|rations?|provisions|supplies)|'
         + `(?:a |one |${WORD_NUMBER_ALTERNATION}|[0-9]+ )?(?:months?|weeks?|days?|years?|seasons?) `
         + '(?:of |worth of )(?:food|rations?|provisions|supplies)|'
-        + 'provisions? for|rations? for|food for the (?:road|trip|journey|way))\\b'
+        + 'provisions? for|rations? for|food for the (?:road|trip|journey|way)|'
+        // "i buy food for a couple of months" bought one bowl of millet.
+        + `food for (?:a couple (?:of )?|a few |several |a |an |${WORD_NUMBER_ALTERNATION}|[0-9]+ )?`
+        + '(?:days?|weeks?|months?|years?|seasons?))\\b'
     ).test(text)) {
         // A SPAN and a COUNT are different asks. "two years of rations" names
         // how long to be fed for; "twenty rations" names how many to carry, and

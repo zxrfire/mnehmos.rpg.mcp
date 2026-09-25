@@ -370,7 +370,38 @@ function howTheFoldPricesOut(): number {
  * per-cultivator flag, so nothing written against held things could see one -
  * the destroy verb told a player holding a book they were carrying nothing.
  */
-export type PouchItemKind = 'pill' | 'herb' | 'artifact' | 'manual' | 'talisman';
+export type PouchItemKind = 'pill' | 'herb' | 'artifact' | 'manual' | 'talisman' | 'ration';
+
+/**
+ * A ration: a sack of dried food, fifty days of eating for a novice. The owner: "you can't
+ * possibly carry food for a few months without a carriage", and food is tracked only in the
+ * player's own pack ("we just simulate npc's"). One sack is most of what a mortal back carries;
+ * a second wants a cart.
+ */
+export const WHAT_A_RATION_TAKES: HowMuchRoomItTakes = { volume: 24, weight: 18 };
+
+/**
+ * How many more sacks of food they could carry: what fits on their back beside everything else
+ * they carry, and what fits in the free hold of any cart with them, less the sacks they already
+ * have. By room and by weight, whichever runs out first. A cart is not bottomless: "a cart isn't
+ * infinite storage tho".
+ */
+export function howManyMoreRationsFit(input: {
+    /** Everything they carry on their body except the food. */
+    loadWithoutFood: HowMuchRoomItTakes;
+    body: HowMuchRoomItTakes;
+    /** The hold still free in every cart with them. */
+    cartRoom: HowMuchRoomItTakes;
+    held: number;
+}): number {
+    const sacksIn = (room: HowMuchRoomItTakes) => Math.max(0, Math.floor(Math.min(
+        room.volume / WHAT_A_RATION_TAKES.volume, room.weight / WHAT_A_RATION_TAKES.weight)));
+    const onTheirBack = sacksIn({
+        volume: input.body.volume - input.loadWithoutFood.volume,
+        weight: input.body.weight - input.loadWithoutFood.weight
+    });
+    return Math.max(0, onTheirBack + sacksIn(input.cartRoom) - input.held);
+}
 
 /**
  * WHAT ONE OF A CATALOG THING TAKES UP.
@@ -416,6 +447,8 @@ export function whatOneOfTheseTakes(kind: PouchItemKind): HowMuchRoomItTakes {
         // tracked slips are, off the talisman file's own two figures.
         case 'talisman':
             return { volume: WHAT_A_SLIP_TAKES, weight: WHAT_A_SLIP_WEIGHS };
+        case 'ration':
+            return WHAT_A_RATION_TAKES;
     }
 }
 

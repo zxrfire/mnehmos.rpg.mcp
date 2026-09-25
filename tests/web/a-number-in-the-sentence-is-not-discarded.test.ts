@@ -8,6 +8,7 @@
 
 import { parseIntent } from '../../src/web/actions';
 import { makeGame } from './harness';
+import { aVehicleOf } from '../../src/engine/world/a-vehicle';
 
 describe('a count of rations', () => {
     /**
@@ -48,6 +49,9 @@ describe('a count of rations', () => {
         const { db, game } = makeGame({ seed: 'rations-count', worldEnabled: true });
         const { cultivator } = await game.newRun('Eater');
         db.prepare('UPDATE cultivators SET spirit_stones = 50000 WHERE id = ?').run(cultivator.id);
+        // Twenty sacks of food want a cart: a back carries one. See `howManyMoreRationsFit`.
+        game.atHand!.objects.push(aVehicleOf({ id: 'cart', conveyanceId: 'conv-carriage-mortal',
+            ownerId: cultivator.id, ownerName: 'Eater', at: game.worldPlaceOf(cultivator) }));
 
         const acted = await game.act('I buy 20 rations');
 

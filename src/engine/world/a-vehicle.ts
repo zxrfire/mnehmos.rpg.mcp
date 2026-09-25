@@ -28,6 +28,32 @@ import { makeObject, type ObjectRecord } from './possessions.js';
 /** Litres a head of a vehicle takes up: a berth. */
 export const WHAT_A_BERTH_TAKES = 4_000;
 
+/**
+ * What a vehicle carries for each head it seats: cargo, not the berth itself. The owner: "a cart
+ * isn't infinite storage tho", "once you max out a cart you gotta do a spirit boat". A drawn
+ * carriage takes twenty swords easily and a season of food, and not a spirit beast's carcass.
+ */
+export const WHAT_A_HEAD_OF_CARGO = { volume: 250, weight: 200 } as const;
+
+/** What a vehicle's hold carries in all, by the heads it seats. */
+export function whatAVehicleHolds(vehicle: Pick<ObjectRecord, 'data'>): { volume: number; weight: number } {
+    const heads = getConveyance(String(vehicle.data?.conveyanceId ?? ''))?.heads ?? 1;
+    return { volume: heads * WHAT_A_HEAD_OF_CARGO.volume, weight: heads * WHAT_A_HEAD_OF_CARGO.weight };
+}
+
+/** The hold still free across these vehicles, after what is already in them. */
+export function theFreeHoldOf(objects: readonly ObjectRecord[], vehicles: readonly ObjectRecord[]): { volume: number; weight: number } {
+    let volume = 0;
+    let weight = 0;
+    for (const vehicle of vehicles) {
+        const holds = whatAVehicleHolds(vehicle);
+        const inside = whatIsInTheVehicle(objects, vehicle.id);
+        volume += Math.max(0, holds.volume - inside.reduce((sum, o) => sum + o.volume, 0));
+        weight += Math.max(0, holds.weight - inside.reduce((sum, o) => sum + o.weight, 0));
+    }
+    return { volume, weight };
+}
+
 /** Whether this is a vehicle. The same field `kindOfCraft` reads. */
 export function isAVehicle(object: Pick<ObjectRecord, 'data'>): boolean {
     return typeof object.data?.conveyanceId === 'string';

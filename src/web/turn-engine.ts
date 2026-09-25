@@ -190,7 +190,7 @@ import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
 import { theLinesForTheirVehicles, whatTheVehicleDoes } from './your-vehicle.js';
-import { aVehicleOf, isAVehicle } from '../engine/world/a-vehicle.js';
+import { aVehicleOf, isAVehicle, theFreeHoldOf, theVehiclesTheyAreWith } from '../engine/world/a-vehicle.js';
 import {
     theyDoSomethingAboutWhatTheyLost,
     whatTheCardSaysOfALoss
@@ -857,6 +857,8 @@ import {
 import { aSealHereMeansAnUndrawnPocket } from '../engine/world/locations.js';
 import { whatThisPersonCanDrawFrom } from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import {
+    WHAT_A_RATION_TAKES,
+    howManyMoreRationsFit,
     whatABodyCanCarry,
     whatAllOfThatTakes,
     whatCarryingThatIsLike
@@ -17920,7 +17922,28 @@ ${fit.line}`;
                 Math.ceil((days ?? DEFAULT_CULTIVATION_DAYS) / ACTIONS_PER_FULL_SATIETY)
             );
         const affordable = Math.floor(cultivator.spiritStones / PROVISION_COST_STONES);
-        const bought = Math.min(wanted, affordable);
+        // AND WHAT A BACK CAN CARRY. The owner: "you can't possibly carry food for a few months
+        // without a carriage". See `howManyMoreRationsFit`.
+        const objects = this.atHand?.objects ?? [];
+        const fits = howManyMoreRationsFit({
+            loadWithoutFood: together(
+                whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id).filter(entry => entry.kind !== 'ration')),
+                whatTheirThingsTake(objects, cultivator.id)),
+            body: whatABodyCanCarry(cultivator.realmOrdinal),
+            cartRoom: theFreeHoldOf(objects, theVehiclesTheyAreWith(objects, cultivator.id, this.worldPlaceOf(cultivator))),
+            held: this.rationsHeld(cultivator)
+        });
+        const bought = Math.min(wanted, affordable, fits);
+
+        if (bought === 0 && affordable > 0) {
+            return refused('cultivator.applyDeltas', 'provision', factsForRefusal(
+                'No room on your back.',
+                'You heft a sack of dry food and there is nowhere on you left to put it. What you '
+                + 'already carry is all a body can walk under; more would want a cart.',
+                `Provisions: no room for another ration (${WHAT_A_RATION_TAKES.volume} room, `
+                + `${WHAT_A_RATION_TAKES.weight} weight each). Nothing bought, nothing spent.`
+            ));
+        }
 
         if (bought === 0) {
             return refused('cultivator.applyDeltas', 'provision', factsForRefusal(
@@ -17957,6 +17980,9 @@ ${fit.line}`;
                 `and ${updated.spiritStones} left in the purse.`,
                 `That is ${humanDays(covers)} of eating in the pack` +
                 `${bought < wanted ? ', which is less than you went in for' : ''}.`,
+                ...(bought < wanted && bought === fits
+                    ? ['That is as much food as your back will carry. More would want a cart.']
+                    : []),
                 // Said plainly once, because it is the thing the whole early
                 // game turns on and no interrupt can teach it in time.
                 'Food does not come to a cave. Whatever is in the pack when the door shuts is ' +

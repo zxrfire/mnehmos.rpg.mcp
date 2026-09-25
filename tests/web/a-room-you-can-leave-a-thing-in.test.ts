@@ -70,6 +70,10 @@ async function aDiscipleWithAPillAndARoom(seed: string, rankIndex = 1) {
         .run(cultivator.id);
     harness.repos.sects.addMember(LOCAL_SECT.id, cultivator.id, rankIndex);
     addToPouch(harness.db, cultivator.id, A_PILL, 'pill', 3);
+    // IN THE HOUSE'S OWN PROVINCE. A road across a border is its real length now
+    // (`provinceRoadDays`), and a walk of days can be stopped by whoever it meets; the room, not
+    // the road, is what these pin.
+    harness.repos.cultivators.update(cultivator.id, { location: 'Green Water City' });
     return { harness, cultivatorId: cultivator.id };
 }
 
@@ -159,8 +163,11 @@ describe('a thing left in the room stays there', () => {
         expect(said).toMatch(/Kept in your room at [^:]+: an iron sword/);
         expect(said).toMatch(/Not reachable from where you are standing/);
 
-        await harness.game.act('I go home');
-        await harness.game.act('I take the sword from my room');
+        // And the road home can stop short the same way.
+        for (let leg = 0; leg < 6 && sword().possessorId !== cultivatorId; leg++) {
+            await harness.game.act('I go home');
+            await harness.game.act('I take the sword from my room');
+        }
         expect(sword().possessorId).toBe(cultivatorId);
     });
 

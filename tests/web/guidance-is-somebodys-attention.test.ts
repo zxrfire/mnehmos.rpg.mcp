@@ -52,6 +52,7 @@ import { yearsToWriteOutACopy } from '../../src/engine/world/manuals';
 import { whatATalkIsWorthToTheHouse } from '../../src/web/a-teacher-giving-you-their-attention';
 import { howCloseTheyStandToTheirWall } from '../../src/web/standing-guard';
 import type { Cultivator } from '../../src/schema/cultivation';
+import { aVehicleOf } from '../../src/engine/world/a-vehicle';
 
 const WORLD = 'a-xianxia-run';
 
@@ -412,8 +413,13 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
 
     async function aTeacherHoldingIt(seed: string, provisioned: boolean) {
         const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
-        await harness.game.newRun('Prober');
-        if (provisioned) await harness.game.act('I buy a year of provisions');
+        const { cultivator: prober } = await harness.game.newRun('Prober');
+        // A year of food wants a cart: a back carries one sack. See `howManyMoreRationsFit`.
+        if (provisioned) {
+            harness.game.atHand!.objects.push(aVehicleOf({ id: 'cart', conveyanceId: 'conv-carriage-mortal',
+                ownerId: prober.id, ownerName: 'Prober', at: harness.game.worldPlaceOf(prober) }));
+            await harness.game.act('I buy a year of provisions');
+        }
         const world = (await harness.game.loadWorld())!;
         const me = harness.game.currentRun().cultivator;
         const here = new Set(harness.game.present(me).map(row => row.id));

@@ -166,7 +166,9 @@ describe('GET /api/state', () => {
             'lifespanPressure',
             'lifespanPressureFromAge',
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextBoundaryRank', 'nextRankName',
-            'physiqueSpeed', 'progressFraction',
+            // `places` and `things` are the sheet's lists: what they know of, and what is on
+            // them. See `places-on-the-sheet.ts` and `things-on-the-sheet.ts`.
+            'physiqueSpeed', 'places', 'progressFraction',
             'progressRequired', 'rankName', 'realmName', 'scarBreakthroughModifier',
             // `sectRung` is the rung on the house's roll, DERIVED server-side
             // through the one read. The sheet used to print a string mirrored
@@ -178,7 +180,7 @@ describe('GET /api/state', () => {
             // three buttons over a verb space a player could not find any other
             // way - see `what-is-worth-doing-standing-here.ts`. Prompts, never
             // a menu: free text stays the whole game.
-            'stagnationYears', 'standingHere',
+            'stagnationYears', 'standingHere', 'things',
             'tollAtNextBoundary', 'turnsUntilBleedingOut', 'untreatedInjuries'
         ]);
         // The four that were added together, and the reason: the client had 50

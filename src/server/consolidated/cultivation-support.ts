@@ -30,6 +30,7 @@ import {
 import type { WorldState } from '../../engine/world/world-state.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import { placeKey } from '../../web/knowledge.js';
+import { FLAG_RATIONS_HELD } from '../../web/flag-keys.js';
 import {
     DEGREE_NAMES,
     insightName,
@@ -440,7 +441,13 @@ export function everythingInThePouch(
     db: Database.Database,
     cultivatorId: string
 ): PouchEntry[] {
-    return allPouchRows(db, cultivatorId);
+    // AND THE FOOD, which is kept as a count and weighs like anything else in the pack. See
+    // `WHAT_A_RATION_TAKES`.
+    const rations = Math.floor(Number(readFlag(db, cultivatorId, FLAG_RATIONS_HELD) ?? 0));
+    return [
+        ...allPouchRows(db, cultivatorId),
+        ...(Number.isFinite(rations) && rations > 0 ? [{ itemId: 'rations', kind: 'ration' as const, quantity: rations }] : [])
+    ];
 }
 
 function allPouchRows(db: Database.Database, cultivatorId: string): PouchEntry[] {
