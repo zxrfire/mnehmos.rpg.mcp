@@ -370,7 +370,7 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
 // and the qi half of it is a hard contract rather than a matter of taste.
 // `GRADE_QI_BANDS` in the technique catalog bands `qiCost` by grade - mortal
 // 2-14, earth 15-49, heaven 50-129, immortal 130-349, chaos 350-1500 - and
-// `GRADE_ORDINAL_BANDS` says which rung each grade opens at: 0, 13, 21, 29, 37.
+// `GRADE_ORDINAL_BANDS` says which rung each grade opens at: 0, 13, 21, 29, 29.
 // `canUseTechnique` refuses an art the cultivator cannot pay for. So the pool
 // curve is not free: at the rung a grade opens, the aperture must hold that
 // grade's costs, or the catalog above that line is unreachable by anybody.

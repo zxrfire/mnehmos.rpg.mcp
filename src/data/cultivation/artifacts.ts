@@ -306,6 +306,8 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         knownOwnershipBy: ['apex-earth-vein-tower', 'court-kiln'],
         description:
             'A sword and a shield that are one object and have never been apart. Three exist, all three in the Survey vault and all three out of the Hundred Schools Age, when the world held more cultivators at the top of the ladder than it has held since, and every one of them predates the reposting - a pair can only come out of the whole vessel, the vessel stood whole only under the Survey, and it has not been whole in nine hundred years. So a pair in a hand names a side as well as a century.',
+        // Heaven-grade work: its rung is the hand's, which stands a band above.
+        data: { grade: 'heaven' },
         tags: ['from:the-root-cauldron', 'derangement-bearing', 'three-exist', 'made-while-it-was-whole', 'known-to-exist']
     }),
     makeObject({

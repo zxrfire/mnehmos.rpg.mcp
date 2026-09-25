@@ -25,6 +25,7 @@ import {
     TRUE_IMMORTAL_ORDINAL,
 } from '../../engine/cultivation/realms.js';
 import { ordinaryCapFor } from '../../engine/cultivation/cultivation.js';
+import { GRADE_ORDINAL_BANDS } from '../../engine/cultivation/which-rungs-a-grade-covers.js';
 
 // PROVENANCE - the Late Age rule The world is poorer than it was. Veins that ran
 // rich for a thousand years have been drawn down, old wars killed whole regions
@@ -432,20 +433,11 @@ export const ABOVE_THE_LID_TRANSMISSION = {
 } as const;
 
 /**
- * Realm-ordinal window in which each grade is learnable. Aligned to realm
- * boundaries: mortal manuals are Qi Condensation, earth manuals carry you through
- * Foundation and Core, heaven through Nascent Soul and Deity Transformation,
- * immortal through Void Tribulation and Body Integration, and chaos manuals only
- * exist for Grand Ascension and above.
+ * Realm-ordinal window in which each grade is learnable: the grade's band on
+ * the one scale every grade is read on (`which-rungs-a-grade-covers.ts`).
+ * Immortal and chaos overlap, because the grades are peers.
  */
-// AND THE TOP TWO BANDS OVERLAP, BECAUSE THE GRADES ARE PEERS
-export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
-    mortal: { min: 0, max: 12 },
-    earth: { min: 13, max: 20 },
-    heaven: { min: 21, max: 28 },
-    immortal: { min: 29, max: 36 },
-    chaos: { min: 29, max: CONTENT_MAX_ORDINAL }
-} as const;
+export { GRADE_ORDINAL_BANDS };
 
 /**
  * Qi cost window per grade. The top two overlap, because the grades are peers: a
@@ -3742,7 +3734,7 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
 
 /** Grade band a given ordinal currently sits in. */
 export function gradeForOrdinal(ordinal: number): TechniqueGrade {
-    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
+    const clamped = Math.max(0, Math.min(CONTENT_MAX_ORDINAL, Math.floor(ordinal)));
     for (const grade of GRADE_ORDER) {
         const band = GRADE_ORDINAL_BANDS[grade];
         if (clamped >= band.min && clamped <= band.max) return grade;

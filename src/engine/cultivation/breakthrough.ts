@@ -42,6 +42,7 @@ import {
     triggersHeavenlyTribulation,
     type RealmKey
 } from './realms.js';
+import { PITCHED_AT } from './which-rungs-a-grade-covers.js';
 import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
 import {
     roadsWalkedBy,
@@ -324,31 +325,13 @@ export const PILL_GRADE_FACTOR: Readonly<Record<TechniqueGrade, number>> = {
 };
 
 /**
- * The realm each pill grade is pitched at, as a realm key. Read off the catalog's
- * guiding-pill line and resolved through `REALM_TIERS` rather than by writing
- * rung numbers down, so the band follows the ladder if the ladder moves.
- * `tests/engine/cultivation/pills.test.ts` asserts it still matches the catalog.
+ * The realm each pill grade is pitched at: the `pitchedAt` column of the one
+ * grade table (`which-rungs-a-grade-covers.ts`). Immortal and chaos are peers
+ * and pitch together at Void Tribulation - a chaos-grade thing holds what a
+ * body at 29 is worth, and `grade-spread.ts` reads that twice, for the overdraw
+ * and the detonation.
  */
-export const PILL_GRADE_REALM: Readonly<Record<TechniqueGrade, RealmKey>> = {
-    mortal: 'foundation_establishment',
-    earth: 'core_formation',
-    heaven: 'nascent_soul',
-    immortal: 'void_tribulation',
-    // LEVEL WITH IMMORTAL, AND IT IS THE LAST OF THE PEER RULING
-    //
-    // Both top grades are FOR 29 and up. Chaos sat at Tribulation
-    // Transcendence, which was the old ladder's belief that it outranked
-    // immortal wearing a different field, and it was the last place that
-    // belief survived after `GRADE_POWER` tied them.
-    //
-    // Moving it down is not a softening. It is what gives the pitch a job:
-    // a chaos-grade thing holds a fixed quantity of stored energy - what a
-    // body at 29 is worth - and being UNDER that is what makes swallowing one
-    // dangerous. `grade-spread.ts` reads this ordinal twice, for the overdraw
-    // and for the detonation, because they are the same stored energy let go
-    // two different ways.
-    chaos: 'void_tribulation'
-};
+export const PILL_GRADE_REALM: Readonly<Record<TechniqueGrade, RealmKey>> = PITCHED_AT;
 
 /** Rungs above its own band over which a pill loses half its effect. */
 export const PILL_BAND_HALF_LIFE_RUNGS = 8;

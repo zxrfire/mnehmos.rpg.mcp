@@ -280,6 +280,14 @@ A veteran and a novice at identical cultivation must not fight identically. Trac
 experience, tactical knowledge, familiarity with specific techniques and opponents, and
 the ability to exploit a weakness.
 
+### One table for every grade
+
+`which-rungs-a-grade-covers.ts` is the only place a grade meets a rung (owner ruling
+2026-09-25: one scale governs a technique's grade and a thing's). Its band says what a
+manual is for and what grade a thing is by its rung; its `madeFrom` column is
+`refiningOrdinalFor`; its `pitchedAt` column is `PILL_GRADE_REALM`. Add a grade rule by
+reading this table, never by writing rungs down beside it.
+
 ### A weapon's grade decides whether it survives being used
 
 `whether-a-weapon-survives-being-used.ts`, consumed by `resolveExchange`.

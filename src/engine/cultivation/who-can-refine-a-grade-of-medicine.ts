@@ -22,35 +22,28 @@
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import {
-    REALM_TIERS,
-    TRUE_IMMORTAL_ORDINAL,
     isExpelledFromBelow,
     realmForOrdinal,
     type RealmKey
 } from './realms.js';
+import { GRADE_ORDINAL_BANDS, theRungAGradeIsMadeFrom } from './which-rungs-a-grade-covers.js';
 
 /**
- * The realm a refiner must stand in to work a grade's materials at all.
- */
-export const REFINING_REALM_BY_GRADE: Readonly<Record<TechniqueGrade, RealmKey>> = {
-    mortal: 'qi_condensation',
-    earth: 'core_formation',
-    heaven: 'void_tribulation',
-    immortal: 'immortal',
-    chaos: 'immortal'
-};
-
-/**
- * The rung a refiner must have reached to work this grade.
+ * The rung a refiner must have reached to work this grade: the `madeFrom`
+ * column of the one grade table (`which-rungs-a-grade-covers.ts`).
  */
 export function refiningOrdinalFor(grade: TechniqueGrade): number {
-    const key = REFINING_REALM_BY_GRADE[grade];
-    if (key === 'immortal') return TRUE_IMMORTAL_ORDINAL;
-    const tier = REALM_TIERS.find(t => t.key === key);
-    // Unreachable while the table names real realms. A loud 0 rather than a
-    // throw, because a bad edit here should fail a test and not a run.
-    return tier?.ordinalStart ?? 0;
+    return theRungAGradeIsMadeFrom(grade);
 }
+
+/**
+ * The realm a refiner must stand in to work a grade's materials at all,
+ * read off `refiningOrdinalFor`.
+ */
+export const REFINING_REALM_BY_GRADE: Readonly<Record<TechniqueGrade, RealmKey>> = Object.fromEntries(
+    (Object.keys(GRADE_ORDINAL_BANDS) as TechniqueGrade[])
+        .map(grade => [grade, realmForOrdinal(refiningOrdinalFor(grade)).key])
+) as Record<TechniqueGrade, RealmKey>;
 
 /**
  * Whether anybody who can live in the lower realm can make this grade.

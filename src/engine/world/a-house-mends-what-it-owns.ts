@@ -16,7 +16,7 @@
  */
 
 import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivation.js';
-import { highestGradeRefinableAt } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
+import { gradeForOrdinal } from '../../data/cultivation/techniques.js';
 import {
     fillsTheSlot,
     whatMendingAHoleTakes,
@@ -28,16 +28,15 @@ import type { WorldState } from './world-state.js';
 
 /**
  * The grade a thing was made at: the grade a made thing carries on its row
- * (`data.grade`, then a `grade:` tag), else the best grade a hand at the rung
- * it was made at can work (`refiningOrdinalFor` is the ladder made things are
- * graded on).
+ * (`data.grade`, then a `grade:` tag), else the band the rung it was made at
+ * stands in, on the one scale (`which-rungs-a-grade-covers.ts`).
  */
 export function theGradeItWasMadeAt(row: Pick<ObjectRecord, 'data' | 'tags' | 'power'>): TechniqueGrade {
     const stored = TechniqueGradeSchema.safeParse(row.data?.grade);
     if (stored.success) return stored.data;
     const tagged = TechniqueGradeSchema.safeParse(row.tags.find(t => t.startsWith('grade:'))?.slice('grade:'.length));
     if (tagged.success) return tagged.data;
-    return highestGradeRefinableAt(ratedWhole(row) ?? 0) ?? 'mortal';
+    return gradeForOrdinal(ratedWhole(row) ?? 0);
 }
 
 /** How many of a stock row there are. A row with no quantity is one thing. */

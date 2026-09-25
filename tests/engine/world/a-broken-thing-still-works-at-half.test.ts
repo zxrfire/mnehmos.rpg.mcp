@@ -5,20 +5,20 @@
  * grade sword is still hard ... at durability 0, just at lower effectiveness."
  * At the floor a thing is kept, keeps its grade, and works at half.
  *
- * Grades here are the making ladder's (`refiningOrdinalFor`): heaven-grade work
- * is made at 29 and up, earth-grade at 17 up to 28.
+ * Grades are the one scale (`which-rungs-a-grade-covers.ts`): heaven covers 21
+ * to 28, earth 13 to 20.
  */
 
 import { describe, expect, it } from 'vitest';
 import { assessPower, type CarriedObject, type CombatantInput } from '../../../src/engine/cultivation/combat.js';
-import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+import { GRADE_ORDINAL_BANDS } from '../../../src/engine/cultivation/which-rungs-a-grade-covers.js';
 import { theRungItWorksAt } from '../../../src/engine/world/object-damage.js';
 import { makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
 import { theWeaponTheyFightWith } from '../../../src/engine/world/what-somebody-fights-with.js';
 
-const HEAVEN = refiningOrdinalFor('heaven');
-const EARTH = refiningOrdinalFor('earth');
-const IMMORTAL = refiningOrdinalFor('immortal');
+const HEAVEN = GRADE_ORDINAL_BANDS.heaven.min;
+const EARTH = GRADE_ORDINAL_BANDS.earth.min;
+const IMMORTAL = GRADE_ORDINAL_BANDS.heaven.max + 1;
 const range = (from: number, below: number) => Array.from({ length: below - from }, (_, i) => from + i);
 
 function holding(weapon: CarriedObject | null): CombatantInput {

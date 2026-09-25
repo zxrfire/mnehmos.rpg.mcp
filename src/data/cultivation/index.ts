@@ -16,7 +16,15 @@ import type { Element, Technique, TechniqueCategory, TechniqueGrade, Pill, PillE
 import { getSpiritRoot, conflictsWithRoot, type SpiritRootKey } from '../../engine/cultivation/spirit-roots.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 
-import { TECHNIQUES, findTechniquesForOrdinal, getTechnique, type TechniqueEntry, type TechniqueQuery } from './techniques.js';
+import {
+    GRADE_ORDER,
+    GRADE_ORDINAL_BANDS,
+    TECHNIQUES,
+    findTechniquesForOrdinal,
+    getTechnique,
+    type TechniqueEntry,
+    type TechniqueQuery
+} from './techniques.js';
 import { PILLS, getPill } from './pills.js';
 import { RECIPES, getRecipesForPill, type RecipeEntry } from './recipes.js';
 import { HERBS, getHerb } from './herbs.js';
@@ -573,10 +581,13 @@ export function getRuinLootTable(ordinal: number): {
  * deliberately: overdosing upward is a real option, and a costly one.
  */
 function affordableGradeForOrdinal(ordinal: number): TechniqueGrade[] {
-    if (ordinal <= 12) return ['mortal', 'earth'];
-    if (ordinal <= 20) return ['mortal', 'earth', 'heaven'];
-    if (ordinal <= 28) return ['mortal', 'earth', 'heaven', 'immortal'];
-    return ['mortal', 'earth', 'heaven', 'immortal', 'chaos'];
+    // The grades whose band has opened, and whichever band opens next.
+    const next = Object.values(GRADE_ORDINAL_BANDS)
+        .map(band => band.min)
+        .filter(min => min > ordinal)
+        .reduce((lowest, min) => Math.min(lowest, min), Infinity);
+    const bar = next === Infinity ? ordinal : next;
+    return GRADE_ORDER.filter(grade => GRADE_ORDINAL_BANDS[grade].min <= bar);
 }
 
 /** Pills that address a given problem, cheapest first. */
