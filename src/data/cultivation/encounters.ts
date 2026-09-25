@@ -185,7 +185,10 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         summaryTemplate:
             '{name}, holding a standing grudge from {grudgeSource}, has located the cultivator at {place} and arrives at {threatRank} with {count} companions. No terms offered.',
         tokens: ['name', 'grudgeSource', 'place', 'threatRank', 'count'],
-        tags: ['hostile', 'feud', 'unavoidable']
+        // The owner retired this from the random draw: it picked a bystander
+        // and invented their grudge. It is now only the shape a real account
+        // arrives in, with the holder in place of the invented name.
+        tags: ['hostile', 'feud', 'unavoidable', 'comes_due_only']
     },
     {
         id: 'enc-demonic-harvester',

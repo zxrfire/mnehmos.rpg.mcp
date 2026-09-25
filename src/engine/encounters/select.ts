@@ -42,6 +42,9 @@ import type {
  * that made the encounter system the leading cause of death and capped the
  * ladder five realms below where it had been.
  */
+/** The tag on a row that arrives only as a real account coming due. */
+const ONLY_WHEN_AN_ACCOUNT_COMES_DUE = 'comes_due_only';
+
 export const THREAT_BAND_WEIGHT: Readonly<Record<string, number>> = {
     unreachable: 0.12,
     overmatched: 0.35,
@@ -93,6 +96,9 @@ export function encounterPool(input: PoolInput): WeightedEntry[] {
         // cultivator even though `offered` would allow the reach. The catalog
         // already states its own window; honour it exactly.
         if (ordinal < entry.minOrdinal || ordinal > entry.maxOrdinal) continue;
+        // Never drawn at random: a row that only arrives when somebody real
+        // holds an account against the player (`an-account-comes-due.ts`).
+        if (entry.tags.includes(ONLY_WHEN_AN_ACCOUNT_COMES_DUE)) continue;
 
         // The second gate. Reads `threatOrdinal` through the same band table
         // the first gate reads `minOrdinal` through, so there is one rule about

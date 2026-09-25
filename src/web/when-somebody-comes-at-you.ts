@@ -49,7 +49,13 @@ export function comesAtYou(occurrence: EncounterOccurrence): boolean {
     return tags.has('hostile') && !tags.has('reward') && !tags.has('feud');
 }
 
-/** What the fight's other side is called, where the draw named nobody. */
+/**
+ * What the fight's other side is called, where the draw named nobody.
+ *
+ * TODO(owner: "for now just one"): a band is fought as its leader alone and
+ * `confrontation.count` is ignored. Bandits and press gangs should fight as the
+ * group they are - more bodies, more blows, the leader falling not ending it.
+ */
 function whoLeadsThem(occurrence: EncounterOccurrence): string {
     const many = (occurrence.confrontation?.count ?? 1) > 1;
     const onTheRoad = ENCOUNTERS.find(row => row.id === occurrence.entryId)?.tags.includes('road');

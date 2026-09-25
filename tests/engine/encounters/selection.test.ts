@@ -38,6 +38,22 @@ const ruin: EncounterPlace = { id: 'r', name: 'a collapsed compound', kind: 'rui
 const BELOW_THE_LID = 44;
 
 describe('the pool', () => {
+    /**
+     * RETIRED FROM THE RANDOM DRAW (the owner): the old feud row picked a
+     * bystander and invented their grudge. It arrives only as a real account
+     * coming due, off the ledger.
+     */
+    it('never draws the feud row at random', () => {
+        for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
+            for (const place of [road, village, cave, ruin]) {
+                for (const activity of ENCOUNTER_ACTIVITIES) {
+                    expect(encounterPool({ ordinal, activity, place })
+                        .some(one => one.entry.id === 'enc-old-feud-ambush')).toBe(false);
+                }
+            }
+        }
+    });
+
     it('is never empty anywhere on the ladder', () => {
         for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
             const pool = encounterPool({ ordinal, activity: 'travel', place: road });
