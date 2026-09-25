@@ -1,4 +1,8 @@
 import Database from 'better-sqlite3';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -15,11 +19,71 @@ import { ensureCultivationDb, type CultivationRepos } from '../../src/server/con
 import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 
+/**
+ * The four files the schema is built from. The template is keyed on all of
+ * them, so a change to any one is a new template rather than a stale one.
+ */
+const THE_FILES_THE_SCHEMA_IS_BUILT_FROM = [
+    '../../src/storage/migrations.ts',
+    '../../src/storage/migrations.cultivation.ts',
+    '../../src/storage/migrations.social.ts',
+    '../../src/storage/migrations.world.ts'
+];
+
+/**
+ * The final schema, built once and kept.
+ *
+ * ── EVERY TEST USED TO BUILD THE WHOLE HISTORY ───────────────────────────
+ *
+ * Measured on a full run: 175,410 of 338,660 log lines were `[Migration]`, one
+ * set of 68 per database - about 2,600 databases, each replaying every schema
+ * change the project has ever made, one ALTER TABLE at a time, to arrive at a
+ * table that could simply have been copied. The design owner: *"stuff ought to
+ * start from a copy of the final schema."*
+ *
+ * Migrating from scratch costs 26 ms; opening a copy of the result costs 0.2.
+ * That is about a minute of the suite, not the suite - the rest is the world
+ * simulations - but it is a minute that bought nothing, and the log it wrote
+ * went through every worker's pipe.
+ *
+ * ON DISK, KEYED ON THE FILES, because the test pool isolates each file's module
+ * graph and a module-level cache would be rebuilt per FILE rather than once. A
+ * temp file survives that, survives the separate forks, and survives between
+ * runs until a migration changes.
+ */
+function theFinalSchema(): Buffer {
+    const here = fileURLToPath(new URL('.', import.meta.url));
+    const hash = createHash('sha256');
+    for (const file of THE_FILES_THE_SCHEMA_IS_BUILT_FROM) {
+        hash.update(readFileSync(join(here, file)));
+    }
+    const path = join(tmpdir(), `mnehmos-schema-${hash.digest('hex').slice(0, 16)}.db`);
+    if (existsSync(path)) return readFileSync(path);
+
+    const built = new Database(':memory:');
+    built.pragma('foreign_keys = ON');
+    migrate(built);
+    const bytes = built.serialize();
+    built.close();
+
+    // Written aside and renamed, because four forks can all reach here on a
+    // cold first run and a half-written template read by one of them would be
+    // a corrupt database that looks like a test failure.
+    const aside = `${path}.${process.pid}.tmp`;
+    writeFileSync(aside, bytes);
+    try { renameSync(aside, path); } catch { /* another fork won; its copy is identical */ }
+    return bytes;
+}
+
+let schema: Buffer | null = null;
+
 /** In-memory database with the real migrations, foreign keys on. */
 export function makeDb(): Database.Database {
-    const db = new Database(':memory:');
+    schema ??= theFinalSchema();
+    const db = new Database(schema);
+    // A connection setting, not something the file holds, so the copy does not
+    // bring it and it is set here the way the original always set it.
     db.pragma('foreign_keys = ON');
-    migrate(db);
     return db;
 }
 
