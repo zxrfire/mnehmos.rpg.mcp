@@ -115,7 +115,7 @@ describe('character creation', () => {
         expect(engine[0].text).toContain('Local Mode');
         expect(engine[0].text).toContain('fully playable');
         expect(engine[1].text).toContain('Talent is rolled once and never redrawn.');
-        expect(engine[2].text, engine[2].text).toMatch(/16 years old/);
+        expect(engine[2].text, engine[2].text).toMatch(new RegExp(`${STARTING_AGE} years old`));
         const narrations = state.log.filter(e => e.role === 'narrator');
         expect(narrations).toHaveLength(1);
         expect(narrations[0]!.text).not.toContain(engine[3]!.text.split('\n')[0]!);

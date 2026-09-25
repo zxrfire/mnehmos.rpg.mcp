@@ -11,6 +11,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
 import { SPIRIT_ROOTS, ATTRIBUTES } from '../../src/engine/cultivation/spirit-roots';
 import { makeGame, startHttp, type HttpHarness } from './harness';
+import { STARTING_AGE } from '../../src/web/turn-constants.js';
 
 let http: HttpHarness | null = null;
 
@@ -223,7 +224,7 @@ describe('GET /api/state', () => {
         // "progress incomplete".
         expect(res.body.derived.breakthroughBlockedReason).toMatch(/qi-units/);
         expect(res.body.tolls).toEqual([]);
-        expect(res.body.derived.lifespanRemaining).toBe(100 - 16);
+        expect(res.body.derived.lifespanRemaining).toBe(100 - STARTING_AGE);
 
         expect(res.body.run).toMatchObject({ status: 'active', turn: 0, elapsedDays: 0, peakOrdinal: 0 });
         // The seed is never sent to the browser; nothing there can use it.
@@ -277,7 +278,7 @@ describe('POST /api/run/new', () => {
         expect(res.body.cultivator.attributes).toEqual(honest.body.cultivator.attributes);
         expect(res.body.cultivator.realmOrdinal).toBe(0);
         expect(res.body.cultivator.spiritStones).toBe(30);
-        expect(res.body.cultivator.age).toBe(16);
+        expect(res.body.cultivator.age).toBe(STARTING_AGE);
         expect(res.body.cultivator.hp).toBe(honest.body.cultivator.hp);
     });
 

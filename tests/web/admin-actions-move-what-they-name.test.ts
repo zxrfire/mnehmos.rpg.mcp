@@ -31,6 +31,7 @@ import { describe, it, expect } from 'vitest';
 import { makeGameInWorld, type Harness } from './harness';
 import { activeAmbientAlias, effectiveLocationId } from '../../src/server/consolidated/cultivation-support';
 import { KnowledgeGate, type KnownEntityKind } from '../../src/web/knowledge';
+import { STARTING_AGE } from '../../src/web/turn-constants.js';
 
 /** ADMIN_MODE is read at call time, so a test can turn it on and put it back. */
 async function withAdmin<T>(on: boolean, fn: () => Promise<T>): Promise<T> {
@@ -78,7 +79,7 @@ describe('a typed ADMIN action moves the thing it names', () => {
     it('set_age moves the age, and refuses a span the rung does not carry', async () => {
         await withAdmin(true, async () => {
             const { game } = await operating('admin-set-age');
-            expect(game.state().cultivator.age).toBe(16);
+            expect(game.state().cultivator.age).toBe(STARTING_AGE);
 
             const result = await game.act('ADMIN set_age 60');
             expect(game.state().cultivator.age).toBe(60);
@@ -103,7 +104,7 @@ describe('a typed ADMIN action moves the thing it names', () => {
 
             expect(game.state().run.elapsedDays).toBe(30);
             // Real aging, not a clock nudged on its own.
-            expect(game.state().cultivator.age).toBeGreaterThan(16);
+            expect(game.state().cultivator.age).toBeGreaterThan(STARTING_AGE);
             expect(result.narration).toMatch(/TIME ADVANCED/i);
         });
     });
