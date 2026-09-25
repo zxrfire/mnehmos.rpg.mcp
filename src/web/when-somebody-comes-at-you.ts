@@ -21,6 +21,7 @@ import {
 import { openFight, whereThisFightStands } from '../engine/cultivation/unfinished-fight.js';
 import { needsToFindYou } from '../engine/encounters/activity.js';
 import type { EncounterOccurrence, EncounterRoll } from '../engine/encounters/types.js';
+import type { NpcRecord } from '../engine/world/npc-state.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { combatantFromCultivator } from '../server/consolidated/combat-manage.js';
 import { isGuidingErrorBody } from '../server/consolidated/cultivation-support.js';
@@ -236,12 +237,17 @@ export function theyCameAtYou(
  * The owner: "we stick to our 3 person in a 'room' rule by having everyone else
  * fight in the background and 1-2 bandits and 1 person on the caravan, plus you".
  * Where the player can fight the band's leader, that is the ordinary played fight
- * `theyCameAtYou` opens, one guard stands beside them and takes the second bandit,
- * and everybody else - the rest of the escort and the rest of the band - fights
- * in the background. Where the player cannot, the whole escort meets the whole
- * band. Each is resolved here by `resolveMelee` and said as one line. A guard
- * stands at the escort job's rung (`job-escort`); every bandit at the rung the
- * draw gave the band. `escortHeld` is false only where the band won the background.
+ * `theyCameAtYou` opens, one of the escort stands beside them and takes the second
+ * bandit, and everybody else - the rest of the escort and the rest of the band -
+ * fights in the background. Where the player cannot, the whole escort meets the
+ * whole band. Each is resolved here by `resolveMelee` and said as one line. Every
+ * bandit stands at the rung the draw gave the band. `escortHeld` is false only
+ * where the band won the background, or nobody was left to hold it.
+ *
+ * A carriage's escort are hired guards at the escort job's rung (`job-escort`), with
+ * no rows. A ship's are its crew (`the-crew-of-a-ship.ts`): the named people
+ * themselves, each on their own body and bearing, so they fight, break off or fall
+ * as those people would, and `fallen` says who died.
  */
 export function theRestOfTheFight(
     service: GameService,
@@ -250,8 +256,9 @@ export function theRestOfTheFight(
     escortHeads: number,
     ambient: AmbientQi,
     vehicle: string,
-    thePlayerFightsTheLeader: boolean
-): { lines: string[]; escortHeld: boolean } {
+    thePlayerFightsTheLeader: boolean,
+    crew: readonly NpcRecord[] | null = null
+): { lines: string[]; escortHeld: boolean; fallen: string[] } {
     const band = occurrence.confrontation?.count ?? 1;
     const bandRung = occurrence.confrontation?.threatOrdinal ?? 0;
     const guardRung = getContract('contract-escort')?.minOrdinal ?? 0;
@@ -261,8 +268,13 @@ export function theRestOfTheFight(
     };
     const bodies = (name: string, count: number, rung: number) => Array.from({ length: Math.max(0, count) },
         (_, i) => body(`${name} ${i + 1}`, rung)).filter((one): one is NonNullable<typeof one> => one !== null);
-    const fight = (guards: number, bandits: number, stream: string) => {
-        const escort = bodies('guard', guards, guardRung);
+    const theirOwn = (people: readonly NpcRecord[]) => people
+        .map(person => {
+            const made = service.theBodyTheyStandIn(run, { id: person.id, name: person.name }, false, null, person);
+            return isGuidingErrorBody(made) ? null : { ...made, id: person.id, name: person.name };
+        })
+        .filter((one): one is NonNullable<typeof one> => one !== null);
+    const fight = (escort: ReturnType<typeof bodies>, bandits: number, stream: string) => {
         const them = bodies('bandit', bandits, bandRung);
         if (escort.length === 0 || them.length === 0) return null;
         return resolveMelee([
@@ -275,27 +287,52 @@ export function theRestOfTheFight(
             intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true }
         });
     };
+    const named = (ids: readonly string[]) => (crew ?? []).filter(person => ids.includes(person.id)).map(person => person.name);
     const said = (result: ReturnType<typeof resolveMelee>, who: string): string => {
         const escort = result.sides.find(side => side.id === 'escort')!;
         const them = result.sides.find(side => side.id === 'band')!;
         const how = result.winningSideId === 'escort' ? `${who} held`
             : result.winningSideId === 'band' ? 'the band had the better of it' : 'neither side broke';
-        return `${how}: of the guards ${escort.fallen.length} fell and ${escort.withdrawn.length} broke off; `
-            + `of the band ${them.fallen.length} fell and ${them.withdrawn.length} broke off.`;
+        const ours = crew
+            ? `of the crew ${named(escort.fallen).join(' and ') || 'nobody'} fell and `
+                + `${named(escort.withdrawn).join(' and ') || 'nobody'} broke off`
+            : `of the guards ${escort.fallen.length} fell and ${escort.withdrawn.length} broke off`;
+        return `${how}: ${ours}; of the band ${them.fallen.length} fell and ${them.withdrawn.length} broke off.`;
     };
 
     const lines: string[] = [];
+    const fallen: string[] = [];
     const inFront = thePlayerFightsTheLeader ? Math.min(2, band) : 0;
-    const besideYou = inFront === 2 ? 1 : 0;
-    const beside = besideYou === 1 ? fight(1, 1, 'a-guard-beside-you') : null;
-    if (beside) lines.push(`A guard fights beside you against a second of the band, and ${said(beside, 'the guard')}`);
-    const guards = escortHeads - besideYou;
-    const behind = fight(guards, band - inFront, 'the-rest-of-the-fight');
-    if (behind) {
-        lines.push(`Around the ${vehicle}, ${howMany(guards, 'guard')} and ${band - inFront} of the band `
-            + `fight it out, and ${said(behind, 'the escort')}`);
+    // Beside the player, a hand before the shipmaster, who keeps the ship.
+    const side = crew
+        ? [...crew].sort((a, b) => Number(a.identity.occupation === 'shipmaster') - Number(b.identity.occupation === 'shipmaster'))
+        : null;
+    const besideYou = inFront === 2 && (side === null || side.length > 0) ? 1 : 0;
+    const beside = besideYou === 1
+        ? fight(side ? theirOwn(side.slice(0, 1)) : bodies('guard', 1, guardRung), 1, 'a-guard-beside-you')
+        : null;
+    if (beside) {
+        const who = side ? side[0]!.name : 'the guard';
+        fallen.push(...beside.sides.find(one => one.id === 'escort')!.fallen);
+        lines.push(`${side ? who : 'A guard'} fights beside you against a second of the band, and ${said(beside, who)}`);
     }
-    return { lines, escortHeld: behind === null || behind.winningSideId !== 'band' };
+    const rest = side ? side.slice(besideYou) : null;
+    const guards = rest ? rest.length : escortHeads - besideYou;
+    const behind = fight(rest ? theirOwn(rest) : bodies('guard', guards, guardRung), band - inFront, 'the-rest-of-the-fight');
+    if (behind) {
+        fallen.push(...behind.sides.find(one => one.id === 'escort')!.fallen);
+        lines.push(`Around the ${vehicle}, `
+            + (rest ? `${rest.map(person => person.name).join(', ')}` : howMany(guards, 'guard'))
+            + ` and ${band - inFront} of the band fight it out, and ${said(behind, rest ? 'the crew' : 'the escort')}`);
+    } else if (rest && rest.length === 0 && band - inFront > 0) {
+        lines.push(`Nobody of the crew is left to stand against the rest of the band around the ${vehicle}.`);
+    }
+    const nobodyToHoldIt = rest !== null && rest.length === 0 && band - inFront > 0;
+    return {
+        lines,
+        escortHeld: !nobodyToHoldIt && (behind === null || behind.winningSideId !== 'band'),
+        fallen: crew ? fallen.filter(id => crew.some(person => person.id === id)) : []
+    };
 }
 
 /** Put what the opened fight said into the execution the span already built. */

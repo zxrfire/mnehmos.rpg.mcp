@@ -10,10 +10,14 @@
  * the stop cost it the crew while going back is still the shorter way (`canTurnBack`).
  *
  * Played on `road-world`, with the seeds found by sweeping: `sea-6` is the one stop in forty on
- * the passage from the river mouth (the crew lost on day 6, past the middle); on the eastern
- * passage out of Sweet Spring Island on day 100, `east-46` is stopped past the middle out on the
- * Bitter Crossing, `east-58` loses its crew on day 2 and turns back, and `east-27` is stopped by
- * a band whose leader comes at the passenger.
+ * the Estuary Tideway (the crew lost on day 6, past the middle); on the Eastern Tideway out of
+ * Sweet Spring Island on day 100, `east-333` is stopped past the middle out on the Bitter
+ * Crossing, `east-64` loses its crew early and turns back, and `east-12` is stopped by a band
+ * whose leader comes at the passenger.
+ *
+ * RE-PINNED when the ship's named crew took the place of four unnamed guards: three or four
+ * defenders is a different escort, so the band that attacks is drawn differently. `east-46`,
+ * `east-58` and `east-27` stopped nothing afterwards; the new seeds were found by sweeping 420.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -110,7 +114,7 @@ describe('a ship at sea', () => {
     }, 120_000);
 
     it('past the middle of the passage, a ship that lost its crew goes on, among the people on that water', async () => {
-        const { game, stopped } = await stoppedOnTheEasternPassage('east-46');
+        const { game, stopped } = await stoppedOnTheEasternPassage('east-333');
 
         expect(stopped.narration).toMatch(/The crew did not hold the ship\. It is past the middle of the passage and goes on\./);
         expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Cloud Gate');
@@ -124,7 +128,7 @@ describe('a ship at sea', () => {
     }, 120_000);
 
     it('short of the middle, a ship that lost its crew turns back for the port it left', async () => {
-        const { game, stopped } = await stoppedOnTheEasternPassage('east-58');
+        const { game, stopped } = await stoppedOnTheEasternPassage('east-64');
 
         expect(stopped.narration).toMatch(/The crew did not hold the ship\. It turns back for Sweet Spring Island/);
         expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Sweet Spring Island');
@@ -135,7 +139,7 @@ describe('a ship at sea', () => {
     }, 120_000);
 
     it('a leader who comes at the passenger is fought at sea', async () => {
-        const { game, stopped } = await stoppedOnTheEasternPassage('east-27');
+        const { game, stopped } = await stoppedOnTheEasternPassage('east-12');
 
         expect(stopped.narration).toMatch(/Its leader came at you/);
         expect(stopped.narration).toMatch(/The fight is open/);

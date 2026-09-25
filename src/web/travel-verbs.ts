@@ -151,6 +151,7 @@ import {
     aShipSailsOn,
     endTheVoyage,
     stillAtSea,
+    thePassageOf,
     theVoyageAfter,
     theVoyageUnderWay,
     theWaterUnder,
@@ -159,7 +160,7 @@ import {
     type AVoyage
 } from './a-ship-at-sea.js';
 import { goingByShipInstead, theWayThereIsByShip } from './the-way-there-is-by-ship.js';
-import { theCrewIsWhereTheShipIs } from './the-crew-of-a-ship.js';
+import { theCrewIsWhereTheShipIs, theCrewOfTheShip, theCrewWhoFell } from './the-crew-of-a-ship.js';
 import { theRestOfTheFight } from './when-somebody-comes-at-you.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
 import { SATIETY_MAX } from '../schema/cultivation.js';
@@ -2345,6 +2346,11 @@ export const travelVerbs = {
         const from = voyage?.from ?? placeName(paid);
         const startDay = Math.floor(run.elapsedDays);
         const ambient = this.ambientFor(paid, run);
+        // A SHIP IS DEFENDED BY ITS CREW, the named people aboard it. See `the-crew-of-a-ship.ts`.
+        const worldDay = Math.floor(this.atHand?.currentDay ?? startDay);
+        const boardedAt = this.atHand ? worldLocationFor(this.atHand, placeName(paid)) : null;
+        const crew = voyage && boardedAt ? theCrewOfTheShip(this, voyage.lane, boardedAt.id, worldDay) : null;
+        const escort = crew ? crew.length : trip.escort;
         const rolled = encountersFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
             {
@@ -2357,7 +2363,7 @@ export const travelVerbs = {
                 comingForYou: accountsComingDue(this, paid)
             }
         );
-        const met = whatTheEscortMet(rolled, trip.escort);
+        const met = whatTheEscortMet(rolled, escort);
         const attacking = met.attacking;
         // WHO FIGHTS WHOM. The player fights the leader where the gap lets them,
         // and the rest is fought around the vehicle; where it does not, the whole
@@ -2365,8 +2371,12 @@ export const travelVerbs = {
         const theyFightYou = attacking !== null && attacking.confrontation?.engageable === true;
         const vehicle = trip.service;
         const theRest = attacking
-            ? theRestOfTheFight(this, run, attacking, trip.escort, ambient, vehicle, theyFightYou)
+            ? theRestOfTheFight(this, run, attacking, escort, ambient, vehicle, theyFightYou, crew)
             : null;
+        if (theRest && voyage) {
+            theCrewWhoFell(this, theRest.fallen, worldDay + Math.max(0, attacking!.absoluteDay - startDay),
+                `on ${thePassageOf(voyage.lane)}`);
+        }
         const stoppedBy = attacking && (theyFightYou || !theRest!.escortHeld) ? attacking : null;
         const lived = stoppedBy
             ? Math.max(1, Math.min(trip.days, stoppedBy.absoluteDay - startDay))
@@ -2452,7 +2462,7 @@ export const travelVerbs = {
             name: 'engine.takeTheSeat',
             action: 'passage' as const,
             summary: `${vehicle} from ${from} to ${trip.to}: ${trip.stones} stone(s), ${skip.simulatedDays} of `
-                + `${trip.days} day(s), escort ${trip.escort}, ${met.withdrew.length} band(s) withdrew`
+                + `${trip.days} day(s), escort ${escort}, ${met.withdrew.length} band(s) withdrew`
                 + `${attacking ? `, a band of ${attacking.confrontation?.count ?? 1} attacked` : ''}.`,
             ok: true
         }, ...skipCalls('passage', skip, null), ...tollCalls(applied.tollLines), ...worldCalls(world)];
@@ -2481,7 +2491,7 @@ export const travelVerbs = {
             const facts = factsForToolResult(`${trip.to}, by ${vehicle}.`, lines);
             if (came) facts.required = [...(facts.required ?? []), came.line];
             facts.structure.push(
-                `takeTheSeat: ${vehicle}, escort ${trip.escort}, ${met.withdrew.length} band(s) withdrew; `
+                `takeTheSeat: ${vehicle}, escort ${escort}, ${met.withdrew.length} band(s) withdrew; `
                 + (voyage
                     ? `hull rations for ${voyage.hullRationDays} of ${sailed} day(s), `
                         + `${packRations - packLeft} ration(s) from the pack, nights under a roof.`

@@ -16,6 +16,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { whatSomebodyKnowsOfTheLand } from '../../src/engine/world/what-somebody-knows-of-the-land';
+import { markDead } from '../../src/engine/world/npc-state';
 import { makeGameInWorld } from './harness';
 
 const THE_CREW = /^npc-crew-/;
@@ -31,6 +32,47 @@ async function stoppedAtSea() {
 }
 
 describe('the crew of a ship', () => {
+    it('defend the ship themselves, by name, when a band attacks it', async () => {
+        // The owner: the real named crew fights, not four unnamed guards. `east-64` is a band that
+        // beats the crew on the Eastern Tideway early and turns the ship back.
+        const { game, db } = await makeGameInWorld({ seed: 'east-64', worldSeed: 'road-world' });
+        await game.newRun('Rider');
+        const id = game.state().cultivator.id;
+        db.prepare("UPDATE cultivators SET location = 'Sweet Spring Island', spirit_stones = 500 WHERE id = ?").run(id);
+        db.prepare('UPDATE runs SET elapsed_days = 100 WHERE cultivator_id = ?').run(id);
+
+        const stopped = await game.act('I take the ship to Cloud Gate');
+
+        const crew = game.atHand!.npcs.filter(npc => THE_CREW.test(npc.id));
+        const fought = stopped.narration.split('\n').find(line => /^Around the ship, /.test(line)) ?? '';
+        expect(crew.length).toBeGreaterThanOrEqual(3);
+        for (const one of crew) expect(fought, one.name).toContain(one.name);
+        expect(fought).not.toMatch(/\bguards?\b/);
+    }, 120_000);
+
+    it('who have died stay dead, and somebody new is taken on in their place', async () => {
+        // Found writing this: the world forgets its mortal dead (`theWorldForgetsTheMortalDead`), and
+        // a crew written under fixed ids wrote the forgotten hand again at the next boarding, which
+        // the store refused as a resurrection and the turn threw. A replacement has an id of its own.
+        const { game, crew } = await stoppedAtSea();
+        await game.act('I wait until we arrive');
+        // Arranged: a hand dies ashore. What is asserted is that nobody raises them.
+        const lost = crew().find(npc => npc.identity.occupation === 'sailor')!;
+        const at = game.atHand!.npcs.findIndex(npc => npc.id === lost.id);
+        game.atHand!.npcs[at] = markDead(game.atHand!.npcs[at]!, Math.floor(game.atHand!.currentDay), 'Drowned in port.');
+        game.theWorldMoved();
+        const living = crew().filter(npc => npc.status === 'alive').length;
+
+        await game.act('I take the ship to Emerald Water City');
+
+        expect(game.state().cultivator.location).toBe('Emerald Water City');
+        expect(game.atHand!.npcs.filter(npc => npc.id === lost.id).every(npc => npc.status !== 'alive')).toBe(true);
+        const aboard = crew().filter(npc => npc.status === 'alive');
+        expect(aboard).toHaveLength(living + 1);
+        const home = game.atHand!.locations.find(row => row.name === 'Emerald Water City')!;
+        expect(aboard.every(npc => npc.locationId === home.id)).toBe(true);
+    }, 120_000);
+
     it('are a shipmaster and two or three hands, aboard with the passenger, three at most in view', async () => {
         const { game, crew } = await stoppedAtSea();
 

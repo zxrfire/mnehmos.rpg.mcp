@@ -8,8 +8,14 @@
  *
  * ONE SHIP TO A LANE, crewed the first time anybody boards it. Its people are written then and not
  * before, the way a beast with a core is given a row on contact, so no world is seeded with crews
- * nobody sails with. Their ids are the ship's, so boarding that lane again finds the same people.
- * Somebody of the crew who has died stays dead, and the ship sails without them.
+ * nobody sails with. They carry the ship on a tag, so boarding that lane again finds the same
+ * people. Somebody of the crew who has died stays dead: at the next boarding the place they left is
+ * taken by somebody new, whose id carries the day they were taken on. Never the dead one's id,
+ * because the world forgets its mortal dead (`theWorldForgetsTheMortalDead`) and an id written
+ * again after that is a resurrection the store refuses.
+ *
+ * WHEN THE SHIP IS ATTACKED they are who defends it (`theRestOfTheFight`), on their own bodies,
+ * and one who falls is dead ({@link theCrewWhoFell}).
  *
  * WHERE THEY ARE is where the ship is: aboard with the passenger at sea, and put in with them at
  * the far end. They work the ship together, so they stand on one deck, three at most to an area
@@ -21,7 +27,7 @@ import { lifespanForOrdinal } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import type { SeaLane } from '../engine/world/what-a-sea-crossing-costs.js';
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
-import { createNpc, setLocation, setRealm, type NpcRecord } from '../engine/world/npc-state.js';
+import { createNpc, markDead, setLocation, setRealm, type NpcRecord } from '../engine/world/npc-state.js';
 import { years } from '../engine/world/opportunities.js';
 import { worldLocationFor } from './entities.js';
 import type { GameService } from './turn-engine.js';
@@ -41,18 +47,25 @@ function theShipOn(lane: SeaLane): string {
     return [slug(lane.fromPlace), slug(lane.toPlace)].sort().join('--');
 }
 
-/** A shipmaster and two or three hands, written the first time the ship is boarded. */
-function theCrewOf(game: GameService, lane: SeaLane, at: string, onDay: number): NpcRecord[] {
-    const world = game.atHand!;
+/**
+ * The living crew of the ship on a lane, a shipmaster and two or three hands, taken on at `at` (a
+ * row id) for every place nobody living holds. Empty where there is no world.
+ */
+export function theCrewOfTheShip(game: GameService, lane: SeaLane, at: string, onDay: number): NpcRecord[] {
+    const world = game.atHand;
+    if (!world) return [];
     const ship = theShipOn(lane);
-    const rng = forStream(world.seed, 'the-crew-of-a-ship', ship);
-    const hands = rng.int(2, 3);
-    const roles = [THE_SHIPMASTER, ...Array.from({ length: hands }, () => A_HAND)];
-    const ids = roles.map((role, i) => `npc-crew-${ship}-${role === THE_SHIPMASTER ? 'master' : `hand-${i}`}`);
+    const tag = `${CREW_OF}${ship}`;
+    const hands = forStream(world.seed, 'the-crew-of-a-ship', ship).int(2, 3);
+    const aboard = () => world.npcs.filter(npc => npc.status === 'alive' && npc.tags.includes(tag));
+    const wanted = [
+        ...(aboard().some(npc => npc.identity.occupation === THE_SHIPMASTER) ? [] : [THE_SHIPMASTER]),
+        ...Array.from({ length: Math.max(0, hands - aboard().filter(npc => npc.identity.occupation === A_HAND).length) },
+            () => A_HAND)
+    ];
     const taken = new Set(world.npcs.map(npc => npc.name));
-    let wrote = false;
-    roles.forEach((role, i) => {
-        const id = ids[i]!;
+    wanted.forEach((role, k) => {
+        const id = `npc-crew-${ship}-${role}-${onDay}-${k}`;
         if (world.npcs.some(npc => npc.id === id)) return;
         const draw = forStream(world.seed, 'the-crew-of-a-ship', id);
         const ordinal = role === THE_SHIPMASTER ? draw.int(0, 4) : draw.int(0, 2);
@@ -67,17 +80,16 @@ function theCrewOf(game: GameService, lane: SeaLane, at: string, onDay: number):
             locationId: at,
             occupation: role,
             takenNames: taken,
-            tags: [`${CREW_OF}${ship}`]
+            tags: [tag]
         });
         taken.add(npc.name);
         npc = { ...setRealm(npc, ordinal, onDay), factionId: null, factionRankIndex: -1 };
         world.npcs.push(npc);
-        wrote = true;
     });
-    if (wrote) game.theWorldMoved();
-    return ids
-        .map(id => world.npcs.find(npc => npc.id === id))
-        .filter((npc): npc is NpcRecord => npc !== undefined && npc.status === 'alive');
+    if (wanted.length > 0) game.theWorldMoved();
+    return aboard().sort((a, b) =>
+        Number(b.identity.occupation === THE_SHIPMASTER) - Number(a.identity.occupation === THE_SHIPMASTER)
+        || (a.id < b.id ? -1 : 1));
 }
 
 /**
@@ -95,7 +107,7 @@ export function theCrewIsWhereTheShipIs(
     const world = game.atHand;
     const row = world ? worldLocationFor(world, where) : null;
     if (!world || !row) return [];
-    const crew = theCrewOf(game, lane, row.id, onDay);
+    const crew = theCrewOfTheShip(game, lane, row.id, onDay);
     const ids = crew.map(npc => npc.id);
     for (const one of crew) {
         const at = world.npcs.indexOf(one);
@@ -115,4 +127,15 @@ export function theCrewIsWhereTheShipIs(
     const deck = master ? theAreasOf(world, row).whereIs.get(master.id) : undefined;
     if (atSea && deck) game.repos.cultivators.standIn(passengerId, deck);
     return world.npcs.filter(npc => ids.includes(npc.id));
+}
+
+/** The crew who fell defending the ship are dead, where and when they fell. */
+export function theCrewWhoFell(game: GameService, ids: readonly string[], onDay: number, where: string): void {
+    const world = game.atHand;
+    if (!world || ids.length === 0) return;
+    for (const id of ids) {
+        const at = world.npcs.findIndex(npc => npc.id === id && npc.status === 'alive');
+        if (at >= 0) world.npcs[at] = markDead(world.npcs[at]!, onDay, `Killed defending the ship, ${where}.`);
+    }
+    game.theWorldMoved();
 }
