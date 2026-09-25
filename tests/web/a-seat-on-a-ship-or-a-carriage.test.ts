@@ -51,7 +51,7 @@ describe('a seat on a ship or a carriage', () => {
             expect(after.hp).toBe(before.hp);
             expect(after.satiety).toBe(100);
             expect(done.narration).toMatch(/Meals were taken on board/);
-            expect(done.narration).not.toMatch(/in the open cost the body/);
+            expect(done.narration).not.toMatch(/in the open (?:has|have) worn the body/);
         }, 120_000);
 
     it('sails the lane from the river mouth, and a band that sees the ship withdraws', async () => {

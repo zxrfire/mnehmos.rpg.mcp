@@ -31,7 +31,7 @@ describe('a night outdoors costs the body', () => {
         const after = game.state().cultivator;
 
         expect(after.hp).toBeLessThan(before.hp);
-        expect(done.narration).toMatch(/nights? in the open cost the body \d+; it stands at \d+ of \d+/);
+        expect(done.narration).toMatch(/nights? in the open (?:has|have) worn the body down to \d+ of \d+/);
     }, 120_000);
 
     it('costs nothing for the same nights under a room at the inn', async () => {
@@ -45,7 +45,7 @@ describe('a night outdoors costs the body', () => {
         expect(after.hp).toBe(before.hp);
         expect(after.spiritStones).toBeLessThan(before.spiritStones);
         expect(done.narration).toMatch(/room at the inn/i);
-        expect(done.narration).not.toMatch(/in the open cost the body/);
+        expect(done.narration).not.toMatch(/in the open (?:has|have) worn the body/);
         expect(game.state().run.elapsedDays).toBe(30);
     }, 120_000);
 
@@ -125,7 +125,7 @@ describe('a night outdoors costs the body', () => {
         const done = await game.act('I wait ten days');
 
         expect(game.state().cultivator.hp).toBeLessThan(back.hp);
-        expect(done.narration).toMatch(/in the open cost the body/);
+        expect(done.narration).toMatch(/in the open (?:has|have) worn the body/);
     }, 120_000);
 
     it('never takes a body below the floor by weather alone', async () => {

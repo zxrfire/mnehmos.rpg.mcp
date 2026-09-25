@@ -11,6 +11,7 @@
 import { forStream } from '../engine/cultivation/rng.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
+import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 
 export type ACounter = 'inn' | 'landing' | 'carriage_station';
 
@@ -81,6 +82,8 @@ const THE_KEEPER_UNNAMED: Readonly<Record<ACounter, string>> = {
  * The keeper as the player can say them: by name only when the player has one.
  * Played: the engine printed a stranger's name for the innkeeper, beside a census
  * saying nobody here could be named, and the narrator went on naming strangers.
+ * Awareness alone is not a name: a look writes every face it sees as a name that
+ * got said, so it is the narrator's own test, a name the player has lived.
  */
 export function theKeeperAsTheyAreKnown(
     game: GameService,
@@ -88,7 +91,7 @@ export function theKeeperAsTheyAreKnown(
     keeper: AKeeper,
     counter: ACounter
 ): string {
-    return game.knowledge.isAwareOf(cultivator.id, 'cultivator', keeper.id)
+    return thePlayerIsSureItIsThem(keeper.name, game.knowledge.awareness(cultivator.id))
         ? keeper.name
         : THE_KEEPER_UNNAMED[counter];
 }

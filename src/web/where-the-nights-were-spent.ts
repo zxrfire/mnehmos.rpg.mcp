@@ -80,9 +80,10 @@ export function chargeTheNightsInTheOpen(
         game.repos.cultivators.applyDeltas(cultivator.id, { hp: -cost.taken });
     })();
     return {
-        line: `${howMany(cost.nights, 'night')} in the open cost the body ${cost.taken}; it stands at `
-            + `${cost.hpAfter} of ${cultivator.maxHp}`
-            + (cost.heldAtTheFloor ? ', the lowest weather alone brings it.' : '.'),
+        // Said as the body, not as a ledger: "cost the body 19" read as bookkeeping.
+        line: `${howMany(cost.nights, 'night')} in the open ${cost.nights === 1 ? 'has' : 'have'} worn the body `
+            + `down to ${cost.hpAfter} of ${cultivator.maxHp}`
+            + (cost.heldAtTheFloor ? ', as low as weather alone brings it.' : '.'),
         structure: `a-night-in-the-open: ${cost.nights} night(s) outdoors below Foundation, `
             + `${cost.rawNights} raw and ${cost.foulNights} foul; ${cost.taken} HP taken`
             + `${cost.heldAtTheFloor ? ', held at the exposure floor' : ''}.`
