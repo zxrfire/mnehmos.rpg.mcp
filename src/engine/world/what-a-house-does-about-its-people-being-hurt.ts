@@ -6,7 +6,7 @@
  * and `origin-odds.ts`, which is a closed-form life model rather than a living
  * world. The one repair a yearly pass could do was `clearBrokenStatus` on a
  * crossing that succeeded. So `untreatedInjuries` was a ratchet: a wound taken
- * in year twelve was still open in year five thousand, and the Hollow Court
+ * in year twelve was still open in year five thousand, and the Empyrean Court
  * looked in on the same man at Burnt Earth a dozen times across a century,
  * finding the same single untreated wound every time.
  *

@@ -61,12 +61,12 @@ import {
 
 const AFTER_READING_ONE_BILL: WhatTheLastTurnDid = {
     runId: 'run', cultivatorId: 'cult', onTurn: 3, outcome: 'executed', acts: [],
-    named: [{ name: 'Cold Sword Sect' }]
+    named: [{ name: 'Unadorned Sword Sect' }]
 };
 
 const AFTER_READING_TWO: WhatTheLastTurnDid = {
     ...AFTER_READING_ONE_BILL,
-    named: [{ name: 'Hollow Bell Wanderers' }, { name: 'Cold Sword Sect' }]
+    named: [{ name: 'Wayside Chime Wanderers' }, { name: 'Unadorned Sword Sect' }]
 };
 
 const NOTHING_WAS_READ: WhatTheLastTurnDid = { ...AFTER_READING_ONE_BILL, named: [] };
@@ -100,8 +100,8 @@ describe('answering one', () => {
 
     /** A house the sentence actually names still wins over the paper. */
     it('prefers the house when one is named', () => {
-        expect(parseIntent('i take the intake at the Silver Island Market').target)
-            .toBe('Silver Island Market');
+        expect(parseIntent('i take the intake at the Silver Island Hall').target)
+            .toBe('Silver Island Hall');
     });
 
     it('binds the paper to the house the wall named', () => {
@@ -110,8 +110,8 @@ describe('answering one', () => {
             AFTER_READING_ONE_BILL,
             'i present myself at the intake'
         );
-        expect(out.plan.action.target).toBe('Cold Sword Sect');
-        expect(out.resolutions.map(r => r.to)).toEqual(['Cold Sword Sect']);
+        expect(out.plan.action.target).toBe('Unadorned Sword Sect');
+        expect(out.resolutions.map(r => r.to)).toEqual(['Unadorned Sword Sect']);
     });
 
     /**
@@ -165,15 +165,15 @@ describe('answering one', () => {
  * is the ruling every other reference in this game keeps.
  */
 describe('the wall answers for itself', () => {
-    const oneBill = () => ({ bills: [{ houseName: 'Cold Sword Sect' }] });
+    const oneBill = () => ({ bills: [{ houseName: 'Unadorned Sword Sect' }] });
     const twoBills = () => ({
-        bills: [{ houseName: 'Cold Sword Sect' }, { houseName: 'Hollow Bell Wanderers' }]
+        bills: [{ houseName: 'Unadorned Sword Sect' }, { houseName: 'Wayside Chime Wanderers' }]
     });
     const noBills = () => ({ bills: [] as { houseName: string }[] });
 
     it('names the house when one paper is up', () => {
-        expect(whichHouseThePaperMeans('the intake', oneBill).house).toBe('Cold Sword Sect');
-        expect(whichHouseThePaperMeans('that notice', oneBill).house).toBe('Cold Sword Sect');
+        expect(whichHouseThePaperMeans('the intake', oneBill).house).toBe('Unadorned Sword Sect');
+        expect(whichHouseThePaperMeans('that notice', oneBill).house).toBe('Unadorned Sword Sect');
     });
 
     it('names nobody when two are up', () => {
@@ -214,13 +214,13 @@ describe('the wall answers for itself', () => {
  */
 describe('what it could have been', () => {
     const twoBills = () => ({
-        bills: [{ houseName: 'Cold Sword Sect' }, { houseName: 'Hollow Bell Wanderers' }]
+        bills: [{ houseName: 'Unadorned Sword Sect' }, { houseName: 'Wayside Chime Wanderers' }]
     });
 
     it('keeps both names when it cannot choose', () => {
         const read = whichHouseThePaperMeans('the intake', twoBills);
         expect(read.house).toBeUndefined();
-        expect(read.couldHaveBeen).toEqual(['Cold Sword Sect', 'Hollow Bell Wanderers']);
+        expect(read.couldHaveBeen).toEqual(['Unadorned Sword Sect', 'Wayside Chime Wanderers']);
     });
 
     /**

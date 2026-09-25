@@ -298,7 +298,7 @@ describe('everybody who watched it walk out holds their own', () => {
 function twoHouses(loserPeople: number): WorldState {
     return {
         factions: [
-            { id: 'loser', name: 'Kiln Clan', seatLocationId: 'loc-kiln', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' },
+            { id: 'loser', name: 'Tripod Clan', seatLocationId: 'loc-kiln', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' },
             { id: 'winner', name: 'Storm Court', seatLocationId: 'loc-storm', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' }
         ],
         // A map, even an empty one: a loser that does not hold together lets its
@@ -307,13 +307,13 @@ function twoHouses(loserPeople: number): WorldState {
         npcs: [
             { id: 'npc-w', name: 'The Storm Tyrant', status: 'alive', tags: [], factionId: 'winner', cultivation: { realmOrdinal: 38 } },
             ...Array.from({ length: loserPeople }, (_, i) => ({
-                id: `npc-l${i}`, name: `Kiln ${i}`, status: 'alive', tags: [], factionId: 'loser',
+                id: `npc-l${i}`, name: `Tripod ${i}`, status: 'alive', tags: [], factionId: 'loser',
                 cultivation: { realmOrdinal: 8 + i }
             }))
         ],
         objects: SIGNIFICANCES.map((significance, i) => makeObject({
             id: `obj-${i}`, name: `a kiln thing ${i}`, kind: 'artifact', significance, power: 10 + i,
-            ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'loser', locationId: 'loc-kiln'
+            ownerId: 'loser', ownerName: 'Tripod Clan', possessorId: 'loser', locationId: 'loc-kiln'
         })),
         history: { facts: [], nextFactSeq: 1 }
     } as unknown as WorldState;
@@ -323,7 +323,7 @@ describe('a settlement leaves the losing side holding something', () => {
     it('a house that held together holds it itself, once, for the whole hold', () => {
         const state = twoHouses(3);
         const moved = settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: true },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
             winner: state.factions[1]!,
             war: 'the war',
             onDay: 500
@@ -339,7 +339,7 @@ describe('a settlement leaves the losing side holding something', () => {
     it('a house that broke up does not, because there is no house left to mind', () => {
         const state = twoHouses(4);
         const moved = settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: false },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: false },
             winner: state.factions[1]!,
             war: 'the war',
             onDay: 500
@@ -359,7 +359,7 @@ describe('a settlement leaves the losing side holding something', () => {
         const state = twoHouses(3);
         state.objects = [];
         const moved = settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: true },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
             winner: state.factions[1]!,
             war: 'the war',
             onDay: 500

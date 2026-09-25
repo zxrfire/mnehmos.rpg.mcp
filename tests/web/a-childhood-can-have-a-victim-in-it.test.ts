@@ -88,7 +88,7 @@
  * Read the table again: 466 of the 470 arrive through the street and 4 through
  * kin. A pinned seed for the kin half is a one-in-seven-thousand draw, and this
  * file held one - `probe-w1/probe-r1-221`, picked out of that sweep. It has
- * stopped being a kin arrangement. That birth opens on Cold Sword Sect ground,
+ * stopped being a kin arrangement. That birth opens on Unadorned Sword Sect ground,
  * which holds five living catalog members, one married couple among them, and
  * nobody dead at all, so there is no second parent for a killing to have taken.
  * Nothing in the opening moved: the other three pins say exactly what they said.

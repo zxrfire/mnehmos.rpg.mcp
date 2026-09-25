@@ -154,7 +154,7 @@ export function fixtureCatalog(): WorldCatalog {
             }),
             faction({
                 id: 'court-third-sill',
-                name: 'Third Sill Court',
+                name: 'Third Sluice Court',
                 powerOrdinal: 33,
                 admissionOrdinal: 21,
                 governance: 'administered',
@@ -186,7 +186,7 @@ export function fixtureCatalog(): WorldCatalog {
             }),
             region({
                 id: 'region-scarwater',
-                name: 'Clear River Ford',
+                name: 'Clear River Ferry',
                 qiDensity: 0.18,
                 ambient: 'thin',
                 // Low enough that talent alone does not get anybody out.
@@ -197,7 +197,7 @@ export function fixtureCatalog(): WorldCatalog {
                 factionIds: ['sect-clearwater-ward', 'sect-fallen-grain-caravan'],
                 exports: ['salt'],
                 places: [
-                    { name: 'Clear River Ford', kind: 'village', ambient: 'thin', note: 'On the dead ground.' },
+                    { name: 'Clear River Ferry', kind: 'village', ambient: 'thin', note: 'On the dead ground.' },
                     { name: 'The Weir', kind: 'waystation', ambient: 'thin', note: 'A toll.' }
                 ],
                 connections: [{ otherRegionId: 'region-low-fall', kind: 'trade_route', travelDays: 9 }],
@@ -215,7 +215,7 @@ export function fixtureCatalog(): WorldCatalog {
                 factionIds: ['court-third-sill'],
                 exports: ['pills', 'formations'],
                 places: [
-                    { name: 'The Third Sill Court', kind: 'city', ambient: 'dense', note: 'It administers.' }
+                    { name: 'The Third Sluice Court', kind: 'city', ambient: 'dense', note: 'It administers.' }
                 ],
                 connections: [{ otherRegionId: 'region-low-fall', kind: 'shared_institution', travelDays: 21 }],
                 scars: ['The deepest vein in the province, and it is spoken for.']

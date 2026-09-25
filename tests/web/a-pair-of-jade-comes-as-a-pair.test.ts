@@ -117,7 +117,7 @@ describe('a pair of jade, bestowed', () => {
             const id = `house-jade-${i}`;
             const trial = { ...state, factions: [makeFaction({ id, name: 'A House', seatLocationId: seat.id, ranks: ['outer', 'inner', 'core', 'elder', 'head'] })] };
             const maker = createNpc('jade', { id: 'maker', name: 'Maker', bornOnDay: 0, onDay: 0, locationId: seat.id, factionId: id, factionRankIndex: 4, cultivation: { realmOrdinal: refiningOrdinalFor('earth') + 5 } });
-            const marked = { ...createNpc('jade', { id: 'marked', name: 'Marked', bornOnDay: 0, onDay: 0, locationId: seat.id, factionId: id, factionRankIndex: 1 }), tags: ['chosen'] };
+            const marked = { ...createNpc('jade', { id: 'marked', name: 'Inscribed', bornOnDay: 0, onDay: 0, locationId: seat.id, factionId: id, factionRankIndex: 1 }), tags: ['chosen'] };
             trial.npcs = [maker, marked];
             if (whatEachHouseGivesAsAPairOfJade(trial, [], 0).length > 0) { houseId = id; Object.assign(state, trial); }
         }

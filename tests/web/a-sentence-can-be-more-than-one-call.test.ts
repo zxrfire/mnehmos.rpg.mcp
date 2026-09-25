@@ -192,7 +192,7 @@ describe('one clause is one act, however many patterns claim it', () => {
      *
      * So the turn asked which came first between buying the noodles and
      * ordering the noodles. And the fork then ate the NEXT turn: "I buy the
-     * copy of Cross-Meridian Strike from the stall" was taken as its answer,
+     * copy of Cross-Meridian Jolt from the stall" was taken as its answer,
      * the noodles ran, and the manual was never bought or refused.
      */
     it('does not ask about one object two verbs keep under different keys', () => {
@@ -524,8 +524,8 @@ describe('two costly acts raise a question rather than a truncation', () => {
 
     it('falls back to the verb\'s own name when the reader gave no words', () => {
         expect(whatThisStepIsCalled(step('cultivate'))).toBe('sitting down to cultivate');
-        expect(whatThisStepIsCalled(step('move', { target: 'Clear River Ford' })))
-            .toBe('the journey to Clear River Ford');
+        expect(whatThisStepIsCalled(step('move', { target: 'Clear River Ferry' })))
+            .toBe('the journey to Clear River Ferry');
     });
 });
 
@@ -997,7 +997,7 @@ describe('a pronoun the table dropped is still a pronoun', () => {
  *   > I find out where I can go, take the road to whichever of them has the
  *   > best air, and sit down there for a year
  *
- *   The Living Ice ... a spirit tide, triple rate.   Bronze Bell Cliff ... thin qi, half rate.
+ *   The Living Ice ... a spirit tide, triple rate.   Bronze Gong Cliff ... thin qi, half rate.
  *   Which comes first? "the journey to unspecified" or "sitting down to cultivate"?
  *
  * The rows were in hand, on the same turn, with the field on every one of them,
@@ -1055,15 +1055,15 @@ describe('the sentence composes without a model', () => {
      * `theWholeSentenceAsAPlan` exists to put back the clauses a reader did not
      * answer, and only the model path ever called it. The table answers with
      * ONE verb, and the verb it answers with is the LAST clause's - so "I go to
-     * Cold Peak and gather herbs" ran the gathering, dropped the journey, and
+     * Moraine Gate and gather herbs" ran the gathering, dropped the journey, and
      * said so afterwards. Running the wrong half of a sentence is worse than
      * asking which half to run.
      */
     it('puts back a clause the reader did not answer', () => {
         const gather: PlanStep = { action: { action: 'gather' } };
         const composed = whatThisTurnMayRun(
-            [{ action: { action: 'move', intent: 'travel', target: 'Cold Peak' } }, gather],
-            'I go to Cold Peak and gather herbs'
+            [{ action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } }, gather],
+            'I go to Moraine Gate and gather herbs'
         );
         expect(composed.toRun.length + composed.askAbout.length).toBe(2);
     });
@@ -1072,10 +1072,10 @@ describe('the sentence composes without a model', () => {
     it('asks rather than guessing, which is what a table can honestly do', () => {
         const composed = whatThisTurnMayRun(
             [
-                { action: { action: 'move', intent: 'travel', target: 'Cold Peak' } },
+                { action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } },
                 { action: { action: 'gather' } }
             ],
-            'I go to Cold Peak and gather herbs'
+            'I go to Moraine Gate and gather herbs'
         );
         expect(composed.theOrderWasGiven).toBe(false);
         expect(composed.askAbout).toHaveLength(2);
@@ -1085,10 +1085,10 @@ describe('the sentence composes without a model', () => {
     it('takes an order a reader says it worked out', () => {
         const composed = whatThisTurnMayRun(
             [
-                { action: { action: 'move', intent: 'travel', target: 'Cold Peak' } },
+                { action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } },
                 { action: { action: 'gather' } }
             ],
-            'I go to Cold Peak and gather herbs',
+            'I go to Moraine Gate and gather herbs',
             true
         );
         expect(composed.theOrderWasGiven).toBe(true);

@@ -95,7 +95,7 @@ function speaking(): HouseWithSomethingToSay[] {
 }
 
 const WALL = {
-    placeName: 'Iron Ridge',
+    placeName: 'Iron Crest',
     ground: 'city' as const,
     placeProvinceId: 'province-a',
     onDay: 400,

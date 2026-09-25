@@ -119,7 +119,7 @@ do the model's job, and the one time it shipped it was also wrong:
 ```text
 > i buy a manual
 ... a Lesser Qi-Gathering Manual, priced at 11 spirit stones ...
-"manual" could be Cold Sword Sect or Hollow Bell Wanderers, and picking one for
+"manual" could be Unadorned Sword Sect or Wayside Chime Wanderers, and picking one for
 you is not this game's to do. Name it and it is settled.
 ```
 
@@ -260,7 +260,7 @@ engine has always had, that no typed English sentence could reach.**
 | `seal` | six houses holding a sealed ancestor with a written `wakeCondition` and `wakeCost`, the strongest at forty-four | no verb at all |
 | `offer` | `IMMORTAL_CHANNELS`, `MillennialOffering`, `IMMORTAL_MOTIVE` on why an offering buys two words | no verb at all |
 | `news` | the whole world ledger - every ranking, refusal, duel and house opening closed ground the simulation has ever written | four phrasings of "what news is there" deflecting into the `recall` listing, which is an inventory of what the player already held |
-| `craft` | the bill, the slip, the rung gate and the launch in `engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.ts`, live for houses on the yearly world pass, plus the whole player half in [`half-built-craft.ts`](half-built-craft.ts) - complete, tested, and with no importer in `src/` | `refine`'s branch owns the words `make`, `craft`, `cook` and `brew`, so a sentence about a carriage either reached a cauldron listing or fell to `unclear`. The world built spirit boats and the player could not lay a keel |
+| `craft` | the bill, the slip, the rung gate and the launch in `engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.ts`, live for houses on the yearly world pass, plus the whole player half in [`half-built-craft.ts`](half-built-craft.ts) - complete, tested, and with no importer in `src/` | `refine`'s branch owns the words `make`, `craft`, `cook` and `brew`, so a sentence about a carriage either reached a cauldron listing or fell to `unclear`. The world built spirit skiffs and the player could not lay a keel |
 
 The `recall` case is the one that says most about how to look for these. It was found by a
 **rank-band sweep** - standing a character at each rung and typing what somebody at that
@@ -1064,7 +1064,7 @@ cultivators standing anywhere still belongs to whoever owns `seedPriorAges`.
 whether the world can still speak of the person, not about the rung, and
 `theWorldForgetsTheMortalDead` keeps everybody a catalog names. Measured over 3,000
 births on three pinned worlds: 24 lives open as the child of an authored figure - the
-Duan line at Old River Village, and the Cold Sword Sect's Sword Hand and Standing
+Duan line at Old River Village, and the Unadorned Sword Sect's Sword Hand and Standing
 Sword, who are married to each other in every world - and all 24 read as a name and
 nothing else before this.
 
@@ -1318,8 +1318,8 @@ being taken** - and the two uses cannot be told apart by any predicate over the 
 So `GameService.interact` moves it off `topic` into a local on the one branch where it
 means something else, at the top, before any of the five readers see it. Guarding five
 branches instead would leave a sixth to be remembered. Measured before the split existed:
-`I steal the spirit boat from Cao Nuolin` was answered by Cao Nuolin turning *"spirit
-boat"* over once and saying something true about the weather, and the taking never ran.
+`I steal the spirit skiff from Cao Nuolin` was answered by Cao Nuolin turning *"spirit
+skiff"* over once and saying something true about the weather, and the taking never ran.
 
 Three things this feeds, and none of them is new machinery:
 
@@ -1923,7 +1923,7 @@ question `company()` asks when that person is standing in front of you were abou
 different people.
 
 Measured on a seeded world before the fix: **203 lore people, 428 world NPCs, zero ids in
-common.** Standing on the ground the Hollow Court's own people hold, having been told 175
+common.** Standing on the ground the Empyrean Court's own people hold, having been told 175
 catalog names through the ordinary channel, the player could name **none** of the ten of
 them in the square - every one of whom they held a live knowledge record for. Told a name,
 walked up to that exact person, and still a stranger.
@@ -1938,7 +1938,7 @@ already folds a place onto `placeKey`. Three rules it keeps:
   each patching it locally, which is how it survived: every call site looked correct.
 - **The strip is a catalog lookup, never a prefix strip.** The world is full of `npc-95`,
   `npc-apex-azure-dew-sect` and `npc-above-3`, and `id.slice(4)` renames the first to `95`
-  and invents a person. Nor is `member-` the rule: ten of the catalog's people, the Hollow
+  and invents a person. Nor is `member-` the rule: ten of the catalog's people, the Empyrean
   Court and the mountains under it, are filed under `hollow-court-`.
 - **Canonical is the catalog id.** 185 of the 203 have a world row; the guest elders, the
   wanderers, the sealed ancestors and the bodies on the immortal channels have none.
@@ -2406,7 +2406,7 @@ location; a gathering seats people by id.
 `destinations` reads the knowledge table for named places and then adds the province's
 caves, wilds and veins off `WorldState.locations`. That second half had no gate at all -
 and "a farm boy knows where the caves are" is a reason to **grant a record**, not a reason
-to skip one. A cultivator holding nothing was handed The Glass Field and The Nine-City
+to skip one. A cultivator holding nothing was handed The Glass Ploughland and The Nine-City
 Assize by name, which are dao grounds seeded as ordinary `wilds`, and the same hole would
 have handed over any prospected find that landed on one of those three kinds.
 
@@ -2436,7 +2436,7 @@ Three joints were missing, and together they are the loop:
 
 **The source is somebody who could point at it, never somebody who could read it.** That
 distinction is the content. A cart driver at the bottom of the ladder has crossed the
-Grinding Ford ten thousand times, will never take anything off it, and is exactly the
+Grinding Shallows ten thousand times, will never take anything off it, and is exactly the
 person who can tell you where it is - `howSomebodyStandsToAGround` separates the two, and
 requiring the speaker to be able to READ it would have made a landmark a secret. Measured
 on a seeded world before that split existed: of 587 living NPCs, the ones standing in a

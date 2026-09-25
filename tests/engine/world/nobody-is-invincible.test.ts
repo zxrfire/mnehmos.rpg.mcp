@@ -336,7 +336,7 @@ describe('and then the elders decide', () => {
         // MEASURED, two arms in one session at seed `inv-rooms` after 150
         // years: adding two houses to the catalog (the two ancient apexes,
         // which acquired sect rows) shifted the simulation enough that the
-        // Thousand Treasure Pavilion's four survivors came out leaning +0.11
+        // Thousand Relic Pavilion's four survivors came out leaning +0.11
         // on temperament alone, and its room carried on. The control arm, the
         // same seed with those two factions filtered out of the catalog in
         // memory, had every room stop. Neither arm says anything about the

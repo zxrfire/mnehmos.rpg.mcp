@@ -18,7 +18,7 @@
  * so no road, walk, fold or passage can forget to bring it.
  *
  * What it takes up is in berths, the design's own unit for a hull: a person, their gear and their
- * share of deck and rail, about 4,000 litres a head. A heaven-grade ring holds a spirit boat.
+ * share of deck and rail, about 4,000 litres a head. A heaven-grade ring holds a spirit skiff.
  */
 
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
@@ -36,7 +36,7 @@ export const WHAT_A_BERTH_TAKES = 4_000;
 export const WHAT_A_HEAD_OF_CARGO = { volume: 250, weight: 200 } as const;
 
 /**
- * And a spirit boat's hold, which is a flying ship's: "spirit boat = genre flying boat". Thirty
+ * And a spirit skiff's hold, which is a flying ship's: "spirit boat = genre flying boat". Thirty
  * heads of it carry a thousand-year tortoise's belly-plate, which is what a boat is for.
  */
 export const WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES = { volume: 2_000, weight: 2_400 } as const;

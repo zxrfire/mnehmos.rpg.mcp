@@ -62,13 +62,13 @@ describe('a word that carries none of the name', () => {
      * empty words from the SHARED count; it does not make a name unsayable.
      */
     it('still matches a name a player types in full', () => {
-        expect(matchScore('the hollow court', 'The Hollow Court')).toBe(100);
-        expect(matchScore('the hollow court', 'The Hollow Court Annex')).toBeGreaterThan(0);
+        expect(matchScore('the empyrean court', 'The Empyrean Court')).toBe(100);
+        expect(matchScore('the empyrean court', 'The Empyrean Court Annex')).toBeGreaterThan(0);
     });
 
     /** And a genuinely shared distinctive word is untouched. */
     it('leaves a real shared word alone', () => {
-        expect(matchScore('the hollow one', 'The Hollow Court')).toBeGreaterThan(0);
+        expect(matchScore('the empyrean one', 'The Empyrean Court')).toBeGreaterThan(0);
     });
 });
 

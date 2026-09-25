@@ -35,16 +35,16 @@ describe('aiming a named art at somebody', () => {
     });
 
     it('reads the catalog\'s own spelling, and who it was put on', () => {
-        const plan = parseIntent('I use Cross-Meridian Strike on Wen Shu');
+        const plan = parseIntent('I use Cross-Meridian Jolt on Wen Shu');
         expect(plan.action).toBe('attack');
         expect(plan.target).toBe('Wen Shu');
-        expect(plan.withArt).toBe('Cross-Meridian Strike');
+        expect(plan.withArt).toBe('Cross-Meridian Jolt');
     });
 
     it('still reads the phrasing that already worked', () => {
-        const plan = parseIntent('I attack him with Cross-Meridian Strike');
+        const plan = parseIntent('I attack him with Cross-Meridian Jolt');
         expect(plan.action).toBe('attack');
-        expect(plan.withArt).toBe('Cross-Meridian Strike');
+        expect(plan.withArt).toBe('Cross-Meridian Jolt');
     });
 
     it('does not turn every use of a thing into a swing', () => {

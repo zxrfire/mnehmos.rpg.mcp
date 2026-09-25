@@ -3,7 +3,7 @@
  *
  * FOUND BY PLAYING BLIND:
  *
- *     > i practise Cross-Meridian Strike for 60 days
+ *     > i practise Cross-Meridian Jolt for 60 days
  *     Mastery 0% to 3%.
  *     Qi deviation: a minor meridian injury...
  *     You did not say for how long, so it came to 7 days - which is what a
@@ -33,7 +33,7 @@ import { parseIntent } from '../../src/web/actions.js';
 import { makeGameInWorld } from './harness.js';
 
 const WORLD = 'art-world';
-const ART = 'Cross-Meridian Strike';
+const ART = 'Cross-Meridian Jolt';
 
 beforeAll(() => {
     process.env.ADMIN_MODE = 'true';

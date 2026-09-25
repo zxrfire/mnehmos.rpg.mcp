@@ -335,7 +335,7 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
 
     structure.push(theNamesHeldAndUnplaceable(input.reachable.length, sorted.length, input));
 
-    // "You are in Green Water City, The Jade Gorge" - a settlement and the province it
+    // "You are in Emerald Water City, The Jade Gorge" - a settlement and the province it
     // sits in often share a name, and printing both reads as a stutter. Say the
     // place, and only add the province when it is telling you something new.
     const bare = (s: string) => s.replace(/^[Tt]he\s+/, '').toLowerCase();

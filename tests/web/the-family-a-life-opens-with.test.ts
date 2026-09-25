@@ -343,7 +343,7 @@ describe('the family a life opens with', () => {
      * Measured across 3,000 births on three pinned worlds: 24 lives open as the
      * child of an authored figure, and ALL 24 would have read as a name and
      * nothing else before this - the Duan line at Old River Village stand at
-     * ordinal 0 to 2, and the Cold Sword Sect's Sword Hand and Standing Sword at
+     * ordinal 0 to 2, and the Unadorned Sword Sect's Sword Hand and Standing Sword at
      * 4 and 8. The same six run seeds gave the same household in all three
      * worlds, because who these people are married to is now catalog and not
      * draw.

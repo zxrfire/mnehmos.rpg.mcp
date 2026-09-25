@@ -170,11 +170,11 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         parties: ['court-kiln', 'sect-deeproot-court', 'apex-earth-vein-tower', 'apex-myriad-course-hall'],
         accounts: {
             'court-kiln':
-                'The ground did not move. Everything the Kiln is - the datum, the nodes, the rota, the perimeter - was here before the reposting and was here after it, and the only thing that walked out of the gate was a roll of names and an administrative word. The Court states this without heat and has never said anything else.',
+                'The ground did not move. Everything the Tripod is - the datum, the nodes, the rota, the perimeter - was here before the reposting and was here after it, and the only thing that walked out of the gate was a roll of names and an administrative word. The Court states this without heat and has never said anything else.',
             'sect-deeproot-court':
-                'Nobody was asked, about a thing every one of them had wanted. That is the fact the Deeproot Court puts first and the one the Kiln never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
+                'Nobody was asked, about a thing every one of them had wanted. That is the fact the Deeproot Court puts first and the one the Tripod never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
             'apex-earth-vein-tower':
-                'A routine reposting of a court, executed correctly, on a schedule. The Survey has never characterised it otherwise in any document, has never referred to the departed body in correspondence, and lists the Kiln Court as its court on the datum. Whether that is composure or the absence of an answer is not something the Survey has been asked in a room where it would have to reply.',
+                'A routine reposting of a court, executed correctly, on a schedule. The Survey has never characterised it otherwise in any document, has never referred to the departed body in correspondence, and lists the Tripod Court as its court on the datum. Whether that is composure or the absence of an answer is not something the Survey has been asked in a room where it would have to reply.',
             'apex-myriad-course-hall':
                 'Some people became available and a schedule had room. The Myriad Course Hall did not send anybody, did not solicit, and did not say a word in public; it offered a posting to a body that had walked out of another one, which is the second time it has done exactly that, and it has acknowledged neither.'
         },
@@ -184,13 +184,13 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-promotion-past-the-kiln',
         yearsAgo: 200,
         provinceId: 'province-low-fall',
-        what: 'The Earth Vein Tower raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Jade Gorge beside the Kiln Court. The probation it had held under for two centuries was carried across rather than lifted, and the Kiln was not consulted.',
+        what: 'The Earth Vein Tower raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Jade Gorge beside the Tripod Court. The probation it had held under for two centuries was carried across rather than lifted, and the Tripod was not consulted.',
         parties: ['sect-storm-tyrant-court', 'court-kiln', 'apex-earth-vein-tower'],
         accounts: {
             'sect-storm-tyrant-court':
                 'A recognition, and a century overdue - the Court reads it as the Survey acknowledging that a body holding the only working lightning curriculum in the world is not a tenant, and as the nearest thing to a restoration available to a house that was once one of the three. What it does not read, and has never once discussed in a room where it could be minuted, is that the probation came with it, that the last two renewals were issued short, and that the other body the Survey keeps in this province was not asked and would not have cared.',
             'court-kiln':
-                'Nothing about it concerns the Kiln, which issues no grants, holds no tenants and has never had a book for one to be removed from - and the Ward has said as much, once, in the only sentence it has ever contributed to the subject. What it did not say, and what the Storm Tyrant has never stopped hearing, is that the Survey now keeps two bodies in this province: one that administers the richest arrangement in the world and takes nothing out of it, and one that administers a broken tether and cannot stop asking to be looked at.',
+                'Nothing about it concerns the Tripod, which issues no grants, holds no tenants and has never had a book for one to be removed from - and the Ward has said as much, once, in the only sentence it has ever contributed to the subject. What it did not say, and what the Storm Tyrant has never stopped hearing, is that the Survey now keeps two bodies in this province: one that administers the richest arrangement in the world and takes nothing out of it, and one that administers a broken tether and cannot stop asking to be looked at.',
             'apex-earth-vein-tower':
                 'The curriculum is the one thing in the Jade Gorge that cannot be replaced, and the Survey would rather administer such a thing than lease it. That is the whole of the reasoning and it was stated in one line. What the sect is, and what the province calls it, did not appear in the decision and there is no line on the form where it would have.'
         },
@@ -230,7 +230,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-four-shortages',
         yearsAgo: 150,
         provinceId: null,
-        what: 'In four recorded stone shortages the exchange rate was set by what the Thousand Treasure Pavilion would pay, and the Stone Marrow Hall published that figure a week later as its own.',
+        what: 'In four recorded stone shortages the exchange rate was set by what the Thousand Relic Pavilion would pay, and the Stone Marrow Hall published that figure a week later as its own.',
         parties: ['sect-stone-marrow-hall', 'sect-thousand-treasure-pavilion'],
         accounts: {
             'sect-stone-marrow-hall':
@@ -258,13 +258,13 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-two-hundred-year-refusal',
         yearsAgo: 200,
         provinceId: 'province-low-fall',
-        what: 'The Nine Peaks Ascetic Order has refused every request to lease its vein for two centuries, without giving reasons, and the Third Sill Court has never compelled it.',
+        what: 'The Nine Peaks Ascetic Sect has refused every request to lease its vein for two centuries, without giving reasons, and the Third Sluice Court has never compelled it.',
         parties: ['sect-nine-peaks-ascetic-order', 'court-third-sill'],
         accounts: {
             'sect-nine-peaks-ascetic-order':
-                'A refusal repeated for two hundred years is a position, and the province insists on calling it geography. The Order\'s grievance is exactly this: everybody treats the deepest vein anybody has kept as an accident that happened to it, when what actually happened is that it said no, every time, to everybody, for two centuries, at a cost it can name.',
+                'A refusal repeated for two hundred years is a position, and the province insists on calling it geography. The Sect\'s grievance is exactly this: everybody treats the deepest vein anybody has kept as an accident that happened to it, when what actually happened is that it said no, every time, to everybody, for two centuries, at a cost it can name.',
             'court-third-sill':
-                'The right to refuse without giving reasons is in the grant, and the Sill wrote the grant, and the Sill has noted internally on four occasions that it is not the Order\'s right to exercise so much as the Sill\'s right to not have withdrawn. It has never withdrawn it. The Order has never been told that this is a decision somebody takes annually.'
+                'The right to refuse without giving reasons is in the grant, and the Sluice wrote the grant, and the Sluice has noted internally on four occasions that it is not the Sect\'s right to exercise so much as the Sluice\'s right to not have withdrawn. It has never withdrawn it. The Sect has never been told that this is a decision somebody takes annually.'
         },
         explains: 'the holding'
     },
@@ -314,13 +314,13 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-swords-and-the-deference',
         yearsAgo: 200,
         provinceId: 'province-low-fall',
-        what: 'The Azure Cloud Pavilion took Ashen Forge blades for two centuries and then stopped, and now accepts arms from elsewhere. The clan was not told and no reason was given.',
+        what: 'The Azure Cloud Pavilion took Ashen Anvil blades for two centuries and then stopped, and now accepts arms from elsewhere. The clan was not told and no reason was given.',
         parties: ['sect-ashen-forge-clan', 'sect-azure-cloud-pavilion'],
         accounts: {
             'sect-ashen-forge-clan':
                 'Two hundred years of the clan\'s work, accepted, and then not, and nobody said anything. The clan has read every reason it can think of into the silence and its grievance is a precise one: the Pavilion did not stop accepting swords, it started accepting somebody else\'s deference, and a blood clan that reforges ploughed-up fragments because it cannot make steel of that quality itself knows exactly what that means about the blades.',
             'sect-azure-cloud-pavilion':
-                'The Pavilion did not decide anything. A quartermaster changed, a standing order lapsed, nobody renewed it, and the terraces have never held a discussion in which the Ashen Forge appeared. That is worse than a decision and the Pavilion has never grasped that it is - it is a body that has been an apex for a short time and has not yet learned that at this altitude an unrenewed order is an announcement.'
+                'The Pavilion did not decide anything. A quartermaster changed, a standing order lapsed, nobody renewed it, and the terraces have never held a discussion in which the Ashen Anvil appeared. That is worse than a decision and the Pavilion has never grasped that it is - it is a body that has been an apex for a short time and has not yet learned that at this altitude an unrenewed order is an announcement.'
         },
         explains: 'the rivalry'
     },
@@ -328,7 +328,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-founding-oath-and-the-severed',
         yearsAgo: 500,
         provinceId: null,
-        what: 'A founding oath of the Vermilion Seal Terrace forbids it to witness for the Severed. The Severed have offered, repeatedly, at rising fees, and the House has refused every time.',
+        what: 'A founding oath of the Vermilion Sigil Terrace forbids it to witness for the Severed. The Severed have offered, repeatedly, at rising fees, and the House has refused every time.',
         parties: ['house-vermilion-seal', 'sect-the-severed'],
         accounts: {
             'house-vermilion-seal':
@@ -362,7 +362,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
             'sect-ancient-bough-grove':
                 'The zone runs eleven days out because that is where the last test happened, and the Grove holds what it can comfortably walk and claims nothing beyond it. It is not aware that anything has changed, and the mechanism by which it would become aware does not exist, because it does not patrol and nobody who knows has any reason to be the one who says so.',
             'court-third-sill':
-                'The valley has never been granted to anybody, has never been asked for, and the file is open. The Sill regards the northern leases as ordinary business inside its own book and has not registered that they intersect a boundary maintained entirely by a belief, because a belief does not appear on a grant map and the Sill has never been to the province.'
+                'The valley has never been granted to anybody, has never been asked for, and the file is open. The Sluice regards the northern leases as ordinary business inside its own book and has not registered that they intersect a boundary maintained entirely by a belief, because a belief does not appear on a grant map and the Sluice has never been to the province.'
         },
         explains: 'the holding'
     },
@@ -384,13 +384,13 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-two-hundred-years-of-edges',
         yearsAgo: 200,
         provinceId: null,
-        what: 'Ninefold Karma Palace began recording the edges left by the Still Blade Peak\'s severances. It has kept the record continuously since and has never made it public, and the Still Blade Peak prices its work as though no such record existed.',
+        what: 'Ninefold Karma Palace began recording the edges left by the Still Blade Pavilion\'s severances. It has kept the record continuously since and has never made it public, and the Still Blade Pavilion prices its work as though no such record existed.',
         parties: ['house-still-blade', 'house-ninefold-karma'],
         accounts: {
             'house-still-blade':
                 'A clean cut leaves nothing. That is the product, it is what the price is for, and the house has believed it without interruption for nineteen centuries. It cuts its own records as doctrine, which means it cannot audit itself, which means it has repeatedly recut work it had already been paid for - and has never once read that as evidence about how much of a cut survives.',
             'house-ninefold-karma':
-                'Every cut leaves an edge, the Karma Palace has two hundred years of them, and it has never published because an unpublished register is leverage and a published one is a pamphlet. It regards the Still Blade Peak\'s pricing as the most reliable indicator in either province of what the house does not know, and it reprices its own arbitration fees off that.'
+                'Every cut leaves an edge, the Karma Palace has two hundred years of them, and it has never published because an unpublished register is leverage and a published one is a pamphlet. It regards the Still Blade Pavilion\'s pricing as the most reliable indicator in either province of what the house does not know, and it reprices its own arbitration fees off that.'
         },
         explains: 'the rivalry'
     },
@@ -398,7 +398,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-tolls-and-the-fords',
         yearsAgo: 300,
         provinceId: 'province-low-fall',
-        what: 'The Thousand Treasure Pavilion began pricing tolls on routes kept open, maintained and forded by the Clear River Alliance, and pays nothing toward them.',
+        what: 'The Thousand Relic Pavilion began pricing tolls on routes kept open, maintained and forded by the Clear River Alliance, and pays nothing toward them.',
         parties: ['sect-clear-river-alliance', 'sect-thousand-treasure-pavilion'],
         accounts: {
             'sect-clear-river-alliance':
@@ -464,7 +464,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     // `sharedEvents` is empty on both, and that is not a gap: every shared
     // event these two are party to is authored against their APEX ids, and
     // `sharedEventsFor` is checked against the id this record is filed under.
-    // The Kiln schism and the Storm Tyrant rows are in SHARED_EVENTS under
+    // The Tripod schism and the Storm Tyrant rows are in SHARED_EVENTS under
     // `apex-earth-vein-tower` and `apex-myriad-course-hall`.
     'sect-earth-vein-tower': {
         factionId: 'sect-earth-vein-tower',
@@ -543,13 +543,13 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'sect-nine-peaks-ascetic-order': {
         factionId: 'sect-nine-peaks-ascetic-order',
         origin:
-            'Nine linked peaks over the deepest vein anybody has surveyed and managed to keep, and the second half of that sentence is the whole of the Order\'s history. Deeper veins have been surveyed. What is unusual is keeping one, and the Order kept this one by refusing every request to lease it for two centuries, without giving reasons, at a cost it can itemise and nobody asks about.',
+            'Nine linked peaks over the deepest vein anybody has surveyed and managed to keep, and the second half of that sentence is the whole of the Sect\'s history. Deeper veins have been surveyed. What is unusual is keeping one, and the Sect kept this one by refusing every request to lease it for two centuries, without giving reasons, at a cost it can itemise and nobody asks about.',
         whyTheGapIs:
             'It is the one house in the catalog short of nothing but years. Its own rule prices every rung in seasons served, and seasons cannot be bought, hurried or supplied - so its pipeline is not waiting on a supplier, a vein, a book or a patron. It is waiting on people to have carried the stone long enough. That makes it the most obvious target in the province: everybody knows where the stores are and that they have never been assayed.',
         whatTheUnlitNodesWere:
-            'The Order does not know, states that it does not know, and maintains them anyway. Fifty-two nodes it cannot account for, on the reasoning that somebody meant them - which is the single most characteristic thing the house does. What is establishable from outside is that the lit eleven are all on the working faces and the dark fifty-two are not, so whatever the diagram was for, it was not for getting at the vein.',
+            'The Sect does not know, states that it does not know, and maintains them anyway. Fifty-two nodes it cannot account for, on the reasoning that somebody meant them - which is the single most characteristic thing the house does. What is establishable from outside is that the lit eleven are all on the working faces and the dark fifty-two are not, so whatever the diagram was for, it was not for getting at the vein.',
         whereTheWrongBeliefComesFrom:
-            'The Order holds that carrying the stone builds the body, which is what it looks like from inside and is what every ascetic tradition in the world says about its own discipline. Its own intake records say something else and have said it for four centuries: the stone selects for people who will do a pointless thing for years. That is a more useful filter and a less flattering one, and nobody has ever had a reason to read the intake records against the doctrine.',
+            'The Sect holds that carrying the stone builds the body, which is what it looks like from inside and is what every ascetic tradition in the world says about its own discipline. Its own intake records say something else and have said it for four centuries: the stone selects for people who will do a pointless thing for years. That is a more useful filter and a less flattering one, and nobody has ever had a reason to read the intake records against the doctrine.',
         sharedEvents: ['event-the-two-hundred-year-refusal']
     },
     'sect-clear-river-alliance': {
@@ -557,11 +557,11 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         origin:
             'Eleven river towns and every ford between them, none of it over a vein and all of it over traffic. The Alliance was not founded so much as agreed to: the towns needed crossing, somebody crossed them, and after two centuries the arrangement had a name. It has never held ground, never had a grant, and never had a relationship with anything above it.',
         whyTheGapIs:
-            'Wide and shallow forever, and moving for the first time in three centuries - on wagons rather than water. Three Ford Masters have run an unlicensed carrying service for six years and remit a share in kind, so eleven landings now handle bonded refining stock instead of ferry fares. What the Alliance never had was anything a cultivator climbs on; what it has now is cargo, and it turns entirely on the River Elders continuing not to establish what the wagons are.',
+            'Wide and shallow forever, and moving for the first time in three centuries - on wagons rather than water. Three Ferry Masters have run an unlicensed carrying service for six years and remit a share in kind, so eleven landings now handle bonded refining stock instead of ferry fares. What the Alliance never had was anything a cultivator climbs on; what it has now is cargo, and it turns entirely on the River Elders continuing not to establish what the wagons are.',
         whatTheUnlitNodesWere:
-            'They are not the Alliance\'s and never were. Five of its eight nodes are lit and all five are on piers, and the piers at Clear River Ford are two ages older than the Alliance - so what it holds is the river furniture of somebody long gone, three nodes of which nobody alive has ever seen working. Half its river charts are copies of a survey from the same period and are more accurate than anything the Alliance has produced since.',
+            'They are not the Alliance\'s and never were. Five of its eight nodes are lit and all five are on piers, and the piers at Clear River Ferry are two ages older than the Alliance - so what it holds is the river furniture of somebody long gone, three nodes of which nobody alive has ever seen working. Half its river charts are copies of a survey from the same period and are more accurate than anything the Alliance has produced since.',
         whereTheWrongBeliefComesFrom:
-            'It believes the Clear River Ford pilings are Alliance work from three centuries back, and there is an Alliance repair record from three centuries back that says so - a genuine record of a genuine repair, read ever since as a record of the building. The pilings are two ages older and are the reason that ford has never moved, which the Alliance would find more useful to know than almost anything else it does know.',
+            'It believes the Clear River Ferry pilings are Alliance work from three centuries back, and there is an Alliance repair record from three centuries back that says so - a genuine record of a genuine repair, read ever since as a record of the building. The pilings are two ages older and are the reason that ford has never moved, which the Alliance would find more useful to know than almost anything else it does know.',
         sharedEvents: ['event-the-tolls-and-the-fords']
     },
     'sect-sweptground-temple': {
@@ -661,13 +661,13 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'sect-cold-sword-sect': {
         factionId: 'sect-cold-sword-sect',
         origin:
-            'A shelf of dry gorge above Stone Ford with a yard already cut on it, and a swordsman who had been sent down off the terraces standing in the yard teaching four other people who had been sent down as well. It has never held a vein, never been granted anything and never written a book, and it is now in its ninth generation of doing the same thing on the same stone. What it inherited was the walls. What it started with was the refusal, and the refusal has been the intake ever since.',
+            'A shelf of dry gorge above Clear River Ferry with a yard already cut on it, and a swordsman who had been sent down off the terraces standing in the yard teaching four other people who had been sent down as well. It has never held a vein, never been granted anything and never written a book, and it is now in its ninth generation of doing the same thing on the same stone. What it inherited was the walls. What it started with was the refusal, and the refusal has been the intake ever since.',
         whyTheGapIs:
             'It never had the road. The Sect can carry somebody to the end of the tempering scripture and no further, because every metal book above that belongs to a house that holds one on terms, and none of them will copy one out for a body that owes nobody anything. The strongest person in the yard did not come up through it; he arrived already high, and the figure the Sect is listed at is his rather than the yard\'s.',
         whatTheUnlitNodesWere:
             'A larger diagram than the yard needs, laid by whoever cut the walls: four dark nodes stand outside the wall in a line down the shelf toward the water, which is where a vein would have been drawn from if there were one under it. Somebody expected the shelf to be worth holding. The Sect lights the one node inside the wall, uses the yard for standing in, and has never had anybody able to read the other four.',
         whereTheWrongBeliefComesFrom:
-            'Two centuries of nothing happening is genuinely difficult to read any other way. The Sect has never been visited, taxed, offered terms or told to move, and the sensible conclusion from a long enough silence is that somebody decided. The other reading only becomes available to a person who has seen the Third Sill Court\'s map, which carries the shelf as unheld and carries no note against it at all, and nobody in the yard has ever had cause or standing to be shown a court\'s map.',
+            'Two centuries of nothing happening is genuinely difficult to read any other way. The Sect has never been visited, taxed, offered terms or told to move, and the sensible conclusion from a long enough silence is that somebody decided. The other reading only becomes available to a person who has seen the Third Sluice Court\'s map, which carries the shelf as unheld and carries no note against it at all, and nobody in the yard has ever had cause or standing to be shown a court\'s map.',
         sharedEvents: []
     },
     'sect-orchid-court': {
@@ -703,7 +703,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'Nobody has ever counted them and the figures are the Immovable Mountain Temple\'s estimate from what walks the perimeter. A posting does not have a pipeline: there is no intake, no admission that has ever been used, and no applicant in nine hundred years, so what the register shows as production is an outside body\'s arithmetic about a rota.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
-            'The world is wrong about them rather than the reverse, and the error is entirely reasonable: every outside account assumes they draw on the root vein, because a body sitting on the richest ground in the world and taking none of it has no precedent anywhere and no motive anybody can supply. Immovable Mountain Temple\'s survey figures show they take nothing from it at all. The figures are public. Nobody has believed them.',
+            'The world is wrong about them rather than the reverse, and the error is entirely reasonable: every outside account assumes they draw on the taproot vein, because a body sitting on the richest ground in the world and taking none of it has no precedent anywhere and no motive anybody can supply. Immovable Mountain Temple\'s survey figures show they take nothing from it at all. The figures are public. Nobody has believed them.',
         sharedEvents: ['event-the-reposting']
     },
     'sect-hollow-court': {
@@ -727,7 +727,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'The fastest pipeline in the catalog by a distance and the worst attrition, and both come from the same sentence: pre-paying the price makes crossings survivable, and most of them stop being people before they stop being cultivators. What sits between what the house holds and what it turns out is not a shortage of anything. It is the fraction that does not arrive.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
-            'They hold that the cut is theirs to choose, which is the doctrine, the recruitment document and the whole of the argument that the practice is dignified rather than merely survivable. The Still Blade Peak, who do it professionally and for money, find that a self-severance takes what is reachable rather than what was chosen. The Severed have been told. They do not accept the finding, and the reason they do not is that accepting it would make six centuries of ledger entries a record of something other than what they say they are.',
+            'They hold that the cut is theirs to choose, which is the doctrine, the recruitment document and the whole of the argument that the practice is dignified rather than merely survivable. The Still Blade Pavilion, who do it professionally and for money, find that a self-severance takes what is reachable rather than what was chosen. The Severed have been told. They do not accept the finding, and the reason they do not is that accepting it would make six centuries of ledger entries a record of something other than what they say they are.',
         sharedEvents: ['event-the-founding-oath-and-the-severed']
     },
     'sect-crimson-abyss-fortress': {
@@ -791,7 +791,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         whyTheGapIs:
             'The whole region\'s pipeline is three people at Standing Cut and one Keystone in two hundred years, and the Ward has started prospecting, which is not a thing bureaus do. Two survey parties have gone past Nine Hundred Paces in four years and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Buddha Precipice since the catastrophe. It ends if Jade Face runs out first, and the Ward is the only party that has measured how close that is.',
         whatTheUnlitNodesWere:
-            'The weir works above Iron Ridge were built by whoever cut the seven surviving nodes into the stone rather than laying them on the ground, which is why those seven still run and the other nineteen do not. The Under-Warden retains a duty at the weir gates that has had no function since the water was diverted, and the diversion is older than the Court - so the bureau is administering the remains of a working it inherited without a description.',
+            'The weir works above Iron Crest were built by whoever cut the seven surviving nodes into the stone rather than laying them on the ground, which is why those seven still run and the other nineteen do not. The Under-Warden retains a duty at the weir gates that has had no function since the water was diverted, and the diversion is older than the Court - so the bureau is administering the remains of a working it inherited without a description.',
         whereTheWrongBeliefComesFrom:
             'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Buddha Precipice will tell you the same thing because the work genuinely is harder. Harder is not higher. The Karma Palace has certified band for band that it is one ladder, and the Ward has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
         sharedEvents: ['event-the-band-for-band-certification', 'event-the-roads-and-the-grants']

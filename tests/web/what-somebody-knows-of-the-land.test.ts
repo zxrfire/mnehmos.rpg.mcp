@@ -85,7 +85,7 @@ describe('what somebody knows of the land', () => {
         // A town: somebody knows the way to any ordinary house of its own province.
         const ordinary = jade.filter(house => house.kind !== 'court');
         for (const house of ordinary.slice(0, 6)) {
-            const found = whoAmongThemKnowsTheWay(world, 'Clear River Ford', crowd('Clear River Ford'), house.id);
+            const found = whoAmongThemKnowsTheWay(world, 'Clear River Ferry', crowd('Clear River Ferry'), house.id);
             if (found < 0) {
                 // Only an apex may be out of a town's reach.
                 expect(whoAmongThemKnowsTheWay(world, PLACE.GREEN_FALL, crowd(PLACE.GREEN_FALL), house.id)).toBeGreaterThanOrEqual(0);

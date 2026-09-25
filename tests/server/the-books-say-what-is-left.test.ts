@@ -33,7 +33,7 @@ describe('looking at the books', () => {
 
     it('reports what the reserves still hold after what was taken', async () => {
         const made = await cultivation({
-            action: 'create_cultivator', name: 'Lu Zhen', seed: 'the-books', location: 'Green Water City'
+            action: 'create_cultivator', name: 'Lu Zhen', seed: 'the-books', location: 'Emerald Water City'
         });
         expect(made.error).toBeUndefined();
         const id = made.cultivator.id as string;

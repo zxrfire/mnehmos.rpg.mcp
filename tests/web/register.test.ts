@@ -64,7 +64,7 @@ const html: string = renderRegisterHtml(reg);
  *
  * The decode is not cosmetic. `esc` turns a double quote into `&quot;`, and the
  * moment an entry started quoting the catalog's own distinct sentence - the
- * Vermilion Seal Terrace cannot say "I promise" in conversation - every
+ * Vermilion Sigil Terrace cannot say "I promise" in conversation - every
  * assertion that the sentence reached the page failed on correct escaping.
  */
 function text(source: string): string {
@@ -274,7 +274,7 @@ describe('court rosters', () => {
     });
 
     it('does not sort the offices into a ladder they do not form', () => {
-        // The Sill Courier stands a mark above the Assessor inside the Survey
+        // The Sluice Courier stands a mark above the Assessor inside the Survey
         // and eight rungs below him on the realm ladder. An ordinal sort would
         // put her at the bottom of her own court and invent a chain of command.
         for (const court of COURTS) {
@@ -423,7 +423,7 @@ describe('the pyramid comes from one source', () => {
     });
 
     it('files every court under the apex its own row names', () => {
-        // The other half of the same rule, and the one the Third Sill moved
+        // The other half of the same rule, and the one the Third Sluice moved
         // under: an apex's `courtIds` and a court's `apexId` are two statements
         // of one fact, and the sheet reads exactly one of them.
         for (const court of COURTS) {
@@ -1210,7 +1210,7 @@ describe('what a contention says about the ladder', () => {
 describe('a body with a row in two catalogs', () => {
     // The duplicate the user reported, and the over-correction that replaced
     // it. Merging the two nodes is right; deleting one of the two NAMES is not
-    // - the province has called the Kiln Court that for nine hundred years and
+    // - the province has called the Tripod Court that for nine hundred years and
     // the Deeproot Court is what the Earth Vein Tower calls the posting, and which one is
     // real is exactly what the catalog says has never been settled.
     const embodied = COURTS.filter(c => c.embodiedByFactionId !== null);
@@ -1282,7 +1282,7 @@ describe('a court panel', () => {
     it('names no kind of move in the heading over a transfer note', () => {
         // Was "two courts do not answer where they used to". There is one, and
         // that is a correction rather than a loss: the other was the Third
-        // Sill, which never moved at all and had a conversion note describing a
+        // Sluice, which never moved at all and had a conversion note describing a
         // transfer that did not happen. The body that did move is the Deeproot Court
         // and it is a posting rather than a court, so its account lives on its
         // own entry, and how it stands with the half that stayed is one row in

@@ -396,7 +396,7 @@ describe('perception_manage consolidated tool', () => {
         });
 
         it('observerBoundToSubsystem reflects binding state', async () => {
-            const boundId = makeCharacter(charRepo, 'Bound');
+            const boundId = makeCharacter(charRepo, 'Tethered');
             const unboundId = makeCharacter(charRepo, 'Unbound');
             bindToSubsystem(db, boundId);
 

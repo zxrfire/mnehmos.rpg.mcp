@@ -15,7 +15,7 @@
  * world authored:
  *
  *   Sweet Spring    real 0.00 (thin, x0.5)   guessed 0.75 (dense, x2)
- *   Thin Ridge      real 0.00 (thin, x0.5)   guessed 0.73 (dense, x2)
+ *   Meagre Crest      real 0.00 (thin, x0.5)   guessed 0.73 (dense, x2)
  *   Nine Peaks      real 0.78 (dense, x2)    guessed 0.06 (thin, x0.5)
  *
  * A place named for water read as rich ground and was dead; a place named for

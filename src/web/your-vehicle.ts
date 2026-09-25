@@ -44,7 +44,13 @@ function theOneNamed(rows: readonly ObjectRecord[], named: string | undefined): 
     // "the boat" is the boat when there is a carriage too; any vehicle word is the first one only
     // when none of them is called by it.
     const word = A_VEHICLE_WORD.exec(said)?.[0];
-    if (word) return rows.find(row => row.name.toLowerCase().includes(word.replace(/s$/, ''))) ?? rows[0]!;
+    if (word) {
+        // A hull is a hull whatever a player calls it: the row is "A spirit skiff"
+        // and "the boat" is the same craft.
+        const stem = word.replace(/s$/, '');
+        const sameCraft = /^(?:boat|ship|skiff)$/.test(stem) ? ['boat', 'ship', 'skiff'] : [stem];
+        return rows.find(row => sameCraft.some(w => row.name.toLowerCase().includes(w))) ?? rows[0]!;
+    }
     const words = said.split(/\s+/).filter(word => word.length > 2);
     return rows.find(row => words.some(word => row.name.toLowerCase().includes(word))) ?? null;
 }

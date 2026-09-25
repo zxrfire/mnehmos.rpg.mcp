@@ -129,10 +129,10 @@ describe('the narrow gate: a practice that says its own name', () => {
      *
      * Measured on this seed: the Villager is born knowing SEVEN of the
      * thirty-eight houses that have a practice - the Sweptground Temple, the
-     * Azure Dew Sect, the Hollow Bell Wanderers, the Six Li Patrol and three
+     * Azure Dew Sect, the Wayside Chime Wanderers, the Six Li Patrol and three
      * caravans and markets - which is exactly the shape that ruling asks for.
      * One practice that names its house was visible to them, and it was the
-     * Hollow Bell Wanderers, whose name they already had.
+     * Wayside Chime Wanderers, whose name they already had.
      *
      * So the claim worth holding is the GATE, not the count: nothing names a
      * house to somebody who could not already name it. That is what the feature

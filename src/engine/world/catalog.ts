@@ -577,7 +577,7 @@ interface RawPrefecture {
  *
  * And `places` are the settlements INSIDE a district while `seat` is the one it
  * is RUN OUT OF, which the schema states and which are different facts: Iron
- * Ridge is the seat of two face districts and is inside neither.
+ * Crest is the seat of two face districts and is inside neither.
  *
  * Where a basin carries the place, its answer stands - `null` included, which is
  * ground the register prints with nobody's name against it and is the catalog's

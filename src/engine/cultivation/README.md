@@ -109,7 +109,7 @@ child somebody spent a word to place at a house that would have refused them.
 
 The hard rule is that **an origin buys inputs and never rank**. There is deliberately no
 field on `OriginTier` that could confer a realm, progress, admission, or a rank inside an
-institution, and the Hollow Court's own admission text is the statement of it: a Void
+institution, and the Empyrean Court's own admission text is the statement of it: a Void
 Refinement floor and evidence you could cross, and nothing else counts, which explicitly
 includes being somebody's child. What it buys instead:
 
@@ -1096,7 +1096,7 @@ A False Immortal is:
 - **Incomplete in a way that shows.** Something did not come back. What is missing varies
   and it is never nothing.
 
-This is the Hollow Court's real membership. Those who "reached the top and refused to step
+This is the Empyrean Court's real membership. Those who "reached the top and refused to step
 through" is the polite version of the story, and some of them did choose it - but a good
 number of the oldest and quietest ones tried, and are what came back. They do not correct
 the polite version.
@@ -1161,7 +1161,7 @@ an immortal lives in the conjunction, not in the roll, and it is supposed to.
 
 **False Immortals outnumber True ones three to one.** That is `MAX_COMPLETION_CHANCE = 0.25`
 doing exactly one job: of the crossings that survive the lightning, three in four do not go
-through. The Hollow Court is three times the size of the company on the far side, and it is
+through. The Empyrean Court is three times the size of the company on the far side, and it is
 that way because the seam closes, not because those people were worse.
 
 ---

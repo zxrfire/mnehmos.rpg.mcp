@@ -40,7 +40,7 @@ describe('a house has the element its books have', () => {
     });
 
     it('ignores a book that carries nobody past the house\'s own door', () => {
-        // The defect this rule was written against: the Thousand Treasure
+        // The defect this rule was written against: the Thousand Relic
         // Pavilion is an auction house with one fire art capped at 0, and
         // counting it made every root but fire unwelcome there.
         const filler = houseElementalCharacterOf({

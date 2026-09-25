@@ -770,7 +770,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     const somewhereBetter = here.thickerGroundWithinReach[0] ?? null;
     // The generic road out, and ONLY where the named one below cannot be built.
     // Played on thin ground with a better town two days off, the row carried
-    // "I travel to Grain Rain" and "where can I go" side by side - the same
+    // "I travel to Insects Awaken" and "where can I go" side by side - the same
     // advice twice, one slot of five each, out of a row whose whole complaint
     // was that it wasted its slots on categories.
     if (!here.aboveTheLid && rateHere < 1 && somewhereBetter === null) {

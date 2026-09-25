@@ -9,7 +9,7 @@
  * the world simulation runs was empty. Measured at seeding, identical across
  * seeds: of eighteen rated objects, ZERO were possessed by an `NpcRecord`.
  *
- * The cause was one unmade join. The artifact catalog named the Hollow Court's
+ * The cause was one unmade join. The artifact catalog named the Empyrean Court's
  * four Seats with a positional key (`seat-first`) that predated
  * `hollow-court-roster.ts` naming them as people, so four of the five strongest
  * reachable objects in the world were keyed to nobody. The catalog now names

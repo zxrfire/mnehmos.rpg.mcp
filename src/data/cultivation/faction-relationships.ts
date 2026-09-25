@@ -25,7 +25,7 @@ import { SHARED_EVENTS } from './faction-history.js';
 
 /**
  * Where one body sits relative to another. Never a judgement of strength: the
- * Hollow Court stands alongside three apexes at ordinal 44 and above nobody.
+ * Empyrean Court stands alongside three apexes at ordinal 44 and above nobody.
  */
 export const RelationStanceSchema = z.enum(['above', 'below', 'alongside']);
 export type RelationStance = z.infer<typeof RelationStanceSchema>;
@@ -122,7 +122,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'two_bodies_nobody_joins',
         what:
-            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Earth Vein Tower, the Deeproot Court took the roll and the founding posting order four provinces away under the Myriad Course Hall, and neither has written to the other since.',
+            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Tripod kept the datum, the nine hundred lit nodes and the perimeter under the Earth Vein Tower, the Deeproot Court took the roll and the founding posting order four provinces away under the Myriad Course Hall, and neither has written to the other since.',
         since:
             'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Earth Vein Tower reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Myriad Course Hall was waiting for them.',
         a: {
@@ -137,9 +137,9 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         b: {
             warmth: 'civil',
             howTheyPutIt:
-                'The Kiln is where the datum, the nodes and the perimeter are, and the work is walking all three on a schedule. Some of the people who used to do it went elsewhere and are doing something else now. The province has read four Warden ranks off this gate for nine hundred years and reads them off it today, and none of that was affected.',
+                'The Tripod is where the datum, the nodes and the perimeter are, and the work is walking all three on a schedule. Some of the people who used to do it went elsewhere and are doing something else now. The province has read four Warden ranks off this gate for nine hundred years and reads them off it today, and none of that was affected.',
             andSoTheyDo:
-                'Nothing at all, in public or in writing. The Kiln issues no correspondence, has never named the other body in a document, and has never asked its own patron to.',
+                'Nothing at all, in public or in writing. The Tripod issues no correspondence, has never named the other body in a document, and has never asked its own patron to.',
             grievance: null
         }
     },
@@ -156,7 +156,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         a: {
             warmth: 'distant',
             howTheyPutIt:
-                'A court was reposted, correctly, on a schedule, and the Survey lists the Kiln Court as its court on the datum. It has never characterised the season otherwise in any document and has never been asked to in a room where it would have to reply.',
+                'A court was reposted, correctly, on a schedule, and the Survey lists the Tripod Court as its court on the datum. It has never characterised the season otherwise in any document and has never been asked to in a room where it would have to reply.',
             andSoTheyDo:
                 'Files the datum figure it receives once a year from the body that stayed, and does not name the other one. Two procedures were quietly restructured in the same era and neither change was explained.',
             grievance: null
@@ -205,7 +205,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'above',
         kind: 'apex_and_court',
         what:
-            'The Kiln administers the datum - the deep vein at the world root that the whole arterial system is measured from - on the Earth Vein Tower behalf, and it is the one court in the Survey arrangement that issues no grants, holds no tenants and has no basin. The whole of the reporting relation is one figure a year, and the figure has not changed in the current Keeper tenure.',
+            'The Tripod administers the datum - the deep vein at the world root that the whole arterial system is measured from - on the Earth Vein Tower behalf, and it is the one court in the Survey arrangement that issues no grants, holds no tenants and has no basin. The whole of the reporting relation is one figure a year, and the figure has not changed in the current Keeper tenure.',
         since:
             'Nine hundred years, uninterrupted from the Survey side of the record: it posted the court, it named the court, and it lists this body as its court on the datum today.',
         a: {
@@ -265,7 +265,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'A grant is a band of altitude and a band of altitude has to be followed uphill. We were not able to say why we could not take one without saying what was in the valley, so we said no and did not explain, and that is still where the matter is.',
             andSoTheyDo:
-                'Sells its crop through the Cold Crucible and the Four Names station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
+                'Sells its crop through the Cold Crucible and the Fourfold Stele station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
             grievance: null
         }
     },
@@ -276,13 +276,13 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'same_patron',
         what:
-            'Two bodies answering the Earth Vein Tower directly in the same province, and the only pair of them anywhere. One administers a datum nobody draws on, issues nothing and answers nothing downward. The other was raised out of two centuries of probation to answer as a court because the lightning curriculum is the one thing in the Jade Gorge nobody can replace, and the probation was carried across rather than lifted. The Kiln was not consulted about the raising, which is unremarkable, because the Kiln is not consulted about anything.',
+            'Two bodies answering the Earth Vein Tower directly in the same province, and the only pair of them anywhere. One administers a datum nobody draws on, issues nothing and answers nothing downward. The other was raised out of two centuries of probation to answer as a court because the lightning curriculum is the one thing in the Jade Gorge nobody can replace, and the probation was carried across rather than lifted. The Tripod was not consulted about the raising, which is unremarkable, because the Tripod is not consulted about anything.',
         since:
             'The raising of the Storm Tyrant Court to answer the Survey directly, which made it the second Survey body in the province and gave the province its first pair to compare.',
         a: {
             warmth: 'distant',
             howTheyPutIt:
-                'Nothing. The Kiln has never commented on the other court, in writing or otherwise, and has never been asked to by the body that posted them both.',
+                'Nothing. The Tripod has never commented on the other court, in writing or otherwise, and has never been asked to by the body that posted them both.',
             andSoTheyDo:
                 'Walks the rota, holds the perimeter, and submits the figure. No exchange of any kind between the two bodies has ever been observed.',
             grievance: null
@@ -308,7 +308,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         what:
             'The two apexes nobody can date. They agree entirely that what a house believes is not a term of any contract, and disagree entirely about whether you delegate at all: one grants veins to tenants on twelve-year terms and reads the reports, and the other holds every face itself with a posted staff of about forty and has no tenants to have a view about. Both have known the other answer for eleven hundred years and neither has ever raised it. In that span one of them has taken two of the other administrations and neither has acknowledged it.',
         since:
-            'Longer than either keeps a record of. The Third Sill has administered an arterial for the Myriad Course Hall inside a province the Earth Vein Tower holds for longer than either apex can date, and neither has ever explained or raised that either.',
+            'Longer than either keeps a record of. The Third Sluice has administered an arterial for the Myriad Course Hall inside a province the Earth Vein Tower holds for longer than either apex can date, and neither has ever explained or raised that either.',
         a: {
             warmth: 'civil',
             howTheyPutIt:
@@ -384,7 +384,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     // A SWORD SCHOOL HOLDS FROM NOBODY, AND THIS IS WHAT THAT LOOKS LIKE FROM
     // THE OTHER END. `alongside` here is the absence of an instrument and not a
     // claim of parity: the Court could have the shelf tomorrow and has never
-    // wanted it, which is a different sentence from the one the Hollow Court's
+    // wanted it, which is a different sentence from the one the Empyrean Court's
     // three rows make with the same field.
     {
         id: 'rel-the-cold-sword-and-the-third-sill',
@@ -393,7 +393,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'tolerated',
         what:
-            'The Court administers the arterial the Jade Gorge branches from and issues every grant in the province, and it has never issued one over the shelf above Stone Ford. There is no vein under that shelf, so there is nothing an instrument could convey, and the yard standing on it holds no ground from anybody and pays nobody for it. The grant book carries the shelf as unheld, with no note against it and no file behind it.',
+            'The Court administers the arterial the Jade Gorge branches from and issues every grant in the province, and it has never issued one over the shelf above Clear River Ferry. There is no vein under that shelf, so there is nothing an instrument could convey, and the yard standing on it holds no ground from anybody and pays nobody for it. The grant book carries the shelf as unheld, with no note against it and no file behind it.',
         since:
             'Two centuries, at the outside, which is as long as anybody has been standing in the yard. No document anywhere records a first refusal, an offer, or a decision of any kind.',
         a: {

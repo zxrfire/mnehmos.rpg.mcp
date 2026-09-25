@@ -5,7 +5,7 @@
  * WHY THIS EXISTS. A faction's membership was never a thing you could ask for.
  * It was a property of each PERSON - `Member.factionId` - and anything that
  * wanted the other direction rebuilt it by scanning: the register filtered
- * `MEMBERS`, the court panel read `Court.roster`, and the Hollow Court's people
+ * `MEMBERS`, the court panel read `Court.roster`, and the Empyrean Court's people
  * were nowhere at all. Three readers, three different answers to one question,
  * and none of them able to say how many people a house has without doing the
  * scan again.
@@ -27,10 +27,10 @@
  *                      one; a court's offices are parallel jobs.
  *   off-ladder titles  the one thing a `Member` row cannot express: somebody
  *                      holding a position that is not a rung. A court's
- *                      offices are parallel jobs; the Hollow Court's Guest
+ *                      offices are parallel jobs; the Empyrean Court's Guest
  *                      stands above the ladder rather than on it.
  *
- * THE HOLLOW COURT USED TO BE A WHOLE THIRD SOURCE HERE AND IS NOT ANY MORE.
+ * THE EMPYREAN COURT USED TO BE A WHOLE THIRD SOURCE HERE AND IS NOT ANY MORE.
  * Everybody on its ladder is on `MEMBERS` with the rest of the world, projected
  * out of `hollow-court-roster.ts` where they are still authored - that file
  * kept its own shape because it carries things no other house needs, like the
@@ -115,7 +115,7 @@ const ALL: readonly RollEntry[] = [
     // nullable, because on every other house it always has one. A title that
     // sits OUTSIDE the ladder rather than beneath it has no index by
     // definition, and the two entries here that carry one - a court's parallel
-    // offices, and the Hollow Court's Guest - are the same shape rather than
+    // offices, and the Empyrean Court's Guest - are the same shape rather than
     // two exceptions.
     //
     // Everybody at the Court who IS on the ladder reaches this roll through
@@ -179,7 +179,7 @@ export function everybodyOnARoll(): readonly RollEntry[] {
 // ─────────────────────────────────────────────────────────────────────────
 // SECONDMENT: TWO ROLLS, AND ONE PERSON
 //
-// THE KILN WARDENS AND THE DEEPROOT COURT ARE POSTINGS, NOT SECTS. `sects.ts`
+// THE TRIPOD WARDENS AND THE DEEPROOT COURT ARE POSTINGS, NOT SECTS. `sects.ts`
 // has said so about the Wardens from the start - *"It teaches nothing and takes
 // nobody"* - and `PostingSchema` in the governance catalog states the shape in
 // full: there is no application to make, and the decision is taken by somebody
@@ -202,9 +202,9 @@ export function everybodyOnARoll(): readonly RollEntry[] {
 // every weight one person carries across every roll they appear on sums to
 // exactly one.
 //
-//     0.9 at the posting      They are standing the watch. When the Kiln fields
+//     0.9 at the posting      They are standing the watch. When the Tripod fields
 //                             what it has, it fields them, and a warden at the
-//                             world-heart is the Kiln's in every way that
+//                             world-heart is the Tripod's in every way that
 //                             decides anything today.
 //     0.1 at the sending      The tie, and it is real: they came from there,
 //         house               they are still of it, and it will have them back.

@@ -380,7 +380,7 @@ describe('asking', () => {
         const { game } = makeGame({ provider });
         await game.newRun('Villager');
 
-        const said = 'I ask the steward what the Sill is, and mention who sent me.';
+        const said = 'I ask the steward what the Sluice is, and mention who sent me.';
         await game.act(said);
 
         const user = provider.calls.at(-1)!.messages.find(m => m.role === 'user')!.content;

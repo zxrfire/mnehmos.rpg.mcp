@@ -56,7 +56,7 @@ const never = { next: () => 0.999999 };
 describe('the same call answers for every kind of thing', () => {
     it('a hull, a sabre, a carriage, a plate and a manual with the same row get the same answer', () => {
         const rows: ThingUnderForce[] = [
-            { id: 'a', name: 'a spirit boat', power: 29, significance: 'significant', tags: ['conveyance'], data: {} },
+            { id: 'a', name: 'a spirit skiff', power: 29, significance: 'significant', tags: ['conveyance'], data: {} },
             { id: 'b', name: 'a sabre', power: 29, significance: 'significant', tags: [], data: {} },
             { id: 'c', name: 'a carriage', power: 29, significance: 'significant', tags: ['conveyance'], data: {} },
             { id: 'd', name: 'a formation plate', power: 29, significance: 'significant', tags: [], data: {} },
@@ -76,7 +76,7 @@ describe('the same call answers for every kind of thing', () => {
         // check is mechanical rather than rhetorical: the module must not name
         // a single kind of object in a way that could steer an outcome.
         const boat = whatBecomesOfIt(
-            { id: 'x', name: 'a spirit boat', power: 20, significance: 'significant', tags: [], data: {} },
+            { id: 'x', name: 'a spirit skiff', power: 20, significance: 'significant', tags: [], data: {} },
             hand(34), always
         );
         const sword = whatBecomesOfIt(
@@ -207,7 +207,7 @@ describe('counted and tracked are different answers and both are correct', () =>
             ownerId: 'sect-a', ownerName: 'Crimson Abyss Fortress'
         });
         const out = whatBecomesOfIt(row, hand(34), always);
-        const back = writeBack(row, out, { onDay: 900, source: 'the war with the Kiln Clan' });
+        const back = writeBack(row, out, { onDay: 900, source: 'the war with the Tripod Clan' });
         expect(back.row).not.toBeNull();
         expect(isRuined(back.row as ObjectRecord)).toBe(true);
         expect((back.row as ObjectRecord).ownerId).toBe('sect-a');
@@ -217,7 +217,7 @@ describe('counted and tracked are different answers and both are correct', () =>
 
 describe('being broken and being mended are events in the thing\'s history', () => {
     it('a hole is a link in the chain with a date and a cause on it', () => {
-        const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25, ownerName: 'the Kiln Clan' });
+        const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25, ownerName: 'the Tripod Clan' });
         const out = whatBecomesOfIt(row, hand(30), never);
         const back = writeBack(row, out, { onDay: 4242, source: 'the war with Crimson Abyss Fortress' });
         const marked = back.row as ObjectRecord;

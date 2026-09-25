@@ -7,7 +7,7 @@
  *
  *   no hull in any world     `TRACKED_CRAFT` is five rows and the seeder read
  *                            none of them. Measured on three seeds at three
- *                            hundred years: zero spirit boats, and none ever
+ *                            hundred years: zero spirit skiffs, and none ever
  *                            built either, because a heaven-grade bill wants six
  *                            cores and the materials errand is capped below the
  *                            rung that brings one home. The only thing in the
@@ -26,7 +26,7 @@
  *
  * ── WHAT THE FIGURE IS ───────────────────────────────────────────────────
  *
- * A named carriage is 700 work-days and 40,000 stones; a hull is 2,400, so a
+ * A titled carriage is 700 work-days and 40,000 stones; a hull is 2,400, so a
  * hull is 137,143. Against the world that produced it: seeded purses run 200 to
  * 1,400, and the measured median purse at a hundred years is around 150,000. So
  * nobody can buy one in a fresh world at any price, a middling house spends

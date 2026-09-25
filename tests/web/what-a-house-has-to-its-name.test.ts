@@ -139,7 +139,7 @@ describe('what is counted as theirs', () => {
      */
     /**
      * The ground is public, and the record and the ground can disagree. The
-     * Pavilion holds the Gorge Head outright while the Third Sill's book still
+     * Pavilion holds the Gorge Head outright while the Third Sluice's book still
      * carries it as a tenant; the Mist Court holds its own line inside it.
      */
     it('says what ground a house holds, on the record and as it stands', () => {
@@ -149,7 +149,7 @@ describe('what is counted as theirs', () => {
 
         const pavilion = read('sect-azure-cloud-pavilion', 'The Azure Cloud Pavilion');
         expect(pavilion).toMatch(/holds The Gorge Head/);
-        expect(pavilion).toMatch(/On the record: Still carried on the Third Sill's book/);
+        expect(pavilion).toMatch(/On the record: Still carried on the Third Sluice's book/);
         expect(pavilion).toMatch(/On the ground: Held outright and openly/);
 
         const mist = read('sect-azure-mist-court', 'The Azure Mist Court');
@@ -182,7 +182,7 @@ describe('what is counted as theirs', () => {
      * the same fact. A craft is moored and never carried - `craft()` and
      * `mintCraft` both set `possessorId: null`, because a hull with a possessor
      * is one `bestObjectHeldBy` would arm somebody with - so every hull and
-     * every named carriage in the world was owned by a house and listed against
+     * every titled carriage in the world was owned by a house and listed against
      * none of them. A visitor asking what the Azure Cloud Pavilion had to its
      * name was told about its shelves and not about the best hull in two
      * provinces, sitting in its own yard.

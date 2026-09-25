@@ -17,14 +17,14 @@
  * institution has no place for their own child - and they get there by opposite
  * routes, which is worth keeping visible rather than collapsing:
  *
- *   THE HOLLOW COURT      because of its BAR. It only wants people capable of
+ *   THE EMPYREAN COURT      because of its BAR. It only wants people capable of
  *                         reaching immortality, which is not a high standard so
  *                         much as a different one, and most children of even
  *                         the greatest cultivators are not that. The child
  *                         fails a standard, and being told that about your own
  *                         child is hard; being the child is harder.
  *
- *   THE KILN COURT        because there is NO INTAKE AT ALL. Nobody joins
+ *   THE TRIPOD COURT        because there is NO INTAKE AT ALL. Nobody joins
  *   THE ROOT SILL COURT   either of them. People arrive by being appointed to a
  *                         posting, by the apex above or by a sect below, and a
  *                         child cannot be appointed to a posting. There is no
@@ -32,7 +32,7 @@
  *
  * AND WHAT FOLLOWS FROM EACH IS DIFFERENT
  * ---------------------------------------
- * The Hollow Court's discretion is absolute, so its version of this is a
+ * The Empyrean Court's discretion is absolute, so its version of this is a
  * mystery: the identity goes to the friend being asked and to nobody else, the
  * child included, and a member's child grows up with a placement they cannot
  * account for, a memento nobody has explained, a good guess at the shape of it
@@ -95,10 +95,10 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
         whyItCannotKeepThem:
             'It only wants people capable of reaching the last realm. That is not a high standard, it is a different one - a house content to produce a strong elder will take a promising child gladly, and a body that only wants people who could cross the Lid will not, because most children of even the greatest cultivators are not that. The Court has never made an exception, has never been asked to make one, and would be a different institution if it did: the whole reason four people at that height can protect each other through a crossing is that everybody there is either somebody who will need protecting or somebody who can provide it.',
         whereTheChildGoes:
-            'To a strong house, on a favour - which is the ordinary mechanic doing exactly what it is for, not a special arrangement. A Seat is at the last realm, so their word will move any bar that moves at all, and what it buys is what a favour always buys: a house takes a child it would have refused on the admission ordinal, at an age where the child has no ordinal. The favour runs through the friendship and never through the institution - nobody writes to the Hollow Court about a child and nobody at the Hollow Court writes as the Hollow Court about one - because the Court is not a party and has no view.\n\n'
+            'To a strong house, on a favour - which is the ordinary mechanic doing exactly what it is for, not a special arrangement. A Seat is at the last realm, so their word will move any bar that moves at all, and what it buys is what a favour always buys: a house takes a child it would have refused on the admission ordinal, at an age where the child has no ordinal. The favour runs through the friendship and never through the institution - nobody writes to the Empyrean Court about a child and nobody at the Empyrean Court writes as the Empyrean Court about one - because the Court is not a party and has no view.\n\n'
             + 'And one of the doors open to them is the one house in the world where the word buys nothing. The Azure Cloud Pavilion has a probation gate at the floor: it would have taken the child off the road, tested them and started spending, and it will not lower its disciple bar for a Seat any more than for anybody else. So a child placed there is placed on no favour at all, owes the Pavilion nothing and is owed nothing - which is the only placement of the kind in the catalog where nobody is carrying a debt, and is either the cleanest thing a Seat can do for a child or a way of giving them nothing, depending on which Seat you ask.',
         whatTheChildKnows:
-            'The shape and not the name. The identity goes to the friend being asked and to nobody else, the child included, because parents know children talk - and the discretion needs no enforcement, because naming a Hollow Court member burns the namer\'s own face in front of exactly the people whose trust is their entire position. Nobody at that level would take money for it and no sum would make sense. So what the child actually has is a placement they did not earn and cannot fully explain, sometimes a memento that was left and never accounted for, a near-certainty about the shape of it because nothing else explains the placement, and no name at all. The one person who could tell them will not, and their refusal is honourable rather than cruel.',
+            'The shape and not the name. The identity goes to the friend being asked and to nobody else, the child included, because parents know children talk - and the discretion needs no enforcement, because naming an Empyrean Court member burns the namer\'s own face in front of exactly the people whose trust is their entire position. Nobody at that level would take money for it and no sum would make sense. So what the child actually has is a placement they did not earn and cannot fully explain, sometimes a memento that was left and never accounted for, a near-certainty about the shape of it because nothing else explains the placement, and no name at all. The one person who could tell them will not, and their refusal is honourable rather than cruel.',
         andWhetherItIsPermanent:
             'Permanent, because the parent is never leaving. A Seat does not serve a term and does not come back, so a child placed this way is placed for good and the receiving house knows it is taking a member rather than a boarder. And the placement is a gamble rather than a gift: a child placed high who cannot meet the receiving house\'s standard does not go home, because there is no home to go to - they wash out into a servant\'s position and stay, which is what a house does with somebody it was given and cannot promote. The parent placed them at a friendly strong court precisely to avoid the bar that shut them out of the Court, and the friendly court has a bar of its own. The risk was moved rather than removed.',
         whatItCostsTheParent:
@@ -108,13 +108,13 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
         factionId: 'court-kiln',
         reason: 'no intake at all',
         whyItCannotKeepThem:
-            'There is no door, and a favour is the wrong instrument - a word skips an admission ordinal and there is no admission here to skip. The Kiln takes nobody on any terms: people stand here because they were appointed to a posting, by the Earth Vein Tower or by a sect under it or friendly to it, and a child cannot be appointed to a posting. It is not that a child would fail an assessment - there is no assessment, no admission figure anybody has ever met, and no procedure by which an application could be made. Che Yuan has turned away something over four thousand people and not one of them was ever going to be admitted.',
+            'There is no door, and a favour is the wrong instrument - a word skips an admission ordinal and there is no admission here to skip. The Tripod takes nobody on any terms: people stand here because they were appointed to a posting, by the Earth Vein Tower or by a sect under it or friendly to it, and a child cannot be appointed to a posting. It is not that a child would fail an assessment - there is no assessment, no admission figure anybody has ever met, and no procedure by which an application could be made. Che Yuan has turned away something over four thousand people and not one of them was ever going to be admitted.',
         whereTheChildGoes:
             'Home, which is not here. An appointee is on loan from somewhere and the child goes to the somewhere: sent by the Earth Vein Tower, the child goes to the Survey; sent by a sect below, the child goes back to that sect. Nothing has to be arranged, because the parent\'s house is the child\'s house and the posting is only where the parent currently is. The one case that needs a favour is an appointee promoted into the apex during or after the term, who then asks for their child the way anybody asks - on somebody\'s word, openly, because a posting is a public appointment and everybody already knows who holds one.',
         whatTheChildKnows:
             'Everything. There was never anything to hide: their parent\'s name is on a gate the province has been reading for nine hundred years. What the child inherits is not a mystery but an expectation, and a debt - they are in this house because somebody who will come back from the datum with precedence asked, and everybody in the house knows it, including them. Being visibly somebody\'s is a different weight from being secretly somebody\'s and is not obviously the lighter one.',
         andWhetherItIsPermanent:
-            'The appointment is temporary and the placement is not, and both parties understood that going in without either saying it. A term at the Kiln runs in decades; a child placed at the start of one is grown by the end of it, taught by the receiving house, on its roll, with its rank ladder behind them. So the Warden comes back alone, to a body that never had their child in it, and the house that raised them has a member rather than a guest - which is the actual repayment and is larger than the favour was.',
+            'The appointment is temporary and the placement is not, and both parties understood that going in without either saying it. A term at the Tripod runs in decades; a child placed at the start of one is grown by the end of it, taught by the receiving house, on its roll, with its rank ladder behind them. So the Warden comes back alone, to a body that never had their child in it, and the house that raised them has a member rather than a guest - which is the actual repayment and is larger than the favour was.',
         whatItCostsTheParent:
             'A decade or three of somebody else raising them, and the certainty that the child will not come back either. It is a smaller price than the Court pays and it is paid in public, which some find harder: everybody knows exactly what was given up and can watch the account being settled.'
     },
@@ -126,11 +126,11 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
         whereTheChildGoes:
             'Home, by the same three routes and into a different kind of house. Sent by the Myriad Course Hall, the child goes to the Myriad Course Hall - which means to a face rather than to a sect, into an arrangement that ranks people by faces worked and deaths avoided, so what they get is not a rank but a schedule, and a schedule is a thing that can be honoured exactly. Sent by a sect below, the child goes back to that sect. Promoted into the apex, the appointee asks a favour like anybody else. The Deeproot Court has never been able to explain the first of the three to anybody from the Jade Gorge.',
         whatTheChildKnows:
-            'Everything, and more than at the Kiln, because the roll here is public. Every appointee is a name somebody can read, so a child knows their parent\'s name, the term, and where it sits among nine hundred years of names above it. What they also know, and what nobody at the Kiln has to carry, is that the name is on a document one of the three apexes behaves as though does not exist - the Earth Vein Tower has never referred to this body in correspondence, so a child of this house grows up holding a lineage that is public, verifiable and formally unacknowledged.',
+            'Everything, and more than at the Tripod, because the roll here is public. Every appointee is a name somebody can read, so a child knows their parent\'s name, the term, and where it sits among nine hundred years of names above it. What they also know, and what nobody at the Tripod has to carry, is that the name is on a document one of the three apexes behaves as though does not exist - the Earth Vein Tower has never referred to this body in correspondence, so a child of this house grows up holding a lineage that is public, verifiable and formally unacknowledged.',
         andWhetherItIsPermanent:
-            'Same answer and a sharper edge. The appointment ends, the placement does not, and more Deeproot Court appointees stay on than Kiln ones - so a returning Warden here is often coming back to a body their child never entered while their own term has become a career. The Myriad Course Hall has no vocabulary for any of this and has never been asked for one.',
+            'Same answer and a sharper edge. The appointment ends, the placement does not, and more Deeproot Court appointees stay on than Tripod ones - so a returning Warden here is often coming back to a body their child never entered while their own term has become a career. The Myriad Course Hall has no vocabulary for any of this and has never been asked for one.',
         whatItCostsTheParent:
-            'The same decades, publicly, plus one thing the Kiln does not charge: the child is raised inside the patron that took the posting, which means the parent has handed the Myriad Course Hall a person as well as a term, and has done it without anybody proposing it or writing it down.'
+            'The same decades, publicly, plus one thing the Tripod does not charge: the child is raised inside the patron that took the posting, which means the parent has handed the Myriad Course Hall a person as well as a term, and has done it without anybody proposing it or writing it down.'
     }
 ];
 
@@ -142,7 +142,7 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
  * Washing out, which is what makes a placement a risk rather than a gift.
  *
  * It is an outcome of being placed above your ability rather than a rule about
- * any one body, and it applies wherever a child is placed - the Hollow Court's
+ * any one body, and it applies wherever a child is placed - the Empyrean Court's
  * children included, which is the sharpest version of it: their parent placed
  * them at a friendly strong court precisely to avoid the bar that shut them out
  * of the Court, and the friendly court has a bar of its own.
@@ -172,7 +172,7 @@ export const WASHING_OUT = {
 /**
  * The object at the centre of the one storyline this produces.
  *
- * On the Hollow Court's side only, because it is the only one of the three
+ * On the Empyrean Court's side only, because it is the only one of the three
  * whose child has nothing else to go on. It behaves like every other object in
  * this world: an ordinary row in the ordinary catalog, with an ordinary power,
  * held by an ordinary person, and nothing about it exempt from anything. What

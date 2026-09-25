@@ -3,7 +3,7 @@
  *
  * FOUND BY PLAYING, engine-only, at Wind Turn on world `a-xianxia-run`. The
  * wall in that square carries two dated bills - Tranquil Oasis Sect in 24 days,
- * Cold Sword Sect in 64 - and both of these spent a single day:
+ * Unadorned Sword Sect in 64 - and both of these spent a single day:
  *
  *     > I wait until the intake     Waiting of 1 day was intended.
  *     > I wait for the intake       Waiting of 1 day was intended.

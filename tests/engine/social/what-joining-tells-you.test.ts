@@ -10,7 +10,7 @@
  *   "you also wouldn't know or care to know the names of all the guest
  *    disciples and servants"
  *
- * The third is not a gate and is not built as one: nobody withholds a herb boy's
+ * The third is not a gate and is not built as one: nobody withholds a medicine boy's
  * name, it simply was not part of what anybody recited to you. Which is why the
  * grant reaches the TOP of the ladder rather than filtering the bottom out of a
  * roster dump.

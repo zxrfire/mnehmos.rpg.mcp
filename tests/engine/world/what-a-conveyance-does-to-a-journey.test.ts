@@ -18,7 +18,7 @@
  *   4. FLIGHT BELONGS TO SWORD SCHOOLS. Ruled by the design owner. An
  *      exclusivity rule is exactly the decision AGENTS.md says needs a test.
  *   5. WHAT A CHEST BURNS, AND WHAT DOES NOT BURN AT ALL. The design owner:
- *      spirit boats are fuelled by spirit stones, and a house sends as often as
+ *      spirit skiffs are fuelled by spirit stones, and a house sends as often as
  *      its treasury allows. Nothing in the engine consumed anything before
  *      this - no `fuel`, no charge, no stones on the row - while `prompt.ts`
  *      had been telling the narrator stones were fuel the whole time, so the
@@ -238,7 +238,7 @@ describe('putting a party on the road', () => {
  * `subject` on the technique row, which the schema always carried and
  * `daoMatches` always read.
  */
-describe('flight on one\'s own blade', () => {
+describe('soaring on one\'s own blade', () => {
     // The row plus the road it stands on, which is what the caller passes and
     // what the gate now reads instead of a `'sword'` constant. A catalog row
     // carries `subjects` and the gate takes the scalar, the same way
@@ -474,7 +474,7 @@ describe('what a journey burns', () => {
      * a sentence.
      *
      * A sending to open an inheritance is 120 walking days with six hands. A
-     * spirit boat at heaven grade is under way 24 of those days, so six heads
+     * spirit skiff at heaven grade is under way 24 of those days, so six heads
      * crossing once is 144 stones, against a seeded purse of 200 to 1,400 and
      * a payroll of 45 a member a year. A poor house gets one crossing and then
      * cannot make payroll.

@@ -341,7 +341,7 @@ const BY_BAND: readonly { from: number; to: number; what: string; lines: string[
         lines: [
             'I cultivate for fifty years',
             'I size up my chances against the barrier',
-            'what do I know of the Hollow Court',
+            'what do I know of the Empyrean Court',
             'I look for an inheritance ground'
         ]
     },
@@ -588,7 +588,7 @@ const asPct = (x: number) => x === 0 ? '  0%' : x < 0.01 ? (x * 100).toFixed(1) 
 function cataclysms(): void {
     rule('5. THE LARGEST THINGS IN THE SETTING, MOVING');
 
-    // ── the whole world against the Hollow Court ──────────────────────────
+    // ── the whole world against the Empyrean Court ──────────────────────────
     const seats = sectThreat('sect-hollow-court')?.withdrawn?.seats ?? [];
     const hollowArtifacts = artifactsOwnedBy('sect-hollow-court').map(a => a.power ?? 0);
     const court = seats.map((seat, i) => fighter('seat-' + i, seat.ordinal, hollowArtifacts[i]));

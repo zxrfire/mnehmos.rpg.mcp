@@ -103,7 +103,7 @@ const CORE_FORMATION_TOP = REALM_TIERS[2].ordinalEnd;
  * Houses that hold a power the province cannot reach, and therefore cannot see.
  *
  * THIS USED TO BE A LIST OF FACTIONS WITH NO ROSTER, AND THAT WAS THE DEFECT.
- * The guard below required the Hollow Court's member count to be `undefined`,
+ * The guard below required the Empyrean Court's member count to be `undefined`,
  * which encodes "the Court has no members". What the design means is "nobody
  * outside the Court knows who its members are", and **absent and withheld are
  * different facts**. The test had the wrong one, and while it stood it forced
@@ -514,7 +514,7 @@ describe('members catalog', () => {
         // other, and a name still says which one somebody is from.
         //
         // A HOUSE THAT WITHHOLDS NAMES CONTRIBUTES NO CLAN NAMES TO THE POOL.
-        // The Hollow Court's Seats are carried as positions - `First Seat` is
+        // The Empyrean Court's Seats are carried as positions - `First Seat` is
         // what stands in for a name, because no name of theirs leaves those
         // mountains - so feeding them in would put `First` and `Third` into the
         // Jade Gorge clan pool and make the Buddha Precipice surname in `Luo
@@ -606,7 +606,7 @@ describe('the strongest member is somebody you can meet', () => {
             const mine = MEMBERS.filter(m => m.factionId === sect.id);
             if (mine.length === 0) {
                 // The one faction with no roster still has to put somebody on
-                // its own number. The Hollow Court does it with positions
+                // its own number. The Empyrean Court does it with positions
                 // rather than names, on purpose, so the claim is asserted
                 // against the seats instead of against a member.
                 const withdrawn = WITHDRAWN_POWERS[sect.id];
@@ -655,9 +655,9 @@ describe('a dao house is a family', () => {
     /**
      * A house does not recruit; it adopts, and adoption here is the name. So a
      * house roll is one surname repeated, and the surname is the founder's -
-     * Yan Duo of the Ninefold Karma Palace, Cao Xun of the Flowing Light Tower, Lin Zhao of
-     * the Vermilion Seal Terrace, Gu Yao of Jade Register Hall, Fu Chang of the Shrinking Earth Pavilion, Xu
-     * Ping of the Immovable Mountain Temple. The Still Blade Peak's founder is unrecorded and the Chu
+     * Yan Duo of the Ninefold Karma Palace, Cao Xun of the Flowing Star Tower, Lin Zhao of
+     * the Vermilion Sigil Terrace, Gu Yao of Jade Register Hall, Fu Chang of the Shrinking Earth Pavilion, Xu
+     * Ping of the Immovable Mountain Temple. The Still Blade Pavilion's founder is unrecorded and the Chu
      * are known by nothing except that they are all Chu.
      *
      * The exception is a woman who married in and declined to change, and it is

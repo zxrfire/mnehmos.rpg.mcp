@@ -388,7 +388,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Tao Chunxi',
         factionId: 'sect-verdant-spring-valley',
         rankIndex: 0,
-        rank: 'Herb Boy',
+        rank: 'Medicine Boy',
         realmOrdinal: 3,
         role: 'peer',
         wants: 'to be allowed to touch a patient, once, under supervision',
@@ -473,7 +473,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Nine Peaks Ascetic Order --------------------------------------
+    // --- Nine Peaks Ascetic Sect --------------------------------------
     {
         id: 'member-kuang-da',
         name: 'Kuang Da',
@@ -483,7 +483,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 6,
         role: 'peer',
         wants: 'a smaller stone, and will die before he asks for one',
-        fears: 'admitting he chose the stone to impress somebody who left the Order the following spring',
+        fears: 'admitting he chose the stone to impress somebody who left the Sect the following spring',
         detail: 'His stone is the largest in living memory, he has carried it eleven years, and the sound of him putting it down is how the refectory knows he has arrived.',
         outlier: false,
         outlierReason: null,
@@ -501,7 +501,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'peer',
         wants: 'to be first up the ninth peak once, in front of the whole intake',
         fears: 'the workings, and will not walk the fourth peak path at all',
-        detail: 'Counts her steps aloud on the climb, which the entire Order finds unbearable and nobody has ever told her.',
+        detail: 'Counts her steps aloud on the climb, which the entire Sect finds unbearable and nobody has ever told her.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -513,7 +513,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Sang Zhiyuan',
         factionId: 'sect-nine-peaks-ascetic-order',
         rankIndex: 3,
-        rank: 'Peak Warden',
+        rank: 'Crag Warden',
         realmOrdinal: 17,
         role: 'master',
         wants: 'the workings surveyed and the question of Meng Da settled in writing',
@@ -553,7 +553,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Ren Xiaomao',
         factionId: 'sect-clear-river-alliance',
         rankIndex: 0,
-        rank: 'Boat Hand',
+        rank: 'Oar Hand',
         realmOrdinal: 2,
         role: 'peer',
         wants: 'her own boat, which is eleven years of wages at the rate she is paid',
@@ -573,7 +573,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'River Disciple',
         realmOrdinal: 7,
         role: 'peer',
-        wants: 'to be taken on the border road run to Clear River Ford once, to see it',
+        wants: 'to be taken on the border road run to Clear River Ferry once, to see it',
         fears: 'land, which he says as though it were an ordinary thing to be afraid of',
         detail: 'Has never slept more than one night away from water in his life and offers this as a qualification.',
         outlier: false,
@@ -590,14 +590,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'River Disciple',
         realmOrdinal: 9,
         role: 'rival',
-        wants: 'the Ford Master\'s seat at Clear River Ford, which is the only seat on the border road',
+        wants: 'the Ferry Master\'s seat at Clear River Ferry, which is the only seat on the border road',
         fears: 'that the River Elders are right and he cannot read water',
-        detail: 'Has twice reported another disciple\'s smuggling to the Ford Master, been thanked both times, and promoted neither.',
+        detail: 'Has twice reported another disciple\'s smuggling to the Ferry Master, been thanked both times, and promoted neither.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
         rivalry: {
-            grievance: 'Somebody the Ford Master likes is going to get Clear River Ford, and Fang Lianzhou has decided in advance who it is.',
+            grievance: 'Somebody the Ferry Master likes is going to get Clear River Ferry, and Fang Lianzhou has decided in advance who it is.',
             beatableBecause: 'His entire method is information, and he has no allies to give him any - the Alliance settles debts in crossings and nobody owes him one. Cornered without a river at his back he is a nine-layer cultivator with a boat pole, and he knows it, which is why he has never once started anything on land.'
         },
         teaching: null
@@ -607,7 +607,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Nie Zhaoxin',
         factionId: 'sect-clear-river-alliance',
         rankIndex: 3,
-        rank: 'Ford Master',
+        rank: 'Ferry Master',
         realmOrdinal: 14,
         role: 'master',
         wants: 'to federate the border road and be remembered as the man who did it',
@@ -619,8 +619,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: {
             knows: 'Every crossing, smuggler, toll dodge and drowned secret between the eleven river towns, in more detail than the charts hold.',
-            mayNotSay: 'The name of a client of the carrying trade, which is the one thing the Alliance sells and the one thing it will expel a Ford Master over.',
-            costsThem: 'A straight answer about the fords is worth money to the Thousand Treasure Pavilion, he knows exactly what it is worth, he gives it away anyway, and it has already cost him a River Elder\'s seat.'
+            mayNotSay: 'The name of a client of the carrying trade, which is the one thing the Alliance sells and the one thing it will expel a Ferry Master over.',
+            costsThem: 'A straight answer about the fords is worth money to the Thousand Relic Pavilion, he knows exactly what it is worth, he gives it away anyway, and it has already cost him a River Elder\'s seat.'
         }
     },
     {
@@ -667,7 +667,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Lamp Novice',
         realmOrdinal: 3,
         role: 'peer',
-        wants: 'eleven days\' cart fare back to Iron Ridge, to fetch her brother',
+        wants: 'eleven days\' cart fare back to Iron Crest, to fetch her brother',
         fears: 'that the cough is the thing that decides it and not the fare',
         detail: 'Rinses her mouth with vinegar before every meal, which no Jade Gorge native does and which nobody at the Temple has asked her about.',
         outlier: false,
@@ -701,7 +701,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Inner Monk',
         realmOrdinal: 12,
         role: 'peer',
-        wants: 'a posting to the Iron Ridge Temple, eleven days away',
+        wants: 'a posting to the Iron Crest Temple, eleven days away',
         fears: 'that he wants it because it is eleven days from his family\'s creditors',
         detail: 'Cuts his own hair rather than let anybody do it, badly, in front of a polished pan, on the first of the month.',
         outlier: false,
@@ -810,7 +810,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Kong Zhaoting',
         factionId: 'sect-lantern-hall',
         rankIndex: 3,
-        rank: 'Keeper of Names',
+        rank: 'Keeper of Scrolls',
         realmOrdinal: 18,
         role: 'senior',
         wants: 'to stop being the one sent to funerals',
@@ -923,7 +923,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: false,
         rivalry: {
             grievance: 'Somebody arrived after him, said nothing about where they came from, and is being given work he asked for.',
-            beatableBecause: 'He argues rank in a house that does not have one below Sill-Sworn, so every complaint he makes is heard as a complaint about the institution rather than about a person. The clerks have started routing his errands through somebody else to avoid the conversation, which is exactly the thing he is complaining about, and he has not noticed that he built it.'
+            beatableBecause: 'He argues rank in a house that does not have one below Sluice-Sworn, so every complaint he makes is heard as a complaint about the institution rather than about a person. The clerks have started routing his errands through somebody else to avoid the conversation, which is exactly the thing he is complaining about, and he has not noticed that he built it.'
         },
         teaching: null
     },
@@ -953,7 +953,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Lou Zhensheng',
         factionId: 'sect-earth-vein-tower',
         rankIndex: 4,
-        rank: 'Sill-Sworn',
+        rank: 'Sluice-Sworn',
         realmOrdinal: 9,
         role: 'senior',
         wants: 'the posting back that he was moved off eleven years ago',
@@ -1029,7 +1029,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Factor',
         realmOrdinal: 15,
         role: 'rival',
-        wants: 'the Clear River Ford rate desk, which decides what the entire border road pays',
+        wants: 'the Clear River Ferry rate desk, which decides what the entire border road pays',
         fears: 'an audit of the nineteen percent',
         detail: 'Keeps a private book of who has bought below rate and from whom, and it is more accurate than the Stone Marrow Hall\'s own.',
         outlier: false,
@@ -1063,7 +1063,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- Thousand Treasure Pavilion --------------------------------------
+    // --- Thousand Relic Pavilion --------------------------------------
     {
         id: 'member-mo-guyun',
         name: 'Mo Guyun',
@@ -1180,7 +1180,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Inner Alchemist',
         realmOrdinal: 15,
         role: 'rival',
-        wants: 'the Cauldron Master\'s furnace, which is allocated on results and nothing else',
+        wants: 'the Crucible Master\'s furnace, which is allocated on results and nothing else',
         fears: 'a public examination',
         detail: 'Has twice reported another journeyman\'s batch as contaminated, was correct twice, and is disliked for it by people who agree with him.',
         outlier: false,
@@ -1197,7 +1197,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Nie Shiyu',
         factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 3,
-        rank: 'Cauldron Master',
+        rank: 'Crucible Master',
         realmOrdinal: 18,
         role: 'master',
         wants: 'to establish, one way or the other, whether the fourth line is a step in the method',
@@ -1231,7 +1231,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Ashen Forge Clan --------------------------------------------------
+    // --- Ashen Anvil Clan --------------------------------------------------
     {
         id: 'member-jin-erchun',
         name: 'Jin Erchun',
@@ -1305,7 +1305,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Hollow Bell Wanderers ---------------------------------------------
+    // --- Wayside Chime Wanderers ---------------------------------------------
     {
         id: 'member-hu-anzhou',
         name: 'Hu Anzhou',
@@ -1345,7 +1345,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Zhan Deyi',
         factionId: 'sect-hollow-bell-wanderers',
         rankIndex: 1,
-        rank: 'Bellringer',
+        rank: 'Chime Ringer',
         realmOrdinal: 6,
         role: 'peer',
         wants: 'nothing much, and says so with a sincerity people find irritating',
@@ -1369,7 +1369,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         // the top of its rung and still is.
         realmOrdinal: 10,
         role: 'rival',
-        wants: 'to be the one who brings the Thousand Treasure Pavilion something worth a floor lot',
+        wants: 'to be the one who brings the Thousand Relic Pavilion something worth a floor lot',
         fears: 'dying in a hole for a fragment worth eleven stones',
         detail: 'Has robbed two members of his own league and is still in it, because the Wanderers have no mechanism for expelling anybody.',
         outlier: false,
@@ -1411,7 +1411,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Xun Zhenning',
         factionId: 'sect-hollow-bell-wanderers',
         rankIndex: 5,
-        rank: 'Bell Keeper',
+        rank: 'Chime Keeper',
         realmOrdinal: 13,
         role: 'senior',
         wants: 'ground, quietly, and would deny wanting it',
@@ -1424,7 +1424,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Cold Sword Sect ---------------------------------------------------
+    // --- Unadorned Sword Sect ---------------------------------------------------
     {
         id: 'member-shan-ruyi',
         name: 'Shan Ruyi',
@@ -1521,7 +1521,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Yue Linshuang',
         factionId: 'sect-frostmirror-court',
         rankIndex: 0,
-        rank: 'Snow Servant',
+        rank: 'Sleet Servant',
         realmOrdinal: 14,
         role: 'peer',
         wants: 'to stop being grateful, which is the only thing anyone at the Ward has ever asked of her',
@@ -1571,7 +1571,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
             costsThem: 'Explaining why he cannot teach you requires describing what the arts do to an ordinary root, and he has watched that happen once, to a friend.'
         }
     },
-    // The Rime Disciples have a stated position in `faction-character.ts` and
+    // The Hoarfrost Disciples have a stated position in `faction-character.ts` and
     // until now nobody to hold it. A disagreement with no one on one side of it
     // is a fact about a document rather than about a court.
     {
@@ -1579,7 +1579,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Xiao Hanning',
         factionId: 'sect-frostmirror-court',
         rankIndex: 2,
-        rank: 'Rime Disciple',
+        rank: 'Hoarfrost Disciple',
         realmOrdinal: 18,
         role: 'peer',
         wants: 'the supervised intake tried once, on five volunteers, with the figure published whichever way it comes out',
@@ -1601,7 +1601,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'a reply of any wording at all from an office that has not answered eleven letters',
         fears: 'that the silence is not contempt but a filing decision, and that the Ward is not in the file',
-        detail: 'Drafts the correspondence to the Third Sill and rewrites every sentence that could be quoted back, which is why the Court\'s claim on the arterial has never once been stated in a form anybody can hold it to.',
+        detail: 'Drafts the correspondence to the Third Sluice and rewrites every sentence that could be quoted back, which is why the Court\'s claim on the arterial has never once been stated in a form anybody can hold it to.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -1609,7 +1609,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Kiln Wardens ------------------------------------------------------ A
+    // --- Tripod Wardens ------------------------------------------------------ A
     // closed gate is not an empty compound. The Wardens take no applicants, and the
     // header of this file used to read that as nobody being here at all - but nine
     // hundred nodes held and nine hundred lit is staffed work, the zero in their
@@ -1695,7 +1695,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Han Shuqing',
         factionId: 'sect-the-severed',
         rankIndex: 0,
-        rank: 'Bound',
+        rank: 'Tethered',
         realmOrdinal: 7,
         role: 'peer',
         wants: 'to stop being frightened of a ledger she has already signed',
@@ -1726,13 +1726,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-third-cut-at-scarwater',
-        name: 'The Third Cut at Clear River Ford',
+        name: 'The Third Cut at Clear River Ferry',
         factionId: 'sect-the-severed',
         rankIndex: 2,
         rank: 'Third Cut',
         realmOrdinal: 17,
         role: 'rival',
-        wants: 'the cutting house at Green Water City, which is four times the size of his',
+        wants: 'the cutting house at Emerald Water City, which is four times the size of his',
         fears: 'nothing he will name, which is the doctrine and is also not true',
         detail: 'Recites what he has given up to applicants, in order, as a sales pitch. The fourth item is a daughter.',
         outlier: false,
@@ -1888,7 +1888,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'peer',
         wants: 'out',
         fears: 'the Verdant Spring Valley, which hunts the Cult on principle and does not check rank first',
-        detail: 'Has a Verdant Spring herb boy\'s token she took off a body four years ago and has never dared sell.',
+        detail: 'Has a Verdant Spring medicine boy\'s token she took off a body four years ago and has never dared sell.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -1904,7 +1904,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 12,
         role: 'rival',
         wants: 'the Bountiful Sheaf Sect driven off the border sites entirely',
-        fears: 'the Caravan\'s factor at Clear River Ford, personally and by name',
+        fears: 'the Caravan\'s factor at Clear River Ferry, personally and by name',
         detail: 'Has killed two Bountiful Sheaf Sect in six years, can name them both, and does, at length, when drinking.',
         outlier: false,
         outlierReason: null,
@@ -2073,7 +2073,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: true,
         rivalry: null,
         teaching: {
-            knows: 'The whole flower road up to the last volume - the three lower canons, the setting, the nine-night opening, the petal cut and the bed array - and she teaches all of it to anybody the Ward has admitted.',
+            knows: 'The whole flower road up to the last volume - the three lower canons, the setting, the nine-vigil opening, the petal cut and the bed array - and she teaches all of it to anybody the Ward has admitted.',
             mayNotSay: 'What the Matriarch did to cross the rung above the road. She has not been forbidden it; she does not know, and she will say she does not know rather than let a bed hand think the answer is being kept from her.',
             costsThem: 'A season of her own setting, every time, because she watches a new pair of hands instead of working her own beds - and the Court counts a bed unworked exactly the way it counts one lost.'
         }
@@ -2164,7 +2164,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'rival',
         wants: 'the Thunder Warden\'s post at the tether',
         fears: 'the Frostmirror Court, one of whose disciples beat her once in front of witnesses',
-        detail: 'Has challenged the same Frostmirror Rime Disciple three times by letter and been ignored three times, and keeps the unanswered letters.',
+        detail: 'Has challenged the same Frostmirror Hoarfrost Disciple three times by letter and been ignored three times, and keeps the unanswered letters.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2256,7 +2256,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- Flowing Light Tower ---------------------------------------
+    // --- Flowing Star Tower ---------------------------------------
     {
         id: 'member-cao-chanming',
         name: 'Cao Chanming',
@@ -2296,7 +2296,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Cao Shuangqing',
         factionId: 'house-flowing-light',
         rankIndex: 2,
-        rank: 'Reader of Hours',
+        rank: 'Reader of Lots',
         // 19 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
@@ -2317,7 +2317,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- Vermilion Seal Terrace ----------------------------------------
+    // --- Vermilion Sigil Terrace ----------------------------------------
     {
         id: 'member-lin-shouzhen',
         name: 'Lin Shouzhen',
@@ -2374,7 +2374,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- Still Blade Peak ------------------------------------------
+    // --- Still Blade Pavilion ------------------------------------------
     {
         id: 'member-chu-changting',
         name: 'Chu Changting',
@@ -2494,11 +2494,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Fu Tuoyi',
         factionId: 'house-shrinking-earth',
         rankIndex: 0,
-        rank: 'Chain Bearer',
+        rank: 'Line Bearer',
         realmOrdinal: 10,
         role: 'peer',
         wants: 'a span of her own to hold',
-        fears: 'the Clear River Ford station never opening, which is nine years late',
+        fears: 'the Clear River Ferry station never opening, which is nine years late',
         detail: 'Walks everywhere at a measured pace and counts, cannot stop, and has stopped apologising for it.',
         outlier: false,
         outlierReason: null,
@@ -2515,7 +2515,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 15,
         role: 'peer',
         wants: 'the border road courier run, which is four days rather than eleven',
-        fears: 'the last forty li before Iron Ridge, which are on nobody\'s survey',
+        fears: 'the last forty li before Iron Crest, which are on nobody\'s survey',
         detail: 'Has walked the unsurveyed forty li twice, will not do it a third time, and will not say why.',
         outlier: false,
         outlierReason: null,
@@ -2528,10 +2528,10 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Fu Lingchuan',
         factionId: 'house-shrinking-earth',
         rankIndex: 2,
-        rank: 'Span Master',
+        rank: 'Measure Master',
         realmOrdinal: 21,
         role: 'master',
-        wants: 'the Clear River Ford station opened in his lifetime',
+        wants: 'the Clear River Ferry station opened in his lifetime',
         fears: 'that the Clear River Alliance is right that it would end them, because he thinks it would',
         detail: 'Carries the chain itself on every journey, physically, and it weighs eleven catties.',
         outlier: false,
@@ -2825,7 +2825,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Kang Shanhe',
         factionId: 'sect-six-li-patrol',
         rankIndex: 0,
-        rank: 'Marker',
+        rank: 'Stakehand',
         realmOrdinal: 1,
         role: 'peer',
         wants: 'a proper name, and will not choose one',
@@ -2842,7 +2842,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Pan Huiya',
         factionId: 'sect-six-li-patrol',
         rankIndex: 0,
-        rank: 'Marker',
+        rank: 'Stakehand',
         realmOrdinal: 3,
         role: 'peer',
         wants: 'to be allowed onto the burn edge',
@@ -2953,7 +2953,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Sheaf Binder',
         realmOrdinal: 7,
         role: 'peer',
-        wants: 'eleven days\' cart fare to Clear River Ford and a start on the other side',
+        wants: 'eleven days\' cart fare to Clear River Ferry and a start on the other side',
         fears: 'arriving there and being read one rank low by the insurance table',
         detail: 'Has the fare, in imported stones, and has had it for three years.',
         outlier: false,
@@ -3008,11 +3008,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: {
             knows: 'Sealed-site work, what a burn zone does to a body over a season, and the price of everything the region produces.',
             mayNotSay: 'The layout of the three worked nodes at the front of the ruin, because being the ones who know the way in is the Caravan\'s only advantage.',
-            costsThem: 'Every gleaner he trains properly is one who survives long enough to buy a cart fare to Clear River Ford, and eleven have.'
+            costsThem: 'Every gleaner he trains properly is one who survives long enough to buy a cart fare to Clear River Ferry, and eleven have.'
         }
     },
 
-    // --- Silver Island Market
+    // --- Silver Island Hall
     // ---------------------------------------------------
     {
         id: 'member-dryrun-ping',
@@ -3033,7 +3033,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-sui-out-of-bellhead',
-        name: 'Sui out of Bronze Bell Cliff',
+        name: 'Sui out of Bronze Gong Cliff',
         factionId: 'sect-silver-island-market',
         rankIndex: 1,
         rank: 'Watch',
@@ -3092,7 +3092,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         // the top of its rung and still is.
         realmOrdinal: 17,
         role: 'senior',
-        wants: 'the northern anchorage carried before the Market Master can put the question a third time',
+        wants: 'the northern anchorage carried before the Barge Master can put the question a third time',
         fears: 'being asked at the table, in front of the other three, whose name the salt flats are in',
         detail: 'Bought two salt flats a day north of the port over four seasons in his own name rather than the port\'s, and has an answer ready for a question nobody has yet put to him.',
         outlier: false,
@@ -3135,7 +3135,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Lian Wukuan',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
-        rank: 'Yoke Bearer',
+        rank: 'Load Bearer',
         realmOrdinal: 3,
         role: 'peer',
         wants: 'a route that ends somewhere with a roof on it, having been promised one four times',
@@ -3152,7 +3152,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Yi Bochen',
         factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
-        rank: 'Yoke Bearer',
+        rank: 'Load Bearer',
         // 6 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
@@ -3262,12 +3262,12 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Duan Shiyin',
         factionId: 'sect-nine-peaks-ascetic-order',
         rankIndex: 6,
-        rank: 'Order Patriarch',
+        rank: 'Sect Patriarch',
         realmOrdinal: 28,
         role: 'senior',
         wants: 'to be told the workings are empty',
-        fears: 'Meng Da, awake and eight hundred years angry, which the Order has decided is not a fear because it cannot be acted on',
-        detail: 'Carries the largest stone in the Order and has carried it since admission, which the younger ascetics take as doctrine and is in fact a wager she lost.',
+        fears: 'Meng Da, awake and eight hundred years angry, which the Sect has decided is not a fear because it cannot be acted on',
+        detail: 'Carries the largest stone in the Sect and has carried it since admission, which the younger ascetics take as doctrine and is in fact a wager she lost.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
@@ -3276,14 +3276,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-old-ge-of-the-ninth-ford',
-        name: 'Old Ge of the Ninth Ford',
+        name: 'Old Ge of the Ninth Ferry',
         factionId: 'sect-clear-river-alliance',
         rankIndex: 6,
         rank: 'Alliance Head',
         realmOrdinal: 24,
         role: 'senior',
         wants: 'the fords kept open',
-        fears: 'a Shrinking Earth Pavilion station at Clear River Ford, which would make every ford on the river a formality',
+        fears: 'a Shrinking Earth Pavilion station at Clear River Ferry, which would make every ford on the river a formality',
         detail: 'Still runs a boat, personally, on the least profitable crossing the Alliance keeps, and will not say why the Alliance keeps it.',
         outlier: true,
         outlierReason: 'last_of_age',
@@ -3395,10 +3395,10 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-bell-keeper-ji',
-        name: 'Bell Keeper Ji',
+        name: 'Chime Keeper Ji',
         factionId: 'sect-hollow-bell-wanderers',
         rankIndex: 5,
-        rank: 'Bell Keeper',
+        rank: 'Chime Keeper',
         realmOrdinal: 20,
         role: 'senior',
         wants: 'somebody to stay',
@@ -3437,7 +3437,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'The Keeper who holds the count',
         factionId: 'sect-deeproot-court',
         rankIndex: 3,
-        rank: 'Keeper of the Kiln',
+        rank: 'Keeper of the Tripod',
         realmOrdinal: 36,
         role: 'senior',
         wants: 'nine hundred lit at the next reckoning, which is the only sentence anybody outside has heard her say twice',
@@ -3606,7 +3606,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // person rather than a capability: the watch tops out five rungs under her,
     // she does not work it, and what the wage buys is somebody a disappointed
     // buyer cannot quietly make disappear. `arrived` rather than `last_of_age`
-    // because the Market has no age to be the last of - it inherited nothing, and
+    // because the Hall has no age to be the last of - it inherited nothing, and
     // its production line is a straight function of its wage bill.
     {
         id: 'member-halfwater-yue',
@@ -3657,7 +3657,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'the nine sealed volumes to stay sealed for one more Keeper',
         fears: 'that the Iron Tally Court was not corrupt, and that the Karma Palace wrote the account that says otherwise',
-        detail: 'Married in from the Flowing Light Tower and did not take the Yan, which makes her the one Keeper in the book who does not carry the house name; writes in front of whoever is speaking and reads the entry back before leaving.',
+        detail: 'Married in from the Flowing Star Tower and did not take the Yan, which makes her the one Keeper in the book who does not carry the house name; writes in front of whoever is speaking and reads the entry back before leaving.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
@@ -3686,7 +3686,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Lin Anren',
         factionId: 'house-vermilion-seal',
         rankIndex: 6,
-        rank: 'Keeper of the Standing Word',
+        rank: 'Keeper of the Standing Pledge',
         realmOrdinal: 31,
         role: 'senior',
         wants: 'the founding oath revisited by somebody with standing to revisit it',
@@ -3768,8 +3768,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
 
     // the Nine Peaks remnant core Eleven of sixty-three formation nodes lit, and a
-    // production figure seven rungs below where the Order stands. Both numbers have
-    // the same cause: the Order did not make these people either. They came with
+    // production figure seven rungs below where the Sect stands. Both numbers have
+    // the same cause: the Sect did not make these people either. They came with
     // the mountains, from the house that held them before, and they are why a sect
     // whose pipeline tops out at twenty-one has a band at twenty-five and above.
     // This is what a remnant core is, and it is not rare.
@@ -3782,8 +3782,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 27,
         role: 'senior',
         wants: 'the peaks lit again, which she has costed and does not raise',
-        fears: 'that the Order is a caretaker and that she is the caretaking',
-        detail: 'Was a Peak Warden of the house that held these mountains before the Order did, and has never once said so to a disciple. She knows what thirty of the dark nodes were for.',
+        fears: 'that the Sect is a caretaker and that she is the caretaking',
+        detail: 'Was a Crag Warden of the house that held these mountains before the Sect did, and has never once said so to a disciple. She knows what thirty of the dark nodes were for.',
         outlier: true,
         outlierReason: 'remnant',
         goodCompany: false,
@@ -3812,12 +3812,12 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Cheng Wanru',
         factionId: 'sect-nine-peaks-ascetic-order',
         rankIndex: 3,
-        rank: 'Peak Warden',
+        rank: 'Crag Warden',
         realmOrdinal: 25,
         role: 'senior',
         wants: 'to be treated as an ascetic rather than as an inheritance',
-        fears: 'that the Order keeps her for what she remembers and not for what she does',
-        detail: 'Answers to a rank the Order created for the remnants and gives it precedence over her old one, which nobody has used in ninety years and which she can still write.',
+        fears: 'that the Sect keeps her for what she remembers and not for what she does',
+        detail: 'Answers to a rank the Sect created for the remnants and gives it precedence over her old one, which nobody has used in ninety years and which she can still write.',
         outlier: true,
         outlierReason: 'remnant',
         goodCompany: false,
@@ -3977,7 +3977,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     }
 ];
 
-// THE HOLLOW COURT, ON THE SAME ROLL AS EVERYBODY ELSE
+// THE EMPYREAN COURT, ON THE SAME ROLL AS EVERYBODY ELSE
 
 const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
     .filter((m): m is typeof m & { rankIndex: number } => m.rankIndex !== null)
@@ -4069,7 +4069,7 @@ export const MEMBERS: readonly Member[] = [...AUTHORED_MEMBERS, ...COURT_MEMBERS
  * owns that family says.
  *
  * AND THE HOUSES THAT DO NOT MARRY. The Severed cut their ties and price the
- * cutting; the Nine Peaks are an ascetic order; the Hollow Court asks nothing of
+ * cutting; the Nine Peaks are an ascetic order; the Empyrean Court asks nothing of
  * anybody and holds nobody. No rule refuses them - they simply have no row.
  */
 
@@ -4102,7 +4102,7 @@ export const AUTHORED_MARRIAGES: readonly AuthoredMarriage[] = Object.freeze([
     {
         oneId: 'member-cao-duan',
         otherId: 'member-yan-changshi',
-        note: 'She married in from the Flowing Light Tower and did not take the Yan, in a house of Yan.'
+        note: 'She married in from the Flowing Star Tower and did not take the Yan, in a house of Yan.'
     },
     {
         oneId: 'member-lin-muyan',
@@ -4128,7 +4128,7 @@ export const AUTHORED_MARRIAGES: readonly AuthoredMarriage[] = Object.freeze([
         oneId: 'member-fu-jingsheng',
         otherId: 'member-fu-lingchuan',
         note: 'He has walked the unsurveyed forty li twice and will not say why. He carries the chain '
-            + 'itself on every journey and wants the Clear River Ford station opened in his lifetime.'
+            + 'itself on every journey and wants the Clear River Ferry station opened in his lifetime.'
     },
     {
         oneId: 'member-chu-wuji',
@@ -4309,7 +4309,7 @@ export const AUTHORED_MARRIAGES: readonly AuthoredMarriage[] = Object.freeze([
  * shelf and has no row anywhere. A descent of six generations is not a tie
  * between two people and there is no second person to tie her to.
  *
- * AND THE SIBLINGS NOBODY NAMED - a brother at Iron Ridge, a sister at a
+ * AND THE SIBLINGS NOBODY NAMED - a brother at Iron Crest, a sister at a
  * market, a brother in the sealed sorting yard. Each is a real fact about the
  * person who fears meeting them and about nobody else the catalog holds.
  */

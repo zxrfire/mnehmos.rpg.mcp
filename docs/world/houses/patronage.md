@@ -329,7 +329,7 @@ here. Eleven towns end up held and twelve do not.
 **A basin is ground and a face district is work**, which is why only the first answers
 this. *"There is nothing in the air, so a holding is not ground, it is work. Every one
 of these is held by an office or by nobody"* - so the Clearwater Ward administering two
-faces from a counter at Iron Ridge does not make Iron Ridge the Ward's. The Silent
+faces from a counter at Iron Crest does not make Iron Crest the Ward's. The Silent
 Cliffs is administered directly and `DIRECT_RULE` settles who collects in one word:
 `noSkim`, nothing is taken by an intermediate tier.
 
@@ -351,7 +351,7 @@ which is where the fact lives, so a house that loses a town stops collecting fro
 settlements of their own - the Myriad Course Hall and the Ancient Bough Grove - carry
 no `levy`, and still do. Several houses do hold both a town and a levy, and the two are
 different money: the Frostmirror sells cold off its glacier by the load and separately
-governs Cold Peak; the Orchid Court sells its crop over a pass it does not control and
+governs Moraine Gate; the Orchid Court sells its crop over a pass it does not control and
 separately holds its terraces.
 
 **And a place can answer who collects at it.** `whoCollectsHere` in `ground-holder.ts`
@@ -368,7 +368,7 @@ those four settlements were on no map: the Grove Basin's `places` was empty and 
 direct administration in the province collected nothing at all. It came last of
 thirty-eight houses at 175 stones a year.
 
-They are on the map now - Plum Village, Two Streams, Smoke Ridge and the hamlet at Pine
+They are on the map now - Plum Village, Two Streams, Smoke Crest and the hamlet at Pine
 Spring, three villages and a hamlet inside a day's walk of the valley - and the Grove
 takes 990 a year off them, which puts it thirty-first. That is the shape the ordering
 wants: a house with no vein and no levy that administers a wooded basin directly eats

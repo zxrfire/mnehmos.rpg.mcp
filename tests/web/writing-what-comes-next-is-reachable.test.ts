@@ -142,8 +142,8 @@ describe('the sentence reaches the verb', () => {
         // clear.
         expect(parseIntent('I write the next stage of the manual myself').target)
             .toBeUndefined();
-        expect(parseIntent('I write the next stage of the Moonlit Well Absorption Art').target)
-            .toMatch(/Moonlit Well/i);
+        expect(parseIntent('I write the next stage of the Moonlit Pond Absorption Art').target)
+            .toMatch(/Moonlit Pond/i);
     });
 });
 

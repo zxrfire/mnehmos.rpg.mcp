@@ -27,7 +27,7 @@
  *                master who shares an element of their root or an art they hold
  *
  * No catalog row names a disciple or a student of anybody: the member rows and
- * the Hollow Court roster speak of disciples as a rung and never by name, so
+ * the Empyrean Court roster speak of disciples as a rung and never by name, so
  * there is nothing to honour here beyond the rule. Nor does the catalog say which
  * of its masters take disciples, except the one who wants *"to take no disciples
  * this decade either"*, who takes none.

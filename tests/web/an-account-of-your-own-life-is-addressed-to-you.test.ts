@@ -9,7 +9,7 @@
  * A run opened with no narrator model configured - which AGENTS.md names a
  * shipping mode, not a degraded one - and the first screen read:
  *
- *     Clear River Ford.
+ *     Clear River Ferry.
  *     Gu Lanlin is here, looking at what is on a counter and not buying.
  *     They were raised on ground like this. They have breathed nothing else
  *     and have nothing to set it against.
@@ -52,7 +52,7 @@
  *
  *     What you came out of: A farm in a thin county.
  *     You are standing here with 30 spirit stones, ...
- *     Deep Snow Village is where they are from. Where they grew up.
+ *     Deep Drift Village is where they are from. Where they grew up.
  *     Liang Peilu. Has been at the far end of that street since before either
  *     of them was anybody.
  *

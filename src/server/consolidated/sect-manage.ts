@@ -381,8 +381,8 @@ export async function handleJoin(
 
     const facts = getSect(sect.id);
 
-    // Two of the region's standing powers take no applicants: the Hollow Court,
-    // which has nothing left to want, and the Kiln Wardens, who do not explain
+    // Two of the region's standing powers take no applicants: the Empyrean Court,
+    // which has nothing left to want, and the Tripod Wardens, who do not explain
     // themselves and do not recruit. This is not a threshold to be met, so
     // there is no shortfall to report and nothing for the narrator to work on.
     if (facts && !facts.recruits) {
@@ -1373,7 +1373,7 @@ export const SectManageTool = {
             they feud with, and the state of the inherited compound they occupy
 - join      the admission ordinal AND the catalog's attribute minimums are enforced by the engine.
             Being narrated impressively does not get a Qi Condensation disciple into a Core
-            Formation sect. The Hollow Court and the Kiln Court take no applicants at all.
+            Formation sect. The Empyrean Court and the Tripod Court take no applicants at all.
 - leave     contribution is forfeited; it does not travel
 - promote   requires BOTH the realm ordinal and the contribution for the next rank; the
             contribution is spent, not merely met

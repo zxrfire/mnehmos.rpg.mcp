@@ -504,9 +504,9 @@ export const combatVerbs = {
         // `artTheyWouldFightWith`.
         // ── AND THE ART THEY NAMED WINS OVER THE ONE WE WOULD PICK ──────
         //
-        // FOUND BY PLAYING. "I attack him with Cross-Meridian Strike" put the
+        // FOUND BY PLAYING. "I attack him with Cross-Meridian Jolt" put the
         // art into the TARGET - the person came back as `him with
-        // Cross-Meridian Strike` - and this line then chose an art on the
+        // Cross-Meridian Jolt` - and this line then chose an art on the
         // player's behalf regardless. So naming one did nothing twice over: the
         // sentence lost it and the engine overrode it.
         //

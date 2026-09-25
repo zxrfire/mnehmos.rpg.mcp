@@ -585,10 +585,10 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
 
     /**
      * THE TWO THE DESIGN OWNER CHOSE, read out of the sect catalog: the Cinnabar
-     * Crucible Sect focuses on medicine and the Ashen Forge Clan on forging, and
+     * Crucible Sect focuses on medicine and the Ashen Anvil Clan on forging, and
      * nobody else on either.
      */
-    it('gives the medicine focus to the Cinnabar Crucible and the forge focus to the Ashen Forge, and to nobody else', () => {
+    it('gives the medicine focus to the Cinnabar Crucible and the forge focus to the Ashen Anvil, and to nobody else', () => {
         const pills = SECTS.filter(sect => whatAHouseIsFocusedOn(sect).pills).map(sect => sect.id);
         const forges = SECTS.filter(sect => whatAHouseIsFocusedOn(sect).artifacts).map(sect => sect.id);
         expect(pills).toEqual(['sect-cinnabar-crucible-sect']);

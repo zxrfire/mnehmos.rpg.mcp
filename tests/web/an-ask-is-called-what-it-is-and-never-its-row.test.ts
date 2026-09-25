@@ -11,7 +11,7 @@
  *
  * and the span under it carried the same id into the prose:
  *
- *     Green Water City. You went out to it. Sect duty:
+ *     Emerald Water City. You went out to it. Sect duty:
  *     posted-sect-azure-dew-sect-sending-an-escort-20 of 2 months was intended.
  *
  * ── THE CAUSE ────────────────────────────────────────────────────────────

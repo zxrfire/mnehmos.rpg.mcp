@@ -22,13 +22,13 @@
  *
  * ── THE STORY THIS GUARDS, WHICH IS WORTH KNOWING ────────────────────────
  *
- * The Azure Cloud Pavilion's prose says it *"was a Third Sill tenant for fifteen
+ * The Azure Cloud Pavilion's prose says it *"was a Third Sluice tenant for fifteen
  * hundred years and stopped being one in the year Ru Anjing crossed"* - so a
  * reader meeting that sentence beside a `parentFactionId` of `court-third-sill`
  * would have every reason to think the data was recording history in a current
  * field. It is not: the Pavilion's row is `apex` with no parent and always was.
  * What produced the scare was a FIXTURE house, `sect-azure-cloud`, which
- * legitimately answers to the Third Sill and differs from the real
+ * legitimately answers to the Third Sluice and differs from the real
  * `sect-azure-cloud-pavilion` by its id alone.
  */
 

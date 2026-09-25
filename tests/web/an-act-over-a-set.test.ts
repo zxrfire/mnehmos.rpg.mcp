@@ -52,8 +52,8 @@ describe('what a set-shaped target names', () => {
         expect(theSetThisNames("Cao Antao's whole clan"))
             .toMatchObject({ kind: 'kin_of', anchor: 'Cao Antao' });
         expect(theSetThisNames('the whole sect')?.kind).toBe('members_of');
-        expect(theSetThisNames('all of Iron Ridge'))
-            .toMatchObject({ kind: 'members_of', house: 'Iron Ridge' });
+        expect(theSetThisNames('all of Iron Crest'))
+            .toMatchObject({ kind: 'members_of', house: 'Iron Crest' });
         expect(theSetThisNames('all the guards')).toMatchObject({ kind: 'role_here', role: 'guard' });
     });
 
@@ -73,7 +73,7 @@ describe('what a set-shaped target names', () => {
         expect(theSetThisNames('all of the demonic houses'))
             .toMatchObject({ kind: 'of_alignment', alignment: 'demonic' });
         // And a house named in full is still a house.
-        expect(theSetThisNames('all of Iron Ridge')?.kind).toBe('members_of');
+        expect(theSetThisNames('all of Iron Crest')?.kind).toBe('members_of');
     });
 
     /**

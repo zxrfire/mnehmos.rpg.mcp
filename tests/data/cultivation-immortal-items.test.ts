@@ -203,7 +203,7 @@ describe('who holds them', () => {
             expect(h.savingTheSect, `${h.factionId} should say what saving it does`).not.toBeNull();
             expect(h.savingTheSect!).toMatch(/does not buy|not a transaction|indefensible|acknowledg|category error|receipt/i);
         }
-        // The Hollow Court has no patriarch to appeal over.
+        // The Empyrean Court has no patriarch to appeal over.
         // Rank does not help: a Surveyor asking is one voice among four.
         const survey = collective.find(h => h.factionId === 'apex-earth-vein-tower')!;
         expect(survey.decidedBy).toMatch(/no office above|one voice/i);
@@ -281,7 +281,7 @@ describe('what happens afterwards', () => {
         for (const item of IMMORTAL_ITEMS) {
             expect(item.socialConsequence.length, `${item.id} social consequence`).toBeGreaterThan(200);
             // Named institutions react, rather than "people talk".
-            expect(item.socialConsequence).toMatch(/Karma Palace|Jade Register Hall|Flowing Light Tower|Still Blade Peak|Frostmirror|Storm Tyrant/);
+            expect(item.socialConsequence).toMatch(/Karma Palace|Jade Register Hall|Flowing Star Tower|Still Blade Pavilion|Frostmirror|Storm Tyrant/);
         }
         const step = IMMORTAL_ITEMS.find(i => i.effect === 'promote_realm')!;
         // A jumped realm is arithmetic anybody can do.
@@ -438,7 +438,7 @@ describe('the step and the boundary', () => {
 describe('once in a life', () => {
     it('applies to both objects and does not stack', () => {
         expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Heaven-Ascending Golden Pill per person, ever/i);
-        expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Root-Recasting Talisman per person, ever/i);
+        expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Spirit-Recasting Talisman per person, ever/i);
         expect(ONCE_IN_A_LIFE.theRule).toMatch(/do not stack/i);
         expect(ONCE_IN_A_LIFE.whatItProtects).toMatch(/one rung and one root/i);
     });
@@ -677,7 +677,7 @@ describe('stock versus flow', () => {
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Earth Vein Tower has, exactly and independently/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/converts a higher into six lowers/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Myriad Course Hall has not raised the question/i);
-        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Hollow Court does not need to/i);
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Empyrean Court does not need to/i);
     });
 });
 

@@ -61,7 +61,7 @@ export const FALSE_IMMORTAL_POWER_MULTIPLIER = 262144;
 
 /**
  * Vast, and finite, and countable. They will die on this side having been most
- * of the way through, which is the entire tragedy of the Hollow Court.
+ * of the way through, which is the entire tragedy of the Empyrean Court.
  */
 export const FALSE_IMMORTAL_LIFESPAN_YEARS = 300000;
 

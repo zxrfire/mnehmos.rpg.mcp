@@ -255,7 +255,7 @@ describe('standing cannot reach into somebody\'s head', () => {
 
 describe('the refusal that is not about standing', () => {
     it('says what it is, and does not read like being turned down', () => {
-        const copy = nothingToBeGotFrom('A Clerk', 'the Sill');
+        const copy = nothingToBeGotFrom('A Clerk', 'the Sluice');
         // The PRINCIPLE, not the sentence. What the refusal has to say is
         // that weight moves what somebody will tell you and never what they
         // have to tell - the wording moved when the old one was found to be

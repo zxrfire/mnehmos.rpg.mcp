@@ -106,7 +106,7 @@ for (const s of SECTS) {
     const character = FACTION_CHARACTER[s.id];
     const peak = character?.production?.peakOrdinal;
     if (typeof peak === 'number' && peak < s.powerOrdinal) {
-        // Legal where the house takes people in already strong - the Hollow
+        // Legal where the house takes people in already strong - the Empyrean
         // Court's whole door is that - and a contradiction where it cannot.
         const route = intakeRouteOf(s.id);
         const canRecruit = route === 'open';

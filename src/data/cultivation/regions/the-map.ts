@@ -166,9 +166,9 @@ export function placeRoadDays(
 
 /**
  * The walking days between two provinces, over as many borders as it takes, or null where no
- * chain of roads joins them. Played: Cold Peak to Iron Ridge is two borders, and with only the
+ * chain of roads joins them. Played: Moraine Gate to Iron Crest is two borders, and with only the
  * direct link read it came back null and was charged the one-day floor, while Silver Island to
- * Cold Peak had taken thirty-four. The legs are the catalog's own; summing them is the same
+ * Moraine Gate had taken thirty-four. The legs are the catalog's own; summing them is the same
  * reasoning `placeRoadDays` gives above, one scale up, and a road is walked either way.
  */
 export function provinceRoadDays(fromRegionId: string, toRegionId: string): number | null {

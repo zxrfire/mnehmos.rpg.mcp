@@ -425,7 +425,7 @@ export function findTechniquesForRoot(
  * is either supported by that number or it is not.
  *
  * Null means it teaches nothing at all. For a closed house (`recruits: false`)
- * that is correct and complete: the Hollow Court reads `reliableOrdinal: 0`
+ * that is correct and complete: the Empyrean Court reads `reliableOrdinal: 0`
  * while sitting at power ordinal 40, and its own note says why - "produces
  * nobody, by construction: it takes no disciples". Zero there is a statement
  * about INTAKE, not about the quality of anything it could teach. For a house

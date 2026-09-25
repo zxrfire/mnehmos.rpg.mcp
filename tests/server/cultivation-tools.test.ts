@@ -1202,10 +1202,10 @@ describe('cultivation MCP tool surface', () => {
             const names = listed.sects.map((entry: any) => entry.name);
             for (const canon of [
                 'Stone Marrow Hall', 'Lantern Hall', 'The Severed',
-                'The Hollow Court',
-                // Was 'The Kiln Court', and the change is THE_KILN_SCHISM
+                'The Empyrean Court',
+                // Was 'The Tripod Court', and the change is THE_KILN_SCHISM
                 // rather than a rename. The house split; each half kept one of
-                // its two names. The half that kept the GROUND is the Kiln
+                // its two names. The half that kept the GROUND is the Tripod
                 // Court and is a court record, not a sect - so it is correctly
                 // absent from this list. What is in `SECTS` is the half that
                 // WALKED, which took the Earth Vein Tower's own administrative word
@@ -1235,7 +1235,7 @@ describe('cultivation MCP tool surface', () => {
             expect(entry.admission.requirement).toBeTruthy();
         });
 
-        it('lets the Hollow Court recruit, but only on a realm nobody has reached', async () => {
+        it('lets the Empyrean Court recruit, but only on a realm nobody has reached', async () => {
             await newRun();
             const court = getSect('sect-hollow-court')!;
 
@@ -1354,7 +1354,7 @@ describe('cultivation MCP tool surface', () => {
                 { action: 'spawn_encounter', ordinal: 44 },
                 { action: 'grant_item', itemId: MINOR_HEALING_PILL_ID },
                 { action: 'set_ambient', band: 'dense' },
-                { action: 'set_location', location: 'Clear River Ford' },
+                { action: 'set_location', location: 'Clear River Ferry' },
                 { action: 'advance_days', days: 10 },
                 { action: 'set_realm', ordinal: 30 },
                 { action: 'audit_log' }
@@ -1638,7 +1638,7 @@ describe('cultivation MCP tool surface', () => {
         // Found by playing: `set_realm` at 45 and 46 gave the right rank, the
         // right lifespan and the right refusal, and left `immortalStatus:
         // "none"` - so a False Immortal was offered "True Immortal" as a next
-        // rank, and a True Immortal standing in Deep Snow Village was offered farmhand
+        // rank, and a True Immortal standing in Deep Drift Village was offered farmhand
         // work. The rung and the crossing are two facts and admin set one.
         it('writes the immortal status when it places somebody above the Lid', async () => {
             process.env.ADMIN_MODE = 'true';

@@ -8,7 +8,7 @@
  *
  * ── WHAT WAS WRONG, MEASURED ON `shape-a` ────────────────────────────────
  *
- * The Hollow Court's Second, Third and Fourth Seats stand on the rung under its
+ * The Empyrean Court's Second, Third and Fourth Seats stand on the rung under its
  * one head's chair. The promotion pass named them blocked `no_seat` for that
  * chair from the first year, the held-back reason pressed on the calendar a
  * mortal lives by, and all three walked out within ninety years; one then
@@ -97,7 +97,7 @@ const held = (over: Partial<HeldBack> = {}): HeldBack => ({
  * UNDER the head is not held back either, which generalised the defect rather
  * than stating it.
  *
- * The defect: the Hollow Court's four Seats stand at `rankIndex 3` of a FOUR
+ * The defect: the Empyrean Court's four Seats stand at `rankIndex 3` of a FOUR
  * rung ladder - the top rung - and `seatsAtRank` gives that rung one chair, so
  * three of the four were stamped held back `no_seat` from the first year and all
  * three walked out within ninety years. Somebody on the top rung has nothing

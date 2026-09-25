@@ -150,7 +150,7 @@ describe('the mechanic sits correctly beside the two things it touches', () => {
         }
     });
 
-    it('is what the Hollow Court is using when it places a child', () => {
+    it('is what the Empyrean Court is using when it places a child', () => {
         // The Court's own bar cannot move - that is why its children go
         // elsewhere - and a Seat's word is exactly the instrument that moves
         // somebody else's. The two facts have to hold at once.

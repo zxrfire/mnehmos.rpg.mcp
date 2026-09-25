@@ -35,7 +35,7 @@ export function isElderRank(rankIndex: number, rankCount: number): boolean {
 /**
  * Whether this rung is the head of the house. Named for the position, not for
  * anybody's title: `ranks[rankCount - 1]` is Clan Chief in the Cinder Clan, Abbot
- * in the Quiet Hall, Order Patriarch on the mountain and Seat at the Hollow
+ * in the Quiet Hall, Sect Patriarch on the mountain and Seat at the Empyrean
  * Court, which is why this must not be called `holdsTheSeat`.
  */
 export function isHeadOfHouse(rankIndex: number, rankCount: number): boolean {

@@ -61,7 +61,7 @@ export const THE_DROWNED_REACH: Region = {
         death: 'Over the side, weighted, with the name said once and not written down. No tablet is cut, no ground is kept and there is nothing anybody could sweep, so the Pearl Ocean is the only province in the world that keeps no record of its dead, and all four of the others regard this as barbarism and say so.',
         taboo: 'Never count the stone chest aloud. What is in it is what everybody aboard is standing on, and saying the figure where it can be heard is the moment a crew stops being a crew and becomes a number of people with an interest.',
         threatModel: 'The weather and the arithmetic, in that order and usually together. Most people who die in the South die because a passage took eleven days longer than it was provisioned for, which is not misfortune, it is a sum somebody did wrong ashore.',
-        naming: 'A landfall where a mainlander would give a county: Sui out of Bronze Bell Cliff, Ma out of Iron Ridge, Nie out of the Salt Fields. A person at sea keeps their surname and gives the place they came aboard instead of the ground their people are from, and nobody asks past that.',
+        naming: 'A landfall where a mainlander would give a county: Sui out of Bronze Gong Cliff, Ma out of Iron Crest, Nie out of the Salt Fields. A person at sea keeps their surname and gives the place they came aboard instead of the ground their people are from, and nobody asks past that.',
         time: 'Counted in passages and in stones burned. Nine passages is a career; a hull\'s age is the number of stones it has gone through, cut into the mast where anybody can read it, and it is the one figure in the province nobody argues with.'
     },
     cultivation: {
@@ -98,7 +98,7 @@ export const THE_DROWNED_REACH: Region = {
         'There are veins under the Pearl Ocean and every one of them is a hundred fathoms down. What put them there is not recorded anywhere anybody has read; what is recorded is the shape, which is a mountain range with its peaks above water, so every island in the province is a vein head with the whole of its vein out of reach beneath it.',
     politics: 'no_authority',
     politicsNote:
-        'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead and would be worth nothing if it held any more. That is not a gap in the province, it is the only kind of institution the province can support, and the third of them is the interesting case: the Silver Island Market is unbacked not because nobody could take it but because everybody would lose by it, which is the only security arrangement in the world that nobody signed and nobody can withdraw from unilaterally.',
+        'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead and would be worth nothing if it held any more. That is not a gap in the province, it is the only kind of institution the province can support, and the third of them is the interesting case: the Silver Island Hall is unbacked not because nobody could take it but because everybody would lose by it, which is the only security arrangement in the world that nobody signed and nobody can withdraw from unilaterally.',
     factionIds: [
         'house-shrinking-earth',
         'sect-hollow-bell-wanderers',
@@ -177,7 +177,7 @@ export const THE_DROWNED_REACH: Region = {
         // ── the middle of the water, which was a gap in the map ────────
         //
         // The province was written as coasts and the water between them
-        // was nothing: Sweet Spring Island and Bronze Bell Cliff and The Far Shore are all edges,
+        // was nothing: Sweet Spring Island and Bronze Gong Cliff and The Far Shore are all edges,
         // and The Bitter Crossing - the one entry that is actually open sea - is named
         // for the absence of anything. So the busiest water in the world
         // had no place on it a narrator could put a scene, and a crossing

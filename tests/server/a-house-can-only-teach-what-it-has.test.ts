@@ -58,7 +58,7 @@ function hearOf(cultivatorId: string, factionId: string): void {
  */
 async function applicant(name: string, seed: string, spiritRoot: SpiritRootKey) {
     const made = await cultivation({
-        action: 'create_cultivator', name, seed, location: 'Green Water City'
+        action: 'create_cultivator', name, seed, location: 'Emerald Water City'
     });
     expect(made.error).toBeUndefined();
     const id = made.cultivator.id as string;

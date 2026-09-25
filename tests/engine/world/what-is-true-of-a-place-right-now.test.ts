@@ -67,7 +67,7 @@ function places(): LocationRecord[] {
     return [
         makeLocation({ id: 'loc-province', name: 'The Jade Gorge', kind: 'region' }),
         makeLocation({
-            id: 'loc-town', name: 'Iron Ridge', kind: 'settlement', parentId: 'loc-province'
+            id: 'loc-town', name: 'Iron Crest', kind: 'settlement', parentId: 'loc-province'
         }),
         makeLocation({
             // `wilderness` is not a `LocationKind`; the world calls it `wilds`.
@@ -482,7 +482,7 @@ describe('passage: the season and somebody deciding are reported apart', () => {
     function pass(): LocationRecord {
         return makeLocation({
             id: 'loc-pass',
-            name: 'The Cold Peak Pass',
+            name: 'The Moraine Gate Pass',
             kind: 'wilds',
             parentId: 'loc-province',
             // Open seven months of the year, from day 0.

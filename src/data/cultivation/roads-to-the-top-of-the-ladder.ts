@@ -19,7 +19,7 @@
  *   that actually separates these four bodies. An apex has ONE, and only
  *   sometimes: the head of the house, at their own discretion, showing a
  *   chosen disciple a thing or two between everything else they have to do. The
- *   Hollow Court has FOUR, and all four are working on nothing else.
+ *   Empyrean Court has FOUR, and all four are working on nothing else.
  *
  * THAT SECOND NUMBER IS WHY THE COURT'S ROAD IS THE BEST ONE. Not a better
  * secret and not a further reach - every road here ends at the same rung. Four
@@ -33,7 +33,7 @@
  * nothing needs to: `carriesTo` in `techniques.ts` takes the lower of the
  * teacher's own rung and the book's cap, the three apex heads stand at 43, 42
  * and 41, and the roads run past all three. The last rungs of those three are
- * walked alone. The Hollow Court's seats stand at the top of the ladder, so it
+ * walked alone. The Empyrean Court's seats stand at the top of the ladder, so it
  * is the only body in the world whose road has a teacher for the whole of it,
  * and it is also the only one that has repeatedly produced people who finished.
  *

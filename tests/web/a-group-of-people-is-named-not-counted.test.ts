@@ -121,7 +121,7 @@ function player(over: Partial<Cultivator> = {}): Cultivator {
         cultivationProgress: 0,
         age: 20,
         alive: true,
-        location: 'Green Water City',
+        location: 'Emerald Water City',
         ...over
     } as Cultivator;
 }

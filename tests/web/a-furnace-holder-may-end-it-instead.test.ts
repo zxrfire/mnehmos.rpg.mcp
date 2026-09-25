@@ -106,7 +106,7 @@ describe('a rite holder who takes everything at once', () => {
         const ran = await fightItOutForced(at.game, at.held);
 
         expect(ran.result).toMatch(new RegExp(
-            `${at.holder.name} does not keep you\\. They work Lotus-Plucking Rite on you and take everything at once`
+            `${at.holder.name} does not keep you\\. They work Lotus-Plucking Ritual on you and take everything at once`
         ));
         expect(ran.result).toMatch(/You do not survive it\./);
         expect(at.alive()).toBe(0);
@@ -121,7 +121,7 @@ describe('a rite holder who takes everything at once', () => {
         const ran = await fightItOutForced(at.game, at.held);
 
         expect(ran.result).toMatch(new RegExp(
-            `Lotus-Plucking Rite does not answer between you and ${at.holder.name}, and ${at.holder.name} does not keep you`
+            `Lotus-Plucking Ritual does not answer between you and ${at.holder.name}, and ${at.holder.name} does not keep you`
         ));
         expect(ran.result).not.toMatch(/draws off|take everything at once/);
         expect(at.alive()).toBe(0);

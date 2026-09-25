@@ -40,7 +40,7 @@
  * inner disciple gets a shot while they are rising and rare enough that the
  * seats are not a revolving door. Measured over the shipped catalog: 13 years
  * for the thirty-odd houses whose conclave rung sits in Qi Condensation or
- * Foundation, 25 for the six that sit in Core Formation, and 500 for the Hollow
+ * Foundation, 25 for the six that sit in Core Formation, and 500 for the Empyrean
  * Court, whose Inner Disciples stand at Body Integration and above.
  *
  * The year each house holds it in is its own, drawn once off the seed and the
@@ -48,7 +48,7 @@
  *
  * MEASURED over 500 years on `shape-a` and `shape-b`, with the intervals the
  * catalog produces (13 years for 28 houses, 25 for 8, 100 for one and 500 for
- * the Hollow Court): 622 and 673 places won, 333 and 339 holders beaten for
+ * the Empyrean Court): 622 and 673 places won, 333 and 339 holders beaten for
  * one - so a place changes hands about nine times a house a century, and the
  * rest of the wins are seats that stood empty. The rungs stayed bottom-heavy
  * ({0:174, 1:138, 2:73, 3:64, 4:77, 5:34, 6:25} on `shape-a`), which is the

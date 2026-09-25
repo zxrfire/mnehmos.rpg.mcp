@@ -80,7 +80,7 @@ function aJunior(): CapabilityActor {
 function theDoor(): LocationRecord {
     return withWings(makeLocation({
         id: 'loc-ruin-clock',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         qiDensity: 95,
         thresholds: makeThresholds(4, 8, 14, 20),

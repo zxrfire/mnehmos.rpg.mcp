@@ -108,7 +108,7 @@ function theStonework(here: LocationRecord): string[] {
     // whose own array is lit and wrong for the ground under a whole compound -
     // every seated house carries a standing ward, so every compound read "the
     // array over it is lit" and the upkeep facet never printed at all. Measured
-    // on The Hollow Court: 41 of 200 nodes burning, stamped `upkeep:dark`, read
+    // on The Empyrean Court: 41 of 200 nodes burning, stamped `upkeep:dark`, read
     // as lit. The ward is said once below, as its own fact.
     const masonry = { ...here, hazards: here.hazards.filter(tag => tag !== 'formation') };
     return describeRoom(masonry, style, { seed: here.id }).onEntry;

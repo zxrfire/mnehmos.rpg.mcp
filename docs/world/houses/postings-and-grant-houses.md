@@ -91,7 +91,7 @@ that happen to sit unusually close together, and the closeness shows up as
 warmth rather than as a different kind of link.
 
 A house's own history can make this look wrong when it is not. The Pavilion
-*"was a Third Sill tenant for fifteen hundred years and stopped being one in the
+*"was a Third Sluice tenant for fifteen hundred years and stopped being one in the
 year Ru Anjing crossed"* - good content, and a reader meeting it may wonder
 whether the data still says so. It does not, and
 [`a-house-that-answers-to-nobody-is-the-top-of-its-chain.test.ts`](../../../tests/data/a-house-that-answers-to-nobody-is-the-top-of-its-chain.test.ts)

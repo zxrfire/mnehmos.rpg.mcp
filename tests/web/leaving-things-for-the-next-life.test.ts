@@ -95,7 +95,7 @@ function cache(overrides: Partial<CacheRecord> = {}): CacheRecord {
         kind: 'cache',
         id: 'cache::run-a::1',
         buriedByRunId: 'run-a',
-        place: 'Iron Ridge Ford',
+        place: 'Iron Crest Ford',
         ground: 'waystation',
         burial: { ground: 'waystation', daysSpent: 7, burierOrdinal: 6, anchored: false, watchers: 0 },
         buriedOnWorldDay: 1_000,
@@ -346,7 +346,7 @@ describe('both routes lose, and they lose differently', () => {
         const listed = counters();
         expect(listed.length).toBe(CUSTODY_TAKERS.length);
         const names = listed.map(view => view.houseName);
-        expect(names.indexOf('Ninefold Karma Palace')).toBeLessThan(names.indexOf('Thousand Treasure Pavilion'));
+        expect(names.indexOf('Ninefold Karma Palace')).toBeLessThan(names.indexOf('Thousand Relic Pavilion'));
         for (const view of listed) {
             expect(['as safe as anything gets', 'sound', 'a risk', 'a bad bet']).toContain(view.band);
         }
@@ -384,14 +384,14 @@ describe('a thing left behind outlives the life that left it', () => {
     it('a cache is readable with the run that buried it gone from the runs table', () => {
         const db = makeDb();
         const ledger = new LegacyLedger(db);
-        ledger.write(cache(), 'A cache at Iron Ridge Ford', 1_000);
+        ledger.write(cache(), 'A cache at Iron Crest Ford', 1_000);
 
         // There is no run row and there never has to be: `cultivation_sites`
         // carries no foreign key on run_id, on purpose.
         expect(db.prepare('SELECT COUNT(*) AS n FROM runs').get()).toEqual({ n: 0 });
 
         // And the read is not scoped to a run, which is the whole point.
-        const found = ledger.cachesAt('the Iron Ridge Ford');
+        const found = ledger.cachesAt('the Iron Crest Ford');
         expect(found.length).toBe(1);
         expect(found[0].buriedByRunId).toBe('run-a');
     });
@@ -507,14 +507,14 @@ describe('a burned vault is a hole in the ground and not a third kind of thing',
         for (let i = 0; i < 200 && converted === null; i += 1) {
             const reading = readDeposit(record, `burn-${i}`, 1_000 + 4_000 * DAYS_PER_YEAR);
             if (!reading?.fate || reading.fate.fate !== 'destroyed_vault_intact') continue;
-            converted = vaultAsACache(record, reading.fate, 'Green Water City', 'cache::from-deposit::1');
+            converted = vaultAsACache(record, reading.fate, 'Emerald Water City', 'cache::from-deposit::1');
         }
         expect(converted, 'no seed in 200 produced a burned vault').not.toBeNull();
         expect(converted!.kind).toBe('cache');
         expect(converted!.goods).toEqual(record.goods);
         expect(converted!.fromDepositId).toBe(record.id);
         // And it is now ground, so the spatial machinery owns it from here.
-        expect(converted!.ground).toBe(groundOf('Green Water City'));
+        expect(converted!.ground).toBe(groundOf('Emerald Water City'));
     });
 
     it('every other fate leaves nothing to dig', () => {
@@ -522,7 +522,7 @@ describe('a burned vault is a hole in the ground and not a third kind of thing',
         for (let i = 0; i < 60; i += 1) {
             const reading = readDeposit(record, `no-burn-${i}`, 1_000 + 4_000 * DAYS_PER_YEAR);
             if (!reading?.fate || reading.fate.fate === 'destroyed_vault_intact') continue;
-            expect(vaultAsACache(record, reading.fate, 'Green Water City', 'x')).toBeNull();
+            expect(vaultAsACache(record, reading.fate, 'Emerald Water City', 'x')).toBeNull();
         }
     });
 });
@@ -607,7 +607,7 @@ describe('one life puts it aside and another life collects it', () => {
             ledger,
             mover,
             cultivator: { id: 'a', spiritStones: 5_000, realmOrdinal: 24, name: 'A' } as never,
-            here: 'Iron Ridge Ford',
+            here: 'Iron Crest Ford',
             worldSeed: seed,
             worldDay: 100_000,
             runId: 'run-a',
@@ -711,13 +711,13 @@ describe('one life puts it aside and another life collects it', () => {
             cultivator: { id: 'b', spiritStones: 0, realmOrdinal: 2 } as never,
             runId: 'run-b',
             worldDay: late,
-            seatOf: () => 'Green Water City'
+            seatOf: () => 'Emerald Water City'
         });
 
         const said = handleLegacy(at, 'claim', 'the Ninefold Karma Palace', 'the third stone by the ford', 0);
         expect(said.refused).toBe(true);
-        expect(said.facts.lines.join(' ')).toContain('in the ground at Green Water City');
-        const holes = () => h.ledger.cachesAt('Green Water City').filter(c => c.fromDepositId === deposit().id);
+        expect(said.facts.lines.join(' ')).toContain('in the ground at Emerald Water City');
+        const holes = () => h.ledger.cachesAt('Emerald Water City').filter(c => c.fromDepositId === deposit().id);
         expect(holes()).toHaveLength(1);
 
         handleLegacy(at, 'claim', 'the Ninefold Karma Palace', 'the third stone by the ford', 0);
@@ -729,16 +729,16 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 60_000);
         handleLegacy(
             h.deps({ cultivator: { id: 'a', spiritStones: 60_000, realmOrdinal: 24 } as never }),
-            'lodge', 'the Vermilion Seal Terrace', 'a boat with no name', 0
+            'lodge', 'the Vermilion Sigil Terrace', 'a boat with no name', 0
         );
         const terms = custodyTermsFor('house-vermilion-seal')!;
         const fraud = h.deps({ cultivator: { id: 'f', spiritStones: 0 } as never, runId: 'run-f' });
         for (let i = 0; i < terms.attemptsAllowed; i += 1) {
-            handleLegacy(fraud, 'claim', 'the Vermilion Seal Terrace', `guess ${i} at the words`, 0);
+            handleLegacy(fraud, 'claim', 'the Vermilion Sigil Terrace', `guess ${i} at the words`, 0);
         }
         // The right words, too late, said by somebody else entirely.
         const heir = h.deps({ cultivator: { id: 'h', spiritStones: 0 } as never, runId: 'run-h' });
-        const late = handleLegacy(heir, 'claim', 'the Vermilion Seal Terrace', 'a boat with no name', 0);
+        const late = handleLegacy(heir, 'claim', 'the Vermilion Sigil Terrace', 'a boat with no name', 0);
         expect(late.refused).toBe(true);
         expect(late.facts.lines.join(' ')).toContain('closed');
     });
@@ -790,7 +790,7 @@ describe('one life puts it aside and another life collects it', () => {
         expect(buried.facts.lines.join(' ')).toContain('People watched you do it');
         expect(buried.facts.lines.join(' ')).not.toMatch(/\b2 people\b/);
         expect(buried.facts.structure.join(' ')).toContain('2 people were');
-        const [row] = h.ledger.cachesAt('Iron Ridge Ford') as CacheRecord[];
+        const [row] = h.ledger.cachesAt('Iron Crest Ford') as CacheRecord[];
         expect(row.burial.watchers).toBe(2);
     });
 });
@@ -842,7 +842,7 @@ describe('what a player types to leave something behind', () => {
         for (const sentence of [
             'I leave the sect',
             'I leave the Azure Cloud Pavilion',
-            'I leave for the Iron Ridge Ford',
+            'I leave for the Iron Crest Ford',
             'I dig for roots along the bank',
             'I claim the reward',
             'I collect my stipend',

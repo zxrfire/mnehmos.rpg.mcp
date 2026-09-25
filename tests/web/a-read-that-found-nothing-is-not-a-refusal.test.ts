@@ -7,7 +7,7 @@
  * answers in play. It answers here too:
  *
  *     > where can I go
- *     You are in Cold Peak, The White Stair, standing at Qi Condensation
+ *     You are in Moraine Gate, The White Stair, standing at Qi Condensation
  *     Layer 13. The White Stair carries nobody past Body Integration Marrow.
  *     ...
  *

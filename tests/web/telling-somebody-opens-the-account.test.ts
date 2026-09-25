@@ -144,12 +144,12 @@ function aWrongDoneTo(
  * on `tells-world` after the move, the day each run opens:
  *
  *     tells-1  Nine Peaks           3 present, 3 nameable
- *     tells-2  Clear River Ford     2 present, 2 nameable
+ *     tells-2  Clear River Ferry     2 present, 2 nameable
  *     tells-3  Orchid Terrace       6 present, 3 nameable
  *     tells-4  Sweet Spring Island  2 present, 2 nameable
  *     tells-5  Six Li               5 present, 3 nameable
  *     tells-7  Three Walls         13 present, 3 nameable
- *     rate-1   Clear River Ford     2 present, 2 nameable
+ *     rate-1   Clear River Ferry     2 present, 2 nameable
  *
  * So each caller says how many parties it needs and the square is only changed
  * where the draw is short of them - which is once, for the three-party test.
@@ -498,7 +498,7 @@ const NOT_A_TELLING: readonly (readonly [string, string])[] = [
     ['tell me about Cao Antao', 'investigate'],
     ['tell me about myself', 'status'],
     ['tell me about the houses near here', 'sect'],
-    ['what can you tell me about the Hollow Court', 'investigate'],
+    ['what can you tell me about the Empyrean Court', 'investigate'],
     // "I tell him I am from the Azure Dew Sect" used to be here and is now in
     // `A_TELLING`, which says why. This one stays: a bare offer of a name with
     // no name in it carries no account, so there is nothing for a hearer to

@@ -49,7 +49,7 @@ const unbound = (row: Row) =>
  * The act happened, or the world refused it for a reason.
  *
  * A QUESTION BACK IS NEITHER, and counting it as a win hid three real failures
- * inside a band reading 100%: "I go to Cold Peak and gather herbs" came back
+ * inside a band reading 100%: "I go to Moraine Gate and gather herbs" came back
  * with *which comes first?*, which is right for a reader that cannot tell the
  * order and is not the sentence being carried out. Asking is legitimate and it
  * is a separate column, because a game that answers every sentence with a

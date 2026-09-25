@@ -4,7 +4,7 @@
  * Two defects, one errand. A party's losses were drawn once for the whole party
  * off its strongest member, so a Tribulation Transcendence Seat was lost at the
  * rate of the disciple beside them. And a party was the strongest names on the
- * roll, pitched off the house's own best, so the Hollow Court's Seats went on
+ * roll, pitched off the house's own best, so the Empyrean Court's Seats went on
  * every errand the Court had: looking for disciples, an escort, a visit, and a
  * ruin whose own survival ask is 12.
  *
@@ -75,7 +75,7 @@ describe('who goes', () => {
 
         // THE PITCH IS THE GROUND'S, NOT THE HOUSE'S. Every errand onto ground
         // that asks anything of somebody standing on it is pitched at what it
-        // asks; pitched off the house's own best instead, the Hollow Court sent
+        // asks; pitched off the house's own best instead, the Empyrean Court sent
         // parties "at ordinal 45" onto a ruin whose survival ask is 12, and the
         // First and Second Seats were lost in one.
         const overpitched: string[] = [];

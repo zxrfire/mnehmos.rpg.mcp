@@ -35,7 +35,7 @@
  *
  * ── AND THE TOWN WAS RENAMED AFTERWARDS, WHICH THIS FILE DOES NOT FOLLOW ──
  *
- * `PLACE.FOUR_GRAVES` is `Four Names` now. Belt and braces: the parser stopped
+ * `PLACE.FOUR_GRAVES` is `Fourfold Stele` now. Belt and braces: the parser stopped
  * mis-reading the name, and then the name stopped carrying a game category at
  * all, because a category word in a place name is a coin-flip for the model
  * that classifies a sentence as well as for the table that parses it.
@@ -160,7 +160,7 @@ describe('and the class is retired, not the five names', () => {
         ['Wind Market', 'market', 'the market board'],
         ['Stone Shadow', 'shadow', 'move/follow'],
         ['Knife Edge', 'knife', 'an attack on somebody called Edge'],
-        ['The Iron Ridge Mission', 'mission', 'the errand board']
+        ['The Iron Crest Mission', 'mission', 'the errand board']
     ])('%s survives every travel phrasing (was eaten by %s -> %s)', name => {
         for (const verb of ['I travel to', 'I go to', 'I walk to', 'I head for', 'I journey to']) {
             const parsed = parseIntent(`${verb} ${name}`) as { action: string; intent?: string };

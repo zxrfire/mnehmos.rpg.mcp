@@ -62,7 +62,7 @@ function build(opts: { cycle?: OpeningCycle | null; perHouse?: number } = {}): W
         id: 'loc-region', name: 'The Province', kind: 'region'
     }));
     state.locations.push(makeLocation({
-        id: 'loc-ruin', name: 'Cold Spring', kind: 'ruin', parentId: 'loc-region',
+        id: 'loc-ruin', name: 'Lone Spring', kind: 'ruin', parentId: 'loc-region',
         qiDensity: 60, thresholds: makeThresholds(4, 8, 14, 20),
         // Sealed only where there is a season to make the column a reading of.
         // Ground with no schedule and the column set is ground nobody can

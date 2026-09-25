@@ -90,7 +90,7 @@ describe('attestation', () => {
 
     it('distinguishes a name a faction can use from one it merely has', () => {
         expect(nameIsUsable(getNamedFigure('figure-ru-anjing')!)).toBe(true);
-        // Held and unreadable: the Order owns the answer and cannot pronounce it.
+        // Held and unreadable: the Sect owns the answer and cannot pronounce it.
         const stoneBearer = getNamedFigure('figure-the-stone-bearer')!;
         expect(stoneBearer.attestation).toBe('unreadable');
         expect(nameIsUsable(stoneBearer)).toBe(false);
@@ -121,7 +121,7 @@ describe('the junior answers', () => {
         }
     });
 
-    it('makes the Hollow Court hear from the weakest of six', () => {
+    it('makes the Empyrean Court hear from the weakest of six', () => {
         const court = figuresFor('sect-hollow-court').filter(f => f.kind === 'immortal_ancestor');
         expect(court.length).toBeGreaterThanOrEqual(4);
         const answering = court.filter(f => f.answers === 'answers');

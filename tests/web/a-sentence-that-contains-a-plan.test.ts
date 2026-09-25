@@ -158,12 +158,12 @@ describe('whose order it is', () => {
     it('runs a workable order in the order it was given', async () => {
         const { game } = await playing([
             STEPS(
-                { action: 'move', intent: 'travel', target: 'Cold Peak', said: 'I go to Cold Peak' },
+                { action: 'move', intent: 'travel', target: 'Moraine Gate', said: 'I go to Moraine Gate' },
                 { action: 'gather', said: 'gather herbs' }
             )
         ]);
         await game.newRun('Probe');
-        const turn = await game.act('I go to Cold Peak and gather herbs');
+        const turn = await game.act('I go to Moraine Gate and gather herbs');
 
         expect(turn.narration).not.toContain('Which comes first?');
         expect(turn.narration).toContain('still ahead of you');

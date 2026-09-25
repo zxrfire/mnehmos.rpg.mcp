@@ -102,6 +102,24 @@ export interface LineageRecord {
     tags: string[];
 }
 
+/**
+ * The first word a line's id was minted from, for a founder renamed since.
+ *
+ * A line's id is `lin-<first word of the founder's name>-<founder id>`, and ids
+ * feed pinned worlds. "Bell Keeper Ji" became "Chime Keeper Ji" because `bell`
+ * is one letter from *sell* and *tell* (AGENTS.md, "A name evokes what it
+ * is"), and the line keeps the id it was first seeded under. Keyed by the
+ * founder's world id, which did not move.
+ */
+const THE_WORD_A_RENAMED_FOUNDERS_LINE_KEEPS: ReadonlyMap<string, string> = new Map([
+    ['npc-member-bell-keeper-ji', 'bell']
+]);
+
+/** The id of the line a founder starts. */
+export function lineageIdOf(surname: string, founderId: string): string {
+    return `lin-${THE_WORD_A_RENAMED_FOUNDERS_LINE_KEEPS.get(founderId) ?? surname.toLowerCase()}-${founderId}`;
+}
+
 export function createLineageRecord(
     init: Partial<LineageRecord> & Pick<LineageRecord, 'id' | 'surname' | 'founderId' | 'foundedOnDay'>
 ): LineageRecord {

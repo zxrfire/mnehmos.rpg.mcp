@@ -214,7 +214,7 @@ describe('who a childhood actually puts in front of you', () => {
             id: 'valley', name: 'The Long Valley', kind: 'region', qiDensity: 0.4
         }));
         world.locations.push(makeLocation({
-            id: 'next', name: 'Stone Ford', kind: 'settlement', qiDensity: 0.4
+            id: 'next', name: 'Clear River Ferry', kind: 'settlement', qiDensity: 0.4
         }));
         for (const record of world.locations) {
             if (record.id === 'home' || record.id === 'next') record.parentId = 'valley';
@@ -227,7 +227,7 @@ describe('who a childhood actually puts in front of you', () => {
 
         const faces = facesFromHome({ world, cultivator: player, origin: 'thin_county', seed: 's' });
         expect(faces.map(one => one.name)).toEqual(['Villager Next Door']);
-        expect(faces[0].whereTheyAre).toEqual({ id: 'next', name: 'Stone Ford' });
+        expect(faces[0].whereTheyAre).toEqual({ id: 'next', name: 'Clear River Ferry' });
     });
 
     it('never leaves a life with nobody, at any band in the table', () => {

@@ -284,7 +284,7 @@ describe('the mortal board is derived from the price list, not written twice', (
      * AND NOTHING AN INSTITUTION OWNS.
      *
      * Three rows on the board are a named house's own counter - an entry on the
-     * Jade Register Hall's register, an oath witnessed by the Vermilion Seal
+     * Jade Register Hall's register, an oath witnessed by the Vermilion Sigil
      * Terrace, a realm placement by the Ninefold Karma Palace - and a villager
      * behind a barrow was drawing them like millet. Measured over three seeded
      * worlds (81 settlement squares, 633 villagers with a barrow out, 1,252

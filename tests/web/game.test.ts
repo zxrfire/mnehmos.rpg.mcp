@@ -361,10 +361,10 @@ describe('move', () => {
         const { game } = makeGame();
         await game.newRun('Walker');
 
-        const result = await game.act('I travel to Clear River Ford.');
+        const result = await game.act('I travel to Clear River Ferry.');
         expect(planned(result).action).toBe('move');
         expect(refusedCall(result)).toBeNull();
-        expect(result.state.cultivator.location).toBe('Clear River Ford');
+        expect(result.state.cultivator.location).toBe('Clear River Ferry');
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(result.state.ambient);
     });
 
@@ -382,7 +382,7 @@ describe('move', () => {
     it('resolves every intent through the same engine path', async () => {
         // The label changes; the routine does not. Nothing branches on intent.
         const paths: string[][] = [];
-        for (const text of ['I travel to Clear River Ford.', 'I flee to Clear River Ford.', 'I sneak into Clear River Ford.']) {
+        for (const text of ['I travel to Clear River Ferry.', 'I flee to Clear River Ferry.', 'I sneak into Clear River Ferry.']) {
             const { game } = makeGame({ seed: 'same' });
             await game.newRun('Walker');
             const result = await game.act(text);

@@ -1,7 +1,7 @@
 /**
  * A road costs the same both ways.
  *
- * Played: Cold Peak to the Tranquil Oasis grounds was a day, and the same
+ * Played: Moraine Gate to the Tranquil Oasis grounds was a day, and the same
  * road back seventeen. The gazetteer does not name a house's grounds, so
  * `standingOf` put anybody standing there in the home province, and the road
  * out was priced from a province they were not in.
@@ -33,13 +33,13 @@ describe('the road to a house and back', () => {
             worldSeed: 'walking-up-the-terraces-world', seed: 'a-road-both-ways'
         });
         const { cultivator } = await game.newRun('Shen Ruo');
-        await game.act('I travel to Cold Peak');
+        await game.act('I travel to Moraine Gate');
 
         // Priced both ways off where they stand. Walked, the road is long enough - two borders,
         // see `provinceRoadDays` - that a player with no food starves on it before arriving.
         const there = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, `${OASIS} grounds`);
         repos.cultivators.update(cultivator.id, { location: `${OASIS} grounds` });
-        const back = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, 'Cold Peak');
+        const back = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, 'Moraine Gate');
         expect(there).not.toBeNull();
         expect(there!).toBeGreaterThan(1);
         expect(back).toBe(there);

@@ -34,7 +34,7 @@ function theirs(): ObjectRecord {
         significance: 'significant',
         power: 18,
         ownerId: 'sect-deeproot-court',
-        ownerName: 'The Kiln Court',
+        ownerName: 'The Tripod Court',
         possessorId: 'sect-deeproot-court'
     }) as ObjectRecord;
 }
@@ -87,7 +87,7 @@ describe('the three routes, and the fourth answer that is most of the world', ()
         const took = takenByForceOfArms(theirs(), {
             by: { id: 'sect-storm-tyrant-court', name: 'Storm Tyrant Court' },
             onDay: 400,
-            source: 'the Kiln war',
+            source: 'the Tripod war',
             acknowledgedBy: ['sect-deeproot-court']
         });
 
@@ -114,10 +114,10 @@ describe('the three routes, and the fourth answer that is most of the world', ()
         expect(route).toBe('possession');
         expect(movesTheRegister(route)).toBe(false);
         expect(object.possessorId).toBe('npc-thief');
-        // The whole thread. The Kiln Court still owns it, which is what makes
+        // The whole thread. The Tripod Court still owns it, which is what makes
         // it findable and what makes carrying it dangerous.
         expect(object.ownerId).toBe('sect-deeproot-court');
-        expect(object.ownerName).toBe('The Kiln Court');
+        expect(object.ownerName).toBe('The Tripod Court');
         expect(reading.nobody).toBe(false);
 
         // And the claim is written anyway. A claim nobody acknowledges is still

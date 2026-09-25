@@ -198,7 +198,7 @@ function agesSection(): string {
   <p class="note"><strong>The third column is the whole of the decline.</strong> Ambient qi is measured against the richest ground the world has ever carried, so an age reading several times the present is not a better era with the same rules in it. It is a different game: the same rungs, bought at a fraction of the price, by people who did not know that was what they were being charged.</p>
   <div class="scroll"><table class="itemtbl">
     <colgroup><col style="width:16%"><col style="width:22%"><col style="width:12%"><col style="width:50%"></colgroup>
-    <caption>The ages, oldest first &middot; year ${num(PRESENT_YEAR)} of the Great Peace is the present</caption>
+    <caption>The ages, oldest first &middot; year ${num(PRESENT_YEAR)} of the Lasting Peace is the present</caption>
     <thead><tr><th>Age</th><th>When</th><th>Qi</th><th>What it was</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>

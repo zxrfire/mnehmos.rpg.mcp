@@ -35,7 +35,7 @@
  * nobody had filed anywhere, run through the whole reader against the corpus
  * as it stood:
  *
- *     how do I get to Iron Ridge from here      -> roads
+ *     how do I get to Iron Crest from here      -> roads
  *     which way to the mountain                 -> roads
  *     how do I reach the city                   -> roads
  *     what is the road to the ford like         -> roads
@@ -69,7 +69,7 @@
  *
  * One thing the five asked for that nothing prints. A region connection in
  * `src/data/cultivation/regions/*.ts` carries a `description` that is
- * literally the road - *"the border road from Clear River Ford to Iron Ridge:
+ * literally the road - *"the border road from Clear River Ferry to Iron Crest:
  * eleven days by cart, four by Shrinking Earth Pavilion courier where the Span
  * still runs it"* - and `whereCouldTheyGo` reads `travelDays` off that
  * connection and drops the sentence beside it. Bearings are held too, and
@@ -112,7 +112,7 @@ describe('the table keeps the two subjects apart on its own', () => {
         ['what can this ground teach me', 'roads'],
         ['is there ground around here that teaches a dao', 'roads'],
         ['where can I go', 'destinations'],
-        ['I head to Iron Ridge', 'move'],
+        ['I head to Iron Crest', 'move'],
         ['I travel to the mountain', 'move']
     ])('%s -> %s', (said, want) => {
         expect(parseIntent(said).action).toBe(want);
@@ -127,7 +127,7 @@ describe('a question about getting somewhere is not a question about a dao', () 
         // See the header: an exemplar is its own nearest neighbour, so a test
         // written from the corpus cannot fail on a misfiling.
         const routes = [
-            'how do I get to Iron Ridge from here',
+            'how do I get to Iron Crest from here',
             'which way to the mountain',
             'how do I reach the city',
             'what is the road to the ford like',

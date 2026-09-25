@@ -189,7 +189,7 @@ describe('the ladder composes with what an art does and what era it is from', ()
         // have demanded 'body' of a hundred and eleven attack arts.
         //
         // The half of it that was never about advancement survives: the Unwritten
-        // Span Scripture sits at the very top of the ladder, where the address
+        // Remnant Scripture sits at the very top of the ladder, where the address
         // ceiling permits a decree, and still lands on one person. Reaching a
         // rung does not oblige an art to use it.
         const top = getTechnique('unwritten-span-scripture')!;

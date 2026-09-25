@@ -91,7 +91,7 @@ describe('the read', () => {
      */
     it('tells a written craft apart from the province\'s own list', () => {
         const read = whatThisGroundMakes(ground([
-            { id: THE_PORT, name: 'Silver Island Market' }
+            { id: THE_PORT, name: 'Silver Island Hall' }
         ]));
         expect(read.workshops.length).toBe(1);
         expect(read.workshops[0]!.derivedFromProvince).toBe(false);
@@ -105,12 +105,12 @@ describe('the read', () => {
      */
     it('reports the cargo this ground has a hand in, and no other', () => {
         const port = whatThisGroundMakes(ground([
-            { id: THE_PORT, name: 'Silver Island Market' }
+            { id: THE_PORT, name: 'Silver Island Hall' }
         ]));
         expect(port.crossings.length).toBeGreaterThan(0);
         for (const crossing of port.crossings) {
-            const theirs = crossing.carriedBy === 'Silver Island Market'
-                || crossing.madeBy === 'Silver Island Market';
+            const theirs = crossing.carriedBy === 'Silver Island Hall'
+                || crossing.madeBy === 'Silver Island Hall';
             expect(theirs, crossing.what).toBe(true);
         }
         // And a house that makes something which goes by water is reported for
@@ -135,7 +135,7 @@ describe('the read', () => {
      */
     it('carries the landfalls, because zero of them is the whole risk', () => {
         const port = whatThisGroundMakes(ground([
-            { id: THE_PORT, name: 'Silver Island Market' }
+            { id: THE_PORT, name: 'Silver Island Hall' }
         ]));
         const nowhereToStop = port.crossings.find(c => c.landfalls === 0);
         expect(nowhereToStop, 'no lane with nothing in the middle of it').toBeTruthy();
@@ -158,7 +158,7 @@ describe('the read', () => {
     /** And the mechanical line says which readings answered. */
     it('reports what it read and what it did not', () => {
         const structure = theStructureOfWhatIsMadeHere(whatThisGroundMakes(ground([
-            { id: THE_PORT, name: 'Silver Island Market' }
+            { id: THE_PORT, name: 'Silver Island Hall' }
         ])));
         expect(structure).toMatch(/whatThisGroundMakes/);
         expect(structure).toMatch(/written craft/);

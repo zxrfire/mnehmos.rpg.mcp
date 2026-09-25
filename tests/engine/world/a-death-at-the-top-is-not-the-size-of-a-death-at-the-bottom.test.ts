@@ -3,7 +3,7 @@
  *
  * Three constants decided the size of every death and none of them read the
  * dead: `elder_died` emitted `local`/`faction`/0.8-at-most, a killing emitted
- * `personal`/`regional`/0.45, so the First Seat of the Hollow Court dying and an
+ * `personal`/`regional`/0.45, so the First Seat of the Empyrean Court dying and an
  * outer disciple dying were the same event to four tenths of one number. The
  * design owner's bar is that a Seat dying is *"earth-shaking"*.
  *

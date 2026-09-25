@@ -104,7 +104,7 @@ describe('the sentence reaches the person in front of you', () => {
         for (const kind of SELF_FACT_KINDS) {
             expect(selfFactFromTopic(A_TOPIC_ABOUT_THEMSELVES[kind])).toBe(kind);
         }
-        expect(selfFactFromTopic('the Hollow Court')).toBeNull();
+        expect(selfFactFromTopic('the Empyrean Court')).toBeNull();
     });
 });
 
@@ -205,11 +205,11 @@ describe('played', () => {
         const { cultivator } = await game.newRun('Lin Baoqing');
         await game.act('I look around');
 
-        const asked = await game.act('I ask the nearest person about the Hollow Court');
+        const asked = await game.act('I ask the nearest person about the Empyrean Court');
         // Whichever way it went - nobody of that name, or asked and blank - it
         // must not have come back as an answer about the Court, and the self
         // path must not have been the one that answered it.
-        expect(String(asked.narration)).not.toContain('Hollow Court admits');
+        expect(String(asked.narration)).not.toContain('Empyrean Court admits');
         expect(String(asked.narration)).not.toMatch(/says they are (a woman|a man)/);
         expect(cultivator.id).toBeTruthy();
     }, 120_000);

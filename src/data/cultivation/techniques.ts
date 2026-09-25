@@ -413,7 +413,7 @@ export const ABOVE_THE_LID_TRANSMISSION = {
          * in `false-immortals.ts`, where it is stated against the measurement.
          */
         heCarriesNothing:
-            'He holds no object at all, which is the reason these entries matter more than a strong man\'s arts usually would. Everybody else at the top of the world is a person plus something they were given; he was close to the Hollow Court once and is not now, nothing of theirs is his to carry, and nothing else in the world would be handed to him. So the arts are the whole account of him, and the one apex head who can fight him to a draw does it on an object rather than on a rung.'
+            'He holds no object at all, which is the reason these entries matter more than a strong man\'s arts usually would. Everybody else at the top of the world is a person plus something they were given; he was close to the Empyrean Court once and is not now, nothing of theirs is his to carry, and nothing else in the world would be handed to him. So the arts are the whole account of him, and the one apex head who can fight him to a draw does it on an object rather than on a rung.'
     },
     trueImmortal: {
         ordinal: TRUE_IMMORTAL_ORDINAL,
@@ -738,7 +738,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
 
     // ── The roads that reach the top of the ladder. Refined at the apexes,
     // because each was written once by one person for one successor and has
-    // been kept rather than improved. Pristine at the Hollow Court, which is
+    // been kept rather than improved. Pristine at the Empyrean Court, which is
     // the only body that has had generation after generation of people take
     // the same road to its end and write down what they found - and that
     // difference is the same difference the `opening` field states.
@@ -1052,7 +1052,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'cross-meridian-strike',
-        name: 'Cross-Meridian Strike',
+        name: 'Cross-Meridian Jolt',
         category: 'attack',
         grade: 'mortal',
         element: null,
@@ -1078,7 +1078,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'green-sprout-lash',
-        name: 'Green Sprout Lash',
+        name: 'Sapling Lash',
         category: 'attack',
         grade: 'mortal',
         element: 'wood',
@@ -1104,7 +1104,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'gutter-rain-palm',
-        name: 'Gutter Rain Palm',
+        name: 'Gutter Downpour Palm',
         category: 'attack',
         grade: 'mortal',
         element: 'water',
@@ -1205,7 +1205,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // Nine consecutive cuts, and the art is the interval between them.
         // About timing rather than about ground. Sword road only.
         subjects: ['sword'],
-        name: 'Nine Rivers Sword Chant',
+        name: 'Nine Rivers Sword Cadence',
         category: 'attack',
         grade: 'earth',
         element: 'water',
@@ -1244,7 +1244,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'tectonic-seal-palm',
-        name: 'Tectonic Seal Palm',
+        name: 'Tectonic Imprint Palm',
         category: 'attack',
         grade: 'earth',
         element: 'earth',
@@ -1257,7 +1257,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'bramble-crown-spear',
-        name: 'Bramble Crown Spear',
+        name: 'Bramble Crown Javelin',
         category: 'attack',
         grade: 'earth',
         element: 'wood',
@@ -1332,7 +1332,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'samsara-tide-crush',
-        name: 'Samsara Tide Crush',
+        name: 'Samsara Whirlpool Crush',
         category: 'attack',
         grade: 'heaven',
         element: 'water',
@@ -1373,7 +1373,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         id: 'hollow-mountain-decree',
         // The one the catalog says people have politely asked its holders not to use where anybody lives, which is a sentence about area and nothing else.
         reach: 'field',
-        name: 'Hollow Mountain Decree',
+        name: 'Phantom Mountain Decree',
         category: 'attack',
         grade: 'heaven',
         element: 'earth',
@@ -1386,7 +1386,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'severed-name-finger',
-        name: 'Severed Name Finger',
+        name: 'Severed Grip Finger',
         category: 'attack',
         grade: 'heaven',
         // The technique operates on something the reader has to already believe is
@@ -1473,7 +1473,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         id: 'open-sky-calamity-word',
         // One syllable, spoken outdoors. The qualifier is the mechanic.
         reach: 'field',
-        name: 'Open Sky Calamity Word',
+        name: 'Open Sky Calamity Syllable',
         category: 'attack',
         grade: 'chaos',
         element: null,
@@ -1501,7 +1501,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         id: 'kalpa-fire-that-eats-heaven',
         // Its own text: it does not stop when the target does.
         reach: 'field',
-        name: 'Kalpa Fire That Eats Heaven',
+        name: 'Heaven-Devouring Kalpa Inferno',
         category: 'attack',
         grade: 'chaos',
         element: 'fire',
@@ -1533,7 +1533,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'stone-hide-mantle',
         subjects: ['body'],
-        name: 'Stone Hide Mantle',
+        name: 'Scree Mantle',
         category: 'defense',
         grade: 'mortal',
         element: 'earth',
@@ -1561,7 +1561,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'golden-bell-shroud',
         subjects: ['body'],
-        name: 'Golden Bell Shroud',
+        name: 'Golden Dome Shroud',
         category: 'defense',
         grade: 'earth',
         element: 'metal',
@@ -1588,7 +1588,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'cold-jade-carapace',
         subjects: ['body'],
-        name: 'Cold Jade Carapace',
+        name: 'Ice Jade Carapace',
         category: 'defense',
         grade: 'earth',
         element: 'ice',
@@ -1633,7 +1633,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'void-hollow-body',
         subjects: ['body'],
-        name: 'Void Hollow Body',
+        name: 'Void Vacant Body',
         category: 'defense',
         grade: 'immortal',
         element: null,
@@ -1736,7 +1736,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'shadow-splitting-gait',
-        name: 'Shadow-Splitting Gait',
+        name: 'Shadow-Splitting Step',
         category: 'movement',
         grade: 'earth',
         element: null,
@@ -1755,7 +1755,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // your own blade is transport; nothing about it stands on ground.
         // Taking it would be mistaking the illustration for the thing.
         subjects: ['sword'],
-        name: 'Gale-Riding Sword Flight',
+        name: 'Gale-Borne Sword Soaring',
         category: 'movement',
         grade: 'earth',
         element: 'metal',
@@ -1824,7 +1824,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'void-fold-pilgrimage',
-        name: 'Void-Fold Pilgrimage',
+        name: 'Void-Crease Pilgrimage',
         category: 'movement',
         grade: 'immortal',
         element: null,
@@ -1855,7 +1855,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'green-mercy-mending-palm',
-        name: 'Green Mercy Mending Palm',
+        name: 'Verdant Mercy Mending Palm',
         category: 'support',
         grade: 'mortal',
         element: 'wood',
@@ -1894,7 +1894,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'hundred-herb-restoration-art',
-        name: 'Hundred-Herb Restoration Art',
+        name: 'Hundred-Grass Restoration Art',
         category: 'support',
         grade: 'earth',
         element: 'wood',
@@ -1920,7 +1920,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'bloodwarm-battle-chant',
-        name: 'Bloodwarm Battle Chant',
+        name: 'Bloodwarm Battle Hymn',
         category: 'support',
         grade: 'earth',
         element: 'fire',
@@ -2062,7 +2062,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'moonlit-well-absorption-art',
-        name: 'Moonlit Well Absorption Art',
+        name: 'Moonlit Pond Absorption Art',
         category: 'cultivation',
         grade: 'mortal',
         element: 'water',
@@ -2180,7 +2180,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'void-tide-breathing-canon',
-        name: 'Void-Tide Breathing Canon',
+        name: 'Void-Ebb Respiration Canon',
         category: 'cultivation',
         grade: 'immortal',
         element: null,
@@ -2195,7 +2195,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'rime-heart-stillness-canon',
-        name: 'Rime-Heart Stillness Canon',
+        name: 'Hoarfrost-Heart Stillness Canon',
         category: 'cultivation',
         grade: 'immortal',
         element: 'ice',
@@ -2498,7 +2498,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'protected-crossing-canon',
-        name: 'Protected Crossing Canon',
+        name: 'Guarded Crossing Canon',
         category: 'cultivation',
         grade: 'chaos',
         element: null,
@@ -2513,7 +2513,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // comment above - and it is the whole of what "best paved" means here.
         opening: null,
         description:
-            'The best-paved road in the world, and it does not reach a rung further than the other three. What it has is no bad stretch anywhere in it: every transition between realms is written out by somebody who had just made it and was asked to explain how, every place a reader has historically stopped has an answer beside it, and there is nothing in it a student is expected to work out alone. That is what a body with exactly one purpose produces after enough centuries of it. The Hollow Court exists to get its own members over the last crossing and has spent everything it has on the question, and the road is where the spending shows.'
+            'The best-paved road in the world, and it does not reach a rung further than the other three. What it has is no bad stretch anywhere in it: every transition between realms is written out by somebody who had just made it and was asked to explain how, every place a reader has historically stopped has an answer beside it, and there is nothing in it a student is expected to work out alone. That is what a body with exactly one purpose produces after enough centuries of it. The Empyrean Court exists to get its own members over the last crossing and has spent everything it has on the question, and the road is where the spending shows.'
     }),
 
 
@@ -2537,7 +2537,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'heavenly-mechanism-sight',
-        name: 'Heavenly Mechanism Sight',
+        name: 'Heavenly Mechanism Augury',
         category: 'support',
         grade: 'earth',
         element: null,
@@ -2550,7 +2550,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'name-holding-recitation',
-        name: 'Name-Holding Recitation',
+        name: 'Namekeeping Recitation',
         category: 'support',
         grade: 'earth',
         element: null,
@@ -2589,7 +2589,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'binding-word-seal',
-        name: 'Binding Word Seal',
+        name: 'Binding Pledge Sigil',
         category: 'support',
         grade: 'heaven',
         element: null,
@@ -2602,7 +2602,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'quiet-cut-severing-stroke',
-        name: 'Still Blade Severing Stroke',
+        name: 'Still Blade Severing Art',
         category: 'forbidden',
         grade: 'heaven',
         element: null,
@@ -2720,7 +2720,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'crimson-bound-union-rite',
-        name: 'Crimson-Bound Union Rite',
+        name: 'Crimson-Knot Union Ritual',
         category: 'dual_cultivation',
         grade: 'earth',
         element: null,
@@ -2735,7 +2735,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'twin-lotus-cultivation-method',
-        name: 'Twin Lotus Cultivation Method',
+        name: 'Twin Lotus Pairing Method',
         category: 'dual_cultivation',
         grade: 'mortal',
         element: null,
@@ -2772,7 +2772,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'lotus-plucking-rite',
-        name: 'Lotus-Plucking Rite',
+        name: 'Lotus-Plucking Ritual',
         category: 'dual_cultivation',
         grade: 'earth',
         element: null,
@@ -2894,7 +2894,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'shut-hour-sealing-field',
-        name: 'Shut Hour Sealing Field',
+        name: 'Shut Moment Domain',
         category: 'defense',
         grade: 'heaven',
         element: null,
@@ -2913,7 +2913,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'thousand-spear-summoning',
-        name: 'Thousand-Spear Summoning',
+        name: 'Thousand-Halberd Summoning',
         category: 'attack',
         grade: 'immortal',
         element: null,
@@ -2964,7 +2964,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // supplies the judgement that of course it would consume something
         // extraordinary without the catalog having to say so.
         id: 'hollow-second-body',
-        name: 'Hollow Second Body',
+        name: 'Empty Second Body',
         category: 'support',
         grade: 'immortal',
         element: null,
@@ -3017,7 +3017,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'turning-year-stillness-art',
-        name: 'Turning Year Stillness Art',
+        name: 'Turning Solstice Stillness Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -3038,7 +3038,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // something to ALREADY BE TRUE, and no magnitude widens that bound.
     art({
         id: 'name-erasing-art',
-        name: 'Name Erasing Art',
+        name: 'Unnaming Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -3066,7 +3066,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'hour-reversing-art',
-        name: 'Hour Reversing Art',
+        name: 'Moment Reversing Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -3346,7 +3346,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'unwritten-span-scripture',
-        name: 'Unwritten Span Scripture',
+        name: 'Unwritten Remnant Scripture',
         category: 'cultivation',
         grade: 'chaos',
         // A gathering canon lands on the person practising it, which is one
@@ -3409,7 +3409,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'nine-night-opening',
         subjects: ['flower'],
-        name: 'Nine-Night Opening',
+        name: 'Nine-Vigil Opening',
         category: 'support',
         grade: 'mortal',
         element: 'wood',
@@ -3428,7 +3428,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // whoever moves rather than whoever was aimed at, which is the road's
         // premise used against somebody instead of on a plant.
         subjects: ['flower'],
-        name: 'Cold-Set Petal Cut',
+        name: 'Chill-Set Petal Cut',
         category: 'attack',
         grade: 'earth',
         element: 'ice',
@@ -3530,7 +3530,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'cold-bed-foundation-canon',
         subjects: ['flower'],
-        name: 'Cold-Bed Foundation Canon',
+        name: 'Chill-Bed Foundation Canon',
         category: 'cultivation',
         grade: 'earth',
         element: 'wood',
@@ -3639,9 +3639,9 @@ export function getTechnique(id: string): TechniqueEntry | undefined {
  * shelves: the Azure Cloud Pavilion, which is `unassailable`, held three of the
  * four taught sword arts including blade flight, and the fourth sat at the
  * Clear River Alliance, which is `unbacked` and is a river federation holding
- * one sword chant rather than a school. So the art that marks somebody as of a
+ * one sword cadence rather than a school. So the art that marks somebody as of a
  * sword school came from the most backed institution on the map, which is the
- * inverse of the picture. The Cold Sword Sect is the fix and it is DATA: an ordinary
+ * inverse of the picture. The Unadorned Sword Sect is the fix and it is DATA: an ordinary
  * sect row whose parentage carries `parentFactionId: null`, holding no vein and
  * no book of its own, teaching the flight to people the terraces sent away. If
  * a shelf pass ever leaves blade flight taught only by houses that hold from
@@ -3658,7 +3658,7 @@ export function getTechnique(id: string): TechniqueEntry | undefined {
  * so the road was documented and empty.
  *
  * TWELVE ARTS, AND THE TEST IS WHAT IS BEING WORKED. A body art hardens the
- * practitioner's own flesh - the iron shirt, the golden bell, the jade
+ * practitioner's own flesh - the iron shirt, the golden dome, the jade
  * carapace, the bark under the skin, a lung tempered through heat, a body
  * driven down until it is part of the world's foundation. That is 炼体, and it
  * is why the road cuts across categories rather than following one: most of
@@ -3670,7 +3670,7 @@ export function getTechnique(id: string): TechniqueEntry | undefined {
  * attack works on the attack (`Burning Heart Cinder Ward`). Two fix the GROUND
  * or the record rather than the person (`Immovable Ground Stance`, `Nameless
  * Witness Stance`), and one makes a second body that is explicitly not the
- * practitioner (`Hollow Second Body`). `Foundation-Tempering Scripture` and
+ * practitioner (`Empty Second Body`). `Foundation-Tempering Scripture` and
  * `Stone Marrow Foundation Canon` temper the foundation, which is the
  * cultivation base and not the flesh, whatever the masonry vocabulary suggests.
  *

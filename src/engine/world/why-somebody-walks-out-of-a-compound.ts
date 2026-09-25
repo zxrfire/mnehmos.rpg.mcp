@@ -13,7 +13,7 @@
  * THE OTHER HALF OF LEAVING is written for a reader rather than for the engine:
  * `docs/world/climbing/past-the-ceiling.md`, *Leaving, and what it costs*, on
  * what a departure is negotiated over - the book rather than the person - and
- * why going to the Hollow Court is the one departure that costs nothing. This
+ * why going to the Empyrean Court is the one departure that costs nothing. This
  * file holds the rate; that holds the decision.
  *
  * ── THE REASONS ARE READ, NEVER INVENTED ─────────────────────────────────

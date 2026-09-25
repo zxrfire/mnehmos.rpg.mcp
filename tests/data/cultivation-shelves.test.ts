@@ -155,7 +155,7 @@ describe('a shelf is a working library', () => {
         // the reach a new member actually has and the bar the shelf has to meet.
         // AND A LIVING MASTER BRIDGES ANY GAP, which is the setting's own
         // answer to a shelf that does not join up: guidance from somebody of an
-        // appropriate level, passed master to student. The Hollow Court is the
+        // appropriate level, passed master to student. The Empyrean Court is the
         // case that forced this clause - it admits at 29 and its one road opens
         // at 41, a twelve-rung hole that looks indefensible until you notice
         // that its seats stand at 42 to 44 and can simply carry somebody over

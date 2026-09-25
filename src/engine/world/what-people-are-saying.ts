@@ -468,7 +468,7 @@ function bend(
         // The house has to move with the person, because several of the
         // sentences below name the house and not the person - and a distortion
         // that swaps a field the rendering never reads is a distortion that did
-        // nothing. Found by reading the output: "The Hollow Court has opened
+        // nothing. Found by reading the output: "The Empyrean Court has opened
         // the Gate Frame" came back identical under `intact` and under
         // `misattributed`, with only the invisible actor list differing.
         const instead = anotherHouse(state, fact);

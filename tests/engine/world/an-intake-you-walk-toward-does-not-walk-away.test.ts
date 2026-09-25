@@ -11,7 +11,7 @@
  * `opensOnDay` was drawn as `floor(onDay) + rng.int(1, remaining)` - anchored to
  * the day of whoever was READING the wall rather than to the wall - so it was
  * recomputed, further off, every time anybody looked. Read against the shipped
- * catalog at Green Water City, seed `run-seed`:
+ * catalog at Emerald Water City, seed `run-seed`:
  *
  *     day  0   Clear River Alliance   opens d28   (in 28 days)
  *     day  5   Clear River Alliance   opens d31   (in 26)
@@ -75,7 +75,7 @@ function field(): DoorInTheField[] {
 }
 
 const WALL = {
-    placeName: 'Iron Ridge',
+    placeName: 'Iron Crest',
     ground: 'city' as const,
     placeProvinceId: 'province-a',
     seed: 'wall-seed'

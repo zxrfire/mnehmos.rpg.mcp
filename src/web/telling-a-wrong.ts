@@ -147,7 +147,7 @@ const A_DOER_IS_NAMED = new RegExp(String.raw`\b(?:${SOMEBODY_DID_IT})\b`, 'i');
 /**
  * The addressees a telling cannot have.
  *
- * The asker, first and above all - "tell me about the Hollow Court" is a
+ * The asker, first and above all - "tell me about the Empyrean Court" is a
  * question, and reaching it from here would be this repo's commonest parser
  * defect: a widened pattern stealing the verb next door. The rest are here
  * because a telling is put to one person who can then hold something;

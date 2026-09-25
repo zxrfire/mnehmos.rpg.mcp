@@ -21,7 +21,7 @@
  *             AS BUILT    the tie the world actually forms - one master, taken
  *                         once at intake, never replaced
  *             CHAIN       the right teacher at every rung, continuously
- *           Reported as age at ordinal 29 against the Hollow Court's bar of 250.
+ *           Reported as age at ordinal 29 against the Empyrean Court's bar of 250.
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';

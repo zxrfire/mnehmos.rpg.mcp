@@ -54,7 +54,7 @@ describe('a Court that takes one sex', () => {
 
     /**
      * The two Courts a rule must never be hung on. The Azure Mist Court's bar
-     * is zero by design with its own test; the Hollow Court is the catalog's
+     * is zero by design with its own test; the Empyrean Court is the catalog's
      * exception in every direction and generalises wrongly.
      */
     it('leaves the two exceptional Courts alone', () => {

@@ -376,7 +376,7 @@ commonest outcome - that nobody below ever learns which of the three it was.
 **So the great crossings in the records did not leave empty chairs. They left no reserved
 chair at all**, and a house in that position is not holding a vacancy, it simply has no such
 post. Azure Cloud sent Ru Anjing 380 years ago. Burnt Earth sent the First Abbot 2,600 years
-ago. The Storm Tyrant Court sent the First Tyrant 3,400 years ago. The Hollow Court has sent
+ago. The Storm Tyrant Court sent the First Tyrant 3,400 years ago. The Empyrean Court has sent
 six. Not one of those houses is short a Protector. Their people succeeded.
 
 ### It obliges nothing
@@ -452,7 +452,7 @@ were in the room and had it shown to them first. A later reader gets the surface
 afternoon was worked out on without the afternoon, from an author who is still alive and
 could simply have been asked, and pays the whole of what reading costs.
 
-And **he holds no object at all**, of any rung. He was of the Hollow Court once and is
+And **he holds no object at all**, of any rung. He was of the Empyrean Court once and is
 not, so nothing of theirs is his to carry, and nothing else in the world would be handed
 to him. That makes the arts the entire account of why he is dangerous - and it is
 measurable: against the three mobilised apexes he takes the Earth Vein Tower every time, the
@@ -462,7 +462,7 @@ strongest person below the Lid can be fought to a standstill one time in five by
 three rungs beneath him, purely because they were given something and he was not. That
 asymmetry is the character. Nothing should fix it.
 
-He is **eligible** for the Hollow Court's reserved post and does not hold it. Nobody found
+He is **eligible** for the Empyrean Court's reserved post and does not hold it. Nobody found
 him wanting; he does not care for titles, having nearly 300,000 years and no rank left to gain, so
 the question has never become interesting enough to answer. The Court cannot seat him
 anyway - seats go by ordinal then remaining years, and a man with no attempts left cannot be

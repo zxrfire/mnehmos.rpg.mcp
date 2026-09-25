@@ -631,7 +631,7 @@ describe('ruins - knowledge follows engagement rather than altitude', () => {
             if (worked) site = worked.location;
         }
         const digger = knownAxes(site, { id: 'f-reed', name: 'the Reed House' });
-        const apex = knownAxes(site, { id: 'f-apex', name: 'the Hollow Court' });
+        const apex = knownAxes(site, { id: 'f-apex', name: 'the Empyrean Court' });
 
         expect(digger.knowsGradient).toBe(true);
         expect(apex.engagements).toBe(0);

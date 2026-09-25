@@ -67,7 +67,7 @@ function build(): WorldState {
     state.currentDay = DAY;
     state.locations.push(makeLocation({ id: 'loc-region', name: 'The Province', kind: 'region' }));
     state.locations.push(makeLocation({
-        id: 'loc-door', name: 'Cold Spring', kind: 'ruin', parentId: 'loc-region',
+        id: 'loc-door', name: 'Lone Spring', kind: 'ruin', parentId: 'loc-region',
         qiDensity: 60, thresholds: makeThresholds(4, 8, 14, 20),
         sealed: true, discovered: true, cycle: SEASON,
         // Held, and counted, which is the one cell of the four where anything

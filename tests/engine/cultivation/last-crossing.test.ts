@@ -185,7 +185,7 @@ describe('the three outcomes', () => {
 
     it('makes False Immortal common relative to True Immortal', () => {
         // Most who get through the lightning stay stuck on this side. That
-        // asymmetry is the Hollow Court's actual membership.
+        // asymmetry is the Empyrean Court's actual membership.
         expect(swept.falseImmortal.length).toBeGreaterThan(swept.trueImmortal.length * 2);
     });
 

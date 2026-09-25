@@ -70,13 +70,13 @@
  * deliberately no rung above which they stop taking it. Comprehension is not
  * priced like a manual. A manual has a `cap` because it teaches a METHOD and
  * the method runs out; a place teaches a PRINCIPLE, and a principle is either
- * legible to you or it is not. Standing in front of the Sword-Marked Cliff at
+ * legible to you or it is not. Standing in front of the Sword-Scored Cliff at
  * Qi Condensation, four hundred spans of somebody else's forty-year argument
  * with one problem is a cliff with scratches on it. At Foundation Establishment
  * it is an argument, and it stays an argument at Grand Ascension.
  *
  * Which is why the floors climb with what the ground is about rather than with
- * how impressive it is. The Grinding Ford asks almost nothing and the Doorless
+ * how impressive it is. The Grinding Shallows asks almost nothing and the Doorless
  * Room asks Void Tribulation, and the gap between them is not quality - it is
  * that you cannot be taught what an absence is by a thing that is there.
  *
@@ -242,7 +242,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     // ── HELD. The nine that make membership worth something. ──────────────
     {
         id: 'dao-ground-sword-marked-cliff',
-        name: 'The Sword-Marked Cliff',
+        name: 'The Sword-Scored Cliff',
         regionId: 'region-low-fall',
         domain: 'weapon',
         subject: 'the sword',
@@ -259,7 +259,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-standing-kiln',
-        name: 'The Standing Kiln',
+        name: 'The Unquenched Brazier',
         regionId: 'region-low-fall',
         domain: 'alchemy',
         subject: 'refinement',
@@ -293,7 +293,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-hour-room',
-        name: 'The Hour Room',
+        name: 'The Water-Clock Room',
         regionId: 'region-low-fall',
         domain: 'time',
         subject: 'duration',
@@ -321,9 +321,9 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         // The stair is how the food gets up. Anybody carrying a load is on it and nobody asks whose.
         admits: 'anybody',
         description:
-            'The service stair cut into the vein face below the Order\'s lowest peak, eleven hundred steps of it, worn through in the middle to the depth of a hand. Everything the Order eats goes up it on somebody\'s back, twice a day, in all weather, and it has done for two centuries.',
+            'The service stair cut into the vein face below the Sect\'s lowest peak, eleven hundred steps of it, worn through in the middle to the depth of a hand. Everything the Sect eats goes up it on somebody\'s back, twice a day, in all weather, and it has done for two centuries.',
         what:
-            'Carrying. There is no instruction attached and the Order offers none. What a Stone Bearer eventually notices is that the stair has selected for a particular way of holding a load, that nobody taught it to them, and that their body arrived at it without being asked.'
+            'Carrying. There is no instruction attached and the Sect offers none. What a Stone Bearer eventually notices is that the stair has selected for a particular way of holding a load, that nobody taught it to them, and that their body arrived at it without being asked.'
     },
     {
         id: 'dao-ground-forty-one-nodes',
@@ -413,7 +413,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-grinding-ford',
-        name: 'The Grinding Ford',
+        name: 'The Grinding Shallows',
         regionId: 'region-quiet-marches',
         domain: 'body',
         subject: 'wear',
@@ -429,7 +429,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-glass-field',
-        name: 'The Glass Field',
+        name: 'The Glass Ploughland',
         regionId: 'region-wide-field',
         domain: 'weapon',
         subject: 'the stroke',
@@ -445,7 +445,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-slow-bell',
-        name: 'The Slow Bell',
+        name: 'The Seldom Gong',
         regionId: 'region-white-stair',
         domain: 'time',
         subject: 'the interval',
@@ -461,7 +461,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-blown-hollow',
-        name: 'The Hollow Between the Arms',
+        name: 'The Nothing Between the Arms',
         regionId: 'region-low-fall',
         domain: 'void',
         subject: 'the gap',
@@ -601,7 +601,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     // they are three cliffs with working on them.
     {
         id: 'dao-carving-the-rain-face',
-        name: 'The Rain Face',
+        name: 'The Drizzle Face',
         regionId: 'region-white-stair',
         domain: 'void',
         subject: 'the seam',
@@ -617,7 +617,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-carving-the-counted-wall',
-        name: 'The Counted Wall',
+        name: 'The Counted Rampart',
         regionId: 'region-quiet-marches',
         domain: 'time',
         subject: 'a span you can count',
@@ -633,7 +633,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-carving-the-unfinished-side',
-        name: 'The Unfinished Side',
+        name: 'The Unfinished Half',
         regionId: 'region-wide-field',
         domain: 'life_death',
         subject: 'coming back short',

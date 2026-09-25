@@ -344,7 +344,7 @@ describe('asking somebody along, played', () => {
         );
         expect(yes, 'nobody agreed in eighty asks').not.toBeNull();
 
-        const folded = await harness.game.act('I fold space to Bronze Bell Cliff') as {
+        const folded = await harness.game.act('I fold space to Bronze Gong Cliff') as {
             narration?: string;
         };
         expect(folded.narration ?? '').toContain(who!);

@@ -54,7 +54,7 @@ describe('the sentence reaches a breaking rather than something politer', () => 
 
     it('reads breaking a thing you hold as breaking it, not as a fight', () => {
         expect(parseIntent('I break my sword').action).toBe('destroy');
-        expect(parseIntent('I smash the spirit boat').action).toBe('destroy');
+        expect(parseIntent('I smash the spirit skiff').action).toBe('destroy');
     });
 
     it('still reads swallowing as swallowing and a fight as a fight', () => {
@@ -92,7 +92,7 @@ describe('a player can break what they are carrying', () => {
     // can actually see, so the precondition is a state somebody can occupy
     // rather than one only a test can build.
     //
-    // The tracked half has no sibling and cannot have one: a spirit boat is
+    // The tracked half has no sibling and cannot have one: a spirit skiff is
     // 2,400 days of work for one pair of hands against a bill of heaven-grade
     // cores, which is a lifetime rather than a fixture. Said plainly rather
     // than faked.
@@ -146,7 +146,7 @@ describe('a tracked thing keeps its row and the row says it ended', () => {
         })!;
         world.objects.push(boat);
 
-        await harness.game.act('I smash the spirit boat');
+        await harness.game.act('I smash the spirit skiff');
 
         const reloaded = await harness.game.loadWorld();
         expect(reloaded, 'the world went missing across the breaking').toBeTruthy();

@@ -66,7 +66,7 @@
  *   the headcount threshold and then deriving it from Poisson noise each fixed
  *   that case and left the instrument wrong.
  *
- *   WRONG AT THE TOP, WHICH IS THE ONE THAT SETTLED IT. Seeding the Hollow
+ *   WRONG AT THE TOP, WHICH IS THE ONE THAT SETTLED IT. Seeding the Empyrean
  *   Court produced Tribulation Transcendence standing larger than Grand
  *   Ascension beneath it, and that is CORRECT. The Court is an institution of
  *   prodigies and it concentrates the summit by construction: its seats were
@@ -463,7 +463,7 @@ describe('the pyramid holds its shape', () => {
         // summit that is genuinely correct.
         //
         // THE SUMMIT IS EXPECTED TO BE IRREGULAR AND MUST NOT BE FIXED BACK.
-        // The Hollow Court is an institution of prodigies and it CONCENTRATES
+        // The Empyrean Court is an institution of prodigies and it CONCENTRATES
         // the top of the ladder by construction: its seats were Grand Ascension
         // cultivators with resources nobody else has and they crossed, while the
         // Grand Ascension cultivators outside it ran out of years. So

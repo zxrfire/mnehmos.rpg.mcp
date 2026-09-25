@@ -787,7 +787,7 @@ function extinctionRecord(): string {
 // Beast materials, what a house moves its people on, and what an artifact is
 // made of. All three catalogs were authored, wired and invisible: the register
 // named no export of any of them, so a reader browsing the sheet could not find
-// out that the world has spirit boats in it, or that a core is an ingredient.
+// out that the world has spirit skiffs in it, or that a core is an ingredient.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -991,7 +991,7 @@ export function renderTrackedCraftSection(): string {
     return `
 <section>
   <div class="sh"><h2>The craft that are objects</h2><span class="r">${TRACKED_CRAFT.length} rows &middot; ${new Set(TRACKED_CRAFT.map(c => c.ownerId).filter(Boolean)).size} houses</span></div>
-  <p class="note"><strong>Everything else that moves a party is an amount; these are rows.</strong> A house has four shod carriages and could not say which of them went anywhere last spring. It can say where each of these is, who built it, and what it cost, and the rating in the second column is the ladder every other object on this tab is rated on.</p>
+  <p class="note"><strong>Everything else that moves a party is an amount; these are rows.</strong> A house has four iron-rimmed carriages and could not say which of them went anywhere last spring. It can say where each of these is, who built it, and what it cost, and the rating in the second column is the ladder every other object on this tab is rated on.</p>
   ${gridTable(
         `Named craft - ${TRACKED_CRAFT.length}, ${TRACKED_CRAFT.filter(c => kindOfCraft(c)?.id === 'conv-spirit-boat').length} of them hulls`,
         ['Craft', 'Rated', 'What it is', 'Whose it is', 'Where it sits', 'Built'],
@@ -1138,9 +1138,9 @@ export function renderItemsSection(): string {
 
 <section>
   <div class="sh"><h2>What a house moves its people on</h2><span class="r">${CONVEYANCES.length} rungs &middot; ${CONVEYANCE_RECIPES.length} of them buildable</span></div>
-  <p class="note"><strong>Arriving is a statement before anybody speaks, and the table is not a ladder.</strong> A named carriage is heaven grade and reaches a district; a hull is heaven grade and crosses water. What a house owns says what it can reach and what it is willing to be seen reaching for, and the two are different questions.</p>
+  <p class="note"><strong>Arriving is a statement before anybody speaks, and the table is not a ladder.</strong> A titled carriage is heaven grade and reaches a district; a hull is heaven grade and crosses water. What a house owns says what it can reach and what it is willing to be seen reaching for, and the two are different questions.</p>
   ${conveyanceTable()}
-  <p class="note"><strong>${conveyancesNobodyBuilds().length} of the ${CONVEYANCES.length} have no bill of materials.</strong> Walking is made of nothing, flight on one's own blade is an art rather than property, and a broken beast is a hunt rather than a build. Everything else below is made out of what a hunt brings back, which is what joins this table to the beast materials above.</p>
+  <p class="note"><strong>${conveyancesNobodyBuilds().length} of the ${CONVEYANCES.length} have no bill of materials.</strong> Walking is made of nothing, soaring on one's own blade is an art rather than property, and a broken beast is a hunt rather than a build. Everything else below is made out of what a hunt brings back, which is what joins this table to the beast materials above.</p>
   <p class="note"><strong>A core in the frame is the line a house cannot buy its way past.</strong> Nothing below ordinal ${BEAST_CORE_ORDINAL} carries one, so the cheapest core obtainable anywhere is ${LOWEST_CORE_GRADE} grade and every craft with one in it is paying that price whatever else it is made of.</p>
   ${conveyanceRecipeBlocks()}
 </section>

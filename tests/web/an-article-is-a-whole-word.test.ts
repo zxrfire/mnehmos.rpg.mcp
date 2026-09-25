@@ -20,7 +20,7 @@
  * catalog in full, with its article, correctly spelled.
  *
  * Seven of the thirty-six houses in the world start with one of those words:
- * three Azure, the Ashen Forge Clan, the Ancient Bough Grove, The Hollow Court,
+ * three Azure, the Ashen Anvil Clan, the Ancient Bough Grove, The Empyrean Court,
  * The Severed. Every one of them was being mangled by every one of the thirteen
  * callers, and the failure was invisible - no error, no refusal about spelling,
  * just a target that resolved to nobody and a verb politely asking again.
@@ -66,10 +66,10 @@ describe('an article in front of a name', () => {
 
     /** A real article is still stripped, which is what the group is for. */
     it('still takes a genuine article off the front', () => {
-        expect(partyAfter('I declare war on the Cold Sword Sect', 'war (?:on|against|upon|with)'))
-            .toBe('Cold Sword Sect');
-        expect(partyAfter('I apply to the Thousand Treasure Pavilion', 'apply to|to'))
-            .toBe('Thousand Treasure Pavilion');
+        expect(partyAfter('I declare war on the Unadorned Sword Sect', 'war (?:on|against|upon|with)'))
+            .toBe('Unadorned Sword Sect');
+        expect(partyAfter('I apply to the Thousand Relic Pavilion', 'apply to|to'))
+            .toBe('Thousand Relic Pavilion');
     });
 });
 
@@ -77,7 +77,7 @@ describe('through the table', () => {
     it('carries the whole name into the plan', () => {
         for (const [sentence, target] of [
             ['I will end the Azure Cloud Pavilion', 'Azure Cloud Pavilion'],
-            ['I declare war on the Ashen Forge Clan', 'Ashen Forge Clan'],
+            ['I declare war on the Ashen Anvil Clan', 'Ashen Anvil Clan'],
             ['I declare war on the Ancient Bough Grove', 'Ancient Bough Grove'],
             ['I declare war on the Azure Dew Sect', 'Azure Dew Sect']
         ] as const) {

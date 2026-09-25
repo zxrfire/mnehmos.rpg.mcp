@@ -25,7 +25,7 @@ const HERE = 'region-home';
 
 const PLACES: TravellerPlace[] = [
     { id: 'Nextvillage', name: 'Nextvillage', regionId: HERE },
-    { id: 'Iron Ridge', name: 'Iron Ridge', regionId: 'region-far' },
+    { id: 'Iron Crest', name: 'Iron Crest', regionId: 'region-far' },
     { id: 'Willow Village', name: 'Willow Village', regionId: 'region-far' },
     { id: 'Six Li', name: 'Six Li', regionId: 'region-far' }
 ];
@@ -156,7 +156,7 @@ describe('the prose grants the name and not the meaning', () => {
         const prose = travellerProse(traveller);
 
         expect(prose).toContain(traveller.from.name);
-        // discovery.md: "If the next paragraph tells the player what the Sill
+        // discovery.md: "If the next paragraph tells the player what the Sluice
         // is, the moment has been spent for nothing."
         expect(prose).not.toMatch(/which is|that is the|a sect|a province|famous|known for/i);
         expect(prose).toMatch(/the way you would say a weekday/);

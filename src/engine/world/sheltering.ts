@@ -7,7 +7,7 @@
  *
  * The design owner:
  *
- *   > if you're inside a spirit boat, you are now much safer than if you were
+ *   > if you're inside a spirit skiff, you are now much safer than if you were
  *   > not. you can still die, but being inside a boat means structurally you
  *   > are safer right? find reasons for this derived not bespoke.
  *

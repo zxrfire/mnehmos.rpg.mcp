@@ -366,21 +366,21 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             // above: `planTheBuild` with nothing named returns every bill, the
             // rung gate on each, and what the pouch is short of. This table
             // went stale when `craft` joined `ACTION_NAMES` and the default
-            // caught it, so "can I build a spirit boat?" was rewritten to
+            // caught it, so "can I build a spirit skiff?" was rewritten to
             // `assess` and answered with an ambient-qi reading of a PLACE
-            // called "spirit boat".
+            // called "spirit skiff".
             return { action: 'craft' };
 
         case 'move':
         case 'ride':
         case 'fold':
-            // Where they could go, priced. "Could I ride to Iron Ridge" and "how
+            // Where they could go, priced. "Could I ride to Iron Crest" and "how
             // far can I fold" are both questions about the map rather than
             // journeys, and the destinations read answers each with the roads
             // the catalog states and the days on them.
             //
             // THE PLACE RIDES ALONG. Dropping it turned "could I ride to Iron
-            // Ridge" into the whole map - a question about one road answered
+            // Crest" into the whole map - a question about one road answered
             // with every road, which is the shape this pass exists to stop. The
             // read decides what to do with a name; the rewrite's job is not to
             // lose it. See `destinations`.
@@ -390,7 +390,7 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         case 'oath':
             // Both have a read as their DEFAULT intent, by the rule stated at
             // INTENT_ACTIONS: the board, and what the swearer already carries.
-            // Dropping the intent reaches it. "What would passage to Iron Ridge
+            // Dropping the intent reaches it. "What would passage to Iron Crest
             // cost" is the board, and the board is a price list.
             //
             // AND FOR AN OATH THE READ IS NAMED RATHER THAN LEFT OFF. Dropping

@@ -124,7 +124,7 @@ export const THE_OATHWRIGHT_HOUSE = 'house-vermilion-seal';
 export const THE_OATHWRIGHT_WILL_NOT_WITNESS_FOR: Readonly<Record<string, string>> =
     Object.freeze({
         'sect-the-severed':
-            'A founding oath of the Vermilion Seal Terrace forbids it, and the house has '
+            'A founding oath of the Vermilion Sigil Terrace forbids it, and the house has '
             + 'refused the fee every year since rather than break it. What the Severed use '
             + 'instead is not recorded anywhere the House would be able to read.'
     });

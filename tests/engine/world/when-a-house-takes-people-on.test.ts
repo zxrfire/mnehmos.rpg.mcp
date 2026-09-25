@@ -73,7 +73,7 @@ describe('an intake on a wall', () => {
         id: `house-${i}`, name: `House ${i}`, admissionOrdinal: i, powerOrdinal: 10 + i * 3,
         provinceId: i % 2 === 0 ? 'province-a' : 'province-b', postsInPublic: true
     }));
-    const WALL = { field, placeName: 'Iron Ridge', ground: 'city' as const, placeProvinceId: 'province-a', seed: SEED };
+    const WALL = { field, placeName: 'Iron Crest', ground: 'city' as const, placeProvinceId: 'province-a', seed: SEED };
 
     it('is held on the day the paper named, and not before', () => {
         const onDay = 5000;

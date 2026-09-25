@@ -12,6 +12,7 @@ import { forStream } from '../engine/cultivation/rng.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
 import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
+import { placeSeedKey } from '../data/cultivation/place-names.js';
 
 export type ACounter = 'inn' | 'landing' | 'carriage_station';
 
@@ -46,7 +47,7 @@ export function whoKeepsTheCounter(
     counter: ACounter,
     countersHere: readonly ACounter[]
 ): AKeeper | null {
-    const place = (cultivator.location ?? '').trim().toLowerCase();
+    const place = placeSeedKey((cultivator.location ?? '').trim()).toLowerCase();
     const seed = game.atHand?.seed ?? 'no-world';
     const atTrade = new Set(
         (game.atHand?.npcs ?? []).filter(npc => npc.activity?.kind === 'trade').map(npc => npc.id)

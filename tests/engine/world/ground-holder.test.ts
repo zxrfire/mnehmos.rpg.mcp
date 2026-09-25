@@ -70,10 +70,10 @@ describe('who holds the ground', () => {
     });
 
     it('keeps "the register carries it with nobody\'s name" as its own answer', () => {
-        // Clear River Ford: `prefecture-scarwater`, `heldByFactionId: null`,
+        // Clear River Ferry: `prefecture-scarwater`, `heldByFactionId: null`,
         // `discrepancy: 'no_holder_of_record'`. Four of fifteen rows are this.
         const region = place('r', 'The Jade Gorge', { kind: 'region' });
-        const town = place('t', 'Clear River Ford', { parentId: 'r' });
+        const town = place('t', 'Clear River Ferry', { parentId: 'r' });
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(read.holding).toBe('no_holder_of_record');
@@ -86,7 +86,7 @@ describe('who holds the ground', () => {
             kind: 'region',
             data: { politics: 'no_authority' }
         });
-        const town = place('t', 'Bronze Bell Cliff', { parentId: 'r' });
+        const town = place('t', 'Bronze Gong Cliff', { parentId: 'r' });
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(read.holding).toBe('no_authority');

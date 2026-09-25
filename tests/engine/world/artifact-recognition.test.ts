@@ -201,7 +201,7 @@ describe('recognising a thing somebody is carrying', () => {
     });
 
     it('keeps an undeclared thing unrecognisable to everybody but its own house', () => {
-        // The Hollow Court has never said its four exist. Everybody in the
+        // The Empyrean Court has never said its four exist. Everybody in the
         // province holds a reference for the Court, so without the object's own
         // silence being read the most secret things in the world would be the
         // most widely recognised.

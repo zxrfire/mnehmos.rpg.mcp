@@ -336,7 +336,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         },
         discoverableTraces: [],
         standingNote:
-            'Everyone defers, and several rivals resent it openly. The Ashen Forge Clan calls the deference "renting a dead woman", and a faction inside the Stone Marrow Hall is quietly modelling what the region looks like the year the Edge is finally spent - a document that would end several careers if it were read aloud. What none of them has worked out is that the Pavilion is not living on what she left. She still answers, every nine to fourteen years, because her sister Ru Anwei is alive in the Pavilion and is the person she answers for - so the stock rises rather than falls, all of it at the bottom of the range. What sits under it is not a clock, it is a position: the income is attached to one named living woman rather than to the mountain, and anybody who wanted it would not have to take the Pavilion, only reach her. She stands at the first rung of the last realm, which is not nothing and is not the same order of thing as what she is standing in front of. Everybody senior has done that arithmetic. Nobody discusses it. See `crossings.ts`.'
+            'Everyone defers, and several rivals resent it openly. The Ashen Anvil Clan calls the deference "renting a dead woman", and a faction inside the Stone Marrow Hall is quietly modelling what the region looks like the year the Edge is finally spent - a document that would end several careers if it were read aloud. What none of them has worked out is that the Pavilion is not living on what she left. She still answers, every nine to fourteen years, because her sister Ru Anwei is alive in the Pavilion and is the person she answers for - so the stock rises rather than falls, all of it at the bottom of the range. What sits under it is not a clock, it is a position: the income is attached to one named living woman rather than to the mountain, and anybody who wanted it would not have to take the Pavilion, only reach her. She stands at the first rung of the last realm, which is not nothing and is not the same order of thing as what she is standing in front of. Everybody senior has done that arithmetic. Nobody discusses it. See `crossings.ts`.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -493,7 +493,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         },
         discoverableTraces: [
             'the rod has not been shown at a succession in three generations, and the Court now describes it instead',
-            'a rod answering its description was sold through a Thousand Treasure auction two centuries ago by a seller the Pavilion will not name',
+            'a rod answering its description was sold through a Thousand Relic auction two centuries ago by a seller the Pavilion will not name',
             'the Court has refused Ledger certification of its vault inventory four times, most recently in writing',
             'Frostmirror Court has offered to pay the Karma Palace\'s fee itself, which the Karma Palace has neither accepted nor declined'
         ],
@@ -547,7 +547,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             'two Sovereign successions in four hundred years were resolved in under a day, unusually fast for a demonic sect'
         ],
         standingNote:
-            'Nobody outside the sect knows the Kindler is there. Its rivals price it as a strong demonic sect with a caldera, which is why the Ashen Forge Clan has twice pushed a border dispute further than it would have if it knew what was under the floor.'
+            'Nobody outside the sect knows the Kindler is there. Its rivals price it as a strong demonic sect with a caldera, which is why the Ashen Anvil Clan has twice pushed a border dispute further than it would have if it knew what was under the floor.'
     },
     // THE HOUSE WITH NOTHING ABOVE IT AND NO CLAIM TO ONE.
     'sect-orchid-court': {
@@ -619,7 +619,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             }
         ],
         // The claim is made and the claim is wrong, which is a state the
-        // catalog had nowhere else. The Thousand Treasure Pavilion holds a
+        // catalog had nowhere else. The Thousand Relic Pavilion holds a
         // false claim because it bought somebody else's; this house holds one
         // because its own ancestor died where nobody could see it happen.
         // `auditAncestralClaim` is what exposes the difference, and it needs
@@ -645,7 +645,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
              * Survey's head without help, and nothing enforces which direction
              * it points.
              *
-             * The data had that forty-four on the Kiln Wardens, who are neither
+             * The data had that forty-four on the Tripod Wardens, who are neither
              * federated, nor a court, nor anybody's client - they are a guard
              * posting, and their First Warden is at his post rather than in
              * reserve. So the number sat on a house the paragraph does not
@@ -747,33 +747,33 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-nine-peaks-ascetic-order': {
         ancestors: [
             { name: 'The Stone Bearer', fate: 'dead', realmOrdinal: null, yearsAgo: 1_600, afterCrossing: null, rememberedFor: 'Carried the founding stone over all nine peaks and never said why, which is now the admission requirement.' },
-            { name: 'Patriarch Meng Da', fate: 'dormant', realmOrdinal: 31, yearsAgo: 800, afterCrossing: null, rememberedFor: 'Walked into the vein workings to survey them and did not come out. He is still down there, which the Order has surveyed to the depth of and has never accepted in words: the entrance has never been sealed and the ascetics tell it as a story.' }
+            { name: 'Patriarch Meng Da', fate: 'dormant', realmOrdinal: 31, yearsAgo: 800, afterCrossing: null, rememberedFor: 'Walked into the vein workings to survey them and did not come out. He is still down there, which the Sect has surveyed to the depth of and has never accepted in words: the entrance has never been sealed and the ascetics tell it as a story.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
         recency: 'none',
         dormant: {
             name: 'Patriarch Meng Da',
-            restingPlace: 'In the vein workings he walked into and did not come out of, at a depth the Order has surveyed and never opened.',
+            restingPlace: 'In the vein workings he walked into and did not come out of, at a depth the Sect has surveyed and never opened.',
             dormantYears: 800,
             realmOrdinal: 31,
             sealGrade: 'crude',
             sealReason: 'protector',
             wakeCondition:
-                'The vein is taken, or the workings are entered by anybody the Order did not send. The Order has never sealed the entrance, which outsiders read as confidence and is in fact the seal needing the airflow.',
+                'The vein is taken, or the workings are entered by anybody the Sect did not send. The Sect has never sealed the entrance, which outsiders read as confidence and is in fact the seal needing the airflow.',
             wakeCost:
-                'He comes up, and the workings close behind him permanently. The Order would keep its mountain and lose the deepest vein in the province, which is the whole of what the Order is.',
+                'He comes up, and the workings close behind him permanently. The Sect would keep its mountain and lose the deepest vein in the province, which is the whole of what the Sect is.',
             publiclyKnown: true
         },
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [],
-        standingNote: 'The Order\'s standing is the vein, and everybody knows it is the vein. Meng Da is a story the ascetics tell each other and do not offer to outsiders.'
+        standingNote: 'The Sect\'s standing is the vein, and everybody knows it is the vein. Meng Da is a story the ascetics tell each other and do not offer to outsiders.'
     },
     'sect-clear-river-alliance': {
         ancestors: [
-            { name: 'Old Shen of the Third Ford', fate: 'dead', realmOrdinal: null, yearsAgo: 300, afterCrossing: null, rememberedFor: 'Federated eleven ferry towns by refusing to carry anyone who would not sign.' },
-            { name: 'River Elder Pei', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Drowned holding a ford against a Thousand Treasure toll collection.' }
+            { name: 'Old Shen of the Third Ferry', fate: 'dead', realmOrdinal: null, yearsAgo: 300, afterCrossing: null, rememberedFor: 'Federated eleven ferry towns by refusing to carry anyone who would not sign.' },
+            { name: 'River Elder Pei', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Drowned holding a ford against a Thousand Relic toll collection.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -786,7 +786,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-lantern-hall': {
         ancestors: [
-            { name: 'The First Keeper of Names', fate: 'dead', realmOrdinal: null, yearsAgo: 1_500, afterCrossing: null, rememberedFor: 'Began the counter-register by writing down what a crossing had taken from a man who could no longer say it himself.' },
+            { name: 'The First Keeper of Scrolls', fate: 'dead', realmOrdinal: null, yearsAgo: 1_500, afterCrossing: null, rememberedFor: 'Began the counter-register by writing down what a crossing had taken from a man who could no longer say it himself.' },
             { name: 'Keeper Ao Shi', fate: 'dead', realmOrdinal: null, yearsAgo: 220, afterCrossing: null, rememberedFor: 'Published the crossing ledger of a sitting Grand Elder and was expelled from four cities for it.' }
         ],
         claimsLivingAncestor: false,
@@ -868,7 +868,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-hollow-bell-wanderers': {
         ancestors: [
-            { name: 'Whoever hung the first bell', fate: 'lost', realmOrdinal: null, yearsAgo: 200, afterCrossing: null, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' },
+            { name: 'Whoever hung the first chime', fate: 'lost', realmOrdinal: null, yearsAgo: 200, afterCrossing: null, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' },
        ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -876,7 +876,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         dormant: null,
         partingGift: {
             id: 'artifact-the-rung-bell',
-            name: 'The Rung Bell',
+            name: 'The Rung Chime',
             description:
                 'Not a treasure sent down from anywhere. It is what Shen Guyi left, and what he left is the whole estate of somebody who stood at forty-four: manuals in grades the Wanderers cannot read, materials from ground that is now thin, and a bell he cast himself in the last year, which is the only part of it they have ever used. It hangs at the crossroads with the others and is not marked.',
             reserveTerms:
@@ -925,8 +925,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-deeproot-court': {
         ancestors: [
-            { name: 'The First Keeper of the Kiln', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, afterCrossing: null, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' },
-            { name: 'The First Warden', fate: 'dormant', realmOrdinal: 37, yearsAgo: 3_100, afterCrossing: null, rememberedFor: 'Head of the house the Kiln and the Deeproot were before either was a posting. Took the position at the world-heart and has not left it, which is why the watches are shaped the way they are and why every node the Wardens hold is lit. The Wardens state this in numbers when asked and have never elaborated.' }
+            { name: 'The First Keeper of the Tripod', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, afterCrossing: null, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' },
+            { name: 'The First Warden', fate: 'dormant', realmOrdinal: 37, yearsAgo: 3_100, afterCrossing: null, rememberedFor: 'Head of the house the Tripod and the Deeproot were before either was a posting. Took the position at the world-heart and has not left it, which is why the watches are shaped the way they are and why every node the Wardens hold is lit. The Wardens state this in numbers when asked and have never elaborated.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -954,13 +954,13 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
          * because he is why every node they hold is lit and that is authored
          * content; what goes is the claim that they can spend him.
          *
-         * The design owner: *"remember the kiln wardens aren't really a sect,
+         * The design owner: *"remember the tripod wardens aren't really a sect,
          * its like a guard posting"*, and *"so its just a dude on permanent
          * guard duty"*. A posting does not have a reserve.
          *
          * AND HE WAS NOT ONE RUNG BELOW IMMORTAL. He stood at 44 - the top of
          * Tribulation Transcendence - for a body that has been standing a watch
-         * for thirty-one centuries and is the founding head of what the Kiln
+         * for thirty-one centuries and is the founding head of what the Tripod
          * and the Deeproot were before either was a posting. He is 37 now, the
          * first rung of Grand Ascension: one realm above what the posting
          * fields today, which is what a founder who never left should read as.
@@ -1088,7 +1088,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-silver-island-market': {
         ancestors: [
             { name: 'Weigher Duan Xi', fate: 'dead', realmOrdinal: 19, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Set the rate at a fortieth and refused four separate offers to raise it, on the argument that the port is worth what passes through it and nothing else. The rate has not moved since and the argument is repeated at every Factors\' table as though somebody had just thought of it.' },
-            { name: 'The Market Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Earth Vein Tower was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Silver Island is worth remarking on.' }
+            { name: 'The Barge Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Earth Vein Tower was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Silver Island is worth remarking on.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1102,7 +1102,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-sand-well-caravan': {
         ancestors: [
             { name: 'The Oasis Master who cut the first tally board', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Left the names of strings that did not come back up on the board instead of wiping them, and the board has never been wiped since. It is now nine boards and the shed was rebuilt around them.' },
-            { name: 'Oasis Elder Ma out of Iron Ridge', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
+            { name: 'Oasis Elder Ma out of Iron Crest', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1115,7 +1115,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-six-li-patrol': {
         ancestors: [
-            { name: 'The first Marker, name not recorded', fate: 'dead', realmOrdinal: null, yearsAgo: 190, afterCrossing: null, rememberedFor: 'Walked the burn edge until it killed her, painting stakes, and the survey she left is still the basis of every safe route in the region.' }
+            { name: 'The first Stakehand, name not recorded', fate: 'dead', realmOrdinal: null, yearsAgo: 190, afterCrossing: null, rememberedFor: 'Walked the burn edge until it killed her, painting stakes, and the survey she left is still the basis of every safe route in the region.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,

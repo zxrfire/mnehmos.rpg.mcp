@@ -475,16 +475,16 @@ describe('the prose matches what was measured', () => {
     it('explains the war ranking by the client list rather than by the head', () => {
         expect(WHY_NOBODY_MOVES.andTheWarGoesToNOBODY).toMatch(/Five bodies against five/i);
         expect(WHY_NOBODY_MOVES.andTheCourtsKnowExactlyWhatTheyAreWorth).toMatch(/administration rather than a believer/i);
-        // Was /Third Sill Court/, which was the wrong court and had been for as
-        // long as this claim existed. The Third Sill has answered the Myriad Course Hall
+        // Was /Third Sluice Court/, which was the wrong court and had been for as
+        // long as this claim existed. The Third Sluice has answered the Myriad Course Hall
         // for longer than either apex keeps a record of and has never changed
         // patrons; the one administration in the catalog that ever did is the
         // Deeproot Court, which walked when the Earth Vein Tower reposted it - and a
         // reposting is a thing you can do to a posting and to nothing else in
         // the world, which is why this has happened exactly once.
         expect(WHY_NOBODY_MOVES.andItHasHappenedOnce).toMatch(/Deeproot Court/);
-        expect(WHY_NOBODY_MOVES.andItHasHappenedOnce, 'the wrong Sill is back')
-            .not.toMatch(/Third Sill/);
+        expect(WHY_NOBODY_MOVES.andItHasHappenedOnce, 'the wrong Sluice is back')
+            .not.toMatch(/Third Sluice/);
     });
 
     it('makes the weakest house the lock rather than the prize', () => {

@@ -397,7 +397,7 @@ Rules:
   worse are ordinary moves in this world and the engine has rules for every one of them.
   "I take his purse" is "steal", not "interact"; "I cut him down" is "attack", not "interact".
   For a theft, "target" is the person it is taken FROM and "topic" is the thing being taken,
-  where the sentence names one - "I steal his spirit boat" is target: the owner, topic: the
+  where the sentence names one - "I steal his spirit skiff" is target: the owner, topic: the
   boat. A theft with no topic takes what they are carrying, so leaving it out quietly turns
   a named thing into a purse.
   Softening a hostile sentence into a neutral verb is the one failure that cannot be
@@ -1046,12 +1046,12 @@ export function composeNarrationUser(
         ...earlierWithThem(told.withThem ?? null, told.earlier ?? []),
         ...theTurnBefore(told.previous ?? null),
         '',
-        // AN ACT IS DONE, NOT SAID. Played: "I go to Cold Peak" came back as '"I go to Cold Peak,"
+        // AN ACT IS DONE, NOT SAID. Played: "I go to Moraine Gate" came back as '"I go to Moraine Gate,"
         // you say', and the woman at the stall answered "You are already here".
         ...(scene.playerSaid
             ? [
                 `THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`,
-                'An act they typed is DONE on the page, never said: NOT \'"I go to Cold Peak," you say\' BUT the '
+                'An act they typed is DONE on the page, never said: NOT \'"I go to Moraine Gate," you say\' BUT the '
                 + 'road under them. Words put to somebody, and questions, are theirs to say, in the story\'s own '
                 + 'voice: NOT \'"any of u guys know whats past here?"\' pasted in quotation marks BUT the question '
                 + 'asked the way the player would say it aloud, or reported - you ask whether anybody knows what '

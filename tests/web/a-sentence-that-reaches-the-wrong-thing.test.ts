@@ -25,7 +25,7 @@
  *                                                   took a figure out of the
  *                                                   house's NAME - the Six Li
  *                                                   Patrol a donation of 6,
- *                                                   the Thousand Treasure
+ *                                                   the Thousand Relic
  *                                                   Pavilion one of 1000
  *     how high would the X take me -> what_they_teach with NO TARGET, 38 of
  *                                                   38. That read takes an
@@ -59,7 +59,7 @@
  * wrong one is a refusal about somebody who is not here:
  *
  *     i tell him about the X     -> target "him about the X", 38 of 38
- *     i fly to Iron Ridge on my sword -> target "Iron Ridge on my sword"
+ *     i fly to Iron Crest on my sword -> target "Iron Crest on my sword"
  *     i stand guard for a month  -> target "month"
  *     who owes me anything       -> target "me anything"
  *     i insult him / i draw my sword on him -> no target
@@ -92,7 +92,7 @@ import { SECTS } from '../../src/data/cultivation/sects';
 
 /**
  * The house as a player says it. Two names in the catalog carry their own
- * article - The Severed, The Hollow Court - and "the The Severed" is not a
+ * article - The Severed, The Empyrean Court - and "the The Severed" is not a
  * sentence anybody types. Stripping it here keeps the sweep over the whole
  * catalog without the fixture inventing a phrasing to fail on.
  */
@@ -224,7 +224,7 @@ describe('a sentence that reaches the wrong thing', () => {
     describe('an argument the engine can use, or none at all', () => {
         it.each([
             ['i stand guard for a month', 'guard'],
-            ['i fly to Iron Ridge on my sword', 'ride'],
+            ['i fly to Iron Crest on my sword', 'ride'],
             ['who owes me anything', 'oath'],
             ['what do i have to answer for', 'oath']
         ])('%s reaches %s without swallowing the rest of the sentence', (said, verb) => {
@@ -236,7 +236,7 @@ describe('a sentence that reaches the wrong thing', () => {
         });
 
         it('a destination said without a mount is unmoved', () => {
-            expect(reached('i travel to Iron Ridge').target).toBe('Iron Ridge');
+            expect(reached('i travel to Iron Crest').target).toBe('Iron Crest');
         });
 
         it('a watch over a named person is unmoved', () => {

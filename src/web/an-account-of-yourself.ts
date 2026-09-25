@@ -72,7 +72,7 @@ export interface WhatIsSoOfThem {
 /**
  * The claim has to be about the speaker.
  *
- * Without it "I tell him that the Hollow Court took his brother" reads as an
+ * Without it "I tell him that the Empyrean Court took his brother" reads as an
  * account of the speaker on the strength of the house name in it.
  */
 const THE_SPEAKER_IS_THE_SUBJECT = /\b(?:i|i'm|im|my|me|myself)\b/i;
@@ -151,7 +151,7 @@ const I_INTRODUCE_MYSELF = new RegExp(
  *
  * The shared split needs `that`, `about` or a wh-word to know where the
  * addressee stops, and this is how somebody actually says it. Tried only after
- * the shared one, because on "I tell him that I am of the Hollow Court" the
+ * the shared one, because on "I tell him that I am of the Empyrean Court" the
  * lookahead would take `him that` for the addressee.
  */
 const A_TELLING_WHO_I_AM = new RegExp(

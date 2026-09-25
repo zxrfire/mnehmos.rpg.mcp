@@ -34,7 +34,7 @@ const renewal = (day: number, over: Partial<PendingFact> = {}): PendingFact => m
     // is what the history layer calls it.
     kind: 'grant_renewed',
     scale: 'local',
-    summary: "The Ashen Forge Clan's grant on its vein comes up for renewal.",
+    summary: "The Ashen Anvil Clan's grant on its vein comes up for renewal.",
     factionIds: ['ashen-forge'],
     visibility: 'faction',
     magnitude: 0.4,
@@ -96,7 +96,7 @@ describe('folding an occurrence', () => {
         const row = state.history.facts[0];
         // The summary is part of the key. Rewriting it would make the row stop
         // absorbing its own further occurrences.
-        expect(row.summary).toBe("The Ashen Forge Clan's grant on its vein comes up for renewal.");
+        expect(row.summary).toBe("The Ashen Anvil Clan's grant on its vein comes up for renewal.");
         expect(describeWithRecurrence(row, yearOfDay)).toContain('2 times, years');
     });
 

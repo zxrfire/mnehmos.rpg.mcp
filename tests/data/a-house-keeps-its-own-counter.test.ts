@@ -10,7 +10,7 @@
  * rows that are not goods at all:
  *
  *   price-gate-registration   an entry on the Jade Register Hall's register
- *   price-oath-witness        an oath witnessed by the Vermilion Seal Terrace
+ *   price-oath-witness        an oath witnessed by the Vermilion Sigil Terrace
  *   price-placement           a realm placement by the Ninefold Karma Palace
  *
  * Measured over three seeded worlds - 81 settlement squares, 640 people, 633 of

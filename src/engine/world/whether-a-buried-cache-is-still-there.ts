@@ -24,7 +24,7 @@
  *
  *   TIME        And this is the half that is easy to get wrong. Concealment is
  *               not permanent, and the setting says so in its own voice: the
- *               Still Blade Peak sells "concealment retainers, renewed
+ *               Still Blade Pavilion sells "concealment retainers, renewed
  *               annually, because concealment decays". So the protection a good
  *               burial buys is spent down over the centuries until the cache is
  *               as findable as a hole in the same ground, and the hazard rises
@@ -123,7 +123,7 @@ export const GROUND_READS: Record<BurialGround, string> = {
 export const WHO_FINDS_IT: Record<BurialGround, string> = {
     city: 'A gang cutting a foundation, who split it before the foreman is told there was anything.',
     sect_town: 'A sect patrol, who report it, which is worse than the gang: it goes into a house\'s inventory and stays there.',
-    market_town: 'A carter widening a yard. It reaches the Thousand Treasure Pavilion within the season, because the Pavilion buys dug goods from anyone and asks nothing about the hole.',
+    market_town: 'A carter widening a yard. It reaches the Thousand Relic Pavilion within the season, because the Pavilion buys dug goods from anyone and asks nothing about the hole.',
     site: 'A grave-reader, working the ground properly, who knew from the surface that something had been put in it.',
     village: 'A family digging a grave for one of their own, in the only ground the village uses for it.',
     hamlet: 'A child, and then the whole hamlet, and then whoever the headman is frightened of.',
@@ -150,7 +150,7 @@ export const CONCEALMENT_WORK_CEILING_DAYS = 90;
 /**
  * Half-life of a concealment, in years.
  *
- * The Still Blade Peak sells concealment retainers renewed annually because
+ * The Still Blade Pavilion sells concealment retainers renewed annually because
  * concealment decays; nothing in this world stays hidden by having once been
  * hidden well. Two hundred years is the figure the rest of this module is
  * calibrated against and the reason a cache is a medium-term instrument: at one

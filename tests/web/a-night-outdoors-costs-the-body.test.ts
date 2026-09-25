@@ -117,7 +117,7 @@ describe('a night outdoors costs the body', () => {
         await game.newRun('Sleeper');
 
         await game.act('I take a room at the inn for thirty nights');
-        await game.act('I book a carriage to Green Water City');
+        await game.act('I book a carriage to Emerald Water City');
         await game.act('I book a carriage to The Furnace Flank');
         expect(game.state().cultivator.location).toBe('The Furnace Flank');
         const back = game.state().cultivator;

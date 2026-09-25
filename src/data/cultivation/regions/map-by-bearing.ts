@@ -78,7 +78,7 @@ export function apexSeats(): {
             name: 'The Azure Cloud Pavilion',
             bearing: 'centre',
             seatedIn: HOME_REGION_ID,
-            why: 'The only apex that is also a sect anybody can walk up to, holding the gorge vein at Green Water City outright and on no grant from anyone. It is in the Jade Gorge seating list because it is genuinely a house in the province as well as a power above it.'
+            why: 'The only apex that is also a sect anybody can walk up to, holding the gorge vein at Emerald Water City outright and on no grant from anyone. It is in the Jade Gorge seating list because it is genuinely a house in the province as well as a power above it.'
         },
         {
             apexId: 'apex-myriad-course-hall',

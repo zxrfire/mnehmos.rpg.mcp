@@ -499,7 +499,7 @@ export const BOUNTIES: readonly Bounty[] = [
         id: 'bounty-weir-grant',
         what: 'Clearing a burn-edge chamber before a grant is issued over it',
         posterFactionId: 'sect-clearwater-ward',
-        posterNote: 'Clearwater Ward at Iron Ridge, posted at the grant queue, paid out of the grant fee before the grant exists.',
+        posterNote: 'Clearwater Ward at Iron Crest, posted at the grant queue, paid out of the grant fee before the grant exists.',
         purseCash: 8_000,
         evidence: 'A Warden walks it afterwards and signs.',
         honoured: 'reliably',
@@ -604,12 +604,12 @@ export const ContractSchema = z.object({
 export type Contract = z.infer<typeof ContractSchema>;
 
 export const CONTRACTS: readonly Contract[] = [
-    { id: 'contract-face-labour', name: 'Face labour (carving)', minOrdinal: 0, cashPerMonth: 700, days: 30, settlements: ['market_town'], risk: 'high', note: 'Buddha Precipice only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
-    { id: 'contract-cave-sitter', name: 'Cave sitter', minOrdinal: 2, cashPerMonth: 800, days: 90, settlements: ['sect_town', 'village'], risk: 'low', note: 'Sitting in somebody else\'s rented cave so the claim does not lapse while they are away. Dull, safe, and the sitter cultivates on their employer\'s ground, which is the actual pay.' },
-    { id: 'contract-quay-watch', name: 'Quay watch', minOrdinal: 3, cashPerMonth: 1_300, days: 30, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Silver Island Market\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told when it signs on that it does not go above Foundation Establishment.' },
+    { id: 'contract-face-labour', name: 'Face carving', minOrdinal: 0, cashPerMonth: 700, days: 30, settlements: ['market_town'], risk: 'high', note: 'Buddha Precipice only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
+    { id: 'contract-cave-sitter', name: 'Grotto sitter', minOrdinal: 2, cashPerMonth: 800, days: 90, settlements: ['sect_town', 'village'], risk: 'low', note: 'Sitting in somebody else\'s rented cave so the claim does not lapse while they are away. Dull, safe, and the sitter cultivates on their employer\'s ground, which is the actual pay.' },
+    { id: 'contract-quay-watch', name: 'Quay watch', minOrdinal: 3, cashPerMonth: 1_300, days: 30, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Silver Island Hall\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told when it signs on that it does not go above Foundation Establishment.' },
     { id: 'contract-beast-culler', name: 'Spirit-beast culler', minOrdinal: 3, cashPerMonth: 1_200, days: 30, settlements: ['village', 'market_town', 'sect_town'], risk: 'high', note: 'Paid per head on a village contract. The standard living for an unaffiliated Qi Condensation cultivator, and the standard way one dies at twenty-six.' },
     { id: 'contract-courier', name: 'Courier', minOrdinal: 4, cashPerMonth: 1_100, days: 20, settlements: ['market_town', 'sect_town', 'city'], risk: 'moderate', note: 'Shrinking Earth Pavilion paper, paid per true li rather than walked. The Span will not sign anyone who cannot read its two-number directions.' },
-    { id: 'contract-gleaner', name: 'Gleaner (burn zone)', minOrdinal: 4, cashPerMonth: 3_000, days: 90, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Buddha Precipice only. The best-paid paper open to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
+    { id: 'contract-gleaner', name: 'Gleaner (scorched zone)', minOrdinal: 4, cashPerMonth: 3_000, days: 90, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Buddha Precipice only. The best-paid paper open to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
     { id: 'contract-escort', name: 'Caravan escort (cultivator)', minOrdinal: 5, cashPerMonth: 2_000, days: 30, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'Underwritten by the Stone Marrow Hall, which prices the contract off its own rank table - the table that reads Buddha Precipice carvers a rank low.' },
     { id: 'contract-tutor', name: 'Tutor to a merchant family', minOrdinal: 5, cashPerMonth: 900, days: 90, settlements: ['market_town', 'city'], risk: 'none', note: 'Teaching a merchant\'s child the Lesser Qi-Gathering Manual. Humiliating, safe, and the fastest way for a low-realm cultivator to meet people with money.' },
     { id: 'contract-dangerous-herb-gathering', name: 'Herb gathering, guarded ground', minOrdinal: 6, cashPerMonth: 1_800, days: 30, settlements: ['village', 'market_town'], risk: 'high', note: 'Earth-grade herbs grow where something is living. Pays four times a picker and kills about one gatherer in twenty a year.' },
@@ -789,7 +789,7 @@ export type AuctionVenue = z.infer<typeof AuctionVenueSchema>;
 export const AUCTION_VENUES: readonly AuctionVenue[] = [
     {
         id: 'auction-low-fall-floor',
-        name: 'The public floor at Green Water City',
+        name: 'The public floor at Emerald Water City',
         runByFactionId: 'sect-thousand-treasure-pavilion',
         regionId: 'region-low-fall',
         places: [PLACE.GREEN_FALL],
@@ -806,7 +806,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     },
     {
         id: 'auction-low-fall-reserved',
-        name: 'The reserved floor',
+        name: 'The private floor',
         runByFactionId: 'sect-thousand-treasure-pavilion',
         regionId: 'region-low-fall',
         places: [PLACE.GREEN_FALL],
@@ -822,7 +822,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     },
     {
         id: 'auction-scarwater-kerb',
-        name: 'The Clear River Ford kerb',
+        name: 'The Clear River Ferry kerb',
         runByFactionId: null,
         regionId: 'region-low-fall',
         places: [PLACE.STONE_FORD],
@@ -836,7 +836,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     },
     {
         id: 'auction-kettle-yard',
-        name: 'The Iron Ridge assay yard disposal',
+        name: 'The Iron Crest assay yard disposal',
         runByFactionId: 'sect-clearwater-ward',
         regionId: 'region-quiet-marches',
         places: [PLACE.IRON_GATE],
@@ -862,7 +862,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
             'Weight is checked in front of the buyer, and disputes are settled by reweighing and nothing else'
         ],
         whatSells: 'Salvage by weight, in lots too large for an individual, to dealers who will break them up.',
-        sectlessNote: 'Buyers here are dealers rather than cultivators. A rogue is on the selling side, is offered the yard rate, and takes it because the alternative is carrying it four days to Iron Ridge.'
+        sectlessNote: 'Buyers here are dealers rather than cultivators. A rogue is on the selling side, is offered the yard rate, and takes it because the alternative is carrying it four days to Iron Crest.'
     }
 ];
 
@@ -880,7 +880,7 @@ export const AUCTION_ACCESS = {
     ],
     theWayAround: [
         'Bid as somebody\'s agent, which works and means that somebody knows exactly what you are holding',
-        'Buy the guarantee: a Vermilion Seal Terrace bond can stand in for a faction seal, and is priced against the penalty clause rather than the lot',
+        'Buy the guarantee: a Vermilion Sigil Terrace bond can stand in for a faction seal, and is priced against the penalty clause rather than the lot',
         'Buy it afterwards from whoever did win it, at a markup, which is a large part of what the kerb is for'
     ],
     theRealConstraint:
@@ -930,7 +930,7 @@ export const ROAD_CUSTOMS: readonly RoadCustom[] = [
     {
         id: 'custom-the-bell',
         custom: 'A bell hung at a crossroads means members of the league passed within the month, and is left alone by everybody including people who owe them money.',
-        keptBy: 'The Hollow Bell Wanderers, and honoured well outside them.',
+        keptBy: 'The Wayside Chime Wanderers, and honoured well outside them.',
         breakingIt: 'Taking a bell down is the cheapest way to be known by a league that has no mountain, no rules and five ranks, all of which travel.'
     },
     {

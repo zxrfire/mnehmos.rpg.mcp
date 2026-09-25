@@ -27,7 +27,7 @@
  * CARRIED AND MOORED ARE BOTH WITHIN REACH, AND ONLY ONE OF THEM WAS
  * ═════════════════════════════════════════════════════════════════════════
  *
- * A carriage and a spirit boat are never carried. `mintCraft` leaves
+ * A carriage and a spirit skiff are never carried. `mintCraft` leaves
  * `possessorId` null on every one of them and records where it is in
  * `data.mooredAt`, so a query on possession sees no craft anywhere in the
  * world - which is why the coercion sweep above, which is a possession query,
@@ -168,10 +168,10 @@ export function whichThingTheyMeant(
     // ── THE ARTICLE COMES OFF BOTH SIDES ─────────────────────────────────
     //
     // The catalog's names carry their own - "A drawn carriage", "A spirit
-    // boat" - which `describeCountedHoldings` already strips for the same
-    // reason, and a player types "the spirit boat". Measured against
-    // `matchScore`: "spirit boat" against "A spirit boat" is 60 and clears the
-    // threshold; "the spirit boat" is 40 and does not. So the name the game
+    // skiff" - which `describeCountedHoldings` already strips for the same
+    // reason, and a player types "the spirit skiff". Measured against
+    // `matchScore`: "spirit skiff" against "A spirit skiff" is 60 and clears the
+    // threshold; "the spirit skiff" is 40 and does not. So the name the game
     // printed was the one phrasing that could not reach the row it named,
     // which is the defect AGENTS.md states as its own rule.
     //

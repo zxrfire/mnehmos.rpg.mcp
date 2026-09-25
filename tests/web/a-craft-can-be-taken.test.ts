@@ -1,5 +1,5 @@
 /**
- * Stealing a carriage or a spirit boat, and what the world then holds.
+ * Stealing a carriage or a spirit skiff, and what the world then holds.
  *
  * WHY THIS EXISTS
  * ---------------
@@ -72,7 +72,7 @@ function aSpiritBoatOwnedBy(ownerId: string, ownerName: string, mooredAt: string
 
 describe('the sentence names the thing and the person', () => {
     it('aims the theft at the owner and carries what was named', () => {
-        const plan = parseIntent('I steal the spirit boat from Wei Lanya');
+        const plan = parseIntent('I steal the spirit skiff from Wei Lanya');
         expect(plan.action).toBe('interact');
         expect(plan.intent).toBe('steal');
         // The person, because `resolveAttempt` prices a theft against whoever
@@ -81,7 +81,7 @@ describe('the sentence names the thing and the person', () => {
         // And the thing, which used to be thrown away by
         // `namesTheThingRatherThanThePerson` and is what says WHICH of their
         // things is being taken.
-        expect((plan.topic ?? '').toLowerCase()).toContain('spirit boat');
+        expect((plan.topic ?? '').toLowerCase()).toContain('spirit skiff');
     });
 
     it('reads the possessive form the same way', () => {
@@ -93,14 +93,14 @@ describe('the sentence names the thing and the person', () => {
 
     it('does not take a sentence about riding one', () => {
         // The two verbs share every noun and are separated by the verb alone.
-        expect(parseIntent('I take the carriage to Iron Ridge').action).toBe('ride');
+        expect(parseIntent('I take the carriage to Iron Crest').action).toBe('ride');
         expect(parseIntent('I buy a carriage').action).toBe('buy');
         expect(parseIntent('I build a carriage').action).toBe('craft');
     });
 });
 
 describe('what is within reach of somebody standing here', () => {
-    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Ridge');
+    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Crest');
 
     it('sees a craft moored where you are, which a possession query cannot', () => {
         // `mintCraft` leaves the possessor null forever, so this row is
@@ -108,46 +108,46 @@ describe('what is within reach of somebody standing here', () => {
         expect(boat.possessorId).toBeNull();
         const world = { objects: [boat] } as never;
 
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Ridge')).toHaveLength(1);
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Ridge')[0].because).toBe('moored');
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Crest')).toHaveLength(1);
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Crest')[0].because).toBe('moored');
     });
 
     it('does not see one moored somewhere else', () => {
         const world = { objects: [boat] } as never;
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Clear River Ford')).toEqual([]);
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Clear River Ferry')).toEqual([]);
         expect(whatIsWithinReachOf(world, 'npc-1', null)).toEqual([]);
     });
 
     it('does not see somebody else\'s', () => {
         const world = { objects: [boat] } as never;
-        expect(whatIsWithinReachOf(world, 'npc-2', 'Iron Ridge')).toEqual([]);
+        expect(whatIsWithinReachOf(world, 'npc-2', 'Iron Crest')).toEqual([]);
     });
 
     it('leaves the counted tier alone, which has no row to take', () => {
         const mundane = makeObject({
             id: 'obj-cart', name: 'A drawn carriage', kind: 'artifact',
-            significance: 'mundane', ownerId: 'npc-1', data: { mooredAt: 'Iron Ridge' }
+            significance: 'mundane', ownerId: 'npc-1', data: { mooredAt: 'Iron Crest' }
         });
         const world = { objects: [mundane] } as never;
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Ridge')).toEqual([]);
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Crest')).toEqual([]);
     });
 
     it('resolves the name the game printed', () => {
-        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Ridge');
-        expect(whichThingTheyMeant(within, 'spirit boat')?.object.id).toBe(boat.id);
-        expect(whichThingTheyMeant(within, 'A spirit boat')?.object.id).toBe(boat.id);
+        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Crest');
+        expect(whichThingTheyMeant(within, 'spirit skiff')?.object.id).toBe(boat.id);
+        expect(whichThingTheyMeant(within, 'A spirit skiff')?.object.id).toBe(boat.id);
         expect(whichThingTheyMeant(within, 'the manual')).toBeNull();
     });
 });
 
 describe('the lift itself', () => {
-    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Ridge');
+    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Crest');
 
     it('moves possession, leaves ownership, and brings the mooring with it', () => {
-        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Ridge');
+        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Crest');
         const lifted = liftIt(within[0], {
             thiefId: 'player', thiefName: 'Shen Wu', fromName: 'Wei Lanya',
-            onDay: 400, here: 'Clear River Ford'
+            onDay: 400, here: 'Clear River Ferry'
         });
 
         expect(lifted.object.possessorId).toBe('player');
@@ -155,7 +155,7 @@ describe('the lift itself', () => {
         // of theft erases the only thread anybody could have followed.
         expect(lifted.object.ownerId).toBe('npc-1');
         expect(lifted.object.knownOwnershipBy).toContain('npc-1');
-        expect(lifted.object.data.mooredAt).toBe('Clear River Ford');
+        expect(lifted.object.data.mooredAt).toBe('Clear River Ferry');
 
         const last = lifted.object.provenance[lifted.object.provenance.length - 1];
         expect(last.how).toBe('stolen');
@@ -167,13 +167,13 @@ describe('the lift itself', () => {
     });
 
     it('does not mutate the row it was handed', () => {
-        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Ridge');
+        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Crest');
         liftIt(within[0], {
             thiefId: 'player', thiefName: 'Shen Wu', fromName: 'Wei Lanya',
-            onDay: 400, here: 'Clear River Ford'
+            onDay: 400, here: 'Clear River Ferry'
         });
         expect(boat.possessorId).toBeNull();
-        expect(boat.data.mooredAt).toBe('Iron Ridge');
+        expect(boat.data.mooredAt).toBe('Iron Crest');
     });
 });
 
@@ -228,7 +228,7 @@ describe('played: a boat changes hands', () => {
         const { db, game, cultivator, known, boat } = await theTheftLands('lift-a');
         const purseBefore = game.state().cultivator.spiritStones;
 
-        await game.act(`ADMIN interact I steal the spirit boat from ${known.name}`);
+        await game.act(`ADMIN interact I steal the spirit skiff from ${known.name}`);
 
         const reloaded = await game.loadWorld();
         expect(reloaded, 'the world went away between turns').toBeTruthy();
@@ -255,11 +255,11 @@ describe('played: a boat changes hands', () => {
     it('says what was taken, and says it is still theirs', async () => {
         const { game, known } = await theTheftLands('lift-b');
         const said = await game.act(
-            `ADMIN interact I steal the spirit boat from ${known.name}`
+            `ADMIN interact I steal the spirit skiff from ${known.name}`
         ) as { narration?: string };
         const prose = (said.narration ?? '').toLowerCase();
 
-        expect(prose).toContain('spirit boat');
+        expect(prose).toContain('spirit skiff');
         // A player who is not told the register still names somebody else is a
         // player who will sail it into the province it was built in.
         expect(prose).toContain('still');

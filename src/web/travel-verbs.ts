@@ -859,7 +859,7 @@ export const travelVerbs = {
         //
         // This spent `SHORT_ACTION_DAYS` for every journey to anywhere, while
         // `destinations` printed the catalog's `travelDays` beside each
-        // province - so the game told a player Iron Ridge was eleven days away and
+        // province - so the game told a player Iron Crest was eleven days away and
         // then took them there in one. `FOLD_TRAVEL_ENGINE_GAP` names this line
         // as the reason a fold could not be shown to save anybody anything.
         //
@@ -1142,7 +1142,7 @@ export const travelVerbs = {
     // player without printing a number the engine does not charge. It was
     // right: `move` spent a flat day for every journey while `destinations`
     // printed the catalog's `travelDays` beside each province, so the game
-    // told a player Iron Ridge was eleven days away and then took them there in
+    // told a player Iron Crest was eleven days away and then took them there in
     // one. {@link daysOnTheRoadTo} is the single reader of that figure and
     // every verb here goes through it, `move` included - so a fold that saves
     // ten days saves ten days that were being spent.
@@ -1637,7 +1637,7 @@ export const travelVerbs = {
         wanted: string | undefined
     ): Promise<Execution> {
         // A CARRIAGE OR A BOAT THAT IS NOT THEIRS is a seat at the counter here,
-        // where one runs. A boat of their own is a spirit boat; a boat they do
+        // where one runs. A boat of their own is a spirit skiff; a boat they do
         // not own, at a landing, is the ship.
         const service = theServiceNamed(wanted);
         if (service !== null
@@ -1682,7 +1682,7 @@ export const travelVerbs = {
         });
         // THE CHEST BURNS SPIRIT STONES, and they are the rider's. The owner: "you burn spirit
         // stones as fuel". Priced here all along (`whatTheChestBurns`) and never taken, so a spirit
-        // boat flew for nothing.
+        // skiff flew for nothing.
         if (journey.stonesBurned > cultivator.spiritStones) {
             return refused('engine.priceJourney', 'ride', factsForRefusal(
                 'Not enough to fly on.',

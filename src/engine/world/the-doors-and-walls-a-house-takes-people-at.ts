@@ -32,7 +32,7 @@ import type { DoorInTheField, PostingGround } from './houses-that-have-to-advert
  *   Crimson Abyss Fortress   a table "outside somebody else's admission day", for
  *                        the people refused inside that morning
  *   Storm Tyrant Court   "collects rather than recruits"
- *   The Still Blade Peak        "no name given, no face seen twice"
+ *   The Still Blade Pavilion        "no name given, no face seen twice"
  *   Bone Lantern Cult    "not posted anywhere. Mentioned to corpse carriers"
  *                        (`rogues.ts`)
  *   Nine Abyss Flame     open about what it is, which "the province reads as

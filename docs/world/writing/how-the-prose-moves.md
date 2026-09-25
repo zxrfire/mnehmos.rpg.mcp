@@ -10,7 +10,7 @@ argument; the prompt gets the conclusions.
 sentence length, paragraph shape, who talks, where the beats fall. The two are independent,
 and the second is the one the narrator keeps getting wrong: a played turn came back as
 
-> Clear River Ford. The air here is thick enough to notice on the first breath. Whatever is
+> Clear River Ferry. The air here is thick enough to notice on the first breath. Whatever is
 > under this ground is close to the surface, and the ground shows signs of being worked. It
 > is an ordinary day and it intends to stay one.
 
@@ -146,7 +146,7 @@ been confounded.
 The narration above is four sentences welded into one block. Broken the way the genre breaks
 it, the same facts move:
 
-> Clear River Ford.
+> Clear River Ferry.
 >
 > The qi here is thick. It presses on the skin, close under the ground, and the ground has
 > been worked over for it.

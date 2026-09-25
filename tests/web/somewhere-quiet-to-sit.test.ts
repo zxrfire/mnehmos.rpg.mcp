@@ -86,7 +86,7 @@ describe('somewhere quiet to sit', () => {
      */
     it('leaves the neighbouring verbs alone', () => {
         expect(parseIntent('I travel to Nine Peaks').action).toBe('move');
-        expect(parseIntent('I go into the mountains to Clear River Ford').action).toBe('move');
+        expect(parseIntent('I go into the mountains to Clear River Ferry').action).toBe('move');
         expect(parseIntent('I look for herbs').action).toBe('gather');
         expect(parseIntent('I pick the mushrooms by the quiet stream').action).toBe('gather');
     });
@@ -180,7 +180,7 @@ describe('the ground under the cultivator, on the wire', () => {
  * The read above was fixed by walking the world's own location table into a
  * player-facing list with no knowledge check anywhere in it, which closed one
  * hole by opening another: a cultivator holding no record for any of them was
- * handed The Glass Field and The Nine-City Roll by name, and would have been
+ * handed The Glass Ploughland and The Nine-City Roll by name, and would have been
  * handed any prospected find that landed on one of the three kinds.
  *
  * Those are dao grounds - `how-a-cultivator-comes-by-a-road.ts` seeds its
@@ -196,8 +196,8 @@ describe('the ground under the cultivator, on the wire', () => {
  * It asserted that NO dao ground was ever named. That was true when it was
  * written and stopped being true when the ambient hearsay channel reached the
  * opening turn: `newRun`'s own `hear` call fires `offerGroundSomebodyGoesTo`,
- * and the player is told, in prose, at 15% - *"Somebody here mentions The Slow
- * Bell the way you would mention a bridge... Nothing about why, and no offer to
+ * and the player is told, in prose, at 15% - *"Somebody here mentions The Seldom
+ * Gong the way you would mention a bridge... Nothing about why, and no offer to
  * explain"* - with a `placed` record and a real source written for it. That is
  * a hook and not a handout: a name they can point at and nothing about what it
  * is for, and pulling on it is how the gate is meant to open. A read that then

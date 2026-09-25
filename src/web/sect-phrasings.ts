@@ -125,7 +125,7 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     //
     // Four of the five that did NOT reach `donate` were worse again: the house
     // NAME carried the figure, so "what does the Six Li Patrol pay" arrived as
-    // a donation of 6 stones and "the Thousand Treasure Pavilion" as one of
+    // a donation of 6 stones and "the Thousand Relic Pavilion" as one of
     // 1000. That is recorded here because the number-out-of-a-name read is
     // still live for any sentence this row does not now claim.
     ['stipend', new RegExp(
@@ -596,8 +596,8 @@ const THE_WORDS_A_CANDIDATE_USES =
  * once and the branches read the answer off it.
  *
  * MEASURED, AND IT IS WHY THE PATTERNS NOW SIT TOGETHER. "I take the intake at
- * the Silver Island Market" came back as the house RECRUITING somebody called
- * "intake at the Silver Island Market" - a person who does not exist, paid for
+ * the Silver Island Hall" came back as the house RECRUITING somebody called
+ * "intake at the Silver Island Hall" - a person who does not exist, paid for
  * out of a purse the speaker does not control. `take` is a recruiting verb and
  * `intake` is an intake noun, so the branch that prices taking a disciple ON
  * fired on a sentence about turning up to be considered AS one. The two

@@ -54,7 +54,7 @@ const BASELINE = 23;
  *
  * TWO WERE REAL, AND WERE FIXED RATHER THAN EXCUSED. `faction-history`'s
  * `whyTheGapIs` restated `faction-character`'s `production.note` word for word
- * on the Thousand Treasure Pavilion and the Ashen Forge Clan. Two fields, two
+ * on the Thousand Relic Pavilion and the Ashen Anvil Clan. Two fields, two
  * questions - *what does this house produce* and *why is it where it is* - and
  * one answer copied into both, which is exactly the drift this file exists to
  * stop. The history field now answers its own question out of the same

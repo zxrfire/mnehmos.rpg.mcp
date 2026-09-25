@@ -1,7 +1,7 @@
 /**
  * Does the one sanctioned route to the top of the ladder ever actually fire?
  *
- * The Hollow Court recruits from about ordinal 29 upward out of any house
+ * The Empyrean Court recruits from about ordinal 29 upward out of any house
  * anywhere, at no cost to the house that raised the person - the original house
  * gains standing, the Court sends rewards back down, and nobody has ever gone to
  * war over it. Its lowest rank sits at Void Refinement, so it has no junior

@@ -1435,7 +1435,7 @@ function applyFosterageReturns(state: WorldState, day: number): number {
         if (ordinal < terms.returnOrdinal && age < terms.returnByAge) continue;
 
         const answer = assessTheReturn(terms, ordinal, age);
-        // TAKEN BACK THROUGH THE DOOR. The Hollow Court's children "may come back
+        // TAKEN BACK THROUGH THE DOOR. The Empyrean Court's children "may come back
         // only on a stranger's terms", and a stranger comes in through the house's
         // intake: somebody of it where they are, its grounds open, or its intake.
         // No road this year and the assessment waits; the terms still run out.
@@ -2498,7 +2498,7 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
     // somebody who stands above everybody on it: there is nothing it could tell
     // them and no rung it could hold them on. Measured on `shape-a`: the world's
     // one False Immortal was enrolled as an outer disciple in his first year,
-    // and a Hollow Court Seat who had walked out joined a splinter at rung zero.
+    // and an Empyrean Court Seat who had walked out joined a splinter at rung zero.
     const strongest = new Map<string, number>();
     for (const npc of state.npcs) {
         if (npc.status !== 'alive' || npc.factionId === null) continue;
@@ -3081,7 +3081,7 @@ function applySendings(
         const goingTo = named?.locationId ?? drawn;
         // AND WHERE THE GROUND DOES SAY, IT IS THE GROUND. What a place asks of
         // somebody who means to live through it, which is the pitch a door's
-        // race already reads: Fallen Wall asks 12 of anybody, whoever the house
+        // race already reads: Fallen Rampart asks 12 of anybody, whoever the house
         // has. The rung is drawn whatever the ground, so the stream does not
         // depend on where the party is going.
         const drawnOffTheMiddle = middle + rng.int(-5, 1);
@@ -4457,7 +4457,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
             // rather than an ordering chosen here: a house that gets one craft gets
             // its next one faster, because the craft carries the party that takes
             // the next core. Deepest-first had every qualified house laying a keel
-            // for a spirit boat on day one and still short of the bill five
+            // for a spirit skiff on day one and still short of the bill five
             // centuries later, so no tracked craft was ever built by anybody.
             .sort((a, b) => a.workDays - b.workDays)[0];
         if (!recipe) continue;
@@ -5437,7 +5437,7 @@ function theWorldsPeople(state: WorldState): NpcRecord[] {
  * test for a house that runs on succession and the wrong one at the top of the
  * ladder, where a single survivor holds tens of thousands of years and
  * rebuilding after losing three of four Seats to a crossing is not a body dying
- * - it is the only thing that body does. The Hollow Court dissolved on every
+ * - it is the only thing that body does. The Empyrean Court dissolved on every
  * seed inside three centuries against members who cannot die of time.
  */
 export function whetherAHouseHasFailed(state: WorldState, f: FactionRecord): boolean {

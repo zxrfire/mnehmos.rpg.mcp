@@ -320,7 +320,7 @@ describe('the stall, which is why two is not the number', () => {
             const apex = APEX_INSTITUTIONS.find(a => a.name === name)!;
             return COURTS.filter(c => c.apexId === apex.id).length;
         };
-        // The Third Sill went to the Myriad Course Hall, which is why these are not
+        // The Third Sluice went to the Myriad Course Hall, which is why these are not
         // what they were: see WHY_NOBODY_MOVES.andItHasHappenedOnce.
         expect(countFor('The Earth Vein Tower')).toBe(1);
         expect(countFor('The Myriad Course Hall')).toBe(2);
@@ -358,7 +358,7 @@ describe('the shadow conspiracy, which is the only assembly that solves both', (
     });
 });
 
-describe('the Hollow Court could, and does not', () => {
+describe('the Empyrean Court could, and does not', () => {
     it('out-holds every apex, and the fact falls straight out of the catalog', () => {
         const hollow = artifactPowerOf('sect-hollow-court');
         expect(hollow).toHaveLength(4);

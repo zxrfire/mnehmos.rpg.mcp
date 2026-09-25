@@ -209,7 +209,7 @@ export const SCENARIOS: Scenario[] = [
         sign: 'taking',
         hope: 'reach is knowledge. Not knowing where they are is the honest refusal, and it '
             + 'is a different sentence from having nothing out there',
-        turns: ['I send my sword to kill the Hollow Court patriarch']
+        turns: ['I send my sword to kill the Empyrean Court patriarch']
     },
     {
         name: 'the-blade-that-says-whose-it-is',
@@ -284,7 +284,7 @@ export const SCENARIOS: Scenario[] = [
         asks: 'several_acts',
         hope: 'two acts in the order the sentence gives. Whatever the engine does with the '
             + 'second, it must not silently drop the first',
-        turns: ['where can I go', 'I go to Cold Peak and gather herbs']
+        turns: ['where can I go', 'I go to Moraine Gate and gather herbs']
     },
     {
         name: 'ask-then-lean',
@@ -374,7 +374,7 @@ export const SCENARIOS: Scenario[] = [
         asks: 'another_word_for_it',
         hope: 'the engine holds a whole priced answer for this. A refusal must name the floor '
             + 'and the grant, never read as an unparseable sentence',
-        turns: ['I teleport to Cold Peak']
+        turns: ['I teleport to Moraine Gate']
     },
     {
         name: 'level-up',

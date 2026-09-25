@@ -96,8 +96,8 @@ describe('a place road is stated once and read both ways', () => {
         // guard does not scan `tests/`, so nothing pointed at it. Neither end
         // of either declared road carries an article, so the article half of
         // the old name is exercised at `loosePlaceKey` and not here.
-        expect(placeRoadDays('clear river ford', 'GREEN WATER CITY')).toBe(2);
-        expect(placeRoadDays('  Green Water City  ', 'Clear River Ford')).toBe(2);
+        expect(placeRoadDays('clear river ferry', 'EMERALD WATER CITY')).toBe(2);
+        expect(placeRoadDays('  Emerald Water City  ', 'Clear River Ferry')).toBe(2);
         expect(placeRoadDays('orchid terrace', 'Orchid Valley')).toBe(1);
     });
 });

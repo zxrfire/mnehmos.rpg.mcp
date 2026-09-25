@@ -1256,7 +1256,7 @@ export function factsForLook(
     // FOUND BY PLAYING BLIND. A new player typed `where am I?` and got nine
     // lines, of which the place was four words at the end of the first:
     //
-    //     Shen Wuyou stands at Qi Condensation Layer 1, age 16, in Green
+    //     Shen Wuyou stands at Qi Condensation Layer 1, age 16, in Emerald
     //     Water City.
     //     Spirit root: Mutated Ice Root. Might 3, Insight 2, Fortune 3...
     //     Unmarked, 50 of 50. Fed. 900 spirit stones in the purse.
@@ -1353,7 +1353,7 @@ export function factsForCompany(
 
     return observable(
         // A HEADLINE IS PLAYER-FACING. This read `${company.total} about in
-        // Green Water City.` - the overlay title and the first line of the log,
+        // Emerald Water City.` - the overlay title and the first line of the log,
         // counting the bodies in the square. The figure is in `structure`
         // below, which is where a count belongs.
         company.total === 0

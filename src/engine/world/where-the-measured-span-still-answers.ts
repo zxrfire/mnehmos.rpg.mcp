@@ -26,7 +26,7 @@
  *   that arrives.
  *
  *   SCARWATER, in the Jade Gorge. The province's own connection text: *"The
- *   border road from Clear River Ford to Iron Ridge: eleven days by cart, four by Measured
+ *   border road from Clear River Ferry to Iron Crest: eleven days by cart, four by Measured
  *   Span courier where the Span still runs it."* Two named places, a stated
  *   walked distance, and the house named as the thing that shortens it.
  *
@@ -51,10 +51,10 @@
  * from a span it folds itself, and the two entries answer it differently for a
  * reason each states:
  *
- *   Four Names is *"one of the nine stations"* and runs on the station's own
+ *   Fourfold Stele is *"one of the nine stations"* and runs on the station's own
  *   cycle. Nine is the count of the terminals the house inherited and cannot
  *   reopen when one stops answering.
- *   Clear River Ford to Iron Ridge is a COURIER route - *"four by Shrinking Earth Pavilion courier
+ *   Clear River Ferry to Iron Crest is a COURIER route - *"four by Shrinking Earth Pavilion courier
  *   where the Span still runs it"* - which is the house's own hand doing the
  *   work, conditionally, and is therefore not a terminal at all.
  *
@@ -66,7 +66,7 @@
  * is not something any caller can turn into a fare. So the rate below is stated
  * in the unit a buyer can check, and is anchored against the line on the price
  * board that prices the same road: caravan passage, 250 per 100 li, *"the border
- * road to Iron Ridge is eleven days and priced as such"*. See {@link
+ * road to Iron Crest is eleven days and priced as such"*. See {@link
  * SPAN_CASH_PER_WALKED_DAY}.
  *
  * PURE. State in, deltas out. No I/O, no DB, no mutation of inputs, and nothing
@@ -81,7 +81,7 @@ import { PLACE } from '../../data/cultivation/place-names.js';
 export const THE_SPAN_HOUSE_ID = 'house-shrinking-earth';
 
 /**
- * Four days in nine, off the Four Names Terminal entry, and the only Span
+ * Four days in nine, off the Fourfold Stele Terminal entry, and the only Span
  * timetable this world states.
  *
  * `phaseDay` 0 rather than a per-counter offset: nothing anywhere says the two
@@ -99,14 +99,14 @@ export const SPAN_SCHEDULE: OpeningCycle = Object.freeze({
  *
  * FOUR HUNDRED, and it is derived rather than picked. The price board carries
  * caravan passage at 250 per 100 li and says in its own note that the eleven-day
- * border road to Iron Ridge is priced by it, which puts an ordinary crossing of that
+ * border road to Iron Crest is priced by it, which puts an ordinary crossing of that
  * road somewhere near 1,400 cash with food and company thrown in. A Span fare
  * has to sit well above that, because what it sells is not speed on the road -
  * it is not being on the road, and the one journey nothing else in the world
  * offers at any price.
  *
  * What that produces, and it is the figure worth checking: the eleven-day
- * Clear River Ford road costs 4,400 cash, which is forty-four spirit stones - half
+ * Clear River Ferry road costs 4,400 cash, which is forty-four spirit stones - half
  * again the whole starting purse of a new cultivator. So the ticket is out of
  * reach of somebody who has just arrived and comfortably inside a season of
  * wages, which is where a thing that saves eleven days of a life ought to sit.

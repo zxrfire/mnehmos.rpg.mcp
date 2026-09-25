@@ -21,12 +21,12 @@
  *     the nomination into a second favour.
  *   - Who may nominate is DERIVED from the parentage chain, `Parentage.standing`
  *     and the relationship layer. Measured on the catalog as it stands: 13 of 38
- *     sects reach a posting at all; the Kiln Court's apex reads 4 sects' names
+ *     sects reach a posting at all; the Tripod Court's apex reads 4 sects' names
  *     plus the Court's own; the Deeproot Court's reads 8 plus its own. A per-
  *     house table would have been wrong the day one of these two bodies changed
  *     apexes, which is a thing that has already happened in this world.
  *   - THE HONEST LIMIT. The lowest rung anybody in fact stands on is 25 at the
- *     Kiln (its weakest serving Warden) and 21 at the Deeproot (its own stated
+ *     Tripod (its weakest serving Warden) and 21 at the Deeproot (its own stated
  *     figure). A player opens at Qi Condensation, so a starting cultivator is 24
  *     and 20 rungs short respectively. This is a mid-game road and the engine
  *     says so with the number rather than pretending.

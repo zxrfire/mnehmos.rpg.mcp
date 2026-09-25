@@ -5,7 +5,7 @@
  * Measured on fresh runs through the harness, the first two paragraphs a new
  * player ever saw:
  *
- *     Clear River Ford. It is the ground they were raised on. There is nothing
+ *     Clear River Ferry. It is the ground they were raised on. There is nothing
  *     here they would notice, because it is what noticing has always been
  *     measured from.
  *     [...]

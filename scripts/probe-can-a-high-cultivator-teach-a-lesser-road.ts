@@ -10,7 +10,7 @@
  *
  * The design claim being tested: somebody at the top is not restricted to their
  * own deep road. They climbed through every rung below them and know it, so a
- * Hollow Court seat taking a Foundation disciple can teach an ordinary art, and
+ * Empyrean Court seat taking a Foundation disciple can teach an ordinary art, and
  * is better at it than whoever normally would.
  *
  * If people accumulate the shallow roads as they climb, the rule already allows

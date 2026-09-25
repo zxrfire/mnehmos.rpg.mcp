@@ -89,15 +89,15 @@ describe('what a house is called', () => {
  *
  *   TEN reached no intent at all, because `WHAT_A_HOUSE_HAS` carried fifteen
  *   house words of its own and the catalog has twenty-seven - Clearwater Ward,
- *   Six Li Patrol, Bountiful Sheaf Sect, Tranquil Oasis Sect, Hollow Bell
- *   Wanderers, Still Blade Peak, Flowing Light Tower, Earth Vein Tower, Bone
+ *   Six Li Patrol, Bountiful Sheaf Sect, Tranquil Oasis Sect, Wayside Chime
+ *   Wanderers, Still Blade Pavilion, Flowing Star Tower, Earth Vein Tower, Bone
  *   Lantern Cult - and The Severed, whose whole name is one word, went to the
  *   market board on `what does the \w+ have`.
  *
  *   SIX went to the deposit counter, because `legacyStep` read a custody
  *   house's NAME plus any interrogative as a question about its counter -
- *   Lantern Hall, Thousand Treasure Pavilion, Jade Register Hall, Vermilion
- *   Seal Terrace, Shrinking Earth Pavilion, Ninefold Karma Palace. The same
+ *   Lantern Hall, Thousand Relic Pavilion, Jade Register Hall, Vermilion
+ *   Sigil Terrace, Shrinking Earth Pavilion, Ninefold Karma Palace. The same
  *   six answered "who leads the X" and "where is the X" with the counter too.
  *
  * It was found by playing: a birth opened knowing exactly two houses and both

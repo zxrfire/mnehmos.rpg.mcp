@@ -23,7 +23,7 @@ export const CROSSING_PRACTICE = {
         'The enemies do sometimes turn up, because somebody worked out the location or followed or simply guessed well - and a crossing interrupted is a death that leaves no trace of having been anything other than a failed crossing.'
     ],
     theAnomaly:
-        'The Hollow Court does it openly. Four known mountains, continuously, at an address anybody could walk to, which is the exact opposite of what every other cultivator in the world does with the single most vulnerable act available to them. It is not confidence about the crossing itself. It is the plain fact that nothing in the world can reach them mid-attempt, stated in the only way that could not be mistaken for a boast. Nobody has ever tested it.'
+        'The Empyrean Court does it openly. Four known mountains, continuously, at an address anybody could walk to, which is the exact opposite of what every other cultivator in the world does with the single most vulnerable act available to them. It is not confidence about the crossing itself. It is the plain fact that nothing in the world can reach them mid-attempt, stated in the only way that could not be mistaken for a boast. Nobody has ever tested it.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ export const DAO_PROTECTOR = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
-// THE HOLLOW COURT, RESTATED
+// THE EMPYREAN COURT, RESTATED
 // Not four beings who reached the top and sat down. A collaboration, and
 // possibly the only functioning one at that altitude in the history of the
 // world.
@@ -178,7 +178,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'why the Myriad Course Hall does not compare notes with the Earth Vein Tower about any of it'
         ],
         note:
-            'The two apexes hold the same category of asset from different ancestors, and neither institution knows whether the two are acquainted, hostile, or unaware of each other. Neither has ever asked the other. Flowing Light Tower would give a great deal for the answer and has no instrument that reaches it.'
+            'The two apexes hold the same category of asset from different ancestors, and neither institution knows whether the two are acquainted, hostile, or unaware of each other. Neither has ever asked the other. Flowing Star Tower would give a great deal for the answer and has no instrument that reaches it.'
     },
     {
         factionId: 'sect-hollow-court',
@@ -269,7 +269,7 @@ export const IMMORTAL_MOTIVE = {
     readTheApexesThisWay: [
         'Earth Vein Tower: three ancestors, all of them nineteen centuries or more gone, all of them institutional rather than personal. Rare answers and good grade is exactly what the rule predicts for ties that have decayed to nothing but provenance.',
         'Myriad Course Hall: two ancestors, same shape, same answer rate. Fewer ties, same decay, and an administration that has never expected more.',
-        'Hollow Court: six, and what comes back is accounts of the crossing rather than objects - because the tie there is professional interest rather than affection. They are being answered by people who find the question interesting, which is a weaker tie than love and a stronger one than reverence.',
+        'Empyrean Court: six, and what comes back is accounts of the crossing rather than objects - because the tie there is professional interest rather than affection. They are being answered by people who find the question interesting, which is a weaker tie than love and a stronger one than reverence.',
         'Azure Cloud: one ancestor, three hundred and eighty years, and a living sister. The highest answer rate in the world, the lowest grade in the world, and both are the same fact.'
     ]
 } as const;
@@ -295,7 +295,7 @@ export const ARCHIVE_AS_CLAIM = {
         {
             case: 'holds the record and cannot read it',
             example: 'sect-nine-peaks-ascetic-order',
-            note: 'The best case in the catalog and it is already implied by the transmission work in `history.ts`: the Boundary Hand\'s numerals are read completely and its prose is not read at all. So the Order can state the exact weight and count of every offering ever made and cannot read the name at the top of the page. Somebody has been reading that document aloud for eight hundred years as a list of quantities.'
+            note: 'The best case in the catalog and it is already implied by the transmission work in `history.ts`: the Boundary Hand\'s numerals are read completely and its prose is not read at all. So the Sect can state the exact weight and count of every offering ever made and cannot read the name at the top of the page. Somebody has been reading that document aloud for eight hundred years as a list of quantities.'
         },
         {
             case: 'wrong name, honestly held',
@@ -319,7 +319,7 @@ export const ARCHIVE_AS_CLAIM = {
         }
     ],
     theCounterExample:
-        'The Hollow Court is the counter-example and should read as one. Their records are good, and that is not incidental to their strength - it is their strength. Six ancestors who can still be named and addressed correctly is the whole reason their depletion is medium rather than terminal at four thousand four hundred years. Every other institution\'s decline includes a component of simple forgetting, and theirs does not.',
+        'The Empyrean Court is the counter-example and should read as one. Their records are good, and that is not incidental to their strength - it is their strength. Six ancestors who can still be named and addressed correctly is the whole reason their depletion is medium rather than terminal at four thousand four hundred years. Every other institution\'s decline includes a component of simple forgetting, and theirs does not.',
     howToUseIt:
         'Where a sect\'s answer rate is unexplained, this is now the available explanation, and it is usually the correct one. An institution does not lose a channel in a dramatic event. It loses a page.'
 } as const;
@@ -332,7 +332,7 @@ export const ARCHIVE_AS_CLAIM = {
 
 export const PAVILION_SURPLUS = {
     theTension:
-        'The Azure Cloud Pavilion holds nine of these objects - seven Heaven-Ascending Golden Pills and two Root-Recasting Talismans, all lower grade - and can barely use any of them. A lower Step is not a small thing: it carries somebody from Nascent Soul Perfection across into Deity Transformation, which is a regional power made in an afternoon. It is also useless to anybody not standing at that boundary, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock is enormous, the stock is rising, and the sect has almost nobody it fits. The bottleneck is people rather than medicine, which is the same sentence as everything else about this institution.',
+        'The Azure Cloud Pavilion holds nine of these objects - seven Heaven-Ascending Golden Pills and two Spirit-Recasting Talismans, all lower grade - and can barely use any of them. A lower Step is not a small thing: it carries somebody from Nascent Soul Perfection across into Deity Transformation, which is a regional power made in an afternoon. It is also useless to anybody not standing at that boundary, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock is enormous, the stock is rising, and the sect has almost nobody it fits. The bottleneck is people rather than medicine, which is the same sentence as everything else about this institution.',
     whatItDoes: [
         'Gives them away, at a rate no institution in history has matched, because the instructions permit it and the arithmetic no longer punishes it - four grants in the last century against one in the two centuries before.',
         'Places them outward: with allied sects, with guest elders, and twice with cultivators who hold no affiliation at all, which is the closest thing the world has seen to an institution exporting advancement.',
@@ -342,9 +342,9 @@ export const PAVILION_SURPLUS = {
     theQuietProblem:
         'Every object placed outside creates somebody who owes the Pavilion a realm, and the Pavilion has never decided what it wants that to be. It is not building a faction, it is not charging, and it has not asked for anything back - so it is accumulating obligations at a rate its own Sword Elders describe as untidy and nobody has proposed a use for.',
     whoHasNoticed: [
-        'The Stone Marrow Hall, whose Iron Ridge and Green Water City houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
+        'The Stone Marrow Hall, whose Iron Crest and Emerald Water City houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
         'Ninefold Karma Palace, because unexplained advancements cluster around Pavilion allies and each one opens a lineage audit that finds nothing wrong and no explanation.',
-        'The Thousand Treasure Pavilion, which has noticed the opposite of a thing: not one of these has ever come to auction from a sect that plainly has more than it needs.',
+        'The Thousand Relic Pavilion, which has noticed the opposite of a thing: not one of these has ever come to auction from a sect that plainly has more than it needs.',
         'The Earth Vein Tower, which holds three objects, keeps a register on the subject, and has no explanation whatever for how a single sect in a single province has nine.'
     ],
     whatNobodyHasWorkedOut:

@@ -29,7 +29,7 @@
  * absorbed by whoever took it.
  *
  * The five standing powers of the region - the Stone Marrow Hall, Lantern
- * Hall, the Severed, the Hollow Court and the Kiln Court - are in this
+ * Hall, the Severed, the Empyrean Court and the Tripod Court - are in this
  * catalog alongside the regional sects, because from a cultivator's point of
  * view they are the same kind of object: a door that may or may not open.
  *
@@ -204,9 +204,9 @@ export type {
 // Four factions carry no ambition at all, and the abstention is the content:
 // the Burnt Earth Temple, which states no grievance because it holds it was
 // given what it needed two and a half thousand years ago; the Ancient Bough Grove,
-// which holds that a grievance is a claim and makes no claims; the Kiln
+// which holds that a grievance is a claim and makes no claims; the Tripod
 // Wardens, who are staff and have no interests of their own to have; and the
-// Hollow Court, which has nothing left to be afraid of and therefore nothing
+// Empyrean Court, which has nothing left to be afraid of and therefore nothing
 // left to reach for. Those are the only four, and each of them is characterised
 // by not wanting rather than by having been left out.
 // ─────────────────────────────────────────────────────────────────────────
@@ -534,7 +534,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'void-piercing-sword-domain',
         specialities: ['attack', 'movement'],
         rivals: ['sect-crimson-abyss-fortress', 'sect-ashen-forge-clan'],
-        territory: 'Terraced peaks above the gorge at Green Water City, and the vein under it, taken off somebody else nineteen centuries ago.',
+        territory: 'Terraced peaks above the gorge at Emerald Water City, and the vein under it, taken off somebody else nineteen centuries ago.',
         recruits: true,
         compound: {
             inherited: true,
@@ -543,7 +543,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A practice yard cut for six hundred, with two hundred and ten flagstones worn through and the rest sharp as the day they were laid.'
         },
         description:
-            'The region\'s orthodox sword sect, on terraces cut into the peaks above the Jade Gorge gorge, sitting on a vein it took off somebody else nineteen centuries ago and has held ever since. Its library is metal from end to end - the thread flicked off a fingertip, the flying blade, the white tiger\'s four hooked lengths, the golden bell, and the standing sword domain at the top of it - so a Pavilion disciple fights at reach and in the air, and is conspicuously bad in a corridor against somebody who has already closed. What the province sees is the courtyard, and both of the things the Pavilion is actually best at happen indoors: it certifies that a person is who they say they are, permanently and without appeal, and it runs the only programme in the world that takes uncultivated mortals onto probation and spends years finding out what they are. The number nobody says out loud is that it reliably produces Core Formation and that what it has put past Nascent Soul in four hundred years can be counted on one hand, with a Ru at each end of the count - the elder crossed three hundred and eighty years ago and is the last confirmed crossing either province can date, and the younger is sitting in the inner hall now. A house that carries one family past the middle of the ladder and thins to almost nothing around them has not found a method; it has a name and a vein, and neither of those is a method. That is why the nine lit nodes out of forty-one, the practice yard cut for six hundred that holds ninety, and the one woman the province can count in the inner hall are all the same fact.',
+            'The region\'s orthodox sword sect, on terraces cut into the peaks above the Jade Gorge gorge, sitting on a vein it took off somebody else nineteen centuries ago and has held ever since. Its library is metal from end to end - the thread flicked off a fingertip, the flying blade, the white tiger\'s four hooked lengths, the golden dome, and the standing sword domain at the top of it - so a Pavilion disciple fights at reach and in the air, and is conspicuously bad in a corridor against somebody who has already closed. What the province sees is the courtyard, and both of the things the Pavilion is actually best at happen indoors: it certifies that a person is who they say they are, permanently and without appeal, and it runs the only programme in the world that takes uncultivated mortals onto probation and spends years finding out what they are. The number nobody says out loud is that it reliably produces Core Formation and that what it has put past Nascent Soul in four hundred years can be counted on one hand, with a Ru at each end of the count - the elder crossed three hundred and eighty years ago and is the last confirmed crossing either province can date, and the younger is sitting in the inner hall now. A house that carries one family past the middle of the ladder and thins to almost nothing around them has not found a method; it has a name and a vein, and neither of those is a method. That is why the nine lit nodes out of forty-one, the practice yard cut for six hundred that holds ninety, and the one woman the province can count in the inner hall are all the same fact.',
         ambition: {
             wants:
                 'The other two to price what a house does on the axis they refuse to price, and to say so where it can be quoted. It is not asking either of them to change; it is asking them to answer in their own words instead of in a silence, which is the only move available to a body that objects and cannot act.',
@@ -560,7 +560,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Verdant Spring Valley',
         alignment: 'righteous',
         powerOrdinal: 26,
-        ranks: ['Herb Boy', 'Outer Physician', 'Inner Physician', 'Hall Physician', 'Life Elder', 'Grand Life Elder', 'Hall Sovereign'],
+        ranks: ['Medicine Boy', 'Outer Physician', 'Inner Physician', 'Hall Physician', 'Life Elder', 'Grand Life Elder', 'Hall Sovereign'],
         admissionOrdinal: 2,
         stipend: [5, 14, 40, 130, 420, 710, 1_200],
         teaches: [
@@ -571,7 +571,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'hundred-herb-restoration-art',
             // The road up to the Canon, which the Hall did not previously
             // list and therefore did not have: its wood canon opens at 16 and
-            // nothing on the shelf reached 16, so a Herb Boy admitted at 2
+            // nothing on the shelf reached 16, so a Medicine Boy admitted at 2
             // could not open the only manual the Hall owns. Both of these are
             // ordinary market stock and always were.
             'lesser-qi-gathering-manual',
@@ -615,28 +615,28 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'A terraced herb valley fed by nine warm springs, an hour off the Jade Gorge road, on ordinary ground with no vein worth the name - which is the whole explanation for everything else about the Hall. Its arts are wood and support almost without exception, from the mending palm any villager can be shown to the restoration art at the top, so its physicians are formidable at keeping somebody alive and have almost nothing to hit anybody with; a Hall cultivator in a fight is looking for the moment after it. Outsiders read the treatment of enemies as softness and get the ledger wrong: the Hall treats anyone who arrives injured and then bills them, never writes a bill off, and holds the largest book of unpaid obligations in the province. It is one of the few houses in the catalog whose pipeline is healthy rather than inherited - reliable to Core Formation Perfection on ground that gives it nothing, because the physicians cultivate at the bedside and the springs are worth more as a working valley than as a vein would have been.',
         ambition: {
             wants:
-                'A grant of its own from the Third Sill, rather than holding the valley as a sub-tenancy from the Ascetic Order.',
+                'A grant of its own from the Third Sluice, rather than holding the valley as a sub-tenancy from the Ascetic Sect.',
             blockedBy: ['sect-nine-peaks-ascetic-order', 'court-third-sill'],
             wouldCost:
-                'The Order will not release it, because the sub-tenancy is the only evidence the Order administers anything rather than merely squatting on a vein, and a court reads administering and holding very differently. Buying the release would take about nine years of the Hall\'s collections and would end the arrangement under which the Order\'s injured are treated at cost.',
+                'The Sect will not release it, because the sub-tenancy is the only evidence the Sect administers anything rather than merely squatting on a vein, and a court reads administering and holding very differently. Buying the release would take about nine years of the Hall\'s collections and would end the arrangement under which the Sect\'s injured are treated at cost.',
             contestedWith: ['sect-nine-peaks-ascetic-order'],
             movedOn:
-                'The Hall has stopped treating Order disciples at cost in two of its four dispensaries and has not said why, and the Peak Wardens have noticed and not raised it.'
+                'The Hall has stopped treating Sect disciples at cost in two of its four dispensaries and has not said why, and the Crag Wardens have noticed and not raised it.'
         }
     },
     {
         id: 'sect-nine-peaks-ascetic-order',
-        name: 'Nine Peaks Ascetic Order',
+        name: 'Nine Peaks Ascetic Sect',
         alignment: 'righteous',
         powerOrdinal: 28,
-        ranks: ['Stone Bearer', 'Ascetic', 'Inner Ascetic', 'Peak Warden', 'Mountain Elder', 'Grand Mountain Elder', 'Order Patriarch'],
+        ranks: ['Stone Bearer', 'Ascetic', 'Inner Ascetic', 'Crag Warden', 'Mountain Elder', 'Grand Mountain Elder', 'Sect Patriarch'],
         admissionOrdinal: 5,
         stipend: [3, 10, 30, 100, 400, 750, 1_400],
         teaches: [
             'loam-crusher-fist',
             'stone-hide-mantle',
             'five-breath-circulation-scripture',
-            // The four rungs between the Order's primer and its vein canon.
+            // The four rungs between the Sect's primer and its vein canon.
             // An ascetic order that has held nine peaks for centuries does not
             // leave its own people unable to reach the book it is famous for;
             // it buys the plain editions like everybody else.
@@ -657,19 +657,19 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             inherited: true,
             formationNodesTotal: 63,
             formationNodesLit: 11,
-            remnant: 'A doorway on the fourth peak with handprints burned into the jamb at a height no one in the Order can reach flat-footed.'
+            remnant: 'A doorway on the fourth peak with handprints burned into the jamb at a height no one in the Sect can reach flat-footed.'
         },
         description:
-            'Nine linked peaks over the deepest vein anybody in the province has surveyed and managed to keep, held for two centuries without a foot of it leased to anyone. The library is earth and body from the crushing fist up to the mountain body and the vein-devouring canon, so an ascetic is slow, obvious, extremely hard to put down, and utterly unable to catch anything that decides to leave. What outsiders take from the road is the stone every ascetic carries and sets down on tables, and what the stone actually does is select for people who will do a pointless thing for years, which the Order\'s own intake records show and the Order does not teach. Eleven of sixty-three nodes are lit and the Order admits it does not know what forty of the others were for, but the pipeline tracks the vein exactly, which is the world in one row: production follows ground, and the ground here has not been sold.',
+            'Nine linked peaks over the deepest vein anybody in the province has surveyed and managed to keep, held for two centuries without a foot of it leased to anyone. The library is earth and body from the crushing fist up to the mountain body and the vein-devouring canon, so an ascetic is slow, obvious, extremely hard to put down, and utterly unable to catch anything that decides to leave. What outsiders take from the road is the stone every ascetic carries and sets down on tables, and what the stone actually does is select for people who will do a pointless thing for years, which the Sect\'s own intake records show and the Sect does not teach. Eleven of sixty-three nodes are lit and the Sect admits it does not know what forty of the others were for, but the pipeline tracks the vein exactly, which is the world in one row: production follows ground, and the ground here has not been sold.',
         ambition: {
             wants:
-                'The vein taken off the Third Sill\'s apportionment entirely, and held outright the way the Pavilion holds the gorge.',
+                'The vein taken off the Third Sluice\'s apportionment entirely, and held outright the way the Pavilion holds the gorge.',
             blockedBy: ['court-third-sill', 'sect-stone-marrow-hall'],
             wouldCost:
-                'An assay, which means letting the Stone Marrow Hall put a figure on the deepest vein anybody has kept, in writing, where the Sill can read it. The Order has refused to be assayed for two hundred years and cannot make the claim without being, which is a trap it has understood since the second refusal and has never found a way around.',
+                'An assay, which means letting the Stone Marrow Hall put a figure on the deepest vein anybody has kept, in writing, where the Sluice can read it. The Sect has refused to be assayed for two hundred years and cannot make the claim without being, which is a trap it has understood since the second refusal and has never found a way around.',
             contestedWith: ['sect-verdant-spring-valley'],
             movedOn:
-                'It has begun quietly maintaining the forty unlit nodes to a standard a surveyor would notice, which is the closest thing to a preparation the Order has ever made.'
+                'It has begun quietly maintaining the forty unlit nodes to a standard a surveyor would notice, which is the closest thing to a preparation the Sect has ever made.'
         }
     },
     {
@@ -690,16 +690,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Clear River Alliance',
         alignment: 'righteous',
         powerOrdinal: 24,
-        ranks: ['Boat Hand', 'River Disciple', 'Current Disciple', 'Ford Master', 'River Elder', 'Grand River Elder', 'Alliance Head'],
+        ranks: ['Oar Hand', 'River Disciple', 'Current Disciple', 'Ferry Master', 'River Elder', 'Grand River Elder', 'Alliance Head'],
         admissionOrdinal: 1,
         stipend: [3, 9, 26, 85, 300, 520, 900],
         protector: {
-            title: 'The Old Neighbour Under the Ford',
+            title: 'The Old Neighbour Under the Ferry',
             policy: 'filled',
             heldBy: 'beast-millennial-tortoise',
             note:
                 'It was in the water before there was a ford, and the eleven towns grew up '
-                + 'around a thing every boat hand has been told about since they could walk. '
+                + 'around a thing every oar hand has been told about since they could walk. '
                 + 'Nobody in the Alliance has ever asked it for anything and nobody has ever '
                 + 'needed to: what it does is be there, and every house within four provinces '
                 + 'knows what is in that water and prices a raid accordingly. The Alliance '
@@ -738,19 +738,19 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             inherited: true,
             formationNodesTotal: 8,
             formationNodesLit: 5,
-            remnant: 'A pier at Clear River Ford standing on pilings that were already old when the town was named, and which no flood has yet moved.'
+            remnant: 'A pier at Clear River Ferry standing on pilings that were already old when the town was named, and which no flood has yet moved.'
         },
         description:
-            'Eleven river towns and every ford between them, none of it over a vein and all of it over traffic, which is the whole business model stated as geography. It teaches water and movement - the gutter palm that takes a bigger opponent\'s footing, the reed crossing, the nine-cut sword chant, the mirror guard - so an Alliance fighter is superb on and near water and merely competent a hundred paces from it, and knows it. Less a sect than a federation of ferrymen who learned to fight: it takes almost anyone, pays almost nothing, and its real asset is that a ferryman is told things nobody would tell a magistrate, which the Alliance has never once thought of as intelligence. Half its river charts are copies of a survey two ages old and still better than anything it has made since, and at some point in the last century it stopped attempting new ones without anybody deciding to.',
+            'Eleven river towns and every ford between them, none of it over a vein and all of it over traffic, which is the whole business model stated as geography. It teaches water and movement - the gutter palm that takes a bigger opponent\'s footing, the reed crossing, the nine-cut sword cadence, the mirror guard - so an Alliance fighter is superb on and near water and merely competent a hundred paces from it, and knows it. Less a sect than a federation of ferrymen who learned to fight: it takes almost anyone, pays almost nothing, and its real asset is that a ferryman is told things nobody would tell a magistrate, which the Alliance has never once thought of as intelligence. Half its river charts are copies of a survey two ages old and still better than anything it has made since, and at some point in the last century it stopped attempting new ones without anybody deciding to.',
         ambition: {
             wants:
-                'To federate the border road to Iron Ridge and become a regional carrier rather than a river carrier.',
+                'To federate the border road to Iron Crest and become a regional carrier rather than a river carrier.',
             blockedBy: ['house-shrinking-earth', 'sect-thousand-treasure-pavilion'],
             wouldCost:
                 'Eleven days of road it cannot police, wagons it does not own, and a fight with a house that prices carriage in a distance nobody else can measure. The River Elders hold that the Alliance is river people and will drown on land, and they have the votes.',
             contestedWith: ['sect-thousand-treasure-pavilion', 'house-shrinking-earth'],
             movedOn:
-                'Three Ford Masters have been running an unlicensed wagon service to Clear River Ford for six years and remitting a share, which the River Elders have chosen not to establish.'
+                'Three Ferry Masters have been running an unlicensed wagon service to Clear River Ferry for six years and remitting a share, which the River Elders have chosen not to establish.'
         }
     },
     {
@@ -786,14 +786,14 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Six nodes, all of them lit, all of them cut by the Temple\'s own hands, all of them weak - and the only complete working formation in the province.'
         },
         description:
-            'A walled temple on swept ground a day out from the Burnt Earth treaty vault, built deliberately where nothing has settled in an age, which means no vein, no tribute and nothing anybody wants. Almost everything it teaches is elementless - the cross-meridian strike, the iron shirt, the warm current, the severing intent, the hollow body - and that is the point rather than a shortage: a temple that only accepted clean roots would be a temple for other people, and elementless arts will not conflict with whatever a muddled intake walks in carrying. It takes orphans, beggars, ruined roots and anyone else the good sects turned away that morning, asks for nothing but the work, and returns endowments of ground intact, which four separate sects have now discovered - and which is why it was never an apex and was never going to be. What makes an apex is somebody above the Lid feeding the house, and the abbot who crossed from here two and a half thousand years ago sent the Temple nothing: what came down came down to ordinary people across the province, a little of it passing through the Temple\'s hands and most of it not, in the largest uncatalogued distribution of immortal-made goods anybody has ever made. Its own patron above the Lid deliberately fed the province instead, which is exactly what the Temple does for people, done at the one scale where it changes a province. Six nodes, all lit, all cut by the Temple itself and all weak: it is the only complete working formation in the province and it is a beginner\'s diagram, which is also the honest summary of the whole institution. It holds one thing that is on no list, because the Temple keeps none, and that did not come from the abbot, because nothing did.'
+            'A walled temple on swept ground a day out from the Burnt Earth treaty vault, built deliberately where nothing has settled in an age, which means no vein, no tribute and nothing anybody wants. Almost everything it teaches is elementless - the cross-meridian jolt, the iron shirt, the warm current, the severing intent, the vacant body - and that is the point rather than a shortage: a temple that only accepted clean roots would be a temple for other people, and elementless arts will not conflict with whatever a muddled intake walks in carrying. It takes orphans, beggars, ruined roots and anyone else the good sects turned away that morning, asks for nothing but the work, and returns endowments of ground intact, which four separate sects have now discovered - and which is why it was never an apex and was never going to be. What makes an apex is somebody above the Lid feeding the house, and the abbot who crossed from here two and a half thousand years ago sent the Temple nothing: what came down came down to ordinary people across the province, a little of it passing through the Temple\'s hands and most of it not, in the largest uncatalogued distribution of immortal-made goods anybody has ever made. Its own patron above the Lid deliberately fed the province instead, which is exactly what the Temple does for people, done at the one scale where it changes a province. Six nodes, all lit, all cut by the Temple itself and all weak: it is the only complete working formation in the province and it is a beginner\'s diagram, which is also the honest summary of the whole institution. It holds one thing that is on no list, because the Temple keeps none, and that did not come from the abbot, because nothing did.'
     },
     {
         id: 'sect-lantern-hall',
         name: 'Lantern Hall',
         alignment: 'righteous',
         powerOrdinal: 31,
-        ranks: ['Copyist', 'Reader', 'Hall Archivist', 'Keeper of Names', 'Senior Keeper', 'Grand Keeper', 'Grand Hall Warden'],
+        ranks: ['Copyist', 'Reader', 'Hall Archivist', 'Keeper of Scrolls', 'Senior Keeper', 'Grand Keeper', 'Grand Hall Warden'],
         admissionOrdinal: 2,
         stipend: [6, 16, 44, 140, 460, 830, 1_500],
         teaches: [
@@ -823,7 +823,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'More than the Hall has, and the House will not sell at any figure, because a counter-register it holds the floor under is a counter-register it can end in a season. Moving instead means shifting four ages of damp-damaged registers across nine cities, and the Hall\'s own archivists put the loss at one volume in twelve.',
             contestedWith: ['house-jade-register'],
             movedOn:
-                'The Warden-General has had two of the nine surveyed for a move and has told nobody, including the Keepers of Names who would have to carry the volumes.'
+                'The Warden-General has had two of the nine surveyed for a move and has told nobody, including the Keepers of Scrolls who would have to carry the volumes.'
         }
     },
 
@@ -1127,15 +1127,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'To publish a vein index and make the price of ground explicit, which would make the Stone Marrow Hall the body that prices veins rather than the body that prices what comes out of them.',
             blockedBy: ['sect-thousand-treasure-pavilion', 'court-third-sill'],
             wouldCost:
-                'An explicit price for a vein is a starting gun, which is the Principal\'s whole objection and is correct. It would also make public that in four recorded shortages the rate was set by what the Thousand Treasure Pavilion would pay and published a week later as the Stone Marrow Hall\'s own.',
+                'An explicit price for a vein is a starting gun, which is the Principal\'s whole objection and is correct. It would also make public that in four recorded shortages the rate was set by what the Thousand Relic Pavilion would pay and published a week later as the Stone Marrow Hall\'s own.',
             contestedWith: ['sect-thousand-treasure-pavilion'],
             movedOn:
-                'The Rate Elders have compiled the index twice, in secret, and both copies are in the same locked house at Green Water City, which about eleven people know.'
+                'The Rate Elders have compiled the index twice, in secret, and both copies are in the same locked house at Emerald Water City, which about eleven people know.'
         }
     },
     {
         id: 'sect-thousand-treasure-pavilion',
-        name: 'Thousand Treasure Pavilion',
+        name: 'Thousand Relic Pavilion',
         alignment: 'neutral',
         powerOrdinal: 27,
         ranks: ['Runner', 'Clerk', 'Appraiser', 'Hall Steward', 'Council Seat', 'Senior Council Seat', 'Grand Steward'],
@@ -1176,7 +1176,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Cinnabar Crucible Sect',
         alignment: 'neutral',
         powerOrdinal: 25,
-        ranks: ['Bellows Hand', 'Outer Alchemist', 'Inner Alchemist', 'Cauldron Master', 'Furnace Elder', 'Grand Furnace Elder', 'Hall Grandmaster'],
+        ranks: ['Bellows Hand', 'Outer Alchemist', 'Inner Alchemist', 'Crucible Master', 'Furnace Elder', 'Grand Furnace Elder', 'Hall Grandmaster'],
         admissionOrdinal: 6,
         stipend: [6, 18, 55, 180, 560, 950, 1_600],
         teaches: [
@@ -1203,24 +1203,24 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A refining hall whose walls are covered in Furnace Script; the Hall can read about a third of it and has built its whole reputation on that third.'
         },
         description:
-            'Furnace halls beside the volcanic fields, a fixed price list nobody negotiates, and a refining hall wall it was founded on that is legible to about a third. It teaches detoxification, circulation, the needle art, the hundred-herb restoration and the molten core scripture, which is a curriculum for people who will spend their cultivation years standing at a cauldron, and the Hall treats a Core Formation grandmaster as a complete career rather than a disappointment. Everybody sees the counter and almost nobody sees the examination hall behind it: admission is by examination rather than combat, so it is one of the very few doors in the world through which a careful person with no talent for violence walks out with a trade. Every formula above earth grade in its book was recovered rather than devised, it is quietly certain that the missing steps are why the heaven-grade batches fail, and it still teaches a step that killed the Furnace Elder who proved it was not one.',
+            'Furnace halls beside the volcanic fields, a fixed price list nobody negotiates, and a refining hall wall it was founded on that is legible to about a third. It teaches detoxification, circulation, the needle art, the hundred-grass restoration and the molten core scripture, which is a curriculum for people who will spend their cultivation years standing at a cauldron, and the Hall treats a Core Formation grandmaster as a complete career rather than a disappointment. Everybody sees the counter and almost nobody sees the examination hall behind it: admission is by examination rather than combat, so it is one of the very few doors in the world through which a careful person with no talent for violence walks out with a trade. Every formula above earth grade in its book was recovered rather than devised, it is quietly certain that the missing steps are why the heaven-grade batches fail, and it still teaches a step that killed the Furnace Elder who proved it was not one.',
         ambition: {
             wants:
-                'Out from under the Frostmirror Court and back under the Third Sill, or failing that a cold source it does not buy from its own landlord.',
+                'Out from under the Frostmirror Court and back under the Third Sluice, or failing that a cold source it does not buy from its own landlord.',
             blockedBy: ['sect-frostmirror-court', 'court-third-sill'],
             wouldCost:
                 'The Frostmirror will not release it, because the Hall\'s tribute is most of what makes the cold arterial look administered rather than merely occupied. Finding cold elsewhere means the glacier\'s competitors, and there are none, so the honest price is a decade of failed high-grade batches while the Hall proves it can work warm.',
             contestedWith: ['sect-frostmirror-court'],
             movedOn:
-                'Two petitions in forty years, both to the Third Sill, neither answered, and the Hall has begun dating its tribute receipts in a way that would let somebody reconstruct exactly what it has paid.'
+                'Two petitions in forty years, both to the Third Sluice, neither answered, and the Hall has begun dating its tribute receipts in a way that would let somebody reconstruct exactly what it has paid.'
         }
     },
     {
         id: 'sect-ashen-forge-clan',
-        name: 'Ashen Forge Clan',
+        name: 'Ashen Anvil Clan',
         alignment: 'neutral',
         powerOrdinal: 23,
-        ranks: ['Coal Hand', 'Smith', 'Forge Disciple', 'Hammer Master', 'Cinder Elder', 'Grand Cinder Elder', 'Clan Chief'],
+        ranks: ['Coal Hand', 'Smith', 'Anvil Disciple', 'Hammer Master', 'Cinder Elder', 'Grand Cinder Elder', 'Clan Chief'],
         admissionOrdinal: 5,
         stipend: [6, 20, 60, 190, 600, 950, 1_500],
         teaches: [
@@ -1266,10 +1266,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     },
     {
         id: 'sect-hollow-bell-wanderers',
-        name: 'Hollow Bell Wanderers',
+        name: 'Wayside Chime Wanderers',
         alignment: 'neutral',
         powerOrdinal: 20,
-        ranks: ['Stray', 'Bellringer', 'Wanderer', 'Road Elder', 'Grand Road Elder', 'Bell Keeper'],
+        ranks: ['Stray', 'Chime Ringer', 'Wanderer', 'Road Elder', 'Grand Road Elder', 'Chime Keeper'],
         admissionOrdinal: 0,
         stipend: [1, 4, 12, 45, 85, 160],
         teaches: [
@@ -1292,13 +1292,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nothing. The Wanderers own no ground, which they present as a philosophy and everyone understands as a budget.'
         },
         description:
-            'No fixed seat, no ground and no inheritance: a bell hung at a crossroads means members passed within the month, and never that they intend to come back. Its library is the cheap and portable end of everything - the cross-meridian strike, two escapes, the gutter palm, the willow step, the gathering manual - which is exactly the kit of people who dig for a living and expect to run, and it is priced at what a nobody with a muddled root can pay. Nobody else will take a Qi Condensation nobody with no family, the league knows it, and every sect in the province that refused them first now recruits out of them, which the Wanderers find funnier than they should. The bells are a four-generation map of every crossroads any member has walked, held by the only people in the province who have crossed it without a sect telling them where to go, and nobody has ever asked to read it.',
+            'No fixed seat, no ground and no inheritance: a bell hung at a crossroads means members passed within the month, and never that they intend to come back. Its library is the cheap and portable end of everything - the cross-meridian jolt, two escapes, the gutter palm, the willow step, the gathering manual - which is exactly the kit of people who dig for a living and expect to run, and it is priced at what a nobody with a muddled root can pay. Nobody else will take a Qi Condensation nobody with no family, the league knows it, and every sect in the province that refused them first now recruits out of them, which the Wanderers find funnier than they should. The bells are a four-generation map of every crossroads any member has walked, held by the only people in the province who have crossed it without a sect telling them where to go, and nobody has ever asked to read it.',
         ambition: {
             wants:
                 'To keep one member past Foundation Establishment for a full decade, which it has not managed in sixty years.',
             blockedBy: ['sect-stone-marrow-hall', 'sect-crimson-abyss-fortress'],
             wouldCost:
-                'A stipend the league does not collect and a reason to stay that is not a favour, and the Bell Keeper holds that the day the league owns ground is the day it starts refusing people. Everyone good enough leaves within a year and the league does not stop them, which is the arithmetic and is why the Road Elders want a seat.',
+                'A stipend the league does not collect and a reason to stay that is not a favour, and the Chime Keeper holds that the day the league owns ground is the day it starts refusing people. Everyone good enough leaves within a year and the league does not stop them, which is the arithmetic and is why the Road Elders want a seat.',
             contestedWith: ['sect-crimson-abyss-fortress'],
             movedOn:
                 'The Road Elders have been quietly holding back three names from the bells so that the recruiters cannot follow the route, which is the first thing the league has ever concealed.'
@@ -1321,7 +1321,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // sword school came from the most backed institution on the map.
     {
         id: 'sect-cold-sword-sect',
-        name: 'Cold Sword Sect',
+        name: 'Unadorned Sword Sect',
         alignment: 'neutral',
         powerOrdinal: 22,
         ranks: ['Yard Hand', 'Sword Hand', 'Standing Sword', 'Yard Elder', 'First Sword', 'Sect Master'],
@@ -1340,7 +1340,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'gale-riding-sword-flight',
         specialities: ['attack', 'movement'],
         rivals: [],
-        territory: 'A dry shelf of gorge above Stone Ford, with no vein under it and nothing granted over it.',
+        territory: 'A dry shelf of gorge above Clear River Ferry, with no vein under it and nothing granted over it.',
         recruits: true,
         compound: {
             inherited: true,
@@ -1349,7 +1349,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A yard walled on three sides and cut for two hundred, with the fourth side open onto the drop because whoever laid it out wanted the wind.'
         },
         description:
-            'A walled yard on the dry shelf above Stone Ford, one lit node out of five, and about sixty people who do nothing else but the sword. It holds no vein, teaches nothing of its own and answers to nobody: the gathering manual, the tempering scripture, the thread, the flying blade and the blade flight are the province\'s common metal road, copied and recopied, and there has never been anything here a grant could convey. That is why the shelf is unheld on the Third Sill Court\'s own map and why nobody has opened a file on it. What the Sect has instead is the one door in the Jade Gorge where somebody the terraces refused is taught to stand on their own blade, which is most of its intake and the whole of its reputation. Its road stops where the tempering scripture stops and everybody in the yard knows the year they will have to choose between staying and going somewhere that holds from somebody.',
+            'A walled yard on the dry shelf above Clear River Ferry, one lit node out of five, and about sixty people who do nothing else but the sword. It holds no vein, teaches nothing of its own and answers to nobody: the gathering manual, the tempering scripture, the thread, the flying blade and the blade flight are the province\'s common metal road, copied and recopied, and there has never been anything here a grant could convey. That is why the shelf is unheld on the Third Sluice Court\'s own map and why nobody has opened a file on it. What the Sect has instead is the one door in the Jade Gorge where somebody the terraces refused is taught to stand on their own blade, which is most of its intake and the whole of its reputation. Its road stops where the tempering scripture stops and everybody in the yard knows the year they will have to choose between staying and going somewhere that holds from somebody.',
         ambition: {
             wants:
                 'A road of its own above the tempering scripture, so that going further stops meaning going elsewhere.',
@@ -1394,7 +1394,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         id: 'sect-orchid-court',
         // The house, which is NOT the settlement. The terraces it lives on
         // are Orchid Terrace; this is the body standing on them, the way
-        // Cold Peak is a town and the Frostmirror Court is the house on it.
+        // Moraine Gate is a town and the Frostmirror Court is the house on it.
         // They were briefly one name and it cost the house its own
         // mentionability - see the note in `place-names.ts`.
         name: 'Orchid Court',
@@ -1452,7 +1452,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'Nothing it can pay and everything it would have to stop doing. Being left alone is only available while nobody has a reason to insist, and the Court sells into a Hall that has to account for what it buys. Every season it sells is a season somebody could work backwards from to a valley that is on nobody\'s figure.',
             contestedWith: [],
             movedOn:
-                'It has begun selling forward two seasons at a time through the Four Names station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
+                'It has begun selling forward two seasons at a time through the Fourfold Stele station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
         }
     },
     {
@@ -1460,7 +1460,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Frostmirror Court',
         alignment: 'neutral',
         powerOrdinal: 36,
-        ranks: ['Snow Servant', 'Mirror Disciple', 'Rime Disciple', 'Court Warden', 'Frost Elder', 'Grand Frost Elder', 'Court Sovereign'],
+        ranks: ['Sleet Servant', 'Mirror Disciple', 'Hoarfrost Disciple', 'Court Warden', 'Frost Elder', 'Grand Frost Elder', 'Court Sovereign'],
         admissionOrdinal: 13,
         stipend: [10, 30, 90, 300, 1_000, 1_700, 3_000],
         teaches: [
@@ -1506,36 +1506,36 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'A glacier court above the snowline on a cold vein nobody else can work, appearing on no accurate map, with twenty-six of forty-four nodes lit and the floors left unswept as doctrine. It is the only institution left holding a complete ice curriculum, because the curriculum was sealed in the ice and the Court dug it out rather than inheriting it from teachers: the frost needle, the tomb slash, the rimeglass carapace, the mirror displacement and the stillness canon, which is the only ice-attuned accumulation canon above heaven grade anybody has. It will not open the library to anyone without a mutated ice root, and this is triage rather than arrogance - the arts kill everyone else, so every applicant it refuses is somebody it has declined to bury, and a mutated ice cultivator who finds this Court has found the one place their talent is not a death sentence. It became a court because the ice curriculum turned out to be the one thing in the province nobody could replace, and it is the only body in either province issuing grant paper of its own in a format that copies its landlord\'s, which it does while describing itself in correspondence as a peer rather than a junior, and while the glacier that fed the curriculum retreats forty spans below the working face.',
         ambition: {
             wants:
-                'The third arterial, and the eleven grants that hang off it, administered by the Frostmirror instead of the Third Sill - or failing that, standing as a peer rather than a junior.',
+                'The third arterial, and the eleven grants that hang off it, administered by the Frostmirror instead of the Third Sluice - or failing that, standing as a peer rather than a junior.',
             blockedBy: ['court-third-sill', 'apex-earth-vein-tower'],
             wouldCost:
-                'Everything it has, spent on a body that has not replied to eleven years of correspondence. The Court reads the silence as weakness and the province reads it as the Sill having read the Court correctly, and both readings cannot be right.',
+                'Everything it has, spent on a body that has not replied to eleven years of correspondence. The Court reads the silence as weakness and the province reads it as the Sluice having read the Court correctly, and both readings cannot be right.',
             contestedWith: [
                 'sect-storm-tyrant-court',
                 'sect-nine-abyss-flame-sect',
                 'sect-cinnabar-crucible-sect'
             ],
             movedOn:
-                'Eleven years of letters, each one closer to quotable than the last, and it has begun issuing its own grant paper to the Cinnabar Crucible Sect in a format that copies the Sill\'s.'
+                'Eleven years of letters, each one closer to quotable than the last, and it has begun issuing its own grant paper to the Cinnabar Crucible Sect in a format that copies the Sluice\'s.'
         }
     },
     {
         id: 'sect-deeproot-court',
         // Renamed. This is the half that left the datum, and it took the
         // Earth Vein Tower's own administrative name for the posting with it - see
-        // THE_KILN_SCHISM. The body still standing on the ground is the Kiln
+        // THE_KILN_SCHISM. The body still standing on the ground is the Tripod
         // Court, under the Survey, and says this one is not the house.
         name: 'Deeproot Court',
         alignment: 'neutral',
         powerOrdinal: 36,
-        ranks: ['Warden', 'Second Warden', 'Gate Warden', 'Keeper of the Kiln'],
+        ranks: ['Warden', 'Second Warden', 'Gate Warden', 'Keeper of the Tripod'],
         admissionOrdinal: 21,
         stipend: [200, 600, 1_800, 5_000],
         teaches: [],
         signatureTechniqueId: null,
         specialities: ['defense'],
         rivals: [],
-        territory: 'The root vein, and a perimeter of nine days\' walk in every direction that nobody has surveyed twice.',
+        territory: 'The taproot vein, and a perimeter of nine days\' walk in every direction that nobody has surveyed twice.',
         recruits: false,
         compound: {
             inherited: true,
@@ -1544,11 +1544,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A gate. It is not large. Everything else the Wardens hold is behind it, and the gate is the only part any outsider has described.'
         },
         description:
-            'The root vein - the deep ground every other vein in the region is understood to branch from, though nobody outside the gate has been permitted to test it - and a perimeter nine days\' walk in every direction that nobody has surveyed twice. It teaches nothing and takes nobody, and the fifteen rungs between its admission figure and its strongest Warden are not a gate anybody has ever been through: the bar is what a posting requires, not what an applicant could meet, and there has been no applicant in nine hundred years. In an age where every institution is fighting over drawn-down holdings, a body sitting on the richest ground in the world and taking none of it is the most alarming fact anybody has established about them, and it is closely followed by the second, which is that every one of the nine hundred nodes it holds is lit and nobody else in the world can say that about any number. The province has called them the Kiln Wardens for nine hundred years and they have never corrected it, which is convenient for them and correct in its own way: what stands at that gate is staff, posted, doing an assigned job on somebody else\'s datum, and every single thing the province finds inexplicable about them is explained by that sentence.'
+            'The taproot vein - the deep ground every other vein in the region is understood to branch from, though nobody outside the gate has been permitted to test it - and a perimeter nine days\' walk in every direction that nobody has surveyed twice. It teaches nothing and takes nobody, and the fifteen rungs between its admission figure and its strongest Warden are not a gate anybody has ever been through: the bar is what a posting requires, not what an applicant could meet, and there has been no applicant in nine hundred years. In an age where every institution is fighting over drawn-down holdings, a body sitting on the richest ground in the world and taking none of it is the most alarming fact anybody has established about them, and it is closely followed by the second, which is that every one of the nine hundred nodes it holds is lit and nobody else in the world can say that about any number. The province has called them the Tripod Wardens for nine hundred years and they have never corrected it, which is convenient for them and correct in its own way: what stands at that gate is staff, posted, doing an assigned job on somebody else\'s datum, and every single thing the province finds inexplicable about them is explained by that sentence.'
     },
     {
         id: 'sect-hollow-court',
-        name: 'The Hollow Court',
+        name: 'The Empyrean Court',
         alignment: 'neutral',
         // The highest acting power in the world, and the only faction whose
         // Tribulation Transcenders are awake. Everyone else at this ordinal is
@@ -1630,7 +1630,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // facts` in AGENTS.md - and this is the smallest clean instance of it
         // in the catalog.
         powerOrdinal: 38,
-        ranks: ['Bound', 'First Cut', 'Third Cut', 'Ninth Cut', 'Nameless', 'First Among the Nameless', 'The Severed Themselves'],
+        ranks: ['Tethered', 'First Cut', 'Third Cut', 'Ninth Cut', 'Nameless', 'First Among the Nameless', 'The Severed Themselves'],
         admissionOrdinal: 5,
         stipend: [15, 50, 170, 550, 1_800, 3_300, 6_000],
         teaches: [
@@ -1665,13 +1665,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A ledger of what each member has already given up, kept accurately, and shown to applicants before anything else.'
         },
         description:
-            'No seat worth naming: cutting houses at the edge of six cities, all of them rented, three portable formation nodes, and a founding ledger entry whose identifying columns cut themselves. Its arts are severance and disappearance - the shadow gait, the tithe palm, the meridian-devouring art, the severed name finger, the hollow body - and a Severed cultivator fights like somebody who has already decided what they are willing to lose, because they have, and it is written down. The doctrine is the most coherent argument in the region and it works: every crossing takes something eventually, so pay it deliberately, cut the bonds and the memories and the name in advance at a time of your choosing, and cross every boundary clean. They climb faster than anybody in the catalog and their attrition is the worst, because most of them stop being people before they stop being cultivators, and the house regards that objection as sentimental rather than incorrect.',
+            'No seat worth naming: cutting houses at the edge of six cities, all of them rented, three portable formation nodes, and a founding ledger entry whose identifying columns cut themselves. Its arts are severance and disappearance - the shadow step, the tithe palm, the meridian-devouring art, the severed grip finger, the vacant body - and a Severed cultivator fights like somebody who has already decided what they are willing to lose, because they have, and it is written down. The doctrine is the most coherent argument in the region and it works: every crossing takes something eventually, so pay it deliberately, cut the bonds and the memories and the name in advance at a time of your choosing, and cross every boundary clean. They climb faster than anybody in the catalog and their attrition is the worst, because most of them stop being people before they stop being cultivators, and the house regards that objection as sentimental rather than incorrect.',
         ambition: {
             wants:
-                'The Vermilion Seal Terrace\'s founding oath against witnessing for the Severed dissolved, so that its agreements can be witnessed like anyone else\'s.',
+                'The Vermilion Sigil Terrace\'s founding oath against witnessing for the Severed dissolved, so that its agreements can be witnessed like anyone else\'s.',
             blockedBy: ['house-vermilion-seal', 'sect-lantern-hall'],
             wouldCost:
-                'Nothing it can pay, which is the problem: the Vermilion Seal Terrace wants the oath gone too and cannot revise its own instruments, and the dissolution method for an oath whose parties are all dead has never worked and is still taught. Meanwhile every contract the Severed sign is unwitnessed, which prices their work about a third above what it is worth.',
+                'Nothing it can pay, which is the problem: the Vermilion Sigil Terrace wants the oath gone too and cannot revise its own instruments, and the dissolution method for an oath whose parties are all dead has never worked and is still taught. Meanwhile every contract the Severed sign is unwitnessed, which prices their work about a third above what it is worth.',
             contestedWith: ['house-vermilion-seal'],
             movedOn:
                 'The Nameless have paid for four separate readings of the founding text by three houses, and all four came back saying the same thing, which they have stopped commissioning.'
@@ -1779,7 +1779,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A field wall of stacked fragments, sorted by weight rather than by what any of them used to be.'
         },
         description:
-            'Old battlefields, worked in rotation, in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It teaches four arts and two of them are corpse work - the cross-meridian strike, bark armour, the tithe palm and corpse-lantern soul forging - which makes its people durable, patient and carrying something that righteous sects execute for possessing. What it is actually best at is ground-reading: they are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to. They hold that the hundred-and-forty-year rotation exists to let sites recover; the founding note says it exists to let the survivors die off first, and the Cult has forgotten the difference.',
+            'Old battlefields, worked in rotation, in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It teaches four arts and two of them are corpse work - the cross-meridian jolt, bark armour, the tithe palm and corpse-lantern soul forging - which makes its people durable, patient and carrying something that righteous sects execute for possessing. What it is actually best at is ground-reading: they are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to. They hold that the hundred-and-forty-year rotation exists to let sites recover; the founding note says it exists to let the survivors die off first, and the Cult has forgotten the difference.',
         ambition: {
             wants:
                 'A rotation slot in the Buddha Precipice burn zones, which are the only unworked ground left within reach.',
@@ -1961,7 +1961,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Four nodes the Grove cut itself, holding a boundary wall that has never been tested, around a hermitage six people live in.'
         },
         description:
-            'A valley of old trees, the mountain above it and four settlements, all of it within a day and a half\'s walk, and six disciples holding a zone eleven days across. It teaches a short elementless list - the cross-meridian strike, the iron shirt, the mending palm, the severing intent, the mountain body, the soul anchor - which is the curriculum of people who expect to end a thing rather than win it, and four nodes of four, all lit, all their own work, in the only institution in the province whose inheritance is nothing at all. It administers what it can comfortably walk and claims nothing beyond it; everyone much further out simply knows the ground is theirs and has never wanted to find out otherwise. It keeps no patrols, no register, no lease and no clients, settles disputes nobody asked it to settle, refuses payment, and has killed twice in two hundred years - both times within nine days of being tested, in front of witnesses who were not asked to be there, which is the entire basis of a claim it has not renewed in forty-one years.'
+            'A valley of old trees, the mountain above it and four settlements, all of it within a day and a half\'s walk, and six disciples holding a zone eleven days across. It teaches a short elementless list - the cross-meridian jolt, the iron shirt, the mending palm, the severing intent, the mountain body, the soul anchor - which is the curriculum of people who expect to end a thing rather than win it, and four nodes of four, all lit, all their own work, in the only institution in the province whose inheritance is nothing at all. It administers what it can comfortably walk and claims nothing beyond it; everyone much further out simply knows the ground is theirs and has never wanted to find out otherwise. It keeps no patrols, no register, no lease and no clients, settles disputes nobody asked it to settle, refuses payment, and has killed twice in two hundred years - both times within nine days of being tested, in front of witnesses who were not asked to be there, which is the entire basis of a claim it has not renewed in forty-one years.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1990,7 +1990,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'foundation-tempering-scripture',
         specialities: ['cultivation', 'defense'],
         rivals: ['sect-fallen-grain-caravan', 'sect-six-li-patrol'],
-        territory: 'Both live pockets in the Buddha Precipice, the weir works above Iron Ridge, and the grant book.',
+        territory: 'Both live pockets in the Buddha Precipice, the weir works above Iron Crest, and the grant book.',
         recruits: true,
         compound: {
             inherited: true,
@@ -1999,7 +1999,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A flood-control works built to manage water by people who plainly also used it to manage qi, running seven of its twenty-six nodes and holding both of the region\'s remaining pockets between them.'
         },
         description:
-            'Both live pockets in the Buddha Precipice, the weir works above Iron Ridge, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Jade Gorge material and none of it carving, because Ward members do not touch a chisel: the Ward cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Karma Palace for certification.',
+            'Both live pockets in the Buddha Precipice, the weir works above Iron Crest, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow step and the tempering scripture, all of it Jade Gorge material and none of it carving, because Ward members do not touch a chisel: the Ward cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Karma Palace for certification.',
         ambition: {
             wants: 'A third workable face found and brought into the grant book before Jade Face runs out.',
             blockedBy: ['court-ninth-face', 'sect-six-li-patrol'],
@@ -2015,7 +2015,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Six Li Patrol',
         alignment: 'righteous',
         powerOrdinal: 14,
-        ranks: ['Marker', 'Warden', 'Road Warden', 'Warden of the Six Li'],
+        ranks: ['Stakehand', 'Warden', 'Road Warden', 'Warden of the Six Li'],
         admissionOrdinal: 0,
         stipend: [1, 3, 9, 30],
         teaches: [
@@ -2037,7 +2037,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nine hundred painted stakes and a shed at Six Li with the survey in it, which is the only complete map of where it is safe to walk.'
         },
         description:
-            'The marked roads: every route through the Buddha Precipice that does not cross dead ground, held by a shed, nine hundred painted stakes and a survey, all of it their own work. They teach the cheapest survivable list in the catalog - the cross-meridian strike, the skimming step, the iron shirt, the gathering manual, the mending palm - which is what a militia needs to walk somebody out of burn ground, and on unaided Buddha Precipice air a Warden stops at Chipping and stays there. Its strongest member would be an outer disciple in the Jade Gorge, it takes anyone, pays almost nothing, and loses two or three people a year to ground that moved. The province finds them mildly comic and they own the only complete record of where it is safe to walk in a region full of ground that kills, kept current at that cost, and they believe the original survey is accurate because it has never been checked.',
+            'The marked roads: every route through the Buddha Precipice that does not cross dead ground, held by a shed, nine hundred painted stakes and a survey, all of it their own work. They teach the cheapest survivable list in the catalog - the cross-meridian jolt, the skimming step, the iron shirt, the gathering manual, the mending palm - which is what a militia needs to walk somebody out of burn ground, and on unaided Buddha Precipice air a Warden stops at Chipping and stays there. Its strongest member would be an outer disciple in the Jade Gorge, it takes anyone, pays almost nothing, and loses two or three people a year to ground that moved. The province finds them mildly comic and they own the only complete record of where it is safe to walk in a region full of ground that kills, kept current at that cost, and they believe the original survey is accurate because it has never been checked.',
         ambition: {
             wants:
                 'Clearwater Ward to pay for paint, and the burn-edge figures in the survey shed recalculated by somebody who is not a Warden.',
@@ -2076,7 +2076,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A sorting yard laid out inside a ruin the Caravan did not build and has never fully entered, working three nodes at the front of it and leaving the rest sealed on the reasonable grounds that they were sealed for a reason.'
         },
         description:
-            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Ridge. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Buddha Precipice also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Caravan brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted.',
+            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Crest. It teaches what keeps a digger alive - the cross-meridian jolt, the shadow step, the scree mantle, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Buddha Precipice also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Caravan brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted.',
         ambition: {
             wants:
                 'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Caravan has misremembered.',
@@ -2104,7 +2104,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // These two are outside that arrangement, and they are outside it for
     // OPPOSITE reasons, which is the whole reason both exist rather than one.
     //
-    //   Silver Island Market  is unowned because owning it would destroy it.
+    //   Silver Island Hall  is unowned because owning it would destroy it.
     //                       Its entire value is that no party holds it, so
     //                       the moment one does, the other parties stop
     //                       coming and what was taken is forty acres of rock
@@ -2126,7 +2126,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // from the two descriptions without either of them saying so.
     //
     // NEITHER IS AN EXCEPTION TO A RULE. Every mechanic below is the ordinary
-    // one: the Market's watch is cultivators on a wage, its income is a margin,
+    // one: the Hall's watch is cultivators on a wage, its income is a margin,
     // its records are the same records anybody keeps. The Caravan' water is
     // the water already priced in `mortal-world.ts`. Take the arrangement away
     // and both price out as ordinary houses at their ordinals, which is the
@@ -2135,7 +2135,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
 
     {
         id: 'sect-silver-island-market',
-        name: 'Silver Island Market',
+        name: 'Silver Island Hall',
         alignment: 'neutral',
         // One Nascent Soul, and the number is doing something specific. It is
         // NOT what defends the port - the port is defended by everybody
@@ -2164,7 +2164,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'still-water-mirror-guard',
         specialities: ['defense', 'movement', 'support'],
         // None, and the absence is the institution. A feud is a party you
-        // will not trade with, and the Market's entire business is being the
+        // will not trade with, and the Hall's entire business is being the
         // counter that both parties to any feud will still stand at.
         rivals: [],
         territory: 'Forty acres of island at the middle of the eastern passage, a deep anchorage, and no claim to one foot of water beyond the shoal line.',
@@ -2176,16 +2176,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nothing inherited and nothing lit. The port stands on ground with no vein under it, so there is no diagram to have lost: what it built, it built - a stone quay, a weigh house, a water cistern cut into the rock, and a bell that is rung for arrivals and for nothing else.'
         },
         description:
-            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Market is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Silver Island is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Market does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Market has no answer for, and the last three killings on the quay were all of that shape.',
+            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Hall is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Silver Island is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Hall does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Hall has no answer for, and the last three killings on the quay were all of that shape.',
         ambition: {
             wants:
                 'A second anchorage on the northern crossing, so that a hull out of the capes has somewhere to make a market before it reaches anybody\'s coast.',
             blockedBy: ['sect-thousand-treasure-pavilion', 'house-shrinking-earth'],
             wouldCost:
-                'The thing it is. A second port is a network, a network is a body with reach, and a body with reach is a party rather than a counter - at which point the powers who currently protect the Market by not touching it acquire a reason to. The Market Master has put this to the Factors in exactly those words twice and been outvoted once.',
+                'The thing it is. A second port is a network, a network is a body with reach, and a body with reach is a party rather than a counter - at which point the powers who currently protect the Hall by not touching it acquire a reason to. The Barge Master has put this to the Factors in exactly those words twice and been outvoted once.',
             contestedWith: ['sect-thousand-treasure-pavilion'],
             movedOn:
-                'Two Factors have been buying salt flats at the Salt Fields in their own names rather than the port\'s, which is either prudence or the first move of the thing the Market Master warned about, and nobody has established which.'
+                'Two Factors have been buying salt flats at the Salt Fields in their own names rather than the port\'s, which is either prudence or the first move of the thing the Barge Master warned about, and nobody has established which.'
         }
     },
 
@@ -2194,7 +2194,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Tranquil Oasis Sect',
         alignment: 'neutral',
         powerOrdinal: 19,
-        ranks: ['Cistern Servant', 'Yoke Bearer', 'Karez Keeper', 'Oasis Elder', 'Grand Oasis Elder', 'Oasis Master'],
+        ranks: ['Cistern Servant', 'Load Bearer', 'Karez Keeper', 'Oasis Elder', 'Grand Oasis Elder', 'Oasis Master'],
         admissionOrdinal: 0,
         stipend: [2, 6, 22, 75, 140, 260],
         teaches: [
@@ -2218,7 +2218,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A tally board under the shed roof with every string that has gone out on it, and the ones that did not come back left up rather than wiped, which is the only record of the dead anywhere on this ground.'
         },
         description:
-            'Water carried out onto the Burial Sands in strings of forty to sixty skins, from Sand Well to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because Sand Well is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Caravan publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the stone hide, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Oasis Elders regard as the only endorsement the shed has ever had.',
+            'Water carried out onto the Burial Sands in strings of forty to sixty skins, from Truce Spring to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because Truce Spring is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Caravan publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the scree mantle, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Oasis Elders regard as the only endorsement the shed has ever had.',
         ambition: {
             wants:
                 'A second well. One dug, anywhere on the sand, of its own, so that the four-day figure stops being the thing that kills its people.',
@@ -2259,7 +2259,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         signatureTechniqueId: 'thread-reading-stance',
         specialities: ['support', 'cultivation'],
         rivals: ['house-still-blade', 'house-flowing-light'],
-        territory: 'A book hall at Green Water City, and a circuit of arbitration benches in forty-one towns.',
+        territory: 'A book hall at Emerald Water City, and a circuit of arbitration benches in forty-one towns.',
         recruits: true,
         compound: {
             inherited: true,
@@ -2268,7 +2268,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A vault of tally volumes in a hand two ages old, still consulted, still binding, and still accurate about families that no longer know they are in it.'
         },
         description:
-            'A book hall at Green Water City and a circuit of arbitration benches in forty-one towns, all of it held in the house\'s own name on nobody\'s grant, which is why a house at this height is a different sort of problem from a sect at the same figure: a sect can be leaned on through whoever renews it, and the Ninefold can only be dealt with. Its dao is karma read as a graph rather than a score - favour, debt, betrayal, oath, inheritance, a killing, a rescue - and four thousand one hundred years of writing those connections down means it is the only institution alive that can see a whole thread at once, across generations, when every person standing on the thread has forgotten it exists. That is not a combat art and it is not sold as one: nobody in the region can settle an inheritance, prove a debt, open a succession or establish whether a sect really has an ancestor above the Lid without a Karma Palace reckoner present, which is how a house with no field doctrine at all has never been attacked twice by the same sect. What it costs is the pace - an audit takes seasons, and the Karma Palace is habitually too late to prevent anything - and what it cannot do is see somebody with no relationships, who is close to invisible to it, or read a thread through a grave, which has never once worked and is filed under research rather than failure. The Yan have held it since Yan Duo, which makes it a family before it is an institution, and the current Keeper of the Ninefold Register is a Cao who married in and did not change her name: the head of an adoption-only house is the one person in it who was never adopted, and the house has never once written down what it thinks about that.',
+            'A book hall at Emerald Water City and a circuit of arbitration benches in forty-one towns, all of it held in the house\'s own name on nobody\'s grant, which is why a house at this height is a different sort of problem from a sect at the same figure: a sect can be leaned on through whoever renews it, and the Ninefold can only be dealt with. Its dao is karma read as a graph rather than a score - favour, debt, betrayal, oath, inheritance, a killing, a rescue - and four thousand one hundred years of writing those connections down means it is the only institution alive that can see a whole thread at once, across generations, when every person standing on the thread has forgotten it exists. That is not a combat art and it is not sold as one: nobody in the region can settle an inheritance, prove a debt, open a succession or establish whether a sect really has an ancestor above the Lid without a Karma Palace reckoner present, which is how a house with no field doctrine at all has never been attacked twice by the same sect. What it costs is the pace - an audit takes seasons, and the Karma Palace is habitually too late to prevent anything - and what it cannot do is see somebody with no relationships, who is close to invisible to it, or read a thread through a grave, which has never once worked and is filed under research rather than failure. The Yan have held it since Yan Duo, which makes it a family before it is an institution, and the current Keeper of the Ninefold Register is a Cao who married in and did not change her name: the head of an adoption-only house is the one person in it who was never adopted, and the house has never once written down what it thinks about that.',
         ambition: {
             wants:
                 'The nine sealed volumes opened and entered, ending twenty-three centuries of the house not knowing what it is standing on.',
@@ -2338,7 +2338,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             surrendered:
                 'Your own line, and every prior obligation you were standing on - the house enters them, settles them, and enters you afterwards with a clean thread, which is the single most expensive thing it does for anybody.',
             naming:
-                'The family is Yan and the house is what the Yan do: the First Keeper was Yan Duo, and every auditor on the forty-one benches today is a Yan. A man adopted in takes the name, which is what the adoption is. The current Keeper of the Ninefold Register does not carry it - she married in from the Flowing Light Tower and kept Cao - so the head of an adoption-only house is the one person in it who was never adopted, which the Circuit raises about once a decade and the Book has never answered.',
+                'The family is Yan and the house is what the Yan do: the First Keeper was Yan Duo, and every auditor on the forty-one benches today is a Yan. A man adopted in takes the name, which is what the adoption is. The current Keeper of the Ninefold Register does not carry it - she married in from the Flowing Star Tower and kept Cao - so the head of an adoption-only house is the one person in it who was never adopted, which the Circuit raises about once a decade and the Book has never answered.',
             lastTaken:
                 'Eighty years ago: a tax clerk from a town two provinces east who had reconstructed nine inheritances off the back of the collection rolls for no reason and no fee.',
             costOfTheForm:
@@ -2362,10 +2362,10 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
     },
     {
         id: 'house-flowing-light',
-        name: 'Flowing Light Tower',
+        name: 'Flowing Star Tower',
         alignment: 'neutral',
         powerOrdinal: 30,
-        ranks: ['Watcher', 'Sighting Disciple', 'Reader of Hours', 'Convergence Master', 'Elder of the Hour', 'First Elder of the Hour', 'First Sighting'],
+        ranks: ['Watcher', 'Sighting Disciple', 'Reader of Lots', 'Convergence Master', 'Elder of the Lots', 'First Elder of the Lots', 'First Sighting'],
         admissionOrdinal: 6,
         stipend: [14, 42, 130, 400, 1_300, 2_200, 3_800],
         teaches: [
@@ -2417,7 +2417,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         ],
         dependents: [
             'four regional rulers who have not made a succession decision unadvised in two centuries',
-            'the Thousand Treasure Pavilion, which prices its auctions off House sightings',
+            'the Thousand Relic Pavilion, which prices its auctions off House sightings',
             'sects choosing when to attempt a disciple\'s realm boundary'
         ],
         counter: {
@@ -2439,7 +2439,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'a small group who have stopped sighting entirely after what they saw in the year of the scar'
         ],
         weaknesses: [
-            'the Flowing Light Tower cannot replace an adviser faster than its advisers die, and it is down to eleven',
+            'the Flowing Star Tower cannot replace an adviser faster than its advisers die, and it is down to eleven',
             'two of the four thrones it advises are in dispute, and it has advised both claimants',
             'its records for the last confirmed ascension are internally contradictory and it has never resolved why'
         ],
@@ -2453,7 +2453,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             surrendered:
                 'Your line and your own future as a subject: an adopted reader is entered into the house\'s own records, and the house does not permit sightings cast on itself, so the day you join is the last day anybody will look at your future.',
             naming:
-                'The family is Cao - Cao Xun, who sighted the first convergence, and Cao Yin, whose sealed account of the scar year does not match what happened - and the Flowing Light Tower is the trade rather than the line. Every reader on the hill is a Cao and a man adopted in takes it; nobody currently on the roll married in and kept anything else, though the house has sent one of its own daughters out to the Karma Palace and did not stop her keeping the name.',
+                'The family is Cao - Cao Xun, who sighted the first convergence, and Cao Yin, whose sealed account of the scar year does not match what happened - and the Flowing Star Tower is the trade rather than the line. Every reader on the hill is a Cao and a man adopted in takes it; nobody currently on the roll married in and kept anything else, though the house has sent one of its own daughters out to the Karma Palace and did not stop her keeping the name.',
             lastTaken:
                 'A hundred and sixty years ago, and the house has looked twice since and both times decided the talent was pattern memory rather than sighting.',
             costOfTheForm:
@@ -2465,10 +2465,10 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
     },
     {
         id: 'house-vermilion-seal',
-        name: 'Vermilion Seal Terrace',
+        name: 'Vermilion Sigil Terrace',
         alignment: 'righteous',
         powerOrdinal: 31,
-        ranks: ['Witness', 'Sworn Clerk', 'Oathwright', 'Warden of Terms', 'Elder Oathwright', 'Grand Oathwright', 'Keeper of the Standing Word'],
+        ranks: ['Witness', 'Sworn Clerk', 'Oathwright', 'Warden of Terms', 'Elder Oathwright', 'Grand Oathwright', 'Keeper of the Standing Pledge'],
         admissionOrdinal: 5,
         stipend: [11, 34, 105, 330, 1_050, 1_800, 3_200],
         teaches: [
@@ -2493,7 +2493,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A treaty vault holding agreements between parties who are all dead, several of which are still binding on people who have never read them.'
         },
         description:
-            'Oath halls at every border crossing of consequence and a treaty vault at Burnt Earth, all of it the house\'s own and none of it on anybody\'s grant, which is what lets it witness between parties who are at war. Its dao is oaths made structural: three thousand eight hundred years of the discipline means a Vermilion Seal Terrace witness does not threaten anybody who breaks a promise, the promise is simply built into them afterwards, and removing it removes some of them with it. Every treaty in the region is in that vault, every sect succession is sworn in front of them, no ruler has yet found a way to hold a border without them, and the reason they look like a formality is that the enforcement has never had to be demonstrated in public - which is exactly what a working deterrent looks like. The house pays for the discipline in speed and in rigidity: a contested reading takes a year, its members are individually unimpressive fighters, and it cannot revise its own oaths even when the terms have become absurd, which is why a founding clause forbidding it to witness for the Severed is costing it a fortune it can see and cannot touch.',
+            'Oath halls at every border crossing of consequence and a treaty vault at Burnt Earth, all of it the house\'s own and none of it on anybody\'s grant, which is what lets it witness between parties who are at war. Its dao is oaths made structural: three thousand eight hundred years of the discipline means a Vermilion Sigil Terrace witness does not threaten anybody who breaks a promise, the promise is simply built into them afterwards, and removing it removes some of them with it. Every treaty in the region is in that vault, every sect succession is sworn in front of them, no ruler has yet found a way to hold a border without them, and the reason they look like a formality is that the enforcement has never had to be demonstrated in public - which is exactly what a working deterrent looks like. The house pays for the discipline in speed and in rigidity: a contested reading takes a year, its members are individually unimpressive fighters, and it cannot revise its own oaths even when the terms have become absurd, which is why a founding clause forbidding it to witness for the Severed is costing it a fortune it can see and cannot touch.',
         ambition: {
             wants:
                 'Its own founding oath against witnessing for the Severed dissolved, which it has wanted for two centuries and cannot do.',
@@ -2558,9 +2558,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             surrendered:
                 'Every oath you were carrying, which is dissolved or assumed by the house, and your line - your children are Bound, sworn at naming, and cannot leave without the house witnessing that too.',
             naming:
-                'The family is Lin, from Lin Zhao onward, and the Vermilion Seal Terrace is what the Lin do rather than who they are: a treaty is witnessed by a Lin and filed under the house, and the two are not the same signature. A man adopted in takes the name in the same sitting his oath is sworn, and the house holds the name change to be the more binding of the two instruments.',
+                'The family is Lin, from Lin Zhao onward, and the Vermilion Sigil Terrace is what the Lin do rather than who they are: a treaty is witnessed by a Lin and filed under the house, and the two are not the same signature. A man adopted in takes the name in the same sitting his oath is sworn, and the house holds the name change to be the more binding of the two instruments.',
             lastTaken:
-                'Two hundred and ten years ago, and he is the current Keeper of the Standing Word, which the Strict Hall mentions rather often.',
+                'Two hundred and ten years ago, and he is the current Keeper of the Standing Pledge, which the Strict Hall mentions rather often.',
             costOfTheForm:
                 'Oathwright training takes forty years, intake has fallen for three generations, and the house will not shorten the training. It cannot buy a generation and will not compress one, so its floor is whoever was born forty years ago.'
         },
@@ -2570,7 +2570,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
     },
     {
         id: 'house-still-blade',
-        name: 'Still Blade Peak',
+        name: 'Still Blade Pavilion',
         alignment: 'demonic',
         powerOrdinal: 33,
         ranks: ['Holder of the Blade', 'Cutter', 'Quiet Hand', 'Master of Removal', 'Elder of the Cut', 'First Elder of the Cut', 'The Last Cut'],
@@ -2600,13 +2600,13 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'Four nodes, portable, of the House\'s own making, and a standing policy of leaving nothing that could be surveyed.'
         },
         description:
-            'No seat anybody has proved, four portable formation nodes of its own making, and a standing policy of leaving nothing that could be surveyed - a house that holds everything in its own name by holding almost nothing at all. Its dao is severance: concealing a connection, cutting one, redirecting consequence, breaking an inheritance structurally rather than defying it, and nineteen centuries of it have made the house the only body that can remove a thing rather than merely argue about it. What is cut does not grow back, which is why the work is expensive, permanent and impossible to appeal, and it is also why the counter exists - every cut leaves an edge, the Ninefold Karma Palace has been reading edges for two hundred years, and the house still prices its work as though that were a secret. Every institution that has publicly called for its destruction has privately commissioned it, so the denunciation and the fee are performed by the same people, and the Still Blade Peak has built its whole pricing around neither side ever mentioning the other.',
+            'No seat anybody has proved, four portable formation nodes of its own making, and a standing policy of leaving nothing that could be surveyed - a house that holds everything in its own name by holding almost nothing at all. Its dao is severance: concealing a connection, cutting one, redirecting consequence, breaking an inheritance structurally rather than defying it, and nineteen centuries of it have made the house the only body that can remove a thing rather than merely argue about it. What is cut does not grow back, which is why the work is expensive, permanent and impossible to appeal, and it is also why the counter exists - every cut leaves an edge, the Ninefold Karma Palace has been reading edges for two hundred years, and the house still prices its work as though that were a secret. Every institution that has publicly called for its destruction has privately commissioned it, so the denunciation and the fee are performed by the same people, and the Still Blade Pavilion has built its whole pricing around neither side ever mentioning the other.',
         ambition: {
             wants:
                 'A replacement for the Iron Tally Court fragments its whole method depends on, which are visibly wearing out and cannot be reproduced.',
             blockedBy: ['house-ninefold-karma'],
             wouldCost:
-                'The only surviving Iron Tally Court material of that grade is in the Karma Palace\'s nine sealed volumes, which the Karma Palace will not open and would not hand over. Taking them means cutting a four-thousand-year-old house\'s own thread, which is the largest commission the Still Blade Peak has ever considered and the one nobody would pay for.',
+                'The only surviving Iron Tally Court material of that grade is in the Karma Palace\'s nine sealed volumes, which the Karma Palace will not open and would not hand over. Taking them means cutting a four-thousand-year-old house\'s own thread, which is the largest commission the Still Blade Pavilion has ever considered and the one nobody would pay for.',
             contestedWith: ['house-ninefold-karma'],
             movedOn:
                 'It has priced the job internally, three times in a century, and the figure has come down each time.'
@@ -2661,7 +2661,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             prodigyIn:
                 'Cutting cleanly the first time, without training and without a client, which is a talent that announces itself by accident - somebody who severed something that was theirs to lose and left an edge nobody could read.',
             marriage:
-                'Yes, and it is the only part of the arrangement the house performs openly, because a marriage is a connection the Still Blade Peak deliberately does not sever and is therefore the strongest thing anybody in it has.',
+                'Yes, and it is the only part of the arrangement the house performs openly, because a marriage is a connection the Still Blade Pavilion deliberately does not sever and is therefore the strongest thing anybody in it has.',
             surrendered:
                 'Everything that could identify you, which the house removes as a condition rather than a courtesy, and your line, which is entered nowhere at all. An adopted cutter has no prior life that can be established by any means the Karma Palace holds.',
             naming:
@@ -2708,7 +2708,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
                 'Gate registration made compulsory beyond the nine cities, out into the market towns and the sect towns.',
             blockedBy: ['house-flowing-light', 'sect-lantern-hall'],
             wouldCost:
-                'It cannot enforce anything itself and would be asking nine city administrations to argue for it in forty more places. The Flowing Light Tower will oppose it, because a register that reaches everybody makes withholding worth more and sighting worth less, and Lantern Hall will publish the fee schedule beside it and let people draw the conclusion.',
+                'It cannot enforce anything itself and would be asking nine city administrations to argue for it in forty more places. The Flowing Star Tower will oppose it, because a register that reaches everybody makes withholding worth more and sighting worth less, and Lantern Hall will publish the fee schedule beside it and let people draw the conclusion.',
             contestedWith: ['sect-lantern-hall', 'house-flowing-light'],
             movedOn:
                 'The Gate faction has had two market towns registering voluntarily for nine years at no charge, which is a demonstration and is costing the House money it has not accounted for.'
@@ -2738,7 +2738,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             name: 'erasure at the source',
             heldBy: 'house-still-blade',
             description:
-                'A register entry can be cut like anything else. The Still Blade Peak can remove a name from the register and from the people who used it, and the Jade Register Hall is then holding an entry for somebody nobody remembers - which has happened at least four times and is why the two houses cannot be in a room together.'
+                'A register entry can be cut like anything else. The Still Blade Pavilion can remove a name from the register and from the people who used it, and the Jade Register Hall is then holding an entry for somebody nobody remembers - which has happened at least four times and is why the two houses cannot be in a room together.'
         },
         blindSpots: [
             'physically weak: the House has produced two combat cultivators in seven hundred years',
@@ -2782,7 +2782,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'Shrinking Earth Pavilion',
         alignment: 'neutral',
         powerOrdinal: 34,
-        ranks: ['Chain Bearer', 'Surveyor', 'Span Master', 'Gate Warden', 'Elder Surveyor', 'Grand Surveyor', 'Keeper of the Long Measure'],
+        ranks: ['Line Bearer', 'Surveyor', 'Measure Master', 'Gate Warden', 'Elder Surveyor', 'Grand Surveyor', 'Keeper of the Long Measure'],
         admissionOrdinal: 8,
         stipend: [16, 48, 150, 470, 1_500, 2_600, 4_600],
         teaches: [
@@ -2791,7 +2791,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             // The two houses stand at opposite ends of the same feud and both
             // finish on the vein canon, but the Span raises its surveyors on
             // the elementless editions anybody can buy rather than on the
-            // earth road its rival teaches - which is why a Span chain bearer
+            // earth road its rival teaches - which is why a Span line bearer
             // and an Immovable Mountain Temple peg do not look alike until Deity
             // Transformation, and then suddenly do.
             'lesser-qi-gathering-manual',
@@ -2847,7 +2847,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         dependents: [
             'every merchant house in the region, absolutely and without alternative',
             'sects whose mountain barriers it built and only it can service',
-            'the Thousand Treasure Pavilion, whose vault is a Span product'
+            'the Thousand Relic Pavilion, whose vault is a Span product'
         ],
         counter: {
             name: 'spatial anchoring',
@@ -2970,7 +2970,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         ],
         dependents: [
             'eleven settlements that exist only because a perimeter is being maintained',
-            'the Kiln Wardens, who accept Immovable Mountain Temple survey figures and nothing else from outsiders',
+            'the Tripod Wardens, who accept Immovable Mountain Temple survey figures and nothing else from outsiders',
             'sects whose vaults cannot be folded into precisely because the Immovable Mountain Temple nailed them'
         ],
         counter: {
@@ -3166,7 +3166,7 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
             {
                 houseId: 'house-immovable-mountain',
                 position:
-                    'An oath sworn on unsurveyed ground has held in no recorded instance. The Vermilion Seal Terrace knows this, has known it for eight centuries, and continues to witness on unfixed ground for the fee.'
+                    'An oath sworn on unsurveyed ground has held in no recorded instance. The Vermilion Sigil Terrace knows this, has known it for eight centuries, and continues to witness on unfixed ground for the fee.'
             }
         ],
         consequence:
@@ -3218,7 +3218,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-clear-river-alliance': {
         minOrdinal: 1,
         preferredRoots: ['single_water', 'dual_water_fire'],
-        requirement: 'Any cultivator who can cross the river at Clear River Ford unaided.'
+        requirement: 'Any cultivator who can cross the river at Clear River Ferry unaided.'
     },
     'sect-sweptground-temple': {
         minOrdinal: 0,
@@ -3249,7 +3249,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         minOrdinal: 6,
         minInsight: 3,
         preferredRoots: ['single_fire', 'single_wood', 'single_water'],
-        requirement: 'A successful mortal-grade refinement performed in front of a Cauldron Master.'
+        requirement: 'A successful mortal-grade refinement performed in front of a Crucible Master.'
     },
     'sect-ashen-forge-clan': {
         minOrdinal: 5,
@@ -3406,7 +3406,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-six-li-patrol': {
         minOrdinal: 0,
         preferredRoots: [],
-        requirement: 'Walk the six miles from Iron Ridge to Six Li by the marked route, alone, and repaint any stake found down on the way.'
+        requirement: 'Walk the six miles from Iron Crest to Six Li by the marked route, alone, and repaint any stake found down on the way.'
     },
     'sect-fallen-grain-caravan': {
         minOrdinal: 0,
@@ -3461,7 +3461,7 @@ const SECTS_BY_TAUGHT_TECHNIQUE: ReadonlyMap<string, readonly SectEntry[]> = (()
 /**
  * A power that is awake, unsealed, and almost never present.
  *
- * The third case, and the one the Hollow Court needed. A sealed ancestor
+ * The third case, and the one the Empyrean Court needed. A sealed ancestor
  * CANNOT act without being spent. A withdrawn power CAN act, at full strength,
  * any time it likes - and does not, because its attention is committed to
  * something that does not leave room for the province.
@@ -3695,10 +3695,10 @@ export const SEAT_ORDER = {
  * The powers that have withdrawn from the world, and the seats they hold.
  *
  * This is the apex of the setting and `docs/` does not name it anywhere - a
- * search of the bible for the Hollow Court's holdings returns nothing, which
+ * search of the bible for the Empyrean Court's holdings returns nothing, which
  * has already produced one invented answer that had to be retracted. The
  * written design for what the Ward is and who it admits is
- * `docs/world/climbing/past-the-ceiling.md`, "The Hollow Court is the exception to all
+ * `docs/world/climbing/past-the-ceiling.md`, "The Empyrean Court is the exception to all
  * of it"; who stands on the mountains is `hollow-court-roster.ts`; the seat
  * ordering is `SEAT_ORDER` immediately above. All four are indexed in
  * `docs/world/INDEX.md`.
@@ -3907,7 +3907,7 @@ export function formationIntegrity(sectId: string): number {
 //
 // The vocabulary existed on one side of the hierarchy and not the other. A
 // court has carried `grantsInRegionId` since it was written; a sect had no
-// field at all saying where it stands, so "the Ashen Forge Clan holds the
+// field at all saying where it stands, so "the Ashen Anvil Clan holds the
 // volcanic flank" was a sentence in a `holds` string and nothing a query could
 // reach. The functions below are that field, on this side.
 //
@@ -3919,7 +3919,7 @@ export function formationIntegrity(sectId: string): number {
 // A sect's ground is stated once, in the file that owns ground.
 //
 // `delegatedFromSect` returning null is a real answer and the most interesting
-// one in the catalog: it is what the Azure Cloud Pavilion, the Hollow Court,
+// one in the catalog: it is what the Azure Cloud Pavilion, the Empyrean Court,
 // the Ancient Bough Grove, the Clear River Alliance and the Six Li Patrol have in
 // common, and it is the only thing they have in common. An apex that answers
 // to nobody, an occupation nothing can move, a zone held by a belief, a toll

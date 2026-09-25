@@ -46,7 +46,7 @@ const WORLD_SEED = 'what-goes-wrong';
 
 function ground(qiDensity = QI_DENSITY_DEFAULT) {
     return makeLocation({
-        id: 'loc-prefecture', name: 'Iron Ridge', kind: 'settlement', qiDensity
+        id: 'loc-prefecture', name: 'Iron Crest', kind: 'settlement', qiDensity
     });
 }
 
@@ -78,7 +78,7 @@ describe('what goes wrong with a place', () => {
     describe('a district its holder has shut', () => {
         it('is not proposed while there is anything left to gather', () => {
             expect(districtsTheirHolderHasShut(
-                [standing(ground(), { holder: { id: 'h', name: 'Iron Ridge Hall' } })], 0
+                [standing(ground(), { holder: { id: 'h', name: 'Iron Crest Hall' } })], 0
             )).toEqual([]);
         });
 
@@ -92,7 +92,7 @@ describe('what goes wrong with a place', () => {
         it('wants both bands gone, because game left is a reason to let people on', () => {
             const herbsOnly = stripped(ground(), ['herb']);
             expect(districtsTheirHolderHasShut(
-                [standing(herbsOnly, { holder: { id: 'h', name: 'Iron Ridge Hall' } })], 0
+                [standing(herbsOnly, { holder: { id: 'h', name: 'Iron Crest Hall' } })], 0
             )).toEqual([]);
         });
 
@@ -102,7 +102,7 @@ describe('what goes wrong with a place', () => {
             // nothing anywhere branches on which.
             const bare = stripped(ground(), ['herb', 'beast_material']);
             const [shut] = districtsTheirHolderHasShut(
-                [standing(bare, { holder: { id: 'sect-kettle', name: 'Iron Ridge Hall' } })], 0
+                [standing(bare, { holder: { id: 'sect-kettle', name: 'Iron Crest Hall' } })], 0
             );
             expect(shut.cause.decidedById).toBe('sect-kettle');
             expect(shut.stops).toContain(STOPS_GATHERING);
@@ -152,7 +152,7 @@ describe('what goes wrong with a place', () => {
             // war, and forty rows saying so would make the layer's own claim
             // about its size false - measured at 440 live wars before the seat
             // filter, against 10 tides and 8 closures.
-            const holder = { id: 'sect-a', name: 'Kiln Hall' };
+            const holder = { id: 'sect-a', name: 'Tripod Hall' };
             const onTheSeat = standing(ground(), {
                 holder, holderIsAtWar: true, holderFightingNames: ['Bone Hall'],
                 isTheHoldersSeat: true
@@ -169,7 +169,7 @@ describe('what goes wrong with a place', () => {
 
         it('says nothing about a house that is not fighting', () => {
             expect(groundUnderAWar([standing(ground(), {
-                holder: { id: 'sect-a', name: 'Kiln Hall' }, isTheHoldersSeat: true
+                holder: { id: 'sect-a', name: 'Tripod Hall' }, isTheHoldersSeat: true
             })])).toEqual([]);
         });
     });
@@ -228,7 +228,7 @@ describe('what goes wrong with a place', () => {
             const bare = stripped(ground(), ['herb', 'beast_material']);
             const proposed = whatIsWrongWithPlacesToday({
                 ground: [standing(bare, {
-                    holder: { id: 'sect-kettle', name: 'Iron Ridge Hall' },
+                    holder: { id: 'sect-kettle', name: 'Iron Crest Hall' },
                     holderIsAtWar: true,
                     holderFightingNames: ['Bone Hall'],
                     isTheHoldersSeat: true
@@ -249,8 +249,8 @@ describe('what goes wrong with a place', () => {
             // Two famines in one province is one famine.
             const bare = stripped(ground(), ['herb', 'beast_material']);
             const twice = [
-                standing(bare, { holder: { id: 'h', name: 'Iron Ridge Hall' } }),
-                standing(bare, { holder: { id: 'h', name: 'Iron Ridge Hall' } })
+                standing(bare, { holder: { id: 'h', name: 'Iron Crest Hall' } }),
+                standing(bare, { holder: { id: 'h', name: 'Iron Crest Hall' } })
             ];
             const proposed = whatIsWrongWithPlacesToday({
                 ground: twice, regions: [], onDay: 0, rng: forStream('x', 'y')

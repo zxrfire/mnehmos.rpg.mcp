@@ -1017,8 +1017,8 @@ export function growCompound(
     //
     // Here rather than inside `growNodes`, where it used to sit. That function
     // returns early when a house has no nodes, so in a pinned world FOUR of 36
-    // seats - Six Li Patrol, Silver Island Market, Hollow Bell Wanderers, Sand
-    // Well Caravan - stood on ground carrying no style at all while every
+    // seats - Six Li Patrol, Silver Island Hall, Wayside Chime Wanderers, Tranquil
+    // Oasis Sect - stood on ground carrying no style at all while every
     // precinct inside them carried the full set. `styleTagsOf` on the seat
     // returned nothing, so nothing could attribute the compound by its
     // stonework and the read of what is built there had no material to name.
@@ -1054,7 +1054,7 @@ export const A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER = 2;
  * chose the house: the Cinnabar Crucible Sect, whose trade is the cauldron.
  *
  * FORGING: a house whose `specialities` name `forging`. The design owner chose
- * the Ashen Forge Clan. Both words are a `HouseCraft` in the sect catalog.
+ * the Ashen Anvil Clan. Both words are a `HouseCraft` in the sect catalog.
  *
  * NOT OUT OF A NAME. Reading the forge focus off "Forge" in a house's name was
  * tried and taken out, because a fact read from a name is a defect this repo has

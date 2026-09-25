@@ -18,9 +18,9 @@
  * ── A NAME IS NOT ALWAYS PLURAL AT THE END ───────────────────────────────
  *
  * A dozen of the two hundred-odd rank titles in `sects.ts` carry a preposition -
- * `Keeper of Names`, `Elder of the Hour`, `Warden of the Six Li`,
+ * `Keeper of Scrolls`, `Elder of the Lots`, `Warden of the Six Li`,
  * `Under-Warden of the Weir` - and the head noun stands in front of it. Adding
- * an s to the last word gives `Keeper of Nameses`. The head is what agrees.
+ * an s to the last word gives `Keeper of Scrollses`. The head is what agrees.
  *
  * ── KNOWN LIMIT, STATED RATHER THAN HIDDEN ───────────────────────────────
  *
@@ -72,14 +72,14 @@ const ALREADY_THE_IRREGULAR_PLURAL: ReadonlySet<string> =
  * Words that are already however many there are.
  *
  * Two kinds. Mass and collective nouns, which have no separate plural; and the
- * participles a house uses AS a rank - `Bound`, `Chosen`, `Ticketed`, `The
+ * participles a house uses AS a rank - `Tethered`, `Chosen`, `Ticketed`, `The
  * Severed` - where the word names the condition and the roster is a list of
  * people in it. `3 chosens` is not a thing a house writes down.
  */
 const THE_SAME_HOWEVER_MANY: ReadonlySet<string> = new Set([
     'folk', 'kin', 'gentry', 'clergy', 'offspring', 'staff', 'sheep', 'deer',
     'fish', 'series', 'species', 'jade', 'rice', 'grain', 'cash', 'coin',
-    'bound', 'chosen', 'severed', 'sworn', 'fallen', 'nameless', 'ticketed',
+    'bound', 'tethered', 'inscribed', 'chosen', 'severed', 'sworn', 'fallen', 'nameless', 'ticketed',
     'kindling', 'dead', 'missing', 'young', 'wounded', 'unnamed', 'unranked'
 ]);
 
@@ -180,7 +180,7 @@ function inTheCaseItArrivedIn(word: string, ending: string): string {
  * A count and the thing it counts, agreeing.
  *
  * The noun is given in the singular, as a catalog or a roster holds it. A
- * leading article goes: a count is one, and "5 a shod carriages" was a real
+ * leading article goes: a count is one, and "5 an iron-rimmed carriages" was a real
  * line in the yard listing before the site learned to strip it.
  */
 export function howMany(count: number, noun: string): string {

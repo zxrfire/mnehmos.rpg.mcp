@@ -290,7 +290,7 @@ describe('a world where people decide for themselves, against one where they do 
         // NOT `every`. The first cut asserted it and went red, correctly:
         // `applyRecruitment` takes anybody standing on no roll, so a share of
         // the people who walked out of one hall are later admitted to another.
-        // That is the world working - somebody who left the Cold Sword Sect for
+        // That is the world working - somebody who left the Unadorned Sword Sect for
         // a terrace three provinces away is exactly who the house near the
         // terrace recruits - and pinning `every` would have pinned a bug into
         // the roster instead.

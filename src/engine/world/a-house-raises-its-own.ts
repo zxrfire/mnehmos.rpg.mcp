@@ -35,7 +35,7 @@
  *   whether it
  *   recruits at all a house that takes nobody raises nobody, and keeps exactly
  *                   the people the catalog gives it. This is what holds the
- *                   Hollow Court and the Deeproot Court where they are.
+ *                   Empyrean Court and the Deeproot Court where they are.
  *   how long it
  *   has stood       a house founded inside the lifespan of the people it takes
  *                   in has not had time to fill a roll yet.

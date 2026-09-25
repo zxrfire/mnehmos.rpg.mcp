@@ -38,7 +38,7 @@
  *
  * ── AND ONE THING THAT DOES NOT HAPPEN, WRITTEN DOWN RATHER THAN HIDDEN ──
  *
- * The Hollow Court's own terms - the only terms in the catalog - were reached
+ * The Empyrean Court's own terms - the only terms in the catalog - were reached
  * ONCE in twelve seeds of five hundred years, and that child died at 100 at
  * ordinal 12. At 2000 years on three more seeds, once, dead at 200 at ordinal
  * 13. `lifespanForOrdinal` is 100 below ordinal 13 and 200 below 16, and the
@@ -453,7 +453,7 @@ describe('somebody in a running world does this', () => {
         expect(after.factionId).toBe(terms.factionId);
         // NOT `toBe(0)`, and the reason is a change in the world rather than a
         // weakened guard. The return puts them on the bottom rung and confers
-        // nothing; two world years then pass, and the Hollow Court now has its
+        // nothing; two world years then pass, and the Empyrean Court now has its
         // real roster standing in it - Outer Disciples at ordinal 29 and 30 -
         // so somebody who came back at exactly the return ordinal is an
         // ordinary promotion candidate against ordinary people, and sometimes

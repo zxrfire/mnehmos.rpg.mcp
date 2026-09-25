@@ -9,7 +9,7 @@
  * body came back the same way:
  *
  *     Fang Ronglin    Elder Holder of the Jade Register Hall   [born: thin_county]
- *     Qiu Xuchen      Convergence Master of the Flowing Light Tower     [born: thin_county]
+ *     Qiu Xuchen      Convergence Master of the Flowing Star Tower     [born: thin_county]
  *     Shen Jingbo     Elder Holder of the Jade Register Hall   [born: thin_county]
  *
  * Measured across five worlds: 89.4% of the seniors of apex bodies were born on

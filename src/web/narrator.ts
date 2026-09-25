@@ -371,11 +371,11 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     }
 
     // A DESTINATION THE PLAYER NAMED IS NOT ONE THE MODEL INVENTED. Played:
-    // "I walk back to Cold Peak for the Silver Island Market intake" - the
-    // model read move(Cold Peak), the table read nothing because of the tail,
+    // "I walk back to Moraine Gate for the Silver Island Hall intake" - the
+    // model read move(Moraine Gate), the table read nothing because of the tail,
     // and the guard declined a walk to a place the sentence names in so many
     // words. Only where the table read NOTHING: a table that read the sentence
-    // as something cheaper ("I ask about Cold Peak") still wins.
+    // as something cheaper ("I ask about Moraine Gate") still wins.
     if (GOES_TO_A_PLACE.has(fromModel.action)
         && withoutAModel.action.action === FALLBACK_ACTION
         && theSentenceNamesIt(input, fromModel.target)) {
@@ -385,7 +385,7 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     // AND A GOING WORD STRAIGHT BEFORE THAT DESTINATION WINS OVER A CHEAPER MISREADING. Played:
     // "forget the board, i just walk to silver island myself" - the model read move(Silver
     // Island), the table read the duty board off "board", and the walk was dropped. "I ask about
-    // Cold Peak" has no going word in front of the name, so it still reads cheaper.
+    // Moraine Gate" has no going word in front of the name, so it still reads cheaper.
     if (GOES_TO_A_PLACE.has(fromModel.action) && aGoingWordLeadsTo(input, fromModel.target)) {
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
@@ -450,7 +450,7 @@ function aGoingWordLeadsTo(input: string, target: string | undefined): boolean {
         if (written !== null && /[A-Z]/.test(written[0][0]!)) return true;
     }
     // OR A NAME SHORTENED THE WAY PEOPLE SAY IT. Played: "heading to green water then" - the model
-    // read move(Green Water City), and the name is only written back capitalised when it is typed
+    // read move(Emerald Water City), and the name is only written back capitalised when it is typed
     // whole. The model gave a name, capitalised, and the sentence goes straight to its first words.
     const short = named.replace(/ (?:city|village|town|hamlet) $/, ' ');
     return short !== named && short.trim().length >= 5
@@ -1206,7 +1206,7 @@ export class DeterministicNarrator implements Narrator {
     /**
      * ONE READING OF THE SENTENCE, AND THEN THE SENTENCE'S OWN CLAUSES.
      *
-     * The table answers with one verb, so "I go to Cold Peak and gather herbs"
+     * The table answers with one verb, so "I go to Moraine Gate and gather herbs"
      * came back as a single act - and `theWholeSentenceAsAPlan`, which exists
      * to put back the clauses a reader did not answer, was only ever called on
      * the model path. The consequence was worse than under-reading: the one

@@ -10,9 +10,9 @@
  *
  * Measured over a seeded, advanced world before the fix:
  *
- *   day 0   Burnt Earth 25   Green Water City 30   Iron Ridge 14   Six Li 13
- *   +20y    Burnt Earth 18   Green Water City 18   Iron Ridge  6   Six Li  6
- *   +50y    Burnt Earth  7   Green Water City  4   Iron Ridge  0   Six Li  1
+ *   day 0   Burnt Earth 25   Emerald Water City 30   Iron Crest 14   Six Li 13
+ *   +20y    Burnt Earth 18   Emerald Water City 18   Iron Crest  6   Six Li  6
+ *   +50y    Burnt Earth  7   Emerald Water City  4   Iron Crest  0   Six Li  1
  *
  * Total alive held at about 350 the whole time - nobody was dying off - and
  * "The Buddha Precipice (region)" went from 39 to 170. The encounter system draws
@@ -497,7 +497,7 @@ describe('the world can lose sight of somebody without losing them', () => {
         //
         // This used to kill the single strongest NPC and assert the ceiling
         // fell. That was correct for years and is not any more: seeding the
-        // Hollow Court stood its four Seats up at ordinals 44, 43, 43 and 42,
+        // Empyrean Court stood its four Seats up at ordinals 44, 43, 43 and 42,
         // so the world it seeds now reads 44(alive), 44(alive), 43, 43, 42, 41
         // and killing one of TWO people at 44 correctly leaves the ceiling at
         // 44. The test failed with "expected 44 to be less than 44".

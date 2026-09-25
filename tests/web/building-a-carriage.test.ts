@@ -114,7 +114,7 @@ describe('a player builds a carriage', () => {
         const { game } = await makeGameInWorld({ seed: 'yard-e', worldSeed: WORLD });
         await game.newRun('Wright');
 
-        const said = await game.act('I build a spirit boat') as { narration?: string };
+        const said = await game.act('I build a spirit skiff') as { narration?: string };
         const prose = (said.narration ?? '').toLowerCase();
 
         // The rung gate is `canRefineGrade`, the same one the cauldron keeps.

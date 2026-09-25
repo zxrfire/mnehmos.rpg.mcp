@@ -144,7 +144,7 @@ describe('the deepest roads - what falls out of the numbers', () => {
         }
     });
 
-    it('makes the Hollow Court the only body that can finish its own road', () => {
+    it('makes the Empyrean Court the only body that can finish its own road', () => {
         const road = deepRoadOf(HOLLOW)!;
         const art = getTechnique(road.techniqueId)!;
         const strongest = Math.max(...road.teachers.map(t => t.realmOrdinal));

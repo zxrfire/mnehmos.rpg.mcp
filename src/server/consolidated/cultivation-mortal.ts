@@ -45,6 +45,7 @@ import {
 import { forStream } from '../../engine/cultivation/rng.js';
 import { dutyTermsAtAMonthlyRate, takeableOffAWall } from '../../engine/encounters/duties.js';
 import { aContractAsAnOffer, contractsPostedAt } from '../../engine/encounters/paper-on-a-town-wall.js';
+import { placeSeedKey } from '../../data/cultivation/place-names.js';
 import { manualsAStallCarries } from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import {
     drawFromTheGround,
@@ -596,7 +597,7 @@ export async function handleForage(
     // Draw first, then run the span it actually takes. The count and the
     // duration come off the same regard, so they cannot drift apart.
     const startDay = Math.floor(run.elapsedDays);
-    const rng = forStream(run.seed, 'forage', startDay, cultivator.location ?? '', biome ?? '');
+    const rng = forStream(run.seed, 'forage', startDay, placeSeedKey(cultivator.location ?? ''), biome ?? '');
     const drawn = forage(asker, rng.next(), {
         biome,
         baseDays: args.days && args.days > 0 ? args.days : FORAGE_BASE_DAYS

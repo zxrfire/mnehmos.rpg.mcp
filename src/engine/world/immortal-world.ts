@@ -201,7 +201,7 @@ const perilGroundId = (i: number) => `loc-above-peril-${i}`;
 const nativeId = (i: number) => `npc-above-${i}`;
 const houseLineageId = (i: number) => `lin-above-${i}`;
 
-const HOUSE_FORMS = ['Ascendancy', 'Terrace', 'Concord', 'Precedence', 'Standing'] as const;
+export const HOUSE_FORMS = ['Ascendancy', 'Terrace', 'Concord', 'Precedence', 'Standing'] as const;
 
 // ─────────────────────────────────────────────────────────────────────────
 // MATERIALISING THE LAYER

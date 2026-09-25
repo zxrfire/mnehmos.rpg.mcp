@@ -130,7 +130,7 @@ describe('a holder of an art that draws on another works it on the player', () =
 
         const last = await fightItOut(at.game, at.held);
 
-        expect(last).toMatch(new RegExp(`${at.holder.name} works Lotus-Plucking Rite on you and draws off \\d+ days`));
+        expect(last).toMatch(new RegExp(`${at.holder.name} works Lotus-Plucking Ritual on you and draws off \\d+ days`));
         expect(at.progress().p).toBeLessThan(before);
         expect(at.progress().alive).toBe(1);
         expect(at.heldAgainst()).toContainEqual(
@@ -162,7 +162,7 @@ describe('a holder of an art that draws on another works it on the player', () =
             said = (await at.game.act('I back off')).narration;
         }
 
-        expect(said).not.toMatch(/works Lotus-Plucking Rite on you/);
+        expect(said).not.toMatch(/works Lotus-Plucking Ritual on you/);
         expect(at.progress().p).toBe(before);
         expect(at.progress().alive).toBe(1);
     }, 200_000);

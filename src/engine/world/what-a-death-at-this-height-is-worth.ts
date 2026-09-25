@@ -5,7 +5,7 @@
  * dead. `elder_died` emitted `scale: 'local'`, `visibility: 'faction'` and a
  * magnitude capped at 0.8; a killing emitted `scale: 'personal'`,
  * `visibility: 'regional'` and 0.45 whoever the victim was. So the First Seat of
- * the Hollow Court dying and an outer disciple dying differed by four tenths of
+ * the Empyrean Court dying and an outer disciple dying differed by four tenths of
  * one number, and the world afterwards was the world before it.
  *
  * The design owner's bar: an elder of a great house dying is news, a Seat dying
@@ -47,7 +47,7 @@
  *
  * ── THE PROPERTY, AND WHY THE EXAMPLES ARE NOT THE RULE ──────────────────
  *
- * The owner, on the other end of it: *"a patriarch or hollow court seat dying -
+ * The owner, on the other end of it: *"a patriarch or empyrean court seat dying -
  * earth shaking"*, and then, plainly: *"again, examples"*. THOSE TWO ARE NOT
  * THE SET, and a rule written as "ordinal above N, or rank index 0" gets his
  * two examples right and everything else wrong.

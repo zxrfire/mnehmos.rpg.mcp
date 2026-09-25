@@ -18,11 +18,11 @@
  *   Ninefold Karma Palace     'sealed escrow of obligations that outlive their parties'
  *   Jade Register Hall          'name custody, an annual fee, payable in advance and
  *                        famously never refunded'
- *   Vermilion Seal Terrace          'custody of the treaty vault, with certified copies
+ *   Vermilion Sigil Terrace          'custody of the treaty vault, with certified copies
  *                        issued to any party to a treaty'
  *   Shrinking Earth Pavilion       'storage certification, without which no storage ring
  *                        sells at full value'
- *   Thousand Treasure   'a vault nobody has located'
+ *   Thousand Relic   'a vault nobody has located'
  *   Lantern Hall        'records what it was from whatever witness is left, so
  *                        that somebody in the world still holds it'
  *

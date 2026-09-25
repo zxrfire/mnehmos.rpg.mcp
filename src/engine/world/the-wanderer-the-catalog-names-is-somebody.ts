@@ -5,7 +5,7 @@
  * provinces, and `false-immortals.ts` calls him the one of his kind anybody can
  * point to. He is a wanderer, which is to say a rogue: on no house's rank ladder
  * (`where-somebody-with-no-house-goes.ts` moves him the way it moves every rogue),
- * with the one difference his catalog states - he is on the Hollow Court's roll
+ * with the one difference his catalog states - he is on the Empyrean Court's roll
  * as Guest of the Court, a title outside its four rungs rather than beneath
  * them, which `faction-roll.ts` carries as an honorary title. His row carries
  * that as a tie, never as a rung: `factionId` stays null.
@@ -14,7 +14,7 @@
  *
  *   walks        the two provinces the catalog describes, Low Fall and the
  *                Buddha Precipice: `keeps-to:` tags on his row.
- *   the Court    *"He goes back to the Hollow Court - not often, on no schedule"*
+ *   the Court    *"He goes back to the Empyrean Court - not often, on no schedule"*
  *                and gives dao lectures to the four; the lecture floor holds
  *                *"perhaps forty separate afternoons ... over the last two
  *                hundred years"*: {@link VISITS_TO_THE_COURT_A_YEAR}. A lecture is

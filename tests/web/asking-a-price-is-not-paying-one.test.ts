@@ -30,7 +30,7 @@
  *   `counter`          - a piece of furniture. "Is there a Span counter here"
  *                        became a haggle, and a counter is precisely where
  *                        somebody goes to buy passage.
- *   `cost`             - "What would a ticket to Iron Ridge cost" is the
+ *   `cost`             - "What would a ticket to Iron Crest cost" is the
  *                        passage counter's question, not a market stall's.
  *
  * And two more have a price reading AND a measuring-up reading, which is the
@@ -108,7 +108,7 @@ describe('the words that mean two things', () => {
     it.each([
         ['I go for the man with the spear', 'attack'],
         ['is there a Span counter here', 'passage'],
-        ['what would a ticket to Iron Ridge cost', 'passage'],
+        ['what would a ticket to Iron Crest cost', 'passage'],
         ['what runs from the Span counter', 'passage']
     ])('keeps %j with its own verb', (said, want) => {
         expect(verb(said)).toBe(want);

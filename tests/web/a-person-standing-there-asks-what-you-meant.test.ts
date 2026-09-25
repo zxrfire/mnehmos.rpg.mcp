@@ -274,23 +274,23 @@ describe('and it is not only names', () => {
 
     it('offers a house when a house is what came nearest', () => {
         const asked = whatSomebodyHereWouldAsk({
-            askedFor: 'hollow',
+            askedFor: 'empyrean',
             asker,
             theyCanPlace: {
                 inFrontOfThem: [
-                    { id: 'sect-hollow-court', name: 'The Hollow Court', kind: 'house' }
+                    { id: 'sect-hollow-court', name: 'The Empyrean Court', kind: 'house' }
                 ],
                 ownHouseWouldKnow: []
             },
             likeness
         });
-        expect(asked.offered).toEqual(['The Hollow Court']);
+        expect(asked.offered).toEqual(['The Empyrean Court']);
         expect(asked.said, 'the words say which KIND it is offering')
             .toContain('which house you meant');
     });
 
     /**
-     * "I end the Hollow Court" is a sentence whose VERB is the unclear part.
+     * "I end the Empyrean Court" is a sentence whose VERB is the unclear part.
      * There is no candidate of any kind, and the answer is the one a person
      * gives: what do you mean by that.
      */

@@ -105,7 +105,7 @@ const RECIPE_DATA: readonly Recipe[] = [
         id: 'recipe-soul-quenching',
         name: 'Soul-Quenching Pill Formula',
         producesPillId: SOUL_QUENCHING_PILL_ID,
-        // Grave lily and hollow reed - a flower that grows where people are
+        // Grave lily and empty reed - a flower that grows where people are
         // buried and a stem with nothing inside it. Both common, both cheap,
         // and neither of them rare enough to be a gate. Whether somebody can
         // make one of these has never been the interesting question.
@@ -214,7 +214,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-decade-lengthening',
-        name: 'Decade-Lengthening Pill Formula',
+        name: 'Lesser Longevity Pill Formula',
         producesPillId: 'pill-decade-lengthening',
         ingredients: [
             { itemId: 'herb-thousand-day-root', quantity: 2 },
@@ -232,7 +232,7 @@ const RECIPE_DATA: readonly Recipe[] = [
         // this one nobody had to dig up. Somebody worked it out from the
         // reed and the mushroom, which is what a mortal grade means.
         id: 'recipe-hollow-reed-fasting',
-        name: 'Hollow Reed Fasting Pill Formula',
+        name: 'Empty Reed Fasting Pill Formula',
         producesPillId: 'pill-hollow-reed-fasting',
         ingredients: [
             // Fills the belly for a day raw; "refined properly it does rather
@@ -265,7 +265,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-lean-month-fasting',
-        name: 'Lesser Grain Abstinence Pill Formula',
+        name: 'Lesser Satiety Pill Formula',
         producesPillId: 'pill-lean-month-fasting',
         ingredients: [
             { itemId: 'herb-cloudcap-mushroom', quantity: 4 },
@@ -335,7 +335,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-two-decade-longevity',
-        name: 'Two-Decade Longevity Pill Formula',
+        name: 'Greater Longevity Pill Formula',
         producesPillId: 'pill-two-decade-longevity',
         ingredients: [
             { itemId: 'herb-hundred-year-snow-ginseng', quantity: 2 },
@@ -408,7 +408,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-condensed-decade',
-        name: 'Condensed Decade Pill Formula',
+        name: 'Lesser Condensed Pill Formula',
         producesPillId: 'pill-condensed-decade',
         ingredients: [
             { itemId: 'herb-millennium-blood-ganoderma', quantity: 1 },
@@ -420,7 +420,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-century-lotus',
-        name: 'Century Lotus Pill Formula',
+        name: 'Iceheart Lotus Pill Formula',
         producesPillId: 'pill-century-lotus',
         ingredients: [
             { itemId: 'herb-glacial-heart-flower', quantity: 2 },
@@ -464,7 +464,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-clear-mind-of-the-hollow-sky',
-        name: 'Hollow Sky Clear Mind Pill Formula',
+        name: 'Empty Sky Clear Mind Pill Formula',
         producesPillId: 'pill-clear-mind-of-the-hollow-sky',
         ingredients: [
             { itemId: 'herb-soulreturn-dew', quantity: 2 },
@@ -487,7 +487,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-condensed-century',
-        name: 'Condensed Century Pill Formula',
+        name: 'Greater Condensed Pill Formula',
         producesPillId: 'pill-condensed-century',
         ingredients: [
             { itemId: 'herb-primordial-earth-marrow', quantity: 3 },
@@ -512,7 +512,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-thousand-year-cypress',
-        name: 'Thousand-Year Cypress Pill Formula',
+        name: 'Thousand-Ring Cypress Pill Formula',
         producesPillId: 'pill-thousand-year-cypress',
         ingredients: [
             { itemId: 'herb-immortal-cypress-heartwood', quantity: 2 },

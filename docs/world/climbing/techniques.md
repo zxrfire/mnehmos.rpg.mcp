@@ -316,9 +316,9 @@ four of the six land on the first rung:
 | Hundred-Pace Step | body | It moves one body - the practitioner's - to somewhere it was not. |
 | Vessel-Borrowing Palm | body | It takes a resource out of one body and puts it into another. Two bodies, and nothing else. |
 | Sixteen-Thread Command | body | It makes *one person* act. |
-| Hollow Second Body | body | A second body is a body. |
-| Shut Hour Sealing Field | place | It takes a piece of ground out of the world, for an hour. |
-| Thousand-Spear Summoning | place | The spears are still standing in the ground afterwards, holding a line. |
+| Empty Second Body | body | A second body is a body. |
+| Shut Moment Domain | place | It takes a piece of ground out of the world, for an hour. |
+| Thousand-Halberd Summoning | place | The spears are still standing in the ground afterwards, holding a line. |
 
 None of them reaches past its rung, and the Sixteen-Thread Command lands **two steps
 below** the ceiling its height would allow - which is the clearest demonstration in the

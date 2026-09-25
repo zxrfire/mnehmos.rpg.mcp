@@ -636,8 +636,8 @@ export const A_PORTABLE_THING =
     // readers ask - who a theft is aimed at, and whether the subject that came out
     // of the sentence is the object rather than the owner. A carriage and a hull
     // are the largest things anybody can be robbed of and they were the two the
-    // list could not see, so "Wei Lanya's spirit boat" resolved to nobody and "the
-    // spirit boat" was handed to a resolver looking for a face.
+    // list could not see, so "Wei Lanya's spirit skiff" resolved to nobody and "the
+    // spirit skiff" was handed to a resolver looking for a face.
     + 'carriage|carriages|cart|carts|wagon|wagons|waggon|waggons|coach|coaches|'
     + 'boat|boats|ship|ships|barge|barges|skiff|skiffs|hull|hulls|'
     // And what somebody has on, which comes off a person as readily as a purse: robes
@@ -776,8 +776,8 @@ export function namesTheThingRatherThanThePerson(target: string | undefined): bo
 }
 
 /**
- * The thing, without the owner attached: "the spirit boat from Cao Nuolin" becomes
- * "the spirit boat".
+ * The thing, without the owner attached: "the spirit skiff from Cao Nuolin" becomes
+ * "the spirit skiff".
  */
 export function theThingWithoutItsOwner(said: string): string {
     return said
@@ -932,7 +932,7 @@ export function whatATakingNames(text: string, input: string): string | null {
         return null;
     }
     if (SITE_PRIZE_NOUNS.test(text) && !/\bwhat(?:'s| is) on\b/.test(text)) return null;
-    // "I take the carriage to Iron Ridge" is a journey, and {@link RIDING} owns
+    // "I take the carriage to Iron Crest" is a journey, and {@link RIDING} owns
     // the whole shape of it. Deferred to explicitly rather than by ordering,
     // because that row runs below this one - except where the sentence says
     // whose the thing is, which is the one reading a journey never has.
@@ -1012,17 +1012,19 @@ export function withoutTheHousesNamed(text: string): string {
  * A house whose OWN NAME is a counter, being read across rather than walked to.
  *
  * Stripping the names stops a name supplying an intent, and it took a genuine
- * sentence with it. The Silver Island Market IS a market, so `I browse the
- * Silver Island Market` lost the only market noun it had and reached nothing,
- * while `where is the Silver Island Market` correctly travelled.
+ * sentence with it. The Silver Island Hall was then called a Market and IS a
+ * market, so browsing it by that name lost the only market noun it had and
+ * reached nothing, while asking where it was correctly travelled.
  *
  * Both readings are real, and the VERB is the whole of what tells them apart: a
  * name may not supply an intent, and once a verb has supplied one, a body whose
  * name says it keeps a counter is a legitimate thing to read across. `browse`
- * was on no list in this file. Measured over the catalog: `i browse the Silver
- * Island Market` and `i peruse the Silver Island Market` reached nothing, while
- * `i shop at` and `i browse the stalls at` the same house both reached the
- * board, and `where is`, `how far is` and `i go to` all travelled.
+ * was on no list in this file. Measured over the catalog then: `i browse` and
+ * `i peruse` the Market reached nothing, while `i shop at` and `i browse the
+ * stalls at` the same house both reached the board, and `where is`, `how far
+ * is` and `i go to` all travelled. No house is called a counter now - `market`
+ * is a word the player types, so no name may be it - and this stays for the
+ * rule rather than for a row.
  *
  * Deliberately NOT `haggle`, `look over` or `look through`: those three already
  * reach somewhere - a bargain put to a party, and a look at a place - and
@@ -1111,7 +1113,7 @@ export const SECT_THEFT_PATTERN =
  *
  * `NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE` is right that `intake` is
  * not part of a house's name - it was put on that list for exactly this
- * sentence shape, because "I present myself at the Hollow Bell Wanderers
+ * sentence shape, because "I present myself at the Wayside Chime Wanderers
  * intake" would otherwise carry four stray words into the name. But between a
  * house name and nothing there is a third thing: a REFERENCE to what the wall
  * just said.
@@ -1624,7 +1626,7 @@ const NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE = new Set([
     'holding', 'days', 'weeks', 'months', 'two', 'three', 'four', 'five',
     'six', 'seven', 'eight', 'nine', 'ten',
     // The verbs of turning up to one, for the same reason: "I present myself
-    // at the Hollow Bell Wanderers intake" put four of them in front of the
+    // at the Wayside Chime Wanderers intake" put four of them in front of the
     // name, and a capture anchored on the noun takes all of them.
     'attend', 'attends', 'attending', 'present', 'presents', 'presenting',
     'sign', 'signs', 'signed', 'signing', 'turn', 'turns', 'turned', 'show',
@@ -1880,8 +1882,8 @@ function theHouseBeingAskedAbout(input: string): string | undefined {
  *
  * Fifteen house words were written out here, and the catalog has twenty-seven.
  * Measured over every row of `SECTS`: NINE houses could not be asked this
- * question at all - Clearwater Ward, Six Li Patrol, Bountiful Sheaf Sect, Sand
- * Well Caravan, Hollow Bell Wanderers, Still Blade Peak, Flowing Light Tower,
+ * question at all - Clearwater Ward, Six Li Patrol, Bountiful Sheaf Sect, Tranquil
+ * Oasis Sect, Wayside Chime Wanderers, Still Blade Pavilion, Flowing Star Tower,
  * Earth Vein Tower, Bone Lantern Cult - because their type noun was not on the
  * line, and a tenth, The Severed, because its name is one word. A birth that
  * opened knowing exactly two houses drew two of them.
@@ -2841,13 +2843,13 @@ export const RIDING = new RegExp([
     '\\b(?:saddle|saddles|saddling|saddled)\\b',
     '\\b(?:take|takes|taking|took|hire|hires|hiring|hired|board|boards|boarding)\\s+'
         + '(?:a\\s+|an\\s+|the\\s+|my\\s+|his\\s+|her\\s+)?'
-        + '(?:spirit\\s+|drawn\\s+|shod\\s+|named\\s+|deep-?drawn\\s+|broken\\s+|river\\s+)*'
-        + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|litter|sedan)\\b',
+        + '(?:spirit\\s+|drawn\\s+|shod\\s+|named\\s+|iron-rimmed\\s+|titled\\s+|deep-?drawn\\s+|broken\\s+|river\\s+)*'
+        + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|skiff|barge|craft|hull|litter|sedan)\\b',
     '\\b(?:by|on|aboard|astride)\\s+'
-        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|spirit\\s+|drawn\\s+|shod\\s+|named\\s+)*'
-        + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull)\\b',
+        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|spirit\\s+|drawn\\s+|shod\\s+|named\\s+|iron-rimmed\\s+|titled\\s+)*'
+        + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|skiff|barge|craft|hull)\\b',
     // The destination can sit between the verb and what is under them - "I fly
-    // to Clear River Ford on my sword" is how somebody actually says it - so the gap
+    // to Clear River Ferry on my sword" is how somebody actually says it - so the gap
     // is bounded rather than adjacent. Bounded and not free: `on my sword` has
     // to be in the same clause or the rule starts reading sentences that
     // mention a blade three ideas later.
@@ -2857,12 +2859,12 @@ export const RIDING = new RegExp([
     // A BOAT IS FLOWN, PILOTED OR SAILED. Played: "I fly my spirit boat to Silver Island" was
     // unclear, where "I take my spirit boat" rode.
     '\\b(?:fly|flies|flying|flew|pilot|pilots|piloting|piloted|sail|sails|sailing|sailed|steer|steers|steering|steered)\\s+'
-        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|his\\s+|her\\s+)?(?:spirit\\s+)?(?:boat|craft|hull|barge)\\b'
+        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|his\\s+|her\\s+)?(?:spirit\\s+)?(?:boat|skiff|craft|hull|barge)\\b'
 ].join('|'));
 
 /** What is under them, when the sentence says. Matched against `CONVEYANCES`. */
 export const WHAT_IS_BEING_RIDDEN =
-    /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride|fly|flies|flying|flew|pilot|pilots|piloting|piloted|sail|sails|sailing|sailed|steer|steers|steering|steered)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|sword|blade))\b/i;
+    /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride|fly|flies|flying|flew|pilot|pilots|piloting|piloted|sail|sails|sailing|sailed|steer|steers|steering|steered)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|iron-rimmed\s+|titled\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|skiff|barge|craft|hull|sword|blade))\b/i;
 
 /**
  * The tail that says what you are ON rather than where you are going.
@@ -2872,7 +2874,7 @@ export const WHAT_IS_BEING_RIDDEN =
  * destination out of what is left.
  */
 export const A_MOUNT_UNDER_YOU =
-    /\s*\b(?:on|aboard|astride|by)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?(?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+|river\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|litter|sedan|sword|blade)\b/i;
+    /\s*\b(?:on|aboard|astride|by)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?(?:spirit\s+|drawn\s+|shod\s+|named\s+|iron-rimmed\s+|titled\s+|deep-?drawn\s+|broken\s+|river\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|skiff|barge|craft|hull|litter|sedan|sword|blade)\b/i;
 
 // THE YARD
 
@@ -2903,7 +2905,7 @@ export const WHAT_A_YARD_MAKES =
  * `CONVEYANCE_RECIPES` by `whichBillTheyMeant`, which owns the grade words.
  */
 export const WHAT_IS_BEING_BUILT =
-    /\b(?:build|builds|building|built|make|makes|making|made|craft|crafts|crafting|crafted|construct|constructs|constructing|assemble|assembles|assembling|finish|finishes|finishing|go back to|going back to|return to|work on|working on|abandon|abandons|abandoning|scrap|scraps|scrapping|break up|breaking up)\s+(?:up\s+|on\s+|with\s+|to\s+)?(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|earth-?grade\s+|heaven-?grade\s+|mortal-?grade\s+)*(?:carriage|cart|wagon|waggon|coach|boat|ship|barge|skiff|hull|keel))\b/i;
+    /\b(?:build|builds|building|built|make|makes|making|made|craft|crafts|crafting|crafted|construct|constructs|constructing|assemble|assembles|assembling|finish|finishes|finishing|go back to|going back to|return to|work on|working on|abandon|abandons|abandoning|scrap|scraps|scrapping|break up|breaking up)\s+(?:up\s+|on\s+|with\s+|to\s+)?(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|iron-rimmed\s+|titled\s+|earth-?grade\s+|heaven-?grade\s+|mortal-?grade\s+)*(?:carriage|cart|wagon|waggon|coach|boat|ship|barge|skiff|hull|keel))\b/i;
 
 // THE BENCH
 //
@@ -2997,14 +2999,14 @@ export const BOOKING_A_PLACE = 'book|books|booking|booked';
  */
 const A_SHIP_OR_A_CARRIAGE_FROM_HERE = new RegExp([
     String.raw`\b(?:take|takes|taking|took|board|boards|boarding|catch|catches|catching|get on|gets on|sail|sails|sailing|go by|goes by|travel by)\s+(?:a\s+|an\s+|the\s+)?ships?\b`,
-    String.raw`\b(?:hire|hires|hiring|hired|charter|charters|chartering|chartered)\s+(?:a\s+|an\s+|the\s+)?(?:(?:drawn|shod|whole)\s+)?(?:carriage|coach|cart|wagon|boat|ship)\b`,
+    String.raw`\b(?:hire|hires|hiring|hired|charter|charters|chartering|chartered)\s+(?:a\s+|an\s+|the\s+)?(?:(?:drawn|shod|iron-rimmed|whole)\s+)?(?:carriage|coach|cart|wagon|boat|skiff|ship)\b`,
     String.raw`\b(?:what|which|where|when|any|is there|are there)\b[^.?!]{0,40}\b(?:ships?|boats?|ferry|ferries|carriages?|coaches?)\b[^.?!]{0,30}\b(?:go|goes|run|runs|sail|sails|leave|leaves|depart|departs|there|here|to)\b`,
     String.raw`\b(?:carriage station|coaching station|ticket booth)\b`
 ].join('|'));
 
 /** Which of the two a counter sentence named, with a carriage's grade word. */
 const A_SHIP_OR_A_CARRIAGE_WORD =
-    /\b(ships?|boats?|ferry|ferries|(?:drawn\s+|shod\s+)?(?:carriages?|coach|coaches|carts?|wagons?))\b/;
+    /\b(ships?|boats?|skiffs?|ferry|ferries|(?:drawn\s+|shod\s+|iron-rimmed\s+)?(?:carriages?|coach|coaches|carts?|wagons?))\b/;
 
 /** Taking a room, which pays for it. */
 const TAKING_A_ROOM =
@@ -3629,7 +3631,7 @@ const THE_PART_IS_NOT_THE_PERSON = [
     // is where it belongs; here it is noise on the end of a name.
     /\s+(?:hard|hardest|violently|savagely|brutally|lightly|gently|softly|quickly|twice|again|once)\s*$/i,
     // AND THE ART IS NOT PART OF THE NAME EITHER. "I attack him with
-    // Cross-Meridian Strike" extracted `him with Cross-Meridian Strike`, which
+    // Cross-Meridian Jolt" extracted `him with Cross-Meridian Jolt`, which
     // resolves to nobody. The art is read off the sentence by
     // `theArtTheyNamed` and carried on its own field.
     /\s+(?:with|using)\s+(?:the\s+|my\s+)?[A-Za-z][\w'-]*(?:[\s-][\w'-]+)*\s*$/i,
@@ -3639,8 +3641,8 @@ const THE_PART_IS_NOT_THE_PERSON = [
 /**
  * THE ART THEY NAMED IN THE SENTENCE, when they named one.
  *
- * FOUND BY PLAYING. "I attack him with Cross-Meridian Strike" came back with
- * the target `him with Cross-Meridian Strike` - the art folded into the
+ * FOUND BY PLAYING. "I attack him with Cross-Meridian Jolt" came back with
+ * the target `him with Cross-Meridian Jolt` - the art folded into the
  * person's name, so it resolved to nobody clean and was never read as an art
  * either. `combat-verbs.ts` then asked `artTheyWouldFightWith` and picked
  * whatever it liked, so naming one did nothing at all.
@@ -3926,9 +3928,9 @@ const MOVE_SUBJECT_VERBS = /flee|escape|run after|runs after|run|retreat|hide|wi
  *
  * TWO ROWS HERE CARRY A NOUN, AND TWO HOUSES ARE NAMED FOR IT. `negotiate`
  * matches `alliance` and `trade` matches `market`, so the Clear River Alliance
- * and the Silver Island Market claimed their own intent out of their own
+ * and the Silver Island Hall claimed their own intent out of their own
  * names. Measured over every row of `SECTS`: "where is the Clear River
- * Alliance" came back as a negotiation and "where is the Silver Island Market"
+ * Alliance" came back as a negotiation and "where is the Silver Island Hall"
  * as a haggle, while the other thirty-six houses travelled. Every other
  * question about those two went the same way - who leads it, what it teaches,
  * whether it would take somebody.
@@ -3936,7 +3938,7 @@ const MOVE_SUBJECT_VERBS = /flee|escape|run after|runs after|run|retreat|hide|wi
  * This is the Earth Vein Tower defect (see `asksAfterGroundTime`) on a
  * different gate, and it takes the same cure. A verb survives the stripping,
  * so "I negotiate with the Clear River Alliance" and "I trade at the Silver
- * Island Market" are untouched; what stops is a sentence whose only claim to
+ * Island Hall" are untouched; what stops is a sentence whose only claim to
  * the intent was the house's name.
  */
 function theInteractIntent(text: string): string | undefined {
@@ -5876,8 +5878,8 @@ function planIntent(input: string): PlannedAction {
 
     // ── WHAT IS NAILED TO THE WALL, AHEAD OF THE BOARD ───────────────────
     //
-    // Measured: "I take the intake at the Silver Island Market" came back as a
-    // DUTY carrying the target "intake at the Silver Island Market" - a
+    // Measured: "I take the intake at the Silver Island Hall" came back as a
+    // DUTY carrying the target "intake at the Silver Island Hall" - a
     // commission by that name, which no house has ever posted. The two
     // branches below read the same verb. `take` is a duty-taking verb and it
     // is also how somebody says they are turning up to be admitted, so the
@@ -6294,7 +6296,7 @@ function planIntent(input: string): PlannedAction {
         // and the one shape the list above did not have. It carries `how much
         // is`, `price of` and `cost of`, and not `what does X cost`.
         //
-        // A TICKET IS NOT A STALL. "What would a ticket to Iron Ridge cost" is
+        // A TICKET IS NOT A STALL. "What would a ticket to Iron Crest cost" is
         // the passage counter's question and `passage` owns it; this pattern
         // took it to the market on the word `cost` alone.
         || (/\bwhat (?:does|do|would|will) (?:a|an|the|one)\b[^.?!]{0,40}\bcosts?\b/.test(text)
@@ -6636,7 +6638,7 @@ function planIntent(input: string): PlannedAction {
         && !/\bgather (?:qi|energy|my qi)\b/.test(text)
         // A pocket is not a plant. `pick` carried this branch, so "I pick Xiao
         // Suiya's pocket" - a theft aimed at a named person - came back "Cloudcap
-        // Mushroom, pouched" and "7 days bent over the ground around Iron Ridge".
+        // Mushroom, pouched" and "7 days bent over the ground around Iron Crest".
         // The player attempted a crime against somebody and the engine charged them
         // a week of foraging for it, which is the worst answer available: not a
         // refusal, not the act, and irreversible.
@@ -6687,7 +6689,7 @@ function planIntent(input: string): PlannedAction {
         // `form`. A proper name has none, so measured:
         //
         //     "I practise the sword art"          -> train_technique
-        //     "I practise Cross-Meridian Strike"  -> UNCLEAR
+        //     "I practise Cross-Meridian Jolt"  -> UNCLEAR
         //
         // Which means an art could be LEARNED by name - `learn_technique`
         // accepts one, and every catalog art is named - and then never
@@ -6711,7 +6713,7 @@ function planIntent(input: string): PlannedAction {
         // FOUND BY PLAYING BLIND, and the refusal named the player's own
         // sentence back at them as the remedy:
         //
-        //     > i practise Cross-Meridian Strike for 60 days
+        //     > i practise Cross-Meridian Jolt for 60 days
         //     Mastery 0% to 3%.
         //     You did not say for how long, so it came to 7 days - which is
         //     what a stretch runs when nobody names one... Say the span and it
@@ -6757,8 +6759,8 @@ function planIntent(input: string): PlannedAction {
     if (RIDING.test(text)) {
         const mount = WHAT_IS_BEING_RIDDEN.exec(input);
         // WHAT IS UNDER YOU IS NOT PART OF WHERE YOU ARE GOING. Every extractor
-        // reads to the end of the clause, so "I fly to Iron Ridge on my sword"
-        // named the place `Iron Ridge on my sword` - a destination nothing
+        // reads to the end of the clause, so "I fly to Iron Crest on my sword"
+        // named the place `Iron Crest on my sword` - a destination nothing
         // resolves, on the one phrasing this branch exists to serve. The mount
         // comes off before the destination is read, and it is the same tail the
         // pattern above matched, so the two cannot disagree about where it is.
@@ -6877,7 +6879,7 @@ function planIntent(input: string): PlannedAction {
 
     // The oath phrasings are here rather than in a verb of their own, and that is
     // the finding rather than a shortcut. "I swear an oath to the House of the
-    // Vermilion Seal Terrace" reached the INTERACT table and was answered by walking the player
+    // Vermilion Sigil Terrace" reached the INTERACT table and was answered by walking the player
     // over and describing them - and the act it names is JOINING. The catalog says
     // so in its own admission requirement, which for that house reads "forty years
     // of intended service, sworn in front of a Warden of Terms before any training
@@ -7134,7 +7136,7 @@ function planIntent(input: string): PlannedAction {
         // answered by investigating a place called "courts near here", with six
         // Courts in the catalog.
         //
-        // A LISTING IS ABOUT THE CATEGORY. "tell me about the Hollow Court" is
+        // A LISTING IS ABOUT THE CATEGORY. "tell me about the Empyrean Court" is
         // a question about ONE house and belongs to the read that answers about
         // a named thing, so a sentence carrying a catalog name never reaches
         // here - which the hand list used to achieve by accident, by not
@@ -7600,8 +7602,8 @@ function planIntent(input: string): PlannedAction {
     //
     // Two reads that exist and could not be asked for:
     //
-    //     "how far is Iron Ridge"    -> UNCLEAR
-    //     "which way is Iron Ridge"  -> UNCLEAR
+    //     "how far is Iron Crest"    -> UNCLEAR
+    //     "which way is Iron Crest"  -> UNCLEAR
     //
     // `destinations` already answers both - it is the read that lists what is
     // in reach and how long each one takes - and "where can I go" reached it
@@ -7616,7 +7618,7 @@ function planIntent(input: string): PlannedAction {
     // ground within reach would teach, asked about the ground you are on.
     //
     // Asking after somewhere you can NAME is the other question. "How far is
-    // Iron Ridge" is somebody who has been told a name deciding whether it is
+    // Iron Crest" is somebody who has been told a name deciding whether it is
     // a day away or a season, and `destinations` is the read that says.
     // ── AND A CAPITAL LETTER IS NOT A NAME ───────────────────────────────
     //
@@ -7739,7 +7741,7 @@ function planIntent(input: string): PlannedAction {
     //
     // Down here every other verb has already had its chance, so a sentence
     // arriving with these words in it has no competing reading left. "I leave
-    // for Iron Ridge" is travel and was claimed a thousand lines up; "I leave
+    // for Iron Crest" is travel and was claimed a thousand lines up; "I leave
     // the room" still reaches nothing, correctly, because there is no room.
     //
     // The second one is the one that matters. Leaving forfeits a seat and a

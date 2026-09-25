@@ -298,8 +298,8 @@ export function settleTheSpoils(
             // nobody wanted kept naming a house that no longer existed, for the
             // remaining life of the world.
             //
-            // Found by playing five centuries: a spirit boat moored in nobody's
-            // yard, still answering to the Thousand Treasure Pavilion, which
+            // Found by playing five centuries: a spirit skiff moored in nobody's
+            // yard, still answering to the Thousand Relic Pavilion, which
             // fell in a war three hundred years earlier.
             applyWhoOwnsThemNow(state, input.loser.id);
         }

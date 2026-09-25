@@ -190,7 +190,7 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
     // Held by houses, seeded as rows in the one possessions table, priced by
     // the same engine as everything else - and unreachable by a sentence,
     // because this read asked four catalogs and not this one. So a player could
-    // stand in front of the Kiln's serving officers and have no way to ask what
+    // stand in front of the Tripod's serving officers and have no way to ask what
     // they would take for the pill on their shelf.
     //
     // `pricedAtOrdinal` is the unit, not `reachesUpToOrdinal`. The field asks
@@ -258,7 +258,7 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
     const craft = namedCraft
         ? getConveyance(String(namedCraft.data.conveyanceId))
         : trackedConveyanceKinds().find(kind => alikeWithoutTheArticle(kind.name, what));
-    // A null grade is the row that is not property - flight on one's own blade -
+    // A null grade is the row that is not property - soaring on one's own blade -
     // and it is never tracked, so this is unreachable rather than a case.
     if (craft && craft.grade !== null) {
         const band = pillBandOrdinal(craft.grade);
@@ -267,7 +267,7 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
         return {
             id: namedCraft ? namedCraft.id : craft.id,
             // The catalog's kind names carry their own article - `A spirit
-            // boat` - and every sentence downstream writes `a ${name}`. Same
+            // skiff` - and every sentence downstream writes `a ${name}`. Same
             // strip the conveyance branch of `buy` already makes, for the same
             // reason it makes it.
             name: namedCraft ? namedCraft.name : craft.name.replace(/^an?\s+/i, ''),
@@ -334,11 +334,11 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
  *
  * `alike` strips a leading `the` off the catalog name only, which is right for
  * every catalog it was written against: those rows are called `The Hidden Edge`
- * and nobody says `a Hidden Edge`. A conveyance row is called `A spirit boat`,
- * so "the spirit boat" - what a player says about the one they were just told
+ * and nobody says `a Hidden Edge`. A conveyance row is called `A spirit skiff`,
+ * so "the spirit skiff" - what a player says about the one they were just told
  * about - matched in neither direction. Same defect `withoutTheArticle` in
- * `object-theft.ts` records from the other end: "A spirit boat" against "the
- * spirit boat" scored 40 and missed.
+ * `object-theft.ts` records from the other end: "A spirit skiff" against "the
+ * spirit skiff" scored 40 and missed.
  */
 function alikeWithoutTheArticle(name: string, said: string): boolean {
     const strip = (s: string): string => s.replace(/^(?:an?|the)\s+/i, '').toLowerCase();
@@ -727,7 +727,7 @@ export function whatIsBeingPutDown(
     // ── EVERYTHING ELSE, WHICH IS WHERE THE MEDIUM STAYS OPEN ────────────
     //
     // An oath, a service, a placement, a name, information, a favour owed - and
-    // a Root-Recasting Talisman, which changes an aperture rather than a rung and which
+    // a Spirit-Recasting Talisman, which changes an aperture rather than a rung and which
     // this world therefore has no unit for. What backs an undertaking is the
     // person making it, so it is worth exactly what they are worth. A tenth
     // medium needs no code here.

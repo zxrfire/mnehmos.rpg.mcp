@@ -26,7 +26,7 @@
  * A COUNT IS NOT A PERSON
  * -----------------------
  * The second half of the file, and the reason the first half was not enough.
- * The Hollow Court's roll used to carry two entries for six crossings, the
+ * The Empyrean Court's roll used to carry two entries for six crossings, the
  * second of which read `Five more in succession` - a row shaped like a person
  * holding a number. Everything downstream then had to guess: the register
  * subtracted the roll (2) from the lineage count (6) and reported four
@@ -268,7 +268,7 @@ describe('an ancestral roll holds people, never a count of them', () => {
     it('gives every crossing on a roll the rung it stands at', () => {
         // Ascension lands on one rung and it is the top of the ladder. An
         // ascended ancestor with no ordinal is invisible to anything reading
-        // the band by height, which is how five of the Hollow Court's six went
+        // the band by height, which is how five of the Empyrean Court's six went
         // missing from a sheet that lists everybody above Grand Ascension.
         for (const [hostId, record] of Object.entries(SECT_ANCESTRY)) {
             for (const a of record.ancestors) {

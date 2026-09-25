@@ -321,19 +321,19 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-decade-lengthening',
-        name: 'Decade-Lengthening Pill',
+        name: 'Lesser Longevity Pill',
         grade: 'mortal',
         effect: 'extend_lifespan',
         potency: 5,
         toxicity: 0.6,
         value: 80,
         description:
-            'Five more years, bought with thousand-day root. Mortals ruin families for these. Cultivators past Foundation Establishment consider them a rounding error.'
+            'Five more years, bought with thousand-day tuber. Mortals ruin families for these. Cultivators past Foundation Establishment consider them a rounding error.'
     },
     {
         // THE WHOLE OF THE ABSTINENCE LINE. It was the bottom rung of three.
         id: GRAIN_ABSTINENCE_PILL_ID,
-        name: 'Hollow Reed Fasting Pill',
+        name: 'Empty Reed Fasting Pill',
         grade: 'mortal',
         effect: 'grain_abstinence',
         potency: GRAIN_ABSTINENCE_DAYS,
@@ -386,7 +386,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-lean-month-fasting',
-        name: 'Lesser Grain Abstinence Pill',
+        name: 'Lesser Satiety Pill',
         grade: 'earth',
         effect: 'sate_hunger',
         potency: 100,
@@ -441,7 +441,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-two-decade-longevity',
-        name: 'Two-Decade Longevity Pill',
+        name: 'Greater Longevity Pill',
         grade: 'earth',
         effect: 'extend_lifespan',
         potency: 20,
@@ -500,7 +500,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-condensed-decade',
-        name: 'Condensed Decade Pill',
+        name: 'Lesser Condensed Pill',
         grade: 'heaven',
         effect: 'advance_progress',
         potency: 2_500,
@@ -522,7 +522,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-century-lotus',
-        name: 'Century Lotus Pill',
+        name: 'Iceheart Lotus Pill',
         grade: 'heaven',
         effect: 'extend_lifespan',
         potency: 100,
@@ -564,7 +564,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-clear-mind-of-the-hollow-sky',
-        name: 'Hollow Sky Clear Mind Pill',
+        name: 'Empty Sky Clear Mind Pill',
         grade: 'immortal',
         effect: 'cleanse_deviation',
         potency: 5,
@@ -597,7 +597,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-condensed-century',
-        name: 'Condensed Century Pill',
+        name: 'Greater Condensed Pill',
         grade: 'immortal',
         effect: 'advance_progress',
         potency: 20_000,
@@ -628,7 +628,7 @@ export const PILLS: readonly Pill[] = [
     // Pattern Pill, whichever reaches the rung the body is standing on.
     {
         id: 'pill-thousand-year-cypress',
-        name: 'Thousand-Year Cypress Pill',
+        name: 'Thousand-Ring Cypress Pill',
         grade: 'immortal',
         effect: 'extend_lifespan',
         potency: 300,

@@ -26,7 +26,7 @@
  * ── A ROAD THAT STOPS AT THE DOOR IS NOT A ROAD ─────────────────────────
  *
  * `cap` is the rung a manual carries somebody to, and it is 0 on a great many
- * bottom-rung arts. Counting those made the Thousand Treasure Pavilion - an
+ * bottom-rung arts. Counting those made the Thousand Relic Pavilion - an
  * auction house with three elementless books and one fire art nobody rises on -
  * a house that turned away every root but fire. So a manual is a road only when
  * it carries past the rung the house admits at, which is `admissionOrdinal` and

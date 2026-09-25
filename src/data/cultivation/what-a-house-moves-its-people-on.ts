@@ -21,7 +21,7 @@ import type {
 export const CONVEYANCES: readonly Conveyance[] = [
     {
         id: 'conv-on-foot',
-        name: 'On foot',
+        name: 'Afoot',
         grade: null,
         range: 'crossing',
         holding: 'none',
@@ -38,7 +38,7 @@ export const CONVEYANCES: readonly Conveyance[] = [
     {
         id: 'conv-sword-flight',
         // The art's grade, not a material. See `Conveyance.grade`.
-        name: 'Flight on one\'s own blade',
+        name: 'Soaring on one\'s own blade',
         grade: 'earth',
         range: 'province',
         holding: 'personal',
@@ -101,7 +101,7 @@ export const CONVEYANCES: readonly Conveyance[] = [
     },
     {
         id: 'conv-carriage-earth',
-        name: 'A shod carriage',
+        name: 'An iron-rimmed carriage',
         grade: 'earth',
         range: 'province',
         holding: 'counted',
@@ -113,11 +113,11 @@ export const CONVEYANCES: readonly Conveyance[] = [
             'Built to hold together over a province rather than a district, with a core in the '
             + 'frame and a beast in the traces that most houses could not take. Still an amount '
             + 'rather than an object: a house has four of these and could not tell you which of '
-            + 'them went to Iron Ridge last spring.'
+            + 'them went to Iron Crest last spring.'
     },
     {
         id: 'conv-carriage-heaven',
-        name: 'A named carriage',
+        name: 'A titled carriage',
         grade: 'heaven',
         range: 'district',
         holding: 'tracked',
@@ -136,7 +136,7 @@ export const CONVEYANCES: readonly Conveyance[] = [
     },
     {
         id: 'conv-spirit-boat',
-        name: 'A spirit boat',
+        name: 'A spirit skiff',
         grade: 'heaven',
         range: 'crossing',
         holding: 'tracked',
@@ -212,7 +212,7 @@ export function adjustCountedHolding(
  * pair of hands almost nobody has, which is the number that makes it an
  * undertaking rather than a purchase. So there is no boat row, no mount row
  * (the price of a mount is a hunt, which its own description states), and no
- * row for flight on one's own blade, which is not property.
+ * row for soaring on one's own blade, which is not property.
  *
  * A hull therefore reaches a second house exactly one way: somebody built it
  * and somebody sold it. See `a-house-sells-what-it-built.ts`, which prices that
@@ -285,7 +285,7 @@ export function describeCountedHoldings(
         return 'Nothing in the yard. Whatever this house sends anywhere, it sends on foot.';
     }
     return held
-        // The catalog names carry their own article - "A shod carriage" - and
+        // The catalog names carry their own article - "An iron-rimmed carriage" - and
         // the head of one of them is not always its last word. `howMany` owns
         // both; the site only lowercases.
         .map(x => `${howMany(x.n, x.c.name.toLowerCase())} at ${x.c.grade} grade`)
@@ -309,7 +309,7 @@ export const CONVEYANCE_RECIPES: readonly ConveyanceRecipe[] = [
     },
     {
         id: 'build-carriage-earth',
-        name: 'A shod carriage',
+        name: 'An iron-rimmed carriage',
         producesConveyanceId: 'conv-carriage-earth',
         grade: 'earth',
         components: [
@@ -329,7 +329,7 @@ export const CONVEYANCE_RECIPES: readonly ConveyanceRecipe[] = [
     },
     {
         id: 'build-carriage-heaven',
-        name: 'A named carriage',
+        name: 'A titled carriage',
         producesConveyanceId: 'conv-carriage-heaven',
         grade: 'heaven',
         components: [
@@ -342,7 +342,7 @@ export const CONVEYANCE_RECIPES: readonly ConveyanceRecipe[] = [
     },
     {
         id: 'build-spirit-boat',
-        name: 'A spirit boat',
+        name: 'A spirit skiff',
         producesConveyanceId: 'conv-spirit-boat',
         grade: 'heaven',
         components: [
@@ -455,7 +455,7 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
         name: 'The Nameless Flag',
         power: 33,
         ownerId: 'sect-thousand-treasure-pavilion',
-        ownerName: 'Thousand Treasure Pavilion',
+        ownerName: 'Thousand Relic Pavilion',
         conveyanceId: 'conv-spirit-boat',
         mooredAt: 'the auction yard, behind the wall, where it is not shown',
         builtYearsAgo: 140,
@@ -472,13 +472,13 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
         name: 'The Fourth Ember',
         power: 31,
         ownerId: 'sect-ashen-forge-clan',
-        ownerName: 'Ashen Forge Clan',
+        ownerName: 'Ashen Anvil Clan',
         conveyanceId: 'conv-carriage-heaven',
         mooredAt: 'the compound yard, under the arc of dark nodes',
         builtYearsAgo: 340,
         tags: ['carriage'],
         description:
-            'A named carriage and no hull, in a clan whose makers outnumber its fighters. The '
+            'A titled carriage and no hull, in a clan whose makers outnumber its fighters. The '
             + 'clan can build to this grade and has, four times, and has never once had six '
             + 'heaven-grade cores in the same yard in the same decade - so what it holds is the '
             + 'best short-range craft in the province and nothing that leaves it.'

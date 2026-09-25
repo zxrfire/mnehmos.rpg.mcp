@@ -18,7 +18,7 @@
  *     settlements          23 -> 27      held  11 -> 15      unheld  12 -> 12
  *     Grove income        175 -> 1,165 a year
  *     Grove's rank      38 of 38 -> 31 of 38
- *     its neighbours    Cold Sword Sect 199 and nothing below
+ *     its neighbours    Unadorned Sword Sect 199 and nothing below
  *                       -> Cinnabar Crucible 1,247 and Burnt Earth Temple 1,045
  *     largest one town  1,800, unchanged
  *

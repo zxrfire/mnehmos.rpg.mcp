@@ -22,7 +22,7 @@
  *   `price-of-advancement.ts`  the True Immortal toll, which takes everything
  *                              the cultivator still had: "What falls back is a
  *                              spirit tide."
- *   `crossings.ts`             what the world sees when the Hollow Court
+ *   `crossings.ts`             what the world sees when the Empyrean Court
  *                              crosses: "A spirit tide, arriving without
  *                              warning and without explanation."
  *
@@ -43,7 +43,7 @@
  *
  * The asymmetry is load-bearing, because the alternative contradicts the
  * setting's own economics. `docs/world/climbing/past-the-ceiling.md` states the
- * premise the whole Hollow Court admission bar is derived from:
+ * premise the whole Empyrean Court admission bar is derived from:
  *
  *     "The qi is the finite thing - you can build another room and you cannot
  *      make another vein."
@@ -73,7 +73,7 @@
  *
  * To somebody above the Lid, whose span runs to the hundreds of thousands, 999
  * years is a short loan and barely worth noting. To everybody below it, it is
- * beyond any life and beyond nearly every institution - the Ashen Forge Clan's
+ * beyond any life and beyond nearly every institution - the Ashen Anvil Clan's
  * eleven generations at the furnace do not reach it.
  *
  * **The same number is a footnote at one end and the shape of a province at the
@@ -103,7 +103,7 @@ export const CROSSING_ENRICHMENT_YEARS = 999;
 /**
  * What the ground reads at the moment of the crossing.
  *
- * `QI_DENSITY_MAX` is the ceiling below the Lid - the Hollow Court's own
+ * `QI_DENSITY_MAX` is the ceiling below the Lid - the Empyrean Court's own
  * mountain - and for a while the ground somebody crossed from is the best in
  * the world, which is the whole of what a spirit tide is. Anchored on the
  * ceiling rather than on a figure invented here, so nothing can be enriched

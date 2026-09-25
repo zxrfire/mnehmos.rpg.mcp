@@ -91,8 +91,8 @@ paid for is something done, not something they are.
   [`rogues.ts`](../../src/data/cultivation/rogues.ts), beside the bounties. A disciple may
   take one on their own time, and it credits their house nothing.
 - **A disciple is sent on a mission.** The standing work a house posts for its own: outer
-  disciple chores, a vein warden, a pill convoy escort, a tide breaker, a formation
-  keeper, a tribulation watch, a seal inspection, a sky survey. `HOUSE_MISSIONS` in
+  disciple chores, a vein warden, a pill convoy escort, a surge breaker, a formation
+  keeper, a tribulation watch, a sigil inspection, a sky survey. `HOUSE_MISSIONS` in
   [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts),
   posted only where the house has the need and somebody on its roll could do it.
 - **Both are served the same way**, taken off the wall through the one duty every board
@@ -516,7 +516,7 @@ The design owner's distinction, and the catalog currently blurs the middle one:
 | **A dual cultivation art** | **both parties cultivate the SAME art** and both gain | `runsOn: 'everyone'`, `requiresPeople: 2` |
 | **Sharing a road with your dao partner** | you happen to cultivate the same art as somebody you are bonded to | no mechanic at all - it is a coincidence, and should stay one |
 
-The first is `Lotus-Nurturing Canon` + `Lotus-Plucking Rite`. The second is
+The first is `Lotus-Nurturing Canon` + `Lotus-Plucking Ritual`. The second is
 `twin-lotus-cultivation-method`. The third is not a thing the engine should model, and
 `what-a-dao-partner-is-for.ts` is right not to.
 
@@ -649,8 +649,8 @@ why nothing in this engine has ever had a rest mechanic to remove.
 Measured with a scripted two-step plan, which is what the phase-1 prompt asks a
 model for:
 
-    > I go to Cold Peak and gather herbs
-      "Which comes first? 'I go to Cold Peak' or 'gather herbs' is answer enough."
+    > I go to Moraine Gate and gather herbs
+      "Which comes first? 'I go to Moraine Gate' or 'gather herbs' is answer enough."
 
 `theSentenceSaysItsOwnOrder` counts *and then*, *then*, *first*, *next*,
 *before*, *once* and *because* as ordering, and a bare **and** as no order at

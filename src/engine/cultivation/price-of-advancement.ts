@@ -262,7 +262,7 @@ export function evaluateToll(
     const taken = selectToll(cultivator, ctx, boundaryIndex, categoryRoll, itemRoll);
 
     if (taken === null) {
-        // Nothing left worth taking. This is not a reprieve - it is the Hollow
+        // Nothing left worth taking. This is not a reprieve - it is the Empyrean
         // Court condition arriving early, and it is the correct answer for a
         // cultivator who has already been emptied out.
         return {

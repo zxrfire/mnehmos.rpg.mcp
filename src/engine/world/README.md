@@ -358,7 +358,7 @@ reason; `survival.ts` remains the only place a death is decided. And the affinit
 `thresholdOffset` finally does something observable: a water root stands on ice that kills
 a generalist at the same rung, and `AccessAssessment.applied` itemises why.
 
-### The qi scale: 1 to 100, and the Hollow Court holds the 100
+### The qi scale: 1 to 100, and the Empyrean Court holds the 100
 
 `qiDensity` on a location is an integer 1..100 (`qi-scale.ts`). It used to be a 0..1
 fraction, which is the same information at a tenth of the resolution: the default
@@ -387,7 +387,7 @@ variance is weather over fixed geology and must not be flattened.
 
 Nothing below the Lid exceeds 100, and the 100 is **derived rather than named**:
 `sectGroundDensity` measures a faction against the strongest faction in the catalog, which
-today is the Hollow Court at ordinal 44. Unseat it, rename it, or write something stronger
+today is the Empyrean Court at ordinal 44. Unseat it, rename it, or write something stronger
 and the top of the scale moves with the arithmetic instead of being left pointing at a
 house that no longer deserves it.
 
@@ -2205,7 +2205,7 @@ the same three against the LOCATION table, and it calls the same function now.
 
 What the rule returns is three things rather than one, because knowing where a thing is and
 being able to read it are different facts. `knowsWhereItIs` is what makes somebody able to
-TELL you - the cart drivers of the Buddha Precipice have crossed the Grinding Ford for six
+TELL you - the cart drivers of the Buddha Precipice have crossed the Grinding Shallows for six
 hundred years and the row says nobody there thinks of it as cultivation - and `shortBy` is
 the first thing a visitor is missing, in the order they meet them: found, then in the
 province or of the house, then let in, then able to read it. That ordering is what makes it
@@ -3145,7 +3145,7 @@ the burn does not**, which is a finding about the economy rather than about conv
 Three things were missing and each hid the next.
 
 - **No hull existed in any world.** `TRACKED_CRAFT` is five rows and the seeder read none of
-  them, so a lived world contained **zero spirit boats** however long it ran - and none was
+  them, so a lived world contained **zero spirit skiffs** however long it ran - and none was
   ever built either, because a heaven-grade bill wants six cores and `sending-for-materials`
   is capped below the rung that brings one home. Same defect `seedArtifacts` exists to fix,
   one catalog over. `seedTheCraftThatAreObjects` seats them, and gives each one the first
@@ -3397,7 +3397,7 @@ servants actually get seated, which gives the mismatch an outflow instead of a d
 **Rung 0 is never conditioned, in any regime.** Two facts turn out to be one rule: an
 outer disciple among hundreds may be anything because nothing has filtered them yet, and
 more than half the ladders in the catalog open with a rung that is not a cultivating rung
-at all - `Sword Servant`, `Dew Servant`, `Herb Boy`. That rung now has a population and a
+at all - `Sword Servant`, `Dew Servant`, `Medicine Boy`. That rung now has a population and a
 reason, and `assignFactionRoles` keeps refused roots on it rather than promoting them.
 
 `CatalogFaction.teachesRoads` carries each road's ceiling beside its element, because a

@@ -17,7 +17,7 @@
  * isn't only limited to names of course, it could be anything.* A sentence can
  * fail to place a house, a place, a thing in somebody's hand, or an art - and
  * it can fail on a WORD, which is the case with no candidate at all: *I end the
- * Hollow Court* is answered by somebody asking what you mean by end. All four
+ * Empyrean Court* is answered by somebody asking what you mean by end. All four
  * are one question with one shape, so this takes candidates of any kind and
  * says which kind it is offering.
  *
@@ -32,7 +32,7 @@
  *
  * That is the whole of it, and the limit is the point: somebody who serves
  * nobody and is standing alone with the player can offer exactly one name, and
- * a Hollow Court steward can place half the Court. Neither of them can offer a
+ * an Empyrean Court steward can place half the Court. Neither of them can offer a
  * thing they have no way of holding, which is what stops this becoming the
  * engine reading its own catalog out loud in a person's voice.
  */
@@ -185,7 +185,7 @@ export function whatSomebodyHereWouldAsk(input: {
         .map(who => who.name);
 
     // AND THE CASE WITH NO CANDIDATE OF ANY KIND, which is a word rather than a
-    // thing. "I end the Hollow Court" is a sentence whose VERB is the unclear
+    // thing. "I end the Empyrean Court" is a sentence whose VERB is the unclear
     // part, and the answer is the one a person gives: what do you mean by that.
     if (here.length === 0) {
         return {

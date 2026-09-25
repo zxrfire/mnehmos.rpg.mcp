@@ -114,7 +114,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
                 // Disciple ladders belong to sects. A court does not teach.
                 expect(officer.title, `${officer.id} borrows a disciple ladder`)
                     .not.toMatch(/disciple|servant|novice|apprentice/i);
-                // 'Seat' is the Hollow Court's word and nobody else's.
+                // 'Seat' is the Empyrean Court's word and nobody else's.
                 expect(officer.title, `${officer.id} borrows the Court vocabulary`)
                     .not.toMatch(/Seat/i);
                 const key = `${court.id}::${officer.title}`;
@@ -207,7 +207,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // reading off that gate for nine hundred years are this court's
         // offices, and the people using them are the ones who stayed.
         const kiln = getCourt('court-kiln')!;
-        expect(kiln.name).toBe('The Kiln Court');
+        expect(kiln.name).toBe('The Tripod Court');
         expect(kiln.embodiedByFactionId, 'the two halves must not be joined').toBeNull();
 
         // The swap guard.
@@ -218,7 +218,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // the right body. This pins the pairing in both directions at once.
         //
         // It nearly went wrong: the court's own id was `court-root-sill` while
-        // its name was 'The Kiln Court', so the half that kept the ground was
+        // its name was 'The Tripod Court', so the half that kept the ground was
         // calling itself by its sibling's name in its own id and in its own
         // officesNote. That is the schism written down wrong, not the schism,
         // and it is exactly the mistake this assertion exists to catch.
@@ -245,7 +245,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // ground on one side, the roll on the other - because those are the
         // facts the two accounts were carrying between them.
         expect((kiln as { lineageDispute?: unknown }).lineageDispute,
-            'the naming dispute is back on the Kiln').toBeUndefined();
+            'the naming dispute is back on the Tripod').toBeUndefined();
         const walkedParentage = getParentage('sect-deeproot-court')!;
         expect((walkedParentage as { lineageDispute?: unknown }).lineageDispute,
             'the naming dispute is back on the Deeproot Court').toBeUndefined();
@@ -255,7 +255,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
             .toMatch(/roll|posting order/i);
 
         const titles = kiln.roster.map(o => o.title);
-        expect(titles.some(t => /Keeper of the Kiln/.test(t)), 'the Keeper stayed').toBe(true);
+        expect(titles.some(t => /Keeper of the Tripod/.test(t)), 'the Keeper stayed').toBe(true);
         for (const officer of kiln.roster) {
             expect(officer.title.length, `${officer.id}`).toBeGreaterThan(3);
         }
@@ -289,7 +289,7 @@ describe('a faction wants something, and somebody is in the way', () => {
         // four people with nothing left to be afraid of.
         // Alphabetical, because the read above sorts. Two of them have moved
         // position under a rename - the grove, and then the Deeproot Court when
-        // its id stopped saying Kiln; the four are the same four.
+        // its id stopped saying Tripod; the four are the same four.
         expect(silent).toEqual([
             'sect-ancient-bough-grove',
             'sect-deeproot-court',
@@ -377,13 +377,13 @@ describe('a faction wants something, and somebody is in the way', () => {
         expect(contestedClaimsOf('sect-sweptground-temple')).toEqual([]);
     });
 
-    it('puts a contested claim on the one arterial the Third Sill administers', () => {
+    it('puts a contested claim on the one arterial the Third Sluice administers', () => {
         // The most useful thing a register can carry is a claim two or more
         // parties have their hands on, and this is the biggest one in the world.
         //
         // It used to assert three CLAIMANTS and there are two, which is a
         // correction rather than a loss. The third was the Storm Tyrant Court,
-        // which answers the Earth Vein Tower directly and holds no Third Sill grant
+        // which answers the Earth Vein Tower directly and holds no Third Sluice grant
         // - so a claim by it on a Myriad Course Hall court's arterial was a claim it had
         // no standing to make. It is still a party to the contest, and both
         // remaining claimants still name it, which is the shape that is
@@ -516,19 +516,19 @@ describe('the dao houses take nobody at a gate', () => {
 describe('a name in the pyramid says which tier it is', () => {
     it('marks the court that spent nine hundred years not looking like one', () => {
         // The house split and each half kept one of its two names. This one
-        // walked; the body still on the datum is the Kiln Court under the Deep
+        // walked; the body still on the datum is the Tripod Court under the Deep
         // Survey. Nothing else about it changed - still closed, still teaching
         // nothing - which is why it is still filed here rather than as a sect.
         const walked = getSect('sect-deeproot-court')!;
         expect(walked.name).toBe('Deeproot Court');
         expect(walked.recruits).toBe(false);
         expect(walked.teaches.length).toBe(0);
-        expect(walked.description).toContain('Kiln Wardens');
+        expect(walked.description).toContain('Tripod Wardens');
     });
 
     it('stops a feeder claiming a tier its roster cannot cover', () => {
         // Every body in the world called a Court sits at 34 or above except the
-        // Hollow Court's own separate meaning of the word. A feeder at 27 that
+        // Empyrean Court's own separate meaning of the word. A feeder at 27 that
         // administers nothing and issues nothing is a sect, and its name now
         // says so - while the vestigial rank at the top of its ladder is the
         // fossil of the founder who called it a Court.

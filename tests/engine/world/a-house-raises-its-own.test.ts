@@ -62,7 +62,7 @@
  *  - it may not move `power_ordinal`, which is the strongest person on a roll.
  *    Deepening the rank and file would otherwise re-order the whole catalog by
  *    standing, quietly, for a reason that has nothing to do with standing.
- *  - it may not fill a posting. The Kiln Wardens and the Deeproot Court teach
+ *  - it may not fill a posting. The Tripod Wardens and the Deeproot Court teach
  *    nothing and take nobody by standing ruling; `recruits: false` is what
  *    holds them, and it has to keep holding them here.
  *  - it may not outnumber the catalog's own people into irrelevance. Every

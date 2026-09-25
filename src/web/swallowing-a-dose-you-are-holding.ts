@@ -102,7 +102,7 @@ export type WhatADoseWouldDo =
  * WHAT IT WAS MADE FOR COMES FIRST. A dose reaches everything permanent and
  * physical at or below its rank - the rank is the axis, not the named break -
  * but the `mends` column still says which wound the grade exists to answer, and
- * pointing a Second Pour Pill at a lost arm when the foundation it was refined
+ * pointing a Second Casting Pill at a lost arm when the foundation it was refined
  * for is also broken would be spending it on the cheaper of two problems.
  *
  * The refusal handed back where nothing is reached is the engine's, verbatim,

@@ -28,7 +28,7 @@
  *     terms or friendly to it. Spending a name draws on the one thing that makes
  *     another name possible. That is `Parentage.standing` and the relationship
  *     layer, read rather than restated - see {@link howFarANameGoes}.
- *   - THE PEOPLE IT DID NOT GO TO. The seats are counted: the Kiln takes four.
+ *   - THE PEOPLE IT DID NOT GO TO. The seats are counted: the Tripod takes four.
  *     A name that goes up is a name that did not go to somebody who expected it,
  *     and the catalog already records what that leaves - two untraced grievances
  *     in the Buddha Precipice, one of them inherited twice. `blocked_advancement`

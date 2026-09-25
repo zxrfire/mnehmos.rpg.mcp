@@ -526,7 +526,7 @@ describe('the auction circuit', () => {
         const affordable = venuesAffordableWith(STARTING_SPIRIT_STONES);
         expect(affordable.length, 'a starting cultivator can attend nothing').toBeGreaterThan(1);
         const reserved = getAuctionVenue('auction-low-fall-reserved')!;
-        expect(reserved.entryBondStones, 'the reserved floor is affordable, which it must not be')
+        expect(reserved.entryBondStones, 'the private floor is affordable, which it must not be')
             .toBeGreaterThan(STARTING_SPIRIT_STONES);
         expect(affordable).not.toContain(reserved);
 

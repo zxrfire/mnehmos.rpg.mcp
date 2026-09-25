@@ -37,7 +37,7 @@ export function aTypoAway(typed: string, name: string): boolean {
 
 /**
  * A stretch that is a typo of a name. A name of several words may have ONE of
- * them misspelt: "your name" is two edits from "Four Names", one in each word,
+ * them misspelt: "your name" was two edits from the place then called "Four Names", one in each word,
  * and asking somebody their name was read as a question about a place.
  */
 function nearlyThisName(typed: string, name: string, width: number): boolean {
@@ -52,7 +52,7 @@ function nearlyThisName(typed: string, name: string, width: number): boolean {
 /** The sentence, with every name they know written as it is spelled. */
 export function inTheSpellingOfTheNamesTheyKnow(said: string, names: readonly string[]): string {
     const known = [...new Set(names.filter(name => name.trim().length >= 4))]
-        // Longest first, so "Iron Ridge Pass" is tried before "Iron Ridge".
+        // Longest first, so "Iron Crest Pass" is tried before "Iron Crest".
         .sort((a, b) => b.length - a.length);
     let out = said;
     for (const name of known) {

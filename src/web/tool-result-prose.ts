@@ -529,7 +529,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         //
         // Found by playing: a new Cistern Servant of the Tranquil Oasis Sect was told they
         // were on the roll, and nothing told them where the Caravan was. They
-        // walked four days to Sand Well, which is a well, and met nobody of
+        // walked four days to Truce Spring, which is a well, and met nobody of
         // their own house. Naming the house is the sentence that takes them
         // there - `I go to the Tranquil Oasis Sect` - and it lands them at its
         // gate; what was missing was anybody saying so.

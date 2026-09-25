@@ -27,10 +27,10 @@ const person = (over: Partial<SomebodyPresent> & { id: string }): SomebodyPresen
     sectRank: null, sectId: null, sectName: null, ...over
 });
 
-/** A disciple of the Hollow Court, and a woman from no house at all. */
+/** A disciple of the Empyrean Court, and a woman from no house at all. */
 const disciple = person({
     id: 'shen', name: 'Shen Yuan', sectId: HOLLOW_COURT,
-    sectName: 'The Hollow Court', sectRank: 'disciple'
+    sectName: 'The Empyrean Court', sectRank: 'disciple'
 });
 const stranger = person({ id: 'lin', name: 'Lin Wei', sex: 'female', age: 22 });
 
@@ -58,7 +58,7 @@ describe('what is within reach', () => {
     it('has a house on it only through somebody who answers to it', () => {
         const withHim = reachIn([disciple, stranger]);
         const court = withHim.find(r => r.kind === 'house');
-        expect(court?.name).toBe('The Hollow Court');
+        expect(court?.name).toBe('The Empyrean Court');
         expect(court?.through?.name).toBe('Shen Yuan');
 
         expect(reachIn([stranger]).some(r => r.kind === 'house')).toBe(false);
@@ -66,13 +66,13 @@ describe('what is within reach', () => {
 
     it('answers to the short form of a house name', () => {
         const reach = reachIn([disciple]);
-        expect(whatThePhraseReaches('the Hollow Court', reach)?.id).toBe(HOLLOW_COURT);
+        expect(whatThePhraseReaches('the Empyrean Court', reach)?.id).toBe(HOLLOW_COURT);
         expect(whatThePhraseReaches('the Court', reach)?.id).toBe(HOLLOW_COURT);
     });
 
     /** Said on the other side of the map, it reaches nothing. */
     it('does not reach a house nobody here answers to', () => {
-        expect(whatThePhraseReaches('the Hollow Court', reachIn([stranger]))).toBeNull();
+        expect(whatThePhraseReaches('the Empyrean Court', reachIn([stranger]))).toBeNull();
     });
 });
 

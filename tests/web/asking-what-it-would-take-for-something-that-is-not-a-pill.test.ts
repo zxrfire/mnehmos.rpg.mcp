@@ -60,11 +60,11 @@ describe('what can be asked after', () => {
     /**
      * And a thing the world does not contain is still nothing.
      *
-     * THE FIXTURE CHANGED AND THE RULE DID NOT. This was "a spirit boat made of
+     * THE FIXTURE CHANGED AND THE RULE DID NOT. This was "a spirit skiff made of
      * cheese", which stopped being a name no catalog carries the day the
-     * conveyance catalog joined this read: `A spirit boat` is a row now, and
+     * conveyance catalog joined this read: `A spirit skiff` is a row now, and
      * every branch in `theThingAskedFor` matches by containment in both
-     * directions on purpose, so that "his Hidden Edge" and "the spirit boat"
+     * directions on purpose, so that "his Hidden Edge" and "the spirit skiff"
      * reach the rows they name. A phrase with a real catalog name inside it
      * resolving to that row is the rule working, not a leak.
      *

@@ -116,9 +116,9 @@ describe('a sentence that is only a pointer', () => {
 
 describe('the pointer is counted against what was printed', () => {
     it('counts an ordinal against the order the listing was printed in', () => {
-        const named = [{ name: 'Cold Sword Sect' }, { name: 'Hollow Bell Wanderers' }];
+        const named = [{ name: 'Unadorned Sword Sect' }, { name: 'Wayside Chime Wanderers' }];
         expect(whichOfTheNamedThings('the second one', 'the second one', named)?.name)
-            .toBe('Hollow Bell Wanderers');
+            .toBe('Wayside Chime Wanderers');
     });
 });
 

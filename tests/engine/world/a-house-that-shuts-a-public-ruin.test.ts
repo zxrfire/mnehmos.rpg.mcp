@@ -53,7 +53,7 @@ function province(id: string): LocationRecord {
 function ruinIn(provinceId: string, opts: Partial<LocationRecord> = {}): LocationRecord {
     return makeLocation({
         id: `loc-ruin-${provinceId}`,
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         parentId: provinceId,
         qiDensity: 80,

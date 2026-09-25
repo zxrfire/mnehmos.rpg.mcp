@@ -28,11 +28,11 @@ actually standing on the four mountains.
   your own terms, at a time of your choosing. They cut their own bonds, memories and
   names *in advance*. They climb faster than anyone. What arrives at the top is not
   really a person and does not pretend to be.
-- **The Hollow Court** - Grand Ascension cultivators who reached the Lid and refused to
+- **The Empyrean Court** - Grand Ascension cultivators who reached the Lid and refused to
   go through. Nothing left to take, therefore nothing left to threaten. Functionally
   immortal, functionally inert, and the only people left who can afford to be honest.
   What a good number of the oldest of them actually are is in
   [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
-- **The Kiln Wardens** - they guard the deep vein at the world's root, which is either
+- **The Tripod Wardens** - they guard the deep vein at the world's root, which is either
   still running or has not been checked in a very long time. They do not explain
   themselves and they do not recruit.

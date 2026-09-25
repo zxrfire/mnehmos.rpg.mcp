@@ -134,7 +134,7 @@ export const DECLARE_VERBS =
  * the rung it opens at for somebody junior - which is the outsider's answer
  * and the rebel's answer, in the house's own terms. So an ending goes there.
  *
- * Measured before this: "I end the Hollow Court" reached the seduction verb,
+ * Measured before this: "I end the Empyrean Court" reached the seduction verb,
  * because the house is called a Court.
  */
 export const ENDING_A_HOUSE_VERBS =
@@ -342,7 +342,7 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
     // ── where we stand ──
     //
     // The READ first, and that ORDER is the point: "are we at war with the Iron
-    // Gate" is a question and "I declare war on the Iron Ridge" is an act, and
+    // Gate" is a question and "I declare war on the Iron Crest" is an act, and
     // the two share every noun. Getting them the wrong way round starts a war
     // by answering a question.
     if (WHERE_WE_STAND.test(text)) {

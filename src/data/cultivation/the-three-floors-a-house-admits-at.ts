@@ -58,7 +58,7 @@ export interface HouseFloors {
  * Deity Transformation elder brought in from a subsidiary is Unplaced, and
  * everyone on a face at any realm is a Hand. Pricing rung 0 off their top-end
  * production puts the bottom of the Survey above Core Formation and strands the
- * roll this catalog actually authored - a sixty-year Second Mark, a Sill-Sworn
+ * roll this catalog actually authored - a sixty-year Second Mark, a Sluice-Sworn
  * who carries renewals, a Hand of ninety years - below the floor of their own
  * rank.
  *

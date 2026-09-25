@@ -484,8 +484,8 @@ describe('every verb is reachable from plain English', () => {
         // The three ways of covering ground that are not walking, and a word
         // given. All four were engine modules with no caller; `ride` was a
         // label on `move` that resolved through the same flat journey.
-        ride: 'I ride to Clear River Ford',
-        fold: 'I fold space to Iron Ridge',
+        ride: 'I ride to Clear River Ferry',
+        fold: 'I fold space to Iron Crest',
         passage: 'what does the Span board say',
         oath: 'what oaths am I carrying',
         provision: 'I stock up on provisions',
@@ -1663,7 +1663,7 @@ describe('what a cultivator carrying open channels is told', () => {
  * Found by a rank-band sweep, and the dead sentences were at the CEILING
  * rather than the floor, which is the worst place for a gap of this shape:
  *
- *   ordinal 37-44   "what do I know of the Hollow Court"   -> unclear
+ *   ordinal 37-44   "what do I know of the Empyrean Court"   -> unclear
  *   ordinal 45-46   "what is my dao"                       -> unclear
  *   ordinal 45-46   "what do I know of Lu Sheng"           -> unclear
  *
@@ -1680,7 +1680,7 @@ describe('asking what I know', () => {
         for (const input of [
             // The three sentences the sweep found dead.
             'what do I know of Lu Sheng',
-            'what do I know of the Hollow Court',
+            'what do I know of the Empyrean Court',
             'what have I heard of the Ninth Stone',
             'what do I know about the Bountiful Sheaf Sect',
             'have I ever heard of the Clearwater Ward',
@@ -1759,7 +1759,7 @@ describe('asking what I know', () => {
             .toBe(invented.narration.replace(/Bo Qianli of the Fifth Terrace/g, 'X'));
         // And nothing about the man leaked into either.
         const everything = real.narration + JSON.stringify(real.toolCalls);
-        expect(everything).not.toMatch(/False Immortal|Hollow Court|wanderer/i);
+        expect(everything).not.toMatch(/False Immortal|Empyrean Court|wanderer/i);
 
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
         expect(real.state.run.elapsedDays).toBe(0);
@@ -1775,7 +1775,7 @@ describe('asking what I know', () => {
         const before = count();
         for (const input of [
             'what do I know of Lu Sheng',
-            'what do I know of the Hollow Court',
+            'what do I know of the Empyrean Court',
             'what do I know of the Azure Cloud Pavilion',
             'what do I know',
             'what is my dao'
@@ -1988,7 +1988,7 @@ describe('institutions acting on each other', () => {
      * The rung that speaks for the house, whichever house it is.
      *
      * Was a hardcoded 5, which was the seat until `Grand Mountain Elder` was
-     * inserted below `Order Patriarch` and moved it to 6. A test that pins the
+     * inserted below `Sect Patriarch` and moved it to 6. A test that pins the
      * INDEX of the seat fails every time a house gains a rung, and it fails by
      * quietly installing the rank below - which reads as the verb being broken
      * rather than as the test being stale.
@@ -2044,7 +2044,7 @@ describe('institutions acting on each other', () => {
     /** The two bodies these tests name that have no row in `SECTS`. */
     const NAMES_OF: Record<string, string> = {
         'apex-earth-vein-tower': 'The Earth Vein Tower',
-        'court-third-sill': 'The Third Sill Court'
+        'court-third-sill': 'The Third Sluice Court'
     };
 
     /** Every flag any of the four verbs writes. The ground truth for "it happened". */
@@ -2076,7 +2076,7 @@ describe('institutions acting on each other', () => {
         ['I ask the Earth Vein Tower for one of its pills', 'petition', 'stock'],
         ['I ask the Earth Vein Tower for an Heaven-Ascending Golden Pill', 'petition', 'stock'],
         ['I offer an alliance to the Frostmirror Court', 'posture', 'alliance'],
-        ['I petition the Third Sill Court for a grant', 'petition', 'grant'],
+        ['I petition the Third Sluice Court for a grant', 'petition', 'grant'],
         ['I demand tribute from the Azure Dew Sect', 'posture', 'tribute'],
         ['I go over to the Myriad Course Hall', 'posture', 'defect'],
         // Two of the twelve are NOT new verbs, and finding that out was worth
@@ -2094,7 +2094,7 @@ describe('institutions acting on each other', () => {
          * your word to an institution reaches the thing that models giving your
          * word rather than the thing next to it.
          */
-        ['I swear an oath to the Vermilion Seal Terrace', 'oath', 'swear']
+        ['I swear an oath to the Vermilion Sigil Terrace', 'oath', 'swear']
     ];
 
     for (const [typed, action, intent] of TWELVE) {
@@ -2342,8 +2342,8 @@ describe('institutions acting on each other', () => {
      * The addressee is resolved before anything is dispatched.
      *
      * Found in a live from-scratch run rather than in the matrix, because it
-     * degrades gracefully and therefore looks fine. "I ask the Hollow Court for
-     * an immortal pill" threw the Hollow Court away and asked whoever was
+     * degrades gracefully and therefore looks fine. "I ask the Empyrean Court for
+     * an immortal pill" threw the Empyrean Court away and asked whoever was
      * standing nearest - a Qi Condensation clerk, about an immortal pill - and
      * two completely different questions came back byte-identical.
      *
@@ -2375,12 +2375,12 @@ describe('institutions acting on each other', () => {
         // completely different questions came back byte-identical from the same
         // NPC. A description may still reach a bystander; a name may not.
         const { game } = await standing(null, { seed: 'bystander', worldEnabled: true });
-        const named = await game.act('I ask the Hollow Court about the crossing');
+        const named = await game.act('I ask the Empyrean Court about the crossing');
 
         // The addressee is a name this cultivator does not hold, so the question
         // was not asked. It must not be re-aimed at whoever is standing nearest.
         expect(engineCalls(named).map(c => c.name)).not.toContain('engine.askedAbout');
-        expect(named.narration).not.toMatch(/hollow court/i);
+        expect(named.narration).not.toMatch(/empyrean court/i);
 
         // And a DESCRIPTION still reaches somebody, which is the behaviour this
         // must not cost: `POINTING` is the closed set that separates the two.
@@ -2395,7 +2395,7 @@ describe('institutions acting on each other', () => {
         // player who typed a different house entirely read a sensible refusal
         // and had no way to tell their house had been swapped.
         const { game } = await standing(null, { seed: 'substitution' });
-        const result = await game.act('I apply to the Thousand Treasure Pavilion');
+        const result = await game.act('I apply to the Thousand Relic Pavilion');
 
         expect(result.narration).toMatch(/not one anybody has said to you|not a name you hold/i);
         expect(result.narration).not.toMatch(/there is one name you have for this/i);
@@ -2978,7 +2978,7 @@ describe('attacking a house', () => {
         expect(result.narration).toMatch(/is a name, a roll and some ground/i);
         // Both routes, and they are the two the engine actually has.
         expect(result.narration).toMatch(/people who answer to it/i);
-        // "the seat" is the Hollow Court's own word for its head and no other
+        // "the seat" is the Empyrean Court's own word for its head and no other
         // house's, so the refusal names the position rather than borrowing it.
         expect(result.narration).toMatch(/whoever heads that house/i);
         expect(result.narration).not.toMatch(/\bthe seat\b/i);
@@ -3127,7 +3127,7 @@ describe('the noun is right and the verb is wrong', () => {
      * these are the sentences most at risk from the two broadest additions.
      */
     it('does not swallow the verbs it sits next to', () => {
-        expect(parseIntent('I travel to Green Water City').action).toBe('move');
+        expect(parseIntent('I travel to Emerald Water City').action).toBe('move');
         expect(parseIntent('what can I buy').action).toBe('market');
         expect(parseIntent('what sects are there').action).toBe('sect');
         expect(parseIntent('I look around').action).toBe('look');
@@ -3185,7 +3185,7 @@ describe('a site can be named the way the game named it', () => {
 
     /** And the whole sentence still routes, not just the name lookup. */
     it('routes an approach to a named site to the site verb', () => {
-        expect(parseIntent('I approach The Slow Door').action).toBe('site');
+        expect(parseIntent('I approach The Patient Door').action).toBe('site');
         expect(parseIntent('I go into The Swept Gate').action).toBe('site');
     });
 });
@@ -3239,7 +3239,7 @@ describe('the plainest things a player says', () => {
      * sentence that merely contains the word keeps its own meaning.
      */
     it('does not let a bare verb swallow a longer sentence', () => {
-        expect(parseIntent('I travel to Green Water City').action).toBe('move');
+        expect(parseIntent('I travel to Emerald Water City').action).toBe('move');
         expect(parseIntent('what am I carrying').action).toBe('inventory');
         expect(parseIntent('I look around').action).toBe('look');
         expect(parseIntent('I attack Cao Nuozhi').action).toBe('attack');

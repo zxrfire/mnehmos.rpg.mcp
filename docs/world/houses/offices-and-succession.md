@@ -171,7 +171,7 @@ interval is a quarter of the years the ladder credits at that rung before it rea
 finished (`stagnationYearsForOrdinal` at the middle of the conclave rung's realm band) - four
 contests inside a career at that height. On the shipped catalog that is **13 years** for the
 thirty-odd houses whose conclave rung stands in Qi Condensation or Foundation, **25** for the
-six in Core Formation, and **500** for the Hollow Court, whose Inner Disciples stand at Body
+six in Core Formation, and **500** for the Empyrean Court, whose Inner Disciples stand at Body
 Integration and above. Each house's own year is drawn once off the seed, so a province does
 not hold them all in one spring. Measured over 500 years on two seeds: 622 and
 673 places won, 333 and 339 holders beaten for one, so a place changes hands

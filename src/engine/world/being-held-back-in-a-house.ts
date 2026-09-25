@@ -103,7 +103,7 @@ export function whereTheyAreHeldBack(
  *
  * NOT BEING HELD BACK. The head's chair is one seat, filled when it stands empty
  * (`seatsAtRank`), which is a succession and not a promotion anybody is denied.
- * Measured on `shape-a`: the Hollow Court's Second, Third and Fourth Seats stand
+ * Measured on `shape-a`: the Empyrean Court's Second, Third and Fourth Seats stand
  * on the rung under the one chair, were stamped held back `no_seat` from the
  * first year, and all three had walked out within ninety years - "they had
  * outgrown their place in that hall" - the top of the world scattered into

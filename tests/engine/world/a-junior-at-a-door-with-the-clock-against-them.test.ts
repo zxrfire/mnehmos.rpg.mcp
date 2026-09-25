@@ -50,7 +50,7 @@ const JUST_INSIDE_THE_DOOR = 2;
 function theDoor(cycle = A_WEEK_EVERY_SIXTY_YEARS): LocationRecord {
     return makeLocation({
         id: 'loc-ruin-clock',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         qiDensity: 95,
         thresholds: makeThresholds(4, 8, 14, 20),

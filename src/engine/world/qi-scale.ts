@@ -1,7 +1,7 @@
 /**
  * The qi scale: one number, 1 to 100, for what the ground under a place holds.
  *
- * 100 is the best ground below the Lid - the Hollow Court's own mountain, and
+ * 100 is the best ground below the Lid - the Empyrean Court's own mountain, and
  * the pockets that were sealed while the world was still rich. Nothing down
  * here exceeds it.
  *
@@ -45,7 +45,7 @@
 /** Dead ground still reads 1. Nothing is 0, because 0 would mean "unmeasured". */
 export const QI_DENSITY_MIN = 1;
 
-/** The Hollow Court's ground, and the ceiling below the Lid. */
+/** The Empyrean Court's ground, and the ceiling below the Lid. */
 export const QI_DENSITY_MAX = 100;
 
 /** The Late Age's ordinary open air. Burnt Earth sits about here. */

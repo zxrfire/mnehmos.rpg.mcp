@@ -113,7 +113,7 @@ console.log(`\n    sealed ancestors available: ${sealed.map(s => `${s.name} ${s.
 const hollow = artifactsOwnedBy('sect-hollow-court');
 const hollowSeats = sectThreat('sect-hollow-court')?.withdrawn?.seats ?? [];
 console.log(
-    `    the Hollow Court:           seats ${hollowSeats.map(s => s.ordinal).join('/')}` +
+    `    the Empyrean Court:           seats ${hollowSeats.map(s => s.ordinal).join('/')}` +
     `  artifacts ${hollow.map(a => a.power).join('/')}  (awake, not sealed)`
 );
 
@@ -206,20 +206,20 @@ const cases: Case[] = [
     },
     {
         label: 'both sealed keys (44 + 42)',
-        attackers: [body('kiln', 'the Kiln ancestor', 44), body('frost', 'the Frostmirror ancestor', 42)],
+        attackers: [body('kiln', 'the Tripod ancestor', 44), body('frost', 'the Frostmirror ancestor', 42)],
         suborned: ['sect-deeproot-court', 'sect-frostmirror-court'],
         note: 'every relevant seal in the region, spent at once'
     },
     {
         label: 'the keys, courts suborned',
-        attackers: [body('kiln', 'the Kiln ancestor', 44), body('frost', 'the Frostmirror ancestor', 42)],
+        attackers: [body('kiln', 'the Tripod ancestor', 44), body('frost', 'the Frostmirror ancestor', 42)],
         suborned: ['sect-deeproot-court', 'sect-frostmirror-court', ...SURVEY_COURT_IDS],
         note: 'same force; the courts do not come'
     },
     {
         label: 'the keys, courts turned against',
         attackers: [
-            body('kiln', 'the Kiln ancestor', 44),
+            body('kiln', 'the Tripod ancestor', 44),
             body('frost', 'the Frostmirror ancestor', 42),
             ...surveyCourts.map(c => body(c.id, `${c.name}, turned`, c.powerOrdinal))
         ],
@@ -229,7 +229,7 @@ const cases: Case[] = [
     {
         label: 'the keys + both turned courts + a turned client',
         attackers: [
-            body('kiln', 'the Kiln ancestor', 44),
+            body('kiln', 'the Tripod ancestor', 44),
             body('frost', 'the Frostmirror ancestor', 42),
             body('storm', 'the Storm Tyrant ancestor', 40),
             ...surveyCourts.map(c => body(c.id, `${c.name}, turned`, c.powerOrdinal))
@@ -254,7 +254,7 @@ const cases: Case[] = [
             body('seat2', 'Second Seat', hollowSeats[1]?.ordinal ?? 43, hollow[1]?.power ?? undefined)
         ],
         suborned: [],
-        note: 'the Hollow Court, if it ever wanted anything'
+        note: 'the Empyrean Court, if it ever wanted anything'
     }
 ];
 

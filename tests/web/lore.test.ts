@@ -238,7 +238,7 @@ describe('the stratum gate', () => {
         const ids = new Set(held.map(entry => entry.id));
 
         // discovery.md's own worked example is a court: "Road's shut past the
-        // ford. Sill business, so it'll be shut a while." He says it the way you
+        // ford. Sluice business, so it'll be shut a while." He says it the way you
         // would say a bank holiday, and cannot tell you a thing about it.
         expect(held.some(entry => entry.catalog === 'courts')).toBe(true);
         // And the enormous factions, for exactly the same reason.
@@ -284,14 +284,14 @@ describe('the stratum gate', () => {
 describe('locality decides how often, never whether', () => {
     it('joins a free-text place to the region it sits in', () => {
         expect(regionOfPlace('Burnt Earth')).toBe('region-low-fall');
-        expect(regionOfPlace('Iron Ridge')).toBe('region-quiet-marches');
+        expect(regionOfPlace('Iron Crest')).toBe('region-quiet-marches');
         expect(regionOfPlace('  the jade gorge  ')).toBe('region-low-fall');
         expect(regionOfPlace('nowhere in particular')).toBeNull();
         expect(regionOfPlace(null)).toBeNull();
     });
 
     it('reads the same row as local here and regional elsewhere', () => {
-        const kettle = LORE.find(entry => entry.name === 'Iron Ridge')!;
+        const kettle = LORE.find(entry => entry.name === 'Iron Crest')!;
         expect(bandFor(kettle, { regionId: 'region-quiet-marches' })).toBe('local');
         expect(bandFor(kettle, { regionId: 'region-low-fall' })).toBe('regional');
         // An unknown place narrows nothing rather than excluding everything.
@@ -783,8 +783,8 @@ describe('what the player actually reads', () => {
         mode: 'overheard' as const,
         speaker: null,
         names: [
-            { kind: 'sect' as const, id: 'a', name: 'The Third Sill Court' },
-            { kind: 'place' as const, id: 'b', name: 'Iron Ridge' }
+            { kind: 'sect' as const, id: 'a', name: 'The Third Sluice Court' },
+            { kind: 'place' as const, id: 'b', name: 'Iron Crest' }
         ],
         note: 'n',
         confidence: 0.2,
@@ -793,8 +793,8 @@ describe('what the player actually reads', () => {
 
     it('performs the exchange instead of describing it', () => {
         const prose = hearingProse(overheard);
-        expect(prose).toContain('The Third Sill Court');
-        expect(prose).toContain('Iron Ridge');
+        expect(prose).toContain('The Third Sluice Court');
+        expect(prose).toContain('Iron Crest');
         expect(prose).not.toMatch(/a fragment|it contained/i);
     });
 
@@ -829,7 +829,7 @@ describe('what the player actually reads', () => {
 
     it('handles a single overheard name as well as a pair', () => {
         const one = hearingProse({ ...overheard, names: [overheard.names[0]] });
-        expect(one).toContain('The Third Sill Court');
+        expect(one).toContain('The Third Sluice Court');
         expect(one).toMatch(/no idea what that was/i);
     });
 });

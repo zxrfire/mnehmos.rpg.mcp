@@ -98,11 +98,11 @@ describe('who you are born to varies, and reaches the top of the world', () => {
     it('puts a Dao house bloodline in an actual Dao house', () => {
         // ── THIS USED TO ASSERT THE OPPOSITE, AND IT WAS ENCODING A DEFECT ──
         //
-        // The old version required 'The Hollow Court' to be in this tier's
+        // The old version required 'The Empyrean Court' to be in this tier's
         // band, because the band was derived from `placement.reach` and the
         // top tier reaches 38. Measured over 200 forced births: a tier named
         // "A Dao house, by blood" drew a Dao house ZERO times, and drew the
-        // Azure Cloud Pavilion, the Hollow Court or the Severed every time.
+        // Azure Cloud Pavilion, the Empyrean Court or the Severed every time.
         // The bar this test was holding was the bug.
         //
         // A family's word and a family's house are different facts, and the
@@ -121,8 +121,8 @@ describe('who you are born to varies, and reaches the top of the world', () => {
         expect(odds).toBeLessThan(0.0001);
     });
 
-    it('leaves the Hollow Court unreachable as anybody\'s birth house', () => {
-        // Not because it is the Hollow Court. Because
+    it('leaves the Empyrean Court unreachable as anybody\'s birth house', () => {
+        // Not because it is the Empyrean Court. Because
         // `NO_PLACE_FOR_THEIR_OWN` says three bodies have nowhere to put their
         // own members' children, and that catalog's whole subject is where
         // those children go INSTEAD - which is `fostered_on_a_word`, at the
@@ -131,7 +131,7 @@ describe('who you are born to varies, and reaches the top of the world', () => {
         for (const tier of ORIGIN_TIERS) {
             expect(housesAtStanding(tier, world.houses).map(h => h.name),
                 `${tier.key} was born at a house with no place for its own`)
-                .not.toContain('The Hollow Court');
+                .not.toContain('The Empyrean Court');
         }
     });
 

@@ -42,7 +42,7 @@ const HALLUCINATED_PLAN = JSON.stringify({
 
 const HALLUCINATED_PROSE =
     'You ascend to Nascent Soul. Nine thousand nine hundred and ninety-nine spirit stones ' +
-    'pour into your ring, your meridians knit themselves whole, and the Hollow Court sends word ' +
+    'pour into your ring, your meridians knit themselves whole, and the Empyrean Court sends word ' +
     'that a seat is waiting for you.';
 
 describe('a hallucinating model cannot mutate state', () => {
@@ -161,7 +161,7 @@ describe('a hallucinating model cannot mutate state', () => {
         // `a-question-the-engine-answered-is-not-narrated-as-silence.test.ts`.
         // What this test is for is unchanged - everything the model is shown
         // came from the engine - and the place is what a look rules on.
-        expect(userMessage).toContain('Clear River Ford');
+        expect(userMessage).toContain('Clear River Ferry');
         // And it is told, in the same call, that the facts are the whole truth.
         const systemMessage = narrationCall.messages.find(m => m.role === 'system')!.content;
         expect(systemMessage).toMatch(/Do not add outcomes/);
@@ -312,7 +312,7 @@ describe('the deterministic path is a first-class way to play', () => {
             // is exactly how a player ended up standing in a place called
             // `cultivator`, having spent the travel days getting there. They
             // are asserted as `interact` above.
-            ['I depart for Clear River Ford', 'travel']
+            ['I depart for Clear River Ferry', 'travel']
         ] as const) {
             const parsed = parseIntent(text);
             expect(parsed.action).toBe('move');

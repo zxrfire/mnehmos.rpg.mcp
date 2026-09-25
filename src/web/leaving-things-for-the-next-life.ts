@@ -1069,8 +1069,8 @@ export function legacyStep(
     // question about its counter. Measured over every row of `SECTS`: "what
     // does the Lantern Hall have", "who leads the Lantern Hall" and "where is
     // the Lantern Hall" all came back as the deposit listing, for all six
-    // houses that take custody - Lantern Hall, Thousand Treasure Pavilion,
-    // Jade Register Hall, Vermilion Seal Terrace, Shrinking Earth Pavilion,
+    // houses that take custody - Lantern Hall, Thousand Relic Pavilion,
+    // Jade Register Hall, Vermilion Sigil Terrace, Shrinking Earth Pavilion,
     // Ninefold Karma Palace. Three different questions, one answer, and it
     // was the answer to none of them.
     //

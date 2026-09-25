@@ -10,7 +10,7 @@
  *
  *   The Root         -> Root Hollow    made `Root Hollow-Recasting Talisman`
  *   Iron Gate        -> Iron Peak Sect made `Iron Peak Sect Sect`
- *   The Root Sill Court -> Deeproot Court made `Deeproot Court Court`
+ *   The Root Sluice Court -> Deeproot Court made `Deeproot Court Court`
  *
  * The tell in every case is a word repeated next to itself, or a name that has
  * grown a second type noun. Neither is ever intentional, and both are cheap to

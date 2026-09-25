@@ -149,7 +149,7 @@ describe('spirit beasts: the catalog', () => {
  *      whole design is unreachable: every target a player could take would
  *      have deserved it, and a window in which nothing costs anything has no
  *      decision in it. This is the assertion to read if somebody is wondering
- *      why the Grave Hound is in the catalog.
+ *      why the Grave Jackal is in the catalog.
  */
 describe('what a beast is inclined to do about people', () => {
     it('uses the houses\' own alignment axis rather than a second enum', () => {
@@ -629,7 +629,7 @@ describe('a contract is rare, costly and mutual', () => {
         expect(THE_CONTRACT.whatTheCultivatorGives.join(' ')).toMatch(/share of their own draw/i);
         expect(THE_CONTRACT.whatItIsWorth).toMatch(/tax|permanent/i);
         // It binds only when witnessed, like every other agreement.
-        expect(THE_CONTRACT.witnessing).toMatch(/Vermilion Seal Terrace|witness/i);
+        expect(THE_CONTRACT.witnessing).toMatch(/Vermilion Sigil Terrace|witness/i);
         // And it can end, in stated ways, one of which is being outgrown.
         expect(THE_CONTRACT.howItBreaks.length).toBeGreaterThanOrEqual(3);
         expect(THE_CONTRACT.howItBreaks.join(' ')).toMatch(/outgrow/i);

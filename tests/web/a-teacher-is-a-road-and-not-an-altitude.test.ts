@@ -7,7 +7,7 @@
  * at ordinal 38 any further. The answer is the same on every seed:
  *
  *   6 people in the world, standing in 2 places.
- *   5 of the 6 on the Hollow Court's ground - the First, Second, Third and
+ *   5 of the 6 on the Empyrean Court's ground - the First, Second, Third and
  *     Fourth Seats, and Shen Quan.
  *   1 is Ru Anwei, at 41, in a hall she has not left in 380 years.
  *

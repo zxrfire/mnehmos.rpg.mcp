@@ -268,7 +268,7 @@ describe('handing on an art that belongs to a house', () => {
 
     // Two houses teach it, so it is somebody's; it has no element, so no root
     // refuses it; and it opens well below where the arrangement stands.
-    const A_HOUSE_ART = 'Twin Lotus Cultivation Method';
+    const A_HOUSE_ART = 'Twin Lotus Pairing Method';
 
     it('is not refused, and the house is told what happened', async () => {
         const harness = await makeGameInWorld({

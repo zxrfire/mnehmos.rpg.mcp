@@ -21,7 +21,7 @@
  *   - the elementless line's own reach, which is a property of nine `cap` and
  *     `requiredOrdinal` fields spread over two hundred thousand lines of
  *     catalog, and
- *   - the Hollow Court's `admissionOrdinal`, which is 29.
+ *   - the Empyrean Court's `admissionOrdinal`, which is 29.
  *
  * The second is 29, so the road clears the door with no elemental book anywhere
  * in the chain. Either number can be edited in isolation by somebody who has
@@ -113,7 +113,7 @@ describe('the elementless road reaches an apex door', () => {
         expect(ordinal).toBeGreaterThanOrEqual(33);
     });
 
-    it('clears the Hollow Court, which is the apex door that tests a rung and nothing else', () => {
+    it('clears the Empyrean Court, which is the apex door that tests a rung and nothing else', () => {
         const court = SECTS.find(s => s.id === 'sect-hollow-court');
         expect(court).toBeDefined();
 

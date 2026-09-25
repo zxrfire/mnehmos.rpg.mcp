@@ -167,7 +167,7 @@ export const THE_SHADOW_CONSPIRACY = {
  */
 export const WHO_HOLDS_A_KEY = {
     theCountAmongTheHouses:
-        'Among the houses that would ever want to, there are two. The forty-four asleep under the Kiln Court and the forty-two asleep under the Frostmirror. Everything else anybody is holding - the forty, the thirty-nine, the thirty-seven, the thirty-one - sits a full realm below Tribulation Transcendence and is worth nothing at this altitude, however many of them arrive. A realm is four times over and numbers do not close it.',
+        'Among the houses that would ever want to, there are two. The forty-four asleep under the Tripod Court and the forty-two asleep under the Frostmirror. Everything else anybody is holding - the forty, the thirty-nine, the thirty-seven, the thirty-one - sits a full realm below Tribulation Transcendence and is worth nothing at this altitude, however many of them arrive. A realm is four times over and numbers do not close it.',
     soTheDoorIsTiny:
         'Which reduces the entire question of whether the top of the world can be killed by its rivals to whether two specific houses would spend two specific ancestors in the same hour. Not a coalition, not a movement, not a war - two houses, each spending the only irreplaceable thing it owns, on a plan neither can verify the other is still holding to.',
     andOneOfThemBelongsToTheTarget:
@@ -182,13 +182,13 @@ export const WHO_HOLDS_A_KEY = {
  */
 export const THE_HOLLOW_COURT_COULD = {
     whatTheyActuallyHold:
-        'Four Seats, at forty-four, forty-three, forty-three and forty-two, and four immortal weapons between them. Set that beside an apex and the comparison is not close: the strongest apex head in the region stands at forty-three with one weapon, and the Hollow Court could field two people above or level with him, each holding one of their own, without waking anything or spending anything that does not come back. Everything written above about margins and assemblies is a description of what the hierarchy can do. The Hollow Court is not in the hierarchy.',
+        'Four Seats, at forty-four, forty-three, forty-three and forty-two, and four immortal weapons between them. Set that beside an apex and the comparison is not close: the strongest apex head in the region stands at forty-three with one weapon, and the Empyrean Court could field two people above or level with him, each holding one of their own, without waking anything or spending anything that does not come back. Everything written above about margins and assemblies is a description of what the hierarchy can do. The Empyrean Court is not in the hierarchy.',
     andItIsNotSealedPower:
         'That is the part that makes it different in kind rather than in degree. A sealed ancestor is a once-ever object with a wake condition and a cost that usually takes the house with it - which is why six houses holding one produce no conspiracies. The Seats are awake, they are permanent, and using two of them costs the Court an interruption. Nothing about it would be a sacrifice.',
     soWhyHasNobodyDiedOfIt:
         'Because they want nothing an apex has. Everybody seated is working on the crossing and has been long enough that the province measures their presence in decades of absence. An apex is an administrative object - grants, veins, arbitration, precedence - and none of that is on the road the Seats are walking. Destroying one would cost them years of attention they are spending on the only thing they care about, and would buy them a province they have no use for.',
     whichIsAStrongerDefenceThanTheWeapon:
-        'And that is worth stating plainly, because it is the real answer to how the top of the world stays where it is. The apexes are not protected from the Hollow Court by their objects, their courts, their sealed clients or their arithmetic. None of that would matter. They are protected by the fact that the one body which could do it in an afternoon is not interested, and has not been for nine hundred years.',
+        'And that is worth stating plainly, because it is the real answer to how the top of the world stays where it is. The apexes are not protected from the Empyrean Court by their objects, their courts, their sealed clients or their arithmetic. None of that would matter. They are protected by the fact that the one body which could do it in an afternoon is not interested, and has not been for nine hundred years.',
     andTheApexesKnowIt:
         'They do, which is why nobody at the top of the region has ever pressed the Court on anything. No grant is issued over it, no arbitration is offered to it, no precedence is claimed against it, and its governance is recorded as unassailable rather than apex for exactly this reason. The relationship is not deference and it is not fear. It is three institutions being extremely careful never to become interesting.',
     andIfItEverChanged:

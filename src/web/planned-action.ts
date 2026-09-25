@@ -124,8 +124,8 @@ export const PlannedActionSchema = z.object({
     /**
      * THE ART THEY NAMED, when they named one.
      *
-     * FOUND BY PLAYING. "I attack him with Cross-Meridian Strike" extracted the
-     * target as `him with Cross-Meridian Strike` - the art was folded into the
+     * FOUND BY PLAYING. "I attack him with Cross-Meridian Jolt" extracted the
+     * target as `him with Cross-Meridian Jolt` - the art was folded into the
      * person's name, so it resolved to nobody clean AND was never read as an
      * art. `combat-verbs.ts` then called `artTheyWouldFightWith(cultivator)`
      * and picked whatever it liked.
@@ -423,7 +423,7 @@ export function carryWhatOnlyTheSentenceKnows(
     // the commonest field of all uncovered: a model that answers `{"action":
     // "buy"}` to a sentence naming the thing being bought.
     //
-    // FOUND BY PLAYING. `I buy the Cross-Meridian Strike` - row one of the
+    // FOUND BY PLAYING. `I buy the Cross-Meridian Jolt` - row one of the
     // stall board, printed by the game two lines earlier - reached the engine
     // with nothing to buy, so the purchase silently did not happen while the
     // prose described the stall correctly. Any name the game prints is a name
@@ -493,7 +493,7 @@ export function carryWhatOnlyTheSentenceKnows(
     }
 
     // AND THE ART THEY NAMED. Same reasoning as `thrown`: a model asked to
-    // plan "I attack him with Cross-Meridian Strike" returns `attack` and a
+    // plan "I attack him with Cross-Meridian Jolt" returns `attack` and a
     // target, and says nothing about the art - so without this the parser's
     // reading is thrown away and the engine picks for the player again.
     if (merged.withArt === undefined && fromSentence.withArt !== undefined) {

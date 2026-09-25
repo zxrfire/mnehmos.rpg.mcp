@@ -463,9 +463,9 @@ describe('the vocabulary, which is closed and small', () => {
  */
 describe('an ordinal said with a noun rather than with "one"', () => {
     const board: ThingNamed[] = [
-        { name: 'Walk the Sand Well line to Six Li' },
+        { name: 'Walk the Truce Spring line to Six Li' },
         { name: 'Stand the night watch at the west gate' },
-        { name: 'Carry the tally books to Iron Ridge' }
+        { name: 'Carry the tally books to Iron Crest' }
     ];
 
     it('points at the line the listing printed', () => {

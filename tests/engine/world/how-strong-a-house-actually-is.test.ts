@@ -15,7 +15,7 @@
  * WHAT IT SAYS THAT THE OLD NUMBER COULD NOT. Measured on seed `rating-probe`,
  * index against `powerOrdinal`:
  *
- *   the Kiln Wardens          powerOrdinal 36 and fourth in the world, on five
+ *   the Tripod Wardens          powerOrdinal 36 and fourth in the world, on five
  *                             people and every node lit. Eighth by powerOrdinal
  *   the Severed               powerOrdinal 38, sixth - one body at 38 and the
  *                             next at 24. A peak with nothing under it
@@ -26,14 +26,14 @@
  * THE AGGREGATION IS NOT THIS FILE'S. An earlier cut picked a curve - a rung
  * worth the square root of two, log-summed - and it had no THRESHOLD, so twenty
  * Core Formation cultivators weighed what one body at 33.6 weighed and the
- * HOLLOW COURT came out TWELFTH. What is used now is `war-melee.ts`'s own rule,
+ * EMPYREAN COURT came out TWELFTH. What is used now is `war-melee.ts`'s own rule,
  * which every fight in the game already runs on: a body a full major realm below
  * the best thing present buys nothing, and above that line numbers are worth
  * `min(MAX_NUMBERS_MULTIPLIER, effectiveBodies ^ NUMBERS_EXPONENT)`.
  *
  * On it, twenty at Core Formation weigh 28 rungs. So do a hundred and so do six
  * hundred, and one body at 30 out-weighs every one of those crowds. Three of the
- * Hollow Court weigh 44.5 rungs against the whole Frostmirror Court at 36.0, and
+ * Empyrean Court weigh 44.5 rungs against the whole Frostmirror Court at 36.0, and
  * the Court is third in the world rather than twelfth.
  *
  * AND IT IS DERIVED, EVERY TIME, FROM THE WORLD. *"The rating changes for
@@ -94,7 +94,7 @@ describe('how strong a house actually is', () => {
         // square root of two, log-summed over the roll - and on it twenty Core
         // Formation cultivators weighed what one body at 33.6 weighed. In this
         // genre they lose to a Body Integration cultivator and it is not close,
-        // and the consequence was measured: the HOLLOW COURT, four immortals,
+        // and the consequence was measured: the EMPYREAN COURT, four immortals,
         // came out twelfth, below a house it could end by sending three people.
         //
         // What replaced it is `war-melee.ts`'s own rule, which is a THRESHOLD
@@ -106,7 +106,7 @@ describe('how strong a house actually is', () => {
         expect(twenty).toBeLessThan(theRungsItCouldField([30]));
     });
 
-    it('lets three of the Hollow Court end the Frostmirror Court', () => {
+    it('lets three of the Empyrean Court end the Frostmirror Court', () => {
         // THE ACCEPTANCE TEST, in the design owner's own terms. Both bodies are
         // read off the seeded world rather than named as figures, so the claim
         // survives somebody authoring a different roll.

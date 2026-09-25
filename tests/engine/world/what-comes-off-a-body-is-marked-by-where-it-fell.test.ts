@@ -65,7 +65,7 @@ const DEAD = { id: 'cult-1', name: 'Shen Ke' };
 const INSIDE_A_SECT: WhereTheyFell = { id: 'loc-sect', name: 'the outer precinct', danger: 0.1 };
 
 /** Deep worked ground. `how-the-world-keeps-finding-more-ruins.ts` goes to 0.8. */
-const A_BAD_PLACE: WhereTheyFell = { id: 'loc-abyss', name: 'the Sunken Kiln', danger: 0.8 };
+const A_BAD_PLACE: WhereTheyFell = { id: 'loc-abyss', name: 'the Sunken Tripod', danger: 0.8 };
 
 /** The one work the catalog holds in parts, as `effectiveCapOf` reads it. */
 const THE_WORK = {
@@ -130,7 +130,7 @@ describe('the danger of a place is the whole of the weighting', () => {
     it('reads the figure off a location record rather than asking the caller to retype it', () => {
         const record = makeLocation({
             id: 'loc-abyss',
-            name: 'the Sunken Kiln',
+            name: 'the Sunken Tripod',
             // `makeLocation` requires a kind; this one was building a record
             // without one. Nothing here reads it - the danger figure is what
             // the claim is about.

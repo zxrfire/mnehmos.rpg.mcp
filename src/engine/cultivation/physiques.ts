@@ -73,7 +73,7 @@ export const PHYSIQUES: readonly Physique[] = [
     },
     {
         key: 'hollow_marrow',
-        name: 'Hollow Marrow Body',
+        name: 'Empty Marrow Body',
         weight: 120,
         cultivationSpeed: 0.6,
         lifespan: 1.8,

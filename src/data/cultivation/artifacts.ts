@@ -117,7 +117,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         significance: 'legendary',
         power: 45,
         ownerId: 'sect-hollow-court',
-        ownerName: 'The Hollow Court',
+        ownerName: 'The Empyrean Court',
         possessorId: 'hollow-court-first-seat',
         description:
             'Carried rather than stored, by somebody at forty-four who uses it as a tool for the crossing and would think describing it to an outsider a waste of an afternoon. Nobody outside the Court has seen it and the Court has never said it exists.',
@@ -159,7 +159,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         significance: 'legendary',
         power: 44,
         ownerId: 'sect-hollow-court',
-        ownerName: 'The Hollow Court',
+        ownerName: 'The Empyrean Court',
         possessorId: 'hollow-court-second-seat',
         description:
             'The same, one rung down. What the province knows is that four people went in, and that the mountains are visited while the occupants are not; what it does not know is that all four are carrying something an apex would empty a vault for.',
@@ -170,12 +170,12 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // below for the recipes, the gate they read, and what the split cost.
     makeObject({
         id: 'cauldron-the-belly',
-        name: 'The Cauldron Belly',
+        name: 'The Tripod Belly',
         kind: 'artifact',
         significance: 'legendary',
         power: 44,
         ownerId: 'court-kiln',
-        ownerName: 'The Kiln Court',
+        ownerName: 'The Tripod Court',
         possessorId: 'court-kiln',
         knownOwnershipBy: ['court-kiln', 'apex-earth-vein-tower', 'sect-deeproot-court'],
         description:
@@ -184,7 +184,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'cauldron-the-lid',
-        name: 'The Cauldron Lid',
+        name: 'The Tripod Lid',
         kind: 'artifact',
         significance: 'legendary',
         power: 44,
@@ -205,7 +205,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         significance: 'legendary',
         power: 43,
         ownerId: 'sect-hollow-court',
-        ownerName: 'The Hollow Court',
+        ownerName: 'The Empyrean Court',
         possessorId: 'hollow-court-third-seat',
         description:
             'Held by the Third Seat, who stands level with the Earth Vein Tower\'s head and is better equipped than him, and who has never had a reason to be within a province of the man.',
@@ -218,7 +218,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         significance: 'legendary',
         power: 43,
         ownerId: 'sect-hollow-court',
-        ownerName: 'The Hollow Court',
+        ownerName: 'The Empyrean Court',
         possessorId: 'hollow-court-fourth-seat',
         description:
             'The weakest of the Court\'s four and still the equal of the Myriad Course Hall\'s Nail. The Fourth Seat is the youngest and the one most likely to be met, on the grounds that they are the only one who still occasionally answers the gate.',
@@ -266,7 +266,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'artifact-the-ninth-volume-case',
         data: { daoDomain: 'karma' },
-        name: 'The Sealing Casket',
+        name: 'The Warding Casket',
         kind: 'artifact',
         significance: 'legendary',
         power: 38,
@@ -296,7 +296,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         // worked these, so what they can be is what the grade's own working
         // asks of a hand, and no more.
         id: 'artifact-cauldron-born-pair',
-        name: 'A Cauldron-Born Pair',
+        name: 'A Tripod-Born Pair',
         kind: 'artifact',
         significance: 'legendary',
         power: refiningOrdinalFor('heaven'),
@@ -338,7 +338,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 22-14: what an ordinary strong house fields ───────────────────────
     makeObject({
         id: 'artifact-frostmirror-plate',
-        name: 'The Cold Jade Plate',
+        name: 'The Ice Jade Plate',
         kind: 'artifact',
         significance: 'significant',
         power: 22,
@@ -351,12 +351,12 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-kiln-gate-seal',
-        name: 'The Kiln Gate Seal',
+        name: 'The Tripod Gate Sigil',
         kind: 'artifact',
         significance: 'significant',
         power: 18,
         ownerId: 'sect-deeproot-court',
-        ownerName: 'The Kiln Court',
+        ownerName: 'The Tripod Court',
         possessorId: 'sect-deeproot-court',
         description:
             'The instrument the Gate Warden carries, which closes a working and holds it closed against the pressure of the vein. It is a tool that happens to be dangerous rather than a weapon that happens to be useful, and the Court has never described it as either.',
@@ -364,7 +364,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-cauldron-born-blade',
-        name: 'A Cauldron-Born Blade',
+        name: 'A Tripod-Born Blade',
         kind: 'artifact',
         significance: 'significant',
         power: refiningOrdinalFor('earth'),
@@ -378,7 +378,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-cauldron-born-shield',
-        name: 'A Cauldron-Born Shield',
+        name: 'A Tripod-Born Shield',
         kind: 'artifact',
         significance: 'significant',
         power: refiningOrdinalFor('earth'),
@@ -420,7 +420,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 9-4: what a wandering cultivator is realistically carrying ────────
     makeObject({
         id: 'artifact-hollow-bell',
-        name: 'A Hollow Bell',
+        name: 'A Wayside Chime',
         kind: 'artifact',
         significance: 'mundane',
         power: 9,
@@ -568,7 +568,7 @@ export const THE_ROOT_CAULDRON = {
     andWhatItIsWorth:
         'Set the ordinals beside the prices. `refiningOrdinalFor` opens earth grade at seventeen and heaven grade at twenty-nine, so a half costs a city for something a Core Formation cultivator forges. That is the whole argument against a half.',
     whatItSubstitutes:
-        'And the argument FOR the whole, which is not that it skips the material. Making a heaven-grade artifact takes a hand at twenty-nine AND heaven-grade material, and the material has to be found and killed for: six things in the catalog carry it, a Thunder Hawk Core, a Grave Hound Core, a Glacier Lynx Core, a White Tiger Core, a Tortoise Plastron and an Earth Dragon Scale. The cauldron meets the same requirement out of a different stock. A certain quantity of people is heaven-grade material, and the vessel is what performs the equivalence.',
+        'And the argument FOR the whole, which is not that it skips the material. Making a heaven-grade artifact takes a hand at twenty-nine AND heaven-grade material, and the material has to be found and killed for: six things in the catalog carry it, a Thunder Hawk Core, a Grave Jackal Core, a Glacier Lynx Core, a White Tiger Core, a Tortoise Plastron and an Earth Dragon Scale. The cauldron meets the same requirement out of a different stock. A certain quantity of people is heaven-grade material, and the vessel is what performs the equivalence.',
     andWhoThatTempts:
         'Two kinds of hard. The honest road is a beast that has to be tracked and beaten, which is slow, uncertain and your own body. The cauldron is politically ruinous and carries no personal risk at all, and the people it takes were condemned by a sentence somebody else handed down, so nobody has to stand in front of a living thing and do it themselves. That is the benefit and it is the whole of it - a bureaucratic one, which is exactly what two neutral administrative apexes would find reasonable. The person this tempts is somebody at twenty-nine who wants the artifact and would rather spend other people than face an Earth Dragon.',
     andTheAlignmentFaultLine:
@@ -576,7 +576,7 @@ export const THE_ROOT_CAULDRON = {
     andWhyAnybodyFeedsItAtAll:
         'Because they are holding it, and not the other way round. The custody came first: it must not be loose. The executions were going to happen regardless, and since the vessel is standing there the condemned go into it rather than somewhere else and something comes out. That is the whole of the reasoning and it is the register of two neutral apexes - no programme, no ambition, a sentence that had to be carried out and a thing with no better use.',
     whoCanWorkIt:
-        'Twenty-nine, and that is true of a half as well as the whole - the same rung `refiningOrdinalFor` opens heaven grade at. Counted through the catalog: thirty-two cultivators in the world stand there or above, and every one of them is the seat of a house, the head of an apex or a Seat of the Hollow Court. So a firing is not something a garrison does. Somebody from the summit has to attend, which is why it is an occasion rather than a procedure and why it pairs with a judgement handed down in person.',
+        'Twenty-nine, and that is true of a half as well as the whole - the same rung `refiningOrdinalFor` opens heaven grade at. Counted through the catalog: thirty-two cultivators in the world stand there or above, and every one of them is the seat of a house, the head of an apex or a Seat of the Empyrean Court. So a firing is not something a garrison does. Somebody from the summit has to attend, which is why it is an occasion rather than a procedure and why it pairs with a judgement handed down in person.',
     whatItDoesToWhoeverCarriesOne:
         'Bloodlust, and it has to be held down. `WHAT_A_HALF_MAD_STRETCH_DOES` is already this mechanic - a stretch somebody was not entirely steering, resolved as deeds rather than as a status word - and the fight unpicked, the thing taken and the month of not stopping are its rows. Both apexes know what they are holding and both keep theirs.',
     /**

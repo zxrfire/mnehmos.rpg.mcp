@@ -712,7 +712,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         attitude: 'Working. Not dying, not doomed, not brave about it: working, with a year or two of it left, and irritated by visitors from the Jade Gorge who arrive with a face already arranged.',
         company: 'good',
-        asked: 'Why he does not stop, which assumes there is something else to do in Iron Ridge',
+        asked: 'Why he does not stop, which assumes there is something else to do in Iron Crest',
         danger: null,
         factionIds: ['sect-clearwater-ward']
     }

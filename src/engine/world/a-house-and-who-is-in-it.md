@@ -186,7 +186,7 @@ emptying. A junior's chair comes free on a breakthrough; an elder's comes free
 on a decision or a death - which is also why the covering question matters more
 at the top: an elder's seat empties without warning.
 
-**The Kiln Wardens and the Deeproot Court are rotations too, and that is
+**The Tripod Wardens and the Deeproot Court are rotations too, and that is
 already modelled - do not restate it here.** `PostingSchema` in
 `src/data/cultivation/governance-and-water-rights.ts` is the record: who may
 appoint, what a posting is worth from below and from above, where an appointee

@@ -44,7 +44,7 @@ A vanishing few are born somewhere that changes the arithmetic.
 <!-- tier: 2 trigger="a well-born cultivator's advantages are weighed, or somebody expects birth to buy rank" -->
 
 It does not buy rank, and it must never buy rank. The great institutions admit on what you
-have reached, not on whose child you are - the Hollow Court's bar is a Void Tribulation
+have reached, not on whose child you are - the Empyrean Court's bar is a Void Tribulation
 floor and evidence you could cross, and *nothing else counts, which explicitly includes
 being somebody's child.*
 
@@ -109,7 +109,7 @@ squeamishness - a bar that cannot be waived is one whose waiving would break som
 It would kill the applicant, or dissolve the thing the house runs on, or admit a
 contribution the house has no use for. [`sects.md`](./sects.md) and the catalog carry each
 house's own reason in its own words. The negative case this file already states is the
-sharpest one: the Hollow Court admits on evidence you could cross and *nothing else counts,
+sharpest one: the Empyrean Court admits on evidence you could cross and *nothing else counts,
 which explicitly includes being somebody's child*, and it is correctly the house where no
 word works, because the arrangement inside it is what the bar is protecting.
 

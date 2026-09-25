@@ -4,7 +4,7 @@
  * Protection is a TIE, not a membership. A rogue with three old friends who can
  * matter is better protected than a sect disciple with a hall full of people who
  * do not care, and no branch here reads `factionId`, rank, or standing with a
- * house. The Hollow Court is not a special case in this file and must not become
+ * house. The Empyrean Court is not a special case in this file and must not become
  * one - it is four people at the top of the ladder who each hold a tie to the
  * other three.
  */

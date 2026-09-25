@@ -41,7 +41,7 @@ describe('a vehicle', () => {
         expect(isWithThem(objects[0]!, 'you', 'market')).toBe(false);
     });
 
-    it('takes a berth a head, so a heaven ring holds a spirit boat', () => {
+    it('takes a berth a head, so a heaven ring holds a spirit skiff', () => {
         const boat = aVehicleOf({ id: 'boat', conveyanceId: 'conv-spirit-boat', ownerId: 'you', ownerName: 'Ke Yan', at: null });
         expect(boat.volume).toBe(30 * WHAT_A_BERTH_TAKES);
         expect(boat.volume).toBeLessThanOrEqual(WHAT_A_RING_HOLDS.heaven);

@@ -71,7 +71,7 @@ export type CapabilityGrant =
      * passenger at any size.
      *
      * A BUDGET RATHER THAN A LIMIT PER OBJECT, because one object can be a
-     * spirit boat. Counting the largest thing carried would let a fold take
+     * spirit skiff. Counting the largest thing carried would let a fold take
      * anything at all so long as it arrived in one piece, which is the wrong
      * answer by inspection.
      *
@@ -101,7 +101,7 @@ export type CapabilityGrant =
      * beat the bare fold, and the sword is the measure of that: take somebody
      * with you, move something bigger than a hand can carry, reach where a
      * held space refuses, or hold the space yourself.
-     * `Void-Fold Pilgrimage` is the row this was written about.
+     * `Void-Crease Pilgrimage` is the row this was written about.
      *
      * IT IS ALSO THE FLOOR UNDER A TALISMAN. A hand at 29 with nothing
      * carvable can still seal its own folding into a way out, so the ancient

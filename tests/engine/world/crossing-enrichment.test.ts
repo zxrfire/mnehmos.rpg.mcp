@@ -83,7 +83,7 @@ describe('the loan a crossing leaves', () => {
     });
 
     it('cannot push any ground past the ceiling below the Lid', () => {
-        // The Hollow Court's own mountain is the top and a crossing does not
+        // The Empyrean Court's own mountain is the top and a crossing does not
         // beat it. Ground already there gains nothing at all.
         expect(enrichedDensity(QI_DENSITY_MAX, 0)).toBe(QI_DENSITY_MAX);
         expect(CROSSING_ENRICHMENT_PEAK).toBe(QI_DENSITY_MAX);

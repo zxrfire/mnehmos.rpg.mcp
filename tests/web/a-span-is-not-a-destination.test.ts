@@ -13,7 +13,7 @@
  * ── THE CAUSE IS ONE WORD DOING TWO JOBS ─────────────────────────────────
  *
  * `for` has to be a movement preposition, because *I set out for Clear River
- * Ford* is how people say it. It is also the word everybody says how LONG they
+ * Ferry* is how people say it. It is also the word everybody says how LONG they
  * are going for. `extractDestination` reads the text after the first movement
  * preposition it finds, so in a sentence with no `to` in it, `for` won the race
  * and the span was handed back as the place.
@@ -23,7 +23,7 @@
  * whole of the string and there was nothing left to cut back to.
  *
  * So the span comes off the SENTENCE, before any preposition is read, and a
- * time noun is required so that "I set out for Clear River Ford" is untouched.
+ * time noun is required so that "I set out for Clear River Ferry" is untouched.
  *
  * ── AND THE OTHER END OF IT ──────────────────────────────────────────────
  *
@@ -60,9 +60,9 @@ describe('a length of time is not a place', () => {
      * have broken, and it is the commonest way of naming a destination there is.
      */
     it.each([
-        ['i set out for clear river ford', 'clear river ford'],
+        ['i set out for clear river ferry', 'clear river ferry'],
         ['i leave for the capital', 'capital'],
-        ['i go to clear river ford', 'clear river ford'],
+        ['i go to clear river ferry', 'clear river ferry'],
         ['i go to nine seasons hall', 'nine seasons hall']
     ])('%s still names a place', (said, place) => {
         expect(parseIntent(said).target).toBe(place);

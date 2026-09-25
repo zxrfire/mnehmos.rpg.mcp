@@ -54,7 +54,7 @@
  * "First Seat", "The Storm Tyrant", "Clan Chief Duan Wu", "Shao Mingchen" -
  * and `surnameOf` answers "The", "First", "Clan" and "Nine" for them. Left
  * alone, that invents lineages: "The" read as a five-house family, "Second" and
- * "Third" as lines standing on the Hollow Court's roll.
+ * "Third" as lines standing on the Empyrean Court's roll.
  *
  * So {@link lineageNameOf} accepts only what the generator could have made -
  * exactly two tokens, `Surname Given` - and declines everything else rather

@@ -265,7 +265,7 @@ describe('a consumable is reachable by its own name', () => {
     it.each([
         'I take the Heaven-Ascending Golden Pill',
         'I swallow the Heaven-Ascending Golden Pill',
-        'I use the Root-Recasting Talisman'
+        'I use the Spirit-Recasting Talisman'
     ])('%s reaches the effect', said => {
         expect(parseIntent(said).action).toBe('consume_pill');
     });

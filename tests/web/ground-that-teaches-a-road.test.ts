@@ -243,10 +243,10 @@ describe('standing on one is standing in its province', () => {
         // The proof the fallback is load-bearing rather than belt and braces:
         // the gazetteer has never heard of any of these.
         expect(regionIdOfPlace(FORD.name)).toBeUndefined();
-        expect(daoGroundNamed('The Grinding Ford')?.id).toBe(FORD.id);
+        expect(daoGroundNamed('The Grinding Shallows')?.id).toBe(FORD.id);
         // Loose on both sides, because the parser strips the article off what
         // the player typed and every name in the catalog carries one.
-        expect(daoGroundNamed('Grinding Ford')?.id).toBe(FORD.id);
+        expect(daoGroundNamed('Grinding Shallows')?.id).toBe(FORD.id);
         expect(daoGroundNamed('Cloud Gate')).toBeUndefined();
     });
 
@@ -328,7 +328,7 @@ describe('and it reaches the sheet', () => {
         //
         // Played for real once, off the same wiring: a cultivator seeded at the
         // ford's own floor and left to sit reached `body`/`wear` in 24 years,
-        // with `stood on The Grinding Ford, which is ground that teaches it`
+        // with `stood on The Grinding Shallows, which is ground that teaches it`
         // written into the account.
         const candidate = discoverableInsights(row, {
             ...discoveryContextFor(repos, row, { runId: row.runId }).context,
@@ -379,14 +379,14 @@ describe('somebody who goes there can point at it', () => {
         // Open and carving ground in the province, whatever rung the speaker
         // stands at. This is the whole reason the source works at all: 0 of the
         // living NPCs in a seeded world stand in a settlement at the rung the
-        // Slow Bell or the Cut Face asks for.
-        expect(named).toContain('The Grinding Ford');
-        expect(named).toContain('The Counted Wall');
+        // Seldom Gong or the Cut Face asks for.
+        expect(named).toContain('The Grinding Shallows');
+        expect(named).toContain('The Counted Rampart');
         // Not another province's, and not one nobody has dug out.
-        expect(named).not.toContain('The Glass Field');
+        expect(named).not.toContain('The Glass Ploughland');
         expect(named).not.toContain('The Unwritten Register');
         // Nor a house's ground, to somebody who is not of the house.
-        expect(named).not.toContain('The Sword-Marked Cliff');
+        expect(named).not.toContain('The Sword-Scored Cliff');
     });
 
     it('and the world reads reach off the same rule the player is held to', () => {

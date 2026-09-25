@@ -73,7 +73,7 @@ describe('asking about your own crossing asks about you', () => {
      * purpose: widening it to a substring match would swallow every location
      * with a common word in its name.
      */
-    it.each(['Nine Peaks', 'the barrier at Nine Peaks', 'Clear River Ford', 'He Anwu'])(
+    it.each(['Nine Peaks', 'the barrier at Nine Peaks', 'Clear River Ferry', 'He Anwu'])(
         '%s is not read as the cultivator', subject => {
             const SELF = /^(?:my ?self|me|my (?:progress|standing|position|cultivation|prospects)|where i (?:am|stand)|whether i(?:'m| am)? (?:ready|stuck|stalled|finished|done)|if i(?:'m| am)? (?:ready|stuck|stalled)|ready|stuck|stalled|(?:the |a |my )?break ?through|(?:the |my )?(?:barrier|crossing|bottleneck)|my (?:foundation|root|body|qi|meridians|injuries|wounds|rank|realm|state|condition|chances|odds|readiness|lifespan|age|years))$/i;
             expect(SELF.test(subject)).toBe(false);

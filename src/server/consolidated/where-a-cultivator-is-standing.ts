@@ -57,7 +57,7 @@ export function standingOf(cultivator: Cultivator): Standing {
     // A HOUSE'S GROUNDS, which the world names `<house> grounds` and the
     // gazetteer does not name at all. They fell through to the home province,
     // so somebody at a house's gate was priced, listed and supplied as if they
-    // stood at home. Played: Cold Peak to the Tranquil Oasis grounds was a day,
+    // stood at home. Played: Moraine Gate to the Tranquil Oasis grounds was a day,
     // and the same road back seventeen, from the wrong province.
     const housesProvince = REGIONS.find(region => region.factionIds.some(id => {
         const house = getSect(id)?.name.toLowerCase();

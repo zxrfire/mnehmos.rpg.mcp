@@ -111,7 +111,7 @@ export const HERBS: readonly Herb[] = [
     },
     {
         id: 'herb-hollow-reed',
-        name: 'Hollow Reed',
+        name: 'Empty Reed',
         grade: 'mortal',
         biome: 'marsh',
         rarityWeight: 160,
@@ -147,7 +147,7 @@ export const HERBS: readonly Herb[] = [
     // Measured on a seeded world: 155 of 1,149 places offered a cultivator at
     // ordinal 0 nothing at all - four White Stair villages, both Burial Sands
     // towns, every room of three sect seats, every scar and every ruin. A run
-    // opening in Deep Snow Village could gather for seven days, be told the
+    // opening in Deep Drift Village could gather for seven days, be told the
     // catalog had nothing within reach, and be told that for the rest of its
     // life, because nothing on cold or high ground opened below Core
     // Formation. `desert` had no row at any rung at all.
@@ -182,7 +182,7 @@ export const HERBS: readonly Herb[] = [
     },
     {
         id: 'herb-spear-thistle',
-        name: 'Spear Thistle',
+        name: 'Dagger Thistle',
         grade: 'mortal',
         biome: 'battlefield',
         rarityWeight: 290,
@@ -204,7 +204,7 @@ export const HERBS: readonly Herb[] = [
     },
     {
         id: 'herb-meltwater-cress',
-        name: 'Meltwater Cress',
+        name: 'Meltwater Sorrel',
         grade: 'mortal',
         biome: 'glacier',
         rarityWeight: 270,
@@ -303,7 +303,7 @@ export const HERBS: readonly Herb[] = [
     },
     {
         id: 'herb-thousand-day-root',
-        name: 'Thousand-Day Root',
+        name: 'Thousand-Day Tuber',
         grade: 'mortal',
         biome: 'mountain',
         rarityWeight: 110,
@@ -384,7 +384,7 @@ export const HERBS: readonly Herb[] = [
     },
     {
         id: 'herb-thunder-struck-peach-wood',
-        name: 'Thunder-Struck Peach Wood',
+        name: 'Thunder-Struck Jujube Timber',
         grade: 'earth',
         biome: 'high_peak',
         rarityWeight: 55,
@@ -428,7 +428,7 @@ export const HERBS: readonly Herb[] = [
     },
     {
         id: 'herb-hundred-year-snow-ginseng',
-        name: 'Hundred-Year Snow Ginseng',
+        name: 'Snowbound Ginseng',
         grade: 'earth',
         biome: 'glacier',
         rarityWeight: 35,

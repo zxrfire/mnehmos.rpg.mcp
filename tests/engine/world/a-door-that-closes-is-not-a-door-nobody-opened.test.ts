@@ -61,7 +61,7 @@ const YEAR = 365;
 function ruin(opts: Partial<LocationRecord> = {}): LocationRecord {
     return makeLocation({
         id: 'loc-ruin-1',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         qiDensity: 80,
         thresholds: makeThresholds(4, 8, 14, 20),

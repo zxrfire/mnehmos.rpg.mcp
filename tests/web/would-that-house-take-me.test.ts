@@ -219,7 +219,7 @@ describe('asking it, played', () => {
  */
 describe('what their door asks', () => {
     const base = {
-        houseName: 'The Cold Sword Sect',
+        houseName: 'The Unadorned Sword Sect',
         admitsFrom: 12,
         standsAt: 4,
         recruits: true,
@@ -233,7 +233,7 @@ describe('what their door asks', () => {
 
     it('states the bar and how far short the asker stands', () => {
         const read = whatTheirDoorAsks(base);
-        expect(read.lines[0]).toContain('The Cold Sword Sect admits from');
+        expect(read.lines[0]).toContain('The Unadorned Sword Sect admits from');
         expect(read.lines.join(' ')).toContain('8 rungs short');
     });
 

@@ -255,7 +255,7 @@ function capture(harness: Harness, seed: string): Restore {
  * before it reaches `this.atHand = await this.loadWorld()`, so a service whose
  * only turn has been an admin one is holding no world at all - and every read
  * that asks the world a question then answers honestly that there is nobody
- * here and no ground within reach. Measured at Green Water City: 0 things on
+ * here and no ground within reach. Measured at Emerald Water City: 0 things on
  * offer and 0 roads within reach off an admin-only service, against 3 and 23
  * for the same square once a `look` had been played. `look` is in
  * `READ_ONLY_ACTIONS` - it spends nothing and moves nobody - and it is what

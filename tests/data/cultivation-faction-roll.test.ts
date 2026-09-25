@@ -85,7 +85,7 @@ describe('the roll - one question, one answer', () => {
     });
 });
 
-describe('the Hollow Court - the house that had nobody', () => {
+describe('the Empyrean Court - the house that had nobody', () => {
     it('parses, and is small on purpose', () => {
         for (const m of HOLLOW_COURT_ROSTER) {
             expect(() => HollowCourtMemberSchema.parse(m), m.id).not.toThrow();

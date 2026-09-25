@@ -53,9 +53,9 @@ describe('asking after somewhere by name', () => {
         'how far is the azure dew sect',
         'how do i get to the azure dew sect',
         'which way to the azure dew sect',
-        'how far is iron ridge',
-        'which way is iron ridge',
-        'how far to clear river ford',
+        'how far is iron crest',
+        'which way is iron crest',
+        'how far to clear river ferry',
         'how would i get to nine peaks'
     ])('%s reads the destinations', said => {
         expect(routes(said)).toBe('destinations');
@@ -66,7 +66,7 @@ describe('asking after somewhere by name', () => {
      * depend on how somebody types.
      */
     it('answers the same sentence typed either way', () => {
-        expect(routes('How far is Iron Ridge')).toBe(routes('how far is iron ridge'));
+        expect(routes('How far is Iron Crest')).toBe(routes('how far is iron crest'));
         expect(routes('Where is the Azure Dew Sect')).toBe(routes('where is the azure dew sect'));
     });
 

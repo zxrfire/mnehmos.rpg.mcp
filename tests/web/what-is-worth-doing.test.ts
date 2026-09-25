@@ -208,7 +208,7 @@ describe('asking what there is to do', () => {
             'who can help me',
             'I ask the elder for help',
             'what can I do with this manual',
-            'what should I do about the Ashen Forge Clan',
+            'what should I do about the Ashen Anvil Clan',
             'I help the farmer with his roof'
         ]) {
             expect(ASKING_WHAT_IS_POSSIBLE.test(said), `"${said}"`).toBe(false);
@@ -863,10 +863,10 @@ describe('the row names what is here rather than what kind of thing is here', ()
             ...WELL,
             ambient: 'thin',
             thickerGroundWithinReach: [
-                { name: 'Grain Rain', ambient: 'normal', travelDays: 6 }
+                { name: 'Insects Awaken', ambient: 'normal', travelDays: 6 }
             ]
         };
-        expect(byId(thin, 'better_ground')?.say).toBe('I travel to Grain Rain');
+        expect(byId(thin, 'better_ground')?.say).toBe('I travel to Insects Awaken');
         expect(byId(thin, 'better_ground')?.because).toMatch(/2\.0x what this square gives back/);
         // And the category it replaces is gone rather than sitting beside it.
         // Played on thin ground with a better town six days off, the row
@@ -929,7 +929,7 @@ describe('the row names what is here rather than what kind of thing is here', ()
             spiritStones: 30,
             peopleHereWithSomethingToSell: 1,
             goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
-            thickerGroundWithinReach: [{ name: 'Grain Rain', ambient: 'normal', travelDays: 6 }],
+            thickerGroundWithinReach: [{ name: 'Insects Awaken', ambient: 'normal', travelDays: 6 }],
             spanCounterHere: true,
             dutiesGoing: 3
         });
@@ -959,7 +959,7 @@ describe('the row names what is here rather than what kind of thing is here', ()
         // The old discipline, restated where it actually falls. Every name in
         // a sentence below was passed in by a caller that had already run the
         // gate; nothing here may compose one out of a count.
-        const handed = ['Cao Fukuan', 'Wei Lanya', 'Grain Rain', 'Lesser Qi-Gathering Manual'];
+        const handed = ['Cao Fukuan', 'Wei Lanya', 'Insects Awaken', 'Lesser Qi-Gathering Manual'];
         const out = whatIsWorthDoingStandingHere({
             ...CROWD,
             ambient: 'thin',
@@ -967,7 +967,7 @@ describe('the row names what is here rather than what kind of thing is here', ()
             peopleHereWithSomethingToSell: 4,
             dutiesGoing: 2,
             goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
-            thickerGroundWithinReach: [{ name: 'Grain Rain', ambient: 'normal', travelDays: 6 }]
+            thickerGroundWithinReach: [{ name: 'Insects Awaken', ambient: 'normal', travelDays: 6 }]
         });
         for (const a of out) {
             if (!a.namesSomething) continue;
@@ -1018,7 +1018,7 @@ describe('a fight is what is happening, and the square stops being the subject',
             { name: 'Yun Keqing', realmOrdinal: 9, standsAbove: true, rungsApart: 9 }
         ],
         goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
-        thickerGroundWithinReach: [{ name: 'Grain Rain', ambient: 'dense', travelDays: 6 }],
+        thickerGroundWithinReach: [{ name: 'Insects Awaken', ambient: 'dense', travelDays: 6 }],
         paperOnTheWall: { bills: 3, withinReach: 2, daysToTheSoonest: 9 },
         spanCounterHere: true,
         dutiesGoing: 4,

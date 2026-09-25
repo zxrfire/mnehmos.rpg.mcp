@@ -95,7 +95,7 @@ export interface HousePosition {
 /**
  * What THIS house calls the person at the top of it.
  *
- * "Seat" is the Hollow Court's word and nobody else's - it is literally the
+ * "Seat" is the Empyrean Court's word and nobody else's - it is literally the
  * fourth entry in that house's own `ranks[]`. A clan has a patriarch, a hall
  * has a hall master, an alliance has a head, a company has a master, and the
  * catalog has said so all along: `ranks[rankCount - 1]` is the title, authored
@@ -205,7 +205,7 @@ export function rankDoesNotReach(position: HousePosition, opensAt: number): stri
  * stated at the head of this file: the refusal names the rung IN THAT HOUSE'S
  * OWN TITLE. A player at the top of the Cinder Clan is its Clan Chief and a
  * player at the top of the Quiet Hall is its Abbot; telling either of them
- * they hold "the seat" hands them the Hollow Court's word for a house that
+ * they hold "the seat" hands them the Empyrean Court's word for a house that
  * has never used it.
  */
 function tierInWords(position: HousePosition): string {

@@ -1,7 +1,7 @@
 /**
  * A child their own house will not keep, placed with somebody their parent knows.
  *
- * Fostering. It is not a Hollow Court mechanic and this file contains no
+ * Fostering. It is not an Empyrean Court mechanic and this file contains no
  * faction name: the Court is the strictest instance of a thing ordinary people
  * do, and the reason it reads as an exception is that it is the one house
  * where the ordinary route - a word from somebody high enough - buys nothing.

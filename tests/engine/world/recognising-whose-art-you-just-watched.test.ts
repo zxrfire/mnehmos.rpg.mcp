@@ -196,7 +196,7 @@ describe('an art says where somebody trained, not whom they serve', () => {
             expect(keys).not.toContain(forbidden);
         }
         // What it does carry is where the art is taught, and that is all it
-        // claims. The Hollow Court is an entire institution built on the gap:
+        // claims. The Empyrean Court is an entire institution built on the gap:
         // it takes nobody below a Void Tribulation floor, so every Seat arrived
         // trained somewhere else and performs that house's art honestly.
         expect(result.houses.map(h => h.factionId)).toContain(AZURE);

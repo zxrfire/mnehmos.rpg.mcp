@@ -116,7 +116,7 @@ describe('the pyramid', () => {
             expect(t.tributeStonesPerYear + t.inKind.length + t.disciplesPerCycle,
                 `${p.factionId} lease costs nothing at all`).toBeGreaterThan(0);
         }
-        // The Sill's subsidiaries owe disciples upward: the feeder made contractual.
+        // The Sluice's subsidiaries owe disciples upward: the feeder made contractual.
         const owingDisciples = leased.filter(p => p.terms!.disciplesPerCycle > 0);
         expect(owingDisciples.length).toBeGreaterThanOrEqual(4);
     });
@@ -359,7 +359,7 @@ describe('above the map', () => {
         // are two bodies rather than one under two names. Each kept one of the
         // names: the ground kept the older, the people took the newer.
         const onTheDatum = getCourt('court-kiln')!;
-        expect(onTheDatum.name).toBe('The Kiln Court');
+        expect(onTheDatum.name).toBe('The Tripod Court');
         expect(onTheDatum.embodiedByFactionId).toBeNull();
         expect(getParentage('sect-deeproot-court')!.relation).toBe('court');
         expect(getParentage('sect-deeproot-court')!.parentFactionId).toBe('apex-myriad-course-hall');
@@ -448,7 +448,7 @@ describe('guest elders', () => {
     it('lists subsidiaries in both directions', () => {
         // Smaller than it was: the Frostmirror and the Storm Tyrant were promoted
         // to courts beside it and took a tenant each with them, which is the
-        // Survey reorganising rather than the Sill failing.
+        // Survey reorganising rather than the Sluice failing.
         const sillHolders = getSubsidiariesOf('court-third-sill');
         expect(sillHolders.length).toBeGreaterThanOrEqual(5);
         for (const p of sillHolders) expect(p.governance).toBe('federated');
@@ -769,7 +769,7 @@ describe('fosterage: the door is not shut, it is just the same door', () => {
 // WHAT THE PINNED ONE IS SITTING ON
 //
 // Each apex was founded by somebody who crossed, and each of them sent one
-// object back down. Those objects are the only thing in the world the Hollow
+// object back down. Those objects are the only thing in the world the Empyrean
 // Court wants, and the only thing worth spending a sealed ancestor on.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -894,7 +894,7 @@ describe('the third apex: young, visible, and holding outright', () => {
         expect(p.terms).toBeNull();
         expect(p.unbackedReason).toBeNull();
         expect(chainToApex(AZURE)).toEqual([AZURE]);
-        // And it is no longer counted among the Third Sill's tenants.
+        // And it is no longer counted among the Third Sluice's tenants.
         expect(getSubsidiariesOf('court-third-sill').map(x => x.factionId)).not.toContain(AZURE);
     });
 
@@ -992,7 +992,7 @@ describe('the Azure Cloud intake', () => {
     });
 
     it('explains why no other apex can copy it, in their own terms', () => {
-        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Hollow Court/);
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Empyrean Court/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Void Tribulation/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Earth Vein Tower/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Myriad Course Hall/);
@@ -1092,10 +1092,10 @@ describe('the Azure Cloud intake', () => {
         expect(sect.powerOrdinal).toBe(41);
         expect(AZURE_CLOUD_INTAKE.theAnomaly).toMatch(/41/);
         expect(AZURE_CLOUD_INTAKE.whoWouldNoticeIt).toMatch(/almost nobody/i);
-        // The Hollow Bell Wanderers reach the same number for the opposite reason.
+        // The Wayside Chime Wanderers reach the same number for the opposite reason.
         const bell = getSectAdmission('sect-hollow-bell-wanderers')!;
         expect(bell.minOrdinal).toBe(0);
-        expect(AZURE_CLOUD_INTAKE.theSameNumberForOppositeReasons).toMatch(/Hollow Bell/);
+        expect(AZURE_CLOUD_INTAKE.theSameNumberForOppositeReasons).toMatch(/Wayside Chime/);
         expect(AZURE_CLOUD_INTAKE.theSameNumberForOppositeReasons).toMatch(/opposite reasons/i);
     });
 
@@ -1172,7 +1172,7 @@ describe('the seats stand on recorded rungs', () => {
     });
 });
 
-describe('Seat is the Hollow Court vocabulary and nobody else uses it', () => {
+describe('Seat is the Empyrean Court vocabulary and nobody else uses it', () => {
     it('derives every apex and court title from the body it belongs to', () => {
         const seen = new Set<string>();
         for (const a of APEX_INSTITUTIONS) {
@@ -1194,7 +1194,7 @@ describe('Seat is the Hollow Court vocabulary and nobody else uses it', () => {
             // A court the apex posted and named derives its title from its own
             // name - the Ninth Face Court has a Ninth Lord. A court that grew
             // and was re-described afterwards names its own senior, and the
-            // Kiln has called hers a Keeper of the Kiln for nine hundred years
+            // Tripod has called hers a Keeper of the Tripod for nine hundred years
             // without stopping when the Survey renamed the posting. Both are
             // legitimate; what matters is that the title belongs to the body
             // rather than to a convention imposed on it.

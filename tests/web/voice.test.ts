@@ -5,7 +5,7 @@
  * them read what the player is shown, which is how a refusal written for a
  * developer shipped unaltered:
  *
- *   "someone about the Hollow Court" is nobody this cultivator has heard of and
+ *   "someone about the Empyrean Court" is nobody this cultivator has heard of and
  *   nobody standing in front of them, so there was nobody to approach. The
  *   engine will not conjure a person to have a conversation with, and it will
  *   not say whether such a person exists. Known to this cultivator, or standing
@@ -86,7 +86,7 @@ function playerFacing(result: { narration: string }): string {
 describe('refusals read as the world declining', () => {
     /** Every refusal path, exercised through the front door. */
     const refusals: Array<[string, string]> = [
-        ['an unknown person', 'I ask someone about the Hollow Court.'],
+        ['an unknown person', 'I ask someone about the Empyrean Court.'],
         ['an unknown thing', 'I examine the Sword of Infinite Nonsense.'],
         ['nobody named', 'I talk to.'],
         ['nowhere named', 'I set out.'],
@@ -122,7 +122,7 @@ describe('refusals read as the world declining', () => {
         const { game } = makeGame();
         await game.newRun('Villager');
 
-        const shown = playerFacing(await game.act('I ask someone about the Hollow Court.'));
+        const shown = playerFacing(await game.act('I ask someone about the Empyrean Court.'));
 
         // The reported bug, verbatim, must not come back.
         expect(shown).not.toContain('The engine will not conjure');
@@ -145,7 +145,7 @@ describe('refusals read as the world declining', () => {
         const { game } = makeGame();
         await game.newRun('Villager');
 
-        const result = await game.act('I ask someone about the Hollow Court.');
+        const result = await game.act('I ask someone about the Empyrean Court.');
         const mechanical = engineCalls(result).map(c => c.summary).join(' ') +
             result.state.log.filter(e => e.role === 'engine').map(e => e.text).join(' ');
 
@@ -219,7 +219,7 @@ describe('no system voice anywhere a player can reach', () => {
         'I look around.',
         'I cultivate for thirty days.',
         `I examine ${LOCAL_SECT.name}.`,
-        'I travel to Clear River Ford.',
+        'I travel to Clear River Ferry.',
         'I wait.',
         'I forage for herbs.',
         'I take work for a season',

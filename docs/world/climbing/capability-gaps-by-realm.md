@@ -461,7 +461,7 @@ because it is not one: the experiences simply did not happen.
 
 **And arriving without having travelled is the loudest thing anybody does in this world.**
 Nobody passed them on the road, no station wrote them down, and nothing was paid at true
-distance for a journey that was not made. It is the top of the same ladder a spirit boat sits
+distance for a journey that was not made. It is the top of the same ladder a spirit skiff sits
 on - on foot, mount or drawn carriage, boat, flight on a blade, fold - and it is the end of it,
 because there is no quiet version.
 

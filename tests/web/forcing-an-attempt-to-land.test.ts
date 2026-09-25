@@ -471,7 +471,7 @@ describe('a forced success is recorded as one', () => {
 //
 // `set_age` is here rather than beside the other arranging actions because it
 // exists for this reason and no other. A bar in this world is often age AND
-// rung - the Azure Cloud Pavilion sorts its intake on the pair, and the Hollow
+// rung - the Azure Cloud Pavilion sorts its intake on the pair, and the Empyrean
 // Court's fostering terms are `returnOrdinal: 29` with `returnByAge: 250` - so
 // a refusal that honestly names what somebody is short by can name an age, and
 // a refusal naming an action nobody built is the defect this whole surface is

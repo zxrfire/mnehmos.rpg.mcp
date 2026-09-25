@@ -44,21 +44,21 @@ export const TROPES: Scenario[] = [
             + 'posture read, and the deed is on the record whether or not the war was refused.',
         // NAME A HOUSE THIS CULTIVATOR HAS HEARD OF.
         //
-        // This scenario said "the Hollow Court" and looked like an engine
+        // This scenario said "the Empyrean Court" and looked like an engine
         // failure: the turn reached `housePosture`, was refused for having no
         // house of your own, and no deed entered the world.
         //
         // The engine was right twice over, and the second reason is the real
-        // one. I first wrote this comment saying the Hollow Court is a withdrawn
+        // one. I first wrote this comment saying the Empyrean Court is a withdrawn
         // power the world does not hold - which is wrong, and the owner said so:
-        // *"hollow court is not bespoke"*. It is not. `factionMeant` is
+        // *"empyrean court is not bespoke"*. It is not. `factionMeant` is
         // KNOWLEDGE-GATED, and a cultivator who has just opened their eyes has
         // never heard of it. Measured:
         //
         //     knows of it, fresh run        false
-        //     I will end the Hollow Court   housePosture
+        //     I will end the Empyrean Court   housePosture
         //     ADMIN grant_knowledge         true
-        //     I will end the Hollow Court   housePosture, aDeedEntersTheWorld
+        //     I will end the Empyrean Court   housePosture, aDeedEntersTheWorld
         //
         // You cannot start a rumour about a house you have never heard of, and
         // that is the same rule for every house in the game. The scenario names

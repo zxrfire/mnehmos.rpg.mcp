@@ -39,10 +39,15 @@ export const HOUSE_TYPE_NOUNS: readonly string[] = Object.freeze([
     // has none: a body here is a sect, a hall, a pavilion, an alliance, a
     // court, a clan or a temple, and which one it is says what it wants and
     // who it answers to.
-    'pavilion', 'wanderers', 'alliance', 'caravan', 'register', 'market',
+    //
+    // `market`, `peak` and `order` were here while a house ended in each, and went
+    // when the house was renamed: all three are words the player types - `market`
+    // and `order` are verbs the table acts on and `peak` is a typo of *speak* - so
+    // as house nouns they made ordinary sentences look institutional.
+    'pavilion', 'wanderers', 'alliance', 'caravan', 'register',
     'stronghold', 'fortress', 'temple', 'patrol', 'palace', 'terrace',
-    'tower', 'valley', 'manor', 'court', 'grove', 'array', 'ward', 'peak',
-    'sect', 'hall', 'cult', 'clan', 'order', 'school', 'house'
+    'tower', 'valley', 'manor', 'court', 'grove', 'array', 'ward',
+    'sect', 'hall', 'cult', 'clan', 'school', 'house'
 ]);
 
 /**
@@ -79,7 +84,7 @@ export const A_HOUSE_TYPE_NOUN = HOUSE_TYPE_NOUNS.join('|');
  */
 export const HOUSE_TYPE_NOUNS_THAT_STAND_ALONE: readonly string[] = Object.freeze([
     'pavilion', 'alliance', 'temple', 'court', 'grove',
-    'sect', 'hall', 'cult', 'clan', 'order', 'school', 'house'
+    'sect', 'hall', 'cult', 'clan', 'school', 'house'
 ]);
 
 /** The standing-alone half as an alternation, with the plural. */
@@ -90,13 +95,13 @@ export const A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL =
  * The houses of the catalog by their own names, longest first.
  *
  * The other half of the same question, and the half the type nouns cannot
- * answer: `Crimson Abyss Fortress`, `Verdant Spring Valley` and `Still Blade
- * Peak` all end in words a player says about ground, so a gate that fires on
- * the bare noun cannot have them - and measured, `I resign from Crimson Abyss
- * Fortress`, `I leave Verdant Spring Valley` and `who is in charge of
- * Clearwater Ward` all reached nothing at all, while `I resign from Silver
- * Island Market` reached the market stall. A whole name is unambiguous where
- * its last word is not, so it can be matched where the word cannot.
+ * answer: `Crimson Abyss Fortress` and `Verdant Spring Valley` end in words
+ * a player says about ground, so a gate that fires on the bare noun cannot
+ * have them - and measured, `I resign from Crimson Abyss Fortress`, `I leave
+ * Verdant Spring Valley` and `who is in charge of Clearwater Ward` all reached
+ * nothing at all, while `I resign from` the Silver Island Hall, when it was
+ * still called a Market, reached the market stall. A whole name is unambiguous
+ * where its last word is not, so it can be matched where the word cannot.
  *
  * A leading `The` is dropped so the name matches with or without it. A name of
  * one word after that is skipped: `The Severed` would put every severed
@@ -116,7 +121,7 @@ export const A_HOUSE_BY_NAME = SECTS
  * "A house of the catalog is named here, by name."
  *
  * The half a listing must NOT fire on. "tell me about the courts near here" is
- * a question about the category and "tell me about the Hollow Court" is a
+ * a question about the category and "tell me about the Empyrean Court" is a
  * question about one house, and the second reaches the read that answers about
  * a named thing.
  */

@@ -349,7 +349,7 @@ describe('the world can take one, and only somebody up to it can', () => {
                 // houses grew a Life Lamp Hall and waited on word of their
                 // recruits, and the seeded worlds moved: a
                 // splinter's robes were looted off a body, and the looter died
-                // at Fallen Wall 83 years after it was emptied and was buried
+                // at Fallen Rampart 83 years after it was emptied and was buried
                 // with them. A grave dug after the emptying is not what was
                 // left; stock that came to rest there before it still is.
                 const cameToRest = object.provenance[object.provenance.length - 1];

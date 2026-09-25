@@ -8,8 +8,8 @@
  * actually holds is two separate statements, each made by somebody, and each
  * belongs on the entry of whoever made it.
  *
- * The register's own entry for this is the Kiln pair, which is asymmetric in
- * exactly the way that matters: the Deeproot Court is cold to the Kiln, and the Kiln
+ * The register's own entry for this is the Tripod pair, which is asymmetric in
+ * exactly the way that matters: the Deeproot Court is cold to the Tripod, and the Tripod
  * is merely civil back, having nothing to complain about.
  */
 
@@ -47,7 +47,7 @@ function entry(anchorId: string): string {
 }
 
 describe('the register shows one direction per house', () => {
-    it('carries the asymmetry the two halves of the Kiln actually have', () => {
+    it('carries the asymmetry the two halves of the Tripod actually have', () => {
         // The data has to be able to say it before the page can show it. If
         // this ever goes symmetric, the display rule above is unenforceable and
         // the defect is in the catalog rather than in the renderer.
@@ -77,7 +77,7 @@ describe('the register shows one direction per house', () => {
         expect(block).toMatch(/at odds with \d|close to \d|contesting with \d/);
     });
 
-    it('marks the founding the Kiln pair contest, on both of their entries', () => {
+    it('marks the founding the Tripod pair contest, on both of their entries', () => {
         // Derived from the event both are parties to, so it must appear from
         // either end or the derivation is direction-dependent.
         expect(contentionBetween('sect-deeproot-court', 'court-kiln').length).toBeGreaterThan(0);

@@ -12,14 +12,14 @@
  *   `buying-passage-at-a-measured-span-counter.ts` - the board, the fare, the
  *   settling a passenger pays for not understanding what moved them.
  *   `what-a-conveyance-does-to-a-journey.ts` - a mount, a drawn carriage, a
- *   spirit boat, flight on one's own blade, and what a watcher at the far gate
+ *   spirit skiff, soaring on one's own blade, and what a watcher at the far gate
  *   reads off each.
  *
  * WHAT THIS FILE PINS, AND WHY EACH ONE IS A DECISION RATHER THAN A NUMBER:
  *
  *   THE ROAD IS PAID. `move` spent a flat day for every journey to anywhere
  *   while `destinations` printed the catalog's `travelDays` beside each
- *   province - so the game told a player Iron Ridge was eleven days away and then
+ *   province - so the game told a player Iron Crest was eleven days away and then
  *   took them there in one. Every verb here goes through one reader of that
  *   figure, so a fold that saves ten days saves ten days that were spent.
  *
@@ -77,13 +77,13 @@ describe('the road is as long as the catalog says it is', () => {
 
     it('spends the stated road on a journey between provinces', async () => {
         // A run seed whose road is not stopped, in the world this arm always used.
-        const { game, db, cultivatorId } = await standingAt('Clear River Ford', 'road-paid-1', 'road-paid-world');
+        const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'road-paid-1', 'road-paid-world');
 
-        const result = await game.act('I travel to Iron Ridge');
+        const result = await game.act('I travel to Iron Crest');
         const after = cultivatorRow(db, cultivatorId);
 
         expect(BORDER_ROAD).toBeGreaterThan(1);
-        expect(after.location).toMatch(/iron ridge/i);
+        expect(after.location).toMatch(/iron crest/i);
         // Age is in years and a road is in days, so the day count is read off
         // the engine's own account of the skip rather than off the row.
         const skip = result.toolCalls.find(call => call.name === 'engine.simulateTimeSkip');
@@ -101,11 +101,11 @@ describe('the road is as long as the catalog says it is', () => {
         // ground is the ford's own road to the province town plus the province
         // town's road up out of the gorge - a sum of stated legs, which is the
         // one thing here that is not a fabrication.
-        const priced = placeRoadDays('Clear River Ford', 'Burnt Earth');
+        const priced = placeRoadDays('Clear River Ferry', 'Burnt Earth');
         expect(priced, 'the catalog no longer prices this pair').not.toBeNull();
         expect(priced!).toBeGreaterThan(1);
 
-        const { game } = await standingAt('Clear River Ford', 'road-unpriced');
+        const { game } = await standingAt('Clear River Ferry', 'road-unpriced');
         const result = await game.act('I travel to Burnt Earth');
         const skip = result.toolCalls.find(call => call.name === 'engine.simulateTimeSkip');
         expect(skip?.summary).toMatch(new RegExp(`\\b${priced}\\b`));
@@ -114,8 +114,8 @@ describe('the road is as long as the catalog says it is', () => {
 
 describe('folding space', () => {
     it('is refused below the floor, as a distance and not as a ban', async () => {
-        const { game } = await standingAt('Clear River Ford', 'fold-floor');
-        const result = await game.act('I fold space to Iron Ridge');
+        const { game } = await standingAt('Clear River Ferry', 'fold-floor');
+        const result = await game.act('I fold space to Iron Crest');
         expect(result.narration).toMatch(/space does not fold for them|it is a road/i);
         // A refusal with no cost attached is a ban. This one names the road.
         expect(result.narration).toMatch(/road/i);
@@ -133,24 +133,24 @@ describe('folding space', () => {
      * and it would delete the Shrinking Earth Pavilion's whole business.
      */
     it('refuses a place they have only been told about, whatever their rung', async () => {
-        const { game } = await standingAt('Clear River Ford', 'fold-no-fix');
+        const { game } = await standingAt('Clear River Ferry', 'fold-no-fix');
         await game.act(`ADMIN set_realm ordinal=${FOLD_FLOOR_ORDINAL + 8}`);
         // Every place is nameable and none has been stood in. Being told about
         // somewhere is not a fix and never becomes one.
-        const result = await game.act('I fold space to Iron Ridge');
+        const result = await game.act('I fold space to Iron Crest');
         expect(result.narration).toMatch(/a fold is not a survey|know the name and not the place/i);
     }, 120_000);
 
     it('carries somebody to ground they have stood on, and charges the settling', async () => {
-        const { game, db, cultivatorId } = await standingAt('Clear River Ford', 'fold-stood');
+        const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'fold-stood');
         // Standing somewhere is what buys a `stood` fix, and it is the only
         // thing that does. Walk it once, walk back, then step it.
-        await game.act('I travel to Iron Ridge');
-        await game.act('I travel to Clear River Ford');
+        await game.act('I travel to Iron Crest');
+        await game.act('I travel to Clear River Ferry');
         await game.act(`ADMIN set_realm ordinal=${FOLD_FLOOR_ORDINAL + 8}`);
 
-        const result = await game.act('I fold space to Iron Ridge');
-        expect(cultivatorRow(db, cultivatorId).location).toMatch(/iron ridge/i);
+        const result = await game.act('I fold space to Iron Crest');
+        expect(cultivatorRow(db, cultivatorId).location).toMatch(/iron crest/i);
 
         const priced = result.toolCalls.find(call => call.name === 'engine.priceFold');
         expect(priced?.ok).toBe(true);
@@ -181,14 +181,14 @@ describe('a Shrinking Earth Pavilion counter', () => {
             REGIONS.flatMap(region => region.places.map(place => place.name))
         );
         for (const route of SPAN_ROUTES) {
-            expect(everyPlace.has(route.fromPlace) || route.fromPlace === 'Green Water City',
+            expect(everyPlace.has(route.fromPlace) || route.fromPlace === 'Emerald Water City',
                 `${route.fromPlace} is not a place in the catalog`).toBe(true);
-            expect(everyPlace.has(route.toPlace) || route.toPlace === 'Green Water City',
+            expect(everyPlace.has(route.toPlace) || route.toPlace === 'Emerald Water City',
                 `${route.toPlace} is not a place in the catalog`).toBe(true);
         }
-        expect(thereIsACounterAt('Clear River Ford')).toBe(true);
+        expect(thereIsACounterAt('Clear River Ferry')).toBe(true);
         expect(thereIsACounterAt('Autumn Gate')).toBe(false);
-        expect(routeTo('Clear River Ford', 'Iron Ridge')).not.toBeNull();
+        expect(routeTo('Clear River Ferry', 'Iron Crest')).not.toBeNull();
     });
 
     it('says so where there is no counter, and says what that means', async () => {
@@ -210,18 +210,18 @@ describe('a Shrinking Earth Pavilion counter', () => {
      */
     it('a board read teaches every destination on it, at the rung that licenses travel', async () => {
         // Deliberately NOT `ADMIN grant_knowledge`: this run has to learn
-        // Iron Ridge from the board or the claim is meaningless.
+        // Iron Crest from the board or the claim is meaningless.
         process.env.ADMIN_MODE = 'true';
         const { game, db } = await makeGameInWorld({
             seed: 'span-board', worldSeed: 'span-board-world', adminMode: true
         });
         const { cultivator } = await game.newRun('Lin Baoqing');
-        await game.act('ADMIN set_location location=Clear River Ford');
+        await game.act('ADMIN set_location location=Clear River Ferry');
         const gate = new KnowledgeGate(db);
 
-        const before = gate.stageOf(cultivator.id, 'place', 'Iron Ridge');
+        const before = gate.stageOf(cultivator.id, 'place', 'Iron Crest');
         await game.act('what does the Span board say');
-        const after = gate.stageOf(cultivator.id, 'place', 'Iron Ridge');
+        const after = gate.stageOf(cultivator.id, 'place', 'Iron Crest');
 
         expect(before).toBe('unaware');
         // `read` reaches `placed`, and `placed` is `REACHABLE_FROM`: the rung
@@ -229,51 +229,51 @@ describe('a Shrinking Earth Pavilion counter', () => {
         // board is a place HEARD ABOUT and not a place stood in, which is why
         // it is not `known` and why a fold still refuses to aim at it.
         expect(after, 'reading the board taught nothing').toBe('placed');
-        expect(gate.canPointAt(cultivator.id, 'place', 'Iron Ridge')).toBe(true);
+        expect(gate.canPointAt(cultivator.id, 'place', 'Iron Crest')).toBe(true);
     }, 180_000);
 
     it('sells a crossing, charges the fare, and moves the body', async () => {
-        const { game, db, cultivatorId } = await standingAt('Clear River Ford', 'span-buy');
+        const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'span-buy');
         db.prepare('UPDATE cultivators SET spirit_stones = 400 WHERE id = ?').run(cultivatorId);
 
         const before = cultivatorRow(db, cultivatorId);
-        const result = await game.act('I buy passage to Iron Ridge');
+        const result = await game.act('I buy passage to Iron Crest');
         const after = cultivatorRow(db, cultivatorId);
 
-        expect(after.location).toMatch(/iron ridge/i);
+        expect(after.location).toMatch(/iron crest/i);
         expect(Number(after.spirit_stones)).toBeLessThan(Number(before.spirit_stones));
         const quote = result.toolCalls.find(call => call.name === 'engine.quotePassageAtACounter');
         expect(quote?.ok).toBe(true);
     }, 180_000);
 
     it('refuses on the purse and names the figure, rather than haggling', async () => {
-        const { game, db, cultivatorId } = await standingAt('Clear River Ford', 'span-poor');
+        const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'span-poor');
         db.prepare('UPDATE cultivators SET spirit_stones = 1 WHERE id = ?').run(cultivatorId);
-        const result = await game.act('I buy passage to Iron Ridge');
+        const result = await game.act('I buy passage to Iron Crest');
         expect(result.narration).toMatch(/spirit stones/i);
-        expect(cultivatorRow(db, cultivatorId).location).toMatch(/clear river ford/i);
+        expect(cultivatorRow(db, cultivatorId).location).toMatch(/clear river ferry/i);
     }, 120_000);
 });
 
 describe('riding', () => {
     it('is its own verb and not a label on walking', () => {
-        expect(parseIntent('I ride to Iron Ridge').action).toBe('ride');
-        expect(parseIntent('I travel to Iron Ridge').action).toBe('move');
+        expect(parseIntent('I ride to Iron Crest').action).toBe('ride');
+        expect(parseIntent('I travel to Iron Crest').action).toBe('move');
         // And the one that could not be said at all: a carriage is one edit
         // from a marriage, and the spelling repair had the only opinion about
         // it until the word entered the parser's own vocabulary.
-        expect(parseIntent('I take a carriage to Iron Ridge').action).toBe('ride');
+        expect(parseIntent('I take a carriage to Iron Crest').action).toBe('ride');
     });
 
     it('says what the party arrived on, which is read at the gate before anybody speaks', async () => {
-        const { game } = await standingAt('Clear River Ford', 'ride-foot');
-        const result = await game.act('I ride to Iron Ridge');
+        const { game } = await standingAt('Clear River Ferry', 'ride-foot');
+        const result = await game.act('I ride to Iron Crest');
         const priced = result.toolCalls.find(call => call.name === 'engine.priceJourney');
         expect(priced?.ok).toBe(true);
-        expect(priced?.summary).toMatch(/On foot/i);
+        expect(priced?.summary).toMatch(/Afoot/i);
         // Walking is a row in the table and it is the floor, never a refusal.
         // Arriving on foot tells the gate what this party can afford exactly as
         // loudly as arriving on a hull does.
-        expect(result.narration).toMatch(/on foot/i);
+        expect(result.narration).toMatch(/afoot|on foot/i);
     }, 120_000);
 });

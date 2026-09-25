@@ -205,7 +205,7 @@ describe('acting on wrong information', () => {
                 holderId: 'ke_ran',
                 claimKey: 'yun_qi_carries_a_heaven_grade_manual',
                 stance: 'believes',
-                statement: 'He is carrying a heaven-grade manual out of the Clear River Ford ruin.',
+                statement: 'He is carrying a heaven-grade manual out of the Clear River Ferry ruin.',
                 factId: null,
                 confidence: 0.8,
                 onDay: daysForYears(30),

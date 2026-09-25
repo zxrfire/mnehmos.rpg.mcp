@@ -354,7 +354,7 @@ describe('being in the room counts', () => {
         // it is a step rather than a duplicate.
         expect(gate.stageOf(cultivator.id, 'place', NEIGHBOUR_PLACE)).toBe('encountered');
 
-        const place = gate.awareness(cultivator.id, 'place').find(row => row.name === 'Clear River Ford');
+        const place = gate.awareness(cultivator.id, 'place').find(row => row.name === 'Clear River Ferry');
         expect(place).toMatchObject({ sourceKind: 'witnessed', stance: 'knows' });
 
         // And the older, weaker record is still on file. Nothing in this layer

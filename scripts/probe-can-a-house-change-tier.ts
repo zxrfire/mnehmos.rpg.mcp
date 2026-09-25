@@ -3,7 +3,7 @@
  *
  * The setting says tiers move. The Storm Tyrant Court entry is a relegation
  * story and is the best-written thing in the register - it WAS an apex, and the
- * province has stopped saying so out loud. The Hollow Court declines. The
+ * province has stopped saying so out loud. The Empyrean Court declines. The
  * Frostmirror Court resents being priced on a loss. All three describe a world
  * where standing is current rather than innate.
  *

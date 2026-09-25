@@ -81,7 +81,7 @@
  *
  *   - An outer disciple among hundreds may be anything, because nothing has
  *     filtered them yet.
- *   - `Dew Servant`, `Sword Servant`, `Herb Boy`, `Stone Bearer`, `Coal Hand` -
+ *   - `Dew Servant`, `Sword Servant`, `Medicine Boy`, `Stone Bearer`, `Coal Hand` -
  *     more than half the ladders in the catalog open with a rung that is not a
  *     cultivating rung at all. That rung has always been there and now it has a
  *     population and a reason: somebody in the house, of the house, possibly

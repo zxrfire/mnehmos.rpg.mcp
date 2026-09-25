@@ -29,7 +29,7 @@
  *
  * ── AND EIGHT BODIES TEACH NOTHING ───────────────────────────────────────
  *
- * Measured over all 45: the Kiln Wardens, four courts and three apex
+ * Measured over all 45: the Tripod Wardens, four courts and three apex
  * institutions have empty shelves. For the Wardens that is the standing ruling
  * - a posting is not a sect, it teaches nothing and takes nobody - and for the
  * others it is what an administrative body is. Saying so plainly is a real

@@ -3,7 +3,7 @@
  * average, and does the roll ever reach the best the schema permits?
  *
  * The world produces no outliers: measured, the fastest cultivator alive reaches
- * ordinal 29 about six years ahead of the median, against a Hollow Court
+ * ordinal 29 about six years ahead of the median, against an Empyrean Court
  * admission bar that wants 250 against a median of 658. Wealth, medicine and
  * talent are all named as things that should compress a timeline and none of
  * them visibly does.

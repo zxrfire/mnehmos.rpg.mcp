@@ -52,7 +52,7 @@ const SEASON: OpeningCycle = { periodDays: 60 * 365, openDays: 21, phaseDay: 100
 function door(over: Partial<LocationRecord> = {}): LocationRecord {
     return makeLocation({
         id: 'loc-ruin-cold-spring',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         parentId: 'loc-prov-here',
         qiDensity: 60,

@@ -1224,7 +1224,7 @@ describe('qi, veins and the Late Age', () => {
         const veinAware = SECTS.filter(s =>
             /vein/i.test(`${s.description} ${s.territory} ${s.compound.remnant}`));
         expect(veinAware.length, 'a sect is old because it holds a vein').toBeGreaterThanOrEqual(5);
-        // The Kiln Wardens guard the deep vein at the world's root.
+        // The Tripod Wardens guard the deep vein at the world's root.
         expect(getSect('sect-deeproot-court')!.description).toMatch(/vein/i);
     });
 

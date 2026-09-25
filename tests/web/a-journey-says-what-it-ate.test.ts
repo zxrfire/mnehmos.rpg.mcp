@@ -10,7 +10,7 @@
  * journey and never a refusal: the player still goes.
  *
  * Played from The Furnace Flank on `road-world`, three days down the arms road to
- * Green Water City, and eleven into the Buddha Precipice.
+ * Emerald Water City, and eleven into the Buddha Precipice.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -24,9 +24,9 @@ describe('a journey says what it ate', () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Walker');
 
-        const done = await game.act('I travel to Green Water City');
+        const done = await game.act('I travel to Emerald Water City');
 
-        expect(game.state().cultivator.location).toBe('Green Water City');
+        expect(game.state().cultivator.location).toBe('Emerald Water City');
         expect(done.narration).toMatch(/Eaten on the road: \d+ rations? from the pack, \d+ left; the belly is at \d+ of 100/);
         // Rations only: the owner dropped water.
         expect(done.narration).not.toMatch(/\bdrank\b|\bwater from\b/);

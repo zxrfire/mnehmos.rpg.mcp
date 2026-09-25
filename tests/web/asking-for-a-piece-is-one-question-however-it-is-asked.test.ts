@@ -78,7 +78,7 @@ async function standingInFrontOfSomethingThatSpeaks(seed: string) {
     // biome selects a creature the running engine then does not put on that
     // ground - the arrangement and the play disagree, and the failure reads as
     // the routing being broken. Measured: the first cut of this file arranged
-    // a White Ape at Cold Spring and played a blank look.
+    // a White Ape at Lone Spring and played a blank look.
     const standing = world.locations
         .filter(place => place.qiDensity >= 60 || place.environment.resources.includes('qi'))
         .map(place => ({

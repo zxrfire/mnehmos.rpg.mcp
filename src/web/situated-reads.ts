@@ -183,7 +183,7 @@ function ordinalOfWorldPerson(game: GameService, personId: string): number {
  * ONLY SECTS CARRY ONE, and that is the finding rather than an oversight.
  * Measured over all 45 bodies: the four courts and three apex institutions in
  * `governance-and-water-rights.ts` state no shelf at all, and neither does the
- * Kiln Wardens row, which is a guard posting written as a sect. So an empty
+ * Tripod Wardens row, which is a guard posting written as a sect. So an empty
  * answer here is the true one for eight bodies and the read says so in words.
  */
 function theShelfOf(factionId: string): readonly string[] {
@@ -682,7 +682,7 @@ export const situatedReads = {
         // FOUND BY PLAYING BLIND:
         //
         //     > how far is Nine Peaks
-        //     You are in Six Li, The Buddha Precipice... Iron Ridge: a market
+        //     You are in Six Li, The Buddha Precipice... Iron Crest: a market
         //     town... Nine Hundred Paces: site... The Jade Face: site...
         //     Willow Village: a village...
         //
@@ -1337,7 +1337,7 @@ export const situatedReads = {
             .map(bill => ({
                 // The house and the word for the paper, because a player says
                 // either: "the intake" reaches every bill and settles only where
-                // one is up, and "the Cold Sword Sect intake" reaches one.
+                // one is up, and "the Unadorned Sword Sect intake" reaches one.
                 name: `${bill.houseName} intake`,
                 saying: bill.saying,
                 inDays: bill.opensOnDay - onDay,

@@ -39,7 +39,7 @@
  *
  *   held                  somebody holds this and can be named
  *   no_holder_of_record   the register carries the ground with nobody's name
- *                         against it. Clear River Ford, Six Li, Nine Hundred Paces
+ *                         against it. Clear River Ferry, Six Li, Nine Hundred Paces
  *   no_authority          the region itself declares nobody holds it, which in
  *                         the catalog today is the Pearl Ocean
  *   unrecorded            nothing anywhere says. NOT the same as unheld, and
@@ -230,7 +230,7 @@ export function whoHoldsTheGround(
         // Whether saying the holder's name a second time would be saying
         // anything. Most ground that carries a holder on its own row is a
         // compound, a precinct or a vault, and those are named for the house
-        // that holds them - so "Ashen Forge Clan holds Ashen Forge Clan
+        // that holds them - so "Ashen Anvil Clan holds Ashen Anvil Clan
         // grounds" is the "X is in X" sentence the prefecture branch below has
         // always refused, and it is what naming the place naively produces.
         const groundCarriesTheirName = holderName !== null

@@ -87,5 +87,5 @@ Burial Sands exactly as the catalog describes it.
   is gone.
 - **Is Wind Turn at the spring?** The one market being at the one water is the obvious
   reading, but the catalog does not currently say where Wind Turn is.
-- **The seat's name.** It was Sand Well, which now collides with the Burial Sands on
+- **The seat's name.** It was Truce Spring, which now collides with the Burial Sands on
   "Sand". Its replacement has to pass the collision rule.

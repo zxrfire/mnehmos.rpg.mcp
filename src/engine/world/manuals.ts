@@ -519,7 +519,7 @@ export function seedSectLibraries(state: WorldState): ObjectRecord[] {
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null) continue;
         const manuals = manualsOf(faction.id);
-        // The Deeproot Court and the Hollow Court still shelve nothing, and
+        // The Deeproot Court and the Empyrean Court still shelve nothing, and
         // both are `recruits: false` rather than empty libraries.
         if (manuals.length === 0) continue;
 

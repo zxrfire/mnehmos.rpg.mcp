@@ -376,7 +376,7 @@ are standing in.
 Wrong at this height, and this is the failure that actually shipped - the top of
 the ladder written at the bottom of it:
 
-> ~~Clear River Ford. You were raised on ground like this. You have breathed
+> ~~Clear River Ferry. You were raised on ground like this. You have breathed
 > nothing else and have nothing to set it against. Nothing is happening. Nothing
 > happens here.~~
 
@@ -388,7 +388,7 @@ is measured to have the longest.
 Wrong at this height for the other reason, because it is a higher band's register
 worn early:
 
-> ~~The Clear River Ford would remember the morning. What he had done here would
+> ~~The Clear River Ferry would remember the morning. What he had done here would
 > reach the Azure Cloud Pavilion before the season turned.~~
 
 Nothing he does here reaches anywhere, and nobody repeats him. The failure is not
@@ -420,7 +420,7 @@ fight is largely decided in the pause before it.
 
 > He said it once, in a room with four people in it, and left.
 >
-> By dusk the Cold Sword Sect had called two of its outer halls back inside the
+> By dusk the Unadorned Sword Sect had called two of its outer halls back inside the
 > wall. Nobody in either hall had been told why.
 
 And the fight, at the same height:

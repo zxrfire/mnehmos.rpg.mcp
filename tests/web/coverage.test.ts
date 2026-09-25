@@ -91,9 +91,9 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     ],
     move: [
         'I travel to Chaff Hand',
-        'I set out for Clear River Ford',
+        'I set out for Clear River Ferry',
         'I head north',
-        'I make my way to Clear River Ford'
+        'I make my way to Clear River Ferry'
     ],
     /**
      * Hands rather than words, and the same resolver a fight uses. Written
@@ -121,24 +121,24 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
      * its own verb and out of `MOVE_PHRASINGS` below.
      */
     ride: [
-        'I ride to Clear River Ford',
+        'I ride to Clear River Ferry',
         'I ride the horse',
-        'I saddle a beast and ride for Iron Ridge',
-        'I take a carriage to Clear River Ford',
-        'I take a spirit boat to Silver Island',
-        'I fly to Clear River Ford on my sword'
+        'I saddle a beast and ride for Iron Crest',
+        'I take a carriage to Clear River Ferry',
+        'I take a spirit skiff to Silver Island',
+        'I fly to Clear River Ferry on my sword'
     ],
     fold: [
-        'I fold space to Clear River Ford',
-        'I step through space to Iron Ridge',
+        'I fold space to Clear River Ferry',
+        'I step through space to Iron Crest',
         'I fold to the Buddha Precipice',
-        'I tear open space and go to Iron Ridge',
+        'I tear open space and go to Iron Crest',
         'I cross the distance in one step'
     ],
     passage: [
-        'I buy passage to Iron Ridge',
+        'I buy passage to Iron Crest',
         'what does the Span board say',
-        'what would a ticket to Iron Ridge cost',
+        'what would a ticket to Iron Crest cost',
         'I book a place on the next span',
         'is there a Span counter here'
     ],
@@ -182,7 +182,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // The bench. Every phrasing names the thing, because `build`, `make` and
     // `craft` on their own are how somebody says half a dozen other
     // intentions - and the sentences next door that must NOT come here are in
-    // `refine` above and in `ride`'s block: "I take the carriage to Iron Ridge" is
+    // `refine` above and in `ride`'s block: "I take the carriage to Iron Crest" is
     // a journey and "I buy a carriage" is a purchase.
     craft: [
         'I build a carriage',
@@ -190,7 +190,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I cut five communication talismans for the sect',
         'I make a cart',
         'I put together a wagon',
-        'I lay down the keel of a spirit boat',
+        'I lay down the keel of a spirit skiff',
         'I go back to the carriage and finish it'
     ],
     // Spirit beasts are where a material comes from, so the verb that goes
@@ -304,7 +304,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // where the ladder is finished and comprehension is the only axis left.
     recall: [
         'what do I know of Lu Sheng',
-        'what do I know of the Hollow Court',
+        'what do I know of the Empyrean Court',
         'what is my dao',
         'what have I heard of the Ninth Stone',
         'what do I know'
@@ -363,7 +363,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I file a Requisition Against Standing Stock',
         'I ask the Earth Vein Tower for one of its pills',
         'I ask the Earth Vein Tower for an Heaven-Ascending Golden Pill',
-        'I petition the Third Sill Court for a grant',
+        'I petition the Third Sluice Court for a grant',
         'I appeal to the court for protection',
         'I claim descent from Ru Anjing'
     ],
@@ -377,7 +377,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     seal: [
         'I wake our sealed ancestor',
         'I rouse the sealed ancestor',
-        'I break the seal under the Kiln Wardens',
+        'I break the seal under the Tripod Wardens',
         'I wake what is under the mountain'
     ],
     offer: [
@@ -598,7 +598,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     destroy: [
         'I smash the pill',
         'I break my sword',
-        'I destroy the spirit boat',
+        'I destroy the spirit skiff',
         'I burn the manual',
         // The scenery, which reaches the verb on purpose. The refusal that
         // says what the engine models lives in the handler, and a sentence
@@ -731,7 +731,7 @@ describe('every intent behind a door is reachable from plain English too', () =>
     });
 
     const MOVE_PHRASINGS: Record<string, readonly string[]> = {
-        travel: ['I travel to Nine Peaks', 'I set out for Clear River Ford'],
+        travel: ['I travel to Nine Peaks', 'I set out for Clear River Ferry'],
         // Leaving the scene rather than naming a destination. The bare ones are
         // how somebody answers being told to get off ground they have walked
         // onto, and all three reached nothing before that scene was wired.
@@ -778,10 +778,10 @@ describe('every intent behind a door is reachable from plain English too', () =>
      * feature nobody has or a price nobody can avoid.
      */
     const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
-        board: ['what does the Span board say', 'what would a ticket to Iron Ridge cost'],
-        buy: ['I buy passage to Iron Ridge', 'I book a place on the next span'],
+        board: ['what does the Span board say', 'what would a ticket to Iron Crest cost'],
+        buy: ['I buy passage to Iron Crest', 'I book a place on the next span'],
         // A whole carriage at a station. See `a-seat-on-a-ship-or-a-carriage.ts`.
-        hire: ['I hire a carriage to Iron Ridge', 'I charter a whole carriage to Iron Ridge']
+        hire: ['I hire a carriage to Iron Crest', 'I charter a whole carriage to Iron Crest']
     };
 
     for (const [intent, phrasings] of Object.entries(PASSAGE_PHRASINGS)) {
@@ -879,7 +879,7 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
-        'passage/hire': ['I hire a carriage to Iron Ridge', 'I hire a shod carriage to Iron Ridge'],
+        'passage/hire': ['I hire a carriage to Iron Crest', 'I hire an iron-rimmed carriage to Iron Crest'],
         // WHO HERE CARRIES SOMETHING ABOUT ME. Lands with a phrasing rather
         // than as a recorded gap, which is the only legal direction for that
         // list. The engine computed this every turn for the scene channel and
@@ -1685,7 +1685,7 @@ describe('the setting\'s nouns are not commands', () => {
 
 describe('a destination has to be somewhere', () => {
     it('reads a trailing noun as a destination, which is why the engine must check it', () => {
-        // The parser cannot tell "Clear River Ford" from "cultivator" - both are just
+        // The parser cannot tell "Clear River Ferry" from "cultivator" - both are just
         // words after a movement verb - so it does not try. What it must not
         // do is stop producing a target, because then real travel breaks. The
         // check belongs in the engine, where the location registers are.

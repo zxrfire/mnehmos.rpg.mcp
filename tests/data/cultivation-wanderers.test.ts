@@ -380,7 +380,7 @@ describe('who knows what', () => {
     it('keeps the full picture to the Court and the inheritors', () => {
         const k = getWanderer(LU_SHENG)!.whoKnowsWhat;
         expect(k.fullTruth.length).toBe(2);
-        expect(k.fullTruth.join(' ')).toMatch(/Hollow Court|Seats/);
+        expect(k.fullTruth.join(' ')).toMatch(/Empyrean Court|Seats/);
         expect(k.fullTruth.join(' ')).toMatch(/inheritors/);
         expect(k.fragments).toMatch(/outer ring|incompatible/i);
         expect(k.nothing).toMatch(/everybody else|no archive/i);

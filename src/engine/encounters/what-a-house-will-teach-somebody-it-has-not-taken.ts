@@ -18,8 +18,8 @@
  *
  * Measured over the catalog with no per-house authoring: 17 of 34 bodies would
  * take a guest; 6 of the 7 dao houses would; the Jade Register Hall would not,
- * because its shelf caps at 13 and there is nothing behind it; the Hollow Court
- * would not, having one book and it is the top of the world; the Kiln Wardens
+ * because its shelf caps at 13 and there is nothing behind it; the Empyrean Court
+ * would not, having one book and it is the top of the world; the Tripod Wardens
  * teach nothing at all. A tenth house wanting a different arrangement changes a
  * column - there is no `if (factionId === ...)` below and there must never be one.
  */

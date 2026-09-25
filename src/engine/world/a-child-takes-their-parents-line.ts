@@ -12,7 +12,7 @@
 
 import { canBeTheTwoParentsOf } from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { bloodlineForChild } from './hunting-a-spirit-beast.js';
-import { addLineageEdge, createLineageRecord } from './lineage.js';
+import { addLineageEdge, createLineageRecord, lineageIdOf } from './lineage.js';
 import type { NpcRecord } from './npc-state.js';
 import type { Roster } from './the-ties-an-ordinary-life-produces.js';
 import type { WorldState } from './world-state.js';
@@ -55,7 +55,7 @@ export function aChildTakesTheirParentsLine(
     let lineage = state.lineages.find(l => l.memberIds.includes(parent.id));
     if (!lineage) {
         lineage = createLineageRecord({
-            id: `lin-${surname.toLowerCase()}-${parent.id}`,
+            id: lineageIdOf(surname, parent.id),
             surname,
             founderId: parent.id,
             foundedOnDay: parent.identity.bornOnDay

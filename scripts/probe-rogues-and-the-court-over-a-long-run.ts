@@ -1,5 +1,5 @@
 /**
- * Where the world's rogues come from, and what becomes of the Hollow Court's own
+ * Where the world's rogues come from, and what becomes of the Empyrean Court's own
  * people on a Tribulation Transcendence clock.
  *
  * Per seed, at each horizon:
@@ -14,7 +14,7 @@
  *   ground      share of the living standing on a sect seat
  *   errands     people who went out on a house's errand and did not come back,
  *               by the rung they held and by how far above the pitch they stood
- *   court       every catalog member of the Hollow Court: status, roll,
+ *   court       every catalog member of the Empyrean Court: status, roll,
  *               location, and the cause where the row ended; and every errand a
  *               Seat went on, with the ground and what it asks
  *

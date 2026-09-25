@@ -26,7 +26,7 @@ import { whatTheySaidInTheFight } from '../src/web/fight-answers.js';
 
 const TAKING = [
     'I take his purse',
-    'I steal the spirit boat from Cao Nuolin',
+    'I steal the spirit skiff from Cao Nuolin',
     'I rob the merchant',
     'I kill him',
     'I attack the nearest cultivator',

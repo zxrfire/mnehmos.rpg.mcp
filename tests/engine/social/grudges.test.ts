@@ -57,7 +57,7 @@ describe('records', () => {
                 cause: 'saved_life',
                 severity: 'grave',
                 onDay: daysForYears(21),
-                description: 'Carried him out of the collapsed ruin at Clear River Ford.'
+                description: 'Carried him out of the collapsed ruin at Clear River Ferry.'
             })
         );
         ledger.put(

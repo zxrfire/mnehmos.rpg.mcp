@@ -1,7 +1,7 @@
 /**
  * Does being rich or gifted actually make anybody faster, and is there a tail?
  *
- * The Hollow Court admits at ordinal 29 and age 250 or under, which is not a
+ * The Empyrean Court admits at ordinal 29 and age 250 or under, which is not a
  * status check but a PREDICTION: reach Void Refinement that fast and your
  * trajectory ends above the Lid. So the Court is by construction selecting the
  * tail of the age distribution. If the world produces no tail, nobody qualifies,

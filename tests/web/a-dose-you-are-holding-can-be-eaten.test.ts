@@ -4,13 +4,13 @@
  * Four grades, eleven doses placed in the world, a price model, a holdings
  * table, a live read of who is carrying one - and `applyStructuralRepair` had
  * NO CALLER ANYWHERE outside its own tests. A player who bartered a house out
- * of a Second Pour Pill was carrying an object no sentence could spend. That is
+ * of a Second Casting Pill was carrying an object no sentence could spend. That is
  * this repository's signature defect: a complete subsystem that compiles,
  * typechecks and is reachable by nothing. The design owner, asked whether to
  * build the road: *"obviously yes you ought to be able to eat it"*.
  *
  * WHY `swallow` CARRIED IT AND NO NEW VERB WAS ADDED. All four doses are called
- * pills, so `PILL_NOUNS` already routed "I swallow the Second Pour Pill" to
+ * pills, so `PILL_NOUNS` already routed "I swallow the Second Casting Pill" to
  * `consume_pill`. What `consume_pill` could not do was FIND one: it reads the
  * pouch, and a dose is an `ObjectRecord` in `state.objects` because there is no
  * counted tier for a thing there are eleven of. The whole difference between a
@@ -186,7 +186,7 @@ describe('asking a holder what they would take for a dose', () => {
      * `repairStorageModel` keeps the dear two as rows and the cheap two as a
      * count in a house's `resources` - a house keeping two of the cheap one is
      * keeping a number, not two stories. The "who else is holding one" read
-     * scanned `state.objects` and nothing else, so for a Second Pour Pill or a
+     * scanned `state.objects` and nothing else, so for a Second Casting Pill or a
      * Core-Knitting Pill it reported an empty world while the register held
      * several, and told the player their problem was finding one.
      *

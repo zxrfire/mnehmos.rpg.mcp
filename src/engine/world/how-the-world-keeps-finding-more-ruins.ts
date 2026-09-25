@@ -437,21 +437,21 @@ function accessForFind(
 
 // NAMING
 
-const NAMES_BY_CHARACTER: Readonly<Record<RuinCharacter, readonly string[]>> = {
+export const NAMES_BY_CHARACTER: Readonly<Record<RuinCharacter, readonly string[]>> = {
     compound: ['The Compound With Its Formations Out', 'The Seat Nobody Came Back To', 'The Walls Above %P'],
-    workshop: ['The Floor With the Stock Still On It', 'The Cold Furnace Above %P', 'The Workshop They Swept First'],
-    archive: ['The Shelves Under the Fall', 'The Room They Left the Lamps In', 'The Order On the Shelves at %P'],
-    vault: ['The Door That Was Not Worth Breaking', 'The Undercroft Under %P', 'The Store With the Lid Still On'],
-    battlefield: ['The Field the Crop Line Goes Round', 'Where Both of Them Stopped', 'The Ground Above %P Nobody Ploughs'],
-    scar: ['The Fused Ground Above %P', 'The Line Where the Grass Stops', 'The Sheet Nobody Crosses Twice'],
-    waystation: ['The Post Above the Ford', 'The Relay With the Board Still Up', 'The Bridge House At %P'],
-    physic_garden: ['The Beds Under the Turf', 'The Wall Round the Old Physic', 'The Garden Above %P'],
-    array_anchor: ['The Stone That Is Still Carrying', 'The Node Nobody Lit', 'The Anchor Above %P'],
-    ossuary: ['The Walled Plot At %P', 'The Chamber With the Course Cut Over It', 'The Ten They Put Together'],
-    teaching_hall: ['The Curriculum Cut Into the Face', 'The Hall They Taught Out Of', 'The Wall Above %P With the Exercises On It'],
-    cut: ['The Working Face At %P', 'The Shaft With the Ladders Out', 'The Cut They Laid a Lid Over'],
-    dwelling: ['The Rooms Somebody Lived In', 'The Cave Above %P With the Lintel Cut', 'The Seat Chamber Nobody Emptied'],
-    open_ground: ['The Ground Above %P', 'The Stone in the Long Field', 'The Depression Bitter Soil In']
+    workshop: ['The Floor With the Stock Still On It', 'The Unlit Crucible Above %P', 'The Workshop Swept First'],
+    archive: ['The Shelves Under the Fall', 'The Room With the Lamps Left In', 'The Sorted Shelves at %P'],
+    vault: ['The Door Not Worth Forcing', 'The Undercroft Under %P', 'The Store With the Lid Still On'],
+    battlefield: ['The Ground the Furrows Skirt', 'The Last Stand of Two', 'The Ground Above %P Nobody Ploughs'],
+    scar: ['The Fused Ground Above %P', 'The Edge of the Grass', 'The Sheet Nobody Crosses Twice'],
+    waystation: ['The Post Above the Ferry', 'The Relay With the Board Still Up', 'The Arch House At %P'],
+    physic_garden: ['The Beds Under the Turf', 'The Rampart About the Old Physic', 'The Garden Above %P'],
+    array_anchor: ['The Stone Still Carrying', 'The Node Nobody Lit', 'The Anchor Above %P'],
+    ossuary: ['The Walled Plot At %P', 'The Chamber With the Course Cut Over It', 'The Ten Laid Together'],
+    teaching_hall: ['The Curriculum Cut Into the Face', 'The Hall of the Last Lesson', 'The Rampart Above %P With the Exercises On It'],
+    cut: ['The Working Face At %P', 'The Shaft With the Ladders Out', 'The Lidded Cut'],
+    dwelling: ['The Rooms Somebody Lived In', 'The Grotto Above %P With the Lintel Cut', 'The Seat Chamber Nobody Emptied'],
+    open_ground: ['The Ground Above %P', 'The Stone in the Long Furrow', 'The Depression Bitter Soil In']
 };
 
 /** A place name a person would use, derived from the province and the character. */

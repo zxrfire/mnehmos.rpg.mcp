@@ -1,5 +1,5 @@
 /**
- * A journey over two borders costs both roads. Played: Cold Peak to Iron Ridge is the White
+ * A journey over two borders costs both roads. Played: Moraine Gate to Iron Crest is the White
  * Stair, the Jade Gorge and the Buddha Precipice, and it was charged one day.
  */
 import { describe, expect, it } from 'vitest';

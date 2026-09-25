@@ -21,19 +21,19 @@ describe('one of it, and more than one of it', () => {
     });
 
     it('agrees with the head noun, not the last word', () => {
-        expect(howMany(2, 'Keeper of Names')).toBe('2 Keepers of Names');
-        expect(howMany(2, 'Elder of the Hour')).toBe('2 Elders of the Hour');
+        expect(howMany(2, 'Keeper of Scrolls')).toBe('2 Keepers of Scrolls');
+        expect(howMany(2, 'Elder of the Lots')).toBe('2 Elders of the Lots');
         expect(howMany(2, 'Under-Warden of the Weir')).toBe('2 Under-Wardens of the Weir');
     });
 
     it('replaces the article a catalog name carries', () => {
-        expect(howMany(1, 'A shod carriage')).toBe('1 shod carriage');
-        expect(howMany(5, 'A shod carriage')).toBe('5 shod carriages');
+        expect(howMany(1, 'An iron-rimmed carriage')).toBe('1 iron-rimmed carriage');
+        expect(howMany(5, 'An iron-rimmed carriage')).toBe('5 iron-rimmed carriages');
     });
 
     it('leaves a word that is already however many there are', () => {
         expect(howMany(3, 'Chosen')).toBe('3 Chosen');
-        expect(howMany(3, 'Bound')).toBe('3 Bound');
+        expect(howMany(3, 'Tethered')).toBe('3 Tethered');
         expect(howMany(3, 'folk')).toBe('3 folk');
     });
 

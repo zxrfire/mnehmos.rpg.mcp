@@ -42,7 +42,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `LOW_FALL_PREFECTURES`, `ORIGIN_ACCOUNTS`, `WOUND_TYPES`
 
-### Nine Peaks Ascetic Order
+### Nine Peaks Ascetic Sect
 
 `sect-nine-peaks-ascetic-order` · its entry: [`sects.ts:628`](../../src/data/cultivation/sects.ts)
 
@@ -112,7 +112,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 6 more
 
-### Thousand Treasure Pavilion
+### Thousand Relic Pavilion
 
 `sect-thousand-treasure-pavilion` · its entry: [`sects.ts:1137`](../../src/data/cultivation/sects.ts)
 
@@ -130,7 +130,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `HOUSE_MISSIONS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, and 3 more
 
-### Ashen Forge Clan
+### Ashen Anvil Clan
 
 `sect-ashen-forge-clan` · its entry: [`sects.ts:1219`](../../src/data/cultivation/sects.ts)
 
@@ -139,7 +139,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `ARCHIVE_COPIES`, `HOUSE_ARTISANS`, `PLACE`
 
-### Hollow Bell Wanderers
+### Wayside Chime Wanderers
 
 `sect-hollow-bell-wanderers` · its entry: [`sects.ts:1268`](../../src/data/cultivation/sects.ts)
 
@@ -148,7 +148,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `OTHERS_WHO_NOTICED`, `ROAD_CUSTOMS`, `ROGUE_TRADES`, `THE_SENDING_PYRAMID`
 
-### Cold Sword Sect
+### Unadorned Sword Sect
 
 `sect-cold-sword-sect` · its entry: [`sects.ts:1323`](../../src/data/cultivation/sects.ts)
 
@@ -180,7 +180,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `SHARED_EVENTS`, `FACTION_RELATIONSHIPS`, `COURTS`, `LID_NON_POSITIONS`, `SEALED_FIGURE_NAMES`, `WHY_NOBODY_MOVES`
 
-### The Hollow Court
+### The Empyrean Court
 
 `sect-hollow-court` · its entry: [`sects.ts:1550`](../../src/data/cultivation/sects.ts)
 
@@ -259,11 +259,11 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `A_RESTING_PLACE_IS_NOT_A_GRAVE`, `BOUNTIES`, `DEALERS`, `DRIVEN_GROUND_AND_THE_NODE`, `ESTIMATING_A_BEAST`, `GRAVE_CONTENTS_BANDS`, and 3 more
 
-### Silver Island Market
+### Silver Island Hall
 
 `sect-silver-island-market` · its entry: [`sects.ts:2137`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) 3 · [`place-names.md`](../../docs/world/writing/place-names.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1
+**Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1
   …and 4 more files.
 
 **Constants most about it:** `CONTRACTS`, `FOUNDERS`, `HALFWATER_TERMS`, `SEA_CARGO`, `SEA_TRADERS`
@@ -286,7 +286,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `CALENDARS`, `DAO_HOUSES`, `DESTROYED_DAO_HOUSES`, `RANK_MISREADINGS`, `SECTS`, `THE_CALENDAR_OFFSET`, and 20 more
 
-### Flowing Light Tower
+### Flowing Star Tower
 
 `house-flowing-light` · its entry: [`sects.ts:2364`](../../src/data/cultivation/sects.ts)
 
@@ -295,7 +295,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `WHY_ACCOUNTS_DISAGREE`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `THE_LID`, `TITLE_TRANSLATIONS`
 
-### Vermilion Seal Terrace
+### Vermilion Sigil Terrace
 
 `house-vermilion-seal` · its entry: [`sects.ts:2467`](../../src/data/cultivation/sects.ts)
 
@@ -304,7 +304,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `CALENDARS`, `DORMANT_ARTS`, `TRADITION_WAR`, `AUCTION_ACCESS`, `CUSTODY_TAKERS`, `GUEST_ELDERS`, and 1 more
 
-### Still Blade Peak
+### Still Blade Pavilion
 
 `house-still-blade` · its entry: [`sects.ts:2572`](../../src/data/cultivation/sects.ts)
 

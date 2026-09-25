@@ -19,7 +19,7 @@
  * it would disagree with the commission table the first time either moved. So a
  * craft with no price of its own is priced against the dearest craft that HAS
  * one, by the only figure the two bills differ in that anybody pays for:
- * `workDays`. A named carriage is 700 days and 40,000 stones; a hull is 2,400
+ * `workDays`. A titled carriage is 700 days and 40,000 stones; a hull is 2,400
  * days, so a hull is 40,000 x 2,400/700 = 137,143.
  *
  * That is a figure with a provenance rather than a feel, and it lands where the
@@ -55,7 +55,7 @@ import type { ObjectRecord } from './possessions.js';
 /**
  * What one craft would fetch, or null where the world does not price it.
  *
- * Null is the honest answer for a row that is not property - flight on one's
+ * Null is the honest answer for a row that is not property - soaring on one's
  * own blade - and for anything this file cannot reach a bill for. A caller
  * getting null has not been told zero.
  */

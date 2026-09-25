@@ -467,7 +467,7 @@ describe('the dao protector office', () => {
         expect(THE_OFFICE.onlyAHouseThatProducedOneCanHaveOne).toMatch(/wrong instrument/i);
         expect(
             APEX_INSTITUTIONS.some(a => a.id === 'sect-hollow-court'),
-            'the Hollow Court holds from nobody and is not an apex; see hierarchy.ts'
+            'the Empyrean Court holds from nobody and is not an apex; see hierarchy.ts'
         ).toBe(false);
     });
 
@@ -699,7 +699,7 @@ describe('the register of possible False Immortals', () => {
     });
 });
 
-describe('identifying a Seat of the Hollow Court', () => {
+describe('identifying a Seat of the Empyrean Court', () => {
     it('makes admission visible, uneven, and useless past the mountain', () => {
         expect(IDENTIFYING_A_SEAT.admissionIsNotUniform).toMatch(/Void Tribulation/);
         expect(IDENTIFYING_A_SEAT.admissionIsNotUniform).toMatch(/already formidable/i);

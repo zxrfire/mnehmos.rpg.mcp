@@ -42,11 +42,11 @@ const GROUNDS = {
     ],
     no_authority: [
         DROWNED,
-        makeLocation({ id: 'g', name: 'Bronze Bell Cliff', kind: 'settlement', parentId: 'sea' })
+        makeLocation({ id: 'g', name: 'Bronze Gong Cliff', kind: 'settlement', parentId: 'sea' })
     ],
     no_holder_of_record: [
         LOW_FALL,
-        makeLocation({ id: 'g', name: 'Clear River Ford', kind: 'settlement', parentId: 'r' })
+        makeLocation({ id: 'g', name: 'Clear River Ferry', kind: 'settlement', parentId: 'r' })
     ],
     unrecorded: [
         makeLocation({ id: 'r', name: 'Somewhere', kind: 'region' }),

@@ -63,9 +63,9 @@ describe('which bill somebody meant', () => {
     /** The player must be able to type back what the game printed. */
     it('accepts the catalog names the listing prints', () => {
         expect(whichBillTheyMeant('A drawn carriage')?.id).toBe('build-carriage-mortal');
-        expect(whichBillTheyMeant('a shod carriage')?.id).toBe('build-carriage-earth');
-        expect(whichBillTheyMeant('a named carriage')?.id).toBe('build-carriage-heaven');
-        expect(whichBillTheyMeant('a spirit boat')?.id).toBe('build-spirit-boat');
+        expect(whichBillTheyMeant('an iron-rimmed carriage')?.id).toBe('build-carriage-earth');
+        expect(whichBillTheyMeant('a titled carriage')?.id).toBe('build-carriage-heaven');
+        expect(whichBillTheyMeant('a spirit skiff')?.id).toBe('build-spirit-boat');
     });
 
     it('lifts a carriage onto a deeper bill when a grade word is present', () => {
@@ -215,7 +215,7 @@ describe('beginning something, and coming back to it', () => {
         });
 
         const second = planTheBuild({
-            db, cultivator: fresh(), said: 'a shod carriage', today: 5
+            db, cultivator: fresh(), said: 'an iron-rimmed carriage', today: 5
         });
         expect(second.kind).toBe('refused');
         expect(second.headline).toContain('already on the stocks');
@@ -258,7 +258,7 @@ describe('what a player may put into a hull', () => {
      * did not happen.
      */
     it('does not deliver a tracked material, and says why', async () => {
-        // Earth-grade plate and sinew, and three cores. The shod carriage's bill
+        // Earth-grade plate and sinew, and three cores. The iron-rimmed carriage's bill
         // is 16 + 8 at earth grade and one core, so the earth half is met and
         // the core is the only thing left.
         const { db, fresh } = await aPlayerWithAPouch('core-line', {
@@ -274,7 +274,7 @@ describe('what a player may put into a hull', () => {
         // Work it as far as it will go, which is 24 pieces of 25 - 96% of the
         // bill, and 144 of the 150 days. The last six days are behind the core.
         const plan = planTheBuild({
-            db, cultivator: fresh(), said: 'a shod carriage', today: 1, days: 10_000
+            db, cultivator: fresh(), said: 'an iron-rimmed carriage', today: 1, days: 10_000
         });
         expect(plan.kind).toBe('work');
         landTheBuild({

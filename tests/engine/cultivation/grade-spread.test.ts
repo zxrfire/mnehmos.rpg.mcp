@@ -425,7 +425,7 @@ describe('grade spread: what the records say', () => {
 
 describe('grade spread: no bespoke branch on the word chaos', () => {
     it('the module never compares a grade to the string', () => {
-        // The rule the design owner gave for how a spirit boat breaks, applied
+        // The rule the design owner gave for how a spirit skiff breaks, applied
         // here: read the property. A new grade with a spread of its own must
         // get this behaviour for free, and the mechanical check is that no
         // comparison against the literal exists to be edited.

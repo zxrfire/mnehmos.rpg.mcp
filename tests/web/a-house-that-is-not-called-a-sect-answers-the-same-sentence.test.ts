@@ -72,7 +72,7 @@ describe('a house that is not called a Sect', () => {
     it.each([
         ['I resign from Crimson Abyss Fortress', 'sect/leave'],
         ['I leave Verdant Spring Valley', 'sect/leave'],
-        ['I resign from Silver Island Market', 'sect/leave'],
+        ['I resign from Silver Island Hall', 'sect/leave'],
         ['who is in charge of Clearwater Ward', 'sect/standing']
     ])('reaches the house named in %s', (sentence, expected) => {
         expect(read(sentence)).toBe(expected);

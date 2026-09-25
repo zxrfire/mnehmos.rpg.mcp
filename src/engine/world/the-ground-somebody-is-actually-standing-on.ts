@@ -32,7 +32,7 @@
  * `controllingFactionId` and its own `qiDensity`, and the empty good ground IS
  * those rooms. The Azure Cloud Pavilion holds a vein chamber at spirit tide 100
  * and a meditation cell at 97; its ground nodes sit at dense 89. So an apex
- * cultivation room is already the best ground below the Hollow Court, exactly
+ * cultivation room is already the best ground below the Empyrean Court, exactly
  * as the setting says, and the only thing missing was anybody using it.
  *
  * ═════════════════════════════════════════════════════════════════════════
@@ -79,7 +79,7 @@
  *
  * It still cannot run away without a cap anybody chose: seats are rooms, so a
  * house that admits past its seats admits people who will not sit on its vein.
- * That is why the Hollow Court can afford nobody it does not choose.
+ * That is why the Empyrean Court can afford nobody it does not choose.
  */
 
 import { AMBIENT_QI_RATE_MULTIPLIER } from '../../schema/cultivation.js';
@@ -144,7 +144,7 @@ export const A_SHARED_ROOM_GIVES = 0.5;
  * The rooms on a house's BEST GROUND - the top band only.
  *
  * A house has one or two chambers on its vein and a great many ordinary halls,
- * and it is the vein people compete for. The Hollow Court holds every one of
+ * and it is the vein people compete for. The Empyrean Court holds every one of
  * its rooms at spirit tide, so it seats far more than anybody else, and that
  * falls out of counting rooms rather than naming the Court.
  */

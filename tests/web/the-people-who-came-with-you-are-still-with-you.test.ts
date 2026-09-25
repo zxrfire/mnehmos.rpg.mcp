@@ -28,7 +28,7 @@
  * so a party the player raised was 364,600 days overdue the moment it existed;
  * `bringHomeWhoeverIsDue` sent everybody home and cleared the activity on the
  * world advance inside that same turn, and the player walked to Ren's Stair
- * alone with the companions' rows still standing at Bronze Bell Cliff.
+ * alone with the companions' rows still standing at Bronze Gong Cliff.
  *
  * It is the failure this repo keeps finding: the party was built correctly and
  * the thing it was routed through could not reach it. The verbs now take the

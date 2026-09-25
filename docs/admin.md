@@ -302,8 +302,8 @@ this game is already one of two things:
 
 The worked example, from the design owner, and both halves are about the same house:
 
-> *"Admin can put you in the middle of the Hollow Court and have you successfully
-> charm/seduce the seats. It can't admit you to the Hollow Court below 29, because there simply
+> *"Admin can put you in the middle of the Empyrean Court and have you successfully
+> charm/seduce the seats. It can't admit you to the Empyrean Court below 29, because there simply
 > isn't a way."*
 
 Seducing a seat is a legal attempt with terrible odds - nothing forbids trying, you would simply
@@ -381,7 +381,7 @@ be asked about. Being subject to one character's memory is exactly what stops an
 the world where they need it.
 
 **It lifts the awareness predicate and nothing else, and the demonstration is one command.**
-`ADMIN sect join the Hollow Court` from a cultivator who has never heard the name resolves the
+`ADMIN sect join the Empyrean Court` from a cultivator who has never heard the name resolves the
 house - and is then refused, by the Court's own bar, with the route attached:
 
 ```
@@ -392,7 +392,7 @@ Nothing was decided. The world refused before any uncertain question arose [...]
     ADMIN set_realm ordinal=<the bar named above> - the house admits from there, and the
     bar is the house's, not this surface's.
 
-The Hollow Court admits from Void Tribulation First Tempering. Shen Yuan stands at Qi
+The Empyrean Court admits from Void Tribulation First Tempering. Shen Yuan stands at Qi
 Condensation Layer 1.
 ```
 

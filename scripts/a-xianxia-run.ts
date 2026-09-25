@@ -128,7 +128,7 @@ for (const scenario of corpus) {
         const shrug = /does not resolve into anything|thought does not resolve/i.test(narration);
 
         // A QUESTION BACK IS NOT THE ACT HAPPENING, and scoring it as one hid
-        // three real failures inside a band reading 100%. "I go to Cold Peak
+        // three real failures inside a band reading 100%. "I go to Moraine Gate
         // and gather herbs" came back with *which comes first?* - correct for
         // a reader that cannot tell, and NOT the sentence being carried out -
         // and the old outcome had no word for the difference, so it read the

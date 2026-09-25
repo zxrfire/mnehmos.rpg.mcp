@@ -326,7 +326,7 @@ export const THREE_ROADS_TO_WHAT_A_PERSON_CARRIES = {
  *              is a property question and a real one; it is not predation.
  *   demonic    Takes from people who did not agree and cannot appeal. The
  *              Core-Taker waits for the second day of a seclusion and leaves
- *              the pouch on the belt, which is the same row the Still Blade Peak
+ *              the pouch on the belt, which is the same row the Still Blade Pavilion
  *              occupies among the houses: a third party who is not present.
  *
  * ── ORTHOGONAL TO THE RUNG, AND ORTHOGONAL TO `nature` ──────────────────
@@ -825,7 +825,7 @@ export const BEASTS: readonly Beast[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'beast-stubble-hare',
-        name: 'Grass Hare',
+        name: 'Grass Rabbit',
         nature: 'ordinary',
         disposition: 'neutral',
         ordinal: 0,
@@ -894,7 +894,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-blind-cave-fish',
-        name: 'Blind Cave Fish',
+        name: 'Blind Grotto Fish',
         nature: 'ordinary',
         disposition: 'neutral',
         ordinal: 1,
@@ -940,7 +940,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-night-cat',
-        name: 'Night Cat',
+        name: 'Dusk Cat',
         nature: 'ordinary',
         disposition: 'neutral',
         ordinal: 3,
@@ -951,7 +951,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 145,
         ability: {
-            name: 'Green Eye',
+            name: 'Moonless Eye',
             kind: 'perception',
             what:
                 'Sees in what a person would call no light at all, and sees colour in it, which is why nothing it hunts has ever learned to hide by going still.'
@@ -1009,7 +1009,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-honey-bear',
-        name: 'Honey Bear',
+        name: 'Honey Bruin',
         nature: 'ordinary',
         disposition: 'neutral',
         ordinal: 12,
@@ -1104,7 +1104,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-iron-eating-bear',
-        name: 'Iron-Eating Bear',
+        name: 'Iron-Eating Beast',
         nature: 'ordinary',
         disposition: 'neutral',
         ordinal: 16,
@@ -1148,7 +1148,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 60,
         ability: {
-            name: 'Sees the Fire Coming',
+            name: 'Sees the Blaze Coming',
             kind: 'perception',
             what:
                 'Knows which ground is going to burn about a day before it does, and is standing somewhere else well before it happens.'
@@ -1175,7 +1175,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 9,
         frequency: 200,
         ability: {
-            name: 'Pack Sense',
+            name: 'Troop Sense',
             kind: 'perception',
             what:
                 'What one of them has seen, all of them have seen, without a sound passing between them and without a line of sight.'
@@ -1233,7 +1233,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-grain-sparrow',
-        name: 'Grain Sparrow',
+        name: 'Stubble Sparrow',
         nature: 'herd',
         // Takes from people who did not agree and cannot appeal, which is the
         // definition and has nothing to do with how frightening it is. A
@@ -1282,7 +1282,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-burn-crow',
-        name: 'Burn Crow',
+        name: 'Scorch Crow',
         nature: 'herd',
         disposition: 'neutral',
         ordinal: 2,
@@ -1316,7 +1316,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 12,
         frequency: 210,
         ability: {
-            name: 'Carried Word',
+            name: 'Carried Voice',
             kind: 'perception',
             what:
                 'Gives back a sound it heard days ago and a long way off, exactly, including a voice, and does it without any idea of what it is repeating.'
@@ -1362,7 +1362,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 10,
         frequency: 120,
         ability: {
-            name: 'Foot on Nothing',
+            name: 'Hoof on Nothing',
             kind: 'movement',
             what:
                 'Stands and turns on rock too small to be called a ledge, at any angle, carrying weight, which is why a herd is above the last route and not on it.'
@@ -1374,7 +1374,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-paper-moth',
-        name: 'Paper Moth',
+        name: 'Paper Weevil',
         nature: 'herd',
         disposition: 'neutral',
         ordinal: 6,
@@ -1413,7 +1413,7 @@ export const BEASTS: readonly Beast[] = [
             what:
                 'Lives on what nothing else will touch, including the parts of a field that have been picked over twice, and breeds on exactly that.'
         },
-        hard: 'Individually nothing. Two hundred of them go through a grain store, a casualty tent or a picket line in a night, and the Iron Ridge ledger records the cost as spoilage every year without a second line.',
+        hard: 'Individually nothing. Two hundred of them go through a grain store, a casualty tent or a picket line in a night, and the Iron Crest ledger records the cost as spoilage every year without a second line.',
         materialIds: ['mat-spoil-rat-pelt'],
         note: 'Sold by weight to the glue-boilers at a rate that has not moved in a generation, and the boilers say the animals are smaller.',
         changedManner: 'Keeps count of everything, including what it is owed and what it has lent, and produces the figure years later to the day.'
@@ -1466,7 +1466,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-blood-sweat-horse',
-        name: 'Blood-Sweat Horse',
+        name: 'Blood-Lather Horse',
         nature: 'herd',
         disposition: 'neutral',
         ordinal: 9,
@@ -1489,7 +1489,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-mire-buffalo',
-        name: 'Mire Buffalo',
+        name: 'Marsh Buffalo',
         nature: 'herd',
         disposition: 'neutral',
         ordinal: 15,
@@ -1523,7 +1523,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 40,
         frequency: 40,
         ability: {
-            name: 'Left Shell',
+            name: 'Left Husk',
             kind: 'concealment',
             what:
                 'Comes out of its own shell whole and leaves the shell standing where it was, so what anybody is holding, watching or has just struck is the part it had finished with.'
@@ -1554,7 +1554,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Nothing a party can do to it is worse than where it already lives, so it goes back into the hot cinder and waits them out. What ends an infestation is the cinder cooling, which is a matter for the mountain rather than for anybody holding a sword.',
         materialIds: ['mat-cinder-rat-fleece'],
-        note: 'The fleece is woven into a cloth that is laundered by being put in the fire, and the Ashen Forge Clan has hung its gate with the same four panels for two hundred years.',
+        note: 'The fleece is woven into a cloth that is laundered by being put in the fire, and the Ashen Anvil Clan has hung its gate with the same four panels for two hundred years.',
         changedManner: 'Will not be the only one in a room if it can be helped, defers to whoever else is there from habit, and agrees with anything said loudly before working out whether it does.'
     },
 
@@ -1621,7 +1621,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 18,
         ability: {
-            name: 'Cold Hunt',
+            name: 'Stone Patience',
             kind: 'concealment',
             what:
                 'Holds still against cold ground until it is not distinguishable from the ground, for as many days as the waiting takes.'
@@ -1633,7 +1633,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-bamboo-viper',
-        name: 'Green Bamboo Viper',
+        name: 'Bamboo-Leaf Viper',
         nature: 'ambush',
         disposition: 'demonic',
         ordinal: 4,
@@ -1644,7 +1644,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 150,
         ability: {
-            name: 'Same Green',
+            name: 'Stem Shade',
             kind: 'concealment',
             what:
                 'Is the colour of the standing stem it is on, at any season, and does not move while anything is looking at the stem.'
@@ -1679,7 +1679,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-trunk-hound',
-        name: 'Trunk Hound',
+        name: 'Trunk Jackal',
         nature: 'ambush',
         disposition: 'demonic',
         ordinal: 10,
@@ -1690,7 +1690,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 62,
         ability: {
-            name: 'Out of the Wood',
+            name: 'Out of the Trunk',
             kind: 'concealment',
             what:
                 'Lies inside a standing trunk with nothing showing and nothing to read on the qi of it, and comes out of the trunk rather than out of the undergrowth.'
@@ -1713,7 +1713,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 55,
         ability: {
-            name: 'Cold Coil',
+            name: 'Undertow Coil',
             kind: 'strength',
             what:
                 'Takes a hold and closes it slowly and does not let go, under water, where the other party is spending something it cannot replace.'
@@ -1771,7 +1771,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-crevasse-worm',
-        name: 'Crevasse Worm',
+        name: 'Crevasse Grub',
         nature: 'ambush',
         disposition: 'demonic',
         ordinal: 16,
@@ -1805,7 +1805,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 20,
         ability: {
-            name: 'Every Foot At Once',
+            name: 'Every Claw At Once',
             kind: 'movement',
             what:
                 'Crosses a wall, a ceiling or a shaft at the same speed as a floor, and turns a corner without slowing, so there is no direction it is not coming from.'
@@ -1817,7 +1817,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-cloud-marked-leopard',
-        name: 'Cloud-Marked Leopard',
+        name: 'Cloud-Spotted Leopard',
         nature: 'ambush',
         disposition: 'demonic',
         ordinal: 18,
@@ -1886,7 +1886,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-year-beast',
-        name: 'Year Beast',
+        name: 'Nian Beast',
         nature: 'ambush',
         disposition: 'demonic',
         ordinal: 21,
@@ -1897,7 +1897,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 9,
         ability: {
-            name: 'Through the Wall',
+            name: 'Through the Byre',
             kind: 'strength',
             what:
                 'Goes through a stock wall, a byre and a house front in one line without turning, and what it wanted is behind the third of them.'
@@ -1953,7 +1953,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It sits in a vent mouth where the air is already bad, so a party is short of breath before anything has happened to them. The old surveys record them at twice the present size, which is the only concession the ground has made to anybody.',
         materialIds: ['mat-sulphur-toad-gland'],
-        note: 'The Ashen Forge gate ledger counts them by the season, and the count has not been over forty in three generations.',
+        note: 'The Ashen Anvil gate ledger counts them by the season, and the count has not been over forty in three generations.',
         changedManner: 'Says the unpleasant thing first and on purpose, then watches to see who in the room flinched before deciding which of them to deal with.'
     },
 
@@ -1997,7 +1997,7 @@ export const BEASTS: readonly Beast[] = [
         // hunting window in which every target deserved it is a window with no
         // decision in it.
         id: 'beast-cairn-hound',
-        name: 'Grave Hound',
+        name: 'Grave Jackal',
         nature: 'territorial',
         disposition: 'righteous',
         ordinal: 18,
@@ -2130,7 +2130,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-toll-lion',
-        name: 'Toll Lion',
+        name: 'Guardian Lion',
         nature: 'territorial',
         disposition: 'neutral',
         ordinal: 17,
@@ -2153,7 +2153,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-ridge-lizard',
-        name: 'Ridge Lizard',
+        name: 'Crest Lizard',
         nature: 'territorial',
         // Nothing under the ridge it sits on has burned in a century and none
         // of them has ever paid it anything or been asked to. That is the
@@ -2167,7 +2167,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 14,
         ability: {
-            name: 'Swallows Fire',
+            name: 'Swallows Flame',
             kind: 'breath',
             what:
                 'Takes fire in and puts water out, in the quantity the fire was, so a burning roof stops burning and nothing decided to stop it.'
@@ -2202,7 +2202,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-hill-borer',
-        name: 'Hill-Borer',
+        name: 'Knoll-Borer',
         nature: 'territorial',
         disposition: 'neutral',
         ordinal: 21,
@@ -2225,7 +2225,7 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-flood-serpent',
-        name: 'Flood Serpent',
+        name: 'Deluge Serpent',
         nature: 'territorial',
         disposition: 'demonic',
         ordinal: 22,
@@ -2316,13 +2316,13 @@ export const BEASTS: readonly Beast[] = [
         changedManner: 'Says the thing everybody was talking around, once, and then will not be drawn on it again.'
     },
     {
-        // The Grave Hound's case, one whole realm up and with an immortal-grade
+        // The Grave Jackal's case, one whole realm up and with an immortal-grade
         // core on it. Righteous, silent, and standing in an ordinary forest a
         // Foundation party can walk into: the decision is not whether it can be
         // taken but what taking it costs, and the catalog is supposed to make
         // that sting.
         id: 'beast-green-qilin',
-        name: 'Green Qilin',
+        name: 'Cyan Qilin',
         nature: 'territorial',
         disposition: 'righteous',
         ordinal: 26,
@@ -2370,7 +2370,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'What it holds is not a place but everywhere one seam of hot rock goes, so a party that has driven it off the rim meets it again at the vent and again at the flank, and it has not been moved off its own ground once.',
         materialIds: ['mat-firevein-serpent-hide', 'mat-firevein-serpent-core'],
-        note: 'The Ashen Forge Clan has never applied to clear it, and the caldera grant the Nine Abyss Flame Sect is said to hold does not mention it either.',
+        note: 'The Ashen Anvil Clan has never applied to clear it, and the caldera grant the Nine Abyss Flame Sect is said to hold does not mention it either.',
         changedManner: 'Arrives without being sent for, at whatever moment it decides the conversation concerns it, and does not accept that it was not already part of it.'
     },
 
@@ -2400,7 +2400,7 @@ export const BEASTS: readonly Beast[] = [
         groupSize: 1,
         frequency: 6,
         ability: {
-            name: 'Gorge Stride',
+            name: 'Gorge Clamber',
             kind: 'movement',
             what:
                 'Holds and crosses sheer rock as though it were level ground, which is most of why the gorge above the Jade Gorge is its and not anybody else\'s.'
@@ -2461,7 +2461,7 @@ export const BEASTS: readonly Beast[] = [
         name: 'The Thing Under Nine Peaks',
         nature: 'ancient',
         // It is drinking a vein an order of four hundred people live on, and
-        // none of them can see the clock or appeal it. That is the Still Blade Peak's
+        // none of them can see the clock or appeal it. That is the Still Blade Pavilion's
         // own row among the houses: a third party who is not present.
         disposition: 'demonic',
         ordinal: 33,
@@ -2479,7 +2479,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It has been cultivating on an undrawn vein since before the order above it was founded, it has never been interrupted, and nobody alive has established whether the seal was cut to keep it in or to keep the vein for it.',
         materialIds: ['mat-ancient-core'],
-        note: 'The Ascetic Order lights nine of its forty-one nodes and has never applied to relight the four that sit over the lower chamber.',
+        note: 'The Ascetic Sect lights nine of its forty-one nodes and has never applied to relight the four that sit over the lower chamber.',
         changedManner: 'Speaks of the ground as its own and of everybody standing on it as a recent arrival, which is not a claim so much as a date.'
     },
     {
@@ -2523,7 +2523,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     // ── mortal: the culling trade, which is most of the trade ─────────
     {
         id: 'mat-hare-pelt',
-        name: 'Grass Hare Pelt',
+        name: 'Grass Rabbit Pelt',
         grade: 'mortal',
         sourceBeastId: 'beast-stubble-hare',
         taking: 'kill',
@@ -2620,7 +2620,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-crow-quill',
-        name: 'Burn Crow Quill',
+        name: 'Scorch Crow Quill',
         grade: 'mortal',
         sourceBeastId: 'beast-burn-crow',
         taking: 'shed',
@@ -2632,7 +2632,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-pheasant-tail',
-        name: 'Pheasant Tail Feather',
+        name: 'Pheasant Plume',
         grade: 'mortal',
         sourceBeastId: 'beast-ringed-pheasant',
         taking: 'shed',
@@ -2644,7 +2644,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-cave-fish-oil',
-        name: 'Cave Fish Oil',
+        name: 'Grotto Fish Oil',
         grade: 'mortal',
         sourceBeastId: 'beast-blind-cave-fish',
         taking: 'kill',
@@ -2656,7 +2656,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-moth-dust',
-        name: 'Paper Moth Dust',
+        name: 'Paper Weevil Dust',
         grade: 'mortal',
         sourceBeastId: 'beast-paper-moth',
         taking: 'scavenge',
@@ -2668,7 +2668,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-magpie-tail',
-        name: 'Magpie Tail Feather',
+        name: 'Magpie Plume',
         grade: 'mortal',
         sourceBeastId: 'beast-verge-magpie',
         taking: 'shed',
@@ -2680,7 +2680,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-night-cat-pelt',
-        name: 'Night Cat Pelt',
+        name: 'Dusk Cat Pelt',
         grade: 'mortal',
         sourceBeastId: 'beast-night-cat',
         taking: 'kill',
@@ -2811,7 +2811,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 180,
         rarityWeight: 48,
         harvestOrdinal: 11,
-        description: 'The one beast material the Buddha Precipice can supply in quantity, and the reason Iron Ridge has a horn market at all.'
+        description: 'The one beast material the Buddha Precipice can supply in quantity, and the reason Iron Crest has a horn market at all.'
     },
     {
         id: 'mat-core-taker-jaw',
@@ -2863,7 +2863,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-cairn-hound-tooth',
-        name: 'Grave Hound Tooth',
+        name: 'Grave Jackal Tooth',
         grade: 'earth',
         sourceBeastId: 'beast-cairn-hound',
         taking: 'scavenge',
@@ -2924,7 +2924,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-weasel-tail-hair',
-        name: 'Weasel Tail-Hair',
+        name: 'Weasel Brush-Hair',
         grade: 'earth',
         sourceBeastId: 'beast-yellow-weasel',
         taking: 'kill',
@@ -2936,7 +2936,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-trunk-hound-hide',
-        name: 'Trunk Hound Hide',
+        name: 'Trunk Jackal Pelt',
         grade: 'earth',
         sourceBeastId: 'beast-trunk-hound',
         taking: 'kill',
@@ -2960,7 +2960,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-red-sweat',
-        name: 'Red Sweat',
+        name: 'Red Lather',
         grade: 'earth',
         sourceBeastId: 'beast-blood-sweat-horse',
         taking: 'shed',
@@ -3008,7 +3008,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-bear-gall',
-        name: 'Honey Bear Gall',
+        name: 'Honey Bruin Gall',
         grade: 'earth',
         sourceBeastId: 'beast-honey-bear',
         taking: 'kill',
@@ -3032,7 +3032,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-buffalo-horn',
-        name: 'Mire Buffalo Horn',
+        name: 'Marsh Buffalo Horn',
         grade: 'earth',
         sourceBeastId: 'beast-mire-buffalo',
         taking: 'kill',
@@ -3056,7 +3056,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-cicada-shell',
-        name: 'Gold Cicada Shell',
+        name: 'Gold Cicada Husk',
         grade: 'earth',
         sourceBeastId: 'beast-gold-cicada',
         taking: 'shed',
@@ -3080,7 +3080,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-iron-bear-tooth',
-        name: 'Iron-Eating Bear Tooth',
+        name: 'Iron-Eating Beast Tooth',
         grade: 'earth',
         sourceBeastId: 'beast-iron-eating-bear',
         taking: 'kill',
@@ -3092,7 +3092,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-crevasse-chitin',
-        name: 'Crevasse Worm Chitin',
+        name: 'Crevasse Grub Chitin',
         grade: 'earth',
         sourceBeastId: 'beast-crevasse-worm',
         taking: 'kill',
@@ -3104,7 +3104,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-toll-lion-mane',
-        name: 'Toll Lion Mane',
+        name: 'Guardian Lion Mane',
         grade: 'earth',
         sourceBeastId: 'beast-toll-lion',
         taking: 'scavenge',
@@ -3140,7 +3140,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-ridge-lizard-scale',
-        name: 'Ridge Lizard Scale',
+        name: 'Crest Lizard Scale',
         grade: 'earth',
         sourceBeastId: 'beast-ridge-lizard',
         taking: 'scavenge',
@@ -3164,7 +3164,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-borer-scale',
-        name: 'Hill-Borer Scale',
+        name: 'Knoll-Borer Scale',
         grade: 'earth',
         sourceBeastId: 'beast-hill-borer',
         taking: 'shed',
@@ -3176,7 +3176,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-leopard-pelt',
-        name: 'Cloud-Marked Leopard Pelt',
+        name: 'Cloud-Spotted Leopard Pelt',
         grade: 'earth',
         sourceBeastId: 'beast-cloud-marked-leopard',
         taking: 'kill',
@@ -3212,7 +3212,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-year-beast-hide',
-        name: 'Year Beast Hide',
+        name: 'Nian Beast Pelt',
         grade: 'earth',
         sourceBeastId: 'beast-year-beast',
         taking: 'kill',
@@ -3224,7 +3224,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-sun-eater-hide',
-        name: 'Sun-Eater Hide',
+        name: 'Sun-Eater Pelt',
         grade: 'earth',
         sourceBeastId: 'beast-sun-eater',
         taking: 'kill',
@@ -3236,7 +3236,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-flood-serpent-hide',
-        name: 'Flood Serpent Hide',
+        name: 'Deluge Serpent Skin',
         grade: 'earth',
         sourceBeastId: 'beast-flood-serpent',
         taking: 'kill',
@@ -3261,7 +3261,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
 
     {
         id: 'mat-firevein-serpent-hide',
-        name: 'Firevein Serpent Hide',
+        name: 'Firevein Serpent Skin',
         grade: 'earth',
         sourceBeastId: 'beast-firevein-serpent',
         taking: 'shed',
@@ -3287,7 +3287,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-cairn-hound-core',
-        name: 'Grave Hound Core',
+        name: 'Grave Jackal Core',
         grade: 'heaven',
         sourceBeastId: 'beast-cairn-hound',
         taking: 'kill',
@@ -3360,7 +3360,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-toll-lion-core',
-        name: 'Toll Lion Core',
+        name: 'Guardian Lion Core',
         grade: 'heaven',
         sourceBeastId: 'beast-toll-lion',
         taking: 'kill',
@@ -3372,7 +3372,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-ridge-lizard-core',
-        name: 'Ridge Lizard Core',
+        name: 'Crest Lizard Core',
         grade: 'heaven',
         sourceBeastId: 'beast-ridge-lizard',
         taking: 'kill',
@@ -3384,7 +3384,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-leopard-core',
-        name: 'Cloud-Marked Leopard Core',
+        name: 'Cloud-Spotted Leopard Core',
         grade: 'heaven',
         sourceBeastId: 'beast-cloud-marked-leopard',
         taking: 'kill',
@@ -3444,7 +3444,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-year-beast-core',
-        name: 'Year Beast Core',
+        name: 'Nian Beast Core',
         grade: 'heaven',
         sourceBeastId: 'beast-year-beast',
         taking: 'kill',
@@ -3456,7 +3456,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-borer-core',
-        name: 'Hill-Borer Core',
+        name: 'Knoll-Borer Core',
         grade: 'heaven',
         sourceBeastId: 'beast-hill-borer',
         taking: 'kill',
@@ -3468,7 +3468,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-qilin-hair',
-        name: 'Green Qilin Hair',
+        name: 'Cyan Qilin Hair',
         grade: 'heaven',
         sourceBeastId: 'beast-green-qilin',
         taking: 'shed',
@@ -3480,7 +3480,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-flood-serpent-core',
-        name: 'Flood Serpent Core',
+        name: 'Deluge Serpent Core',
         grade: 'heaven',
         sourceBeastId: 'beast-flood-serpent',
         taking: 'kill',
@@ -3592,7 +3592,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
 
     {
         id: 'mat-qilin-core',
-        name: 'Green Qilin Core',
+        name: 'Cyan Qilin Core',
         grade: 'immortal',
         sourceBeastId: 'beast-green-qilin',
         taking: 'kill',
@@ -3606,7 +3606,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     // ── chaos: one of these is a plot, not a purchase ──────────────────
     {
         id: 'mat-ancient-core',
-        name: 'Core of Something Older Than the Sect Above It',
+        name: 'Core of Something Predating the Sect Above It',
         grade: 'chaos',
         sourceBeastId: 'beast-thing-under-nine-peaks',
         taking: 'kill',
@@ -3645,7 +3645,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         causeKnownLocally: false,
         precursors: [
             'the ordinary animals went first and went far, which is the tell every gatherer knows and no sect records',
-            'measured output at the Ascetic Order fell before anything was seen, and was reported as a survey error',
+            'measured output at the Ascetic Sect fell before anything was seen, and was reported as a survey error',
             'vein deer arrived on three neighbouring holdings at once, out of season, and were culled as pests'
         ],
         minOrdinal: 3,
@@ -3659,7 +3659,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
     },
     {
         id: 'tide-failed-seal-upstream',
-        name: 'The Tide Out of a Broken Seal',
+        name: 'The Surge Out of a Broken Sigil',
         regionId: 'region-low-fall',
         cause:
             'A seal failed somewhere upstream and a pocket of qi nothing had drawn on began venting into the open world. Everything within a hundred li moved toward the surge, arrived together, and started competing over ground that will be ordinary again within the year.',
@@ -3687,7 +3687,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         causeKnownLocally: true,
         precursors: [
             'the Six Li Patrol repainted the stakes twice in one year and the second repaint was not published',
-            'horn prices at Iron Ridge fell, because everything arriving at market was undersized and everyone could see it',
+            'horn prices at Iron Crest fell, because everything arriving at market was undersized and everyone could see it',
             'hares reached the sorting yard at Willow Village, which they have no business doing and had not done before'
         ],
         minOrdinal: 0,
@@ -3695,7 +3695,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         driverBeastId: null,
         beastIds: ['beast-stubble-hare', 'beast-stone-ox', 'beast-grey-wolf-pack'],
         whoAbsorbsIt:
-            'Iron Ridge, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
+            'Iron Crest, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
         aftermath:
             'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Buddha Precipice actually gets, and it is not a story anybody tells.'
     }
@@ -3738,7 +3738,7 @@ export const THE_CONTRACT = {
         'a witness fee to a Dao house, since an unwitnessed contract binds nobody and the beast knows the law better than most disciples do'
     ],
     witnessing:
-        'A contract of this kind is witnessed the way any other agreement is - a house of the Vermilion Seal Terrace takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
+        'A contract of this kind is witnessed the way any other agreement is - a house of the Vermilion Sigil Terrace takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
     whyItIsRare:
         'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Tribulation, which is nearly all of them - the other party has to be one of a handful of things in the world.',
     howItBreaks: [

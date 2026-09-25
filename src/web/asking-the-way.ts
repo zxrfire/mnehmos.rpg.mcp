@@ -39,7 +39,7 @@ export function theWayAskedOfACrowd(sentence: string): string | null {
 
 /**
  * A topic that asks the way, however a reader wrote it down: "the way to X", "road to X",
- * "directions to X", "how to get to X". Played: the model filed "road to Green Water City", and
+ * "directions to X", "how to get to X". Played: the model filed "road to Emerald Water City", and
  * a topic read only as `the way to` sent the question to the list of destinations.
  */
 const A_WAY_TOPIC =

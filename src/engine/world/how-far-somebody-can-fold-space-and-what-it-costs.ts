@@ -193,7 +193,7 @@ export function priceFold(input: FoldInput): FoldCost {
 /**
  * What arriving this way says about somebody, before a word is spoken.
  *
- * The same axis as a spirit boat and a delegation on foot, and the end of it.
+ * The same axis as a spirit skiff and a delegation on foot, and the end of it.
  * One sentence, engine-authored, no branch on faction or title anywhere.
  */
 export function whatArrivingByFoldSays(landsShortBy: number): string {

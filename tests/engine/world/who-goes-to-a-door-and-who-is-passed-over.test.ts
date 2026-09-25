@@ -66,7 +66,7 @@ import {
     whatBeingPassedOverDoes
 } from '../../../src/engine/world/who-goes-to-a-door-and-who-is-passed-over.js';
 
-const DOOR = 'Cold Spring';
+const DOOR = 'Lone Spring';
 
 /** The three cells of the door table where nobody is handing a place out. */
 const UNCOUNTED: readonly HowADoorIsKept[] = [

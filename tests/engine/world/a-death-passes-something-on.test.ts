@@ -65,7 +65,7 @@ import type { WorldState } from '../../../src/engine/world/world-state';
  * The height at which a death stops being a nothingburger.
  *
  * The design owner's line all evening: a low ordinal cultivator dying is
- * nothing, a patriarch or a hollow court seat dying is earth shaking. 29 is
+ * nothing, a patriarch or a empyrean court seat dying is earth shaking. 29 is
  * where the bands the world reads as senior begin.
  */
 const A_DEATH_THAT_SHOULD_LEAVE_SOMETHING = 29;

@@ -349,7 +349,7 @@ describe('a cap and a suitability are independent axes', () => {
 
 describe('the houses, measured against their own books', () => {
     it('never derives a ceiling of zero from a house with a road and no shelf', () => {
-        // The Hollow Court used to read `reliableOrdinal: 0`, on the reasoning
+        // The Empyrean Court used to read `reliableOrdinal: 0`, on the reasoning
         // that zero is a statement about INTAKE rather than about the house -
         // it takes nobody from the bottom because there is no bottom here. The
         // reasoning was sound and answered the wrong question: it admits at a

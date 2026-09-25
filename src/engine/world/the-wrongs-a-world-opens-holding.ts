@@ -4,7 +4,7 @@
  * ── A WRONG MAY NAME SOMEBODY THE CATALOG WROTE ──────────────────────────
  *
  * It did not, and the refusal was argued. The first cut of this pass drew from
- * everybody able and produced *"The Storm Tyrant killed Lu Zhenshi at Deep Snow
+ * everybody able and produced *"The Storm Tyrant killed Lu Zhenshi at Deep Drift
  * Village"* - the seeder writing an unsettled murder onto the record of the most
  * heavily authored people in the world, asserted by nothing in the catalog. The
  * guard that followed said a seeder does not argue with the writing, and it was

@@ -323,7 +323,7 @@ describe('asking whether somebody could be moved does not move them', () => {
             // move anybody in or out of.
             //
             // Once the seeder stopped stranding the upper stratum on region
-            // nodes, the busiest place became an actual settlement - Clear River Ford,
+            // nodes, the busiest place became an actual settlement - Clear River Ferry,
             // 14 people - and a real settlement churns. Measured across the ten
             // turns below: 14 standing on day 0, 10 on day 1, and the tenth
             // person in the snapshot walked off with the other four.
@@ -813,7 +813,7 @@ describe('a manual costs what a manual costs', () => {
 
         const shelved = await game.act('what would it take to learn the Sixteen-Thread Command');
         expect(shelved.narration).toMatch(
-            /Vermilion Seal Terrace holds a complete copy that nobody there can perform/
+            /Vermilion Sigil Terrace holds a complete copy that nobody there can perform/
         );
 
         const sealed = await game.act('what would it take to learn the Paired-Breath Canon');
@@ -986,7 +986,7 @@ describe('a question about what would follow is not the act it names', () => {
             ['I cultivate for ten years', 'cultivate'],
             ['I gather herbs here', 'gather'],
             ['I fight him if he draws', 'attack'],
-            ['I travel to Iron Ridge', 'move']
+            ['I travel to Iron Crest', 'move']
         ] as const) {
             const plan = parseIntent(said);
             expect(plan.action, said).toBe(action);
@@ -1133,9 +1133,9 @@ describe('a closing question mark means this is not an action', () => {
      *
      * `theReadThatAnswersIt` is a per-verb table and `craft` had no case in it,
      * so it fell to `default: { action: 'assess', target }` - and measured,
-     * "can I build a spirit boat?" came back as
-     * `{action:'assess', target:'spirit boat'}`, which `GameService.assess`
-     * turns into `handleAssess({against:'place', place:'spirit boat'})`. The
+     * "can I build a spirit skiff?" came back as
+     * `{action:'assess', target:'spirit skiff'}`, which `GameService.assess`
+     * turns into `handleAssess({against:'place', place:'spirit skiff'})`. The
      * player asking whether they can lay a keel got an ambient-qi reading of a
      * place by that name.
      *
@@ -1145,7 +1145,7 @@ describe('a closing question mark means this is not an action', () => {
      * `craft` joined `ACTION_NAMES`.
      */
     it('answers a question about building with the bench listing', () => {
-        for (const said of ['can I build a spirit boat?', 'what can I build']) {
+        for (const said of ['can I build a spirit skiff?', 'what can I build']) {
             const plan = parseIntent(said);
             expect(plan.action, said).toBe('craft');
             // DROPPING THE TARGET IS THE WHOLE OF IT, exactly as it is for
@@ -1157,7 +1157,7 @@ describe('a closing question mark means this is not an action', () => {
             expect(plan.target, said).toBeUndefined();
         }
         // And deciding to build one is still the act, with its target on it.
-        const decided = parseIntent('I build a spirit boat');
+        const decided = parseIntent('I build a spirit skiff');
         expect(decided.action).toBe('craft');
         expect(decided.target).toBeDefined();
     });

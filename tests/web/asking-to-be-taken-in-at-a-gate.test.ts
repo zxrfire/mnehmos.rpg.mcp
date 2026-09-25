@@ -44,15 +44,15 @@ describe('the guard', () => {
         new ProviderNarrator(new ScriptedProvider({ plans: [json] }), { model: 'test' });
 
     it('lets a walk to a place the sentence names stand where the table read nothing', async () => {
-        const said = 'I walk back to Cold Peak for the Silver Island Market intake.';
+        const said = 'I walk back to Moraine Gate for the Silver Island Hall intake.';
         expect(parseIntent(said).action).toBe('unclear');
-        const plan = await modelSaying('{"action":"move","target":"Cold Peak"}').plan(said, '');
-        expect(plan.action).toMatchObject({ action: 'move', target: 'Cold Peak' });
+        const plan = await modelSaying('{"action":"move","target":"Moraine Gate"}').plan(said, '');
+        expect(plan.action).toMatchObject({ action: 'move', target: 'Moraine Gate' });
         expect(plan.source).toBe('model');
     });
 
     it('still declines a walk the table read as something cheaper', async () => {
-        const plan = await modelSaying('{"action":"move","target":"Cold Peak"}').plan('I ask about Cold Peak', '');
+        const plan = await modelSaying('{"action":"move","target":"Moraine Gate"}').plan('I ask about Moraine Gate', '');
         expect(plan.action.action).not.toBe('move');
     });
 });

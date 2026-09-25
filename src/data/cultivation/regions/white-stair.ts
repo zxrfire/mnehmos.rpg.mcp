@@ -179,13 +179,13 @@ export const THE_WHITE_STAIR: Region = {
     branches: [
         {
             parentSectId: 'sect-cinnabar-crucible-sect',
-            localName: 'The Cold Crucible at Cold Peak',
+            localName: 'The Cold Crucible at Moraine Gate',
             doesHere:
-                'Four furnaces and a price list, and the only alchemy in the province. It stands here because the Hall\'s grant comes from the Frostmirror rather than from the Third Sill, which is an arrangement neither province has a document for and neither has asked about.'
+                'Four furnaces and a price list, and the only alchemy in the province. It stands here because the Hall\'s grant comes from the Frostmirror rather than from the Third Sluice, which is an arrangement neither province has a document for and neither has asked about.'
         },
         {
             parentSectId: 'house-shrinking-earth',
-            localName: 'The Four Names Terminal',
+            localName: 'The Fourfold Stele Terminal',
             doesHere:
                 'One of the nine stations, at the head of the pass, an hour from a station seventeen days\' walk away. It is the only reason anything reaches the North in the five months the road is shut, it opens four days in nine, and the Frostmirror pays for it in stones without ever having said what for.'
         }

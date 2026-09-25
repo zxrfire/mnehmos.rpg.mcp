@@ -64,7 +64,7 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
     theBand:
         'A seal holds from Void Tribulation to Tribulation Transcendence, ordinal twenty-nine to forty-four, and the sect catalog states why in both directions: the floor is economic, because below Void Tribulation nobody would pay to run a formation continuously off a vein, and the ceiling is what was built, because nothing in the Late Age was ever made to hold anything higher.',
     theGap:
-        `A False Immortal stands at ordinal ${FALSE_IMMORTAL_ORDINAL}. One rung above the top of the band, and one rung is the whole of it. The strongest thing anybody in either province has ever sealed is the First Warden of the Kiln Wardens at ordinal forty-four, under a masterwork formation, on the deepest ground in the world, held by staff posted by an apex - and that is the ceiling, and it is still short.`,
+        `A False Immortal stands at ordinal ${FALSE_IMMORTAL_ORDINAL}. One rung above the top of the band, and one rung is the whole of it. The strongest thing anybody in either province has ever sealed is the First Warden of the Tripod Wardens at ordinal forty-four, under a masterwork formation, on the deepest ground in the world, held by staff posted by an apex - and that is the ceiling, and it is still short.`,
     soNobodyBanksOne:
         'No sect holds a False Immortal in reserve. No sect has ever held one. No sect could. Every protector in this catalog stood on a mountain because they chose to, could have walked off it at any hour of any day, and eventually did - and the whole architecture of the office follows from that one asymmetry rather than from anything anybody negotiated.',
     andNobodyHasNoticedTheGapIsTheReason:
@@ -77,7 +77,7 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
         theCount:
             'Eleven ninth-family nodes exist in the two provinces by the Immovable Mountain Temple\'s own survey. Nine are required. The eleven are in four different places, none of them can be moved, and cutting a new one is the thing nobody can do. The world is holding more than enough and cannot get them into one room.',
         theGround:
-            'And even in one room it would burn more than any vein in either province carries. The one that would run it is the datum itself, which the Kiln Wardens are posted on and draw nothing from, and they are staff on somebody else\'s ground rather than a sect with a decision to make.',
+            'And even in one room it would burn more than any vein in either province carries. The one that would run it is the datum itself, which the Tripod Wardens are posted on and draw nothing from, and they are staff on somebody else\'s ground rather than a sect with a decision to make.',
         nobodyEverBuiltOne:
             'There is no evidence the specification was ever executed and good reason to think it was not. The True Weight Age produced fewer crossings than any age in the record and therefore had almost nothing above the band to hold, so what survives is an engineering figure for a problem that age did not have. Nothing anywhere in this world is a sealed False Immortal, and nothing should ever be written as one.',
         theQualifier:
@@ -88,7 +88,7 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
 // ─────────────────────────────────────────────────────────────────────────
 // THE MADNESS
 // Three stages, ordered, covering the rung's full span. The pace is years; the
-// speed is legacy. The names are what a Hollow Court Seat would enter in a
+// speed is legacy. The names are what an Empyrean Court Seat would enter in a
 // record - which faculty is being reported on and what state it is in - and not
 // titles for the stages.
 // Each of the first two has an internal turn that is NOT a band boundary: the
@@ -144,7 +144,7 @@ export const MADNESS_STAGES: readonly MadnessStage[] = [
             'The bottom of their own dao, or the work running out of anywhere to land. Where neither happens the stage simply continues, and a False Immortal whose legacy keeps holding stays here well past the nominal band. The death of the last person who knew them before the crossing moves nobody: it falls inside this stage, it happens to everybody inside the first two thousand years because nothing below the Lid outlives that, and the dao heart comes through it unshaken every time it has been watched.',
         observed: true,
         observedNote:
-            'Directly, in the present, and by four people. The Seats of the Hollow Court have had six hundred and forty years of the early face and would recognise the description immediately, which is the only reason any of this is written from life rather than reconstructed. The late face is the one the record is best on: several of the seven entries in this catalog were at it during the whole of their office, and the accounts agree so completely about the presentation that they read as though somebody collated them, which nobody has.'
+            'Directly, in the present, and by four people. The Seats of the Empyrean Court have had six hundred and forty years of the early face and would recognise the description immediately, which is the only reason any of this is written from life rather than reconstructed. The late face is the one the record is best on: several of the seven entries in this catalog were at it during the whole of their office, and the accounts agree so completely about the presentation that they read as though somebody collated them, which nobody has.'
     },
     {
         id: 'stage-heart-demon-without-deviation',
@@ -178,7 +178,7 @@ export const MADNESS_STAGES: readonly MadnessStage[] = [
             'The span, which is the only thing left and arrives on schedule. There is no further stage for it to move them into, and the rung\'s figure is the figure: whatever else has or has not happened by then, the years run out and that is the end of the account.',
         observed: false,
         observedNote:
-            'No. This stage is reconstructed from what the record holds of the keeping and an inference about where the keeping is going, and the reconstruction is the Hollow Court\'s rather than anybody else\'s. It may simply be wrong, and the file states that rather than smoothing it, because a stage nobody has seen is exactly the sort of thing a catalog quietly turns into a fact.'
+            'No. This stage is reconstructed from what the record holds of the keeping and an inference about where the keeping is going, and the reconstruction is the Empyrean Court\'s rather than anybody else\'s. It may simply be wrong, and the file states that rather than smoothing it, because a stage nobody has seen is exactly the sort of thing a catalog quietly turns into a fact.'
     }
 ];
 
@@ -234,7 +234,7 @@ export const THE_OFFICE = {
     onlyAHouseThatProducedOneCanHaveOne:
         'And there is a structural reason the reserved post exists where it does, which nobody wrote down because it falls out of the office being internal. A protector is typically one of your own who crossed and came back, so only a house that has itself produced somebody who came back can expect one at all. Note the exact words, because an earlier draft of this entry got them wrong and put a chair at Burnt Earth: the qualifying fact is CAME BACK, not GOT THROUGH. A completed crossing produces a True Immortal who left and no chair at all. Only a crossing that stopped half way leaves a person a house could seat. So the crossing record is the wrong instrument and reads too generously - it counts departures and vacancies together, and the two are opposite outcomes. The qualifying fact is never a position in a hierarchy either, and that comes apart at the sharpest case in the world: the house with more completed crossings behind it than the rest of the top of the world put together holds from nobody, sits on no grant table, and is on nobody\'s list of the institutions that run anything.',
     whatACrossingLeavesBehind:
-        'Which produces the reading that is worth having, because it is the opposite of failure - but it has to be said in three parts rather than one, and collapsing them is the mistake this entry used to make. A crossing has three outcomes and only the middle one produces a chair. FIRST: somebody goes all the way and becomes a True Immortal, and there is nothing left here at all. No chair was ever reserved, because there is nobody a chair could have been for - the person is gone and not coming back, and a house in this position is not holding a vacancy, it simply has no such office. That is the commonest cited case and it is every name anybody can point to: the Azure Cloud Pavilion sent Ru Anjing three hundred and eighty years ago, the Burnt Earth Temple sent the First Abbot two thousand six hundred years ago, the Storm Tyrant Court sent the First Tyrant three thousand four hundred years ago, and the Hollow Court has sent six. Not one of those houses is short a protector. Their people succeeded. SECOND: somebody stops half way and becomes a False Immortal, and the house finds out. Only this produces a reserved chair, because only this leaves a person in the world who could conceivably stand in it, and the house holds the post open for them and for nobody else. THIRD, and by a wide margin the commonest of the three: somebody becomes a False Immortal and nobody below ever learns which of the outcomes it was. There is no chair, and the house does not know it is missing one. See `CROSSING_PRACTICE` for why - a crossing happens in a cave nobody was told about, and the default state afterwards is that the people who supplied three hundred years of it cannot say whether their candidate completed, died, or is sitting somewhere in seclusion.',
+        'Which produces the reading that is worth having, because it is the opposite of failure - but it has to be said in three parts rather than one, and collapsing them is the mistake this entry used to make. A crossing has three outcomes and only the middle one produces a chair. FIRST: somebody goes all the way and becomes a True Immortal, and there is nothing left here at all. No chair was ever reserved, because there is nobody a chair could have been for - the person is gone and not coming back, and a house in this position is not holding a vacancy, it simply has no such office. That is the commonest cited case and it is every name anybody can point to: the Azure Cloud Pavilion sent Ru Anjing three hundred and eighty years ago, the Burnt Earth Temple sent the First Abbot two thousand six hundred years ago, the Storm Tyrant Court sent the First Tyrant three thousand four hundred years ago, and the Empyrean Court has sent six. Not one of those houses is short a protector. Their people succeeded. SECOND: somebody stops half way and becomes a False Immortal, and the house finds out. Only this produces a reserved chair, because only this leaves a person in the world who could conceivably stand in it, and the house holds the post open for them and for nobody else. THIRD, and by a wide margin the commonest of the three: somebody becomes a False Immortal and nobody below ever learns which of the outcomes it was. There is no chair, and the house does not know it is missing one. See `CROSSING_PRACTICE` for why - a crossing happens in a cave nobody was told about, and the default state afterwards is that the people who supplied three hundred years of it cannot say whether their candidate completed, died, or is sitting somewhere in seclusion.',
     theChairIsAPieceOfKnowledge:
         'Which is what a reserved chair actually is, and it is worth stating separately because it is not obvious from the ceremonies. A house holding one is not telling you it was strong enough to produce somebody; half the houses in either province have an ascended ancestor on a wall and no chair anywhere. It is telling you the house KNOWS what became of one of its own - that the person stopped rather than finished, and is still out there. That is a piece of knowledge almost nobody in the world has about anybody, it is rarer than the crossing itself, and it is the second of the two filters that make the post empty everywhere: False Immortals are scarce, and knowing about one is scarcer. A house with a chair has a reason it knows, and the reason is worth asking about.',
     itIsVacantAndNotAbolished:
@@ -256,7 +256,7 @@ export const THE_OFFICE = {
     theNameOutlivedTheOccupancy:
         'And the phrase has drifted with eight centuries of vacancy. A cultivator today who hears "dao protector" understands the one-off guard at a crossing - somebody who stands over a helpless attempt for its duration - and has no idea the words also name a seat that has been held for two thousand years at a stretch. See `DAO_PROTECTOR` in `crossings.ts`, which is the surviving sense and the only one anybody uses. The two are related the way a watchman and a wall are related.',
     theCourtDidNotUseTheName:
-        'Worth noticing at the one place it came up again. When the Hollow Court had to invent somewhere to put a False Immortal it could not seat, the precedent was available, well documented and exactly the right shape - a position outside the rungs, held by somebody the house cannot order. Nobody proposed it. Guest of the Court was invented instead, and whether that was tact, oversight or an accurate reading of the man is not recorded, has never been raised by any of the five people who could raise it, and is not resolved here.'
+        'Worth noticing at the one place it came up again. When the Empyrean Court had to invent somewhere to put a False Immortal it could not seat, the precedent was available, well documented and exactly the right shape - a position outside the rungs, held by somebody the house cannot order. Nobody proposed it. Guest of the Court was invented instead, and whether that was tact, oversight or an accurate reading of the man is not recorded, has never been raised by any of the five people who could raise it, and is not resolved here.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -281,7 +281,7 @@ export const THE_VACANCY = {
         'Quarters kept swept at the top of a stair, with no bedding in them and a schedule for the sweeping, in houses that would be embarrassed to be asked why.',
         'A place laid at a founding ceremony, at the end of the row rather than the head of it, which the officiant announces as vacant and everybody present has heard announced as vacant every year of their lives.',
         'An entry on a roll with the name column empty, which the Ninefold Karma Palace will certify as a valid standing office and has certified twice in four centuries for houses that wanted it on paper.',
-        'A hall in the Nine Peaks compound that the ascetics still call the ninth guest\'s, which is the only trace of the last occupant anybody outside the Order would recognise.'
+        'A hall in the Nine Peaks compound that the ascetics still call the ninth guest\'s, which is the only trace of the last occupant anybody outside the Sect would recognise.'
     ],
     theBurntEarthEntryWasWrongAndIsRetracted:
         'A sixth item stood here and has been struck, and the retraction is kept rather than quietly deleted because the error is instructive. It read: "at Burnt Earth, four monks, a plain wall, and a chair that has been reserved for two thousand six hundred years." The Burnt Earth Temple has no chair and never had one. Their only immortal SUCCEEDED - the First Abbot went all the way, which makes him a True Immortal who left rather than a False Immortal who stopped, and a house in that position is not holding a vacancy open because there was never anybody it could be held open for. The line was written from the crossing record, which is the wrong qualifier: a completed crossing produces a departure, and only a False Immortal produces a chair. See `whatACrossingLeavesBehind`, which now separates the three outcomes this entry collapsed into one.',
@@ -577,7 +577,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             heldByFactionId: 'house-immovable-mountain',
             holderKnows: false,
             builtOnIt:
-                'Nothing, which is the ordinary case and worth having once. Three sign groups of the Bird-Track Hand are agreed and one of the three is agreed to be a number, so what the Immovable Mountain Temple has is nine hundred characters of which it can identify roughly forty and can read none. It surveys them, records that they are unchanged, and files the entry under condition of the stones. The house has never asked why a containment house would cut the Bird-Track Hand on anything.',
+                'Nothing, which is the ordinary case and worth having once. Three sign groups of the Bird-Scratch Hand are agreed and one of the three is agreed to be a number, so what the Immovable Mountain Temple has is nine hundred characters of which it can identify roughly forty and can read none. It surveys them, records that they are unchanged, and files the entry under condition of the stones. The house has never asked why a containment house would cut the Bird-Scratch Hand on anything.',
             yieldedTechniqueIds: []
         },
         end: 'went_looking',
@@ -591,7 +591,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         whatBecameOfIt:
             'The Girdle stood for another two thousand years and then was ended by the Immovable Mountain Temple, which broke the eastern nail itself to demonstrate that the Girdle could not hold the survey. Nobody involved on either side knew that the Girdle had been keeping an empty office for twenty centuries, and nobody has worked out since that the house the Immovable Mountain Temple\'s founders moved against had lost its deterrent before the Hundred Schools Age ended. He does not know any of it happened.',
         whatSurvives: [
-            'nine hundred characters of the Bird-Track Hand on the inner faces of three standing stones, surveyed four times and never published',
+            'nine hundred characters of the Bird-Scratch Hand on the inner faces of three standing stones, surveyed four times and never published',
             'a duration entered in the Girdle survey ledger in a column meant for something else, which the Immovable Mountain Temple inherited and has never queried',
             'the office in the Girdle ceremonies, kept for two thousand years after the occupant walked out, which is why the accounts of the house are confident about a protector nobody alive ever saw'
         ],
@@ -656,7 +656,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
     {
         id: 'fi-deng-ru',
         name: 'Deng Ru',
-        calledBy: 'The Guest at Iron Ridge',
+        calledBy: 'The Guest at Iron Crest',
         crossedYearsAgo: 44_000,
         remainderAtCrossingYears: null,
         remainderNote:
@@ -671,18 +671,18 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             recruitment: 'external',
             recruitmentNote:
                 'External, and the Span never once put it that way, because the Span never put it any way at all. He was entered on a station roll rather than a house roll, which is what the Span does with a surveyor it has hired for a season, and nobody ever revised the entry in eleven hundred years. It is the least ceremonious arrangement in the catalog and it worked better than any of the others.',
-            title: 'The Guest at Iron Ridge, entered on the station roll and never on the house roll',
+            title: 'The Guest at Iron Crest, entered on the station roll and never on the house roll',
             fromYearsAgo: 4_600,
             toYearsAgo: 3_500,
             whatTheHouseSupplied:
                 'Terminals. Twenty-two closed and nine answering, a survey listing thirty-one, and a house that would talk about nothing else for as long as anybody would sit there. It was the last subject in the world he still had an appetite for, and the Span gave him eleven hundred years of it without ever once asking him for anything.',
             whatTheHouseGot:
-                'Eleven hundred years of a guest at Iron Ridge station who was never described as anything more than that, and nine amended entries in the true-distance table, which is the part the Span does not know it got.',
+                'Eleven hundred years of a guest at Iron Crest station who was never described as anything more than that, and nine amended entries in the true-distance table, which is the part the Span does not know it got.',
             theOrderThatWasGiven: null
         },
         carving: {
             id: 'carving-under-the-kettle-plaster',
-            where: 'On the north wall of the second room at Iron Ridge station, faced over with lime plaster during a rebuild four hundred years ago by masons who recorded the wall as bearing old cutting of no interest.',
+            where: 'On the north wall of the second room at Iron Crest station, faced over with lime plaster during a rebuild four hundred years ago by masons who recorded the wall as bearing old cutting of no interest.',
             whatItIs:
                 'A folding: how two known places are brought against each other and walked across, cut out in full by somebody who remembered doing it as a matter of ordinary travel. About two thirds of the face was recorded in a station notebook before the plaster went on, by a clerk who copied it because it was there and did not understand a character of it.',
             script: 'ordinary',
@@ -696,7 +696,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         end: 'went_mad',
         endedYearsAgo: 3_500,
         endNote:
-            'Over about a century he answered less, and then not at all, and one spring he walked out of Iron Ridge station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
+            'Over about a century he answered less, and then not at all, and one spring he walked out of Iron Crest station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
         whichExitItReallyWas:
             'The record would call it going looking and this catalog calls it the trajectory, and the distinction rests on the eleven hundred years before it rather than on the walk. A man who spends a century answering less and then leaves for a place that is not there has not decided anything. He has arrived somewhere.',
         stageAtEndId: 'stage-heart-demon-without-deviation',
@@ -705,7 +705,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'Nine entries of the true-distance table carry corrections in the Span\'s own hand, unsigned, all made in one season, and they are the only original figures the house has ever produced. The Span believes they are a recovered Open Gate Age correction, which in every sense that matters they are: he took them himself, correctly, when the network ran. Every courier contract and freight span in two provinces has been priced off them for eleven hundred years and the Span cannot find the error, because there is no error in them.',
         whatSurvives: [
             'nine corrected entries in the true-distance table, unsigned, in the Span\'s own hand, which price every courier contract in two provinces',
-            'a line in the Iron Ridge station book recording that the Guest departed, with no entry before it and none after',
+            'a line in the Iron Crest station book recording that the Guest departed, with no entry before it and none after',
             'about two thirds of a folding, copied by a clerk who did not understand it, circulating as a recovered fragment with no attribution',
             'the original under lime plaster on the north wall of a room the Span uses daily'
         ],
@@ -877,7 +877,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         crossedYearsAgo: 19_000,
         remainderAtCrossingYears: 21_000,
         remainderNote:
-            'Twenty-one thousand, which he mentioned once at the Nine Peaks in the course of declining something and which the Order recorded as a quantity, because quantities are what the Order records. It is in the offering ledger, in the numerals everybody can read, in a column with no heading.',
+            'Twenty-one thousand, which he mentioned once at the Nine Peaks in the course of declining something and which the Sect recorded as a quantity, because quantities are what the Sect records. It is in the offering ledger, in the numerals everybody can read, in a column with no heading.',
         path: 'peak',
         pathNote:
             'Path two, and he was five hundred years into a post before he admitted to himself that was what it had always been. He came to the Nine Peaks because an ascetic order that carries nothing and asks for nothing is a restful place to think, and he left the moment thinking somewhere else looked better - which is the whole of path two and is not dramatic in the slightest.',
@@ -887,16 +887,16 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
                 'The ascetic order on the nine peaks, which holds its founding record in a hand whose numerals it reads perfectly and whose prose it has not read in eight hundred years.',
             recruitment: 'external',
             recruitmentNote:
-                'External, and the Order handled it the way the Order handles everything, which is to say it did not handle it. Nobody negotiated, nobody drew an instrument and nobody entered him on any roll except the one that records who is on which peak. The Order asks nothing of anybody and therefore had nothing to ask of him, which is the only reason an external arrangement there was frictionless and is also why it ended the first afternoon somebody asked.',
-            title: 'The Ninth Guest, which is what the Order calls anybody staying on the ninth peak and was never a title at all',
+                'External, and the Sect handled it the way the Sect handles everything, which is to say it did not handle it. Nobody negotiated, nobody drew an instrument and nobody entered him on any roll except the one that records who is on which peak. The Sect asks nothing of anybody and therefore had nothing to ask of him, which is the only reason an external arrangement there was frictionless and is also why it ended the first afternoon somebody asked.',
+            title: 'The Ninth Guest, which is what the Sect calls anybody staying on the ninth peak and was never a title at all',
             fromYearsAgo: 4_900,
             toYearsAgo: 4_400,
             whatTheHouseSupplied:
-                'Nothing, deliberately, which is why it worked. The Order asks nothing of anybody, offers nothing to anybody, and left him alone on the ninth peak for five hundred years with the weather and the workings, and that turned out to be exactly what somebody two thirds of the way down their own dao wanted. He said as much, once, and the Order recorded the date and not the sentence.',
+                'Nothing, deliberately, which is why it worked. The Sect asks nothing of anybody, offers nothing to anybody, and left him alone on the ninth peak for five hundred years with the weather and the workings, and that turned out to be exactly what somebody two thirds of the way down their own dao wanted. He said as much, once, and the Sect recorded the date and not the sentence.',
             whatTheHouseGot:
-                'Five hundred years of not being interfered with by anyone in the province, which the Order attributed entirely to the peaks being difficult to reach.',
+                'Five hundred years of not being interfered with by anyone in the province, which the Sect attributed entirely to the peaks being difficult to reach.',
             theOrderThatWasGiven:
-                'One, on a spring afternoon four thousand four hundred years ago. A boundary with a neighbouring holding had gone bad and a Mountain Elder asked him to go down and settle it. He stood up, said that was not what he was there for, and walked down the mountain. He did not come back and the Order has never written down that any of it happened.'
+                'One, on a spring afternoon four thousand four hundred years ago. A boundary with a neighbouring holding had gone bad and a Mountain Elder asked him to go down and settle it. He stood up, said that was not what he was there for, and walked down the mountain. He did not come back and the Sect has never written down that any of it happened.'
         },
         carving: {
             id: 'carving-the-lintel-underside',
@@ -920,11 +920,11 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         stageAtEndId: 'stage-dao-heart-unshaken',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
-            'The Order lost five hundred years of undisturbed peace and never connected the loss to the departure. Its offering weights change abruptly in the year he left, in the direction of a house that has begun paying for things it did not previously have to pay for, and they have never changed back - which is the only evidence anywhere that he was ever there, and it is in a column of numerals that the Order reads perfectly and has never interpreted.',
+            'The Sect lost five hundred years of undisturbed peace and never connected the loss to the departure. Its offering weights change abruptly in the year he left, in the direction of a house that has begun paying for things it did not previously have to pay for, and they have never changed back - which is the only evidence anywhere that he was ever there, and it is in a column of numerals that the Sect reads perfectly and has never interpreted.',
         whatSurvives: [
             'nine legible characters on the underside of the ninth peak lintel, which nobody has ever looked at',
-            'a step change in the Nine Peaks offering weights in one year, in numerals the Order reads perfectly and has never interpreted',
-            'a remainder figure of twenty-one thousand in an unheaded column of the Order offering ledger',
+            'a step change in the Nine Peaks offering weights in one year, in numerals the Sect reads perfectly and has never interpreted',
+            'a remainder figure of twenty-one thousand in an unheaded column of the Sect offering ledger',
             'an unnamed entry in a Shrinking Earth Pavilion station daybook, nine years later, about a traveller who asked which terminals open somewhere breathable'
         ],
         servingNow: false
@@ -942,7 +942,7 @@ export const THE_CANDIDATE_REGISTER = {
     whatItIs:
         'A list of people the world has some reason to think came back from a crossing. One line each, maintained at the three apex institutions and nowhere else, and it is not a watch list: nobody on it is being looked for, nobody on it has been approached, and most of the names are of people who have been dead for thousands of years. It is a register of questions that cannot be closed, kept because an institution that notices things cannot un-notice them and has no procedure for striking a line it was never able to disprove.',
     whatIsActuallyPublic:
-        'Admissions, and nothing after them. You cannot hide somebody walking up a mountain and being taken in - people see arrivals, the person had a life somewhere before, and somebody notices when they stop having it - so who has entered the Hollow Court is a matter of public fact going back centuries. Rank, seat, standing, progression, whether they are still alive and whether they ever attempted the crossing are internal and have never been stated by anybody. It is not a wall. It is a house with one open door and no windows.',
+        'Admissions, and nothing after them. You cannot hide somebody walking up a mountain and being taken in - people see arrivals, the person had a life somewhere before, and somebody notices when they stop having it - so who has entered the Empyrean Court is a matter of public fact going back centuries. Rank, seat, standing, progression, whether they are still alive and whether they ever attempted the crossing are internal and have never been stated by anybody. It is not a wall. It is a house with one open door and no windows.',
     soTheApexesHoldAListOfTheHouseAndNotADossier:
         'Which is what the three institutions are actually holding, and it is worth writing it that way round rather than as a file on any individual. What they have is a list of everybody known to have gone up those mountains, kept because the Court admits at Void Tribulation and a Void Tribulation admission is a rare and individually remarkable event that three separate institutions would each note the year of. It goes back centuries, it is probably accurate, and it is nearly useless: it records who went in and nothing whatever about what became of them.',
     theMarksAreWhatGeneratesIt:
@@ -1073,9 +1073,9 @@ export const THE_PRESENT_COUNT = {
         theRumour:
             'There is a rumour that he declined, or that he would not take it officially, and its entire population is three. It is not in the world and could not get there: what it presupposes is that the Court has a chair for him at all, and five people alive know that. What the three hold is an offhand remark at second hand, from the one of them who was in the room, and they do not agree about it. One reads a refusal. One reads a man changing the subject, which he does constantly and about everything. One holds that no question was ever actually put and there is therefore nothing in it to interpret. So it might be true. It might be a misheard joke. It might have been about something else entirely, and he does not remember making it. Nothing in this catalog says which.',
         nobodyCanCheck:
-            'And nobody can, the three holding it included. The Hollow Court does not announce, deny, correct or brief, and it does not do any of those things inwardly either: there is no procedure by which three Seats settle a disagreement about what a fourth heard, and none of them has ever proposed one. Note the shape it leaves - a rumour that he declined implies an offer that was made and answered, in a situation where whether either of those happened is the thing in dispute. That is not an inconsistency to be tidied. It is the Court\'s opacity turned on the Court, which is the one place nothing has ever shown it operating, and it should stay visible.',
+            'And nobody can, the three holding it included. The Empyrean Court does not announce, deny, correct or brief, and it does not do any of those things inwardly either: there is no procedure by which three Seats settle a disagreement about what a fourth heard, and none of them has ever proposed one. Note the shape it leaves - a rumour that he declined implies an offer that was made and answered, in a situation where whether either of those happened is the thing in dispute. That is not an inconsistency to be tidied. It is the Court\'s opacity turned on the Court, which is the one place nothing has ever shown it operating, and it should stay visible.',
         andNowhereElseIsACandidate:
-            'It would be the Hollow Court or nothing, and this is not loyalty and should never be written as gratitude. It is where he is from, it is where the four people who know what he is are, and everywhere else in the world is a room he would be the strangest thing in. Another house could offer on any terms it liked and it would not be a decision he had to make; it would be a conversation he was having with somebody in an inn.',
+            'It would be the Empyrean Court or nothing, and this is not loyalty and should never be written as gratitude. It is where he is from, it is where the four people who know what he is are, and everywhere else in the world is a room he would be the strangest thing in. Another house could offer on any terms it liked and it would not be a decision he had to make; it would be a conversation he was having with somebody in an inn.',
         threeReasonsAndAllOfThemTrue:
             'So the reason he does not hold the post is overdetermined, which is the correct state for it. He does not care for titles. The rule that orders seats cannot order him, because a seat is a position in a queue for the crossing and he has no attempts left. And he no longer belongs to them in the way holding their office would require. Nobody refused anybody. It is simply not a thing that could happen.',
         heUsedToBeOfThem:
@@ -1083,13 +1083,13 @@ export const THE_PRESENT_COUNT = {
         theRegister:
             'Fondness without belonging, and it is easy to overplay in both directions. He is not devoted and he is not bitter. The accurate note is affectionate and entirely resigned, in a shrugging way rather than a grieving one - the same unhurried, faintly amused acceptance that lets him sit through the Third Seat on obligation to keep three other people from losing face. He does not perform any of this, has probably never said it out loud, and would change the subject. Whether the peace is genuine or is the most complete thing he has ever built is not resolved here and costs nothing to leave open.',
         andHeDoesTheOtherHalfAnyway:
-            'The office has two functions and only one of them needs a promise. He goes back to the Hollow Court - not often, on no schedule, under no obligation - and what he does there is give dao lectures, which is the substantive half of what a protector was ever for, being performed right now, by the only False Immortal in the world, for the four beings best placed to use it. He wants no name for it and there is no name attached to it, which is the arrangement working exactly as a man indifferent to titles would arrange it if he had arranged anything.',
+            'The office has two functions and only one of them needs a promise. He goes back to the Empyrean Court - not often, on no schedule, under no obligation - and what he does there is give dao lectures, which is the substantive half of what a protector was ever for, being performed right now, by the only False Immortal in the world, for the four beings best placed to use it. He wants no name for it and there is no name attached to it, which is the arrangement working exactly as a man indifferent to titles would arrange it if he had arranged anything.',
         theThirdSeat:
             'And on every one of those visits the Third Seat delivers a dao sermon on obligation, at length, to a man permanently barred from the only obligation that would have mattered. He finds it insufferable and does not hide it well. He sits through it anyway, for the other three rather than for her. Both things are true on the same afternoon and neither party has ever remarked on it.'
     },
     theDefenceQuestionStaysOpen: {
         whatIsTrue:
-            'He is on the Hollow Court\'s roll as Guest of the Court, entered without discussion, and has never asked to be taken off it. There is no obligation attached in either direction and neither party has ever proposed one, including the obvious one. If the mountains were attacked tomorrow nothing whatsoever compels him to come.',
+            'He is on the Empyrean Court\'s roll as Guest of the Court, entered without discussion, and has never asked to be taken off it. There is no obligation attached in either direction and neither party has ever proposed one, including the obvious one. If the mountains were attacked tomorrow nothing whatsoever compels him to come.',
         whatIsNotKnown:
             'Whether he would. That is not withheld from the reader and it is not withheld by him: it has never been asked, it has never been decided, and it is unknown to him as much as to anybody. A man who had privately made up his mind either way would be a different man from the one in the catalog.',
         itIsTheSameTraitProducingASecondUnknown:
@@ -1097,7 +1097,7 @@ export const THE_PRESENT_COUNT = {
         whyNobodyAsks:
             'Because the four people who would need the answer are the four who cannot ask for it. Asking converts a tie into a proposal, a proposal has to be accepted or declined, and either outcome is worse for the Court than the present state - in which it may have the single most consequential asset in the world and has never verified it, counted it, or mentioned it to anybody.',
         doNotResolveIt:
-            'This is the sharpest expression of what the Hollow Court is: opaque by construction, holding something it cannot count on. It stays a maybe in the data as well as in the prose. No field anywhere records whether he would come, no faction record points at him as a protector, and no tool may report the Court as having one.',
+            'This is the sharpest expression of what the Empyrean Court is: opaque by construction, holding something it cannot count on. It stays a maybe in the data as well as in the prose. No field anywhere records whether he would come, no faction record points at him as a protector, and no tool may report the Court as having one.',
         andItIsNotADeterrent:
             'It deters nobody, because deterrence requires somebody to have been told. Four Seats and him know he is on the roll. The Court has never mentioned him in any setting where a third party was present and has never tried to trade on it, so outside the mountains it is not even a question anybody could be wrong about.'
     },
@@ -1119,7 +1119,7 @@ export const THE_PRESENT_COUNT = {
  */
 export const THE_ARTS_ARE_THE_WHOLE_INVENTORY = {
     heHoldsNothing:
-        'No object at all, of any rung. Not a diminished one, not a borrowed one, and not one of the Hollow Court\'s - he was of them once and is not now, so nothing of theirs is his to carry, and there is nobody else in the world who would hand him anything. Every other figure at the top of this setting is a person plus something they were given. He is the one who is only the person.',
+        'No object at all, of any rung. Not a diminished one, not a borrowed one, and not one of the Empyrean Court\'s - he was of them once and is not now, so nothing of theirs is his to carry, and there is nobody else in the world who would hand him anything. Every other figure at the top of this setting is a person plus something they were given. He is the one who is only the person.',
     soTheArtsAreTheAccount:
         'Which is why the three entries at ordinal forty-five in the technique catalog carry more than a strong man\'s arts usually would. They are not the flourish on top of an object doing the real work; they are the whole of why he is dangerous, and taking them away leaves a man at a rung and nothing else. Read `WHAT_AN_ART_BUYS` beside this: an art is worth most of a rung inside a realm and nothing at all across the Lid, and he is the one case in the world where somebody is standing on the art alone.',
     andItIsMeasuredRatherThanClaimed:
@@ -1137,7 +1137,7 @@ export const THE_ARTS_ARE_THE_WHOLE_INVENTORY = {
 export const LU_SHENG_CARVINGS: readonly DaoCarving[] = [
     {
         id: 'carving-the-lecture-face-at-the-court',
-        where: 'The floor of the north hall on the Hollow Court\'s own mountain, in the space the four of them sit in when he comes back, cut in courses over the last two hundred years of visits.',
+        where: 'The floor of the north hall on the Empyrean Court\'s own mountain, in the space the four of them sit in when he comes back, cut in courses over the last two hundred years of visits.',
         whatItIs:
             'The working of a dao lecture, left where the lecture happened. It accumulates rather than composes: he arrives, they talk, something gets cut, and he goes, and there are perhaps forty separate afternoons on that floor with nothing joining them up. It is the only body of his cutting that anybody in the world has watched being made.',
         script: 'ordinary',

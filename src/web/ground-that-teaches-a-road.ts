@@ -14,7 +14,7 @@
  * not name, could not be told about, and got nothing from while standing on it.
  *
  * It was found while closing a discovery leak in the travel list, which had
- * been handing fresh cultivators The Glass Field and The Nine-City Roll by
+ * been handing fresh cultivators The Glass Ploughland and The Nine-City Roll by
  * name because open grounds seed as ordinary `wilds`. Those bare names were the
  * ONLY place a player ever saw one. Closing the leak made the absence visible;
  * it did not create it.
@@ -30,7 +30,7 @@
  *   A SOURCE     the player learns of a ground from somebody who could point at
  *                it - which is to say from a person whose own life puts it in
  *                front of them. Everybody in the Buddha Precipice can tell you
- *                where the Grinding Ford is; the carts have been crossing it for
+ *                where the Grinding Shallows is; the carts have been crossing it for
  *                six hundred years. Almost none of them has ever taken anything
  *                from it. That gap is the whole content of the channel, and it
  *                is why the source is `knowsWhereItIs` and never `inReach`.
@@ -530,7 +530,7 @@ export function housesGladToSeeYou(
  * because a dao ground is a world location and is not a catalog place. Every
  * read that went through `regionIdOfPlace` answered "the home province" for
  * anybody actually standing on one - so a cultivator who walked to the Glass
- * Field was treated as never having left the Jade Gorge.
+ * Ploughland was treated as never having left the Jade Gorge.
  */
 export function howAPlayerStands(
     state: WorldState,

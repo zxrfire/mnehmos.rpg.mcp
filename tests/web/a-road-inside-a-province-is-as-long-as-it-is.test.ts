@@ -67,7 +67,7 @@ describe('a road inside a province costs what the catalog says', () => {
     });
 
     it('walks it back for the same price, off the one row the catalog states', async () => {
-        // The road is declared on Clear River Ford and read from both ends. A player
+        // The road is declared on Clear River Ferry and read from both ends. A player
         // walking back up the gorge is the only place that distinction is
         // observable, and a one-way road is a bug `linkLocations` already
         // names as one.

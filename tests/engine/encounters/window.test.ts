@@ -327,7 +327,7 @@ describe('what stands above', () => {
 
 describe('the people seam', () => {
     const crowd: EncounterPerson[] = [
-        { id: 'npc-1', name: 'Jiang Ciyi', realmOrdinal: 11, factionName: 'Thousand Treasure Pavilion', rank: 'Clerk' },
+        { id: 'npc-1', name: 'Jiang Ciyi', realmOrdinal: 11, factionName: 'Thousand Relic Pavilion', rank: 'Clerk' },
         { id: 'npc-2', name: 'Gu Huilu', realmOrdinal: 12 },
         { id: 'npc-3', name: 'Shen Anbo', realmOrdinal: 7, known: true }
     ];

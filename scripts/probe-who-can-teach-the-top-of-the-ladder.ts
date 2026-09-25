@@ -117,7 +117,7 @@ function bestTeacherFor(techniqueId: string): { ordinal: number; who: string } |
 // `end` is the highest rung TEACHING can reach on this book, which is not the
 // same as its cap: nobody is ever taught onto 45, because that rung is reached
 // by surviving the crossing and by nothing else. Comparing a teacher's reach
-// against `cap` is what made the register report the Hollow Court as unable to
+// against `cap` is what made the register report the Empyrean Court as unable to
 // finish its own road. `gap` below is measured against `end`.
 console.log('\nEVERY CULTIVATION ART: CAP, TEACHABLE END, BEST TEACHER, AND THE REAL GAP');
 console.log(' cap  end  best  reach  gap  art');

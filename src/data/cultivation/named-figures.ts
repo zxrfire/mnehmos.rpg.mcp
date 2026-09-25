@@ -102,7 +102,7 @@ export const THE_JUNIOR_ANSWERS = {
     itExplainsTheGrades:
         'And it dissolves what looked like a separate fact about Ru Anjing. A fresh immortal sending lower-grade medicines is not a statement about her generosity or her limits as a person; she is the most junior member of the only society that could send anything, so she is the one who answers and the one whose reach sets the grade. The Azure Cloud Pavilion has the highest answer rate in the world and the lowest grade for one reason rather than two.',
     itIsNotASnub:
-        'A sect answered by its junior ancestor is being answered by a functioning institution. The Hollow Court hears from the weakest of six, which is still something enormous, and the fact that the other five are silent means they are far stronger rather than that they are displeased. Reading juniority as a slight is a mortal error and a common one.',
+        'A sect answered by its junior ancestor is being answered by a functioning institution. The Empyrean Court hears from the weakest of six, which is still something enormous, and the fact that the other five are silent means they are far stronger rather than that they are displeased. Reading juniority as a slight is a mortal error and a common one.',
     theAnswerIsExact:
         'And what comes down is precise. Two words from one of them are two deliberately chosen words that say exactly what was meant and no more - brevity as completeness at a scale the receiver is not equipped for, rather than vagueness. They do not garble, forget, approximate or misremember, and nothing is lost in the crossing.',
     relayingIsAccurate:
@@ -135,7 +135,7 @@ export const THE_DECAY_OF_MEMORY = {
     frontLoadingIsTheAntidote:
         'And that is the only antidote to `THE_WRONG_QUESTION` that exists. It is not extra kindness and it is not a different answer - it is correct accounting on a budget the old ones have stopped being able to see. Only a recently ascended immortal would think of it, because only they still remember that a question is a once-a-century act rather than a conversation.',
     theInversion:
-        'Which means a sect\'s best possible arrangement is a fresh immortal, and produces the unfairest fact in the catalog with a cause rather than a personality behind it: the Hollow Court\'s six ancients are a channel that is technically superior and practically worse, while the Azure Cloud Pavilion\'s single recent one is thin, lucky, and worth more.',
+        'Which means a sect\'s best possible arrangement is a fresh immortal, and produces the unfairest fact in the catalog with a cause rather than a personality behind it: the Empyrean Court\'s six ancients are a channel that is technically superior and practically worse, while the Azure Cloud Pavilion\'s single recent one is thin, lucky, and worth more.',
     theClockOnAzureCloud:
         'And it puts a term on the Pavilion. Ru Anjing will get worse. Not soon, not by choosing to, and not in any way she would recognise as a change - in a few centuries she will answer like the others, and nobody currently alive at the Pavilion will see it happen. The present advantage is a window rather than a possession.',
     somebodyHasWorkedThisOut:
@@ -187,9 +187,9 @@ export const WHO_HINTS_AND_WHY = {
     ruAnjingDoes:
         'Ru Anjing is the exception twice over: she has a living sister, and she is three hundred and eighty years old, which is nothing. She still remembers what an offering costs to make and that the Pavilion cannot afford many. So she does not answer and stop - she front-loads, wrapping the exact answer in the context that stops it being misread, because she knows there is no second exchange in which to fix it. Not a different answer, which none of them give. The same answer, delivered by somebody who can still see the budget.',
     theBitterIrony:
-        'Which produces the most unfair fact in the catalog, and it now has a cause rather than a personality behind it. The Hollow Court\'s excellent archives buy it a perfect channel to six people who have been up there long enough to have forgotten what a question costs. The Azure Cloud Pavilion\'s thin, lucky, sentimental arrangement - one recent ancestor, one living sister - is worth more in practice than four thousand years of immaculate record-keeping, and will stop being worth more on a timetable nobody at the Pavilion can affect.',
+        'Which produces the most unfair fact in the catalog, and it now has a cause rather than a personality behind it. The Empyrean Court\'s excellent archives buy it a perfect channel to six people who have been up there long enough to have forgotten what a question costs. The Azure Cloud Pavilion\'s thin, lucky, sentimental arrangement - one recent ancestor, one living sister - is worth more in practice than four thousand years of immaculate record-keeping, and will stop being worth more on a timetable nobody at the Pavilion can affect.',
     theCourtsRealVulnerability:
-        'And it leaves a genuine exposure underneath all of it: the Hollow Court is the body most likely to ask a question well and be destroyed by the answer anyway, because there is nobody up there who cares enough to break the frame. Everybody who fears the Court fears its power. The thing that could actually end it is a well-drafted sentence.',
+        'And it leaves a genuine exposure underneath all of it: the Empyrean Court is the body most likely to ask a question well and be destroyed by the answer anyway, because there is nobody up there who cares enough to break the frame. Everybody who fears the Court fears its power. The thing that could actually end it is a well-drafted sentence.',
     howToTellWhichChannelYouAreOn:
         'Ask two questions about the answerer: how long ago did they cross, and is there anybody alive they know. Recent and tied is the warm channel, and there is exactly one of those in the world. Everything else is exact, complete and cold, and the coldness increases with age at a rate nobody down here has been able to measure because nobody down here lives long enough to see it move.'
 } as const;
@@ -330,7 +330,7 @@ export type NamedFigure = z.infer<typeof NamedFigureSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
-    // ── the Hollow Court: six crossings, one voice ────────────────────
+    // ── the Empyrean Court: six crossings, one voice ────────────────────
     {
         id: 'figure-shen-yuandao',
         name: 'Shen Yuandao',
@@ -341,7 +341,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 4400,
         attestation: 'withheld',
         attestationNote:
-            'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Immovable Mountain Temple\'s, taken off a Ten Thousand Works site register that predates the Court\'s reticence and was never meant to be interesting.',
+            'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Immovable Mountain Temple\'s, taken off a Ten Thousand Deeds site register that predates the Court\'s reticence and was never meant to be interesting.',
         answers: 'silent',
         juniority: 6,
         manner:
@@ -594,7 +594,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
     // and both are attested by the SAME KIND of document: a running record
     // the body has kept from the first day. That is what a house has instead
     // of an ancestor when there is nobody above it to have been given one by.
-    // The Market has a rate book and the Caravan have a tally board, and each
+    // The Hall has a rate book and the Caravan have a tally board, and each
     // of those is worth more to its holder than a wall of tablets, because it
     // is the thing the body is actually trusted for.
     {
@@ -688,18 +688,18 @@ export const FOUNDERS: readonly NamedFigure[] = [
         alsoCalled: 'the Stone Bearer',
         kind: 'founder',
         factionId: 'sect-nine-peaks-ascetic-order',
-        whatTheyWere: 'The first ascetic up all nine peaks carrying the same stone, who declined to say what the stone was for and set the Order\'s entire manner.',
+        whatTheyWere: 'The first ascetic up all nine peaks carrying the same stone, who declined to say what the stone was for and set the Sect\'s entire manner.',
         yearsAgo: 800,
         attestation: 'unreadable',
         attestationNote:
-            'The Order has the name. It is in the founding record, in the Boundary Hand, and the Order reads the numerals in that document perfectly and has not read the prose in eight hundred years - so it carries a founder it can point at and cannot pronounce, and uses the title instead. Any party who reads the hand could hand it back in an afternoon.',
+            'The Sect has the name. It is in the founding record, in the Boundary Hand, and the Sect reads the numerals in that document perfectly and has not read the prose in eight hundred years - so it carries a founder it can point at and cannot pronounce, and uses the title instead. Any party who reads the hand could hand it back in an afternoon.',
         answers: null,
         juniority: null,
         note: 'The same document, the same hand and the same gap that makes Patriarch Meng Da a folklore problem rather than an institutional one. One unread page is doing a great deal of work at the Nine Peaks.'
     },
     {
         id: 'figure-old-shen',
-        name: 'Old Shen of the Third Ford',
+        name: 'Old Shen of the Third Ferry',
         alsoCalled: null,
         kind: 'founder',
         factionId: 'sect-clear-river-alliance',
@@ -730,7 +730,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
     {
         id: 'figure-the-first-keeper-of-names',
         name: 'Ao Duan',
-        alsoCalled: 'the First Keeper of Names',
+        alsoCalled: 'the First Keeper of Scrolls',
         kind: 'founder',
         factionId: 'sect-lantern-hall',
         whatTheyWere: 'The archivist who began writing down what boundaries take, starting with what one had just taken from a friend of his.',
@@ -813,7 +813,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
     },
     {
         id: 'figure-the-first-bell',
-        name: 'Whoever hung the first bell',
+        name: 'Whoever hung the first chime',
         alsoCalled: null,
         kind: 'founder',
         factionId: 'sect-hollow-bell-wanderers',
@@ -832,7 +832,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         alsoCalled: null,
         kind: 'founder',
         factionId: 'sect-cold-sword-sect',
-        whatTheyWere: 'A swordsman the terraces sent down without writing a reason, who found a walled yard on the shelf above Stone Ford and taught four other people who had been sent down the same way.',
+        whatTheyWere: 'A swordsman the terraces sent down without writing a reason, who found a walled yard on the shelf above Clear River Ferry and taught four other people who had been sent down the same way.',
         yearsAgo: 240,
         attestation: 'secure',
         attestationNote: 'Two centuries of people who were personally taught by somebody who was personally taught by him, in an unbroken line of about nine, in one yard. Nothing is written down and nothing needs to be: the chain is short enough that the current Sect Master can name every link in it.',
@@ -929,7 +929,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
     },
     {
         id: 'figure-the-first-marker',
-        name: 'The first Marker',
+        name: 'The first Stakehand',
         alsoCalled: null,
         kind: 'founder',
         factionId: 'sect-six-li-patrol',
@@ -1059,7 +1059,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
     },
     {
         id: 'figure-the-first-keeper-kiln',
-        name: 'The First Keeper of the Kiln',
+        name: 'The First Keeper of the Tripod',
         alsoCalled: null,
         kind: 'founder',
         factionId: 'sect-deeproot-court',
@@ -1113,7 +1113,7 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
     },
     {
         id: 'figure-the-standing-hand-clerks',
-        name: 'The Ten Thousand Works recopying clerks',
+        name: 'The Ten Thousand Deeds recopying clerks',
         alsoCalled: null,
         kind: 'historical',
         factionId: null,
@@ -1128,7 +1128,7 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
     },
     {
         id: 'figure-the-taught-teacher',
-        name: 'The teacher the Given Ladder requires',
+        name: 'The master the Given Ladder requires',
         alsoCalled: null,
         kind: 'historical',
         factionId: null,

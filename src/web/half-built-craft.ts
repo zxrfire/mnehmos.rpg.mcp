@@ -268,8 +268,10 @@ const WHAT_PEOPLE_CALL_A_BUILD: Readonly<Record<string, string>> = Object.freeze
 /** Words that lift a carriage off the cheapest bill onto a deeper one. */
 const DEEPER_CARRIAGE: Readonly<Record<string, string>> = Object.freeze({
     shod: 'build-carriage-earth',
+    rimmed: 'build-carriage-earth',
     earth: 'build-carriage-earth',
     named: 'build-carriage-heaven',
+    titled: 'build-carriage-heaven',
     heaven: 'build-carriage-heaven'
 });
 
@@ -278,7 +280,7 @@ const DEEPER_CARRIAGE: Readonly<Record<string, string>> = Object.freeze({
  *
  * The catalog's own names first, because the game prints "A drawn carriage" and
  * a player must be able to type back what the game printed. Then the nouns,
- * then a grade word that lifts a carriage onto a deeper bill - so "a shod
+ * then a grade word that lifts a carriage onto a deeper bill - so "an iron-rimmed
  * carriage" and "an earth-grade carriage" both land on the earth bill, and a
  * bare "a carriage" lands on the cheapest one rather than on a guess.
  */

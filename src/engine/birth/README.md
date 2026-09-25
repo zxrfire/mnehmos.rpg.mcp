@@ -36,7 +36,7 @@ without knowing an origin exists.
 
 1. **An origin buys inputs, never rank.** `Birth` has no realm ordinal, no
    cultivation progress, no rank index, no foundation and no insight, and no
-   field may be added that could carry one. A Hollow Court Seat's child opens
+   field may be added that could carry one. An Empyrean Court Seat's child opens
    at ordinal zero like everybody else. The shape is the enforcement, exactly
    as it is in `origin.ts`.
 
@@ -112,7 +112,7 @@ person. Nothing new is stored anywhere. `RaisedInside.stillToClear` carries the 
 `the-three-floors-a-house-admits-at.ts` untouched, and a test asserts it equals
 what that file says rather than anything shorter.
 
-Played, at Vermilion Seal Terrace: *"On the roll of The House of the Bound
+Played, at Vermilion Sigil Terrace: *"On the roll of The House of the Bound
 Word"*, and `promote` answers *"there is nothing to be promoted from ... the
 first rung opens at Qi Condensation Layer 6, and they stand at Qi Condensation
 Layer 1."* At the Azure Cloud Pavilion, born on its ground: *"Serves no house."*

@@ -82,7 +82,7 @@ export function whatTheChairAsks(house: FactionRecord): number {
  *
  * Anybody the record says is not serving is out of the pool: `servingNow` is a
  * field on each False Immortal and it is theirs, not a rule about their kind.
- * Measured, without reading it, the search seated Lu Sheng in the Hollow
+ * Measured, without reading it, the search seated Lu Sheng in the Empyrean
  * Court's chair.
  */
 function whoClearsTheBar(state: WorldState, bar: number): NpcRecord[] {

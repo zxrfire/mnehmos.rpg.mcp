@@ -104,9 +104,9 @@ describe('reading an account back out of the row it was written into', () => {
     it('round-trips every shape an account is written in', () => {
         const shapes = [
             { name: 'Shen Wuyi', house: null, rung: null },
-            { name: 'Shen Wuyi', house: 'Hollow Court', rung: null },
+            { name: 'Shen Wuyi', house: 'Empyrean Court', rung: null },
             { name: 'Shen Wuyi', house: null, rung: 'core_formation' as const },
-            { name: 'Shen Wuyi', house: 'Hollow Court', rung: 'core_formation' as const }
+            { name: 'Shen Wuyi', house: 'Empyrean Court', rung: 'core_formation' as const }
         ];
         for (const shape of shapes) {
             const back = theAccountInAStatement(theAccountAsAStatement(shape, 'Fallback'));
@@ -123,10 +123,10 @@ describe('reading an account back out of the row it was written into', () => {
      */
     it('reads the speaker\'s own record of having given one', () => {
         const said = theAccountAsAStatement(
-            { name: 'Shen Wuyi', house: 'Hollow Court', rung: null }, 'Fallback'
+            { name: 'Shen Wuyi', house: 'Empyrean Court', rung: null }, 'Fallback'
         );
         const back = theAccountInAStatement(`An account given to Duan Shutao: ${said}`);
-        expect(back?.house).toBe('Hollow Court');
+        expect(back?.house).toBe('Empyrean Court');
     });
 
     /**
@@ -135,7 +135,7 @@ describe('reading an account back out of the row it was written into', () => {
      */
     it('is empty-handed on a row that is not an account', () => {
         expect(theAccountInAStatement('Duan Shutao exists.')).toBeNull();
-        expect(theAccountInAStatement('The Hollow Court is somewhere out there.')).toBeNull();
+        expect(theAccountInAStatement('The Empyrean Court is somewhere out there.')).toBeNull();
         expect(theAccountInAStatement('')).toBeNull();
     });
 
@@ -146,20 +146,20 @@ describe('reading an account back out of the row it was written into', () => {
      * they cannot both be.
      */
     it('calls only the parts both accounts speak to', () => {
-        const withHouse = { name: 'Shen Wuyi', house: 'Hollow Court', rung: null };
+        const withHouse = { name: 'Shen Wuyi', house: 'Empyrean Court', rung: null };
         const withRung = { name: 'Shen Wuyi', house: null, rung: 'core_formation' as const };
         expect(whereTwoAccountsDisagree(withHouse, withRung)).toEqual([]);
 
         const otherHouse = { name: 'Shen Wuyi', house: 'Azure Dew Sect', rung: null };
         expect(whereTwoAccountsDisagree(withHouse, otherHouse)).toEqual(['house']);
 
-        const otherName = { name: 'Bai Luo', house: 'Hollow Court', rung: null };
+        const otherName = { name: 'Bai Luo', house: 'Empyrean Court', rung: null };
         expect(whereTwoAccountsDisagree(withHouse, otherName)).toEqual(['name']);
 
         // Two spellings of one name are one name, and it is the same
         // normalisation the forward comparison uses.
         expect(whereTwoAccountsDisagree(
-            withHouse, { name: 'shen wuyi', house: 'the Hollow Court', rung: null }
+            withHouse, { name: 'shen wuyi', house: 'the Empyrean Court', rung: null }
         )).toEqual([]);
     });
 });
@@ -214,7 +214,7 @@ describe('the world\'s own people gainsay an account put to them', () => {
         await game.act(`I tell ${hearer.name} that I am of the Cinnabar Crucible Sect`);
         const before = openLedger(db);
 
-        const again = await game.act(`I tell ${hearer.name} that I am of the Hollow Court`);
+        const again = await game.act(`I tell ${hearer.name} that I am of the Empyrean Court`);
 
         expect(again.narration).toContain(hearer.name);
         const gainsaying = again.toolCalls.find(

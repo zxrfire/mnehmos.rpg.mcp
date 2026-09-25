@@ -13,7 +13,7 @@
  *                     had said in front of them, where the same sentence typed
  *                     plainly is refused.
  *   IT IS NOT A       and the act behind the name still meets every bar. The
- *   BYPASS OF A RULE  Hollow Court admits at Void Tribulation whether or not
+ *   BYPASS OF A RULE  Empyrean Court admits at Void Tribulation whether or not
  *                     anybody has heard of it.
  *   IT DOES NOT LEAK  the very next ordinary sentence is refused again, and
  *                     nothing was written: the holder has heard of exactly what
@@ -49,12 +49,12 @@ async function withAdminMode<T>(on: boolean, fn: () => Promise<T>): Promise<T> {
 /**
  * A house at the top of the world that nobody starts having heard of.
  *
- * The Hollow Court is the right one to test with because it refuses for TWO
+ * The Empyrean Court is the right one to test with because it refuses for TWO
  * separate reasons - nobody has heard of it, and it admits at Void Tribulation -
  * so a reach that lifted more than the awareness gate would be visible
  * immediately.
  */
-const THE_COURT = 'the Hollow Court';
+const THE_COURT = 'the Empyrean Court';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE CONTEXT ITSELF

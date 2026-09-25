@@ -182,7 +182,7 @@ describe('the way a place does things arrives when it is touched, and not as new
 
     it('hands the custom over as its own block, apart from the rulings', () => {
         const message = composeNarrationUser(facts, {
-            place: 'Iron Ridge', ambient: 'thin',
+            place: 'Iron Crest', ambient: 'thin',
             theWayItIsDoneHere: [{ when: 'death', text: 'Coffins go up, not down, as high as the family can pay.' }]
         });
         expect(message).toContain('THE WAY IT IS DONE HERE');
@@ -192,24 +192,24 @@ describe('the way a place does things arrives when it is touched, and not as new
     });
 
     it('says nothing when the engine set none', () => {
-        expect(composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin' })).not.toContain('THE WAY IT IS DONE HERE');
+        expect(composeNarrationUser(facts, { place: 'Iron Crest', ambient: 'thin' })).not.toContain('THE WAY IT IS DONE HERE');
     });
 
     /** A province's senses were authored and read by nothing; the narrator invented them. */
     it('hands a province over in full on arriving and in a line after', () => {
         const province = { colour: 'grey slate and rust', smell: 'coal smoke.', food: 'millet and salted radish' };
-        const first = composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin', whatThisProvinceIsLike: province });
+        const first = composeNarrationUser(facts, { place: 'Iron Crest', ambient: 'thin', whatThisProvinceIsLike: province });
         expect(first).toContain('The province: colour: grey slate and rust; smell: coal smoke; food: millet and salted radish.');
         expect(first).toContain('never describe or list it');
-        const later = composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin', whatThisProvinceIsLike: province }, { arrived: false });
+        const later = composeNarrationUser(facts, { place: 'Iron Crest', ambient: 'thin', whatThisProvinceIsLike: province }, { arrived: false });
         expect(later).toContain('The province, as before: colour: grey slate and rust;');
-        expect(composeNarrationUser(facts, { place: 'Iron Ridge', ambient: 'thin' })).not.toContain('The province');
+        expect(composeNarrationUser(facts, { place: 'Iron Crest', ambient: 'thin' })).not.toContain('The province');
     });
 
     /** An area inside a province is what the player stands in; the province is around it. */
     it('leads with the area and puts the province around it', () => {
         const message = composeNarrationUser(facts, {
-            place: 'Iron Ridge', ambient: 'thin',
+            place: 'Iron Crest', ambient: 'thin',
             whatThisProvinceIsLike: { colour: 'green-grey' },
             whatThisAreaIsLike: { smell: 'wet canopy and rot' }
         });

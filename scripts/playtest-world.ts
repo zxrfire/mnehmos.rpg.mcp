@@ -94,7 +94,7 @@ async function loreReach() {
     rule('1. WHO CAN EVER HEAR OF WHOM - the lore gate, measured');
     const lu = WANDERERS[0];
     line(`  Testing reach for: ${lu.recordName}, ${rankName(lu.lastOrdinal)}, ${lu.affiliation.factionId}`);
-    line(`  and for the apex institutions and the Hollow Court's seats.`);
+    line(`  and for the apex institutions and the Empyrean Court's seats.`);
 
     sub('at what standing does a name become sayable in front of you');
     const rungs = [0, 6, 13, 20, 29, 37, 41, 44];
@@ -125,9 +125,9 @@ async function loreReach() {
         note('lore', 'broken', 'A starting mortal can be told the name of the world\'s only False Immortal.');
     }
     if (knowsHim(insider)) {
-        note('lore', 'works', 'A Hollow Court member holds him regardless of realm - the insider route works.');
+        note('lore', 'works', 'An Empyrean Court member holds him regardless of realm - the insider route works.');
     } else {
-        note('lore', 'friction', 'Even a Hollow Court member cannot hold his name, so the insider route is unreachable in play.');
+        note('lore', 'friction', 'Even an Empyrean Court member cannot hold his name, so the insider route is unreachable in play.');
     }
 
     sub('the legends, which are what actually travels');
@@ -178,14 +178,14 @@ async function apexIntake() {
 }
 
 /**
- * The Hollow Court, from the outside and then from inside the gate.
+ * The Empyrean Court, from the outside and then from inside the gate.
  *
  * The most opaque institution in the setting, admitting at Void Refinement,
  * with four unnamed Seats nobody outside the mountains has ever identified. The
  * question is whether a player can get anywhere near any of it.
  */
 async function theSeats() {
-    rule('3. THE HOLLOW COURT AND ITS SEATS');
+    rule('3. THE EMPYREAN COURT AND ITS SEATS');
     const court = getSect('sect-hollow-court')!;
     const withdrawn = WITHDRAWN_POWERS['sect-hollow-court'];
     line(`  ${court.name}: bar ${court.admissionOrdinal} (${rankName(court.admissionOrdinal)}), ranks ${court.ranks.join(' > ')}`);

@@ -116,7 +116,7 @@ describe('the two ids one person is filed under resolve to one claim', () => {
         expect(theOneIdAPersonIsKnownBy('cultivator-abc')).toBe('cultivator-abc');
         expect(catalogPersonBehind('npc-95')).toBeNull();
 
-        // And the Hollow Court, which is the reason a `member-` prefix rule
+        // And the Empyrean Court, which is the reason a `member-` prefix rule
         // would have been wrong: ten of the catalog's people are filed under
         // `hollow-court-`, and they are the top of the world.
         const court = MEMBERS.filter(m => m.id.startsWith('hollow-court-'));

@@ -16,7 +16,7 @@
  *     seven years old they are at 0. They wait, in their own family's house.
  *   - A Dao house's name reaches perhaps thirty houses, and the ones it can
  *     actually use on a seven-year-old are EXACTLY THE FIVE THAT ADMIT AT 0 -
- *     the Burnt Earth Temple, the Azure Dew, the Hollow Bell Wanderers, the
+ *     the Burnt Earth Temple, the Azure Dew, the Wayside Chime Wanderers, the
  *     Six Li Patrol and the Bountiful Sheaf Sect. All five take anybody. So the
  *     greatest name in the province buys a place at a house that would have
  *     taken a farmer's child that morning, which makes the name worth nothing
@@ -174,7 +174,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
     {
         factionId: 'sect-ashen-forge-clan',
         answer: 'no, and the bar does not move',
-        why: 'It is not a bar. It is a family, and a blood clan cannot recruit, so there is no door for a word to open - what it produces is the family, and every Ashen child who takes the rota arrives at the rung the clan chief stands on. Somebody asking the Ashen Forge to take a favoured child is asking it to have a different son, and the clan finds the request bewildering rather than offensive.',
+        why: 'It is not a bar. It is a family, and a blood clan cannot recruit, so there is no door for a word to open - what it produces is the family, and every Ashen child who takes the rota arrives at the rung the clan chief stands on. Somebody asking the Ashen Anvil to take a favoured child is asking it to have a different son, and the clan finds the request bewildering rather than offensive.',
         andWhatItTakes: null,
         andWhetherItsOwnWordMovesAnybody: null
     },
@@ -200,7 +200,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
         why: 'Nobody joins it. People stand here because they were appointed - by the Earth Vein Tower, or by a sect under it or friendly to it - and an appointment is not an admission, so there is no bar for a word to skip and no application anybody could make. What LOOKS like a bar from outside is fifteen rungs of distance; what it actually is, is that the question is decided elsewhere, about you. A favour is the wrong instrument here and the right one is a nomination, which is a different thing with a different price.',
         andWhatItTakes: null,
         andWhetherItsOwnWordMovesAnybody:
-            'The Keeper reports one figure a year upward and answers nothing downward, including requests. In nine hundred years the Kiln has asked nobody for anything, which the province reads as austerity and which is more simply a body with no interest in the world outside its perimeter.'
+            'The Keeper reports one figure a year upward and answers nothing downward, including requests. In nine hundred years the Tripod has asked nobody for anything, which the province reads as austerity and which is more simply a body with no interest in the world outside its perimeter.'
     },
     {
         factionId: 'sect-deeproot-court',
@@ -233,7 +233,7 @@ export const THE_APEXES_THAT_TRADE = {
     theLongCut:
         'It will do the same and it prices it honestly, which is the difference. The Myriad Course Hall employs rather than grants, so it cannot lean on a tenant - what it has instead is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Myriad Course Hall regards as evidence that it sets them correctly.',
     andWhatTheyWillNotDo:
-        'Neither will move a bar that cannot be moved, and both know exactly which those are. Asking the Earth Vein Tower to place a child at the Frostmirror gets a one-line reply saying the arts would kill them; asking either of them to place one at the Hollow Court gets no reply at all. A word is not a lever against a wall, and the two apexes are better than anybody in the world at knowing the difference - which is most of why their words are worth anything.',
+        'Neither will move a bar that cannot be moved, and both know exactly which those are. Asking the Earth Vein Tower to place a child at the Frostmirror gets a one-line reply saying the arts would kill them; asking either of them to place one at the Empyrean Court gets no reply at all. A word is not a lever against a wall, and the two apexes are better than anybody in the world at knowing the difference - which is most of why their words are worth anything.',
     andWhyThePavilionIsNotHere:
         'Because it will not. It has the standing to move almost any bar in the province and has never once asked, on the stated ground that it would then be doing to another house what it refuses to do to itself. That is a real cost paid annually in a currency the other two spend freely, and it is the only one of the three that never has to wonder what a placement is going to be worth to somebody later.'
 } as const;

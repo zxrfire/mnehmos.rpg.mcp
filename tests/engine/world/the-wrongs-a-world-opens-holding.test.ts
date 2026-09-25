@@ -113,7 +113,7 @@ describe('the wrongs a world opens holding', () => {
      *
      * This pass used to refuse an authored figure in either role, and the
      * refusal was argued: the first version drew the doer from everybody able
-     * and produced *"The Storm Tyrant killed Lu Zhenshi at Deep Snow Village"*,
+     * and produced *"The Storm Tyrant killed Lu Zhenshi at Deep Drift Village"*,
      * which is the seeder writing an unsettled murder onto the record of the
      * most heavily authored people in the world. The design owner has ruled the
      * other way - *wrongs may touch authored figures* - and the distinction that

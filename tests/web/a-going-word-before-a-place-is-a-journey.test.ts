@@ -28,12 +28,12 @@ describe('a going word before a place', () => {
 
     // Played: the name is only written back capitalised when it is typed whole.
     it.each([
-        'heading to green water then',
-        'aight thx old man. heading to green water then'
+        'heading to emerald water then',
+        'aight thx old man. heading to emerald water then'
     ])('stands on a name shortened the way people say it: %s', async said => {
-        const plan = await modelSaying('{"action":"move","target":"Green Water City"}').plan(said, '');
+        const plan = await modelSaying('{"action":"move","target":"Emerald Water City"}').plan(said, '');
         expect(plan.action.action).toBe('move');
-        expect(plan.action.target).toBe('Green Water City');
+        expect(plan.action.target).toBe('Emerald Water City');
     });
 
     it('does not turn going over to the market into a journey', async () => {

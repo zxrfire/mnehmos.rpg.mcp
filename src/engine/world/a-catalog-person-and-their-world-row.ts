@@ -51,7 +51,7 @@
  * catalog holds".
  *
  * The naming convention is not the rule either. Ten of the catalog's people -
- * the Hollow Court's seats and the mountains under them, which is the apex of
+ * the Empyrean Court's seats and the mountains under them, which is the apex of
  * the setting - are filed under `hollow-court-` rather than `member-`, so a
  * rule keyed on the `member-` prefix would have silently excluded the top of
  * the world. The set is read off `MEMBERS` for exactly that reason.

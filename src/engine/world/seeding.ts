@@ -26,6 +26,7 @@ import {
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { rosterByRung, elderRungOf } from '../cultivation/leadership.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
+import { placeIdSlug } from '../../data/cultivation/place-names.js';
 import { THE_LINE_AT_OLD_RIVER } from '../../data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { rollOf } from '../../data/cultivation/faction-roll.js';
@@ -396,7 +397,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // rests on existed only in a catalog nothing read. See `goods.ts`.
     state.objects.push(...seedArtifacts(state));
     // And the hulls, which is the same defect one catalog over. See
-    // `seedTheCraftThatAreObjects`: no world has ever contained a spirit boat.
+    // `seedTheCraftThatAreObjects`: no world has ever contained a spirit skiff.
     state.objects.push(...seedTheCraftThatAreObjects(state));
     state.objects.push(...seedComprehensionMaterials(state));
     // And the ground that teaches a road, which is the other half of the same
@@ -595,9 +596,9 @@ function regionLocationId(regionId: string): string {
     return `loc-${regionId}`;
 }
 
+/** A renamed place keeps the id it was seeded under - see `placeIdSlug`. */
 function placeLocationId(regionId: string, placeName: string): string {
-    const slug = placeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    return `loc-${regionId}-${slug || 'place'}`;
+    return `loc-${regionId}-${placeIdSlug(placeName) || 'place'}`;
 }
 
 /**

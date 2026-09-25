@@ -17,7 +17,7 @@
  * any of it:
  *
  *   theThingAskedFor   asked five catalogs and not the conveyance one, so
- *                      "what would you take for a spirit boat" came back
+ *                      "what would you take for a spirit skiff" came back
  *                      "nothing in the world is called that a person would
  *                      barter over" - a false sentence about the catalog.
  *   thisRowIs          knew four id conventions and not `data.conveyanceId`,
@@ -77,7 +77,7 @@ describe('a hull is reachable by a sentence', () => {
      * furniture and not for the world.
      */
     it('answers for a craft by its kind and by a hull\'s own name', () => {
-        const byKind = theThingAskedFor('a spirit boat', null);
+        const byKind = theThingAskedFor('a spirit skiff', null);
         expect(byKind, 'the conveyance catalog is still not asked').not.toBeNull();
         expect(byKind!.id).toBe(HULL);
         expect(byKind!.pastTheCashLine, 'no counter in the world carries one').toBe(true);
@@ -86,7 +86,7 @@ describe('a hull is reachable by a sentence', () => {
 
         // And the same words with the other article, which is what a player
         // says about the one they were just told about.
-        expect(theThingAskedFor('the spirit boat', null)?.id).toBe(HULL);
+        expect(theThingAskedFor('the spirit skiff', null)?.id).toBe(HULL);
 
         const byName = theThingAskedFor('The Cloud Ladder', null);
         expect(byName, 'a named hull in the catalog answers to its own name').not.toBeNull();
@@ -97,7 +97,7 @@ describe('a hull is reachable by a sentence', () => {
     it('quotes the figure the engine derives and not one of its own', () => {
         const fetches = whatACraftWouldFetch(HULL);
         expect(fetches).not.toBeNull();
-        const said = theThingAskedFor('a spirit boat', null)!.whatMovesOne;
+        const said = theThingAskedFor('a spirit skiff', null)!.whatMovesOne;
         expect(said, 'a player is told the bar and never the price').toBeDefined();
         expect(said).toContain(fetches!.toLocaleString('en-US'));
     });
@@ -152,7 +152,7 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
         });
 
         // ── NO NEW VERB ──────────────────────────────────────────────────
-        const sentence = `ask ${speaker.name} what they would take for a spirit boat`;
+        const sentence = `ask ${speaker.name} what they would take for a spirit skiff`;
         expect(parseIntent(sentence).action, 'a hull reached a verb of its own').toBe('request');
 
         const asked = await game.act(sentence);
@@ -177,7 +177,7 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
         }));
 
         const traded = await game.act(
-            `I offer ${speaker.name} ${heavy.name} for a spirit boat`);
+            `I offer ${speaker.name} ${heavy.name} for a spirit skiff`);
         expect(traded.narration ?? '', 'the trade did not land on this seed').toMatch(
             /takes what you offered/i);
 
@@ -201,6 +201,6 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
         expect(claim!.note).not.toMatch(/for 0 stones/);
 
         // AND THE PROSE AGREES WITH THE ROW IT JUST WROTE.
-        expect(traded.narration ?? '').not.toMatch(/spirit boat is in your pouch/i);
+        expect(traded.narration ?? '').not.toMatch(/spirit skiff is in your pouch/i);
     }, 300_000);
 });

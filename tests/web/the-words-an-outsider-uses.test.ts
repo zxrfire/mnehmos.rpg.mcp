@@ -28,7 +28,7 @@ import { parseIntent } from '../../src/web/verb-pattern-table';
 
 /** The word a player who has never read this setting would reach for. */
 const OUTSIDER: Array<[string, string]> = [
-    ['I teleport to Cold Peak', 'fold'],
+    ['I teleport to Moraine Gate', 'fold'],
     ['I meditate for a year', 'cultivate'],
     ['I train for ten years', 'cultivate'],
     ['I level up', 'breakthrough'],

@@ -17,7 +17,7 @@ How anybody decides whether you are who you say you are. Read alongside
 | [The spectrum of signals](#the-spectrum-of-signals) | somebody has to establish who they are |
 | [A signal is worth what they cannot check](#a-signal-is-worth-what-they-cannot-check) | deciding whether a particular deception works |
 | [Recognition runs backwards to prestige](#recognition-runs-backwards-to-prestige) | somebody from a great house is far from it |
-| [Expensive signals, and forging one](#expensive-signals-and-forging-one) | a retinue, a spirit boat, anything nobody could afford to fake |
+| [Expensive signals, and forging one](#expensive-signals-and-forging-one) | a retinue, a spirit skiff, anything nobody could afford to fake |
 | [Tokens shatter, so somebody has to be taken alive](#tokens-shatter-so-somebody-has-to-be-taken-alive) | somebody is holding a house's token that is not theirs |
 | [Checking costs time](#checking-costs-time-and-time-is-what-nobody-has) | somebody doubts a claim and has to decide whether to go and find out |
 | [The art is the strongest check](#the-art-is-the-strongest-check) | deciding whether a house is still the house, or a person still of it |
@@ -124,7 +124,7 @@ whoever granted it*. The neighbours tolerate demonic houses because they have se
 days of the other thing and would rather have a correspondent.
 
 **But that argument is about a vacuum and not about unheld ground generally**, and the two
-rows in the middle are the difference. Clear River Ford is on the register with nobody's name
+rows in the middle are the difference. Clear River Ferry is on the register with nobody's name
 against it, inside a province with a survey, a bench, a Ledger and an assay house, and run
 by a fordhall that holds no grant and takes a toll it has no authority to take: a complaint
 there has somewhere to go and nothing obliges anybody to hear it. Eleven days of sand with
@@ -173,7 +173,7 @@ come out somewhere a mirror would not have put them:
   a member who was *outwitted*, and being outwitted is not what a threat is. It holds ground,
   it keeps an address, and it is dangerous to cross - so for somebody weighing violence it is
   much like any other house, and nothing like an empty province.
-- **Clear River Ford is worth less to a threatener than it costs a stranger.** The people who keep an
+- **Clear River Ferry is worth less to a threatener than it costs a stranger.** The people who keep an
   unheld ford working were never appointed to, but open violence on the road is precisely what
   stops it working. They have more reason to move against a threat than to speak for somebody
   they have never met.
@@ -282,7 +282,7 @@ where a token or a name in common becomes load-bearing.
 
 <!-- tier: 2 trigger="a party arrives with elders, boats, or anything nobody could plausibly afford to fake" -->
 
-A retinue of elders and spirit boats is believed because **assembling one is beyond almost
+A retinue of elders and spirit skiffs is believed because **assembling one is beyond almost
 everybody.** Nobody checks it, nobody can check it, and it works anyway - **its strength is
 the cost of faking it, not any verification.**
 
@@ -455,7 +455,7 @@ while a minor noble who has barely left one city has. **Connection, not mileage*
 diffusion is why an ordinary person can hold a real opinion about a house they will never see,
 while still being exactly the person a good forgery works on.
 
-**The Hollow Court breaks this in a better way than being invisible.** They take nobody below a
+**The Empyrean Court breaks this in a better way than being invisible.** They take nobody below a
 Void Tribulation floor, so **every one of their people arrives already trained somewhere else.**
 The Court is built of transfers, and it holds as many arts as it has taken people.
 
@@ -499,7 +499,7 @@ out of every house in the world in the only container nobody can search.
 [`items.md`](../things/items.md#holding-is-a-signature) has the consequence in full: practising an art is
 visible, so it is **evidence for as long as you keep climbing on it** - which is the rest of
 your life, because putting it down means starting again - and what happens when they catch you
-turns on whose art it is, not on the theft. **Nobody asks the Hollow Court**, because going
+turns on whose art it is, not on the theft. **Nobody asks the Empyrean Court**, because going
 there costs the house nothing and is an honour on it, and a house that has been honoured for a
 member's leaving is not placed to complain about what that member carried in their head.
 
@@ -673,7 +673,7 @@ that the mechanic is not invented for one of them:**
   under the datum stone and living Xu still walk the house, which has *never treated the
   succession as a family matter*. **The signal is there and is deliberately not used**, which
   is a more interesting state than either extreme.
-- **Meng, at the Nine Peaks Ascetic Order - the mechanic, already written out.** Of Patriarch
+- **Meng, at the Nine Peaks Ascetic Sect - the mechanic, already written out.** Of Patriarch
   Meng Da the catalog says the line *runs to him unbroken and legibly, and he would recognise
   it in a sentence*. **That is this entire section, stated in the data before it was stated
   here**, for a sealed ancestor nobody designed the model around.
@@ -778,7 +778,7 @@ Measured: `void-piercing-sword-domain` is taught by exactly one house in the wor
 property is a design question rather than a bug to patch from underneath them.
 
 **The Meng line stands on nobody's roll.** `RESERVED_SURNAMES` reserves Meng to the Nine Peaks
-Ascetic Order on the strength of Patriarch Meng Da, and Meng Da is a *dormant* entry in
+Ascetic Sect on the strength of Patriarch Meng Da, and Meng Da is a *dormant* entry in
 `SECT_ANCESTRY` - not a member. No living Meng exists anywhere in `members.ts`. That is not a
 defect: it is [an absent name is a question](#the-woken-ancestor) occurring for real in the data,
 and the two checks disagreeing about it is the model working. The name settles the claim; the
@@ -792,7 +792,7 @@ identifies none of them - and the third house was not there.
 **`surnameOf` returns a title for 41 of 186 roster rows.** It splits at the first space, which is
 exact for what `personName` generates and wrong for "The Abbot", "First Seat", "The Storm Tyrant",
 "Clan Chief Duan Wu" and "Shao Mingchen". Left alone it invents lineages: *The* read as a
-five-house family, *Second* and *Third* as lines standing on the Hollow Court's roll. The lineage
+five-house family, *Second* and *Third* as lines standing on the Empyrean Court's roll. The lineage
 reader accepts only two-token `Surname Given` names and **declines the other 41 rather than
 guessing** - which loses about a dozen real surnames sitting behind titles, and is the correct
 direction to be wrong in when a name is worth corroboration at best. Recovering those wants a

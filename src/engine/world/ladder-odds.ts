@@ -176,7 +176,7 @@ export function believedStatement(realm: RealmKey): string {
  * Crossings ATTEMPTED per thousand years, in the present age.
  *
  * The record a rate like this is read off runs about 4,400 years, back to the
- * Hollow Court's first crossing; anything older is tradition, not record.
+ * Empyrean Court's first crossing; anything older is tradition, not record.
  */
 export const CROSSINGS_ATTEMPTED_PER_MILLENNIUM = 6;
 

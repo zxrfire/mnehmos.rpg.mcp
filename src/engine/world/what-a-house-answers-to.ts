@@ -67,7 +67,7 @@ import type { FactionRecord } from './world-state.js';
  * NULL IS NOT NOUGHT, and this cost a broken test to learn. The first version
  * returned 0 where the table was silent, and a zero is indistinguishable from
  * *these two have no relation* at all 38 sites that read the scalar. Two houses
- * the old unconditional line warmed - the Pavilion toward the Third Sill among
+ * the old unconditional line warmed - the Pavilion toward the Third Sluice among
  * them - silently lost their standing entirely. So: null where nothing is known,
  * and the caller decides what to do about it. That is the same class of defect
  * as the flat 0.4 itself: a number that cannot say *I do not know*.
@@ -75,7 +75,7 @@ import type { FactionRecord } from './world-state.js';
  * AND THE TWO SOURCES DISAGREE ABOUT THE PAVILION, which is a catalog finding
  * rather than a bug here. The sect catalog gives `sect-azure-cloud-pavilion` a
  * parent of `court-third-sill`; `FACTION_PARENTAGE` calls it an apex holding on
- * no grant from anyone, and its own prose says why - it *"was a Third Sill
+ * no grant from anyone, and its own prose says why - it *"was a Third Sluice
  * tenant for fifteen hundred years and stopped being one in the year Ru Anjing
  * crossed."* One field is current and one is historical, and nothing says which.
  * The caller's field is treated as authoritative here because it is what built

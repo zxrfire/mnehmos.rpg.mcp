@@ -132,7 +132,7 @@ export interface RefusalCopy {
  * A topic that is a QUESTION about the world rather than the name of a thing.
  *
  * The gate below asks whether this person has heard of the topic, which is the
- * right question for `the Hollow Court` and the wrong one for `who is in
+ * right question for `the Empyrean Court` and the wrong one for `who is in
  * charge`. Measured: "I ask the oldest man here who is in charge" came back
  * with *Yun Lanshan has not heard of who is in charge* - a sentence about the
  * knowledge gate rather than about the province, and a dead end where the

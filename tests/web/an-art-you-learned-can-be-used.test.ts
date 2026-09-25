@@ -8,7 +8,7 @@
  * `technique`, `stance`, `form` - and a proper name has none:
  *
  *     "I practise the sword art"          -> train_technique
- *     "I practise Cross-Meridian Strike"  -> UNCLEAR
+ *     "I practise Cross-Meridian Jolt"  -> UNCLEAR
  *
  * `learn_technique` accepts a bare name and every catalog art HAS one, so an
  * art could be acquired by name and then never drilled by that name again. The
@@ -16,8 +16,8 @@
  *
  * AIMING ONE. Worse, because it failed in two directions at once:
  *
- *     "I attack him with Cross-Meridian Strike"
- *         -> attack, target "him with Cross-Meridian Strike"
+ *     "I attack him with Cross-Meridian Jolt"
+ *         -> attack, target "him with Cross-Meridian Jolt"
  *
  * The art was folded into the person's name, so it resolved to nobody clean AND
  * was never read as an art. `combat-verbs.ts` then called
@@ -44,14 +44,14 @@ const read = (said: string) => parseIntent(said);
 
 describe('practising an art that has a name', () => {
     it.each([
-        'I practise Cross-Meridian Strike',
-        'I train Cross-Meridian Strike',
-        'I drill Cross-Meridian Strike',
-        'I work on Cross-Meridian Strike'
+        'I practise Cross-Meridian Jolt',
+        'I train Cross-Meridian Jolt',
+        'I drill Cross-Meridian Jolt',
+        'I work on Cross-Meridian Jolt'
     ])('reaches the drill from %j', said => {
         const got = read(said);
         expect(got.action).toBe('train_technique');
-        expect(got.target).toBe('Cross-Meridian Strike');
+        expect(got.target).toBe('Cross-Meridian Jolt');
     });
 
     /**
@@ -73,7 +73,7 @@ describe('practising an art that has a name', () => {
         ['I train for a month', 'cultivate'],
         ['I work on my cultivation', 'cultivate'],
         ['I practise my breathing', 'cultivate'],
-        ['I learn Cross-Meridian Strike', 'learn_technique']
+        ['I learn Cross-Meridian Jolt', 'learn_technique']
     ])('leaves %j alone', (said, verb) => {
         expect(read(said).action).toBe(verb);
     });
@@ -84,20 +84,20 @@ describe('aiming an art that has a name', () => {
      * THE PERSON AND THE ART ARE TWO FACTS AND THE SENTENCE CARRIES BOTH.
      */
     it.each([
-        'I attack him with Cross-Meridian Strike',
-        'I hit him with Cross-Meridian Strike',
-        'I strike him using Cross-Meridian Strike'
+        'I attack him with Cross-Meridian Jolt',
+        'I hit him with Cross-Meridian Jolt',
+        'I strike him using Cross-Meridian Jolt'
     ])('separates who from what in %j', said => {
         const got = read(said);
         expect(got.action).toBe('attack');
         expect(got.target).toBe('him');
-        expect(got.withArt).toBe('Cross-Meridian Strike');
+        expect(got.withArt).toBe('Cross-Meridian Jolt');
     });
 
     it('keeps a named person as the person', () => {
-        const got = read('I attack Bai Wanchen with Cross-Meridian Strike');
+        const got = read('I attack Bai Wanchen with Cross-Meridian Jolt');
         expect(got.target).toBe('Bai Wanchen');
-        expect(got.withArt).toBe('Cross-Meridian Strike');
+        expect(got.withArt).toBe('Cross-Meridian Jolt');
     });
 
     /**

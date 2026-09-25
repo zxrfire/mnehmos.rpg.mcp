@@ -260,7 +260,7 @@ export function theFamilyThisLifeOpensWith(input: FamilyInput): KinFromBirth[] {
     // don't have a choice"*: a mortal can die, move or be cleaned up and nothing
     // will ever say so. `theWorldForgetsTheMortalDead` is that sentence in code,
     // and it has an exception - somebody the catalog wrote is kept by name at
-    // ANY rung, because the catalog still holds it. So a Sword Hand of the Cold
+    // ANY rung, because the catalog still holds it. So a Sword Hand of the Bare
     // Sword Sect at ordinal 4 is a real record and a real tie, and the ruling is
     // untouched: what it refuses is a promise this engine cannot keep, and this
     // is one it can.

@@ -449,9 +449,9 @@ function whatIsHere(service: GameService, cultivator: Cultivator): string[] {
 }
 
 /**
- * The catalog writes its own articles - "A spirit boat" - and a sentence puts
+ * The catalog writes its own articles - "A spirit skiff" - and a sentence puts
  * one in front of whatever it is given, so a line reads "you reach for a A
- * spirit boat" unless one side gives way.
+ * spirit skiff" unless one side gives way.
  */
 function theArticleIsAlreadyOnIt(name: string): string {
     // And a player's own words often carry a determiner of their own, or are

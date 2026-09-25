@@ -362,7 +362,7 @@ function writeIt(
         const leaves = whatAKillingLeaves(state, { victim: dying, killer, day, theyLeft, description: summary });
         // HOW BIG A KILLING IS READS WHO DIED. `personal`, `regional` and 0.45
         // were the same three numbers whether the dead was an outer disciple or
-        // a Seat of the Hollow Court, and the world afterwards was the world
+        // a Seat of the Empyrean Court, and the world afterwards was the world
         // before it. See `what-a-death-at-this-height-is-worth.ts`.
         const worth = whatADeathIsWorth(dying, victimsHouse, whatTheyHeldUp(state, dying));
         // AND THEY PAY FOR IT IN FRONT OF EVERYBODY. Killing somebody a realm

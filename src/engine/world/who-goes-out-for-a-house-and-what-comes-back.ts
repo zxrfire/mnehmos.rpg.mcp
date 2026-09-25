@@ -986,9 +986,9 @@ export function whoTheHouseCanSend(
  *
  * `whoTheHouseCanSend` takes the strongest first, so a house's apex went on
  * every errand it had. Measured on one seed over three hundred years, the
- * Hollow Court's First and Fourth Seats (44 and 42) went on looking for
+ * Empyrean Court's First and Fourth Seats (44 and 42) went on looking for
  * disciples, an escort and a visit, and two of the Court's Seats were lost
- * together in Fallen Wall, a ruin whose own survival ask is 12.
+ * together in Fallen Rampart, a ruin whose own survival ask is 12.
  *
  * The design says the strong have better to do (`normal-in-the-cultivation-
  * world.md`), and `summonable` in `duties.ts` is the ruling already written for

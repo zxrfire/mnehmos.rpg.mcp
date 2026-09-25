@@ -4,11 +4,11 @@
  * FOUND BY PLAYING. A run opened with this, and this was the whole of it:
  *
  *     shen wuyou I begins at Qi Condensation Layer 1, age 16. Born in Clear
- *     River Ford, a market town on thin ground. A farm in a thin county. 30
+ *     River Ferry, a market town on thin ground. A farm in a thin county. 30
  *     spirit stones, under a year of seclusion. 3 NAMES KNOWN. Metal-Wood Dual
  *     Root; Might 3, Insight 3, Fortune 3, Charm 2.
  *
- *     Clear River Ford. The air here gives very little back.
+ *     Clear River Ferry. The air here gives very little back.
  *     The day asks nothing in particular.
  *
  * The design owner: *"if you start in a place with 0 people, say it, like the

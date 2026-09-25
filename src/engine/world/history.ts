@@ -763,7 +763,7 @@ export interface PriorAges {
 // ─────────────────────────────────────────────────────────────────────────
 // NAMING
 // Deterministic, cheap, and physical. Places in this world are named for what
-// they are: Burnt Earth, the Jade Gorge, Clear River Ford.
+// they are: Burnt Earth, the Jade Gorge, Clear River Ferry.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const SURNAMES = [
@@ -776,7 +776,7 @@ export const SURNAMES = [
  */
 export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
     ['Ru', 'Azure Cloud Pavilion'],
-    ['Meng', 'Nine Peaks Ascetic Order'],
+    ['Meng', 'Nine Peaks Ascetic Sect'],
 ]);
 
 /**
@@ -825,10 +825,10 @@ export const GIVEN_TAIL_FEMALE = [
  * relative position, which are the two English habits (Sweptfall, Nearford,
  * Underhollow). Every word here is one the authored map already uses.
  */
-const PLACE_HEAD = [
-    'Cold', 'Black', 'Green', 'White', 'Jade', 'Iron', 'Bronze', 'Azure', 'Vermilion',
-    'Deep', 'Thin', 'Broken', 'Old', 'Dry', 'Salt', 'Cloud', 'Frost', 'Grey',
-    'Nine', 'Seven', 'Three', 'Autumn', 'Grain', 'Silent', 'Hidden', 'Bitter'
+export const PLACE_HEAD = [
+    'Frigid', 'Black', 'Jasper', 'White', 'Jade', 'Iron', 'Bronze', 'Azure', 'Vermilion',
+    'Deep', 'Barren', 'Broken', 'Old', 'Dry', 'Salt', 'Cloud', 'Frost', 'Grey',
+    'Nine', 'Seven', 'Three', 'Autumn', 'Sorghum', 'Silent', 'Hidden', 'Bitter'
 ] as const;
 
 /**
@@ -843,7 +843,7 @@ const PLACE_HEAD = [
  *
  * `reach`, `fall` and `shelf` are gone with the compounding, by the same
  * document's rule: they are English landscape words with no type noun behind
- * them, where Terrace, Ford, Cliff and Peak are the same features under words a
+ * them, where Terrace, Ferry, Cliff and Crag are the same features under words a
  * reader takes as translated.
  */
 /**
@@ -856,25 +856,32 @@ const PLACE_HEAD = [
  * Roof, Well, Bank, Yard, Hollow and Reach are English domestic and
  * agricultural words, and a space between two of them is still an English
  * village. What is left here is the set the authored map uses, and nothing
- * else: Gorge, Terrace, Cliff, Peak, Gate, Ford, Pass, Ridge, Stair, Spring,
+ * else: Gorge, Terrace, Cliff, Crag, Gate, Ferry, Pass, Crest, Stair, Spring,
  * Vein, Sands.
+ *
+ * Crag, Crest and Ferry were Peak, Ridge and Ford, and every word in these
+ * lists was swapped one for one so every seeded draw stayed where it was: a
+ * name word is never a word the player types or a typo of one (AGENTS.md,
+ * "A name evokes what it is"), and `peak` is one letter from *speak*, `ridge`
+ * from *ride*, `ford` from *food*. The heads lost Cold, Green, Thin and Grain
+ * for the same reason.
  */
-const PLACE_TAIL = [
-    'Peak', 'Ridge', 'Gorge', 'Valley', 'Cliff', 'Terrace', 'Stair',
-    'Ford', 'Pass', 'Gate', 'Spring', 'Sands', 'Stream', 'Rock', 'Face'
+export const PLACE_TAIL = [
+    'Crag', 'Crest', 'Gorge', 'Valley', 'Cliff', 'Terrace', 'Stair',
+    'Ferry', 'Pass', 'Gate', 'Spring', 'Sands', 'Stream', 'Rock', 'Face'
 ] as const;
 
-const FACTION_ADJ = [
-    'Ninefold', 'Grey Vein', 'Iron Pear', 'Cold Kiln', 'Long Lantern', 'Split Stone',
+export const FACTION_ADJ = [
+    'Ninefold', 'Grey Vein', 'Iron Quince', 'Idle Censer', 'Long Lantern', 'Cleft Stone',
     'Quiet Wheel', 'Falling Rope', 'Second Ledger', 'Bone Orchard', 'Grey Millet',
-    'Hollow Reed', 'Wound Gate', 'Thousand Furrow', 'Salt Bell', 'Low Hearth'
+    'Empty Reed', 'Breach Gate', 'Thousand Furrow', 'Salt Gong', 'Low Hearth'
 ] as const;
 
-const FACTION_FORM = ['Sect', 'Hall', 'Pavilion', 'Court', 'Stone Marrow Hall'] as const;
+export const FACTION_FORM = ['Sect', 'Hall', 'Pavilion', 'Court', 'Stone Marrow Hall'] as const;
 
-const ERA_ADJ = [
+export const ERA_ADJ = [
     'Standing', 'Bright', 'Drowned', 'Iron', 'Counting', 'Quiet', 'Burning',
-    'Wide', 'Last', 'Middle', 'Broken', 'Waking'
+    'Broad', 'Last', 'Middle', 'Broken', 'Waking'
 ] as const;
 
 /**
@@ -929,7 +936,7 @@ export function placeName(rng: CultivationRNG): string {
     const head = rng.pick(PLACE_HEAD);
     const tail = rng.pick(PLACE_TAIL);
     // Nine Peaks, not Nine Peak. The authored map has the model - Nine Peaks,
-    // Three Walls, Four Names, Six Li - and a counted feature is plural in
+    // Three Walls, Six Li - and a counted feature is plural in
     // both languages. The rule used to be a private three-liner here and got
     // `Pass` wrong, reading its final s as a plural already there and minting
     // Nine Pass; the shared one knows that a Witness is one person.

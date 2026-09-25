@@ -39,7 +39,7 @@
 
 import { bloodlineForChild } from './hunting-a-spirit-beast.js';
 import { makeFact } from './history.js';
-import { addLineageEdge, createLineageRecord } from './lineage.js';
+import { addLineageEdge, createLineageRecord, lineageIdOf } from './lineage.js';
 import type { NpcRecord } from './npc-state.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { indexById, type WorldState } from './world-state.js';
@@ -229,7 +229,7 @@ export function theOtherBloodParent(
     let line = state.lineages.find(l => l.memberIds.includes(notYetWritten.id));
     if (!line) {
         line = createLineageRecord({
-            id: `lin-${surname.toLowerCase()}-${notYetWritten.id}`,
+            id: lineageIdOf(surname, notYetWritten.id),
             surname,
             founderId: notYetWritten.id,
             foundedOnDay: notYetWritten.identity.bornOnDay

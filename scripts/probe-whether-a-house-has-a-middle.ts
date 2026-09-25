@@ -51,7 +51,7 @@
  * NINE SLOTS STILL STAND EMPTY and both reasons are somebody else's: four are
  * rungs where a row on the roll is not alive - `assignFactionRoles` builds its
  * view from every row with a `factionId` whatever their status, so a dead
- * member holds a chair - and five are one house, the Nine Peaks Ascetic Order,
+ * member holds a chair - and five are one house, the Nine Peaks Ascetic Sect,
  * whose curated ranks skip Inner Ascetic and whose curated rank is honoured as
  * a floor. The catalog says nobody there is an Inner Ascetic.
  *

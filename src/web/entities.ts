@@ -113,7 +113,7 @@ export function worldLocationFor(world: WorldState, place: string | null): Locat
     const exact = world.locations.find(l => l.name.trim().toLowerCase() === wanted);
     if (exact) return exact;
 
-    // "the Jade Gorge" against "Green Water City", and the id form for anything
+    // "the Jade Gorge" against "Emerald Water City", and the id form for anything
     // that reached us already keyed.
     const key = placeKey(wanted);
     const loose = loosePlaceKey(wanted);

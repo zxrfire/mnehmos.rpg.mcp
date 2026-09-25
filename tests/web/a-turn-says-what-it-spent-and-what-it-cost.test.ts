@@ -134,7 +134,7 @@ describe('the listings say what you are holding', () => {
      * PLAYED, after buying and learning the manual:
      *
      *   > what arts do I know
-     *   "What a root like yours could take up: Cross-Meridian Strike ...
+     *   "What a root like yours could take up: Cross-Meridian Jolt ...
      *    Swallow-Skimming Step ... Azure Dew Gathering Canon ..."
      *
      * Every phrasing of the question reaches `listTechniques`, which filters

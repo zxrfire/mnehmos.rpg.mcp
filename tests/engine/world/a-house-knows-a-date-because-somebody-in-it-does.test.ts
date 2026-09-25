@@ -57,7 +57,7 @@ const YEAR = 365;
 function doorOpenFor(openDays: number): LocationRecord {
     return makeLocation({
         id: 'loc-ruin-that-opens',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         qiDensity: 80,
         thresholds: makeThresholds(4, 8, 14, 20),

@@ -425,9 +425,9 @@ export const WANDERERS: readonly Wanderer[] = [
                 'Every visit the Third Seat delivers a dao sermon on obligation, at length, to a man permanently barred from the only obligation that would have mattered. He finds it insufferable and does not hide it well. He sits through it anyway, and not for her: the other three would lose face if a Seat were seen to be walked out on, and he has nothing left to lose but they do. It is the only thing in his life he still does purely because somebody else would be diminished if he did not.'
         },
         whoKnows:
-            'Four Seats and him, and that is knowing rather than suspecting. The Court is opaque by construction rather than by policy - it does not announce, deny, correct or brief, and it has never once mentioned him in any setting where a third party was present. So no archive anywhere holds confirmation of any of it, which is not the same as no archive holding anything: all three apex institutions carry a line with his name on it, the Hollow Court against it, and the word possible. That is the whole of what any of them has. No date, no circumstances, no account of anything, nothing about where he is or what he does, and nothing whatever about the Court\'s arrangement with him. Nor that he held First Seat, which is the single most significant fact about him and is in nobody\'s records anywhere: what is public about that house is who has entered it and nothing after, so no roster of its seats has ever existed outside those mountains and the seats could turn over inside a century with no event for anybody to observe and nothing to observe it against. None of the three has ever added a fourth thing to the line and none of them has been able to strike it either: confirming it means approaching the one house in the world nobody approaches, an unconfirmed False Immortal is not a thing any institution moves on, and being wrong in either direction costs more than the answer is worth. Outside those four and those three lines there is nothing at all. What escapes, escapes because he said it to somebody, usually in passing, usually to a person with no way to check and no idea what they were being handed.',
+            'Four Seats and him, and that is knowing rather than suspecting. The Court is opaque by construction rather than by policy - it does not announce, deny, correct or brief, and it has never once mentioned him in any setting where a third party was present. So no archive anywhere holds confirmation of any of it, which is not the same as no archive holding anything: all three apex institutions carry a line with his name on it, the Empyrean Court against it, and the word possible. That is the whole of what any of them has. No date, no circumstances, no account of anything, nothing about where he is or what he does, and nothing whatever about the Court\'s arrangement with him. Nor that he held First Seat, which is the single most significant fact about him and is in nobody\'s records anywhere: what is public about that house is who has entered it and nothing after, so no roster of its seats has ever existed outside those mountains and the seats could turn over inside a century with no event for anybody to observe and nothing to observe it against. None of the three has ever added a fourth thing to the line and none of them has been able to strike it either: confirming it means approaching the one house in the world nobody approaches, an unconfirmed False Immortal is not a thing any institution moves on, and being wrong in either direction costs more than the answer is worth. Outside those four and those three lines there is nothing at all. What escapes, escapes because he said it to somebody, usually in passing, usually to a person with no way to check and no idea what they were being handed.',
         whyNotWithThem:
-            'The Hollow Court is four people working continuously on the crossing, and presence there is measured in decades of absence because that is what the work looks like. He is permanently barred from that crossing - it has been opened against his name and will not open again - so there is nothing at the Court for him to do. Everyone else on those mountains has the only thing he does not have, which is something left to attempt. So he left, and nobody argued.',
+            'The Empyrean Court is four people working continuously on the crossing, and presence there is measured in decades of absence because that is what the work looks like. He is permanently barred from that crossing - it has been opened against his name and will not open again - so there is nothing at the Court for him to do. Everyone else on those mountains has the only thing he does not have, which is something left to attempt. So he left, and nobody argued.',
         wants:
             'To know what the far side declined, and why. Nobody below the Lid can tell him, the only parties who could are through it and do not come back, and he has had six hundred and forty years to establish that no arrangement, resource, favour or threat available in this world touches the question.',
         whyHeIsHonest:
@@ -466,7 +466,7 @@ export const WANDERERS: readonly Wanderer[] = [
                     'It is not a place. He picks it up and puts it down somewhere else when it suits him, for reasons that are very probably not reasons. Directions to it are worthless inside a decade, so anybody treating it as a site - surveying, sealing, watching, mapping - is wasting their life, and several have. This is also most of why the accounts of him are incoherent.',
                 lastMovedYearsAgo: 7,
                 contradictoryAccounts: [
-                    'A Hollow Bell wanderer found it in a dry cistern under a ruined granary in the Jade Gorge, ninety years ago, and could take anybody to the spot',
+                    'A Wayside Chime wanderer found it in a dry cistern under a ruined granary in the Jade Gorge, ninety years ago, and could take anybody to the spot',
                     'A Bountiful Sheaf Sect crew found what is plainly the same cache in a burn-zone chamber in the Buddha Precipice forty years ago, and can also take anybody to the spot',
                     'A Clear River ferryman describes finding it in a boat locker that was not his boat, twelve years ago, and has never been believed by anybody'
                 ]
@@ -477,12 +477,12 @@ export const WANDERERS: readonly Wanderer[] = [
                 'There was no oath and no ceremony; a ritual would have embarrassed him. He said it once, while doing something else, in roughly these words: do not go telling people about me. Other people I have given things to, that is fine. The Court knows already. Everybody else, no. Then he changed the subject, and has never raised it again with anybody, and it has been honoured absolutely by every inheritor who ever received it.',
             permittedToTell: [
                 'other inheritors of his, of whom there are perhaps a dozen and most of whom have never met',
-                'the Seats of the Hollow Court and the two or three at the top of the Ninefold Karma Palace who already hold the file'
+                'the Seats of the Empyrean Court and the two or three at the top of the Ninefold Karma Palace who already hold the file'
             ],
             forbidden:
                 'Everybody else, without exception: their sect, their master, their family, their disciples and whoever is buying.',
             motive:
-                'Not fear, since there is no consequence in the world he would mind and he knows it. He simply does not want to be gossiped about. It is a preference, expressed once, of the same weight as preferring a corner table - and it is obeyed more completely than most oaths sworn in front of the Vermilion Seal Terrace.',
+                'Not fear, since there is no consequence in the world he would mind and he knows it. He simply does not want to be gossiped about. It is a preference, expressed once, of the same weight as preferring a corner table - and it is obeyed more completely than most oaths sworn in front of the Vermilion Sigil Terrace.',
             whyLegendsAreIncoherent:
                 'Because the accurate sources are precisely the ones not talking. Everything circulating in high cultivator circles comes from the outer ring: a sighting, a secondhand account, an incident witnessed at a distance and reconstructed wrongly by somebody with half of it. The people who could correct any of it are inheritors, who will not, and Court Seats, who do not speak to anybody. So the versions multiply, contradict each other, and are never once tested against somebody who knows.',
             breachConsequence:
@@ -563,7 +563,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'The afternoon that reorganises somebody else entirely is, to him, an afternoon. He will remember them fondly and inaccurately, will confuse two of them a century later, and may not notice that one has died. None of that is coldness. It is the arithmetic of a very long life, and he has never remarked on it.',
             regulars: [
                 {
-                    place: 'The Bell and Ford, an inn at Clear River Ford on the border road',
+                    place: 'The Bell and Ford, an inn at Clear River Ferry on the border road',
                     person: 'Old Tan, who has run it since he was thirty-one',
                     yearsThere: 41,
                     timesServed: 9,
@@ -582,7 +582,7 @@ export const WANDERERS: readonly Wanderer[] = [
         },
         whoKnowsWhat: {
             fullTruth: [
-                'the four Seats of the Hollow Court, who have known him since before the crossing',
+                'the four Seats of the Empyrean Court, who have known him since before the crossing',
                 'the inheritors who have actually met him, of whom there are perhaps a dozen and who have been asked not to gossip'
             ],
             fragments:
@@ -597,7 +597,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 bothConcluded:
                     'That they cannot tell, separately, in their own words, and they are right. Neither institution is being incompetent here: they have done everything competently and they have exactly the evidence that exists, and it does not resolve. This is what real institutional knowledge looks like at this distance, and both of them have had the honesty to write the uncertainty down rather than pick an answer.',
                 theAnomaly:
-                    'A wandering False Immortal is itself anomalous, and both registers note it. Nearly everybody who half-fails is sealed under a mountain or seated at the Hollow Court, because that state does not usually produce somebody who walks about visiting people. One doing so is not what the category predicts, which is a further reason the record cannot make sense of him: the observations are strange in a way the classification does not account for.',
+                    'A wandering False Immortal is itself anomalous, and both registers note it. Nearly everybody who half-fails is sealed under a mountain or seated at the Empyrean Court, because that state does not usually produce somebody who walks about visiting people. One doing so is not what the category predicts, which is a further reason the record cannot make sense of him: the observations are strange in a way the classification does not account for.',
                 candidateNames: [
                     {
                         name: 'Lu Sheng',
@@ -714,7 +714,7 @@ export const WANDERERS: readonly Wanderer[] = [
             looksArbitraryFromBelow:
                 'Two decisions, ten paces and one minute apart: he robbed the most prestigious institution in the world of an irreplaceable object, and then declined to touch a sword lying unattended in an empty room. From below those acts are the same kind of act and the second is smaller, so the province concluded variously that he was mad, that the Edge is trapped, that he was interrupted, or that the Pavilion is lying about what happened. None of them can get at the actual rule, because the actual rule is about a party they do not know exists.',
             readableBy:
-                'Somebody who understands that there is a constituency above the Lid with interests down here, and that it is the only constituency he answers to. There are perhaps a dozen such people, four of them are Seats of the Hollow Court, and none of them has explained it to anybody.',
+                'Somebody who understands that there is a constituency above the Lid with interests down here, and that it is the only constituency he answers to. There are perhaps a dozen such people, four of them are Seats of the Empyrean Court, and none of them has explained it to anybody.',
             playerIsNotProtected:
                 'None of this covers whoever he gives something to. He is fine; the recipient is holding stolen property belonging to an institution that knows precisely who has it, has every right to it, and cannot reach him. He does not think of that as a risk transfer because he does not think about it at all, and by the time it matters he has wandered off and is two provinces away, entirely cheerful.'
         },
@@ -742,7 +742,7 @@ export const WANDERERS: readonly Wanderer[] = [
             },
             {
                 yearsAgo: 8,
-                where: 'A Thousand Treasure Pavilion auction preview',
+                where: 'A Thousand Relic Pavilion auction preview',
                 what: 'He looked at a catalogued lot for some seconds and said, out loud and to nobody in particular, that it was a forgery of an Heaven-Ascending Golden Pill and not a good one. He was right, he did not elaborate, and he had left before the auctioneer worked out who to ask.',
                 consequence: 'The lot was withdrawn, the consignor was ruined inside a month, and the Pavilion has not held a preview open to the public since.',
                 heNeverLearned: true
@@ -758,7 +758,7 @@ export const WANDERERS: readonly Wanderer[] = [
             },
             {
                 calledBy: 'The Guest',
-                toldAmong: 'The four Seats of the Hollow Court, and three or four people at the top of the Ninefold Karma Palace',
+                toldAmong: 'The four Seats of the Empyrean Court, and three or four people at the top of the Ninefold Karma Palace',
                 version: 'That a False Immortal holds the lowest rank at the Court, has never used it, and is somewhere in the world walking about.',
                 accurate: true,
                 whatIsWrong: 'Nothing, which is why it is the version almost nobody has heard: every party holding it is either an inheritor who has been asked not to gossip or a Seat who does not speak to anybody. It is also the version least likely to be believed if repeated, because it is the least interesting.'
@@ -787,7 +787,7 @@ export const WANDERERS: readonly Wanderer[] = [
         ],
         startingAwareness: 'unaware',
         awarenessSources: [
-            'a Seat of the Hollow Court, in the unlikely event of one speaking to anybody',
+            'a Seat of the Empyrean Court, in the unlikely event of one speaking to anybody',
             'the Ninefold Karma Palace at Keeper level, which holds the crossing file and does not discuss it',
             'a high-realm cultivator repeating one of the wrong versions at a gathering where such people are present',
             'having sat next to him for an evening and worked it out afterwards, usually years afterwards'

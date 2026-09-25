@@ -9,7 +9,7 @@
  * 25.9% - were rows saying something an earlier row already said, word for word.
  * The single worst statement appeared 167 times:
  *
- *     x167  The Ashen Forge Clan's grant on its vein comes up for renewal.
+ *     x167  The Ashen Anvil Clan's grant on its vein comes up for renewal.
  *
  * It is not noise that crept in. `seedGrantSchedule` puts a REPEATING scheduled
  * effect on the books for every federated house, and `advanceTime` writes a fact

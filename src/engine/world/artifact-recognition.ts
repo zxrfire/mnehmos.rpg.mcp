@@ -64,11 +64,11 @@
  *                       "nobody knows" would silence most of the catalog.
  *
  *   `undeclared`        the catalog's own marker for a thing whose owner has
- *                       never said it exists. The Hollow Court's four carry it
+ *                       never said it exists. The Empyrean Court's four carry it
  *                       and nothing anywhere read it. A reference for the HOUSE
  *                       cannot supply a reference for an object the house has
  *                       never admitted to, and everybody in the province holds
- *                       a reference for the Hollow Court - so without this the
+ *                       a reference for the Empyrean Court - so without this the
  *                       most secret objects in the world would be the most
  *                       widely recognised.
  *

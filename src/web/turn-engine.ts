@@ -32,6 +32,7 @@ import {
 } from '../engine/cultivation/breakthrough.js';
 import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
+import { placeSeedKey } from '../data/cultivation/place-names.js';
 import { describeBirth, drawBirth, groundDensityFor } from '../engine/birth/birth.js';
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { rollSex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
@@ -4199,7 +4200,7 @@ export class GameService {
         // ── A HAGGLE IS NOT A PURCHASE, AND THIS ONE SPENDS MONEY ────────
         //
         // Reported from a played run: "I haggle with the stallholder over
-        // Cross-Meridian Strike" was routed by the model to `buy` and the
+        // Cross-Meridian Jolt" was routed by the model to `buy` and the
         // purse paid the full fifteen stones. The pattern table gets this
         // right - it reads `interact/trade`, which is the haggle - so the
         // guard is not about the table. It is that a verb WHICH SPENDS must
@@ -6143,11 +6144,11 @@ ${noticed}`;
         // dao oath is defined as one sworn TO this house - the design owner:
         // *just for simplicity make them have to swear to the oath dao house* -
         // and a house you must swear to, that nobody has heard of, is a verb
-        // with no way in. Measured: "I swear a dao oath to the Vermilion Seal Terrace"
+        // with no way in. Measured: "I swear a dao oath to the Vermilion Sigil Terrace"
         // came back as a stranger asking who that is.
         //
         // Exempted HERE and not by seeding awareness, which was tried. The
-        // house is called Vermilion Seal Terrace, `bound word` is oath
+        // house is called Vermilion Sigil Terrace, `bound word` is oath
         // vocabulary, and putting it in the player's known-sect list sent every
         // sentence naming it to this verb instead of `sect`.
         const oathHouse = getSect(THE_OATHWRIGHT_HOUSE);
@@ -8271,7 +8272,7 @@ ${noticed}`;
                 // ANSWERING "COULD I LEAVE" WITHOUT LEAVING
                 const held = positionIn(this.repos, cultivator.id);
                 if (topic === 'leaving') {
-                    // "Seat" was the Hollow Court's own word for a rung, swept out
+                    // "Seat" was the Empyrean Court's own word for a rung, swept out
                     // of generic code by `652a66e` everywhere except this file,
                     // which was dirty at the time. Note WHICH sense this one was:
                     // not the head of the house, because the person asking is any
@@ -10575,7 +10576,7 @@ ${line}`;
         // otherwise the catalog's weighted table decides, which is the honest
         // answer to "I look for something useful".
         const wanted = (target ?? '').trim().length >= 2 ? resolveHerb(target!.trim()) : null;
-        const rng = forStream(run.seed, 'web_forage', startDay, placeName(cultivator));
+        const rng = forStream(run.seed, 'web_forage', startDay, placeSeedKey(placeName(cultivator)));
         // AND THE GROUND DECIDES WHAT GROWS ON IT. The third argument existed
         // and nothing here passed it, so a glacier and a rice terrace drew from
         // the same forty-three herbs. The same reading the hunt uses two

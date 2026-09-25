@@ -37,23 +37,23 @@ export type Arterial = z.infer<typeof ArterialSchema>;
 export const ARTERIALS: readonly Arterial[] = [
     {
         id: 'arterial-hollow-run',
-        name: 'The Hollow Run',
+        name: 'The Empyrean Vein',
         ordinalInSystem: 1,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: null,
-        drawnOnBy: 'The Hollow Court, which was not granted it and did not ask.',
+        drawnOnBy: 'The Empyrean Court, which was not granted it and did not ask.',
         note:
-            'The richest of the four and the only one the Survey has never had an administrator for. The first Surveyor is a real office with real duties and none of them are on the arterial itself; what the post actually does is keep a figure current and submit it, which is the same shape as the Kiln and is not admitted to be.'
+            'The richest of the four and the only one the Survey has never had an administrator for. The first Surveyor is a real office with real duties and none of them are on the arterial itself; what the post actually does is keep a figure current and submit it, which is the same shape as the Tripod and is not admitted to be.'
     },
     {
         id: 'arterial-the-root',
-        name: 'The Root Vein',
+        name: 'The Taproot Vein',
         ordinalInSystem: 2,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: 'court-kiln',
         drawnOnBy: 'Nobody at all. Nine hundred lit nodes and no draw.',
         note:
-            'The datum. Every survey in the province is ultimately measured against it without knowing whose datum it is, and the one figure the Kiln reports upward once a year is this arterial\'s, unchanged for the whole of Ji Wanluo\'s tenure.'
+            'The datum. Every survey in the province is ultimately measured against it without knowing whose datum it is, and the one figure the Tripod reports upward once a year is this arterial\'s, unchanged for the whole of Ji Wanluo\'s tenure.'
     },
     {
         id: 'arterial-the-eleven',

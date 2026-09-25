@@ -4,7 +4,7 @@
  * FOUND BY PLAYING BLIND, two sentences apart:
  *
  *     > how far is Nine Peaks
- *     You are in Six Li, The Buddha Precipice... Iron Ridge: a market town...
+ *     You are in Six Li, The Buddha Precipice... Iron Crest: a market town...
  *     Nine Hundred Paces: site... The Jade Face: site... Willow Village: a
  *     village... There are 2 further names you are carrying that you cannot
  *     place.
@@ -21,7 +21,7 @@
  * `HOW_FAR_IS_SOMEWHERE` captures the place - the branch that reads it even
  * says so, *"the first non-empty group is the thing asked after"* - and the
  * line under it returned `{ action: 'destinations' }` with nothing in it. The
- * same slip sat in `asking-is-not-doing.ts`, where "could I ride to Iron Ridge"
+ * same slip sat in `asking-is-not-doing.ts`, where "could I ride to Iron Crest"
  * was rewritten to the map read with the ridge dropped.
  *
  * A value computed and dropped between two functions that call each other, and
@@ -80,7 +80,7 @@ async function onePlaceItCanPoint(game: Playing): Promise<string | null> {
 describe('asking after one place by name', () => {
     it('carries the name out of the sentence', () => {
         expect(parseIntent('how far is Nine Peaks').target).toBe('Nine Peaks');
-        expect(parseIntent('which way is Iron Ridge').target).toBe('Iron Ridge');
+        expect(parseIntent('which way is Iron Crest').target).toBe('Iron Crest');
         expect(parseIntent('where is the Jade Face').target).toBe('Jade Face');
     });
 

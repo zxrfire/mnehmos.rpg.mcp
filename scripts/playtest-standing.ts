@@ -1,7 +1,7 @@
 /**
  * Every position in the world, asked the things worth asking.
  *
- * The list is the designer's: join an ordinary sect, an apex, the Hollow
+ * The list is the designer's: join an ordinary sect, an apex, the Empyrean
  * Court; start a war; wake a sealed ancestor legally and illegally; call down
  * an immortal ancestor. Asked by a rogue at the bottom, a rogue at the top, a
  * False Immortal, a True Immortal down for fifteen breaths, and every rung of a
@@ -226,14 +226,14 @@ const POSITIONS: Position[] = [
     /**
      * The strongest possible applicant to the top of the world.
      *
-     * The Hollow Court admits from ordinal 29 and has NO ceiling, and
+     * The Empyrean Court admits from ordinal 29 and has NO ceiling, and
      * `handleJoin` files every new member at rank index 0. So the single most
      * powerful applicant in existence enrols as an Outer Disciple, on the same
      * rung as somebody sixteen rungs below them. This position exists to catch
      * that, and `theApexDoor` below asserts it directly.
      */
-    { label: 'hollow court outer', ordinal: 41, houseId: 'sect-hollow-court', rank: 0, status: 'none' },
-    { label: 'hollow court seat', ordinal: 41, houseId: 'sect-hollow-court', rank: 3, status: 'none' },
+    { label: 'empyrean court outer', ordinal: 41, houseId: 'sect-hollow-court', rank: 0, status: 'none' },
+    { label: 'empyrean court seat', ordinal: 41, houseId: 'sect-hollow-court', rank: 3, status: 'none' },
     /**
      * Strong and broke.
      *
@@ -271,7 +271,7 @@ const ASKS: [string, string][] = [
     // ── doors ────────────────────────────────────────────────────────────
     ['I apply to the Azure Dew Sect', 'an ordinary door'],
     ['I apply to the Azure Cloud Pavilion', 'an apex with a front gate'],
-    ['I apply to the Hollow Court', 'the highest bar in the world'],
+    ['I apply to the Empyrean Court', 'the highest bar in the world'],
     ['I apply to the Earth Vein Tower', 'an apex nobody can join at all'],
     ['I ask the Jade Register Hall to adopt me', 'the only way into a dao house'],
 
@@ -286,20 +286,20 @@ const ASKS: [string, string][] = [
     ['I steal the sect treasury and leave in the night', 'the theft that already works'],
     ['I steal the Datum Lamp', 'taking the most valuable object in the world'],
     ['I rob the grave of Shen Guyi', 'grave robbing, which the catalog is built for'],
-    ['I break the seal under the Kiln Court', 'stealing an ancestor that is not yours'],
+    ['I break the seal under the Tripod Court', 'stealing an ancestor that is not yours'],
 
     // ── asking for what cannot be bought ─────────────────────────────────
     ['I ask the Earth Vein Tower for an Heaven-Ascending Golden Pill', 'the pill that carries you a realm'],
-    ['I ask the Azure Cloud Pavilion for a Root-Recasting Talisman', 'the talisman that rewrites a root'],
+    ['I ask the Azure Cloud Pavilion for a Spirit-Recasting Talisman', 'the talisman that rewrites a root'],
     ['I file a Requisition Against Standing Stock', 'the form, by name'],
     ['I ask the Earth Vein Tower for one of its pills', 'the same thing in plain words'],
-    ['I ask the Hollow Court for a dao protector', 'asking the top of the world for a favour'],
+    ['I ask the Empyrean Court for a dao protector', 'asking the top of the world for a favour'],
 
     // ── the world's institutions ─────────────────────────────────────────
     ['I declare war on the Nine Abyss Flame Sect', 'starting a war'],
     ['I offer an alliance to the Frostmirror Court', 'the visible half of a conspiracy'],
     ['I demand tribute from the Azure Dew Sect', 'being owed'],
-    ['I petition the Third Sill Court for a grant', 'the currency of the whole pyramid'],
+    ['I petition the Third Sluice Court for a grant', 'the currency of the whole pyramid'],
     ['I defect to the Myriad Course Hall', 'what two courts have already done'],
 
     // ── the dead, and the ones above the Lid ─────────────────────────────
@@ -492,7 +492,7 @@ async function ask(game: Game, db: Database.Database, text: string): Promise<Cel
  * Put a run into one position and prove it took.
  *
  * The knowledge gate is the hazard here and it is silent when it fires: a
- * cultivator who has never heard of the Hollow Court gets "nobody by that
+ * cultivator who has never heard of the Empyrean Court gets "nobody by that
  * name", and a matrix that has not defeated the gate measures the gate at every
  * single cell instead of the height it thinks it is varying. Every sect in the
  * catalog is written in as a heard name before anything is asked, and
@@ -554,7 +554,7 @@ async function seat(position: Position): Promise<{ game: Game; db: Database.Data
     // `act()` lazily seeds the world on its first call, so the first thing
     // typed in a fresh game writes seventeen `world_*` tables no matter what it
     // was. The first version of this scorer took that as proof the ask had
-    // happened, and reported `I apply to the Hollow Court` as WROTE at a rung
+    // happened, and reported `I apply to the Empyrean Court` as WROTE at a rung
     // where the engine had just answered "Not a name you hold."
     //
     // A pure read pays that cost up front. Everything the real ask writes
@@ -626,10 +626,10 @@ async function theApexDoor(): Promise<void> {
     for (const applicant of applicants) {
         const { game, db } = await seat(applicant);
         // Phrasing matters and is not a detail: the name parser takes the whole
-        // trailing string, so "join the Hollow Court AS A DISCIPLE" is looked up
-        // as a house called "Hollow Court as a disciple", is not found, and the
+        // trailing string, so "join the Empyrean Court AS A DISCIPLE" is looked up
+        // as a house called "Empyrean Court as a disciple", is not found, and the
         // knowledge gate answers instead of the admission gate.
-        const cell = await ask(game, db, 'I apply to the Hollow Court');
+        const cell = await ask(game, db, 'I apply to the Empyrean Court');
         const after: any = (game as any).state().cultivator;
         const rank = after.sectRank ?? '-';
         if (after.sectId === court.id) filed.push(String(rank));
@@ -640,7 +640,7 @@ async function theApexDoor(): Promise<void> {
 
     if (filed.length > 1 && new Set(filed).size === 1) {
         note('broken',
-            `The Hollow Court files every admitted applicant at "${filed[0]}" - the bottom rung - `
+            `The Empyrean Court files every admitted applicant at "${filed[0]}" - the bottom rung - `
             + `whether they stand at ordinal ${court.admissionOrdinal} or above the Lid at 45. `
             + `\`handleJoin\` calls addMember(sect, cultivator, 0) unconditionally, and `
             + `\`admissionOrdinal\` is a FLOOR with no ceiling anywhere beside it. The strongest `
@@ -659,7 +659,7 @@ async function theSecondDoor(): Promise<void> {
     const afterFirst: any = (game as any).state().cultivator;
     line(`  joined first : ${afterFirst.sectId} as ${afterFirst.sectRank}  [${first.verdict}]`);
 
-    const second = await ask(game, db, 'I apply to the Nine Peaks Ascetic Order');
+    const second = await ask(game, db, 'I apply to the Nine Peaks Ascetic Sect');
     const afterSecond: any = (game as any).state().cultivator;
     line(`  joined second: ${afterSecond.sectId} as ${afterSecond.sectRank}  [${second.verdict}]`);
     line(`  tables written by the second join: ${second.wrote.join(', ') || 'none'}`);
@@ -834,8 +834,8 @@ async function theMatrix(): Promise<void> {
         //
         // An ask can read standing perfectly, SAY so in the structured
         // channel, and still do the same nothing at every rung. `I ask the
-        // Hollow Court for a dao protector` files nine different rulings -
-        // "There is no rank on the letter", "Sent over Seat of The Hollow
+        // Empyrean Court for a dao protector` files nine different rulings -
+        // "There is no rank on the letter", "Sent over Seat of The Empyrean
         // Court (rank_index=3 of 4)" - and the answer to all nine is "It is
         // done. Nothing about it drew attention." with no byte written.
         //
@@ -941,7 +941,7 @@ async function theMatrix(): Promise<void> {
             `${reportsButDoesNot.length} ask(s) READ standing, FILE a different structured ruling for `
             + 'three or more positions, and then produce the same nothing at every one of them - no '
             + 'row written anywhere, whether the sender was a rogue at ordinal 0 or the Seat of the '
-            + 'Hollow Court. The ladder is being consulted and it is not being obeyed: '
+            + 'Empyrean Court. The ladder is being consulted and it is not being obeyed: '
             + reportsButDoesNot.map(s => `"${s}"`).join('; '));
     }
 }

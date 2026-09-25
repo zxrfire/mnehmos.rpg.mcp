@@ -43,7 +43,7 @@ export type Claim = z.infer<typeof ClaimSchema>;
 
 // THE AGES
 
-/** Year 1,517 of the Great Peace, which is the Jade Gorge's reckoning. */
+/** Year 1,517 of the Lasting Peace, which is the Jade Gorge's reckoning. */
 export const PRESENT_YEAR = 1_517;
 
 export const AgeSchema = z.object({
@@ -88,7 +88,7 @@ export const AGES: readonly Age[] = [
         whatItBuilt:
             'The gate terminals, of which the Shrinking Earth Pavilion inherited a survey listing thirty-one. The roads, which is the part everybody walks on and nobody thinks about: the old roads run terminal to terminal and not town to town, so the present road network connects places with no reason to be connected and misses every market in both provinces. And the figures. True distance between two points is a Open Gate Age measurement and the Span has never produced an original one, only maintained the table.',
         livingThere:
-            'Crowded, and by every account extremely uneven. The qi was thicker than anything now living has stood in and it was drawn on continuously by the network, so a person near a terminal lived in ground richer than the Hollow Court holds and a person four days away lived in ground the Jade Gorge would consider ordinary. There was no local anything: no local price, no local ruler, no local famine, because a shortfall anywhere was answered from somewhere else the same day. It is the only age in the record with no recorded famine at all, and the only one where a single failure could starve everybody.',
+            'Crowded, and by every account extremely uneven. The qi was thicker than anything now living has stood in and it was drawn on continuously by the network, so a person near a terminal lived in ground richer than the Empyrean Court holds and a person four days away lived in ground the Jade Gorge would consider ordinary. There was no local anything: no local price, no local ruler, no local famine, because a shortfall anywhere was answered from somewhere else the same day. It is the only age in the record with no recorded famine at all, and the only one where a single failure could starve everybody.',
         didTheyKnow:
             'They knew the arterial veins were falling and they did not treat it as a problem, because for eleven thousand years of their own record it had never once mattered: the network moved qi to wherever it was short, so a drawn-down artery read as an accounting entry rather than as an event. Every surviving figure is a rate of draw, carefully kept, in a hand that plainly regarded the number as routine. Nobody has found a Open Gate Age document that treats the decline as anything other than administration.',
         howItEnded: {
@@ -115,7 +115,7 @@ export const AGES: readonly Age[] = [
             'thirty-one gate terminals on the Shrinking Earth Pavilion survey, twenty-two closed and nine answering, none of them Span work',
             'the road network, which goes to terminals and is the reason travel in both provinces is inefficient in a way nobody can explain locally',
             'the true-distance table, which prices every courier contract and every freight span in the region and has never been recalculated',
-            'the Bird-Track Hand: a script on the terminal frames of which three sign groups are agreed and one of the three is agreed to be a number'
+            'the Bird-Scratch Hand: a script on the terminal frames of which three sign groups are agreed and one of the three is agreed to be a number'
         ],
         note:
             'The Open Gate Age is the reason the world is late, and almost nothing in the present points at it. It spent the arterial system on ordinary administration over a span of time nobody can measure, and left a road network, a distance table and a silence.'
@@ -171,7 +171,7 @@ export const AGES: readonly Age[] = [
         livingThere:
             'Comfortable at the top and unremarkable below it, on ground still rich enough that an ordinary person in an ordinary district could reach Foundation Establishment without a patron. The houses were young, competitive and generous, and admission was easier than it has ever been since. What an ordinary person noticed was the measuring: surveyors, tallies, registers and inspections, everywhere, constantly, by nine institutions who did not coordinate and each wanted their own figure.',
         didTheyKnow:
-            'They found out, and finding out is what ended them. The Hundred Schools Age is the age that discovered the decline as a measured rate rather than an impression, published it, and then discovered that a published rate is an instruction. Every account of the Beacon Fire Age that traces its own causes traces them to a figure, and the figure was correct.',
+            'They found out, and finding out is what ended them. The Hundred Schools Age is the age that discovered the decline as a measured rate rather than an impression, published it, and then discovered that a published rate is an instruction. Every account of the Beacon Age that traces its own causes traces them to a figure, and the figure was correct.',
         howItEnded: {
             statement:
                 'The Hundred Schools Age ended when the first arterial surveys were published and the great powers of the age acted on them. There is no single event and no date anybody defends; there is a century in which leases stopped being renewed everywhere at once and were not replaced by anything.',
@@ -180,7 +180,7 @@ export const AGES: readonly Age[] = [
             evidence: [
                 'three surviving arterial figures from that century, from three institutions, agreeing to within a tenth, which is the only time in the record that any three surveys have agreed about anything',
                 'lease and grant instruments from the Karma Palace\'s own tally volumes stop mid-series across nine unrelated parties within about eighty years',
-                'the Flowing Light Tower has case records from the century showing an abrupt collapse in the number of live possibilities its predecessors could read, which it interprets as everybody having already decided',
+                'the Flowing Star Tower has case records from the century showing an abrupt collapse in the number of live possibilities its predecessors could read, which it interprets as everybody having already decided',
                 'no battle of any size is recorded for the first forty years of it, which is what a scramble looks like before it becomes a war'
             ],
             claimedOutcomes: [],
@@ -190,33 +190,33 @@ export const AGES: readonly Age[] = [
             'every ancient house in both provinces, all of them founded inside this age and none outside it',
             'the disciplines themselves, which are the Hundred Schools Age\'s actual monument and are still being practised',
             'the first ambient survey, held in three incomplete copies by parties who will not lend them to each other',
-            'six crossings from the Hollow Court alone, and the channels that still answer because of them'
+            'six crossings from the Empyrean Court alone, and the channels that still answer because of them'
         ],
         note:
             'The Hundred Schools Age is the world the present is nostalgic for and the world that caused the present. It measured honestly, published, and could not have predicted that an honest number would be read as a starting pistol.'
     },
     {
         id: 'age-beacon-fire',
-        name: 'The Beacon Fire Age',
+        name: 'The Beacon Age',
         beganYearsAgo: 2_400,
         endedYearsAgo: 1_517,
         qiDensity: 0.31,
         whatItWas:
             'Nine hundred years of taking. The shortest age in the record and the only one whose events still have names attached to them, because it is recent enough that the parties who did the taking are the parties still standing. Every scar, every dead province, every forbidden perimeter and most of the sealed sites in both provinces date from it. It is not a dark age in the sense of a collapse: the institutions functioned perfectly well throughout, kept excellent records, and used them to plan.',
         whatItBuilt:
-            'Nothing. The Beacon Fire Age is the only age in the record with no construction layer at all. What it produced was destruction of a specific and deliberate kind: ground killed so that a rival could not hold it, networks broken rather than taken, and the discovery, made independently by several parties, that culling a region\'s cultivators frees its qi and that this works.',
+            'Nothing. The Beacon Age is the only age in the record with no construction layer at all. What it produced was destruction of a specific and deliberate kind: ground killed so that a rival could not hold it, networks broken rather than taken, and the discovery, made independently by several parties, that culling a region\'s cultivators frees its qi and that this works.',
         livingThere:
-            'Survivable in inverse proportion to the quality of your ground. A district on a poor vein went untouched for nine hundred years; a district on a good one changed hands eleven times and then stopped existing. The Beacon Fire Age is where the present habit of not announcing anything comes from, and where the crossing practice hardened into what it is now, because a crossing was the single most reliably attended event of the age and almost nobody who attempted one in it was left alone.',
+            'Survivable in inverse proportion to the quality of your ground. A district on a poor vein went untouched for nine hundred years; a district on a good one changed hands eleven times and then stopped existing. The Beacon Age is where the present habit of not announcing anything comes from, and where the crossing practice hardened into what it is now, because a crossing was the single most reliably attended event of the age and almost nobody who attempted one in it was left alone.',
         didTheyKnow:
-            'They knew the ground was being killed and they did it anyway, and the surviving arguments for it are not stupid. The Beacon Fire Age position, stated plainly in three separate places, is that the decline made the arithmetic unavoidable: a region carries so many cultivators, the number is falling, and a party that declines to act on that is choosing to be the one that is culled. Everybody who acted on it was individually correct and collectively catastrophic, and every institution that came out of it knows this and none of them will say it in a room.',
+            'They knew the ground was being killed and they did it anyway, and the surviving arguments for it are not stupid. The Beacon Age position, stated plainly in three separate places, is that the decline made the arithmetic unavoidable: a region carries so many cultivators, the number is falling, and a party that declines to act on that is choosing to be the one that is culled. Everybody who acted on it was individually correct and collectively catastrophic, and every institution that came out of it knows this and none of them will say it in a room.',
         howItEnded: {
             statement:
-                'The Beacon Fire Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Vermilion Seal Terrace does not hold one.',
+                'The Beacon Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Vermilion Sigil Terrace does not hold one.',
             truth: 'unresolved',
             heldBy: ['house-vermilion-seal', 'house-ninefold-karma', 'apex-earth-vein-tower', 'apex-myriad-course-hall'],
             evidence: [
                 'the practice changed within about a decade across both provinces and every tradition, which is not how customs change and is exactly how instruments do',
-                'the Vermilion Seal Terrace holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
+                'the Vermilion Sigil Terrace holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
                 'grant language in nine unrelated houses converges on the same four clauses in the same order within a generation',
                 'the Jade Gorge counts its years from it, so at minimum somebody at the time was certain enough to reset a calendar'
             ],
@@ -231,26 +231,26 @@ export const AGES: readonly Age[] = [
         whatSurvives: [
             'the pyramid itself: grant, tribute, renewal, non-renewal, and every clause in it',
             'the scars, the dead provinces and the eleven containment perimeters the Immovable Mountain Temple maintains',
-            'the crossing practice, which is a Beacon Fire Age adaptation that nobody has seen a reason to abandon',
+            'the crossing practice, which is a Beacon Age adaptation that nobody has seen a reason to abandon',
             'the standing grievances of every institution founded before it against every institution founded before it'
         ],
         note:
-            'The Beacon Fire Age is why the map is not on fire now. Everything stabilising about the present arrangement was invented by parties who had just spent nine centuries proving the alternative, and the arrangement holds because all of them remember what it is an alternative to.'
+            'The Beacon Age is why the map is not on fire now. Everything stabilising about the present arrangement was invented by parties who had just spent nine centuries proving the alternative, and the arrangement holds because all of them remember what it is an alternative to.'
     },
     {
         id: 'age-present',
-        name: 'The Great Peace',
+        name: 'The Lasting Peace',
         beganYearsAgo: 1_517,
         endedYearsAgo: null,
         qiDensity: 0.22,
         whatItWas:
-            'The present, and nobody living in it calls it an age. The Jade Gorge calls the period the Great Peace because that is the name of its calendar, the Buddha Precipice does not name it at all, and the term the two archivist institutions use between themselves for the whole situation is not in general circulation. It is fifteen centuries of granting rather than taking, on ground that has continued to fall the entire time, with no construction, no new discipline and one confirmed crossing in the last four hundred years.',
+            'The present, and nobody living in it calls it an age. The Jade Gorge calls the period the Lasting Peace because that is the name of its calendar, the Buddha Precipice does not name it at all, and the term the two archivist institutions use between themselves for the whole situation is not in general circulation. It is fifteen centuries of granting rather than taking, on ground that has continued to fall the entire time, with no construction, no new discipline and one confirmed crossing in the last four hundred years.',
         whatItBuilt:
             'Institutions inside inherited buildings. The present age has built ferry towns, market towns, sorting yards, register houses, a counter register, a courier network laid over somebody else\'s roads, and one complete formation of six weak nodes at the Burnt Earth Temple, which is the only entirely new working formation in the province and is cited by everybody on all sides of every argument about whether the age can build anything.',
         livingThere:
             'Thin, ordinary and survivable, and for most people uneventful in a way the earlier ages were not. Progress is slow, the ceiling arrives early, and the ruins are so common that a village granary is built against a wall nobody remembers building. What the present has that no earlier age had is the wreckage of four ages lying open, and the whole exploration economy is people digging in it.',
         didTheyKnow:
-            'The present knows the ground is thin and mostly explains it as bad luck or as the sins of the Beacon Fire Age, which is a quarter true. Two institutions hold the fuller account and neither publishes it: the Immovable Mountain Temple, which can read the numerals and has the datum, and the Earth Vein Tower, which has the arterial figures and no reason to share them. Everybody else believes the world was always going to end up like this and that the ancients were simply better, which is the most comfortable available error.',
+            'The present knows the ground is thin and mostly explains it as bad luck or as the sins of the Beacon Age, which is a quarter true. Two institutions hold the fuller account and neither publishes it: the Immovable Mountain Temple, which can read the numerals and has the datum, and the Earth Vein Tower, which has the arterial figures and no reason to share them. Everybody else believes the world was always going to end up like this and that the ancients were simply better, which is the most comfortable available error.',
         howItEnded: {
             statement:
                 'It has not ended. Ambient qi is still falling at a rate the Earth Vein Tower measures and does not publish, and no institution in either province has a plan that addresses it rather than positions against it.',
@@ -367,14 +367,14 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
             'walking the old roads and noticing that they connect nothing, then finding what is at the ends of them',
             'a Shrinking Earth Pavilion station warden who will explain, at length and for free, why the swept gate frame is swept',
             'comparing the Span survey and the Immovable Mountain Temple survey, which disagree in four places, all arterial, and asking why nobody has resolved it',
-            'the Bird-Track Hand on a terminal frame, and the fact that a Cinnabar Crucible reader can tell you it is not Furnace Script and nothing else'
+            'the Bird-Scratch Hand on a terminal frame, and the fact that a Cinnabar Crucible reader can tell you it is not Furnace Script and nothing else'
         ],
         note:
             'The Thirty-One are the reason the world is thin and almost nothing in the present points at them. They spent the arterial system on freight and correspondence over a period nobody can measure, and the only institution that could reconstruct it has no reason to and no instrument for the arterial layer at all.'
     },
     {
         id: 'dead-ten-thousand-works',
-        name: 'The Ten Thousand Works',
+        name: 'The Ten Thousand Deeds',
         existence: 'established',
         ageId: 'age-true-weight',
         whyThatName:
@@ -392,7 +392,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
                     'A house holding an ancestral channel and the only income of consumables in the world that goes up rather than down lights nine nodes out of forty-one and has never lit a tenth. Wealth is not the constraint and never was.'
             },
             {
-                what: 'The Nine Peaks Ascetic Order\'s compound, including a doorway on the fourth peak with handprints burned into the jamb at a height nobody in the Order can reach flat-footed.',
+                what: 'The Nine Peaks Ascetic Sect\'s compound, including a doorway on the fourth peak with handprints burned into the jamb at a height nobody in the Sect can reach flat-footed.',
                 heldByFactionId: 'sect-nine-peaks-ascetic-order',
                 nodes: { total: 63, lit: 11 },
                 whyItCannotBeReplaced:
@@ -422,7 +422,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         ],
         theEnd: {
             statement:
-                'The Ten Thousand Works ran short of people who could cut and hold nodes, for several centuries, and abandoned districts in an order that follows network difficulty rather than ground quality.',
+                'The Ten Thousand Deeds ran short of people who could cut and hold nodes, for several centuries, and abandoned districts in an order that follows network difficulty rather than ground quality.',
             truth: 'reconstructed',
             heldBy: ['house-immovable-mountain', 'apex-earth-vein-tower'],
             evidence: [
@@ -441,7 +441,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
             'the Immovable Mountain Temple\'s own numerals, which any careful person can learn to read in a season, at which point every one of their documents becomes a readable table of quantities inside an unreadable sentence'
         ],
         note:
-            'This is the civilisation the present is actually living inside. The pyramid, the vein lease and the phrase "holds a vein at sufferance" all resolve to the same thing: the thing being granted was built by the Ten Thousand Works, cannot be rebuilt, and is being spent.'
+            'This is the civilisation the present is actually living inside. The pyramid, the vein lease and the phrase "holds a vein at sufferance" all resolve to the same thing: the thing being granted was built by the Ten Thousand Deeds, cannot be rebuilt, and is being spent.'
     },
     {
         id: 'dead-before-the-gates',
@@ -451,7 +451,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         whyThatName:
             'It has no name because most parties do not accept that it is a thing. The phrase is a description of the evidence: at eleven of the thirty-one terminals the frame sits in a seat that was cut before the frame and to a different standard, and the seat is not Open Gate Age work.',
         whoTheyWere:
-            'Unknown, and possibly nobody. The claim is that the Thirty-One did not build the gate network but inherited it, refitted it, and ran it, exactly as the present inherited the Ten Thousand Works and lights a ninth of them. It is held by two people: an Elder Surveyor of the Shrinking Earth Pavilion who has published nothing, and a Warden of the Immovable Mountain Temple\'s survey who has published a note about seat tooling and has been left alone about it because nobody read it.',
+            'Unknown, and possibly nobody. The claim is that the Thirty-One did not build the gate network but inherited it, refitted it, and ran it, exactly as the present inherited the Ten Thousand Deeds and lights a ninth of them. It is held by two people: an Elder Surveyor of the Shrinking Earth Pavilion who has published nothing, and a Warden of the Immovable Mountain Temple\'s survey who has published a note about seat tooling and has been left alone about it because nobody read it.',
         whatTheyCouldDo:
             'Nothing anybody can state, which is the honest position. The seats are cut, they are older than the frames sitting in them, and the tooling is not a tooling anybody can match to a known hand. Every other statement about them is an inference from eleven holes in the ground.',
         survivingWorks: [
@@ -481,7 +481,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
                 'the four terminals the two surveys disagree about are not among the eleven, which nobody has explained'
             ],
             claimedOutcomes: [
-                'a civilisation before the Open Gate Age cut the seats, and the Thirty-One inherited and refitted a network exactly as the present inherited the Ten Thousand Works',
+                'a civilisation before the Open Gate Age cut the seats, and the Thirty-One inherited and refitted a network exactly as the present inherited the Ten Thousand Deeds',
                 'the Thirty-One cut the seats themselves, early, and changed their own standard once, which would make the eleven the oldest terminals rather than the oldest anything',
                 'the eleven are repairs: seats recut later to a field standard by whoever was maintaining the network at the end, which would date them younger rather than older',
                 'the tooling difference is not a difference, and the Warden measured badly'
@@ -499,11 +499,11 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
 ];
 
 /**
- * The two traditions, reconciled against the Ten Thousand Works.
+ * The two traditions, reconciled against the Ten Thousand Deeds.
  */
 export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
     statement:
-        'A node of the Ten Thousand Works is qi driven into stone and held there. A carver\'s seam is qi driven into stone and worked out. They are very likely the same physical thing at two scales, and the Cut Road is therefore an unwitting reconstruction of one part of a Ten Thousand Works trade.',
+        'A node of the Ten Thousand Deeds is qi driven into stone and held there. A carver\'s seam is qi driven into stone and worked out. They are very likely the same physical thing at two scales, and the Cut Road is therefore an unwitting reconstruction of one part of a Ten Thousand Deeds trade.',
     truth: 'reconstructed',
     heldBy: ['house-immovable-mountain'],
     evidence: [
@@ -518,7 +518,7 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
 
 /** Why nobody has ever said the sentence above in a room with both traditions in it. */
 export const WHY_THE_RECONCILIATION_IS_NOT_MADE = [
-    'Immovable Mountain Temple holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing the work of the Ten Thousand Works is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
+    'Immovable Mountain Temple holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing the work of the Ten Thousand Deeds is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
     'The Drawn will not hear it, because it makes carving older and more legitimate than the Drawn Road\'s own account of itself, and the standing Jade Gorge position is that carving is quarrying with extra steps.',
     'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Buddha Precipice account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
     'And it would change what a vein lease is. If a node and a seam are the same thing, then a Drawn sect holding lit nodes and a carver holding a face are holding the same asset under two entirely different bodies of law, which is a question no arbitration in the world currently has a forum for.'
@@ -572,14 +572,14 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
         evidence: [
             'manuals across the entire world share a structure: the same order of sections, the same conventions for marking a stage, the same phrase forms at the head of a passage',
             'the ladder itself is identical everywhere, in both traditions, with the same boundaries at the same places, which is a remarkable thing to be true by accident',
-            'the Hollow Court receives accounts of the crossing from somebody who made it, which establishes at minimum that instruction across the Lid is possible',
+            'the Empyrean Court receives accounts of the crossing from somebody who made it, which establishes at minimum that instruction across the Lid is possible',
             'the Ninth Nail was driven through from above by somebody who intended it to be found and used, which is teaching in every sense that matters'
         ],
         theProblem:
             'It has no teacher. Not a name that survives, not a site, not a manual that claims to be the first one, and nothing anywhere in the record that behaves like a founding transmission rather than a copy of a copy. Every named teacher in every sect version is a sect ancestor, and no two sects name the same one.',
         demonstrablyWrong: {
             refutation:
-                'The shared structure is a copying artifact and not a doctrine. The Ten Thousand Works standardised manual formatting the way they standardised weights: section order, stage marks and head phrases are their own survey conventions applied to instructional documents, and they appear in every manual in the world because every manual in the world descends from a recopying programme of theirs. Manual fragments older than that programme exist, they do not share the structure, and they do not share it in exactly the places the convention would predict.',
+                'The shared structure is a copying artifact and not a doctrine. The Ten Thousand Deeds standardised manual formatting the way they standardised weights: section order, stage marks and head phrases are their own survey conventions applied to instructional documents, and they appear in every manual in the world because every manual in the world descends from a recopying programme of theirs. Manual fragments older than that programme exist, they do not share the structure, and they do not share it in exactly the places the convention would predict.',
             whyItIsStillHeld:
                 'Because the fragments that refute it are in two collections and neither will lend. The Earth Vein Tower holds a set it has never described to anybody, and the Cinnabar Crucible Sect holds three sheets it believes to be a defective alchemy text and has never shown to a person who reads the Boundary Hand. Nobody has ever put a manual from before that programme and one from after it on the same table, so the argument has never been made in a room, and the account is far too useful to a sect that wants to be descended from a teacher for anybody inside one to go looking.',
             whoCouldDemonstrateIt: ['apex-earth-vein-tower', 'house-immovable-mountain', 'sect-cinnabar-crucible-sect']
@@ -606,7 +606,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
     },
     {
         id: 'origin-thirteen-and-four',
-        name: 'The Thirteen and the Four',
+        name: 'The Thirteen and the Fourfold',
         heldBy: ['house-flowing-light', 'house-ninefold-karma', 'house-vermilion-seal'],
         currency: 'institutional',
         account:
@@ -617,7 +617,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             'thirteen at the bottom and four above, which reads as a design choice and nothing else',
             'the Price of Advancement takes something specific rather than something proportional, which is a term and not a weather',
             'the tribulation arrives, which is to say something responds, and a response requires a responder even if nobody can name one',
-            'the Vermilion Seal Terrace can demonstrate that an oath sworn on unfixed ground does not bind, which establishes that the world enforces terms against ground rather than against intent'
+            'the Vermilion Sigil Terrace can demonstrate that an oath sworn on unfixed ground does not bind, which establishes that the world enforces terms against ground rather than against intent'
         ],
         theProblem:
             'No builder, no site, no method, no tool and no artifact of the building, in eleven thousand years of digging, by a world whose entire economy is digging. The account has never produced a single object. Its holders answer that a work this size would not leave the kind of debris anybody is looking for, which is true and is also exactly what an unfalsifiable position sounds like, and all three houses know it.',
@@ -625,7 +625,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
     },
     {
         id: 'origin-grain-of-the-stone',
-        name: 'The Grain of the Stone',
+        name: 'The Figure of the Stone',
         heldBy: ['apex-myriad-course-hall', 'sect-fallen-grain-caravan'],
         currency: 'minority',
         account:
@@ -656,7 +656,7 @@ export const THE_FIRST_CULTIVATORS: Claim = {
     evidence: [
         'the Boundary Hand has a sign group for a practitioner that appears in documents older than any manual anybody holds, in survey contexts, treated as an ordinary occupation alongside masons and weighers',
         'the gate terminals cannot be worked by anyone now living, and the Shrinking Earth Pavilion\'s own estimate of what operating one would require is a realm nobody in the world currently occupies, which means the Open Gate Age already had people above the present ceiling',
-        'the Hollow Court has an account from above, received roughly nine hundred years ago and never reconciled with the rest, in which the person who made the crossing describes the approach in terms that do not assume the ladder has a bottom'
+        'the Empyrean Court has an account from above, received roughly nine hundred years ago and never reconciled with the rest, in which the person who made the crossing describes the approach in terms that do not assume the ladder has a bottom'
     ],
     claimedOutcomes: [
         'cultivation is older than every civilisation in the record and the question has no answer inside this world at all',
@@ -705,7 +705,7 @@ export const LID_THEORIES: readonly LidTheory[] = [
         cannotAnswer:
             'A containment has a holder. Every containment the Immovable Mountain Temple has ever certified, without exception, fails when nobody is holding it, and the failure is the house\'s entire business: it maintains eleven perimeters because eleven perimeters would otherwise let go. The Lid has not let go in the whole recoverable record, and there is no nail, no datum, no staff and no institution anywhere that claims to be holding it.',
         theirAnswerToThat:
-            'That the holder exists and is not in the survey, which the house concedes is an admission rather than an argument. Its internal position, written down and not published, is that the Kiln Wardens are staff of something, that the deep vein at the world\'s root is a datum of some kind, and that these two facts sit uncomfortably close to the question and cannot be pursued because the Wardens do not answer anyone.',
+            'That the holder exists and is not in the survey, which the house concedes is an admission rather than an argument. Its internal position, written down and not published, is that the Tripod Wardens are staff of something, that the deep vein at the world\'s root is a datum of some kind, and that these two facts sit uncomfortably close to the question and cannot be pursued because the Wardens do not answer anyone.',
         ifItIsTrue:
             'Somebody is holding it, has held it since before the record, and the entire history of the world is happening inside a maintained perimeter. It also means it can fail, which is the part the Immovable Mountain Temple does not put in writing.'
     },
@@ -751,7 +751,7 @@ export const LID_THEORIES: readonly LidTheory[] = [
     },
     {
         id: 'lid-split-tally',
-        name: 'The Split Tally',
+        name: 'The Halved Tally',
         heldBy: 'house-ninefold-karma',
         throughWhichPrinciple: 'karma',
         theory:
@@ -779,7 +779,7 @@ export const LID_NON_POSITIONS = [
     {
         factionId: 'sect-hollow-court',
         position:
-            'The Hollow Court holds no theory of the Lid. Four beings have been receiving accounts of the crossing itself, from somebody who made it, for four thousand four hundred years, and when the question has been put to them the answer has been that the accounts do not describe one. Not that the accounts are unclear about it: that the subject does not arise. Everybody who learns this finds it worse than any of the four theories, and it is the single most disturbing fact available to anybody investigating the question.',
+            'The Empyrean Court holds no theory of the Lid. Four beings have been receiving accounts of the crossing itself, from somebody who made it, for four thousand four hundred years, and when the question has been put to them the answer has been that the accounts do not describe one. Not that the accounts are unclear about it: that the subject does not arise. Everybody who learns this finds it worse than any of the four theories, and it is the single most disturbing fact available to anybody investigating the question.',
         whyItMatters:
             'The best-informed party in the world, working continuously on nothing else, has not formed an opinion in four millennia. Either the question is malformed, or the answer is something the accounts cannot carry, or the four of them have one and have never been asked by anybody they considered worth answering.'
     },
@@ -793,7 +793,7 @@ export const LID_NON_POSITIONS = [
     {
         factionId: 'sect-deeproot-court',
         position:
-            'The Kiln Wardens do not answer. They have been asked, in writing, by the Immovable Mountain Temple, twice in nine hundred years, and both letters were received and neither was replied to. They keep a datum of their own, they date documents in a five-figure year in a reckoning nobody else uses, and they hold every node they have lit since before the province had a name.',
+            'The Tripod Wardens do not answer. They have been asked, in writing, by the Immovable Mountain Temple, twice in nine hundred years, and both letters were received and neither was replied to. They keep a datum of their own, they date documents in a five-figure year in a reckoning nobody else uses, and they hold every node they have lit since before the province had a name.',
         whyItMatters:
             'They are staff of an apex, posted, doing an assigned job on somebody else\'s datum. Whatever the assignment is, it is older than the True Weight Age\'s ability to date it, and the Immovable Mountain Temple\'s unpublished position is that the Wardens are the closest thing in the world to a party that might be holding something.'
     }
@@ -860,7 +860,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
     },
     {
         id: 'script-bird-track-hand',
-        name: 'The Bird-Track Hand',
+        name: 'The Bird-Scratch Hand',
         ageId: 'age-open-gate',
         legibility:
             'Named for what the marks look like to a person who cannot read them, which is the whole of what anybody has. Three sign groups are agreed by everybody who has looked, and one of the three is agreed to be a number that nobody can interpret because nothing states its units. Beyond that there is no agreement of any kind, including on whether the marks on a terminal frame are one script or two.',
@@ -905,7 +905,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         name: 'The Warden reckoning',
         ageId: 'age-open-gate',
         legibility:
-            'Not a script so much as a date format, and it is the only living example of anything of the sort. The Kiln Wardens mark documents with a five-figure year in a reckoning nobody else uses and have never explained the epoch. Two attempts have been made to convert it against known events and the two answers are about four thousand years apart.',
+            'Not a script so much as a date format, and it is the only living example of anything of the sort. The Tripod Wardens mark documents with a five-figure year in a reckoning nobody else uses and have never explained the epoch. Two attempts have been made to convert it against known events and the two answers are about four thousand years apart.',
         readBy: ['sect-deeproot-court'],
         whyItIsLikeThat:
             'It is not dead and never was. It is in continuous use by a body that does not answer questions, which produces the same practical result as a dead script and is far more unsettling, because the only people who could explain it are alive and standing right there.',
@@ -980,7 +980,7 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         truth: 'objective',
         heldBy: ['sect-lantern-hall', 'house-jade-register', 'house-flowing-light'],
         evidence: [
-            'the Flowing Light Tower\'s own records for the last confirmed ascension are internally contradictory and it has never resolved why',
+            'the Flowing Star Tower\'s own records for the last confirmed ascension are internally contradictory and it has never resolved why',
             'unattributed tribulation scars exist with no name against them, and some belong to candidates and some to people nobody wondered about',
             'the Jade Register Hall holds register entries that stopped matching their holders and cannot say what happened to any of them'
         ],
@@ -1035,19 +1035,19 @@ export type Calendar = z.infer<typeof CalendarSchema>;
 export const CALENDARS: readonly Calendar[] = [
     {
         id: 'calendar-great-peace',
-        name: 'The Great Peace',
+        name: 'The Lasting Peace',
         regionId: 'region-low-fall',
         keptBy: ['house-immovable-mountain', 'sect-stone-marrow-hall', 'house-ninefold-karma'],
         countsFrom:
-            'The Settlement, which is said to be the arrangement that ended the Beacon Fire Age and made water something granted rather than taken. Year one is the year of it, and the present year is 1,517.',
+            'The Settlement, which is said to be the arrangement that ended the Beacon Age and made water something granted rather than taken. Year one is the year of it, and the present year is 1,517.',
         presentYear: PRESENT_YEAR,
         isTheOriginCorrect: {
             statement:
-                'The Great Peace is dated from an event for which no instrument survives, whose convening nobody can name, and which may not have been a single event at all.',
+                'The Lasting Peace is dated from an event for which no instrument survives, whose convening nobody can name, and which may not have been a single event at all.',
             truth: 'unresolved',
             heldBy: ['house-vermilion-seal', 'house-immovable-mountain', 'house-ninefold-karma'],
             evidence: [
-                'no instrument bearing the name survives and the Vermilion Seal Terrace does not hold one, which for that house is an extraordinary admission',
+                'no instrument bearing the name survives and the Vermilion Sigil Terrace does not hold one, which for that house is an extraordinary admission',
                 'the eleven subsidiary agreements of that decade refer to terms they do not restate',
                 'the practice changed across both provinces within about a decade, which is instrument speed and not custom speed',
                 'the calendar itself was reset, which means somebody at the time was certain enough to make everybody renumber'
@@ -1064,7 +1064,7 @@ export const CALENDARS: readonly Calendar[] = [
     },
     {
         id: 'calendar-face-years',
-        name: 'Face years',
+        name: 'Face Reckoning',
         regionId: 'region-quiet-marches',
         keptBy: ['apex-myriad-course-hall', 'sect-clearwater-ward', 'sect-six-li-patrol'],
         countsFrom:
@@ -1072,7 +1072,7 @@ export const CALENDARS: readonly Calendar[] = [
         presentYear: 1_489,
         isTheOriginCorrect: {
             statement:
-                'The epoch of the Face years is a dated schedule entry, which makes it the better-evidenced of the two origins and does not make it convertible to the other one.',
+                'The epoch of the Face Reckoning is a dated schedule entry, which makes it the better-evidenced of the two origins and does not make it convertible to the other one.',
             truth: 'reconstructed',
             heldBy: ['apex-myriad-course-hall', 'house-shrinking-earth'],
             evidence: [
@@ -1088,7 +1088,7 @@ export const CALENDARS: readonly Calendar[] = [
     },
     {
         id: 'calendar-seat-years',
-        name: 'Seat years',
+        name: 'Seat Reckoning',
         regionId: null,
         keptBy: [
             'sect-azure-cloud-pavilion',
@@ -1102,7 +1102,7 @@ export const CALENDARS: readonly Calendar[] = [
         presentYear: null,
         isTheOriginCorrect: {
             statement:
-                'Seat years have no origin to be correct about, and converting a sect\'s internal date to either provincial count requires a complete and accurate list of its seats and their lengths, which almost no sect has.',
+                'The Seat Reckoning has no origin to be correct about, and converting a sect\'s internal date to either provincial count requires a complete and accurate list of its seats and their lengths, which almost no sect has.',
             truth: 'objective',
             heldBy: ['sect-lantern-hall', 'house-ninefold-karma'],
             evidence: [
@@ -1117,15 +1117,15 @@ export const CALENDARS: readonly Calendar[] = [
     },
     {
         id: 'calendar-warden-year',
-        name: 'The Warden year',
+        name: 'The Warden Reckoning',
         regionId: null,
         keptBy: ['sect-deeproot-court'],
         countsFrom:
-            'Nothing anybody can identify. The Kiln Wardens mark their eleven known outside documents with a five-figure year and have never stated the epoch, been asked in a way they answered, or shown any sign of considering the question worth a reply.',
+            'Nothing anybody can identify. The Tripod Wardens mark their eleven known outside documents with a five-figure year and have never stated the epoch, been asked in a way they answered, or shown any sign of considering the question worth a reply.',
         presentYear: null,
         isTheOriginCorrect: {
             statement:
-                'Two attempts have been made to convert the Warden year against dateable events, and the two answers are about four thousand years apart. Nobody has made a third.',
+                'Two attempts have been made to convert the Warden Reckoning against dateable events, and the two answers are about four thousand years apart. Nobody has made a third.',
             truth: 'unresolved',
             heldBy: ['house-immovable-mountain', 'sect-lantern-hall'],
             evidence: [
@@ -1153,7 +1153,7 @@ export const CALENDARS: readonly Calendar[] = [
  */
 export const THE_CALENDAR_OFFSET: Claim = {
     statement:
-        'The Great Peace and the Face years are twenty-eight years apart by universal commercial practice, thirty-one by the Immovable Mountain Temple\'s survey notes, and thirty-three by the Ninefold Karma Palace\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
+        'The Lasting Peace and the Face Reckoning are twenty-eight years apart by universal commercial practice, thirty-one by the Immovable Mountain Temple\'s survey notes, and thirty-three by the Ninefold Karma Palace\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
     truth: 'unresolved',
     heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma', 'apex-myriad-course-hall'],
     evidence: [
@@ -1166,7 +1166,7 @@ export const THE_CALENDAR_OFFSET: Claim = {
         'twenty-eight, and the other two are computing against a reckoning that was itself adjusted once',
         'thirty-one, and the commercial figure is a rounding that got fixed by use',
         'thirty-three, and every cross-border inheritance settled in the last fifteen hundred years is out by five years',
-        'the question is malformed because the Great Peace\'s own epoch is a compressed decade, in which case no single offset exists at all'
+        'the question is malformed because the Lasting Peace\'s own epoch is a compressed decade, in which case no single offset exists at all'
     ],
     fidelity: 'partial'
 };
@@ -1223,7 +1223,7 @@ export type LocalResidue = z.infer<typeof LocalResidueSchema>;
 export const LOCAL_RESIDUE: readonly LocalResidue[] = [
     // ── sealed compounds ──────────────────────────────────────────────
     {
-        siteName: 'Nine Bell Terrace',
+        siteName: 'Nine Gong Terrace',
         kind: 'ruin',
         whatTheySay:
             'They rang them out on the last night so the country would know. Nine bells, one for each hall, and when the last one stopped that was the seal taken.',
@@ -1262,7 +1262,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The ground there has been cold for centuries and the name is older than the sealing, so the name is not a claim about the present and never was. What the diggers are reading is real temperature variation in a wall that catches sun, and the rule they built on it is a rule about weather that works.'
     },
     {
-        siteName: 'Cold Spring',
+        siteName: 'Lone Spring',
         kind: 'ruin',
         whatTheySay:
             'The well is good and the well is theirs. They left it outside the wall on purpose, for whoever came after, and that is why it has never gone bad.',
@@ -1288,7 +1288,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'About half of one roof is above the wall line and the rest is not. Selective collapse is what an unmaintained inherited compound does and needs no intent behind it. The family\'s rule is superstition and is also the reason there is anything left to look at.'
     },
     {
-        siteName: 'Cinder Ridge',
+        siteName: 'Cinder Crest',
         kind: 'ruin',
         whatTheySay:
             'They kept the duty list going after they shut the door. Two years of it. Somebody was still writing down who had the gate, and there was no gate, and there was nobody to relieve them.',
@@ -1340,7 +1340,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'Nothing has grown in it for an age. The grandmother chain is longer than any mortal lifespan will support and is therefore a story about the name rather than a memory of the yard, which is the ordinary fate of a name that is wrong.'
     },
     {
-        siteName: 'Sunken Ford',
+        siteName: 'Sunken Ferry',
         kind: 'ruin',
         whatTheySay:
             'It went under. Same as a man goes under. You do not say it drowned and you do not say it fell, you say it went under, and everybody knows what you mean.',
@@ -1407,7 +1407,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The sharpness is the thing everybody remarks on and is the whole content of the name. A boundary that sharp is consistent with a catastrophe and inconsistent with erosion, which is as far as the evidence carries, and it is far enough for the surveyors\' purpose.'
     },
     {
-        siteName: 'Wenzhi\'s Field',
+        siteName: 'Wenzhi\'s Paddy',
         kind: 'scar',
         whatTheySay:
             'Wenzhi had it. Not Wenzhi did it. He had the ground, and when it happened there was no word for what had happened, so it went down as his.',
@@ -1433,7 +1433,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The old entry survives in the surveys and every local knows better. A stale record that is still authoritative because it is the record is the ordinary way the deep past reaches a mortal household, and it reaches it as a bill.'
     },
     {
-        siteName: 'Three Year Ground',
+        siteName: 'Three Summer Ground',
         kind: 'scar',
         whatTheySay:
             'Three years before anybody would cross. Nobody decided that. Everybody waited three years and then somebody went and then everybody went.',
@@ -1459,7 +1459,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The colour is the name and it has not changed. Whether the water carries anything has never been tested by anybody competent, and the population that has been drinking it for generations is the only evidence in existence and has never been looked at.'
     },
     {
-        siteName: 'Near Pass',
+        siteName: 'Brief Pass',
         kind: 'scar',
         whatTheySay:
             'It is the short way. It costs you a day. Say it to a stranger and see whether they laugh, because if they laugh they are not from here.',
@@ -1503,7 +1503,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
         siteName: 'sill',
         kind: 'word',
         whatTheySay:
-            'Sill business. Means the road is shut and it is not our business why, and you go round, and you do not ask at the ford.',
+            'Sluice business. Means the road is shut and it is not our business why, and you go round, and you do not ask at the ford.',
         heldBy:
             'the whole of the Jade Gorge, in the flat register used for a bank holiday',
         practice:

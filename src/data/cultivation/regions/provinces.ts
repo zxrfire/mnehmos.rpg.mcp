@@ -205,7 +205,7 @@ export const PROVINCES: readonly Province[] = [
         onTheGround: 'Nobody in either played province has been, and the Myriad Course Hall does not publish what it takes out.',
         prefectureIds: [],
         whatIsKnownOfIt:
-            'A name on a schedule the Clearwater Ward countersigns once every twenty years without reading past its own line, and a rumour among Iron Ridge carvers that there is somewhere the tools are better.',
+            'A name on a schedule the Clearwater Ward countersigns once every twenty years without reading past its own line, and a rumour among Iron Crest carvers that there is somewhere the tools are better.',
         startingAwareness: 'unaware'
     },
     {
@@ -217,9 +217,9 @@ export const PROVINCES: readonly Province[] = [
         administeredByCourtId: 'court-ninth-face',
         governingFact: 'Second band. Worked hard for eleven hundred years and still returning enough to keep a course open.',
         onPaper: 'Second band of five, and the only one that has ever moved up rather than down.',
-        onTheGround: 'Unknown here. The Assessor of the Four Faces rates it annually and the figure is not circulated.',
+        onTheGround: 'Unknown here. The Assessor of the Distant Faces rates it annually and the figure is not circulated.',
         prefectureIds: [],
-        whatIsKnownOfIt: 'Nothing at all in the Buddha Precipice. The name appears once on the schedule the Twenty-Year Hand carries and nobody at the Clearwater Ward has ever asked what it is.',
+        whatIsKnownOfIt: 'Nothing at all in the Buddha Precipice. The name appears once on the schedule the Generation Hand carries and nobody at the Clearwater Ward has ever asked what it is.',
         startingAwareness: 'unaware'
     },
     {
@@ -233,7 +233,7 @@ export const PROVINCES: readonly Province[] = [
         onPaper: 'Third band of five, and it has been third for two hundred years.',
         onTheGround: 'Unknown here, and the Myriad Course Hall has never had reason to describe it to anybody in the Buddha Precipice.',
         prefectureIds: [],
-        whatIsKnownOfIt: 'A name, and the fact that it is above the Buddha Precipice in the queue, which is the only comparative figure anybody in Iron Ridge has ever heard.',
+        whatIsKnownOfIt: 'A name, and the fact that it is above the Buddha Precipice in the queue, which is the only comparative figure anybody in Iron Crest has ever heard.',
         startingAwareness: 'unaware'
     },
     {
@@ -248,7 +248,7 @@ export const PROVINCES: readonly Province[] = [
         onTheGround: 'Unknown here, and the Assessor believes it will change places with the Buddha Precipice within her tenure and has not written that down.',
         prefectureIds: [],
         whatIsKnownOfIt:
-            'The one name a Iron Ridge carver might have heard, because it is the province directly above them in a queue nobody has told them they are in.',
+            'The one name a Iron Crest carver might have heard, because it is the province directly above them in a queue nobody has told them they are in.',
         startingAwareness: 'unaware'
     }
 ];
@@ -311,7 +311,7 @@ export function provinceForFaction(factionId: string): Province | undefined {
 /**
  * Whose gift a faction's ground is in, tracing sub-holdings up. Returns null
  * where nothing granted it - which is a real and important answer, and the
- * only thing the Pavilion, the Hollow Court, the Grove, the Clear River
+ * only thing the Pavilion, the Empyrean Court, the Grove, the Clear River
  * Alliance and the Six Li Patrol have in common.
  */
 export function delegatedFrom(factionId: string): string | null {

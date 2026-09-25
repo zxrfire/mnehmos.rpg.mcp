@@ -90,7 +90,7 @@ describe('examining a thing', () => {
             const { game } = await aReaderAt(
                 'examine-outsider', 30, 'the Azure Cloud Pavilion'
             );
-            const said = await game.act('I examine the Cold Jade Plate');
+            const said = await game.act('I examine the Ice Jade Plate');
 
             expect(said.narration).toContain('Something you cannot place');
             expect(said.narration).not.toMatch(/Frostmirror/i);

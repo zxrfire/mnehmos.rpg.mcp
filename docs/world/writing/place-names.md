@@ -50,12 +50,12 @@ belongs to the world's history, where a player can go and find it.
 
 The catalog already has the model, and it was authored before this file:
 
-- **Grain Rain** is a solar term. Twelve thousand people died there in one afternoon and
+- **Insects Awaken** is a solar term. Twelve thousand people died there in one afternoon and
   the ground has fruited ever since. The name is what that season was called *before* it
   happened, and nothing in the name says so.
-- **Four Names** is the four names the record gives for the men who kept the station the
-  winter the pass was cut. Three of them are in the wall and there were five. The name is
-  from the record and the record is wrong.
+- **Fourfold Stele** is the stone at the station that carries the four names the record gives
+  for the men who kept it the winter the pass was cut. Three of them are in the wall and there
+  were five. The count is from the record and the record is wrong.
 - **Old River Village** is a river village. The river moved four li in one spring three hundred
   years ago and nobody renamed it.
 
@@ -80,10 +80,10 @@ Clear Creek Village -> Stonewater Town -> White River City -> Jade Pass
 
 | Tier | Register | Who has one | In the catalog |
 |---|---|---|---|
-| Ordinary | plain, concrete, often a distance or a crop or a water | most villages, hamlets, waystations | Six Li, Old River Village, Sand Well, Salt Fields |
+| Ordinary | plain, concrete, often a distance or a crop or a water | most villages, hamlets, waystations | Six Li, Old River Village, Truce Spring, Salt Fields |
 | Working | a trade, a landmark, a season | market towns, work faces | Wind Turn, Autumn Gate, Jade Face |
-| Held | material and treasure, weather, a number | cities, sect seats, passes | Nine Peaks, Cloud Gate, Iron Ridge, Cold Peak |
-| Remembered | an event the world actually holds | sites with a history | Grain Rain, Four Names |
+| Held | material and treasure, weather, a number | cities, sect seats, passes | Nine Peaks, Cloud Gate, Iron Crest, Moraine Gate |
+| Remembered | an event the world actually holds | sites with a history | Insects Awaken, Fourfold Stele |
 | Rare | heaven, the dao, the dead, catastrophe | almost nothing | *see below* |
 
 **The rare tier has to be sparse enough that a player notices one.** One or two names in
@@ -104,12 +104,12 @@ words with a quota attached, and the results read exactly like what they were.
 
 | Family | Range |
 |---|---|
-| Material and treasure | Jade Pass, Goldfire Mountain, Blackstone Valley, Ironblood Ridge |
+| Material and treasure | Jade Pass, Goldfire Mountain, Blackstone Valley, Ironblood Crest |
 | Celestial | Star Burial Ground, Fallen Star Sea, Moonfall Valley, Heaven's End |
 | Death and catastrophe | Blood River, Burial Mountain, Ashen Earth, Fallen Immortal Valley |
 | Heaven and the dao | Heaven-Breaking Mountain, Heaven's Gate, Dao River, Ascension Platform |
 | Ancient and unknown | Ancient God Ruins, Forgotten Sea, Silent Mountain, Nameless Valley |
-| Beasts and myth | Dragon's Gate, Phoenix Mountain, Nine Dragon Ridge, Demon Sea |
+| Beasts and myth | Dragon's Gate, Phoenix Mountain, Nine Dragon Crest, Demon Sea |
 | Simple and strong | Black Mountain, Long River, Cloud Sea, Thunder Valley, Wind Pass |
 
 ## The type noun
@@ -117,8 +117,8 @@ words with a quota attached, and the results read exactly like what they were.
 <!-- tier: 3 -->
 
 **Most names end in an ordinary geographical or settlement word, and that word carries the
-tier.** Village 村, Town 镇, City 城, Pass 关, Gorge 峡, Valley 谷, Peak 峰, Ridge 岭,
-Ford 渡, Island 岛, Sea 海, Cliff 崖, Terrace 台, Gate 门. This is what makes a name read as
+tier.** Village 村, Town 镇, City 城, Pass 关, Gorge 峡, Valley 谷, Crag 峰, Crest 岭,
+Ferry 渡, Island 岛, Sea 海, Cliff 崖, Terrace 台, Gate 门. This is what makes a name read as
 translated from somewhere rather than invented in English, and it is what lets the ladder
 above exist at all: *Clear Creek* and *Clear Creek Village* are the same image at two
 different sizes.
@@ -126,9 +126,11 @@ different sizes.
 Two consequences:
 
 - **Prefer the noun the genre uses to the one English reaches for first.** Isle, Cape,
-  Reach, Fall, Marches and Ground are English landscape words. Island, Cliff, Ford,
-  Terrace, Pass and Peak are the same features under names a reader takes as
-  translated.
+  Reach, Fall, Marches and Ground are English landscape words. Island, Cliff, Ferry,
+  Terrace, Pass and Crag are the same features under names a reader takes as
+  translated. Peak, Ridge and Ford were on this list and are not: each is one letter from
+  a word the player types (*speak*, *ride*, *food*) - see
+  [What a name must not be](#what-a-name-must-not-be).
 - **Stair is the exception, and *The White Stair* is why the list no longer holds it.**
   A third pass proposed *The White Ridge* and it was rejected as saying nothing, which
   was the right call: it is a qualifier plus a geographic noun, the floor rather than
@@ -145,8 +147,8 @@ Two consequences:
   attempt at a fix put a space in and stopped there. The design owner's verdict on that:
   **HALF ROOF IS NOT XIANXIA**, and he was right. Roof, Well, Bank, Yard, Hollow, Rota,
   Landing, Shortcut and Reach are English domestic and agricultural words, and a space
-  between two of them is still an English village. *Cloud Eaves Hall*, *Cold Spring*,
-  *Cut Edge*, *Iron Hook Slope* are the same places under the nouns the authored map
+  between two of them is still an English village. *Cloud Eaves Hall*, *Lone Spring*,
+  *Cut Edge*, *Iron Mattock Slope* are the same places under the nouns the authored map
   already uses.
 - **A gerund is the same failure in a third coat.** *Digging* and *Gleaning* are English
   place names (Reading, Barking). Name what the work leaves: *Poor Man's Terrace*, *The
@@ -181,7 +183,7 @@ Sect names run in three registers and should not all be `[Cool Thing] Sect`:
 
 | Register | Range |
 |---|---|
-| Geographical | Cloud River Sect 云水宗, Azure Peak Sect 青峰宗, Falling Snow Sect 落雪宗 |
+| Geographical | Cloud River Sect 云水宗, Azure Crag Sect 青峰宗, Falling Frost Sect 落霜宗 |
 | Dao and philosophical | Profound Heaven Sect 玄天宗, Pure Yang Sect 纯阳宗, Clear Heart Sect 清心宗 |
 | Old and intimidating | Blood River Sect 血河宗, Corpse Mountain Sect 尸山宗, Fallen Star Sect 陨星宗 |
 
@@ -204,15 +206,17 @@ checked, and what it decided:
   Servant*, and a client house taking its patron's word is the register working. Two
   Abysses - Crimson Abyss Fortress and Nine Abyss Flame Sect - are two unrelated demonic
   houses reaching for the same stock word, which is what demonic houses do.
-- **The five Dao houses keep their formula.** *Flowing Light Tower*, *of the
-  Vermilion Seal Terrace*, *of the Still Blade Peak*, *of Jade Register Hall*, *of the Shrinking Earth Pavilion*: each names
+- **The five Dao houses keep their formula.** *Flowing Star Tower*, *of the
+  Vermilion Sigil Terrace*, *of the Still Blade Pavilion*, *of Jade Register Hall*, *of the Shrinking Earth Pavilion*: each names
   the dao rather than the ground, which is the second register, and the house noun in
   front is what stops it being the article-plus-abstraction that was struck out of
   `artifacts.ts`. A treasure with no noun saying what it is has nothing holding it up; a
   house does.
 - **A name derived from ground follows the ground.** Silver Isle became Silver Island, so
-  the Silver Isle Rail became **the Silver Island Market**. Nothing else moved, because
-  Burnt Earth, Six Li, Sand Well and Nine Peaks all kept their names.
+  the Silver Isle Rail became the Silver Island Market - and later **the Silver Island
+  Hall**, because `market` is a word the player types. Nothing else moved in that pass,
+  because Burnt Earth, Six Li, Nine Peaks and the well now called Truce Spring all kept
+  their names.
 - **Left, and worth naming as left:** *Stone Marrow Hall* and *Ancient Bough Grove*
   are English compounds where the rest of the catalog is not. They are a working assay
   house and a working grove, most things are ordinary, and neither is worth the sweep.
@@ -251,8 +255,8 @@ two centuries later. A counted one is an amount on a holder, and its row in
 
 | Kept as | Named | Already right in the catalog |
 |---|---|---|
-| tracked | the definite article, an image, and what it does | The Ninth Nail, The Polestar Lamp, The Quelling Stone, The Sealing Casket |
-| counted | the indefinite article and a plain description | A Notched Sabre, A Hollow Bell, A Cutting Knife |
+| tracked | the definite article, an image, and what it does | The Ninth Nail, The Polestar Lamp, The Quelling Stone, The Warding Casket |
+| counted | the indefinite article and a plain description | A Notched Sabre, A Wayside Chime, A Cutting Knife |
 
 **A counted weapon must not be given a good name**, and that is the half that gets broken.
 The failure named by the design owner is *Fallen Moon Saber*: a stock modifier bolted to a
@@ -266,7 +270,7 @@ not earn a name by being carried somewhere interesting.
 
 ### And an object nobody has named still has to read as an object
 
-The Hollow Court's four were *The Unwritten Span*, *The Second Silence*, *The Turned Ledger*
+The Empyrean Court's four were *The Unwritten Span*, *The Second Silence*, *The Turned Ledger*
 and *The Fourth Refusal*, on the argument that nobody below the Lid has ever seen one, so no
 name exists in the world and the catalog was describing rather than reporting. Overruled:
 [`tone.md`](tone.md#naming-conventions) named two of them verbatim as the failure mode to
@@ -302,11 +306,19 @@ Standing prohibitions:
   because a category word in a name is also a coin-flip for the model that classifies the
   sentence before the table ever sees it. The same sweep found *Wind Market* (the market
   board), *Stone Shadow* (`shadow` is the following verb), *Knife Edge* (`knife` is a
-  weapon, and every phrasing about it planned an attack) and *The Iron Ridge Mission*
-  (the duty board). They are Wind Turn, Under Stone, Cut Edge and The Iron Ridge Temple.
+  weapon, and every phrasing about it planned an attack) and *The Iron Crest Mission*
+  (the duty board). They are Wind Turn, Under Stone, Cut Edge and The Iron Crest Temple.
   **Before a name is settled, say it in a sentence a player would type** - "I travel to
   X", "tell me about X", "where is X" - and check it still means what it says. A place may
   be *described* as a market; it may not be *called* one.
+- **a word the player types, or a typo of one.** Names are matched with typo tolerance, so
+  "what is your name?" was read as a question about the waystation then called *Four
+  Names*: *four* is one letter from *your*. The owner: *"rename all the place names to not
+  conflict with verbs even fuzzy"*. Peak (*speak*), Ridge (*ride*), Ford (*food*), Wall
+  (*will*), Bell (*sell*), Hollow (*follow*), Cold (*could*) and Green (*greet*) all went
+  for it, from the catalog and from the generator's word lists alike. The rule is
+  AGENTS.md's fifth naming rule, and
+  `tests/docs/a-name-is-never-a-word-the-player-types.test.ts` holds every name to it.
 
 Region IDS still carry retired names - `region-low-fall`, `region-quiet-marches` - and that
 is deliberate: an id is written into saved worlds and is not a display name.
@@ -319,6 +331,9 @@ Read the header of
 [`place-names.ts`](../../../src/data/cultivation/place-names.ts) before changing a name.
 The short version:
 
+- **A seeded place's location id is a slug of its display name**, so a rename would move
+  the id and reshuffle every pinned world. `placeIdSlug` in `place-names.ts` keeps the
+  slug a renamed place was first seeded under; add the place to it when you rename one.
 - **A place has no id. The display string is the key.** `regionIdOfPlace`,
   `declaredAmbientAt` and `prefectureCarrying` all match on it, and all of them **fail
   open**: an unmatched name resolves to the home province or a default band rather than
@@ -340,16 +355,17 @@ The short version:
   `z.string().min(1)`, so a missed one passes the schema and silently unprices a road.
 - **A house named after its ground is a COLLISION, and the owner has ruled it a bug** -
   *"this is a bug as per agents.md naming collision"*. Found by playing: a new disciple of
-  the Sand Well Caravan typed `I go to Sand Well`, the natural short form of their own
-  house, and the game walked them four days to the well. Swept across all 38 houses, five
+  the house then called the Sand Well Caravan typed `I go to Sand Well`, the natural short
+  form of their own house, and the game walked them four days to the well (Truce Spring
+  now). Swept across all 38 houses, five
   had it, every one the same shape - the house name is a place name plus a type noun:
 
   | house | ground it collided with |
   |---|---|
-  | ~~Sand Well Caravan~~ ~~Waterman Caravan~~ **Tranquil Oasis Sect** | Sand Well (wilds) - **done** |
+  | ~~Sand Well Caravan~~ ~~Waterman Caravan~~ **Tranquil Oasis Sect** | Sand Well, now Truce Spring (wilds) - **done** |
   | Burnt Earth Temple | Burnt Earth (settlement) |
-  | Nine Peaks Ascetic Order | Nine Peaks (settlement) |
-  | Silver Island Market | Silver Island (settlement) |
+  | Nine Peaks Ascetic Sect | Nine Peaks (settlement) |
+  | Silver Island Hall | Silver Island (settlement) |
   | Six Li Patrol | Six Li (settlement) |
 
   **Rename the HOUSE, not the ground.** Measured: the five place names carry 33 to 151
@@ -358,7 +374,7 @@ The short version:
 
   **And the new name must still END in a type noun.** `tests/data/the-nouns-a-house-ends-with.test.ts`
   holds the parser's list of the words a house name ends with against the catalog, so
-  moving the noun - *the Caravan of Sand Well* - makes the house unparseable. Change the
+  moving the noun - *the Caravan of Truce Spring* - makes the house unparseable. Change the
   words in FRONT of it. Take them from the house's own vocabulary rather than inventing:
   the Caravan's head was a Waterman. (Later the owner ruled *"a sect is not a caravan"*, and the
   house became the Tranquil Oasis Sect, its head the Oasis Master.)

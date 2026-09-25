@@ -25,7 +25,7 @@ import type { WorldState } from '../../../src/engine/world/world-state.js';
 function twoHouses(opts: { loserHasPeople?: boolean } = {}): WorldState {
     const state = {
         factions: [
-            { id: 'loser', name: 'Kiln Clan', seatLocationId: 'loc-kiln', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' },
+            { id: 'loser', name: 'Tripod Clan', seatLocationId: 'loc-kiln', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' },
             { id: 'winner', name: 'Storm Court', seatLocationId: 'loc-storm', dissolvedOnDay: null, tags: [], standing: {}, resources: {}, alignment: 'neutral' }
         ],
         // A MAP, EVEN AN EMPTY ONE. A loser that does not hold together lets its
@@ -35,28 +35,28 @@ function twoHouses(opts: { loserHasPeople?: boolean } = {}): WorldState {
         npcs: [
             { id: 'npc-w', name: 'The Storm Tyrant', status: 'alive', tags: [], factionId: 'winner', cultivation: { realmOrdinal: 38 } },
             ...(opts.loserHasPeople === false ? [] : [
-                { id: 'npc-l1', name: 'Kiln Elder', status: 'alive', tags: [], factionId: 'loser', cultivation: { realmOrdinal: 22 } },
-                { id: 'npc-l2', name: 'Kiln Junior', status: 'alive', tags: [], factionId: 'loser', cultivation: { realmOrdinal: 8 } }
+                { id: 'npc-l1', name: 'Tripod Elder', status: 'alive', tags: [], factionId: 'loser', cultivation: { realmOrdinal: 22 } },
+                { id: 'npc-l2', name: 'Tripod Junior', status: 'alive', tags: [], factionId: 'loser', cultivation: { realmOrdinal: 8 } }
             ])
         ],
         objects: [
             makeObject({
                 id: 'obj-relic', name: 'a nascent echo', kind: 'material',
                 significance: 'significant', power: 28,
-                ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'loser',
+                ownerId: 'loser', ownerName: 'Tripod Clan', possessorId: 'loser',
                 locationId: 'loc-kiln'
             }),
             makeObject({
                 id: 'obj-cinder', name: 'a banked cinder', kind: 'material',
                 significance: 'notable', power: 16,
-                ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'loser',
+                ownerId: 'loser', ownerName: 'Tripod Clan', possessorId: 'loser',
                 locationId: 'loc-kiln'
             }),
             // Carried out of the gate by a person: not in the hold.
             makeObject({
                 id: 'obj-blade', name: 'an elder\'s blade', kind: 'artifact',
                 significance: 'significant', power: 22,
-                ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'npc-l1'
+                ownerId: 'loser', ownerName: 'Tripod Clan', possessorId: 'npc-l1'
             })
         ],
         history: { facts: [], nextFactSeq: 1 }
@@ -86,7 +86,7 @@ describe('the ordinary ending is that somebody else has it', () => {
     it('a settlement moves the hold and destroys nothing', () => {
         const state = twoHouses();
         const moved = settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: true },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
             winner: state.factions[1],
             war: 'the war',
             onDay: 500
@@ -106,9 +106,9 @@ describe('the ordinary ending is that somebody else has it', () => {
     it('ownership moves with possession, and the chain names the war', () => {
         const state = twoHouses();
         settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: true },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
             winner: state.factions[1],
-            war: 'the war between the Kiln Clan and the Storm Court',
+            war: 'the war between the Tripod Clan and the Storm Court',
             onDay: 500
         }, rng());
 
@@ -118,14 +118,14 @@ describe('the ordinary ending is that somebody else has it', () => {
         const link = relic.provenance.at(-1)!;
         expect(link.how).toBe('looted');
         expect(link.onDay).toBe(500);
-        expect(link.source).toMatch(/war between the Kiln Clan/);
+        expect(link.source).toMatch(/war between the Tripod Clan/);
         expect(link.previousHolderId).toBe('loser');
     });
 
     it('a taken thing is in the winner\'s hold, so it can be taken again', () => {
         const state = twoHouses();
         settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: true },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
             winner: state.factions[1], war: 'a war', onDay: 500
         }, rng());
         expect(whatIsLeftInTheHold(state, 'winner').map(o => o.id))
@@ -135,7 +135,7 @@ describe('the ordinary ending is that somebody else has it', () => {
     it('the loser is still there. Losing a hold is not being ended', () => {
         const state = twoHouses();
         settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: true },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
             winner: state.factions[1], war: 'a war', onDay: 500
         }, rng());
         expect(state.factions[0].dissolvedOnDay).toBeNull();
@@ -147,7 +147,7 @@ describe('or the losing side grabs their vault and runs', () => {
     it('the things go out in members\' arms, and a person holds them', () => {
         const state = twoHouses();
         const moved = settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: false },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: false },
             winner: state.factions[1], war: 'a war', onDay: 500
         }, rng());
 
@@ -164,7 +164,7 @@ describe('or the losing side grabs their vault and runs', () => {
     it('disbanding is not being destroyed: the people scatter, alive', () => {
         const state = twoHouses();
         settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: false },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: false },
             winner: state.factions[1], war: 'a war', onDay: 500
         }, rng());
 
@@ -178,7 +178,7 @@ describe('or the losing side grabs their vault and runs', () => {
     it('a house with nobody left cannot carry anything anywhere', () => {
         const state = twoHouses({ loserHasPeople: false });
         const moved = settleTheSpoils(state, {
-            loser: { id: 'loser', name: 'Kiln Clan', holdsTogether: false },
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: false },
             winner: state.factions[1], war: 'a war', onDay: 500
         }, rng());
         // Falls back to capture rather than to nothing: the things are still
@@ -192,7 +192,7 @@ describe('what is in a vault is behind the vault', () => {
     it('a force that cannot get through the vault reaches nothing in it', () => {
         const state = twoHouses();
         const vault = {
-            id: 'v', name: 'the Kiln hold', power: 29,
+            id: 'v', name: 'the Tripod hold', power: 29,
             significance: 'significant' as const, tags: [], data: {}
         };
         const inside = whatIsLeftInTheHold(state, 'loser');
@@ -204,7 +204,7 @@ describe('what is in a vault is behind the vault', () => {
     it('and a breached one exposes everything that was in it', () => {
         const state = twoHouses();
         const vault = {
-            id: 'v', name: 'the Kiln hold', power: 29,
+            id: 'v', name: 'the Tripod hold', power: 29,
             significance: 'significant' as const, tags: [], data: {}
         };
         const inside = whatIsLeftInTheHold(state, 'loser');
@@ -256,13 +256,13 @@ describe('whether a losing house has anybody left at all', () => {
 describe('the two transfer helpers write what they say they write', () => {
     const thing = () => makeObject({
         id: 'o', name: 'a thing', kind: 'artifact', power: 20,
-        ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'loser'
+        ownerId: 'loser', ownerName: 'Tripod Clan', possessorId: 'loser'
     }) as ObjectRecord;
 
     it('taken moves the register, and records on what basis and who accepted it', () => {
         const took = takenAsSpoils(thing(), {
             by: { id: 'winner', name: 'Storm Court' },
-            from: { id: 'loser', name: 'Kiln Clan' },
+            from: { id: 'loser', name: 'Tripod Clan' },
             war: 'a war', onDay: 9
         });
         expect(took.ownerId).toBe('winner');
@@ -281,9 +281,9 @@ describe('the two transfer helpers write what they say they write', () => {
         // house walked out too, knows what was in the hold, and knows who has
         // it. That is possession, for as long as it goes on.
         const watched = carriedOff(thing(), {
-            by: { id: 'npc-l1', name: 'Kiln Elder', realmOrdinal: 14 },
+            by: { id: 'npc-l1', name: 'Tripod Elder', realmOrdinal: 14 },
             objectors: [{ id: 'npc-l2', name: 'Another Elder', realmOrdinal: 12 }],
-            from: { name: 'Kiln Clan' },
+            from: { name: 'Tripod Clan' },
             war: 'a war', onDay: 9
         });
         expect(watched.possessorId).toBe('npc-l1');
@@ -296,9 +296,9 @@ describe('the two transfer helpers write what they say they write', () => {
         // And the case the ruling carves out: somebody far enough above every
         // one of them that there is no question to raise.
         const unanswerable = carriedOff(thing(), {
-            by: { id: 'npc-l1', name: 'Kiln Elder', realmOrdinal: 40 },
+            by: { id: 'npc-l1', name: 'Tripod Elder', realmOrdinal: 40 },
             objectors: [{ id: 'npc-l2', name: 'Another Elder', realmOrdinal: 4 }],
-            from: { name: 'Kiln Clan' },
+            from: { name: 'Tripod Clan' },
             war: 'a war', onDay: 9
         });
         expect(unanswerable.possessorId).toBe('npc-l1');

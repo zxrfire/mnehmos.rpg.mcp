@@ -60,7 +60,7 @@ function field(): DoorInTheField[] {
 }
 
 const WALL = {
-    placeName: 'Iron Ridge',
+    placeName: 'Iron Crest',
     ground: 'market_town' as const,
     placeProvinceId: 'province-a',
     onDay: 400,
@@ -125,8 +125,8 @@ describe('whose word reaches which ground', () => {
 
     /**
      * A null province is a fact rather than missing data. The houses that read
-     * null in the shipped catalog are the ones that work a road - the Hollow
-     * Bell Wanderers own nothing and signal with "a bell hung at a crossroads"
+     * null in the shipped catalog are the ones that work a road - the Wayside
+     * Chime Wanderers own nothing and signal with "a bell hung at a crossroads"
      * - and confining them to a province they do not have would delete them.
      */
     it('lets a house with no seat reach anywhere, including unplaced ground', () => {
@@ -175,8 +175,8 @@ describe('the wall', () => {
         // Different window, different draw. Asserted on the stream rather than
         // on the outcome, because two draws from nine houses may honestly
         // coincide and a test that demanded they differ would be flaky.
-        expect(forStream('x', 'recruiting_bills', 'Iron Ridge', 4).seed)
-            .not.toBe(forStream('x', 'recruiting_bills', 'Iron Ridge', 5).seed);
+        expect(forStream('x', 'recruiting_bills', 'Iron Crest', 4).seed)
+            .not.toBe(forStream('x', 'recruiting_bills', 'Iron Crest', 5).seed);
         expect(nextWindow.every(b => b.opensOnDay > WALL.onDay)).toBe(true);
     });
 
@@ -261,7 +261,7 @@ describe('the draw perturbs nothing', () => {
         ];
         expect(after).toEqual(before);
 
-        expect(forStream('run', 'recruiting_bills', 'Iron Ridge', 4).seed)
-            .not.toBe(forStream('run', 'breakthrough', 'Iron Ridge', 4).seed);
+        expect(forStream('run', 'recruiting_bills', 'Iron Crest', 4).seed)
+            .not.toBe(forStream('run', 'breakthrough', 'Iron Crest', 4).seed);
     });
 });

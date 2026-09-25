@@ -46,17 +46,17 @@ const KNOWN = new Set<string>([
 describe('a superlative is a measurement', () => {
     it('does not let the Nine Peaks claim a pipeline three houses beat', () => {
         // Measured: reliable production in the Jade Gorge runs Crimson Abyss 29,
-        // Nine Abyss 25, Ashen Forge 23, then a group at 21 that the Order is
+        // Nine Abyss 25, Ashen Anvil 23, then a group at 21 that the Sect is
         // in. It was calling itself the best pipeline in the province and it is
         // joint fourth. What IS singular is the thing it is short of, and the
         // note now says that instead.
         const order = getSect('sect-nine-peaks-ascetic-order')!;
         const c = getFactionCharacter(order.id)!;
         const better = SECTS.filter(s => inLowFall(s.id) && reliableOf(s.id) > reliableOf(order.id));
-        expect(better.length, 'nobody out-produces the Order any more - recheck the claim')
+        expect(better.length, 'nobody out-produces the Sect any more - recheck the claim')
             .toBeGreaterThan(0);
         for (const text of [order.description, c.production.note]) {
-            expect(text, 'the Order is claiming the best pipeline again')
+            expect(text, 'the Sect is claiming the best pipeline again')
                 .not.toMatch(/best pipeline in the province/i);
         }
     });
@@ -106,7 +106,7 @@ describe('a superlative is a measurement', () => {
         // The governance line that started this. Nascent Soul opens at 21 and
         // more than half the Jade Gorge reaches it.
         const terms = getParentage('sect-nine-peaks-ascetic-order')?.terms;
-        expect(terms, 'the Order holds on no terms at all now').toBeTruthy();
+        expect(terms, 'the Sect holds on no terms at all now').toBeTruthy();
         for (const b of terms!.buys) {
             expect(b, 'the only-Nascent-Soul claim is back')
                 .not.toMatch(/only pipeline in the Jade Gorge/i);
@@ -138,16 +138,16 @@ describe('every cross-reference resolves', () => {
     });
 
     it('keeps the two Sills apart', () => {
-        // A live trap, and it has caught somebody before. "Sill" is in the name
+        // A live trap, and it has caught somebody before. "Sluice" is in the name
         // of a posting under one apex and an ordinary court under the other,
-        // and anything about the ground means the Kiln while anything about the
-        // third arterial and its grants means the Third Sill.
+        // and anything about the ground means the Tripod while anything about the
+        // third arterial and its grants means the Third Sluice.
         const third = COURTS.find(c => c.id === 'court-third-sill')!;
         const deeproot = getSect('sect-deeproot-court')!;
         const kiln = COURTS.find(c => c.id === 'court-kiln')!;
 
-        expect(third.apexId, 'the Third Sill is an ordinary Myriad Course Hall court').toBe('apex-myriad-course-hall');
-        expect(kiln.apexId, 'the Kiln stayed with the Survey').toBe('apex-earth-vein-tower');
+        expect(third.apexId, 'the Third Sluice is an ordinary Myriad Course Hall court').toBe('apex-myriad-course-hall');
+        expect(kiln.apexId, 'the Tripod stayed with the Survey').toBe('apex-earth-vein-tower');
         expect(getParentage(deeproot.id)?.parentFactionId, 'the Deeproot Court walked to the Myriad Course Hall')
             .toBe('apex-myriad-course-hall');
 
@@ -159,22 +159,22 @@ describe('every cross-reference resolves', () => {
         expect(postings, 'a body that is not one of the two is being staffed by appointment')
             .toEqual(['court-kiln', 'sect-deeproot-court']);
 
-        // And the Third Sill carries no defection material, because it never
+        // And the Third Sluice carries no defection material, because it never
         // moved. The only administration that ever changed patrons is the
         // Deeproot Court.
-        expect(third.transferNote, 'the Third Sill has acquired a transfer again').toBeUndefined();
+        expect(third.transferNote, 'the Third Sluice has acquired a transfer again').toBeUndefined();
     });
 
     it('never sends the Storm Tyrant to a court under the wrong apex', () => {
         // It answers the Earth Vein Tower. A Myriad Course Hall court cannot be its landlord,
         // cannot have held its probation, and cannot be what it was promoted
-        // past - the Survey's own body in that province is the Kiln.
+        // past - the Survey's own body in that province is the Tripod.
         const tyrant = getSect('sect-storm-tyrant-court')!;
         const p = getParentage(tyrant.id)!;
         expect(p.parentFactionId).toBe('apex-earth-vein-tower');
         expect(p.note, 'the Storm Tyrant is holding from a Myriad Course Hall court again')
-            .not.toMatch(/Third Sill/);
-        expect(tyrant.ambition?.blockedBy, 'the Storm Tyrant is blocked by the wrong Sill')
+            .not.toMatch(/Third Sluice/);
+        expect(tyrant.ambition?.blockedBy, 'the Storm Tyrant is blocked by the wrong Sluice')
             .not.toContain('court-third-sill');
     });
 });

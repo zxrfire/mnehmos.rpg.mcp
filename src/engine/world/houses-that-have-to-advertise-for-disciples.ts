@@ -21,6 +21,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { placeSeedKey } from '../../data/cultivation/place-names.js';
 import { realmForOrdinal } from '../cultivation/realms.js';
 // A house's calendar is a function of the seed, the house and the year, the same
 // way an intake's season is - so it is derived where the seed and the day already
@@ -247,7 +248,7 @@ export function billsOnTheWall(input: WallInput): RecruitingBill[] {
         //
         // Anchored to `floor(onDay)` this drew a fresh future date on every
         // read, so the intake receded as anybody walked toward it: measured at
-        // Green Water City, one house was 28 days off on day 0, 22 off on day
+        // Emerald Water City, one house was 28 days off on day 0, 22 off on day
         // 20, and still a day off on day 89. `datedThingsHere` publishes every
         // bill as a thing to WAIT for, so that was a date the engine offered
         // and then moved.
@@ -299,7 +300,7 @@ function drawnOnThisWall(
         .filter(h => h.postsInPublic && reachesThisGround(h, input.placeProvinceId));
     if (eligible.length === 0) return [];
 
-    const rng = forStream(input.seed, 'recruiting_bills', input.placeName, window);
+    const rng = forStream(input.seed, 'recruiting_bills', placeSeedKey(input.placeName), window);
 
     // Drawn without replacement: one house does not paper a wall with itself.
     const pool = [...eligible];
@@ -583,7 +584,7 @@ export function noticesOnTheWall(input: WallInput & {
             || a.ask.kind.localeCompare(b.ask.kind));
 
     const window = Math.floor(Math.max(0, input.onDay) / A_BILL_STAYS_UP_FOR_DAYS);
-    const rng = forStream(input.seed, 'wall_notices', input.placeName, window);
+    const rng = forStream(input.seed, 'wall_notices', placeSeedKey(input.placeName), window);
 
     const drawn: { house: HouseWithSomethingToSay; ask: TheAsk }[] = [];
     while (pool.length > 0) drawn.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]!);

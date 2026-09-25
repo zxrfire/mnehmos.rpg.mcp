@@ -24,11 +24,11 @@ import {
     type SomebodyStandingThere
 } from '../../../src/engine/encounters/being-told-to-get-off-this-ground.js';
 
-const ruin = makeLocation({ id: 'loc-the-fallen-wall', name: 'Fallen Wall', kind: 'ruin' });
+const ruin = makeLocation({ id: 'loc-the-fallen-wall', name: 'Fallen Rampart', kind: 'ruin' });
 // A town, and a rich one: the mastery threshold on a market square is what let
 // a player be told to clear off the ground they opened the game standing on.
 const town = makeLocation({
-    id: 'loc-green-water', name: 'Green Water City', kind: 'settlement',
+    id: 'loc-green-water', name: 'Emerald Water City', kind: 'settlement',
     thresholds: { entry: 0, survival: 0, operational: 0, mastery: 32 }
 });
 const vein = makeLocation({ id: 'loc-the-deep-vein', name: 'The Deep Vein', kind: 'vein' });
@@ -50,7 +50,7 @@ describe('whether they say anything at all', () => {
         expect(demand).not.toBeNull();
         expect(demand!.saidBy.id).toBe('first');
         expect(demand!.theirSide).toHaveLength(2);
-        expect(demand!.line).toContain('Fallen Wall');
+        expect(demand!.line).toContain('Fallen Rampart');
         expect(demand!.line).toContain('here first');
     });
 

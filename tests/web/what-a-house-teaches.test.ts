@@ -61,7 +61,7 @@ describe('what a house teaches', () => {
     it('names each road with the rung it opens at and the rung it ends at', () => {
         const read = whatAHouseTeaches({
             world: withPeopleAt([40]),
-            houseName: 'The Cold Sword Sect',
+            houseName: 'The Unadorned Sword Sect',
             factionId: 'house',
             teaches: [aMetalRoad.id, aPrimer.id],
             askersRoot: 'single_metal'
@@ -79,7 +79,7 @@ describe('what a house teaches', () => {
     /**
      * EIGHT OF THE WORLD'S 45 BODIES TEACH NOTHING, and that is a real answer.
      *
-     * The Kiln Wardens - a guard posting written as a sect, which teaches
+     * The Tripod Wardens - a guard posting written as a sect, which teaches
      * nothing and takes nobody by standing ruling - four courts and three apex
      * institutions. An empty list would read as a missing answer; a sentence
      * saying the place is not one that teaches is the true one.
@@ -87,7 +87,7 @@ describe('what a house teaches', () => {
     it('says outright that a body with no shelf is not a place that teaches', () => {
         const read = whatAHouseTeaches({
             world: withPeopleAt([30]),
-            houseName: 'The Kiln Wardens',
+            houseName: 'The Tripod Wardens',
             factionId: 'house',
             teaches: [],
             askersRoot: 'single_fire'
@@ -111,7 +111,7 @@ describe('what a house teaches', () => {
     it('tells a root that cannot walk the deepest road where its own ceiling is', () => {
         const read = whatAHouseTeaches({
             world: withPeopleAt([40]),
-            houseName: 'The Cold Sword Sect',
+            houseName: 'The Unadorned Sword Sect',
             factionId: 'house',
             teaches: [aMetalRoad.id, aPrimer.id],
             askersRoot: 'single_wood'
@@ -137,7 +137,7 @@ describe('what a house teaches', () => {
     it('says when the top of the shelf is above everybody on the roll', () => {
         const read = whatAHouseTeaches({
             world: withPeopleAt([12, 8]),
-            houseName: 'The Cold Sword Sect',
+            houseName: 'The Unadorned Sword Sect',
             factionId: 'house',
             teaches: [aMetalRoad.id, aPrimer.id],
             askersRoot: 'single_metal'
@@ -158,7 +158,7 @@ describe('what a house teaches', () => {
     it('makes no claim about the roll when the world holds nobody for them', () => {
         const read = whatAHouseTeaches({
             world: null,
-            houseName: 'The Cold Sword Sect',
+            houseName: 'The Unadorned Sword Sect',
             factionId: 'house',
             teaches: [aMetalRoad.id, aPrimer.id],
             askersRoot: 'single_metal'

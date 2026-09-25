@@ -52,7 +52,7 @@ export const PrefectureSchema = z.object({
     /**
      * Whose gift it is in: a court id, an apex id, or a sect id where the
      * holding is at one remove. Null where nothing granted it to anybody -
-     * which is what the Pavilion, the Hollow Court and the Grove have in
+     * which is what the Pavilion, the Empyrean Court and the Grove have in
      * common and is the only thing they have in common.
      */
     delegatedFromId: z.string().nullable(),

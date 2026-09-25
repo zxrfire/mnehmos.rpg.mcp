@@ -317,7 +317,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         appendFact(state.history, makeFact({
             day: state.currentDay + 200,
             kind: 'war',
-            summary: 'The Third Sill Court moved against the Ancient Bough Grove.',
+            summary: 'The Third Sluice Court moved against the Ancient Bough Grove.',
             factionIds: ['court-third-sill', 'sect-ancient-bough-grove'],
             visibility: 'public',
             magnitude: 0.8,
@@ -347,7 +347,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         const digest = buildPlayerDigest(facts, nobody, state.currentDay, state.currentDay + 400);
         for (const line of digest.lines) {
             expect(line.form).not.toBe('named');
-            expect(line.text).not.toMatch(/Azure Cloud|Crimson Abyss|Third Sill|Ancient Bough Grove/);
+            expect(line.text).not.toMatch(/Azure Cloud|Crimson Abyss|Third Sluice|Ancient Bough Grove/);
         }
         expect(namesPermitted(digest).factions.size).toBe(0);
     });
@@ -434,7 +434,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         const big = appendFact(state.history, makeFact({
             day: state.currentDay + 10,
             kind: 'war',
-            summary: 'The Third Sill Court went to war.',
+            summary: 'The Third Sluice Court went to war.',
             factionIds: ['court-third-sill'],
             locationId: 'loc-region-highstair',
             visibility: 'public',
@@ -814,7 +814,7 @@ describe('the acceptance test: five hundred years', () => {
         for (const id of permitted.factions) expect(id).toBe('sect-azure-cloud');
         for (const line of digest.lines) {
             if (line.form === 'named') continue;
-            expect(line.text).not.toMatch(/Crimson Abyss|Third Sill|Ancient Bough Grove|Clearwater Ward|Bountiful Sheaf Sect/);
+            expect(line.text).not.toMatch(/Crimson Abyss|Third Sluice|Ancient Bough Grove|Clearwater Ward|Bountiful Sheaf Sect/);
         }
     });
 

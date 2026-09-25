@@ -79,7 +79,7 @@ export interface WhatAHouseHasToItsName {
  * the same fact and they are not. A craft is moored, never carried - `craft()`
  * and `mintCraft` both set `possessorId: null` on purpose, because a hull with
  * a possessor is a hull `bestObjectHeldBy` would arm somebody with - so every
- * hull and every named carriage in the world was owned by a house and listed
+ * hull and every titled carriage in the world was owned by a house and listed
  * against none of them. A player asking what the Azure Cloud Pavilion has to
  * its name was told about its shelves and not about the best hull in two
  * provinces, sitting in its own yard.

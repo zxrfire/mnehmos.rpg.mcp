@@ -73,7 +73,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'Carver and face are one piece. Known from a single inscription in the sealed part of the sorting-yard ruin, which is where most of the vocabulary above Keystone comes from.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'Inscription vocabulary. The Buddha Precipice uses the word and could not recognise the state if it walked into Iron Ridge.'
+        subRankNote: 'Inscription vocabulary. The Buddha Precipice uses the word and could not recognise the state if it walked into Iron Crest.'
     },
     {
         fromOrdinal: 37, toOrdinal: 40,
@@ -119,7 +119,7 @@ export const THE_QUIET_MARCHES: Region = {
     ],
     register: {
         colour: 'grey on grey: rock dust on everything, whitened hands, pale rings around every mouth and nose that has worked a face',
-        light: 'flat and hard, no haze, and a dust plume over Iron Ridge visible from the border marker on a still day',
+        light: 'flat and hard, no haze, and a dust plume over Iron Crest visible from the border marker on a still day',
         sound: 'chisels. Two hundred of them, dawn to dark, and the silence when a face is worked out is how a district learns it is finished',
         smell: 'cut stone and wet grit, cold iron, and the vinegar the carvers rinse their mouths with against the dust',
         food: 'flatbread, salt, boiled roots, and a thin sour broth drunk hot to clear the throat - imported grain, because a fifth of the arable land is gone'
@@ -181,21 +181,21 @@ export const THE_QUIET_MARCHES: Region = {
     branches: [
         {
             parentSectId: 'sect-stone-marrow-hall',
-            localName: 'The Iron Ridge Assay House',
+            localName: 'The Iron Crest Assay House',
             doesHere:
                 'Buys salvage, assays and cuts stones, sells them back at nineteen percent over Jade Gorge, and publishes the insurance table that reads every Buddha Precipice title one rank low. In a region where imported stones are the only alternative to grant time, the assay house is the second government.'
         },
         {
             parentSectId: 'sect-sweptground-temple',
-            // NOT `The Iron Ridge Mission`. `mission` is a DUTY noun - the word
+            // NOT `The Iron Crest Mission`. `mission` is a DUTY noun - the word
             // the house's mission board answers to - so every sentence about
-            // this branch reached the duty board: "what does the Iron Ridge
+            // this branch reached the duty board: "what does the Iron Crest
             // Mission teach" was answered with a list of errands rather than
             // with the shelf it actually keeps. Same defect as FOUR_GRAVES in
             // `place-names.ts` and found by the same sweep. It is a temple's
             // daughter house and `temple` is a house noun, which is what it
             // should have been reading as all along.
-            localName: 'The Iron Ridge Temple',
+            localName: 'The Iron Crest Temple',
             doesHere:
                 'Teaches the Lesser Qi-Gathering Manual and elementless basics free to anyone who turns up, and is the only institution in the region that will tell a carver plainly that their local titles and the standard ladder are the same rungs. Four monks, no face, no grant.'
         }
@@ -206,7 +206,7 @@ export const THE_QUIET_MARCHES: Region = {
             // THE PROVINCE IS ADMINISTERED DIRECTLY, WHICH IS THE ANSWER FOR
             // EVERY TOWN IN IT. "There is no sect to join... a cultivator deals
             // with the administration itself, at a counter", and the counter at
-            // Iron Ridge is the Clearwater Ward's, which holds "Nothing of its
+            // Iron Crest is the Clearwater Ward's, which holds "Nothing of its
             // own" and administers two faces on the Hall's behalf. `DIRECT_RULE`
             // settles who collects in one word - `noSkim`, nothing is taken by
             // an intermediate tier - so the town is the Hall's and the counter's
@@ -249,7 +249,7 @@ export const THE_QUIET_MARCHES: Region = {
             // leased". A contractor paid by the administration does not govern
             // the village it works out of.
             heldByFactionId: 'sect-myriad-course-hall',
-            kind: 'village', ambient: 'thin', note: 'Bountiful Sheaf Sect\' sorting yard, where salvage is priced before it goes to Iron Ridge.',
+            kind: 'village', ambient: 'thin', note: 'Bountiful Sheaf Sect\' sorting yard, where salvage is priced before it goes to Iron Crest.',
             connections: [
                 {
                     kind: 'path',
@@ -308,7 +308,7 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'trade_route',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The border road to Clear River Ford: eleven days by cart and the only route that does not cross dead ground. Salvage out, pills and grain in, at fourteen percent over before haggling.',
+                'The border road to Clear River Ferry: eleven days by cart and the only route that does not cross dead ground. Salvage out, pills and grain in, at fourteen percent over before haggling.',
             travelDays: 11
         },
         {
@@ -329,7 +329,7 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'unsettled_border',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The last forty li before Iron Ridge are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Bountiful Sheaf Sect and the Still Blade Peak both use it, for opposite reasons.',
+                'The last forty li before Iron Crest are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Bountiful Sheaf Sect and the Still Blade Pavilion both use it, for opposite reasons.',
             travelDays: 11
         }
     ],
@@ -370,12 +370,12 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
         onPaper:
-            'One of two workable faces in the province, entered on the Hall\'s course schedule in the bottom band, administered by the Clearwater Ward from a counter at Iron Ridge.',
+            'One of two workable faces in the province, entered on the Hall\'s course schedule in the bottom band, administered by the Clearwater Ward from a counter at Iron Crest.',
         onTheGround:
             'Grant access at forty stones a day and a queue of eleven. The Court holds nothing of its own here: it apportions somebody else\'s face on somebody else\'s schedule and has no authority to make an exception.',
         discrepancy: 'none',
         note:
-            'The Court has an unpublished survey of how much workable stone is left. The Assessor of the Four Faces asked for it, was given it, kept the copy, and fears the figure is right.'
+            'The Court has an unpublished survey of how much workable stone is left. The Assessor of the Distant Faces asked for it, was given it, kept the copy, and fears the figure is right.'
     },
     {
         id: 'district-fourth-face',
@@ -435,7 +435,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
             'Repainted every year by six people nobody pays, on ground the Myriad Course Hall has never scheduled, and leaving the stakes is how visitors die here.',
         discrepancy: 'no_holder_of_record',
         note:
-            'The Buddha Precipice answer to the Clear River Ford unsurvey, arrived at from the opposite direction: not ground too disputed to certify, but ground too worthless to schedule, kept alive by people who were never appointed to keep it.'
+            'The Buddha Precipice answer to the Clear River Ferry unsurvey, arrived at from the opposite direction: not ground too disputed to certify, but ground too worthless to schedule, kept alive by people who were never appointed to keep it.'
     },
     {
         id: 'district-dead-verge',

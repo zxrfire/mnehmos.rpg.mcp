@@ -4,7 +4,7 @@
  *
  * MEASURED, on a played run before this. The opening read:
  *
- *     Clear River Ford. You were raised on ground like this.
+ *     Clear River Ferry. You were raised on ground like this.
  *     Gu Lanlin is here, looking at what is on a counter and not buying.
  *     Nothing is happening. Nothing happens here.
  *

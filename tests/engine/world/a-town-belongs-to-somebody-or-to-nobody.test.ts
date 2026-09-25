@@ -18,7 +18,7 @@
  *                own note for the rest - "The Frostmirror's town", "One gate
  *                station, at Halfway Gate", "Nobody in the Yellow Plain holds
  *                ground". Eight of those name a holder and six name nobody.
- *      3 of 23   a judgement, recorded as one: Iron Ridge and Willow Village to
+ *      3 of 23   a judgement, recorded as one: Iron Crest and Willow Village to
  *                the Hall that administers the province directly rather than to
  *                the bureau and the contractor standing in them, and The Far
  *                Shore to the house whose nine gate stations it matches.

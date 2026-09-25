@@ -232,7 +232,7 @@ export function whatTheNameReaches(
 //
 // The worked example is already authored and this must stay consistent with
 // it rather than run parallel to it: `NO_PLACE_FOR_THEIR_OWN` in
-// `bodies-that-cannot-keep-their-members-children.ts` has a Hollow Court Seat
+// `bodies-that-cannot-keep-their-members-children.ts` has an Empyrean Court Seat
 // placing a child on a friend's word, with the identity going to the friend
 // and to nobody else. That is this function, with `told` set to the one person
 // asked - which is the default and, on that case, the whole of the drama.

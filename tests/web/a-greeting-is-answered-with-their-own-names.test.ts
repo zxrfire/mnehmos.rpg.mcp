@@ -56,7 +56,7 @@ describe('the words reach the self-question', () => {
         for (const topic of ['greeting', 'identity', 'who he is', 'introduction']) {
             expect(selfFactFromTopic(topic), topic).toBe('name');
         }
-        expect(selfFactFromTopic('the Hollow Court')).toBeNull();
+        expect(selfFactFromTopic('the Empyrean Court')).toBeNull();
     });
 });
 

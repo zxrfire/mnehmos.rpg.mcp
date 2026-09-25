@@ -581,10 +581,12 @@ Prefer an event the catalog already records over inventing one to justify a name
 
 **What a body is called, and the word is a claim about what it is.** A house takes one of
 **Sect** (宗门) / **Hall** (殿) / **Pavilion** (阁) / **Alliance** (盟) / **Court** (府) /
-**Clan** (家族) / **Temple** (寺) / **Stronghold** (寨) / **Market** (坊市), plus the few a
-particular house has earned - Tower, Peak, Palace, Terrace, Grove, Array, Ward, Patrol,
-Caravan. Which one it is tells the reader what the body wants and who it answers to, so it is
-never chosen for sound.
+**Clan** (家族) / **Temple** (寺) / **Stronghold** (寨), plus the few a particular house has
+earned - Tower, Palace, Terrace, Grove, Array, Ward, Patrol, Caravan. Which one it is tells
+the reader what the body wants and who it answers to, so it is never chosen for sound.
+Market, Peak and Order were on this list and are not: each is a word the player types or a
+typo of one (`market` and `order` are verbs the table acts on, `peak` is one letter from
+*speak*), and no word of a name may be.
 
 - **`guild` is banned outright.** It is a fantasy-RPG institution - an independent professional
   association you register with and take jobs from - and this world has none. If someone wants
@@ -631,7 +633,7 @@ it in has to be disambiguated from the rest of the sentence. Where a noun turns 
 sides, the mortal body moves - there are fewer of them and a player meets them last.
 
 **A ruin has two names, and which one you get is a fact about the reader.** The colloquial
-name is what people who only ever saw it call it - *Fallen Wall*, *Cloud Eaves*, *Ash Slope* -
+name is what people who only ever saw it call it - *Fallen Rampart*, *Cloud Eaves*, *Ash Slope* -
 generated from what somebody saw, what happened there, or a name that is simply wrong. It
 carries no poetry and often no type noun, **because a person naming something they are afraid
 of reaches for neither.** Do not formalise these.

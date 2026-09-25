@@ -12,7 +12,7 @@
  * the rung where a beast grows a core it is the size of a horse, then a house, and a tortoise a
  * thousand years old sheds scutes like roof tiles off a hall. What the ring grades hold is the
  * yardstick: a mortal ring is a travelling chest (200), an earth ring a cart (4,000), a heaven
- * ring a spirit boat (160,000). A core is the exception: it is the beast's qi drawn to a point, and
+ * ring a spirit skiff (160,000). A core is the exception: it is the beast's qi drawn to a point, and
  * stays in a hand until the beast is older than the houses.
  */
 
@@ -86,7 +86,7 @@ const WHAT_EACH_PART_TAKES: Readonly<Record<string, readonly [volume: number, we
     'mat-firevein-serpent-hide': [4200, 1300],
     'mat-roc-pinion': [2000, 260],
     // And the giants. A horn the size of a boat's prow; a dragon's single scale a door; a
-    // tortoise's belly-plate a courtyard, which is what a spirit boat or a heaven ring is for.
+    // tortoise's belly-plate a courtyard, which is what a spirit skiff or a heaven ring is for.
     'mat-rhino-horn': [2400, 2600],
     'mat-dragon-scale': [900, 1200],
     'mat-qilin-hair': [20, 2],

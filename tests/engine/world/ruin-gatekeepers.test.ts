@@ -27,7 +27,7 @@ const HOUSE = 'sect-azure-cloud-pavilion';
 function ruin(controllingFactionId: string | null = null) {
     return makeLocation({
         id: 'loc-ruin-test',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         thresholds: makeThresholds(15, 19, 23, 25),
         controllingFactionId
@@ -54,7 +54,7 @@ describe('an entry bar is a person', () => {
     it('stands on unheld ground that is not a ruin', () => {
         const wilds = makeLocation({
             id: 'loc-wilds-test',
-            name: 'The Glass Field',
+            name: 'The Glass Ploughland',
             kind: 'wilds',
             thresholds: makeThresholds(20, 24, 28, 32)
         });

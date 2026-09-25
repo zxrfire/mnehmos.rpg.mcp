@@ -10,7 +10,7 @@
  * price what it costs somebody to say yes to you. Every one of them needs a
  * body the player can point at, and the engine says so, correctly and often:
  *
- *   > 5 people in Green Water City stand above Qi Condensation Layer 1, the deepest of
+ *   > 5 people in Emerald Water City stand above Qi Condensation Layer 1, the deepest of
  *   > them 10 rungs up, and you have never met any of them. You have no name to
  *   > ask for, which is the whole of what is stopping you.
  *
@@ -241,7 +241,7 @@ describe('getting in front of somebody worth asking', () => {
      * IT USED TO ASSERT THAT NO SEAT WAS EVER NAMED, which was the same rule
      * stated one step too wide. `newRun`'s own `hear` call fires
      * `offerTheRoadToAHouse` at 12%, and the opening says so in prose -
-     * *"Somebody here can point at Still Blade Peak grounds. It stands in the
+     * *"Somebody here can point at Still Blade Pavilion grounds. It stands in the
      * province and has a gate on it, and everybody here knows that much"* -
      * writing a `placed` record with that source. One gate, named by a person,
      * is the hook the discovery gate is opened by; the list is what must not

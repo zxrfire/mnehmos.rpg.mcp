@@ -240,7 +240,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             doesHere:
                 'Buys at Wind Turn, by weight, on the same manifest rule it uses at Willow Village, and will not send a crew in. The Caravan is the only institution operating here that publishes what it does here, and what it publishes is that it buys and does not dig.',
             whyHere:
-                'A yard four days away in Iron Ridge and a market with one buyer at it is the same trade the Caravan already runs, with the sorting done by somebody else and the losses taken by somebody else.'
+                'A yard four days away in Iron Crest and a market with one buyer at it is the same trade the Caravan already runs, with the sorting done by somebody else and the losses taken by somebody else.'
         },
         {
             who: 'The Shrinking Earth Pavilion',
@@ -252,7 +252,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'The house carries for everyone and is owed nothing by anyone, and this is the only ground in the world where that doctrine costs it nothing, because there is nobody here who could have owed it anything.'
         },
         {
-            who: 'The Thousand Treasure Pavilion\'s buyers',
+            who: 'The Thousand Relic Pavilion\'s buyers',
             factionId: 'sect-thousand-treasure-pavilion',
             holds: 'nothing',
             doesHere:
@@ -274,7 +274,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             factionId: 'sect-sand-well-caravan',
             holds: 'nothing',
             doesHere:
-                'Runs water out from Sand Well to whatever shows are open, in strings of forty to sixty skins, and takes a share of what comes off the ground it watered rather than a price at the well. It holds neither the water nor the show and could not hold either: Sand Well is the one thing on this ground nobody has ever fought over and a show is gone inside nine years, so what the Caravan actually own is a route that has to be rewalked every season and a reputation for arriving.',
+                'Runs water out from Truce Spring to whatever shows are open, in strings of forty to sixty skins, and takes a share of what comes off the ground it watered rather than a price at the well. It holds neither the water nor the show and could not hold either: Truce Spring is the one thing on this ground nobody has ever fought over and a show is gone inside nine years, so what the Caravan actually own is a route that has to be rewalked every season and a reputation for arriving.',
             whyHere:
                 'It is the only ground in the world where carrying water is a trade rather than a chore, because it is the only ground with rich air on it and no well within four days of the air. Everywhere else the two things are in the same place.'
         }
@@ -295,7 +295,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         death: 'Left where they fell, and the cover takes them within the year and gives them back a decade later with their possessions still on them. Nobody is buried and nobody is burned, and the dead belong to whoever is standing over them when the sand puts them out again.',
         taboo: 'Never point. Indicating where a show is, in company, with your hand, is how a finder is killed, and a visitor who does it at Wind Turn has the conversation ended for them by somebody else before they have finished the gesture.',
         threatModel: 'People, and specifically people who have already been refused everywhere. There is no institution to answer for anyone and nothing to be taken away from anyone, so what a stranger will do is decided entirely by what they think they can get, and everybody plans on that being the whole of it.',
-        naming: 'The gate that refused you, given where a mainlander gives a county: Lian out of Three Walls, Zou out of Autumn Gate, Shao out of the Iron Ridge queue. Where the Pearl Ocean names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
+        naming: 'The gate that refused you, given where a mainlander gives a county: Lian out of Three Walls, Zou out of Autumn Gate, Shao out of the Iron Crest queue. Where the Pearl Ocean names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
         time: 'Counted in shows. "Two shows ago" is anything from a season to nine years and nobody converts it, and the only fixed calendar anybody here observes is the posting cycle at nine city gates, which is imported, resented and universally known.'
     },
     ambientProfile: { thin: 78, normal: 4, dense: 12, spirit_tide: 6 },
@@ -375,7 +375,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         }
     ],
     hazards: [
-        'no water: four days between Sand Well and anything else, and the ordinary cause of death here is a sum somebody did before setting out',
+        'no water: four days between Truce Spring and anything else, and the ordinary cause of death here is a sum somebody did before setting out',
         'cover that moves about a li a year, so a route walked last season is not a route, and the stakes the Six Li Patrol paint stop at the Buddha Precipice survey',
         'other people, in a place where nobody can be complained about to anybody, and where a stranger has no institution behind them and nothing to lose',
         'shows that close while somebody is sitting on one, which is not dangerous in itself and strands people who provisioned for a season on ground they were being paid to guard',
@@ -387,7 +387,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         directDays: 9,
         throughTheCentreDays: 17,
         whyItIsEmpty:
-            'Eleven days to Clear River Ford and six down the gorge is seventeen days and a toll; the direct line is nine and is free. It is empty because no convoy can be underwritten across it - the Stone Marrow Hall will not put its name on a load at any price, which is the strongest thing an escort house can say about anything - and because a cart that is robbed on it has been robbed by nobody, in nowhere, with no bench that would hear it. Every party that has tried the shortcut with goods has arrived, or has not, and the ones that did not are the reason the eight days are still there to be saved.'
+            'Eleven days to Clear River Ferry and six down the gorge is seventeen days and a toll; the direct line is nine and is free. It is empty because no convoy can be underwritten across it - the Stone Marrow Hall will not put its name on a load at any price, which is the strongest thing an escort house can say about anything - and because a cart that is robbed on it has been robbed by nobody, in nowhere, with no bench that would hear it. Every party that has tried the shortcut with goods has arrived, or has not, and the ones that did not are the reason the eight days are still there to be saved.'
     },
     whatItCostsTheNeighbours: [
         {
@@ -478,11 +478,11 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
             missingDisciplines: [
                 {
                     discipline: 'alchemy',
-                    reason: 'A furnace is a fixed installation and nothing here is fixed. Every institution that has ever operated on this ground is a camp, and a camp that stops moving is buried or robbed, so what the sand produces leaves it raw and is refined four days away in Iron Ridge by somebody else.'
+                    reason: 'A furnace is a fixed installation and nothing here is fixed. Every institution that has ever operated on this ground is a camp, and a camp that stops moving is buried or robbed, so what the sand produces leaves it raw and is refined four days away in Iron Crest by somebody else.'
                 },
                 {
                     discipline: 'formations',
-                    reason: 'A formation is anchored to ground and the ground walks about a li a year. Tuo\'s Wall is what the province has instead of an argument about this: two hundred paces of it are above the sand, the rest is not, and nobody now living can name what it was called.'
+                    reason: 'A formation is anchored to ground and the ground walks about a li a year. Tuo\'s Rampart is what the province has instead of an argument about this: two hundred paces of it are above the sand, the rest is not, and nobody now living can name what it was called.'
                 }
             ],
             strongDisciplines: [
@@ -490,7 +490,7 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
                 'sitting on dense ground with nobody\'s permission, which every solitary in the world got here or did not get at all'
             ],
             costNote:
-                'Nothing, and that is the point: no grant, no tenancy, no tribute and nobody to be polite to. What it costs instead is water, four days of it between Sand Well and anything else, and the ordinary cause of death here is a sum somebody did before setting out.',
+                'Nothing, and that is the point: no grant, no tenancy, no tribute and nobody to be polite to. What it costs instead is water, four days of it between Truce Spring and anything else, and the ordinary cause of death here is a sum somebody did before setting out.',
             localRankNames: standardBandsWith(
                 ground.howRankIsSpoken,
                 'Nobody here confers a band and nobody checks one. The words are the world\'s ordinary words for a person with no house, so they tile the shared ladder trivially and mean nothing more than that somebody has been asked whose they are and had no answer.'

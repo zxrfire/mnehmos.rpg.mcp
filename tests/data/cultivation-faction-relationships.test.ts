@@ -165,7 +165,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
     const DEEPROOT = 'sect-deeproot-court';
     const KILN = 'court-kiln';
 
-    it('the Deeproot Court and the Kiln Court are related to each other at all', () => {
+    it('the Deeproot Court and the Tripod Court are related to each other at all', () => {
         const tie = relationshipBetween(DEEPROOT, KILN);
         expect(tie, 'the pair the whole section was asked for is missing').toBeDefined();
         expect(tie?.stance).toBe('alongside');
@@ -214,7 +214,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
         const above = relsFor(DEEPROOT).filter(r => r.stance === 'above').map(r => r.otherId);
         for (const id of ['apex-myriad-course-hall', 'apex-earth-vein-tower']) {
             const aliases = idsForFaction(id);
-            expect(above.some(o => aliases.includes(o)), `${id} is not above the Third Sill`).toBe(true);
+            expect(above.some(o => aliases.includes(o)), `${id} is not above the Third Sluice`).toBe(true);
         }
     });
 });

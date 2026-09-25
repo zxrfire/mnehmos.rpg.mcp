@@ -116,7 +116,7 @@ export const THE_LOW_FALL: Region = {
     branches: [
         {
             parentSectId: 'sect-fallen-grain-caravan',
-            localName: 'The Willow Village Factor at Clear River Ford',
+            localName: 'The Willow Village Factor at Clear River Ferry',
             doesHere:
                 'Sells Buddha Precipice salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Buddha Precipice has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
         },
@@ -144,7 +144,7 @@ export const THE_LOW_FALL: Region = {
             // reason this field exists rather than an illustration of it.
             //
             // The `trade_route` to the Buddha Precipice below quotes its
-            // eleven days as "the border road from Clear River Ford to Iron Ridge" -
+            // eleven days as "the border road from Clear River Ferry to Iron Crest" -
             // so the figure starts at the ford, and the stretch from the
             // province town out to the ford has never been priced by
             // anything. `daysOnTheRoadTo` charged a player one flat day
@@ -190,7 +190,7 @@ export const THE_LOW_FALL: Region = {
         },
         {
             name: PLACE.BURNT_EARTH,
-            kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Vermilion Seal Terrace.',
+            kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Vermilion Sigil Terrace.',
             connections: [
                 {
                     kind: 'road',
@@ -210,20 +210,20 @@ export const THE_LOW_FALL: Region = {
         },
         {
             name: PLACE.NINE_PEAKS,
-            kind: 'sect_town', ambient: 'dense', grounds: ['spirit_vein', 'mountain'], note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.',
+            kind: 'sect_town', ambient: 'dense', grounds: ['spirit_vein', 'mountain'], note: 'The deepest vein anyone has kept, and the Ascetic Sect sitting on it.',
             connections: [
                 {
                     kind: 'path',
                     otherPlaceName: PLACE.GREEN_FALL,
                     description:
-                        'Up out of the province town to the deepest vein anybody has kept, three days of climb, and the reason the Ascetic Order is up there and not down here.',
+                        'Up out of the province town to the deepest vein anybody has kept, three days of climb, and the reason the Ascetic Sect is up there and not down here.',
                     travelDays: 3
                 }
             ]
         },
         // ── THE ASHFALL BASIN, WHICH EXISTED EVERYWHERE BUT ON THE MAP ───
         //
-        // `prefecture-ashfall` is a fully authored holding - the Ashen Forge
+        // `prefecture-ashfall` is a fully authored holding - the Ashen Anvil
         // Clan on the flank, the Nine Abyss Flame Sect on the caldera and the
         // vent vein "on a grant the righteous sects of the province do not
         // believe exists", the Cinnabar Crucible Sect in the field furnace
@@ -240,7 +240,7 @@ export const THE_LOW_FALL: Region = {
         {
             name: PLACE.THE_FLANK,
             kind: 'sect_town', ambient: 'normal', grounds: ['volcanic'],
-            note: 'The Ashen Forge compound, cut into the flank around a furnace that was there before the clan was. Everybody in it takes a turn at the rota, including the children and the chief.',
+            note: 'The Ashen Anvil compound, cut into the flank around a furnace that was there before the clan was. Everybody in it takes a turn at the rota, including the children and the chief.',
             connections: [
                 {
                     kind: 'road',
@@ -402,28 +402,28 @@ export const THE_LOW_FALL: Region = {
             kind: 'trade_route',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The border road from Clear River Ford to Iron Ridge: eleven days by cart, four by Shrinking Earth Pavilion courier where the Span still runs it. Salvage and people out; pills, stones and grain in.',
+                'The border road from Clear River Ferry to Iron Crest: eleven days by cart, four by Shrinking Earth Pavilion courier where the Span still runs it. Salvage and people out; pills, stones and grain in.',
             travelDays: 11
         },
         {
             kind: 'refugee_flow',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'A steady drift of Buddha Precipice-born carvers arriving at Clear River Ford with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Fortress recruits the rest.',
+                'A steady drift of Buddha Precipice-born carvers arriving at Clear River Ferry with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Fortress recruits the rest.',
             travelDays: 11
         },
         {
             kind: 'shared_institution',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Stone Marrow Hall and Burnt Earth Temple both hold Buddha Precipice outposts, and the Bountiful Sheaf Sect keeps a factor at Clear River Ford. Those three offices are the whole formal relationship between the regions.',
+                'The Stone Marrow Hall and Burnt Earth Temple both hold Buddha Precipice outposts, and the Bountiful Sheaf Sect keeps a factor at Clear River Ferry. Those three offices are the whole formal relationship between the regions.',
             travelDays: 11
         },
         {
             kind: 'unsettled_border',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'Immovable Mountain Temple has surveyed to the burn edge and no further, so the last forty li before Iron Ridge are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
+                'Immovable Mountain Temple has surveyed to the burn edge and no further, so the last forty li before Iron Crest are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
             travelDays: 11
         },
         {
@@ -444,7 +444,7 @@ export const THE_LOW_FALL: Region = {
             kind: 'trade_route',
             otherRegionId: NORTH_REGION_ID,
             description:
-                'Seventeen days over the pass to Cold Peak, shut five months a year, carrying grain and timber up and ice-cut stones down. Everything the White Stair eats comes over this road and everybody in the Jade Gorge knows it.',
+                'Seventeen days over the pass to Moraine Gate, shut five months a year, carrying grain and timber up and ice-cut stones down. Everything the White Stair eats comes over this road and everybody in the Jade Gorge knows it.',
             travelDays: 17
         },
         {
@@ -465,7 +465,7 @@ export const THE_LOW_FALL: Region = {
     trueHereFalseThere: [
         'A holding can be granted. This is the only province with a surveyed vein under it, so it is the only one with a grant book, a renewal cycle, a tenant, and a reason for anybody to be polite to anybody.',
         'A pill above mortal grade can be bought over a counter, today, in four towns, and the counter is not a monopoly.',
-        'An oath binds. The Vermilion Seal Terrace witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
+        'An oath binds. The Vermilion Sigil Terrace witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
         'Sitting still on ordinary ground, in the open, makes measurable progress - and it goes on making it all the way to the top of the ladder, which no other province can say at any rung.'
     ],
     crossingNotes: [
@@ -501,7 +501,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             }
         ],
         onPaper:
-            'Still carried on the Third Sill\'s book as one of the eleven, with nineteen renewals in the archive and no twentieth ever issued or asked for. The Sill has never struck the page and the Pavilion has never asked it to.',
+            'Still carried on the Third Sluice\'s book as one of the eleven, with nineteen renewals in the archive and no twentieth ever issued or asked for. The Sluice has never struck the page and the Pavilion has never asked it to.',
         onTheGround:
             'Held outright and openly since the year Ru Anjing crossed, on no grant from anyone, with a front gate, a recruitment cycle and a published rank list.',
         discrepancy: 'record_names_the_wrong_holder',
@@ -527,10 +527,10 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'The oldest continuous grant in the Jade Gorge, twelve-year cycle, whole vein output above a fixed local allowance taken quarterly, three disciples upward per cycle.',
         onTheGround:
-            'The same, and the Order has never seen a renewal document: the confirmation is spoken, by somebody who walks in without being announced.',
+            'The same, and the Sect has never seen a renewal document: the confirmation is spoken, by somebody who walks in without being announced.',
         discrepancy: 'none',
         note:
-            'The Order\'s famous refusal to lease its vein is printed as principle and is a term of the grant. Three generations of the province have been allowed to believe otherwise because the alternative is explaining who sets it.'
+            'The Sect\'s famous refusal to lease its vein is printed as principle and is a term of the grant. Three generations of the province have been allowed to believe otherwise because the alternative is explaining who sets it.'
     },
     {
         id: 'prefecture-ashfall',
@@ -567,7 +567,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-cold-jade-basin',
-        name: 'Cold Jade Basin',
+        name: 'Ice Jade Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: 'the glacier terrace',
@@ -576,9 +576,9 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: 'apex-earth-vein-tower',
         subHoldings: [],
         onPaper:
-            'The glacier and the cold vein under it, on a grant nobody else has ever applied for, held directly from the Survey rather than through the Sill.',
+            'The glacier and the cold vein under it, on a grant nobody else has ever applied for, held directly from the Survey rather than through the Sluice.',
         onTheGround:
-            'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent. The glacier itself is seventeen days over the pass in the White Stair, and the Court has never sat in the province the register puts it in.',
+            'The same, and the Frostmirror has been writing to the Third Sluice about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent. The glacier itself is seventeen days over the pass in the White Stair, and the Court has never sat in the province the register puts it in.',
         discrepancy: 'none',
         note:
             'One of the two basins that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Black Ice Vein runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two basins over it on the Jade Gorge book because the arterial is Jade Gorge rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
@@ -609,7 +609,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-scarwater',
-        name: 'The Clear River Ford Basin',
+        name: 'The Clear River Ferry Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: PLACE.STONE_FORD,
@@ -624,7 +624,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             },
             {
                 factionId: 'sect-fallen-grain-caravan',
-                holds: 'The Willow Village Factor at Clear River Ford, a shopfront for Buddha Precipice salvage.',
+                holds: 'The Willow Village Factor at Clear River Ferry, a shopfront for Buddha Precipice salvage.',
                 delegatedFromId: 'sect-clearwater-ward'
             }
         ],
@@ -634,7 +634,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
         note:
-            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Bountiful Sheaf Sect and the Still Blade Peak both use, for opposite reasons.'
+            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Bountiful Sheaf Sect and the Still Blade Pavilion both use, for opposite reasons.'
     },
     {
         id: 'prefecture-sweptground',
@@ -689,7 +689,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-hollow-reach',
-        name: 'The Hollow Basin',
+        name: 'The Empyrean Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: 'the four mountains',

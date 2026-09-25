@@ -71,7 +71,7 @@ describe('a pronoun reaches the thing the last turn handed over', () => {
      *
      * FOUND BY PLAYING BLIND. The refusal was reaching the player as a scene:
      *
-     *     You search the streets and alleys of Green Water City, looking for
+     *     You search the streets and alleys of Emerald Water City, looking for
      *     the thing you seek... Whether the object is hidden in another city or
      *     simply does not exist remains unknown.
      *

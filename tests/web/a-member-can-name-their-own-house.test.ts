@@ -60,7 +60,7 @@ describe('a member standing among their own', () => {
      * serves nowhere learns not one name from being there.
      *
      * This used to assert that not everybody on the roll was named, and the
-     * told-the-structure producer correctly broke it: at the Hollow Court every
+     * told-the-structure producer correctly broke it: at the Empyrean Court every
      * member stands on the top two rungs, so being enrolled genuinely does
      * introduce all four of them. That is the told rule, not the presence rule,
      * and the height gate on the presence rule is asserted directly in
@@ -147,7 +147,7 @@ describe('what being enrolled told them', () => {
             m => at.game.knowledge.isAwareOf(at.cultivator.id, 'cultivator', m.id));
         expect(held.length).toBeGreaterThan(0);
         expect(held.length).toBeLessThan(at.roll.length);
-        // Nobody is withholding a herb boy's name - it simply was not part of
+        // Nobody is withholding a medicine boy's name - it simply was not part of
         // what anybody recited to them.
         const bottom = Math.min(...at.roll.map(m => m.rankIndex));
         expect(held.some(m => m.rankIndex === bottom)).toBe(false);

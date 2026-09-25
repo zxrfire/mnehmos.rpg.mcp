@@ -73,7 +73,7 @@ async function aDiscipleWithAPillAndARoom(seed: string, rankIndex = 1) {
     // IN THE HOUSE'S OWN PROVINCE. A road across a border is its real length now
     // (`provinceRoadDays`), and a walk of days can be stopped by whoever it meets; the room, not
     // the road, is what these pin.
-    harness.repos.cultivators.update(cultivator.id, { location: 'Green Water City' });
+    harness.repos.cultivators.update(cultivator.id, { location: 'Emerald Water City' });
     return { harness, cultivatorId: cultivator.id };
 }
 
@@ -126,7 +126,7 @@ describe('a thing left in the room stays there', () => {
 
         // ELEVEN DAYS AWAY AND IT IS STILL THERE. A store that empties when the
         // player walks off is not a room.
-        await harness.game.act('I travel to Iron Ridge');
+        await harness.game.act('I travel to Iron Crest');
         expect(pouchQuantity(harness.db, room, A_PILL)).toBe(1);
 
         await harness.game.act('I go home');
@@ -154,10 +154,10 @@ describe('a thing left in the room stays there', () => {
         expect(sword().possessorId).toBe(room);
 
         // A road can stop a journey short, so go on until they are there.
-        for (let leg = 0; leg < 6 && harness.repos.cultivators.getById(cultivatorId)!.location !== 'Iron Ridge'; leg++) {
-            await harness.game.act('I travel to Iron Ridge');
+        for (let leg = 0; leg < 6 && harness.repos.cultivators.getById(cultivatorId)!.location !== 'Iron Crest'; leg++) {
+            await harness.game.act('I travel to Iron Crest');
         }
-        expect(harness.repos.cultivators.getById(cultivatorId)!.location).toBe('Iron Ridge');
+        expect(harness.repos.cultivators.getById(cultivatorId)!.location).toBe('Iron Crest');
         const away = await harness.game.act('what am I carrying');
         const said = [away.narration ?? '', ...harness.game.state().log.slice(-8).map(e => e.text)].join(' ');
         expect(said).toMatch(/Kept in your room at [^:]+: an iron sword/);
@@ -175,7 +175,7 @@ describe('a thing left in the room stays there', () => {
         const { harness, cultivatorId } = await aDiscipleWithAPillAndARoom('quarters-reach');
         const room = whereAHouseLetsYouKeepThings(LOCAL_SECT.id, cultivatorId);
 
-        await harness.game.act('I travel to Iron Ridge');
+        await harness.game.act('I travel to Iron Crest');
         const answer = await harness.game.act(`I put the ${WHAT_IT_IS_CALLED} in my room`);
 
         expect(pouchQuantity(harness.db, room, A_PILL)).toBe(0);

@@ -1,7 +1,7 @@
 /**
  * Sealed ancestors: sealed and dormant high-realm beings, held and unheld.
  *
- * The Hollow Court description says the quiet part outright - everyone else at
+ * The Empyrean Court description says the quiet part outright - everyone else at
  * that ordinal is sealed under a mountain - and this file is what that
  * sentence commits the world to. There are more of them than any institution
  * has counted, they are not all owned, and the ones that are owned are the
@@ -456,7 +456,7 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
         restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
         publishedCondition: null,
         privateContingency:
-            'An apex vault at the one moment nobody is sitting on it. The Court has worked out that the Earth Vein Tower cannot leave its own seat, has told nobody in a hundred and ninety years, and keeps a permanent watcher at Green Water City against a trigger that has never once occurred. See `contingencies.ts` for the worked case: it is the clearest example in the world of what a private contingency actually looks like, and it is not what the Ward has written down.',
+            'An apex vault at the one moment nobody is sitting on it. The Court has worked out that the Earth Vein Tower cannot leave its own seat, has told nobody in a hundred and ninety years, and keeps a permanent watcher at Emerald Water City against a trigger that has never once occurred. See `contingencies.ts` for the worked case: it is the clearest example in the world of what a private contingency actually looks like, and it is not what the Ward has written down.',
         strategy: 'silence',
         strategyNote:
             'Silence, absolutely, and for the specific reason that the plan requires surprise and the observation underneath it is spent the moment a second party holds it. The Court fields a fraction of the defence its holdings warrant and has never lost the library, which reads externally as luck and is a deliberate refusal to advertise.',
@@ -509,22 +509,22 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         id: 'sealed-meng-da',
         name: 'Patriarch Meng Da',
         whereItIs: 'Somewhere in the vein workings under the Nine Peaks, which have never been sealed and are entered by ascetics on ordinary business several times a year.',
-        sealedBy: 'Nothing. He walked in eight hundred years ago to survey the workings and did not come out, and the Order has never closed the entrance.',
+        sealedBy: 'Nothing. He walked in eight hundred years ago to survey the workings and did not come out, and the Sect has never closed the entrance.',
         sealedFor: null,
         sealerFactionId: null,
         sealMaintained: false,
-        lastChecked: 'Never. There is nothing to check, because the Order does not treat this as a thing that exists - it is a story ascetics tell each other and do not offer to outsiders.',
+        lastChecked: 'Never. There is nothing to check, because the Sect does not treat this as a thing that exists - it is a story ascetics tell each other and do not offer to outsiders.',
         awareness: 'unknown_to_holder',
         whoKnows:
-            'The Order has surveyed the workings to the depth he is at and has never opened it or said why, which is as close to knowing as an institution gets without admitting anything. What it does not accept is the conclusion: the ascetics tell it as a story, and a story is not a thing an Order has to act on. The Peak Wardens want the workings surveyed and Meng Da resolved; the Mountain Elders hold that the workings are the vein and the vein is not to be entered, which is doctrine dressed as caution and is the only reason nobody has gone looking.',
+            'The Sect has surveyed the workings to the depth he is at and has never opened it or said why, which is as close to knowing as an institution gets without admitting anything. What it does not accept is the conclusion: the ascetics tell it as a story, and a story is not a thing a Sect has to act on. The Crag Wardens want the workings surveyed and Meng Da resolved; the Mountain Elders hold that the workings are the vein and the vein is not to be entered, which is doctrine dressed as caution and is the only reason nobody has gone looking.',
         hazard:
             'The deepest vein in the province is being worked continuously by an institution that has an eight-hundred-year-old Patriarch somewhere underneath it and has decided the question is a matter of tradition. If he is down there and something reaches him - a collapse, a deep survey, a boundary dispute that goes to digging - it happens under the richest ground in the Jade Gorge, to a party nobody warned, with no wake condition, no cost accounting and nobody who could be said to have decided anything.',
         opportunity:
             'The only sealed ancestor in the world that is not behind a seal. Anybody willing to go into the workings could reach him, and reaching him is the single cheapest access to a high-realm being available anywhere - which is exactly why the Mountain Elders have made not entering into a principle.',
         ifSheWakes:
-            'He is the best case in the world and nobody has noticed, because everybody is busy treating him as a hazard under a vein. The Order still exists, the line runs to him unbroken and legibly, and he would recognise it in a sentence - so the duty holds and he would act for them. What he would probably do with the hours is not fight anybody. It is talk: the Order holds its founding record in a hand whose numerals it reads perfectly and whose prose it has not read in eight hundred years, and he is the last person alive who could read it aloud. An afternoon of that is worth more to the Nine Peaks than anything under the mountain, and the Mountain Elders have turned not going to look at him into doctrine.',
+            'He is the best case in the world and nobody has noticed, because everybody is busy treating him as a hazard under a vein. The Sect still exists, the line runs to him unbroken and legibly, and he would recognise it in a sentence - so the duty holds and he would act for them. What he would probably do with the hours is not fight anybody. It is talk: the Sect holds its founding record in a hand whose numerals it reads perfectly and whose prose it has not read in eight hundred years, and he is the last person alive who could read it aloud. An afternoon of that is worth more to the Nine Peaks than anything under the mountain, and the Mountain Elders have turned not going to look at him into doctrine.',
         nobodyIsResponsible:
-            'The Order would deny he is there. If he came up, no institution would accept that it had been theirs to manage: the Order because it never sealed anything, the Sill because a vein grant is not a custodial obligation, and the Survey because its register has no entry for a person who is not dead and is not anywhere.'
+            'The Sect would deny he is there. If he came up, no institution would accept that it had been theirs to manage: the Sect because it never sealed anything, the Sluice because a vein grant is not a custodial obligation, and the Survey because its register has no entry for a person who is not dead and is not anywhere.'
     },
     {
         id: 'sealed-the-tally-seal',
@@ -585,7 +585,7 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         opportunity:
             'Anybody who read the original site record would know something about the Verdant Spring Valley that the Verdant Spring Valley cannot know, and could tell them - which would be worth more to the Hall than anything else in the world and is worth almost nothing to anybody else.',
         nobodyIsResponsible:
-            'The Hall holds a sub-grant on a valley and has no custodial obligation to anything under it, the Ascetic Order that granted it has never surveyed below the springs, and the party that did the sealing has been gone long enough that the question of liability has no defendant. If it opens, the arbitration is about who deals with ninety physicians and a chamber, and the Karma Palace would be starting from nothing.',
+            'The Hall holds a sub-grant on a valley and has no custodial obligation to anything under it, the Ascetic Sect that granted it has never surveyed below the springs, and the party that did the sealing has been gone long enough that the question of liability has no defendant. If it opens, the arbitration is about who deals with ninety physicians and a chamber, and the Karma Palace would be starting from nothing.',
         ifSheWakes:
             'A wall comes down during a repair and a woman steps out into a working infirmary. Nobody there can name her, nobody can show her a line, and she does not ask them to - she can see what the building is for inside a minute, which is more than most wakings get. So there is no duty and she does not pretend there is one. What there is, is an afternoon, ninety physicians, and a person who knew the channels when they were cut and understood what they were doing to the water. The likely outcome is the generous one and it is generous precisely because nothing obliges it: she spends the hours teaching. A method the Late Age lost, a Dao transmitted directly to whichever physician was holding the trowel, or simply the answer to the question the Hall has been getting wrong since the channels started cracking. It is one of the very few ways anything actually comes back in this age, it is nobody\'s plan, and it happens because somebody was standing there.'
     }

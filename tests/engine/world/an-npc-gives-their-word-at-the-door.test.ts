@@ -41,7 +41,7 @@ const HOUSE = 'house-that-asks-for-silence';
 function aWorld(): WorldState {
     const state = createWorld({ seed: 'a-word-given', skipPriorAges: true, regionCount: 0 });
     state.factions.push(makeFaction({
-        id: HOUSE, name: 'Cold Spring Hall', ranks: ['Outer', 'Inner', 'Elder']
+        id: HOUSE, name: 'Lone Spring Hall', ranks: ['Outer', 'Inner', 'Elder']
     }));
     return state;
 }
@@ -75,7 +75,7 @@ describe('the oath a house asks for on the way out', () => {
     });
 
     it('is the same answer from the same person, and most people swear', () => {
-        const house = makeFaction({ id: HOUSE, name: 'Cold Spring Hall', ranks: ['Outer'] });
+        const house = makeFaction({ id: HOUSE, name: 'Lone Spring Hall', ranks: ['Outer'] });
         let refused = 0;
         for (let i = 0; i < 300; i++) {
             const npc = { id: `npc-${i}` };
@@ -119,7 +119,7 @@ describe('teaching what you swore not to', () => {
             .not.toBeNull();
 
         const broke = theyTaughtWhatTheySworeNotTo(
-            state, leaver, house.id, house.name, 900, 'Cold Spring Breathing'
+            state, leaver, house.id, house.name, 900, 'Lone Spring Breathing'
         );
         expect(broke, 'nothing happened when the word was broken').not.toBeNull();
         expect(broke!.settled.status).toBe('settled');
@@ -143,7 +143,7 @@ describe('teaching what you swore not to', () => {
         const house = state.factions[0]!;
         const stranger = somebody('npc-never-swore');
         expect(theyTaughtWhatTheySworeNotTo(
-            state, stranger, house.id, house.name, 900, 'Cold Spring Breathing'
+            state, stranger, house.id, house.name, 900, 'Lone Spring Breathing'
         )).toBeNull();
         expect(state.obligations).toHaveLength(0);
         expect(theyBrokeTheirWordTo(state, stranger.id, house.id)).toBe(false);
@@ -204,7 +204,7 @@ describe('the world\'s ledger survives a save', () => {
         const leaver = somebody('npc-saved', 'Yun Qiao');
         state.npcs.push(leaver);
         theOathOnTheWayOut(state, leaver, house, 400);
-        theyTaughtWhatTheySworeNotTo(state, leaver, house.id, house.name, 900, 'Cold Spring Breathing');
+        theyTaughtWhatTheySworeNotTo(state, leaver, house.id, house.name, 900, 'Lone Spring Breathing');
 
         repo.saveWorld(state);
         const loaded = repo.loadWorld(state.id)!;

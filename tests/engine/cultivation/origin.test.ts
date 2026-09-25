@@ -4,7 +4,7 @@
  * These tests are about the HARD RULE more than about the numbers: an origin
  * buys inputs and never rank. The one that matters most is
  * "placement does not waive an institution's own floor", because that is the
- * rule the Hollow Court states in prose and is the one an implementation would
+ * rule the Empyrean Court states in prose and is the one an implementation would
  * quietly break first.
  */
 
@@ -166,7 +166,7 @@ describe('an origin buys inputs and never rank', () => {
     });
 
     it('does not waive an institution\'s own floor, including for a Dao house', () => {
-        // The Hollow Court: Void Tribulation at the floor, and nothing else
+        // The Empyrean Court: Void Tribulation at the floor, and nothing else
         // counts, which includes being somebody's child.
         const hollowCourt = { id: 'sect-hollow-court', powerOrdinal: 44, admissionOrdinal: 29 };
         const localSect = { id: 'sect-local', powerOrdinal: 11, admissionOrdinal: 0 };

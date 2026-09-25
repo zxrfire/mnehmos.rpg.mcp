@@ -29,9 +29,9 @@ import { z } from 'zod';
 //
 // `seedPriorAges` now draws from these tables and `locationFromRuin` and
 // `locationFromScar` patch the drawn name onto the record, so what a player
-// travels to is Cold Spring or Bitter Soil. The generated toponym survives as
+// travels to is Lone Spring or Bitter Soil. The generated toponym survives as
 // `location` - the ground the province puts it at - and that half was always
-// fine: Sweptfall and Coldmouth sit beside Burnt Earth and Clear River Ford
+// fine: Sweptfall and Coldmouth sit beside Burnt Earth and Clear River Ferry
 // without embarrassing themselves.
 //
 // The claim above about the generated half being fine was WRONG, and it is
@@ -65,8 +65,8 @@ import { z } from 'zod';
 //      and the first attempt at a fix put a space in and stopped there. The
 //      design owner's verdict on that: HALF ROOF IS NOT XIANXIA. Spacing an
 //      English village name gives an English village name. Terrace, Gorge,
-//      Cliff, Spring, Stair, Array, Garden, Eaves, Slope, Hall, Ridge, Ford,
-//      Basin, Wall, Creek, Stone, Head, Cut - what `place-names.ts`
+//      Cliff, Spring, Stair, Array, Garden, Eaves, Slope, Hall, Crest, Ferry,
+//      Basin, Rampart, Creek, Stone, Head, Cut - what `place-names.ts`
 //      already uses, and nothing else. An administrative word is not one of
 //      them: District and Catchment were both in here and are a Prefecture
 //      (州) and a Basin now.
@@ -76,7 +76,7 @@ import { z } from 'zod';
 //      replace - once beside Isle, Cape, Fall and Marches, and once beside
 //      Roof, Well, Bank and Yard - and no authored place has ever used it. The
 //      two that did were this table's Scorched Reach and the Hollow Reach
-//      prefecture in `low-fall.ts`, and they are Ash Slope and the Hollow
+//      prefecture in `low-fall.ts`, and they are Ash Slope and the Empyrean
 //      Basin now.
 //      AND THE QUALIFIER IN FRONT HAS TO BE AN IMAGE. The convention this is
 //      translated out of pairs a type noun with a colour, a material, a number
@@ -84,12 +84,17 @@ import { z } from 'zod';
 //      Thousand Blade Peak, Falling Star Rainforest. A bare adjective gives a
 //      name that satisfies every rule above and is still dead on the page:
 //      Rich Soil, Long Ridge and Frost Head were all rejected for exactly that,
-//      and are Sweet Spring, Cinder Ridge and Cold Jade Basin.
+//      and are Sweet Spring, Cinder Crest and Ice Jade Basin.
 //      A gerund is the same failure in a third coat. Digging and Gleaning are
 //      English place names (Reading, Barking); name what the work leaves -
-//      Poor Man's Terrace, Thin Ridge.
+//      Poor Man's Terrace, Meagre Crest.
 //   5. It must not sound like a faction. `sects.ts` names are very good and the
 //      registers must not blur - a place is duller than a house, always.
+//   6. No word of it is a word the player types, or a typo of one. Names are
+//      matched with typo tolerance, so Wall read as *will*, Ford as *food* and
+//      Ridge as *ride*; they are Rampart, Ferry and Crest. The rule is in
+//      AGENTS.md and `a-name-is-never-a-word-the-player-types.test.ts` holds
+//      these tables to it.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const PlaceNameSourceSchema = z.enum([
@@ -116,24 +121,24 @@ export type GeneratedPlaceName = z.infer<typeof GeneratedPlaceNameSchema>;
  * Twenty against a draw of twelve, so a seeded world does not repeat.
  */
 export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
-    { name: 'Nine Bell Terrace', source: 'what_happened', records: 'The bells were counted on the last night and the count was passed outward. There were seven.' },
+    { name: 'Nine Gong Terrace', source: 'what_happened', records: 'The gongs were counted on the last night and the count was passed outward. There were seven.' },
     { name: 'Quan Terrace', source: 'who_held_it', records: 'A surname nobody in the province can now attach to anything else, on a terrace anybody can see from the road.' },
     { name: 'The Warm Gate', source: 'a_name_that_is_wrong', records: 'It has been cold for nine hundred years. The name is older than the sealing and was never revised.' },
     { name: 'Cloud Eaves', source: 'what_is_visibly_there', records: 'What is left standing above the wall line, which is about half of one roof.' },
     { name: 'Three Stone Array', source: 'what_is_visibly_there', records: 'Three array stones out of a ring nobody has ever counted the rest of.' },
     { name: 'The Millet Garden', source: 'a_name_that_is_wrong', records: 'Nothing has grown in it in an age, and the surrounding villages still call it that at market.' },
     { name: 'Poor Man\'s Terrace', source: 'what_people_do_there_now', records: 'The only thing that has happened there for four hundred years, done by whoever is broke that season.' },
-    { name: 'Fallen Wall', source: 'what_happened', records: 'What the first party back reported, which turned out to be wrong by about eleven buildings.' },
+    { name: 'Fallen Rampart', source: 'what_happened', records: 'What the first party back reported, which turned out to be wrong by about eleven buildings.' },
     { name: 'Muyang', source: 'who_held_it', records: 'The house name, used flat, with no honorific and no form of words around it.' },
     { name: 'Sixty Doors', source: 'what_is_visibly_there', records: 'Counted from outside by somebody who could not get through any of them.' },
-    { name: 'Cinder Ridge', source: 'what_happened', records: 'The duty roster was still being kept for two years after the sealing, and the last page is legible.' },
-    { name: 'Sunken Ford', source: 'what_happened', records: 'Said of the seat rather than of the ground, and said the same way about a person.' },
-    { name: 'Cold Spring', source: 'what_is_visibly_there', records: 'The only well outside the wall, still good, and the reason anybody camps there at all.' },
+    { name: 'Cinder Crest', source: 'what_happened', records: 'The duty roster was still being kept for two years after the sealing, and the last page is legible.' },
+    { name: 'Sunken Ferry', source: 'what_happened', records: 'Said of the seat rather than of the ground, and said the same way about a person.' },
+    { name: 'Lone Spring', source: 'what_is_visibly_there', records: 'The only well outside the wall, still good, and the reason anybody camps there at all.' },
     { name: 'Bai\'s Turning', source: 'who_held_it', records: 'A path around the perimeter named for the last steward, who was not using it to get anywhere.' },
-    { name: 'Wide Gate', source: 'a_name_that_is_wrong', records: 'It is narrow, it faces the wrong way, and every account since the fall has called it wide.' },
+    { name: 'Broad Gate', source: 'a_name_that_is_wrong', records: 'It is narrow, it faces the wrong way, and every account since the fall has called it broad.' },
     { name: 'The Fifth Winter', source: 'what_happened', records: 'How long the compound answered after it was shut, counted by the people who kept coming back to check.' },
-    { name: 'Iron Hook Slope', source: 'what_people_do_there_now', records: 'Where the diggers dress and sort before they go in, named for the tools they leave in it.' },
-    { name: 'The Second Wall', source: 'what_is_visibly_there', records: 'There is no first wall any more, so the surviving one is still called the second.' },
+    { name: 'Iron Mattock Slope', source: 'what_people_do_there_now', records: 'Where the diggers dress and sort before they go in, named for the tools they leave in it.' },
+    { name: 'The Second Rampart', source: 'what_is_visibly_there', records: 'There is no first rampart any more, so the surviving one is still called the second.' },
     { name: 'Ren\'s Stair', source: 'who_held_it', records: 'A stair head that carries the name of a Warden nobody can now place in any roll.' },
     { name: 'The Quiet Channel', source: 'a_name_that_is_wrong', records: 'It is not quiet, it has never been quiet, and everybody who has been in says so and goes on calling it that.' }
 ];
@@ -147,15 +152,15 @@ export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
  */
 export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
     { name: 'Ash Slope', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
-    { name: 'Four Days\' Fire', source: 'what_happened', records: 'How long it took, counted from a hill by people who could not do anything else.' },
+    { name: 'Fourth-Day Blaze', source: 'what_happened', records: 'The day it was finally over, counted from a hill by people who could not do anything else.' },
     { name: 'Reed Flat', source: 'what_is_visibly_there', records: 'It was not flat before, and the word does the whole of the work.' },
     { name: 'Bitter Soil', source: 'what_is_visibly_there', records: 'Stated as a fact rather than as a name, and used as one for two hundred years.' },
-    { name: 'Wenzhi\'s Field', source: 'who_held_it', records: 'The farmer who held the ground, named because nobody could name what did it.' },
+    { name: 'Wenzhi\'s Paddy', source: 'who_held_it', records: 'The farmer who held the ground, named because nobody could name what did it.' },
     { name: 'Sweet Spring', source: 'a_name_that_is_wrong', records: 'It was, and the surveys still carry the old entry, and every local knows better.' },
     { name: 'Standing Water', source: 'what_is_visibly_there', records: 'It has not drained since, and nothing will drink it.' },
-    { name: 'Three Year Ground', source: 'what_happened', records: 'The interval before anybody would cross it, agreed by nobody and observed by everybody.' },
-    { name: 'Near Pass', source: 'a_name_that_is_wrong', records: 'It is the short way and it costs a day to go round, which is the joke and the warning at once.' },
-    { name: 'Thin Ridge', source: 'what_people_do_there_now', records: 'People still work the edges for what the ground gives up, and are known by it.' },
+    { name: 'Three Summer Ground', source: 'what_happened', records: 'The interval before anybody would cross it, agreed by nobody and observed by everybody.' },
+    { name: 'Brief Pass', source: 'a_name_that_is_wrong', records: 'It is the short way and it costs a day to go round, which is the joke and the warning at once.' },
+    { name: 'Meagre Crest', source: 'what_people_do_there_now', records: 'People still work the edges for what the ground gives up, and are known by it.' },
     // NOT `Knife Edge`, which is what this was and which no sentence could
     // survive: `knife` is a weapon in the attack table, so every phrasing about
     // this place - travelling to it, asking where it is, asking what is known of

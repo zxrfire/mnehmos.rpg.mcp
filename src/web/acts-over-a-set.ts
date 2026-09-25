@@ -127,7 +127,7 @@ const SOMEBODYS_OWN_PEOPLE = new RegExp(
 );
 
 /**
- * A house named as a whole: "the whole sect", "all of Iron Ridge".
+ * A house named as a whole: "the whole sect", "all of Iron Crest".
  *
  * The quantifier is required. "the sect" on its own is how a member refers to
  * their own house in an ordinary sentence and is not an act over everybody in

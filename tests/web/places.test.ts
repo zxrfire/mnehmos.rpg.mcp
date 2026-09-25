@@ -371,7 +371,7 @@ describe("a place gives the ground it has, not its province's average", () => {
      *
      * The stakes are not description. Where to sit is one of the few real
      * decisions a low cultivator has, and Nine Peaks - "the deepest vein
-     * anyone has kept, and the Ascetic Order sitting on it" - was
+     * anyone has kept, and the Ascetic Sect sitting on it" - was
      * arithmetically identical to a thin ford town.
      *
      * This asserts through the played game rather than the catalog, because
@@ -420,7 +420,7 @@ describe("a place gives the ground it has, not its province's average", () => {
         // raised on thin ground has nothing to remark on, which is the honest
         // reading and is what `unknown` produces - so what must NOT appear is
         // any claim that this ground is better than what they know.
-        expect(await airAt('Clear River Ford')).not.toMatch(/thicker|better/i);
+        expect(await airAt('Clear River Ferry')).not.toMatch(/thicker|better/i);
         expect(await airAt('Burnt Earth')).not.toMatch(/thicker|better/i);
     }, 120_000);
 
@@ -429,8 +429,8 @@ describe("a place gives the ground it has, not its province's average", () => {
         // mode was every one of them reading identically.
         const said = new Set([
             await airAt('Nine Peaks'),
-            await airAt('Clear River Ford'),
-            await airAt('Green Water City')
+            await airAt('Clear River Ferry'),
+            await airAt('Emerald Water City')
         ]);
         expect(said.size).toBeGreaterThan(1);
     }, 120_000);

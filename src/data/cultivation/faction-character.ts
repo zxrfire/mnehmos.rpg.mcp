@@ -242,9 +242,9 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         practice: 'Ascetics carry a stone at all times, of a size chosen at admission and never changed, and set it down only to sleep - so a conversation with one includes the sound of a rock being placed on a table.',
         grievance: 'That every other institution in the province regards their vein as an accident of geography rather than a two-century refusal to lease it.',
-        fear: 'That Meng Da is still alive somewhere in the workings, and that the Order has spent eight hundred years not sealing the entrance because it does not want to find out.',
-        lateness: 'Eleven of sixty-three nodes lit, and the Order admits it does not know what forty of the others were for - it maintains them anyway, unlit, on the reasoning that somebody meant them.',
-        disagreement: 'The Peak Wardens want the workings surveyed and Meng Da resolved. The Mountain Elders hold that the workings are the vein and the vein is not to be entered, which is doctrine dressed as caution.',
+        fear: 'That Meng Da is still alive somewhere in the workings, and that the Sect has spent eight hundred years not sealing the entrance because it does not want to find out.',
+        lateness: 'Eleven of sixty-three nodes lit, and the Sect admits it does not know what forty of the others were for - it maintains them anyway, unlit, on the reasoning that somebody meant them.',
+        disagreement: 'The Crag Wardens want the workings surveyed and Meng Da resolved. The Mountain Elders hold that the workings are the vein and the vein is not to be entered, which is doctrine dressed as caution.',
         wrongAbout: 'It holds that carrying the stone builds the body. Its own intake records show the stone selects for people who will do a pointless thing for years, which is a different and more useful filter.',
         unitOfValue: 'Years of service. Rank, grain and vein access are all counted in seasons carried, and stones are treated as an administrative nuisance.',
         production: {
@@ -262,16 +262,16 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         quietlyStopped: 'Surveying. Half its river-charts are copies of a survey two ages old, the copies are still better than anything the Alliance has produced since, and at some point in the last century it stopped attempting new ones. Nobody decided this. The last man who could take a proper sounding died, his apprentice took a landing instead, and the charts have been getting copied rather than made ever since.',
         practice: 'Members are recognisable by the tar on their palms from boat rope, and greet each other by naming a ford - "Third, this spring" - rather than by name.',
-        grievance: 'That the Thousand Treasure Pavilion prices tolls on routes the Alliance keeps open, and calls this commerce.',
-        fear: 'That the ferry trade is what the Alliance is, and that a Shrinking Earth Pavilion station at Clear River Ford would end it in a decade.',
+        grievance: 'That the Thousand Relic Pavilion prices tolls on routes the Alliance keeps open, and calls this commerce.',
+        fear: 'That the ferry trade is what the Alliance is, and that a Shrinking Earth Pavilion station at Clear River Ferry would end it in a decade.',
         lateness: 'Five of eight nodes lit, all of them on piers; half the river charts are copies of a survey two ages old and more accurate than anything the Alliance has produced since.',
-        disagreement: 'The Ford Masters want to federate the Buddha Precipice border road and become a regional carrier. The River Elders hold that the Alliance is river people and will drown on land.',
-        wrongAbout: 'It believes its pier pilings at Clear River Ford are Alliance work from three centuries back. They are two ages older than the Alliance and are the reason that ford has never moved.',
+        disagreement: 'The Ferry Masters want to federate the Buddha Precipice border road and become a regional carrier. The River Elders hold that the Alliance is river people and will drown on land.',
+        wrongAbout: 'It believes its pier pilings at Clear River Ferry are Alliance work from three centuries back. They are two ages older than the Alliance and are the reason that ford has never moved.',
         unitOfValue: 'Crossings owed. A debt here is discharged by carrying somebody, and the Alliance will accept nothing else from its own.',
         production: {
             reliableOrdinal: 13, currentCount: 9, peakOrdinal: 24, peakCount: 1, yearsSinceLastPeak: 300,
             climbingToward: 17, waitingOn: 'access',
-            note: 'Wide, shallow, no vein - and moving for the first time in three centuries, on wagons rather than water. Three Ford Masters have run an unlicensed carrying service to Clear River Ford for six years and remit a share in kind, so eleven landings now handle bonded refining stock instead of ferry fares, which is enough to put boat hands into Core Formation. It turns on two things the Alliance does not control: the River Elders continuing not to establish what the wagons are, and Clear River Ford staying a ford rather than becoming a Shrinking Earth Pavilion station.'
+            note: 'Wide, shallow, no vein - and moving for the first time in three centuries, on wagons rather than water. Three Ferry Masters have run an unlicensed carrying service to Clear River Ferry for six years and remit a share in kind, so eleven landings now handle bonded refining stock instead of ferry fares, which is enough to put boat hands into Core Formation. It turns on two things the Alliance does not control: the River Elders continuing not to establish what the wagons are, and Clear River Ferry staying a ford rather than becoming a Shrinking Earth Pavilion station.'
         },
         distinctSentence: 'A federation of ferrymen who learned to fight, who settle internal debts in river crossings rather than stones, and whose oldest asset is a pier they did not build.'
     },
@@ -304,7 +304,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That the world calls what the crossings take "the price" and considers the matter closed.',
         fear: 'That the counter-register is a comfort rather than a remedy, and that writing a name down does not in fact keep it.',
         lateness: 'Seventeen of thirty nodes lit; roughly one register in forty from the third age is illegible from damp, and the stack rooms flood on a schedule the Hall has never fixed.',
-        disagreement: 'The Keepers of Names want the registers opened to anyone. The Warden-General holds that an open register is an inventory for the Jade Register Hall and the Still Blade Peak alike.',
+        disagreement: 'The Keepers of Scrolls want the registers opened to anyone. The Warden-General holds that an open register is an inventory for the Jade Register Hall and the Still Blade Pavilion alike.',
         wrongAbout: 'The Hall holds that its counter-register is independent of the Jade Register Hall. Nine of its nine city stack rooms were originally House buildings, and the House still holds the leases.',
         unitOfValue: 'Names on a wall. The Hall measures its own worth by how many it has recorded, and states the figure the way other sects state their vein depth.',
         production: {
@@ -348,7 +348,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         fear: 'That the presses are irreplaceable. It repairs them constantly, has never built a new one, and does not publish how many are still working.',
         lateness: 'Thirty-four of fifty-five nodes lit, and its refining presses are inherited machinery of a design its own artificers cannot reproduce at any price.',
         disagreement: 'The Rate Elders want to publish a vein index and make the price of ground explicit. The Principal holds that an explicit price for a vein is a starting gun.',
-        wrongAbout: 'It believes it sets the stone rate. In four recorded shortages the rate was set by what the Thousand Treasure Pavilion would pay, and the Stone Marrow Hall published that figure a week later as its own.',
+        wrongAbout: 'It believes it sets the stone rate. In four recorded shortages the rate was set by what the Thousand Relic Pavilion would pay, and the Stone Marrow Hall published that figure a week later as its own.',
         unitOfValue: 'Spirit stones, cut and assayed, to the tenth. It is the only faction that treats its own unit as the natural one and cannot really conceive of another.',
         production: {
             reliableOrdinal: 20, currentCount: 12, peakOrdinal: 33, peakCount: 3, yearsSinceLastPeak: 150,
@@ -383,10 +383,10 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Everybody sees the counter. Almost nobody sees the examination hall behind it, and the Hall finds the confusion useful at the price list.'
         },
         practice: 'Alchemists keep one hand permanently bandaged, by rule rather than injury, so that a burn to the working hand never costs a batch; hall members shake with the left.',
-        grievance: 'That the Thousand Treasure Pavilion prices medicine the Hall makes and takes the margin on it.',
+        grievance: 'That the Thousand Relic Pavilion prices medicine the Hall makes and takes the margin on it.',
         fear: 'That the missing steps in the wall script are not missing but deliberately omitted, and that the batches which fail are failing for a reason somebody understood.',
         lateness: 'Fifteen of twenty-seven nodes lit, and the refining hall wall it was founded on is legible to about a third - the Hall has built a four-hundred-year reputation on that third.',
-        disagreement: 'The Cauldron Masters want to sell heaven-grade attempts at cost with the failure rate disclosed. The Furnace Elders regard disclosure as an admission that the Hall does not know its own method.',
+        disagreement: 'The Crucible Masters want to sell heaven-grade attempts at cost with the failure rate disclosed. The Furnace Elders regard disclosure as an admission that the Hall does not know its own method.',
         wrongAbout: 'It teaches that the fourth line of the wall script is a step. Furnace Elder Bo died proving it is not, and the Hall recorded the death and kept teaching the line.',
         unitOfValue: 'Successful batches. Standing inside the Hall is a count of refinements that held, and no amount of money moves it.',
         production: {
@@ -398,7 +398,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     },
     'sect-ashen-forge-clan': {
         knownFor: {
-            outside: 'The quarrel. Whatever the Ashen Forge is actually for, the province knows it mostly as the clan that fell out with the Azure Cloud Pavilion over how its swords were being used.',
+            outside: 'The quarrel. Whatever the Ashen Anvil is actually for, the province knows it mostly as the clan that fell out with the Azure Cloud Pavilion over how its swords were being used.',
             actuallyGoodAt: 'Reading a fragment. They can identify what a ploughed-up shard was, which age it is from and what it will tolerate, and then reforge it - and half the region is armed off that skill without knowing whose it is.',
             theGap: 'A quarrel is repeatable at dinner and metallurgy is not.'
         },
@@ -473,7 +473,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That every sect in the province refused them first, and that several now recruit from them.',
         fear: 'That the league is a waiting room - that everyone good enough leaves, which is the arithmetic and nobody says it.',
         lateness: 'It owns no ground and inherits nothing, which it presents as philosophy; the honest version is that being late requires having been early.',
-        disagreement: 'The Road Elders want a fixed seat and a vein. The Bell Keeper holds that the day the league owns ground is the day it starts refusing people.',
+        disagreement: 'The Road Elders want a fixed seat and a vein. The Chime Keeper holds that the day the league owns ground is the day it starts refusing people.',
         wrongAbout: 'It believes the bell practice is two centuries old and originally a signal. The oldest bells are forty years old and the practice was started by one person as a joke about being unwelcome.',
         unitOfValue: 'Favours owed between individuals, tracked by nobody centrally, and defaulted on constantly.',
         production: {
@@ -493,7 +493,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         fear: 'A season in which somebody it taught is used to do something the province cannot overlook, because the Sect has no way at all to answer for one of its own.',
         lateness: 'It found the yard, and the yard was cut for two hundred by somebody who left four of its five nodes dark. The Sect has never asked what the other four were for and has never had anybody who could have found out.',
         disagreement: 'The Yard Elders want the road above the tempering scripture on any terms available, including terms. The Sect Master holds that a house which accepts a book accepts a renewal, and that the day the yard has something to lose is the day it stops taking people who were sent away.',
-        wrongAbout: 'It believes the terraces know it is here and have decided to leave it alone. The Pavilion has no file on it, the Third Sill Court carries the shelf as unheld, and the decision the Sect has read two centuries of restraint into was never taken by anybody.',
+        wrongAbout: 'It believes the terraces know it is here and have decided to leave it alone. The Pavilion has no file on it, the Third Sluice Court carries the shelf as unheld, and the decision the Sect has read two centuries of restraint into was never taken by anybody.',
         unitOfValue: 'Seasons stood in the yard. Nothing here converts into a stone, a favour or a name, because there is nobody above to spend any of them on, and the only currency the Sect has ever kept count of is how many mornings somebody has turned up.',
         production: {
             reliableOrdinal: 15,
@@ -538,13 +538,13 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         practice: 'Nobody sweeps. The floors of the cold hall are left exactly as they are on doctrine, and a visitor who tidies is not corrected but is not admitted again.',
         grievance: 'That the Storm Tyrant Court has raided them twice and the province regards the Frostmirror as the curiosity in that relationship.',
         fear: 'That the ice curriculum is finite - it was dug out, not written, and there is no more glacier to dig.',
-        lateness: 'Twenty-six of forty-four nodes lit; and the curriculum above Rime Disciple is recovered inscription with gaps the Court fills by inference and does not tell disciples it is filling.',
-        disagreement: 'The Rime Disciples want to admit clean-root cultivators under supervision. The Court Sovereign has calculated that this kills about four in five and refuses.',
+        lateness: 'Twenty-six of forty-four nodes lit; and the curriculum above Hoarfrost Disciple is recovered inscription with gaps the Court fills by inference and does not tell disciples it is filling.',
+        disagreement: 'The Hoarfrost Disciples want to admit clean-root cultivators under supervision. The Court Sovereign has calculated that this kills about four in five and refuses.',
         wrongAbout: 'The Court holds that the Mirror lies under the hall by choice. The hall was built over her afterwards, and the Court\'s own founding inscription is ambiguous in a way it does not teach.',
         unitOfValue: 'Cold. Standing is measured in how long a member can hold the hall\'s temperature without shelter, and the figure is posted.',
         production: {
             // 35 -> 36, which is the top of Body Integration and the last rung the
-            // court's own signature manual reaches. The Rime-Heart Stillness Canon
+            // court's own signature manual reaches. The Hoarfrost-Heart Stillness Canon
             // caps at 37, and a house whose signature book runs that far having
             // never produced anybody who finished it read as the catalog
             // contradicting itself rather than as a fact about the house. Both of
@@ -565,7 +565,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         fear: 'Unknown, and the absence is what alarms the other powers: an institution with nothing to lose and everything lit is not a shape anyone can price.',
         lateness: 'They are the one faction that is not late: nine hundred nodes held, nine hundred lit, which nobody else in the world can say and nobody can explain.',
         disagreement: 'Outsiders have recorded exactly one: two Wardens at the gate disagreeing, in numbers, about whether a visitor should be given water. He was.',
-        wrongAbout: 'The world is wrong about them rather than the reverse: every outside account assumes they draw on the root vein, and the Immovable Mountain Temple\'s survey figures show they take nothing from it at all.',
+        wrongAbout: 'The world is wrong about them rather than the reverse: every outside account assumes they draw on the taproot vein, and the Immovable Mountain Temple\'s survey figures show they take nothing from it at all.',
         unitOfValue: 'Nothing tradeable. They neither buy nor sell, accept no fees, and have never been recorded making an exchange of any kind.',
         production: {
             reliableOrdinal: 29, currentCount: 0, peakOrdinal: 36, peakCount: 0, yearsSinceLastPeak: 0,
@@ -615,7 +615,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         fear: 'That the doctrine works and produces something that cannot be argued with afterwards, including about whether it was worth it.',
         lateness: 'Three nodes, all theirs, all portable, and a founding ledger entry whose identifying columns cut themselves - the house cannot establish who founded it.',
         disagreement: 'The Ninth Cut faction hold that cutting should be voluntary and gradual. The Nameless hold that a gradual cut is a bond you are still paying interest on.',
-        wrongAbout: 'They hold that the cut is theirs to choose. The Still Blade Peak, who do it professionally, note that a self-severance takes what is reachable rather than what was chosen, and the Severed do not accept the finding.',
+        wrongAbout: 'They hold that the cut is theirs to choose. The Still Blade Pavilion, who do it professionally, note that a self-severance takes what is reachable rather than what was chosen, and the Severed do not accept the finding.',
         unitOfValue: 'Cuts made, recorded in the house ledger. A member\'s standing is the length of their own entry.',
         production: {
             reliableOrdinal: 24, currentCount: 6, peakOrdinal: 38, peakCount: 1, yearsSinceLastPeak: 600,
@@ -766,7 +766,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         knownFor: {
             outside: 'Villainy. Everybody knows what they sell, everybody says they should be destroyed, and the saying of it is a social obligation.',
             actuallyGoodAt: 'Being busy. Every institution that has publicly called for their destruction has privately used them, and the house is one of the most productive in the catalog.',
-            theGap: 'The denunciation and the commission are performed by the same people, and the Still Blade Peak has built its entire pricing around the fact that neither side will ever mention the other.'
+            theGap: 'The denunciation and the commission are performed by the same people, and the Still Blade Pavilion has built its entire pricing around the fact that neither side will ever mention the other.'
         },
         practice: 'No member gives a name, a face is never seen twice on the same commission, and work is taken and delivered exclusively through third parties who are paid not to remember.',
         grievance: 'That every institution which publicly wants them destroyed has privately used them, and that the Severed get called philosophers for doing it badly to themselves.',
@@ -911,13 +911,13 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Everybody at the quay explains the port by its rate. The rate is the advertisement. What people are actually buying is the certainty that the transaction ends with them walking away holding money, and almost nobody says that out loud because saying it means admitting what happens everywhere else.'
         },
         practice: 'A price given at the rail is held for the length of a tide and not one hour longer, said aloud, in front of whoever is standing there, and written into the book the same minute. The port has never negotiated in a room.',
-        grievance: 'That the Thousand Treasure Pavilion sends buyers to Silver Island, uses the peace the Market pays for, and posts its own auction terms on the quay without contributing a stone to the watch.',
-        fear: 'Becoming worth taking. Every proposal that would make the port larger is heard by the Factors as a proposal to make it a party, and a party has enemies, and enemies is the one thing the Market cannot hold forty acres against.',
+        grievance: 'That the Thousand Relic Pavilion sends buyers to Silver Island, uses the peace the Hall pays for, and posts its own auction terms on the quay without contributing a stone to the watch.',
+        fear: 'Becoming worth taking. Every proposal that would make the port larger is heard by the Factors as a proposal to make it a party, and a party has enemies, and enemies is the one thing the Hall cannot hold forty acres against.',
         lateness: 'Not late at all, and it is the only body in the catalog of which that is true: it inherited nothing, built what it stands in, and has no dark nodes because it has no diagram. Which is also its weakness - there is no ancestor to wake and no gift to spend, so a bad decade ends it.',
-        disagreement: 'Whether to open a second anchorage on the northern crossing. The Market Master says a network is a party and a party gets taken; two Factors say a port that cannot grow is a port waiting for somebody to build a better one.',
+        disagreement: 'Whether to open a second anchorage on the northern crossing. The Barge Master says a network is a party and a party gets taken; two Factors say a port that cannot grow is a port waiting for somebody to build a better one.',
         wrongAbout: 'That the watch is what makes the quay safe. The watch makes the quay safe up to Foundation Establishment, and above that the quay is safe because the people on it are mutually deterred - which means the port\'s peace is not the port\'s achievement and is not the port\'s to keep.',
         unitOfValue:
-            'Turnover. The Market counts what crossed the rail this season and nothing else - not standing, not obligations owed, not who was pleased. It is the only body in the catalog that will take a worse price to keep a party trading, because a party that stops coming is a permanent subtraction from the only figure it keeps.',
+            'Turnover. The Hall counts what crossed the rail this season and nothing else - not standing, not obligations owed, not who was pleased. It is the only body in the catalog that will take a worse price to keep a party trading, because a party that stops coming is a permanent subtraction from the only figure it keeps.',
         production: {
             reliableOrdinal: 13, currentCount: 34, peakOrdinal: 21, peakCount: 1, yearsSinceLastPeak: 22,
             climbingToward: 17, waitingOn: 'access',
@@ -1020,7 +1020,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         highestOrdinal: 41,
         climbedYearsAgo: 380,
         climbedWhere:
-            'The gorge vein beneath the Pavilion itself, worked continuously by one person for the better part of two centuries while the sect around her was an ordinary Third Sill tenant paying an ordinary tribute.',
+            'The gorge vein beneath the Pavilion itself, worked continuously by one person for the better part of two centuries while the sect around her was an ordinary Third Sluice tenant paying an ordinary tribute.',
         ageNote:
             'Late Age throughout, which is the part nobody can explain away. Ru Anjing did not climb in a richer era; she climbed in this one, on a vein a court had already assessed and priced, and every faction that insists the road is closed has to hold her at arms length to keep saying it.',
         whyNobodyHasSince:
@@ -1152,7 +1152,7 @@ export const DORMANT_ARTS: readonly DormantArt[] = [
         evidence:
             'Three voided agreements in its own vault, each with the sworn party named, the witnessing oathwright named, and a marginal note in the oathwright\'s hand recording that the signatory\'s hand moved and the signatory did not. The House does not treat these as disputed. It treats them as the reason the method is in the vault.',
         howTheHouseTalksAboutIt:
-            'Plainly, and slightly too often. The Vermilion Seal Terrace regards holding the one art that makes a witnessed agreement meaningless as the strongest possible argument for its own necessity, and every oathwright can recite what it does. None of them can do it, and the House has never pretended the two facts are related.',
+            'Plainly, and slightly too often. The Vermilion Sigil Terrace regards holding the one art that makes a witnessed agreement meaningless as the strongest possible argument for its own necessity, and every oathwright can recite what it does. None of them can do it, and the House has never pretended the two facts are related.',
         terms:
             'Swear to the House first - a real oath, witnessed, with a penalty clause the House writes - and then ask. It will teach on those terms to almost anybody, because a party bound by an oathwright\'s own clause is the one kind of person it is not afraid to hand this to. What it will not do is teach somebody who has sworn nothing, and that refusal is doctrine rather than caution.'
     },

@@ -185,7 +185,7 @@ export const ANCIENT_ARTS: readonly AncientArt[] = [
         whenTheModernArtWins:
             'Whenever you might one day want to be alone. An ordinary gathering manual at the same rung is slower and asks nothing of you, and the difference in rate stops mattering the first time the other half of your circuit does something you would not have done.',
         whoPractisesIt:
-            'Almost nobody, and the ones who do are almost always siblings or a married pair who understood exactly what they were signing. The clearest surviving instance is two cairns eleven paces apart above Clear River Ford, raised on the same afternoon, in a province that has never asked why the second one was needed.'
+            'Almost nobody, and the ones who do are almost always siblings or a married pair who understood exactly what they were signing. The clearest surviving instance is two cairns eleven paces apart above Clear River Ferry, raised on the same afternoon, in a province that has never asked why the second one was needed.'
     },
     {
         techniqueId: 'hollow-second-body',
@@ -484,9 +484,9 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
         factionId: 'sect-nine-peaks-ascetic-order',
         standing: 'spent_theirs',
         howItIsKnown:
-            'The Order recorded it, in the ordinary way it records everything, in a grant-cycle return that three parties have read since.',
+            'The Sect recorded it, in the ordinary way it records everything, in a grant-cycle return that three parties have read since.',
         whatBecameOfIt:
-            'Given to a Mountain Elder four hundred years ago who was at the top of what she was going to reach and eleven years from the end of her allotted span. She had those years and nine hundred more, and did not advance in any of them. The Order has been a different institution since: it is the only house in the province that has already answered the question of what its one great asset was for, and every decision it has made since has been made by people who know the answer was a person rather than a position.'
+            'Given to a Mountain Elder four hundred years ago who was at the top of what she was going to reach and eleven years from the end of her allotted span. She had those years and nine hundred more, and did not advance in any of them. The Sect has been a different institution since: it is the only house in the province that has already answered the question of what its one great asset was for, and every decision it has made since has been made by people who know the answer was a person rather than a position.'
     },
     {
         factionId: 'house-flowing-light',
@@ -533,10 +533,10 @@ export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
         factionId: 'sect-nine-peaks-ascetic-order',
         techniqueId: 'shut-hour-sealing-field',
         provenanceNote:
-            'Brought back by an Order expedition eleven hundred years ago, along with four jars, which is a figure the Order still has written down.',
+            'Brought back by a Sect expedition eleven hundred years ago, along with four jars, which is a figure the Sect still has written down.',
         stock: 'spent',
         willingToPartWithIt:
-            'Yes, and it has said so twice. The Order will hand the book to anybody who has done it a service worth the trouble, because it watched three of its own stall at the same place with it and does not expect the fourth to do better. What it will not hand over is the empty jars, which it keeps.'
+            'Yes, and it has said so twice. The Sect will hand the book to anybody who has done it a service worth the trouble, because it watched three of its own stall at the same place with it and does not expect the fourth to do better. What it will not hand over is the empty jars, which it keeps.'
     },
     {
         factionId: 'house-immovable-mountain',
@@ -579,7 +579,7 @@ export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
         // and this is a living house's inventory.
         carriesToMastery: 0.85,
         willingToPartWithIt:
-            'It has never acknowledged holding either, and the only reason anybody suspects is that a sealed field was raised eleven years ago in a place the Still Blade Peak had been working, and four separate accounts of it disagree about everything except that it happened.'
+            'It has never acknowledged holding either, and the only reason anybody suspects is that a sealed field was raised eleven years ago in a place the Still Blade Pavilion had been working, and four separate accounts of it disagree about everything except that it happened.'
     }
 ];
 
@@ -613,7 +613,7 @@ export const STOCKED_INHERITANCES: readonly StockedInheritance[] = [
     {
         siteId: 'grave-shen-guyi',
         leftBy:
-            'Shen Guyi, who reached the end of Tribulation Transcendence in the Third Sill\'s service, spent his last eleven years divesting in a recorded order exactly the way somebody preparing to cross divests, and then did not attempt it. He sat, and old age took him. The eleven years of divestment are the only reason this exists: a man who spends a decade putting things down deliberately has time to decide who gets what and how much of it.',
+            'Shen Guyi, who reached the end of Tribulation Transcendence in the Third Sluice\'s service, spent his last eleven years divesting in a recorded order exactly the way somebody preparing to cross divests, and then did not attempt it. He sat, and old age took him. The eleven years of divestment are the only reason this exists: a man who spends a decade putting things down deliberately has time to decide who gets what and how much of it.',
         techniqueId: 'shut-hour-sealing-field',
         upkeepHerbId: 'herb-kingfisher-lacquer-fern',
         carriesToMastery: 0.7,

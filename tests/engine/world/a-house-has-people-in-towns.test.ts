@@ -164,7 +164,7 @@ describe('a house stations people outside itself', () => {
         // where you stand is right and so is going home after being entered
         // (`a-recruit-is-given-their-lamp-at-the-house.ts`). Found on `town-b`
         // once being held back became a reason to leave at any rung: Ning Ciyan
-        // left the Cold Sword Sect for a dao ground in year 196, was taken back
+        // left the Unadorned Sword Sect for a dao ground in year 196, was taken back
         // onto Orchid Court's roll there, and was home by 199. What this pins is
         // that a posting strands nobody, which a departure is not.
         let kept = 0;

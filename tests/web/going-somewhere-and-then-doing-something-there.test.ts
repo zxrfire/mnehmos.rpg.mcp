@@ -6,7 +6,7 @@
  * and the turn answered:
  *
  *     Mo Rongzhi is speaking to no one in particular... He says that Cao Peixue
- *     died at Green Water City some time ago...
+ *     died at Emerald Water City some time ago...
  *
  *     You remain where you are. The market is still a distance away, and no
  *     steps were taken toward it.
@@ -178,14 +178,14 @@ describe('going somewhere and then doing something there', () => {
     it('does the second thing where the first one left you', async () => {
         const { game } = await playing([
             STEPS(
-                { action: 'move', intent: 'travel', target: 'Cold Peak', said: 'I go to Cold Peak' },
+                { action: 'move', intent: 'travel', target: 'Moraine Gate', said: 'I go to Moraine Gate' },
                 { action: 'look', said: 'look around' }
             )
         ]);
         await game.newRun('Probe');
         const before = game.state().cultivator.location;
 
-        const turn = await game.act('I go to Cold Peak and then look around');
+        const turn = await game.act('I go to Moraine Gate and then look around');
 
         expect(ranInOrder(turn)).toEqual(['move', 'look']);
         const after = game.state().cultivator.location;

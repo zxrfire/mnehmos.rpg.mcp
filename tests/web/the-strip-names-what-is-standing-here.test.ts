@@ -37,7 +37,7 @@
  * every settlement in the catalog, on pinned worlds, so the number is exact
  * for the worlds it names rather than an estimate of them.
  *
- * ── What (1) caught, in Green Water City on `strip-a` ────────────────────
+ * ── What (1) caught, in Emerald Water City on `strip-a` ────────────────────
  *
  *     "I buy a A month of rations"     said to route to `buy`, routed to
  *                                      `provision`

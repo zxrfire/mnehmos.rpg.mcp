@@ -31,7 +31,7 @@
  * thousand years is, absent any other information, about as likely to fail in a
  * given year as one in four thousand. That is not a law of nature, it is the
  * only honest prior available, and it puts the Shrinking Earth Pavilion at five thousand
- * years and the Thousand Treasure Pavilion - a commercial house with no
+ * years and the Thousand Relic Pavilion - a commercial house with no
  * founding date in the catalog at all - a very long way apart, which is the
  * distinction the player is being asked to make.
  *

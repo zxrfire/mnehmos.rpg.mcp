@@ -198,7 +198,7 @@ Intents: `travel`, `flee`, `approach`, `enter`, `follow`.
 
 ### `ride`
 
-go somewhere ON something: a mount, a drawn carriage, a spirit boat, or flight on the cultivator's own blade. "target" is the destination; "topic" names what is under them when the player said. The engine picks what actually suits the road out of what they can put under them, charges the walking days the catalog states, and says what the arrival reads as. A carriage or a boat they do not own is a seat bought at the counter here, where one runs.
+go somewhere ON something: a mount, a drawn carriage, a spirit skiff, or flight on the cultivator's own blade. "target" is the destination; "topic" names what is under them when the player said. The engine picks what actually suits the road out of what they can put under them, charges the walking days the catalog states, and says what the arrival reads as. A carriage or a boat they do not own is a seat bought at the counter here, where one runs.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'ride'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.ride` · the deterministic parser reaches it · spends in-world time.
 
@@ -214,7 +214,7 @@ Takes `target`.
 
 ### `passage`
 
-a counter that sells a place on something going somewhere: a ship from a landing, a carriage from a station, or the Shrinking Earth Pavilion's span. "intent" is "board" to read what runs from here and what each costs, "buy" for a seat, or "hire" for a whole carriage; "target" is where to; "topic" is "ship" or "carriage" (with "shod" for the better carriage) when the sentence named one. A ship is on water; a "boat" the player does not own, at a landing, is the ship. "I take the ship to X", "I buy a ticket to X", "I book a carriage to X", "what ships are there". Reading the board is free. A seat is fed on board and is a roof; bandits mostly watch an escort go by.
+a counter that sells a place on something going somewhere: a ship from a landing, a carriage from a station, or the Shrinking Earth Pavilion's span. "intent" is "board" to read what runs from here and what each costs, "buy" for a seat, or "hire" for a whole carriage; "target" is where to; "topic" is "ship" or "carriage" (with "iron-rimmed" for the better carriage) when the sentence named one. A ship is on water; a "boat" the player does not own, at a landing, is the ship. "I take the ship to X", "I buy a ticket to X", "I book a carriage to X", "what ships are there". Reading the board is free. A seat is fed on board and is a roof; bandits mostly watch an escort go by.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'passage'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.passage` · the deterministic parser reaches it · spends in-world time.
 
@@ -298,7 +298,7 @@ Takes `target`.
 
 ### `craft`
 
-build a thing at a bench out of material a hunt brought back - a carriage or a spirit boat. "target" names what is being built; naming nothing carries on with whatever is already on the stocks, or lists the bills if there is nothing. "days" is how long they said they would spend at it. NOT refine, which is the cauldron and wants a named herb for a named pill; a bill wants a quantity at a grade and does not care which animal it came off. Saying they abandon or scrap what is on the stocks comes here too, and clears it. It spends days and it can fail, and a failure keeps the materials. Reinforcing a door of their own with a beast part they carry is here too - "target" is the door and what it is worked with, as in "the cave door with the hide I took" - and an inn's or a house's door is not theirs to reinforce.
+build a thing at a bench out of material a hunt brought back - a carriage or a spirit skiff. "target" names what is being built; naming nothing carries on with whatever is already on the stocks, or lists the bills if there is nothing. "days" is how long they said they would spend at it. NOT refine, which is the cauldron and wants a named herb for a named pill; a bill wants a quantity at a grade and does not care which animal it came off. Saying they abandon or scrap what is on the stocks comes here too, and clears it. It spends days and it can fail, and a failure keeps the materials. Reinforcing a door of their own with a beast part they carry is here too - "target" is the door and what it is worked with, as in "the cave door with the hide I took" - and an inn's or a house's door is not theirs to reinforce.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'craft'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 

@@ -832,7 +832,7 @@ describe('faction distinctness pass', () => {
         }
     });
 
-    it('makes the Hollow Court the one house whose two metrics agree', () => {
+    it('makes the Empyrean Court the one house whose two metrics agree', () => {
         // The reverse of what this used to assert, and the reversal is the
         // point. Everywhere else in the catalog the routine figure sits far
         // under the strongest member, because a house's best person is an
@@ -1032,7 +1032,7 @@ describe('survivors of a richer age', () => {
         // 43 rather than 41. The ceiling moved when the two unnameable apexes
         // acquired sect rows and brought their own provenance with them, and
         // the Survey's forty-three is now the highest recorded climb in the
-        // catalog. The two above it - the Hollow Court's seats - are in
+        // catalog. The two above it - the Empyrean Court's seats - are in
         // `PROVENANCE_PENDING` and deliberately hold no record.
         expect(survivorsOfARicherAge(43)).toEqual([]);
     });

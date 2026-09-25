@@ -40,7 +40,7 @@
  *                 belief that could decay: the occupants are individually
  *                 stronger than anything that could be sent, everyone has
  *                 done the arithmetic, and nobody raises it. This is the
- *                 Hollow Court, and it is the only faction in the world that
+ *                 Empyrean Court, and it is the only faction in the world that
  *                 sits on the vein it sits on because nothing can move it.
  *
  *   unbacked      holds no vein from anyone, answers to nobody, and pays for
@@ -87,7 +87,7 @@
  *
  * THE RECONTEXTUALISATION
  * -----------------------
- * The Kiln Wardens are already in the sect catalog as an eccentric local order
+ * The Tripod Wardens are already in the sect catalog as an eccentric local order
  * that guards the deep vein at the world's root, draws nothing from it, lights
  * every node it holds and does not recruit. They are not eccentric and they are
  * not local. They are a court, stationed, and when a player finally learns that
@@ -303,7 +303,7 @@ export type Posting = z.infer<typeof PostingSchema>;
 /**
  * WHAT USED TO BE HERE: `LineageDisputeSchema`, and the two accounts it held.
  *
- * The Kiln Court and the Deeproot Court each carried a partisan record
+ * The Tripod Court and the Deeproot Court each carried a partisan record
  * arguing that it was the real house and the other was not, with a field on
  * each saying no instrument anywhere settles it. The shape presented the two
  * as one institution with a disagreement inside it, and they are not that.
@@ -454,7 +454,7 @@ export const ParentageSchema = z.object({
      * THIS WAS `holdsVein: boolean` AND THE BOOLEAN WAS THE NEXT BUG. Yes or no
      * gave every holder in the world one identical vein, so the Crimson Abyss
      * Fortress on "the least valuable grant in the province" drew what the
-     * Hollow Court draws off "the richest vein anyone has ever surveyed", and
+     * Empyrean Court draws off "the richest vein anyone has ever surveyed", and
      * out-earned the court that granted it. `CatalogFaction.holdsVein` still
      * exists and is derived from this field, so nothing that only wants yes or
      * no had to change and there is no second copy to drift.
@@ -875,7 +875,7 @@ export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 //
 // Two consequences worth writing down, because both look like errors:
 //
-//   - THE TITLES DO NOT SORT. The Sill Courier stands four realms below the
+//   - THE TITLES DO NOT SORT. The Sluice Courier stands four realms below the
 //     Keeper of the Eleven and is not junior to her; she carries the grants and
 //     he apportions them, and neither office contains the other. A court roster
 //     read as a ladder reads as nonsense, which is the correct reading.
@@ -883,12 +883,12 @@ export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 //   - EVERY OFFICER HOLDS TWO STANDINGS. The court office is what they do, and
 //     `apexRank` is where they stand inside the institution that posted them -
 //     a title from that apex's own `ranks`. That is what a posting means. The
-//     Earth Vein Tower's ladder says outright that Sill-Sworn is an appointment to a
+//     Earth Vein Tower's ladder says outright that Sluice-Sworn is an appointment to a
 //     court rather than an honour, and this field is the other end of that
 //     sentence: the people in these rosters are Survey and Myriad Course Hall staff on a
 //     posting, not a local body that grew where it stands.
 //
-// The Kiln is the case that proves the rule and is written to. Its offices are
+// The Tripod is the case that proves the rule and is written to. Its offices are
 // the Warden ranks the province has been looking at for nine hundred years,
 // because the Wardens ARE the posting; the reveal is not a new set of titles,
 // it is the second column. It reveals less than it did, because half the people
@@ -954,11 +954,11 @@ export const CourtSchema = z.object({
      * The prefectures whose holders hold from it, by id, from `regions.ts`.
      *
      * `grantsInRegionId` said which province a court's clients are in and
-     * nothing finer, so "the Third Sill grants in the Jade Gorge" was true of
+     * nothing finer, so "the Third Sluice grants in the Jade Gorge" was true of
      * four courts at once and named no ground. This is the ground. A court
      * with an empty list is administering something that is not a tenancy -
-     * the Kiln administers a datum nobody draws on, which is why its list is
-     * empty and why that emptiness is the whole of what the Kiln is.
+     * the Tripod administers a datum nobody draws on, which is why its list is
+     * empty and why that emptiness is the whole of what the Tripod is.
      */
     grantsInPrefectureIds: z.array(z.string()),
     /** A faction in the sect catalog that IS this court, where one is. */
@@ -974,7 +974,7 @@ export const CourtSchema = z.object({
      * always having done so. On one court, and it is not a transfer.
      *
      * NO COURT IN THIS CATALOG HAS EVER CHANGED PATRONS. This doc used to say
-     * one had, and named the Third Sill, which has answered the Myriad Course Hall for
+     * one had, and named the Third Sluice, which has answered the Myriad Course Hall for
      * longer than either apex keeps a record of - inside a province the Deep
      * Survey holds, which neither has ever explained or raised. The body that
      * did move is the Deeproot Court, and it is a POSTING rather than a court: you
@@ -999,7 +999,7 @@ export const CourtSchema = z.object({
      * is a court read wrongly.
      *
      * Two bodies are the exception and they are the exception on purpose: the
-     * Kiln Court and the Deeproot Court are ORGANISATIONS WITH POSTINGS. They
+     * Tripod Court and the Deeproot Court are ORGANISATIONS WITH POSTINGS. They
      * take nobody. Somebody stands there because they were appointed - by the
      * apex above, or sent by a sect below that is under that apex or friendly
      * to it - and that is the whole of the intake.
@@ -1019,8 +1019,8 @@ export const CourtSchema = z.object({
      *
      * `leaderTitleOfCourt` derives "the Ninth Lord" from "The Ninth Face
      * Court", which is right for a court the apex posted and named. It is
-     * wrong for one that grew and was re-described afterwards: the Kiln has
-     * called its senior a Keeper of the Kiln for nine hundred years and did
+     * wrong for one that grew and was re-described afterwards: the Tripod has
+     * called its senior a Keeper of the Tripod for nine hundred years and did
      * not stop when the Survey started calling the posting something else.
      * Set this where the house names its own; leave it out where the apex does.
      */
@@ -1105,7 +1105,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 // and this file argued for it; that was overturned. Each has a sect row, a roll
 // and a shelf now, and what separates them is `startingAwareness`: one can be
 // named by anybody and two cannot, so the door is ordinary and finding it is
-// not. The bodies that genuinely take nobody are the two postings - the Kiln
+// not. The bodies that genuinely take nobody are the two postings - the Tripod
 // Court and the Deeproot Court - and they are not sects and never were.
 //
 // Two neutrals, and the difference between their neutralities is the sharpest
@@ -1124,7 +1124,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         factionId: 'sect-earth-vein-tower',
         name: 'The Earth Vein Tower',
         traditionId: 'tradition-drawn',
-        // Tribulation Transcendence Late. Above the Hollow Court, which is the
+        // Tribulation Transcendence Late. Above the Empyrean Court, which is the
         // ceiling of the visible world, and above every court and tenant beneath
         // it - the Survey can end a four-hundred-year sect by declining to sign,
         // and this is the number that says the sect could not answer.
@@ -1199,13 +1199,13 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 theBind:
                     'Their single greatest asset is the one thing they cannot take anywhere, and the reason is not grand. They stay put because leaving means being robbed. The roll does not answer it: a house of surveyors, clerks and court postings is a great many people and not one of them is a garrison, and the ladder tops out at thirty-nine below her. They could settle any dispute in the world by attending it, and would come back to a lighter building - so the Lamp has never left the chamber, and the Survey has never once turned up to anything in person.',
                 whoWouldTry:
-                    'Not an apex, which is what makes it a real risk rather than a theoretical one. An ordinary ambitious sect with a formation master, a decent crew and patience - the Ashen Forge Clan could field one, the Crimson Abyss Fortress would pay for one, and there are eleven institutions in the province with the means and no standing to lose. None of them would face the Survey. All of them can count.',
+                    'Not an apex, which is what makes it a real risk rather than a theoretical one. An ordinary ambitious sect with a formation master, a decent crew and patience - the Ashen Anvil Clan could field one, the Crimson Abyss Fortress would pay for one, and there are eleven institutions in the province with the means and no standing to lose. None of them would face the Survey. All of them can count.',
                 deferenceLogic:
                     'It is the deference border applied to an apex. The Survey is not defended in the sense of being hard to enter; it is defended by a belief about what would happen to anybody who tried, held by everybody who might otherwise. That belief is worth exactly what the last test was worth, and there has not been a test - so nobody knows the real value, including the Survey. Its whole posture, the couriers who do not wait, the arbitration nobody attends, the rulings that cannot be appealed, exists so that the question is never put. The institution is built to make sure nobody ever needs to find out whether the one under the vault would come out, and the honest answer is that she would rather not, and they cannot afford to be asked. Somebody has certainly thought about this. Somebody may already be counting the days the vault has gone unattended.',
                 nearlyDid: {
                     yearsAgo: 240,
-                    what: 'Two arterial veins were being worked simultaneously by parties the Survey could not identify, its couriers were being turned back at three borders, and a Sill ruling was openly ignored for the first time in the institutional record. It was the closest the arterial system has come to being taken out of Survey administration, and everybody involved knew it.',
-                    proposedBy: 'The Surveyor of the second arterial, seconded by the Sill-Sworn at the Kiln, in writing, in a minute that still exists - which is the only occasion in the record on which the Kiln has been a party to anything the Survey was deciding.',
+                    what: 'Two arterial veins were being worked simultaneously by parties the Survey could not identify, its couriers were being turned back at three borders, and a Sluice ruling was openly ignored for the first time in the institutional record. It was the closest the arterial system has come to being taken out of Survey administration, and everybody involved knew it.',
+                    proposedBy: 'The Surveyor of the second arterial, seconded by the Sluice-Sworn at the Tripod, in writing, in a minute that still exists - which is the only occasion in the record on which the Tripod has been a party to anything the Survey was deciding.',
                     theArgumentThatStopped:
                         'The Surveyor of the fourth arterial asked who was sitting on the vault while they did this. Nobody had an answer, because there is not one: the roll is long and there is one person on it who could hold that room, she was the person they proposed to send, and the building she would be leaving contains everything the institution has ever been given. The minute records the question and no reply, and then the proposal being withdrawn by the party that made it. It is four lines long and it is the whole of the Survey self-understanding: they are not an army, they are a very large office with one guard.',
                     outcome: 'The Lamp stayed in the chamber. The Survey lost the two arterials for nineteen years, recovered them by ordinary administration and outliving the parties, and has never revisited the question. The Surveyor who proposed it was not censured and served another two hundred years.'
@@ -1224,10 +1224,10 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         courtIds: ['court-kiln'],
         ranks: [
             { title: 'Unplaced', decidedBy: 'arrival, and nothing else. Everyone begins here and most people stay.', note: 'The class that contains almost everybody, at every realm from Qi Condensation to Deity Transformation.' },
-            { title: 'Marked', decidedBy: 'a sponsor willing to attach their own standing to yours', note: 'The first mark is somebody else\'s risk taken on your behalf, and it can be withdrawn.' },
+            { title: 'Inscribed', decidedBy: 'a sponsor willing to attach their own standing to yours', note: 'The first mark is somebody else\'s risk taken on your behalf, and it can be withdrawn.' },
             { title: 'Second Mark', decidedBy: 'results: surveys completed, grants administered, errors not made', note: 'Where a competent person spends sixty years without embarrassment.' },
             { title: 'First Mark', decidedBy: 'service of a kind the Survey does not describe in writing', note: 'First Marks give instruction to Second Marks regardless of the realms involved, and this is not remarked upon.' },
-            { title: 'Sill-Sworn', decidedBy: 'appointment to a court, which is a posting rather than an honour', note: 'The rank at which realm finally begins to matter again, because the work begins to require it.' },
+            { title: 'Sluice-Sworn', decidedBy: 'appointment to a court, which is a posting rather than an honour', note: 'The rank at which realm finally begins to matter again, because the work begins to require it.' },
             { title: 'Surveyor', decidedBy: 'the previous Surveyor of that arterial, and nothing else', note: 'Four of them. One per arterial vein.' },
             // The seat had no rung for four hundred years because nobody was
             // reading the ladder as a ladder anybody stood on. It is the top of
@@ -1411,7 +1411,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             intact: true
         },
         holds:
-            'The gorge vein at Green Water City and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
+            'The gorge vein at Emerald Water City and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
         // No province, and the emptiness is `heritage: 'recent'` written as
         // territory. A province is something a house accumulates over an age.
         holdsProvinceIds: [],
@@ -1459,8 +1459,8 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
 export const COURTS: readonly Court[] = [
     {
         id: 'court-third-sill',
-        name: 'The Third Sill Court',
-        // Not transferred, and this comment used to say it was. The Third Sill
+        name: 'The Third Sluice Court',
+        // Not transferred, and this comment used to say it was. The Third Sluice
         // has administered the third arterial under the Myriad Course Hall for longer
         // than either apex keeps a record of, inside a province the Earth Vein Tower
         // holds - which is an anomaly nobody has ever raised and is the closest
@@ -1472,9 +1472,9 @@ export const COURTS: readonly Court[] = [
         // The defection this used to describe was real and belongs to a
         // different body: the Deeproot Court, which walked, and which is the
         // only administration in the catalog that has ever changed patrons.
-        // Two bodies with "Sill" in the name under two different apexes is a
+        // Two bodies with "Sluice" in the name under two different apexes is a
         // trap and it has already caught somebody - anything about the ground,
-        // the datum or the nodes means the Kiln; anything about the third
+        // the datum or the nodes means the Tripod; anything about the third
         // arterial and the grants hanging off it means this one.
         apexId: 'apex-myriad-course-hall',
         // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
@@ -1486,13 +1486,13 @@ export const COURTS: readonly Court[] = [
             ordinal: 44,
             yearsAgo: 160,
             end: 'declined',
-            note: 'Reached the end of Tribulation Transcendence in the Sill\'s own service and spent his last eleven years divesting, exactly the way somebody preparing to cross divests: artifacts, manuals, stones, given away in a recorded order. Then he did not attempt it. He sat, and old age took him at a rung nobody has stood on in the Jade Gorge since. He never said why, and the one time he was asked he said that he had thought about it. The Sill has been a court for a hundred and sixty years rather than something else because of that decision, and does not discuss it.'
+            note: 'Reached the end of Tribulation Transcendence in the Sluice\'s own service and spent his last eleven years divesting, exactly the way somebody preparing to cross divests: artifacts, manuals, stones, given away in a recorded order. Then he did not attempt it. He sat, and old age took him at a rung nobody has stood on in the Jade Gorge since. He never said why, and the one time he was asked he said that he had thought about it. The Sluice has been a court for a hundred and sixty years rather than something else because of that decision, and does not discuss it.'
         },
         administers: 'The third arterial vein, which the eleven surveyed veins of the Jade Gorge branch from.',
         grantsInRegionId: 'region-low-fall',
         // Two basins and the sects beneath them. The Gorge Head is NOT
-        // here and is still on the Sill's own book: the page was never struck
-        // and the ground has not been the Sill's for three hundred and eighty
+        // here and is still on the Sluice's own book: the page was never struck
+        // and the ground has not been the Sluice's for three hundred and eighty
         // years, which is the difference between a grant book and a map.
         grantsInPrefectureIds: [
             'prefecture-nine-peaks',
@@ -1500,7 +1500,7 @@ export const COURTS: readonly Court[] = [
         ],
         embodiedByFactionId: null,
         officesNote:
-            'Four things happen to a grant and the Sill has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Earth Vein Tower the same five people are a Surveyor, a Sill-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
+            'Four things happen to a grant and the Sluice has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Earth Vein Tower the same five people are a Surveyor, a Sluice-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
         roster: [
             {
                 id: 'court-officer-ruan-kezhen',
@@ -1511,17 +1511,17 @@ export const COURTS: readonly Court[] = [
                 apexRank: 'Course Keeper',
                 wants: 'to hand the third arterial on to whoever comes next without having been made to answer the Frostmirror in person',
                 fears: 'a question that can only be settled by attending it',
-                detail: 'Reads every draft his Sill-Sworn puts in front of him, signs about two thirds, and returns the rest with a single word in the margin and no explanation of it.'
+                detail: 'Reads every draft his Sluice-Sworn puts in front of him, signs about two thirds, and returns the rest with a single word in the margin and no explanation of it.'
             },
             {
                 id: 'court-officer-bai-zhensu',
                 name: 'Bai Zhensu',
-                title: 'the Sill-Sworn',
+                title: 'the Sluice-Sworn',
                 office: 'Drafts everything the Third Lord signs, and keeps the twelve-year book in which every grant in the province has a page and a date.',
                 realmOrdinal: 33,
                 apexRank: 'Set Hand',
                 wants: 'the Frostmirror correspondence answered, in writing, by somebody',
-                fears: 'that the correct answer is the one the Sill is giving, and that she has been wrong about it for eleven years',
+                fears: 'that the correct answer is the one the Sluice is giving, and that she has been wrong about it for eleven years',
                 detail: 'Seconded the proposal to send the Lamp out of its chamber two hundred and forty years ago, in writing, and has drafted four replies to the Frostmirror Court in the last eleven and filed all four unsent.'
             },
             {
@@ -1549,8 +1549,8 @@ export const COURTS: readonly Court[] = [
             {
                 id: 'court-officer-yin-cha',
                 name: 'Yin Cha',
-                title: 'the Sill Courier',
-                office: 'Carries the grants to the eleven gates, hands them over, and does not stay for an answer. She is the only part of the Third Sill anybody in the province has ever seen.',
+                title: 'the Sluice Courier',
+                office: 'Carries the grants to the eleven gates, hands them over, and does not stay for an answer. She is the only part of the Third Sluice anybody in the province has ever seen.',
                 realmOrdinal: 21,
                 apexRank: 'Face Master',
                 wants: 'to be allowed to take the chair once',
@@ -1560,32 +1560,32 @@ export const COURTS: readonly Court[] = [
         ],
         startingAwareness: 'unaware',
         description:
-            'The office the Jade Gorge actually holds from, though no sect in the province would put it that way and most would deny the framing. Grants are issued in writing, renewed on a twelve-year cycle, and delivered by a courier who does not stay for an answer. The Sill has never been to the province. It has never needed to.'
+            'The office the Jade Gorge actually holds from, though no sect in the province would put it that way and most would deny the framing. Grants are issued in writing, renewed on a twelve-year cycle, and delivered by a courier who does not stay for an answer. The Sluice has never been to the province. It has never needed to.'
     },
     {
         id: 'court-kiln',
         // The id used to be `court-root-sill`, which was the name the OTHER
         // half walked off with. The row was calling itself by its sibling's
         // name in its own id and in its own officesNote while being named the
-        // Kiln Court, which is the schism written down wrong rather than the
+        // Tripod Court, which is the schism written down wrong rather than the
         // schism.
         //
         // The old name, kept by the half that stayed. For nine hundred years
         // this court had two of them - the Survey called it the Deeproot Court and
-        // the province called it the Kiln - and nobody had to choose, because
-        // a Keeper of the Kiln was a Sill-Sworn of the Earth Vein Tower and both
+        // the province called it the Tripod - and nobody had to choose, because
+        // a Keeper of the Tripod was a Sluice-Sworn of the Earth Vein Tower and both
         // sentences described one person. When the house split, each half took
         // one of the names, and the one that kept the ground kept the older.
         // They are two institutions now and have been since, with no
         // correspondence in either direction. What the other half kept is on
         // its own entry in `FACTION_PARENTAGE['sect-deeproot-court']`.
-        name: 'The Kiln Court',
+        name: 'The Tripod Court',
         apexId: 'apex-earth-vein-tower',
         powerOrdinal: 37,
         highWaterMark: null,
         administers: 'The datum itself: the deep vein at the world\'s root that the arterial system is measured from.',
         grantsInRegionId: 'region-low-fall',
-        // Empty, and the emptiness is the Kiln. It issues no grants, has no
+        // Empty, and the emptiness is the Tripod. It issues no grants, has no
         // tenants and holds no basin: a datum, nine hundred lit nodes and a
         // perimeter. Everything the province finds inexplicable about the
         // Wardens is this array being empty.
@@ -1594,7 +1594,7 @@ export const COURTS: readonly Court[] = [
         // `sect-deeproot-court`, because they were the same people. They are two
         // bodies now and the join would be a lie.
         embodiedByFactionId: null,
-        leaderTitle: 'Keeper of the Kiln',
+        leaderTitle: 'Keeper of the Tripod',
         // Nobody joins it. One of exactly two bodies in the world that work
         // this way, and the reason the reposting was a thing the Survey could
         // do at all - see `PostingSchema`.
@@ -1606,9 +1606,9 @@ export const COURTS: readonly Court[] = [
             whatItIsWorthFromAbove:
                 'A mark the other apexes read. This is the part that surprises people, because an apex\'s chosen wants for nothing: they have the best books in the world in front of them and an elder at the last realm to open them. What they cannot get inside their own house is a credential anybody outside it recognises, and a posting on the datum is one of the very few things all three recognise, because all three are entangled in the arrangement that produced it. So the top of the world competes for these seats against people being sent up from a hill village, and both parties know it.',
             andAfterwards:
-                'They go back, and they go back higher. A Kiln term is read - by the Survey, which posted them, and by every house that has ever wanted the Survey to read something of theirs - and the reading is the whole value: a term that nobody looked at afterwards would make this a career rather than a step, and the Kiln has never been a career for anybody except the Keeper. What the Ward has never had to think about, and reads as vindication, is that a Kiln term is read without qualification: this is the body standing on the datum, and nothing about how the term is read changed when the other half left.',
+                'They go back, and they go back higher. A Tripod term is read - by the Survey, which posted them, and by every house that has ever wanted the Survey to read something of theirs - and the reading is the whole value: a term that nobody looked at afterwards would make this a career rather than a step, and the Tripod has never been a career for anybody except the Keeper. What the Ward has never had to think about, and reads as vindication, is that a Tripod term is read without qualification: this is the body standing on the datum, and nothing about how the term is read changed when the other half left.',
             andBeingPassedOver:
-                'Happens far more often than being chosen, and to people who had every reason to expect it. The Kiln takes four. There is no list of the ones who were considered and there has never been an explanation given to any of them, because the Survey does not explain and the nominating houses cannot say what they were not told - so what a passed-over candidate has is a certainty they cannot check, held for a lifetime, about a decision nobody will confirm was ever taken. And then they watch the one who went come back ahead of them.',
+                'Happens far more often than being chosen, and to people who had every reason to expect it. The Tripod takes four. There is no list of the ones who were considered and there has never been an explanation given to any of them, because the Survey does not explain and the nominating houses cannot say what they were not told - so what a passed-over candidate has is a certainty they cannot check, held for a lifetime, about a decision nobody will confirm was ever taken. And then they watch the one who went come back ahead of them.',
             andWhatTheTermIsWorthAfterwards:
                 'Precedence, not height. A returning Warden comes back at exactly the rung they left at - a decade of walking a node rota moves nobody up a ladder - and comes back ahead of every chosen who stayed, because when the next seat opens they are the one who went and did the work somewhere that was not comfortable while the others were at home being promising. Nobody grants that. It is simply what everybody senior enough to promote them already thinks, and it holds precisely because the posting is unglamorous from the inside: a body with no intake, staffed by other people\'s decisions, doing an assigned job on ground it does not own. Going is a way of being useful that cannot be faked. For an apex\'s chosen, precedence is the one thing their own house cannot simply hand them, which is why the favoured compete for a seat at a gate that turns four thousand people away.'
         },
@@ -1624,15 +1624,15 @@ export const COURTS: readonly Court[] = [
         // relationship in `faction-relationships.ts` rather than two
         // irreconcilable claims about who is real.
         officesNote:
-            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Earth Vein Tower, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Myriad Course Hall took them in. Ji Wanluo is Keeper of the Kiln, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Kiln has no dealings with.',
+            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Tripod issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Tripod was a Sluice-Sworn of the Earth Vein Tower, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Myriad Course Hall took them in. Ji Wanluo is Keeper of the Tripod, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Tripod has no dealings with.',
         roster: [
             {
                 id: 'court-officer-ji-wanluo',
                 name: 'Ji Wanluo',
-                title: 'Keeper of the Kiln',
+                title: 'Keeper of the Tripod',
                 office: 'Holds the datum, reports one figure upward once a year, and answers nothing downward. The figure has not changed in her tenure and she submits it anyway.',
                 realmOrdinal: 37,
-                apexRank: 'Sill-Sworn',
+                apexRank: 'Sluice-Sworn',
                 wants: 'nothing she has ever stated to anyone outside the perimeter',
                 fears: 'the figure changing',
                 detail: 'Holds the original posting order, which is nine hundred years old, names the first four Wardens, and is the only document at the kiln that is not a number.'
@@ -1673,7 +1673,7 @@ export const COURTS: readonly Court[] = [
         ],
         startingAwareness: 'unaware',
         description:
-            'The court nobody in the province has recognised as a court, and which the province has called the Kiln Wardens for nine hundred years without being corrected. The Kiln Court holds every node lit, draw nothing from the richest ground in the world, make no ancestral claim, refuse all applicants, have no grievance in nine hundred years of outside record, and have never been observed making an exchange of any kind - because they are not a faction with strange habits. They are staff, posted, doing an assigned job on someone else\'s datum, and every single thing the province finds inexplicable about them is explained by that sentence.'
+            'The court nobody in the province has recognised as a court, and which the province has called the Tripod Wardens for nine hundred years without being corrected. The Tripod Court holds every node lit, draw nothing from the richest ground in the world, make no ancestral claim, refuse all applicants, have no grievance in nine hundred years of outside record, and have never been observed making an exchange of any kind - because they are not a faction with strange habits. They are staff, posted, doing an assigned job on someone else\'s datum, and every single thing the province finds inexplicable about them is explained by that sentence.'
     },
     {
         id: 'court-azure-mist',
@@ -1709,13 +1709,13 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-pei-hanzhang',
                 name: 'Pei Hanzhang',
                 // The embodied court keeps its sect's own top rank, the same
-                // way the Kiln does: the province has been reading the real
+                // way the Tripod does: the province has been reading the real
                 // title for three centuries without knowing it was one.
                 //
                 // AND THE RANK MOVED, SO THIS MOVES WITH IT. The Mist is a
                 // subsidiary sect rather than an arm of the Pavilion, so its
                 // head is its own head: `warden` is an officer's word - a post
-                // held on behalf of somebody, which is what the Kiln and
+                // held on behalf of somebody, which is what the Tripod and
                 // Deeproot are - and it said the opposite of what this house is.
                 // The three other offices below keep their own names, which were
                 // never titles of the head.
@@ -1807,7 +1807,7 @@ export const COURTS: readonly Court[] = [
             {
                 id: 'court-officer-chi-yuanru',
                 name: 'Chi Yuanru',
-                title: 'Assessor of the Four Faces',
+                title: 'Assessor of the Distant Faces',
                 office: 'Rates driven ground across the four provinces the Buddha Precipice has never heard named, and decides which faces enter the course at all.',
                 realmOrdinal: 33,
                 apexRank: 'Face Master',
@@ -1829,13 +1829,13 @@ export const COURTS: readonly Court[] = [
             {
                 id: 'court-officer-shao-kang',
                 name: 'Shao Kang',
-                title: 'the Twenty-Year Hand',
-                office: 'Walks into Iron Ridge once every twenty years, countersigns the Clearwater Ward grant book, adjusts the schedule, and is gone inside a day.',
+                title: 'the Generation Hand',
+                office: 'Walks into Iron Crest once every twenty years, countersigns the Clearwater Ward grant book, adjusts the schedule, and is gone inside a day.',
                 realmOrdinal: 26,
                 apexRank: 'Set Hand',
                 wants: 'to be asked once what the countersignature is for',
                 fears: 'nothing about the errand, which he has now run four times',
-                detail: 'Has never been offered lodging in Iron Ridge, has never corrected a Weir Master who described the countersignature as an internal formality of the Court\'s own devising, and has written a note about it in the margin of the schedule on all four visits.'
+                detail: 'Has never been offered lodging in Iron Crest, has never corrected a Weir Master who described the countersignature as an internal formality of the Court\'s own devising, and has written a note about it in the margin of the schedule on all four visits.'
             }
         ],
         startingAwareness: 'unaware',
@@ -1898,7 +1898,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: 'indifferent',
         note: 'There is nothing between the Hall and a carver, which is what makes it the least deniable institution in the world and the one with the least to say about itself. It owns every act by name and consequently does very little quickly.'
     },
-    // ── holders of a Jade Gorge vein, from the Third Sill ────────────────
+    // ── holders of a Jade Gorge vein, from the Third Sluice ────────────────
     // ── the two Azure feeders ──────────────────────────────────────────
     // The Pavilion grants to these two and to nobody else, which makes its
     // structure the smallest of the three apexes and the only one where the
@@ -1983,7 +1983,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         governance: 'unassailable',
         relation: 'apex',
         parentFactionId: null,
-        holds: 'The gorge vein at Green Water City and the terraced peaks above it, outright, on no grant from anyone. The Pavilion was a Third Sill tenant for fifteen hundred years and stopped being one in the year Ru Anjing crossed.',
+        holds: 'The gorge vein at Emerald Water City and the terraced peaks above it, outright, on no grant from anyone. The Pavilion was a Third Sluice tenant for fifteen hundred years and stopped being one in the year Ru Anjing crossed.',
         veinWorth: 'a vein system',
         levy: null,
         trade: {
@@ -1998,7 +1998,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Nothing recurring, which is what Ru Anjing actually bought with her last decades. She did not make the Pavilion strong - it was already respectable - she made its independence not worth contesting, settled what was outstanding, and left the position standing without her in it. Nineteen grant renewals are still in the archive and the twentieth was never issued or asked for.',
         unbackedReason: null,
         independenceStance: 'proud',
-        note: 'The Third Sill Court has never formally acknowledged that the grant lapsed and the Pavilion has never formally asserted that it did, and for three hundred and eighty years both parties found this comfortable. It has since stopped being a question at all. What settles the Pavilion\'s independence is what the Pavilion now is, and a body that is one of the three does not need a former landlord to write anything down - the last time anybody at the terraces raised the paperwork was two centuries ago, they were not answered, and nobody has raised it since.'
+        note: 'The Third Sluice Court has never formally acknowledged that the grant lapsed and the Pavilion has never formally asserted that it did, and for three hundred and eighty years both parties found this comfortable. It has since stopped being a question at all. What settles the Pavilion\'s independence is what the Pavilion now is, and a body that is one of the three does not need a former landlord to write anything down - the last time anybody at the terraces raised the paperwork was two centuries ago, they were not answered, and nobody has raised it since.'
     },
     'sect-nine-peaks-ascetic-order': {
         factionId: 'sect-nine-peaks-ascetic-order',
@@ -2009,36 +2009,36 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         veinWorth: 'a working vein',
         levy: null,
         trade: {
-            makes: 'Cut stone and node blanks off nine peaks, sold down the road because the Order will not carry money for anything else.',
+            makes: 'Cut stone and node blanks off nine peaks, sold down the road because the Sect will not carry money for anything else.',
             grade: 'mortal',
             devotion: 'a sideline'
         },
         terms: {
             tributeStonesPerYear: 0,
-            inKind: ['the entire vein output above a fixed local allowance, taken quarterly', 'maintenance of the workings, at the Order\'s own cost'],
+            inKind: ['the entire vein output above a fixed local allowance, taken quarterly', 'maintenance of the workings, at the Sect\'s own cost'],
             disciplesPerCycle: 3,
             // Was "the only pipeline in the Jade Gorge that reliably produces
             // Nascent Soul", which the production catalog shows is false: six
             // other Jade Gorge houses reliably reach that realm and three reach
-            // the one above it. What is true of the Order and of nothing else
+            // the one above it. What is true of the Sect and of nothing else
             // is the second half of the first clause - it is the one house in
             // the catalog waiting on nothing except years.
-            buys: ['the deepest vein anybody has surveyed and kept, and the one pipeline in the province that is short of nothing except time', 'the right to refuse every lease request without giving reasons, which the Order has exercised for two centuries and is not the Order\'s right to exercise'],
-            renewal: 'Twelve years, and the Order has never seen a renewal document, because the grant is administered through the Deeproot Court directly and arrives as a spoken confirmation from somebody who walks in without being announced.'
+            buys: ['the deepest vein anybody has surveyed and kept, and the one pipeline in the province that is short of nothing except time', 'the right to refuse every lease request without giving reasons, which the Sect has exercised for two centuries and is not the Sect\'s right to exercise'],
+            renewal: 'Twelve years, and the Sect has never seen a renewal document, because the grant is administered through the Deeproot Court directly and arrives as a spoken confirmation from somebody who walks in without being announced.'
         },
         standing: 'good',
         awarenessOfApex: 'placed',
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Order\'s famous refusal to lease its vein is not principle. It is a term, and the Mountain Elders have let three generations of the province believe otherwise because the alternative is explaining who sets it.'
+        note: 'The Sect\'s famous refusal to lease its vein is not principle. It is a term, and the Mountain Elders have let three generations of the province believe otherwise because the alternative is explaining who sets it.'
     },
     'sect-verdant-spring-valley': {
         factionId: 'sect-verdant-spring-valley',
         governance: 'federated',
         relation: 'subsidiary',
         parentFactionId: 'sect-nine-peaks-ascetic-order',
-        holds: 'The spring valley, held from the Ascetic Order rather than from the Sill: a sub-grant, and a rung lower than the Hall lets on.',
+        holds: 'The spring valley, held from the Ascetic Sect rather than from the Sluice: a sub-grant, and a rung lower than the Hall lets on.',
         // Null, and the sect's own description is why: the Hall sits "on
         // ordinary ground with no vein worth the name", which is the whole
         // explanation for everything else about it.
@@ -2055,10 +2055,10 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         },
         terms: {
             tributeStonesPerYear: 6_000,
-            inKind: ['treatment of Order ascetics without charge, which is the term the Hall minds', 'a physician resident at Nine Peaks year-round'],
+            inKind: ['treatment of Sect ascetics without charge, which is the term the Hall minds', 'a physician resident at Nine Peaks year-round'],
             disciplesPerCycle: 0,
-            buys: ['the valley and its springs', 'the Order standing between the Hall and anyone who wants the valley'],
-            renewal: 'Twelve years, in step with the Order\'s own. If the Order lost its grant the Hall would lose the valley the same season, which is a dependency the Hall has never publicly acknowledged.'
+            buys: ['the valley and its springs', 'the Sect standing between the Hall and anyone who wants the valley'],
+            renewal: 'Twelve years, in step with the Sect\'s own. If the Sect lost its grant the Hall would lose the valley the same season, which is a dependency the Hall has never publicly acknowledged.'
         },
         standing: 'good',
         awarenessOfApex: 'whisper',
@@ -2204,14 +2204,14 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             inKind: ['a copy of every inscription recovered from the ice, sent onward unread by the Court'],
             disciplesPerCycle: 0,
             buys: ['the glacier, the cold vein beneath it, and the library that was dug out of it', 'the assurance that nothing will be granted above it, which is why the Ward has never lost the library'],
-            renewal: 'Twelve years, at a tribute so low the Ward has privately concluded the Sill wants the inscriptions and not the stones.'
+            renewal: 'Twelve years, at a tribute so low the Ward has privately concluded the Sluice wants the inscriptions and not the stones.'
         },
         standing: 'good',
         awarenessOfApex: 'placed',
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Raised from an ordinary Third Sill tenancy to a court under the same patron, once the ice curriculum turned out to be the one thing in the province nobody could replace. It administers the cold arterial and grants to the Cinnabar Crucible Sect, which needs the cold more than it admits.'
+        note: 'Raised from an ordinary Third Sluice tenancy to a court under the same patron, once the ice curriculum turned out to be the one thing in the province nobody could replace. It administers the cold arterial and grants to the Cinnabar Crucible Sect, which needs the cold more than it admits.'
     },
     'sect-nine-abyss-flame-sect': {
         factionId: 'sect-nine-abyss-flame-sect',
@@ -2234,23 +2234,23 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             // there was no income to check it against.
             //
             // 12,000 is not a figure chosen to be comfortable. It is what the
-            // Third Sill charges the Ashen Forge Clan, which holds a working
+            // Third Sluice charges the Ashen Anvil Clan, which holds a working
             // vein under the same court AND a city gate and earns half again
-            // what this sect does. The note below says the Sill grants to a
+            // what this sect does. The note below says the Sluice grants to a
             // demonic sect "on the same terms as anyone else"; the same terms
             // cannot be eleven times the other vein-holder's.
             tributeStonesPerYear: 12_000,
-            inKind: ['nothing in kind; the Sill takes stones from this one and has never explained the preference'],
+            inKind: ['nothing in kind; the Sluice takes stones from this one and has never explained the preference'],
             disciplesPerCycle: 2,
             buys: ['the caldera, the vent vein under it, and the seal at the vent nobody asks about', 'the absence of any grant to anyone who might want to take it'],
-            renewal: 'Twelve years, paid early every cycle for two hundred years, which the Sill has never acknowledged and the sect has never stopped doing.'
+            renewal: 'Twelve years, paid early every cycle for two hundred years, which the Sluice has never acknowledged and the sect has never stopped doing.'
         },
         standing: 'good',
         awarenessOfApex: 'named',
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Sill grants to a demonic sect on the same terms as anyone else because tribute is tribute, and the Burnt Earth Temple has been told this to its face by a courier who did not stay to discuss it.'
+        note: 'The Sluice grants to a demonic sect on the same terms as anyone else because tribute is tribute, and the Burnt Earth Temple has been told this to its face by a courier who did not stay to discuss it.'
     },
     'sect-storm-tyrant-court': {
         factionId: 'sect-storm-tyrant-court',
@@ -2277,7 +2277,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Earth Vein Tower\'s second body in the Jade Gorge, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Kiln Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Kiln has never commented.'
+        note: 'The Earth Vein Tower\'s second body in the Jade Gorge, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Tripod Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Tripod has never commented.'
     },
     'sect-crimson-abyss-fortress': {
         factionId: 'sect-crimson-abyss-fortress',
@@ -2343,7 +2343,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Pavilion knows more about the Sill than any other faction in the province and has built its whole fraudulent ancestry on the certainty that the Sill does not care what it claims about its own dead.'
+        note: 'The Pavilion knows more about the Sluice than any other faction in the province and has built its whole fraudulent ancestry on the certainty that the Sluice does not care what it claims about its own dead.'
     },
     'sect-stone-marrow-hall': {
         factionId: 'sect-stone-marrow-hall',
@@ -2364,7 +2364,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         },
         terms: {
             tributeStonesPerYear: 0,
-            inKind: ['the rate itself, set within a band the Stone Marrow Hall is given and has never published', 'refining capacity reserved for the Sill\'s own use, quantity unstated'],
+            inKind: ['the rate itself, set within a band the Stone Marrow Hall is given and has never published', 'refining capacity reserved for the Sluice\'s own use, quantity unstated'],
             disciplesPerCycle: 0,
             buys: ['the monopoly, which is worth more than any vein in the province', 'the presses, which are maintained by somebody the Stone Marrow Hall does not employ'],
             renewal: 'Twelve years, and the band moves each time, which is why the Stone Marrow Hall\'s Rate Elders cannot explain their own rate to their own Council.'
@@ -2390,7 +2390,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         // a fourth said it was the only one that has ever moved; the fourth was
         // right and the other three have been corrected to it.
         parentFactionId: 'apex-myriad-course-hall',
-        holds: 'The datum: the root vein, held on nobody\'s behalf but the Survey\'s, and drawn on by nobody at all.',
+        holds: 'The datum: the taproot vein, held on nobody\'s behalf but the Survey\'s, and drawn on by nobody at all.',
         veinWorth: 'an arterial',
         levy: null,
         trade: {
@@ -2413,22 +2413,22 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             whatItIsWorthFromBelow:
                 'The same step up, from a different set of houses. A carver sent from one of the Hall\'s faces arrives holding a Warden rank that the Myriad Course Hall\'s own ladder does not contain, in a body whose roll goes back to the first four - and the Myriad Course Hall, which ranks people by faces worked and deaths avoided and nothing else, has quietly acquired the one posting in its whole arrangement that confers a standing rather than a record. It has never commented on that either.',
             whatItIsWorthFromAbove:
-                'More, not less, and for a reason the Kiln cannot match: this is the body holding the founding posting order that names the first four Wardens, and a term entered on that roll goes under nine hundred years of names. An apex\'s chosen who takes it is buying that. What nobody says at the ceremony is that the Earth Vein Tower has never referred to this body in correspondence since the schism, so a term here is a credential two of the three apexes read and the third passes over in silence.',
+                'More, not less, and for a reason the Tripod cannot match: this is the body holding the founding posting order that names the first four Wardens, and a term entered on that roll goes under nine hundred years of names. An apex\'s chosen who takes it is buying that. What nobody says at the ceremony is that the Earth Vein Tower has never referred to this body in correspondence since the schism, so a term here is a credential two of the three apexes read and the third passes over in silence.',
             andAfterwards:
-                'They go back higher, into an arrangement of the Hall\'s that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Deeproot Court is closer to being a career here than it is four provinces away, and the roll is why.',
+                'They go back higher, into an arrangement of the Hall\'s that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Tripod. The Deeproot Court is closer to being a career here than it is four provinces away, and the roll is why.',
             andBeingPassedOver:
-                'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Buddha Precipice that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
+                'Cuts deeper here, because the roll is public and the Tripod\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Buddha Precipice that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
             andWhatTheTermIsWorthAfterwards:
                 'The same precedence, and a sharper version of it, because the Myriad Course Hall ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Myriad Course Hall has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
         },
         // A SCHISM, AND THEN TWO BODIES. This entry used to carry the mirror
-        // of the Kiln Court's `lineageDispute`: an argument that the half that
+        // of the Tripod Court's `lineageDispute`: an argument that the half that
         // walked is the real house, answered by an equal and opposite argument
         // four provinces away, with a field on each saying no instrument
         // anywhere settles it. That is gone, and what replaces it is simpler
         // and harder: they split, and they have run independently ever since.
         // This body took the roll and the founding posting order and answers
-        // the Myriad Course Hall; the Kiln Court kept the datum, the nodes and the
+        // the Myriad Course Hall; the Tripod Court kept the datum, the nodes and the
         // perimeter and answers the Earth Vein Tower. Neither writes to the other
         // and neither has asked to. See `faction-relationships.ts` for how
         // they stand, which is one relationship rather than two claims.
@@ -2449,7 +2449,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             traffic: 'a province'
         },
         trade: {
-            makes: 'Weir gear and the schedule the works run on, made at Iron Ridge for the faces the Ward holds and for nobody else.',
+            makes: 'Weir gear and the schedule the works run on, made at Iron Crest for the faces the Ward holds and for nobody else.',
             grade: 'mortal',
             devotion: 'a sideline'
         },
@@ -2474,7 +2474,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             traffic: 'a road'
         },
         trade: {
-            makes: 'Sorted salvage out of the burn zones, cleaned at the barrow yard and sold on at Iron Ridge as stock rather than as finds.',
+            makes: 'Sorted salvage out of the burn zones, cleaned at the barrow yard and sold on at Iron Crest as stock rather than as finds.',
             grade: 'mortal',
             devotion: 'a hall'
         },
@@ -2522,7 +2522,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // the only field that separates them - which is exactly the load that
     // field was added to carry.
     //
-    // The Market is unbacked because it is USEFUL to everybody, so taking it
+    // The Hall is unbacked because it is USEFUL to everybody, so taking it
     // costs the taker more than it gains: whoever held Silver Island would hold
     // forty acres of rock, because the traffic is the asset and the traffic
     // is there for the neutrality. Its protection is not a garrison and not
@@ -2558,7 +2558,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         standing: 'not_applicable',
         awarenessOfApex: 'known',
         costOfIndependence:
-            'No grant, so no vein, so nothing in the air: every rung anybody at the port climbs is bought out of a chest, and the port pays that wage bill itself out of the spread. It also means the Market has no recourse. When somebody above the watch takes what is not theirs, there is nobody it can write to, and it has never pretended otherwise - the alternative is calling on an apex, which would end the neutrality in the same afternoon it was used.',
+            'No grant, so no vein, so nothing in the air: every rung anybody at the port climbs is bought out of a chest, and the port pays that wage bill itself out of the spread. It also means the Hall has no recourse. When somebody above the watch takes what is not theirs, there is nobody it can write to, and it has never pretended otherwise - the alternative is calling on an apex, which would end the neutrality in the same afternoon it was used.',
         unbackedReason: 'useful_to_everyone_aligned_with_none',
         independenceStance: 'proud',
         note: 'The one body in the catalog whose independence is an asset rather than a cost, and the Factors know precisely why: the port is worth what passes through it, what passes through it comes because no party owns it, and the day a party owns it the traffic goes and the rock stays. Every apex has a factor on the quay, all three know where it is, and none of them has ever needed to be told any of the above.'
@@ -2615,7 +2615,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         unbackedReason: 'holding_something',
         independenceStance: 'proud',
         holdsByReputation: true,
-        note: 'It holds from nobody, by reputation: nothing is granted, nothing is paid, and the ground is theirs because of what the province believes would happen to whoever went and took it. The Grove holds what it can comfortably walk and claims nothing beyond it, and the ground beyond it is nevertheless theirs because nobody has been willing to find out otherwise since the year 41 test. The Third Sill Court has never granted the valley to anyone, has never been asked to, and has left the file open.'
+        note: 'It holds from nobody, by reputation: nothing is granted, nothing is paid, and the ground is theirs because of what the province believes would happen to whoever went and took it. The Grove holds what it can comfortably walk and claims nothing beyond it, and the ground beyond it is nevertheless theirs because nobody has been willing to find out otherwise since the year 41 test. The Third Sluice Court has never granted the valley to anyone, has never been asked to, and has left the file open.'
     },
     // ── unaffiliated, and paying for it ───────────────────────────────
     'sect-sweptground-temple': {
@@ -2664,7 +2664,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Wide and shallow forever: nine at Foundation Establishment, one Nascent Soul in three hundred years, and no mechanism by which that changes. The Alliance is a large organisation that cannot produce a strong person.',
         unbackedReason: 'useful_to_everyone_aligned_with_none',
         independenceStance: 'proud',
-        note: 'Tolerated absolutely, because eleven towns need crossing and the Sill has no interest in the river.'
+        note: 'Tolerated absolutely, because eleven towns need crossing and the Sluice has no interest in the river.'
     },
     'sect-hollow-bell-wanderers': {
         factionId: 'sect-hollow-bell-wanderers',
@@ -2700,7 +2700,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         veinWorth: null,
         levy: null,
         trade: {
-            makes: 'Its own blades, made in the yard by the sixty people who do nothing else, and sold at Stone Ford when the yard is short.',
+            makes: 'Its own blades, made in the yard by the sixty people who do nothing else, and sold at Clear River Ferry when the yard is short.',
             grade: 'mortal',
             devotion: 'a hall'
         },
@@ -2708,10 +2708,10 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
         costOfIndependence:
-            'Two things, and the second is the one the province notices. Its road stops where the tempering scripture stops, because the metal books above that are held by houses that hold from somebody and nobody copies one out for a house that owes nothing. And when one of its people is killed there is nowhere to send it: a granted sect puts a matter over the offender\'s head and waits, and this one can only send somebody. Read from the other side, that is also why a Cold Sword swordsman is left alone in an argument - there is no house up the line to be leaned on to call him off, and everybody has worked out which of the two facts they are standing in front of.',
+            'Two things, and the second is the one the province notices. Its road stops where the tempering scripture stops, because the metal books above that are held by houses that hold from somebody and nobody copies one out for a house that owes nothing. And when one of its people is killed there is nowhere to send it: a granted sect puts a matter over the offender\'s head and waits, and this one can only send somebody. Read from the other side, that is also why an Unadorned Sword swordsman is left alone in an argument - there is no house up the line to be leaned on to call him off, and everybody has worked out which of the two facts they are standing in front of.',
         unbackedReason: 'not_worth_the_trouble_yet',
         independenceStance: 'proud',
-        note: 'Nobody has offered and nobody has refused. There is no vein under the shelf, so a grant over it would convey nothing, and the only thing in the yard worth having is sixty people who would have to be got through to reach it. The Third Sill Court has carried the shelf as unheld for two centuries and has never opened a file on it.'
+        note: 'Nobody has offered and nobody has refused. There is no vein under the shelf, so a grant over it would convey nothing, and the only thing in the yard worth having is sixty people who would have to be got through to reach it. The Third Sluice Court has carried the shelf as unheld for two centuries and has never opened a file on it.'
     },
     'sect-bone-lantern-cult': {
         factionId: 'sect-bone-lantern-cult',
@@ -2759,7 +2759,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'They cannot be granted anything because a grant is an obligation with a term, and their whole doctrine is the pre-emptive severance of exactly that. They climb faster than anyone and hold nothing, which is the trade they say they are making.',
         unbackedReason: 'not_worth_the_trouble_yet',
         independenceStance: 'proud',
-        note: 'The one faction whose independence is not a cost but the product, and the Sill has never approached them, which they have noticed.'
+        note: 'The one faction whose independence is not a cost but the product, and the Sluice has never approached them, which they have noticed.'
     },
     'sect-hollow-court': {
         factionId: 'sect-hollow-court',
@@ -2806,10 +2806,10 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         standing: 'not_applicable',
         awarenessOfApex: 'placed',
         costOfIndependence:
-            'It cannot be protected, only needed. The Karma Palace has no vein, no pipeline dependency and no patron, and its safety consists entirely of being the instrument the Third Sill uses when a boundary is disputed.',
+            'It cannot be protected, only needed. The Karma Palace has no vein, no pipeline dependency and no patron, and its safety consists entirely of being the instrument the Third Sluice uses when a boundary is disputed.',
         unbackedReason: 'arrangement_that_is_not_patronage',
         independenceStance: 'would_take_a_backer',
-        note: 'The Sill\'s arbitration clause names the Karma Palace. The Karma Palace has never mentioned this to a client and prices its work as though it were an ordinary house.'
+        note: 'The Sluice\'s arbitration clause names the Karma Palace. The Karma Palace has never mentioned this to a client and prices its work as though it were an ordinary house.'
     },
     'house-flowing-light': {
         factionId: 'house-flowing-light',
@@ -3042,7 +3042,7 @@ export const FEEDER = {
         },
         {
             route: 'purchase',
-            how: 'The Thousand Treasure Pavilion has bought two seats in four hundred years, at prices it has never disclosed, for candidates it has never explained.',
+            how: 'The Thousand Relic Pavilion has bought two seats in four hundred years, at prices it has never disclosed, for candidates it has never explained.',
             share: 1
         }
     ],
@@ -3155,7 +3155,7 @@ export const AZURE_CLOUD_INTAKE = {
     theTrade:
         'Two facts about the Pavilion are already established and they answer each other. It is one person deep, with about ninety disciples and six at Core Formation, and it is the richest institution in the region because a woman on the other side of the Lid loves her sister and sends what she can every nine to fourteen years. Thin on members, rich in resources. There is exactly one rational move available to an institution in that position, and the Pavilion has been making it for a century: spend the thing you have in surplus to buy the thing you lack. They are converting medicine, materials and stones into people.',
     whyNobodyElseCanDoIt:
-        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Tribulation floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Myriad Course Hall are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
+        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Empyrean Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Tribulation floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Myriad Course Hall are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
     itIsCircumstanceNotValues:
         'Nothing here is a difference of principle. Put the Earth Vein Tower in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
     theOtherReason:
@@ -3248,7 +3248,7 @@ export const AZURE_CLOUD_INTAKE = {
 
     // ── wide intake, narrow conversion ────────────────────────────────
     theFunnel:
-        'And here is the thing the whole programme is most often misread as, so it is stated flatly: the bar at the narrow end has not moved. Becoming an actual disciple of the Azure Cloud Pavilion is exactly as hard as it has always been, and an Azure Cloud disciple is precisely as impressive as anybody the Hollow Court or the Earth Vein Tower keeps. There is no discount anywhere in this. What is wide is the mouth of the funnel, not its throat.',
+        'And here is the thing the whole programme is most often misread as, so it is stated flatly: the bar at the narrow end has not moved. Becoming an actual disciple of the Azure Cloud Pavilion is exactly as hard as it has always been, and an Azure Cloud disciple is precisely as impressive as anybody the Empyrean Court or the Earth Vein Tower keeps. There is no discount anywhere in this. What is wide is the mouth of the funnel, not its throat.',
     notTheSoftApex:
         'So do not read them as the charitable apex, the easy apex or the kind one. They are the apex that can afford to look at everybody, which is an entirely different thing from admitting them, and the people they eventually keep have been through a longer and more searching filter than anybody at the other two. Washing out is the ordinary outcome. Being kept is the remarkable one, and the sect behaves accordingly.',
 
@@ -3273,11 +3273,11 @@ export const AZURE_CLOUD_INTAKE = {
 
     // ── the anomaly ───────────────────────────────────────────────────
     theAnomaly:
-        'Read as a table, the Pavilion is the strangest row in the world: power ordinal 41, and a door that opens at the very bottom of the ladder. The Hollow Court will not look below 29. The other high sects sit at 13, 21 and 29. Nothing else in the catalog combines that much power with that low a door, and the anomaly is the single most legible expression of everything else about them - thin on members, rich on resources, and gambling because they are the only ones who can afford the losses.',
+        'Read as a table, the Pavilion is the strangest row in the world: power ordinal 41, and a door that opens at the very bottom of the ladder. The Empyrean Court will not look below 29. The other high sects sit at 13, 21 and 29. Nothing else in the catalog combines that much power with that low a door, and the anomaly is the single most legible expression of everything else about them - thin on members, rich on resources, and gambling because they are the only ones who can afford the losses.',
     whoWouldNoticeIt:
         'Almost nobody, because almost nobody reads the world as a table. A farmer knows the Pavilion tests people. A well-informed cultivator who has dealt with two or three apexes would see it immediately and find it strange, and is exactly the sort of person who would remark on it over a drink and expect you to already understand why it matters.',
     theSameNumberForOppositeReasons:
-        'And the one other body in the catalog whose door sits at the bottom is the Hollow Bell Wanderers, whose entire ceremony is showing up and ringing the bell. Same number, opposite reasons. The Wanderers take anybody because they are a loose league with nothing to protect and no capacity to assess. The Pavilion takes anybody in because it can afford to test them for years and send most of them home. A number is not a policy, and these two are the proof.',
+        'And the one other body in the catalog whose door sits at the bottom is the Wayside Chime Wanderers, whose entire ceremony is showing up and ringing the bell. Same number, opposite reasons. The Wanderers take anybody because they are a loose league with nothing to protect and no capacity to assess. The Pavilion takes anybody in because it can afford to test them for years and send most of them home. A number is not a policy, and these two are the proof.',
 
     // ── handoff ───────────────────────────────────────────────────────
     engineHandoff:
@@ -3405,7 +3405,7 @@ export const UNBACKED_PLAYER_TRADE = {
 export const GUEST_ELDERS: readonly GuestElder[] = [
     {
         id: 'guest-shen-of-the-fourth-ford',
-        name: 'Shen Yiao, called Shen of the Fourth Ford',
+        name: 'Shen Yiao, called Shen of the Fourth Ferry',
         realmOrdinal: 30,
         traditionId: 'tradition-drawn',
         hostFactionId: 'sect-azure-cloud-pavilion',
@@ -3419,7 +3419,7 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
         guestRisk:
             'If the Pavilion loses its grant she loses the only decent vein she has legal access to, and she is old enough that starting again elsewhere is not a plan.',
         leaveClause:
-            'She may walk out at any time, including during a siege, and no oath, contract or obligation exists that anyone could point at afterwards. The Pavilion knows this, has considered asking her to swear something with the Vermilion Seal Terrace, and has concluded that asking would itself end the arrangement.'
+            'She may walk out at any time, including during a siege, and no oath, contract or obligation exists that anyone could point at afterwards. The Pavilion knows this, has considered asking her to swear something with the Vermilion Sigil Terrace, and has concluded that asking would itself end the arrangement.'
     },
     {
         id: 'guest-third-face-ren',
@@ -3428,14 +3428,14 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
         traditionId: 'tradition-cut',
         hostFactionId: 'sect-stone-marrow-hall',
         provides:
-            'The only carver the Stone Marrow Hall has ever retained: he reads driven stone the assay house cannot price, which is how the Iron Ridge branch stopped being cheated on salvage lots within a season of his arrival.',
+            'The only carver the Stone Marrow Hall has ever retained: he reads driven stone the assay house cannot price, which is how the Iron Crest branch stopped being cheated on salvage lots within a season of his arrival.',
         receives:
             'Stones, in quantity, paid weekly rather than by grant day - the only arrangement in the Buddha Precipice that lets a carver cultivate without the Clearwater Ward - and passage on Stone Marrow Hall carts.',
         term: 'A written agreement of five years, the only guest arrangement in either province that has ever been put on paper, and it names no penalty for either side.',
         hostRisk:
             'He is Keystone, immune to every soul-directed art the Stone Marrow Hall\'s own guards know, and the Stone Marrow Hall\'s insurance table reads him a rank low, which means it has systematically underpriced its own guest elder.',
         guestRisk:
-            'Working for a Jade Gorge institution has made him unwelcome at the Iron Ridge grant queue, and if the agreement lapses he goes back to a region where the Court decides whether he advances.',
+            'Working for a Jade Gorge institution has made him unwelcome at the Iron Crest grant queue, and if the agreement lapses he goes back to a region where the Court decides whether he advances.',
         leaveClause:
             'Five years, then nothing. He has said he will not renew and the Stone Marrow Hall has not decided whether to believe him, because he says that every year.'
     },
@@ -3469,7 +3469,7 @@ const COURT_BY_ID: ReadonlyMap<string, Court> = new Map(COURTS.map(c => [c.id, c
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT A BODY CALLS ITS LEADER
 //
-// "Seat" is the Hollow Court's own vocabulary and belongs to it alone. Every
+// "Seat" is the Empyrean Court's own vocabulary and belongs to it alone. Every
 // other body names its leader after the thing it is standing on, which is the
 // ordinary convention in both provinces: a lordship is over a place or an
 // object, never over people, and the title outlives whoever holds it.
@@ -3674,7 +3674,7 @@ export function idsForFaction(id: string): string[] {
     if (apex) return apex.factionId === null ? [apex.id] : [apex.id, apex.factionId];
 
     // A court can be the same body as a sect too, and for the same reason: the
-    // Kiln and the Azure Mist are institutions with a row in each catalog. This
+    // Tripod and the Azure Mist are institutions with a row in each catalog. This
     // case was missing, so anything that drew the pyramid from both tables drew
     // those houses twice, at two different ordinals, as though they were
     // neighbours rather than one another.
@@ -3688,14 +3688,14 @@ export function idsForFaction(id: string): string[] {
     return [id];
 }
 
-// The Kiln schism used to live here, as a single standalone record narrating
+// The Tripod schism used to live here, as a single standalone record narrating
 // both sides from outside. Then it lived on the two bodies as a pair of
 // partisan accounts arguing about which of them was the house. Neither shape
 // is here now, and the second was the more misleading of the two: it presented
 // an institution that had split as an institution having an argument.
 //
 // What is true is plainer. There was a schism, and there are two bodies. The
-// Kiln Court holds the datum, the nine hundred lit nodes and the perimeter,
+// Tripod Court holds the datum, the nine hundred lit nodes and the perimeter,
 // under the Earth Vein Tower. Deeproot Court holds the roll and the founding
 // posting order, four provinces away, under the Myriad Course Hall. They do not
 // correspond and neither has asked to. Each fact sits on the body it belongs

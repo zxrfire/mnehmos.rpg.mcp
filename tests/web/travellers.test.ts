@@ -181,7 +181,7 @@ describe('travellers show up', () => {
         const traveller = passingThrough({
             rng: forStream('fixed', 'traveller'),
             unknownPlaces: [
-                { id: 'Iron Ridge', name: 'Iron Ridge', regionId: 'far' },
+                { id: 'Iron Crest', name: 'Iron Crest', regionId: 'far' },
                 { id: 'Six Li', name: 'Six Li', regionId: 'far' }
             ],
             hereRegionId: 'home',
@@ -308,7 +308,7 @@ describe('asking somebody about something they cannot place', () => {
         }).lines.join(' ');
 
         const answers = new Set([
-            ask('the next town'), ask('the Sill'), ask('where the road goes'),
+            ask('the next town'), ask('the Sluice'), ask('where the road goes'),
             ask('who runs the ford'), ask('the vein'), ask('my mother')
         ]);
         expect(answers.size).toBeGreaterThan(1);
@@ -319,7 +319,7 @@ describe('asking somebody about something they cannot place', () => {
             asker,
             asked: roster('official', 'sect-lantern-hall'),
             subject: null,
-            rawTopic: 'the Sill',
+            rawTopic: 'the Sluice',
             holdsIt: false,
             priorDealings: 0,
             speakerName: null

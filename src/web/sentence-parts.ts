@@ -249,7 +249,7 @@ export function parseCount(input: string): number | null {
  * A trailing "for <however long>", which is a SPAN and never a destination.
  *
  * FOUND BY PLAYING, and it is systematic rather than one phrasing. `for` has to
- * be a movement preposition - *I set out for Clear River Ford* - and it is also
+ * be a movement preposition - *I set out for Clear River Ferry* - and it is also
  * how everybody says how long they are going for. Where the sentence carried no
  * `to`, `for` won the race and the span became the place:
  *
@@ -264,7 +264,7 @@ export function parseCount(input: string): number | null {
  * there was nothing left to cut back to.
  *
  * So it comes off the SENTENCE, before any preposition is read. A time noun is
- * required, so "I set out for Clear River Ford" is untouched.
+ * required, so "I set out for Clear River Ferry" is untouched.
  */
 const A_SPAN_AND_NOT_A_PLACE =
     /\s+for\s+(?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several|some|many|a few|the next|\d+)?\s*(?:while|bit|spell|stretch|day|days|week|weeks|month|months|season|seasons|year|years|decade|decades|lifetime|age|ages)\b.*$/i;
@@ -284,7 +284,7 @@ export function extractDestination(input: string): string | undefined {
     const prepositional = /\b(?:to|towards?|into|for)\s+(.{2,80}?)\s*[.!?]?$/i.exec(said);
     if (prepositional) return cleanPlace(prepositional[1]);
 
-    // "travel Clear River Ford" - a bare destination straight after the verb.
+    // "travel Clear River Ferry" - a bare destination straight after the verb.
     //
     // AND NOT A PARTICLE, which is the other half of the fix written up at
     // `THE_PARTICLE_AND_NOT_THE_NAME`. Without the lookahead this arm read "I
@@ -605,8 +605,8 @@ export function partyAfter(input: string, markers: string): string | undefined {
     // that had named a house of the catalog in full.
     //
     // Seven of the thirty-six houses in the world start with one of these
-    // words - three Azure, the Ashen Forge Clan, the Ancient Bough Grove, The
-    // Hollow Court, The Severed - and every one of them was being mangled by
+    // words - three Azure, the Ashen Anvil Clan, the Ancient Bough Grove, The
+    // Empyrean Court, The Severed - and every one of them was being mangled by
     // every one of this function's thirteen callers.
     //
     // Requiring the whitespace INSIDE the optional group is the whole fix: an
@@ -619,8 +619,8 @@ export function partyAfter(input: string, markers: string): string | undefined {
         'i'
     ).exec(input);
     // A leading preposition survives when the verb itself was the marker that
-    // matched - "apply to the Thousand Treasure Pavilion" captures "to the
-    // Thousand Treasure Pavilion" - and a faction matcher handed that string
+    // matched - "apply to the Thousand Relic Pavilion" captures "to the
+    // Thousand Relic Pavilion" - and a faction matcher handed that string
     // resolves nobody. Stripped after the article rather than before, because
     // both can be there.
     const cleaned = (found?.[1] ?? '')
@@ -697,7 +697,7 @@ export function isBareDuration(input: string): boolean {
  *   Knife Edge     `knife`    12 of 12 phrasings became an ATTACK on "Edge"
  *   Wind Market    `market`   7 of 12 reached the board and never moved
  *   Stone Shadow   `shadow`   every travel phrasing became move/FOLLOW
- *   Iron Ridge Mission `mission`  "what does it teach" reached the errand board
+ *   Iron Crest Mission `mission`  "what does it teach" reached the errand board
  *
  * Those names were changed, which fixes those names. This fixes the CLASS: any
  * branch that anchors on a category noun can ask the sentence with its names

@@ -129,7 +129,7 @@ describe('the sentence reaches the verb', () => {
      */
     it('does not read a place a cultivator is from as a house', () => {
         expect(whatAccountWasGiven('I am from the north valley')).toBeNull();
-        expect(whatAccountWasGiven('I am of the Hollow Court')?.house).toBe('Hollow Court');
+        expect(whatAccountWasGiven('I am of the Empyrean Court')?.house).toBe('Empyrean Court');
     });
 });
 
@@ -265,21 +265,21 @@ describe('the world\'s own people do it too', () => {
      * it is rare, and it never hands somebody their own house back.
      */
     it('has a stranger claim a house that is not theirs, rarely', () => {
-        const houses = ['Hollow Court', 'Azure Dew Sect', 'Iron Ridge Hall'];
+        const houses = ['Empyrean Court', 'Azure Dew Sect', 'Iron Crest Hall'];
         const always = { chance: () => true, int: (min: number, _max: number) => min };
         const never = { chance: () => false, int: (min: number, _max: number) => min };
 
         expect(whatHouseTheyClaimInstead({ rng: never, theirOwn: null, houses })).toBeNull();
 
         const claimed = whatHouseTheyClaimInstead({
-            rng: always, theirOwn: 'Hollow Court', houses
+            rng: always, theirOwn: 'Empyrean Court', houses
         });
         expect(claimed).not.toBeNull();
-        expect(claimed).not.toBe('Hollow Court');
+        expect(claimed).not.toBe('Empyrean Court');
 
         // Nowhere to borrow a name from is not a lie, it is silence.
         expect(whatHouseTheyClaimInstead({
-            rng: always, theirOwn: 'Hollow Court', houses: ['Hollow Court']
+            rng: always, theirOwn: 'Empyrean Court', houses: ['Empyrean Court']
         })).toBeNull();
     });
 });

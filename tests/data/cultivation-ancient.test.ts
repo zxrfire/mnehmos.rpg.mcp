@@ -289,8 +289,8 @@ describe('provinces, arterials and prefectures', () => {
             .toBeGreaterThan(0);
         // And ground the record carries with nobody against it must genuinely
         // have been granted to nobody. The field is about the RECORD, not
-        // about who is standing there: the Hollow Basin has an occupant and a
-        // blank column, which is the whole of what makes it the Hollow Basin.
+        // about who is standing there: the Empyrean Basin has an occupant and a
+        // blank column, which is the whole of what makes it the Empyrean Basin.
         for (const pref of PREFECTURES) {
             if (pref.discrepancy !== 'no_holder_of_record') continue;
             const granted = pref.heldByFactionId !== null && pref.delegatedFromId !== null;
@@ -339,8 +339,8 @@ describe('provinces, arterials and prefectures', () => {
                     .toBe(province!.id);
             }
         }
-        // The Kiln administers a datum nobody draws on. Its emptiness is the
-        // whole of what the Kiln is, and it is the one court allowed none.
+        // The Tripod administers a datum nobody draws on. Its emptiness is the
+        // whole of what the Tripod is, and it is the one court allowed none.
         const kiln = COURTS.find(c => c.id === 'court-kiln')!;
         expect(kiln.grantsInPrefectureIds).toEqual([]);
     });

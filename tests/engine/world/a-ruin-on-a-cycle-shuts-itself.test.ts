@@ -79,7 +79,7 @@ const EVERY_SIXTY_YEARS = { periodDays: 60 * YEAR, openDays: 30, phaseDay: 0 };
 function ruin(opts: Partial<LocationRecord> = {}): LocationRecord {
     return makeLocation({
         id: 'loc-ruin-on-a-cycle',
-        name: 'Cold Spring',
+        name: 'Lone Spring',
         kind: 'ruin',
         qiDensity: 80,
         thresholds: makeThresholds(4, 8, 14, 20),

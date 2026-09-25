@@ -223,11 +223,11 @@ export const TRADITION_WAR = {
     marchesAccount:
         'That the Drawn drained the province deliberately to end the quarrel, and that the Cut Road exists because a few people learned to work what was left rather than die of it. Taught in the Buddha Precipice as the founding fact of the region.',
     trueAccount:
-        'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Vermilion Seal Terrace\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
+        'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Vermilion Sigil Terrace\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
     discoverableTraces: [
         'the weir nodes are cut into stone, which is Cut Road work, on a site the Jade Gorge account says the Drawn never held',
         'the burn edge radiates from the weir rather than from any battlefield, and no engagement of any size is recorded within forty li of it',
-        'the Vermilion Seal Terrace\'s vault index lists a treaty of that year with both traditions as parties and no subject line',
+        'the Vermilion Sigil Terrace\'s vault index lists a treaty of that year with both traditions as parties and no subject line',
         'the Ninefold Karma Palace has an arbitration case from eighty years later in which both regions sued the same third party and then jointly withdrew'
     ]
 } as const;
@@ -277,7 +277,7 @@ export const CROSS_TRADITION_ERRORS: readonly {
         heldBy: 'tradition-cut',
         belief: 'That a cornered Drawn cultivator can take somebody else\'s body.',
         truth: 'That door does not exist for them. Every attempt on record ended the soul that tried it.',
-        consequence: 'Two Drawn envoys have been killed pre-emptively in Iron Ridge by people acting reasonably on a false premise, and the Buddha Precipice has never revised the teaching.'
+        consequence: 'Two Drawn envoys have been killed pre-emptively in Iron Crest by people acting reasonably on a false premise, and the Buddha Precipice has never revised the teaching.'
     },
     {
         heldBy: 'tradition-drawn',

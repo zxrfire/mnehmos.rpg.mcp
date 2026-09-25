@@ -511,8 +511,8 @@ const A_BARE_ONE = /^(?:the\s+)?(?:that|this|it|one|same|other)(?:\s+one)?$/i;
  *
  * The first cut was wider. It held `manual`, `book`, `job`, `work` and `offer`
  * too, and that broke on the next turn of the next session: `i buy a manual`,
- * one turn after a WALL read, came back with *"manual" could be Cold Sword Sect
- * or Hollow Bell Wanderers*.
+ * one turn after a WALL read, came back with *"manual" could be Unadorned Sword Sect
+ * or Wayside Chime Wanderers*.
  *
  * `ThingNamed` carries a name and a price and no KIND, so the resolver cannot
  * tell a house from a book and matched the word against whatever the last turn

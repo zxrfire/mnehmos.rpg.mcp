@@ -146,7 +146,7 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         cannotBeMade:
             'The Cinnabar Crucible Sect has tried it four times across three centuries, published every failure in full, and states plainly that it cannot identify the method, the materials, or in two cases even the direction of the error. What is left of a failed attempt is inert and does not resemble the original in any measurable way. No alchemist at any grade has produced anything closer.',
         notForSale:
-            'It has never appeared in a Thousand Treasure catalogue, and the Stone Marrow Hall declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
+            'It has never appeared in a Thousand Relic catalogue, and the Stone Marrow Hall declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
         grades: {
             higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Marrow to Grand Ascension Rising Body - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Earth Vein Tower holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
             middle: 'May deliver a cultivator into Void Tribulation and no higher: at best Deity Transformation Final Turn to Void Tribulation First Tempering, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
@@ -163,7 +163,7 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
     },
     {
         id: 'immortal-root-recasting-talisman',
-        name: 'The Root-Recasting Talisman',
+        name: 'The Spirit-Recasting Talisman',
         form: 'talisman',
         effect: 'change_spirit_root',
         knownCount: 4,
@@ -174,16 +174,16 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         cannotBeMade:
             'Nothing in the world approaches it, and unlike the golden pill there is no history of attempts, because there is no theory to attempt. A spirit root is the aperture a person draws qi through and it is settled before birth; there is no discipline anywhere that treats it as a thing with a mechanism, and the alchemists who tried the pill will say flatly that this is a different kind of object and they would not know where to begin.',
         notForSale:
-            'No price, no catalogue, no assay, and no broker who will carry an approach. The Thousand Treasure Pavilion, which will handle almost anything, has twice declined to pass a message about one and did not explain why either time.',
+            'No price, no catalogue, no assay, and no broker who will carry an approach. The Thousand Relic Pavilion, which will handle almost anything, has twice declined to pass a message about one and did not explain why either time.',
         grades: {
-            higher: 'Grants a single mutated root - the best outcome that exists below the Lid, and the thing no institution in the world can supply by any other means. Exactly one is known. This is the object that should not exist, and everything alarming ever said about the Root-Recasting Talisman is about this grade.',
+            higher: 'Grants a single mutated root - the best outcome that exists below the Lid, and the thing no institution in the world can supply by any other means. Exactly one is known. This is the object that should not exist, and everything alarming ever said about the Spirit-Recasting Talisman is about this grade.',
             middle: 'Takes a five-root straight to a one or a two, and which of the two you get is luck. Not dosage, not preparation, not the skill of anybody present: luck, on the day, with no way found in nine hundred years to influence it. That uncertainty is exactly why it is a middle grade rather than a higher one - a better ceiling than the lower and a worse floor than anybody would choose for something this rare. One is known.',
             lower: 'Reliable, bounded, and the most useful object in this file. A five-root becomes a four or a three; a four or a three becomes a two. It never produces better than a two, and it cannot produce a single root at any point, by any route, for anybody. What it does is take the worst root in the world and make it merely bad, every time, without a gamble - and because nobody gets a second one, the two it leaves behind is where that person stays forever. Two are known, both at the Azure Cloud Pavilion.'
         },
         effectNote:
             'It changes the root once and forever, to the extent its grade permits: the lower narrows reliably and never past a two, the middle goes to a one or a two on luck alone, and the higher grants a single mutated root outright. Nobody gets a second, at any grade, in any circumstance. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Court has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
         socialConsequence:
-            'There is no version of this that stays quiet. Jade Register Hall holds a register entry describing a person who no longer matches it, and an entry that has stopped matching its holder is the single loudest signal that register can produce - it is what the register is for. The Still Blade Peak will take a commission to make the discrepancy go away and will not be able to, which has happened once and did not improve their reputation. Flowing Light Tower cannot sight the person correctly for some years afterwards, because every reading it holds was cast on a root that is no longer there. And two institutions in particular want to know: the Frostmirror Court and the Storm Tyrant Court both survive on an intake of one root in a hundred, and a manufactured mutated root would end that problem permanently, which makes them the least safe parties in the world to be recognised by.',
+            'There is no version of this that stays quiet. Jade Register Hall holds a register entry describing a person who no longer matches it, and an entry that has stopped matching its holder is the single loudest signal that register can produce - it is what the register is for. The Still Blade Pavilion will take a commission to make the discrepancy go away and will not be able to, which has happened once and did not improve their reputation. Flowing Star Tower cannot sight the person correctly for some years afterwards, because every reading it holds was cast on a root that is no longer there. And two institutions in particular want to know: the Frostmirror Court and the Storm Tyrant Court both survive on an intake of one root in a hundred, and a manufactured mutated root would end that problem permanently, which makes them the least safe parties in the world to be recognised by.',
         ruinAvailability:
             'In principle only, and nobody sensible plans on it. The legitimate case is identical to the pill - a grave, one person, one object, somewhere remote - and it has never once been the recorded outcome of a dig. The Bone Lantern Cult, which works more graves than anybody, states that it has never seen one and does not expect to. There is no cache, there has never been a cache, and the claim that there is one has been the bait in at least three lethal frauds.',
         description:
@@ -214,11 +214,11 @@ export const THE_LAST_REALM_IS_UNBUYABLE = {
     gradeCapsDestinationNotDistance:
         'Note what the grades actually buy, because it is easy to misread: every grade performs the same single crossing, from Perfection to the Early rung above it. What a higher grade buys is permission to perform that crossing further up the ladder, not a longer journey. A higher-grade pill spent at Nascent Soul Perfection does exactly what a lower-grade one would have done there, and the difference between them is spent for nothing.',
     whyItStopsThere:
-        'Because 40 is the last rung of the mortal plane and 41 is the approach to the Lid. Everything below the sky can be given: inputs, time, teachers, medicine, a rung. The approach cannot, and that is not a rule about these objects - it is the same rule as the Hollow Court refusing to look at anybody below a Void Tribulation floor with evidence they could cross, and the same rule as `origin.md` holding that privilege buys inputs and never rank. Being handed things gets you to the foot of the last climb and no further.',
+        'Because 40 is the last rung of the mortal plane and 41 is the approach to the Lid. Everything below the sky can be given: inputs, time, teachers, medicine, a rung. The approach cannot, and that is not a rule about these objects - it is the same rule as the Empyrean Court refusing to look at anybody below a Void Tribulation floor with evidence they could cross, and the same rule as `origin.md` holding that privilege buys inputs and never rank. Being handed things gets you to the foot of the last climb and no further.',
     whatItProtects:
-        'The meaning of the top of the ladder. If any grade could hand somebody 41, everything above 40 would be a statement about what an institution had in a vault rather than about a person, and every Tribulation Transcender in the world would be an open question about who paid for them. Instead the answer is known in advance and is the same for all of them: they walked. That is why the last realm still means something, and why the four seated at the Hollow Court are impressive in a way no holding can imitate.',
+        'The meaning of the top of the ladder. If any grade could hand somebody 41, everything above 40 would be a statement about what an institution had in a vault rather than about a person, and every Tribulation Transcender in the world would be an open question about who paid for them. Instead the answer is known in advance and is the same for all of them: they walked. That is why the last realm still means something, and why the four seated at the Empyrean Court are impressive in a way no holding can imitate.',
     theConsequenceForHolders:
-        'It also caps what any of this buys politically. The Earth Vein Tower holds the only higher-grade pill in existence and could not manufacture a peer for the Hollow Court with it - the best it can do is move somebody who has already climbed to 36 onto the first rung of the last mortal realm. An apex spending its rarest object still cannot buy its way into the last realm, every apex knows it, and that takes a great deal of heat out of the cold war.'
+        'It also caps what any of this buys politically. The Earth Vein Tower holds the only higher-grade pill in existence and could not manufacture a peer for the Empyrean Court with it - the best it can do is move somebody who has already climbed to 36 onto the first rung of the last mortal realm. An apex spending its rarest object still cannot buy its way into the last realm, every apex knows it, and that takes a great deal of heat out of the cold war.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -338,7 +338,7 @@ export const THE_TWO_CLAIMS = {
 
 export const ONCE_IN_A_LIFE = {
     theRule:
-        'One Heaven-Ascending Golden Pill per person, ever. One Root-Recasting Talisman per person, ever. They do not stack, cannot be repeated, and a second one of either does nothing at all to somebody who has already taken one - it is simply consumed against a body that will not take it twice.',
+        'One Heaven-Ascending Golden Pill per person, ever. One Spirit-Recasting Talisman per person, ever. They do not stack, cannot be repeated, and a second one of either does nothing at all to somebody who has already taken one - it is simply consumed against a body that will not take it twice.',
     whyItMattersForTheStep:
         'Because it converts merit into timing. Whatever crossing somebody spends their one Step on is the only one they will ever be given, so a cultivator carried across an early boundary can never be carried across a later one - and somebody who took theirs below Perfection to buy years has also used it up. Nothing here is wasted and everything here is final, which is a harder thing to reason about than waste.',
     whyItBitesHardestOnTheLowerDealing:
@@ -419,7 +419,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         recordedRefusal: {
             yearsAgo: 140,
             theCase:
-                'A formation master relit a node at the Deeproot Court that had been dark for six years, alone, over a winter, at a cost to herself the Kiln Wardens recorded in detail. It is the only instance in the outside record of anybody doing that court a service it could not do itself, and she filed the requisition for a disciple rather than for herself.',
+                'A formation master relit a node at the Deeproot Court that had been dark for six years, alone, over a winter, at a cost to herself the Tripod Wardens recorded in detail. It is the only instance in the outside record of anybody doing that court a service it could not do itself, and she filed the requisition for a disciple rather than for herself.',
             refusedBy:
                 'Two of the four Surveyors, in writing, on the ground that a service to a court is not a matter touching the arterial system. The other two consented and it made no difference, because the instrument requires all four.',
             afterwards:
@@ -580,7 +580,7 @@ export const STOCK_VERSUS_FLOW = {
     whyFlowIsSoRare:
         'Because flow needs a benefactor who both answers often and still remembers that answering matters, and that means a recent crossing with a living tie. There is one of those in the world. Every other line upward runs to somebody who crossed millennia ago, answers at intervals measured in ages, and can no longer feel what a request costs the people making it - see `THE_DECAY_OF_MEMORY` in `named-figures.ts`.',
     theTwoAxesDoNotAlign: [
-        'The old lines - the Hollow Court, the Earth Vein Tower, the Myriad Course Hall - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
+        'The old lines - the Empyrean Court, the Earth Vein Tower, the Myriad Course Hall - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
         'The Azure Cloud Pavilion holds more objects than anybody else in the world and not one of them above lower grade. Flow without quality.'
     ],
     whyAzureCloudIsAllLower:
@@ -604,7 +604,7 @@ export const STOCK_VERSUS_FLOW = {
     itIsALongBet:
         'The admirable part is that nobody now living will see it resolve. Seven crossings at 24 to 25, over decades, feeding a climb that takes millennia and that the Pavilion cannot assist past 28 in any case. They are spending everything they have on raising the odds for somebody who has not been born, in an institution that will not know whether it worked. That is not cleverness. It is an institution behaving as though the future is real.',
     whoElseHasWorkedItOut:
-        'The Earth Vein Tower has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Myriad Course Hall has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Hollow Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
+        'The Earth Vein Tower has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Myriad Course Hall has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Empyrean Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -621,7 +621,7 @@ export const THE_SENDING_PYRAMID = {
     theOrdinaryFactionShape:
         'So the ordinary faction shape is: a handful of lowers received across centuries, perhaps one middle in the whole record, no higher ever, and almost all of it spent. Anything richer than that needs a reason written down.',
     whoNeverReceivedAnything:
-        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. Ancient Bough Grove, the Six Li Patrol, the Hollow Bell Wanderers, the Bone Lantern Cult, the Severed, the Clear River Alliance and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
+        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. Ancient Bough Grove, the Six Li Patrol, the Wayside Chime Wanderers, the Bone Lantern Cult, the Severed, the Clear River Alliance and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -634,7 +634,7 @@ export const REGISTERS_COUNT_WHAT_THEY_CAN_SEE = {
     soItIsAFloor:
         'The true figure is at least that and probably a little higher, and the two parties most likely to hold something uncounted are exactly the ones the registers cannot reach: an institution that will not discuss its shelf, and an institution that keeps no accounts of any kind.',
     andEverKnownIsToo:
-        'The same applies to `everKnown`. Twenty-four Steps and seven Dealings is what the record can trace, and the record is a Ten Thousand Works inheritance with four thousand years of gaps in it. Nobody who works with these figures treats them as complete, and nobody has a better method.'
+        'The same applies to `everKnown`. Twenty-four Steps and seven Dealings is what the record can trace, and the record is a Ten Thousand Deeds inheritance with four thousand years of gaps in it. Nobody who works with these figures treats them as complete, and nobody has a better method.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -683,7 +683,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
         spentOn:
-            'A lower Root-Recasting Talisman, sixteen hundred years ago, on a five-root child of the Tyrant house who was carrying a name the Court needed carried. It narrowed her to a three. She was never anything remarkable and she held the seat for four hundred years, which was the entire purpose.',
+            'A lower Spirit-Recasting Talisman, sixteen hundred years ago, on a five-root child of the Tyrant house who was carrying a name the Court needed carried. It narrowed her to a three. She was never anything remarkable and she held the seat for four hundred years, which was the entire purpose.',
         judgedInHindsight:
             'Regarded internally as sound and externally as revealing: the Court spent an irreplaceable object on succession rather than on strength, which tells you what the Storm Tyrant Court is actually organised around. Ninefold Karma Palace, which audited it, has never said so out loud and has the file.'
     },
@@ -704,14 +704,14 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-nine-peaks-ascetic-order',
         itemId: 'immortal-heaven-ascending-golden-pill',
-        throughLine: 'The Myriad Course Hall line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since. The part nobody in the province has ever remarked on is that the Order stands on ground the Earth Vein Tower holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sluice court, which passed objects down to its clients three times in the history of the Sect and has not since. The part nobody in the province has ever remarked on is that the Sect stands on ground the Earth Vein Tower holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
         everReceived: { higher: 0, middle: 0, lower: 3 },
         stillHeld: { higher: 0, middle: 0, lower: 1 },
         countedByTheRegisters: false,
         spentOn:
             'Two lowers, six and nine centuries ago, both on ascetics standing at Nascent Soul Perfection who had carried the same stone for two hundred years. Both clean crossings, both uncontroversial then and since.',
         judgedInHindsight:
-            'The two spends are not the interesting part. The third object is: the Order has held one lower Step for forty-one years without agreeing on a recipient. The Peak Wardens want it spent on somebody who works the vein; the Mountain Elders hold that no candidate has appeared. The argument has the exact shape of a held question - see `HELD_QUESTIONS` in `named-figures.ts` - the Order does not discuss it beyond the peaks, the registers do not count it, and two of the four ascetics who would have qualified have died while the discussion continued.'
+            'The two spends are not the interesting part. The third object is: the Sect has held one lower Step for forty-one years without agreeing on a recipient. The Crag Wardens want it spent on somebody who works the vein; the Mountain Elders hold that no candidate has appeared. The argument has the exact shape of a held question - see `HELD_QUESTIONS` in `named-figures.ts` - the Sect does not discuss it beyond the peaks, the registers do not count it, and two of the four ascetics who would have qualified have died while the discussion continued.'
     },
     // -- does not know what it has -------------------------------------
     {
@@ -736,13 +736,13 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
         spentOn:
             'Nothing. It is still there, and this is the entry: the Temple keeps no accounts of any kind, has never inventoried anything, and the shelf has not been looked at by anybody currently alive.',
         judgedInHindsight:
-            'It cannot be judged, which is the point. Somewhere in the Temple is a box nobody living has opened, holding a middle-grade Root-Recasting Talisman received before any of the four current monks was born, and none of them could tell you it exists. This is `LOST_RECORDS` at its most literal. The poorest institution in the province is sitting on the single most valuable object outside the apexes, behind the ground rice - and would give it away inside the hour to whoever needed it, if only somebody would tell them it was there.'
+            'It cannot be judged, which is the point. Somewhere in the Temple is a box nobody living has opened, holding a middle-grade Spirit-Recasting Talisman received before any of the four current monks was born, and none of them could tell you it exists. This is `LOST_RECORDS` at its most literal. The poorest institution in the province is sitting on the single most valuable object outside the apexes, behind the ground rice - and would give it away inside the hour to whoever needed it, if only somebody would tell them it was there.'
     },
     // -- the ordinary shape --------------------------------------------
     {
         factionId: 'sect-verdant-spring-valley',
         itemId: 'immortal-heaven-ascending-golden-pill',
-        throughLine: 'The Myriad Course Hall line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume. The chain still exists and has simply stopped moving: the Sill has sent nothing down it in two centuries, the Order sends nothing further, and the Hall has never established which of the two stopped first.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sluice court and the Nine Peaks above it, which is two removes and shows in the volume. The chain still exists and has simply stopped moving: the Sluice has sent nothing down it in two centuries, the Sect sends nothing further, and the Hall has never established which of the two stopped first.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -754,24 +754,24 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-frostmirror-court',
         itemId: 'immortal-root-recasting-talisman',
-        throughLine: 'The Myriad Course Hall line, through the Third Sill court, exactly once and never again - and the Ward has never been able to establish whether "never again" was a decision anybody took or simply what happened. It has raised the question twice, in eleven years of letters, and both times inside a paragraph about something else.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sluice court, exactly once and never again - and the Ward has never been able to establish whether "never again" was a decision anybody took or simply what happened. It has raised the question twice, in eleven years of letters, and both times inside a paragraph about something else.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
         spentOn:
-            'A lower Root-Recasting Talisman, nine hundred years ago, which was the wrong object arriving at the wrong door. The Court needs mutated ice roots; a lower Dealing cannot produce a mutated root by any route, and what it does instead is narrow a bad root to a two, which is of no use whatever to an institution that admits one root in a hundred. It was spent on the steward who ran the hall - a five-root who could not have used the library if she had wanted to, and who was made merely bad instead of hopeless.',
+            'A lower Spirit-Recasting Talisman, nine hundred years ago, which was the wrong object arriving at the wrong door. The Court needs mutated ice roots; a lower Dealing cannot produce a mutated root by any route, and what it does instead is narrow a bad root to a two, which is of no use whatever to an institution that admits one root in a hundred. It was spent on the steward who ran the hall - a five-root who could not have used the library if she had wanted to, and who was made merely bad instead of hopeless.',
         judgedInHindsight:
             'The Court records it without comment and considers the matter closed. Everybody else finds it quietly astonishing that the one institution in the world with an obvious use for a higher-grade Dealing received a lower one and spent it on an administrator. The answer of the Court, when anybody is rude enough to ask, is that no lower Dealing was ever going to make an ice cultivator out of anybody, and that the steward was cold enough already.'
     },
     {
         factionId: 'sect-cinnabar-crucible-sect',
         itemId: 'immortal-root-recasting-talisman',
-        throughLine: 'The Myriad Course Hall line, through the Third Sill court, which sent one object to the Hall and has sent nothing since - and the Hall now holds from the Frostmirror instead, so the door that object came through is not one it can knock on any more. Neither party knew at the time that it was the last, which is the ordinary way a line ends.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sluice court, which sent one object to the Hall and has sent nothing since - and the Hall now holds from the Frostmirror instead, so the door that object came through is not one it can knock on any more. Neither party knew at the time that it was the last, which is the ordinary way a line ends.',
         everReceived: { higher: 0, middle: 1, lower: 0 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
         spentOn:
-            'The middle Root-Recasting Talisman spent nine hundred years ago, whose file the Ninefold Karma Palace still holds. The Hall gambled it on its most promising alchemist, a muddled five-root who leaned toward fire, expecting a single fire root. A middle Dealing goes to a one or a two on luck and nothing else. It produced a dual water and metal, which is a real and useful root and is close to useless at a furnace.',
+            'The middle Spirit-Recasting Talisman spent nine hundred years ago, whose file the Ninefold Karma Palace still holds. The Hall gambled it on its most promising alchemist, a muddled five-root who leaned toward fire, expecting a single fire root. A middle Dealing goes to a one or a two on luck and nothing else. It produced a dual water and metal, which is a real and useful root and is close to useless at a furnace.',
         judgedInHindsight:
             'The object did exactly what it does. The Hall bet on the half of the outcome it wanted and lost, and the alchemist - who was not meaningfully consulted, and who became a perfectly successful formation contractor two provinces away - is the reason every institution that has held a middle Dealing since has declined to spend it. The Earth Vein Tower has never submitted a requisition against its own, and its clerks are taught the form without ever being told why nobody uses it.'
     }

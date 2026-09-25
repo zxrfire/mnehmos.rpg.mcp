@@ -35,8 +35,8 @@ describe('what could stand over a house at all', () => {
     });
 
     it('leaves out the thing that is taking from the house it stands over', () => {
-        // The Thing Under Nine Peaks is at 33, on the Ascetic Order's own vein,
-        // sharing the Order's element - every ground and element signal points
+        // The Thing Under Nine Peaks is at 33, on the Ascetic Sect's own vein,
+        // sharing the Sect's element - every ground and element signal points
         // at a pairing - and it is draining them. It is the reason the ground
         // is contested rather than the reason it is held.
         const pool = thingsThatCouldStandOverAHouse().map(t => t.id);

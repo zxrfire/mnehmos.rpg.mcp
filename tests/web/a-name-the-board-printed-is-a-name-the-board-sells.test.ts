@@ -5,7 +5,7 @@
  * WHAT WAS PLAYED
  * ═════════════════════════════════════════════════════════════════════════
  *
- * `I buy the Cross-Meridian Strike` - row one of the first board a beginner
+ * `I buy the Cross-Meridian Jolt` - row one of the first board a beginner
  * ever reads - reached the engine with NOTHING TO BUY. The stones stayed in the
  * pouch, no book arrived, and the prose described the stall correctly, because
  * the prose was right about everything the engine told it.
@@ -85,18 +85,18 @@ describe('a name the board printed is a name the board sells', () => {
      */
     it('puts the subject back when the reader answered with the verb alone', () => {
         const plan = carryWhatOnlyTheSentenceKnows(
-            { action: 'buy' }, 'I buy the Cross-Meridian Strike', [], true
+            { action: 'buy' }, 'I buy the Cross-Meridian Jolt', [], true
         );
-        expect(plan.target).toBe('Cross-Meridian Strike');
+        expect(plan.target).toBe('Cross-Meridian Jolt');
     });
 
     /** And never over a subject the reader did supply, which is the better read. */
     it('never overwrites a subject the reader chose', () => {
         const plan = carryWhatOnlyTheSentenceKnows(
-            { action: 'buy', target: 'Stone Hide Mantle' },
-            'I buy the Cross-Meridian Strike', [], true
+            { action: 'buy', target: 'Scree Mantle' },
+            'I buy the Cross-Meridian Jolt', [], true
         );
-        expect(plan.target).toBe('Stone Hide Mantle');
+        expect(plan.target).toBe('Scree Mantle');
     });
 
     /**
@@ -107,7 +107,7 @@ describe('a name the board printed is a name the board sells', () => {
      */
     it('carries nothing across when the two readings name different verbs', () => {
         const plan = carryWhatOnlyTheSentenceKnows(
-            { action: 'sell' }, 'I buy the Cross-Meridian Strike', [], true
+            { action: 'sell' }, 'I buy the Cross-Meridian Jolt', [], true
         );
         expect(plan.target).toBeUndefined();
     });

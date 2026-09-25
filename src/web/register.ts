@@ -1958,7 +1958,7 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
             contestedOver: contentionBetween(factionId, r.otherId)
         }));
 
-    // A CONTENTION IS NOT ALWAYS A TIE, and the two halves of the Kiln are the case
+    // A CONTENTION IS NOT ALWAYS A TIE, and the two halves of the Tripod are the case
     // that proves it. Neither carries the other in `rivals`; neither has an
     // ambition; they have not corresponded in nine hundred years. They do have an
     // authored tie, so they would have survived this. Other pairs do not: two
@@ -2569,7 +2569,7 @@ function curriculumLine(d: SectDossier): string | null {
             return sentence(`${ladder}${spliceable(unperiod(claim(a.rankNote, 200)))}`);
         }
         // Teaching nothing is not a hole in the data. It is what the Deeproot Court
-        // Court and the Hollow Court are, and silence here would read as a
+        // Court and the Empyrean Court are, and silence here would read as a
         // teach list the register mislaid.
         const nothing = 'It hands nothing over: no teach list, no signature art, and nobody comes here to learn.';
         return door ? `${nothing} ${door}` : nothing;
@@ -3840,8 +3840,8 @@ export function buildRegister(): WorldRegister {
         for (const a of d.artifacts) a.ownerLinkId = d.id;
 
         // Everybody an ambition names is somebody with an entry on this sheet,
-        // and a register that prints "blocked by the Third Sill Court" without
-        // a way to go and read the Third Sill Court is making the reader search
+        // and a register that prints "blocked by the Third Sluice Court" without
+        // a way to go and read the Third Sluice Court is making the reader search
         // for it by eye.
         if (d.ambition) {
             for (const b of d.ambition.blockedBy) b.linkId = entryFor(b.id);
@@ -6867,7 +6867,7 @@ function courtPanel(court: RegisterCourt, selfAnchor: string, panelId?: string):
         ['offices', String(court.officers.length)],
         // Deliberately not the house's name here. Where a court is also a
         // sect, this panel sits inside a card already headed with that name,
-        // and repeating it printed "also filed as The Kiln Court" on the Kiln
+        // and repeating it printed "also filed as The Tripod Court" on the Tripod
         // Court. The alias belongs beside the heading, which is where the
         // dossier puts it.
         ['a beginner', named ? 'may be told the name' : 'has never heard of it']
@@ -7347,7 +7347,7 @@ function treeNode(
      */
     const card = court && entry
         // Named for the house, not for the posting. The province has called this
-        // body the Kiln Court for nine hundred years and the Deeproot Court is what the
+        // body the Tripod Court for nine hundred years and the Deeproot Court is what the
         // Earth Vein Tower calls the job; leading with the apex's word for it made the
         // name every reader arrives with disappear off the sheet entirely, which is
         // worse than the duplicate it replaced. Both names are on the one node,
@@ -7704,7 +7704,7 @@ const APEX_NOTE = '<p class="note">A court is the layer every tenant in a provin
     + '<strong>Almost all of them are sects</strong> - they have members, an intake, a ladder and a seat, '
     + 'and the word <em>court</em> describes the arterial vein they administer rather than what kind of '
     + 'institution they are, so each of those has its own entry in the list below. <strong>Two are not.</strong> '
-    + 'The Kiln Court and the Deeproot Court are offices: nobody joins either, there is no intake and no '
+    + 'The Tripod Court and the Deeproot Court are offices: nobody joins either, there is no intake and no '
     + 'ladder to climb, and what stands there is between three and six people appointed from elsewhere, '
     + 'doing an assigned job on ground the body does not own. Those two are the ones with no faction entry, '
     + 'and the reason is the distinction rather than an omission.</p>';

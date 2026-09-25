@@ -601,7 +601,7 @@ export const WHAT_THE_LIGHTNING_TOOK = {
     whyProvenIsWorthMore:
         'Because there is no other way to get the claim. A forge states what it intended, an assay house states what it measured, and both are opinions about behaviour under conditions nobody applied. An object that was on a body through a tribulation and is still an object has been through the only test that is not an opinion, and the people who understand this will pay a multiple for it that looks insane to anybody reading the inventory count.',
     whoKnowsThis:
-        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Bountiful Sheaf Sect know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Treasure Pavilion catalogues by count because count is what buyers ask for.',
+        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Bountiful Sheaf Sect know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Relic Pavilion catalogues by count because count is what buyers ask for.',
     theExceptionIsNotAnException:
         'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Karma Palace has established in four centuries were exactly this.',
     andAFailedCrossingLeavesNoBody:
@@ -660,7 +660,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             marker: 'A double gate in a hillside, cut for people rather than for effect, with a worn step and a bar socket on the inside face. The stone around the sockets is polished to a shine by four centuries of hands and nothing else about it is decorated at all.',
             rumour: 'The ascetics call it the low gate and say it is where a dead order used to test its intake, which is why nobody serious goes: an intake test is for children, and everything worth having is behind the intake test rather than at it.',
             attributedTo: 'An order the Nine Peaks absorbed the remnants of, whose name the ascetics use and do not write down',
-            lastPartySaid: 'Three from a Clear River Ford culling crew went in saying it was an afternoon and that the only risk was the walk. All three were at Qi Condensation and none of them had been told what the intake ordinal of a Foundation-grade order looks like.',
+            lastPartySaid: 'Three from a Clear River Ferry culling crew went in saying it was an afternoon and that the only risk was the walk. All three were at Qi Condensation and none of them had been told what the intake ordinal of a Foundation-grade order looks like.',
             whatAKnowledgeablePartyReads: 'An intake gate is calibrated for the intake of the sect that cut it, and a Foundation-grade order tested its applicants at Foundation. The bar socket is on the inside, so it was barred by the people running the test and not by the applicants, which means the test was supervised and the supervision is what is missing now. Nothing supervises it. It simply runs.',
             whatAnIgnorantPartyConcludes: 'That an outer gate is the easy one, because in a living sect the outer gate is where the fourteen-year-olds queue. The word outer is doing all the work in that sentence and it is a word about position rather than difficulty.',
             startingAwareness: 'named',
@@ -674,7 +674,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     kind: 'strength',
                     ordinal: 13,
                     test: 'The plate discharges the accumulated pressure of the hall into whoever has both hands on it, in one push, at the load an applicant at Foundation Establishment Early was expected to hold for a count of six. It is not a trick and there is nothing to read. It is a measured amount of force applied to a body, and the measurement has not changed since the order that took it stopped existing.',
-                    below: 'Below Foundation the body has nothing to spread the load through, and what happens is the thing the channels were cut to drain. Qi Condensation cultivators are killed by it outright at the lower layers and crippled at the upper ones, which is the outcome the Clear River Ford crew got and the reason two of them are in the margins catalog now.',
+                    below: 'Below Foundation the body has nothing to spread the load through, and what happens is the thing the channels were cut to drain. Qi Condensation cultivators are killed by it outright at the lower layers and crippled at the upper ones, which is the outcome the Clear River Ferry crew got and the reason two of them are in the margins catalog now.',
                     noWorkaround: 'There is no approach, no partial contact and no way to take it in stages. The plate is the door and the door is one event. Parties have tried levering the pivot, which discharges it into the lever and then into them.'
                 }
             ],
@@ -1019,7 +1019,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-foundation-that-was-not-finished',
         kind: 'trial',
-        name: 'The Slow Door',
+        name: 'The Patient Door',
         character: 'dwelling',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -1066,7 +1066,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     below: 'The chest does not open and the array puts the claimant out of the room, gently, in the sense that they are outside and unhurt and the door is shut. It is the only trial in the catalog with a polite failure, which is why the eleven parties all escalated to force: nothing had happened yet and force was the obvious next step.'
                 }
             ],
-            howItKills: 'By being forced. The array is not a defence and has none, but the inner door is cut into a Nine Peaks vein wall, and every party that has tried to open a vein wall by force in that province has learned what the Ascetic Order does about it. Two of the nine recorded attempts ended at the door; the other seven ended two days later on the Order\'s terms.',
+            howItKills: 'By being forced. The array is not a defence and has none, but the inner door is cut into a Nine Peaks vein wall, and every party that has tried to open a vein wall by force in that province has learned what the Ascetic Sect does about it. Two of the nine recorded attempts ended at the door; the other seven ended two days later on the Sect\'s terms.',
             prize: {
                 techniqueIds: ['jade-pool-lifespring-art'],
                 other: [
@@ -1202,7 +1202,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-door-that-wants-a-refusal',
         kind: 'trial',
-        name: 'The Unbarred Mouth',
+        name: 'The Unbarred Maw',
         character: 'vault',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -1238,7 +1238,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     below: 'The box does not open, cannot be broken, and is not protected. Parties have taken it away with them; it is a stone box a hundred paces down the spur and it still does not open, and eventually somebody carries it back up because carrying it down was the whole of the idea.'
                 }
             ],
-            howItKills: 'It does not, and the elder was specific about that in the note: he did not want a guarded thing, he wanted an unspendable one. The cost is entirely in what opening it makes true about the claimant, because the Pavilion knows what is in the box and will know within a season who has it, and the Flowing Light Tower has had a standing sighting on the cave for four hundred years.',
+            howItKills: 'It does not, and the elder was specific about that in the note: he did not want a guarded thing, he wanted an unspendable one. The cost is entirely in what opening it makes true about the claimant, because the Pavilion knows what is in the box and will know within a season who has it, and the Flowing Star Tower has had a standing sighting on the cave for four hundred years.',
             prize: {
                 techniqueIds: [
                     // A door that opens only for somebody who refuses it, holding the art
@@ -2036,7 +2036,7 @@ export const GRAVES: readonly Grave[] = [
         outside: {
             marker: 'A vault door in the floor of a clan hall that is still in use, walked over daily, with the clan mark inlaid in the leaf and the leaf worn smooth by two hundred and forty years of feet. It is not hidden and it is not guarded. The clan holds its meetings standing on it.',
             rumour: 'Everybody in the district knows what it is, including every party that would like to rob it, and the clan makes no secret of the contents because secrecy is not what is keeping them.',
-            attributedTo: 'The third Forge Ancestor of the Ashen Forge Clan',
+            attributedTo: 'The third Forge Ancestor of the Ashen Anvil Clan',
             lastPartySaid: 'Two serious attempts in two hundred years. The second, which was a Crimson Abyss raiding party of nineteen, killed eleven of the clan, stood on the leaf for two days and left with the hall\'s furniture.',
             whatAKnowledgeablePartyReads: 'A clan vault that opens for descent is the one lock in the world that cannot be picked, bought, forced or negotiated, and the clan can therefore leave it in the floor of a room it holds meetings in. It is also a full inventory of a Deity Transformation cultivator who died in bed at two hundred and eighty, which means it is large and none of it has ever been tested against anything.',
             whatAnIgnorantPartyConcludes: 'That a vault nobody is guarding is a vault nobody thinks is worth guarding. Nineteen people acted on that and it cost the clan eleven dead and cost the raiders their reputation, which in that province is the more expensive of the two.',
@@ -2233,7 +2233,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-deep-gleaner-xun',
         kind: 'grave',
-        name: 'The Resealed Wall',
+        name: 'The Resealed Rampart',
         character: 'workshop',
         origin: 'overrun_at_work',
         scale: 'a_compound',
@@ -2450,8 +2450,8 @@ export const GRAVES: readonly Grave[] = [
         mannerOfDeath: 'duel',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'Two cairns eleven paces apart on a surveyed line above Clear River Ford, both raised by the same party on the same afternoon, both with a stone standing at the head and neither with a name on it. Immovable Mountain Temple\'s perimeter mark is on the rock between them and was there first.',
-            rumour: 'Everybody local knows what happened, has an opinion about who was in the right, and can name both parties. It was twelve years ago and there are people in Clear River Ford who were there.',
+            marker: 'Two cairns eleven paces apart on a surveyed line above Clear River Ferry, both raised by the same party on the same afternoon, both with a stone standing at the head and neither with a name on it. Immovable Mountain Temple\'s perimeter mark is on the rock between them and was there first.',
+            rumour: 'Everybody local knows what happened, has an opinion about who was in the right, and can name both parties. It was twelve years ago and there are people in Clear River Ferry who were there.',
             attributedTo: 'Two Core Formation cultivators of the Pavilion and the Stone Marrow Hall',
             lastPartySaid: 'Nobody has opened either. There is no reason to think there is anything in them and the families are alive and local.',
             whatAKnowledgeablePartyReads: 'Two Core Formation cultivators died in a duel over a survey line twelve years ago and were cairned where they fell by the survivors, which means both of them went into the ground with everything they had on that day and none of it has been through anything except an afternoon. It is a fair haul at a fair price and it is exactly what it looks like.',
@@ -2539,9 +2539,9 @@ export const GRAVES: readonly Grave[] = [
         mannerOfDeath: 'died_of_injuries',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'A man in a ditch off the Iron Ridge circuit with his contract still in his coat, three years there, found and reported twice by people who did not want the trouble of moving him. The village has a note of it.',
+            marker: 'A man in a ditch off the Iron Crest circuit with his contract still in his coat, three years there, found and reported twice by people who did not want the trouble of moving him. The village has a note of it.',
             rumour: 'He is known about. He took a culling notice priced off an old survey, the notice was wrong by four ranks, and the village has not amended it and does not intend to.',
-            attributedTo: 'A culler of the Iron Ridge circuit',
+            attributedTo: 'A culler of the Iron Crest circuit',
             lastPartySaid: 'Two people have gone through his pockets and both left the contract, which is the only object at the site anybody has any use for and neither of them could read.',
             whatAKnowledgeablePartyReads: 'That there is nothing here, and that the contract in his coat is the mispriced notice and is evidence, and that a party who takes it to the Clearwater Ward is doing something for somebody rather than for themselves.',
             whatAnIgnorantPartyConcludes: 'The same. Nobody is wrong about this grave. It is in the catalog because a file about inheritance needs the floor of the distribution in it, and the floor is a man in a ditch with a splint on and a contract that killed him.',
@@ -2696,7 +2696,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-count-that-outlived-him',
         kind: 'grave',
-        name: 'The Green Glass',
+        name: 'The Verdigris Glass',
         character: 'scar',
         origin: 'what_the_catastrophe_made',
         scale: 'a_compound',
@@ -2717,7 +2717,7 @@ export const GRAVES: readonly Grave[] = [
             marker: 'About four hundred paces of fen fused to green glass, flat, with the reeds still visible in it standing upright where they were. The edge of it is a clean line. At the centre there is a shallow depression with three objects in it, and they are the only things on the whole sheet that are not part of the sheet.',
             rumour: 'The fen villages date it to a single night three hundred and forty years ago and say the sky came down on a man nobody knew, twice, and that the second one was longer. Nobody claims him, no sect has ever posted a name, and the standing local view is that whoever it was had earned it.',
             attributedTo: 'Not established. Four institutions have opinions and none of them has a name',
-            lastPartySaid: 'A Thousand Treasure buyer walked the edge eleven years ago with a hired Nascent Soul cultivator, priced the sheet by count at three objects, and declined to fund a crossing. The buyer\'s note calls it the thinnest apex site in the province, which is correct by count and is the exact error the trade is famous for.',
+            lastPartySaid: 'A Thousand Relic buyer walked the edge eleven years ago with a hired Nascent Soul cultivator, priced the sheet by count at three objects, and declined to fund a crossing. The buyer\'s note calls it the thinnest apex site in the province, which is correct by count and is the exact error the trade is famous for.',
             whatAKnowledgeablePartyReads: 'A tribulation at that scale burns everything the person was carrying, so three objects on four hundred paces of glass is not a poor site, it is the profile: whatever is out there went through the heaviest event in the world in direct contact and is still an object. The depression at the centre is where he was, and a body at Tribulation Transcendence does not decay, so the absence of one says the strike went on long enough to take it.',
             whatAnIgnorantPartyConcludes: 'That three items on four hundred paces is not worth the crossing, and that a site with no name attached to it has no provenance and therefore no resale. Both are true as stated and both are reasoning by count, which is the reasoning that sends every party in the province to the maintained crypt instead.',
             startingAwareness: 'named',
@@ -2843,7 +2843,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-field-where-both-of-them-stopped',
         kind: 'grave',
-        name: 'The Slow Field',
+        name: 'The Halted Acre',
         character: 'battlefield',
         origin: 'fought_over_and_left',
         scale: 'a_mountain',

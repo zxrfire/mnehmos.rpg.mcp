@@ -32,7 +32,7 @@
  *     land          takes the materials, puts the work in, launches if it is
  *                   finished. Only ever called on a `work` plan.
  *     the world     what a launch minted becomes a row. Without this step a
- *                   player could finish a spirit boat and own nothing.
+ *                   player could finish a spirit skiff and own nothing.
  *
  * The days go BEFORE the write because a cultivator who dies at the bench did
  * not finish the hull, and `applyTimeSkip` is what decides whether they are
@@ -44,7 +44,7 @@
  *
  * A second yard. `workOn` takes `hands` because a house has several and divides
  * the work between them; a person is one pair, and the days do not divide. That
- * is why a spirit boat is 2,400 days of work for somebody alone and why a house
+ * is why a spirit skiff is 2,400 days of work for somebody alone and why a house
  * with four qualified elders is the only body that finishes one in a lifetime -
  * and it is the catalog's arithmetic rather than a rule stated here. Hiring a
  * yard is a real and missing thing; see {@link A_YARD_IS_NOT_HIREABLE_YET}.
@@ -221,7 +221,7 @@ export const craftVerbs = {
         //
         // `mintCraft` decides whether there is an object at all and hands it
         // back rather than writing it; nothing had ever taken it. Without this
-        // a player could finish a spirit boat, be told it was theirs, and own
+        // a player could finish a spirit skiff, be told it was theirs, and own
         // nothing - the narration asserting an outcome the database never took,
         // which is the one thing this package exists to make impossible.
         // A counted-grade conveyance finished at the bench is a vehicle too: it goes with them, and

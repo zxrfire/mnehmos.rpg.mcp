@@ -10,7 +10,7 @@
  * person. `factKindFor` maps a scheduled `assessment` onto it, and every
  * assessment on the books is a grant renewal, so the whole kind read:
  *
- *     The Ashen Forge Clan's grant on its vein comes up for renewal.
+ *     The Ashen Anvil Clan's grant on its vein comes up for renewal.
  *
  * Meanwhile `applyPromotions` raised people through their houses every year and
  * wrote the rank onto the record without writing anything to the ledger, so

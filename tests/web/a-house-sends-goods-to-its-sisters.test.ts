@@ -80,11 +80,11 @@ describe('a house sends goods to its sisters', () => {
     });
 
     it('costs more face the bigger the fumble, and pays nothing late', () => {
-        const late = (wants: 'a back' | 'a carriage' | 'a spirit boat') => whatALateDeliveryCosts({ wants, contribution: 100 }, 3)!;
+        const late = (wants: 'a back' | 'a carriage' | 'a spirit skiff') => whatALateDeliveryCosts({ wants, contribution: 100 }, 3)!;
         expect(whatALateDeliveryCosts({ wants: 'a back', contribution: 100 }, 0)).toBeNull();
         expect(late('a back').face).toBe('slight');
         expect(late('a carriage').face).toBe('serious');
-        expect(late('a spirit boat').face).toBe('grave');
+        expect(late('a spirit skiff').face).toBe('grave');
         expect(late('a back').contribution).toBe(30);
         expect(whatALateDeliveryCosts({ wants: 'a back', contribution: 100 }, 40)!.contribution).toBe(100);
     });

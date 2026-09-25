@@ -68,9 +68,9 @@ function side(input: CombatantInput): FightSide {
 
 const GROUND: FightGround = {
     locationId: 'loc-ford',
-    locationName: 'Clear River Ford Ford',
+    locationName: 'Clear River Ferry Ford',
     waysOut: [
-        { id: 'loc-town', name: 'Clear River Ford', days: 2 },
+        { id: 'loc-town', name: 'Clear River Ferry', days: 2 },
         { id: 'loc-peaks', name: 'The Nine Peaks', days: 9 }
     ]
 };
@@ -430,13 +430,13 @@ describe('backing off', () => {
             combatant({ id: 'q', name: 'Other' })
         );
         const turn = takeAFightTurn(fight!, { kind: 'break_off' }, { ambient: NEUTRAL, turn: 1 });
-        expect(turn.fleeingToward?.name).toBe('Clear River Ford');
+        expect(turn.fleeingToward?.name).toBe('Clear River Ferry');
     });
 
     it('takes the road the player named, by the name the game printed', () => {
         expect(wayOut(GROUND, 'The Nine Peaks')!.id).toBe('loc-peaks');
         expect(wayOut(GROUND, 'nine peaks')!.id).toBe('loc-peaks');
-        expect(wayOut(GROUND, 'Clear River Ford')!.id).toBe('loc-town');
+        expect(wayOut(GROUND, 'Clear River Ferry')!.id).toBe('loc-town');
     });
 
     it('is still available where there is nowhere to go, and says so', () => {

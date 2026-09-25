@@ -106,12 +106,12 @@ describe('an absent name is a question, not a verdict', () => {
     });
 
     it('the Meng line stands on nobody roll, which is the ordinary case and not a catastrophe', () => {
-        // Meng is reserved to the Nine Peaks Ascetic Order on the strength of a
+        // Meng is reserved to the Nine Peaks Ascetic Sect on the strength of a
         // sealed patriarch. Nothing named Meng is on any LIVING roll, so the
         // roll reads the line as gone - and the reserved map still settles it,
         // which is exactly the two checks disagreeing in the way trust.md says
         // they should: the name carries the house, and the roll cannot confirm it.
-        expect(RESERVED_SURNAMES.get('Meng')).toBe('Nine Peaks Ascetic Order');
+        expect(RESERVED_SURNAMES.get('Meng')).toBe('Nine Peaks Ascetic Sect');
         expect(housesWithALineNamed('Meng')).toEqual([]);
         expect(readTheRollFor('Meng Da', 'sect-nine-peaks-ascetic-order').worth).toBe('settles_it');
         expect(linesOnTheRollOf('sect-nine-peaks-ascetic-order')).not.toContain('Meng');

@@ -1,5 +1,5 @@
 /**
- * A player born in Deep Snow Village could gather herbs for the rest of their
+ * A player born in Deep Drift Village could gather herbs for the rest of their
  * life and never once come back with anything.
  *
  * Once the played `gather` verb started reading what is underfoot, the herb

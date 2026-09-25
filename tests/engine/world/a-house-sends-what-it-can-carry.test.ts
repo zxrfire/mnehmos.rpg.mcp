@@ -50,7 +50,7 @@ import {
 } from '../../../src/engine/world/what-a-conveyance-does-to-a-journey.js';
 import { STONES_BURNED_PER_HEAD_PER_DAY } from '../../../src/engine/world/what-a-sea-crossing-costs.js';
 
-const HOUSE = { id: 'house-a', name: 'The Cold Spring Sect' };
+const HOUSE = { id: 'house-a', name: 'The Lone Spring Sect' };
 const BOAT = requireConveyance('conv-spirit-boat');
 const SHOD = requireConveyance('conv-carriage-earth');
 const materials = () => getSendingReason('sending-for-materials')!;

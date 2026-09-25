@@ -113,8 +113,8 @@ export function whatCanBeReachedFromHere(input: {
  * The one question a caller asks of this list, and the reason it is a function
  * rather than a comparison at each call site: a phrase reaches a thing under
  * the name the engine uses OR under any of the ones it also answers to, and a
- * caller checking only the first would tell somebody the Hollow Court is not
- * here while a Hollow Court disciple is standing in front of them.
+ * caller checking only the first would tell somebody the Empyrean Court is not
+ * here while an Empyrean Court disciple is standing in front of them.
  */
 export function whatThePhraseReaches(
     said: string,
@@ -133,8 +133,8 @@ export function whatThePhraseReaches(
 /**
  * The other things a house gets called, out of its own name.
  *
- * Houses in this world are named `<image> <type-noun>` - the Hollow Court, the
- * Iron Ridge - and people drop the first half constantly. Nothing here is a
+ * Houses in this world are named `<image> <type-noun>` - the Empyrean Court, the
+ * Iron Crest - and people drop the first half constantly. Nothing here is a
  * table of nicknames: the short form is the name's own last word, so a house
  * added to the catalog tomorrow is shortened correctly without anybody writing
  * it down. The leaning is included because it is how a player refers to a house

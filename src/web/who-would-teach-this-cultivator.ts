@@ -93,7 +93,7 @@ export interface SomebodyAbove {
      *
      * Measured across five seeded worlds, for a cultivator at ordinal 38:
      * SIX people in the whole world hold a road that carries any further, and
-     * they stand in exactly two places - five of them on the Hollow Court's
+     * they stand in exactly two places - five of them on the Empyrean Court's
      * ground, and Ru Anwei in a hall she has not left in three hundred and
      * eighty years. That is the top of this ladder working as designed.
      *

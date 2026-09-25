@@ -398,7 +398,7 @@ describe('what gets taken', () => {
     });
 
     it('finds nothing to take from a cultivator who has already been emptied', () => {
-        // The Hollow Court condition arriving early. Not a reprieve.
+        // The Empyrean Court condition arriving early. Not a reprieve.
         let nothingLeft = 0;
         for (let i = 0; i < 400; i++) {
             const result = evaluateToll(makeCultivator({ realmOrdinal: 12 }), {

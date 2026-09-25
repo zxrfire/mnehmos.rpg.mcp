@@ -10,7 +10,7 @@
  *   "any work going?"              -> the MARKET read. Millet at one cash, a
  *                                     ferry crossing, manuals at six and nine.
  *   "is anyone hiring around here?" -> a STANDING read. "You are a Stray to the
- *                                     Hollow Bell Wanderers."
+ *                                     Wayside Chime Wanderers."
  *
  * Both answered confidently, about something else. That is worse than a
  * refusal: a player told the price of millet does not learn that the game

@@ -182,7 +182,7 @@ interface Rule {
  * The design owner, after the catalog was moved wholesale into the xianxia
  * register: *we can now unretire ash cuz its now all xianxia names.* Ash
  * Terrace and Ash Slope are ordinary names there, and `ashen` and `ashfall`
- * were never caught by this rule anyway - the Ashen Forge Clan and Ashfall
+ * were never caught by this rule anyway - the Ashen Anvil Clan and Ashfall
  * Crescent have stood the whole time.
  *
  * WHAT STAYS BANNED IS THE MECHANIC, because that is what this rule was always
@@ -474,7 +474,7 @@ describe('ash is a name again, and still not a mechanic', () => {
      * guard quietly stops guarding.
      */
     it('allows a name and refuses the mechanic', () => {
-        const allowed = ['Ash Slope', 'Ash Terrace', 'Ashen Forge Clan',
+        const allowed = ['Ash Slope', 'Ash Terrace', 'Ashen Anvil Clan',
             'Ashfall Crescent', 'the ashfall', 'trash'];
         const banned = ['ash_density', 'world_ash_density', 'ashDensity',
             'ASH_DENSITY', 'qi is ash', 'the Ash was thick'];

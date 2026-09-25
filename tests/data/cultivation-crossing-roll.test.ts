@@ -3,7 +3,7 @@
  *
  * This suite exists because of a specific failure. `LINEAGE_STANDINGS` recorded
  * how many people a house had ever put through the Lid, and the names lived
- * somewhere else or nowhere. The Hollow Court's six were carried as a count
+ * somewhere else or nowhere. The Empyrean Court's six were carried as a count
  * plus one line reading "five more in succession, named on no tablet outside
  * the Court" - a row shaped like a person carrying a number - and everything
  * downstream then reported three of the most significant people in the setting

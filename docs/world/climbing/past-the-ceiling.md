@@ -452,7 +452,7 @@ itemised below.
 
 **What.** A house's library is what a house's treasury holds. `siphon` already prices the
 reserves by rank - `baseReservesFor(stipend)` gives the Azure Dew Sect 54,864 stones and a
-Hollow Court seat 2,592,000 - and `canReachReserves` already gates access on rank rather
+Empyrean Court seat 2,592,000 - and `canReachReserves` already gates access on rank rather
 than on cleverness: "Access is the rank. This is a crime a house has to promote somebody
 into."
 
@@ -593,7 +593,7 @@ machinery that exists.
 | D1 | `volumes` on a cultivation manual: an ordered list of volume ids, or null for a single-volume work | 1b | The complete work already has a `cap`. A volume is one row per part with `tags: ['shard', 'from:<manual-id>']` so `shardPower`'s arithmetic applies unchanged. Do not add a second cap field - derive it. |
 | D2 | Close the 37 - 40 corridor, or state that it is closed on purpose | 1 | `heaven-conversing-primordial-canon` is the only continuation past 37 and its only route is a parting gift. If that is intended, it belongs in a named constant with a reason, the way `NO_SURVIVING_COPY_NOTES` does it. If it is not, it needs a second route. |
 | D3 | `rootGrades` and `domain` populated on cultivation manuals | 1, 1b, 3 | `Find` already reads them and `assessFit` already judges them. Today only `element` is authored, so the root and comprehension axes never fire for a manual and every miss reads as an element miss. |
-| D4 | A `derivable` marker, or a stated reason a given manual is not | 7 | Which manuals a sufficient dao can reconstruct. Not every book: the Unwritten Span Scripture is written for a condition no reader is in, and its own entry says so. |
+| D4 | A `derivable` marker, or a stated reason a given manual is not | 7 | Which manuals a sufficient dao can reconstruct. Not every book: the Unwritten Remnant Scripture is written for a condition no reader is in, and its own entry says so. |
 | D5 | Volume-holder rows for at least one scattered set | 1b | An object with three holders in three factions, with `knownOwnershipBy` set differently on each, so the investigation half of the route has something to find. |
 
 ### Engine - `src/engine/cultivation/**` and `src/engine/encounters/**`
@@ -666,10 +666,10 @@ leaving is rare and costly, that it is weighed over a whole career rather than a
 that it gets steeper the higher somebody already stands. Neither of those decides what a
 departure is worth arguing over, which is what this section is for.
 
-### The Hollow Court is the exception to all of it
+### The Empyrean Court is the exception to all of it
 
 Everything in this section describes leaving as a thing that costs something. **Going to the
-Hollow Court costs nothing and is an honour on the house you leave.**
+Empyrean Court costs nothing and is an honour on the house you leave.**
 
 The Court takes people from about ordinal 29 upward, out of any house anywhere - **and only
 if they are 250 years old or younger.**
@@ -687,12 +687,12 @@ It also explains how a body this attractive stays small without turning anybody 
 arbitrarily: the bar is objective, it is knowable in advance, and almost nobody clears it.
 
 **And there is a second reason for the bar: the Court does not want to share.** Not space -
-**it has never been short of that**, and this is true of the Hollow Court and of nowhere else.
+**it has never been short of that**, and this is true of the Empyrean Court and of nowhere else.
 Every other house in the world rations where its people sit, because good ground is scarce and
 a seat on a vein holds only so many. The Court does not have that problem, because **it sits on
 the best vein on the planet** and has built against it accordingly. It has cultivation rooms for everybody and spare ones
 besides, it has never had enough members to fill them, and if it ever did it could trivially
-afford to cut more. **Nobody has ever been turned away from the Hollow Court for want of
+afford to cut more. **Nobody has ever been turned away from the Empyrean Court for want of
 somewhere to sit.**
 
 What it is protecting is the ground itself. The qi is the finite thing - you can build another
@@ -716,11 +716,11 @@ standing by having produced somebody the Court wanted**, and the Court makes tha
 rewards, a celebration, sometimes a dao artifact sent back down. Nobody swears an oath,
 nobody buys a release, nobody carries a grievance, and no house has ever gone to war over
 one. It is sanctioned by everybody because everybody knows a Court disciple could have come
-from anywhere, and because **nobody would start a war with the Hollow Court over any member
+from anywhere, and because **nobody would start a war with the Empyrean Court over any member
 at all** - not even its most junior.
 
 And note what "most junior" means here, because it is the fact that sets the Court apart from
-every other house on the map: **an OUTER disciple of the Hollow Court is a Void Tribulation
+every other house on the map: **an OUTER disciple of the Empyrean Court is a Void Tribulation
 cultivator.** Its bottom rung sits at a rung most houses never reach at all, which is the
 direct consequence of recruiting from about ordinal 29 upward and taking nobody below it. So
 "they would not go to war over an outer disciple" is not a statement about somebody
@@ -790,7 +790,7 @@ Three consequences, and they make the Court unlike every other institution in th
   the end of their own house's shelf can reach, in one move, a body holding more roads than
   anyone and giving them away to its own.
 
-**So the scarce thing in the Hollow Court is not knowledge. It is people's hours.** The shelf
+**So the scarce thing in the Empyrean Court is not knowledge. It is people's hours.** The shelf
 is open; what is not open is the living False Immortal, and the seats, and an elder's time.
 A disciple's ceiling there is set by whose attention they can get, not by what they are
 allowed to read - which is the exact reverse of the problem everywhere else, where the reader

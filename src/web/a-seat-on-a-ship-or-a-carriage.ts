@@ -65,7 +65,7 @@ const THE_DRAWN_CARRIAGE = 'conv-carriage-mortal';
 
 /**
  * The grades a station hires out, and what the whole carriage costs: every seat
- * it holds at the seat fare, times this. A named carriage is a house's and is
+ * it holds at the seat fare, times this. A titled carriage is a house's and is
  * not let.
  */
 const A_HIRED_CARRIAGE_BY_GRADE: readonly { conveyanceId: string; fareTimesItsSeats: number }[] = [
@@ -229,9 +229,9 @@ function theHireOf(line: ALine, grade: typeof A_HIRED_CARRIAGE_BY_GRADE[number])
     };
 }
 
-/** Which grade a sentence asks to hire: a shod carriage when it names one, else a drawn one. */
+/** Which grade a sentence asks to hire: an iron-rimmed carriage when it names one, else a drawn one. */
 function theGradeAskedFor(said: string) {
-    return /\b(?:shod|earth)\b/i.test(said) ? A_HIRED_CARRIAGE_BY_GRADE[1]! : A_HIRED_CARRIAGE_BY_GRADE[0]!;
+    return /\b(?:shod|iron-rimmed|rimmed|earth)\b/i.test(said) ? A_HIRED_CARRIAGE_BY_GRADE[1]! : A_HIRED_CARRIAGE_BY_GRADE[0]!;
 }
 
 /** One line as the board says it. */
@@ -284,7 +284,7 @@ export async function aSeatOnAShipOrACarriage(
     target: string | undefined,
     intent: string,
     service: AService | null,
-    /** What the sentence said it was riding, where it said: "a shod carriage". */
+    /** What the sentence said it was riding, where it said: "an iron-rimmed carriage". */
     askedIn = ''
 ): Promise<Execution> {
     const here = placeName(cultivator);

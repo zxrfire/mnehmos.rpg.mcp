@@ -257,7 +257,7 @@ describe('the rung that is one person wide', () => {
 
     it('gives him no object, at any rung, under any owner or possessor column', () => {
         // The sharpest fact about him and the easiest one to erase by accident.
-        // He was of the Hollow Court and is not now, so nothing of theirs is
+        // He was of the Empyrean Court and is not now, so nothing of theirs is
         // his to carry, and nothing else in the world would be handed to him.
         const him = WANDERERS.find(w => w.lastOrdinal === FALSE_IMMORTAL_ORDINAL)!;
         const names = [him.id, him.recordName, him.commonName];

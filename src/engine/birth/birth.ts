@@ -253,7 +253,7 @@ function placesOnBand(places: readonly BirthPlace[], band: AmbientQi): BirthPlac
  *
  * This used to read `placement.reach` and it was wrong both ways. Measured over
  * 200 forced births per tier: `dao_house_bloodline` reaches 38 and drew {Azure
- * Cloud Pavilion, Hollow Court, the Severed} - the seven Dao houses stand at 29
+ * Cloud Pavilion, Empyrean Court, the Severed} - the seven Dao houses stand at 29
  * to 35, so a tier named "A Dao house, by blood" drew a Dao house ZERO times;
  * `apex_sect_members_child` reaches 29 and drew from a sixteen-house band
  * containing no apex. `reach` is what a family's WORD reaches;

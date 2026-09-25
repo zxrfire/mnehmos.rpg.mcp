@@ -4,7 +4,7 @@
  *
  * FOUND BY PLAYING, on turns one and two of a fresh run:
  *
- *   turn 1  "Azure Dew Sect is holding an intake at Clear River Ford in 69
+ *   turn 1  "Azure Dew Sect is holding an intake at Clear River Ferry in 69
  *            days, and will hear anybody who has reached Qi Condensation at
  *            all."   (volunteered, unprompted)
  *

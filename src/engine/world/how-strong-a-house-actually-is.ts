@@ -89,8 +89,8 @@ import { whatTheTownsBringIn } from './locations.js';
  * weighed, and in this genre twenty Core Formation cultivators do not beat a
  * Body Integration cultivator, they lose and it is not close.
  *
- * The consequence, measured: the Hollow Court - four immortals - came out
- * TWELFTH, below the Frostmirror Court, which the Hollow Court could end by
+ * The consequence, measured: the Empyrean Court - four immortals - came out
+ * TWELFTH, below the Frostmirror Court, which the Empyrean Court could end by
  * sending three people. The design owner: *"someone like 3 ordinals up blows
  * many many many people away of 3 ordinals below; its not linear."*
  *
@@ -310,7 +310,7 @@ export function howStrongAHouseActuallyIs(has: WhatAHouseHasToField): WhatAHouse
     // roll, a sealed ancestor against `MAX_ORDINAL` - and both saturated:
     // materiel read 1.00 for thirty-four of thirty-eight houses, and a sealed
     // 42 was worth 0.913 to a house whose own best is 36, which is most of the
-    // index for one body it can use once. Between them they put the HOLLOW
+    // index for one body it can use once. Between them they put the EMPYREAN
     // COURT - four immortals - thirteenth, behind a house it could end by
     // sending three people.
     //

@@ -282,7 +282,7 @@ export const matchVerbs = {
         if (offered && offered.trim().length >= 2) {
             // `theirs.reachesTo` is the fourth argument for the reason the
             // barter caller passes one: what a thing is worth is a fact about
-            // the person receiving it. This is the owner's Hollow Court case,
+            // the person receiving it. This is the owner's Empyrean Court case,
             // and it falls out of rows rather than out of a branch on a house -
             // a member standing at the Void Tribulation floor is refused stones
             // and refused a heaven-grade pill, and the one thing in the catalog

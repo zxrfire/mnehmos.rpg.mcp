@@ -83,7 +83,7 @@ export type StructuralRepairMedicine = z.infer<typeof StructuralRepairMedicineSc
 export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = [
     {
         id: 'repair-second-pour',
-        name: 'Second Pour Pill',
+        name: 'Second Casting Pill',
         grade: 'mortal',
         mends: ['broken-foundation'],
         // The end of Foundation Establishment.
@@ -322,18 +322,18 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
     },
     {
         // THE AUCTION CASE, and it is a real body under real pressure rather
-        // than a hypothetical. The Kiln administers a datum nobody draws on,
+        // than a hypothetical. The Tripod administers a datum nobody draws on,
         // so its grant list is empty and it has no tenancy income at all. It
         // is the one holder in the world for whom selling is on the table.
         factionId: 'court-kiln',
         medicineId: 'repair-soul-seating',
         count: 1,
         howGot:
-            'Inherited with the office, from an administration that ended, along with a datum nobody draws on and a set of nodes laid out to a plan that assumes a mountain is still attached. Nobody now serving knows which of the Kiln\'s predecessors bought it or what for.',
+            'Inherited with the office, from an administration that ended, along with a datum nobody draws on and a set of nodes laid out to a plan that assumes a mountain is still attached. Nobody now serving knows which of the Tripod\'s predecessors bought it or what for.',
         whyStillHeld:
-            'Because it has not been sold YET, which is the only entry in this table that reads that way. A court with an empty grant list has no tenancy income, and every generation of Kiln officers has considered putting this up and has been talked out of it by the argument that a court which sells its last irreplaceable thing has stopped being a court. That argument is getting thinner.',
+            'Because it has not been sold YET, which is the only entry in this table that reads that way. A court with an empty grant list has no tenancy income, and every generation of Tripod officers has considered putting this up and has been talked out of it by the argument that a court which sells its last irreplaceable thing has stopped being a court. That argument is getting thinner.',
         whoDecides:
-            'The Kiln\'s serving officers, by majority, which is a far lower bar than any other holder in this table and is exactly why this is the one that might move.'
+            'The Tripod\'s serving officers, by majority, which is a far lower bar than any other holder in this table and is exactly why this is the one that might move.'
     },
 
     // ══ EARTH GRADE - counted, and still beyond any individual ═════════

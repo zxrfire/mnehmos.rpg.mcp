@@ -43,7 +43,7 @@
  * a child.
  */
 
-import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
+import { addLineageEdge, createLineageRecord, lineageIdOf, type LineageRecord } from './lineage.js';
 import { surnameOf } from './history.js';
 import type { NpcRecord, RelationshipKind } from './npc-state.js';
 import type { WorldState } from './world-state.js';
@@ -94,7 +94,7 @@ export function lineagesFromTheKinTheWorldWrote(
             a.identity.bornOnDay - b.identity.bornOnDay || (a.id < b.id ? -1 : 1));
         const founder = inOrder[0]!;
         let lineage = createLineageRecord({
-            id: `lin-${surnameOf(founder.name).toLowerCase()}-${founder.id}`,
+            id: lineageIdOf(surnameOf(founder.name), founder.id),
             surname: surnameOf(founder.name),
             founderId: founder.id,
             foundedOnDay: founder.identity.bornOnDay

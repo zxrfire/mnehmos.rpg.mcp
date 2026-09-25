@@ -21,7 +21,7 @@
  *   Crimson Abyss Fortress   the member, who was not told the rate at the point of
  *                        sale and is paid a wage in advance against it
  *   Bone Lantern Cult    the dead, who cannot be asked
- *   The Still Blade Peak        a third party who is not present and cannot appeal
+ *   The Still Blade Pavilion        a third party who is not present and cannot appeal
  *
  * Note what the axis is NOT. It is not cruelty, it is not power, and it is not
  * how much the province dislikes them - the Bone Lantern Cult is the most
@@ -56,12 +56,12 @@
  * ------------------------------------------------------
  * Recognition is territorial: the instrument is the grant, and a grant needs
  * ground. Two of the six hold none. The Severed rents cutting houses at the
- * edge of six cities and holds no ground at all; the Still Blade Peak has a standing
+ * edge of six cities and holds no ground at all; the Still Blade Pavilion has a standing
  * policy of leaving nothing that could be surveyed. Neither can be granted to,
  * warned by non-renewal, or replaced by recognising a successor, because there
  * is nothing to withhold. They are the strongest and the least findable of the
  * six, and the Survey has never approached either - which the Severed has
- * noticed and the Still Blade Peak has drawn its own conclusion about and written
+ * noticed and the Still Blade Pavilion has drawn its own conclusion about and written
  * nothing down. That is the Survey's real exposure on this axis and it is not
  * one it has a procedure for.
  *
@@ -149,7 +149,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         whoPays:
             'The member, entirely, and nobody else at all. It is the only one of the six with no external cost whatsoever.',
         didTheyAgree:
-            'Completely, in advance, and in writing, and they are shown the ledger before they are shown anything else. This is the reason the righteous houses find it the hardest of the six to prosecute and hate it the most: there is no victim to produce, no complaint to take, and every member will tell you at length that they chose it and would choose it again. The one thing the doctrine does not survive is the Still Blade Peak\'s finding, which the Severed have been told and do not accept - a self-severance takes what is reachable rather than what was chosen.',
+            'Completely, in advance, and in writing, and they are shown the ledger before they are shown anything else. This is the reason the righteous houses find it the hardest of the six to prosecute and hate it the most: there is no victim to produce, no complaint to take, and every member will tell you at length that they chose it and would choose it again. The one thing the doctrine does not survive is the Still Blade Pavilion\'s finding, which the Severed have been told and do not accept - a self-severance takes what is reachable rather than what was chosen.',
         whatItKeepsLocal:
             'It cuts nobody who has not asked. Six cities, all rented, no ground, no recruitment table and no approach to anybody who has not walked in - and the restraint is not principle, it is the only reason a body of that strength with no grant and no patron has never had a province decide about it. The moment a Severed cultivator cuts something off somebody else, the doctrine stops being a philosophy and becomes an incident, and the house knows precisely which of its arts would make that argument for it.',
         standingOnTheContract:
@@ -169,9 +169,9 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         whatItKeepsLocal:
             'The cost is paid by the individual and never by the caldera - that is the sentence the whole arrangement rests on, and the sect enforces it internally far harder than any patron enforces anything on it. An elder who lets what they have become reach the villages below the vent is a liability rather than a scandal, and the bridge is kept in poor repair on purpose for reasons that run in both directions.',
         standingOnTheContract:
-            'The best of the six and by some distance. It holds from the Third Sill Court, has paid its tribute early every cycle for two hundred years, and has never been refused a renewal. Which places the strongest live demonic pipeline in the province on the Myriad Course Hall\'s books rather than the Survey\'s - so the apex with the recognition doctrine has no instrument on it at all, and the apex that does hold its grant has no doctrine about what it is.',
+            'The best of the six and by some distance. It holds from the Third Sluice Court, has paid its tribute early every cycle for two hundred years, and has never been refused a renewal. Which places the strongest live demonic pipeline in the province on the Myriad Course Hall\'s books rather than the Survey\'s - so the apex with the recognition doctrine has no instrument on it at all, and the apex that does hold its grant has no doctrine about what it is.',
         ifItWereDestroyed:
-            'The caldera and the vent vein are a real grant on real ground, so a vacancy opens and the Third Sill fills it, and the Sill grants to whoever is standing there on the same terms as anybody else because tribute is tribute. The lightning of it is that the vent vein is worth having and several righteous houses in the province have said publicly that it should not be held by that sect - which means the successor is likely to be one of them, holding the ground on terms it has spent two centuries condemning.'
+            'The caldera and the vent vein are a real grant on real ground, so a vacancy opens and the Third Sluice fills it, and the Sluice grants to whoever is standing there on the same terms as anybody else because tribute is tribute. The lightning of it is that the vent vein is worth having and several righteous houses in the province have said publicly that it should not be held by that sect - which means the successor is likely to be one of them, holding the ground on terms it has spent two centuries condemning.'
     },
     {
         factionId: 'sect-storm-tyrant-court',
@@ -185,7 +185,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         whatItKeepsLocal:
             'It collects mutated lightning roots and nothing else. There are perhaps a handful in a generation, most of them die young in houses that cannot teach them, and the Court takes those - so its intake is measured in people per century and is invisible to anybody not watching for it. A body that took ordinarily talented disciples at that rate would have been ended long ago, and the Court is entirely clear that its restraint is what buys the arrangement.',
         standingOnTheContract:
-            'Probationary, and the province can read the warning if it knows the vocabulary. It is a court answering directly to the Earth Vein Tower, raised past the Kiln Court - the Survey\'s other body in the province, which issues nothing and answers nothing downward - because the curriculum is the one thing in the Jade Gorge nobody can replace and the Survey would rather administer such a thing than lease it. The last two renewals were issued for six years instead of twelve, which in the grant vocabulary is a warning delivered without a word, and the Court has not established which of the three terms it is being warned about.',
+            'Probationary, and the province can read the warning if it knows the vocabulary. It is a court answering directly to the Earth Vein Tower, raised past the Tripod Court - the Survey\'s other body in the province, which issues nothing and answers nothing downward - because the curriculum is the one thing in the Jade Gorge nobody can replace and the Survey would rather administer such a thing than lease it. The last two renewals were issued for six years instead of twelve, which in the grant vocabulary is a warning delivered without a word, and the Court has not established which of the three terms it is being warned about.',
         ifItWereDestroyed:
             'The floating stone is tethered to a peak by a chain that is inspected annually and cannot be repaired, so what a successor inherits is a maintenance liability with the world\'s only lightning curriculum inside it. The Survey would recognise whoever held it, and the honest problem is that almost nobody could: the curriculum can only be worn by a mutated root, so the ground would pass to a body that could hold the stone and not read the library, and the one thing in the province nobody can replace would stop being replaced by anybody.'
     },
@@ -261,7 +261,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
  *
  * What it does instead is use them, through intermediaries, in a way that
  * creates standing in neither direction and leaves no record on either side.
- * The Still Blade Peak has been paid twice by a party it could not identify, through
+ * The Still Blade Pavilion has been paid twice by a party it could not identify, through
  * three layers, for cuts it was not permitted to record, and has written nothing
  * down about who it thinks that was. This catalog does not say either, and the
  * silence is deliberate: a body whose entire architecture is that no
@@ -279,7 +279,7 @@ export const DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE = {
     soWhatTheApexDoesInstead:
         'It uses them, through intermediaries, in a way that creates standing in neither direction. That is not recognition and it is not patronage: it is a transaction between two parties who have both arranged not to be identifiable to the other, and it leaves no record on either side, which is exactly what both of them are paying for.',
     andWhyThatIsWorseForTheHouses:
-        'Outside the grant system means answerable to no apex and protected by none. A sect that pays, sends and fights has somebody with an interest in its continuing; a dao house has nobody at all, and if a province decides about one there is no letter anybody could write. Every dao house has a counter rather than a patron - the Karma Palace reads the Still Blade Peak\'s edges, Jade Register Hall holds the register of absences - and a counter is what an institution grows instead of protection when protection is not available to it.'
+        'Outside the grant system means answerable to no apex and protected by none. A sect that pays, sends and fights has somebody with an interest in its continuing; a dao house has nobody at all, and if a province decides about one there is no letter anybody could write. Every dao house has a counter rather than a patron - the Karma Palace reads the Still Blade Pavilion\'s edges, Jade Register Hall holds the register of absences - and a counter is what an institution grows instead of protection when protection is not available to it.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
