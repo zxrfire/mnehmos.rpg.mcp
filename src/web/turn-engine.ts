@@ -9583,6 +9583,29 @@ ${noticed}`;
         //
         // Priced through the same call `buy` prices it with, so the figure
         // somebody is quoted is the figure they are charged.
+        //
+        // AND SOMEBODY STANDING HERE WITH IT ON OFFER IS ASKED FIRST. The
+        // price question read the board, the stall and the pouch and never the
+        // people, so a thing one person here was selling came back "nothing
+        // here prices it" - and the haggle after it had no figure to argue with.
+        if (category === undefined && named.length >= 3 && this.atHand) {
+            const offered = readWhatIsOnOfferHere(
+                cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+            ).offers.find(offer => matchScore(named, offer.name) > MATCH_THRESHOLD);
+            if (offered) {
+                const asked = factsForToolResult(`${offered.name}, and what ${offered.sellerName} asks.`, [
+                    `${offered.sellerName} has ${offered.name} and is asking ${offered.askStones} spirit `
+                    + `stone${offered.askStones === 1 ? '' : 's'} for it. You are carrying `
+                    + `${cultivator.spiritStones}.`
+                ]);
+                asked.structure.push(
+                    `${offered.thingId} on offer from ${offered.sellerId} at ${offered.askStones} stone(s). `
+                    + 'Quoted, not bought - nothing spent and no time passed.'
+                );
+                this.nameWhatTheyGot(offered.name, offered.askStones, offered.sellerName);
+                return this.freeAction(run, 'market', asked);
+            }
+        }
         if (category === undefined && named.length >= 3) {
             const regionId = standingOf(cultivator).regionId;
             const onTheStall = manualsAStallCarries()
