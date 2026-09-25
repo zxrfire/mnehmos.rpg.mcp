@@ -608,7 +608,15 @@ export function whatAHouseWouldSendYouOn(input: {
  * What is on the board, for somebody standing in front of it.
  */
 export function commissionBoard(ordinal: number, membership: Membership | null): DutyCandidate[] {
-    return poolFrom(COMMISSION_ENTRIES, ordinal, membership, 'commission');
+    return poolFrom(COMMISSION_ENTRIES.filter(entry => seenBy(entry, membership)), ordinal, membership, 'commission');
+}
+
+/**
+ * A house's own work is on its board, which is inside and for its own: somebody off every
+ * roll is never offered it, and never refused it either, because they never see it.
+ */
+function seenBy(entry: EncounterEntry, membership: Membership | null): boolean {
+    return membership !== null || !entry.tags.includes('sect');
 }
 
 function poolFrom(
@@ -638,6 +646,7 @@ export function boardRefusals(
 ): { entry: EncounterEntry; regard: Regard }[] {
     const out: { entry: EncounterEntry; regard: Regard }[] = [];
     for (const entry of COMMISSION_ENTRIES) {
+        if (!seenBy(entry, membership)) continue;
         if (ordinal < entry.minOrdinal || ordinal > entry.maxOrdinal) continue;
         const terms = dutyTermsFor(entry, ordinal, membership, 'commission');
         if (summonable(terms.regard.band)) continue;

@@ -260,10 +260,15 @@ describe('the board', () => {
         expect(commissionBoard(6, member(0)).length).toBeGreaterThan(0);
     });
 
-    it('is open to a rogue, who is simply paid differently', () => {
+    it('is open to a rogue, paid differently, except for a house\'s own work', () => {
         const asMember = commissionBoard(6, member(0));
         const asRogue = commissionBoard(6, null);
-        expect(asRogue.map(r => r.entry.id)).toEqual(asMember.map(r => r.entry.id));
+        // The owner: a sect's board is internal, and outsiders get notices.
+        expect(asMember.map(r => r.entry.id)).toContain('enc-sect-mission-board');
+        expect(asRogue.map(r => r.entry.id)).not.toContain('enc-sect-mission-board');
+        expect(boardRefusals(6, null).map(r => r.entry.id)).not.toContain('enc-sect-mission-board');
+        expect(asRogue.map(r => r.entry.id))
+            .toEqual(asMember.filter(r => !r.entry.tags.includes('sect')).map(r => r.entry.id));
         for (const row of asRogue) expect(row.terms.contribution).toBe(0);
     });
 });
