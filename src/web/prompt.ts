@@ -1046,7 +1046,16 @@ export function composeNarrationUser(
         ...earlierWithThem(told.withThem ?? null, told.earlier ?? []),
         ...theTurnBefore(told.previous ?? null),
         '',
-        ...(scene.playerSaid ? [`THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`, ''] : []),
+        // AN ACT IS DONE, NOT SAID. Played: "I go to Cold Peak" came back as '"I go to Cold Peak,"
+        // you say', and the woman at the stall answered "You are already here".
+        ...(scene.playerSaid
+            ? [
+                `THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`,
+                'An act they typed is DONE on the page, never said: NOT \'"I go to Cold Peak," you say\' BUT the '
+                + 'road under them. Words put to somebody, and questions, are theirs to say.',
+                ''
+            ]
+            : []),
         'WHAT THE ENGINE RULED. Every ruling is true and must reach the page; none of its wording may.',
         ...facts.lines.map(line => `- ${line}`),
         ...(facts.required && facts.required.length > 0
