@@ -322,7 +322,7 @@ Takes `target`.
 
 ### `eat`
 
-buy and eat a meal.
+buy and eat a meal. Food by any name is a meal - barley, rice, buns, noodles, tea and bread, whatever the place eats - and a hungry "I buy some barley" is this, or provision to carry some away. Never buy.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'eat'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.eat` · the deterministic parser reaches it · spends in-world time.
 
@@ -342,7 +342,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'tre
 
 ### `buy`
 
-buy one line off the mortal price board by name. "target" is the thing: a pill, a physician's visit, a course of care, a ferry crossing. Use this rather than "interact" for anything with a price on it - a purchase is not an approach to a person.
+buy one line off the mortal price board by name. "target" is the thing: a pill, a physician's visit, a course of care, a ferry crossing. Use this rather than "interact" for anything with a price on it - a purchase is not an approach to a person. Food is not bought here: it is eat, or provision.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'buy'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.buy` · the deterministic parser reaches it.
 

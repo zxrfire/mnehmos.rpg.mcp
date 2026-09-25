@@ -34,18 +34,14 @@ describe('the road to a house and back', () => {
         });
         const { cultivator } = await game.newRun('Shen Ruo');
         await game.act('I travel to Cold Peak');
-        const days = () => repos.runs.getById(game.state().run.id)!.elapsedDays;
 
-        const setOut = days();
-        await game.act(`I walk to the ${OASIS}`);
-        const there = days() - setOut;
-        expect(repos.cultivators.getById(cultivator.id)!.location).toBe(`${OASIS} grounds`);
-
-        const turnBack = days();
-        const back = await game.act('I go to Cold Peak');
-        const road = /Travel of (\d+) days?/.exec(back.narration);
-        expect(road, back.narration).not.toBeNull();
-        expect(Number(road![1])).toBe(Math.round(there));
-        expect(days() - turnBack).toBeLessThanOrEqual(Math.round(there));
+        // Priced both ways off where they stand. Walked, the road is long enough - two borders,
+        // see `provinceRoadDays` - that a player with no food starves on it before arriving.
+        const there = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, `${OASIS} grounds`);
+        repos.cultivators.update(cultivator.id, { location: `${OASIS} grounds` });
+        const back = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, 'Cold Peak');
+        expect(there).not.toBeNull();
+        expect(there!).toBeGreaterThan(1);
+        expect(back).toBe(there);
     }, 120_000);
 });

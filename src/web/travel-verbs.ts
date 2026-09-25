@@ -11,6 +11,7 @@ import {
     REGIONS,
     localPrice,
     placeRoadDays,
+    provinceRoadDays,
     regionIdOfPlace,
     requireRegion
 } from '../data/cultivation/regions.js';
@@ -1135,12 +1136,8 @@ export const travelVerbs = {
             ?? inTheWorld(destination);
         if (toRegionId === null || toRegionId === from.id) return null;
 
-        let shortest: number | null = null;
-        for (const link of from.connections) {
-            if (link.otherRegionId !== toRegionId) continue;
-            if (shortest === null || link.travelDays < shortest) shortest = link.travelDays;
-        }
-        return shortest;
+        // Over as many borders as it takes. See `provinceRoadDays`.
+        return provinceRoadDays(from.id, toRegionId);
     },
 
     /**

@@ -165,6 +165,44 @@ export function placeRoadDays(
 }
 
 /**
+ * The walking days between two provinces, over as many borders as it takes, or null where no
+ * chain of roads joins them. Played: Cold Peak to Iron Ridge is two borders, and with only the
+ * direct link read it came back null and was charged the one-day floor, while Silver Island to
+ * Cold Peak had taken thirty-four. The legs are the catalog's own; summing them is the same
+ * reasoning `placeRoadDays` gives above, one scale up, and a road is walked either way.
+ */
+export function provinceRoadDays(fromRegionId: string, toRegionId: string): number | null {
+    if (fromRegionId === toRegionId) return null;
+    const roads = new Map<string, Map<string, number>>();
+    const join = (a: string, b: string, days: number) => {
+        const from = roads.get(a) ?? new Map<string, number>();
+        if (days < (from.get(b) ?? Infinity)) from.set(b, days);
+        roads.set(a, from);
+    };
+    for (const region of [...THE_FIVE_PROVINCES, THE_BLOWN_GROUND_AS_REGION]) {
+        for (const link of region.connections) {
+            join(region.id, link.otherRegionId, link.travelDays);
+            join(link.otherRegionId, region.id, link.travelDays);
+        }
+    }
+    const best = new Map<string, number>([[fromRegionId, 0]]);
+    const settled = new Set<string>();
+    for (;;) {
+        let at: string | null = null;
+        let cost = Infinity;
+        for (const [region, days] of best) {
+            if (!settled.has(region) && days < cost) { at = region; cost = days; }
+        }
+        if (at === null) return null;
+        if (at === toRegionId) return cost;
+        settled.add(at);
+        for (const [next, days] of roads.get(at) ?? []) {
+            if (cost + days < (best.get(next) ?? Infinity)) best.set(next, cost + days);
+        }
+    }
+}
+
+/**
  * Everywhere the catalog says is next to this place, in walking days.
  */
 export function placesNextTo(

@@ -366,7 +366,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     eat: {
         takes: [],
-        says: `buy and eat a meal.`
+        says: `buy and eat a meal. Food by any name is a meal - barley, rice, buns, noodles, tea
+            and bread, whatever the place eats - and a hungry "I buy some barley" is this, or
+            provision to carry some away. Never buy.`
     },
     provision: {
         takes: ['days', 'rations'],
@@ -389,7 +391,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         says: `buy one line off the mortal price board by name. "target" is the thing: a pill, a
             physician's visit, a course of care, a ferry crossing. Use this rather than
             "interact" for anything with a price on it - a purchase is not an approach to a
-            person.`
+            person. Food is not bought here: it is eat, or provision.`
     },
     sell: {
         takes: ['target'],
