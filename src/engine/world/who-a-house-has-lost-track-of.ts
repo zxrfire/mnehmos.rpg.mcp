@@ -67,17 +67,27 @@ export function whoTheHouseHasLostTrackOf(house: Pick<FactionRecord, 'tags'>): S
 
 /** Since when this house has not known where this person is, or null where it does. */
 export function whenTheHouseLostTrackOf(house: Pick<FactionRecord, 'tags'>, personId: string): number | null {
-    // The first of this person's own tags that reads, as `fromTag` reads it -
-    // without parsing every tag the house carries, which this did for every
-    // person the world asked about, against every house.
-    if (!personId) return null;
-    const theirs = `${THE_HOUSE_LOST_TRACK_OF}${personId}|`;
-    for (const tag of house.tags) {
-        if (!tag.startsWith(theirs)) continue;
-        const sinceDay = Number(tag.slice(theirs.length).split('|')[0]);
-        if (Number.isFinite(sinceDay)) return sinceDay;
+    return lostTrackIn(house.tags).get(personId) ?? null;
+}
+
+/**
+ * A house's lost-track tags read once, first valid tag per person as `fromTag`
+ * reads them. Asked for every person the world weighs against every house, so
+ * the parse is kept against the tags array; a house's tags are replaced, never
+ * edited in place, and a change of length re-reads them regardless.
+ */
+const LOST_TRACK_READ = new WeakMap<readonly string[], { length: number; since: Map<string, number> }>();
+
+function lostTrackIn(tags: readonly string[]): Map<string, number> {
+    const kept = LOST_TRACK_READ.get(tags);
+    if (kept && kept.length === tags.length) return kept.since;
+    const since = new Map<string, number>();
+    for (const tag of tags) {
+        const read = fromTag(tag);
+        if (read && !since.has(read.personId)) since.set(read.personId, read.sinceDay);
     }
-    return null;
+    LOST_TRACK_READ.set(tags, { length: tags.length, since });
+    return since;
 }
 
 /** The house, having lost track of somebody. The earlier day stands where it already had. */

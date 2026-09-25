@@ -111,10 +111,18 @@ export const WHAT_IT_HAS_COME_TO: Record<string, number> = {};
 export function seatsThePeopleHeldBackWant(state: WorldState): Map<string, Set<string>> {
     const out = new Map<string, Set<string>>();
     const { blocked } = assessPromotions(state);
+    // Everybody alive by house and rung, once, in roster order - this filtered
+    // the whole world for every person held back.
+    const onRung = new Map<string, NpcRecord[]>();
+    for (const n of state.npcs) {
+        if (n.status !== 'alive') continue;
+        const key = `${n.factionId}|${n.factionRankIndex}`;
+        const list = onRung.get(key);
+        if (list) list.push(n); else onRung.set(key, [n]);
+    }
     for (const b of blocked) {
         if (b.reason !== 'no_seat' && b.reason !== 'outranked') continue;
-        const holders = state.npcs.filter(n => n.status === 'alive' && n.factionId === b.factionId
-            && n.factionRankIndex === b.atRank && n.id !== b.npcId);
+        const holders = (onRung.get(`${b.factionId}|${b.atRank}`) ?? []).filter(n => n.id !== b.npcId);
         if (holders.length > 0) out.set(b.npcId, new Set(holders.map(h => h.id)));
     }
     return out;
