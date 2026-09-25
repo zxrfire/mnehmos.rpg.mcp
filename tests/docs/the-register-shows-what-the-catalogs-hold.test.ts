@@ -12,7 +12,7 @@
  * `src/data/cultivation/` were not imported by a single register module, and 74
  * of the 97 exports that are tables of rows were not named by one. The design
  * owner found three of them by reading the published sheet: *"i don't see spirit
- * beast material and crafting in the standing register nor do i see spirit skiffs
+ * beast material and crafting in the standing register nor do i see spirit boats
  * etc"*, and *"it's missing too much"*. Every one of the three was in the
  * catalogs, in the engine, and invisible.
  *

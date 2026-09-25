@@ -27,7 +27,7 @@
  * The cut lands exactly where the ruling put it, and it was already drawn.
  *
  * THE MEASUREMENT THIS PINS: a stranger - no faction, nobody known, standing
- * somewhere else - hears about the spirit skiff and does not hear about the
+ * somewhere else - hears about the spirit boat and does not hear about the
  * pill, and the square that watched the pill break still has it on its record.
  */
 
@@ -94,7 +94,7 @@ describe('a heaven-grade thing ending is something people know about', () => {
             mooredAt: cultivator.location!
         })!);
 
-        await harness.game.act('I smash the spirit skiff');
+        await harness.game.act('I smash the spirit boat');
 
         const reloaded = await harness.game.loadWorld();
         expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
@@ -134,7 +134,7 @@ describe('a heaven-grade thing ending is something people know about', () => {
             mooredAt: cultivator.location!
         })!);
 
-        await harness.game.act('I smash the spirit skiff');
+        await harness.game.act('I smash the spirit boat');
 
         const reloaded = await harness.game.loadWorld();
         expect(reloaded, 'the world went missing across the breaking').toBeTruthy();

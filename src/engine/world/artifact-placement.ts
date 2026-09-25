@@ -77,7 +77,7 @@ export function seedArtifacts(state: WorldState): ObjectRecord[] {
  *
  * `TRACKED_CRAFT` is five rows - three hulls, a titled carriage, and the hull
  * nobody came back for - and the seeder read none of them, so a lived world
- * contained ZERO spirit skiffs however long it ran. Measured on three seeds at
+ * contained ZERO spirit boats however long it ran. Measured on three seeds at
  * three hundred years: no house ever finished one either, because a heaven
  * grade bill wants six cores and `sending-for-materials` is capped below the
  * rung that brings one home. The only thing in the world that crosses open

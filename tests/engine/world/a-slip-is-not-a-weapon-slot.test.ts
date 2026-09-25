@@ -49,7 +49,7 @@ describe('what somebody would raise in a fight', () => {
 
     it('not a carriage, which was the only case anybody had written down', () => {
         expect(isSomethingYouWouldSwing(makeObject({
-            id: 'boat', name: 'a spirit skiff', kind: 'artifact', power: 40,
+            id: 'boat', name: 'a spirit boat', kind: 'artifact', power: 40,
             tags: ['conveyance']
         }))).toBe(false);
     });

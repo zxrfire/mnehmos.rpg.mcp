@@ -65,7 +65,7 @@ describe('which bill somebody meant', () => {
         expect(whichBillTheyMeant('A drawn carriage')?.id).toBe('build-carriage-mortal');
         expect(whichBillTheyMeant('an iron-rimmed carriage')?.id).toBe('build-carriage-earth');
         expect(whichBillTheyMeant('a titled carriage')?.id).toBe('build-carriage-heaven');
-        expect(whichBillTheyMeant('a spirit skiff')?.id).toBe('build-spirit-boat');
+        expect(whichBillTheyMeant('a spirit boat')?.id).toBe('build-spirit-boat');
     });
 
     it('lifts a carriage onto a deeper bill when a grade word is present', () => {

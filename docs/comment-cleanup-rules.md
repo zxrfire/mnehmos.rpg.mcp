@@ -50,7 +50,7 @@ that every line can answer *what would be lost if this were deleted*.
 Before, 17 lines on one enum member:
 
 > Getting there ON something rather than on foot. `what-a-conveyance-does-to-a-journey.ts`
-> prices a mount, a drawn carriage, a spirit skiff and soaring on one's own blade against the
+> prices a mount, a drawn carriage, a spirit boat and soaring on one's own blade against the
 > days and the range... None of it had a caller. `ride` was a LABEL on `move` - one of five
 > intents, every one of which resolved through the same flat one-day journey - so "I ride to
 > X" and "I walk to X" were the same event... Its own member rather than a widened `move`

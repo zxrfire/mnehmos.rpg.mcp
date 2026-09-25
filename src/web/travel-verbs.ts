@@ -1637,7 +1637,7 @@ export const travelVerbs = {
         wanted: string | undefined
     ): Promise<Execution> {
         // A CARRIAGE OR A BOAT THAT IS NOT THEIRS is a seat at the counter here,
-        // where one runs. A boat of their own is a spirit skiff; a boat they do
+        // where one runs. A boat of their own is a spirit boat; a boat they do
         // not own, at a landing, is the ship.
         const service = theServiceNamed(wanted);
         if (service !== null

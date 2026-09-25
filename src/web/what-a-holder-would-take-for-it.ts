@@ -334,11 +334,11 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
  *
  * `alike` strips a leading `the` off the catalog name only, which is right for
  * every catalog it was written against: those rows are called `The Hidden Edge`
- * and nobody says `a Hidden Edge`. A conveyance row is called `A spirit skiff`,
- * so "the spirit skiff" - what a player says about the one they were just told
+ * and nobody says `a Hidden Edge`. A conveyance row is called `A spirit boat`,
+ * so "the spirit boat" - what a player says about the one they were just told
  * about - matched in neither direction. Same defect `withoutTheArticle` in
- * `object-theft.ts` records from the other end: "A spirit skiff" against "the
- * spirit skiff" scored 40 and missed.
+ * `object-theft.ts` records from the other end: "A spirit boat" against "the
+ * spirit boat" scored 40 and missed.
  */
 function alikeWithoutTheArticle(name: string, said: string): boolean {
     const strip = (s: string): string => s.replace(/^(?:an?|the)\s+/i, '').toLowerCase();

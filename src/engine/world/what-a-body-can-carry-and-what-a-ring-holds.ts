@@ -181,7 +181,7 @@ export function whatARingIsMadeOf(ringClass: TechniqueGrade): TechniqueGrade {
  * heaven grade storage ring."*
  *
  * So that is the measurement, and it turns out to be a rule rather than a
- * number: A RING OF A GRADE HOLDS A CONVEYANCE OF THAT GRADE. `A spirit skiff`
+ * number: A RING OF A GRADE HOLDS A CONVEYANCE OF THAT GRADE. `A spirit boat`
  * in `what-a-house-moves-its-people-on.ts` is heaven grade and carries thirty
  * heads. A berth - a person, their gear, and their share of deck, hull and rail
  * - is about 4,000 litres, so the boat is a hundred and twenty thousand
@@ -207,7 +207,7 @@ export const WHAT_A_RING_HOLDS: Readonly<Record<TechniqueGrade, number>> = {
     mortal: 200,
     // A cart and what is on it.
     earth: 4_000,
-    // A spirit skiff, and the reason to want one.
+    // A spirit boat, and the reason to want one.
     heaven: 160_000,
     immortal: 4_000_000,
     chaos: 100_000_000
@@ -305,7 +305,7 @@ export function whatStopsThemCarryingIt(
  *
  *   the floor    the smallest fold anybody can make, which is already heaven-
  *                grade ore worked by a Void Tribulation hand
- *   the top      a heaven-grade ring costs a heaven-grade spirit skiff
+ *   the top      a heaven-grade ring costs a heaven-grade spirit boat
  *
  * A first cut picked an exponent of 1.35 by eye and put a heaven-grade ring at
  * two hundred and forty-nine million stones - several times a great house's

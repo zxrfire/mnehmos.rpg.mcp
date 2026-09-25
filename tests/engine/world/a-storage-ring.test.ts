@@ -72,7 +72,7 @@ describe('a storage ring', () => {
 
     it('will not take more than it holds', () => {
         const ring = worn(aStorageRing({ id: 'ring', grade: 'mortal', ownerId: 'lu', ownerName: 'Lu Hanbo', ownerOrdinal: 9 }));
-        const boat = makeObject({ id: 'boat', name: 'a spirit skiff', kind: 'artifact', possessorId: 'lu', volume: 120_000 });
+        const boat = makeObject({ id: 'boat', name: 'a spirit boat', kind: 'artifact', possessorId: 'lu', volume: 120_000 });
         expect(putIntoTheRing([ring, boat], 'lu', ring, boat)).toBe('no_room');
     });
 });

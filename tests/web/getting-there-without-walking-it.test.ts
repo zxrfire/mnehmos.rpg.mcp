@@ -12,7 +12,7 @@
  *   `buying-passage-at-a-measured-span-counter.ts` - the board, the fare, the
  *   settling a passenger pays for not understanding what moved them.
  *   `what-a-conveyance-does-to-a-journey.ts` - a mount, a drawn carriage, a
- *   spirit skiff, soaring on one's own blade, and what a watcher at the far gate
+ *   spirit boat, soaring on one's own blade, and what a watcher at the far gate
  *   reads off each.
  *
  * WHAT THIS FILE PINS, AND WHY EACH ONE IS A DECISION RATHER THAN A NUMBER:

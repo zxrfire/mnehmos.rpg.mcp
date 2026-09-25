@@ -9,7 +9,7 @@
  * maybe lose merit (if the goods are still there)? DEFINITELY lose face".
  *
  * So a delivery is posted whatever the reader could carry. Its size is a fact on the notice: a
- * case that goes on a back, bales that want a carriage, a season's stock that wants a spirit skiff.
+ * case that goes on a back, bales that want a carriage, a season's stock that wants a spirit boat.
  * How it gets there is the carrier's to solve.
  */
 
@@ -23,7 +23,7 @@ import { makeObject, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
 
 /** How much a consignment asks of whoever carries it. */
-export type WhatItWants = 'a back' | 'a carriage' | 'a spirit skiff';
+export type WhatItWants = 'a back' | 'a carriage' | 'a spirit boat';
 
 /**
  * The goods houses send one another. No word here is a verb the table acts on, one typo from
@@ -37,8 +37,8 @@ const GOODS: readonly { goods: string; volume: number; weight: number; wants: Wh
     { goods: 'a banded strongbox', volume: 16, weight: 22, wants: 'a back', worth: 1 },
     { goods: 'bales of dried spirit grass', volume: 420, weight: 160, wants: 'a carriage', worth: 2 },
     { goods: 'sacks of spirit ore', volume: 260, weight: 640, wants: 'a carriage', worth: 2 },
-    { goods: 'a beast\'s pelts, horn and sinew', volume: 1600, weight: 1300, wants: 'a spirit skiff', worth: 4 },
-    { goods: 'a granary\'s grain for the kitchens', volume: 4200, weight: 3400, wants: 'a spirit skiff', worth: 4 }
+    { goods: 'a beast\'s pelts, horn and sinew', volume: 1600, weight: 1300, wants: 'a spirit boat', worth: 4 },
+    { goods: 'a granary\'s grain for the kitchens', volume: 4200, weight: 3400, wants: 'a spirit boat', worth: 4 }
 ];
 
 export interface AConsignment {
@@ -219,7 +219,7 @@ export function theGoodsSignedFor(input: {
 const THE_FACE_A_LATE_DELIVERY_COSTS: Readonly<Record<WhatItWants, Severity>> = {
     'a back': 'slight',
     'a carriage': 'serious',
-    'a spirit skiff': 'grave'
+    'a spirit boat': 'grave'
 };
 
 /**

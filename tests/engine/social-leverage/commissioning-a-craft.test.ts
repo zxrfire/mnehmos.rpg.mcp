@@ -887,7 +887,7 @@ describe('asking somebody to make you a ring', () => {
 
     it('is priced as a fold, and the grades climb steeply', () => {
         // The design owner: a heaven-grade ring is absurdly expensive,
-        // equivalent to a heaven-grade spirit skiff, and a court has maybe one.
+        // equivalent to a heaven-grade spirit boat, and a court has maybe one.
         // That is a statement about the fold rather than about the ore.
         const mortal = whatACommissionComesTo('mortal', true);
         const earth = whatACommissionComesTo('earth', true);

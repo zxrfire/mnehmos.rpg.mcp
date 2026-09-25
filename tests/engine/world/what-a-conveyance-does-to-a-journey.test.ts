@@ -18,7 +18,7 @@
  *   4. FLIGHT BELONGS TO SWORD SCHOOLS. Ruled by the design owner. An
  *      exclusivity rule is exactly the decision AGENTS.md says needs a test.
  *   5. WHAT A CHEST BURNS, AND WHAT DOES NOT BURN AT ALL. The design owner:
- *      spirit skiffs are fuelled by spirit stones, and a house sends as often as
+ *      spirit boats are fuelled by spirit stones, and a house sends as often as
  *      its treasury allows. Nothing in the engine consumed anything before
  *      this - no `fuel`, no charge, no stones on the row - while `prompt.ts`
  *      had been telling the narrator stones were fuel the whole time, so the
@@ -474,7 +474,7 @@ describe('what a journey burns', () => {
      * a sentence.
      *
      * A sending to open an inheritance is 120 walking days with six hands. A
-     * spirit skiff at heaven grade is under way 24 of those days, so six heads
+     * spirit boat at heaven grade is under way 24 of those days, so six heads
      * crossing once is 144 stones, against a seeded purse of 200 to 1,400 and
      * a payroll of 45 a member a year. A poor house gets one crossing and then
      * cannot make payroll.

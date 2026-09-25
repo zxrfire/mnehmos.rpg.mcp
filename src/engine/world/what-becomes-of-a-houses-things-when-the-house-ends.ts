@@ -117,7 +117,7 @@ export function whoOwnsThemNow(
  * had stopped existing, which is the exact state the fall site's own comment
  * says must never happen.
  *
- * Found by a played world: a spirit skiff five centuries old, moored in nobody's
+ * Found by a played world: a spirit boat five centuries old, moored in nobody's
  * yard, still answering to the Thousand Relic Pavilion, which fell in a war.
  * `war-spoils.ts` moves the things the victor TAKES; whatever they leave stayed
  * the dead house's forever.

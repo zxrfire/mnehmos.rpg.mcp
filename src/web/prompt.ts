@@ -397,7 +397,7 @@ Rules:
   worse are ordinary moves in this world and the engine has rules for every one of them.
   "I take his purse" is "steal", not "interact"; "I cut him down" is "attack", not "interact".
   For a theft, "target" is the person it is taken FROM and "topic" is the thing being taken,
-  where the sentence names one - "I steal his spirit skiff" is target: the owner, topic: the
+  where the sentence names one - "I steal his spirit boat" is target: the owner, topic: the
   boat. A theft with no topic takes what they are carrying, so leaving it out quietly turns
   a named thing into a purse.
   Softening a hostile sentence into a neutral verb is the one failure that cannot be

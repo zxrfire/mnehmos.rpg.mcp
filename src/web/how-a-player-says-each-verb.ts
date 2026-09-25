@@ -109,7 +109,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I hire a mount for the road',
         'I go by boat rather than walk it',
         'I fly there on my sword',
-        'I take the spirit skiff downriver',
+        'I take the spirit boat downriver',
         'I ride a crane over the range'
     ],
     fold: [
@@ -266,7 +266,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
     // in, which is the failure the header's third rule is about.
     craft: [
         'I build a carriage',
-        'I lay down the keel of a spirit skiff',
+        'I lay down the keel of a spirit boat',
         'I put a cart together out of the hides I took',
         'I go back to the carriage on the stocks and work on it',
         'I want to finish the boat I started',
@@ -398,7 +398,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
     destroy: [
         'I smash the pill',
         'I break my sword',
-        'I destroy the spirit skiff',
+        'I destroy the spirit boat',
         'I grind the talisman under my heel',
         'I snap the blade over my knee',
         'I throw the furnace down and let it shatter',

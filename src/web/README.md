@@ -260,7 +260,7 @@ engine has always had, that no typed English sentence could reach.**
 | `seal` | six houses holding a sealed ancestor with a written `wakeCondition` and `wakeCost`, the strongest at forty-four | no verb at all |
 | `offer` | `IMMORTAL_CHANNELS`, `MillennialOffering`, `IMMORTAL_MOTIVE` on why an offering buys two words | no verb at all |
 | `news` | the whole world ledger - every ranking, refusal, duel and house opening closed ground the simulation has ever written | four phrasings of "what news is there" deflecting into the `recall` listing, which is an inventory of what the player already held |
-| `craft` | the bill, the slip, the rung gate and the launch in `engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.ts`, live for houses on the yearly world pass, plus the whole player half in [`half-built-craft.ts`](half-built-craft.ts) - complete, tested, and with no importer in `src/` | `refine`'s branch owns the words `make`, `craft`, `cook` and `brew`, so a sentence about a carriage either reached a cauldron listing or fell to `unclear`. The world built spirit skiffs and the player could not lay a keel |
+| `craft` | the bill, the slip, the rung gate and the launch in `engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.ts`, live for houses on the yearly world pass, plus the whole player half in [`half-built-craft.ts`](half-built-craft.ts) - complete, tested, and with no importer in `src/` | `refine`'s branch owns the words `make`, `craft`, `cook` and `brew`, so a sentence about a carriage either reached a cauldron listing or fell to `unclear`. The world built spirit boats and the player could not lay a keel |
 
 The `recall` case is the one that says most about how to look for these. It was found by a
 **rank-band sweep** - standing a character at each rung and typing what somebody at that
@@ -1318,7 +1318,7 @@ being taken** - and the two uses cannot be told apart by any predicate over the 
 So `GameService.interact` moves it off `topic` into a local on the one branch where it
 means something else, at the top, before any of the five readers see it. Guarding five
 branches instead would leave a sixth to be remembered. Measured before the split existed:
-`I steal the spirit skiff from Cao Nuolin` was answered by Cao Nuolin turning *"spirit
+`I steal the spirit boat from Cao Nuolin` was answered by Cao Nuolin turning *"spirit
 skiff"* over once and saying something true about the weather, and the taking never ran.
 
 Three things this feeds, and none of them is new machinery:

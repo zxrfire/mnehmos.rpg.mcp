@@ -397,7 +397,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // rests on existed only in a catalog nothing read. See `goods.ts`.
     state.objects.push(...seedArtifacts(state));
     // And the hulls, which is the same defect one catalog over. See
-    // `seedTheCraftThatAreObjects`: no world has ever contained a spirit skiff.
+    // `seedTheCraftThatAreObjects`: no world has ever contained a spirit boat.
     state.objects.push(...seedTheCraftThatAreObjects(state));
     state.objects.push(...seedComprehensionMaterials(state));
     // And the ground that teaches a road, which is the other half of the same

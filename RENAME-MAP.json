@@ -1,369 +1,1336 @@
 {
-  "about": "Every display string renamed so that no word of a name is a word the player types, or a typo of one (AGENTS.md, \"A name evokes what it is\"). Ids are unchanged. Apply `phrases`, `lowercase` and `caseVariants` case-sensitively as whole phrases (never inside a longer word), longest first, in ONE pass so no replacement fires on another's output; a name with an apostrophe also appears escaped (\\') in single-quoted TypeScript. `shortForms` are the words prose shortens a renamed body to, applied only where the sentence means that body. `generatorWords` are replaced ONLY inside the named list, one for one, so every seeded draw is unchanged. Do not apply this to text that quotes the owner verbatim, or to the history kept on purpose in docs/world/writing/place-names.md, src/data/cultivation/place-names.ts (placeIdSlug and placeSeedKey key on the retired names), src/web/names-as-they-are-spelled.ts and the two name tests.",
-  "phrases": [
-    ["Core of Something Older Than the Sect Above It","Core of Something Predating the Sect Above It"],
-    ["The teacher the Given Ladder requires","The master the Given Ladder requires"],
-    ["The Old Neighbour Under the Ford","The Old Neighbour Under the Ferry"],
-    ["Twin Lotus Cultivation Method","Twin Lotus Pairing Method"],
-    ["The Tide Out of a Broken Seal","The Surge Out of a Broken Sigil"],
-    ["The First Keeper of the Kiln","The First Keeper of the Tripod"],
-    ["Lesser Grain Abstinence Pill","Lesser Satiety Pill"],
-    ["Hundred-Herb Restoration Art","Hundred-Grass Restoration Art"],
-    ["Old Neighbour Under the Ford","Old Neighbour Under the Ferry"],
-    ["Whoever hung the first bell","Whoever hung the first chime"],
-    ["Keeper of the Standing Word","Keeper of the Standing Pledge"],
-    ["Kalpa Fire That Eats Heaven","Heaven-Devouring Kalpa Inferno"],
-    ["Moonlit Well Absorption Art","Moonlit Pond Absorption Art"],
-    ["Still Blade Severing Stroke","Still Blade Severing Art"],
-    ["The Root-Recasting Talisman","The Spirit-Recasting Talisman"],
-    ["The Hollow Between the Arms","The Nothing Between the Arms"],
-    ["Thousand Treasure Pavilion","Thousand Relic Pavilion"],
-    ["Old Shen of the Third Ford","Old Shen of the Third Ferry"],
-    ["Assessor of the Four Faces","Assessor of the Distant Faces"],
-    ["Rime-Heart Stillness Canon","Hoarfrost-Heart Stillness Canon"],
-    ["Turning Year Stillness Art","Turning Solstice Stillness Art"],
-    ["Thousand-Year Cypress Pill","Thousand-Ring Cypress Pill"],
-    ["Hollow Sky Clear Mind Pill","Empty Sky Clear Mind Pill"],
-    ["The First Keeper of Names","The First Keeper of Scrolls"],
-    ["Void-Tide Breathing Canon","Void-Ebb Respiration Canon"],
-    ["Cold-Bed Foundation Canon","Chill-Bed Foundation Canon"],
-    ["Two-Decade Longevity Pill","Greater Longevity Pill"],
-    ["Thunder-Struck Peach Wood","Thunder-Struck Jujube Timber"],
-    ["Hundred-Year Snow Ginseng","Snowbound Ginseng"],
-    ["The Thirteen and the Four","The Thirteen and the Fourfold"],
-    ["Flight on one's own blade","Soaring on one's own blade"],
-    ["Tide Out of a Broken Seal","Surge Out of a Broken Sigil"],
-    ["Nine Peaks Ascetic Order","Nine Peaks Ascetic Sect"],
-    ["Old Ge of the Ninth Ford","Old Ge of the Ninth Ferry"],
-    ["Gale-Riding Sword Flight","Gale-Borne Sword Soaring"],
-    ["Green Mercy Mending Palm","Verdant Mercy Mending Palm"],
-    ["Protected Crossing Canon","Guarded Crossing Canon"],
-    ["Heavenly Mechanism Sight","Heavenly Mechanism Augury"],
-    ["Crimson-Bound Union Rite","Crimson-Knot Union Ritual"],
-    ["Thousand-Spear Summoning","Thousand-Halberd Summoning"],
-    ["Unwritten Span Scripture","Unwritten Remnant Scripture"],
-    ["Hollow Reed Fasting Pill","Empty Reed Fasting Pill"],
-    ["Shen of the Fourth Ford","Shen of the Fourth Ferry"],
-    ["First Elder of the Hour","First Elder of the Lots"],
-    ["Nine Rivers Sword Chant","Nine Rivers Sword Cadence"],
-    ["Name-Holding Recitation","Namekeeping Recitation"],
-    ["Shut Hour Sealing Field","Shut Moment Domain"],
-    ["Decade-Lengthening Pill","Lesser Longevity Pill"],
-    ["Hollow Between the Arms","Nothing Between the Arms"],
-    ["Root-Recasting Talisman","Spirit-Recasting Talisman"],
-    ["Vermilion Seal Terrace","Vermilion Sigil Terrace"],
-    ["Bloodwarm Battle Chant","Bloodwarm Battle Hymn"],
-    ["Hollow Mountain Decree","Phantom Mountain Decree"],
-    ["Open Sky Calamity Word","Open Sky Calamity Syllable"],
-    ["Condensed Century Pill","Greater Condensed Pill"],
-    ["The Sword-Marked Cliff","The Sword-Scored Cliff"],
-    ["Hollow Bell Wanderers","Wayside Chime Wanderers"],
-    ["Cross-Meridian Strike","Cross-Meridian Jolt"],
-    ["Shadow-Splitting Gait","Shadow-Splitting Step"],
-    ["Condensed Decade Pill","Lesser Condensed Pill"],
-    ["Firevein Serpent Hide","Firevein Serpent Skin"],
-    ["Pheasant Tail Feather","Pheasant Plume"],
-    ["Thirteen and the Four","Thirteen and the Fourfold"],
-    ["Face labour (carving)","Face carving"],
-    ["Silver Island Market","Silver Island Hall"],
-    ["Void-Fold Pilgrimage","Void-Crease Pilgrimage"],
-    ["Sees the Fire Coming","Sees the Blaze Coming"],
-    ["Cloud-Marked Leopard","Cloud-Spotted Leopard"],
-    ["Flowing Light Tower","Flowing Star Tower"],
-    ["Bramble Crown Spear","Bramble Crown Javelin"],
-    ["Severed Name Finger","Severed Grip Finger"],
-    ["Lotus-Plucking Rite","Lotus-Plucking Ritual"],
-    ["Magpie Tail Feather","Magpie Plume"],
-    ["The Cold Jade Plate","The Ice Jade Plate"],
-    ["The Unfinished Side","The Unfinished Half"],
-    ["Gleaner (burn zone)","Gleaner (scorched zone)"],
-    ["Keeper of the Kiln","Keeper of the Tripod"],
-    ["Tectonic Seal Palm","Tectonic Imprint Palm"],
-    ["Samsara Tide Crush","Samsara Whirlpool Crush"],
-    ["Golden Bell Shroud","Golden Dome Shroud"],
-    ["Cold Jade Carapace","Ice Jade Carapace"],
-    ["Hollow Second Body","Empty Second Body"],
-    ["Hour Reversing Art","Moment Reversing Art"],
-    ["Nine-Night Opening","Nine-Vigil Opening"],
-    ["Cold-Set Petal Cut","Chill-Set Petal Cut"],
-    ["Century Lotus Pill","Iceheart Lotus Pill"],
-    ["Every Foot At Once","Every Claw At Once"],
-    ["Green Bamboo Viper","Bamboo-Leaf Viper"],
-    ["Flood Serpent Hide","Deluge Serpent Skin"],
-    ["The Cauldron Belly","The Tripod Belly"],
-    ["The Sealing Casket","The Warding Casket"],
-    ["The Kiln Gate Seal","The Tripod Gate Sigil"],
-    ["Grain of the Stone","Figure of the Stone"],
-    ["Ten Thousand Works","Ten Thousand Deeds"],
-    ["The Unbarred Mouth","The Unbarred Maw"],
-    ["The reserved floor","The private floor"],
-    ["Hollow Marrow Body","Empty Marrow Body"],
-    ["Sword-Marked Cliff","Sword-Scored Cliff"],
-    ["Deep Snow Village","Deep Drift Village"],
-    ["Bronze Bell Cliff","Bronze Gong Cliff"],
-    ["Thousand Treasure","Thousand Relic"],
-    ["Elder of the Hour","Elder of the Lots"],
-    ["Green Sprout Lash","Sapling Lash"],
-    ["Stone Hide Mantle","Scree Mantle"],
-    ["Binding Word Seal","Binding Pledge Sigil"],
-    ["Thousand-Day Root","Thousand-Day Tuber"],
-    ["Blood-Sweat Horse","Blood-Lather Horse"],
-    ["Gold Cicada Shell","Gold Cicada Husk"],
-    ["The Standing Kiln","The Unquenched Brazier"],
-    ["The Grinding Ford","The Grinding Shallows"],
-    ["The Resealed Wall","The Resealed Rampart"],
-    ["Nine Bell Terrace","Nine Gong Terrace"],
-    ["Three Year Ground","Three Summer Ground"],
-    ["Keeper of Nameses","Keeper of Scrollses"],
-    ["Green Water City","Emerald Water City"],
-    ["Clear River Ford","Clear River Ferry"],
-    ["Ashen Forge Clan","Ashen Anvil Clan"],
-    ["The Hollow Court","The Empyrean Court"],
-    ["Still Blade Peak","Still Blade Pavilion"],
-    ["Twenty-Year Hand","Generation Hand"],
-    ["The first Marker","The first Stakehand"],
-    ["Gutter Rain Palm","Gutter Downpour Palm"],
-    ["Void Hollow Body","Void Vacant Body"],
-    ["Name Erasing Art","Unnaming Art"],
-    ["Second Pour Pill","Second Casting Pill"],
-    ["Iron-Eating Bear","Iron-Eating Beast"],
-    ["Trunk Hound Hide","Trunk Jackal Pelt"],
-    ["Through the Wall","Through the Byre"],
-    ["Weasel Tail-Hair","Weasel Brush-Hair"],
-    ["The Cauldron Lid","The Tripod Lid"],
-    ["The Counted Wall","The Counted Rampart"],
-    ["The Hollow Basin","The Empyrean Basin"],
-    ["A named carriage","A titled carriage"],
-    ["Keepers of Names","Keepers of Scrolls"],
-    ["Cauldron Masters","Crucible Masters"],
-    ["Cold Sword Sect","Unadorned Sword Sect"],
-    ["Order Patriarch","Sect Patriarch"],
-    ["Keeper of Names","Keeper of Scrolls"],
-    ["Cauldron Master","Crucible Master"],
-    ["Reader of Hours","Reader of Lots"],
-    ["Meltwater Cress","Meltwater Sorrel"],
-    ["Blind Cave Fish","Blind Grotto Fish"],
-    ["Foot on Nothing","Hoof on Nothing"],
-    ["Out of the Wood","Out of the Trunk"],
-    ["Year Beast Hide","Nian Beast Pelt"],
-    ["Beacon Fire Age","Beacon Age"],
-    ["Bird-Track Hand","Bird-Scratch Hand"],
-    ["The Glass Field","The Glass Ploughland"],
-    ["The Green Glass","The Verdigris Glass"],
-    ["Cold Jade Basin","Ice Jade Basin"],
-    ["A shod carriage","An iron-rimmed carriage"],
-    ["Iron Hook Slope","Iron Mattock Slope"],
-    ["The Second Wall","The Second Rampart"],
-    ["Four Days' Fire","Fourth-Day Blaze"],
-    ["Unfinished Side","Unfinished Half"],
-    ["Cold Jade Plate","Ice Jade Plate"],
-    ["Seal inspection","Sigil inspection"],
-    ["Vermilion Seal","Vermilion Sigil"],
-    ["Forge Disciple","Anvil Disciple"],
-    ["The Kiln Court","The Tripod Court"],
-    ["Sun-Eater Hide","Sun-Eater Pelt"],
-    ["The Slow Field","The Halted Acre"],
-    ["The Hollow Run","The Empyrean Vein"],
-    ["Wenzhi's Field","Wenzhi's Paddy"],
-    ["Unbarred Mouth","Unbarred Maw"],
-    ["Cauldron Belly","Tripod Belly"],
-    ["Sealing Casket","Warding Casket"],
-    ["Kiln Gate Seal","Tripod Gate Sigil"],
-    ["Rime Disciples","Hoarfrost Disciples"],
-    ["Flowing Light","Flowing Star"],
-    ["Rime Disciple","Hoarfrost Disciple"],
-    ["Spear Thistle","Dagger Thistle"],
-    ["Cave Fish Oil","Grotto Fish Oil"],
-    ["Grain Sparrow","Stubble Sparrow"],
-    ["Crevasse Worm","Crevasse Grub"],
-    ["Swallows Fire","Swallows Flame"],
-    ["Flood Serpent","Deluge Serpent"],
-    ["Cauldron-Born","Tripod-Born"],
-    ["The Rung Bell","The Rung Chime"],
-    ["The Hour Room","The Water-Clock Room"],
-    ["The Slow Bell","The Seldom Gong"],
-    ["The Rain Face","The Drizzle Face"],
-    ["The Slow Door","The Patient Door"],
-    ["The Root Vein","The Taproot Vein"],
-    ["A spirit boat","A spirit skiff"],
-    ["Standing Kiln","Unquenched Brazier"],
-    ["Grinding Ford","Grinding Shallows"],
-    ["Resealed Wall","Resealed Rampart"],
-    ["Hollow Court","Empyrean Court"],
-    ["Snow Servant","Sleet Servant"],
-    ["Sill Courier","Sluice Courier"],
-    ["Chain Bearer","Line Bearer"],
-    ["Kiln Wardens","Tripod Wardens"],
-    ["Carried Word","Carried Voice"],
-    ["Mire Buffalo","Marsh Buffalo"],
-    ["Ridge Lizard","Crest Lizard"],
-    ["Gorge Stride","Gorge Clamber"],
-    ["Cinder Ridge","Cinder Crest"],
-    ["Counted Wall","Counted Rampart"],
-    ["Hollow Basin","Empyrean Basin"],
-    ["Cauldron Lid","Tripod Lid"],
-    ["Peak Wardens","Crag Wardens"],
-    ["Ford Masters","Ferry Masters"],
-    ["Tide breaker","Surge breaker"],
-    ["Smoke Ridge","Smoke Crest"],
-    ["Ashen Forge","Ashen Anvil"],
-    ["Hollow Bell","Wayside Chime"],
-    ["Ford Master","Ferry Master"],
-    ["Peak Warden","Crag Warden"],
-    ["Bell Keeper","Chime Keeper"],
-    ["Yoke Bearer","Load Bearer"],
-    ["Span Master","Measure Master"],
-    ["Hollow Reed","Empty Reed"],
-    ["Trunk Hound","Trunk Jackal"],
-    ["Grave Hound","Grave Jackal"],
-    ["Green Qilin","Cyan Qilin"],
-    ["Warden year","Warden Reckoning"],
-    ["Great Peace","Lasting Peace"],
-    ["Split Tally","Halved Tally"],
-    ["Fallen Wall","Fallen Rampart"],
-    ["Sunken Ford","Sunken Ferry"],
-    ["Cold Spring","Lone Spring"],
-    ["Glass Field","Glass Ploughland"],
-    ["Green Glass","Verdigris Glass"],
-    ["Second Wall","Second Rampart"],
-    ["Cave sitter","Grotto sitter"],
-    ["Stone Ford","Clear River Ferry"],
-    ["Iron Ridge","Iron Crest"],
-    ["Grain Rain","Insects Awaken"],
-    ["Four Names","Fourfold Stele"],
-    ["Tuo's Wall","Tuo's Rampart"],
-    ["Cold Sword","Unadorned Sword"],
-    ["Bellringer","Chime Ringer"],
-    ["Sill-Sworn","Sluice-Sworn"],
-    ["Third Sill","Third Sluice"],
-    ["Kiln Court","Tripod Court"],
-    ["Grass Hare","Grass Rabbit"],
-    ["Honey Bear","Honey Bruin"],
-    ["Pack Sense","Troop Sense"],
-    ["Paper Moth","Paper Weevil"],
-    ["Left Shell","Left Husk"],
-    ["Same Green","Stem Shade"],
-    ["Year Beast","Nian Beast"],
-    ["Hill-Borer","Knoll-Borer"],
-    ["Face years","Face Reckoning"],
-    ["Seat years","Seat Reckoning"],
-    ["Thin Ridge","Meagre Crest"],
-    ["Slow Field","Halted Acre"],
-    ["Hollow Run","Empyrean Vein"],
-    ["Cold Peak","Moraine Gate"],
-    ["Sand Well","Truce Spring"],
-    ["Boat Hand","Oar Hand"],
-    ["Night Cat","Dusk Cat"],
-    ["Green Eye","Moonless Eye"],
-    ["Burn Crow","Scorch Crow"],
-    ["Red Sweat","Red Lather"],
-    ["Cold Hunt","Stone Patience"],
-    ["Cold Coil","Undertow Coil"],
-    ["Toll Lion","Guardian Lion"],
-    ["Wide Gate","Broad Gate"],
-    ["Near Pass","Brief Pass"],
-    ["Hour Room","Water-Clock Room"],
-    ["Slow Bell","Seldom Gong"],
-    ["Rain Face","Drizzle Face"],
-    ["Slow Door","Patient Door"],
-    ["Root Vein","Taproot Vein"],
-    ["Rung Bell","Rung Chime"],
-    ["Herb Boy","Medicine Boy"]
-  ],
-  "lowercase": [
-    ["flight on one's own blade","soaring on one's own blade"],
-    ["hundred-herb restoration","hundred-grass restoration"],
-    ["cross-meridian strike","cross-meridian jolt"],
-    ["severed name finger","severed grip finger"],
-    ["thousand-day root","thousand-day tuber"],
-    ["seal inspection","sigil inspection"],
-    ["tide breaker","surge breaker"],
-    ["sword chant","sword cadence"],
-    ["golden bell","golden dome"],
-    ["hollow body","vacant body"],
-    ["shadow gait","shadow step"],
-    ["cave sitter","grotto sitter"],
-    ["stone hide","scree mantle"],
-    ["root vein","taproot vein"],
-    ["herb boy","medicine boy"]
-  ],
-  "caseVariants": [
-    ["the Root-Recasting Talisman","the Spirit-Recasting Talisman"],
-    ["the Sword-Marked Cliff","the Sword-Scored Cliff"],
-    ["the Cold Jade Plate","the Ice Jade Plate"],
-    ["the reserved floor","the private floor"],
-    ["nine-night opening","nine-vigil opening"],
-    ["the Grinding Ford","the Grinding Shallows"],
-    ["THE HOLLOW COURT","THE EMPYREAN COURT"],
-    ["the HOLLOW COURT","the EMPYREAN COURT"],
-    ["GREEN WATER CITY","EMERALD WATER CITY"],
-    ["the hollow court","the empyrean court"],
-    ["clear river ford","clear river ferry"],
-    ["the Hollow Basin","the Empyrean Basin"],
-    ["named carriages","titled carriages"],
-    ["a shod carriage","an iron-rimmed carriage"],
-    ["THE KILN COURT","THE TRIPOD COURT"],
-    ["shod carriages","iron-rimmed carriages"],
-    ["named carriage","titled carriage"],
-    ["shod carriage","iron-rimmed carriage"],
-    ["HOLLOW COURT","EMPYREAN COURT"],
-    ["KILN WARDENS","TRIPOD WARDENS"],
-    ["hollow court","empyrean court"],
-    ["kiln wardens","tripod wardens"],
-    ["chain bearer","line bearer"],
-    ["Spirit boats","Spirit skiffs"],
-    ["spirit boats","spirit skiffs"],
-    ["hollow reed","empty reed"],
-    ["Spirit boat","Spirit skiff"],
-    ["spirit boat","spirit skiff"],
-    ["iron ridge","iron crest"],
-    ["boat hand","oar hand"]
-  ],
-  "exactStrings": [
-    ["'Marked'", "'Inscribed'"],
-    ["'Bound'", "'Tethered'"],
-    ["'Marker'", "'Stakehand'"],
-    ["'On foot'", "'Afoot'"]
-  ],
-  "shortForms": [
-    ["Kiln", "Tripod"],
-    ["Sill", "Sluice"],
-    ["the Order (the Nine Peaks house)", "the Sect"],
-    ["Ascetic Order", "Ascetic Sect"],
-    ["the Market (the Silver Island house)", "the Hall"],
-    ["Market Master", "Barge Master"]
-  ],
-  "generatorWords": {
-    "src/engine/world/history.ts": {
-      "PLACE_HEAD": { "Cold": "Frigid", "Green": "Jasper", "Thin": "Barren", "Grain": "Sorghum" },
-      "PLACE_TAIL": { "Peak": "Crag", "Ridge": "Crest", "Ford": "Ferry" },
-      "FACTION_ADJ": { "Iron Pear": "Iron Quince", "Cold Kiln": "Idle Censer", "Split Stone": "Cleft Stone", "Hollow Reed": "Empty Reed", "Salt Bell": "Salt Gong", "Wound Gate": "Breach Gate" },
-      "ERA_ADJ": { "Wide": "Broad" }
+    "about": "Every display string renamed so that no word of a name is a word the player types, or a typo of one (AGENTS.md, \"A name evokes what it is\"). Ids are unchanged. Apply `phrases`, `lowercase` and `caseVariants` case-sensitively as whole phrases (never inside a longer word), longest first, in ONE pass so no replacement fires on another's output; a name with an apostrophe also appears escaped (\\') in single-quoted TypeScript. `shortForms` are the words prose shortens a renamed body to, applied only where the sentence means that body. `generatorWords` are replaced ONLY inside the named list, one for one, so every seeded draw is unchanged. Do not apply this to text that quotes the owner verbatim, or to the history kept on purpose in docs/world/writing/place-names.md, src/data/cultivation/place-names.ts (placeIdSlug and placeSeedKey key on the retired names), src/web/names-as-they-are-spelled.ts and the two name tests. \"spirit boat\" is the owner's genre word and was kept (the guard exempts \"boat\").",
+    "phrases": [
+        [
+            "Core of Something Older Than the Sect Above It",
+            "Core of Something Predating the Sect Above It"
+        ],
+        [
+            "The teacher the Given Ladder requires",
+            "The master the Given Ladder requires"
+        ],
+        [
+            "The Old Neighbour Under the Ford",
+            "The Old Neighbour Under the Ferry"
+        ],
+        [
+            "Twin Lotus Cultivation Method",
+            "Twin Lotus Pairing Method"
+        ],
+        [
+            "The Tide Out of a Broken Seal",
+            "The Surge Out of a Broken Sigil"
+        ],
+        [
+            "The First Keeper of the Kiln",
+            "The First Keeper of the Tripod"
+        ],
+        [
+            "Lesser Grain Abstinence Pill",
+            "Lesser Satiety Pill"
+        ],
+        [
+            "Hundred-Herb Restoration Art",
+            "Hundred-Grass Restoration Art"
+        ],
+        [
+            "Old Neighbour Under the Ford",
+            "Old Neighbour Under the Ferry"
+        ],
+        [
+            "Whoever hung the first bell",
+            "Whoever hung the first chime"
+        ],
+        [
+            "Keeper of the Standing Word",
+            "Keeper of the Standing Pledge"
+        ],
+        [
+            "Kalpa Fire That Eats Heaven",
+            "Heaven-Devouring Kalpa Inferno"
+        ],
+        [
+            "Moonlit Well Absorption Art",
+            "Moonlit Pond Absorption Art"
+        ],
+        [
+            "Still Blade Severing Stroke",
+            "Still Blade Severing Art"
+        ],
+        [
+            "The Root-Recasting Talisman",
+            "The Spirit-Recasting Talisman"
+        ],
+        [
+            "The Hollow Between the Arms",
+            "The Nothing Between the Arms"
+        ],
+        [
+            "Thousand Treasure Pavilion",
+            "Thousand Relic Pavilion"
+        ],
+        [
+            "Old Shen of the Third Ford",
+            "Old Shen of the Third Ferry"
+        ],
+        [
+            "Assessor of the Four Faces",
+            "Assessor of the Distant Faces"
+        ],
+        [
+            "Rime-Heart Stillness Canon",
+            "Hoarfrost-Heart Stillness Canon"
+        ],
+        [
+            "Turning Year Stillness Art",
+            "Turning Solstice Stillness Art"
+        ],
+        [
+            "Thousand-Year Cypress Pill",
+            "Thousand-Ring Cypress Pill"
+        ],
+        [
+            "Hollow Sky Clear Mind Pill",
+            "Empty Sky Clear Mind Pill"
+        ],
+        [
+            "The First Keeper of Names",
+            "The First Keeper of Scrolls"
+        ],
+        [
+            "Void-Tide Breathing Canon",
+            "Void-Ebb Respiration Canon"
+        ],
+        [
+            "Cold-Bed Foundation Canon",
+            "Chill-Bed Foundation Canon"
+        ],
+        [
+            "Two-Decade Longevity Pill",
+            "Greater Longevity Pill"
+        ],
+        [
+            "Thunder-Struck Peach Wood",
+            "Thunder-Struck Jujube Timber"
+        ],
+        [
+            "Hundred-Year Snow Ginseng",
+            "Snowbound Ginseng"
+        ],
+        [
+            "The Thirteen and the Four",
+            "The Thirteen and the Fourfold"
+        ],
+        [
+            "Flight on one's own blade",
+            "Soaring on one's own blade"
+        ],
+        [
+            "Tide Out of a Broken Seal",
+            "Surge Out of a Broken Sigil"
+        ],
+        [
+            "Nine Peaks Ascetic Order",
+            "Nine Peaks Ascetic Sect"
+        ],
+        [
+            "Old Ge of the Ninth Ford",
+            "Old Ge of the Ninth Ferry"
+        ],
+        [
+            "Gale-Riding Sword Flight",
+            "Gale-Borne Sword Soaring"
+        ],
+        [
+            "Green Mercy Mending Palm",
+            "Verdant Mercy Mending Palm"
+        ],
+        [
+            "Protected Crossing Canon",
+            "Guarded Crossing Canon"
+        ],
+        [
+            "Heavenly Mechanism Sight",
+            "Heavenly Mechanism Augury"
+        ],
+        [
+            "Crimson-Bound Union Rite",
+            "Crimson-Knot Union Ritual"
+        ],
+        [
+            "Thousand-Spear Summoning",
+            "Thousand-Halberd Summoning"
+        ],
+        [
+            "Unwritten Span Scripture",
+            "Unwritten Remnant Scripture"
+        ],
+        [
+            "Hollow Reed Fasting Pill",
+            "Empty Reed Fasting Pill"
+        ],
+        [
+            "Shen of the Fourth Ford",
+            "Shen of the Fourth Ferry"
+        ],
+        [
+            "First Elder of the Hour",
+            "First Elder of the Lots"
+        ],
+        [
+            "Nine Rivers Sword Chant",
+            "Nine Rivers Sword Cadence"
+        ],
+        [
+            "Name-Holding Recitation",
+            "Namekeeping Recitation"
+        ],
+        [
+            "Shut Hour Sealing Field",
+            "Shut Moment Domain"
+        ],
+        [
+            "Decade-Lengthening Pill",
+            "Lesser Longevity Pill"
+        ],
+        [
+            "Hollow Between the Arms",
+            "Nothing Between the Arms"
+        ],
+        [
+            "Root-Recasting Talisman",
+            "Spirit-Recasting Talisman"
+        ],
+        [
+            "Vermilion Seal Terrace",
+            "Vermilion Sigil Terrace"
+        ],
+        [
+            "Bloodwarm Battle Chant",
+            "Bloodwarm Battle Hymn"
+        ],
+        [
+            "Hollow Mountain Decree",
+            "Phantom Mountain Decree"
+        ],
+        [
+            "Open Sky Calamity Word",
+            "Open Sky Calamity Syllable"
+        ],
+        [
+            "Condensed Century Pill",
+            "Greater Condensed Pill"
+        ],
+        [
+            "The Sword-Marked Cliff",
+            "The Sword-Scored Cliff"
+        ],
+        [
+            "Hollow Bell Wanderers",
+            "Wayside Chime Wanderers"
+        ],
+        [
+            "Cross-Meridian Strike",
+            "Cross-Meridian Jolt"
+        ],
+        [
+            "Shadow-Splitting Gait",
+            "Shadow-Splitting Step"
+        ],
+        [
+            "Condensed Decade Pill",
+            "Lesser Condensed Pill"
+        ],
+        [
+            "Firevein Serpent Hide",
+            "Firevein Serpent Skin"
+        ],
+        [
+            "Pheasant Tail Feather",
+            "Pheasant Plume"
+        ],
+        [
+            "Thirteen and the Four",
+            "Thirteen and the Fourfold"
+        ],
+        [
+            "Face labour (carving)",
+            "Face carving"
+        ],
+        [
+            "Silver Island Market",
+            "Silver Island Hall"
+        ],
+        [
+            "Void-Fold Pilgrimage",
+            "Void-Crease Pilgrimage"
+        ],
+        [
+            "Sees the Fire Coming",
+            "Sees the Blaze Coming"
+        ],
+        [
+            "Cloud-Marked Leopard",
+            "Cloud-Spotted Leopard"
+        ],
+        [
+            "Flowing Light Tower",
+            "Flowing Star Tower"
+        ],
+        [
+            "Bramble Crown Spear",
+            "Bramble Crown Javelin"
+        ],
+        [
+            "Severed Name Finger",
+            "Severed Grip Finger"
+        ],
+        [
+            "Lotus-Plucking Rite",
+            "Lotus-Plucking Ritual"
+        ],
+        [
+            "Magpie Tail Feather",
+            "Magpie Plume"
+        ],
+        [
+            "The Cold Jade Plate",
+            "The Ice Jade Plate"
+        ],
+        [
+            "The Unfinished Side",
+            "The Unfinished Half"
+        ],
+        [
+            "Gleaner (burn zone)",
+            "Gleaner (scorched zone)"
+        ],
+        [
+            "Keeper of the Kiln",
+            "Keeper of the Tripod"
+        ],
+        [
+            "Tectonic Seal Palm",
+            "Tectonic Imprint Palm"
+        ],
+        [
+            "Samsara Tide Crush",
+            "Samsara Whirlpool Crush"
+        ],
+        [
+            "Golden Bell Shroud",
+            "Golden Dome Shroud"
+        ],
+        [
+            "Cold Jade Carapace",
+            "Ice Jade Carapace"
+        ],
+        [
+            "Hollow Second Body",
+            "Empty Second Body"
+        ],
+        [
+            "Hour Reversing Art",
+            "Moment Reversing Art"
+        ],
+        [
+            "Nine-Night Opening",
+            "Nine-Vigil Opening"
+        ],
+        [
+            "Cold-Set Petal Cut",
+            "Chill-Set Petal Cut"
+        ],
+        [
+            "Century Lotus Pill",
+            "Iceheart Lotus Pill"
+        ],
+        [
+            "Every Foot At Once",
+            "Every Claw At Once"
+        ],
+        [
+            "Green Bamboo Viper",
+            "Bamboo-Leaf Viper"
+        ],
+        [
+            "Flood Serpent Hide",
+            "Deluge Serpent Skin"
+        ],
+        [
+            "The Cauldron Belly",
+            "The Tripod Belly"
+        ],
+        [
+            "The Sealing Casket",
+            "The Warding Casket"
+        ],
+        [
+            "The Kiln Gate Seal",
+            "The Tripod Gate Sigil"
+        ],
+        [
+            "Grain of the Stone",
+            "Figure of the Stone"
+        ],
+        [
+            "Ten Thousand Works",
+            "Ten Thousand Deeds"
+        ],
+        [
+            "The Unbarred Mouth",
+            "The Unbarred Maw"
+        ],
+        [
+            "The reserved floor",
+            "The private floor"
+        ],
+        [
+            "Hollow Marrow Body",
+            "Empty Marrow Body"
+        ],
+        [
+            "Sword-Marked Cliff",
+            "Sword-Scored Cliff"
+        ],
+        [
+            "Deep Snow Village",
+            "Deep Drift Village"
+        ],
+        [
+            "Bronze Bell Cliff",
+            "Bronze Gong Cliff"
+        ],
+        [
+            "Thousand Treasure",
+            "Thousand Relic"
+        ],
+        [
+            "Elder of the Hour",
+            "Elder of the Lots"
+        ],
+        [
+            "Green Sprout Lash",
+            "Sapling Lash"
+        ],
+        [
+            "Stone Hide Mantle",
+            "Scree Mantle"
+        ],
+        [
+            "Binding Word Seal",
+            "Binding Pledge Sigil"
+        ],
+        [
+            "Thousand-Day Root",
+            "Thousand-Day Tuber"
+        ],
+        [
+            "Blood-Sweat Horse",
+            "Blood-Lather Horse"
+        ],
+        [
+            "Gold Cicada Shell",
+            "Gold Cicada Husk"
+        ],
+        [
+            "The Standing Kiln",
+            "The Unquenched Brazier"
+        ],
+        [
+            "The Grinding Ford",
+            "The Grinding Shallows"
+        ],
+        [
+            "The Resealed Wall",
+            "The Resealed Rampart"
+        ],
+        [
+            "Nine Bell Terrace",
+            "Nine Gong Terrace"
+        ],
+        [
+            "Three Year Ground",
+            "Three Summer Ground"
+        ],
+        [
+            "Keeper of Nameses",
+            "Keeper of Scrollses"
+        ],
+        [
+            "Green Water City",
+            "Emerald Water City"
+        ],
+        [
+            "Clear River Ford",
+            "Clear River Ferry"
+        ],
+        [
+            "Ashen Forge Clan",
+            "Ashen Anvil Clan"
+        ],
+        [
+            "The Hollow Court",
+            "The Empyrean Court"
+        ],
+        [
+            "Still Blade Peak",
+            "Still Blade Pavilion"
+        ],
+        [
+            "Twenty-Year Hand",
+            "Generation Hand"
+        ],
+        [
+            "The first Marker",
+            "The first Stakehand"
+        ],
+        [
+            "Gutter Rain Palm",
+            "Gutter Downpour Palm"
+        ],
+        [
+            "Void Hollow Body",
+            "Void Vacant Body"
+        ],
+        [
+            "Name Erasing Art",
+            "Unnaming Art"
+        ],
+        [
+            "Second Pour Pill",
+            "Second Casting Pill"
+        ],
+        [
+            "Iron-Eating Bear",
+            "Iron-Eating Beast"
+        ],
+        [
+            "Trunk Hound Hide",
+            "Trunk Jackal Pelt"
+        ],
+        [
+            "Through the Wall",
+            "Through the Byre"
+        ],
+        [
+            "Weasel Tail-Hair",
+            "Weasel Brush-Hair"
+        ],
+        [
+            "The Cauldron Lid",
+            "The Tripod Lid"
+        ],
+        [
+            "The Counted Wall",
+            "The Counted Rampart"
+        ],
+        [
+            "The Hollow Basin",
+            "The Empyrean Basin"
+        ],
+        [
+            "A named carriage",
+            "A titled carriage"
+        ],
+        [
+            "Keepers of Names",
+            "Keepers of Scrolls"
+        ],
+        [
+            "Cauldron Masters",
+            "Crucible Masters"
+        ],
+        [
+            "Cold Sword Sect",
+            "Unadorned Sword Sect"
+        ],
+        [
+            "Order Patriarch",
+            "Sect Patriarch"
+        ],
+        [
+            "Keeper of Names",
+            "Keeper of Scrolls"
+        ],
+        [
+            "Cauldron Master",
+            "Crucible Master"
+        ],
+        [
+            "Reader of Hours",
+            "Reader of Lots"
+        ],
+        [
+            "Meltwater Cress",
+            "Meltwater Sorrel"
+        ],
+        [
+            "Blind Cave Fish",
+            "Blind Grotto Fish"
+        ],
+        [
+            "Foot on Nothing",
+            "Hoof on Nothing"
+        ],
+        [
+            "Out of the Wood",
+            "Out of the Trunk"
+        ],
+        [
+            "Year Beast Hide",
+            "Nian Beast Pelt"
+        ],
+        [
+            "Beacon Fire Age",
+            "Beacon Age"
+        ],
+        [
+            "Bird-Track Hand",
+            "Bird-Scratch Hand"
+        ],
+        [
+            "The Glass Field",
+            "The Glass Ploughland"
+        ],
+        [
+            "The Green Glass",
+            "The Verdigris Glass"
+        ],
+        [
+            "Cold Jade Basin",
+            "Ice Jade Basin"
+        ],
+        [
+            "A shod carriage",
+            "An iron-rimmed carriage"
+        ],
+        [
+            "Iron Hook Slope",
+            "Iron Mattock Slope"
+        ],
+        [
+            "The Second Wall",
+            "The Second Rampart"
+        ],
+        [
+            "Four Days' Fire",
+            "Fourth-Day Blaze"
+        ],
+        [
+            "Unfinished Side",
+            "Unfinished Half"
+        ],
+        [
+            "Cold Jade Plate",
+            "Ice Jade Plate"
+        ],
+        [
+            "Seal inspection",
+            "Sigil inspection"
+        ],
+        [
+            "Vermilion Seal",
+            "Vermilion Sigil"
+        ],
+        [
+            "Forge Disciple",
+            "Anvil Disciple"
+        ],
+        [
+            "The Kiln Court",
+            "The Tripod Court"
+        ],
+        [
+            "Sun-Eater Hide",
+            "Sun-Eater Pelt"
+        ],
+        [
+            "The Slow Field",
+            "The Halted Acre"
+        ],
+        [
+            "The Hollow Run",
+            "The Empyrean Vein"
+        ],
+        [
+            "Wenzhi's Field",
+            "Wenzhi's Paddy"
+        ],
+        [
+            "Unbarred Mouth",
+            "Unbarred Maw"
+        ],
+        [
+            "Cauldron Belly",
+            "Tripod Belly"
+        ],
+        [
+            "Sealing Casket",
+            "Warding Casket"
+        ],
+        [
+            "Kiln Gate Seal",
+            "Tripod Gate Sigil"
+        ],
+        [
+            "Rime Disciples",
+            "Hoarfrost Disciples"
+        ],
+        [
+            "Flowing Light",
+            "Flowing Star"
+        ],
+        [
+            "Rime Disciple",
+            "Hoarfrost Disciple"
+        ],
+        [
+            "Spear Thistle",
+            "Dagger Thistle"
+        ],
+        [
+            "Cave Fish Oil",
+            "Grotto Fish Oil"
+        ],
+        [
+            "Grain Sparrow",
+            "Stubble Sparrow"
+        ],
+        [
+            "Crevasse Worm",
+            "Crevasse Grub"
+        ],
+        [
+            "Swallows Fire",
+            "Swallows Flame"
+        ],
+        [
+            "Flood Serpent",
+            "Deluge Serpent"
+        ],
+        [
+            "Cauldron-Born",
+            "Tripod-Born"
+        ],
+        [
+            "The Rung Bell",
+            "The Rung Chime"
+        ],
+        [
+            "The Hour Room",
+            "The Water-Clock Room"
+        ],
+        [
+            "The Slow Bell",
+            "The Seldom Gong"
+        ],
+        [
+            "The Rain Face",
+            "The Drizzle Face"
+        ],
+        [
+            "The Slow Door",
+            "The Patient Door"
+        ],
+        [
+            "The Root Vein",
+            "The Taproot Vein"
+        ],
+        [
+            "Standing Kiln",
+            "Unquenched Brazier"
+        ],
+        [
+            "Grinding Ford",
+            "Grinding Shallows"
+        ],
+        [
+            "Resealed Wall",
+            "Resealed Rampart"
+        ],
+        [
+            "Hollow Court",
+            "Empyrean Court"
+        ],
+        [
+            "Snow Servant",
+            "Sleet Servant"
+        ],
+        [
+            "Sill Courier",
+            "Sluice Courier"
+        ],
+        [
+            "Chain Bearer",
+            "Line Bearer"
+        ],
+        [
+            "Kiln Wardens",
+            "Tripod Wardens"
+        ],
+        [
+            "Carried Word",
+            "Carried Voice"
+        ],
+        [
+            "Mire Buffalo",
+            "Marsh Buffalo"
+        ],
+        [
+            "Ridge Lizard",
+            "Crest Lizard"
+        ],
+        [
+            "Gorge Stride",
+            "Gorge Clamber"
+        ],
+        [
+            "Cinder Ridge",
+            "Cinder Crest"
+        ],
+        [
+            "Counted Wall",
+            "Counted Rampart"
+        ],
+        [
+            "Hollow Basin",
+            "Empyrean Basin"
+        ],
+        [
+            "Cauldron Lid",
+            "Tripod Lid"
+        ],
+        [
+            "Peak Wardens",
+            "Crag Wardens"
+        ],
+        [
+            "Ford Masters",
+            "Ferry Masters"
+        ],
+        [
+            "Tide breaker",
+            "Surge breaker"
+        ],
+        [
+            "Smoke Ridge",
+            "Smoke Crest"
+        ],
+        [
+            "Ashen Forge",
+            "Ashen Anvil"
+        ],
+        [
+            "Hollow Bell",
+            "Wayside Chime"
+        ],
+        [
+            "Ford Master",
+            "Ferry Master"
+        ],
+        [
+            "Peak Warden",
+            "Crag Warden"
+        ],
+        [
+            "Bell Keeper",
+            "Chime Keeper"
+        ],
+        [
+            "Yoke Bearer",
+            "Load Bearer"
+        ],
+        [
+            "Span Master",
+            "Measure Master"
+        ],
+        [
+            "Hollow Reed",
+            "Empty Reed"
+        ],
+        [
+            "Trunk Hound",
+            "Trunk Jackal"
+        ],
+        [
+            "Grave Hound",
+            "Grave Jackal"
+        ],
+        [
+            "Green Qilin",
+            "Cyan Qilin"
+        ],
+        [
+            "Warden year",
+            "Warden Reckoning"
+        ],
+        [
+            "Great Peace",
+            "Lasting Peace"
+        ],
+        [
+            "Split Tally",
+            "Halved Tally"
+        ],
+        [
+            "Fallen Wall",
+            "Fallen Rampart"
+        ],
+        [
+            "Sunken Ford",
+            "Sunken Ferry"
+        ],
+        [
+            "Cold Spring",
+            "Lone Spring"
+        ],
+        [
+            "Glass Field",
+            "Glass Ploughland"
+        ],
+        [
+            "Green Glass",
+            "Verdigris Glass"
+        ],
+        [
+            "Second Wall",
+            "Second Rampart"
+        ],
+        [
+            "Cave sitter",
+            "Grotto sitter"
+        ],
+        [
+            "Stone Ford",
+            "Clear River Ferry"
+        ],
+        [
+            "Iron Ridge",
+            "Iron Crest"
+        ],
+        [
+            "Grain Rain",
+            "Insects Awaken"
+        ],
+        [
+            "Four Names",
+            "Fourfold Stele"
+        ],
+        [
+            "Tuo's Wall",
+            "Tuo's Rampart"
+        ],
+        [
+            "Cold Sword",
+            "Unadorned Sword"
+        ],
+        [
+            "Bellringer",
+            "Chime Ringer"
+        ],
+        [
+            "Sill-Sworn",
+            "Sluice-Sworn"
+        ],
+        [
+            "Third Sill",
+            "Third Sluice"
+        ],
+        [
+            "Kiln Court",
+            "Tripod Court"
+        ],
+        [
+            "Grass Hare",
+            "Grass Rabbit"
+        ],
+        [
+            "Honey Bear",
+            "Honey Bruin"
+        ],
+        [
+            "Pack Sense",
+            "Troop Sense"
+        ],
+        [
+            "Paper Moth",
+            "Paper Weevil"
+        ],
+        [
+            "Left Shell",
+            "Left Husk"
+        ],
+        [
+            "Same Green",
+            "Stem Shade"
+        ],
+        [
+            "Year Beast",
+            "Nian Beast"
+        ],
+        [
+            "Hill-Borer",
+            "Knoll-Borer"
+        ],
+        [
+            "Face years",
+            "Face Reckoning"
+        ],
+        [
+            "Seat years",
+            "Seat Reckoning"
+        ],
+        [
+            "Thin Ridge",
+            "Meagre Crest"
+        ],
+        [
+            "Slow Field",
+            "Halted Acre"
+        ],
+        [
+            "Hollow Run",
+            "Empyrean Vein"
+        ],
+        [
+            "Cold Peak",
+            "Moraine Gate"
+        ],
+        [
+            "Sand Well",
+            "Truce Spring"
+        ],
+        [
+            "Boat Hand",
+            "Oar Hand"
+        ],
+        [
+            "Night Cat",
+            "Dusk Cat"
+        ],
+        [
+            "Green Eye",
+            "Moonless Eye"
+        ],
+        [
+            "Burn Crow",
+            "Scorch Crow"
+        ],
+        [
+            "Red Sweat",
+            "Red Lather"
+        ],
+        [
+            "Cold Hunt",
+            "Stone Patience"
+        ],
+        [
+            "Cold Coil",
+            "Undertow Coil"
+        ],
+        [
+            "Toll Lion",
+            "Guardian Lion"
+        ],
+        [
+            "Wide Gate",
+            "Broad Gate"
+        ],
+        [
+            "Near Pass",
+            "Brief Pass"
+        ],
+        [
+            "Hour Room",
+            "Water-Clock Room"
+        ],
+        [
+            "Slow Bell",
+            "Seldom Gong"
+        ],
+        [
+            "Rain Face",
+            "Drizzle Face"
+        ],
+        [
+            "Slow Door",
+            "Patient Door"
+        ],
+        [
+            "Root Vein",
+            "Taproot Vein"
+        ],
+        [
+            "Rung Bell",
+            "Rung Chime"
+        ],
+        [
+            "Herb Boy",
+            "Medicine Boy"
+        ]
+    ],
+    "lowercase": [
+        [
+            "flight on one's own blade",
+            "soaring on one's own blade"
+        ],
+        [
+            "hundred-herb restoration",
+            "hundred-grass restoration"
+        ],
+        [
+            "cross-meridian strike",
+            "cross-meridian jolt"
+        ],
+        [
+            "severed name finger",
+            "severed grip finger"
+        ],
+        [
+            "thousand-day root",
+            "thousand-day tuber"
+        ],
+        [
+            "seal inspection",
+            "sigil inspection"
+        ],
+        [
+            "tide breaker",
+            "surge breaker"
+        ],
+        [
+            "sword chant",
+            "sword cadence"
+        ],
+        [
+            "golden bell",
+            "golden dome"
+        ],
+        [
+            "hollow body",
+            "vacant body"
+        ],
+        [
+            "shadow gait",
+            "shadow step"
+        ],
+        [
+            "cave sitter",
+            "grotto sitter"
+        ],
+        [
+            "stone hide",
+            "scree mantle"
+        ],
+        [
+            "root vein",
+            "taproot vein"
+        ],
+        [
+            "herb boy",
+            "medicine boy"
+        ]
+    ],
+    "caseVariants": [
+        [
+            "the Root-Recasting Talisman",
+            "the Spirit-Recasting Talisman"
+        ],
+        [
+            "the Sword-Marked Cliff",
+            "the Sword-Scored Cliff"
+        ],
+        [
+            "the Cold Jade Plate",
+            "the Ice Jade Plate"
+        ],
+        [
+            "the reserved floor",
+            "the private floor"
+        ],
+        [
+            "nine-night opening",
+            "nine-vigil opening"
+        ],
+        [
+            "the Grinding Ford",
+            "the Grinding Shallows"
+        ],
+        [
+            "THE HOLLOW COURT",
+            "THE EMPYREAN COURT"
+        ],
+        [
+            "the HOLLOW COURT",
+            "the EMPYREAN COURT"
+        ],
+        [
+            "GREEN WATER CITY",
+            "EMERALD WATER CITY"
+        ],
+        [
+            "the hollow court",
+            "the empyrean court"
+        ],
+        [
+            "clear river ford",
+            "clear river ferry"
+        ],
+        [
+            "the Hollow Basin",
+            "the Empyrean Basin"
+        ],
+        [
+            "named carriages",
+            "titled carriages"
+        ],
+        [
+            "a shod carriage",
+            "an iron-rimmed carriage"
+        ],
+        [
+            "THE KILN COURT",
+            "THE TRIPOD COURT"
+        ],
+        [
+            "shod carriages",
+            "iron-rimmed carriages"
+        ],
+        [
+            "named carriage",
+            "titled carriage"
+        ],
+        [
+            "shod carriage",
+            "iron-rimmed carriage"
+        ],
+        [
+            "HOLLOW COURT",
+            "EMPYREAN COURT"
+        ],
+        [
+            "KILN WARDENS",
+            "TRIPOD WARDENS"
+        ],
+        [
+            "hollow court",
+            "empyrean court"
+        ],
+        [
+            "kiln wardens",
+            "tripod wardens"
+        ],
+        [
+            "chain bearer",
+            "line bearer"
+        ],
+        [
+            "hollow reed",
+            "empty reed"
+        ],
+        [
+            "iron ridge",
+            "iron crest"
+        ],
+        [
+            "boat hand",
+            "oar hand"
+        ]
+    ],
+    "exactStrings": [
+        [
+            "'Marked'",
+            "'Inscribed'"
+        ],
+        [
+            "'Bound'",
+            "'Tethered'"
+        ],
+        [
+            "'Marker'",
+            "'Stakehand'"
+        ],
+        [
+            "'On foot'",
+            "'Afoot'"
+        ]
+    ],
+    "shortForms": [
+        [
+            "Kiln",
+            "Tripod"
+        ],
+        [
+            "Sill",
+            "Sluice"
+        ],
+        [
+            "the Order (the Nine Peaks house)",
+            "the Sect"
+        ],
+        [
+            "Ascetic Order",
+            "Ascetic Sect"
+        ],
+        [
+            "the Market (the Silver Island house)",
+            "the Hall"
+        ],
+        [
+            "Market Master",
+            "Barge Master"
+        ]
+    ],
+    "generatorWords": {
+        "src/engine/world/history.ts": {
+            "PLACE_HEAD": {
+                "Cold": "Frigid",
+                "Green": "Jasper",
+                "Thin": "Barren",
+                "Grain": "Sorghum"
+            },
+            "PLACE_TAIL": {
+                "Peak": "Crag",
+                "Ridge": "Crest",
+                "Ford": "Ferry"
+            },
+            "FACTION_ADJ": {
+                "Iron Pear": "Iron Quince",
+                "Cold Kiln": "Idle Censer",
+                "Split Stone": "Cleft Stone",
+                "Hollow Reed": "Empty Reed",
+                "Salt Bell": "Salt Gong",
+                "Wound Gate": "Breach Gate"
+            },
+            "ERA_ADJ": {
+                "Wide": "Broad"
+            }
+        },
+        "src/engine/world/how-the-world-keeps-finding-more-ruins.ts": {
+            "NAMES_BY_CHARACTER": {
+                "The Cold Furnace Above": "The Unlit Crucible Above",
+                "The Workshop They Swept First": "The Workshop Swept First",
+                "The Room They Left the Lamps In": "The Room With the Lamps Left In",
+                "The Order On the Shelves at": "The Sorted Shelves at",
+                "The Door That Was Not Worth Breaking": "The Door Not Worth Forcing",
+                "The Field the Crop Line Goes Round": "The Ground the Furrows Skirt",
+                "Where Both of Them Stopped": "The Last Stand of Two",
+                "The Line Where the Grass Stops": "The Edge of the Grass",
+                "The Post Above the Ford": "The Post Above the Ferry",
+                "The Bridge House At": "The Arch House At",
+                "The Wall Round the Old Physic": "The Rampart About the Old Physic",
+                "The Ten They Put Together": "The Ten Laid Together",
+                "The Hall They Taught Out Of": "The Hall of the Last Lesson",
+                "The Wall Above": "The Rampart Above",
+                "The Cut They Laid a Lid Over": "The Lidded Cut",
+                "The Stone That Is Still Carrying": "The Stone Still Carrying",
+                "The Stone in the Long Field": "The Stone in the Long Furrow",
+                "The Cave Above": "The Grotto Above"
+            }
+        }
     },
-    "src/engine/world/how-the-world-keeps-finding-more-ruins.ts": {
-      "NAMES_BY_CHARACTER": {
-        "The Cold Furnace Above": "The Unlit Crucible Above",
-        "The Workshop They Swept First": "The Workshop Swept First",
-        "The Room They Left the Lamps In": "The Room With the Lamps Left In",
-        "The Order On the Shelves at": "The Sorted Shelves at",
-        "The Door That Was Not Worth Breaking": "The Door Not Worth Forcing",
-        "The Field the Crop Line Goes Round": "The Ground the Furrows Skirt",
-        "Where Both of Them Stopped": "The Last Stand of Two",
-        "The Line Where the Grass Stops": "The Edge of the Grass",
-        "The Post Above the Ford": "The Post Above the Ferry",
-        "The Bridge House At": "The Arch House At",
-        "The Wall Round the Old Physic": "The Rampart About the Old Physic",
-        "The Ten They Put Together": "The Ten Laid Together",
-        "The Hall They Taught Out Of": "The Hall of the Last Lesson",
-        "The Wall Above": "The Rampart Above",
-        "The Cut They Laid a Lid Over": "The Lidded Cut",
-        "The Stone That Is Still Carrying": "The Stone Still Carrying",
-        "The Stone in the Long Field": "The Stone in the Long Furrow",
-        "The Cave Above": "The Grotto Above"
-      }
+    "words": {
+        "allowance (what a house pays a member; the settling allowance keeps its word)": "stipend"
     }
-  },
-  "words": {
-    "allowance (what a house pays a member; the settling allowance keeps its word)": "stipend"
-  }
 }

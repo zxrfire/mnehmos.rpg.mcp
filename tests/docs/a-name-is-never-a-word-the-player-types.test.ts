@@ -58,7 +58,10 @@ const NOT_A_COLLISION: ReadonlyMap<string, string> = new Map([
     ['seat', 'a form of address as well as a rank - "Third Seat" is how the Court is spoken to'],
     ['pill', 'the type noun of every pill'],
     ['beast', 'the type noun of the beast kind'],
-    ['cultivator', 'the type noun of every person on the road, the player included']
+    ['cultivator', 'the type noun of every person on the road, the player included'],
+    // The owner's own genre word: "spirit boat = genre flying boat". A player types it
+    // to mean exactly the thing, and it is not to be renamed away.
+    ['boat', 'the owner\'s term for the flying vessel, "spirit boat"']
 ]);
 
 /**

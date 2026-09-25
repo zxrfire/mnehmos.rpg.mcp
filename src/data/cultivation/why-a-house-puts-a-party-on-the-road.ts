@@ -52,7 +52,7 @@
  *                             circulation, and there is deliberately no stored
  *                             score. A hard sending finished is a heavy fact
  *                             that travels, not a number going up.
- *   who carries the party     spirit skiffs. Physical, ordinal-rated, craftable
+ *   who carries the party     spirit boats. Physical, ordinal-rated, craftable
  *                             objects, owned elsewhere. Nothing here is a
  *                             conveyance and nothing here should become one.
  *   places that shut          `LocationRecord.cycle` with `nextOpeningDay`,

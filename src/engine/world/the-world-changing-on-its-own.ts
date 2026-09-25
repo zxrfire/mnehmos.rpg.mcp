@@ -4457,7 +4457,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
             // rather than an ordering chosen here: a house that gets one craft gets
             // its next one faster, because the craft carries the party that takes
             // the next core. Deepest-first had every qualified house laying a keel
-            // for a spirit skiff on day one and still short of the bill five
+            // for a spirit boat on day one and still short of the bill five
             // centuries later, so no tracked craft was ever built by anybody.
             .sort((a, b) => a.workDays - b.workDays)[0];
         if (!recipe) continue;

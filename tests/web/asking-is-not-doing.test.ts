@@ -1133,9 +1133,9 @@ describe('a closing question mark means this is not an action', () => {
      *
      * `theReadThatAnswersIt` is a per-verb table and `craft` had no case in it,
      * so it fell to `default: { action: 'assess', target }` - and measured,
-     * "can I build a spirit skiff?" came back as
-     * `{action:'assess', target:'spirit skiff'}`, which `GameService.assess`
-     * turns into `handleAssess({against:'place', place:'spirit skiff'})`. The
+     * "can I build a spirit boat?" came back as
+     * `{action:'assess', target:'spirit boat'}`, which `GameService.assess`
+     * turns into `handleAssess({against:'place', place:'spirit boat'})`. The
      * player asking whether they can lay a keel got an ambient-qi reading of a
      * place by that name.
      *
@@ -1145,7 +1145,7 @@ describe('a closing question mark means this is not an action', () => {
      * `craft` joined `ACTION_NAMES`.
      */
     it('answers a question about building with the bench listing', () => {
-        for (const said of ['can I build a spirit skiff?', 'what can I build']) {
+        for (const said of ['can I build a spirit boat?', 'what can I build']) {
             const plan = parseIntent(said);
             expect(plan.action, said).toBe('craft');
             // DROPPING THE TARGET IS THE WHOLE OF IT, exactly as it is for
@@ -1157,7 +1157,7 @@ describe('a closing question mark means this is not an action', () => {
             expect(plan.target, said).toBeUndefined();
         }
         // And deciding to build one is still the act, with its target on it.
-        const decided = parseIntent('I build a spirit skiff');
+        const decided = parseIntent('I build a spirit boat');
         expect(decided.action).toBe('craft');
         expect(decided.target).toBeDefined();
     });

@@ -32,7 +32,7 @@ days going by, one detail of the place, what changed or did not. The engine inte
 **A road is the same shape.**
 
 > you can't just travel, you have to rest. if you sleep in the cold, you gain negative effects.
-> you meet other travellers, merchants, etc. maybe even a sect party or lucky or a spirit skiff.
+> you meet other travellers, merchants, etc. maybe even a sect party or lucky or a spirit boat.
 > same shape as cultivation. bandits, whatever
 
 > once you get very powerful no more bandits. this isn't bespoke but your encounters scale on

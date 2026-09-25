@@ -125,7 +125,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I ride the horse',
         'I saddle a beast and ride for Iron Crest',
         'I take a carriage to Clear River Ferry',
-        'I take a spirit skiff to Silver Island',
+        'I take a spirit boat to Silver Island',
         'I fly to Clear River Ferry on my sword'
     ],
     fold: [
@@ -190,7 +190,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I cut five communication talismans for the sect',
         'I make a cart',
         'I put together a wagon',
-        'I lay down the keel of a spirit skiff',
+        'I lay down the keel of a spirit boat',
         'I go back to the carriage and finish it'
     ],
     // Spirit beasts are where a material comes from, so the verb that goes
@@ -598,7 +598,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     destroy: [
         'I smash the pill',
         'I break my sword',
-        'I destroy the spirit skiff',
+        'I destroy the spirit boat',
         'I burn the manual',
         // The scenery, which reaches the verb on purpose. The refusal that
         // says what the engine models lives in the handler, and a sentence

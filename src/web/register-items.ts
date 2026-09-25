@@ -787,7 +787,7 @@ function extinctionRecord(): string {
 // Beast materials, what a house moves its people on, and what an artifact is
 // made of. All three catalogs were authored, wired and invisible: the register
 // named no export of any of them, so a reader browsing the sheet could not find
-// out that the world has spirit skiffs in it, or that a core is an ingredient.
+// out that the world has spirit boats in it, or that a core is an ingredient.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**

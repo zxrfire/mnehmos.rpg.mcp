@@ -71,7 +71,7 @@ export type CapabilityGrant =
      * passenger at any size.
      *
      * A BUDGET RATHER THAN A LIMIT PER OBJECT, because one object can be a
-     * spirit skiff. Counting the largest thing carried would let a fold take
+     * spirit boat. Counting the largest thing carried would let a fold take
      * anything at all so long as it arrived in one piece, which is the wrong
      * answer by inspection.
      *

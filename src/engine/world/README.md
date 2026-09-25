@@ -3145,7 +3145,7 @@ the burn does not**, which is a finding about the economy rather than about conv
 Three things were missing and each hid the next.
 
 - **No hull existed in any world.** `TRACKED_CRAFT` is five rows and the seeder read none of
-  them, so a lived world contained **zero spirit skiffs** however long it ran - and none was
+  them, so a lived world contained **zero spirit boats** however long it ran - and none was
   ever built either, because a heaven-grade bill wants six cores and `sending-for-materials`
   is capped below the rung that brings one home. Same defect `seedArtifacts` exists to fix,
   one catalog over. `seedTheCraftThatAreObjects` seats them, and gives each one the first

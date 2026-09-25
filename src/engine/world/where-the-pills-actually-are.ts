@@ -178,7 +178,7 @@ export function seedPillStock(state: WorldState): ObjectRecord[] {
                 //
                 //   > the pill itself also doesn't make you stronger, it stores
                 //   > hp, so from the power pov it doesn't help either. only
-                //   > weapons and spirit skiffs do
+                //   > weapons and spirit boats do
                 //
                 // A pill is stored health, not a raised ceiling, and the
                 // instinct to write the rung here is the mistake to resist -

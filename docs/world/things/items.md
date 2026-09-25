@@ -431,9 +431,9 @@ that has decided not to look.**
 
 ## One thing breaks the way everything breaks
 
-<!-- tier: 2 trigger="a spirit skiff, a sword, a carriage, a formation plate or a spirit tool is broken, holed, worn out or mended; or somebody asks what a war costs a house physically" -->
+<!-- tier: 2 trigger="a spirit boat, a sword, a carriage, a formation plate or a spirit tool is broken, holed, worn out or mended; or somebody asks what a war costs a house physically" -->
 
-Asked how spirit skiffs come apart when two sects go to war, the design owner answered in one
+Asked how spirit boats come apart when two sects go to war, the design owner answered in one
 line: **no bespoke logic, the same way that a sword breaks.** There is one resolver -
 [`object-damage.ts`](../../../src/engine/world/object-damage.ts) - and its input type carries
 no kind of object at all, so a rule that applies to hulls and not to blades cannot be written

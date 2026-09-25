@@ -13,7 +13,7 @@ import { whatTheirThingsTake } from '../../src/engine/world/what-somebody-is-car
 import { whatTheVehicleDoes } from '../../src/web/your-vehicle';
 import { makeGameInWorld } from './harness';
 
-describe('what a carriage and a spirit skiff hold', () => {
+describe('what a carriage and a spirit boat hold', () => {
     it('takes twenty swords a body cannot, and turns away a carcass a boat takes', async () => {
         const { game } = await makeGameInWorld({ seed: 'a-cart-of-swords', worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');
@@ -50,7 +50,7 @@ describe('what a carriage and a spirit skiff hold', () => {
     }, 180_000);
 
     /** The owner: "try piloting a spirit boat too / you burn spirit stones as fuel". */
-    it('burns spirit stones to fly a spirit skiff, and does not lift on an empty purse', async () => {
+    it('burns spirit stones to fly a spirit boat, and does not lift on an empty purse', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'a-boat-that-burns', worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');
         const here = game.worldPlaceOf(cultivator);
@@ -60,12 +60,12 @@ describe('what a carriage and a spirit skiff hold', () => {
         const from = where().location;
 
         repos.cultivators.update(cultivator.id, { spiritStones: 0 });
-        const grounded = await game.act('I fly my spirit skiff to Silver Island');
+        const grounded = await game.act('I fly my spirit boat to Silver Island');
         expect(grounded.toolCalls.some(call => call.action === 'ride' && !call.ok)).toBe(true);
         expect(where().location).toBe(from);
 
         repos.cultivators.update(cultivator.id, { spiritStones: 100 });
-        const flown = await game.act('I fly my spirit skiff to Silver Island');
+        const flown = await game.act('I fly my spirit boat to Silver Island');
         expect(where().location).toBe('Silver Island');
         expect(flown.narration).toMatch(/\d+ spirit stones burned in its chest/);
         expect(where().spiritStones).toBeLessThan(100);

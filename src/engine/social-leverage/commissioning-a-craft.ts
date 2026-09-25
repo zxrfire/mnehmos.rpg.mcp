@@ -427,7 +427,7 @@ export function whatACommissionComesTo(
 ): number | null {
     // A RING IS PRICED AS A FOLD, not as its materials. The design owner: a
     // heaven-grade ring is absurdly expensive, equivalent to a heaven-grade
-    // spirit skiff, and a court has maybe one - which is a statement about the
+    // spirit boat, and a court has maybe one - which is a statement about the
     // FOLD and not about the ore, and `whatARingCosts` is where it is made.
     if (aRing) return whatARingCosts(grade);
     if (!madeBelowTheLid(grade)) return null;

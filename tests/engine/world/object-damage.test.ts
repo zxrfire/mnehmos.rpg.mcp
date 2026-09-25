@@ -56,7 +56,7 @@ const never = { next: () => 0.999999 };
 describe('the same call answers for every kind of thing', () => {
     it('a hull, a sabre, a carriage, a plate and a manual with the same row get the same answer', () => {
         const rows: ThingUnderForce[] = [
-            { id: 'a', name: 'a spirit skiff', power: 29, significance: 'significant', tags: ['conveyance'], data: {} },
+            { id: 'a', name: 'a spirit boat', power: 29, significance: 'significant', tags: ['conveyance'], data: {} },
             { id: 'b', name: 'a sabre', power: 29, significance: 'significant', tags: [], data: {} },
             { id: 'c', name: 'a carriage', power: 29, significance: 'significant', tags: ['conveyance'], data: {} },
             { id: 'd', name: 'a formation plate', power: 29, significance: 'significant', tags: [], data: {} },
@@ -76,7 +76,7 @@ describe('the same call answers for every kind of thing', () => {
         // check is mechanical rather than rhetorical: the module must not name
         // a single kind of object in a way that could steer an outcome.
         const boat = whatBecomesOfIt(
-            { id: 'x', name: 'a spirit skiff', power: 20, significance: 'significant', tags: [], data: {} },
+            { id: 'x', name: 'a spirit boat', power: 20, significance: 'significant', tags: [], data: {} },
             hand(34), always
         );
         const sword = whatBecomesOfIt(

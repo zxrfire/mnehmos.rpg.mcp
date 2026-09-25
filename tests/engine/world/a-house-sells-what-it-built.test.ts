@@ -7,7 +7,7 @@
  *
  *   no hull in any world     `TRACKED_CRAFT` is five rows and the seeder read
  *                            none of them. Measured on three seeds at three
- *                            hundred years: zero spirit skiffs, and none ever
+ *                            hundred years: zero spirit boats, and none ever
  *                            built either, because a heaven-grade bill wants six
  *                            cores and the materials errand is capped below the
  *                            rung that brings one home. The only thing in the

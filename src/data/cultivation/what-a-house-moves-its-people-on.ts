@@ -136,7 +136,7 @@ export const CONVEYANCES: readonly Conveyance[] = [
     },
     {
         id: 'conv-spirit-boat',
-        name: 'A spirit skiff',
+        name: 'A spirit boat',
         grade: 'heaven',
         range: 'crossing',
         holding: 'tracked',
@@ -342,7 +342,7 @@ export const CONVEYANCE_RECIPES: readonly ConveyanceRecipe[] = [
     },
     {
         id: 'build-spirit-boat',
-        name: 'A spirit skiff',
+        name: 'A spirit boat',
         producesConveyanceId: 'conv-spirit-boat',
         grade: 'heaven',
         components: [

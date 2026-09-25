@@ -17,7 +17,7 @@ How anybody decides whether you are who you say you are. Read alongside
 | [The spectrum of signals](#the-spectrum-of-signals) | somebody has to establish who they are |
 | [A signal is worth what they cannot check](#a-signal-is-worth-what-they-cannot-check) | deciding whether a particular deception works |
 | [Recognition runs backwards to prestige](#recognition-runs-backwards-to-prestige) | somebody from a great house is far from it |
-| [Expensive signals, and forging one](#expensive-signals-and-forging-one) | a retinue, a spirit skiff, anything nobody could afford to fake |
+| [Expensive signals, and forging one](#expensive-signals-and-forging-one) | a retinue, a spirit boat, anything nobody could afford to fake |
 | [Tokens shatter, so somebody has to be taken alive](#tokens-shatter-so-somebody-has-to-be-taken-alive) | somebody is holding a house's token that is not theirs |
 | [Checking costs time](#checking-costs-time-and-time-is-what-nobody-has) | somebody doubts a claim and has to decide whether to go and find out |
 | [The art is the strongest check](#the-art-is-the-strongest-check) | deciding whether a house is still the house, or a person still of it |
@@ -282,7 +282,7 @@ where a token or a name in common becomes load-bearing.
 
 <!-- tier: 2 trigger="a party arrives with elders, boats, or anything nobody could plausibly afford to fake" -->
 
-A retinue of elders and spirit skiffs is believed because **assembling one is beyond almost
+A retinue of elders and spirit boats is believed because **assembling one is beyond almost
 everybody.** Nobody checks it, nobody can check it, and it works anyway - **its strength is
 the cost of faking it, not any verification.**
 

@@ -221,7 +221,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     ride: {
         takes: ['target', 'topic'],
-        says: `go somewhere ON something: a mount, a drawn carriage, a spirit skiff, or flight
+        says: `go somewhere ON something: a mount, a drawn carriage, a spirit boat, or flight
             on the cultivator's own blade. "target" is the destination; "topic" names what is
             under them when the player said. The engine picks what actually suits the road out
             of what they can put under them, charges the walking days the catalog states, and
@@ -349,7 +349,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     craft: {
         takes: ['target', 'days'],
         says: `build a thing at a bench out of material a hunt brought back - a carriage or a
-            spirit skiff. "target" names what is being built; naming nothing carries on with
+            spirit boat. "target" names what is being built; naming nothing carries on with
             whatever is already on the stocks, or lists the bills if there is nothing.
             "days" is how long they said they would spend at it. NOT refine, which is the
             cauldron and wants a named herb for a named pill; a bill wants a quantity at a

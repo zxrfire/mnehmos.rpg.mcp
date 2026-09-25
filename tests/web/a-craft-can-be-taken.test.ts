@@ -1,5 +1,5 @@
 /**
- * Stealing a carriage or a spirit skiff, and what the world then holds.
+ * Stealing a carriage or a spirit boat, and what the world then holds.
  *
  * WHY THIS EXISTS
  * ---------------
@@ -72,7 +72,7 @@ function aSpiritBoatOwnedBy(ownerId: string, ownerName: string, mooredAt: string
 
 describe('the sentence names the thing and the person', () => {
     it('aims the theft at the owner and carries what was named', () => {
-        const plan = parseIntent('I steal the spirit skiff from Wei Lanya');
+        const plan = parseIntent('I steal the spirit boat from Wei Lanya');
         expect(plan.action).toBe('interact');
         expect(plan.intent).toBe('steal');
         // The person, because `resolveAttempt` prices a theft against whoever
@@ -81,7 +81,7 @@ describe('the sentence names the thing and the person', () => {
         // And the thing, which used to be thrown away by
         // `namesTheThingRatherThanThePerson` and is what says WHICH of their
         // things is being taken.
-        expect((plan.topic ?? '').toLowerCase()).toContain('spirit skiff');
+        expect((plan.topic ?? '').toLowerCase()).toContain('spirit boat');
     });
 
     it('reads the possessive form the same way', () => {
@@ -134,8 +134,8 @@ describe('what is within reach of somebody standing here', () => {
 
     it('resolves the name the game printed', () => {
         const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Crest');
-        expect(whichThingTheyMeant(within, 'spirit skiff')?.object.id).toBe(boat.id);
-        expect(whichThingTheyMeant(within, 'A spirit skiff')?.object.id).toBe(boat.id);
+        expect(whichThingTheyMeant(within, 'spirit boat')?.object.id).toBe(boat.id);
+        expect(whichThingTheyMeant(within, 'A spirit boat')?.object.id).toBe(boat.id);
         expect(whichThingTheyMeant(within, 'the manual')).toBeNull();
     });
 });
@@ -228,7 +228,7 @@ describe('played: a boat changes hands', () => {
         const { db, game, cultivator, known, boat } = await theTheftLands('lift-a');
         const purseBefore = game.state().cultivator.spiritStones;
 
-        await game.act(`ADMIN interact I steal the spirit skiff from ${known.name}`);
+        await game.act(`ADMIN interact I steal the spirit boat from ${known.name}`);
 
         const reloaded = await game.loadWorld();
         expect(reloaded, 'the world went away between turns').toBeTruthy();
@@ -255,11 +255,11 @@ describe('played: a boat changes hands', () => {
     it('says what was taken, and says it is still theirs', async () => {
         const { game, known } = await theTheftLands('lift-b');
         const said = await game.act(
-            `ADMIN interact I steal the spirit skiff from ${known.name}`
+            `ADMIN interact I steal the spirit boat from ${known.name}`
         ) as { narration?: string };
         const prose = (said.narration ?? '').toLowerCase();
 
-        expect(prose).toContain('spirit skiff');
+        expect(prose).toContain('spirit boat');
         // A player who is not told the register still names somebody else is a
         // player who will sail it into the province it was built in.
         expect(prose).toContain('still');

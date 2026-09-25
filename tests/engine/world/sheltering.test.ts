@@ -66,7 +66,7 @@ describe('the shelter is the gate, read with the thing in the way', () => {
 describe('it knows about none of the four things it covers', () => {
     it('a hull, a vault, a hall and a formation with the same row answer the same', () => {
         const rows: ThingUnderForce[] = [
-            hull(29, { id: 'a', name: 'a spirit skiff', tags: ['conveyance'] }),
+            hull(29, { id: 'a', name: 'a spirit boat', tags: ['conveyance'] }),
             hull(29, { id: 'b', name: 'a vault' }),
             hull(29, { id: 'c', name: 'a hall' }),
             hull(29, { id: 'd', name: 'a formation', tags: ['formation'] })

@@ -636,8 +636,8 @@ export const A_PORTABLE_THING =
     // readers ask - who a theft is aimed at, and whether the subject that came out
     // of the sentence is the object rather than the owner. A carriage and a hull
     // are the largest things anybody can be robbed of and they were the two the
-    // list could not see, so "Wei Lanya's spirit skiff" resolved to nobody and "the
-    // spirit skiff" was handed to a resolver looking for a face.
+    // list could not see, so "Wei Lanya's spirit boat" resolved to nobody and "the
+    // spirit boat" was handed to a resolver looking for a face.
     + 'carriage|carriages|cart|carts|wagon|wagons|waggon|waggons|coach|coaches|'
     + 'boat|boats|ship|ships|barge|barges|skiff|skiffs|hull|hulls|'
     // And what somebody has on, which comes off a person as readily as a purse: robes
@@ -776,8 +776,8 @@ export function namesTheThingRatherThanThePerson(target: string | undefined): bo
 }
 
 /**
- * The thing, without the owner attached: "the spirit skiff from Cao Nuolin" becomes
- * "the spirit skiff".
+ * The thing, without the owner attached: "the spirit boat from Cao Nuolin" becomes
+ * "the spirit boat".
  */
 export function theThingWithoutItsOwner(said: string): string {
     return said

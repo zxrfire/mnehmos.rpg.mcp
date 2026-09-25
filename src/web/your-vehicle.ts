@@ -45,7 +45,7 @@ function theOneNamed(rows: readonly ObjectRecord[], named: string | undefined): 
     // when none of them is called by it.
     const word = A_VEHICLE_WORD.exec(said)?.[0];
     if (word) {
-        // A hull is a hull whatever a player calls it: the row is "A spirit skiff"
+        // A hull is a hull whatever a player calls it: the row is "A spirit boat"
         // and "the boat" is the same craft.
         const stem = word.replace(/s$/, '');
         const sameCraft = /^(?:boat|ship|skiff)$/.test(stem) ? ['boat', 'ship', 'skiff'] : [stem];
