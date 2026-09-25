@@ -917,6 +917,18 @@ export function howTheRoomReadsThem(company: Company, yourOrdinal: number): stri
  * at, what they are like, what is on their mind, what their body shows, and who they are to the
  * player. Everyone present gets one, because a sentence said to the room is answered by the room.
  */
+/**
+ * A line for each face in the area the player cannot put a name to, where the scene read them
+ * (`company`, which says what they look like): somebody to walk up to, described and never named.
+ */
+function facesWithNoName(company: Company): string[] {
+    return company.strangers
+        .filter(face => face.sex !== undefined)
+        .slice(0, PEOPLE_GIVEN_A_CARD)
+        .map(face => `- A face with no name to it: ${face.sex === 'female' ? 'a woman' : face.sex === 'male' ? 'a man' : 'somebody'}`
+            + (face.at ? `, ${face.at}.` : '.'));
+}
+
 export function thePeopleHere(
     company: Company | null | undefined,
     yourOrdinal: number,
@@ -977,9 +989,14 @@ export function thePeopleHere(
         ...(namedOnly.filter(name => thePlayerIsSureItIsThem(name, awareness, playerSaid)).length > 0
             ? [`- Also here, and nameable: ${namedOnly.filter(name => thePlayerIsSureItIsThem(name, awareness, playerSaid)).join(', ')}.`]
             : []),
-        ...(faceless > 0
-            ? [`- And ${faceless} ${faceless === 1 ? 'person' : 'people'} whose faces the player cannot place: `
-                + 'no names, never counted aloud. They may be heard as the crowd.']
-            : [])
+        // A FACE WITH NO NAME IS STILL A CARD: an area holds three at most, and the owner's "3
+        // character cards per room" counts the faceless too.
+        ...facesWithNoName(company),
+        ...(faceless > 0 && facesWithNoName(company).length > 0
+            ? ['- They have no names on the page until they give one, and nobody counts them aloud.']
+            : faceless > 0
+                ? [`- And ${faceless} ${faceless === 1 ? 'person' : 'people'} whose faces the player cannot place: `
+                    + 'no names, never counted aloud. They may be heard as the crowd.']
+                : [])
     ];
 }

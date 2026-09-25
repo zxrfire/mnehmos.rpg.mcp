@@ -14,7 +14,7 @@ import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
-import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { worldLocationFor } from './entities.js';
 import {
     whatSomebodyWouldSayAboutAHouse,
@@ -217,8 +217,8 @@ export function othersPresent(
     // another person standing in it. One person is one person whichever store
     // holds them, which is what `everybodyDrawingHere` already says about the
     // same two stores a few lines away.
-    const inWorld = npcsStandingIn(world, place.id)
-        .filter(npc => npc.id !== cultivator.id)
+    // THE AREA OF THE PLACE THEY STAND IN, three at most. See `where-in-a-place-somebody-is-standing.ts`.
+    const inWorld = npcsWhereTheyStand(world, place, cultivator.standingIn, cultivator)
         .map(npc => worldRosterRow(npc, world.currentDay, world));
     return oneCrowd(stored, inWorld);
 }

@@ -78,6 +78,8 @@ import { WORLD_POPULATION } from '../../src/server/state/cultivation-world';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
+import { npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { standWhereThePeopleAre, theBusiestAreaOf } from './standing-where-the-people-are';
 
 /** The blood kinds `whoTheyCarryFor` reads. Not the two teaching ones. */
 const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
@@ -130,7 +132,9 @@ interface Sweep {
     pairs: number;
     hits: number;
     worldsWithOne: number;
-    /** The first pair that opens beside a priced loss. */
+    /** Of those, the ones where all three are in the part of the town the run opens in. */
+    inTheRoom: number;
+    /** The first pair that opens IN THE ROOM with a priced loss, for the played tests. */
     first: { worldSeed: string; seed: string } | null;
 }
 
@@ -142,11 +146,14 @@ interface Sweep {
  * The same reads `whatIsStandingHere` does, against the seeded world rather
  * than against a service, so the sweep costs no database and no run.
  */
-function opensBesideALoss(state: WorldState, placeName: string): boolean {
+function opensBesideALoss(state: WorldState, placeName: string, inTheRoom = false): boolean {
     const row = state.locations.find(
         l => l.name.toLowerCase() === placeName.trim().toLowerCase());
     if (!row) return false;
-    const here = state.npcs.filter(n => n.status === 'alive' && n.locationId === row.id);
+    // THE TOWN, or with `inTheRoom` the area of it the run opens in: the most people's.
+    const here = inTheRoom
+        ? npcsInTheArea(state, theBusiestAreaOf(state, row).id)
+        : state.npcs.filter(n => n.status === 'alive' && n.locationId === row.id);
     const dead = new Set(state.npcs.filter(n => n.status !== 'alive').map(n => n.id));
     const priced = state.history.facts.filter(f => f.data && 'deedWeight' in f.data);
 
@@ -176,6 +183,7 @@ async function theSweep(): Promise<Sweep> {
     let pairs = 0;
     let hits = 0;
     let worldsWithOne = 0;
+    let inTheRoom = 0;
     let first: Sweep['first'] = null;
     for (const worldSeed of WORLDS) {
         const state = seedWorld({
@@ -187,11 +195,13 @@ async function theSweep(): Promise<Sweep> {
             if (!opensBesideALoss(state, place)) continue;
             hits++;
             here++;
+            if (!opensBesideALoss(state, place, true)) continue;
+            inTheRoom++;
             first ??= { worldSeed, seed };
         }
         if (here > 0) worldsWithOne++;
     }
-    swept = { pairs, hits, worldsWithOne, first };
+    swept = { pairs, hits, worldsWithOne, inTheRoom, first };
     return swept;
 }
 
@@ -280,9 +290,14 @@ describe('a fresh world has somebody to tell', () => {
      * seeder does not fail this and a collapse does. Measured over 12 worlds and
      * 30 births each: 10 of 12 worlds, 23 of 360 pairs; after the killings were
      * drawn by where people live (see the header), 11 of 12 and 24 of 360.
+     *
+     * IN THE TOWN, since a place was read into areas of at most three: the run opens in one area
+     * of it, and all three are in THAT area far less often. The
+     * family is a walk away in the rest, which is what the density below counts.
      */
     it('is a property of fresh worlds rather than of one seed', async () => {
-        const { pairs, hits, worldsWithOne } = await theSweep();
+        const { pairs, hits, worldsWithOne, inTheRoom } = await theSweep();
+        console.log(`[sweep] ${hits} of ${pairs} openings in the town, ${inTheRoom} in the room`);
         expect(pairs).toBe(WORLDS.length * BIRTHS.length);
         expect(
             worldsWithOne,
@@ -305,7 +320,9 @@ describe('a fresh world has somebody to tell', () => {
         const { worldSeed, seed } = await aWorldWithSomebodyToTell();
         const { game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
-        const s = await whatIsStandingHere(game, cultivator);
+        // The busiest area, which is the one the sweep read the room off.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
+        const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
 
         const priced = s.world.history.facts.filter(f => f.data && 'deedWeight' in f.data);
         expect(priced.length,
@@ -346,7 +363,9 @@ describe('a fresh world has somebody to tell', () => {
         const { worldSeed, seed } = await aWorldWithSomebodyToTell();
         const { db, game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
-        const s = await whatIsStandingHere(game, cultivator);
+        // The busiest area, which is the one the sweep read the room off.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
+        const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
 
         (game as unknown as { knowledge: { learn(i: unknown): unknown } }).knowledge.learn({
             holderId: (cultivator as { id: string }).id,
@@ -394,7 +413,9 @@ describe('a fresh world has somebody to tell', () => {
         const { worldSeed, seed } = await aWorldWithSomebodyToTell();
         const { db, game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
-        const s = await whatIsStandingHere(game, cultivator);
+        // The busiest area, which is the one the sweep read the room off.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
+        const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
 
         const dead = new Set(
             s.world.npcs.filter(npc => npc.status !== 'alive').map(npc => npc.id));

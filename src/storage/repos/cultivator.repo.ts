@@ -254,6 +254,7 @@ export class CultivatorRepository {
     private readonly clearBleedClockStmt: Database.Statement;
     private readonly selectInjuryByIdStmt: Database.Statement;
     private readonly rosterStmt: Database.Statement;
+    private standingInStmts: { read: Database.Statement; write: Database.Statement; clear: Database.Statement } | null = null;
 
     constructor(private db: Database.Database) {
         this.insertStmt = db.prepare(`
@@ -404,6 +405,32 @@ export class CultivatorRepository {
         return valid;
     }
 
+    /** The flag the area of a place somebody walked to is held under. */
+    static readonly STANDING_IN_FLAG = 'standing_in_area_of_place';
+
+    private standingInSql() {
+        this.standingInStmts ??= {
+            read: this.db.prepare('SELECT value FROM cultivator_flags WHERE cultivator_id = ? AND key = ?'),
+            write: this.db.prepare(`
+                INSERT INTO cultivator_flags (cultivator_id, key, value, updated_at)
+                VALUES (?, ?, ?, datetime('now'))
+                ON CONFLICT(cultivator_id, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+            `),
+            clear: this.db.prepare('DELETE FROM cultivator_flags WHERE cultivator_id = ? AND key = ?')
+        };
+        return this.standingInStmts;
+    }
+
+    /**
+     * Stand them in an area of the place they are in, or where a road arrives with null. See
+     * `where-in-a-place-somebody-is-standing.ts`.
+     */
+    standIn(id: string, partId: string | null): void {
+        const sql = this.standingInSql();
+        if (partId === null) sql.clear.run(id, CultivatorRepository.STANDING_IN_FLAG);
+        else sql.write.run(id, CultivatorRepository.STANDING_IN_FLAG, partId);
+    }
+
     /** The cultivator, injuries included, or null when the id is unknown. */
     getById(id: string): Cultivator | null {
         const row = this.selectByIdStmt.get(id) as CultivatorRow | undefined;
@@ -496,6 +523,12 @@ export class CultivatorRepository {
         // of this hazard is gone with the column; the house half is covered by
         // `a-rank-has-one-writer.test.ts`.
         this.updateStmt.run(this.toParams(merged));
+        // AN AREA OF A PLACE IS ONLY WHERE THEY ARE WHILE THEY ARE AT THAT PLACE. Any change of place
+        // lands them where a road arrives, including at the place they left.
+        if (merged.location !== existing.location && existing.standingIn) {
+            this.standIn(id, null);
+            return { ...merged, standingIn: null };
+        }
         return merged;
     }
 
@@ -907,7 +940,9 @@ export class CultivatorRepository {
             deathCause: row.death_cause,
             diedOnTurn: row.died_on_turn,
             createdAt: row.created_at,
-            updatedAt: row.updated_at
+            updatedAt: row.updated_at,
+            standingIn: (this.standingInSql().read.get(row.id, CultivatorRepository.STANDING_IN_FLAG) as
+                { value: string } | undefined)?.value ?? null
         });
 
         assertTraceableInsights(cultivator);

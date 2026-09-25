@@ -60,6 +60,9 @@
  */
 
 import { makeGameInWorld } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { npcsAt } from '../../src/engine/world/world-state';
+import { worldLocationFor } from '../../src/web/entities';
 import { parseIntent } from '../../src/web/verb-pattern-table';
 import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { upsertRelationship } from '../../src/engine/world/npc-state';
@@ -281,14 +284,19 @@ describe('handing on an art that belongs to a house', () => {
         await harness.game.act('I buy a year of provisions');
 
         const world = await harness.game.loadWorld();
+        const fits = (npc: { cultivation: { techniqueIds: readonly string[]; realmOrdinal: number } }) =>
+            !npc.cultivation.techniqueIds.includes('twin-lotus-cultivation-method')
+            && npc.cultivation.realmOrdinal >= 5;
+        // Where somebody who could take it is: a place is read into areas of three at most.
+        const place = worldLocationFor(world!, harness.game.state().cultivator.location);
+        await standWhereThePeopleAre(harness, harness.game.state().cultivator.id, new Set(
+            (place ? npcsAt(world!, place.id) : []).filter(fits).map(npc => npc.id)));
         const me = harness.game.state().cultivator;
         const student = harness.game.present(me)
             .filter(row => row.id !== me.id)
             .find(row => {
                 const npc = world!.npcs.find(other => other.id === row.id);
-                return npc !== undefined
-                    && !npc.cultivation.techniqueIds.includes('twin-lotus-cultivation-method')
-                    && npc.cultivation.realmOrdinal >= 5;
+                return npc !== undefined && fits(npc);
             });
         expect(student, 'nobody here stands high enough to take it').toBeTruthy();
 

@@ -114,6 +114,7 @@ import {
     type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
 import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
+import { aWalkAcrossThePlace, standThemIn, theGateLetsThemIn, theWatchAtTheGate } from './walking-across-a-place.js';
 import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
 import { abodeLocationId } from '../engine/world/immortal-world.js';
@@ -350,6 +351,11 @@ function whatIsAtTheGateHere(
 
     lines.push(...whatYouAlreadyHoldAboutThem(game, cultivator, house));
 
+    // THE ONE ON WATCH, who is at every gate a house has anybody behind. See `theWatchAtTheGate`.
+    const watch = theWatchAtTheGate(game, house.seat, house.factionName);
+    lines.push(watch.line);
+    structure.push(watch.structure);
+
     const gate = whatTheGateOfThisHouseSays(game, cultivator, house);
     // Stopped is an obstacle like being turned away is, and the same road past
     // it is open: somebody who owes you walks you in.
@@ -362,6 +368,9 @@ function whatIsAtTheGateHere(
         lines.push(`${host.name} owes you, and it is that and not your standing that is `
             + 'walking you through.');
     }
+    // WHERE THAT LEAVES THEM STANDING: inside, in the forecourt, only where the gate let them in;
+    // anybody it stopped or turned away is outside it with the one on watch.
+    standThemIn(game, cultivator, theGateLetsThemIn(said.way) ? 'forecourt' : 'gate');
     return { lines, structure: [...structure, said.structure].join(' ') };
 }
 
@@ -626,6 +635,10 @@ export const travelVerbs = {
         // On a house's ground, a sentence naming one of its rooms, or the gate
         // and the forecourt, is a walk across the compound rather than a road.
         // See `walking-inside-the-walls.ts` for what decides it.
+        // An area of the place they stand in first - the inn, the cloth row, in through the gate -
+        // which is a walk and not a road. See `walking-across-a-place.ts`.
+        const acrossThePlace = await aWalkAcrossThePlace(this, run, cultivator, said);
+        if (acrossThePlace) return acrossThePlace;
         const insideTheWalls = await aWalkInsideTheWalls(this, run, cultivator, said);
         if (insideTheWalls) return insideTheWalls;
         const named = resolvePlace(destinationNamed(said));

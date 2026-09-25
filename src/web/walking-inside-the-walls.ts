@@ -52,6 +52,7 @@ import { howThisCultivatorStandsInTheHouseHolding } from './how-this-cultivator-
 import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { theGateBetweenThemAndIt } from './walking-across-a-place.js';
 import {
     A_MASTERS_DWELLING,
     theLessonYourMasterCalledYouTo,
@@ -313,6 +314,16 @@ export async function aWalkInsideTheWalls(
     }
 
     // ── WHETHER THEY GET THERE ───────────────────────────────────────────
+    // OUTSIDE THE GATE, THE GATE IS ASKED FIRST: somebody it stopped or turned away does not walk
+    // past it to a room. See `walking-across-a-place.ts`.
+    const shut = destination.id !== seat.id ? theGateBetweenThemAndIt(game, cultivator) : null;
+    if (shut) {
+        return refused('engine.walkInsideTheWalls', 'move', factsForRefusal(
+            shut.facts[0] ?? `The gate of ${seat.name} does not let you through.`,
+            shut.facts.join(' '),
+            `walkInsideTheWalls: ${destination.id} is behind the gate of ${seat.id}. ${shut.structure}`
+        ));
+    }
     // Out is always open: nothing stops anybody leaving a building. And a
     // disciple called to their master's room is let through to it; nobody else is.
     if (destination.id !== seat.id && !invited) {

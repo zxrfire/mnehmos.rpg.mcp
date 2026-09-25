@@ -68,7 +68,7 @@ import {
     type WhatThisPersonWouldDo
 } from '../engine/world/what-somebody-standing-here-would-part-with.js';
 import { whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { standingOf } from '../server/consolidated/where-a-cultivator-is-standing.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
@@ -215,7 +215,8 @@ export function readWhatIsOnOfferHere(
     const place = worldLocationFor(world, cultivator.location);
     if (!place) return { offers: [], read: [], peopleHere: 0 };
 
-    const here = npcsStandingIn(world, place.id).filter(npc => npc.id !== cultivator.id);
+    // The area of the place they stand in: a stall in the cloth row is not at the inn.
+    const here = npcsWhereTheyStand(world, place, cultivator.standingIn, cultivator);
     const read: WhatThisPersonWouldDo[] = [];
     const regionId = standingOf(cultivator).regionId;
 

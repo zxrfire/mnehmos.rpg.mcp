@@ -24,6 +24,8 @@ import { describe, it, expect } from 'vitest';
 import { npcsStandingIn as npcsAt } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
 import { SECTS } from '../../src/data/cultivation/sects';
+import { npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { theBusiestAreaOf } from './standing-where-the-people-are';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGame, engineCalls, refusedCall, planned } from './harness';
@@ -39,7 +41,11 @@ async function populatedPlace(game: ReturnType<typeof inWorld>['game']) {
         .map(l => ({ location: l, people: npcsAt(world, l.id) }))
         .filter(x => x.people.length >= 2)
         .sort((a, b) => b.people.length - a.people.length);
-    return { world, ...settlements[0] };
+    // WHO IS IN FRONT OF THE PLAYER is one area of it, three at most
+    // (`where-in-a-place-somebody-is-standing.ts`): the busiest, which each test stands them in.
+    const { location } = settlements[0]!;
+    const area = theBusiestAreaOf(world, location);
+    return { world, location, area, people: npcsInTheArea(world, area.id) };
 }
 
 describe('the join between a place name and a world location', () => {
@@ -76,10 +82,11 @@ describe('people are visible where they are standing', () => {
         resetCultivationWorlds();
         const { db, game } = inWorld('present');
         const { cultivator } = await game.newRun('Ke Yan');
-        const { location, people } = await populatedPlace(game);
+        const { location, area, people } = await populatedPlace(game);
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(location.name, cultivator.id);
+        game.repos.cultivators.standIn(cultivator.id, area.id);
 
         const result = await game.act('who is here');
         expect(planned(result).action).toBe('look');
@@ -100,11 +107,13 @@ describe('people are visible where they are standing', () => {
         resetCultivationWorlds();
         const { db, game } = inWorld('census');
         const { cultivator } = await game.newRun('Ke Yan');
-        const { location, people } = await populatedPlace(game);
-        expect(people.length).toBeGreaterThan(5);
+        const { location, area, people } = await populatedPlace(game);
+        // Three at most stand in front of anybody now; the claim is about what is said of them.
+        expect(people.length).toBeGreaterThan(1);
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(location.name, cultivator.id);
+        game.repos.cultivators.standIn(cultivator.id, area.id);
 
         const result = await game.act('who is around');
         // A square, not a register: the crowd is a crowd, and at most one
@@ -120,10 +129,11 @@ describe('people are visible where they are standing', () => {
         resetCultivationWorlds();
         const { db, game } = inWorld('gate');
         const { cultivator } = await game.newRun('Ke Yan');
-        const { location, people } = await populatedPlace(game);
+        const { location, area, people } = await populatedPlace(game);
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(location.name, cultivator.id);
+        game.repos.cultivators.standIn(cultivator.id, area.id);
 
         const result = await game.act('who is here');
 
@@ -139,10 +149,11 @@ describe('people are visible where they are standing', () => {
         resetCultivationWorlds();
         const { db, game } = inWorld('approach');
         const { cultivator } = await game.newRun('Ke Yan');
-        const { location, people } = await populatedPlace(game);
+        const { location, area, people } = await populatedPlace(game);
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(location.name, cultivator.id);
+        game.repos.cultivators.standIn(cultivator.id, area.id);
 
         const target = people[0];
         const result = await game.act(`I speak with ${target.name}`);

@@ -934,6 +934,8 @@ export function composeNarrationUser(
         company?: Company | null;
         /** Rooms off this yard the player could walk to. See `theDoorsOffThisYard`. */
         doorsFromHere?: readonly string[];
+        /** The other areas of the place the player is standing in. See `theRestOfThisPlace`. */
+        elsewhereHere?: readonly string[];
         /** The person the engine resolved this turn's act onto, by name, if any. */
         addressing?: string | null;
         /** The years before turn 0, to be written rather than summarised. */
@@ -1019,6 +1021,15 @@ export function composeNarrationUser(
                 + `${scene.doorsFromHere.join(', ')}. They belong in the scene as what they are - a `
                 + 'door standing open, a lamp lit in one, somebody crossing to another. Nobody '
                 + 'recites the list, and the player walks to one by saying so.'
+            ]
+            : []),
+        // A PLACE IS NOT ONE SQUARE. Its people are read into areas of at most three, and the ones
+        // in front of the player are the ones in the area they stand in.
+        ...(scene.elsewhereHere && scene.elsewhereHere.length > 0
+            ? [
+                `Elsewhere here, each a short walk: ${scene.elsewhereHere.join(', ')}. `
+                + 'The people there are not in this scene. Nobody recites the list, and the player '
+                + 'walks to one by saying so.'
             ]
             : []),
         '',

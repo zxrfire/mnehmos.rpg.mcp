@@ -26,6 +26,7 @@ import { TIE_MUST_PREDATE_BY_DAYS } from '../../src/engine/cultivation/standing-
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { worldLocationFor } from '../../src/web/entities';
 import { makeGameInWorld } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 const names = (r: { toolCalls: Array<{ name: string }> }) => r.toolCalls.map(c => c.name);
 const summaries = (r: { toolCalls: Array<{ summary: string }> }) =>
@@ -35,11 +36,13 @@ function whereTheyAre(game: any) {
     return game.state().cultivator.location;
 }
 
-/** Everybody standing where the player is standing, off the world. */
+/** Everybody standing where the player is standing, off the world: the area of it they are in. */
 async function peopleHere(game: any) {
     const world = await game.loadWorld();
     const place = worldLocationFor(world, whereTheyAre(game));
-    return { world, people: place ? npcsAt(world, place.id) : [] };
+    const inFront = new Set(game.present(game.repos.cultivators.getById(game.state().cultivator.id))
+        .map((row: { id: string }) => row.id));
+    return { world, people: place ? npcsAt(world, place.id).filter((n: { id: string }) => inFront.has(n.id)) : [] };
 }
 
 /**
@@ -81,6 +84,8 @@ async function somebodyAtTheirWall(game: any, standing: number) {
             note: 'Known each other a long time.'
         }, day - TIE_MUST_PREDATE_BY_DAYS - 1);
         world.npcs[world.npcs.findIndex((n: any) => n.id === candidate.id)] = tied;
+        // And the player in the area of the place they are read into: three at most to one.
+        await standWhereThePeopleAre({ game, repos: game.repos }, player.id, new Set([tied.id]));
         return tied;
     }
     return null;

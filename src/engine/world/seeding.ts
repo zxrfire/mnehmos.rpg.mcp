@@ -92,6 +92,7 @@ import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
 import { lineagesFromTheKinTheWorldWrote } from './a-family-is-the-people-you-are-kin-to.js';
 import { CHILD_STANDING, PARENT_STANDING, rosterOf } from './the-ties-an-ordinary-life-produces.js';
 import { uniformsForEverybodyAlreadyOnARoll } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { theRingsAWorldOpensWith } from './who-opens-the-world-wearing-a-ring.js';
 import {
     applyTheLoans,
     whatEachHouseHasOutOnLoan,
@@ -552,6 +553,10 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
                 note: whyTheyHaveIt(loan)
             }));
     }
+
+    // AND A RING ON THE HANDS THAT COULD HAVE COME BY ONE. After the lending, so nobody lends a
+    // ring down, and with no draw. See `who-opens-the-world-wearing-a-ring.ts`.
+    state.objects.push(...theRingsAWorldOpensWith(state));
 
     // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
     // ended up standing and what they ended up holding. Before this, every

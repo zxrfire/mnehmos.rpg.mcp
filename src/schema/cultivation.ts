@@ -594,6 +594,12 @@ export const CultivatorSchema = z.object({
      * the run goes. The engine stores and lists it; it never reasons about it.
      */
     location: z.string().nullable().default(null),
+    /**
+     * The area of the place at `location` they walked to (`<place id>#<kind>#<slug>`), or null for
+     * where a road arrives. Held in `cultivator_flags`, and cleared by any change of `location`.
+     * See `where-in-a-place-somebody-is-standing.ts`.
+     */
+    standingIn: z.string().nullable().optional(),
     /** Names/ids of parties who have a standing grudge. */
     feuds: z.array(z.string()).default([]),
 

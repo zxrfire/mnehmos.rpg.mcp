@@ -539,6 +539,12 @@ import { buyAVesselOffTheBoard } from './buying-a-vessel-off-the-board.js';
 import { whetherTheHousesCounterIsHere } from './a-house-counter-is-where-the-house-is.js';
 import { settleWhatWasPlacedWithAMaker } from './a-commission-placed-with-a-maker.js';
 import { intoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard } from './walking-inside-the-walls.js';
+import {
+    crossToWhoeverTheyNamed,
+    openAmongThePeopleOfTheirPlace,
+    thePlaceAsTheSceneNamesIt,
+    theRestOfThisPlace
+} from './walking-across-a-place.js';
 // Above a certain grade a pill has a value and no price. The refusal that says
 // so already existed and nothing asked it.
 import {
@@ -2335,6 +2341,10 @@ export class GameService {
         // put it earlier and nothing flushes them.
         this.theWorldMoved();
 
+        // AMONG THE PEOPLE OF THEIR TOWN, the ones they know first, once they know anybody.
+        // See `walking-across-a-place.ts`.
+        created.cultivator = openAmongThePeopleOfTheirPlace(this, created.cultivator);
+
         const awareness = this.knowledge.awareness(created.cultivator.id);
 
         const ambient = this.ambientFor(created.cultivator, created.run);
@@ -3307,7 +3317,7 @@ export class GameService {
 
         const company = this.company(after.cultivator);
         const scene = {
-            place: placeName(after.cultivator),
+            place: thePlaceAsTheSceneNamesIt(this, after.cultivator, placeName(after.cultivator)),
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
             hearing: execution.hearing ?? null,
@@ -3327,6 +3337,8 @@ export class GameService {
             // only the square makes the house look empty to somebody standing
             // inside it.
             doorsFromHere: theDoorsOffThisYard(this, after.cultivator),
+            // And the rest of the place: its people are read into areas of at most three.
+            elsewhereHere: theRestOfThisPlace(this, after.cultivator),
             addressing: whoTheActWasPutTo(
                 stepsOfThePlan(theTurnsPlan).map(step => step.action.target), company
             ),
@@ -3496,7 +3508,7 @@ export class GameService {
         // them are in the account of it.
         this.sayWhoWasInIt(execution, squareBefore, cultivator, after.cultivator);
         const narration = await this.narrator.narrate(execution.facts, {
-            place: placeName(after.cultivator),
+            place: thePlaceAsTheSceneNamesIt(this, after.cultivator, placeName(after.cultivator)),
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
             filed: this.filedOutcome(execution),
@@ -3581,7 +3593,7 @@ export class GameService {
         // nobody. `A_RUNG_MOVED` is what prices it for the people watching.
         this.sayWhoWasInIt(execution, squareBefore, cultivator, after.cultivator);
         const narration = await this.narrator.narrate(execution.facts, {
-            place: placeName(after.cultivator),
+            place: thePlaceAsTheSceneNamesIt(this, after.cultivator, placeName(after.cultivator)),
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
             filed: this.filedOutcome(execution),
@@ -4042,10 +4054,17 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
-        const done = await this.carryOut(action, run, cultivator, ambient, rawInput);
+        // SOMEBODY NAMED ACROSS THE SQUARE IS A WALK AWAY. See `walking-across-a-place.ts`.
+        const crossed = crossToWhoeverTheyNamed(this, cultivator, action.target);
+        const actor = crossed?.cultivator ?? cultivator;
+        const done = await this.carryOut(action, run, actor, ambient, rawInput);
+        if (crossed) {
+            done.facts.lines.unshift(crossed.line);
+            done.facts.structure.push(crossed.structure);
+        }
         // The nights a span spent outdoors, for every verb that spends days.
         theWeatherTakesItsShare(
-            this, action.action, run, cultivator, done,
+            this, action.action, run, actor, done,
             theFightStillStands(this.fight, run.id, cultivator.id)
         );
         // REFUSING TO CARRY IT OUT DOES NOT UNSAY IT. Here rather than in any
@@ -19664,7 +19683,13 @@ ${fit.line}`;
                     rankIndex: row?.factionRankIndex ?? -1
                 });
             } else {
-                strangers.push({ ordinal: person.realmOrdinal });
+                // A FACE WITH NO NAME IS STILL A CARD: what they are at, and nothing that names them.
+                const doing = byId.get(person.id)?.activity ?? null;
+                strangers.push({
+                    ordinal: person.realmOrdinal,
+                    sex: person.sex ?? null,
+                    at: doing === null ? null : whatThatLooksLike(doing, [])
+                });
             }
         }
 

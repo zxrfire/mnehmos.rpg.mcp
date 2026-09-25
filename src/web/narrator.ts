@@ -526,6 +526,8 @@ export interface NarratorScene {
      * which reads them through the same gate the walk itself applies.
      */
     doorsFromHere?: readonly string[];
+    /** The other areas of the place the player is standing in. See `theRestOfThisPlace`. */
+    elsewhereHere?: readonly string[];
     /** The person this turn's act was put to, by name, where the engine resolved one. */
     addressing?: string | null;
     /**

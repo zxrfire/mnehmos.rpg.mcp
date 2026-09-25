@@ -40,6 +40,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
+import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
 import { parseIntent } from '../../src/web/actions.js';
 import {
     liftIt,
@@ -214,6 +215,8 @@ describe('played: a boat changes hands', () => {
         const known = new KnowledgeGate(db).awareness(cultivator.id)
             .find(row => row.kind === 'cultivator');
         expect(known, 'the pinned world opened with nobody the player could name').toBeDefined();
+        // In the part of the town they are in, which the run did not necessarily open in.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([known!.id]));
 
         const world = await game.loadWorld();
         expect(world, 'the run opened without a world').toBeTruthy();

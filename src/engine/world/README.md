@@ -2442,6 +2442,27 @@ market is computed on arrival and nothing is stored. **What that does not give**
 gap it is: the town has no road of its own, no residents in `npcs`, and no encounters.
 Closing it needs a world population scaled to the map it is spread over.
 
+**A place is read into areas of at most three, the same way.**
+`where-in-a-place-somebody-is-standing.ts` reads whoever a row holds (after the compound's
+room read) into areas off what they are at: in a town a counter or a hired hand to a market or
+the street, a table or a sitting to an inn, anything else to the street; at a house's seat the
+one on watch and anybody not of the house outside the gate, the house's own in the forecourt;
+anywhere else one kind. Each kind is split into as few areas as hold three at most, filled
+by a draw of each person's own, the dead who fell there counted so a death pulls nobody across
+(the owner: "AT MOST 3 people per room, 3 NPCs"). An area is an id
+(`<place id>#<kind>#<slug>`), never a location row, for the density reason above; `npcsAt` and
+`npcsStandingIn` still answer for the whole row. The player stands in one area
+(`Cultivator.standingIn`, cleared by any change of `location`), and `othersPresent` is that
+area. A house's gate always has the lowest rung of the house in its yard on watch, and where
+nobody of the house is home the gate is shut; somebody the gate stops or turns away stands
+outside it. Measured on `road-world`: the start square of four seeds held 6, 11, 21 and 28
+people before, and the area a run opens in now holds two or three, most of them faces it knows;
+over three seeded worlds, of 1,360 areas anybody stands in, 38% hold one, 28% two and 33% three.
+
+**A world opens with rings on the hands that could have come by one.**
+`who-opens-the-world-wearing-a-ring.ts`: `whatARingCosts` against `netEarningsPerYear`
+over a life, and a hand that can fold one always has one. No draw.
+
 `standing-at-the-gate-of-a-house.ts` answers the door, and it answers with all three
 roads rather than a boolean, because **not having the standing to go in is not the same
 as seeing nothing**:

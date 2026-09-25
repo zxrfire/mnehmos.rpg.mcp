@@ -1606,8 +1606,11 @@ export interface SomebodyInTheSquare {
 export interface Company {
     /** People the player has a knowledge record for. Nameable. */
     named: SomebodyInTheSquare[];
-    /** People they can see and cannot name. Described by standing only. */
-    strangers: { ordinal: number }[];
+    /**
+     * People they can see and cannot name. Described by standing, and - since an area holds three
+     * at most (`where-in-a-place-somebody-is-standing.ts`) - by what they look like and are at.
+     */
+    strangers: { ordinal: number; sex?: 'male' | 'female' | null; at?: string | null }[];
     /** Everybody present, including whoever did not fit in the two lists. */
     total: number;
 }

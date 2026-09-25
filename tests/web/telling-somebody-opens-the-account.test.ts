@@ -75,6 +75,8 @@ import { parseIntent } from '../../src/web/actions';
 import { aDeedEntersTheWorld } from '../../src/engine/world/a-deed-enters-the-world-as-a-fact';
 import { NO_NAME_ON_IT } from '../../src/engine/social/accounts-with-no-name';
 import { worldLocationFor } from '../../src/web/entities';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import type { WorldState } from '../../src/engine/world/world-state';
 
 interface LedgerRow {
@@ -188,6 +190,12 @@ async function whoIsHere(
             if (npc.status !== 'alive' || npc.locationId === null) continue;
             heads.set(npc.locationId, (heads.get(npc.locationId) ?? 0) + 1);
         }
+        // A place is read into areas of at most three, and the ones in front of the player are one area's.
+        for (const row of world.locations.filter(one => heads.has(one.id))) {
+            const counts = new Map<string, number>();
+            for (const at of theAreasOf(world, row).whereIs.values()) counts.set(at, (counts.get(at) ?? 0) + 1);
+            heads.set(row.id, Math.max(0, ...counts.values()));
+        }
         const opened = worldLocationFor(world, cultivator.location);
         const kind = opened?.kind ?? 'settlement';
         // The smallest square that holds enough, ordered by id so the choice
@@ -199,6 +207,7 @@ async function whoIsHere(
         expect(chosen, `this world holds no ${kind} with ${atLeast} people in it`)
             .toBeDefined();
         game.repos.cultivators.update(cultivator.id, { location: chosen.name });
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
         standing = game.repos.cultivators.getById(cultivator.id)!;
         for (const person of game.present(standing) as { id: string; name: string }[]) {
             game.knowledge.learnIfNew({

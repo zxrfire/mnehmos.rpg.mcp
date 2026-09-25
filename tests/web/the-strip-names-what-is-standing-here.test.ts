@@ -59,6 +59,7 @@ import { parseIntent } from '../../src/web/actions.js';
 import { whatTheySaidInTheFight } from '../../src/web/fight-answers.js';
 import type { Affordance } from '../../src/web/what-is-worth-doing-standing-here.js';
 import { makeGameInWorld } from './harness.js';
+import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
 
 /**
  * The client's own cut, copied from `web/app.js` rather than guessed at.
@@ -93,6 +94,11 @@ async function censusOf(worldSeed: string): Promise<{
     const out = [];
     for (const { place } of SETTLEMENTS) {
         repos.cultivators.update(cultivator.id, { location: place.name } as never);
+        // A place is read into areas of three at most: stand where the faces they know are, the way
+        // a player walks over to somebody they recognise.
+        await standWhereThePeopleAre({ game, repos }, cultivator.id,
+            (game as unknown as { knowledge: { awareIds(h: string, k: string): Set<string> } })
+                .knowledge.awareIds(cultivator.id, 'cultivator'));
         const all = game.state().derived.standingHere as Affordance[];
         out.push({ where: place.name, all, shown: whatThePlayerSees(all) });
     }

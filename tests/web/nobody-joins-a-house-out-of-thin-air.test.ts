@@ -35,6 +35,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { theReportsTheyOwe } from '../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
@@ -135,6 +136,8 @@ describe('nobody joins a house out of thin air', () => {
             }
         };
         game.theWorldMoved();
+        // Beside them: in the area of the place the recruiter is read into, three at most to one.
+        await standWhereThePeopleAre({ game, repos }, cultivator.id, new Set([npc.id]));
         game.knowledge.learnIfNew({
             holderId: cultivator.id, kind: 'sect', id: house.id, name: house.name,
             onDay: 0, sourceKind: 'told', stage: 'named'

@@ -42,7 +42,9 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { makeGameInWorld, ScriptedProvider } from './harness';
+import { makeGameInWorld, ScriptedProvider, type Harness } from './harness';
+import { worldLocationFor } from '../../src/web/entities';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 /** A pinned world whose opening square has somebody with something on their mind. */
 const WORLD = 'chew-a';
@@ -56,6 +58,22 @@ function narrationPrompts(provider: ScriptedProvider): string[] {
         .map(call => call.messages.find(m => m.role === 'user')?.content ?? '');
 }
 
+/**
+ * A new run, standing in the area of its town where somebody it can name has something on their
+ * mind: a place is read into areas of three at most (`where-in-a-place-somebody-is-standing.ts`).
+ */
+async function besideSomebodyPreoccupied(harness: Harness) {
+    const { cultivator } = await harness.game.newRun('Probe');
+    const world = harness.game.atHand!;
+    const place = worldLocationFor(world, cultivator.location)!;
+    for (const area of theAreasOf(world, place).areas) {
+        harness.repos.cultivators.standIn(cultivator.id, area.id);
+        const me = harness.repos.cultivators.getById(cultivator.id)!;
+        if (harness.game.company(me).named.some(person => person.chewing != null)) return me;
+    }
+    return harness.repos.cultivators.getById(cultivator.id)!;
+}
+
 describe('what somebody in the square is preoccupied with', () => {
     it('reaches the narrator as a state and the engine-only player as a sentence', async () => {
         const provider = new ScriptedProvider({
@@ -63,7 +81,7 @@ describe('what somebody in the square is preoccupied with', () => {
             narrations: ['(scripted)']
         });
         const harness = await makeGameInWorld({ seed: RUN, worldSeed: WORLD, provider });
-        const { cultivator } = await harness.game.newRun('Probe');
+        const cultivator = await besideSomebodyPreoccupied(harness);
 
         const preoccupied = harness.game.company(cultivator).named
             .filter(person => person.chewing != null);
@@ -82,7 +100,7 @@ describe('what somebody in the square is preoccupied with', () => {
 
     it('is the plain sentence when no narrator is configured', async () => {
         const harness = await makeGameInWorld({ seed: RUN, worldSeed: WORLD });
-        const { cultivator } = await harness.game.newRun('Probe');
+        const cultivator = await besideSomebodyPreoccupied(harness);
 
         const preoccupied = harness.game.company(cultivator).named
             .filter(person => person.chewing != null);

@@ -45,6 +45,7 @@ import { applyTimeSkip } from './apply.js';
 // The move verb's own call, so a room of this compound is answered by the walk
 // rather than by a refusal that says the room does not exist.
 import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
+import { aWalkAcrossThePlace } from './walking-across-a-place.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { worldLocationFor } from './entities.js';
 import {
@@ -438,6 +439,8 @@ export const siteVerbs = {
         // been shown, and a ruin whose name happens to hold a room word must
         // not be answered by the compound.
         if (!site) {
+            const across = await aWalkAcrossThePlace(this, run, cultivator, target);
+            if (across && across.outcome === 'executed') return across;
             const walked = await aWalkInsideTheWalls(this, run, cultivator, target);
             if (walked && walked.outcome === 'executed') return walked;
         }

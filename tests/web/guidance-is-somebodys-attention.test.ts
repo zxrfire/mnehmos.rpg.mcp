@@ -46,6 +46,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeGameInWorld, type Harness } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { guidanceMultiplier } from '../../src/engine/cultivation/cultivation';
 import { recordABondBothWays, tieFrom } from '../../src/web/encounters';
 import { yearsToWriteOutACopy } from '../../src/engine/world/manuals';
@@ -131,6 +132,8 @@ async function somebodyAboveHere(seed: string, opts: { atLeast?: number } = {}) 
         activity: { kind: 'idle', note: 'looking at nothing', withIds: [], sinceDay: Math.floor(world.currentDay) }
     };
     harness.game.theWorldMoved();
+    // A town is read into parts off what people are at, so the arrangement moved them: stand with them.
+    await standWhereThePeopleAre(harness, me.id, new Set([teacher!.id]));
     return { harness, world, me, teacher: world.npcs[at]!, others, above };
 }
 
@@ -319,12 +322,16 @@ describe('a master may say no', () => {
         const at = world.npcs.findIndex(npc => npc.id === teacher.id);
         world.npcs[at] = {
             ...world.npcs[at]!,
+            // Where the player is: on this seed the world has them at a dao ground by now.
+            locationId: harness.game.worldPlaceOf(harness.game.currentRun().cultivator),
             activity: {
                 kind: 'their_practice', note: 'behind a closed door, and not to be interrupted',
                 withIds: [], sinceDay: today, untilDay: today + 40
             }
         };
         harness.game.theWorldMoved();
+        // Somebody sitting down to their practice in a town has taken a room at the inn: go there.
+        await standWhereThePeopleAre(harness, harness.game.currentRun().cultivator.id, new Set([teacher.id]));
         const before = harness.game.currentRun().run.elapsedDays;
 
         const turn = await harness.game.act('I ask my master to guide my cultivation for 10 days') as Turn;

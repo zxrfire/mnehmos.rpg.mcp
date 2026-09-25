@@ -32,6 +32,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { KnowledgeGate } from '../../src/web/knowledge';
 
 /**
@@ -92,6 +93,10 @@ describe('one notion of who is in the room', () => {
             .filter(row => row.kind === 'cultivator')
             .map(row => row.name);
         expect(known.length).toBeGreaterThan(0);
+        // Where a face they can name is: a place is read into areas of three at most.
+        const knownIds = new Set(new KnowledgeGate(db).awareness(cultivator.id)
+            .filter(row => row.kind === 'cultivator').map(row => row.id));
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, knownIds);
 
         const said = await game.act('I introduce myself to someone') as { narration?: string };
         expect(known.some(name => (said.narration ?? '').includes(name))).toBe(true);

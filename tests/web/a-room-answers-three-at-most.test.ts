@@ -16,9 +16,19 @@ async function putToTheRoom(intent: string) {
         plans: [JSON.stringify({ action: 'interact', target: 'everyone here', intent })],
         narrations: ['(scripted)']
     });
-    // Six standing on this square at the start.
     const { game } = await makeGameInWorld({ seed: 'intro-1', worldSeed: 'road-world', provider });
     const { cultivator } = await game.newRun('Probe');
+    // AN AREA HOLDS THREE AT MOST (`where-in-a-place-somebody-is-standing.ts`), so more than three
+    // in front of the player are the ones who came with them. Arranged: three more of the town's
+    // people at a conversation with the player.
+    const world = game.atHand ?? (await game.loadWorld())!;
+    const here = new Set(game.present(cultivator).map(row => row.id));
+    const town = world.locations.find(row => row.name === cultivator.location)!;
+    const day = Math.floor(world.currentDay);
+    for (const npc of world.npcs.filter(n => n.status === 'alive' && n.locationId === town.id && !here.has(n.id)).slice(0, 3)) {
+        npc.activity = { kind: 'talking', note: 'talking with a newcomer', withIds: [cultivator.id], sinceDay: day, untilDay: null };
+    }
+    game.theWorldMoved();
     const standing = game.present(cultivator).length;
     const mark = provider.calls.length;
     const done = await game.act('I greet everyone here');

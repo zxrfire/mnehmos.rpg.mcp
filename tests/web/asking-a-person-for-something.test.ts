@@ -33,6 +33,7 @@ import { isCommonlyHeld, whoseArt } from '../../src/engine/world/manuals.js';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques.js';
 import { LEVERAGE_ATTEMPT_CONSTANTS } from '../../src/engine/social-leverage/index.js';
 import { makeGameInWorld, type Harness } from './harness.js';
+import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
 import { factsForRequest } from '../../src/web/facts.js';
 import {
     howItHasBeenGoing,
@@ -251,6 +252,18 @@ async function everybodyNameable(harness: Harness): Promise<string[]> {
     return names;
 }
 
+/**
+ * In the area of this place where the people they have heard of are: a place is read into areas
+ * of at most three (`where-in-a-place-somebody-is-standing.ts`), and moving lands them in the street.
+ */
+async function standWithWhoTheyKnow(harness: Harness): Promise<void> {
+    const me = harness.game.currentRun().cultivator.id;
+    const heardOf = (harness.game as unknown as {
+        knowledge: { awareIds(holder: string, kind: string): Set<string> };
+    }).knowledge.awareIds(me, 'cultivator');
+    await standWhereThePeopleAre(harness, me, heardOf);
+}
+
 async function anybodyNameable(harness: Harness): Promise<string | null> {
     return (await everybodyNameable(harness))[0] ?? null;
 }
@@ -335,6 +348,7 @@ async function somebodyWorthAsking(harness: Harness): Promise<string> {
     const me = harness.game.currentRun().cultivator.id;
     for (const place of (await squaresWithSomebodyKnownAndAbove(harness)).slice(0, 8)) {
         harness.repos.cultivators.update(me, { location: place });
+        await standWithWhoTheyKnow(harness);
         const found = await anybodyNameable(harness);
         if (found !== null) return found;
     }
@@ -433,6 +447,7 @@ async function somebodyAndWhatTheyWouldTeach(
         // before it found one. Provisioning is a precondition; nothing about
         // the answer is arranged.
         harness.repos.cultivators.update(me, { location: place, satiety: 100 });
+        await standWithWhoTheyKnow(harness);
         for (const who of await everybodyNameable(harness)) {
             harness.repos.cultivators.update(me, { satiety: 100 });
             const said = await harness.game.act(`I ask ${who} to teach me`) as {

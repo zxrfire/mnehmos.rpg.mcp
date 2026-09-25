@@ -15,6 +15,9 @@ import { KnowledgeGate } from '../../src/web/knowledge';
 import { whatNamingThemDoes, whatTheyAreKnownFor } from '../../src/web/recognising-somebody-you-had-heard-of';
 import { thePlayerIsSureItIsThem } from '../../src/web/the-narrator-plays-the-world';
 import { makeGameInWorld, ScriptedProvider } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { npcsAt } from '../../src/engine/world/world-state';
+import { worldLocationFor } from '../../src/web/entities';
 
 describe('what somebody is known for', () => {
     const fact = (over: Partial<HistoricalFact>): HistoricalFact => ({
@@ -51,7 +54,13 @@ describe('on the square', () => {
         harness.db.prepare('UPDATE cultivators SET attributes = json_set(attributes, \'$.insight\', 4) WHERE id = ?')
             .run(cultivator.id);
         const gate = new KnowledgeGate(harness.db);
-        const here = harness.game.present(cultivator)
+        // Where most of the faces they cannot yet place are: an area holds three at most.
+        const world = harness.game.atHand!;
+        const unplaced = new Set(npcsAt(world, worldLocationFor(world, cultivator.location)!.id)
+            .filter(n => !thePlayerIsSureItIsThem(n.name, gate.awareness(cultivator.id, 'cultivator')))
+            .map(n => n.id));
+        await standWhereThePeopleAre(harness, cultivator.id, unplaced);
+        const here = harness.game.present(harness.repos.cultivators.getById(cultivator.id)!)
             .filter(p => !thePlayerIsSureItIsThem(p.name, gate.awareness(cultivator.id, 'cultivator')));
         for (const person of here) {
             harness.game.knowledge.learnIfNew({

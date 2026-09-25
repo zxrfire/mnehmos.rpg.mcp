@@ -19,6 +19,7 @@ import { announceMode } from '../../src/web/which-mode-this-session-is-playing-i
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
 import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 /**
  * The four files the schema is built from. The template is keyed on all of
@@ -433,6 +434,11 @@ export async function aRecruiterOfTheHouseIsHere(
         }
     };
     game.theWorldMoved();
+    // AND THE PLAYER IN THE AREA THEY STAND IN: a place is read into areas of at most three
+    // (`where-in-a-place-somebody-is-standing.ts`), and one recruiter is one area's.
+    const row = world.locations.find(l => l.id === here);
+    const area = row ? theAreasOf(world, row).whereIs.get(npc.id) : undefined;
+    if (area) game.repos.cultivators.standIn(cultivator.id, area);
     return {
         name: npc.name,
         backWhereTheyWere() {

@@ -32,6 +32,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { npcsInFaction } from '../../src/engine/world/world-state';
 import {
     theSetAsThisCultivatorKnowsIt,
@@ -180,11 +181,15 @@ describe('an act aimed at a set, played', () => {
         await game.act('I look around');
         standAtTheTopOfTheLadder(db, cultivator.id);
 
-        const before = (game as any).present((game as any).currentRun().cultivator).length;
+        const standing = (game as any).present((game as any).currentRun().cultivator) as { id: string }[];
+        const before = standing.length;
         expect(before).toBeGreaterThan(2);
 
         const result = await game.act('I kill everyone here');
-        const after = (game as any).present((game as any).currentRun().cultivator).length;
+        // WHO OF THEM IS STILL ALIVE, and not how many are standing here after: a place is read
+        // into areas of three at most, and the world forgetting its dead re-reads who stands where.
+        const world = (game as any).atHand;
+        const after = standing.filter(one => world.npcs.find((n: any) => n.id === one.id)?.status === 'alive').length;
 
         // The measured defect was ONE person considered. What is asserted is
         // that the set was carried out over the reachable subset, which is what
@@ -259,6 +264,9 @@ describe('an act aimed at a set, played', () => {
         const house = split!.house;
         const square = world!.locations.find((row: any) => row.id === split!.locationId)!;
         game.repos.cultivators.update(cultivator.id, { location: square.name });
+        // A town is read into parts: stand where most of the house is.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id,
+            new Set(npcsInFaction(world!, house.id).map(one => one.id)));
 
         const members = npcsInFaction(world!, house.id);
         const here = new Set(service.present(service.currentRun().cultivator)
@@ -341,6 +349,8 @@ describe('an act aimed at a set, played', () => {
         const service = game as any;
         const world = await game.loadWorld();
         const anchor = world!.npcs.find((npc: any) => npc.id === 'npc-154')!;
+        // The part of the town they are in, which a run no longer opens in.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([anchor.id]));
         service.knowledge.learnIfNew({
             holderId: cultivator.id,
             kind: 'cultivator',

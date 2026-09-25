@@ -26,6 +26,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { purposeOf } from '../../src/engine/world/architecture';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import {
     npcsStandingIn,
     npcsWithin,
@@ -77,6 +78,10 @@ async function atTheGateOfAHouseWithATalkOn(
     const { compound, hall } = found!;
     const me = harness.game.currentRun().cultivator;
     harness.repos.cultivators.update(me.id, { location: compound.seat.name });
+    // PAST THE GATE, in the forecourt: somebody the gate stops stands outside it
+    // (`where-in-a-place-somebody-is-standing.ts`), and these are about the rooms behind it.
+    const forecourt = theAreasOf(world, compound.seat).areas.find(area => area.for === 'forecourt')!;
+    harness.repos.cultivators.standIn(me.id, forecourt.id);
     return { harness, world, compounds, seat: compound.seat, hall: hall!, houseId: compound.houseId, me };
 }
 

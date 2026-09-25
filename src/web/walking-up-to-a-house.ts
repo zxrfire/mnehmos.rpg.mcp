@@ -51,6 +51,8 @@ import { ledgerAbout, type ObligationDb } from '../storage/repos/obligation.repo
 import { whichWayItPoints } from '../engine/social/grudges.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import { loosePlaceKey } from './knowledge.js';
+import { worldLocationFor } from './entities.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import type { GameService } from './turn-engine.js';
 
 /** A house and the ground its gate stands on, once a name has reached one. */
@@ -140,7 +142,16 @@ export function whatTheGateOfThisHouseSays(
     // WHOSE PEOPLE ARE OUT HERE, and they are read off the same roster every
     // other verb reads rather than off the house's catalog roll: a name on the
     // roll who is four provinces away cannot walk anybody through a gate.
-    const presentOfTheHouse = game.present(cultivator)
+    // THE WHOLE YARD, gate and forecourt: the one on watch can call anybody standing in it down
+    // to the gate, though the player outside sees only the watch. See
+    // `where-in-a-place-somebody-is-standing.ts`.
+    const atTheSeat = world !== null && worldLocationFor(world, cultivator.location)?.id === house.seat.id;
+    const people = atTheSeat
+        ? npcsStandingIn(world!, house.seat.id)
+            .filter(npc => npc.id !== cultivator.id)
+            .map(npc => ({ id: npc.id, name: npc.name, realmOrdinal: npc.cultivation.realmOrdinal, sectId: npc.factionId }))
+        : game.present(cultivator);
+    const presentOfTheHouse = people
         .filter(row => row.sectId === house.factionId)
         .map(row => ({
             id: row.id,

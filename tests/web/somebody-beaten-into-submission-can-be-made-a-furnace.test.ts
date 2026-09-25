@@ -142,7 +142,9 @@ describe('the rite on somebody who has yielded', () => {
      * path: the row is marked dead and the chronicle gets a death fact.
      */
     it('kills through the ordinary killing path when the draw kills', async () => {
-        const at = await standingInFrontOfAFurnace('furnace-rite-14', 30);
+        // Re-pinned from furnace-rite-14 when a place was read into areas of three: who stands in
+        // front of the player moved.
+        const at = await standingInFrontOfAFurnace('furnace-rite-37', 30);
         const before = at.progress();
 
         const acted = await at.game.act(`I make ${at.mark.name} my furnace`);

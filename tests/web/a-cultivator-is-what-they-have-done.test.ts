@@ -33,6 +33,9 @@ import { whatTheirRecordMakesThem } from '../../src/engine/social-leverage/perso
 import { obligationFromRow } from '../../src/storage/repos/obligation.repo';
 import { whatTheWorldHoldsAbout } from '../../src/web/personal-record';
 import { makeGameInWorld } from './harness';
+import type { GameService } from '../../src/web/game';
+import { worldLocationFor } from '../../src/web/entities';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 /** High enough to be seen and dealt with, before anybody is stood level with. */
 const IN_PLAIN_SIGHT = 12;
@@ -98,10 +101,19 @@ const WOULD_MISS_THEM = new Set(['kin', 'spouse', 'parent', 'child']);
 
 /** Who is standing here, and the rung that puts the cultivator among them. */
 async function standingAmongThem(
-    game: { act(text: string): Promise<{ narration: string }> }
+    game: { act(text: string): Promise<{ narration: string }> } & Pick<GameService, 'atHand' | 'currentRun'>
 ): Promise<{ neighbours: string[]; rung: number }> {
     const neighbours = await whoIsHere(game);
-    return { neighbours, rung: await levelWith(neighbours) };
+    // A PLACE IS READ INTO AREAS OF AT MOST THREE, so three people to wrong may take a walk round
+    // it, asking again in each, the way a player would.
+    const place = game.atHand ? worldLocationFor(game.atHand, game.currentRun().cultivator.location) : null;
+    for (const area of place && game.atHand ? theAreasOf(game.atHand, place).areas : []) {
+        if (neighbours.length >= 3) break;
+        await game.act(`I go to ${area.name}`);
+        for (const name of await whoIsHere(game)) if (!neighbours.includes(name)) neighbours.push(name);
+    }
+    const three = neighbours.slice(0, 3);
+    return { neighbours: three, rung: await levelWith(three) };
 }
 
 /** Four ordinary verbs, none of which is a special case anywhere. */

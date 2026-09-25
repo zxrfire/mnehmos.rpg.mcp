@@ -54,6 +54,11 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 
 const WORLD = { seed: 'a-listing-named', worldSeed: 'a-listing-named-world' };
+/**
+ * A run that opens among three people it knows. An area holds three at most
+ * (`where-in-a-place-somebody-is-standing.ts`), and the run above opens beside one.
+ */
+const AMONG_PEOPLE_IT_KNOWS = { seed: 'a-listing-named-5', worldSeed: 'a-listing-named-world' };
 
 /** Rows printed under a heading, indented two spaces, up to the next unindented line. */
 function rowsUnder(narration: string, heading: RegExp): string[] {
@@ -74,8 +79,8 @@ function nameOfAPricedRow(row: string): string {
     return parts.slice(0, -1).join(', ');
 }
 
-async function playThen(listing: string, followUp: string) {
-    const { game } = await makeGameInWorld(WORLD);
+async function playThen(listing: string, followUp: string, world: typeof WORLD = WORLD) {
+    const { game } = await makeGameInWorld(world);
     await game.newRun('Prober');
     const listed = await game.act(listing);
     const answered = await game.act(followUp);
@@ -116,7 +121,7 @@ describe('a listing this game prints is one the next sentence can name', () => {
     }, 300000);
 
     it('names the people a teacher read printed', async () => {
-        const { listed, answered } = await playThen('who would teach me', 'the second one');
+        const { listed, answered } = await playThen('who would teach me', 'the second one', AMONG_PEOPLE_IT_KNOWS);
         const people = listed.split('\n')
             .map(line => /^(.+?) stands at /.exec(line)?.[1])
             .filter((name): name is string => name !== undefined);
@@ -144,7 +149,7 @@ describe('a listing this game prints is one the next sentence can name', () => {
      * recorded only where the read the player asked for IS the square.
      */
     it('names the people standing here when the read was the square', async () => {
-        const { listed, answered } = await playThen('who is here', 'the second one');
+        const { listed, answered } = await playThen('who is here', 'the second one', AMONG_PEOPLE_IT_KNOWS);
         // The square arrives as sentences joined into one line, so the names
         // are read out of the text rather than off line starts.
         const people = [...listed.matchAll(

@@ -13,13 +13,18 @@ import { describe, expect, it } from 'vitest';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { thePlayerIsSureItIsThem } from '../../src/web/the-narrator-plays-the-world';
 import { makeGameInWorld, ScriptedProvider } from './harness';
+import { npcsAt } from '../../src/engine/world/world-state';
+import { worldLocationFor } from '../../src/web/entities';
 
 /** Somebody on the pinned square the player cannot yet be sure of, read off a first game on the same seeds. */
 async function aStrangerOn(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'road-world' });
     const { cultivator } = await harness.game.newRun('Probe');
     const gate = new KnowledgeGate(harness.db);
-    const stranger = harness.game.present(cultivator)
+    // Anywhere in the town: a place is read into areas of three at most, and the act put to them
+    // by name crosses to them (`walking-across-a-place.ts`).
+    const world = harness.game.atHand!;
+    const stranger = npcsAt(world, worldLocationFor(world, cultivator.location)!.id)
         .find(p => !thePlayerIsSureItIsThem(p.name, gate.awareness(cultivator.id, 'cultivator')));
     expect(stranger, 'nobody here the player is unsure of').toBeTruthy();
     return stranger!;
