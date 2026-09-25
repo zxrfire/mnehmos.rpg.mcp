@@ -1444,19 +1444,24 @@ export function walkingDaysFrom(
     }
 
     const best = new Map<string, number>([[startId, 0]]);
-    // A sorted frontier costs less than a heap at this size, and nothing here
-    // is on the turn path.
-    const frontier: { id: string; days: number }[] = [{ id: startId, days: 0 }];
-    while (frontier.length > 0) {
-        frontier.sort((a, b) => a.days - b.days);
-        const here = frontier.shift()!;
+    // A heap ordered by days and then by push order, which pops in exactly the
+    // order a stable sort-and-shift did - so the map comes back in the same
+    // insertion order - without re-sorting the frontier on every step. The
+    // sort was the single largest cost of a simulated year.
+    const frontier = new MinHeap<{ id: string; days: number; seq: number }>(
+        (a, b) => a.days - b.days || a.seq - b.seq
+    );
+    let seq = 0;
+    frontier.push({ id: startId, days: 0, seq: seq++ });
+    while (frontier.size > 0) {
+        const here = frontier.pop()!;
         if ((best.get(here.id) ?? Infinity) < here.days) continue;
         const node = byId.get(here.id);
         if (!node) continue;
         const step = (toId: string, days: number): void => {
             if (days >= (best.get(toId) ?? Infinity)) return;
             best.set(toId, days);
-            frontier.push({ id: toId, days });
+            frontier.push({ id: toId, days, seq: seq++ });
         };
         for (const link of node.links) {
             if (!link.open) continue;
@@ -1958,4 +1963,48 @@ export function makeSecretRealm(
 function clamp01(n: number): number {
     if (!Number.isFinite(n)) return 0;
     return Math.max(0, Math.min(1, n));
+}
+
+/** A binary min-heap over a comparator. Local: the spatial one merges entries by key. */
+class MinHeap<T> {
+    private readonly items: T[] = [];
+    constructor(private readonly before: (a: T, b: T) => number) {}
+
+    get size(): number {
+        return this.items.length;
+    }
+
+    push(item: T): void {
+        const items = this.items;
+        items.push(item);
+        let at = items.length - 1;
+        while (at > 0) {
+            const up = (at - 1) >> 1;
+            if (this.before(items[at]!, items[up]!) >= 0) break;
+            [items[at], items[up]] = [items[up]!, items[at]!];
+            at = up;
+        }
+    }
+
+    pop(): T | undefined {
+        const items = this.items;
+        if (items.length === 0) return undefined;
+        const top = items[0];
+        const last = items.pop()!;
+        if (items.length > 0) {
+            items[0] = last;
+            let at = 0;
+            for (;;) {
+                const left = at * 2 + 1;
+                const right = left + 1;
+                let least = at;
+                if (left < items.length && this.before(items[left]!, items[least]!) < 0) least = left;
+                if (right < items.length && this.before(items[right]!, items[least]!) < 0) least = right;
+                if (least === at) break;
+                [items[at], items[least]] = [items[least]!, items[at]!];
+                at = least;
+            }
+        }
+        return top;
+    }
 }

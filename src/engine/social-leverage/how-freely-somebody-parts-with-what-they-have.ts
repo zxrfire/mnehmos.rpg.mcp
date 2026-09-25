@@ -19,6 +19,19 @@ const DRAWS = 2;
 export function openHandednessOf(personId: string): number {
     const id = (personId ?? '').trim();
     if (id.length === 0) return 0;
+    // A pure function of the id, asked for every time somebody weighs parting
+    // with something - a twentieth of a late simulated year went to rebuilding
+    // the same stream. Kept, since nobody's disposition changes.
+    const known = OPEN_HANDEDNESS.get(id);
+    if (known !== undefined) return known;
+    const read = derivedOpenHandedness(id);
+    OPEN_HANDEDNESS.set(id, read);
+    return read;
+}
+
+const OPEN_HANDEDNESS = new Map<string, number>();
+
+function derivedOpenHandedness(id: string): number {
     // The person goes in the SEED slot and the constant in the stream slot,
     // which is the reverse of how `forStream` usually reads. Do not "fix" the
     // argument order - the derived string differs, and every disposition in

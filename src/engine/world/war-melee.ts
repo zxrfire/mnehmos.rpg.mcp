@@ -600,7 +600,24 @@ function settleOneWar(
  */
 /** Whether these two houses are in an open war with each other. */
 export function areAtWarWithEachOther(state: WorldState, aId: string, bId: string): boolean {
-    return liveWars(state).some(w => (w.a.id === aId && w.b.id === bId) || (w.a.id === bId && w.b.id === aId));
+    // The same test `liveWars` applies, for one pair, without building every
+    // war to ask about two houses: this is asked for every pair the killing
+    // read weighs, and the full list was a tenth of a late simulated year.
+    let byId: Map<string, WorldState['factions'][number]> | null = null;
+    for (const effect of state.schedule) {
+        if (effect.data.kind !== 'war_resolution') continue;
+        const sideA = String(effect.data.sideA ?? '');
+        const sideB = String(effect.data.sideB ?? '');
+        if (!((sideA === aId && sideB === bId) || (sideA === bId && sideB === aId))) continue;
+        byId ??= new Map(state.factions.map(f => [f.id, f]));
+        const a = byId.get(sideA);
+        const b = byId.get(sideB);
+        if (!a || !b) continue;
+        if (a.dissolvedOnDay !== null || b.dissolvedOnDay !== null) continue;
+        if (!a.tags.includes('at_war') || !b.tags.includes('at_war')) continue;
+        return true;
+    }
+    return false;
 }
 
 function liveWars(state: WorldState): LiveWar[] {

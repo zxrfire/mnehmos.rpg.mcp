@@ -166,6 +166,50 @@ export function theJadeBetween(
     return null;
 }
 
+/**
+ * Whole halves by holder, in object order, for a pass that asks about many
+ * pairs. `theJadeBetween` scans every object in the world and every person
+ * for the lamps on each call, and the passes below ask it once per person -
+ * a square in the size of the world. Built once, and kept current by the
+ * pass that adds pairs, so every answer is the one the scan would give.
+ */
+class TheHalvesHeld {
+    private readonly byHolder = new Map<string, ObjectRecord[]>();
+    private readonly lamps: Map<string, NpcRecord>;
+
+    constructor(state: Pick<WorldState, 'objects' | 'npcs'>) {
+        for (const o of state.objects) this.note(o);
+        this.lamps = new Map(state.npcs.map(n => [n.id, n] as const));
+    }
+
+    add(objects: readonly ObjectRecord[]): void {
+        for (const o of objects) this.note(o);
+    }
+
+    /** `theJadeBetween`, off the index. */
+    between(holderId: string, otherId: string): ObjectRecord | null {
+        const lamp = (id: string) => {
+            const npc = this.lamps.get(id);
+            return npc ? THE_LAMP_BURNS.has(npc.status) : true;
+        };
+        if (!lamp(holderId) || !lamp(otherId)) return null;
+        const mine = this.byHolder.get(holderId) ?? [];
+        const theirs = this.byHolder.get(otherId) ?? [];
+        if (mine.length === 0 || theirs.length === 0) return null;
+        for (const half of mine) {
+            const twinId = String(half.data.twinId);
+            if (theirs.some(t => t.id === twinId)) return half;
+        }
+        return null;
+    }
+
+    private note(o: ObjectRecord): void {
+        if (!isWhole(o)) return;
+        const list = this.byHolder.get(o.possessorId!);
+        if (list) list.push(o); else this.byHolder.set(o.possessorId!, [o]);
+    }
+}
+
 /** Everybody whose half answers to one this person holds. */
 export function whoTheirJadeReaches(
     state: Pick<WorldState, 'objects' | 'npcs'>,
@@ -345,6 +389,7 @@ export function theInternalAffairsElderMakesJadeForElders(
     day: number
 ): number {
     let made = 0;
+    const held = new TheHalvesHeld(state);
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null) continue;
         const maker = whoMakesJadeForTheElders(state, house);
@@ -353,16 +398,18 @@ export function theInternalAffairsElderMakesJadeForElders(
             .filter(n => n.status === 'alive' && n.factionId === house.id && n.id !== maker.id
                 && n.locationId === house.seatLocationId
                 && isElderRank(n.factionRankIndex, house.ranks.length)
-                && theJadeBetween(state, n.id, maker.id) === null)
+                && held.between(n.id, maker.id) === null)
             .sort((a, b) => b.factionRankIndex - a.factionRankIndex || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0];
         if (!elder) continue;
-        state.objects.push(...aPairOfCommunicationJade({
+        const pair = aPairOfCommunicationJade({
             maker: { id: maker.id, name: maker.name, ordinal: maker.cultivation.realmOrdinal },
             keeps: { id: maker.id, name: maker.name },
             gives: { id: elder.id, name: elder.name },
             onDay: day,
             locationId: house.seatLocationId
-        }));
+        });
+        state.objects.push(...pair);
+        held.add(pair);
         made++;
     }
     return made;
@@ -386,6 +433,7 @@ export function mastersGiveJadeToDisciplesTheyValue(
     }
 ): number {
     const byId = new Map(state.npcs.map(n => [n.id, n] as const));
+    const held = new TheHalvesHeld(state);
     let made = 0;
     for (const master of state.npcs) {
         if (input.onlyElders && !input.onlyElders(master)) continue;
@@ -395,18 +443,20 @@ export function mastersGiveJadeToDisciplesTheyValue(
             .map(r => ({ tie: r, disciple: byId.get(r.targetId) }))
             .filter((x): x is { tie: typeof x.tie; disciple: NpcRecord } =>
                 x.disciple !== undefined && x.disciple.status === 'alive'
-                && theJadeBetween(state, master.id, x.disciple.id) === null)
+                && held.between(master.id, x.disciple.id) === null)
             .sort((a, b) => b.tie.standing - a.tie.standing
                 || (a.disciple.id < b.disciple.id ? -1 : a.disciple.id > b.disciple.id ? 1 : 0));
         const chosen = valued[0];
         if (!chosen) continue;
-        state.objects.push(...aPairOfCommunicationJade({
+        const pair = aPairOfCommunicationJade({
             maker: { id: master.id, name: master.name, ordinal: master.cultivation.realmOrdinal },
             keeps: { id: master.id, name: master.name },
             gives: { id: chosen.disciple.id, name: chosen.disciple.name },
             onDay: input.day,
             locationId: master.locationId
-        }));
+        });
+        state.objects.push(...pair);
+        held.add(pair);
         made++;
     }
     return made;

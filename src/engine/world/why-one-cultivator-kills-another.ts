@@ -630,13 +630,30 @@ export function everybodyWithAReasonThisYear(state: WorldState, seatsTheyWant: R
     // the motives instead - who holds a grievance against whom, who is carrying
     // something where it would be seen, who is standing on ground worth being
     // first on, and who is held back from a seat somebody else has.
+    // Who would stand with a killer where they are. It depends on the killer
+    // alone, and was being filtered out of the whole square for every pair.
+    const allies = new Map<string, NpcRecord[]>();
+    const alliesHere = (killer: NpcRecord): NpcRecord[] => {
+        let found = allies.get(killer.id);
+        if (found === undefined) {
+            found = (byPlace.get(killer.locationId!) ?? []).filter(n => n.id !== killer.id
+                && n.factionId !== null && n.factionId === killer.factionId
+                && killer.activity !== null && killer.activity.withIds.includes(n.id));
+            allies.set(killer.id, found);
+        }
+        return found;
+    };
+
     const consider = (killer: NpcRecord, victim: NpcRecord): void => {
         if (killer.id === victim.id) return;
+        // The cheap refusals first. Each reads only this year's fixed state, so
+        // a pair they turn away would be turned away again, and skipping the
+        // key for it changes nothing but the cost.
+        if (killer.locationId === null || killer.locationId !== victim.locationId) return;
+        if (!isTheWorldsToMove(killer) || !theWorldMayEnd(victim)) return;
         const pair = `${killer.id}|${victim.id}`;
         if (already.has(pair)) return;
         already.add(pair);
-        if (!isTheWorldsToMove(killer) || !theWorldMayEnd(victim)) return;
-        if (killer.locationId === null || killer.locationId !== victim.locationId) return;
         const place = places.get(killer.locationId) ?? null;
         const relation = howTheyStandToEachOther(state, killer, victim, houses, byId);
         if (relation.value <= 0) return;
@@ -648,10 +665,7 @@ export function everybodyWithAReasonThisYear(state: WorldState, seatsTheyWant: R
             killerKnows: knows.get(killer.id)!
         });
         if (stakes === null) return;
-        const here = byPlace.get(killer.locationId) ?? [];
-        const attackers = [killer, ...here.filter(n => n.id !== killer.id && n.id !== victim.id
-            && n.factionId !== null && n.factionId === killer.factionId
-            && killer.activity !== null && killer.activity.withIds.includes(n.id))];
+        const attackers = [killer, ...alliesHere(killer).filter(n => n.id !== victim.id)];
         const killersHouse = killer.factionId === null ? null : houses.get(killer.factionId) ?? null;
         const chance = whetherItComesToBlows({
             relation, stakes, killer, killersHouse, attackers, victim,

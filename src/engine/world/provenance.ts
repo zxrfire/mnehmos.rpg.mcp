@@ -397,6 +397,22 @@ const WING_NAMES = [
 ] as const;
 
 function deriveWings(location: LocationRecord): RuinWing[] {
+    // Pure in these four, and read on every walk past a site: the same stream
+    // was rebuilt for the same answer many times a year. Copies go out, since
+    // a caller may work a wing.
+    const key = `${location.id}|${location.data.techniqueCount ?? 0}|${location.data.treasureCount ?? 0}`
+        + `|${location.thresholds.mastery}`;
+    let derived = DERIVED_WINGS.get(key);
+    if (derived === undefined) {
+        derived = deriveWingsAfresh(location);
+        DERIVED_WINGS.set(key, derived);
+    }
+    return derived.map(wing => ({ ...wing }));
+}
+
+const DERIVED_WINGS = new Map<string, readonly RuinWing[]>();
+
+function deriveWingsAfresh(location: LocationRecord): RuinWing[] {
     const rng = forStream('wings', location.id);
     const stocked = Number(location.data.techniqueCount ?? 0) + Number(location.data.treasureCount ?? 0);
     // A bigger house has more of itself. Two at minimum, so "one door nobody
