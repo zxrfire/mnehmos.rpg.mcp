@@ -397,12 +397,12 @@ describe('the feeder and arrival', () => {
         // THE LIVE DOOR, at the Survey. Whoever walks up below the bar for an
         // elder from outside is Unplaced, however high they stood where they
         // came from, and the door has no input for where that was.
-        const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-earth-vein-tower')!;
-        const door = offerAtTheDoorOf(survey.factionId, 0)!;
+        const surveyId = APEX_INSTITUTIONS.find(a => a.id === 'apex-earth-vein-tower')!.factionId!;
+        const door = offerAtTheDoorOf(surveyId, 0)!;
         for (let ordinal = 0; ordinal < door.elderBar!; ordinal++) {
-            const offer = offerAtTheDoorOf(survey.factionId, ordinal)!;
+            const offer = offerAtTheDoorOf(surveyId, ordinal)!;
             expect(offer.offered).toBe(ARRIVAL_RULES.entryRankIndex);
-            expect(getSect(survey.factionId)!.ranks[offer.offered!]).toBe('Unplaced');
+            expect(getSect(surveyId)!.ranks[offer.offered!]).toBe('Unplaced');
         }
     });
 
