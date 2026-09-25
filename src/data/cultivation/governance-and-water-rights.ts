@@ -897,7 +897,6 @@ export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 // ever since - see the note on `court-kiln`.
 // ─────────────────────────────────────────────────────────────────────────
 
-
 export const CourtOfficerSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(2),
@@ -916,7 +915,6 @@ export const CourtOfficerSchema = z.object({
     detail: z.string().min(30)
 });
 export type CourtOfficer = z.infer<typeof CourtOfficerSchema>;
-
 
 export const CourtSchema = z.object({
     id: z.string(),
@@ -3543,15 +3541,6 @@ export function courtOfficers(courtId: string): CourtOfficer[] {
  */
 export function strongestOfficerOf(court: Court): CourtOfficer {
     return court.roster.reduce((best, o) => (o.realmOrdinal > best.realmOrdinal ? o : best));
-}
-
-/** One officer, by id, from any court. */
-export function getCourtOfficer(officerId: string): CourtOfficer | undefined {
-    for (const court of COURTS) {
-        const found = court.roster.find(o => o.id === officerId);
-        if (found) return found;
-    }
-    return undefined;
 }
 
 export function getParentage(factionId: string): Parentage | undefined {

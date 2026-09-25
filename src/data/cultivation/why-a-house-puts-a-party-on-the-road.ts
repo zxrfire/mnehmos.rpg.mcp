@@ -605,21 +605,3 @@ const BY_ID: ReadonlyMap<string, SendingReason> =
 export function getSendingReason(id: string): SendingReason | undefined {
     return BY_ID.get(id);
 }
-
-/**
- * Reasons grouped by what a house must already have.
- *
- * Built once from the rows, so a new row joins its group without anybody
- * touching this. The engine's binding pass walks the keys.
- */
-export const SENDING_REASONS_BY_NEED: ReadonlyMap<ReasonNeed, readonly SendingReason[]> =
-    (() => {
-        const map = new Map<ReasonNeed, SendingReason[]>();
-        for (const need of ReasonNeedSchema.options) map.set(need, []);
-        for (const reason of SENDING_REASONS) map.get(reason.needs)!.push(reason);
-        return map;
-    })();
-
-/** Every reason with a ceiling above which nobody is sent. */
-export const CAPPED_SENDINGS: readonly SendingReason[] =
-    SENDING_REASONS.filter(r => r.ceilingOrdinal !== null);

@@ -8,7 +8,6 @@ import type {
     Region,
     RegionPlaceConnection
 } from './region-schema.js';
-import { BLOWN_GROUND_ID } from './region-ids.js';
 import { THE_LOW_FALL } from './low-fall.js';
 import { THE_QUIET_MARCHES } from './quiet-marches.js';
 import { THE_WIDE_FIELD } from './wide-field.js';
@@ -269,9 +268,3 @@ export const REGIONS: readonly Region[] = (() => {
     return [...spine, THE_BLOWN_GROUND_AS_REGION];
 })();
 
-/**
- * The five arms, and the subject of every province invariant in the catalog tests:
- * two seated houses, a tradition, a road to the centre, a ceiling nobody else
- * shares.
- */
-export const SPINE_REGIONS: readonly Region[] = REGIONS.filter(r => r.id !== BLOWN_GROUND_ID);

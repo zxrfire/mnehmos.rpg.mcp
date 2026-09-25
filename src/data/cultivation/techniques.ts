@@ -347,11 +347,6 @@ export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Arts above the Lid that are deliberately MODERN, with the reason each.
- */
-export const MODERN_ABOVE_THE_LID_NOTES: Readonly<Record<string, string>> = {};
-
-/**
  * When an art was written, and it is a statement about IDIOM rather than about a
  * century or a height.
  */
@@ -1136,7 +1131,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         id: 'hundred-cut-flying-blade',
         // `subjects` is what an art is ABOUT. Three roads name one: the sword,
-        // the flower, and the body. See the note beside `SWORD_SUBJECT` below
+        // the flower, and the body. See the sword-school note beside `FLOWER_SUBJECT` below
         // for why these five swords and nothing else.
         //
         // One sliver of metal steered by intent for ten paces. A moving edge,
@@ -3617,19 +3612,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
 
 const TECHNIQUE_BY_ID: ReadonlyMap<string, TechniqueEntry> = new Map(TECHNIQUES.map(t => [t.id, t]));
 
-const TECHNIQUES_BY_PROVENANCE: ReadonlyMap<TechniqueProvenance, readonly TechniqueEntry[]> =
-    buildGroups(t => t.provenance);
-
-function buildGroups<K>(key: (t: TechniqueEntry) => K): ReadonlyMap<K, readonly TechniqueEntry[]> {
-    const map = new Map<K, TechniqueEntry[]>();
-    for (const t of TECHNIQUES) {
-        const k = key(t);
-        const bucket = map.get(k);
-        if (bucket) bucket.push(t);
-        else map.set(k, [t]);
-    }
-    return map;
-}
 
 /**
  * Techniques bucketed by the ordinal at which they become available, indexed
@@ -3696,30 +3678,10 @@ export function getTechnique(id: string): TechniqueEntry | undefined {
  * what it DOES, and folding one into the other is how a catalog loses both.
  */
 
-export const SWORD_SUBJECT = 'sword';
-
-/** Every art whose subject is the blade, strongest requirement last. */
-export const SWORD_ARTS: readonly TechniqueEntry[] = TECHNIQUES
-    .filter(t => isOnRoad(t, SWORD_SUBJECT))
-    .slice()
-    .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
-
-/** Whether this art is one of the school's. Read off the row, never a list. */
-export function isSwordArt(techniqueId: string): boolean {
-    const t = getTechnique(techniqueId);
-    return t !== undefined && isOnRoad(t, SWORD_SUBJECT);
-}
-
 /**
  * The flower is a school, and taking without ending the stand belongs to it.
  */
 export const FLOWER_SUBJECT = 'flower';
-
-/** Every art whose subject is the bed, strongest requirement last. */
-export const FLOWER_ARTS: readonly TechniqueEntry[] = TECHNIQUES
-    .filter(t => isOnRoad(t, FLOWER_SUBJECT))
-    .slice()
-    .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
 
 /** Whether this art is one of the school's. Read off the row, never a list. */
 export function isFlowerArt(techniqueId: string): boolean {
@@ -3738,28 +3700,6 @@ export function takesWithoutEndingTheStand(input: {
 }): boolean {
     if (input.daoSubject === FLOWER_SUBJECT) return true;
     return input.knownTechniqueIds.some(isFlowerArt);
-}
-
-/**
- * Arts by how they are obtained. `getTechniquesByProvenance('ruin')` is the
- * loot table for sealed sites - the reason a talentless cultivator digs.
- */
-export function getTechniquesByProvenance(provenance: TechniqueProvenance): readonly TechniqueEntry[] {
-    return TECHNIQUES_BY_PROVENANCE.get(provenance) ?? [];
-}
-
-/**
- * Arts the world can name and cannot produce. Nothing hands one of these over
- * and nothing is supposed to: they are here so that an art with no route is a
- * stated fact rather than a hole nobody has noticed yet.
- */
-export function getTechniquesWithNoSurvivingCopy(): TechniqueEntry[] {
-    return TECHNIQUES.filter(t => !t.survivingCopy);
-}
-
-/** Everything no living teacher can transmit: ruin and grave sources together. */
-export function getRecoveredTechniques(): TechniqueEntry[] {
-    return [...getTechniquesByProvenance('ruin'), ...getTechniquesByProvenance('grave')];
 }
 
 export interface TechniqueQuery {
@@ -3798,17 +3738,6 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
         }
     }
     return out;
-}
-
-/**
- * The highest-grade arts a cultivator can currently reach, which is what a shop, a
- * sect library, or an inheritance should actually be offering.
- */
-export function findBestTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): TechniqueEntry[] {
-    const eligible = findTechniquesForOrdinal(ordinal, opts);
-    if (eligible.length === 0) return [];
-    const best = eligible.reduce((max, t) => Math.max(max, gradeRank(t.grade)), 0);
-    return eligible.filter(t => gradeRank(t.grade) === best);
 }
 
 /** Grade band a given ordinal currently sits in. */

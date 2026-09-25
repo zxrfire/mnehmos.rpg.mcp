@@ -20,12 +20,10 @@ import { describe, it, expect } from 'vitest';
 
 import { MAX_ORDINAL, rankName, realmForOrdinal } from '../../src/engine/cultivation/realms.js';
 import {
-    HERB_VALUE_BANDS,
-    HERB_RARITY_CEILING,
     HerbBiomeSchema,
     type HerbBiome
 } from '../../src/data/cultivation/herbs.js';
-import { getEncounter, ENCOUNTERS, ruinWeightShare } from '../../src/data/cultivation/encounters.js';
+import { getEncounter, ENCOUNTERS } from '../../src/data/cultivation/encounters.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
 import { getCultivationCatalogCounts } from '../../src/data/cultivation/index.js';
 import {
@@ -43,27 +41,39 @@ import {
     BeastMaterialSchema,
     BeastTideSchema,
     getBeast,
-    requireBeast,
-    getBeastsByNature,
-    getBeastsByBiome,
     getBeastMaterial,
     materialsOf,
     coreOf,
-    getBeastTide,
-    tidesInRegion,
-    beastsInTide,
-    describeBeastRealm,
-    findBeastsForOrdinal,
-    findThreatsAboveOrdinal,
-    veinContenders,
-    sealedOnlyBeasts,
-    negotiableBeasts,
     anythingAtThisRungSpeaks,
-    getBeastsByDisposition,
-    rollBeast
+    type Beast
 } from '../../src/data/cultivation/beasts.js';
 import { SectAlignmentSchema } from '../../src/schema/cultivation.js';
-import { getSectsByAlignment } from '../../src/data/cultivation/sects.js';
+import { SECTS } from '../../src/data/cultivation/sects.js';
+import { HERB_RARITY_CEILING, HERB_VALUE_BANDS } from '../support/the-bands-a-catalog-row-sits-in.js';
+
+// Catalog reads only this file makes. The game reads the catalogs itself and
+// draws through `rollEncounters`.
+const getEncountersForOrdinal = (ordinal: number) =>
+    ENCOUNTERS.filter(e => e.minOrdinal <= ordinal && e.maxOrdinal >= ordinal);
+const ruinWeightShare = (ordinal: number): number => {
+    const pool = getEncountersForOrdinal(ordinal);
+    const total = pool.reduce((sum, e) => sum + e.weight, 0);
+    const dig = pool.filter(e => e.kind === 'ruin' || e.kind === 'grave')
+        .reduce((sum, e) => sum + e.weight, 0);
+    return total === 0 ? 0 : dig / total;
+};
+const requireBeast = (id: string): Beast => getBeast(id)!;
+const getBeastsByBiome = (biome: HerbBiome) => BEASTS.filter(b => b.biome === biome);
+const getBeastsByNature = (nature: Beast['nature']) => BEASTS.filter(b => b.nature === nature);
+const getBeastsByDisposition = (d: Beast['disposition']) => BEASTS.filter(b => b.disposition === d);
+const findBeastsForOrdinal = (ordinal: number) => BEASTS.filter(b => b.ordinal <= ordinal);
+const getBeastTide = (id: string) => BEAST_TIDES.find(t => t.id === id);
+const beastsInTide = (id: string) =>
+    (getBeastTide(id)?.beastIds ?? []).map(getBeast).filter((b): b is Beast => b !== undefined);
+const tidesInRegion = (regionId: string) => BEAST_TIDES.filter(t => t.regionId === regionId);
+const veinContenders = () => BEASTS.filter(b => b.veinRelation === 'holds' || b.veinRelation === 'drains');
+const sealedOnlyBeasts = () => BEASTS.filter(b => b.persistence === 'sealed_only');
+const negotiableBeasts = () => BEASTS.filter(b => anythingAtThisRungSpeaks(b.ordinal));
 
 const BEAST_IDS = new Set(BEASTS.map(b => b.id));
 
@@ -78,7 +88,6 @@ describe('spirit beasts: the catalog', () => {
         }
         expect(getBeast('beast-ironhide-boar')).toBeDefined();
         expect(getBeast('beast-nothing')).toBeUndefined();
-        expect(() => requireBeast('beast-nothing')).toThrow();
     });
 
     it('has unique ids and unique names', () => {
@@ -153,7 +162,7 @@ describe('what a beast is inclined to do about people', () => {
         for (const alignment of ['righteous', 'neutral', 'demonic'] as const) {
             expect(getBeastsByDisposition(alignment).length, `nothing is ${alignment}`)
                 .toBeGreaterThan(0);
-            expect(getSectsByAlignment(alignment).length, `no house is ${alignment}`)
+            expect(SECTS.filter(s => s.alignment === alignment).length, `no house is ${alignment}`)
                 .toBeGreaterThan(0);
         }
     });
@@ -240,11 +249,8 @@ describe('an amount below the line, an individual above it', () => {
 
 describe('one ladder: danger is an ordinal, not a stat block', () => {
     it('reads a beast with the same realm vocabulary as a cultivator', () => {
-        for (const b of BEASTS) {
-            expect(describeBeastRealm(b)).toBe(rankName(b.ordinal));
-        }
-        // And the vocabulary is the human one, unchanged.
-        expect(describeBeastRealm(requireBeast('beast-earth-dragon'))).toMatch(/Deity Transformation/);
+        // The vocabulary is the human one, unchanged.
+        expect(rankName(requireBeast('beast-earth-dragon').ordinal)).toMatch(/Deity Transformation/);
     });
 
     it('carries no combat statistics in the discarded idiom', () => {
@@ -276,14 +282,6 @@ describe('one ladder: danger is an ordinal, not a stat block', () => {
         }
     });
 
-    it('is inert, like every catalog beside it', () => {
-        // Nothing here decides anything; the draw takes the caller's sample.
-        const first = rollBeast(44, 0);
-        const same = rollBeast(44, 0);
-        expect(first?.id).toBe(same?.id);
-        expect(rollBeast(44, 0.999999999)).toBeDefined();
-        expect(rollBeast(0, 0.5)?.ordinal).toBeLessThanOrEqual(0);
-    });
 });
 
 describe('the change, and why a talking beast is never the easy option', () => {
@@ -647,22 +645,8 @@ describe('a contract is rare, costly and mutual', () => {
 });
 
 describe('lookups', () => {
-    it('separates what can be taken from what is above the cultivator', () => {
-        for (const ordinal of [0, 5, 13, 21, 33, 44]) {
-            const takeable = findBeastsForOrdinal(ordinal);
-            const above = findThreatsAboveOrdinal(ordinal);
-            expect(takeable.length + above.length).toBe(BEASTS.length);
-            for (const b of takeable) expect(b.ordinal).toBeLessThanOrEqual(ordinal);
-            for (const b of above) expect(b.ordinal).toBeGreaterThan(ordinal);
-        }
-        // The lowest realm in the world can take the hare and nothing else.
+    it('leaves the lowest realm in the world the hare and nothing else', () => {
         expect(findBeastsForOrdinal(0).map(b => b.id)).toEqual(['beast-stubble-hare']);
-        expect(findThreatsAboveOrdinal(MAX_ORDINAL)).toEqual([]);
-        // Clamped, not thrown.
-        expect(findBeastsForOrdinal(-5)).toEqual(findBeastsForOrdinal(0));
-        expect(findBeastsForOrdinal(Number.NaN)).toEqual(findBeastsForOrdinal(0));
-        expect(findBeastsForOrdinal(21, 'glacier').every(b => b.biome === 'glacier')).toBe(true);
-        expect(rollBeast(0, 0.5, 'abyss')).toBeUndefined();
     });
 
     it('reports its own size to the catalog counts', () => {

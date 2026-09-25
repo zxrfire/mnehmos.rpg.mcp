@@ -25,10 +25,9 @@
  *    in this file - see `THE GRADE FLOOR` below.
  */
 
-import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
+import type { Recipe } from '../../schema/cultivation.js';
 import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { getPill, HOLLOWING_PILL_ID, SOUL_QUENCHING_PILL_ID } from './pills.js';
-import type { Band } from './techniques.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROVENANCE - knowledge is recovered, not invented
@@ -85,31 +84,6 @@ export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
 const RECIPE_SOURCE_NOTES: Record<RecipeProvenance, string> = {
     known: 'In circulation. A hall will sell the method, or teach it against a bond.',
     recovered: 'Recovered from a sealed site. No living alchemist worked it out; someone transcribed it off a wall or out of a tomb, and the transcription may not be complete.'
-} as const;
-
-/**
- * Base success-rate window per produced-pill grade. Descending, and level
- * across the peers.
- *
- * A mortal pill fails roughly one time in eight. The two top grades share a
- * window because **what it takes to make one is the same work**: chaos and
- * immortal are peers in power (`GRADE_POWER` in `techniques.ts`), the same
- * cauldron at the same rung produces both - `REFINING_REALM_BY_GRADE` has said
- * so since it was written - and a cauldron does not know what the thing will
- * turn out to do when somebody swallows it. That is settled at use, not at
- * refinement.
- *
- * So the chaos floor was raised to the immortal floor rather than left as a
- * step down. Nothing in the catalog moved: the chaos recipes sit at the bottom
- * of the shared window, which is a fact about those formulas rather than about
- * the grade.
- */
-export const RECIPE_SUCCESS_BANDS: Record<TechniqueGrade, Band> = {
-    mortal: { min: 0.75, max: 0.9 },
-    earth: { min: 0.55, max: 0.7 },
-    heaven: { min: 0.35, max: 0.5 },
-    immortal: { min: 0.05, max: 0.3 },
-    chaos: { min: 0.05, max: 0.3 }
 } as const;
 
 const RECIPE_DATA: readonly Recipe[] = [
@@ -761,7 +735,3 @@ export function getRecipesUsingHerb(herbId: string): readonly RecipeEntry[] {
     return RECIPES_BY_INGREDIENT.get(herbId) ?? [];
 }
 
-/** The recipes that only exist because somebody dug. A ruin loot table. */
-export function getRecoveredRecipes(): RecipeEntry[] {
-    return RECIPES.filter(r => r.provenance === 'recovered');
-}

@@ -31,10 +31,11 @@ import { join, relative, resolve } from 'node:path';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
 import {
     PLACE,
-    PLACE_NAMES,
-    REGION_NAME,
-    REGION_NAMES
+    REGION_NAME
 } from '../../src/data/cultivation/place-names.js';
+
+const PLACE_NAMES: readonly string[] = Object.values(PLACE);
+const REGION_NAMES: readonly string[] = Object.values(REGION_NAME);
 
 const SRC = resolve(__dirname, '../../src');
 /** The one file allowed to spell a place name out. */

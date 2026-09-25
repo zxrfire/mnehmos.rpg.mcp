@@ -316,15 +316,3 @@ export function thereIsNoDoorAt(factionId: string): boolean {
 export function willNotBeMoved(): readonly FavourStance[] {
     return FAVOUR_STANCES.filter(f => f.answer === 'no, and the bar does not move');
 }
-
-/**
- * The houses a favour is actually needed at, which is the useful list.
- *
- * Everything with a bar above the floor and a door to come through. Derived, so
- * it cannot drift from `SECT_ADMISSION`.
- */
-export function favourIsWorthSomethingAt(): string[] {
-    return SECTS
-        .map(s => s.id)
-        .filter(id => favourStanceOf(id)?.answer === 'yes, at a price');
-}

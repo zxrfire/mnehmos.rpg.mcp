@@ -47,17 +47,26 @@ import {
     getTechnique
 } from '../../src/data/cultivation/techniques.js';
 import {
+    FALSE_IMMORTALS,
     LU_SHENG_CARVINGS,
     THE_ARTS_ARE_THE_WHOLE_INVENTORY,
-    THE_PRESENT_COUNT,
-    allDaoCarvings,
-    techniquesFromCarvings
+    THE_PRESENT_COUNT
 } from '../../src/data/cultivation/false-immortals.js';
 import { SECTS, SECT_ANCESTRY, getSect } from '../../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS, COURTS, idsForFaction } from '../../src/data/cultivation/hierarchy.js';
 import { NAMED_FIGURES } from '../../src/data/cultivation/named-figures.js';
 import { WANDERERS } from '../../src/data/cultivation/wanderers.js';
-import { getEncountersForOrdinal, rollEncounter } from '../../src/data/cultivation/encounters.js';
+import { ENCOUNTERS } from '../../src/data/cultivation/encounters.js';
+
+const allDaoCarvings = () => [
+    ...FALSE_IMMORTALS.map(f => f.carving).filter((c): c is NonNullable<typeof c> => c !== null),
+    ...LU_SHENG_CARVINGS
+];
+const techniquesFromCarvings = () => allDaoCarvings().flatMap(c => c.yieldedTechniqueIds);
+
+// Catalog reads only this file makes; the game draws through `rollEncounters`.
+const getEncountersForOrdinal = (ordinal: number) =>
+    ENCOUNTERS.filter(e => e.minOrdinal <= ordinal && e.maxOrdinal >= ordinal);
 
 const ARTS_AT = (ordinal: number) => TECHNIQUES.filter(t => t.requiredOrdinal === ordinal);
 const OBJECTS_AT = (power: number) => ARTIFACTS.filter(a => a.power === power);
@@ -108,7 +117,6 @@ describe('what the catalog authors, and what may be held', () => {
             // says where the content stops.
             expect(getEncountersForOrdinal(ordinal).length, `nothing happens at ${ordinal}`)
                 .toBeGreaterThan(0);
-            expect(rollEncounter(ordinal, 0.5), `${ordinal} cannot be drawn for`).toBeDefined();
         }
     });
 

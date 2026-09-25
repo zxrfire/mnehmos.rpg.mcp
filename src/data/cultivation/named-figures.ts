@@ -1230,10 +1230,6 @@ export function figuresFor(factionId: string): readonly NamedFigure[] {
     return [];
 }
 
-export function figuresOfKind(kind: FigureKind): readonly NamedFigure[] {
-    return NAMED_FIGURES.filter(f => f.kind === kind);
-}
-
 /**
  * Whether a faction can actually use the name it holds for a figure. A name
  * it cannot read, cannot choose between, or never took down is a name it has

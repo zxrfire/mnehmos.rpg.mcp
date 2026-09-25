@@ -23,7 +23,7 @@ import {
     BEASTS,
     BEAST_CHANGE_ORDINAL,
     BEAST_CORE_ORDINAL,
-    requireBeast,
+    getBeast,
     type Beast
 } from '../../../src/data/cultivation/beasts.js';
 import {
@@ -299,7 +299,7 @@ describe('the disposition decides the sign, and the caller decides the size', ()
         expect(shareOfWhatTheyHad({ beast: solitary })).toBe(1);
         expect(shareOfWhatTheyHad({ beast: solitary, howManyTheyHad: 4 })).toBe(0.25);
         // A herd is a fraction of itself, not the whole of anything.
-        const herd = requireBeast('beast-vein-deer');
+        const herd = getBeast('beast-vein-deer')!;
         expect(shareOfWhatTheyHad({ beast: herd })).toBeCloseTo(1 / herd.groupSize, 10);
         // Clamped rather than thrown, and never a division by zero.
         expect(shareOfWhatTheyHad({ beast: solitary, howManyTheyHad: 0 })).toBe(1);

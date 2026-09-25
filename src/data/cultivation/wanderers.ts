@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { FALSE_IMMORTAL_ORDINAL, MAX_ORDINAL } from '../../engine/cultivation/realms.js';
-import { AwarenessSchema } from './hierarchy.js';
 import type { SecretStatus } from '../../engine/social/secrets.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -797,37 +796,3 @@ export const WANDERERS: readonly Wanderer[] = [
             'An unremarkable man of no obvious age, drinking slowly in the cheap part of an inn, who answers questions from whoever sits down and does not ask who they are. He is not registered at any gate, carries nothing worth taking, and pays for things in ordinary coin. Nobody who has not been told what he is has ever guessed it from looking.'
     }
 ];
-
-// ─────────────────────────────────────────────────────────────────────────
-// LOOKUPS
-// ─────────────────────────────────────────────────────────────────────────
-
-const WANDERER_BY_ID: ReadonlyMap<string, Wanderer> = new Map(WANDERERS.map(w => [w.id, w]));
-
-export function getWanderer(id: string): Wanderer | undefined {
-    return WANDERER_BY_ID.get(id);
-}
-
-/** Wanderers affiliated with a faction without being of it. */
-export function getWanderersAffiliatedWith(factionId: string): Wanderer[] {
-    return WANDERERS.filter(w => w.affiliation.factionId === factionId);
-}
-
-/** The stories in circulation, wrong ones included. Mostly wrong ones. */
-export function legendsOf(wandererId: string): Legend[] {
-    return [...(WANDERER_BY_ID.get(wandererId)?.legends ?? [])];
-}
-
-/** The one version that happens to be true, where there is one. */
-export function accurateLegendOf(wandererId: string): Legend | undefined {
-    return WANDERER_BY_ID.get(wandererId)?.legends.find(l => l.accurate);
-}
-
-/**
- * Whether this wanderer may be named in narration to somebody holding this
- * awareness. Same rule as the apex institutions: `unaware` and `whisper` are
- * not enough, and the world may act on a player who cannot name what acted.
- */
-export function mayBeNamedTo(awareness: z.infer<typeof AwarenessSchema>): boolean {
-    return awareness !== 'unaware' && awareness !== 'whisper';
-}

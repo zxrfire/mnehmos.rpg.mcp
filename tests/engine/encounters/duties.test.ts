@@ -25,8 +25,10 @@ import {
     type EncounterPlace,
     type Membership
 } from '../../../src/engine/encounters/index.js';
-import { ENCOUNTERS, requireEncounter } from '../../../src/data/cultivation/encounters.js';
+import { getEncounter, ENCOUNTERS } from '../../../src/data/cultivation/encounters.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
+
+const requireEncounter = (id: string) => getEncounter(id)!;
 
 const village: EncounterPlace = { id: 'v', name: 'Burnt Earth', kind: 'settlement', danger: 0.2 };
 const road: EncounterPlace = { id: 'r', name: 'the low road', kind: 'wilds', danger: 0.45 };

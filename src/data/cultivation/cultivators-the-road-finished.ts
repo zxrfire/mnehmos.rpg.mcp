@@ -706,31 +706,6 @@ export const FALLEN: readonly Fallen[] = [
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const FALLEN_BY_ID: ReadonlyMap<string, Fallen> = new Map(FALLEN.map(f => [f.id, f]));
-
-export function getFallen(id: string): Fallen | undefined {
-    return FALLEN_BY_ID.get(id);
-}
-
-export function fallenByKind(kind: FallenKind): Fallen[] {
-    return FALLEN.filter(f => f.kind === kind);
-}
-
-export function fallenInRegion(regionId: string): Fallen[] {
-    return FALLEN.filter(f => f.place.regionId === regionId);
-}
-
-/** The ones it would be a mistake to write off, and why. */
-export function dangerousFallen(opts: { underestimatedOnly?: boolean } = {}): Fallen[] {
-    return FALLEN.filter(f =>
-        f.danger !== null && (!opts.underestimatedOnly || f.danger.underestimated));
-}
-
-/** Who is holding down a given job. Meshes this file with `OCCUPATIONS`. */
-export function fallenWorkingAs(occupationId: string): Fallen[] {
-    return FALLEN.filter(f => f.work.occupationId === occupationId);
-}
-
 /**
  * The arithmetic that keeps the maimed maimed, computed rather than written
  * down, so it can never disagree with the mortal economy.

@@ -12,13 +12,15 @@ import {
 // The residence figure the world layer prices the standing population against.
 // Imported rather than restated so a change there breaks here loudly, which is
 // the point: this file is what that number is made of.
-import { FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS } from '../../engine/world/ladder-odds.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE OPEN AXIS
 // Stated once. Every entry below concludes from it rather than re-arguing it.
 // ─────────────────────────────────────────────────────────────────────────
 
+// `thisIsAlreadyTrueInTheEngine` once said `discoverableInsights` reads only the
+// spirit root. It reads access now; the claim that still holds is the one
+// about ceilings - a manual's `cap` stops a rank, never an understanding.
 export const THE_OPEN_AXIS = {
     twoAxesAndOneIsShut:
         `Rank and dao are separate axes and only one of them is closed. Ordinal ${FALSE_IMMORTAL_ORDINAL} is final - the Lid has been opened against the name and will not open again - but understanding has no ceiling tied to the ladder, reads the spirit root rather than the rung, and does not care in the slightest what realm the person holding it stands at. A False Immortal cannot climb and can absolutely keep going deeper, and that asymmetry is the whole of their situation.`,
@@ -31,15 +33,6 @@ export const THE_OPEN_AXIS = {
     theTwoFailures:
         'So there are two ways it goes wrong and they produce the same curve at different speeds. The dao finishes, which is path two failing by succeeding. Or the legacy fails: the house falls, the students die, the carving is never read by anybody. Path one fails by being outlived, which is why protectors are so heavily over-represented among the ones the world remembers going mad - an institution is somebody else\'s and institutions fall.',
     thisIsAlreadyTrueInTheEngine:
-        // CORRECTED. This used to read "`discoverableInsights` reads the spirit
-        // root and nothing else", which was true when it was written and has not
-        // been true for some time: the function is now fully access-shaped and
-        // reads `readableManuals`, `teachers`, `artifacts`, `inheritances`,
-        // `tradition`, `locationTags` and `survived` alongside the root. The claim
-        // the file actually needs is the one about CEILINGS, and that half is
-        // intact - which matters more now that cultivation manuals carry a `cap`
-        // and rank is gated by the book in your hands. Dao is the axis that has no
-        // such ceiling, and that asymmetry is the point.
         'None of this needs building. Insight degree has no ordinal ceiling, `formInsight` never looks at a rung, and no cultivation manual\'s `cap` touches comprehension - a cap stops a RANK, never an understanding. What `discoverableInsights` does read is access: manuals in reach, teachers, artifacts, inheritances, tradition, the ground underfoot and what has been survived. So a False Immortal is limited by what they can get at, exactly as everybody else is, and not by how high they stand. The engine already treats rank and dao as independent; this file is the setting saying out loud what that independence means for the one population that has hit the end of one axis and not the other.'
 } as const;
 
@@ -202,20 +195,6 @@ export function madnessStageAt(
     if (index < 0) index = MADNESS_STAGES.length - 1;
     if (legacy !== 'holding') index = Math.min(index + 1, MADNESS_STAGES.length - 1);
     return MADNESS_STAGES[index];
-}
-
-/** Position of a stage in the trajectory. Ordered, so it compares. */
-export function stageIndex(stageId: string): number {
-    return MADNESS_STAGES.findIndex(s => s.id === stageId);
-}
-
-/**
- * Whether somebody with this remainder can ever reach this stage at all.
- */
-export function canEverReach(remainderYears: number, stageId: string): boolean {
-    const stage = MADNESS_STAGES.find(s => s.id === stageId);
-    if (!stage) return false;
-    return remainderYears > stage.fromYear;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -408,16 +387,6 @@ export const DEPARTURE_DESTINATIONS: readonly {
             'A seal that has been opened and closed again looks exactly like a seal, which is the whole difficulty. At least one site in the two provinces has almost certainly been entered this way and nobody has any means of establishing which.'
     }
 ];
-
-/**
- * Whether a residence of this many years is unusual for a False Immortal.
- */
-export function residenceIsExceptional(
-    yearsResident: number,
-    meanResidenceYears = FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS
-): boolean {
-    return yearsResident > meanResidenceYears;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // CARVING
@@ -1055,19 +1024,6 @@ export const IDENTIFYING_A_SEAT = {
         'Not a lead, and it must never be written as one. There is no right person to find and pay: the ones who know cannot be bought, cannot be leveraged, and mostly do not think of themselves as holding anything. If it produces play at all, the play is years of being trusted and very probably still not being told, and a run that ends with somebody courteously declining to say is the correct outcome rather than a failed one.'
 } as const;
 
-/**
- * The entries whose marks are still readable or still in use, which is what an
- * institution could actually notice and write a line about.
- */
-export function marksThatGenerateCandidateLines(): FalseImmortalRecord[] {
-    return FALSE_IMMORTALS.filter(f =>
-        f.carving !== null &&
-        (f.carving.yieldedTechniqueIds.length > 0 ||
-            f.carving.legible === 'fully' ||
-            f.carving.legible === 'partly')
-    );
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // THE PRESENT COUNT
 // Zero serving protectors, one open question, and the open question stays
@@ -1224,34 +1180,9 @@ export const LU_SHENG_CARVINGS: readonly DaoCarving[] = [
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const BY_ID: ReadonlyMap<string, FalseImmortalRecord> =
-    new Map(FALSE_IMMORTALS.map(f => [f.id, f]));
-
-export function getFalseImmortal(id: string): FalseImmortalRecord | undefined {
-    return BY_ID.get(id);
-}
-
 /** Everyone who held an office at a given house. Usually nobody. */
 export function protectorsOf(factionId: string): FalseImmortalRecord[] {
     return FALSE_IMMORTALS.filter(f => f.office?.factionId === factionId);
-}
-
-/** Grouped by how they left. The distribution is the design. */
-export function byEnd(end: FalseImmortalEnd): FalseImmortalRecord[] {
-    return FALSE_IMMORTALS.filter(f => f.end === end);
-}
-
-/** Which of the three each of them was spending the years on. */
-export function byPath(path: LegacyPath): FalseImmortalRecord[] {
-    return FALSE_IMMORTALS.filter(f => f.path === path);
-}
-
-/**
- * Internal against external, which the record is badly skewed on. See
- * `THE_OFFICE.whyTheRecordSaysOtherwise` before drawing anything from the ratio.
- */
-export function byRecruitment(recruitment: Recruitment): FalseImmortalRecord[] {
-    return FALSE_IMMORTALS.filter(f => f.office?.recruitment === recruitment);
 }
 
 /**
@@ -1263,28 +1194,3 @@ export function servingProtectors(): FalseImmortalRecord[] {
     return FALSE_IMMORTALS.filter(f => f.servingNow);
 }
 
-/**
- * Every face cut by anybody who has been over the Lid, in one list.
- */
-export function allDaoCarvings(): DaoCarving[] {
-    return [
-        ...FALSE_IMMORTALS.map(f => f.carving).filter((c): c is DaoCarving => c !== null),
-        ...LU_SHENG_CARVINGS
-    ];
-}
-
-/** Carvings anybody could actually go and stand in front of. */
-export function reachableCarvings(): DaoCarving[] {
-    return allDaoCarvings().filter(c => c.legible !== 'unseen');
-}
-
-/** Arts in the technique catalog that came off one of these faces. */
-export function techniquesFromCarvings(): string[] {
-    return allDaoCarvings().flatMap(c => c.yieldedTechniqueIds);
-}
-
-/** The stage a record was at when its account ends, where it can be assigned. */
-export function stageAtEndOf(id: string): MadnessStage | undefined {
-    const stageId = BY_ID.get(id)?.stageAtEndId;
-    return stageId ? MADNESS_STAGES.find(s => s.id === stageId) : undefined;
-}

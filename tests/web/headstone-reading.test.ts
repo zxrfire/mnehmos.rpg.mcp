@@ -129,6 +129,10 @@ describe('what the lightning took', () => {
         const line = headstoneStructure(stone({ mannerOfDeath: 'heavenly_tribulation' }));
         expect(line).toContain(`${GRAVE_CONTENTS_BANDS.tribulation.minItems}-${GRAVE_CONTENTS_BANDS.tribulation.maxItems}`);
         expect(line).toContain('allProven=true');
+
+        const quiet = headstoneStructure(stone({ mannerOfDeath: 'old_age' }));
+        expect(quiet).toContain(`${GRAVE_CONTENTS_BANDS.intact.minItems}-${GRAVE_CONTENTS_BANDS.intact.maxItems}`);
+        expect(quiet).toContain('allProven=false');
     });
 
     /**

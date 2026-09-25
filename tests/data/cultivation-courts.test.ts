@@ -32,7 +32,6 @@ import {
     CourtSchema,
     CourtOfficerSchema,
     getCourt,
-    getCourtOfficer,
     getApexInstitution,
     courtOfficers,
     strongestOfficerOf,
@@ -47,6 +46,9 @@ import {
     intakeRouteOf,
     contestedClaimsOf
 } from '../../src/data/cultivation/sects.js';
+
+const getCourtOfficer = (officerId: string) =>
+    COURTS.flatMap(court => court.roster).find(o => o.id === officerId);
 
 /** Anything the world can point at: a sect, a court or an apex. */
 function resolves(id: string): boolean {

@@ -34,7 +34,7 @@ import { formInsight, recordAchievement } from '../src/engine/cultivation/unders
 import type { Insight } from '../src/schema/cultivation.js';
 import { makeCultivator } from '../tests/engine/cultivation/fixtures.js';
 import { getSect } from '../src/data/cultivation/sects.js';
-import { getHoldingsOf, getImmortalItem } from '../src/data/cultivation/immortal-items.js';
+import { IMMORTAL_ITEMS, getHoldingsOf } from '../src/data/cultivation/immortal-items.js';
 import {
     requiredContributionForRank,
     requiredOrdinalForRank
@@ -382,7 +382,7 @@ async function disciple(): Promise<void> {
     // live on the item. Reading `h.name` and `h.grade` printed "undefined
     // (undefined)" for every row.
     for (const h of holdings.slice(0, 4)) {
-        const item = getImmortalItem(h.itemId);
+        const item = IMMORTAL_ITEMS.find(i => i.id === h.itemId);
         if (!item) { line(`    - ${h.itemId}, which is not in the catalog`); continue; }
         line(`    - ${item.name} (${h.byGrade.higher} higher, ${h.byGrade.middle} middle, `
             + `${h.byGrade.lower} lower)`);

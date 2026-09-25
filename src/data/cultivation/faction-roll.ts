@@ -171,11 +171,6 @@ export function rollOf(factionId: string): RollEntry[] {
     return out.sort((a, b) => b.realmOrdinal - a.realmOrdinal || a.name.localeCompare(b.name));
 }
 
-/** How many people are on it. Never a measure of the body's strength. */
-export function rollSizeOf(factionId: string): number {
-    return rollOf(factionId).length;
-}
-
 /** The whole world's roll, for tests and for anything sweeping every body. */
 export function everybodyOnARoll(): readonly RollEntry[] {
     return ALL;

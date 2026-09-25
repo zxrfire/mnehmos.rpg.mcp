@@ -20,16 +20,16 @@ import {
 } from '../../src/engine/cultivation/realms.js';
 import { FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS } from '../../src/engine/world/ladder-odds.js';
 import {
+    DESTROYED_DAO_HOUSES,
     getSect,
-    getDestroyedDaoHouse,
-    getDormantAncestors,
     SECT_ANCESTRY
 } from '../../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy.js';
 import { getTechnique } from '../../src/data/cultivation/techniques.js';
-import { getWanderer } from '../../src/data/cultivation/wanderers.js';
+import { WANDERERS } from '../../src/data/cultivation/wanderers.js';
 import { HOLLOW_COURT_ROSTER } from '../../src/data/cultivation/hollow-court-roster.js';
 import {
+    LU_SHENG_CARVINGS,
     FALSE_IMMORTALS,
     FalseImmortalRecordSchema,
     FalseImmortalEndSchema,
@@ -47,26 +47,48 @@ import {
     THE_OFFER,
     THE_CANDIDATE_REGISTER,
     IDENTIFYING_A_SEAT,
-    marksThatGenerateCandidateLines,
     THE_PRESENT_COUNT,
     CARVING,
     DEPARTURE,
     DEPARTURE_DESTINATIONS,
     RecruitmentSchema,
-    residenceIsExceptional,
-    byRecruitment,
     madnessStageAt,
-    stageIndex,
-    canEverReach,
-    getFalseImmortal,
     protectorsOf,
-    byEnd,
-    byPath,
-    servingProtectors,
-    reachableCarvings,
-    techniquesFromCarvings,
-    stageAtEndOf
+    servingProtectors
 } from '../../src/data/cultivation/false-immortals.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const getWanderer = (id: string) => WANDERERS.find(w => w.id === id);
+const getDestroyedDaoHouse = (id: string) => DESTROYED_DAO_HOUSES.find(h => h.id === id);
+const getDormantAncestors = () => Object.entries(SECT_ANCESTRY)
+    .flatMap(([sectId, r]) => r.dormant ? [{ sectId, dormant: r.dormant }] : []);
+
+// Catalog reads only this file makes. The game reads FALSE_IMMORTALS and MADNESS_STAGES itself.
+type FalseImmortalRecord = (typeof FALSE_IMMORTALS)[number];
+const getFalseImmortal = (id: string) => FALSE_IMMORTALS.find(f => f.id === id);
+const byEnd = (end: FalseImmortalRecord['end']) => FALSE_IMMORTALS.filter(f => f.end === end);
+const byPath = (path: FalseImmortalRecord['path']) => FALSE_IMMORTALS.filter(f => f.path === path);
+const byRecruitment = (recruitment: string) => FALSE_IMMORTALS.filter(f => f.office?.recruitment === recruitment);
+const allDaoCarvings = () => [
+    ...FALSE_IMMORTALS.map(f => f.carving).filter((c): c is NonNullable<typeof c> => c !== null),
+    ...LU_SHENG_CARVINGS
+];
+const reachableCarvings = () => allDaoCarvings().filter(c => c.legible !== 'unseen');
+const techniquesFromCarvings = () => allDaoCarvings().flatMap(c => c.yieldedTechniqueIds);
+const stageAtEndOf = (id: string) => {
+    const stageId = getFalseImmortal(id)?.stageAtEndId;
+    return stageId ? MADNESS_STAGES.find(s => s.id === stageId) : undefined;
+};
+const stageIndex = (stageId: string) => MADNESS_STAGES.findIndex(s => s.id === stageId);
+const canEverReach = (remainderYears: number, stageId: string) => {
+    const stage = MADNESS_STAGES.find(s => s.id === stageId);
+    return stage !== undefined && remainderYears > stage.fromYear;
+};
+const residenceIsExceptional = (yearsResident: number) => yearsResident > FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS;
+// The entries whose marks are still readable or still in use.
+const marksThatGenerateCandidateLines = () => FALSE_IMMORTALS.filter(f =>
+    f.carving !== null
+    && (f.carving.yieldedTechniqueIds.length > 0 || f.carving.legible === 'fully' || f.carving.legible === 'partly'));
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE INVARIANT UNDER EVERYTHING

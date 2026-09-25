@@ -258,4 +258,17 @@ describe('played', () => {
         expect(heard).toMatch(/on the water/i);
         expect(heard).toMatch(/carries it/i);
     }, 200_000);
+
+    /** A province beside ground nobody governs says what comes over from it. */
+    it('says what comes over the border from the ungoverned ground', async () => {
+        const { game, repos } = await makeGameInWorld({
+            seed: 'over-the-border', worldSeed: 'world-made-here'
+        });
+        const { cultivator } = await game.newRun('Factor');
+        const marches = REGIONS.find(r => r.id === 'region-quiet-marches')!;
+        repos.cultivators.update(cultivator.id, { location: marches.places[0]!.name });
+
+        const said = await game.act('what is made here');
+        expect(said.narration).toMatch(/From [^:]+: People\. The sand starts/);
+    }, 200_000);
 });

@@ -22,10 +22,10 @@ import {
     rankName
 } from '../../src/engine/cultivation/realms.js';
 import { SPIRIT_ROOTS } from '../../src/engine/cultivation/spirit-roots.js';
-import { getSect, getDestroyedDaoHouse } from '../../src/data/cultivation/sects.js';
+import { DESTROYED_DAO_HOUSES, getSect } from '../../src/data/cultivation/sects.js';
 import { getApexInstitution, getCourt } from '../../src/data/cultivation/hierarchy.js';
 import { getTechnique, GRAVE_ONLY_TECHNIQUE_IDS } from '../../src/data/cultivation/techniques.js';
-import { getImmortalItem } from '../../src/data/cultivation/immortal-items.js';
+import { IMMORTAL_ITEMS } from '../../src/data/cultivation/immortal-items.js';
 import { HELD_INSTRUMENTS, UNOWNED_ANCESTORS } from '../../src/data/cultivation/sealed-ancestors.js';
 import {
     INHERITANCE_TRIALS,
@@ -45,19 +45,25 @@ import {
     outsideViewOf,
     enterSite,
     getSite,
-    requireSite,
-    getTrial,
-    getGrave,
-    sitesWithGateKind,
-    trialsGuarding,
-    gravesHolding,
-    gravesByMannerOfDeath,
     tribulationTouched,
     contentsBandFor,
-    provenContents,
-    describeOutside,
     type Site
 } from '../../src/data/cultivation/inheritance-trials.js';
+
+const getDestroyedDaoHouse = (id: string) => DESTROYED_DAO_HOUSES.find(h => h.id === id);
+const getImmortalItem = (id: string) => IMMORTAL_ITEMS.find(i => i.id === id);
+
+// Catalog reads only this file makes. The game reads the catalog arrays itself.
+const getTrial = (id: string) => INHERITANCE_TRIALS.find(t => t.id === id);
+const getGrave = (id: string) => GRAVES.find(g => g.id === id);
+const sitesWithGateKind = (kind: string) =>
+    SITES.filter(s => s.interior.gates.some(g => g.kind === kind));
+const trialsGuarding = (techniqueId: string) =>
+    INHERITANCE_TRIALS.filter(t => t.interior.prize.techniqueIds.includes(techniqueId));
+const gravesHolding = (techniqueId: string) =>
+    GRAVES.filter(g => g.interior.contents.some(c => c.techniqueId === techniqueId));
+const gravesByMannerOfDeath = (manner: string) => GRAVES.filter(g => g.mannerOfDeath === manner);
+const provenContents = (grave: (typeof GRAVES)[number]) => grave.interior.contents.filter(c => c.proven);
 
 // ─────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -113,15 +119,13 @@ describe('the catalog', () => {
 
     it('resolves by id, by kind, and refuses an unknown one loudly', () => {
         for (const s of SITES) {
-            expect(getSite(s.id), s.id).toBeDefined();
-            expect(requireSite(s.id).id).toBe(s.id);
+            expect(getSite(s.id)?.id, s.id).toBe(s.id);
         }
         expect(getTrial(INHERITANCE_TRIALS[0]!.id)).toBeDefined();
         expect(getTrial(GRAVES[0]!.id), 'a grave is not a trial').toBeUndefined();
         expect(getGrave(GRAVES[0]!.id)).toBeDefined();
         expect(getGrave(INHERITANCE_TRIALS[0]!.id), 'a trial is not a grave').toBeUndefined();
         expect(getSite('trial-does-not-exist')).toBeUndefined();
-        expect(() => requireSite('trial-does-not-exist')).toThrow(/Unknown inheritance site/);
     });
 });
 
@@ -199,12 +203,13 @@ describe('the interior is not reachable from outside', () => {
         }
     });
 
-    it('describes the outside with the manner of death first for a grave', () => {
-        const line = describeOutside(outsideViewOf('grave-yun-baiheng')!);
-        expect(line).toMatch(/failed crossing/);
-        expect(line).toMatch(/90 years ago/);
+    it('carries the manner of death on the outside of a grave and not of a trial', () => {
+        const grave = outsideViewOf('grave-yun-baiheng')!;
+        expect(grave.kind).toBe('grave');
+        expect(grave.kind === 'grave' && grave.mannerOfDeath).toBe('failed_crossing');
+        expect(grave.kind === 'grave' && grave.yearsDead).toBe(90);
         // And a trial has no manner of death to lead with.
-        expect(describeOutside(outsideViewOf('trial-the-eighth-stone')!)).not.toMatch(/Died:/);
+        expect(outsideViewOf('trial-the-eighth-stone')).not.toHaveProperty('mannerOfDeath');
     });
 });
 

@@ -34,7 +34,7 @@ import { describe, expect, it } from 'vitest';
 import { SECTS } from '../../src/data/cultivation/index';
 import { parseIntent } from '../../src/web/actions';
 import { makeObject } from '../../src/engine/world/possessions';
-import { theThingsAHouseIsSittingOn } from '../../src/web/what-a-house-has-to-its-name';
+import { theThingsAHouseIsSittingOn, whatAHouseHasToItsName } from '../../src/web/what-a-house-has-to-its-name';
 import { makeGameInWorld } from './harness';
 
 function said(result: unknown): string {
@@ -137,6 +137,27 @@ describe('what is counted as theirs', () => {
      * and the day that stops being true for a settlement it must stop being
      * true here.
      */
+    /**
+     * The ground is public, and the record and the ground can disagree. The
+     * Pavilion holds the Gorge Head outright while the Third Sill's book still
+     * carries it as a tenant; the Mist Court holds its own line inside it.
+     */
+    it('says what ground a house holds, on the record and as it stands', () => {
+        const read = (factionId: string, houseName: string) => whatAHouseHasToItsName({
+            world: null, house: null, houseName, factionId, readerOrdinal: 0, today: 0
+        }).lines.join(' ');
+
+        const pavilion = read('sect-azure-cloud-pavilion', 'The Azure Cloud Pavilion');
+        expect(pavilion).toMatch(/holds The Gorge Head/);
+        expect(pavilion).toMatch(/On the record: Still carried on the Third Sill's book/);
+        expect(pavilion).toMatch(/On the ground: Held outright and openly/);
+
+        const mist = read('sect-azure-mist-court', 'The Azure Mist Court');
+        expect(mist).toMatch(/sits in The Gorge Head/);
+        expect(mist).toMatch(/On the record: The lower gorge and the mist terraces/);
+        expect(mist).not.toMatch(/On the ground/);
+    });
+
     it('counts only what the house is actually sitting on', () => {
         const row = (id: string, name: string, ownerId: string, possessorId: string) =>
             makeObject({

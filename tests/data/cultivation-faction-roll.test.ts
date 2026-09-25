@@ -11,21 +11,24 @@ import { describe, it, expect } from 'vitest';
 
 import {
     rollOf,
-    rollSizeOf,
     everybodyOnARoll
 } from '../../src/data/cultivation/faction-roll.js';
 import {
     HOLLOW_COURT_ROSTER,
     HollowCourtMemberSchema,
     HOW_THE_COURT_IS_SEEN,
-    hollowCourtTier,
-    workingNamesInCirculation,
     getHollowCourtMember
 } from '../../src/data/cultivation/hollow-court-roster.js';
 import { MEMBERS } from '../../src/data/cultivation/members.js';
 import { SECTS, requireSect, WITHDRAWN_POWERS } from '../../src/data/cultivation/sects.js';
 import { COURTS, idsForFaction } from '../../src/data/cultivation/governance-and-water-rights.js';
 import { REALM_TIERS, lifespanForOrdinal } from '../../src/engine/cultivation/realms.js';
+
+const rollSizeOf = (factionId: string) => rollOf(factionId).length;
+const hollowCourtTier = (tier: string) => HOLLOW_COURT_ROSTER.filter(m => m.tier === tier);
+// The aliases the province hears, without the people behind them.
+const workingNamesInCirculation = () =>
+    HOLLOW_COURT_ROSTER.map(m => m.worksOutsideAs).filter((n): n is string => n !== null);
 
 const HOLLOW = 'sect-hollow-court';
 

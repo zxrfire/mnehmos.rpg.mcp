@@ -943,16 +943,9 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
 // ACCESSORS
 // ─────────────────────────────────────────────────────────────────────────
 
-const EVENTS_BY_ID = new Map(SHARED_EVENTS.map(e => [e.id, e]));
-
 /** One faction's history, or undefined where none has been written. */
 export function historyOf(factionId: string): FactionHistory | undefined {
     return FACTION_HISTORY[factionId];
-}
-
-/** A shared event by id. */
-export function sharedEvent(id: string): SharedEvent | undefined {
-    return EVENTS_BY_ID.get(id);
 }
 
 /**

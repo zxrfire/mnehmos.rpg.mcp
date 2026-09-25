@@ -24,8 +24,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
     SENDING_REASONS,
-    SENDING_REASONS_BY_NEED,
-    CAPPED_SENDINGS,
     TIER_NAMES,
     ReasonNeedSchema,
     SendingReasonSchema,
@@ -34,6 +32,12 @@ import {
 import { BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts.js';
 import { REGARD_BANDS } from '../../src/schema/cultivation.js';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
+
+// Groupings only this file reads. The engine walks SENDING_REASONS itself.
+const SENDING_REASONS_BY_NEED = new Map(ReasonNeedSchema.options.map(need =>
+    [need, SENDING_REASONS.filter(r => r.needs === need)] as const));
+// Every reason with a ceiling above which nobody is sent.
+const CAPPED_SENDINGS = SENDING_REASONS.filter(r => r.ceilingOrdinal !== null);
 
 describe('the catalog is well formed', () => {
     it('every row satisfies the schema', () => {

@@ -781,87 +781,8 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const ITEM_BY_ID: ReadonlyMap<string, ImmortalItem> = new Map(IMMORTAL_ITEMS.map(i => [i.id, i]));
-
-const RECEIPTS_BY_FACTION: ReadonlyMap<string, ReceiptHistory> =
-    new Map(RECEIPT_HISTORIES.map(r => [r.factionId, r]));
-
-/** What this faction has ever received. Undefined means never anything. */
-export function receiptsFor(factionId: string): ReceiptHistory | undefined {
-    return RECEIPTS_BY_FACTION.get(factionId);
-}
-
-/** What the receipt histories account for as spent, by grade, for one item. */
-export function spentAcrossHistories(itemId: string): GradeCounts {
-    return RECEIPT_HISTORIES.filter(r => r.itemId === itemId).reduce<GradeCounts>((acc, r) => ({
-        higher: acc.higher + (r.everReceived.higher - r.stillHeld.higher),
-        middle: acc.middle + (r.everReceived.middle - r.stillHeld.middle),
-        lower: acc.lower + (r.everReceived.lower - r.stillHeld.lower)
-    }), { higher: 0, middle: 0, lower: 0 });
-}
-
-export function getImmortalItem(id: string): ImmortalItem | undefined {
-    return ITEM_BY_ID.get(id);
-}
-
 /** Everything a faction holds, which for almost every faction is nothing. */
 export function getHoldingsOf(factionId: string): Holding[] {
     return IMMORTAL_HOLDINGS.filter(h => h.factionId === factionId);
-}
-
-export function getHoldersOf(itemId: string): Holding[] {
-    return IMMORTAL_HOLDINGS.filter(h => h.itemId === itemId);
-}
-
-/** The count in the world right now, summed from the holdings. */
-export function worldCountOf(itemId: string): number {
-    return getHoldersOf(itemId).reduce((sum, h) => sum + h.count, 0);
-}
-
-/** The same, broken out by grade, which is the comparison that matters. */
-export function worldCountByGrade(itemId: string): GradeCounts {
-    return getHoldersOf(itemId).reduce<GradeCounts>((acc, h) => ({
-        higher: acc.higher + h.byGrade.higher,
-        middle: acc.middle + h.byGrade.middle,
-        lower: acc.lower + h.byGrade.lower
-    }), { higher: 0, middle: 0, lower: 0 });
-}
-
-/** What a faction holds in total, across both medicines. */
-export function totalHeldBy(factionId: string): GradeCounts & { total: number } {
-    const counts = getHoldingsOf(factionId).reduce<GradeCounts>((acc, h) => ({
-        higher: acc.higher + h.byGrade.higher,
-        middle: acc.middle + h.byGrade.middle,
-        lower: acc.lower + h.byGrade.lower
-    }), { higher: 0, middle: 0, lower: 0 });
-    return { ...counts, total: counts.higher + counts.middle + counts.lower };
-}
-
-/** The best grade a holder can reach for, which is not the same as depth. */
-export function gradeCeilingOf(factionId: string): 'higher' | 'middle' | 'lower' | 'none' {
-    const held = totalHeldBy(factionId);
-    if (held.higher > 0) return 'higher';
-    if (held.middle > 0) return 'middle';
-    if (held.lower > 0) return 'lower';
-    return 'none';
-}
-
-/**
- * Holders a petitioner could in principle persuade, as opposed to holders
- * where there is nobody with the authority to be persuaded.
- */
-export function persuadableHolders(): Holding[] {
-    return IMMORTAL_HOLDINGS.filter(h => h.releaseMode === 'written_instruction');
-}
-
-/** Every recorded instance of a good case being refused. */
-export function recordedRefusals(): { holding: Holding; refusal: RecordedRefusal }[] {
-    return IMMORTAL_HOLDINGS
-        .filter(h => h.recordedRefusal !== null)
-        .map(h => ({ holding: h, refusal: h.recordedRefusal as RecordedRefusal }));
-}
-
-export function getEngineGap(effect: ImmortalItemEffect): typeof ENGINE_GAPS[number] | undefined {
-    return ENGINE_GAPS.find(g => g.effect === effect);
 }
 

@@ -27,7 +27,6 @@ import { describe, it, expect } from 'vitest';
 import {
     PLACES_THAT_TEACH_A_DAO,
     PlaceThatTeachesADaoSchema,
-    daoGroundsHeldBy,
     daoGroundsIn
 } from '../../../src/data/cultivation/places-that-teach-a-dao.js';
 import {
@@ -65,6 +64,8 @@ import {
     roadsWalkedBy
 } from '../../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { ARTIFACTS } from '../../../src/data/cultivation/artifacts.js';
+
+const daoGroundsHeldBy = (factionId: string) => PLACES_THAT_TEACH_A_DAO.filter(p => p.heldBy === factionId);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE CATALOG

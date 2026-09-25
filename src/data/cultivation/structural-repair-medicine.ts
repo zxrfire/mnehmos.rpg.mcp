@@ -433,13 +433,3 @@ export function getStructuralRepairMedicine(
     if (!id) return null;
     return BY_ID.get(id) ?? null;
 }
-
-/** Every faction that starts the world holding any of one medicine. */
-export function openingHoldersOf(medicineId: string): RepairHolding[] {
-    return STRUCTURAL_REPAIR_HOLDINGS.filter(h => h.medicineId === medicineId);
-}
-
-/** The medicines that cannot be made on this side of the Lid. */
-export function sentDownMedicines(): StructuralRepairMedicine[] {
-    return STRUCTURAL_REPAIR_MEDICINES.filter(m => !m.madeBelowTheLid);
-}

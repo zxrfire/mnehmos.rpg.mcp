@@ -34,10 +34,11 @@ import {
     NAMED_FIGURE_ENGINE_GAP,
     getNamedFigure,
     figuresFor,
-    figuresOfKind,
     nameIsUsable,
     whoAnswersFor
 } from '../../src/data/cultivation/named-figures.js';
+
+const figuresOfKind = (kind: (typeof NAMED_FIGURES)[number]['kind']) => NAMED_FIGURES.filter(f => f.kind === kind);
 
 describe('the named figures', () => {
     it('parse, and are uniquely identified', () => {

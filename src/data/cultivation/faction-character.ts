@@ -979,17 +979,6 @@ export interface HighRealmProvenance {
     settledBelief: string;
 }
 
-/**
- * Factions above the threshold whose records are being revised elsewhere and
- * are deliberately not written here. Kept explicit so the gap is visible
- * rather than silent, and so the catalog test can hold the line for
- * everything else.
- */
-export const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
-    'sect-hollow-court',
-    'sect-deeproot-court'
-]);
-
 export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
     'sect-earth-vein-tower': {
         highestOrdinal: 43,
@@ -1112,24 +1101,6 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'Every competent party in either province takes it as settled that the top of the ladder is closed in this age. The Severed decline to correct the belief, on the reasoning that a road nobody believes in is a road nobody competes for, and their own Nameless have stopped saying either way.'
     }
 };
-
-export function getHighRealmProvenance(factionId: string): HighRealmProvenance | undefined {
-    return HIGH_REALM_PROVENANCE[factionId];
-}
-
-/**
- * Factions whose strength is a fact about a previous age rather than this one.
- * Takes its threshold as an argument rather than restating an engine number:
- * pass the engine constant here once one exists.
- */
-export function survivorsOfARicherAge(aboveOrdinal: number = HIGH_REALM_THRESHOLD): {
-    factionId: string;
-    provenance: HighRealmProvenance;
-}[] {
-    return Object.entries(HIGH_REALM_PROVENANCE)
-        .filter(([, p]) => p.highestOrdinal > aboveOrdinal)
-        .map(([factionId, provenance]) => ({ factionId, provenance }));
-}
 
 // DORMANT ARTS - present, complete, proven, and unperformed
 
@@ -1278,34 +1249,10 @@ export const DORMANT_ARTS: readonly DormantArt[] = [
     }
 ];
 
-const DORMANT_BY_FACTION: ReadonlyMap<string, readonly DormantArt[]> = (() => {
-    const map = new Map<string, DormantArt[]>();
-    for (const row of DORMANT_ARTS) {
-        const bucket = map.get(row.factionId);
-        if (bucket) bucket.push(row);
-        else map.set(row.factionId, [row]);
-    }
-    return map;
-})();
-
-/** What this institution holds, complete and proven, that nobody there can perform. */
-export function dormantArtsOf(factionId: string): readonly DormantArt[] {
-    return DORMANT_BY_FACTION.get(factionId) ?? [];
-}
 
 /** Everywhere a given art is sitting on a shelf nobody in the building can open. */
 export function whoHoldsDormant(techniqueId: string): readonly DormantArt[] {
     return DORMANT_ARTS.filter(d => d.techniqueId === techniqueId);
-}
-
-/**
- * Institutions worth more than their roster, because the archive outlived the
- * capacity. The single most useful read on this table: it is the list of houses
- * a player should join for what is on the shelf rather than for who is standing
- * in the yard.
- */
-export function factionsHoldingDormantArts(): string[] {
-    return [...DORMANT_BY_FACTION.keys()];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1349,16 +1296,3 @@ export function inheritanceGap(factionId: string, powerOrdinal: number): number 
     return tier ? powerOrdinal - tier.reliableOrdinal : 0;
 }
 
-/**
- * Factions that have lost ground - `peak` above `reliable` - worst first.
- */
-export function decliningFactions(): { factionId: string; lost: number; yearsSinceLastPeak: number }[] {
-    return Object.entries(FACTION_CHARACTER)
-        .map(([factionId, c]) => ({
-            factionId,
-            lost: c.production.peakOrdinal - c.production.reliableOrdinal,
-            yearsSinceLastPeak: c.production.yearsSinceLastPeak
-        }))
-        .filter(row => row.lost > 0)
-        .sort((a, b) => b.lost - a.lost);
-}

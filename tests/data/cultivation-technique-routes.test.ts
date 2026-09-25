@@ -34,14 +34,20 @@ import {
     RUIN_ONLY_TECHNIQUE_IDS,
     GRAVE_ONLY_TECHNIQUE_IDS,
     getTechnique,
-    isWideSpan,
-    getTechniquesWithNoSurvivingCopy
+    isWideSpan
 } from '../../src/data/cultivation/techniques.js';
 import { SECTS, SECT_ANCESTRY } from '../../src/data/cultivation/sects.js';
 import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { idsForFaction } from '../../src/data/cultivation/governance-and-water-rights.js';
 import { INHERITANCE_TRIALS, GRAVES } from '../../src/data/cultivation/inheritance-trials.js';
-import { allDaoCarvings } from '../../src/data/cultivation/false-immortals.js';
+import { LU_SHENG_CARVINGS, FALSE_IMMORTALS } from '../../src/data/cultivation/false-immortals.js';
+
+const getTechniquesWithNoSurvivingCopy = () => TECHNIQUES.filter(t => !t.survivingCopy);
+
+const allDaoCarvings = () => [
+    ...FALSE_IMMORTALS.map(f => f.carving).filter((c): c is NonNullable<typeof c> => c !== null),
+    ...LU_SHENG_CARVINGS
+];
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE ROUTES

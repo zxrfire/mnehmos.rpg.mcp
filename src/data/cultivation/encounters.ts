@@ -6,7 +6,7 @@ import {
     RegardProfileSchema,
     SimEventKindSchema,
 } from '../../schema/cultivation.js';
-import { MAX_ORDINAL, TOTAL_RANKS } from '../../engine/cultivation/realms.js';
+import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import {
     regardFor,
     type Regard,
@@ -1772,91 +1772,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
 
 const ENCOUNTER_BY_ID: ReadonlyMap<string, EncounterEntry> = new Map(ENCOUNTERS.map(e => [e.id, e]));
 
-
-/**
- * Eligible entries per ordinal, precomputed for every rank. The time-skip
- * simulation may draw thousands of times in one call, so the per-draw cost is
- * a weighted walk over an already-filtered list rather than a scan of the
- * catalog.
- */
-const ENCOUNTERS_BY_ORDINAL: readonly (readonly EncounterEntry[])[] = (() => {
-    const buckets: EncounterEntry[][] = Array.from({ length: TOTAL_RANKS }, () => []);
-    for (const e of ENCOUNTERS) {
-        for (let o = e.minOrdinal; o <= e.maxOrdinal; o++) buckets[o].push(e);
-    }
-    return buckets;
-})();
-
-const TOTAL_WEIGHT_BY_ORDINAL: readonly number[] =
-    ENCOUNTERS_BY_ORDINAL.map(bucket => bucket.reduce((sum, e) => sum + e.weight, 0));
-
 export function getEncounter(id: string): EncounterEntry | undefined {
     return ENCOUNTER_BY_ID.get(id);
-}
-
-export function requireEncounter(id: string): EncounterEntry {
-    const e = ENCOUNTER_BY_ID.get(id);
-    if (!e) throw new Error(`Unknown encounter: ${id}`);
-    return e;
-}
-
-/** Everything that may fire at this ordinal, unfiltered. */
-export function getEncountersForOrdinal(ordinal: number): readonly EncounterEntry[] {
-    return ENCOUNTERS_BY_ORDINAL[clampOrdinal(ordinal)];
-}
-
-export interface EncounterQuery {
-    kind?: EncounterKind;
-    /** Restrict to entries that stop the skip, or to entries that do not. */
-    interrupts?: boolean;
-    /** Restrict to entries whose threat is at most this many ranks above. */
-    maxThreatGap?: number;
-}
-
-/**
- * Weighted draw from a uniform [0,1) sample. The caller owns seeding, matching
- * `rollSpiritRoot` and `rollHerb`, so a run replays identically from its seed.
- * Returns undefined only when a filter excludes everything.
- */
-export function rollEncounter(
-    ordinal: number,
-    sample: number,
-    opts: EncounterQuery = {}
-): EncounterEntry | undefined {
-    const o = clampOrdinal(ordinal);
-    const unfiltered = ENCOUNTERS_BY_ORDINAL[o];
-    const filtered = hasFilters(opts)
-        ? unfiltered.filter(e => matches(e, o, opts))
-        : unfiltered;
-    if (filtered.length === 0) return undefined;
-
-    const total = hasFilters(opts)
-        ? filtered.reduce((sum, e) => sum + e.weight, 0)
-        : TOTAL_WEIGHT_BY_ORDINAL[o];
-    let cursor = Math.max(0, Math.min(0.999999999, sample)) * total;
-    for (const e of filtered) {
-        cursor -= e.weight;
-        if (cursor < 0) return e;
-    }
-    return filtered[filtered.length - 1];
-}
-
-function hasFilters(opts: EncounterQuery): boolean {
-    return opts.kind !== undefined || opts.interrupts !== undefined || opts.maxThreatGap !== undefined;
-}
-
-function matches(e: EncounterEntry, ordinal: number, opts: EncounterQuery): boolean {
-    if (opts.kind && e.kind !== opts.kind) return false;
-    if (opts.interrupts !== undefined && e.interrupts !== opts.interrupts) return false;
-    if (opts.maxThreatGap !== undefined && e.threatOrdinal !== null) {
-        if (e.threatOrdinal - ordinal > opts.maxThreatGap) return false;
-    }
-    return true;
-}
-
-function clampOrdinal(ordinal: number): number {
-    if (!Number.isFinite(ordinal)) return 0;
-    return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
 }
 
 // WHAT AN ENCOUNTER COSTS
@@ -1899,27 +1816,5 @@ export function fillSummary(entry: EncounterEntry, values: Record<string, string
         const value = values[token];
         return value === undefined ? whole : String(value);
     });
-}
-
-/** Tokens the engine still has to supply for this entry. */
-export function missingTokens(entry: EncounterEntry, values: Record<string, unknown>): string[] {
-    return entry.tokens.filter(t => values[t] === undefined);
-}
-
-/**
- * Share of the eligible draw weight at this ordinal that is ruins or graves.
- * Exploration is the core loop for a cultivator without talent, so this stays
- * substantial across the whole ladder rather than tapering into a late-game
- * garnish. Returned as a fraction of 1.
- */
-export function ruinWeightShare(ordinal: number): number {
-    const o = clampOrdinal(ordinal);
-    const pool = ENCOUNTERS_BY_ORDINAL[o];
-    const total = TOTAL_WEIGHT_BY_ORDINAL[o];
-    if (total === 0) return 0;
-    const dig = pool
-        .filter(e => e.kind === 'ruin' || e.kind === 'grave')
-        .reduce((sum, e) => sum + e.weight, 0);
-    return dig / total;
 }
 

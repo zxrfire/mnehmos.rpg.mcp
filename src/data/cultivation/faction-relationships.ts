@@ -910,15 +910,6 @@ export function relationshipsOf(factionId: string, alsoKnownAsIds: readonly stri
         || x.otherName.localeCompare(y.otherName));
 }
 
-/**
- * The one tie between two named bodies, from the first one's side. Usually none.
- */
-export function relationshipBetween(factionId: string, otherId: string): ResolvedRelationship | undefined {
-    const theirs = new Set(idsForFaction(otherId));
-    return relationshipsOf(factionId, idsForFaction(factionId))
-        .find(r => idsForFaction(r.otherId).some(id => theirs.has(id)));
-}
-
 /** Every authored and derived pair in the world. For the coherence tests. */
 export function allFactionRelationshipPairs(): readonly {
     id: string;

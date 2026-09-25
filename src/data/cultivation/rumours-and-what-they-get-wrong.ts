@@ -995,36 +995,6 @@ export const RUMOURS: readonly Rumour[] = [
 // correct for no measurable gain.
 // ─────────────────────────────────────────────────────────────────────────
 
-const RUMOUR_BY_ID: ReadonlyMap<string, Rumour> = new Map(RUMOURS.map(r => [r.id, r]));
-
-export function getRumour(id: string): Rumour | undefined {
-    return RUMOUR_BY_ID.get(id);
-}
-
-/**
- * Every saying attached to one catalog entry.
- *
- * This is the join the discovery channels want: `lore.ts` has already decided
- * that a speaker could say a name, and this says what they would say about it.
- * A name with no rumour attached is said flatly, which is the default and
- * should stay the common case.
- */
-export function rumoursAbout(entityId: string): Rumour[] {
-    return RUMOURS.filter(r => r.aboutId === entityId);
-}
-
-/**
- * Sayings about nothing nameable.
- *
- * The largest single group, and the one a speaker reaches for when they have
- * no name to hand: what everybody thinks cultivators are, what the ground
- * does, what the old people could do. These are the rows that can be said to
- * somebody who knows nothing whatever, which is where every run starts.
- */
-export function unattachedRumours(): Rumour[] {
-    return RUMOURS.filter(r => r.aboutId === null);
-}
-
 /**
  * What this speaker could say, gated exactly as `lore.ts` gates a name.
  *

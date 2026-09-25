@@ -41,6 +41,7 @@ import {
     whatAHouseIsMadeOf
 } from '../engine/world/what-a-house-is-made-of-and-what-brings-it-down.js';
 import { HALLS_DOWN } from '../engine/world/what-a-year-of-war-does-to-a-compound.js';
+import { territoryOfSect } from '../data/cultivation/sects.js';
 import type { FactionRecord, WorldState } from '../engine/world/world-state.js';
 
 /** One thing a house is sitting on. */
@@ -141,6 +142,17 @@ export function whatAHouseHasToItsName(input: {
             ? `${input.houseName} sits behind walls and nothing else. There is no array over `
               + 'that ground.'
             : `${seat.formationName} stands over the whole of the ${input.houseName} compound.`);
+
+    // The ground it holds, on the record and as it stands, where a prefecture
+    // names it. A sub-holder's record is its own line in the grant.
+    const ground = territoryOfSect(input.factionId);
+    if (ground) {
+        lines.push(ground.isPrincipalHolder
+            ? `${input.houseName} holds ${ground.prefecture.name} in ${ground.province.name}. `
+              + `On the record: ${ground.onPaper} On the ground: ${ground.onTheGround}`
+            : `${input.houseName} sits in ${ground.prefecture.name} in ${ground.province.name} `
+              + `and holds a part of it. On the record: ${ground.onPaper}`);
+    }
 
     if (hallsDown > 0) {
         lines.push(

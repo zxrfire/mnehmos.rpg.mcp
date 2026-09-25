@@ -23,9 +23,8 @@ import {
     DISASTER_RESPONSES,
     UNTOUCHED_BY_DISASTER_ORDINAL,
     couldDieToADisaster,
-    exposureOf,
     factionsADisasterCouldDestroy,
-    WHAT_FALLS_ON_THOSE_BELOW,
+    WHAT_FALLS_ON_THOSE_BELOW
 } from '../../src/data/cultivation/catastrophe.js';
 import {
     DEATHS_AVAILABLE,
@@ -41,7 +40,7 @@ import {
     THE_HOLLOW_COURT_COULD,
     THE_REVOLT
 } from '../../src/data/cultivation/standoff.js';
-import { ARTIFACTS, artifactPowerOf, artifactsOwnedBy } from '../../src/data/cultivation/artifacts.js';
+import { ARTIFACTS, artifactsOwnedBy } from '../../src/data/cultivation/artifacts.js';
 import { MEMBERS } from '../../src/data/cultivation/members.js';
 import { APEX_INSTITUTIONS, COURTS } from '../../src/data/cultivation/hierarchy.js';
 import { SECT_ANCESTRY, sectThreat, sectsWithASealedCeiling } from '../../src/data/cultivation/sects.js';
@@ -53,6 +52,11 @@ import {
     TRUE_IMMORTAL_ORDINAL,
     isExpelledFromBelow
 } from '../../src/engine/cultivation/realms.js';
+
+const exposureOf = (tier: (typeof CATASTROPHE_EXPOSURE)[number]['tier']) =>
+    CATASTROPHE_EXPOSURE.find(e => e.tier === tier)!;
+const artifactPowerOf = (ownerId: string) =>
+    artifactsOwnedBy(ownerId).map(a => a.power ?? 0).sort((a, b) => b - a);
 
 describe('what a catastrophe can end', () => {
     it('covers all three tiers and escalates the right way', () => {

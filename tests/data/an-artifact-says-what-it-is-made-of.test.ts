@@ -46,7 +46,6 @@ import {
     WHAT_AN_ARTIFACT_IS_MADE_OF,
     fillsTheSlot,
     isAWorkedGrade,
-    theBenchIsReady,
     whatItIsMadeOf,
     whatTheBenchIsShortOf,
     whatWouldFill,
@@ -60,6 +59,9 @@ import {
     refiningOrdinalFor
 } from '../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { TechniqueGradeSchema } from '../../src/schema/cultivation.js';
+
+const theBenchIsReady = (grade: Parameters<typeof whatTheBenchIsShortOf>[0], materialsToHand: readonly string[]) =>
+    whatTheBenchIsShortOf(grade, materialsToHand).length === 0;
 
 const WORKED = Object.keys(WHAT_AN_ARTIFACT_IS_MADE_OF) as (keyof typeof WHAT_AN_ARTIFACT_IS_MADE_OF)[];
 

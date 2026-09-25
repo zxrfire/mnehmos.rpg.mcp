@@ -22,7 +22,9 @@ import {
     type Find,
     type Seeker
 } from '../../../src/engine/encounters/index.js';
-import { requireEncounter } from '../../../src/data/cultivation/encounters.js';
+import { getEncounter } from '../../../src/data/cultivation/encounters.js';
+
+const requireEncounter = (id: string) => getEncounter(id)!;
 
 const fireRoot: Seeker = { ordinal: 12, elements: ['fire'], rootGrade: 'single', insights: { sword: 2 } };
 

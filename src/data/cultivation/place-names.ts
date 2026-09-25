@@ -171,11 +171,6 @@ export const PLACE = {
 /** The name of any place the map has a row for. */
 export type PlaceName = typeof PLACE[keyof typeof PLACE];
 
-/** Every place name, in catalog order. */
-export const PLACE_NAMES: readonly PlaceName[] = Object.freeze(
-    Object.values(PLACE) as PlaceName[]
-);
-
 /**
  * The provinces, and the wedge between them. Kept apart from {@link PLACE}
  * because `Green Water City` the town and `The Jade Gorge` the province are two
@@ -194,8 +189,3 @@ export const REGION_NAME = {
 
 /** The name of any province, or of the ungoverned interior. */
 export type RegionName = typeof REGION_NAME[keyof typeof REGION_NAME];
-
-/** Every province name, in catalog order. */
-export const REGION_NAMES: readonly RegionName[] = Object.freeze(
-    Object.values(REGION_NAME) as RegionName[]
-);

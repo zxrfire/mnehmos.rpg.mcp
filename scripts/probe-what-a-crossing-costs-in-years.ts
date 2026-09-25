@@ -19,7 +19,8 @@ import { computeCultivationRate, DAYS_PER_YEAR } from '../src/engine/cultivation
 import { progressRequiredForOrdinal, lifespanForOrdinal } from '../src/engine/cultivation/realms.js';
 import { STONES_PER_YEAR_OF_SECLUSION } from '../src/engine/cultivation/origin.js';
 import { earningsPerYear } from '../src/engine/world/seeding.js';
-import { PILLS, isAdvancement } from '../src/data/cultivation/pills.js';
+import { PILLS } from '../src/data/cultivation/pills.js';
+import { isAdvancement } from '../tests/support/the-bands-a-catalog-row-sits-in.js';
 
 const n = (v: number, d = 0) => v.toLocaleString('en-US', { maximumFractionDigits: d });
 

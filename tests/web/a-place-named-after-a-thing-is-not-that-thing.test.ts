@@ -52,7 +52,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
-import { PLACE_NAMES } from '../../src/data/cultivation/place-names';
+import { PLACE } from '../../src/data/cultivation/place-names';
+
+const PLACE_NAMES: readonly string[] = Object.values(PLACE);
 
 describe('a town whose name carries a site noun', () => {
     // The retired name, kept on purpose. See the header: the live catalog has

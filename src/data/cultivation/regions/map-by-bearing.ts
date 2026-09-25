@@ -8,14 +8,14 @@
  */
 
 import type { Bearing, Region, RegionBranch } from './region-schema.js';
-import { REGIONS, getRegionForFaction } from './the-map.js';
+import { REGIONS } from './the-map.js';
 import { ADJACENT_REGION_ID, HOME_REGION_ID } from './region-ids.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE MAP BY BEARING
 //
 // Reading the world as five columns rather than as one list. The arrangement
-// these produce is the answer to a specific complaint - that the lower world
+// is the answer to a specific complaint - that the lower world
 // map showed a heap of houses with no compass on it - and the numbers are
 // worth having in front of you when you edit a seating list, because the
 // shape of the world is legible in them and is not otherwise legible
@@ -36,31 +36,6 @@ import { ADJACENT_REGION_ID, HOME_REGION_ID } from './region-ids.js';
 // The apexes are deliberately NOT one per bearing and `apexSeats` says so
 // plainly rather than leaving a reader to infer a symmetry that is not there.
 // ─────────────────────────────────────────────────────────────────────────
-
-export function regionsByBearing(): Record<Bearing, Region[]> {
-    const out = {
-        centre: [], north: [], east: [], south: [], west: [], interior: []
-    } as Record<Bearing, Region[]>;
-    for (const r of REGIONS) out[r.bearing].push(r);
-    return out;
-}
-
-export function regionAtBearing(bearing: Bearing): Region | undefined {
-    return REGIONS.find(r => r.bearing === bearing);
-}
-
-/** Every seated house, grouped by where on the map it sits. */
-export function factionsByBearing(): Record<Bearing, string[]> {
-    const out = {
-        centre: [], north: [], east: [], south: [], west: [], interior: []
-    } as Record<Bearing, string[]>;
-    for (const r of REGIONS) out[r.bearing].push(...r.factionIds);
-    return out;
-}
-
-export function bearingOfFaction(factionId: string): Bearing | undefined {
-    return getRegionForFaction(factionId)?.bearing;
-}
 
 /**
  * Where the three apexes actually stand, and the honest statement that they
@@ -125,35 +100,3 @@ export function getBranchesOf(factionId: string): { region: Region; branch: Regi
     return out;
 }
 
-/**
- * The provinces' contrast, as a table a tool can render directly.
- *
- * One row per aspect, one column per region, in catalog order. It was two
- * columns while there were two provinces; the shape had to change because a
- * `home`/`adjacent` pair silently stops being the world the moment there is a
- * third province, and a table that quietly omits three fifths of the map is
- * worse than no table.
- */
-export function regionContrast(): {
-    aspect: string;
-    byRegion: Record<string, string | number>;
-}[] {
-    const row = (
-        aspect: string,
-        pick: (r: Region) => string | number
-    ): { aspect: string; byRegion: Record<string, string | number> } => ({
-        aspect,
-        byRegion: Object.fromEntries(REGIONS.map(r => [r.id, pick(r)]))
-    });
-    return [
-        row('factions seated', r => r.factionIds.length),
-        row('tradition', r => r.traditionId),
-        row('politics', r => r.politics),
-        row('local ceiling (ordinal)', r => r.localCeilingOrdinal),
-        row('ambient rate multiplier', r => r.cultivation.ambientRateMultiplier),
-        row('disciplines that do not work', r => r.cultivation.missingDisciplines.length),
-        row('price multiplier', r => r.priceMultiplier),
-        row('places written', r => r.places.length),
-        row('reachable provinces', r => new Set(r.connections.map(c => c.otherRegionId)).size)
-    ];
-}

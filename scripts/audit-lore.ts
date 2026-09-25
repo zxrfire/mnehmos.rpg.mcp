@@ -21,7 +21,7 @@
  */
 
 import { SECTS, SECT_ANCESTRY, sectThreat, intakeRouteOf } from '../src/data/cultivation/sects.js';
-import { allDaoCarvings } from '../src/data/cultivation/false-immortals.js';
+import { FALSE_IMMORTALS, LU_SHENG_CARVINGS } from '../src/data/cultivation/false-immortals.js';
 import {
     APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, idsForFaction
 } from '../src/data/cultivation/hierarchy.js';
@@ -183,7 +183,7 @@ scan(MEMBERS);
 // that are NOT routes. `DESTROYED_DAO_HOUSES.fragmentTechniqueIds` says which
 // dead house an art belonged to, which is provenance and not a door, and a
 // blanket scan of it would clear three arts nothing can currently hand over.
-for (const carving of allDaoCarvings()) {
+for (const carving of [...FALSE_IMMORTALS.flatMap(f => f.carving ? [f.carving] : []), ...LU_SHENG_CARVINGS]) {
     for (const id of carving.yieldedTechniqueIds) otherRoutes.add(id);
 }
 for (const records of Object.values(SECT_ANCESTRY)) {

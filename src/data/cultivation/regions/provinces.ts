@@ -291,14 +291,6 @@ export function getProvince(id: string): Province | undefined {
     return PROVINCE_BY_ID.get(id);
 }
 
-export function getPrefecture(id: string): Prefecture | undefined {
-    return PREFECTURE_BY_ID.get(id);
-}
-
-export function prefecturesOf(provinceId: string): Prefecture[] {
-    return PREFECTURES.filter(p => p.provinceId === provinceId);
-}
-
 /** The province a `REGIONS` row stands on. */
 export function provinceForRegion(regionId: string): Province | undefined {
     return PROVINCES.find(p => p.regionId === regionId);
@@ -337,7 +329,3 @@ export function arterialsOf(provinceId: string): Arterial[] {
         .sort((a, b) => a.ordinalInSystem - b.ordinalInSystem);
 }
 
-/** Prefectures where the record and the ground do not agree. */
-export function contestedGround(): Prefecture[] {
-    return PREFECTURES.filter(p => p.discrepancy !== 'none');
-}

@@ -52,45 +52,6 @@ export const PILL_VALUE_BANDS: Record<TechniqueGrade, Band> = {
     chaos: { min: 10_000, max: 1_000_000 }
 } as const;
 
-/**
- * Most toxic a pill of each grade may be. Rising, and level across the peers.
- */
-export const PILL_TOXICITY_CEILING: Record<TechniqueGrade, number> = {
-    mortal: 1.5,
-    earth: 4,
-    heaven: 9,
-    immortal: 40,
-    chaos: 40
-} as const;
-
-/**
- * The effects that buy ADVANCEMENT rather than survival.
- *
- * ── WHY `grain_abstinence` IS ONE OF THEM ───────────────────────────────
- *
- * It used to be argued from the ten-year heaven-grade pill: what it bought was
- * years to cultivate in, the same as a lifespan pill at a shorter horizon.
- * That row no longer exists, so the argument is restated from the one that
- * does rather than left to be re-derived from a pill nobody can look at.
- *
- * The design owner: **"stopping hunger is advancement cuz u stop having to
- * hunt for food."** What is bought is not the meals. It is the time that would
- * have gone on feeding yourself - the foraging, the walking back down for
- * rice, the interruptions - and that time goes into cultivating instead. A
- * pill that ends an errand is advancement however short the span it covers.
- */
-export const ADVANCEMENT_EFFECTS: ReadonlySet<PillEffect> = new Set<PillEffect>([
-    'boost_breakthrough',
-    'advance_progress',
-    'extend_lifespan',
-    'grain_abstinence'
-]);
-
-/** Whether this effect buys advancement. The one place that decides. */
-export function isAdvancement(effect: PillEffect): boolean {
-    return ADVANCEMENT_EFFECTS.has(effect);
-}
-
 // WHAT MODERN ALCHEMY CAN DO ABOUT A LIFESPAN
 
 /** The end of Nascent Soul, read off the ladder rather than retyped. */
@@ -828,23 +789,12 @@ export function getPill(id: string): Pill | undefined {
     return PILL_BY_ID.get(id);
 }
 
-export function requirePill(id: string): Pill {
-    const p = PILL_BY_ID.get(id);
-    if (!p) throw new Error(`Unknown pill: ${id}`);
-    return p;
-}
-
 export function getPillsByEffect(effect: PillEffect): readonly Pill[] {
     return PILLS_BY_EFFECT.get(effect) ?? [];
 }
 
 export function getPillsByGrade(grade: TechniqueGrade): readonly Pill[] {
     return PILLS_BY_GRADE.get(grade) ?? [];
-}
-
-/** The pill every run begins with. */
-export function getStartingPill(): Pill {
-    return requirePill(MINOR_HEALING_PILL_ID);
 }
 
 /**

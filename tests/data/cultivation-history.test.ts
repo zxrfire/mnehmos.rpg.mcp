@@ -49,23 +49,62 @@ import {
     WHAT_THE_OFFSET_HIDES,
     WHY_THE_RECONCILIATION_IS_NOT_MADE,
     WHY_ACCOUNTS_DISAGREE,
-    ageAtYearsAgo,
-    allCitedFactionIds,
-    getAge,
-    getCalendar,
-    getDeadCivilisation,
-    getLidTheory,
-    getOriginAccount,
     historyEras,
-    lidTheoryOf,
-    presentAge,
-    theWrongOriginAccount,
-    unresolvedQuestions,
     type Claim
 } from '../../src/data/cultivation/history.js';
 import { SECTS, DESTROYED_DAO_HOUSES, getSect } from '../../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const getAge = (id: string) => AGES.find(a => a.id === id);
+const getCalendar = (id: string) => CALENDARS.find(c => c.id === id);
+const getDeadCivilisation = (id: string) => DEAD_CIVILISATIONS.find(d => d.id === id);
+const getLidTheory = (id: string) => LID_THEORIES.find(t => t.id === id);
+const getOriginAccount = (id: string) => ORIGIN_ACCOUNTS.find(o => o.id === id);
+const lidTheoryOf = (factionId: string) => LID_THEORIES.find(t => t.heldBy === factionId);
+const presentAge = () => AGES.filter(a => a.endedYearsAgo === null)[0]!;
+const theWrongOriginAccount = () => ORIGIN_ACCOUNTS.find(o => o.demonstrablyWrong !== null);
+const ageAtYearsAgo = (yearsAgo: number) => AGES.find(a => {
+    const began = a.beganYearsAgo ?? Number.POSITIVE_INFINITY;
+    const ended = a.endedYearsAgo ?? 0;
+    return yearsAgo <= began && yearsAgo > ended;
+}) ?? (yearsAgo <= 0 ? AGES[AGES.length - 1] : undefined);
+const unresolvedQuestions = (): Claim[] => {
+    const out: Claim[] = [THE_LID, THE_FIRST_CULTIVATORS, THE_CALENDAR_OFFSET];
+    for (const age of AGES) if (age.howItEnded.truth === 'unresolved') out.push(age.howItEnded);
+    for (const dead of DEAD_CIVILISATIONS) if (dead.theEnd.truth === 'unresolved') out.push(dead.theEnd);
+    for (const cal of CALENDARS) if (cal.isTheOriginCorrect.truth === 'unresolved') out.push(cal.isTheOriginCorrect);
+    return out;
+};
+// Every faction id the history attributes a belief, a holding or a reading to.
+const allCitedFactionIds = (): string[] => {
+    const ids = new Set<string>();
+    const addAll = (list: readonly string[]) => { for (const id of list) ids.add(id); };
+    const addClaim = (c: Claim) => addAll(c.heldBy);
+    for (const age of AGES) addClaim(age.howItEnded);
+    for (const dead of DEAD_CIVILISATIONS) {
+        addClaim(dead.theEnd);
+        for (const w of dead.survivingWorks) if (w.heldByFactionId) ids.add(w.heldByFactionId);
+    }
+    for (const o of ORIGIN_ACCOUNTS) {
+        addAll(o.heldBy);
+        if (o.demonstrablyWrong) addAll(o.demonstrablyWrong.whoCouldDemonstrateIt);
+    }
+    for (const t of LID_THEORIES) ids.add(t.heldBy);
+    for (const n of LID_NON_POSITIONS) ids.add(n.factionId);
+    addClaim(THE_LID);
+    addClaim(THE_FIRST_CULTIVATORS);
+    addClaim(THE_CALENDAR_OFFSET);
+    addClaim(DRIVEN_GROUND_AND_THE_NODE);
+    for (const s of DEAD_SCRIPTS) addAll(s.readBy);
+    for (const c of WHY_ACCOUNTS_DISAGREE) addClaim(c);
+    for (const cal of CALENDARS) {
+        addAll(cal.keptBy);
+        addClaim(cal.isTheOriginCorrect);
+    }
+    return [...ids].sort();
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 // HELPERS

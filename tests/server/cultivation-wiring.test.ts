@@ -26,7 +26,10 @@ import {
 import { runSeedFor } from '../../src/engine/world/legacy.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { CERTIFICATION_COST_STONES } from '../../src/server/consolidated/sect-politics.js';
-import { getSectsClaimingLivingAncestor, getSectAncestry } from '../../src/data/cultivation/sects.js';
+import { SECT_ANCESTRY, getSectAncestry } from '../../src/data/cultivation/sects.js';
+
+const getSectsClaimingLivingAncestor = () =>
+    Object.entries(SECT_ANCESTRY).filter(([, r]) => r.claimsLivingAncestor).map(([id]) => id);
 
 const ctx = { sessionId: 'wiring' };
 

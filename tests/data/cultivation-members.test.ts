@@ -26,12 +26,12 @@ import {
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
 import {
     HOLLOW_COURT_ROSTER,
-    HOW_THE_COURT_IS_SEEN,
-    workingNamesInCirculation
+    HOW_THE_COURT_IS_SEEN
 } from '../../src/data/cultivation/hollow-court-roster.js';
 import { mayBeNamed } from '../../src/data/cultivation/hierarchy.js';
 import {
-    SPINE_REGIONS,
+    BLOWN_GROUND_ID,
+    REGIONS,
     HOME_REGION_ID,
     ADJACENT_REGION_ID,
     getRegionForFaction
@@ -41,20 +41,56 @@ import {
     MEMBERS,
     MemberSchema,
     getMember,
-    requireMember,
     getMembersOf,
-    getMembersInRegion,
-    getMembersByRole,
-    getMemberRegionId,
-    getPeersAt,
-    getRivalsIn,
-    getMastersIn,
-    rankRealmBand,
-    realmIsPlausible,
-    rankNameIsCurrent,
-    memberCountsByFaction,
-    describeMember
+    rankRealmBand
 } from '../../src/data/cultivation/members.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const SPINE_REGIONS = REGIONS.filter(r => r.id !== BLOWN_GROUND_ID);
+type Member = (typeof MEMBERS)[number];
+const requireMember = (id: string): Member => {
+    const member = getMember(id);
+    if (!member) throw new Error(`Unknown member: ${id}`);
+    return member;
+};
+const getMemberRegionId = (memberId: string) => {
+    const member = getMember(memberId);
+    return member ? getRegionForFaction(member.factionId)?.id : undefined;
+};
+const getMembersInRegion = (regionId: string) =>
+    MEMBERS.filter(m => getRegionForFaction(m.factionId)?.id === regionId);
+const getMembersByRole = (role: Member['role']) => MEMBERS.filter(m => m.role === role);
+const getPeersAt = (ordinal: number, spread = 4) => {
+    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
+    return MEMBERS.filter(m => Math.abs(m.realmOrdinal - clamped) <= spread);
+};
+const inRegionByRole = (regionId: string, role: Member['role']) => getMembersInRegion(regionId)
+    .filter(m => m.role === role)
+    .sort((a, b) => a.realmOrdinal - b.realmOrdinal);
+const getRivalsIn = (regionId: string) => inRegionByRole(regionId, 'rival');
+const getMastersIn = (regionId: string) => inRegionByRole(regionId, 'master');
+// A member's realm sits inside the band their rank allows at their house.
+const realmIsPlausible = (member: Member): boolean => {
+    const band = rankRealmBand(member.factionId, member.rankIndex);
+    return band !== undefined && band !== null
+        && member.realmOrdinal >= band.minOrdinal && member.realmOrdinal <= band.maxOrdinal;
+};
+// The denormalised rank string still matches the house's ladder.
+const rankNameIsCurrent = (member: Member): boolean => getSect(member.factionId)?.ranks[member.rankIndex] === member.rank;
+const memberCountsByFaction = (): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const m of MEMBERS) out[m.factionId] = (out[m.factionId] ?? 0) + 1;
+    return out;
+};
+const describeMember = (id: string) => {
+    const member = getMember(id);
+    if (!member) return undefined;
+    const sect = requireSect(member.factionId);
+    return `${member.name}, ${member.rank}, ${sect.name}. Wants ${member.wants}. Fears ${member.fears}. ${member.detail}`;
+};
+
+const workingNamesInCirculation = () =>
+    HOLLOW_COURT_ROSTER.map(m => m.worksOutsideAs).filter((n): n is string => n !== null);
 
 /** Top of Qi Condensation. Below this is where the player starts. */
 const QI_CONDENSATION_TOP = REALM_TIERS[0].ordinalEnd;

@@ -24,12 +24,10 @@ import {
     CONVEYANCE_RECIPES,
     TRACKED_CRAFT,
     adjustCountedHolding,
-    conveyancesForRange,
     conveyancesNobodyBuilds,
     countedHolding,
     countedHoldingKey,
     craftAgeInYears,
-    craftOwnedBy,
     describeCountedHoldings,
     getConveyance,
     kindOfCraft,
@@ -41,6 +39,11 @@ import { OBJECT_CEILING_BELOW_THE_LID } from '../../src/engine/cultivation/realm
 import { FRAGMENTS_AT_OR_ABOVE } from '../../src/engine/cultivation/whether-a-weapon-survives-being-used.js';
 import { BEAST_MATERIALS, BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
+
+const conveyancesForRange = (range: (typeof CONVEYANCES)[number]['range']) =>
+    CONVEYANCES.filter(c => c.range === range);
+const craftOwnedBy = (ownerId: string) =>
+    TRACKED_CRAFT.filter(c => c.ownerId !== null && c.ownerId === ownerId);
 
 const HEAVEN_FLOOR = refiningOrdinalFor('heaven');
 

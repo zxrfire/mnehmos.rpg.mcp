@@ -755,22 +755,6 @@ export function workWithheldFrom(
         .map(({ record, regard }) => ({ occupation: record, reason: regard.reaction, band: regard.band }));
 }
 
-/**
- * The highest ordinal at which any mortal-economy job is still put to somebody.
- */
-export function measuredMortalWorkCeiling(): number {
-    const mortalWork = OCCUPATIONS.filter(o => o.kind !== 'cultivator');
-    for (let ordinal = MAX_ORDINAL; ordinal >= 0; ordinal--) {
-        if (offeredTo(mortalWork, ordinal).some(o => o.minOrdinal <= ordinal)) return ordinal;
-    }
-    return 0;
-}
-
-/** Prices in a category, cheapest first. */
-export function pricesByCategory(category: Price['category']): Price[] {
-    return PRICES.filter(p => p.category === category).sort((a, b) => a.cash - b.cash);
-}
-
 /** How mortals here treat a cultivator at this ordinal. */
 export function mortalAttitudeFor(ordinal: number, regionId: string): string | undefined {
     const band = MORTAL_ATTITUDES.find(a => ordinal >= a.fromOrdinal && ordinal <= a.toOrdinal);
@@ -795,20 +779,3 @@ export function monthsOfSurvival(stones: number, standard: 'rough' | 'inn' | 'ca
 // ─────────────────────────────────────────────────────────────────────────
 // LOOKUPS: FEARS AND THE DEAD
 // ─────────────────────────────────────────────────────────────────────────
-
-/** Everything a settlement of this size is afraid of, largest fear first. */
-export function fearsOf(settlement: Settlement['kind']): SettlementFear[] {
-    return SETTLEMENT_FEARS.filter(f => f.settlement === settlement);
-}
-
-/**
- * The fears somebody is actually paid for.
- */
-export function fearsThatFundSomebody(): SettlementFear[] {
-    return SETTLEMENT_FEARS.filter(f => f.paidTo !== null);
-}
-
-/** What a settlement of this size does with a body. */
-export function funeraryPracticeOf(settlement: Settlement['kind']): FuneraryPractice | undefined {
-    return FUNERARY_PRACTICE.find(f => f.settlement === settlement);
-}

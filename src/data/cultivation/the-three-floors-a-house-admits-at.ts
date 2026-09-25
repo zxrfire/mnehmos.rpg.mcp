@@ -185,12 +185,3 @@ export function theDoorIsShutTo(factionId: string, sex: Sex): string | null {
         + 'from anybody opens - there is no version of this where you are admitted. Whatever '
         + 'you wanted from them, another house is where you will have to want it from.';
 }
-
-/**
- * The floor for being taken in without being taken on, where the house
- * declares one. Null where it does not; undefined for an unknown faction.
- */
-export function guestFloorOf(factionId: string): number | null | undefined {
-    const floors = houseFloorsOf(factionId);
-    return floors ? floors.guest : undefined;
-}

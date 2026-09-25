@@ -16,9 +16,7 @@ import {
     STRUCTURAL_REPAIR_HOLDINGS,
     StructuralRepairMedicineSchema,
     RepairHoldingSchema,
-    getStructuralRepairMedicine,
-    openingHoldersOf,
-    sentDownMedicines
+    getStructuralRepairMedicine
 } from '../../src/data/cultivation/structural-repair-medicine.js';
 import {
     NOTHING_REPAIRS_ABOVE_ORDINAL,
@@ -44,6 +42,10 @@ import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
 import { WOUND_TYPES } from '../../src/data/cultivation/wounds.js';
 import { PILLS } from '../../src/data/cultivation/pills.js';
 import { InjurySchema, type Injury } from '../../src/schema/cultivation.js';
+
+const openingHoldersOf = (medicineId: string) =>
+    STRUCTURAL_REPAIR_HOLDINGS.filter(h => h.medicineId === medicineId);
+const sentDownMedicines = () => STRUCTURAL_REPAIR_MEDICINES.filter(m => !m.madeBelowTheLid);
 
 const GRAND_ASCENSION = REALM_TIERS.find(t => t.key === 'grand_ascension')!;
 const DEITY_TRANSFORMATION = REALM_TIERS.find(t => t.key === 'deity_transformation')!;

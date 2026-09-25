@@ -3001,41 +3001,6 @@ export function getSite(id: string): Site | undefined {
     return SITE_BY_ID.get(id);
 }
 
-export function requireSite(id: string): Site {
-    const s = SITE_BY_ID.get(id);
-    if (!s) throw new Error(`Unknown inheritance site: ${id}`);
-    return s;
-}
-
-export function getTrial(id: string): InheritanceTrial | undefined {
-    const s = SITE_BY_ID.get(id);
-    return s && s.kind === 'trial' ? s : undefined;
-}
-
-export function getGrave(id: string): Grave | undefined {
-    const s = SITE_BY_ID.get(id);
-    return s && s.kind === 'grave' ? s : undefined;
-}
-
-/** Sites carrying at least one gate of this kind. */
-export function sitesWithGateKind(kind: GateKind): Site[] {
-    return SITES.filter(s => s.interior.gates.some(g => g.kind === kind));
-}
-
-/** Which trials guard a given technique. Answers "where does this come from". */
-export function trialsGuarding(techniqueId: string): InheritanceTrial[] {
-    return INHERITANCE_TRIALS.filter(t => t.interior.prize.techniqueIds.includes(techniqueId));
-}
-
-/** Which graves hold a copy of one. A grave is the other half of that question. */
-export function gravesHolding(techniqueId: string): Grave[] {
-    return GRAVES.filter(g => g.interior.contents.some(c => c.techniqueId === techniqueId));
-}
-
-export function gravesByMannerOfDeath(manner: MannerOfDeath): Grave[] {
-    return GRAVES.filter(g => g.mannerOfDeath === manner);
-}
-
 /**
  * Whether the manner of death is one the lightning was present for. The two
  * profiles in `GRAVE_CONTENTS_BANDS` are selected by this predicate and by
@@ -3050,19 +3015,3 @@ export function contentsBandFor(manner: MannerOfDeath): typeof GRAVE_CONTENTS_BA
     return tribulationTouched(manner) ? GRAVE_CONTENTS_BANDS.tribulation : GRAVE_CONTENTS_BANDS.intact;
 }
 
-/** Items with the warranty. Empty for every grave that is not a tribulation one. */
-export function provenContents(grave: Grave): GraveGood[] {
-    return grave.interior.contents.filter(c => c.proven);
-}
-
-/**
- * The reading a party takes off the outside, as one line, with the manner of
- * death first for a grave because that is the order a grave-reader reads in.
- */
-export function describeOutside(view: SiteOutsideView): string {
-    const head = view.name ?? 'An unattributed site';
-    if (view.kind === 'grave') {
-        return `${head}. Died: ${view.mannerOfDeath.replace(/_/g, ' ')}, ${view.yearsDead} years ago, at ordinal ${view.occupantOrdinal}. Burial: ${view.burial.replace(/_/g, ' ')}. ${view.outside.marker}`;
-    }
-    return `${head}. ${view.outside.marker}`;
-}

@@ -801,6 +801,24 @@ describe('a manual costs what a manual costs', () => {
         expect(result.narration).toMatch(/not sold|nobody sells|does not sell/i);
         expect(result.narration).toMatch(/What is:/);
     }, 120_000);
+
+    /**
+     * A house can hold a book whole that nobody inside it can perform, and it
+     * teaches an outsider on terms. And an art of an earlier age says why it is
+     * out of reach. Asking what a book would take says both.
+     */
+    it('names the house that holds a book it cannot perform, and why an old art is absent', async () => {
+        const { game } = makeGame({ seed: 'a-shelf-nobody-reads', worldEnabled: true });
+        await game.newRun('Lin Baoqing');
+
+        const shelved = await game.act('what would it take to learn the Sixteen-Thread Command');
+        expect(shelved.narration).toMatch(
+            /Vermilion Seal Terrace holds a complete copy that nobody there can perform/
+        );
+
+        const sealed = await game.act('what would it take to learn the Paired-Breath Canon');
+        expect(sealed.narration).toMatch(/only living holder is sealed/);
+    }, 120_000);
 });
 
 describe('a house takes somebody on, or it does not', () => {

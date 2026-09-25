@@ -23,10 +23,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
-    FLOWER_ARTS,
     FLOWER_SUBJECT,
-    SWORD_ARTS,
-    SWORD_SUBJECT,
     TECHNIQUES,
     getTechnique,
     isFlowerArt,
@@ -35,6 +32,13 @@ import {
 import { SECTS } from '../../src/data/cultivation/sects.js';
 import { isOnRoad, primaryRoadOf } from '../../src/schema/cultivation.js';
 import { domainForSubject } from '../../src/engine/cultivation/understanding.js';
+
+const SWORD_SUBJECT = 'sword';
+const onTheRoad = (subject: string) => TECHNIQUES
+    .filter(t => isOnRoad(t, subject))
+    .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
+const FLOWER_ARTS = onTheRoad(FLOWER_SUBJECT);
+const SWORD_ARTS = onTheRoad(SWORD_SUBJECT);
 
 const COURT = 'sect-orchid-court';
 const court = SECTS.find(s => s.id === COURT)!;

@@ -28,8 +28,7 @@ import {
 } from '../../src/engine/world/how-a-cultivator-comes-by-a-road';
 import {
     PLACES_THAT_TEACH_A_DAO,
-    daoGroundNamed,
-    getPlaceThatTeachesADao
+    daoGroundNamed
 } from '../../src/data/cultivation/places-that-teach-a-dao';
 import {
     groundThatTeachesARoad,
@@ -54,6 +53,8 @@ import { forStream } from '../../src/engine/cultivation/rng';
 import { applyTimeSkip } from '../../src/web/apply';
 import { regionIdOfPlace } from '../../src/data/cultivation/regions';
 import type { Achievement, Insight, TimeSkipResult } from '../../src/schema/cultivation';
+
+const getPlaceThatTeachesADao = (id: string) => PLACES_THAT_TEACH_A_DAO.find(p => p.id === id);
 
 /** A skip that changed nothing except what the cultivator understood. */
 function skipThatOnlyTaught(insight: Insight, achievement: Achievement): TimeSkipResult {

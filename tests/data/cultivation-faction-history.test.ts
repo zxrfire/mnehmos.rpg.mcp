@@ -25,7 +25,6 @@ import {
     SharedEventSchema,
     historyOf,
     otherPartiesTo,
-    sharedEvent,
     sharedEventsFor
 } from '../../src/data/cultivation/faction-history.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
@@ -36,6 +35,8 @@ import {
     getCourt
 } from '../../src/data/cultivation/hierarchy.js';
 import { getFactionCharacter } from '../../src/data/cultivation/faction-character.js';
+
+const sharedEvent = (id: string) => SHARED_EVENTS.find(e => e.id === id);
 
 /** Every id that names a real body, from all three catalogs at once. */
 const KNOWN_BODIES = new Set<string>([

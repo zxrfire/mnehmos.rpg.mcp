@@ -32,11 +32,14 @@ import {
     BEASTS,
     BEAST_CHANGE_ORDINAL,
     BEAST_CORE_ORDINAL,
-    requireBeast,
-    requireBeastMaterial,
+    getBeast,
+    getBeastMaterial,
     materialsOf
 } from '../../../src/data/cultivation/beasts.js';
 import { keptAs } from '../../../src/engine/world/possessions.js';
+
+const requireBeast = (id: string) => getBeast(id)!;
+const requireBeastMaterial = (id: string) => getBeastMaterial(id)!;
 
 const OPEN = { sealed: false, onAVein: false };
 const VEIN = { sealed: false, onAVein: true };

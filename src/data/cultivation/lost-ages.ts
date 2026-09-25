@@ -10,8 +10,7 @@ import {
     ANCIENT_TECHNIQUE_IDS,
     NO_SURVIVING_COPY_TECHNIQUE_IDS,
     NO_SURVIVING_COPY_NOTES,
-    getTechnique,
-    type TechniqueEntry
+    getTechnique
 } from './techniques.js';
 
 // THE AXIS: CATEGORICAL AGAINST ELEMENTAL
@@ -673,66 +672,9 @@ export function absenceTierOf(techniqueId: string): AbsenceTier {
     return ancient.upkeepHerbId ? 'lost' : 'abandoned';
 }
 
-/** The technique rows themselves, for anything that wants the mechanics. */
-export function ancientTechniques(): TechniqueEntry[] {
-    return ANCIENT_ARTS
-        .map(a => getTechnique(a.techniqueId))
-        .filter((t): t is TechniqueEntry => t !== undefined);
-}
-
 /** Ancient arts whose practice consumes something the world no longer grows. */
 export function materialGatedArts(): AncientArt[] {
     return ANCIENT_ARTS.filter(a => a.upkeepHerbId !== null);
-}
-
-/**
- * How many of a material are left in the world, archives and sealed sites
- * together. The one number the whole search economy turns on.
- */
-export function unitsLeftInTheWorld(herbId: string): number {
-    const m = getLostMaterial(herbId);
-    if (!m) return 0;
-    return m.remaining.inArchives + m.remaining.unfound;
-}
-
-/**
- * Extinct material sitting in a site nobody has opened, by site id.
- */
-export function ancientMaterialsAt(siteId: string): {
-    herbId: string;
-    units: number;
-    note: string;
-}[] {
-    const out: { herbId: string; units: number; note: string }[] = [];
-    for (const m of LOST_MATERIALS) {
-        for (const place of m.remaining.placements) {
-            if (place.siteId === siteId) {
-                out.push({ herbId: m.herbId, units: place.units, note: place.note });
-            }
-        }
-    }
-    return out;
-}
-
-/** Every site holding any of it, for anything that wants to seed a map. */
-export function sitesHoldingAncientMaterial(): string[] {
-    return [...new Set(LOST_MATERIALS.flatMap(m => m.remaining.placements.map(p => p.siteId)))];
-}
-
-export function getLostMaterial(herbId: string): LostMaterial | undefined {
-    return LOST_MATERIALS.find(m => m.herbId === herbId);
-}
-
-/** Houses that still have their one, including the one nobody can confirm. */
-export function housesStillHoldingMedicine(): MedicineHolding[] {
-    return MEDICINE_HOLDINGS.filter(
-        h => h.standing === 'holds_one' || h.standing === 'believed_to_hold'
-    );
-}
-
-/** Houses that have already spent theirs, which is a different house. */
-export function housesThatSpentTheirs(): MedicineHolding[] {
-    return MEDICINE_HOLDINGS.filter(h => h.standing === 'spent_theirs');
 }
 
 /**

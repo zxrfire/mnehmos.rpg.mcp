@@ -653,15 +653,6 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
 // ACCESSORS
 // ─────────────────────────────────────────────────────────────────────────
 
-export function getPlaceThatTeachesADao(id: string): PlaceThatTeachesADao | undefined {
-    return PLACES_THAT_TEACH_A_DAO.find(p => p.id === id);
-}
-
-/** Every ground a house controls. Empty for almost every house in the world. */
-export function daoGroundsHeldBy(factionId: string): PlaceThatTeachesADao[] {
-    return PLACES_THAT_TEACH_A_DAO.filter(p => p.heldBy === factionId);
-}
-
 /** Every ground in a province, whoever holds it. */
 export function daoGroundsIn(regionId: string): PlaceThatTeachesADao[] {
     return PLACES_THAT_TEACH_A_DAO.filter(p => p.regionId === regionId);

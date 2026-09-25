@@ -645,13 +645,6 @@ export function containmentHeldBy(ownerId: string): readonly ObjectRecord[] {
     return artifactsOwnedBy(ownerId).filter(a => a.tags.includes('containment'));
 }
 
-/** Power levels a party could put on the ground, strongest first. */
-export function artifactPowerOf(ownerId: string): number[] {
-    return artifactsOwnedBy(ownerId)
-        .map(a => a.power ?? 0)
-        .sort((a, b) => b - a);
-}
-
 /** One artifact by id, or undefined. */
 export function getArtifact(id: string): ObjectRecord | undefined {
     return ARTIFACTS.find(a => a.id === id);

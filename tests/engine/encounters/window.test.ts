@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { requireEncounter } from '../../../src/data/cultivation/encounters.js';
+import { getEncounter } from '../../../src/data/cultivation/encounters.js';
 import {
     rollEncounters,
     stanceFor,
@@ -19,6 +19,8 @@ import {
     type EncounterPlace,
     type EncounterRollInput
 } from '../../../src/engine/encounters/index.js';
+
+const requireEncounter = (id: string) => getEncounter(id)!;
 
 const village: EncounterPlace = { id: 'v', name: 'Burnt Earth', kind: 'settlement', danger: 0.2, qiDensity: 12 };
 const road: EncounterPlace = { id: 'r', name: 'the low road', kind: 'wilds', danger: 0.45, qiDensity: 20 };

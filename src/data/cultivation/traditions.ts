@@ -263,17 +263,6 @@ export const TWICE_WORKED = {
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const TRADITION_BY_ID: ReadonlyMap<string, Tradition> = new Map(TRADITIONS.map(t => [t.id, t]));
-
-export function getTradition(id: string): Tradition | undefined {
-    return TRADITION_BY_ID.get(id);
-}
-
-/** The tradition seated in a region. */
-export function traditionForRegion(regionId: string): Tradition | undefined {
-    return TRADITIONS.find(t => t.seatRegionId === regionId);
-}
-
 /**
  * What each tradition gets wrong about the other, which is where people die.
  * These are beliefs held by competent parties, not by fools.

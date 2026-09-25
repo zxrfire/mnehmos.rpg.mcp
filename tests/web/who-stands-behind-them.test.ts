@@ -92,6 +92,13 @@ describe('the sentence', () => {
 });
 
 describe('the gate', () => {
+    /** The most junior immortal a house can name is the one who answers, said only past the gate. */
+    it('names who answers for a house from above, and only to somebody high enough', () => {
+        expect(read(THE_PAVILION, 35).lines.join(' '))
+            .toMatch(/The one above who answers for [^.]* is Ru Anjing/);
+        expect(read(THE_PAVILION, 20).lines.join(' ')).not.toMatch(/The one above who answers/);
+    });
+
     it('cuts where the ladder cuts, and the bands are ordered', () => {
         expect(howMuchTheyKnowAt(4)).toBe('the_public_reckoning');
         expect(howMuchTheyKnowAt(20)).toBe('what_still_arrives');

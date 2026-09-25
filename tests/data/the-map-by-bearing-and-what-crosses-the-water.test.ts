@@ -15,8 +15,8 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+    getRegionForFaction,
     REGIONS,
-    SPINE_REGIONS,
     BLOWN_GROUND_ID,
     THE_BLOWN_GROUND,
     HOME_REGION_ID,
@@ -25,11 +25,7 @@ import {
     NORTH_REGION_ID,
     SOUTH_REGION_ID,
     apexSeats,
-    bearingOfFaction,
-    factionsByBearing,
     getRegion,
-    regionAtBearing,
-    regionsByBearing,
     type Bearing
 } from '../../src/data/cultivation/regions.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
@@ -45,6 +41,18 @@ import {
     artisansOf,
     cargoOnLane
 } from '../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
+
+// Catalog reads only this file makes. The game reads REGIONS itself.
+const SPINE_REGIONS = REGIONS.filter(r => r.id !== BLOWN_GROUND_ID);
+const BEARINGS: readonly Bearing[] = ['centre', 'north', 'east', 'south', 'west', 'interior'];
+const regionsByBearing = () => Object.fromEntries(
+    BEARINGS.map(b => [b, REGIONS.filter(r => r.bearing === b)])
+) as Record<Bearing, typeof REGIONS[number][]>;
+const regionAtBearing = (bearing: Bearing) => REGIONS.find(r => r.bearing === bearing);
+const factionsByBearing = () => Object.fromEntries(
+    BEARINGS.map(b => [b, REGIONS.filter(r => r.bearing === b).flatMap(r => r.factionIds)])
+) as Record<Bearing, string[]>;
+const bearingOfFaction = (factionId: string) => getRegionForFaction(factionId)?.bearing;
 
 const COMPASS: Bearing[] = ['centre', 'north', 'east', 'south', 'west'];
 

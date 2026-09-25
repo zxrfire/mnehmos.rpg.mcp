@@ -5,8 +5,7 @@
 import { z } from 'zod';
 import type { Sex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
-import { requireSect, getSect } from './sects.js';
-import { getRegionForFaction } from './regions.js';
+import { getSect } from './sects.js';
 import { HOLLOW_COURT_ROSTER } from './hollow-court-roster.js';
 import { groundReachOf, servantBarOf } from './the-three-floors-a-house-admits-at.js';
 
@@ -4393,90 +4392,8 @@ export function getMember(id: string): Member | undefined {
     return MEMBER_BY_ID.get(id);
 }
 
-export function requireMember(id: string): Member {
-    const member = MEMBER_BY_ID.get(id);
-    if (!member) throw new Error(`Unknown member: ${id}`);
-    return member;
-}
-
 /** Everybody named inside one faction, bottom rank first. */
 export function getMembersOf(factionId: string): readonly Member[] {
     return MEMBERS_BY_FACTION.get(factionId) ?? [];
 }
 
-/** Which region a member stands in, resolved through their faction. */
-export function getMemberRegionId(memberId: string): string | undefined {
-    const member = MEMBER_BY_ID.get(memberId);
-    if (!member) return undefined;
-    return getRegionForFaction(member.factionId)?.id;
-}
-
-/** Everybody in a region, across every faction seated there. */
-export function getMembersInRegion(regionId: string): Member[] {
-    return MEMBERS.filter(m => getRegionForFaction(m.factionId)?.id === regionId);
-}
-
-export function getMembersByRole(role: FactionMemberRole): Member[] {
-    return MEMBERS.filter(m => m.role === role);
-}
-
-/**
- * People a cultivator at this ordinal can actually meet on level ground: close
- * enough that neither party is unfightable, which is the band where friendship,
- * debt and murder are all still available.
- */
-export function getPeersAt(ordinal: number, spread = 4): Member[] {
-    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
-    return MEMBERS.filter(m => Math.abs(m.realmOrdinal - clamped) <= spread);
-}
-
-/** Personal opposition seated in this region, lowest realm first. */
-export function getRivalsIn(regionId: string): Member[] {
-    return getMembersInRegion(regionId)
-        .filter(m => m.role === 'rival')
-        .sort((a, b) => a.realmOrdinal - b.realmOrdinal);
-}
-
-/** Everyone in this region who will teach, and on what terms. */
-export function getMastersIn(regionId: string): Member[] {
-    return getMembersInRegion(regionId)
-        .filter(m => m.role === 'master')
-        .sort((a, b) => a.realmOrdinal - b.realmOrdinal);
-}
-
-/**
- * Whether this member's realm is plausible for their rank and their faction.
- * The catalog test asserts it for every entry; the helper is exported so a
- * generator adding people later fails the same way.
- */
-export function realmIsPlausible(member: Member): boolean {
-    const band = rankRealmBand(member.factionId, member.rankIndex);
-    if (!band) return false;
-    return member.realmOrdinal >= band.minOrdinal && member.realmOrdinal <= band.maxOrdinal;
-}
-
-/** Whether the denormalised rank string still matches the faction's ladder. */
-export function rankNameIsCurrent(member: Member): boolean {
-    const sect = getSect(member.factionId);
-    if (!sect) return false;
-    return sect.ranks[member.rankIndex] === member.rank;
-}
-
-/** Head count per faction, for the content smoke test and tool responses. */
-export function memberCountsByFaction(): Record<string, number> {
-    const out: Record<string, number> = {};
-    for (const [factionId, list] of MEMBERS_BY_FACTION) out[factionId] = list.length;
-    return out;
-}
-
-/**
- * A one-line rendering, for a narrator that needs the whole person in a
- * sentence rather than an object. Deliberately terse: these people are meant
- * to be cheap to hold in mind alongside everything else in a scene.
- */
-export function describeMember(id: string): string | undefined {
-    const member = MEMBER_BY_ID.get(id);
-    if (!member) return undefined;
-    const sect = requireSect(member.factionId);
-    return `${member.name}, ${member.rank}, ${sect.name}. Wants ${member.wants}. Fears ${member.fears}. ${member.detail}`;
-}

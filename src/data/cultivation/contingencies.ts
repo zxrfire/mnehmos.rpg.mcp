@@ -305,23 +305,3 @@ export const OTHERS_WHO_NOTICED: readonly {
             'Repeat it in inns, which makes them the most likely route by which a player first hears any of this - a true and load-bearing fact, delivered as a grumble by somebody with no idea what they are holding, in a form nobody has ever bothered to verify.'
     }
 ];
-
-// ─────────────────────────────────────────────────────────────────────────
-// LOOKUPS
-// ─────────────────────────────────────────────────────────────────────────
-
-const BY_ID: ReadonlyMap<string, Contingency> = new Map(CONTINGENCIES.map(c => [c.id, c]));
-
-export function getContingency(id: string): Contingency | undefined {
-    return BY_ID.get(id);
-}
-
-/** Plans a faction is holding, which it will not be discussing. */
-export function contingenciesHeldBy(factionId: string): Contingency[] {
-    return CONTINGENCIES.filter(c => c.heldBy === factionId);
-}
-
-/** Plans aimed at a faction, whether or not that faction has any idea. */
-export function contingenciesAgainst(factionId: string): Contingency[] {
-    return CONTINGENCIES.filter(c => c.targetFactionId === factionId);
-}

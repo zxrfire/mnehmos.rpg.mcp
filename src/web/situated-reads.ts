@@ -8,11 +8,15 @@ import { getMembersOf } from '../data/cultivation/members.js';
 import {
     REGIONS,
     canAdvanceHere,
+    leakageInto,
     placeRoadDays,
     regionIdOfPlace,
-    requireRegion
+    requireRegion,
+    ungovernedGroundBordering
 } from '../data/cultivation/regions.js';
-import { getSectsTeaching } from '../data/cultivation/sects.js';
+import { getDaoHouse, getSectsTeaching } from '../data/cultivation/sects.js';
+import { whoHoldsDormant } from '../data/cultivation/faction-character.js';
+import { absenceTierOf, type AbsenceTier } from '../data/cultivation/lost-ages.js';
 import { capOf, carriesTo } from '../data/cultivation/techniques.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
@@ -204,6 +208,13 @@ interface HouseAtItsDoor {
     guestDoorOpen?: boolean | null;
     admission?: { requirement?: string } | null;
 }
+
+/** Why an art of an earlier age is out of reach, said once per tier. */
+const WHY_AN_ART_OF_AN_EARLIER_AGE_IS_ABSENT: Partial<Record<AbsenceTier, string>> = {
+    dormant: 'Its only living holder is sealed, and waking them is the only way it is taught.',
+    lost: 'The herb it is fed on is gone from the world, so nobody can keep it up past what stored stock carries.',
+    abandoned: 'It belongs to an earlier age, and nobody alive walks it.'
+};
 
 export const situatedReads = {
     /**
@@ -1601,8 +1612,20 @@ export const situatedReads = {
                     + (taughtBy > 0
                         ? `${taughtBy} house${taughtBy === 1 ? '' : 's'} teach${taughtBy === 1 ? 'es' : ''} `
                           + 'it, to their own, and being one of their own is the whole of the price.'
-                        : 'No house is known to teach it either, so what is left is finding a copy '
-                          + 'somewhere nobody has been.')
+                        : absenceTierOf(art.id) === 'no_surviving_copy'
+                            ? 'No house teaches it, and no copy of it survives anywhere.'
+                            : 'No house is known to teach it either, so what is left is finding a copy '
+                              + 'somewhere nobody has been.')
+                );
+            }
+            const absent = WHY_AN_ART_OF_AN_EARLIER_AGE_IS_ABSENT[absenceTierOf(art.id)];
+            if (absent) lines.push(absent);
+            // A house can hold an art whole that nobody inside it can perform.
+            for (const shelf of whoHoldsDormant(art.id)) {
+                const holder = getDaoHouse(shelf.factionId)?.name ?? this.nameOfAnyBody(shelf.factionId);
+                lines.push(
+                    `${holder} holds a complete copy that nobody there can perform, and teaches it to `
+                    + 'an outsider on terms rather than for stones.'
                 );
             }
         }
@@ -1677,9 +1700,14 @@ export const situatedReads = {
             nameOfHouse: id => (getSect(id) as { name?: string } | undefined)?.name ?? id
         });
 
+        // And what comes over the border from ground nobody governs.
+        const fromTheVacuum = ungovernedGroundBordering(region.id).flatMap(ground => {
+            const leak = leakageInto(ground.id, region.id);
+            return leak ? [`From ${ground.name}: ${leak.what}`] : [];
+        });
         const facts = factsForToolResult(
             `${region.name}, and what comes off it.`,
-            theLinesForWhatIsMadeHere(read)
+            [...theLinesForWhatIsMadeHere(read), ...fromTheVacuum]
         );
         facts.structure.push(theStructureOfWhatIsMadeHere(read));
         return this.freeAction(run, 'look', facts);

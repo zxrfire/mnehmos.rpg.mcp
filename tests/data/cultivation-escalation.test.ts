@@ -41,8 +41,6 @@ import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import {
     DORMANT_ARTS,
     FACTION_CHARACTER,
-    dormantArtsOf,
-    factionsHoldingDormantArts,
     whoHoldsDormant
 } from '../../src/data/cultivation/faction-character.js';
 import { ANCIENT_ARTS, ARCHIVE_COPIES, STOCKED_INHERITANCES } from '../../src/data/cultivation/lost-ages.js';
@@ -53,6 +51,10 @@ import {
     practiceCeilingFor,
     supplyLimitedArts
 } from '../../src/engine/cultivation/upkeep.js';
+
+// Catalog reads only this file makes; the game asks by technique, through `whoHoldsDormant`.
+const dormantArtsOf = (factionId: string) => DORMANT_ARTS.filter(d => d.factionId === factionId);
+const factionsHoldingDormantArts = () => [...new Set(DORMANT_ARTS.map(d => d.factionId))];
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE ADDRESS LADDER

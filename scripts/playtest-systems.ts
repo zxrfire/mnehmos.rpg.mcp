@@ -17,7 +17,7 @@ import { deviationRisk, rollDeviation, resolveDeviation } from '../src/engine/cu
 import { assessPower, assessGap, resolveExchange, combatPowerForOrdinal } from '../src/engine/cultivation/combat.js';
 import { evaluateToll, isTolled, boundariesCrossed } from '../src/engine/cultivation/toll.js';
 import { discoverableInsights, formInsight, recordAchievement, understandingEffects } from '../src/engine/cultivation/understanding.js';
-import { SITES, outsideViewOf, enterSite, sitesWithGateKind } from '../src/data/cultivation/inheritance-trials.js';
+import { SITES, outsideViewOf, enterSite } from '../src/data/cultivation/inheritance-trials.js';
 import { TECHNIQUES, opacityOf, learningCostMultiplier, transmissionModeOf } from '../src/data/cultivation/techniques.js';
 import { makeCultivator, makeInjuries } from '../tests/engine/cultivation/fixtures.js';
 import { makeGame } from '../tests/web/harness.js';
@@ -170,7 +170,7 @@ async function trialsAndGraves() {
     rule('5. INHERITANCE TRIALS AND GRAVES - measured end to end through game.act');
     line(`  sites in the catalog: ${SITES.length}`);
     for (const kind of ['strength', 'age_and_talent', 'fate'] as const) {
-        line(`    gated by ${kind.padEnd(15)} ${sitesWithGateKind(kind).length}`);
+        line(`    gated by ${kind.padEnd(15)} ${SITES.filter(s => s.interior.gates.some(g => g.kind === kind)).length}`);
     }
 
     sub('the interior must not leak through the outside view');

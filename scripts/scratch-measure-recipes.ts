@@ -7,7 +7,7 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import {
     WHAT_AN_ARTIFACT_IS_MADE_OF,
-    theBenchIsReady,
+    whatTheBenchIsShortOf,
     whatWouldFill
 } from '../src/data/cultivation/what-an-artifact-is-made-of.js';
 import { ARTIFACTS } from '../src/data/cultivation/artifacts.js';
@@ -45,8 +45,8 @@ async function main(): Promise<void> {
             .filter(o => o.kind === 'material')
             .map(o => String(o.data.materialId));
         if (held.length > 0) anyMaterial++;
-        if (theBenchIsReady('earth', held)) complete.earth++;
-        if (theBenchIsReady('heaven', held)) complete.heaven++;
+        if (whatTheBenchIsShortOf('earth', held).length === 0) complete.earth++;
+        if (whatTheBenchIsShortOf('heaven', held).length === 0) complete.heaven++;
     }
     line(`houses standing: ${houses.length}`);
     line(`  ceilings: mortal ${ceilingCount.mortal}, earth ${ceilingCount.earth}, heaven ${ceilingCount.heaven}`);

@@ -32,7 +32,7 @@ import {
 } from '../../src/data/cultivation/techniques.js';
 import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { houseTeachingCeiling } from '../../src/data/cultivation/index.js';
-import { PILLS, PILL_VALUE_BANDS, isAdvancement } from '../../src/data/cultivation/pills.js';
+import { PILLS, PILL_VALUE_BANDS } from '../../src/data/cultivation/pills.js';
 import { stillNeedsToEat } from '../../src/engine/cultivation/survival.js';
 import { pillBandOrdinal } from '../../src/engine/cultivation/breakthrough.js';
 import { getArtifact } from '../../src/data/cultivation/artifacts.js';
@@ -47,6 +47,7 @@ import {
     progressRequiredForOrdinal
 } from '../../src/engine/cultivation/realms.js';
 import { realmsSpannedBy, techniqueExhausted } from '../../src/engine/cultivation/cultivation.js';
+import { isAdvancement } from '../support/the-bands-a-catalog-row-sits-in.js';
 
 const MANUALS = TECHNIQUES.slice();
 

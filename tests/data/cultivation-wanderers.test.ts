@@ -21,17 +21,19 @@ import {
 } from '../../src/engine/cultivation/realms.js';
 import { getSect } from '../../src/data/cultivation/sects.js';
 import { getEncounter } from '../../src/data/cultivation/encounters.js';
-import { getImmortalItem, getHoldingsOf } from '../../src/data/cultivation/immortal-items.js';
+import { IMMORTAL_ITEMS, getHoldingsOf } from '../../src/data/cultivation/immortal-items.js';
 import { mayBeNamed } from '../../src/data/cultivation/hierarchy.js';
 import {
     WANDERERS,
-    WandererSchema,
-    getWanderer,
-    getWanderersAffiliatedWith,
-    legendsOf,
-    accurateLegendOf,
-    mayBeNamedTo
+    WandererSchema
 } from '../../src/data/cultivation/wanderers.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const getImmortalItem = (id: string) => IMMORTAL_ITEMS.find(i => i.id === id);
+const getWanderer = (id: string) => WANDERERS.find(w => w.id === id);
+const getWanderersAffiliatedWith = (factionId: string) => WANDERERS.filter(w => w.affiliation.factionId === factionId);
+const legendsOf = (id: string) => [...(getWanderer(id)?.legends ?? [])];
+const accurateLegendOf = (id: string) => getWanderer(id)?.legends.find(l => l.accurate);
 
 const LU_SHENG = 'wanderer-lu-sheng';
 
@@ -50,12 +52,11 @@ describe('wandering figures', () => {
     it('is unknown to exist, not merely hard to find', () => {
         for (const w of WANDERERS) {
             expect(w.startingAwareness).toBe('unaware');
-            expect(mayBeNamedTo(w.startingAwareness), `${w.id} may not be named to a beginner`)
-                .toBe(false);
-            expect(mayBeNamedTo('whisper')).toBe(false);
-            expect(mayBeNamedTo('named')).toBe(true);
             // Same rule the apex institutions use, so narration cannot leak.
-            expect(mayBeNamedTo(w.startingAwareness)).toBe(mayBeNamed(w.startingAwareness));
+            expect(mayBeNamed(w.startingAwareness), `${w.id} may not be named to a beginner`)
+                .toBe(false);
+            expect(mayBeNamed('whisper')).toBe(false);
+            expect(mayBeNamed('named')).toBe(true);
             expect(w.awarenessSources.length, `${w.id} is unlearnable`).toBeGreaterThanOrEqual(3);
         }
     });

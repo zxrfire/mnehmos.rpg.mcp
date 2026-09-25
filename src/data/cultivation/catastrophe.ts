@@ -91,10 +91,6 @@ export const CATASTROPHE_EXPOSURE: readonly CatastropheExposure[] = [
     }
 ];
 
-export function exposureOf(tier: CatastropheExposure['tier']): CatastropheExposure {
-    return CATASTROPHE_EXPOSURE.find(e => e.tier === tier)!;
-}
-
 /** Whether an unaimed catastrophe could kill somebody standing at this rung. */
 export function couldDieToADisaster(ordinal: number): boolean {
     return ordinal < UNTOUCHED_BY_DISASTER_ORDINAL;

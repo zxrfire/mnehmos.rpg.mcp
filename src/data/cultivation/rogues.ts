@@ -59,14 +59,11 @@
 
 import { z } from 'zod';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
-import { STARTING_SPIRIT_STONES } from '../../schema/cultivation.js';
 import { PLACE } from './place-names.js';
 import {
     CASH_PER_STONE,
     OccupationSchema,
-    getOccupation,
-    getPrice,
-    stonesToCash
+    getOccupation
 } from './mortal-world.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -615,13 +612,6 @@ export const DEALER_MARKUP: Record<
     }
 };
 
-/** Road price for a catalog price id, in cash. Never a second economy. */
-export function roadPrice(priceId: string, kind: keyof typeof DEALER_MARKUP): number | undefined {
-    const price = getPrice(priceId);
-    if (!price) return undefined;
-    return Math.round(price.cash * DEALER_MARKUP[kind].multiplier);
-}
-
 export const DealerSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -907,75 +897,6 @@ export const ROAD_CUSTOMS: readonly RoadCustom[] = [
 // ─────────────────────────────────────────────────────────────────────────
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
-
-const TRADE_BY_ID: ReadonlyMap<string, RogueTrade> = new Map(ROGUE_TRADES.map(t => [t.id, t]));
-const BOUNTY_BY_ID: ReadonlyMap<string, Bounty> = new Map(BOUNTIES.map(b => [b.id, b]));
-const DEALER_BY_ID: ReadonlyMap<string, Dealer> = new Map(DEALERS.map(d => [d.id, d]));
-const VENUE_BY_ID: ReadonlyMap<string, AuctionVenue> = new Map(AUCTION_VENUES.map(v => [v.id, v]));
-
-export function getRogueTrade(id: string): RogueTrade | undefined {
-    return TRADE_BY_ID.get(id);
-}
-
-export function getBounty(id: string): Bounty | undefined {
-    return BOUNTY_BY_ID.get(id);
-}
-
-export function getDealer(id: string): Dealer | undefined {
-    return DEALER_BY_ID.get(id);
-}
-
-export function getAuctionVenue(id: string): AuctionVenue | undefined {
-    return VENUE_BY_ID.get(id);
-}
-
-/** What a rogue at this ordinal can take. The answer at 0 to 6 is the point. */
-export function tradesForOrdinal(ordinal: number): RogueTrade[] {
-    return ROGUE_TRADES.filter(t => t.minOrdinal <= ordinal);
-}
-
-/** Bounties by how reliably the purse actually arrives. */
-export function bountiesHonoured(level: Bounty['honoured']): Bounty[] {
-    return BOUNTIES.filter(b => b.honoured === level);
-}
-
-/** Who posts work in a given faction's name. */
-export function bountiesFrom(factionId: string): Bounty[] {
-    return BOUNTIES.filter(b => b.posterFactionId === factionId);
-}
-
-/** Venues a cultivator with the starting purse can actually stand on. */
-export function venuesAffordableWith(stones: number = STARTING_SPIRIT_STONES): AuctionVenue[] {
-    return AUCTION_VENUES.filter(v => v.entryBondStones <= stones);
-}
-
-/** Dealers working a region, and which side of the counter they are on. */
-export function dealersIn(regionId: string, side?: Dealer['side']): Dealer[] {
-    return DEALERS.filter(d => d.regionId === regionId && (side === undefined || d.side === side));
-}
-
-/**
- * The entry bond in cash, for comparison with a wage rather than a purse.
- * Twenty stones is two thousand cash, which is a month and a bit of the escort
- * work that would pay for it.
- */
-export function bondInCash(venueId: string): number | undefined {
-    const venue = VENUE_BY_ID.get(venueId);
-    if (!venue) return undefined;
-    return stonesToCash(venue.entryBondStones);
-}
-
-/** Months of a given trade's pay to cover a catalog price at road markup. */
-export function monthsToAffordOnTheRoad(
-    priceId: string,
-    kind: keyof typeof DEALER_MARKUP,
-    occupationId: string
-): number | undefined {
-    const cost = roadPrice(priceId, kind);
-    const monthly = unbackedMonthlyFor(occupationId);
-    if (cost === undefined || monthly === undefined || monthly <= 0) return undefined;
-    return Number((cost / monthly).toFixed(1));
-}
 
 /** Re-exported so a caller never has to reach for a second conversion rate. */
 export { CASH_PER_STONE };

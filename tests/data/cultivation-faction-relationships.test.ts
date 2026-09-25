@@ -13,7 +13,6 @@ import {
     FACTION_RELATIONSHIPS,
     FactionRelationshipSchema,
     relationshipsOf,
-    relationshipBetween,
     allFactionRelationshipPairs
 } from '../../src/data/cultivation/faction-relationships.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
@@ -25,6 +24,13 @@ import {
     getCourt,
     idsForFaction
 } from '../../src/data/cultivation/governance-and-water-rights.js';
+
+// The one tie between two named bodies, from the first one's side.
+const relationshipBetween = (factionId: string, otherId: string) => {
+    const theirs = new Set(idsForFaction(otherId));
+    return relationshipsOf(factionId, idsForFaction(factionId))
+        .find(r => idsForFaction(r.otherId).some(id => theirs.has(id)));
+};
 
 /** Everything the register draws an entry or a panel for. */
 const BODIES: readonly { id: string; name: string }[] = [

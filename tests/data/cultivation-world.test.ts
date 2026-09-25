@@ -24,7 +24,6 @@ import { getApexInstitution } from '../../src/data/cultivation/hierarchy.js';
 import { getPill, MINOR_HEALING_PILL_ID, GRAIN_ABSTINENCE_PILL_ID } from '../../src/data/cultivation/pills.js';
 import {
     REGIONS,
-    SPINE_REGIONS,
     RegionSchema,
     HOME_REGION_ID,
     ADJACENT_REGION_ID,
@@ -37,7 +36,6 @@ import {
     rankMisreadingFor,
     canAdvanceHere,
     disciplineWorksIn,
-    regionContrast,
     RANK_MISREADINGS,
     TITLE_TRANSLATIONS,
     PLACERS,
@@ -52,8 +50,7 @@ import {
     THE_BLOWN_GROUND,
     BLOWN_GROUND_ID,
     ungovernedGroundBordering,
-    leakageInto,
-    canAdvanceOnUngoverned
+    leakageInto
 } from '../../src/data/cultivation/regions.js';
 import {
     TRADITIONS,
@@ -61,8 +58,6 @@ import {
     TRADITION_WAR,
     TWICE_WORKED,
     CROSS_TRADITION_ERRORS,
-    getTradition,
-    traditionForRegion,
     killRequirement
 } from '../../src/data/cultivation/traditions.js';
 import {
@@ -76,7 +71,6 @@ import {
     CASH_PER_STONE,
     getPrice,
     findWorkForOrdinal,
-    pricesByCategory,
     mortalAttitudeFor,
     monthsOfSurvival,
     stonesToCash
@@ -86,13 +80,55 @@ import {
     getFactionCharacter,
     getProductionTier,
     inheritanceGap,
-    decliningFactions,
-    getHighRealmProvenance,
-    survivorsOfARicherAge,
     HIGH_REALM_PROVENANCE,
-    HIGH_REALM_THRESHOLD,
-    PROVENANCE_PENDING
+    HIGH_REALM_THRESHOLD
 } from '../../src/data/cultivation/faction-character.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const SPINE_REGIONS = REGIONS.filter(r => r.id !== BLOWN_GROUND_ID);
+// One row per aspect, one column per province: the comparison across all six.
+const regionContrast = () => {
+    const row = (aspect: string, pick: (r: (typeof REGIONS)[number]) => string | number) =>
+        ({ aspect, byRegion: Object.fromEntries(REGIONS.map(r => [r.id, pick(r)])) });
+    return [
+        row('factions seated', r => r.factionIds.length),
+        row('tradition', r => r.traditionId),
+        row('politics', r => r.politics),
+        row('local ceiling (ordinal)', r => r.localCeilingOrdinal),
+        row('ambient rate multiplier', r => r.cultivation.ambientRateMultiplier),
+        row('disciplines that do not work', r => r.cultivation.missingDisciplines.length),
+        row('price multiplier', r => r.priceMultiplier),
+        row('places written', r => r.places.length),
+        row('reachable provinces', r => new Set(r.connections.map(c => c.otherRegionId)).size)
+    ];
+};
+const canAdvanceOnUngoverned = (groundId: string, ordinal: number) => {
+    const ground = UNGOVERNED_GROUND.find(g => g.id === groundId);
+    return ground !== undefined && ordinal < ground.ceilingOrdinal;
+};
+const getTradition = (id: string) => TRADITIONS.find(t => t.id === id);
+const traditionForRegion = (regionId: string) => TRADITIONS.find(t => t.seatRegionId === regionId);
+const pricesByCategory = (category: (typeof PRICES)[number]['category']) =>
+    PRICES.filter(p => p.category === category).sort((a, b) => a.cash - b.cash);
+const decliningFactions = () => Object.entries(FACTION_CHARACTER)
+    .map(([factionId, c]) => ({
+        factionId,
+        lost: c.production.peakOrdinal - c.production.reliableOrdinal,
+        yearsSinceLastPeak: c.production.yearsSinceLastPeak
+    }))
+    .filter(row => row.lost > 0)
+    .sort((a, b) => b.lost - a.lost);
+const getHighRealmProvenance = (factionId: string) => HIGH_REALM_PROVENANCE[factionId];
+const survivorsOfARicherAge = (aboveOrdinal: number = HIGH_REALM_THRESHOLD) =>
+    Object.entries(HIGH_REALM_PROVENANCE)
+        .filter(([, p]) => p.highestOrdinal > aboveOrdinal)
+        .map(([factionId, provenance]) => ({ factionId, provenance }));
+// Houses above the threshold whose records are being revised elsewhere and are
+// deliberately not written; kept explicit so the gap is visible.
+const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
+    'sect-hollow-court',
+    'sect-deeproot-court'
+]);
 
 function expectUniqueIds(entries: readonly { id: string }[], label: string): void {
     const seen = new Set(entries.map(e => e.id));

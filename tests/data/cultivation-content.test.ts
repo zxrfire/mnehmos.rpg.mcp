@@ -40,7 +40,7 @@ import {
 } from '../../src/data/cultivation/techniques.js';
 import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { idsForFaction } from '../../src/data/cultivation/governance-and-water-rights.js';
-import { WANDERERS, getWanderer } from '../../src/data/cultivation/wanderers.js';
+import { WANDERERS } from '../../src/data/cultivation/wanderers.js';
 import { SPIRIT_ROOTS } from '../../src/engine/cultivation/spirit-roots.js';
 import { DiceEngine } from '../../src/math/dice.js';
 
@@ -54,37 +54,28 @@ import {
     getTechnique,
     isWideSpan,
     findTechniquesForOrdinal,
-    findBestTechniquesForOrdinal,
     gradeForOrdinal,
-    getTechniquesByProvenance,
-    getRecoveredTechniques,
     RUIN_ONLY_TECHNIQUE_IDS,
     GRAVE_ONLY_TECHNIQUE_IDS
 } from '../../src/data/cultivation/techniques.js';
 import {
     PILLS,
     PILL_VALUE_BANDS,
-    PILL_TOXICITY_CEILING,
     POTENCY_UNITS,
     MINOR_HEALING_PILL_ID,
     GRAIN_ABSTINENCE_PILL_ID,
     getPill,
-    getStartingPill,
     findCheapestPillFor
 } from '../../src/data/cultivation/pills.js';
 import {
     RECIPES,
-    RECIPE_SUCCESS_BANDS,
     getRecipe,
     getRecipesForPill,
     getRecipesUsingHerb,
-    getRecoveredRecipes,
     RECOVERED_RECIPE_IDS
 } from '../../src/data/cultivation/recipes.js';
 import {
     HERBS,
-    HERB_VALUE_BANDS,
-    HERB_RARITY_CEILING,
     HerbSchema,
     getHerb,
     rollHerb
@@ -93,7 +84,6 @@ import {
     SECTS,
     SECT_ADMISSION,
     getSect,
-    getSectsByAlignment,
     getSectsTeaching,
     stipendForRank,
     formationIntegrity,
@@ -101,28 +91,17 @@ import {
     DESTROYED_DAO_HOUSES,
     DAO_HOUSE_DISPUTES,
     getDaoHouse,
-    getDestroyedDaoHouse,
-    getCounterHouse,
-    getDisputesFor,
-    getSuccessionAccounts,
     isDaoHouse,
     SECT_ANCESTRY,
     getSectAncestry,
-    getDormantAncestors,
-    getSectsClaimingLivingAncestor,
     getPartingGift,
-    getPreeminentSect,
     auditAncestralClaim
 } from '../../src/data/cultivation/sects.js';
 import {
     ENCOUNTERS,
     EncounterEntrySchema,
     getEncounter,
-    getEncountersForOrdinal,
-    rollEncounter,
-    fillSummary,
-    missingTokens,
-    ruinWeightShare
+    fillSummary
 } from '../../src/data/cultivation/encounters.js';
 import {
     getCultivationCatalogCounts,
@@ -134,6 +113,63 @@ import {
     getRuinLootTable,
     CULTIVATION_CONTENT_PROVENANCE
 } from '../../src/data/cultivation/index.js';
+
+import {
+    HERB_RARITY_CEILING,
+    HERB_VALUE_BANDS,
+    PILL_TOXICITY_CEILING,
+    RECIPE_SUCCESS_BANDS
+} from '../support/the-bands-a-catalog-row-sits-in.js';
+
+const getWanderer = (id: string) => WANDERERS.find(w => w.id === id);
+
+// Catalog reads only this file makes. The game reads the catalog arrays itself.
+const findBestTechniquesForOrdinal = (ordinal: number) => {
+    const eligible = findTechniquesForOrdinal(ordinal);
+    const best = eligible.reduce((max, t) => Math.max(max, gradeRank(t.grade)), 0);
+    return eligible.filter(t => gradeRank(t.grade) === best);
+};
+const getTechniquesByProvenance = (provenance: string) => TECHNIQUES.filter(t => t.provenance === provenance);
+const getRecoveredTechniques = () => [...getTechniquesByProvenance('ruin'), ...getTechniquesByProvenance('grave')];
+const getRecoveredRecipes = () => RECIPES.filter(r => r.provenance === 'recovered');
+const getDestroyedDaoHouse = (id: string) => DESTROYED_DAO_HOUSES.find(h => h.id === id);
+const getCounterHouse = (houseId: string) => {
+    const held = getDaoHouse(houseId)!.counter.heldBy;
+    return held ? getDaoHouse(held) : undefined;
+};
+const getDisputesFor = (factionId: string) =>
+    DAO_HOUSE_DISPUTES.filter(d => d.positions.some(p => p.houseId === factionId));
+const getSuccessionAccounts = (houseId: string) => {
+    const succession = getDaoHouse(houseId)!.succession;
+    return succession ? {
+        official: succession.officialVersion,
+        truth: succession.trueVersion,
+        predecessor: getDestroyedDaoHouse(succession.predecessorId),
+        traces: succession.discoverableTraces
+    } : undefined;
+};
+const getDormantAncestors = () => Object.entries(SECT_ANCESTRY)
+    .flatMap(([sectId, r]) => r.dormant ? [{ sectId, dormant: r.dormant }] : []);
+const getSectsClaimingLivingAncestor = () =>
+    Object.entries(SECT_ANCESTRY).filter(([, r]) => r.claimsLivingAncestor).map(([id]) => id);
+const getPreeminentSect = () => {
+    const found = Object.entries(SECT_ANCESTRY).find(([, r]) =>
+        r.claimsLivingAncestor && r.claimIsTrue && r.recency === 'recent' && r.partingGift?.intact);
+    return found ? getSect(found[0]) : undefined;
+};
+
+// Catalog reads only this file makes; the game draws through `rollEncounters`.
+const getEncountersForOrdinal = (ordinal: number) =>
+    ENCOUNTERS.filter(e => e.minOrdinal <= ordinal && e.maxOrdinal >= ordinal);
+const ruinWeightShare = (ordinal: number): number => {
+    const pool = getEncountersForOrdinal(ordinal);
+    const total = pool.reduce((sum, e) => sum + e.weight, 0);
+    const dig = pool.filter(e => e.kind === 'ruin' || e.kind === 'grave')
+        .reduce((sum, e) => sum + e.weight, 0);
+    return total === 0 ? 0 : dig / total;
+};
+const missingTokens = (entry: { tokens: readonly string[] }, values: Record<string, unknown>) =>
+    entry.tokens.filter(t => values[t] === undefined);
 
 const GRADES = GRADE_ORDER;
 const dice = new DiceEngine('cultivation-content-test');
@@ -524,7 +560,6 @@ describe('pills', () => {
         expect(pill).toBeDefined();
         expect(pill?.effect).toBe('heal_hp');
         expect(pill?.grade).toBe('mortal');
-        expect(getStartingPill().id).toBe(MINOR_HEALING_PILL_ID);
     });
 
     /**
@@ -761,9 +796,9 @@ describe('sects', () => {
     });
 
     it('covers all three alignments', () => {
-        expect(getSectsByAlignment('righteous').length).toBeGreaterThanOrEqual(3);
-        expect(getSectsByAlignment('neutral').length).toBeGreaterThanOrEqual(3);
-        expect(getSectsByAlignment('demonic').length).toBeGreaterThanOrEqual(3);
+        for (const alignment of ['righteous', 'neutral', 'demonic'] as const) {
+            expect(SECTS.filter(s => s.alignment === alignment).length).toBeGreaterThanOrEqual(3);
+        }
     });
 
     it('rank ladders are distinct and pair one-to-one with stipends', () => {
@@ -847,7 +882,7 @@ describe('sects', () => {
                 expect(s.alignment, `${s.id} teaches forbidden arts openly`).toBe('demonic');
             }
         }
-        expect(getSectsByAlignment('demonic').some(s => s.teaches.some(id => forbiddenIds.has(id)))).toBe(true);
+        expect(SECTS.filter(s => s.alignment === 'demonic').some(s => s.teaches.some(id => forbiddenIds.has(id)))).toBe(true);
     });
 
     it('somewhere takes an ordinal-zero cultivator', () => {
@@ -942,33 +977,8 @@ describe('encounters', () => {
         }
     });
 
-    it('rollEncounter is deterministic, in-range, and filterable', () => {
-        for (let o = 0; o <= CONTENT_MAX_ORDINAL; o++) {
-            for (const sample of [0, 0.33, 0.66, 0.999999]) {
-                const drawn = rollEncounter(o, sample);
-                expect(drawn, `ordinal ${o} sample ${sample}`).toBeDefined();
-                expect(drawn!.minOrdinal).toBeLessThanOrEqual(o);
-                expect(drawn!.maxOrdinal).toBeGreaterThanOrEqual(o);
-                expect(rollEncounter(o, sample)!.id).toBe(drawn!.id);
-            }
-        }
-
-        const opportunity = rollEncounter(10, 0.5, { kind: 'opportunity' });
-        expect(opportunity?.kind).toBe('opportunity');
-
-        const uninterrupted = rollEncounter(10, 0.5, { interrupts: false });
-        expect(uninterrupted?.interrupts).toBe(false);
-
-        const nearThreat = rollEncounter(20, 0.5, { maxThreatGap: 0 });
-        if (nearThreat && nearThreat.threatOrdinal !== null) {
-            expect(nearThreat.threatOrdinal).toBeLessThanOrEqual(20);
-        }
-    });
-
-    it('weighted draws spread across the eligible table', () => {
-        const seen = new Set<string>();
-        for (let i = 0; i < 200; i++) seen.add(rollEncounter(10, i / 200)!.id);
-        expect(seen.size).toBeGreaterThan(5);
+    it('offers a spread of entries at an ordinary rung', () => {
+        expect(new Set(getEncountersForOrdinal(10).map(e => e.id)).size).toBeGreaterThan(5);
     });
 
     it('fillSummary substitutes declared tokens and flags missing ones', () => {

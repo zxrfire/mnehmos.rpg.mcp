@@ -20,7 +20,8 @@
  * saying which line is being tested is what makes that argument possible.
  */
 
-import { PILLS, isAdvancement } from '../src/data/cultivation/pills.js';
+import { PILLS } from '../src/data/cultivation/pills.js';
+import { isAdvancement } from '../tests/support/the-bands-a-catalog-row-sits-in.js';
 import { RECIPES } from '../src/data/cultivation/recipes.js';
 import { HERBS } from '../src/data/cultivation/herbs.js';
 import { FACTION_CHARACTER } from '../src/data/cultivation/faction-character.js';
@@ -125,7 +126,7 @@ function thinGroundStops(): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Which effects count as advancement is `isAdvancement` in `pills.ts`, and it is
+ * Which effects count as advancement is `isAdvancement` in `tests/support/the-bands-a-catalog-row-sits-in.ts`, and it is
  * imported rather than restated. This audit hardcoded its own set once, which
  * meant three places in the project were entitled to an opinion about the same
  * question and two of them were wrong - so a correction to the catalog's own

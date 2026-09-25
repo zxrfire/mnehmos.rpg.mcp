@@ -446,16 +446,6 @@ export function leakageInto(groundId: string, regionId: string): Leakage | undef
 }
 
 /**
- * Whether an unbacked cultivator at this ordinal still has anything to gain
- * from ungoverned ground. Same reading as `canAdvanceHere`, and the answer at
- * 28 is the whole point of the place.
- */
-export function canAdvanceOnUngoverned(groundId: string, ordinal: number): boolean {
-    const ground = UNGOVERNED_GROUND.find(g => g.id === groundId);
-    return ground !== undefined && ordinal < ground.ceilingOrdinal;
-}
-
-/**
  * The Burial Sands as a `Region`, so the map can hold it.
  */
 function ungovernedGroundAsRegion(ground: UngovernedGround): Region {

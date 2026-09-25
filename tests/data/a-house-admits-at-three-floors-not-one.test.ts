@@ -5,10 +5,14 @@ import {
     houseFloorsOf,
     servantBarOf,
     discipleBarOf,
-    guestFloorOf,
     groundReachOf,
     A_SERVANT_STANDS_THIS_FAR_BELOW_WHAT_THE_GROUND_REACHES
 } from '../../src/data/cultivation/the-three-floors-a-house-admits-at.js';
+
+const guestFloorOf = (factionId: string) => {
+    const floors = houseFloorsOf(factionId);
+    return floors ? floors.guest : undefined;
+};
 
 /**
  * A house does not have one door, and the bar for a servant's place is not

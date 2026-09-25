@@ -41,15 +41,25 @@ import {
     OCCUPATIONS,
     OCCUPATION_REGARD_SPAN,
     findWorkForOrdinal,
-    measuredMortalWorkCeiling,
     workExistingFor,
     workWithheldFrom
 } from '../../../src/data/cultivation/mortal-world.js';
 import {
+    getEncounter,
     encounterDamage,
-    encounterThreatRegard,
-    requireEncounter
+    encounterThreatRegard
 } from '../../../src/data/cultivation/encounters.js';
+
+// The highest ordinal any mortal work is still offered at.
+const measuredMortalWorkCeiling = (): number => {
+    const mortalWork = OCCUPATIONS.filter(o => o.kind !== 'cultivator');
+    for (let ordinal = MAX_ORDINAL; ordinal >= 0; ordinal--) {
+        if (offeredTo(mortalWork, ordinal).some(o => o.minOrdinal <= ordinal)) return ordinal;
+    }
+    return 0;
+};
+
+const requireEncounter = (id: string) => getEncounter(id)!;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE TABLE

@@ -26,19 +26,13 @@ import {
     RUMOURS,
     RumourSchema,
     WRONG_ACCURACIES,
-    getRumour,
-    rumoursAbout,
-    unattachedRumours,
     rumoursSpeakableBy,
     rumoursThatAreWrong,
     shareOfRumoursThatAreWrong
 } from '../../src/data/cultivation/rumours-and-what-they-get-wrong.js';
 import {
     LOCAL_RESIDUE,
-    LocalResidueSchema,
-    residueFor,
-    residueOfKind,
-    unsettledResidue
+    LocalResidueSchema
 } from '../../src/data/cultivation/history.js';
 import {
     RUIN_NAMES,
@@ -52,12 +46,22 @@ import {
     SETTLEMENT_FEARS,
     SettlementFearSchema,
     FUNERARY_PRACTICE,
-    FuneraryPracticeSchema,
-    fearsOf,
-    fearsThatFundSomebody,
-    funeraryPracticeOf
+    FuneraryPracticeSchema
 } from '../../src/data/cultivation/mortal-world.js';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
+
+import { resolvePlace } from '../../src/web/entities.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const getRumour = (id: string) => RUMOURS.find(r => r.id === id);
+const rumoursAbout = (entityId: string) => RUMOURS.filter(r => r.aboutId === entityId);
+const unattachedRumours = () => RUMOURS.filter(r => r.aboutId === null);
+const residueOfKind = (kind: (typeof LOCAL_RESIDUE)[number]['kind']) => LOCAL_RESIDUE.filter(r => r.kind === kind);
+const unsettledResidue = () => LOCAL_RESIDUE.filter(r => r.truth === 'unresolved');
+type SettlementKind = (typeof SETTLEMENT_FEARS)[number]['settlement'];
+const fearsOf = (settlement: SettlementKind) => SETTLEMENT_FEARS.filter(f => f.settlement === settlement);
+const fearsThatFundSomebody = () => SETTLEMENT_FEARS.filter(f => f.paidTo !== null);
+const funeraryPracticeOf = (settlement: SettlementKind) => FUNERARY_PRACTICE.find(f => f.settlement === settlement);
 
 /**
  * Everything a rumour is allowed to point at, by id.
@@ -230,10 +234,13 @@ describe('local residue of the deep past', () => {
         }
     });
 
-    it('is reachable by site name', () => {
+    /** Asking about a named place says what the nearest families say of it. */
+    it('is told to anybody who asks about the place by name', () => {
         const one = LOCAL_RESIDUE[0]!;
-        expect(residueFor(one.siteName).map(r => r.siteName)).toContain(one.siteName);
-        expect(residueFor('a place with no story')).toEqual([]);
+        const told = resolvePlace(one.siteName)!.facts.join(' ');
+        expect(told).toContain(one.whatTheySay);
+        expect(told).toContain(one.practice);
+        expect(resolvePlace('a place with no story')!.facts.join(' ')).toMatch(/a name and a road/);
     });
 
     it('gives a story to the named sites that most obviously imply one', () => {

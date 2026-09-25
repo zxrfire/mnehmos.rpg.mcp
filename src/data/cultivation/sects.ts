@@ -74,10 +74,8 @@ import type { Sect, SpiritRootKey, TechniqueCategory } from '../../schema/cultiv
 import { APEX_INSTITUTIONS } from './governance-and-water-rights.js';
 import {
     delegatedFrom,
-    getPrefecture,
     getProvince,
     prefectureForFaction,
-    provinceForFaction,
     type Prefecture,
     type Province
 } from './regions.js';
@@ -164,7 +162,7 @@ export interface SectCompound {
 // this roll and SECTS stay below, which is what keeps the import one-way.
 import { SECT_ANCESTRY } from './the-ancestors-a-house-still-names.js';
 import type {
-    AncestralRecords, DormantAncestor, PartingGift, AncestralRecency
+    AncestralRecords, PartingGift, AncestralRecency
 } from './the-ancestors-a-house-still-names.js';
 
 export { SECT_ANCESTRY } from './the-ancestors-a-house-still-names.js';
@@ -3432,16 +3430,6 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
 
 const SECT_BY_ID: ReadonlyMap<string, SectEntry> = new Map(SECTS.map(s => [s.id, s]));
 
-const SECTS_BY_ALIGNMENT: ReadonlyMap<Sect['alignment'], readonly SectEntry[]> = (() => {
-    const map = new Map<Sect['alignment'], SectEntry[]>();
-    for (const s of SECTS) {
-        const bucket = map.get(s.alignment);
-        if (bucket) bucket.push(s);
-        else map.set(s.alignment, [s]);
-    }
-    return map;
-})();
-
 /** Reverse index: which sects teach a given technique. */
 const SECTS_BY_TAUGHT_TECHNIQUE: ReadonlyMap<string, readonly SectEntry[]> = (() => {
     const map = new Map<string, SectEntry[]>();
@@ -3810,10 +3798,6 @@ export function requireSect(id: string): SectEntry {
     return s;
 }
 
-export function getSectsByAlignment(alignment: Sect['alignment']): readonly SectEntry[] {
-    return SECTS_BY_ALIGNMENT.get(alignment) ?? [];
-}
-
 export function getSectsTeaching(techniqueId: string): readonly SectEntry[] {
     return SECTS_BY_TAUGHT_TECHNIQUE.get(techniqueId) ?? [];
 }
@@ -3839,27 +3823,6 @@ export function getSectAncestry(id: string): AncestralRecords | undefined {
 }
 
 /**
- * Factions with something still in the world that can be woken. This is the
- * list that makes "what happens afterwards" a real question, and the engine
- * should never surface it wholesale to a player: `publiclyKnown` is false for
- * most of them, and the ones that are hidden are hidden on purpose.
- */
-export function getDormantAncestors(): { sectId: string; dormant: DormantAncestor }[] {
-    const out: { sectId: string; dormant: DormantAncestor }[] = [];
-    for (const [sectId, records] of Object.entries(SECT_ANCESTRY)) {
-        if (records.dormant) out.push({ sectId, dormant: records.dormant });
-    }
-    return out;
-}
-
-/** Factions publicly claiming an ancestor above the Lid, true or otherwise. */
-export function getSectsClaimingLivingAncestor(): string[] {
-    return Object.entries(SECT_ANCESTRY)
-        .filter(([, r]) => r.claimsLivingAncestor)
-        .map(([id]) => id);
-}
-
-/**
  * The parting gift a sect is holding, if it still has one. An intact gift from
  * a recent crossing is the difference between a venerable sect and a currently
  * formidable one.
@@ -3867,20 +3830,6 @@ export function getSectsClaimingLivingAncestor(): string[] {
 export function getPartingGift(sectId: string): PartingGift | undefined {
     const gift = SECT_ANCESTRY[sectId]?.partingGift;
     return gift ?? undefined;
-}
-
-/**
- * The preeminent institution of the present age: the sect whose ancestor made
- * the last confirmed crossing and left an intact gift behind. There is exactly
- * one, and the test asserts that.
- */
-export function getPreeminentSect(): SectEntry | undefined {
-    for (const [sectId, r] of Object.entries(SECT_ANCESTRY)) {
-        if (r.claimsLivingAncestor && r.claimIsTrue && r.recency === 'recent' && r.partingGift?.intact) {
-            return SECT_BY_ID.get(sectId);
-        }
-    }
-    return undefined;
 }
 
 /**
@@ -3907,21 +3856,9 @@ export function auditAncestralClaim(sectId: string): {
 }
 
 const DAO_HOUSE_BY_ID: ReadonlyMap<string, DaoHouseEntry> = new Map(DAO_HOUSES.map(h => [h.id, h]));
-const DESTROYED_HOUSE_BY_ID: ReadonlyMap<string, DestroyedDaoHouse> =
-    new Map(DESTROYED_DAO_HOUSES.map(h => [h.id, h]));
 
 export function getDaoHouse(id: string): DaoHouseEntry | undefined {
     return DAO_HOUSE_BY_ID.get(id);
-}
-
-export function requireDaoHouse(id: string): DaoHouseEntry {
-    const h = DAO_HOUSE_BY_ID.get(id);
-    if (!h) throw new Error(`Unknown Dao house: ${id}`);
-    return h;
-}
-
-export function getDestroyedDaoHouse(id: string): DestroyedDaoHouse | undefined {
-    return DESTROYED_HOUSE_BY_ID.get(id);
 }
 
 /** True for the houses, false for the ordinary regional sects. */
@@ -3959,43 +3896,6 @@ export function contestedClaimsOf(factionId: string): SectEntry[] {
     return [...ids].map(id => SECT_BY_ID.get(id)).filter((s): s is SectEntry => Boolean(s));
 }
 
-/**
- * The house that holds the counter to this house's principle, where a living
- * house holds it at all. No specialisation is an automatic win, and this is
- * the lookup that says who to go to about it.
- */
-export function getCounterHouse(houseId: string): DaoHouseEntry | undefined {
-    const held = requireDaoHouse(houseId).counter.heldBy;
-    return held ? DAO_HOUSE_BY_ID.get(held) : undefined;
-}
-
-/** Disputes a given house is a party to. */
-export function getDisputesFor(factionId: string): DaoHouseDispute[] {
-    return DAO_HOUSE_DISPUTES.filter(d => d.positions.some(p => p.houseId === factionId));
-}
-
-/**
- * What a house's own archive says about how it came to hold its ground, and
- * what actually happened. The engine hands the official version out freely and
- * gates the true version behind whatever the run has actually uncovered - this
- * lookup does not decide that, it only supplies both.
- */
-export function getSuccessionAccounts(houseId: string): {
-    official: string;
-    truth: string;
-    predecessor: DestroyedDaoHouse | undefined;
-    traces: readonly string[];
-} | undefined {
-    const succession = requireDaoHouse(houseId).succession;
-    if (!succession) return undefined;
-    return {
-        official: succession.officialVersion,
-        truth: succession.trueVersion,
-        predecessor: DESTROYED_HOUSE_BY_ID.get(succession.predecessorId),
-        traces: succession.discoverableTraces
-    };
-}
-
 export function formationIntegrity(sectId: string): number {
     const sect = requireSect(sectId);
     if (sect.compound.formationNodesTotal === 0) return 0;
@@ -4009,13 +3909,13 @@ export function formationIntegrity(sectId: string): number {
 // court has carried `grantsInRegionId` since it was written; a sect had no
 // field at all saying where it stands, so "the Ashen Forge Clan holds the
 // volcanic flank" was a sentence in a `holds` string and nothing a query could
-// reach. These four functions are that field, on this side.
+// reach. The functions below are that field, on this side.
 //
 // THEY ARE LOOKUPS AND NOT A SECOND COPY, deliberately. `PREFECTURES` in
 // `regions.ts` is the single authority for who holds what ground, and the
 // alternative - a `SECT_TERRITORY` record beside `SECT_ADMISSION` - would have
 // been a second place entitled to an opinion about the same fact, which is
-// exactly the failure `ADVANCEMENT_EFFECTS` was written to end in `pills.ts`.
+// exactly the failure one statement of a rule exists to prevent.
 // A sect's ground is stated once, in the file that owns ground.
 //
 // `delegatedFromSect` returning null is a real answer and the most interesting
@@ -4026,16 +3926,6 @@ export function formationIntegrity(sectId: string): number {
 // nobody authorised and six people repainting stakes are five completely
 // different reasons for the same empty field.
 // ─────────────────────────────────────────────────────────────────────────
-
-/** The prefecture a sect holds, or sits inside as a sub-holder. */
-export function prefectureOfSect(sectId: string): Prefecture | undefined {
-    return prefectureForFaction(sectId);
-}
-
-/** The province a sect's ground is in. */
-export function provinceOfSect(sectId: string): Province | undefined {
-    return provinceForFaction(sectId);
-}
 
 /**
  * Whose gift a sect's ground is in - a court, an apex, or another sect where
@@ -4081,13 +3971,3 @@ export function territoryOfSect(sectId: string): {
     };
 }
 
-/** Every sect standing in a prefecture, holder first. */
-export function sectsSeatedIn(prefectureId: string): SectEntry[] {
-    const prefecture = getPrefecture(prefectureId);
-    if (!prefecture) return [];
-    const ids = [
-        ...(prefecture.heldByFactionId ? [prefecture.heldByFactionId] : []),
-        ...prefecture.subHoldings.map(s => s.factionId)
-    ];
-    return ids.map(id => getSect(id)).filter((s): s is SectEntry => s !== undefined);
-}

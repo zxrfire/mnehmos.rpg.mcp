@@ -63,6 +63,8 @@
 
 import {
     GRAVE_CONTENTS_BANDS,
+    contentsBandFor,
+    tribulationTouched,
     type Burial,
     type MannerOfDeath
 } from '../data/cultivation/inheritance-trials.js';
@@ -78,25 +80,13 @@ export interface HeadstoneFacts {
 }
 
 /**
- * Which of the two contents profiles this death produces.
- *
- * The mapping is `GRAVE_CONTENTS_BANDS`'s own comment made executable -
- * *"`tribulation` covers `heavenly_tribulation` and `failed_crossing`; `intact`
- * covers everything else"* - so there is one statement of it rather than two
- * that can drift.
+ * Which of the two contents profiles this death produces. The rule is the
+ * catalog's `tribulationTouched`, so there is one statement of it.
  */
 type ContentsProfile = keyof typeof GRAVE_CONTENTS_BANDS;
 
-/**
- * Deliberately not exported. `headstoneStructure` states the band it chose, by
- * name and by number, so the mapping is assertable through a function the game
- * actually calls - and an export only a test reads is a rule that looks
- * maintained and is reached by nobody.
- */
 function contentsProfileOf(manner: MannerOfDeath): ContentsProfile {
-    return manner === 'heavenly_tribulation' || manner === 'failed_crossing'
-        ? 'tribulation'
-        : 'intact';
+    return tribulationTouched(manner) ? 'tribulation' : 'intact';
 }
 
 /** The enums as somebody would say them, rather than as they are stored. */
@@ -164,7 +154,7 @@ export function whatTheStoneSays(facts: HeadstoneFacts): string[] {
  */
 export function headstoneStructure(facts: HeadstoneFacts): string {
     const profile = contentsProfileOf(facts.mannerOfDeath);
-    const band = GRAVE_CONTENTS_BANDS[profile];
+    const band = contentsBandFor(facts.mannerOfDeath);
     return `grave marker: occupant at ${rankName(facts.occupantOrdinal)}, `
         + `${facts.mannerOfDeath}, ${facts.burial}, ${facts.yearsDead} years dead. `
         + `GRAVE_CONTENTS_BANDS.${profile}: ${band.minItems}-${band.maxItems} item(s), `

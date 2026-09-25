@@ -41,9 +41,11 @@ import {
     isGrantAvailableAt
 } from '../../../src/engine/world/capability.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
-import { SPINE_REGIONS } from '../../../src/data/cultivation/regions.js';
+import { BLOWN_GROUND_ID, REGIONS } from '../../../src/data/cultivation/regions.js';
 import { horizonInDays } from '../../../src/web/what-you-can-see-from-up-there.js';
 import type { LocationRecord } from '../../../src/engine/world/locations.js';
+
+const SPINE_REGIONS = REGIONS.filter(r => r.id !== BLOWN_GROUND_ID);
 
 /**
  * Every stated road BETWEEN TWO PROVINCES, in walking days.

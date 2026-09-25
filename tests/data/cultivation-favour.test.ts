@@ -18,11 +18,13 @@ import {
     FAVOUR_STANCES,
     FavourStanceSchema,
     THE_APEXES_THAT_TRADE,
-    favourIsWorthSomethingAt,
     favourStanceOf,
     willNotBeMoved
 } from '../../src/data/cultivation/a-favour-skips-the-admission-bar.js';
 import { APEX_INSTITUTIONS, getApexInstitution } from '../../src/data/cultivation/hierarchy.js';
+
+const favourIsWorthSomethingAt = () =>
+    SECTS.map(s => s.id).filter(id => favourStanceOf(id)?.answer === 'yes, at a price');
 
 const barOf = (id: string): number => {
     const sect = getSect(id)!;

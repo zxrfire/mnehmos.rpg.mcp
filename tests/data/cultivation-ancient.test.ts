@@ -29,12 +29,9 @@ import {
     ProvinceSchema,
     ArterialSchema,
     arterialsOf,
-    contestedGround,
     delegatedFrom,
-    getPrefecture,
     getProvince,
     prefectureForFaction,
-    prefecturesOf,
     provinceForFaction,
     provinceForRegion,
     REGIONS,
@@ -47,12 +44,10 @@ import {
     FACTION_PARENTAGE
 } from '../../src/data/cultivation/hierarchy.js';
 import {
+    getSect,
     SECTS,
-    prefectureOfSect,
-    provinceOfSect,
     delegatedFromSect,
-    territoryOfSect,
-    sectsSeatedIn
+    territoryOfSect
 } from '../../src/data/cultivation/sects.js';
 import {
     ANCIENT_ARTS,
@@ -65,14 +60,8 @@ import {
     STOCKED_INHERITANCES,
     THE_EXTINCTION_IS_SYMMETRIC,
     THE_TRADE,
-    ancientMaterialsAt,
-    sitesHoldingAncientMaterial,
-    unitsLeftInTheWorld,
     THE_RUIN_MEDICINE,
     absenceTierOf,
-    ancientTechniques,
-    housesStillHoldingMedicine,
-    housesThatSpentTheirs,
     materialGatedArts,
     unresolvedAncientReferences
 } from '../../src/data/cultivation/lost-ages.js';
@@ -95,12 +84,44 @@ import {
 } from '../../src/data/cultivation/pills.js';
 import { getRecipe } from '../../src/data/cultivation/recipes.js';
 import {
-    MODERN_ABOVE_THE_LID_NOTES,
     TECHNIQUES,
     getTechnique
 } from '../../src/data/cultivation/techniques.js';
 import { SITES } from '../../src/data/cultivation/inheritance-trials.js';
 import { FALSE_IMMORTAL_ORDINAL, MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+const getPrefecture = (id: string) => PREFECTURES.find(p => p.id === id);
+const prefecturesOf = (provinceId: string) => PREFECTURES.filter(p => p.provinceId === provinceId);
+const contestedGround = () => PREFECTURES.filter(p => p.discrepancy !== 'none');
+const prefectureOfSect = (sectId: string) => prefectureForFaction(sectId);
+const provinceOfSect = (sectId: string) => provinceForFaction(sectId);
+const sectsSeatedIn = (prefectureId: string) => {
+    const prefecture = getPrefecture(prefectureId);
+    if (!prefecture) return [];
+    return [
+        ...(prefecture.heldByFactionId ? [prefecture.heldByFactionId] : []),
+        ...prefecture.subHoldings.map(s => s.factionId)
+    ].map(id => getSect(id)).filter((s): s is NonNullable<typeof s> => s !== undefined);
+};
+const ancientTechniques = () => ANCIENT_ARTS
+    .map(a => getTechnique(a.techniqueId))
+    .filter((t): t is NonNullable<typeof t> => t !== undefined);
+const unitsLeftInTheWorld = (herbId: string) => {
+    const m = LOST_MATERIALS.find(x => x.herbId === herbId);
+    return m ? m.remaining.inArchives + m.remaining.unfound : 0;
+};
+const ancientMaterialsAt = (siteId: string) => LOST_MATERIALS.flatMap(m => m.remaining.placements
+    .filter(place => place.siteId === siteId)
+    .map(place => ({ herbId: m.herbId, units: place.units, note: place.note })));
+const sitesHoldingAncientMaterial = () =>
+    [...new Set(LOST_MATERIALS.flatMap(m => m.remaining.placements.map(p => p.siteId)))];
+const housesStillHoldingMedicine = () =>
+    MEDICINE_HOLDINGS.filter(h => h.standing === 'holds_one' || h.standing === 'believed_to_hold');
+const housesThatSpentTheirs = () => MEDICINE_HOLDINGS.filter(h => h.standing === 'spent_theirs');
+// Arts above the Lid that are deliberately MODERN, with the reason each. Empty
+// today; an entry here is how an author declares one.
+const MODERN_ABOVE_THE_LID_NOTES: Readonly<Record<string, string>> = {};
 
 /** Everything that can legitimately hold or grant ground. */
 const HOLDER_IDS: ReadonlySet<string> = new Set<string>([

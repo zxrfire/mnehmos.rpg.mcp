@@ -342,6 +342,32 @@ describe('played, through the whole service', () => {
             .toMatch(/to a technique/);
     }, 200_000);
 
+    /** A herb says which pills it goes into, off the recipe catalog. */
+    it('says what a herb is made into', async () => {
+        const { game } = await makeGameInWorld({ seed: 'asked-a-herb', worldSeed: 'world-asked-about' });
+        await game.newRun('Wen Shuyi');
+
+        const result = await game.act('tell me about the Grave Lily');
+
+        const read = engineCalls(result).find(call => call.action === 'investigate');
+        expect(read?.summary).toMatch(/to a herb/);
+        expect(result.narration).toMatch(/Alchemists put it into the [^.]*Soul-Quenching Pill/);
+    }, 200_000);
+
+    /** A province's own word for a realm, which the standing read prints, can be asked back. */
+    it('reads a local rank title back to the shared ladder', async () => {
+        const { game } = await makeGameInWorld({ seed: 'asked-a-title', worldSeed: 'world-asked-about' });
+        await game.newRun('Wen Shuyi');
+
+        const result = await game.act('tell me about Standing Cut');
+
+        const read = engineCalls(result).find(call => call.action === 'investigate');
+        expect(read?.ok).toBe(true);
+        expect(result.narration).toMatch(/Standing Cut is what [^.]* calls Foundation Establishment/);
+        // The known misreading travels with it.
+        expect(result.narration).toMatch(/Three courses against four stages/);
+    }, 200_000);
+
     /**
      * The question that used to come back as the player's own affiliation, or
      * as a refusal about a house nobody had named. It reaches the register of

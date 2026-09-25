@@ -135,12 +135,8 @@ import {
     TechniqueGradeSchema,
     type SectAlignment
 } from '../../schema/cultivation.js';
-import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
-import {
-    narrowToOffered,
-    type RegardAskerInput
-} from '../../engine/cultivation/regard.js';
-import { HerbBiomeSchema, type HerbBiome } from './herbs.js';
+import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { HerbBiomeSchema } from './herbs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -3773,75 +3769,13 @@ export const CONTRACT_ENGINE_REQUIREMENTS: readonly string[] = [
 
 const BEAST_BY_ID: ReadonlyMap<string, Beast> = new Map(BEASTS.map(b => [b.id, b]));
 const MATERIAL_BY_ID: ReadonlyMap<string, BeastMaterial> = new Map(BEAST_MATERIALS.map(m => [m.id, m]));
-const TIDE_BY_ID: ReadonlyMap<string, BeastTide> = new Map(BEAST_TIDES.map(t => [t.id, t]));
-
-const BEASTS_BY_BIOME: ReadonlyMap<HerbBiome, readonly Beast[]> = (() => {
-    const map = new Map<HerbBiome, Beast[]>();
-    for (const b of BEASTS) {
-        const bucket = map.get(b.biome);
-        if (bucket) bucket.push(b);
-        else map.set(b.biome, [b]);
-    }
-    return map;
-})();
-
-const BEASTS_BY_NATURE: ReadonlyMap<BeastNature, readonly Beast[]> = (() => {
-    const map = new Map<BeastNature, Beast[]>();
-    for (const b of BEASTS) {
-        const bucket = map.get(b.nature);
-        if (bucket) bucket.push(b);
-        else map.set(b.nature, [b]);
-    }
-    return map;
-})();
-
-const BEASTS_BY_DISPOSITION: ReadonlyMap<BeastDisposition, readonly Beast[]> = (() => {
-    const map = new Map<BeastDisposition, Beast[]>();
-    for (const b of BEASTS) {
-        const bucket = map.get(b.disposition);
-        if (bucket) bucket.push(b);
-        else map.set(b.disposition, [b]);
-    }
-    return map;
-})();
 
 export function getBeast(id: string): Beast | undefined {
     return BEAST_BY_ID.get(id);
 }
 
-export function requireBeast(id: string): Beast {
-    const b = BEAST_BY_ID.get(id);
-    if (!b) throw new Error(`Unknown beast: ${id}`);
-    return b;
-}
-
-export function getBeastsByBiome(biome: HerbBiome): readonly Beast[] {
-    return BEASTS_BY_BIOME.get(biome) ?? [];
-}
-
-export function getBeastsByNature(nature: BeastNature): readonly Beast[] {
-    return BEASTS_BY_NATURE.get(nature) ?? [];
-}
-
-/**
- * Everything inclined the same way about people.
- *
- * The same shape as `getSectsByAlignment` and reading the same field, which is
- * the point: a question about who takes from whom is answered the same way
- * whether the answer is a house or an animal.
- */
-export function getBeastsByDisposition(disposition: BeastDisposition): readonly Beast[] {
-    return BEASTS_BY_DISPOSITION.get(disposition) ?? [];
-}
-
 export function getBeastMaterial(id: string): BeastMaterial | undefined {
     return MATERIAL_BY_ID.get(id);
-}
-
-export function requireBeastMaterial(id: string): BeastMaterial {
-    const m = MATERIAL_BY_ID.get(id);
-    if (!m) throw new Error(`Unknown beast material: ${id}`);
-    return m;
 }
 
 /** Everything that comes off one beast, resolved. */
@@ -3876,94 +3810,4 @@ export function materialsOf(beastId: string): BeastMaterial[] {
  */
 export function coreOf(beastId: string): BeastMaterial | undefined {
     return materialsOf(beastId).find(m => m.core);
-}
-
-export function getBeastTide(id: string): BeastTide | undefined {
-    return TIDE_BY_ID.get(id);
-}
-
-export function tidesInRegion(regionId: string): BeastTide[] {
-    return BEAST_TIDES.filter(t => t.regionId === regionId);
-}
-
-/** What is actually in a tide, resolved. */
-export function beastsInTide(tideId: string): Beast[] {
-    const tide = getBeastTide(tideId);
-    if (!tide) return [];
-    return tide.beastIds
-        .map(id => BEAST_BY_ID.get(id))
-        .filter((b): b is Beast => b !== undefined);
-}
-
-/**
- * The only reading of a beast anybody gets, and the reading a cultivator
- * makes across a valley. One ladder, so the realm vocabulary applies to a
- * boar exactly as it applies to a disciple.
- */
-export function describeBeastRealm(beast: Beast): string {
-    return rankName(beast.ordinal);
-}
-
-/** Beasts a cultivator at this ordinal could take without a realm gap. */
-export function findBeastsForOrdinal(ordinal: number, biome?: HerbBiome): Beast[] {
-    const cap = clampOrdinal(ordinal);
-    const pool = biome ? getBeastsByBiome(biome) : BEASTS;
-    return pool.filter(b => b.ordinal <= cap);
-}
-
-/**
- * What is on this ground and above the cultivator, which is the question that
- * actually kills people. A four-rank gap is not a hard fight; it is a death,
- * and the caller is entitled to know before walking in.
- */
-export function findThreatsAboveOrdinal(ordinal: number, biome?: HerbBiome): Beast[] {
-    const floor = clampOrdinal(ordinal);
-    const pool = biome ? getBeastsByBiome(biome) : BEASTS;
-    return pool.filter(b => b.ordinal > floor);
-}
-
-/** Things that are a competing draw on, or sitting on top of, a vein. */
-export function veinContenders(): Beast[] {
-    return BEASTS.filter(b => b.veinRelation === 'holds' || b.veinRelation === 'drains');
-}
-
-/** What only exists behind a seal, which is most of what is impressive. */
-export function sealedOnlyBeasts(): Beast[] {
-    return BEASTS.filter(b => b.persistence === 'sealed_only');
-}
-
-/** Everything that can be talked to, which is everything at or past the change. */
-export function negotiableBeasts(): Beast[] {
-    return BEASTS.filter(b => anythingAtThisRungSpeaks(b.ordinal));
-}
-
-/**
- * Weighted draw from a uniform [0,1) sample. Takes the sample rather than an
- * RNG so the caller owns seeding, matching `rollHerb` and `rollEncounter`.
- * Returns undefined when nothing in this biome is reachable at this ordinal.
- */
-export function rollBeast(
-    ordinal: RegardAskerInput,
-    sample: number,
-    biome?: HerbBiome
-): Beast | undefined {
-    const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
-    // Reachable first, then narrowed to what is still worth meeting. A rat the
-    // asker is twenty rungs past does not get drawn as an encounter; it gets
-    // walked past. Where nothing survives the narrowing the reachable set comes
-    // back, because a ground with only rats on it still has rats on it.
-    const pool = narrowToOffered(findBeastsForOrdinal(rung, biome), ordinal);
-    if (pool.length === 0) return undefined;
-    const total = pool.reduce((sum, b) => sum + b.frequency, 0);
-    let cursor = Math.max(0, Math.min(0.999999999, sample)) * total;
-    for (const b of pool) {
-        cursor -= b.frequency;
-        if (cursor < 0) return b;
-    }
-    return pool[pool.length - 1];
-}
-
-function clampOrdinal(ordinal: number): number {
-    if (!Number.isFinite(ordinal)) return 0;
-    return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
 }

@@ -28,6 +28,14 @@ import {
     TECHNIQUES
 } from '../data/cultivation/index.js';
 import { PRICES, type Price } from '../data/cultivation/mortal-world.js';
+import { getRecipesUsingHerb } from '../data/cultivation/recipes.js';
+import { residueFor } from '../data/cultivation/history.js';
+import {
+    REGIONS,
+    rankMisreadingFor,
+    regionIdOfPlace,
+    translateLocalTitle
+} from '../data/cultivation/regions.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
@@ -857,13 +865,16 @@ export function resolveRecipe(query: string): ResolvedEntity | null {
 export function resolveHerb(query: string): ResolvedEntity | null {
     const match = best(query, HERBS, herb => herb.name);
     if (!match) return null;
+    const goesInto = [...new Set(getRecipesUsingHerb(match.id)
+        .map(r => PILLS.find(p => p.id === r.producesPillId)?.name ?? r.name))];
     return {
         kind: 'herb',
         id: match.id,
         name: match.name,
         facts: [
             `${match.name}. ${match.description}`,
-            `It grows where the ${match.biome} is, and it goes for about ${match.value} spirit stones to anyone buying.`
+            `It grows where the ${match.biome} is, and it goes for about ${match.value} spirit stones to anyone buying.`,
+            ...(goesInto.length > 0 ? [`Alchemists put it into the ${goesInto.join(', the ')}.`] : [])
         ],
         structure: [
             `${articleCapitalised(match.grade)} ${match.grade}-grade herb of the ${match.biome}, `
@@ -1121,12 +1132,19 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
 
     // Deliberately does NOT volunteer which sect holds the ground. That is one
     // of the most consequential facts in the world and it is not free for
-    // standing on a road; it has to be learned from a source.
+    // standing on a road; it has to be learned from a source. What the nearest
+    // families say about it, and what they do about it, is free.
+    const told = residueFor(cleaned);
     return {
         kind: 'place',
         id: cleaned,
         name: cleaned,
-        facts: [`${cleaned}, which is a name and a road and not much else that anyone here can tell you.`],
+        facts: told.length === 0
+            ? [`${cleaned}, which is a name and a road and not much else that anyone here can tell you.`]
+            : told.flatMap(r => [
+                `${cleaned}. What the families nearest it say: ${r.whatTheySay}`,
+                `What they do about it: ${r.practice}`
+            ]),
         structure: ['Places are free text in this engine; nothing about them is simulated.']
     };
 }
@@ -1260,10 +1278,42 @@ export function resolveAnything(
         // catalogs, because a thing standing in front of somebody is a better
         // answer than a pill with a similar name that is nowhere near them.
         resolveObject(query, self, scope) ??
+        resolveLocalTitle(query, self) ??
         resolveRecipe(query) ??
         resolvePill(query) ??
         resolveHerb(query)
     );
+}
+
+/**
+ * A province's own word for a realm, which the standing read prints, read back
+ * to the shared ladder. The asker's own province is asked first.
+ */
+export function resolveLocalTitle(query: string, self: Cultivator): ResolvedEntity | null {
+    const wanted = query.trim().replace(/^(?:the|a|an)\s+/i, '').trim();
+    if (wanted.length < 3) return null;
+    const here = regionIdOfPlace(self.location);
+    const regions = [...REGIONS].sort((a, b) => Number(b.id === here) - Number(a.id === here));
+    for (const region of regions) {
+        const title = translateLocalTitle(region.id, wanted);
+        if (!title) continue;
+        const misread = rankMisreadingFor(title.band.localName);
+        return {
+            kind: 'rank',
+            id: `${region.id}#title-${title.band.localName}`,
+            name: title.band.localName,
+            facts: [
+                `${title.band.localName} is what ${region.name} calls ${title.standardName}. `
+                + title.band.subRankNote,
+                ...(misread ? [misread.insideIsNot] : [])
+            ],
+            structure: [
+                `${title.band.localName} covers ${theRung(title.fromOrdinal)} to `
+                + `${theRung(title.toOrdinal)} on the shared ladder.`
+            ]
+        };
+    }
+    return null;
 }
 
 /**

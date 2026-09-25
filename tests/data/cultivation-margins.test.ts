@@ -36,11 +36,6 @@ import {
     FALLEN,
     FallenSchema,
     FallenKindSchema,
-    getFallen,
-    fallenByKind,
-    fallenInRegion,
-    fallenWorkingAs,
-    dangerousFallen,
     monthsOfWorkToAfford,
     type Fallen
 } from '../../src/data/cultivation/fallen.js';
@@ -63,20 +58,46 @@ import {
     UNBACKED,
     UNBACKED_DEDUCTION,
     UNDERWRITTEN_OCCUPATION_IDS,
-    getRogueTrade,
-    getBounty,
-    getDealer,
-    getAuctionVenue,
-    tradesForOrdinal,
-    bountiesFrom,
-    bountiesHonoured,
-    dealersIn,
-    venuesAffordableWith,
-    bondInCash,
-    roadPrice,
-    unbackedMonthlyFor,
-    monthsToAffordOnTheRoad
+    unbackedMonthlyFor
 } from '../../src/data/cultivation/rogues.js';
+
+// Catalog reads only this file makes. The game reads the catalog arrays itself.
+const getFallen = (id: string) => FALLEN.find(f => f.id === id);
+const fallenByKind = (kind: Fallen['kind']) => FALLEN.filter(f => f.kind === kind);
+const fallenInRegion = (regionId: string) => FALLEN.filter(f => f.place.regionId === regionId);
+const fallenWorkingAs = (occupationId: string) => FALLEN.filter(f => f.work.occupationId === occupationId);
+const dangerousFallen = (opts: { underestimatedOnly?: boolean } = {}) =>
+    FALLEN.filter(f => f.danger !== null && (!opts.underestimatedOnly || f.danger.underestimated));
+const getRogueTrade = (id: string) => ROGUE_TRADES.find(t => t.id === id);
+const getBounty = (id: string) => BOUNTIES.find(b => b.id === id);
+const getDealer = (id: string) => DEALERS.find(d => d.id === id);
+const getAuctionVenue = (id: string) => AUCTION_VENUES.find(v => v.id === id);
+const tradesForOrdinal = (ordinal: number) => ROGUE_TRADES.filter(t => t.minOrdinal <= ordinal);
+const bountiesFrom = (factionId: string) => BOUNTIES.filter(b => b.posterFactionId === factionId);
+const bountiesHonoured = (level: (typeof BOUNTIES)[number]['honoured']) =>
+    BOUNTIES.filter(b => b.honoured === level);
+const dealersIn = (regionId: string, side?: (typeof DEALERS)[number]['side']) =>
+    DEALERS.filter(d => d.regionId === regionId && (side === undefined || d.side === side));
+const venuesAffordableWith = (stones: number = STARTING_SPIRIT_STONES) =>
+    AUCTION_VENUES.filter(v => v.entryBondStones <= stones);
+const bondInCash = (venueId: string) => {
+    const venue = getAuctionVenue(venueId);
+    return venue ? stonesToCash(venue.entryBondStones) : undefined;
+};
+const roadPrice = (priceId: string, kind: keyof typeof DEALER_MARKUP) => {
+    const price = getPrice(priceId);
+    return price ? Math.round(price.cash * DEALER_MARKUP[kind].multiplier) : undefined;
+};
+const monthsToAffordOnTheRoad = (
+    priceId: string,
+    kind: keyof typeof DEALER_MARKUP,
+    occupationId: string
+): number | undefined => {
+    const cost = roadPrice(priceId, kind);
+    const monthly = unbackedMonthlyFor(occupationId);
+    if (cost === undefined || monthly === undefined || monthly <= 0) return undefined;
+    return Number((cost / monthly).toFixed(1));
+};
 
 /**
  * One catalog row, in the shape `isTheSamePerson` declares it takes.

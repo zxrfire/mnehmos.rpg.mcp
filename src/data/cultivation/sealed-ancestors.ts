@@ -638,27 +638,3 @@ export const SEALED_ANCESTOR_PATTERN = {
     theOneThatWillNotWake:
         'At least one of them is already gone, and the holder is the last party who would find out. Xu Ci has been dead for perhaps two centuries under the Immovable Mountain Temple datum stone, the house has published a schedule it cannot execute, and its entire strategic posture rests on it. This is the most likely state for the oldest of these, and nobody checks, because checking a sealed ancestor is indistinguishable from spending one.'
 } as const;
-
-// ─────────────────────────────────────────────────────────────────────────
-// LOOKUPS
-// ─────────────────────────────────────────────────────────────────────────
-
-const HELD_BY_ID: ReadonlyMap<string, HeldInstrument> = new Map(HELD_INSTRUMENTS.map(h => [h.id, h]));
-
-export function getHeldInstrument(id: string): HeldInstrument | undefined {
-    return HELD_BY_ID.get(id);
-}
-
-/**
- * Instruments whose holder is wrong about what they have. The engine should
- * never surface this to the holder, and the holder should keep acting on the
- * belief.
- */
-export function bluffs(): HeldInstrument[] {
-    return HELD_INSTRUMENTS.filter(h => h.condition !== h.holderBelieves);
-}
-
-/** Sealed ancestors nobody is maintaining, which is all of the unowned ones. */
-export function unmaintainedSeals(): UnownedAncestor[] {
-    return UNOWNED_ANCESTORS.filter(u => !u.sealMaintained);
-}

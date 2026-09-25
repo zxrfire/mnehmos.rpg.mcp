@@ -55,6 +55,7 @@ import {
     lineageTierFor,
     standingsAreNotATotalOrder
 } from '../data/cultivation/crossings.js';
+import { nameIsUsable, whoAnswersFor } from '../data/cultivation/named-figures.js';
 
 /**
  * How much of the answer somebody at this height gets.
@@ -206,6 +207,15 @@ export function whoStandsBehindThem(input: {
     lines.push(standing.whatDepletionLooksLike);
     lines.push(standing.resilience);
     lines.push(standing.behaviour);
+
+    // Who answers, where anybody does: the most junior immortal the house can name.
+    const answers = channel === null ? undefined : whoAnswersFor(input.factionId);
+    if (answers && nameIsUsable(answers)) {
+        lines.push(
+            `The one above who answers for ${input.houseName} is ${answers.name}, the most junior `
+            + 'of its immortals.'
+        );
+    }
 
     // AND WHY A LOST NAME IS A CUT TIE. Said only where it bears: a house whose
     // record has gone is not being ignored, it has severed the thing that would

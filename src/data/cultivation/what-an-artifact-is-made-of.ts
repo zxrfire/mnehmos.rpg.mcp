@@ -244,14 +244,6 @@ export function whatTheRecipeSpends(
     return read.short.length > 0 ? null : read.filled;
 }
 
-/** Whether this haul is a whole recipe. */
-export function theBenchIsReady(
-    grade: TechniqueGrade,
-    materialsToHand: readonly string[]
-): boolean {
-    return whatTheBenchIsShortOf(grade, materialsToHand).length === 0;
-}
-
 /**
  * How many substitutes a refusal names before it stops.
  *
@@ -299,4 +291,3 @@ export function whyTheBenchIsShort(
     return `${whoseHands} can work ${grade} grade and the bench is short by `
         + `${short.length} of ${whatItIsMadeOf(grade)?.length ?? 0}. ${lines.join(' ')}`;
 }
-

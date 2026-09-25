@@ -304,33 +304,9 @@ export const HOW_THE_COURT_IS_SEEN = {
         'The province holds two lists it cannot join. It knows who went in, because the door is public and famous people were watched walking up it. It knows the working names, because those circulate. What it cannot do is match one to the other, and the reason is simply that there is almost no evidence: these people hardly ever come out, so a handful of sightings across centuries will not establish that the figure under one alias is the person who went through the gate, however reasonable the guess. So there are confident identifications, some of them are probably right, and not one of them can be closed. Somebody hunting a parent inside the Court is doing inference on a matching problem with a handful of candidates - counting arrivals against names, watching ages and rungs, noticing who stopped being seen elsewhere - which is a real thing a person can be good or bad at, and better than a locked door.'
 } as const;
 
-const BY_TIER: ReadonlyMap<HollowCourtTier, HollowCourtMember[]> = (() => {
-    const map = new Map<HollowCourtTier, HollowCourtMember[]>();
-    for (const m of HOLLOW_COURT_ROSTER) {
-        const bucket = map.get(m.tier);
-        if (bucket) bucket.push(m);
-        else map.set(m.tier, [m]);
-    }
-    return map;
-})();
-
-/** Everybody at one rung of the Court. */
-export function hollowCourtTier(tier: HollowCourtTier): readonly HollowCourtMember[] {
-    return BY_TIER.get(tier) ?? [];
-}
-
 /** One of them, by id. */
 export function getHollowCourtMember(id: string): HollowCourtMember | undefined {
     return HOLLOW_COURT_ROSTER.find(m => m.id === id);
-}
-
-/**
- * The aliases the province actually hears, without the people behind them.
- */
-export function workingNamesInCirculation(): readonly string[] {
-    return HOLLOW_COURT_ROSTER
-        .map(m => m.worksOutsideAs)
-        .filter((n): n is string => n !== null);
 }
 
 /**

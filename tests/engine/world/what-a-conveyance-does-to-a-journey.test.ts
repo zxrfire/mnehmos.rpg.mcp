@@ -61,9 +61,14 @@ import {
 } from '../../../src/engine/world/what-a-sea-crossing-costs.js';
 import { OBJECT_CEILING_BELOW_THE_LID } from '../../../src/engine/cultivation/realms.js';
 import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import { getTechnique, isSwordArt, SWORD_ARTS } from '../../../src/data/cultivation/techniques.js';
-import { primaryRoadOf } from '../../../src/schema/cultivation.js';
+import { TECHNIQUES, getTechnique } from '../../../src/data/cultivation/techniques.js';
+import { isOnRoad, primaryRoadOf } from '../../../src/schema/cultivation.js';
 import { techniqueEffectiveness } from '../../../src/engine/cultivation/understanding.js';
+
+const SWORD_ARTS = TECHNIQUES
+    .filter(t => isOnRoad(t, 'sword'))
+    .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
+const isSwordArt = (id: string) => SWORD_ARTS.some(t => t.id === id);
 
 const FOOT = requireConveyance('conv-on-foot');
 const MOUNT = requireConveyance('conv-mount-mortal');

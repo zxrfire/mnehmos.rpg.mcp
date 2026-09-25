@@ -16,8 +16,16 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildRegister, renderRegisterHtml } from '../../src/web/register.js';
-import { relationshipBetween } from '../../src/data/cultivation/faction-relationships.js';
+import { relationshipsOf } from '../../src/data/cultivation/faction-relationships.js';
 import { contentionBetween } from '../../src/data/cultivation/what-two-houses-both-have-a-hand-on.js';
+import { idsForFaction } from '../../src/data/cultivation/governance-and-water-rights.js';
+
+// The one tie between two named bodies, from the first one's side.
+const relationshipBetween = (factionId: string, otherId: string) => {
+    const theirs = new Set(idsForFaction(otherId));
+    return relationshipsOf(factionId, idsForFaction(factionId))
+        .find(r => idsForFaction(r.otherId).some(id => theirs.has(id)));
+};
 
 const HTML = renderRegisterHtml(buildRegister());
 

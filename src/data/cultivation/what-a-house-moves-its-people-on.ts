@@ -6,10 +6,7 @@
 import { howMany } from '../../utils/a-count-agrees-with-what-it-counts.js';
 import { makeObject } from '../../engine/world/possessions.js';
 import type { ObjectRecord } from '../../engine/world/possessions.js';
-import type {
-    Conveyance,
-    ConveyanceRange
-} from '../../engine/world/what-a-conveyance-does-to-a-journey.js';
+import type { Conveyance } from '../../engine/world/what-a-conveyance-does-to-a-journey.js';
 import type {
     ConveyanceRecipe
 } from '../../engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
@@ -167,10 +164,6 @@ export function requireConveyance(id: string): Conveyance {
     const c = CONVEYANCE_BY_ID.get(id);
     if (!c) throw new Error(`Unknown conveyance: ${id}`);
     return c;
-}
-
-export function conveyancesForRange(range: ConveyanceRange): readonly Conveyance[] {
-    return CONVEYANCES.filter(c => c.range === range);
 }
 
 /** The two rows that are objects. Everything else is an amount or an art. */
@@ -511,11 +504,6 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
             + 'knew where it was decided was worth more than a boat.'
     })
 ];
-
-/** Everything a body owns outright. A null owner is nobody's and returns for none. */
-export function craftOwnedBy(ownerId: string): readonly ObjectRecord[] {
-    return TRACKED_CRAFT.filter(c => c.ownerId !== null && c.ownerId === ownerId);
-}
 
 /**
  * The conveyance kind a tracked craft is an instance of.

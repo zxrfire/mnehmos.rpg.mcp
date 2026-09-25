@@ -29,20 +29,23 @@ import {
     THE_LINEAGE_CLAIM,
     WHAT_SHE_DOES_WITH_THE_TIME,
     WHEN_ONE_WAKES,
-    LOST_RECORDS,
-    getHeldInstrument,
-    bluffs,
-    unmaintainedSeals
+    LOST_RECORDS
 } from '../../src/data/cultivation/sealed-ancestors.js';
 import {
     CONTINGENCIES,
     ContingencySchema,
     VAULT_CONTENTS,
-    OTHERS_WHO_NOTICED,
-    getContingency,
-    contingenciesHeldBy,
-    contingenciesAgainst
+    OTHERS_WHO_NOTICED
 } from '../../src/data/cultivation/contingencies.js';
+
+// Catalog reads only this file makes.
+const getHeldInstrument = (id: string) => HELD_INSTRUMENTS.find(h => h.id === id);
+const bluffs = () => HELD_INSTRUMENTS.filter(h => h.condition !== h.holderBelieves);
+const unmaintainedSeals = () => UNOWNED_ANCESTORS.filter(u => !u.sealMaintained);
+const getContingency = (id: string) => CONTINGENCIES.find(c => c.id === id);
+const contingenciesHeldBy = (factionId: string) => CONTINGENCIES.filter(c => c.heldBy === factionId);
+const contingenciesAgainst = (factionId: string) =>
+    CONTINGENCIES.filter(c => c.targetFactionId === factionId);
 
 describe('the asymmetry', () => {
     it('states the law once, with its number and its consequences', () => {

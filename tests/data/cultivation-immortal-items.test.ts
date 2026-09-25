@@ -24,18 +24,9 @@ import {
     ImmortalItemSchema,
     IMMORTAL_HOLDINGS,
     HoldingSchema,
-    worldCountByGrade,
-    totalHeldBy,
-    gradeCeilingOf,
     RecordedRefusalSchema,
     ENGINE_GAPS,
-    getImmortalItem,
     getHoldingsOf,
-    getHoldersOf,
-    worldCountOf,
-    persuadableHolders,
-    recordedRefusals,
-    getEngineGap,
     THE_LAST_REALM_IS_UNBUYABLE,
     THE_STEP_AND_THE_BOUNDARY,
     ONCE_IN_A_LIFE,
@@ -45,15 +36,43 @@ import {
     THE_SENDING_PYRAMID,
     REGISTERS_COUNT_WHAT_THEY_CAN_SEE,
     RECEIPT_HISTORIES,
-    ReceiptHistorySchema,
-    receiptsFor,
-    spentAcrossHistories
+    ReceiptHistorySchema
 } from '../../src/data/cultivation/immortal-items.js';
 import { rankName, realmForOrdinal, isRealmBoundary } from '../../src/engine/cultivation/realms.js';
 import { MAX_RANKS_PER_TURN } from '../../src/schema/cultivation.js';
 import { getSectAdmission } from '../../src/data/cultivation/sects.js';
 import { AZURE_CLOUD_INTAKE } from '../../src/data/cultivation/hierarchy.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
+
+// Catalog reads only this file makes. The game reads the catalog itself.
+type Counts = { higher: number; middle: number; lower: number };
+const addCounts = (a: Counts, b: Counts): Counts =>
+    ({ higher: a.higher + b.higher, middle: a.middle + b.middle, lower: a.lower + b.lower });
+const NONE: Counts = { higher: 0, middle: 0, lower: 0 };
+const getImmortalItem = (id: string) => IMMORTAL_ITEMS.find(i => i.id === id);
+const getHoldersOf = (itemId: string) => IMMORTAL_HOLDINGS.filter(h => h.itemId === itemId);
+const worldCountOf = (itemId: string) => getHoldersOf(itemId).reduce((sum, h) => sum + h.count, 0);
+const worldCountByGrade = (itemId: string) => getHoldersOf(itemId).reduce((acc, h) => addCounts(acc, h.byGrade), NONE);
+const totalHeldBy = (factionId: string) => {
+    const counts = getHoldingsOf(factionId).reduce((acc, h) => addCounts(acc, h.byGrade), NONE);
+    return { ...counts, total: counts.higher + counts.middle + counts.lower };
+};
+const gradeCeilingOf = (factionId: string): 'higher' | 'middle' | 'lower' | 'none' => {
+    const held = totalHeldBy(factionId);
+    return held.higher > 0 ? 'higher' : held.middle > 0 ? 'middle' : held.lower > 0 ? 'lower' : 'none';
+};
+const persuadableHolders = () => IMMORTAL_HOLDINGS.filter(h => h.releaseMode === 'written_instruction');
+const recordedRefusals = () => IMMORTAL_HOLDINGS
+    .filter(h => h.recordedRefusal !== null)
+    .map(h => ({ holding: h, refusal: h.recordedRefusal! }));
+const getEngineGap = (effect: string) => ENGINE_GAPS.find(g => g.effect === effect);
+const receiptsFor = (factionId: string) => RECEIPT_HISTORIES.find(r => r.factionId === factionId);
+const spentAcrossHistories = (itemId: string) => RECEIPT_HISTORIES.filter(r => r.itemId === itemId)
+    .reduce((acc, r) => addCounts(acc, {
+        higher: r.everReceived.higher - r.stillHeld.higher,
+        middle: r.everReceived.middle - r.stillHeld.middle,
+        lower: r.everReceived.lower - r.stillHeld.lower
+    }), NONE);
 
 describe('items from above', () => {
     it('parses, and there are almost none of them', () => {
