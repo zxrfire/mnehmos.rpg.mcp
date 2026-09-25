@@ -44,9 +44,12 @@ import {
 import {
     whatABodyCanCarry,
     whatAllOfThatTakes,
-    whatStopsThemCarryingIt
+    whatStopsThemCarryingIt,
+    WHAT_A_RING_HOLDS
 } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { residenceOf, whereTheyKeepTheirThings } from '../engine/world/somewhere-that-is-theirs.js';
+import { gradeForOrdinal } from '../data/cultivation/techniques.js';
 import { hadAs, isWorn, type ObjectRecord } from '../engine/world/possessions.js';
 import {
     howManyHeld,
@@ -65,11 +68,13 @@ function aThingNamed(rows: readonly ObjectRecord[], said: string): ObjectRecord 
 export type StowIntent = 'leave' | 'collect' | 'look';
 
 /**
- * What the quarters read needs off the run, resolved in one place.
+ * Where this cultivator keeps things: an abode of their own first, else the room their house
+ * gives them. Each with how it is reached from where they stand.
  *
- * Exported because `move` answers "I go home" out of the same two facts and a
- * second resolution of them would be a second opinion about where somebody
- * lives.
+ * THE ABODE FIRST, WHERE THERE IS ONE: a house quarters you, an abode is yours, the same order
+ * `whereHomeIs` answers in. What an abode holds is flat by the holder's grade, what a ring of that
+ * grade holds. The owner: "just do a flat amount, mortal, earth, heaven grade depending on your
+ * ordinal". Reached only standing in it; the house's room only on the house's ground.
  */
 export function theQuartersThisCultivatorHas(
     game: GameService,
@@ -81,7 +86,29 @@ export function theQuartersThisCultivatorHas(
     houseName: string;
     rankTitle: string;
     stipend: number;
+    reachedFrom: (placeId: string | null) => boolean;
 } | null {
+    const abode = residenceOf(world, cultivator.id);
+    if (abode) {
+        const grade = gradeForOrdinal(cultivator.realmOrdinal);
+        return {
+            quarters: {
+                locationId: abode.id,
+                name: abode.name,
+                purpose: 'residence',
+                precinctIndex: 0,
+                factionId: '',
+                holderId: whereTheyKeepTheirThings(world, cultivator.id) ?? abode.id,
+                room: WHAT_A_RING_HOLDS[grade],
+                shareWith: 0
+            } as Quarters,
+            factionId: '',
+            houseName: abode.name,
+            rankTitle: 'its holder',
+            stipend: 0,
+            reachedFrom: placeId => isAtOrInside(world, placeId, abode.id)
+        };
+    }
     const position = positionIn(game.repos, cultivator.id);
     if (!position) return null;
     const stipend = game.repos.sects.stipendForRank(position.sectId, position.rankIndex);
@@ -98,8 +125,21 @@ export function theQuartersThisCultivatorHas(
         factionId: position.sectId,
         houseName: position.sectName,
         rankTitle: position.rankTitle,
-        stipend
+        stipend,
+        reachedFrom: placeId => standingOnTheirHousesGround(world, placeId, position.sectId)
     };
+}
+
+/** Whether a place is this one or inside it. */
+function isAtOrInside(world: WorldState, placeId: string | null, targetId: string): boolean {
+    let at = placeId ? world.locations.find(row => row.id === placeId) ?? null : null;
+    const seen = new Set<string>();
+    while (at && !seen.has(at.id)) {
+        if (at.id === targetId) return true;
+        seen.add(at.id);
+        at = at.parentId ? world.locations.find(row => row.id === at!.parentId) ?? null : null;
+    }
+    return false;
 }
 
 /**
@@ -162,8 +202,8 @@ export function whatIsKeptInYourRoom(game: GameService, world: WorldState, culti
     if (!mine) return null;
     const inside = whatIsInThere(game, mine.quarters);
     if (inside === 'There is nothing in it.') return null;
-    const here = standingOnTheirHousesGround(world, game.worldPlaceOf(cultivator), mine.factionId);
-    return `Kept in your room at ${mine.houseName}: ${inside}.`
+    const here = mine.reachedFrom(game.worldPlaceOf(cultivator));
+    return `Kept ${mine.factionId === '' ? 'at' : 'in your room at'} ${mine.houseName}: ${inside}.`
         + (here ? '' : ' Not reachable from where you are standing.');
 }
 
@@ -237,7 +277,7 @@ export const stowVerbs = {
         }
 
         const here = this.worldPlaceOf(cultivator);
-        if (!standingOnTheirHousesGround(world, here, factionId)) {
+        if (!mine.reachedFrom(here)) {
             return refused('engine.notAtYourHouse', 'stow', factsForRefusal(
                 'Your room is not here.',
                 `${whatTheRoomIsLike(quarters)} It is at ${houseName}, and a room does not `

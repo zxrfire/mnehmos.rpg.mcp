@@ -37,6 +37,9 @@ import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
 import { makeObject } from '../../src/engine/world/possessions';
+import { theQuartersThisCultivatorHas } from '../../src/web/leaving-a-thing-in-your-own-room';
+import { WHAT_A_RING_HOLDS } from '../../src/engine/world/what-a-body-can-carry-and-what-a-ring-holds';
+import { gradeForOrdinal } from '../../src/data/cultivation/techniques';
 import { parseIntent } from '../../src/web/actions';
 import { SECTS } from '../../src/data/cultivation/sects';
 import { getPill } from '../../src/data/cultivation/pills';
@@ -266,6 +269,30 @@ describe('home is a place, or plainly nowhere', () => {
         // Somebody on a roll AND holding ground answers with the ground. A
         // house quarters you; an abode is yours.
         expect(whereHomeIs(harness.game, settled.state, cultivator).kind).toBe('abode');
+    });
+
+    /**
+     * An abode of your own keeps things too, and holds what a ring of your grade holds. The owner:
+     * "just do a flat amount, mortal, earth, heaven grade depending on your ordinal".
+     */
+    it('keeps things in an abode of your own, as much as your grade holds, and only there', async () => {
+        const { harness, cultivatorId } = await aDiscipleWithAPillAndARoom('abode-keeps');
+        const world = (await harness.game.loadWorld())!;
+        const settled = theyTakeGroundAndMakeItTheirs(world, {
+            residentId: cultivatorId,
+            onDay: Math.floor(world.currentDay),
+            locationId: abodeLocationId(cultivatorId),
+            name: 'the cloud terrace',
+            layer: IMMORTAL_LAYER
+        });
+        expect(settled.ok).toBe(true);
+        Object.assign(harness.game.atHand!, settled.state);
+        const cultivator = harness.repos.cultivators.getById(cultivatorId)!;
+        const mine = theQuartersThisCultivatorHas(harness.game, harness.game.atHand!, cultivator)!;
+        expect(mine.quarters.locationId).toBe(abodeLocationId(cultivatorId));
+        expect(mine.quarters.room).toBe(WHAT_A_RING_HOLDS[gradeForOrdinal(cultivator.realmOrdinal)]);
+        expect(mine.reachedFrom(abodeLocationId(cultivatorId))).toBe(true);
+        expect(mine.reachedFrom(null)).toBe(false);
     });
 
     it('says nothing plainly when there is nowhere', async () => {
