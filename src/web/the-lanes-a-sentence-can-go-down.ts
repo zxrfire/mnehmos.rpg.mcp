@@ -213,13 +213,17 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'move'
     },
     cultivate: {
-        says: 'spending time on your own advancement',
+        // AND SLEEP IS SPENDING TIME. Played: "crash for the night", with the room already paid,
+        // went to trade/buy and bought no nights, and the day never moved.
+        says: 'spending time - on your own advancement, or only letting it pass: sleeping the night, '
+            + 'resting, waiting',
         intents: {
             sit: 'cultivate',
             seclude: 'seclude',
             cross: 'breakthrough',
             drill: 'train_technique',
-            wait: 'wait'
+            wait: 'wait',
+            sleep: 'wait'
         },
         otherwise: 'cultivate'
     },
@@ -239,8 +243,8 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     trade: {
         // A ROOM IS BOUGHT. Played: "cool, ill grab a room for 2 nights then" went to work/board,
         // "board" read as bed and board, and the guard dropped it as a job.
-        says: 'stones for things and things for stones - a room or a bed at an inn is bought here - '
-            + 'except food, which is sustain',
+        says: 'stones for things and things for stones - a room or a bed at an inn is bought here, once; '
+            + 'sleeping in it is cultivate - except food, which is sustain',
         // `give` is the player parting with THEIRS. A demand made of
         // somebody else is fight/make_them_comply, and the two collided.
         intents: { buy: 'buy', sell: 'sell', give_mine_away: 'give', prices: 'market' },

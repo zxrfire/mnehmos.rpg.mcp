@@ -119,6 +119,13 @@ describe('a lane is a choice a model can make', () => {
         expect(THE_LANES.site.says).toMatch(/never an inn, a room or a house/);
     });
 
+    /** Played: "crash for the night" with the room paid went to buying it again. */
+    it('sleeps the night as time spent, never as a room bought again', () => {
+        expect(theVerbForThisLane('cultivate', 'sleep')).toBe('wait');
+        expect(THE_LANES.cultivate.says).toMatch(/sleeping the night/);
+        expect(THE_LANES.trade.says).toMatch(/sleeping in it is cultivate/);
+    });
+
     /** A response that named a verb outright still works, table readings included. */
     it('leaves a plan that named its verb alone', () => {
         const said = validatePlan({ action: 'cultivate', days: 30, reason: 'sat down' });
