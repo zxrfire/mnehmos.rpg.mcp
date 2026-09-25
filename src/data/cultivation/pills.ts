@@ -707,7 +707,7 @@ export const PILLS: readonly Pill[] = [
         toxicity: 25.0,
         value: 480_000,
         description:
-            'Closes one of the things about a body that nothing closes. Which one is not up to the taker and is not announced beforehand - somebody carrying a single such injury is therefore certain of it, and somebody carrying four is not, which is the whole of what people mean when they say the Sky-Mending Pill is wasted on the badly hurt. Two are known to have been refined; one was used, and its user is still walking.'
+            'Closes one of the things about a body that nothing closes. Which one is drawn when it is taken and is not announced beforehand: somebody carrying a single such wound knows which will close, and somebody carrying four knows only that one of the four will. Two are known to have been refined; one was used, and its user is still walking.'
     },
     {
         id: 'pill-millennium-condensation',
