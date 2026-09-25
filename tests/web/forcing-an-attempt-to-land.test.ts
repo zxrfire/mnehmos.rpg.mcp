@@ -247,7 +247,7 @@ describe('a roll is what forcing reaches', () => {
         await withAdminMode(true, async () => {
             const plain = await aCultivatorAtADoor('a');
             const refused = await plain.game.act('I join the Azure Dew Sect');
-            expect(refused.narration).toMatch(/did not take them/i);
+            expect(refused.narration).toMatch(/did not take you/i);
             expect(
                 plain.repos.cultivators.getById(plain.game.currentRun().cultivator.id)!.sectId
             ).toBeNull();

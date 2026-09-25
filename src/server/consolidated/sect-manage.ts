@@ -557,9 +557,9 @@ export async function handleJoin(
         // says a refusal may never be.
         return guidingError(
             'not_taken_on',
-            `${sect.name} looked at ${cultivator.name} and did not take them. `
+            `${sect.name} looked at you and did not take you. `
             + (beforeHere !== null
-                ? 'They have watched this one leave once already, and a house remembers which '
+                ? 'They have watched you leave once already, and a house remembers which '
                   + 'door somebody used. '
                 : 'Nobody said why, which is how it usually goes when nobody is speaking for you. ')
             + 'Standing higher when you come back moves it, and somebody putting you in front of '

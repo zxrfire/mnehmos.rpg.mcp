@@ -163,7 +163,7 @@ describe('given a beginner, when they ask a house to take them', () => {
         // of the house is taking anybody on where they stand today - which says
         // when and where somebody is. All three are the engine having decided;
         // none is it failing to understand.
-        expect(answer, answer).toMatch(/Taken on by|did not take them|already serves|is taking anybody on here today/i);
+        expect(answer, answer).toMatch(/Taken on by|did not take you|already serves|is taking anybody on here today/i);
 
         if (/Taken on by/i.test(answer)) {
             expect(game.state().cultivator.sectId).toBeTruthy();
