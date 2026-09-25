@@ -176,7 +176,8 @@ const A_RANK_IN_THE_PLURAL =
  * called "elders".
  */
 export function theSetThisNames(query: string): SetShape | null {
-    const wanted = query.trim().replace(/\s+/g, ' ').replace(/[.!?]+$/, '');
+    // `everyone_here` is how a model writes the room, and it is the room.
+    const wanted = query.trim().replace(/_/g, ' ').replace(/\s+/g, ' ').replace(/[.!?]+$/, '');
     if (wanted.length === 0) return null;
 
     if (THE_WHOLE_SQUARE.test(wanted)) {

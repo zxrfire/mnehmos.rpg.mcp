@@ -57,9 +57,62 @@ export const A_TOPIC_ABOUT_THEMSELVES: Readonly<Record<SelfFactKind, string>> = 
     house: 'whose they are'
 });
 
-const KIND_BY_TOPIC: ReadonlyMap<string, SelfFactKind> = new Map(
-    SELF_FACT_KINDS.map(kind => [A_TOPIC_ABOUT_THEMSELVES[kind], kind])
-);
+/**
+ * A greeting, as a topic. Answered as the name: a stranger greeted gives it,
+ * and nothing is guessed at and no other name is said.
+ */
+export const A_GREETING_TOPIC = 'a greeting';
+
+/**
+ * Other words for the same questions, as a model or an address carries them.
+ * Played: "hello" came through as `greeting` and "who are you?" as `identity`,
+ * both resolved to nothing, and the answers were guesses with a stranger's
+ * name dropped into each.
+ */
+const SAID_OTHERWISE: Readonly<Record<string, SelfFactKind>> = Object.freeze({
+    [A_GREETING_TOPIC]: 'name',
+    greeting: 'name',
+    greetings: 'name',
+    hello: 'name',
+    introduction: 'name',
+    introductions: 'name',
+    identity: 'name',
+    'their identity': 'name',
+    'who they are': 'name',
+    'who he is': 'name',
+    'who she is': 'name',
+    'who you are': 'name',
+    'their name': 'name',
+    'his name': 'name',
+    'her name': 'name',
+    'your name': 'name',
+    name: 'name',
+    'where they are from': 'house',
+    'where he is from': 'house',
+    'where she is from': 'house',
+    'where you are from': 'house',
+    origin: 'house'
+});
+
+const KIND_BY_TOPIC: ReadonlyMap<string, SelfFactKind> = new Map([
+    ...SELF_FACT_KINDS.map(kind => [A_TOPIC_ABOUT_THEMSELVES[kind], kind] as const),
+    ...Object.entries(SAID_OTHERWISE)
+]);
+
+/**
+ * A courtesy that asks nothing - thanks, a farewell, an apology said in
+ * passing. Played: "I thank Duan Shuping" went through the guessing branch
+ * as a question about "thanks".
+ */
+export function isACourtesy(topic: string): boolean {
+    return /^(?:(?:my\s+|a\s+|many\s+)?thanks?(?:\s+you)?|thank\s+you|gratitude|a\s+thank\s+you|farewell|goodbye|good\s*bye|a\s+farewell|parting\s+words|an?\s+apology|apologies|sorry)$/
+        .test(topic.trim().toLowerCase().replace(/[.!?]+$/, ''));
+}
+
+/** Whether a topic is a greeting rather than a question. */
+export function isAGreeting(topic: string): boolean {
+    return /^(?:a greeting|greetings?|hello)$/.test(topic.trim().toLowerCase());
+}
 
 /**
  * The phrasings, per fact.
@@ -68,7 +121,11 @@ const HOW_SOMEBODY_ASKS: Readonly<Record<SelfFactKind, readonly RegExp[]>> = Obj
     name: [
         /\byour name\b/,
         /\bwhat (?:should|do|shall) i call you\b/,
-        /\bwho am i (?:talking|speaking) to\b/
+        /\bwho am i (?:talking|speaking) to\b/,
+        /\bwho (?:are|r) (?:you|u|ye)\b/,
+        /\bwho might you be\b/,
+        /\bwho you are\b/,
+        /\bintroduce yourself\b/
     ],
     age: [
         /\bhow old are you\b/,
@@ -88,7 +145,12 @@ const HOW_SOMEBODY_ASKS: Readonly<Record<SelfFactKind, readonly RegExp[]>> = Obj
         // pronoun the other way round, and it is the phrasing somebody reaches
         // for exactly when they have decided to lean on the answer.
         /\bwh(?:at|ich) (?:house|sect|clan|order|court) you (?:are|serve|belong)\b/,
-        /\byour (?:house|sect|clan|order)\b/
+        /\byour (?:house|sect|clan|order)\b/,
+        // Where a cultivator is from is whose they are; a person with no house
+        // says so.
+        /\bwhere (?:are|r) (?:you|u) from\b/,
+        /\bwhere (?:do|did) you (?:come|hail) from\b/,
+        /\bwhere you are from\b/
     ]
 });
 

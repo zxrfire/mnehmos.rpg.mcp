@@ -91,6 +91,13 @@ export interface AskedInput {
      * noun: a borrowed blade is a blade until somebody names it.
      */
     onTheirMind?: WhatIsOnTheirMind | null;
+    /**
+     * Whether the player had their name before this turn. Defaults to
+     * `speakerName !== null`; a name filed earlier in the same turn is news.
+     */
+    nameWasAlreadyHeld?: boolean;
+    /** Whether what was said was a greeting rather than a question. */
+    greeted?: boolean;
 }
 
 export interface Answer {
@@ -352,9 +359,13 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
                 // A name the player already has is not news, and saying it back
                 // at them in the form of an introduction reads as the engine
                 // talking to itself. Every other fact is worth hearing twice.
-                themselves.kind === 'name' && input.speakerName !== null
-                    ? `${who} gives the same name you already had for them.`
-                    : themselves.said.replace('{who}', who)
+                themselves.kind !== 'name' || input.speakerName === null
+                    ? themselves.said.replace('{who}', who)
+                    : input.nameWasAlreadyHeld ?? true
+                        ? input.greeted
+                            ? `${who} returns the greeting.`
+                            : `${who} gives the same name you already had for them.`
+                        : `${who} gives their name.`
             ],
             structure: [
                 ...structure,

@@ -703,7 +703,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // once named here - so the model, which reads the sentence first and
             // falls back to the table, was never told they existed.
             'what_they_hold', 'what_they_teach', 'who_is_above_them',
-            'what_is_made_here', 'would_they_take_me'
+            'what_is_made_here', 'would_they_take_me',
+            // Asking to be let in at a house's gate, and who of a house is here.
+            'the_gate', 'their_people_here'
         ],
         says: `observe the surroundings, or ask about a house or a province from where the
             player is standing. Passes no time. "intent" narrows what is being looked
@@ -730,7 +732,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             "what_they_teach" is the question before joining and is not request/teaching, which
             is asking a PERSON to teach you and spends days. Prefer these over recall, which
             reads only what the cultivator has already been told, and over investigate, which
-            examines a thing in front of them.`
+            examines a thing in front of them.
+
+            "the_gate" is asking to be let in at a house's gate - "may I enter?", "let me in",
+            "I enter the Azure Dew Sect" - answered by what the gate says to this cultivator;
+            "target" names the house or is omitted at its gate. A house is never a site.
+            "their_people_here" is who of a named house is standing here - "who is a disciple of
+            the Azure Dew Sect?" - and "target" names the house.`
     },
     status: {
         takes: [],

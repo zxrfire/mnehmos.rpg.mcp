@@ -678,7 +678,7 @@ const ASKING_TO_BE_TAKEN_ON =
 export const ASKING_FOR_GUIDANCE = new RegExp(
     String.raw`\b(?:guide|oversee|supervise|watch over|look over|correct|keep an eye on)\s+`
     + String.raw`(?:me in\s+|me through\s+)?my\s+(?:cultivation|practi[cs]e|training|sitting|breathing|forms?|circulation|qi)\b`
-    + String.raw`|\bguide me\b(?!\s+(?:in|through|down|along|up)\s+(?!my\b))`
+    + String.raw`|\bguide me\b(?!\s+(?:to|in|through|down|along|up)\s+(?!my\b))`
     + String.raw`|\bwatch me\s+(?:cultivate|practi[cs]e|train|sit|circulate|run\s+(?:the|my|through the|through my)\s+forms?|work (?:the|my|through the) forms?)\b`
     + String.raw`|\b(?:sit|stay) with me while i\s+(?:cultivate|practi[cs]e|train|sit)\b`
     + String.raw`|\b(?:give|offer)\s+me\s+(?:some\s+)?(?:guidance|pointers)\b`
@@ -763,7 +763,7 @@ const ASKING_TO_BE_RAISED =
  * that asks for nothing and has its own reader two hundred lines up.
  */
 export const ASKING_THEM_TO_COME =
-    /\b(?:come (?:with|along with) (?:me|us)|come along\b|travel(?:ling)? with (?:me|us)|ride with (?:me|us)|(?:walk|ride|travel|go) (?:the )?(?:road|way) with (?:me|us)|walk with (?:me|us)|go with (?:me|us)|journey with (?:me|us)|join (?:me|us)(?!\s+(?:for|at)\b)|accompany (?:me|us)|escort (?:me|us)|take me with (?:you|him|her|them)|on the road with (?:me|us)|at my side|(?:be|as) my (?:companion|escort|guard on the road))\b/i;
+    /\b(?:come (?:with|along with) (?:me|us)|come along\b|travel(?:ling)? with (?:me|us)|ride with (?:me|us)|(?:walk|ride|travel|go) (?:the )?(?:road|way) with (?:me|us)|walk with (?:me|us)|go with (?:me|us)|journey with (?:me|us)|join (?:me|us)(?!\s+(?:for|at)\b)|accompany (?:me|us)|escort (?:me|us)|take me with (?:you|him|her|them)|on the road with (?:me|us)|at my side|(?:be|as) my (?:companion|escort|guard on the road)|(?:take|lead|guide|bring|show) (?:me|us)(?: the way)?(?=\s+to\b(?!\s+(?:meet|see)\b)))\b/i;
 
 /**
  * Where the party would be bound, when the sentence says.

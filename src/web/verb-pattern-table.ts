@@ -101,9 +101,15 @@ import { whoseAccountIsBeingChallenged } from './two-accounts-of-one-person.js';
 // because the words are the match's - see that file's own section header.
 import { whoIsSittingWithThem } from './match-phrasings.js';
 import {
+    A_GREETING_TOPIC,
     A_TOPIC_ABOUT_THEMSELVES,
     whatIsBeingAskedAboutThem
 } from '../engine/social/what-somebody-knows-about-themselves.js';
+import {
+    A_TOPIC_ABOUT_THE_HOUSES_THEY_KNOW,
+    asksWhichHousesTheyKnow
+} from './which-houses-somebody-could-name.js';
+import { THE_WAY_TO as THE_WAY_TOPIC } from './asking-the-way.js';
 import {
     ASKING_FOR_GUIDANCE,
     askingWhatSomebodyIsAfter,
@@ -4617,6 +4623,74 @@ function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
     };
 }
 
+/** A greeting said on its own, which is said to whoever is here. */
+const A_GREETING_ON_ITS_OWN =
+    /^(?:(?:hello|hullo|hi|hey|greetings|good (?:morning|day|afternoon|evening)|well met|salutations)(?:\s+(?:there|everyone|everybody|all|all of you|friends?|folks|you all|strangers?|fellow daoists?|daoists?))*|i (?:say|call out) (?:hello|hi|good (?:morning|day|evening))(?:\s+to\s+(?:everyone|everybody|all|the room|them all))?)[\s!.,]*$/i;
+
+/** Greeting somebody, as the verb of a sentence. */
+const GREETING_SOMEBODY =
+    /\b(?:greet|greets|greeting|greeted|says? (?:hello|hi|good (?:morning|day|evening)) to|introduce myself)\b/;
+
+/**
+ * "take me to X", said to somebody's face: asking them along, bound for X.
+ * Never a fold. "take me to meet" and "take me to see" are introductions.
+ */
+const TAKE_ME_THERE =
+    /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:take|lead|guide|bring|escort|show)\s+(?:me|us)\s+(?:the\s+way\s+)?to\s+(?!(?:meet|see)\b)(.{2,60}?)(?:\s*,?\s*(?:now|please|at once|right now|quickly))?[\s.!?]*$/i;
+
+/** "how do I get to X", "which way to X", said to somebody's face. */
+const THE_WAY_TO =
+    /^\s*(?:(?:can|could|will|would)\s+you\s+tell\s+me\s+)?(?:how\s+(?:do|can|would|should)\s+(?:i|we)\s+(?:get|go)\s+to|how\s+to\s+(?:get|go)\s+to|which\s+way\s+(?:is\s+it\s+)?to|which\s+way\s+is|where\s+(?:is|lies)|where\s+(?:would|could|can|do|might|should)\s+(?:i|we|one)\s+find|the\s+way\s+to)\s+(.{2,60}?)[\s.!?]*$/i;
+
+/** "I ask him how to get to X": the way, asked of a person, who answers it. */
+const ASKING_SOMEBODY_THE_WAY =
+    /\bask(?:s|ed)?\s+(.{2,40}?)\s+(?:how\s+(?:to|do\s+i|can\s+i|i\s+(?:can|could|would|should))\s+(?:get|go)\s+to|the\s+way\s+to|which\s+way\s+(?:to|is)|where\s+(?:is|lies))\s+(.{2,60}?)[\s.!?]*$/i;
+
+/**
+ * Asking to be let in: "may I enter?", "let me in", "I request entry". A house
+ * may follow; anything else that follows is not this.
+ */
+const ASKING_TO_BE_LET_IN =
+    /^\s*(?:(?:may|can|could|might)\s+(?:i|we)\s+(?:please\s+)?(?:enter|come\s+in(?:side)?|go\s+in(?:side)?|be\s+let\s+in|pass(?:\s+through)?)|(?:please\s+)?let\s+(?:me|us)\s+(?:in|through|pass)|i\s+(?:ask|request|beg)\s+(?:to\s+(?:enter|be\s+let\s+in|come\s+in)|for\s+(?:entry|entrance|admittance))|i\s+request\s+(?:entry|entrance|admittance))(?:\s+(?:to|into|at)?\s*(.{3,60}?))?\s*(?:,?\s*please)?[\s?.!]*$/i;
+
+/** "who is a disciple of the Azure Dew Sect?": who of a named house is here. */
+const WHO_OF_A_HOUSE_IS_HERE =
+    /\b(?:who(?:'s| is| are)?(?:\s+here(?:\s+(?:is|are))?)?|is\s+(?:any\s?one|any\s?body|some\s?one|some\s?body)(?:\s+here)?|are\s+there\s+any|which\s+of\s+(?:them|these\s+people|you)(?:\s+(?:is|are))?)\s+(?:(?:a|an|the|any)\s+)?(?:(?:disciples?|members?|elders?|people|ones?|servants?|cultivators?|followers?)\s+)?(?:of|from|with|in|belonging\s+to|serving)\s+(.{3,60}?)\s*(?:here)?[\s?.!]*$/i;
+
+/** A question put to whoever is here rather than to one person. */
+const PUT_TO_WHOEVER_IS_HERE =
+    /\b(?:(?:does|do|would|will|can|could)\s+(?:any\s?one|any\s?body|some\s?one|some\s?body|any\s+of\s+you|you\s+all|people|folks)(?:\s+here)?\s+(?:know|tell|name|point|recommend|suggest|heard|have\s+heard)|(?:any\s?one|any\s?body)\s+(?:here\s+)?(?:know|heard)|i\s+ask\s+(?:around|everyone|everybody|anyone|anybody|people|the\s+(?:crowd|room|people|locals|villagers|townsfolk|square))(?:\s+(?:about|after))?|i\s+ask\s+(?:about|after)|ask(?:ing)?\s+around(?:\s+(?:about|after))?)\b/i;
+
+/** Whether the sentence asks whoever is here which houses there are. */
+function housesAskedOfWhoeverIsHere(text: string): boolean {
+    const hit = PUT_TO_WHOEVER_IS_HERE.exec(text);
+    if (!hit) return false;
+    const tail = text.slice(hit.index + hit[0].length)
+        .replace(/^\s*(?:(?:me|us|of|about|after|if|whether|there\s+(?:is|are)|any|which)\s+)*/i, '');
+    return asksWhichHousesTheyKnow(tail);
+}
+
+/**
+ * What a sentence said to somebody's face asks of them, where it is one of the
+ * questions about themselves, a greeting, a way asked, or asking along. Null
+ * for anything else, which stays a question put to them.
+ */
+function whatIsSaidToTheirFace(said: string): PlannedAction | null {
+    const text = said.toLowerCase().trim();
+    const ownFact = whatIsBeingAskedAboutThem(text);
+    if (ownFact !== null) {
+        return { action: 'interact', intent: theInteractIntent(text) ?? 'talk', topic: A_TOPIC_ABOUT_THEMSELVES[ownFact] };
+    }
+    if (A_GREETING_ON_ITS_OWN.test(text)) return { action: 'interact', intent: 'talk', topic: A_GREETING_TOPIC };
+    const along = TAKE_ME_THERE.exec(said);
+    const bound = along ? cleanPlace(along[1] ?? '') : undefined;
+    if (bound) return { action: 'request', intent: 'company', topic: bound };
+    const way = THE_WAY_TO.exec(said);
+    const place = way ? cleanPlace(way[1] ?? '') : undefined;
+    if (place) return { action: 'interact', intent: 'talk', topic: `${THE_WAY_TOPIC}${place}` };
+    return null;
+}
+
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
@@ -4660,6 +4734,8 @@ function planIntent(input: string): PlannedAction {
         const addressed = AN_ADDRESS_AT_THE_FRONT.exec(input);
         if (addressed && isAWayOfAddressingSomebody(addressed[1]!)) {
             const rest = addressed[2]!.trim();
+            const toTheirFace = whatIsSaidToTheirFace(rest);
+            if (toTheirFace) return { ...toTheirFace, target: addressed[1]!.trim() };
             return {
                 action: 'interact',
                 target: addressed[1]!.trim(),
@@ -4995,6 +5071,53 @@ function planIntent(input: string): PlannedAction {
             // `A_WATCH_WITH_NO_LENGTH_SAID`, in the verb rather than here.
             ...(parseDuration(text) !== null ? { days: parseDuration(text)! } : {})
         };
+    }
+
+    // ── A GREETING, THE WAY, ASKING ALONG, AND WHICH HOUSES THERE ARE ────
+    //
+    // Played: "hello" and "who are you?" were answered with guesses and a
+    // stranger's name, "TAKE ME TO DRAGONVEIN" folded space, and "does anyone
+    // know the strongest sect i may visit?" read the player their own list.
+    if (A_GREETING_ON_ITS_OWN.test(text)) {
+        return { action: 'interact', target: 'everyone here', intent: 'talk', topic: A_GREETING_TOPIC };
+    }
+    // AT A HOUSE'S GATE. "may i enter?" was the destinations listing and "who is a
+    // disciple of X" was the house's record. See `asking-to-be-let-in-at-a-gate.ts`
+    // and `who-of-a-house-is-standing-here.ts`.
+    {
+        const letIn = ASKING_TO_BE_LET_IN.exec(input);
+        const house = (letIn?.[1] ?? '').trim();
+        if (letIn && (house.length === 0 || A_HOUSE_IS_NAMED.test(house))) {
+            return { action: 'look', intent: 'the_gate', ...(house ? { target: house } : {}) };
+        }
+        const ofAHouse = WHO_OF_A_HOUSE_IS_HERE.exec(input);
+        const named = (ofAHouse?.[1] ?? '').trim();
+        if (ofAHouse && A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT.test(named)) {
+            return { action: 'look', intent: 'their_people_here', target: named };
+        }
+    }
+    if (housesAskedOfWhoeverIsHere(text) && !A_HOUSE_NAME_IS_SAID.test(text)) {
+        return {
+            action: 'interact', target: 'everyone here', intent: 'talk',
+            topic: A_TOPIC_ABOUT_THE_HOUSES_THEY_KNOW
+        };
+    }
+    {
+        const along = TAKE_ME_THERE.exec(input);
+        const bound = along ? cleanPlace(along[1] ?? '') : undefined;
+        if (bound) {
+            const days = parseDuration(text);
+            return { action: 'request', intent: 'company', topic: bound, ...(days ? { days } : {}) };
+        }
+        const theWay = ASKING_SOMEBODY_THE_WAY.exec(input);
+        const who = (theWay?.[1] ?? '').trim();
+        const where = theWay ? cleanPlace(theWay[2] ?? '') : undefined;
+        if (who.length >= 2 && where) {
+            return {
+                action: 'interact', intent: 'talk', topic: `${THE_WAY_TOPIC}${where}`,
+                ...(/^(?:around|about)$/i.test(who) ? {} : { target: who })
+            };
+        }
     }
 
     // ASKING SOMEBODY A PLAIN FACT ABOUT THEMSELVES
@@ -7181,6 +7304,9 @@ function planIntent(input: string): PlannedAction {
             // AND WHAT WAS NAMED, WHICH USED TO BE THROWN AWAY
             ...(takingAThing ? { topic: theThingWithoutItsOwner(subject!) } : {}),
             ...(!takingAThing && !offeredTo && told ? { topic: told.matter } : {}),
+            // A greeting is answered with their own name, never with a guess.
+            ...(interactIntent === 'talk' && !told && GREETING_SOMEBODY.test(text)
+                ? { topic: A_GREETING_TOPIC } : {}),
             ...(leverage ? { leverage } : {})
         };
     }

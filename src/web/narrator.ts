@@ -53,6 +53,9 @@ import {
 // is a question it already answers for the phase-1 glossary and for
 // `docs/verbs.md`. No second list.
 import { WHAT_EACH_VERB_IS_FOR } from './what-each-verb-is-for-in-the-players-words.js';
+import { HOW_A_PLAYER_SAYS_EACH_VERB } from './how-a-player-says-each-verb.js';
+import { FOLDING_SPACE } from './verb-pattern-table.js';
+import { A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT } from './what-a-house-is-called.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
 import type { Company, EngineFacts } from './facts.js';
@@ -281,6 +284,36 @@ async function theModelIsNotWhyThisTurnIsDangerous(
 
     const withoutAModel = await readTheSentence(input);
 
+    // A FOLD IS SAID, NEVER INFERRED. Played: "TAKE ME TO DRAGONVEIN, NOW",
+    // said to a messenger, was read as `fold`, and asking somebody along spends
+    // days too, so the check below let it through.
+    if (fromModel.action === 'fold'
+        && withoutAModel.action.action !== 'fold'
+        && !FOLDING_SPACE.test(inTheCharactersThePatternsUse(input).toLowerCase())) {
+        return {
+            action: withoutAModel.action,
+            declined:
+                `the model read this as folding space; the sentence says nothing about folding, `
+                + `and reading it without a model reaches ${labelFor(withoutAModel.action)}. `
+                + `Say it plainly - "${HOW_A_PLAYER_SAYS_EACH_VERB.fold[0]}" - to mean the fold.`,
+            tierFailure: withoutAModel.tierFailure
+        };
+    }
+
+    // A HOUSE IS NEVER A SITE. Played: "I enter the azure dew sect" was read as
+    // `site`, which is for ruins and sealed ground; going into a house is its gate.
+    if (fromModel.action === 'site'
+        && A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT.test(fromModel.target ?? '')
+        && withoutAModel.action.action !== 'site') {
+        return {
+            action: withoutAModel.action,
+            declined:
+                `the model read this as a site; "${fromModel.target}" is a house, and reading it `
+                + `without a model reaches ${labelFor(withoutAModel.action)}.`,
+            tierFailure: withoutAModel.tierFailure
+        };
+    }
+
     // GIVING AND TAKING ARE NEVER EACH OTHER'S FALLBACK
     if (takingFromThem && readsAsGiving(withoutAModel.action)) {
         return {
@@ -374,7 +407,7 @@ async function theModelIsNotWhyThisTurnIsDangerous(
             `the model read this as ${fromModel.action}, which can spend days or end the run; `
             + `reading the same sentence without a model reaches ${withoutAModel.action.action}, which cannot. `
             + 'A model may read a sentence differently; it may not be the reason a turn became dangerous. '
-            + `Say it plainly - "I attack him" - to mean ${fromModel.action}.`,
+            + `Say it plainly - "${HOW_A_PLAYER_SAYS_EACH_VERB[fromModel.action as Exclude<ActionName, 'unclear'>]?.[0] ?? fromModel.action}" - to mean ${fromModel.action}.`,
         tierFailure: withoutAModel.tierFailure
     };
 }

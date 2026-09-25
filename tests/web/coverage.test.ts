@@ -1251,6 +1251,17 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'would the Azure Dew Sect take somebody like me',
             'am I good enough for the Azure Dew Sect'
         ],
+        // Asking to be let in at a gate, and who of a house is standing here.
+        'look/the_gate': [
+            'may i enter?',
+            'let me in',
+            'may I enter the Azure Dew Sect?'
+        ],
+        'look/their_people_here': [
+            'who is a disciple of the Azure Dew Sect?',
+            'is anyone here of the Azure Dew Sect?',
+            'who here is from the Azure Dew Sect'
+        ],
         // ── AND THE OFFICER HALF OF A HOUSE ──────────────────────────────
         'sect/authority': [
             'what do I run',

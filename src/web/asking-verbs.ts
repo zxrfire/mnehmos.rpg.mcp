@@ -116,6 +116,12 @@ import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
 import { askedAbout, whetherTheyHoldIt } from './asked.js';
+import { theHousesTheyWouldName, whatTheySaidOfTheHouses } from './which-houses-somebody-could-name.js';
+import {
+    howMuchOfTheRoadALifeHasSeen,
+    theRoadAnUpbringingSaw,
+    whatSomebodyKnowsOfTheLand
+} from '../engine/world/what-somebody-knows-of-the-land.js';
 import {
     type DatabaseHandle,
     openLedgerBetween,
@@ -320,6 +326,99 @@ function theGroundBetweenThem(
 }
 
 export const askingVerbs = {
+    /**
+     * Asked which houses there are, somebody names the ones THEY can place,
+     * each filed as told. See `which-houses-somebody-could-name.ts`.
+     *
+     * What they know of is `whatSomebodyKnowsOfTheLand`, from where they
+     * stand: a village knows a house or two nearby, a town or any cultivator
+     * every house of the province, a house member the world. `placed` means they
+     * give the way, and the gate is filed with the name.
+     */
+    theHousesTheyCouldName(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        asked: RosterEntry
+    ): Execution {
+        const knownAlready = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
+        const who = knownAlready ? asked.name : 'The one nearest to hand';
+        const world = this.atHand;
+        const them = world?.npcs.find(row => row.id === asked.id) ?? null;
+        const standingOn = them?.locationId ?? null;
+        const land = world
+            ? whatSomebodyKnowsOfTheLand(world, {
+                id: asked.id,
+                from: world.locations.find(row => row.id === standingOn)?.name ?? asked.location,
+                ordinal: asked.realmOrdinal,
+                house: asked.sectId ? { id: asked.sectId, rankIndex: them?.factionRankIndex ?? 0 } : null,
+                ...(them
+                    ? {
+                        travelled: Math.max(
+                            theRoadAnUpbringingSaw(them.identity.origin),
+                            howMuchOfTheRoadALifeHasSeen(them.identity.occupation)
+                        )
+                    }
+                    : {})
+            })
+            : null;
+        const stageOf = new Map((land?.houses ?? []).map(house => [house.id, house.stage]));
+        const named = theHousesTheyWouldName({
+            houses: (world?.factions ?? []).filter(house => house.dissolvedOnDay === null),
+            theirHouseId: asked.sectId,
+            standingOn,
+            whatTheyKnow: id => stageOf.get(id) ?? null
+        });
+
+        const calls: ToolCallRecord[] = [{
+            name: 'engine.theHousesTheyCouldName',
+            action: 'talk',
+            summary: `Asked ${asked.name} which houses they know: named ${named.length}`
+                + `${named.length > 0 ? ` (${named.map(h => `${h.name}, ${h.because}`).join('; ')})` : ''}. `
+                + 'Read off what they can place, never off what the asker holds.',
+            ok: true
+        }];
+        for (const house of named) {
+            this.nameWhatTheyGot(house.name);
+            const learned = this.noteEncounter(
+                cultivator, run, { kind: 'sect', id: house.id, name: house.name }, 'told',
+                `${asked.name} named it at ${placeName(cultivator)}.`
+            );
+            if (learned) {
+                calls.push({
+                    name: 'knowledge.learn',
+                    action: 'house_told',
+                    summary: `${house.name} (${house.id}) recorded as told, from ${asked.name}.`,
+                    ok: true
+                });
+            }
+            // THE WAY, where they know it: the gate becomes a place to set out for.
+            const seatId = world?.factions.find(row => row.id === house.id)?.seatLocationId ?? null;
+            const gate = house.stage === 'placed' && seatId
+                ? world?.locations.find(row => row.id === seatId) ?? null
+                : null;
+            if (gate && this.noteEncounter(
+                cultivator, run, { kind: 'place', id: gate.id, name: gate.name }, 'told',
+                `${asked.name} gave the way to the gate of the ${house.name}.`
+            )) {
+                calls.push({
+                    name: 'knowledge.learn',
+                    action: 'gate_placed',
+                    summary: `${gate.name} recorded as told, from ${asked.name}: they gave the way.`,
+                    ok: true
+                });
+            }
+        }
+
+        const facts = factsForToolResult(
+            `${knownAlready ? asked.name : 'Somebody'}, asked which houses they know.`,
+            whatTheySaidOfTheHouses(who, named)
+        );
+        const execution = this.freeAction(run, 'interact', facts);
+        execution.calls = calls;
+        return execution;
+    },
+
     /**
      * An attempt to move somebody, resolved rather than described.
      */

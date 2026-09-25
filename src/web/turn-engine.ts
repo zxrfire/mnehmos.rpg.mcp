@@ -535,10 +535,18 @@ import {
     pillCashPrice
 } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout, whetherTheyHoldIt } from './asked.js';
+import { asksTheWay, THE_WAY_TO, theWayAskedFor, theWayTo } from './the-way-to-somewhere-asked-of-somebody.js';
 import {
+    isACourtesy,
+    isAGreeting,
     selfFactFromTopic,
     whatTheySayAboutThemselves
 } from '../engine/social/what-somebody-knows-about-themselves.js';
+import { asksWhichHousesTheyKnow } from './which-houses-somebody-could-name.js';
+import { whoOfThemKnowEachOther } from './who-of-them-know-each-other.js';
+import { askingToBeLetIn } from './asking-to-be-let-in-at-a-gate.js';
+import { whoOfAHouseIsStandingHere } from './who-of-a-house-is-standing-here.js';
+import { theHouseholdTie, theKinThisWordMeans } from './a-kinship-word-is-your-household.js';
 import {
     THE_ANSWER_IS_TO_GO,
     THE_ANSWER_IS_TO_KEEP_SITTING,
@@ -4028,6 +4036,11 @@ export class GameService {
     ): void {
         if (!this.atHand) return;
         if (costsTheAskerNothing(action)) return;
+        // A name that reached no site or no place is a misparse, not an
+        // announcement. Played: "I enter the azure dew sect" read as `site`
+        // wrote that the player had said they would "site" the house.
+        if (into.calls.some(call => !call.ok
+            && (call.name === 'engine.resolveSite' || call.name === 'engine.resolvePlace'))) return;
         const named = (action.target ?? '').trim();
         if (named.length === 0) return;
         const heard = this.present(cultivator);
@@ -4361,8 +4374,14 @@ export class GameService {
                 return this.strikeBarrier(run, cultivator, ambient);
             }
 
-            case 'move':
+            case 'move': {
+                // Going in at the gate you are standing at is asking the gate.
+                if (action.intent === 'enter' && this.atHand) {
+                    const atTheGate = askingToBeLetIn(this, run, cultivator, action.target, true);
+                    if (atTheGate) return atTheGate;
+                }
                 return this.move(run, cultivator, ambient, action.target, action.intent ?? 'travel');
+            }
 
             case 'ride':
                 return this.ride(run, cultivator, action.target, action.topic);
@@ -5218,6 +5237,20 @@ ${noticedWaiting}`;
                 if (action.intent === 'would_they_take_me') {
                     this.atHand = this.atHand ?? await this.loadWorld();
                     return await this.wouldThatHouseTakeYou(run, cultivator, action.target);
+                }
+
+                // ASKING TO BE LET IN, answered by the gate. Where there is no
+                // gate here and none was named, "can I go in" is the site read.
+                if (action.intent === 'the_gate') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return askingToBeLetIn(this, run, cultivator, action.target, false)
+                        ?? await this.site(run, cultivator, ambient, action.target, 'outside');
+                }
+
+                // WHO OF A HOUSE IS STANDING HERE.
+                if (action.intent === 'their_people_here') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return whoOfAHouseIsStandingHere(this, run, cultivator, action.target);
                 }
 
                 // WHO IS ABOVE A HOUSE, WHICH IS ASKED BEFORE MOVING ON ONE.
@@ -6344,6 +6377,33 @@ ${noticed}`;
     ): Execution | Promise<Execution> {
         const scope = this.scopeFor(cultivator);
 
+        // A KINSHIP WORD IS YOUR HOUSEHOLD, by the tie. See `a-kinship-word-is-your-household.ts`.
+        {
+            const npcs = this.atHand?.npcs ?? [];
+            const mine = npcs.find(row => row.id === cultivator.id)?.relationships ?? [];
+            const known = this.knowledge.awareness(cultivator.id, 'cultivator');
+            const kin = theKinThisWordMeans(
+                target,
+                id => theHouseholdTie(
+                    npcs.find(row => row.id === id)?.relationships
+                        .filter(tie => tie.targetId === cultivator.id) ?? [],
+                    mine.filter(tie => tie.targetId === id),
+                    known.find(row => row.id === id && row.sourceKind === 'witnessed')?.statement ?? null
+                ),
+                this.present(cultivator)
+            );
+            if (kin) {
+                target = kin.name;
+                if (kin.misnamed) this.recognitionsThisTurn.push(kin.misnamed);
+            }
+        }
+        // WHERE A PLACE IS, asked of a person, is the way there, however the
+        // reader carried the topic.
+        if (topic && theWayAskedFor(topic) === null && selfFactFromTopic(topic) === null
+            && !asksWhichHousesTheyKnow(topic) && asksTheWay(rawInput)) {
+            topic = THE_WAY_TO + topic.trim();
+        }
+
         // WHOSE IT IS, ASKED OF THE WORLD, BEFORE IT IS CALLED A THEFT
         if (intent === 'take') {
             const thing = (topic ?? '').trim();
@@ -6387,11 +6447,13 @@ ${noticed}`;
         // the crowd order and the other four went unrobbed.
         const asASet = query.length >= 2 ? theSetThisNames(query) : null;
         if (asASet) {
-            return this.actOverASet(
+            const answered: { id: string; name: string }[] = [];
+            const overTheSet = this.actOverASet(
                 cultivator,
                 asASet,
                 'interact',
                 member => {
+                    answered.push(member);
                     const now = this.currentRun();
                     return Promise.resolve(this.interact(
                         now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
@@ -6410,6 +6472,31 @@ ${noticed}`;
                 // lands on every one of them.
                 INTERACT_SETTLES_NOTHING.has(intent) ? 3 : undefined
             );
+            if (selfFactFromTopic(topic ?? '') !== 'name') return overTheSet;
+            // Introduced together: the names, which folding the set's account
+            // would otherwise reduce to "each of them", and which of them know
+            // each other.
+            return overTheSet.then(folded => {
+                const here = this.present(cultivator);
+                const given = answered
+                    .filter(one => this.namesGivenThisTurn.includes(one.name))
+                    .map(one => one.name);
+                const names = given.length === 0 || answered.length < 2 ? [] : [given.length === 1
+                    ? `${given[0]} is the name given.`
+                    : `${given.slice(0, -1).join(', ')} and ${given[given.length - 1]} are the names given.`];
+                const ties = whoOfThemKnowEachOther(
+                    answered.map(one => ({
+                        ...one, sectId: here.find(row => row.id === one.id)?.sectId ?? null
+                    })),
+                    id => this.atHand?.npcs.find(row => row.id === id)?.relationships ?? []
+                );
+                folded.facts.lines.push(...ties);
+                // The names reach the model as "X gives you their name" at the
+                // end of the turn; the printed account needs them said here.
+                folded.facts.prose = [folded.facts.prose, ...names, ...ties]
+                    .filter(text => text.length > 0).join('\n\n');
+                return folded;
+            });
         }
 
         // A THEFT'S TOPIC IS A THING, NOT A QUESTION
@@ -7334,7 +7421,27 @@ ${noticed}`;
         // What the question was about, resolved against the same catalogs
         // everything else uses. Unresolvable is a real outcome, not an error:
         // people are asked about things that do not exist all the time.
-        const subject = resolveAnything(
+        //
+        // Except two questions that name no thing: which houses they know,
+        // answered out of what THEY can place, and a question about themselves,
+        // which is theirs to answer and is never looked up or guessed at.
+        if (!compelled && asksWhichHousesTheyKnow(topic)) {
+            return this.theHousesTheyCouldName(run, cultivator, asked);
+        }
+        // The way somewhere, answered from what they know of the land.
+        const wayTo = compelled ? null : theWayAskedFor(topic);
+        if (wayTo !== null) return theWayTo(this, run, cultivator, asked, wayTo);
+        // A courtesy asks nothing, so nothing is looked up or guessed at.
+        if (isACourtesy(topic)) {
+            const known = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
+            return this.freeAction(run, 'interact', factsForToolResult(
+                `${known ? asked.name : 'Somebody'}, ${topic.trim()}.`,
+                [`${known ? asked.name : 'The one nearest to hand'} hears it. A courtesy asks `
+                    + 'nothing of them, and nothing is weighed.']
+            ));
+        }
+        const ownFact = selfFactFromTopic(topic);
+        const subject = ownFact !== null ? null : resolveAnything(
             this.repos, topic, cultivator, scope,
             whereYouStandOnYourHousesRoll(this, cultivator)
         );
@@ -7357,7 +7464,7 @@ ${noticed}`;
         // them. `whoWouldAsk` predicted this exact gap in its own comment: the
         // house roll was left out "only because nothing hands this method a
         // curriculum". This is the curriculum.
-        const pointed = subject === null
+        const pointed = subject === null && ownFact === null
             // ANYTHING THEY KNOW, first, because that is the rule. The
             // art-holder read below is one instance of it and not the shape of
             // it: the design owner, on an earlier cut that only did arts -
@@ -7373,10 +7480,8 @@ ${noticed}`;
         // through the part where they decline to help.
         const knownAlready = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
 
-        // Whether the question was about THEM. Read off the canonical topic the
-        // parser emits, which is a closed lookup rather than a scan of the player's
-        // prose - see `what-somebody-knows-about-themselves.ts`.
-        const ownFact = selfFactFromTopic(topic);
+        // Whether the question was about THEM, read off the topic above - see
+        // `what-somebody-knows-about-themselves.ts`.
         const aboutThemselves = ownFact === null
             ? null
             : whatTheySayAboutThemselves(ownFact, {
@@ -7391,6 +7496,9 @@ ${noticed}`;
             asker: cultivator,
             asked,
             speakerName: knownAlready ? asked.name : null,
+            // Given on the approach this same turn, which is still news.
+            nameWasAlreadyHeld: knownAlready && !this.namesGivenThisTurn.includes(asked.name),
+            greeted: isAGreeting(topic),
             subject,
             rawTopic: topic,
             aboutThemselves,
@@ -7489,7 +7597,9 @@ ${noticed}`;
         // The last mile. `asked.ts` decides how far the answer got; what falls
         // out of it is a name said flatly, which discovery.md calls the primary
         // way names enter a player's world. Written before the prose exists.
-        const dropped = this.hear(
+        // Not on a question about themselves: the answer is their own name,
+        // and nobody else's is said with it.
+        const dropped = aboutThemselves !== null ? null : this.hear(
             cultivator, run, `ask:${asked.id}:${topic}`, asked.id,
             { intent: 'asked', reach: answer.reach });
 
@@ -7509,7 +7619,9 @@ ${noticed}`;
         const said = [...answer.lines, ...alsoTheGate];
 
         const facts = factsForToolResult(
-            `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
+            isAGreeting(topic)
+                ? `${knownAlready || met ? asked.name : 'Somebody'}, greeted.`
+                : `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
             said,
             // What a player with no narrator reads, where the two differ. A
             // person who turned the question onto their own subject is handed
