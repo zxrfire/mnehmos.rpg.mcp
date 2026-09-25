@@ -208,7 +208,8 @@ describe('a duty runs under the words a person uses for it', () => {
             const h = await makeGameInWorld({ worldSeed: WORLD, seed: `duty-${said}` });
             await h.game.newRun('Shen Wu');
             const board = await h.game.act('what duties are there');
-            expect((board.narration.match(/: \d+ (?:days|months?)/g) ?? []).length).toBeGreaterThan(1);
+            // A titled line carries its term in the title; every offered line ends with its contribution.
+            expect((board.narration.match(/ \d+ contribution\./g) ?? []).length).toBeGreaterThan(1);
             const before = h.game.state();
 
             const put = await h.game.act(said);

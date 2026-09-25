@@ -5967,7 +5967,12 @@ function planIntent(input: string): PlannedAction {
     }
 
     // the house's own board, ahead of the mortal one
-    const namedDuty = usedAsVerb(text, DUTY_TAKING_VERBS) ? dutyNamed(text) : undefined;
+    // "I'll do the materials trip" as well as "I take" it, the same takings a contract hears.
+    // A contract named whole ("sign me up for the caravan escort") stays the contract.
+    const namedDuty = usedAsVerb(text, DUTY_TAKING_VERBS)
+        || (/\b(?:i'?ll|i will|let me|i can|i could|i want to|i'd like to) do\b|\b(?:sign|put) (?:me|us) (?:up|down)\b/.test(text)
+            && tradeNamedIn(text) === undefined)
+        ? dutyNamed(text) : undefined;
     if (namedDuty) {
         return { action: 'sect', intent: 'duty', target: namedDuty };
     }

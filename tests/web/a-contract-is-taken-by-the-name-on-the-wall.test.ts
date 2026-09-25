@@ -122,3 +122,11 @@ describe('the wall', () => {
         expect(game.state().run.elapsedDays).toBe(0);
     }, 120_000);
 });
+
+/** Played: "I'll do the materials trip" read as nothing while "I take the materials trip" was a taking. */
+describe('a house posting said the way a contract is said', () => {
+    it.each(["I'll do the materials trip", 'sign me up for the materials trip', 'put me down for the materials trip'])(
+        'reads %s as taking it', said => {
+            expect(parseIntent(said)).toMatchObject({ action: 'sect', intent: 'duty' });
+        });
+});
