@@ -24,6 +24,7 @@ import {
 } from './what-a-manual-has-left-in-it.js';
 import { isTeachingSomebody } from './an-npc-striking-at-the-next-wall.js';
 import { isAwayOnSomething } from './npc-state.js';
+import { isInsideTheCompound } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 
@@ -1165,6 +1166,7 @@ export function applyManualCopying(
 ): WrittenCopy[] {
     // ── The library, indexed once. ──
     const holdingAt = new Map<string, number>();
+    const placeById = new Map(state.locations.map(l => [l.id, l] as const));
     for (let i = 0; i < state.objects.length; i++) {
         const o = state.objects[i];
         // Never onto a row that is dust: that would put pages back into a book
@@ -1246,7 +1248,15 @@ export function applyManualCopying(
             // Somebody away is not at a desk this year. Nothing is started for
             // them. Anything else they are at stops for the desk, as it always
             // did: the yearly roll this replaced was taken whatever they were at.
-            const free = doing === null || !isAwayOnSomething(doing.kind);
+            //
+            // AND THE DESK IS AT HOME. A copy for the house's shelf is written in
+            // the house: somebody standing anywhere else sits down to nothing.
+            // Found on `town-a` once every world stood on the written ages: a
+            // Frostmirror elder back from board work started a twenty-six-year
+            // copy at the Orchid Court's ground and never went home.
+            const atTheDesk = faction.seatLocationId === null
+                || isInsideTheCompound(placeById, master.locationId, faction.seatLocationId);
+            const free = (doing === null || !isAwayOnSomething(doing.kind)) && atTheDesk;
             let worst = -1;
             for (const techniqueId of sitting === null && free ? master.cultivation.techniqueIds : []) {
                 if (!canReproduce(master, techniqueId)) continue;

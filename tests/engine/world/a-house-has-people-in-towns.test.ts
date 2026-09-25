@@ -180,7 +180,11 @@ describe('a house stations people outside itself', () => {
                 const seat = seatOf.get(house) ?? null;
                 if (seat === null) continue;
                 kept++;
-                const away = who.activity?.kind === 'stationed' || who.activity?.kind === 'out_with_a_party';
+                // And on the road home is not idle either: somebody put off a
+                // roll and taken back on where they stood walks to the seat,
+                // which is the going-home the note above calls right.
+                const away = who.activity?.kind === 'stationed' || who.activity?.kind === 'out_with_a_party'
+                    || (who.activity?.kind === 'travelling' && who.activity.returnTo === seat);
                 if (who.locationId !== seat && !away) idle.push(`${who.name} at ${who.locationId}`);
             }
         }
