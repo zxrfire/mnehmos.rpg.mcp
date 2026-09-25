@@ -35,10 +35,18 @@ export const WHAT_A_BERTH_TAKES = 4_000;
  */
 export const WHAT_A_HEAD_OF_CARGO = { volume: 250, weight: 200 } as const;
 
+/**
+ * And a spirit boat's hold, which is a flying ship's: "spirit boat = genre flying boat". Thirty
+ * heads of it carry a thousand-year tortoise's belly-plate, which is what a boat is for.
+ */
+export const WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES = { volume: 2_000, weight: 2_400 } as const;
+
 /** What a vehicle's hold carries in all, by the heads it seats. */
 export function whatAVehicleHolds(vehicle: Pick<ObjectRecord, 'data'>): { volume: number; weight: number } {
-    const heads = getConveyance(String(vehicle.data?.conveyanceId ?? ''))?.heads ?? 1;
-    return { volume: heads * WHAT_A_HEAD_OF_CARGO.volume, weight: heads * WHAT_A_HEAD_OF_CARGO.weight };
+    const kind = getConveyance(String(vehicle.data?.conveyanceId ?? ''));
+    const heads = kind?.heads ?? 1;
+    const each = kind?.crossesGroundThatCannotBeWalked ? WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES : WHAT_A_HEAD_OF_CARGO;
+    return { volume: heads * each.volume, weight: heads * each.weight };
 }
 
 /** The hold still free across these vehicles, after what is already in them. */

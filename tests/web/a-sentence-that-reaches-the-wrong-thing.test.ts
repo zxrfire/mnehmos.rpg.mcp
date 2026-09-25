@@ -273,13 +273,19 @@ describe('a sentence that reaches the wrong thing', () => {
     });
 
     describe('your own pouch is neither a swing nor a theft', () => {
+        it('taking out of your own pouch is a look at what you are carrying', () => {
+            expect(reached('i take the pill out of my pouch').action).toBe('inventory');
+        });
+
+        // And a ring of your own is somewhere a thing is put or taken from, which the carry verb
+        // does: see `what-is-in-your-ring.ts`.
         it.each([
-            'i put the sword in my ring',
-            'i take the sword out of my ring',
-            'i put the manual in my storage ring',
-            'i take the pill out of my pouch'
-        ])('%s is a look at what you are carrying', said => {
-            expect(reached(said).action).toBe('inventory');
+            ['i put the sword in my ring', 'store'],
+            ['i take the sword out of my ring', 'retrieve'],
+            ['i put the manual in my storage ring', 'store']
+        ])('%s is putting it in or taking it out', (said, intent) => {
+            expect(reached(said).action).toBe('carry');
+            expect(reached(said).intent).toBe(intent);
         });
 
         it('somebody else\'s is still a theft', () => {

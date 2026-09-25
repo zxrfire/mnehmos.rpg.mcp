@@ -31,6 +31,7 @@
  */
 
 import { FOLD_FLOOR_ORDINAL } from './how-far-somebody-can-fold-space-and-what-it-costs.js';
+import { whatABeastPartTakes } from './what-a-beast-part-takes.js';
 import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
@@ -454,12 +455,13 @@ export function whatOneOfTheseTakes(kind: PouchItemKind): HowMuchRoomItTakes {
 
 /** What a whole pouch amounts to. Stacks counted, not listed. */
 export function whatAllOfThatTakes(
-    held: readonly { kind: PouchItemKind; quantity: number }[]
+    held: readonly { kind: PouchItemKind; quantity: number; itemId?: string }[]
 ): HowMuchRoomItTakes {
     let volume = 0;
     let weight = 0;
     for (const lot of held) {
-        const each = whatOneOfTheseTakes(lot.kind);
+        // A part off a beast is its own size, not a handful of herbs. See `what-a-beast-part-takes.ts`.
+        const each = (lot.itemId === undefined ? null : whatABeastPartTakes(lot.itemId)) ?? whatOneOfTheseTakes(lot.kind);
         const many = Math.max(0, Math.floor(lot.quantity));
         volume += each.volume * many;
         weight += each.weight * many;
