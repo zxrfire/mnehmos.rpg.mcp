@@ -415,7 +415,13 @@ export function takeAFightTurn(
             // holds the grudge, exactly as they would have from the one-call path.
             return {
                 fight: null,
-                finished: concludeFrom(fight, theirs.input.id, mine.input.id, 'withdrew', ctx),
+                // Getting clear is not yielding. `concludeConfrontation` turns a
+                // coercer's won withdrawal into a submission, which is right for
+                // somebody beaten past the line and wrong for somebody who got away.
+                finished: concludeFrom(
+                    { ...fight, intent: { ...fight.intent, toMakeThemComply: false } },
+                    theirs.input.id, mine.input.id, 'withdrew', ctx
+                ),
                 playerAct: 'break_off',
                 theirAct,
                 exchanges: [],

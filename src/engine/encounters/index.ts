@@ -112,6 +112,14 @@ export {
 export { fillTokens, type FillContext, type FillResult } from './tokens.js';
 
 export {
+    ACCOUNT_DAILY_AT_MOST,
+    THE_FEUD_ROW,
+    attemptAnAccount,
+    chanceAnAccountComesDue,
+    dailyChanceAnAccountComesDue
+} from './an-account-comes-due.js';
+
+export {
     assessFit,
     bestFor,
     mayHoldAFit,
@@ -179,6 +187,7 @@ export {
 } from './window.js';
 
 export type {
+    AnAccountComingDue,
     ArrivableFact,
     Confrontation,
     Duty,

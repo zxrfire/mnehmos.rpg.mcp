@@ -704,6 +704,8 @@ export function settleAFight(input: {
     opponentIdOnRecord: string | null;
     /** What the aggressor brought, for the battle record. */
     edges: readonly Edge[];
+    /** False where the other side opened the fight. Picks which priced side is whose. */
+    playerIsAggressor?: boolean;
 }): object {
     const {
         repos, run, cultivator, self, opponent, technique, result, nextTurn, day
@@ -881,7 +883,9 @@ export function settleAFight(input: {
         // The death gate. Combat produced damage; survival.ts decides whether
         // that was an ending, and nothing else in this file may.
         const after = repos.cultivators.getById(cultivator.id)!;
-        const cause = evaluateDeathConditions(after, { forcingCombat: true });
+        // Somebody who was attacked did not force anything, so the barely-standing
+        // clause does not apply to them; an empty bar still kills.
+        const cause = evaluateDeathConditions(after, { forcingCombat: input.playerIsAggressor !== false });
         if (cause) {
             death = { cause, description: describeDeath(cause, after) };
             repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description);
@@ -910,8 +914,12 @@ export function settleAFight(input: {
             summary: result.gap.summary,
             options: result.gap.options
         },
-        self: projectPower(result.aggressor),
-        opponent: { id: opponent.id, name: opponent.name, ...projectPower(result.defender) },
+        self: projectPower(input.playerIsAggressor === false ? result.defender : result.aggressor),
+        opponent: {
+            id: opponent.id,
+            name: opponent.name,
+            ...projectPower(input.playerIsAggressor === false ? result.aggressor : result.defender)
+        },
         exchanges: result.exchanges.map(x => ({
             index: x.index,
             attackerId: x.attackerId,

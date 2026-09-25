@@ -1040,6 +1040,7 @@ import {
 } from './view.js';
 import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
+import { whatIsHeldAgainst, whoHoldsThisAccount } from './who-comes-to-settle-an-account.js';
 import type { AHolder } from '../engine/social-leverage/being-hunted.js';
 import { namesTheCoin, whatIsBeingSwapped } from './what-is-being-swapped-for-what.js';
 import {
@@ -20105,59 +20106,15 @@ ${fit.line}`;
      * Who is actually holding something against this cultivator, derived.
      */
     private whoIsHuntingThisCultivator(cultivator: Cultivator): string[] {
-        return [...whatTheWorldHoldsAbout({
-            db: this.db as unknown as ObligationDb,
-            person: {
-                id: cultivator.id,
-                ordinal: cultivator.realmOrdinal,
-                // `Backing`'s own three values, read off the roll: a house that
-                // would have to be dealt with, a roll whose house would not put
-                // its weight behind you, and nobody at all.
-                backing: cultivator.sectId === null
-                    ? 'none'
-                    : whereYouStandOnYourHousesRoll(this, cultivator)
-                        ? 'backed'
-                        : 'unclaimable'
-            },
-            lookUpHolder: id => this.whoHoldsAnAccount(id)
-        }).feuds];
+        return [...whatIsHeldAgainst(this, cultivator).feuds];
     }
 
     /**
-     * Who an id on the ledger actually is, for anybody reading a record.
-     *
-     * Lifted out of `whoIsHuntingThisCultivator` when the standing read became
-     * the second caller. One answer to "who is this holder", for the same
-     * reason `whatSomebodyHereWouldAsk` takes its matcher from its caller: two
-     * readers of one ledger that disagree about who a row belongs to would
-     * report two different worlds off the same rows.
+     * Who an id on the ledger actually is. One answer to "who is this holder",
+     * shared with the encounter draw: see `who-comes-to-settle-an-account.ts`.
      */
     private whoHoldsAnAccount(id: string): AHolder | null {
-        const npc = (this.atHand?.npcs ?? []).find(row => row.id === id);
-        if (npc) {
-            return {
-                id: npc.id,
-                name: npc.name,
-                ordinal: npc.cultivation.realmOrdinal,
-                houseId: npc.factionId
-            };
-        }
-        const row = this.repos.cultivators.getById(id);
-        if (row) {
-            return {
-                id: row.id,
-                name: row.name,
-                ordinal: row.realmOrdinal,
-                houseId: row.sectId ?? null
-            };
-        }
-        const house = this.repos.sects.getById(id);
-        // A house is a holder like any other and has a rung: whoever answers
-        // for it. Without this every institutional account read as a holder
-        // nobody could place and was silently dropped.
-        return house
-            ? { id: house.id, name: house.name, ordinal: house.powerOrdinal, houseId: house.id }
-            : null;
+        return whoHoldsThisAccount(this.atHand, this.repos, id);
     }
 
     private stateView(run: Run, cultivator: Cultivator): StateView {

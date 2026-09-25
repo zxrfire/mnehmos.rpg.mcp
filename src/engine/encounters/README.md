@@ -82,6 +82,7 @@ window.ts       the cadence loop. The entry point is rollEncounters()
 | a summons | an institution | being asked for by name |
 | a commission | you | work you went and took off a board |
 | a contact | somebody you live with | the texture of belonging |
+| an account coming due | somebody holding one against you | `an-account-comes-due.ts`: the holders `whoIsComingForYou` lists, drawn by the weight of what they hold, the curve stated there |
 
 The first two are coincidence. The last three are what makes a membership mean
 something, and before them a Dew Servant and a rogue lived identical lives.
@@ -558,7 +559,10 @@ and it never touches damage, a resolution, or a capability gap.
   artifact rows and a battle history the pure layer does not hold. A hostile
   encounter comes back as a `Confrontation` - gap, count, damage multiplier,
   whether walking away is available - for the caller to put through
-  `resolveMelee`, or not, because the player was handed control back.
+  `resolveMelee`, or not, because the player was handed control back. Where
+  somebody comes at the player with nothing on offer, the web layer opens the
+  ordinary standing fight with them as aggressor
+  (`src/web/when-somebody-comes-at-you.ts`).
 - **It does not write knowledge.** It returns `KnowledgeGrant[]` shaped to spread
   into `KnowledgeGate.learnIfNew` with a holder and a day added.
 - **It does not invent people.** The cast is supplied. An encounter that needs a

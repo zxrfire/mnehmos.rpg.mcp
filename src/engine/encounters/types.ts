@@ -330,6 +330,29 @@ export interface EncounterOccurrence {
     /** People from the supplied cast who took part. Ids only. */
     castIds: string[];
     source: 'catalog' | 'digest' | 'summons' | 'contact';
+    /** Set when this is somebody coming to settle an account against the cultivator. */
+    account?: AnAccountComingDue | null;
+}
+
+/**
+ * An open account against the cultivator, held by somebody who may act on it and
+ * thinks it worth doing (`whoIsComingForYou`'s `coming` list), with who would
+ * actually come: the holder, or a member a holding house sends.
+ */
+export interface AnAccountComingDue {
+    holderId: string;
+    holderName: string;
+    /** True where the holder is a house, and `sent` is somebody on its roll. */
+    holderIsAHouse: boolean;
+    sent: { id: string; name: string; realmOrdinal: number };
+    /** `WHAT_A_RECORD_COUNTS_FOR` summed over this holder's open accounts. */
+    weight: number;
+    /** The heaviest of them. */
+    severity: import('../social/grudges.js').Severity;
+    /** The heaviest record's own words. */
+    what: string;
+    /** A blood feud: written to be carried rather than settled. */
+    carried: boolean;
 }
 
 /** Everything a window produced, chronologically. */
@@ -403,6 +426,8 @@ export interface EncounterRollInput {
     names?: EncounterNamePools;
     /** World-digest lines eligible to arrive rather than be reported. */
     arrivable?: readonly ArrivableFact[];
+    /** Open accounts whose holders may come to settle them. Omitted reads as none. */
+    comingForYou?: readonly AnAccountComingDue[];
     /** Cap on how many occurrences one window may produce. */
     limit?: number;
 }

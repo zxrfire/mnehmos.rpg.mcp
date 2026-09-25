@@ -123,6 +123,8 @@ import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.j
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { foldTheFightIn, theyCameAtYou } from './when-somebody-comes-at-you.js';
+import { accountsComingDue } from './who-comes-to-settle-an-account.js';
 
 /**
  * Somebody putting a party together, which the world sim writes and nothing
@@ -878,7 +880,8 @@ export const travelVerbs = {
                 activity: 'travel',
                 cultivator,
                 // The row id is a randomUUID. See PLAYER_ROLL_IDENTITY.
-                rollIdentity: PLAYER_ROLL_IDENTITY
+                rollIdentity: PLAYER_ROLL_IDENTITY,
+                comingForYou: accountsComingDue(this, cultivator)
             }
         );
         // ── AND A ROAD CAN STOP YOU ──────────────────────────────────────
@@ -955,7 +958,7 @@ export const travelVerbs = {
             facts.lines.push(...onTheWay.lines, ...world.lines);
             facts.structure.push(...onTheWay.structure, ...world.structure,
                 `move: stopped on day ${walked} of ${onTheRoad} for ${arrivedAt}; location unchanged.`);
-            return {
+            const halted: Execution = {
                 facts,
                 events: skip.events,
                 timeSkip: skip,
@@ -969,6 +972,9 @@ export const travelVerbs = {
                     ok: true
                 }]
             };
+            // AND WHOEVER STOPPED IT MAY HAVE COME AT THEM, which is a fight.
+            const cameAt = theyCameAtYou(this, applied.run, applied.cultivator, ambient, happened);
+            return cameAt ? foldTheFightIn(halted, cameAt) : halted;
         }
 
         // Standing somewhere is how a place stops being a rumour. Recorded with

@@ -14,6 +14,7 @@ import {
     type Seeker,
     type Suitability,
     type DutyCandidate,
+    type AnAccountComingDue,
     type ArrivableFact,
     type Duty,
     type EncounterActivity,
@@ -178,6 +179,8 @@ export interface EncounterRequest {
     membership?: Membership | null;
     /** The house roster. See `rosterFor`. Derived when omitted. */
     roster?: readonly ContactPerson[];
+    /** Holders who may come to settle an account. See `accountsComingDue`. */
+    comingForYou?: readonly AnAccountComingDue[];
 }
 
 /** Roll the window. Call this BEFORE provisioning or simulating anything. */
@@ -206,6 +209,7 @@ export function encountersFor(deps: EncounterDeps, request: EncounterRequest): E
         cast: castFor(deps, cultivator),
         names: namesFor(deps, cultivator),
         arrivable: request.arrivable,
+        comingForYou: request.comingForYou,
         membership,
         house: standing?.house ?? null,
         ...(standing === null ? {} : {

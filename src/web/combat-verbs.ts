@@ -113,6 +113,7 @@ import {
     theFurnaceRiteOnSomebodyWhoYielded,
     theyAnswerForTheRite
 } from './the-furnace-rite-once-somebody-has-yielded.js';
+import { theFurnaceRiteWorkedOnYou } from './the-furnace-rite-worked-on-you.js';
 import { whatIsInTheirHand } from './what-is-on-you-and-in-your-hands.js';
 import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 
@@ -244,6 +245,77 @@ export const combatVerbs = {
                         myHouse !== null && npc?.factionId === myHouse
                 };
             });
+    },
+
+    /**
+     * The body somebody is fighting in: their `cultivators` row where they have
+     * one, their world row where they have that, and a description at the rung
+     * the square reported otherwise. Whoever opened the fight.
+     */
+    theBodyTheyStandIn(
+        this: GameService,
+        run: Run,
+        party: { id: string; name: string },
+        onRecord: boolean,
+        standingOrdinal: number | null,
+        theirRecord: NpcRecord | null
+    ): ReturnType<typeof combatantFromOpponent> {
+        const opponentSpec = onRecord
+            ? { cultivatorId: party.id }
+            : {
+                name: party.name,
+                ...(standingOrdinal !== null ? { realmOrdinal: standingOrdinal } : {}),
+                ...(theirRecord
+                    ? {
+                        realmOrdinal: theirRecord.cultivation.realmOrdinal,
+                        // Clamped to the schema's bands rather than passed
+                        // raw: an out-of-range attribute is a validation
+                        // error, and a fight that fails to start is a worse
+                        // answer than one fought on the nearest legal body.
+                        might: Math.max(1, Math.min(3, theirRecord.cultivation.attributes.might)),
+                        insight: Math.max(1, Math.min(4, theirRecord.cultivation.attributes.insight)),
+                        untreatedInjuries: Math.max(0, Math.min(
+                            10, Math.floor(theirRecord.cultivation.untreatedInjuries)
+                        )),
+                        maxHp: Math.max(1, Math.round(maxBodyOf(theirRecord))),
+                        // ON THE WORLD'S CLOCK, which is the clock the wound
+                        // was stamped on. `bodyOnDay` is a world day and mending
+                        // runs forward from it, so measuring it against the
+                        // RUN's elapsed days - a much smaller number - gives
+                        // zero days of mending forever, and anybody the world
+                        // ever hurt reads as permanently one hit from dead.
+                        //
+                        // Which nothing noticed while nothing wrote a world
+                        // NPC's bar. `gatherings.ts` now writes what a bout
+                        // took, and the first thing it broke was the player
+                        // swinging at somebody who had been to one: an opponent
+                        // frozen at a sliver is not a fight, it is `no_contest`,
+                        // and no account is written about a contest there was
+                        // no contest in.
+                        hp: Math.max(1, Math.round(bodyStandingOn(
+                            theirRecord,
+                            Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
+                        )))
+                    }
+                    : {})
+            };
+
+        // WHO THEY ARE, for the one case where the decision is theirs alone.
+        //
+        // A swing from far below is not refused and is not free: the person
+        // swung at decides what happens, and what they decide is read off
+        // three numbers the world already keeps about everybody. This is the
+        // only place that can see them, because a cultivators row carries no
+        // disposition and the combat engine is pure.
+        const bearing = theirRecord
+            ? {
+                ...whatSomebodyIsLike(theirRecord),
+                openHanded: openHandednessOf(theirRecord.id)
+            }
+            : undefined;
+        return combatantFromOpponent(
+            { ...opponentSpec, ...(bearing ? { bearing } : {}) }, this.repos
+        );
     },
 
     artTheyWouldFightWith(this: GameService, cultivator: Cultivator): string | undefined {
@@ -417,61 +489,8 @@ export const combatVerbs = {
         }
 
         // AND THE BODY THEY ARE ACTUALLY STANDING IN
-        const opponentSpec = onRecord
-            ? { cultivatorId: party.id }
-            : {
-                name: party.name,
-                ...(standing ? { realmOrdinal: standing.realmOrdinal } : {}),
-                ...(theirRecord
-                    ? {
-                        realmOrdinal: theirRecord.cultivation.realmOrdinal,
-                        // Clamped to the schema's bands rather than passed
-                        // raw: an out-of-range attribute is a validation
-                        // error, and a fight that fails to start is a worse
-                        // answer than one fought on the nearest legal body.
-                        might: Math.max(1, Math.min(3, theirRecord.cultivation.attributes.might)),
-                        insight: Math.max(1, Math.min(4, theirRecord.cultivation.attributes.insight)),
-                        untreatedInjuries: Math.max(0, Math.min(
-                            10, Math.floor(theirRecord.cultivation.untreatedInjuries)
-                        )),
-                        maxHp: Math.max(1, Math.round(maxBodyOf(theirRecord))),
-                        // ON THE WORLD'S CLOCK, which is the clock the wound
-                        // was stamped on. `bodyOnDay` is a world day and mending
-                        // runs forward from it, so measuring it against the
-                        // RUN's elapsed days - a much smaller number - gives
-                        // zero days of mending forever, and anybody the world
-                        // ever hurt reads as permanently one hit from dead.
-                        //
-                        // Which nothing noticed while nothing wrote a world
-                        // NPC's bar. `gatherings.ts` now writes what a bout
-                        // took, and the first thing it broke was the player
-                        // swinging at somebody who had been to one: an opponent
-                        // frozen at a sliver is not a fight, it is `no_contest`,
-                        // and no account is written about a contest there was
-                        // no contest in.
-                        hp: Math.max(1, Math.round(bodyStandingOn(
-                            theirRecord,
-                            Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
-                        )))
-                    }
-                    : {})
-            };
-
-        // WHO THEY ARE, for the one case where the decision is theirs alone.
-        //
-        // A swing from far below is not refused and is not free: the person
-        // swung at decides what happens, and what they decide is read off
-        // three numbers the world already keeps about everybody. This is the
-        // only place that can see them, because a cultivators row carries no
-        // disposition and the combat engine is pure.
-        const bearing = theirRecord
-            ? {
-                ...whatSomebodyIsLike(theirRecord),
-                openHanded: openHandednessOf(theirRecord.id)
-            }
-            : undefined;
-        const opponentBody = combatantFromOpponent(
-            { ...opponentSpec, ...(bearing ? { bearing } : {}) }, this.repos
+        const opponentBody = this.theBodyTheyStandIn(
+            run, party, onRecord, standing?.realmOrdinal ?? null, theirRecord
         );
         if (isGuidingErrorBody(opponentBody)) {
             return this.fromToolResult(
@@ -1258,7 +1277,8 @@ export const combatVerbs = {
             nextTurn: run.turn + 1,
             day: Math.floor(run.elapsedDays),
             opponentIdOnRecord: held.opponentIdOnRecord,
-            edges: []
+            edges: [],
+            playerIsAggressor: held.cameAtYou === undefined
         });
 
         const execution = this.fromToolResult(
@@ -1382,6 +1402,21 @@ export const combatVerbs = {
             this.whatSparingThemLeft(run, cultivator, held, execution);
         }
 
+        // AND WHAT SOMEBODY WHO CAME AT YOU CAME FOR: the rite above, the other
+        // way round. A rite that kills the player goes to the same death mark a
+        // fight's own death gate writes.
+        let theRiteKilledYou = false;
+        if (held.cameAtYou?.wanted === 'furnace' && result.outcome === 'submission'
+            && result.winnerId === held.opponent.id && !theRunClosed) {
+            theRiteKilledYou = theFurnaceRiteWorkedOnYou(this, run, cultivator, held, execution).died;
+            if (theRiteKilledYou) {
+                this.repos.cultivators.markDead(
+                    cultivator.id, 'combat_defeat', run.turn + 1,
+                    `Drawn off as a cultivation furnace by ${held.party.name}, and it killed them.`
+                );
+            }
+        }
+
         // LAST, and the order is load-bearing. `afterAFight` writes the accounts a
         // bout opens because it went past what was agreed, and
         // `a-bout-two-people-agreed-to.test.ts` reads the ledger in insertion order
@@ -1393,7 +1428,8 @@ export const combatVerbs = {
         // death runs the same killing path a finishing blow does.
         const done = this.afterAFight(
             run, cultivator, held,
-            theRiteKilledThem ? { ...(settled as object), finished: true } : settled,
+            theRiteKilledThem ? { ...(settled as object), finished: true }
+                : theRiteKilledYou ? { ...(settled as object), died: true } : settled,
             execution
         );
         this.whatTheLoserNowHoldsAboutYou(run, cultivator, held, result, done);

@@ -570,6 +570,12 @@ export interface StandingFight {
      * gets the list again.
      */
     routesAlreadyNamed?: boolean;
+    /**
+     * Set when the other side opened it: an ambush on a road or at a cave door.
+     * `wanted` is what they came for, read off what they hold - `furnace` for
+     * somebody holding an art that draws on another - and null for a beating.
+     */
+    cameAtYou?: { wanted: 'furnace' | null; because: string };
 }
 
 /** Whether a fight the service is holding is still this run's and this body's. */

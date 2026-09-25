@@ -36,6 +36,7 @@ import {
     whoAsksASeniorToGo
 } from './who-a-senior-is-asked-to-take-out.js';
 import { resolveOccurrence } from './resolve.js';
+import { attemptAnAccount } from './an-account-comes-due.js';
 import { fillTokens } from './tokens.js';
 import { valenceOf } from './valence.js';
 import type {
@@ -121,7 +122,10 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     // long span is not charged twice for its first fortnight.
     const occasionChance = TURN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
     checks++;
-    const occasion = attempt(input, pool, startDay, 0, occasionChance, 'occasion');
+    // Somebody coming for them is not a coincidence, so they are asked first.
+    const owed = attemptAnAccount(input, startDay, 0, 1, 'occasion');
+    if (owed) occurrences.push(owed);
+    const occasion = owed ? null : attempt(input, pool, startDay, 0, occasionChance, 'occasion');
     if (occasion) occurrences.push(occasion);
 
     // The house asks first. Drawn before the world's own coincidences so that
@@ -153,6 +157,12 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
         for (let day = firstGrid; day <= startDay + days; day += grid) {
             if (occurrences.length >= limit) break;
             checks++;
+
+            const due = attemptAnAccount(input, day, day - startDay, grid, 'span');
+            if (due) {
+                occurrences.push(due);
+                break;
+            }
 
             const drawn = attempt(input, pool, day, day - startDay, spanChance, 'span');
             if (drawn) {

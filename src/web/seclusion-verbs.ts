@@ -96,6 +96,8 @@ import {
 } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { foldTheFightIn, theyCameAtYou } from './when-somebody-comes-at-you.js';
+import { accountsComingDue } from './who-comes-to-settle-an-account.js';
 
 /**
  * How much of an open seclusion gets through a door over the whole sitting.
@@ -365,7 +367,8 @@ export const seclusionVerbs = {
                 ),
                 // The row id is a randomUUID and would make the run
                 // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
-                rollIdentity: PLAYER_ROLL_IDENTITY
+                rollIdentity: PLAYER_ROLL_IDENTITY,
+                comingForYou: accountsComingDue(this, cultivator)
             }
         );
         // AND THE WORLD GETS A SAY IN HOW LONG THIS RUNS.
@@ -695,7 +698,7 @@ export const seclusionVerbs = {
             );
         }
 
-        return {
+        const sat: Execution = {
             facts,
             events: [...skip.events, ...enc2.events].sort((a, b) => a.dayOffset - b.dayOffset),
             timeSkip: skip,
@@ -711,6 +714,11 @@ export const seclusionVerbs = {
                 ...worldCalls(world)
             ]
         };
+        // AND WHOEVER CUT IT SHORT MAY HAVE COME AT THEM, which is a fight.
+        const cameAt = skip.died
+            ? null
+            : theyCameAtYou(this, applied.run, applied.cultivator, ambient, happened);
+        return cameAt ? foldTheFightIn(sat, cameAt) : sat;
     },
 
     /**
