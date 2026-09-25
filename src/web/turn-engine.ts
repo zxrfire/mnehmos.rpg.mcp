@@ -4889,6 +4889,11 @@ ${noticedWaiting}`;
                     case 'retrieve':
                     case 'unmark':
                         return whatTheRingDoes(this, run, cultivator, action.intent, action.target);
+                    case 'load':
+                    case 'unload':
+                    case 'leave_behind':
+                    case 'take_along':
+                        return whatTheVehicleDoes(this, cultivator, action.intent, action.target);
                     default:
                         return whatWearingThemBuys(this, cultivator, action.target);
                 }
@@ -4898,11 +4903,6 @@ ${noticedWaiting}`;
                 // own words, and nothing downstream branches on what kind of
                 // thing it is. The list of what may go there is open.
                 return this.proposeAMatch(
-                    case 'load':
-                    case 'unload':
-                    case 'leave_behind':
-                    case 'take_along':
-                        return whatTheVehicleDoes(this, cultivator, action.intent, action.target);
                     run, cultivator, ambient, action.target, action.topic,
                     action.intent ?? 'propose', action.leverage, rawInput
                 );
@@ -13498,6 +13498,8 @@ ${opened.text}` : receipt,
         // AND WHAT IS OWNED AND KEPT ELSEWHERE, which is not to hand. See `leaving-a-thing-in-your-own-room.ts`.
         const keptInTheRoom = this.atHand ? whatIsKeptInYourRoom(this, this.atHand, cultivator) : null;
         if (keptInTheRoom !== null) lines.push(keptInTheRoom);
+        // AND THEIR VEHICLES: with them, or left where they left them. See `your-vehicle.ts`.
+        lines.push(...theLinesForTheirVehicles(this, this.atHand?.objects ?? [], cultivator));
         if (rations > 0) {
             lines.push(
                 `Food: ${rations} ration${rations === 1 ? '' : 's'}`
@@ -13507,8 +13509,6 @@ ${opened.text}` : receipt,
                     : ', and a body at this rung has stopped needing them.')
             );
         }
-        // AND THEIR VEHICLES: with them, or left where they left them. See `your-vehicle.ts`.
-        lines.push(...theLinesForTheirVehicles(this, this.atHand?.objects ?? [], cultivator));
         const slips = theLineForCommunicationTalismans(
             theCommunicationTalismansOnYou(this.db, cultivator.id),
             houseId => this.atHand?.factions.find(f => f.id === houseId)?.name ?? houseId);

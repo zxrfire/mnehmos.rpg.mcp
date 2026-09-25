@@ -1175,20 +1175,20 @@ export const travelVerbs = {
             available.push({ conveyance: requireConveyance('conv-sword-flight'), power: null });
         }
 
+        const here = this.worldPlaceOf(cultivator);
         for (const row of this.atHand?.objects ?? []) {
             // Held OR owned. `mintCraft` moors a craft rather than handing it
             // to somebody - a craft with a possessor is one `bestObjectHeldBy`
             // would arm them with - so reading `possessorId` alone meant that
-        const here = this.worldPlaceOf(cultivator);
             // even somebody who built one could not ride it.
             if (row.possessorId !== cultivator.id && row.ownerId !== cultivator.id) continue;
+            // AND IT HAS TO BE WHERE THEY ARE: going with them, or left standing here, "unless you
+            // fit it in a storage ring", which is taking it out first. See `a-vehicle.ts`.
+            if (!isWithThem(row, cultivator.id, here)) continue;
             const kind = kindOfCraft(row);
             if (kind) available.push({ conveyance: kind, power: row.power, rowId: row.id });
         }
 
-            // AND IT HAS TO BE WHERE THEY ARE: going with them, or left standing here, "unless you
-            // fit it in a storage ring", which is taking it out first. See `a-vehicle.ts`.
-            if (!isWithThem(row, cultivator.id, here)) continue;
         // ── AND WHAT THEY SIMPLY HAVE ────────────────────────────────────
         //
         // The counted tier, which the note above correctly said nothing in
@@ -1615,14 +1615,14 @@ export const travelVerbs = {
             power: chosen.power,
             heads
         });
-
-        const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
-            await this.arriveAfterSpending(
-                run, cultivator, journey.daysOneWay, arrivedAt
         // Ridden, it goes with them, whether it was going with them already or left standing here.
         const rowId = available.find(a => a.conveyance.id === chosen.conveyance.id && a.power === chosen.power)?.rowId;
         const ridden = rowId ? this.atHand?.objects.find(o => o.id === rowId) : undefined;
         if (ridden && this.atHand) takeItAlong(this.atHand.objects, ridden, cultivator.id);
+
+        const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
+            await this.arriveAfterSpending(
+                run, cultivator, journey.daysOneWay, arrivedAt
             );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
