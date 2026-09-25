@@ -147,9 +147,10 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     // the span
     if (!interruptedIn(occurrences)) {
         const spanChance = SPAN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
-        const firstGrid = nextGridDay(startDay);
+        const grid = profile.gridDays ?? ENCOUNTER_GRID_DAYS;
+        const firstGrid = nextGridDay(startDay, grid);
 
-        for (let day = firstGrid; day <= startDay + days; day += ENCOUNTER_GRID_DAYS) {
+        for (let day = firstGrid; day <= startDay + days; day += grid) {
             if (occurrences.length >= limit) break;
             checks++;
 
@@ -206,8 +207,8 @@ function interruptedIn(occurrences: readonly EncounterOccurrence[]): boolean {
 }
 
 /** The first grid day strictly after `startDay`. Never `startDay` itself. */
-function nextGridDay(startDay: number): number {
-    return (Math.floor(startDay / ENCOUNTER_GRID_DAYS) + 1) * ENCOUNTER_GRID_DAYS;
+function nextGridDay(startDay: number, grid: number = ENCOUNTER_GRID_DAYS): number {
+    return (Math.floor(startDay / grid) + 1) * grid;
 }
 
 // ONE CHECK

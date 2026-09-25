@@ -70,7 +70,16 @@ import {
 } from '../server/consolidated/cultivation-support.js';
 import type { ActionName } from './actions.js';
 import { applyTimeSkip } from './apply.js';
-import { PLAYER_ROLL_IDENTITY } from './encounters.js';
+import {
+    PLAYER_ROLL_IDENTITY,
+    cutTo,
+    daysActuallySpent,
+    encountersFor,
+    recordEncounters,
+    sayingWhatEndedTheSpan,
+    whatCutTheSpanShort,
+    withEncounterDeltas
+} from './encounters.js';
 import { resolvePlace, worldLocationFor } from './entities.js';
 import { loosePlaceKey } from './knowledge.js';
 import {
@@ -106,7 +115,7 @@ import { getLocation, getNpc, type WorldState } from '../engine/world/world-stat
 import { populationWeightOf, type LocationRecord } from '../engine/world/locations.js';
 import { pathTo } from '../engine/world/architecture.js';
 import { layerOf, type LayerKey } from '../engine/world/layers.js';
-import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
+import { factsForMove, factsForRefusal, factsForTimeSkip, factsForToolResult, humanDays, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
@@ -811,7 +820,45 @@ export const travelVerbs = {
         const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
 
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, onTheRoad, {
+
+        // ── THE ROAD HAS THINGS ON IT ────────────────────────────────────
+        //
+        // Played: eleven days from the grounds to the next province, and
+        // nothing on the road - no traveller, no merchant, no trouble. The
+        // design owner: *"you can't just travel ... you meet other travellers,
+        // merchants, etc. maybe even a sect party ... bandits, whatever"*, and
+        // *"your encounters scale on your realm."*
+        //
+        // Nothing was missing but this call. `'travel'` has always been an
+        // encounter activity, with its own profile in the realm-pitched draw
+        // that already knows what somebody has outgrown; every other span that
+        // spends days rolls this window through `shortSkip`, and the journey
+        // alone called the time-skip directly and skipped it. The time-skip's
+        // own check runs on a ninety-day grid that suits a decade in a cave
+        // and that an eleven-day road almost never reaches.
+        const enc = encountersFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
+            {
+                seed: run.seed,
+                startDay,
+                days: onTheRoad,
+                activity: 'travel',
+                cultivator,
+                // The row id is a randomUUID. See PLAYER_ROLL_IDENTITY.
+                rollIdentity: PLAYER_ROLL_IDENTITY
+            }
+        );
+        // ── AND A ROAD CAN STOP YOU ──────────────────────────────────────
+        //
+        // The owner: *"just treat journey as a multi part action ... if you
+        // get interrupted in a multi part action, you stop."* Nothing new is
+        // built for it. A span cut short never moves anybody - that is already
+        // true of every broken sitting - so a journey stopped on day four has
+        // spent four days and arrived nowhere, and the rest of the road is
+        // still ahead.
+        const lived = daysActuallySpent(enc, startDay, onTheRoad);
+        const setOut = withEncounterDeltas(cultivator, enc);
+        const skip = simulateTimeSkip(setOut, lived, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -827,19 +874,59 @@ export const travelVerbs = {
             understanding: this.understandingFor(run, cultivator),
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
-            rations: this.drawFromPack(cultivator, onTheRoad),
+            rations: this.drawFromPack(cultivator, lived),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            // On its feet, so the sentences written for a cave are not used.
+            spanIsASitting: false,
             ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
         this.putBackWhatWasNotEaten(cultivator, skip);
+        const stopped = !skip.died && skip.simulatedDays < onTheRoad;
         const applied = applyTimeSkip(this.repos, {
-            before: cultivator, run, skip, location: arrivedAt
+            before: setOut, run, skip, ...(stopped ? {} : { location: arrivedAt })
         });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+
+        // What the road actually put in front of them, cut to the days walked:
+        // an occurrence past the day they stopped did not happen.
+        const happened = cutTo(enc, startDay, skip.simulatedDays);
+        this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
+        const onTheWay = recordEncounters(
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
+        );
+
+        if (stopped) {
+            const cut = whatCutTheSpanShort({
+                asked: onTheRoad, lived, skip, arrival: enc, startDay, world: null
+            });
+            const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, 'Travel', onTheRoad);
+            const line = `The road to ${arrivedAt} stopped short. `
+                + (cut ? sayingWhatEndedTheSpan(cut, humanDays) : `${humanDays(skip.simulatedDays)} were spent on it.`)
+                + ` You are not there. The rest of the road is still ahead of you - say it again and it runs.`;
+            facts.lines.unshift(line);
+            facts.required = [...(facts.required ?? []), line];
+            facts.lines.push(...onTheWay.lines, ...world.lines);
+            facts.structure.push(...onTheWay.structure, ...world.structure,
+                `move: stopped on day ${skip.simulatedDays} of ${onTheRoad} for ${arrivedAt}; location unchanged.`);
+            return {
+                facts,
+                events: skip.events,
+                timeSkip: skip,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: [{
+                    name: 'engine.encounterWindow',
+                    action: 'move',
+                    summary: `The road to ${arrivedAt} was stopped on day ${skip.simulatedDays} of `
+                        + `${onTheRoad}. Location unchanged; ${onTheRoad - skip.simulatedDays} day(s) of road remain.`,
+                    ok: true
+                }]
+            };
+        }
 
         // Standing somewhere is how a place stops being a rumour. Recorded with
         // its source so a place walked to and a place read about stay different
@@ -856,6 +943,9 @@ export const travelVerbs = {
         const facts = factsForMove(
             cultivator, applied.cultivator, arrivedAt, intent, skip, ambient, ambientAfter
         );
+        // WHAT WAS MET ON THE ROAD, on a road that was walked to its end.
+        facts.lines.push(...onTheWay.lines);
+        facts.structure.push(...onTheWay.structure);
         // WHICH PLACE THE ROAD ENDED AT, where the name typed was a province.
         // Said on the required channel: a player who typed a province and is
         // standing in a town has to be told which town.

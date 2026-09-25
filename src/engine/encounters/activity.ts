@@ -129,6 +129,18 @@ export interface ActivityProfile {
     readonly lean: Readonly<Record<EncounterValence, number>>;
     /** Kinds this activity puts you in the way of, as weight multipliers. */
     readonly kindBias: Readonly<Partial<Record<EncounterKind, number>>>;
+    /**
+     * Days between span checks, where this activity is not a sitting.
+     *
+     * `ENCOUNTER_GRID_DAYS` is fifteen, and fifteen is a cadence for somebody
+     * sitting still for a season. The grid is absolute, so a road that begins
+     * just after a grid day and is shorter than fifteen days gets NO span check
+     * - only the one roll at its start, the same as a one-day hop. Measured
+     * after the road was first wired: twenty-four journeys, eleven of them
+     * eleven days long, and one encounter between all of them. Absent means
+     * the shared cadence.
+     */
+    readonly gridDays?: number;
 }
 
 const PROFILES: Readonly<Record<EncounterActivity, ActivityProfile>> = {
@@ -176,6 +188,15 @@ const PROFILES: Readonly<Record<EncounterActivity, ActivityProfile>> = {
     travel: {
         id: 'travel',
         exposure: 1.3,
+        // THREE DAYS, and it is a choice with a direction. The design owner:
+        // *"you can't just travel ... you meet other travellers, merchants,
+        // etc. maybe even a sect party ... bandits"*. An eleven-day road gets
+        // three or four checks, so most long roads meet something and some
+        // meet more; a one-day hop keeps its single roll and stays quiet.
+        // Nothing else needs to scale: the pool already drops what the
+        // traveller has outgrown, so a strong enough cultivator's road empties
+        // of bandits on its own.
+        gridDays: 3,
         unreachableTags: ['auction'],
         unreachableKinds: [],
         lean: { good: 38, neutral: 20, bad: 42 },
