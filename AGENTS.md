@@ -616,7 +616,12 @@ word must not be a verb the table acts on (`Ridge` reads as *ride*, `Market` is 
 edit from one (`Peak`/*speak*, `Ford`/*food*, `Bell`/*sell*, `Hollow`/*follow*), nor one edit
 from the words every question is made of (*your*, *what*, *where*, *here*). Build names from
 xianxia nouns a player only types when they mean the place. This applies to the generator's word
-lists as much as to the catalog. Replace a generated word one for one, so the seeded draws, and
+lists as much as to the catalog.
+
+**When a verb and an item want the same word, the verb wins.** The design owner: *"verbs win over
+items cuz verbs are more generic and commonly used."* A verb is typed in every kind of sentence;
+an item's name is typed only when the item is meant. So the item is renamed, even though "a name a
+player types keeps the word they type" would otherwise keep it. Replace a generated word one for one, so the seeded draws, and
 every pinned world, stay the same apart from the name.
 
 What is NOT a collision: the words that are forms of address as much as names. *Elder*,
