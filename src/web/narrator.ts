@@ -376,7 +376,10 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     // and the guard declined a walk to a place the sentence names in so many
     // words. Only where the table read NOTHING: a table that read the sentence
     // as something cheaper ("I ask about Moraine Gate") still wins.
-    if (GOES_TO_A_PLACE.has(fromModel.action)
+    // AND WORK NAMED IN SO MANY WORDS, the same way. Played: "cool, sign me up for the quay watch",
+    // with the quay watch on the board the turn before, was read by the model as work on it and
+    // declined, because the table reads "sign me up for" as nothing.
+    if (THE_ACT_IS_THE_THING_NAMED.has(fromModel.action)
         && withoutAModel.action.action === FALLBACK_ACTION
         && theSentenceNamesIt(input, fromModel.target)) {
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
@@ -414,6 +417,9 @@ async function theModelIsNotWhyThisTurnIsDangerous(
 
 /** Verbs whose whole act is getting to the place named. `fold` is not one: a fold is said. */
 const GOES_TO_A_PLACE: ReadonlySet<ActionName> = new Set<ActionName>(['move', 'ride', 'passage']);
+
+/** Verbs whose whole act is the thing the sentence names: a place to get to, or the work to take. */
+const THE_ACT_IS_THE_THING_NAMED: ReadonlySet<ActionName> = new Set<ActionName>([...GOES_TO_A_PLACE, 'work']);
 
 /** Whether the model's target is in the sentence in so many words, article or no. */
 function theSentenceNamesIt(input: string, target: string | undefined): boolean {

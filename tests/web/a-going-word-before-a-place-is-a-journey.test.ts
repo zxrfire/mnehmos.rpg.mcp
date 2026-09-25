@@ -52,6 +52,16 @@ describe('a going word before a place', () => {
         expect(parseIntent('right hook to his jaw').action).not.toBe('move');
     });
 
+    // Played blind: "cool, sign me up for the quay watch" was the model's work on the quay watch,
+    // declined because the table reads "sign me up for" as nothing.
+    it('lets work stand that the sentence names in so many words', async () => {
+        const job = '{"action":"work","target":"quay watch"}';
+        const plan = await modelSaying(job).plan('cool, sign me up for the quay watch', '');
+        expect(plan.action.action).toBe('work');
+        const invented = await modelSaying(job).plan('i stare at the harbour', '');
+        expect(invented.action.action).not.toBe('work');
+    });
+
     it('does not turn going over to the market into a journey', async () => {
         const plan = await modelSaying('{"action":"move","target":"the market"}').plan('i go to the market', '');
         expect(plan.action.action).not.toBe('move');
