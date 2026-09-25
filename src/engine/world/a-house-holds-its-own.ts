@@ -21,7 +21,7 @@
  *
  * ── AND IT IS ONE STORE, WHICH IS THE POINT ──────────────────────────────
  *
- * A treasury is a place, not a per-person allowance. Everything that touches
+ * A treasury is a place, not a per-person stipend. Everything that touches
  * it - a stipend paid out, a donation in, a siphon, a war indemnity, the cost
  * of putting a hall back up - moves the SAME number, so a house that has been
  * bled cannot pay its people and a house that has just been paid can rebuild.

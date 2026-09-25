@@ -270,7 +270,7 @@ describe('a house holds its own', () => {
 
     /**
      * THE TWO MOVEMENTS ARE THE SAME NUMBER, which is the whole point of a
-     * treasury being a place rather than a per-person allowance: a house that
+     * treasury being a place rather than a per-person stipend: a house that
      * has been bled cannot then pay for its own walls.
      */
     it('leaves a bled house unable to rebuild', () => {

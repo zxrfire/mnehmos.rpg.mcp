@@ -100,7 +100,7 @@ export type SectIntent =
 /**
  * The two that need no noun. "Promote me" and "my stipend" are about a sect whether
  * or not the sentence says so - there is nothing else in the game that promotes
- * anybody or pays an allowance - so these are tested early, ahead of the verbs that
+ * anybody or pays a stipend - so these are tested early, ahead of the verbs that
  * would otherwise swallow them ("collect my pay" reads as gathering, "ask for a
  * promotion" reads as asking somebody a question).
  */
@@ -129,7 +129,7 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // 1000. That is recorded here because the number-out-of-a-name read is
     // still live for any sentence this row does not now claim.
     ['stipend', new RegExp(
-        String.raw`\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b`
+        String.raw`\b(?:stipend|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b`
         // A HOUSE IS REQUIRED, and it is what keeps this off "what did I earn"
         // and "how much did that pay" - both of which are the purse's question
         // and are read far below this row.

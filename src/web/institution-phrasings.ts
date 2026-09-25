@@ -63,7 +63,7 @@ export const PETITION_NOUNS =
     // - and "I ask the Frostmirror Court to put my name forward" reached
     // `request/a_thing`, which looked for an OBJECT called "put my name
     // forward", found none, and narrated nothing at all.
-    /\b(?:a grant|the grant|a stipend from|an allowance|a posting|a place at|a nomination|to nominate|nominate me|put my name|my name forward|my name up|relief|for aid|for protection|for help|a dispensation|an exemption|a hearing|a ruling|a (?:dao )?protector|a guard for|a technique|an art|a manual|the manual|resources|materials|stones for|a pill from|what i(?:'m| am)? owed|what is owed (?:me|to me))\b/;
+    /\b(?:a grant|the grant|a stipend from|a posting|a place at|a nomination|to nominate|nominate me|put my name|my name forward|my name up|relief|for aid|for protection|for help|a dispensation|an exemption|a hearing|a ruling|a (?:dao )?protector|a guard for|a technique|an art|a manual|the manual|resources|materials|stones for|a pill from|what i(?:'m| am)? owed|what is owed (?:me|to me))\b/;
 
 /**
  * A BODY, rather than a person standing in front of you.

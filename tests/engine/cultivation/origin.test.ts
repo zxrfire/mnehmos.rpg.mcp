@@ -73,7 +73,7 @@ describe('the table', () => {
     // stopped being true when `great_house` split into three routes that
     // differ in KIND rather than in height: a Dao house's blood is the
     // richest and the commonest of the three, and an apex member's child is
-    // rarer and holds a personal allowance rather than a house treasury.
+    // rarer and holds a personal stipend rather than a house treasury.
     // Forcing them back into one chain would be re-imposing the exact
     // conflation the split exists to remove.
     //

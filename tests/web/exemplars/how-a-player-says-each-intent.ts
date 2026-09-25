@@ -125,7 +125,7 @@ export const HOW_A_PLAYER_SAYS_EACH_SECT_ASK: Readonly<Record<string, readonly s
     stipend: [
         'I go and draw my stipend',
         'I collect what the house owes me this month',
-        'I want my allowance',
+        'I want my stipend',
         'I ask for what I am paid'
     ],
     standing: [
