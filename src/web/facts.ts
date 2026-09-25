@@ -720,10 +720,13 @@ function timeSkipProse(
     // NOT EVERY SPAN IS SPENT SITTING DOWN.
     // Each picks a different opening sentence.
     const travelling = /travel|journey|road|walk/i.test(label);
+    const sailing = /sailing/i.test(label);
     const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
     const livedWithSomebody = /rais(?:e|ing)|child|marriage|household/i.test(label);
 
-    const opening = travelling
+    const opening = sailing
+        ? `${where}. ${before.name} was aboard, at sea.`
+        : travelling
         ? `${where}. ${before.name} took to the road.`
         : livedWithSomebody
             // The years still passed and the world still moved. What did not

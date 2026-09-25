@@ -117,10 +117,15 @@ describe('a seat on a ship or a carriage', () => {
         `).run(id);
 
         const done = await game.act('I take the ship to Moraine Gate');
+        // The pack's last ration is eaten at sea, and being told so stops the span there,
+        // aboard (`a-ship-at-sea.ts`); the ship sails on when they do.
+        expect(done.narration).toMatch(/The ship's rations ran out on day 46 of \d+; [1-9]\d* rations? came out of the pack/);
+        expect(done.narration).toMatch(/At sea on .+, bound for Moraine Gate\./);
+
+        const landed = await game.act('I wait until we arrive');
 
         expect(game.state().cultivator.location).toBe('Moraine Gate');
-        expect(done.narration).toMatch(/64 days by ship from Salt Fields to Moraine Gate, against the 34 days quoted/);
-        expect(done.narration).toMatch(/The ship's rations ran out on day 46 of 64; [1-9]\d* rations? came out of the pack/);
+        expect(landed.narration).toMatch(/64 days by ship from Salt Fields to Moraine Gate, against the 34 days quoted/);
         const held = db.prepare("SELECT value FROM cultivator_flags WHERE cultivator_id = ? AND key = 'rations_held'")
             .get(id) as { value: string };
         expect(Number(held.value)).toBe(0);

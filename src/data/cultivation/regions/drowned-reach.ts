@@ -232,6 +232,7 @@ export const THE_DROWNED_REACH: Region = {
         { name: PLACE.THE_BOUNDLESS, kind: 'site', ambient: 'thin', grounds: ['lake_bottom', 'abyss'], note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
         { name: PLACE.THE_SALT_FIELDS, kind: 'site', ambient: 'thin', grounds: ['marsh'], note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
     ],
+    openWater: true,
     // Straits, islands and the ground under the water. Everything that lives
     // here lives on a shore, in the shallows, or below both - and the province
     // sells what comes off ground people used to walk on before the water

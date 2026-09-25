@@ -2841,8 +2841,10 @@ atmosphere - a commit point past which turning back is not shorter, a season tha
 the route without anybody deciding to, a duration that is sampled rather than fixed,
 rations loaded at the quay that a long passage outruns, and a stone burn that is the
 whole of cultivation because there is no vein under open water. A ship seat bought at a
-landing (`src/web/a-seat-on-a-ship-or-a-carriage.ts`) reads the season, the duration and
-the rations; `move` over a sea connection still walks it as a road.
+landing (`src/web/a-seat-on-a-ship-or-a-carriage.ts`) reads the season, the duration, the
+rations and the commit point (`canTurnBack`, when a stop costs the crew). `move` to a place
+with an end on open water goes to the landing instead of walking
+(`src/web/the-way-there-is-by-ship.ts`).
 
 What it would take is two lines in files that conflict badly when shared: one `crossing`
 member on `LinkKind`, and one ternary at the `linkLocations` call in `seeding.ts` that

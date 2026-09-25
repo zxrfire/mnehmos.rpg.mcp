@@ -250,6 +250,11 @@ export function regionIdOfPlace(placeName: string | null | undefined): string | 
     return indices().regionIdByPlaceName.get(placeName.trim().toLowerCase());
 }
 
+/** Whether a province is open water, where everything is sailed. See `RegionSchema.openWater`. */
+export function isOpenWater(regionId: string | null | undefined): boolean {
+    return regionId ? indices().byId.get(regionId)?.openWater === true : false;
+}
+
 /**
  * What a named place says is underfoot, where it says anything.
  *

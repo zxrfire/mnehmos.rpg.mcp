@@ -363,6 +363,7 @@ import {
     writeTheWorldNow
 } from '../server/state/cultivation-world.js';
 import { somebodyDidThis } from '../engine/world/estate-at-death.js';
+import { aShipSailsOn, sayWhereTheShipIs, theRationsAboard, theVoyageUnderWay } from './a-ship-at-sea.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_ERRAND,
@@ -971,6 +972,7 @@ import {
     sayThisWhateverTheNarratorDoes,
     sayThisFirstWhateverTheNarratorDoes,
     shownFirstWithNoModel,
+    shownWithNoModelAfter,
     type EngineFacts
 } from './facts.js';
 import { describeFoundation, foundationEffect } from '../engine/cultivation/foundation.js';
@@ -4485,6 +4487,20 @@ export class GameService {
             }
         }
 
+        // ABOARD A SHIP AT SEA, days spent are days the ship sails. See `a-ship-at-sea.ts`.
+        const aboard = theVoyageUnderWay(this.db, cultivator);
+        if (aboard && (action.action === 'seclude'
+            || (action.action === 'cultivate' && (action.target ?? '').trim().length < 2))) {
+            return aShipSailsOn(this, run, cultivator, aboard,
+                action.days ?? (action.action === 'seclude' ? DEFAULT_SECLUSION_DAYS : DEFAULT_CULTIVATION_DAYS),
+                'sitting');
+        }
+        if (aboard && action.action === 'wait') {
+            const untilPort = /\b(?:arriv\w*|land\w*|port|dock\w*|ashore|reach\w*|get there|put in)\b/i.test(rawInput);
+            return aShipSailsOn(this, run, cultivator, aboard,
+                untilPort ? null : action.days ?? SHORT_ACTION_DAYS, 'waiting');
+        }
+
         switch (action.action) {
             // `durationAskedFor` is the UNCLAMPED span in the sentence.
             // `action.days` has already been through `parseDuration`, which no
@@ -4956,6 +4972,13 @@ ${noticedWaiting}`;
                         copyNamesHeldBy(this.db, cultivator.id)
                     ).line
                 ));
+                if (aboard) {
+                    sayWhereTheShipIs(sheet.facts, placeName(cultivator), aboard);
+                    const hull = theRationsAboard(this.db, cultivator);
+                    shownWithNoModelAfter(sheet.facts, hull > 0
+                        ? `The hull's rations cover ${howMany(hull, 'more day')}.`
+                        : "The hull's rations are gone; meals come out of the pack.");
+                }
                 // AND WHAT THEY ARE ACTUALLY CARRYING, when it is close enough
                 // to matter. The design owner: *"objects have volume and
                 // weight"*, *"how much you can carry is limited by volume and
@@ -5654,6 +5677,7 @@ ${noticedWaiting}`;
                             ? factsForCompany(cultivator, company, standing)
                             : factsForLook(cultivator, ambient, company, standing, groundIsQuiet))
                 );
+                if (aboard) sayWhereTheShipIs(looking.facts, placeName(cultivator), aboard);
                 // ── AND LOOKING AT A SQUARE IS HOW YOU COME TO KNOW WHO IS
                 //    STANDING IN IT ────────────────────────────────────────
                 //

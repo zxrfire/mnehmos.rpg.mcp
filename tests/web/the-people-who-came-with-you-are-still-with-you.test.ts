@@ -60,6 +60,14 @@ import { dutyFromOffer, membershipFor } from '../../src/web/encounters';
 import { rememberSummons } from '../../src/web/pending-summons';
 import { whoASeniorIsAskedToTakeOut } from '../../src/engine/encounters/who-a-senior-is-asked-to-take-out';
 import { whoIsOnTheRoadWith } from '../../src/engine/world/who-is-on-the-road-with-you';
+import { isOpenWater, regionIdOfPlace } from '../../src/data/cultivation/regions';
+
+/**
+ * Whether a square is on ground a road leaves from. A journey with an end on open water is
+ * sailed from a landing (`the-way-there-is-by-ship.ts`), and these are about walking: the
+ * fixture once stood the player on Bronze Gong Cliff, and the walk became a seat offered.
+ */
+const onLand = (name: string) => !isOpenWater(regionIdOfPlace(name));
 
 const HOUSE = SECTS
     .filter(sect => sect.recruits)
@@ -85,7 +93,7 @@ function somewhereElse(game: any, location: string | null): string {
     const found = (game.atHand?.locations ?? [])
         .filter((row: { kind: string }) => row.kind === 'settlement')
         .map((row: { name: string }) => row.name)
-        .find((name: string) => name.toLowerCase() !== here);
+        .find((name: string) => name.toLowerCase() !== here && onLand(name));
     expect(found, 'the world has nowhere else in it').toBeDefined();
     return found as string;
 }
@@ -117,7 +125,7 @@ function standWhereTwoOthersAre(game: any, cultivator: any): any {
     // it does not have to is a test measuring a different situation than the
     // one a player meets.
     const standing = placeRow(game, cultivator.location);
-    if (standing && (heads.get(standing.id) ?? 0) >= 2) return cultivator;
+    if (standing && onLand(standing.name) && (heads.get(standing.id) ?? 0) >= 2) return cultivator;
 
     // Otherwise the smallest square that holds two, by id so the choice does
     // not depend on the order `locations` came back in - and of the same KIND
@@ -126,8 +134,8 @@ function standWhereTwoOthersAre(game: any, cultivator: any): any {
     // situation no player is ever in.
     const kind = standing?.kind ?? 'settlement';
     const chosen = (world.locations ?? [])
-        .filter((row: { id: string; kind: string }) =>
-            row.kind === kind && (heads.get(row.id) ?? 0) >= 2)
+        .filter((row: { id: string; kind: string; name: string }) =>
+            row.kind === kind && onLand(row.name) && (heads.get(row.id) ?? 0) >= 2)
         .sort((a: { id: string }, b: { id: string }) =>
             (heads.get(a.id)! - heads.get(b.id)!) || (a.id < b.id ? -1 : 1))[0];
     expect(chosen, 'this world holds no square with two people standing in it')

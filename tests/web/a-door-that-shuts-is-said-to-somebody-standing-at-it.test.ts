@@ -50,6 +50,8 @@ import {
     type LocationRecord
 } from '../../src/engine/world/locations';
 import { withWings } from '../../src/engine/world/provenance';
+import { regionCatalogIdOf } from '../../src/engine/world/how-a-cultivator-comes-by-a-road';
+import { isOpenWater } from '../../src/data/cultivation/regions';
 import { SCHEDULE_READ_ORDINAL } from '../../src/engine/world/convergence';
 import { FOLD_FLOOR_ORDINAL } from '../../src/engine/world/how-far-somebody-can-fold-space-and-what-it-costs';
 import { cutATalisman } from '../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
@@ -119,8 +121,11 @@ describe('a door that shuts is said to somebody standing at it', () => {
 
         // ASKED OF THE WORLD, never named. Which ruins carry a schedule is the
         // catalog's business and moves.
+        // On land: a ruin out on open water is sailed to from a port, and this is about walking
+        // onto one (`the-way-there-is-by-ship.ts`).
         const site = loaded!.locations.find(
             (row: any) => row.kind === 'ruin' && row.cycle
+                && !isOpenWater(regionCatalogIdOf(loaded!, row.id))
         );
         expect(site, 'this world seeded no ruin on a schedule').toBeTruthy();
 

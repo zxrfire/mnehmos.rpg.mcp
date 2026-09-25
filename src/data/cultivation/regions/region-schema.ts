@@ -359,6 +359,12 @@ export const RegionSchema = z.object({
     branches: z.array(RegionBranchSchema),
     places: z.array(RegionPlaceSchema),
     /**
+     * A province with no ground in it. Every way into it, out of it and across it is
+     * sailed, so its place connections are passages and not roads, and a ship at sea is
+     * on it. Absent on every land province.
+     */
+    openWater: z.literal(true).optional(),
+    /**
      * What is underfoot across the province: the grounds a thing living here
      * lives on.
      *

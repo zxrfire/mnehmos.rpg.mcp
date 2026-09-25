@@ -147,6 +147,23 @@ import {
     type AService
 } from './a-seat-on-a-ship-or-a-carriage.js';
 import { whatTheEscortMet } from '../engine/encounters/an-escort-on-the-road.js';
+import {
+    aShipSailsOn,
+    endTheVoyage,
+    stillAtSea,
+    theVoyageAfter,
+    theVoyageUnderWay,
+    theWaterUnder,
+    whereTheShipIs,
+    writeTheVoyage,
+    type AVoyage
+} from './a-ship-at-sea.js';
+import {
+    aSeatIsBoughtHere,
+    noShipGoesThere,
+    theWayOnIsByShip,
+    theWayThereIsByShip
+} from './the-way-there-is-by-ship.js';
 import { theRestOfTheFight } from './when-somebody-comes-at-you.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
 import { SATIETY_MAX } from '../schema/cultivation.js';
@@ -656,6 +673,15 @@ export const travelVerbs = {
         // which is a walk and not a road. See `walking-across-a-place.ts`.
         const acrossThePlace = await aWalkAcrossThePlace(this, run, cultivator, said);
         if (acrossThePlace) return acrossThePlace;
+        // ABOARD A SHIP AT SEA the one way is where it is bound, and going there is sailing on.
+        const voyage = theVoyageUnderWay(this.repos.db, cultivator);
+        if (voyage) {
+            const bound = (said ?? '').trim();
+            return bound.length === 0 || loosePlaceKey(bound) === loosePlaceKey(voyage.bound)
+                || /^(?:on|onward|onwards|ahead|forward)$/i.test(bound)
+                ? aShipSailsOn(this, run, cultivator, voyage, null, 'carrying_on')
+                : stillAtSea(voyage, 'move');
+        }
         const insideTheWalls = await aWalkInsideTheWalls(this, run, cultivator, said);
         if (insideTheWalls) return insideTheWalls;
         const named = resolvePlace(destinationNamed(said));
@@ -899,6 +925,18 @@ export const travelVerbs = {
         // AND A PROVINCE IS NOT SOMEWHERE ANYBODY STANDS. See `whereTheRoadEndsIn`.
         const roadEnds = this.whereTheRoadEndsIn(worldRow?.name ?? asProvince?.name ?? place.name);
         const arrivedAt = roadEnds.name;
+
+        // A JOURNEY WITH AN END ON OPEN WATER IS SAILED, so it goes to the landing, or at the
+        // landing says what the seat costs. See `the-way-there-is-by-ship.ts`.
+        const byShip = theWayThereIsByShip(this, cultivator, arrivedAt, Math.floor(run.elapsedDays));
+        if (byShip) {
+            if (byShip.landing === null) return noShipGoesThere(byShip, placeName(cultivator));
+            if (byShip.line && loosePlaceKey(byShip.landing) === loosePlaceKey(placeName(cultivator))) {
+                return aSeatIsBoughtHere(this, run, cultivator, byShip);
+            }
+            return theWayOnIsByShip(this, cultivator,
+                await this.move(run, cultivator, ambient, byShip.landing, intent), byShip);
+        }
 
         // ── AND THE ROAD IS AS LONG AS THE CATALOG SAYS IT IS ────────────
         //
@@ -1681,6 +1719,8 @@ export const travelVerbs = {
         target: string | undefined,
         wanted: string | undefined
     ): Promise<Execution> {
+        const voyage = theVoyageUnderWay(this.repos.db, cultivator);
+        if (voyage) return stillAtSea(voyage, 'ride');
         // A CARRIAGE OR A BOAT THAT IS NOT THEIRS is a seat at the counter here,
         // where one runs. A boat of their own is a spirit boat; a boat they do
         // not own, at a landing, is the ship.
@@ -2045,6 +2085,13 @@ export const travelVerbs = {
         /** Which counter, where the sentence named a ship or a carriage. */
         topic?: string
     ): Promise<Execution> {
+        // Aboard, a seat to where the ship is bound is the ship sailing on; see `a-ship-at-sea.ts`.
+        const voyage = theVoyageUnderWay(this.repos.db, cultivator);
+        if (voyage) {
+            return (target ?? '').trim().length === 0 || loosePlaceKey(target ?? '') === loosePlaceKey(voyage.bound)
+                ? aShipSailsOn(this, run, cultivator, voyage, null, 'carrying_on')
+                : stillAtSea(voyage, 'passage');
+        }
         const here = standingOf(cultivator);
         const counter = counterPlaceNameAt(placeName(cultivator));
         const today = Math.floor(run.elapsedDays);
@@ -2265,9 +2312,12 @@ export const travelVerbs = {
      * the escort reads them (`an-escort-on-the-road.ts`): a band that withdraws is
      * a line, and a band big enough to take the escort on is a fight, played with
      * its leader and the rest said (`theRestOfTheFight`). A carriage fare includes
-     * board, so the pack is not opened. A ship feeds its passengers the hull's
-     * rations for `sea.hullRationDays`, and past them the pack is opened. The
-     * nights are under a roof.
+     * board, so the pack is not opened. The nights are under a roof.
+     *
+     * A ship sails `sea`, a voyage, for `days` of it: its hull's rations first and
+     * then the pack. Short of port, stopped or not, the passenger is at sea on it
+     * (`a-ship-at-sea.ts`), and a stop that cost the crew turns it back where that
+     * is still the shorter way.
      */
     async takeTheSeat(
         this: GameService,
@@ -2281,12 +2331,17 @@ export const travelVerbs = {
             stones: number;
             escort: number;
             bought: string;
-            /** A ship's passage: the days quoted, and the days the hull's rations cover. */
-            sea?: { quotedDays: number; hullRationDays: number };
+            /** A ship's voyage, as it stood when these days began. */
+            sea?: AVoyage;
+            /** How much of the days goes to cultivation; travel by default. */
+            focus?: number;
         }
     ): Promise<Execution> {
-        const paid = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -trip.stones }) ?? cultivator;
-        const from = placeName(paid);
+        const voyage = trip.sea ?? null;
+        const paid = trip.stones > 0
+            ? this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -trip.stones }) ?? cultivator
+            : cultivator;
+        const from = voyage?.from ?? placeName(paid);
         const startDay = Math.floor(run.elapsedDays);
         const ambient = this.ambientFor(paid, run);
         const rolled = encountersFor(
@@ -2316,27 +2371,31 @@ export const travelVerbs = {
             ? Math.max(1, Math.min(trip.days, stoppedBy.absoluteDay - startDay))
             : trip.days;
         const happened = cutTo(met.roll, startDay, lived);
-        const setOut = withEncounterDeltas(paid, happened);
-        // The hull's share is eaten before the pack, so only the pack's part of
-        // what is left goes back.
+        // THE HULL FEEDS THE DAYS IT WAS LOADED FOR, counted from the quay, and
+        // the pack the rest: its share goes into the belly day for day, so a
+        // passage sailed a few days at a time is fed no more than one sailed at once.
         const perRation = daysPerRation(paid.realmOrdinal, paid.injuries);
-        const hullRations = trip.sea && Number.isFinite(perRation)
-            ? Math.ceil(trip.sea.hullRationDays / perRation) : 0;
-        const packRations = trip.sea ? this.drawFromPack(paid, lived) : 0;
+        const hullDays = voyage ? Math.min(lived, Math.max(0, voyage.hullRationDays - voyage.sailed)) : 0;
+        const hullFeeds = Number.isFinite(perRation) && perRation > 0 ? Math.ceil(hullDays * SATIETY_MAX / perRation) : 0;
+        const withTheBand = withEncounterDeltas(paid, happened);
+        const setOut = hullFeeds > 0
+            ? { ...withTheBand, satiety: Math.min(SATIETY_MAX, withTheBand.satiety + hullFeeds) }
+            : withTheBand;
+        const packRations = voyage ? this.drawFromPack(paid, lived) : 0;
         const skip = simulateTimeSkip(setOut, lived, {
             seed: run.seed,
             rollIdentity: PLAYER_ROLL_IDENTITY,
-            locationId: from,
+            locationId: placeName(paid),
             turn: run.turn,
             startDay,
             options: {
-                focusMultiplier: TRAVEL_FOCUS,
+                focusMultiplier: trip.focus ?? TRAVEL_FOCUS,
                 ...this.rateTermsFor(paid),
                 ground: this.groundFor(paid)
             },
             understanding: this.understandingFor(run, paid),
-            rations: hullRations + packRations,
-            grainAbstinence: !trip.sea,
+            rations: packRations,
+            grainAbstinence: !voyage,
             autoBreakthrough: false,
             randomEvents: true,
             spanIsASitting: false,
@@ -2344,12 +2403,20 @@ export const travelVerbs = {
             toll: tollConditionsFor(this.repos, paid)
         });
         const packLeft = Math.min(packRations, skip.endState.rationsRemaining);
-        if (trip.sea) this.putBackWhatWasNotEaten(paid, { endState: { rationsRemaining: packLeft } });
-        const arrived = !skip.died && stoppedBy === null && skip.simulatedDays >= lived;
+        if (voyage) this.putBackWhatWasNotEaten(paid, { endState: { rationsRemaining: packLeft } });
+        const sailed = (voyage?.sailed ?? 0) + skip.simulatedDays;
+        const arrived = !skip.died && stoppedBy === null && skip.simulatedDays >= lived
+            && (voyage === null || sailed >= voyage.days);
+        // SHORT OF PORT IS AT SEA. See `a-ship-at-sea.ts`.
+        const crewLost = theRest !== null && !theRest.escortHeld;
+        const onward = voyage && !skip.died && !arrived ? theVoyageAfter(voyage, sailed, crewLost) : null;
+        const atSea = onward ? theWaterUnder(onward.voyage) : null;
         const applied = applyTimeSkip(this.repos, {
-            before: setOut, run, skip, ...(arrived ? { location: trip.to } : {})
+            before: setOut, run, skip, ...(arrived ? { location: trip.to } : atSea ? { location: atSea } : {})
         });
-        const fed = skip.died || trip.sea
+        if (onward && atSea) writeTheVoyage(this.repos.db, cultivator.id, onward.voyage);
+        else if (voyage) endTheVoyage(this.repos.db, cultivator.id);
+        const fed = skip.died || voyage
             ? applied.cultivator
             : this.repos.cultivators.applyDeltas(applied.cultivator.id, {
                 satiety: SATIETY_MAX - applied.cultivator.satiety,
@@ -2359,6 +2426,9 @@ export const travelVerbs = {
         const onTheWay = recordEncounters(this.knowledge, fed, applied.run.elapsedDays, happened, this.repos);
         const rationsLeft = everythingInThePouch(this.db, fed.id)
             .find(entry => entry.kind === 'ration')?.quantity ?? 0;
+        const whatWasEaten = voyage
+            ? whatTheHullFed(fed, voyage.hullRationDays, sailed, packRations - packLeft, rationsLeft)
+            : whatWasEatenOnBoard(fed, rationsLeft);
 
         const lines: string[] = [trip.bought];
         for (const band of met.withdrew) {
@@ -2389,13 +2459,14 @@ export const travelVerbs = {
             noteWhoseGroundThisIs(this, fed, run, trip.to);
             const introduced = whatArrivingIntroduces(this, fed);
             lines.push(
-                `${howMany(skip.simulatedDays, 'day')} by ${vehicle} from ${from} to ${trip.to}, `
-                + (trip.sea
-                    ? `against the ${howMany(trip.sea.quotedDays, 'day')} quoted.`
-                    : `${howMany(trip.walkingDays, 'day')} on foot.`),
-                trip.sea
-                    ? whatTheHullFed(fed, trip.sea.hullRationDays, skip.simulatedDays, packRations - packLeft, rationsLeft)
-                    : whatWasEatenOnBoard(fed, rationsLeft),
+                !voyage
+                    ? `${howMany(skip.simulatedDays, 'day')} by ${vehicle} from ${from} to ${trip.to}, `
+                        + `${howMany(trip.walkingDays, 'day')} on foot.`
+                    : from === trip.to
+                        ? `${howMany(sailed, 'day')} at sea, and back into ${trip.to}.`
+                        : `${howMany(sailed, 'day')} by ship from ${from} to ${trip.to}, `
+                            + `against the ${howMany(voyage.quoted, 'day')} quoted.`,
+                whatWasEaten,
                 ...onTheWay.lines, ...applied.tollLines, ...world.lines
             );
             const came = this.theyArrivedWithYou(fed, trip.to);
@@ -2405,8 +2476,8 @@ export const travelVerbs = {
             if (came) facts.required = [...(facts.required ?? []), came.line];
             facts.structure.push(
                 `takeTheSeat: ${vehicle}, escort ${trip.escort}, ${met.withdrew.length} band(s) withdrew; `
-                + (trip.sea
-                    ? `hull rations for ${trip.sea.hullRationDays} of ${skip.simulatedDays} day(s), `
+                + (voyage
+                    ? `hull rations for ${voyage.hullRationDays} of ${sailed} day(s), `
                         + `${packRations - packLeft} ration(s) from the pack, nights under a roof.`
                     : 'fed on board, nights under a roof.'),
                 ...onTheWay.structure, ...world.structure, ...introduced.structure,
@@ -2418,7 +2489,8 @@ export const travelVerbs = {
             };
         }
 
-        const facts = factsForTimeSkip(paid, fed, skip, ambient, 'Travel', trip.days);
+        const facts = factsForTimeSkip(paid, fed, skip, ambient, voyage ? 'Sailing' : 'Travel', trip.days);
+        if (onward) lines.push(whatWasEaten);
         facts.lines.unshift(...lines);
         facts.prose = [...lines, facts.prose].join('\n\n');
         facts.lines.push(...onTheWay.lines, ...world.lines);
@@ -2427,19 +2499,35 @@ export const travelVerbs = {
             facts, events: skip.events, timeSkip: skip, breakthrough: null, outcome: 'executed',
             calls, nights: 'under_a_roof'
         };
+        if (onward) {
+            const where = whereTheShipIs(onward.voyage);
+            const crew = !crewLost ? []
+                : onward.turnedBack
+                    ? [`The crew did not hold the ship. It turns back for ${onward.voyage.bound}, the shorter way.`]
+                    : ['The crew did not hold the ship. It is past the middle of the passage and goes on.'];
+            for (const said of [...crew, where].reverse()) sayThisFirstWhateverTheNarratorDoes(facts, said);
+            if (stoppedBy) {
+                sayThisFirstWhateverTheNarratorDoes(facts, `The ship to ${voyage!.bound} stopped on day `
+                    + `${sailed} of ${voyage!.days}. You are aboard, at sea.`);
+            }
+            facts.structure.push(`takeTheSeat: at sea, ${sailed} of ${onward.voyage.days} day(s) sailed, `
+                + `bound for ${onward.voyage.bound}, crew ${onward.voyage.crew}.`);
+        }
         if (!stoppedBy || skip.died) return halted;
 
-        // A CARRIAGE STOPPED ON THE ROAD leaves the road to walk; a ship's lane is not walked.
-        const walked = Math.min(trip.walkingDays - 1,
-            Math.max(1, Math.round(skip.simulatedDays * trip.walkingDays / trip.days)));
-        if (vehicle === 'carriage' && trip.walkingDays > 1) {
-            writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
-                to: trip.to, from, road: trip.walkingDays, walked
-            } satisfies StoppedRoad));
+        if (!voyage) {
+            // A CARRIAGE STOPPED ON THE ROAD leaves the road to walk.
+            const walked = Math.min(trip.walkingDays - 1,
+                Math.max(1, Math.round(skip.simulatedDays * trip.walkingDays / trip.days)));
+            if (trip.walkingDays > 1) {
+                writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
+                    to: trip.to, from, road: trip.walkingDays, walked
+                } satisfies StoppedRoad));
+            }
+            sayThisFirstWhateverTheNarratorDoes(facts, `The ${vehicle} to ${trip.to} stopped on day `
+                + `${skip.simulatedDays} of ${trip.days}. You are not there`
+                + `; the rest of the road is ${humanDays(trip.walkingDays - walked)} on foot.`);
         }
-        sayThisFirstWhateverTheNarratorDoes(facts, `The ${vehicle} to ${trip.to} stopped on day `
-            + `${skip.simulatedDays} of ${trip.days}. You are not there`
-            + (vehicle === 'carriage' ? `; the rest of the road is ${humanDays(trip.walkingDays - walked)} on foot.` : '.'));
         if (!theyFightYou) return halted;
         const cameAt = theyCameAtYou(this, applied.run, fed, ambient, {
             ...happened, occurrences: [stoppedBy], firstInterruptDay: stoppedBy.absoluteDay

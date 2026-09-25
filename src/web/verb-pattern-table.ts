@@ -1148,11 +1148,11 @@ const UP_OR_DOWN =
 
 /** Carrying on down the road, said as a whole sentence. */
 const CARRYING_ON =
-    /^(?:(?:i|we)\s+)?(?:(?:keep|carry|press|push|continue|walk|move|head)\s+(?:on(?:wards?)?|going|walking|moving|ahead|forward|north|south|east|west)(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road))?|continue(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road|walk))?|onwards?|on we go)\s*[.!?]*$/;
+    /^(?:(?:i|we)\s+)?(?:(?:keep|carry|press|push|continue|walk|move|head|sail)\s+(?:on(?:wards?)?|going|walking|moving|sailing|ahead|forward|north|south|east|west)(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road))?|continue(?:\s+(?:on\s+)?(?:my|our|the)\s+(?:way|journey|road|walk))?|onwards?|on we go)\s*[.!?]*$/;
 
 /** "keep going to X", "carry on to X", "press on towards X": the road, with where it ends. */
 const CARRYING_ON_TO =
-    /^(?:(?:i|we)\s+)?(?:keep|carry|press|push|continue|walk|move|head)\s+(?:on(?:wards?)?|going|walking|moving|ahead|forward)\s+(?:on\s+)?(?:to|towards?|for)\s+(.{2,60}?)[\s.!?]*$/;
+    /^(?:(?:i|we)\s+)?(?:keep|carry|press|push|continue|walk|move|head|sail)\s+(?:on(?:wards?)?|going|walking|moving|sailing|ahead|forward)\s+(?:on\s+)?(?:to|towards?|for)\s+(.{2,60}?)[\s.!?]*$/;
 
 export const RECRUITING_BILL_PATTERN = new RegExp([
     String.raw`\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b`,
@@ -2855,7 +2855,7 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // `go back out to` and `go back to` are the same road as `go to`, and
     // they are how somebody leaves a room: "I go back out to the forecourt"
     // reached nothing.
-    ['travel', /\b(?:travel|go (?:back )?(?:out |in )?to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b|\b(?:go|goes|going|went|walk|walks|ride|rides|return|returns|returning|returned|head|heads|make|makes|get|gets)\s+(?:back\s+|on\s+|straight\s+)?home\b/]
+    ['travel', /\b(?:travel|go (?:back )?(?:out |in )?to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|sail (?:on )?to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b|\b(?:go|goes|going|went|walk|walks|ride|rides|return|returns|returning|returned|head|heads|make|makes|get|gets)\s+(?:back\s+|on\s+|straight\s+)?home\b/]
 ];
 
 // THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING

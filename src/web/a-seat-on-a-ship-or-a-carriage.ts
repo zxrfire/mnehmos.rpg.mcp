@@ -2,11 +2,13 @@
  * Ships from a landing and carriages from a station: what runs from here, what a seat or a whole carriage costs, and buying one.
  *
  * WHAT RUNS IS THE MAP'S. A ship runs the sea lanes (`SEA_LANES`), from each
- * named landfall to the other, in the months the lane is worked. A carriage runs
- * every `road` a place states (a `path` is ground nobody drives), and from the
- * town a province's roads come into, to the town of every province a land road
- * joins it to. Not the Measured Span, which is a house's folding service and is
- * `passage` at its own counters.
+ * named landfall to the other, in the months the lane is worked, and between the
+ * ports of a province that is open water, on the days its passages state. A
+ * carriage runs nowhere on open water, and otherwise on every `road` a place
+ * states (a `path` is ground nobody drives), and from the town a province's roads
+ * come into, to the town of every province a land road joins it to. Not the
+ * Measured Span, which is a house's folding service and is `passage` at its own
+ * counters.
  *
  * WHAT IT COSTS IS THE BOARD'S. A ship seat is the board's sea passage a day
  * (deck passage where the lane has nowhere to stop) for the lane's expected days.
@@ -31,7 +33,9 @@ import { SEA_LANES } from '../data/cultivation/what-each-house-makes-and-what-cr
 import { cashToStones, getPrice } from '../data/cultivation/mortal-world.js';
 import {
     REGIONS,
+    isOpenWater,
     localPrice,
+    placeRoadDays,
     placesNextTo,
     provinceRoadDays,
     regionIdOfPlace,
@@ -62,6 +66,7 @@ import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { theKeeperAsTheyAreKnown, whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
 import { theCountersHere, theInnAsSeenHere } from './a-room-at-an-inn.js';
+import type { AVoyage } from './a-ship-at-sea.js';
 
 export type AService = 'ship' | 'carriage';
 
@@ -103,6 +108,23 @@ export function theServiceNamed(said: string | undefined): AService | null {
     if (/\b(?:ships?|boats?|ferry|ferries|barges?|hulls?|landing)\b/.test(word)) return 'ship';
     if (/\b(?:carriages?|coach|coaches|carts?|wagons?|waggons?|station)\b/.test(word)) return 'carriage';
     return null;
+}
+
+/**
+ * A ship between two ports of an open-water province. The catalog states the days and
+ * nothing else about the passage, so it is worked all year at ordinary weather.
+ */
+function aPassageBetween(from: string, to: string, days: number): SeaLane {
+    const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return {
+        id: `passage-${slug(from)}-${slug(to)}`,
+        fromPlace: from,
+        toPlace: to,
+        expectedDays: days,
+        openMonthsPerYear: 12,
+        intermediateLandfallDays: [],
+        weatherSeverity: 1
+    };
 }
 
 /** The catalog place a lane's landfall names, where it names one. */
@@ -159,14 +181,27 @@ export function theCountersAsSeenHere(game: GameService, cultivator: Cultivator,
     ];
 }
 
-/**
- * Everything that runs from where they stand, ships first, nearest first.
- */
-export function whatRunsFromHere(game: GameService, cultivator: Cultivator, today: number): ALine[] {
-    const here = placeName(cultivator);
-    const regionId = standingOf(cultivator).regionId;
-    const lines: ALine[] = [];
+/** Every place a ship puts in at: each lane's landfalls, and the ports of open water. */
+export function thePortsShipsPutInAt(): string[] {
+    const ports = new Set<string>();
+    for (const lane of SEA_LANES) {
+        for (const end of [theLandfall(lane.fromPlace), theLandfall(lane.toPlace)]) if (end) ports.add(end);
+    }
+    for (const region of REGIONS.filter(one => isOpenWater(one.id))) {
+        for (const place of region.places) if (place.kind !== 'site') ports.add(place.name);
+    }
+    return [...ports];
+}
 
+/**
+ * The ships from a port: each lane with a landfall here, then across open water every other
+ * port a passage reaches, nearest first. Nothing from anywhere a ship does not put in.
+ */
+export function theShipsFrom(here: string, today: number): ALine[] {
+    const regionId = regionIdOfPlace(here);
+    const ports = thePortsShipsPutInAt();
+    if (!regionId || !ports.includes(here)) return [];
+    const lines: ALine[] = [];
     for (const lane of SEA_LANES) {
         const from = theLandfall(lane.fromPlace);
         const to = theLandfall(lane.toPlace);
@@ -184,6 +219,35 @@ export function whatRunsFromHere(game: GameService, cultivator: Cultivator, toda
             lane
         });
     }
+    if (!isOpenWater(regionId)) return lines;
+    const across = requireRegion(regionId).places
+        .filter(place => place.name !== here && ports.includes(place.name) && !lines.some(line => line.to === place.name))
+        .map(place => ({ to: place.name, days: placeRoadDays(here, place.name) }))
+        .filter((one): one is { to: string; days: number } => one.days !== null && one.days > 0)
+        .sort((a, b) => a.days - b.days || a.to.localeCompare(b.to));
+    for (const { to, days } of across) {
+        const lane = aPassageBetween(here, to, days);
+        lines.push({
+            service: 'ship',
+            to,
+            walkingDays: days,
+            days,
+            cashPerSeat: theSeatFare(regionId, 'ship', days, lane),
+            runsFromDay: null,
+            lane
+        });
+    }
+    return lines;
+}
+
+/**
+ * Everything that runs from where they stand, ships first, nearest first.
+ */
+export function whatRunsFromHere(game: GameService, cultivator: Cultivator, today: number): ALine[] {
+    const here = placeName(cultivator);
+    const regionId = standingOf(cultivator).regionId;
+    const lines: ALine[] = theShipsFrom(here, today);
+    if (isOpenWater(regionId)) return lines;
 
     const carriage = requireConveyance(THE_DRAWN_CARRIAGE);
     const byRoad = new Map<string, number>();
@@ -194,7 +258,7 @@ export function whatRunsFromHere(game: GameService, cultivator: Cultivator, toda
     const province = requireRegion(regionId);
     if (game.whereTheRoadEndsIn(province.name).name === here) {
         for (const link of province.connections) {
-            if (link.kind === 'sea_crossing') continue;
+            if (link.kind === 'sea_crossing' || isOpenWater(link.otherRegionId)) continue;
             const days = provinceRoadDays(province.id, link.otherRegionId);
             const other = REGIONS.find(region => region.id === link.otherRegionId);
             if (days === null || !other) continue;
@@ -247,7 +311,7 @@ function theGradeAskedFor(said: string) {
 }
 
 /** One line as the board says it. */
-function sayTheLine(line: ALine): string {
+export function sayTheLine(line: ALine): string {
     const when = line.runsFromDay === null ? 'runs today' : `the lane is next worked on day ${line.runsFromDay}`;
     const hire = line.service === 'carriage'
         ? '; hired whole, ' + A_HIRED_CARRIAGE_BY_GRADE.map(grade => {
@@ -403,11 +467,23 @@ export async function aSeatOnAShipOrACarriage(
     const sailed = line.lane && hold
         ? resolveCrossing(`${run.seed}:${today}`, line.lane, hold, monthOf(today))
         : null;
+    const voyage: AVoyage | null = line.lane && hold && sailed
+        ? {
+            from: here,
+            bound: line.to,
+            lane: line.lane,
+            sailed: 0,
+            days: sailed.daysTaken,
+            quoted: line.days,
+            hullRationDays: hold.rationDaysAboard,
+            crew: THE_ESCORT.ship
+        }
+        : null;
     return game.takeTheSeat(run, cultivator, {
         service: line.service,
         to: line.to,
-        days: sailed ? sailed.daysTaken : hired ? hired.days : line.days,
-        ...(sailed && hold ? { sea: { quotedDays: line.days, hullRationDays: hold.rationDaysAboard } } : {}),
+        days: voyage ? voyage.days : hired ? hired.days : line.days,
+        ...(voyage ? { sea: voyage } : {}),
         walkingDays: line.walkingDays,
         stones,
         escort: line.service === 'ship' ? THE_ESCORT.ship : hired ? THE_ESCORT.hired_carriage : THE_ESCORT.seat_carriage,
