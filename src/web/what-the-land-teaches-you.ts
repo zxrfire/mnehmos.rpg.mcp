@@ -10,6 +10,8 @@
 
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
 import {
+    A_HOUSE_HEARD_OF_AT_HOME,
+    A_HOUSE_SEEN_GROWING_UP,
     theRoadAnUpbringingSaw,
     whatSomebodyKnowsOfTheLand,
     whatStandingHereShows,
@@ -78,9 +80,11 @@ export function learnWhatTheLandTeachesThem(game: GameService, cultivator: Culti
         if (game.knowledge.learnIfNew({
             holderId: cultivator.id, kind: 'sect', id: house.id, name: house.name, onDay,
             sourceKind: 'told', stage: house.stage,
-            sourceNote: house.stage === 'placed'
-                ? 'A house whose disciples you have seen, and whose gate you could find.'
-                : 'A house people where you have lived know of.'
+            sourceNote: raised
+                ? (house.stage === 'placed' ? A_HOUSE_SEEN_GROWING_UP : A_HOUSE_HEARD_OF_AT_HOME)
+                : house.stage === 'placed'
+                    ? 'A house whose disciples you have seen, and whose gate you could find.'
+                    : 'A house people where you have lived know of.'
         })) learned++;
     }
     return learned;

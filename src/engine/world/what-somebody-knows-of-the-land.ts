@@ -115,6 +115,13 @@ function nextDoor(regionId: string): string[] {
     return [...days.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
 }
 
+/**
+ * How a house learned growing up is written down, so whoever raised the player can be read as
+ * knowing it too. See `whatThisPersonKnowsOfTheLand`.
+ */
+export const A_HOUSE_SEEN_GROWING_UP = 'A house whose disciples you saw growing up, and whose gate you could find.';
+export const A_HOUSE_HEARD_OF_AT_HOME = 'A house you grew up hearing of at home.';
+
 /** Who somebody is, as far as what they know of the land goes. */
 export interface WhoTheyAre {
     id: string;

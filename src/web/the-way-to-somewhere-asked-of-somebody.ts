@@ -18,11 +18,14 @@ import { placeRoadDays, REGIONS, theRoadBetweenProvinces } from '../data/cultiva
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import {
+    A_HOUSE_HEARD_OF_AT_HOME,
+    A_HOUSE_SEEN_GROWING_UP,
     howMuchOfTheRoadALifeHasSeen,
     theRoadAnUpbringingSaw,
     whatSomebodyKnowsOfTheLand,
     whoAmongThemKnowsTheWay,
     whoAmongThemKnowsTheWayToAPlace,
+    type WhatTheyKnowOfTheLand,
     type WhoTheyAre
 } from '../engine/world/what-somebody-knows-of-the-land.js';
 import { theHouseNamed } from './asking-to-be-let-in-at-a-gate.js';
@@ -71,6 +74,32 @@ function thePlaceNamed(world: Pick<WorldState, 'locations'> | null, where: strin
     return rows.find(row => loosePlaceKey(row.name) === key)
         ?? rows.find(row => loosePlaceKey(row.name) === key.replace(/s$/, ''))
         ?? null;
+}
+
+/**
+ * What somebody here knows of the land, and for whoever raised the player, every house the player
+ * grew up hearing of too: it was at home they heard it. Played blind: the opening had the player
+ * raised on tales of the Azure Dew Sect, and the man who raised them, asked where it was, had
+ * never heard of it.
+ */
+export function whatThisPersonKnowsOfTheLand(
+    game: GameService,
+    playerId: string,
+    world: Pick<WorldState, 'locations' | 'factions' | 'npcs'>,
+    asked: RosterEntry
+): WhatTheyKnowOfTheLand {
+    const land = whatSomebodyKnowsOfTheLand(world, whoTheyAreOf(world, asked));
+    const raisedThem = game.knowledge.awareness(playerId, 'cultivator')
+        .some(row => row.id === asked.id && /raised you/.test(row.statement));
+    if (!raisedThem) return land;
+    const known = new Set(land.houses.map(house => house.id));
+    const heardAtHome = game.knowledge.awareness(playerId, 'sect')
+        .filter(row => row.sourceKind === 'told' && !known.has(row.id)
+            // The birth's own rows are day 0; the upbringing's are marked.
+            && (row.acquiredOnDay === 0 || row.sourceNote === A_HOUSE_SEEN_GROWING_UP
+                || row.sourceNote === A_HOUSE_HEARD_OF_AT_HOME))
+        .map(row => ({ id: row.id, name: row.name, stage: 'named' as const }));
+    return { ...land, houses: [...land.houses, ...heardAtHome] };
 }
 
 /** Who somebody standing here is, as far as what they know of the land goes. */
@@ -137,7 +166,7 @@ export function theWayTo(
     const name = house?.factionName ?? place?.name ?? where;
     const called = house && !/^the\s/i.test(name) ? `the ${name}` : name;
 
-    const land = world ? whatSomebodyKnowsOfTheLand(world, whoTheyAreOf(world, asked)) : null;
+    const land = world ? whatThisPersonKnowsOfTheLand(game, cultivator.id, world, asked) : null;
     const stage: 'placed' | 'named' | null =
         somebodyHereHasBeen && (house || place) ? 'placed'
         : house

@@ -117,11 +117,7 @@ import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
 import { askedAbout, whetherTheyHoldIt } from './asked.js';
 import { theHousesTheyWouldName, whatTheySaidOfTheHouses } from './which-houses-somebody-could-name.js';
-import {
-    howMuchOfTheRoadALifeHasSeen,
-    theRoadAnUpbringingSaw,
-    whatSomebodyKnowsOfTheLand
-} from '../engine/world/what-somebody-knows-of-the-land.js';
+import { whatThisPersonKnowsOfTheLand } from './the-way-to-somewhere-asked-of-somebody.js';
 import {
     type DatabaseHandle,
     openLedgerBetween,
@@ -346,22 +342,9 @@ export const askingVerbs = {
         const world = this.atHand;
         const them = world?.npcs.find(row => row.id === asked.id) ?? null;
         const standingOn = them?.locationId ?? null;
-        const land = world
-            ? whatSomebodyKnowsOfTheLand(world, {
-                id: asked.id,
-                from: world.locations.find(row => row.id === standingOn)?.name ?? asked.location,
-                ordinal: asked.realmOrdinal,
-                house: asked.sectId ? { id: asked.sectId, rankIndex: them?.factionRankIndex ?? 0 } : null,
-                ...(them
-                    ? {
-                        travelled: Math.max(
-                            theRoadAnUpbringingSaw(them.identity.origin),
-                            howMuchOfTheRoadALifeHasSeen(them.identity.occupation)
-                        )
-                    }
-                    : {})
-            })
-            : null;
+        // Whoever raised the player also knows what the player heard at home. See
+        // `whatThisPersonKnowsOfTheLand`.
+        const land = world ? whatThisPersonKnowsOfTheLand(this, cultivator.id, world, asked) : null;
         const stageOf = new Map((land?.houses ?? []).map(house => [house.id, house.stage]));
         const named = theHousesTheyWouldName({
             houses: (world?.factions ?? []).filter(house => house.dissolvedOnDay === null),

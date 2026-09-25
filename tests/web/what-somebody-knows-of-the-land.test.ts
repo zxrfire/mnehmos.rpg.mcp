@@ -136,6 +136,27 @@ describe('what somebody knows of the land', () => {
         expect(near.narration).toMatch(/gives the way to Willow Village: in this province, \d+ days? on the road/);
     }, 180_000);
 
+    // Played blind: the opening had the player growing up on tales of the Azure Dew Sect, and the
+    // man who raised them, asked where it was, had never heard of it.
+    it('grows up hearing of the houses the one who raised them knows', async () => {
+        let asked = 0;
+        for (const seed of ['raised-hears-1', 'raised-hears-2', 'raised-hears-3', 'raised-hears-4']) {
+            const { game } = await makeGameInWorld({ seed, worldSeed: 'a-xianxia-run' });
+            await game.newRun('Ke Yan');
+            const { cultivator } = game.currentRun();
+            const raiser = game.knowledge.awareness(cultivator.id, 'cultivator').find(row => /raised you/.test(row.statement));
+            if (!raiser) continue;
+            const grewUpOn = game.knowledge.awareness(cultivator.id, 'sect').filter(row => row.sourceKind === 'told');
+            for (const house of grewUpOn) {
+                const turn = await game.act(`${raiser.name}, where is the ${house.name}?`);
+                if (!turn.toolCalls.some(call => call.name === 'engine.theWayTo')) continue;
+                asked++;
+                expect(turn.narration, `${raiser.name} on ${house.name}`).not.toMatch(/does not know where/);
+            }
+        }
+        expect(asked, 'no raiser was ever asked').toBeGreaterThan(0);
+    }, 300_000);
+
     it('widens as the player goes: a capital signs its roads to the next provinces', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'the-land-goes-further', worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');
