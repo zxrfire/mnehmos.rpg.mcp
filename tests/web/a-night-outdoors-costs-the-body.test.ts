@@ -62,16 +62,35 @@ describe('a night outdoors costs the body', () => {
         expect(game.state().cultivator.hp).toBe(before.hp);
     }, 120_000);
 
-    it('has somebody keeping the inn, and "the innkeeper" is them', async () => {
+    /**
+     * Somebody keeps it, and a stranger is not named by the engine. Played: the
+     * keeper's name was printed beside a census saying nobody here could be
+     * named, and the narrator went on naming strangers.
+     */
+    it('has somebody keeping the inn, said as the innkeeper by somebody with no name for them', async () => {
+        const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Sleeper');
+
+        const took = await game.act('I take a room at the inn');
+        const keeper = /(\S+(?: \S+)?) keeps the inn/.exec(took.narration)?.[1];
+        expect(keeper, took.narration).toBeDefined();
+        // Named only where the player holds the name (this is their home town, so
+        // they may); otherwise the innkeeper.
+        const held = (game as unknown as { awarenessOf(c: typeof cultivator): { name: string }[] })
+            .awarenessOf(cultivator).map(row => row.name);
+        if (keeper !== 'The innkeeper') expect(held).toContain(keeper);
+
+        const asked = await game.act('I talk to the innkeeper');
+        expect(asked.narration).not.toMatch(/matched nobody|answers to that name/);
+    }, 120_000);
+
+    /** Played: "is there like an inn or somewhere i can crash tonight" was a look that never mentioned one. */
+    it('shows the inn and its price to a look round', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Sleeper');
 
-        const took = await game.act('I take a room at the inn');
-        const keeper = /([A-Z][a-z]+ [A-Z][a-z]+) keeps the inn/.exec(took.narration)?.[1];
-        expect(keeper, took.narration).toBeDefined();
-
-        const asked = await game.act('I talk to the innkeeper');
-        expect(asked.narration).toContain(keeper!);
+        const looked = await game.act('I look around');
+        expect(looked.narration).toMatch(/There is an inn here: a room is \d+ cash a night, and a meal \d+\./);
     }, 120_000);
 
     it('ends the room when they leave the place, so coming back is outdoors again', async () => {

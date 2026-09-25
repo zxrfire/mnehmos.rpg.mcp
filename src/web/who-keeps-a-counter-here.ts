@@ -70,6 +70,29 @@ export function whoKeepsTheCounter(
     return null;
 }
 
+/** What each counter's keeper is called by somebody who has no name for them. */
+const THE_KEEPER_UNNAMED: Readonly<Record<ACounter, string>> = {
+    inn: 'the innkeeper',
+    landing: 'the landing clerk',
+    carriage_station: 'the station clerk'
+};
+
+/**
+ * The keeper as the player can say them: by name only when the player has one.
+ * Played: the engine printed a stranger's name for the innkeeper, beside a census
+ * saying nobody here could be named, and the narrator went on naming strangers.
+ */
+export function theKeeperAsTheyAreKnown(
+    game: GameService,
+    cultivator: Cultivator,
+    keeper: AKeeper,
+    counter: ACounter
+): string {
+    return game.knowledge.isAwareOf(cultivator.id, 'cultivator', keeper.id)
+        ? keeper.name
+        : THE_KEEPER_UNNAMED[counter];
+}
+
 /**
  * The counter a phrase names its keeper by, where it names one this place has.
  */

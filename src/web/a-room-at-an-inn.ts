@@ -24,7 +24,7 @@ import { factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
-import { whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
+import { theKeeperAsTheyAreKnown, whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
 
 const FLAG_LODGED_AT = 'lodged_at';
 
@@ -42,6 +42,17 @@ export function anInnIsKeptHere(cultivator: Cultivator): boolean {
     const kind = standingOf(cultivator).settlementKind;
     const trade = getOccupation('job-innkeeper');
     return kind !== null && trade !== undefined && (trade.settlements as readonly string[]).includes(kind);
+}
+
+/**
+ * The inn as a look round sees it, with its price, or null where none is kept.
+ * Played: "is there like an inn or somewhere i can crash tonight" was a look, and
+ * the look never mentioned the inn standing in the square.
+ */
+export function theInnAsSeenHere(game: GameService, cultivator: Cultivator): string | null {
+    if (!anInnIsKeptHere(cultivator)) return null;
+    const bed = whatTheBedCostsHere(game, cultivator, 'price-inn-night');
+    return `There is an inn here: a room is ${bed.cash} cash a night, and a meal ${bed.mealCash}.`;
 }
 
 /** The counters kept where they stand, for "the innkeeper" and "the clerk" to be read against. */
@@ -164,7 +175,7 @@ export function takeARoom(
             : `The room at the inn at ${here} is already paid for those nights.`,
         `The room is yours through day ${paidThroughDay} while you stay in ${here}. You have eaten; `
         + `the belly is at ${fed.satiety} of ${SATIETY_MAX}.`,
-        ...(keeper ? [`${keeper.name} keeps the inn and took the money.`] : [])
+        ...(keeper ? [`${capitalised(theKeeperAsTheyAreKnown(game, cultivator, keeper, 'inn'))} keeps the inn and took the money.`] : [])
     ];
     const facts = factsForToolResult(`A room at ${here}.`, lines);
     facts.structure.push(
@@ -185,4 +196,8 @@ export function takeARoom(
             ok: true
         }]
     };
+}
+
+function capitalised(said: string): string {
+    return said.charAt(0).toUpperCase() + said.slice(1);
 }

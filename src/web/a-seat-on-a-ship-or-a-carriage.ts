@@ -52,8 +52,8 @@ import { factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
-import { whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
-import { theCountersHere } from './a-room-at-an-inn.js';
+import { theKeeperAsTheyAreKnown, whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
+import { theCountersHere, theInnAsSeenHere } from './a-room-at-an-inn.js';
 
 export type AService = 'ship' | 'carriage';
 
@@ -133,6 +133,20 @@ function theSeatFare(regionId: string, service: AService, walkingDays: number, l
     }
     const perHundredLi = localPrice(regionId, getPrice('price-caravan-passage')!.cash);
     return Math.round(perHundredLi * LI_WALKED_IN_A_DAY / 100) * walkingDays;
+}
+
+/** The inn, the landing and the carriage station as a look round sees them. */
+export function theCountersAsSeenHere(game: GameService, cultivator: Cultivator, today: number): string[] {
+    const inn = theInnAsSeenHere(game, cultivator);
+    const runs = whatRunsFromHere(game, cultivator, today);
+    const ships = runs.some(line => line.service === 'ship');
+    const carriages = runs.some(line => line.service === 'carriage');
+    return [
+        ...(inn ? [inn] : []),
+        ...(ships || carriages
+            ? [`${ships && carriages ? 'Ships call here and carriages run from here' : ships ? 'Ships call here' : 'Carriages run from here'}; a clerk sells the seats.`]
+            : [])
+    ];
 }
 
 /**
@@ -381,6 +395,6 @@ export async function aSeatOnAShipOrACarriage(
         stones,
         escort: line.service === 'ship' ? THE_ESCORT.ship : hired ? THE_ESCORT.hired_carriage : THE_ESCORT.seat_carriage,
         bought: `${what} from ${here} to ${line.to}: ${howMany(stones, 'spirit stone')}`
-            + `${keeper ? `, paid to ${keeper.name}` : ''}.`
+            + `${keeper ? `, paid to ${theKeeperAsTheyAreKnown(game, cultivator, keeper, line.service === 'ship' ? 'landing' : 'carriage_station')}` : ''}.`
     });
 }

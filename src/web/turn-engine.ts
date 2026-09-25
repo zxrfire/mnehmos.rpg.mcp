@@ -1210,7 +1210,7 @@ import { stowVerbs, whatIsKeptInYourRoom, type StowIntent } from './leaving-a-th
 import { theWeatherTakesItsShare } from './where-the-nights-were-spent.js';
 import { AT_THE_INN, takeARoom, theCountersHere, whereTheyAreLodged } from './a-room-at-an-inn.js';
 import { theCounterThisKeeperKeeps, whoKeepsTheCounter } from './who-keeps-a-counter-here.js';
-import { theBoothsHere } from './a-seat-on-a-ship-or-a-carriage.js';
+import { theBoothsHere, theCountersAsSeenHere } from './a-seat-on-a-ship-or-a-carriage.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
 // Whose the thing is, asked of the world before anything calls a taking a theft.
@@ -5478,6 +5478,16 @@ ${line}`;
                         + `about it can be told. It is at the ${String(wrong.stage).replace(/_/g, ' ')} `
                         + `stage, with ${howMany(wrong.running, 'condition')} still running here.`
                     );
+                }
+                // THE COUNTERS STANDING HERE: an inn with its price, and whatever
+                // ships or carriages sell seats. A look round sees a sign.
+                if (action.intent !== 'company' && action.intent !== 'warmth') {
+                    for (const line of theCountersAsSeenHere(this, cultivator, Math.floor(run.elapsedDays))) {
+                        looking.facts.lines.push(line);
+                        looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                    }
                 }
                 // ── AND WHAT IS BUILT ON IT ─────────────────────────────
                 //
