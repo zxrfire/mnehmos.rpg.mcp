@@ -806,6 +806,13 @@ import {
     theWallWhereTheyStand,
     walkOverToTheBoard
 } from './the-mission-board-inside-a-house.js';
+import {
+    isHeldAsAPost,
+    leaveTheMissionPost,
+    settleTheMissionPostTheyHold,
+    takeUpTheMissionPost,
+    theMissionPostOnTheSheet
+} from './holding-a-mission-post.js';
 import type {
     ArrivableFact,
     DutyCandidate
@@ -3283,6 +3290,18 @@ export class GameService {
             for (const line of commissioned.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
         }
 
+        // AND THE MISSION POST THEY HOLD: served, or walked away from. See `holding-a-mission-post.ts`.
+        const heldPost = settleTheMissionPostTheyHold(this, this.currentRun().cultivator);
+        if (heldPost) {
+            execution.calls.push({
+                name: 'world.settleTheMissionPostTheyHold',
+                action: 'sect',
+                summary: heldPost.structure.join(' '),
+                ok: true
+            });
+            for (const line of heldPost.lines) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+
         // AND WHERE THEIR HOUSE HAS POSTED THEM: put to them, reached, left,
         // looked in on, or served. See `holding-a-posting.ts`.
         const posted = settleWhereYourHouseHasPostedYou(this, this.currentRun().cultivator, clockOnEntry);
@@ -4562,6 +4581,16 @@ export class GameService {
                 );
 
             case 'oath':
+                // LEAVING A POST IS BREAKING THE WORD GIVEN FOR IT. See `holding-a-mission-post.ts`.
+                if (action.intent === 'break' && action.target === 'post') {
+                    return leaveTheMissionPost(this, run, cultivator)
+                        ?? refused('engine.leaveTheMissionPost', 'oath', factsForRefusal(
+                            'You are on no post.',
+                            'You hold no post to leave. A posting your house sent you to is left by leaving '
+                            + 'the place it is in.',
+                            'leaveTheMissionPost: no open post oath. Nothing written.'
+                        ));
+                }
                 // A WORD SERVED OUT IS THE ONE STEP OF THIS VERB THAT SPENDS
                 // DAYS, so it is the one that is awaited and the only one that
                 // needs the ambient reading. The other four are free reads and
@@ -4954,6 +4983,12 @@ ${noticedWaiting}`;
                 if (sealed !== null) {
                     sheet.facts.lines.push(sealed);
                     sheet.facts.prose = `${sheet.facts.prose}\n\n${sealed}`;
+                }
+                // AND THE POST THEY HOLD, where they hold one.
+                const onPost = theMissionPostOnTheSheet(this, cultivator);
+                if (onPost !== null) {
+                    sheet.facts.lines.push(onPost);
+                    sheet.facts.prose = `${sheet.facts.prose}\n\n${onPost}`;
                 }
                 // The pouch AND every thing held: a sword or a spare robe takes room too. What is
                 // worn or held weighs and takes no room. See `what-somebody-is-carrying-takes.ts`.
@@ -17301,10 +17336,21 @@ ${fit.line}`;
         // reason accepting is a decision rather than free money: a run that
         // ends in the middle leaves a standing obligation somebody can read in
         // forty years, and `refuseDuty` is what settles it the other way.
+        // ONE POST AT A TIME: somebody on post is somewhere, for years.
+        const onPost = isHeldAsAPost(chosen.entry.id) ? theMissionPostOnTheSheet(this, cultivator) : null;
+        if (onPost !== null) {
+            return refused('encounters.acceptDuty', 'sect', factsForRefusal(
+                'You are on post already.',
+                `${onPost} A second post is taken when that one is served or left.`,
+                `acceptDuty refused for ${chosen.entry.id}: a post is already held. Nothing written.`
+            ));
+        }
         const sworn = acceptDuty(ledger);
         // A DELIVERY IS SIGNED FOR AND CARRIED, not served out in a span of days. See
         // `what-a-house-sends-its-sisters.ts`.
         if (isADelivery(chosen.entry.id)) return this.signForADelivery(run, cultivator, chosen, duty, sworn);
+        // A MISSION ABOVE THE OUTER RUNG IS HELD, not spent at once. See `holding-a-mission-post.ts`.
+        if (isHeldAsAPost(chosen.entry.id)) return takeUpTheMissionPost(this, run, cultivator, chosen, duty, sworn);
 
         // ── AND YOU SAID SO TO SOMEBODY ──────────────────────────────────
         //

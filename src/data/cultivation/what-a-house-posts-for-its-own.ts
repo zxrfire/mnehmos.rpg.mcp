@@ -11,7 +11,8 @@
  * months; the rungs above get posts of years, and the elders the long standing
  * ones. A rung takes its own missions and every rung's below it. Tasks that
  * exist at two rungs are two rows with two different jobs, not one row with a
- * scaled number.
+ * scaled number. Outer chores are served in one span; everything above is held
+ * as a post until its day (`web/holding-a-mission-post.ts`).
  *
  * WHICH HOUSE POSTS WHICH is the sending reasons' own column. `needs` is a
  * `ReasonNeed` and is read by the same `NEED_PREDICATES`, so a house holding no

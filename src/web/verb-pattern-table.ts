@@ -2185,6 +2185,12 @@ export function theKindOfWorkNamed(text: string): string | undefined {
     return best?.name;
 }
 
+/** Walking off a post, or a mission held as one, in so many words. */
+const LEAVING_A_POST = new RegExp(
+    String.raw`\b(?:leave|leaving|quit|quitting|abandon|abandoning|desert|deserting|walk off|walk away from|step down from|give up|giving up)\s+(?:my|the|this)\s+`
+    + `(?:post|${HOUSE_MISSIONS.filter(mission => mission.rung !== 'outer').map(mission => mission.said).join('|')})\\b`
+);
+
 /**
  * A commission or summons the player has NAMED, or undefined.
  */
@@ -4804,6 +4810,9 @@ function planIntent(input: string): PlannedAction {
     if (CARRYING_ON.test(text)) return { action: 'move', intent: 'travel' };
     // HITTING THE SACK IS SLEEP, ahead of every row that reads "hit" as a blow.
     if (/\bhit(?:s|ting)? the (?:sack|hay)\b/.test(text)) return { action: 'wait', days: nightsAskedFor(text) ?? 1 };
+    // LEAVING A POST IS NOT KEEPING THE WORD GIVEN FOR IT, and never leaving the house:
+    // "I leave my post" was read as nothing and sits one word from `sect/leave`.
+    if (LEAVING_A_POST.test(text)) return { action: 'oath', intent: 'break', target: 'post' };
     // AND CARRYING ON TO SOMEWHERE NAMED. Played: "ugh. keep going to iron ridge" read as a wait.
     {
         const onTo = CARRYING_ON_TO.exec(text);
