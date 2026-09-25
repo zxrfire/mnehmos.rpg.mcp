@@ -285,7 +285,8 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     house: {
         says: 'anything put TO a house rather than to a person, AND THE WALL IT POSTS ON - a '
             + 'board, a wall, a notice, the work or the duties going here. Reading one is this '
-            + 'lane and not a look around, because a look around does not carry the postings',
+            + 'lane, intent duties, and not a look around, because a look around does not carry the '
+            + 'postings',
         intents: {
             duties: 'sect',
             join: 'sect',

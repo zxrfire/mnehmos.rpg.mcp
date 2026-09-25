@@ -138,6 +138,16 @@ describe('a lane is a choice a model can make', () => {
         expect(wanted.ok && wanted.action.action).toBe('request');
     });
 
+    /**
+     * Played blind: "show me what's on it", of the wall, reached the house verb with the lane's own
+     * "duties", which the verb has no case for, and a list of houses came back.
+     */
+    it('reads a board off the house lane as the duty board', () => {
+        const said = validatePlan({ lane: 'house', intent: 'duties', reason: 'read the wall' });
+        expect(said.ok && said.action).toMatchObject({ action: 'sect', intent: 'duty' });
+        expect(THE_LANES.house.says).toMatch(/intent duties/);
+    });
+
     /** A response that named a verb outright still works, table readings included. */
     it('leaves a plan that named its verb alone', () => {
         const said = validatePlan({ action: 'cultivate', days: 30, reason: 'sat down' });

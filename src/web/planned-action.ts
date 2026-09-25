@@ -283,6 +283,10 @@ function theLaneExpanded(raw: unknown): unknown {
     const action = theVerbForThisLane(lane, intent);
     // A QUESTION PUT TO SOMEBODY IS TALK to the engine, which reads its intents by that word.
     if (lane === 'speak' && intent === 'ask_them_a_question') return { ...said, action, intent: 'talk' };
+    // A HOUSE'S BOARD IS READ BY `duty`, which the house verb knows by that word. Played blind: the
+    // lane's own "duties" reached `sect` as an intent it has no case for, and a list of houses came
+    // back instead of the board.
+    if (lane === 'house' && intent === 'duties') return { ...said, action, intent: 'duty' };
     // THE WAY IS A QUESTION, whatever word the model put to it. Played: "anyone know the way to the
     // white stairs?" came back as a request, which can spend days, so the guard threw the right
     // reading away for the list of destinations.
