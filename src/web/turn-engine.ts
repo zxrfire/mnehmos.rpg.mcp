@@ -4699,19 +4699,27 @@ export class GameService {
                 // the general question this verb answers and the reason the
                 // field was allowed to come off in the first place.
                 const saidUntil = action.target ?? whatTheyWouldWaitFor(rawInput);
+                // SLEEPING WHERE THEY STAND IS NOT WAITING FOR AN EVENT. Played:
+                // "i crash in the inn bed and sleep till morning" named the inn,
+                // and was answered with three intake notices to choose from.
+                const sleepingHere = (said: string) =>
+                    /\b(?:inn|room|beds?|morning|dawn|daybreak|here|the night)\b/i.test(said)
+                    || loosePlaceKey(said) === loosePlaceKey(placeName(cultivator));
+                let sleepsHere = false;
                 if ((saidUntil ?? '').trim().length > 0) {
                     const landed = this.whenTheNamedThingFalls(
                         cultivator, run, saidUntil as string
                     );
-                    if (landed.settled === null) return landed.refusal;
-                    waitingDays = landed.settled.inDays;
+                    if (landed.settled !== null) waitingDays = landed.settled.inDays;
+                    else if (sleepingHere(saidUntil as string)) sleepsHere = true;
+                    else return landed.refusal;
                 }
                 // A NIGHT AT THE INN IS PAID BEFORE IT IS SLEPT: the nights the
                 // room does not already cover are bought first, and a refusal
                 // there is the answer. See `a-room-at-an-inn.ts`.
                 let room: Execution | null = null;
                 let waiter = cultivator;
-                if ((saidUntil ?? '').trim().length === 0 && AT_THE_INN.test(rawInput)) {
+                if (((saidUntil ?? '').trim().length === 0 || sleepsHere) && AT_THE_INN.test(rawInput)) {
                     const lodged = whereTheyAreLodged(this, cultivator);
                     const covered = lodged ? lodged.paidThroughDay - Math.floor(run.elapsedDays) : 0;
                     if (covered < waitingDays) {

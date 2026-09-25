@@ -84,6 +84,25 @@ describe('a night outdoors costs the body', () => {
         expect(asked.narration).not.toMatch(/matched nobody|answers to that name/);
     }, 120_000);
 
+    /**
+     * Played: "i crash in the inn bed and sleep till morning" named the inn as
+     * what to wait for, and was answered with the intake notices to choose from.
+     */
+    it.each([
+        'i crash in the inn bed and sleep till morning',
+        'I sleep at the inn until dawn',
+        'I wait until The Eleven Beds'
+    ])('sleeps the night where they stand: %s', async said => {
+        const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+        await game.newRun('Sleeper');
+        await game.act('I take a room at the inn');
+        const before = game.state().run.elapsedDays;
+
+        const slept = await game.act(said);
+        expect(slept.narration).not.toMatch(/did not say which|nothing for the waiting to end on/);
+        expect(game.state().run.elapsedDays - before).toBe(1);
+    }, 120_000);
+
     /** Played: "is there like an inn or somewhere i can crash tonight" was a look that never mentioned one. */
     it('shows the inn and its price to a look round', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
