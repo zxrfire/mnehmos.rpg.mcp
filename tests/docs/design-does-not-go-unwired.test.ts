@@ -174,7 +174,10 @@ const DEAD = 0;
 // into reads a player meets.
 // 222 -> 178: outside the world simulation - D&D-era server and utility
 // code deleted, fixtures moved into their tests, ten wired or deduped.
-const TEST_ONLY = 178;
+// 178 -> 102: engine/world - 11 wired, 49 deleted, 24 moved into their tests
+// or tests/support, counting names a removal surfaced; 50 left, each named with
+// its reason in the commit that lowered this.
+const TEST_ONLY = 102;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
