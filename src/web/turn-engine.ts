@@ -182,7 +182,7 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { howItIsHad } from '../engine/world/possessions.js';
+import { howItIsHad, type ObjectRecord } from '../engine/world/possessions.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
@@ -192,11 +192,14 @@ import {
     isADelivery,
     theConsignmentOnTheEntry,
     theGoodsSignedFor,
+    theHouseThatSentIt,
     whatAHouseSendsItsSisters,
     whatALateDeliveryCosts,
     whatAWrittenOffDeliveryCosts,
+    THE_FACE_A_FUMBLE_TAKES,
     type WhatItWants
 } from '../engine/world/what-a-house-sends-its-sisters.js';
+import { theirFaceMoves } from '../engine/world/what-a-face-is-worth.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
@@ -11310,24 +11313,36 @@ ${line}`;
         const world = this.atHand;
         const here = this.worldPlaceOf(cultivator);
         const vehicles = new Set(theVehiclesTheyAreWith(world?.objects ?? [], cultivator.id, here).map(row => row.id));
-        const carried = (world?.objects ?? []).filter(row => row.tags.includes('consignment')
-            && row.data.carrierId === cultivator.id
+        const withinReach = (row: { data: Record<string, unknown>; possessorId: string | null; locationId: string | null }) =>
+            row.data.carrierId === cultivator.id
             && (row.possessorId === cultivator.id || (row.possessorId !== null && vehicles.has(row.possessorId))
-                || (row.possessorId === null && row.locationId === here && here !== null)));
-        if (!world || carried.length === 0) {
-            return refused('engine.handOverADelivery', 'carry', factsForRefusal(
-                'Nothing to hand over.', 'You are carrying nothing anybody sent you out with.',
-                'No consignment in their charge within reach.'));
-        }
+                || (row.possessorId === null && row.locationId === here && here !== null));
+        const carried = (world?.objects ?? []).filter(row => row.tags.includes('consignment') && withinReach(row));
+        const writtenOff = (world?.objects ?? []).filter(row => row.tags.includes('written-off') && withinReach(row));
         const atTheSeat = (houseId: string) => {
-            const seat = world.factions.find(faction => faction.id === houseId)?.seatLocationId ?? null;
-            if (seat === null || here === null) return false;
+            const seat = world?.factions.find(faction => faction.id === houseId)?.seatLocationId ?? null;
+            if (!world || seat === null || here === null) return false;
             const byId = new Map(world.locations.map(row => [row.id, row]));
             for (let row = byId.get(here), steps = 0; row && steps < 8; steps++, row = row.parentId ? byId.get(row.parentId) : undefined) {
                 if (row.id === seat) return true;
             }
             return false;
         };
+        // WRITTEN-OFF GOODS GO BACK TO THE HOUSE THAT SENT THEM, and that saves face. See
+        // `returnWrittenOffGoods`.
+        const toReturn = writtenOff.find(row => atTheSeat(String(row.ownerId)));
+        if (world && toReturn) return this.returnWrittenOffGoods(run, cultivator, toReturn, here);
+        if (!world || carried.length === 0) {
+            const owed = writtenOff[0];
+            return refused('engine.handOverADelivery', 'carry', factsForRefusal(
+                'Nothing to hand over.',
+                owed
+                    ? `${owed.name} was written off by ${owed.ownerName ?? 'the house that sent it'}. Taken back to `
+                      + 'that house, it saves the face it cost you.'
+                    : 'You are carrying nothing anybody sent you out with.',
+                owed ? `Written-off ${owed.id} belongs to ${owed.ownerId}; standing at ${here}.`
+                    : 'No consignment in their charge within reach.'));
+        }
         const goods = carried.find(row => atTheSeat(String(row.data.toHouseId)));
         if (!goods) {
             const first = carried[0]!;
@@ -11364,6 +11379,7 @@ ${line}`;
             }
             lines.push(`It is ${humanDays(daysLate)} late. Nothing is paid for it`
                 + (cost.contribution > 0 ? `, and ${cost.contribution} contribution is taken back` : '') + '.');
+            theirFaceMoves(world, cultivator.id, -THE_FACE_A_FUMBLE_TAKES[cost.face], Math.floor(world.currentDay));
             aDeedEntersTheWorld(world, {
                 kind: 'said_in_public',
                 weight: cost.face,
@@ -11384,6 +11400,45 @@ ${line}`;
     }
 
     /**
+     * Written-off goods brought back to the house that sent them. The owner: "if you return the
+     * written off goods, you save face". The face the write-off took is given back and the house's
+     * grudge over it is settled as compensated; the pay stays taken, and the word stays broken.
+     */
+    private returnWrittenOffGoods(
+        run: Run,
+        cultivator: Cultivator,
+        goods: ObjectRecord,
+        here: string | null
+    ): Execution {
+        const world = this.atHand!;
+        const today = Math.floor(run.elapsedDays);
+        const houseId = String(goods.ownerId);
+        const house = world.factions.find(row => row.id === houseId)?.name ?? 'the house that sent them';
+        const at = world.objects.findIndex(row => row.id === goods.id);
+        world.objects[at] = { ...goods, possessorId: houseId, locationId: here,
+            tags: goods.tags.filter(tag => tag !== 'written-off').concat('returned') };
+        const saved = Number(goods.data.faceLost ?? 0);
+        if (saved > 0) theirFaceMoves(world, cultivator.id, saved, Math.floor(world.currentDay));
+        const entryId = String(goods.data.entryId);
+        const grudge = ledgerAbout(this.db as unknown as ObligationDb, cultivator.id).find(row =>
+            row.status === 'open' && row.holderId === houseId && row.subjectId === cultivator.id && row.tags.includes(entryId));
+        if (grudge) {
+            writeOneObligation(this.db as unknown as DatabaseHandle, settleObligation(grudge, {
+                resolution: 'compensated', onDay: today, byId: cultivator.id,
+                note: `${goods.name} brought back on day ${today}.`
+            }));
+        }
+        this.theWorldMoved();
+        const facts = factsForToolResult(`${goods.name} returned.`, [
+            `${house} has ${goods.name} back. That saves the face the write-off cost you; `
+            + 'the pay taken back stays taken.'
+        ]);
+        facts.structure.push(`returnWrittenOffGoods: ${goods.id} to ${houseId}; face +${saved}; `
+            + `${grudge ? `grudge ${grudge.id} compensated` : 'no open grudge'}.`);
+        return this.freeAction(run, 'carry', facts);
+    }
+
+    /**
      * Deliveries never handed over, written off once the house stops waiting: the oath broken,
      * the house's grudge for it, the pay taken back from a member, and word of it going round -
      * a step worse where the goods are gone. Read at the end of every turn, so no delivery sits
@@ -11400,10 +11455,12 @@ ${line}`;
         const notes: string[] = [];
         for (const oath of open) {
             const entryId = oath.tags.find(tag => isADelivery(tag))!;
-            const houseId = oath.subjectId;
-            if (!houseId) continue;
             const at = world.objects.findIndex(row => row.tags.includes('consignment') && row.data.oathId === oath.id);
             const goods = at >= 0 ? world.objects[at]! : null;
+            // The house that sent them, never the duty's own house: a carrier who is not on its
+            // roll swore an oath to nobody in particular.
+            const houseId = goods?.ownerId ?? theHouseThatSentIt(world, entryId);
+            if (!houseId) continue;
             const consignment = theConsignmentOnTheEntry(world, houseId, entryId);
             const wants = (goods?.data.wants as WhatItWants | undefined) ?? consignment?.wants;
             if (!wants) continue;
@@ -11425,8 +11482,12 @@ ${line}`;
                 terms: null, dueOnDay: null, tags: ['duty', 'delivery', entryId, cost.lost ? 'lost' : 'lapsed']
             }));
             if (cost.contribution > 0) this.repos.sects.addContribution(houseId, cultivator.id, -cost.contribution);
+            // The face it costs, kept on the goods: brought back, they give it back.
+            const faceLost = THE_FACE_A_FUMBLE_TAKES[cost.face];
+            theirFaceMoves(world, cultivator.id, -faceLost, Math.floor(world.currentDay));
             if (goods) {
-                world.objects[at] = { ...goods, tags: goods.tags.filter(tag => tag !== 'consignment').concat('written-off') };
+                world.objects[at] = { ...goods, tags: goods.tags.filter(tag => tag !== 'consignment').concat('written-off'),
+                    data: { ...goods.data, faceLost } };
             }
             aDeedEntersTheWorld(world, {
                 kind: 'said_in_public',
@@ -11441,7 +11502,8 @@ ${line}`;
             });
             lines.push(`${house} has written off ${what} for ${toHouse}: `
                 + `${cost.lost ? 'they are lost' : 'they were never brought'}, ${humanDays(today - oath.dueOnDay!)} past due. `
-                + `Your word to carry them is broken${cost.contribution > 0 ? `, and ${cost.contribution} contribution is taken back` : ''}.`);
+                + `Your word to carry them is broken${cost.contribution > 0 ? `, and ${cost.contribution} contribution is taken back` : ''}.`
+                + (cost.lost ? '' : ` Brought back to ${house}, they save the face it cost you.`));
             notes.push(`${entryId}: ${cost.lost ? 'lost' : 'lapsed'}, face ${cost.face}, contribution -${cost.contribution}, oath ${oath.id} broken.`);
         }
         if (lines.length === 0) return null;

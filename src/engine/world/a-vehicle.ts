@@ -42,6 +42,17 @@ export const WHAT_A_HEAD_OF_CARGO = { volume: 250, weight: 200 } as const;
 export const WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES = { volume: 2_000, weight: 2_400 } as const;
 
 /** What a vehicle's hold carries in all, by the heads it seats. */
+/**
+ * The rank a spirit boat answers to: somebody at it or above is at the helm, or it does not
+ * lift. The owner: "29", which is the first tempering of Void Tribulation.
+ */
+export const A_SPIRIT_BOAT_ANSWERS_TO = 29;
+
+/** Whether a conveyance wants somebody at that rank to fly it: a spirit boat, and nothing on the ground. */
+export function itWantsAPilot(conveyance: Pick<Conveyance, 'crossesGroundThatCannotBeWalked' | 'holding'>): boolean {
+    return conveyance.crossesGroundThatCannotBeWalked && conveyance.holding === 'tracked';
+}
+
 export function whatAVehicleHolds(vehicle: Pick<ObjectRecord, 'data'>): { volume: number; weight: number } {
     const kind = getConveyance(String(vehicle.data?.conveyanceId ?? ''));
     const heads = kind?.heads ?? 1;

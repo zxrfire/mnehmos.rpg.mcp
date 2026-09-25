@@ -2,7 +2,8 @@
  * Getting somewhere: on foot, on something, by folding, or on somebody's span.
  */
 
-import { isWithThem, takeItAlong } from '../engine/world/a-vehicle.js';
+import { A_SPIRIT_BOAT_ANSWERS_TO, isWithThem, itWantsAPilot, takeItAlong } from '../engine/world/a-vehicle.js';
+import { rankName } from '../engine/cultivation/realms.js';
 import { resolveSect } from './entities.js';
 import { readTheWall } from './what-is-posted-on-the-wall-here.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
@@ -1707,10 +1708,24 @@ export const travelVerbs = {
         const withYou = this.whoIsWithYouOnTheRoad(cultivator);
         const heads = 1 + withYou.length;
 
-        const chosen = (asked && available.some(a => a.conveyance.id === asked.id)
-            ? available.find(a => a.conveyance.id === asked.id)!
-            : bestForThisRoad(available, walkingDays, heads))
-            ?? available[0];
+        // A SPIRIT BOAT ANSWERS ONLY TO SOMEBODY AT THE RANK TO FLY IT, and anybody going may be
+        // at the helm. Asked for by name, it says so; otherwise it is simply not what goes.
+        const highest = Math.max(cultivator.realmOrdinal, ...withYou.map(person => person.cultivation.realmOrdinal));
+        const aPilot = highest >= A_SPIRIT_BOAT_ANSWERS_TO;
+        if (!aPilot && asked && itWantsAPilot(asked) && available.some(a => a.conveyance.id === asked.id)) {
+            return refused('engine.priceJourney', 'ride', factsForRefusal(
+                'It will not answer to you.',
+                `${asked.name} answers only to somebody at ${rankName(A_SPIRIT_BOAT_ANSWERS_TO)} or above at `
+                + 'its helm, and nobody going is. Nothing is spent, and it does not lift.',
+                `ride: ${asked.id} wants a pilot at ordinal ${A_SPIRIT_BOAT_ANSWERS_TO}; the highest going is `
+                + `${highest}. Location unchanged, no time passed.`));
+        }
+        const flyable = available.filter(a => aPilot || !itWantsAPilot(a.conveyance));
+
+        const chosen = (asked && flyable.some(a => a.conveyance.id === asked.id)
+            ? flyable.find(a => a.conveyance.id === asked.id)!
+            : bestForThisRoad(flyable, walkingDays, heads))
+            ?? flyable[0] ?? available[0];
 
         const journey = priceJourney({
             walkingDays,
@@ -1720,7 +1735,7 @@ export const travelVerbs = {
         });
         // THE CHEST BURNS SPIRIT STONES, and they are the rider's. The owner: "you burn spirit
         // stones as fuel". Priced here all along (`whatTheChestBurns`) and never taken, so a spirit
-        // skiff flew for nothing.
+        // boat flew for nothing.
         if (journey.stonesBurned > cultivator.spiritStones) {
             return refused('engine.priceJourney', 'ride', factsForRefusal(
                 'Not enough to fly on.',

@@ -38,6 +38,13 @@ export type VehicleIntent = 'load' | 'unload' | 'leave_behind' | 'take_along';
 /** Words for a vehicle, in the player's own vocabulary. */
 const A_VEHICLE_WORD = /\b(?:cart|carts|carriage|carriages|wagon|waggon|boat|boats|ship|skiff|mount|mounts|mule|horse|beast|ride)\b/i;
 
+/** The words that name one kind of vehicle, whatever the row itself is called. */
+const THE_SAME_KIND_OF_VEHICLE: readonly (readonly string[])[] = [
+    ['boat', 'ship', 'skiff'],
+    ['cart', 'carriage', 'wagon', 'waggon'],
+    ['mount', 'mule', 'horse', 'beast', 'ride']
+];
+
 function theOneNamed(rows: readonly ObjectRecord[], named: string | undefined): ObjectRecord | null {
     const said = (named ?? '').toLowerCase().replace(/^(?:my|the|a|an)\s+/, '').trim();
     if (rows.length === 0) return null;
@@ -46,11 +53,13 @@ function theOneNamed(rows: readonly ObjectRecord[], named: string | undefined): 
     // when none of them is called by it.
     const word = A_VEHICLE_WORD.exec(said)?.[0];
     if (word) {
-        // A hull is a hull whatever a player calls it: the row is "A spirit boat"
-        // and "the boat" is the same craft.
-        const stem = word.replace(/s$/, '');
-        const sameCraft = /^(?:boat|ship|skiff)$/.test(stem) ? ['boat', 'ship', 'skiff'] : [stem];
-        return rows.find(row => sameCraft.some(w => row.name.toLowerCase().includes(w))) ?? rows[0]!;
+        // A word finds a vehicle of its own kind: "the boat" is the spirit boat, "the cart" is the
+        // carriage, and a beast is whatever draws one. Never the first one here whatever it is.
+        // Played: "load it into my spirit boat" loaded into the carriage standing here, while
+        // the boat was moored somewhere else.
+        const stem = word.toLowerCase().replace(/s$/, '');
+        const kin = THE_SAME_KIND_OF_VEHICLE.find(family => family.includes(stem)) ?? [stem];
+        return rows.find(row => kin.some(w => row.name.toLowerCase().includes(w))) ?? null;
     }
     const words = said.split(/\s+/).filter(word => word.length > 2);
     return rows.find(row => words.some(word => row.name.toLowerCase().includes(word))) ?? null;

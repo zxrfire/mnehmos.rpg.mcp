@@ -4776,7 +4776,7 @@ function whatIsSaidToTheirFace(said: string): PlannedAction | null {
 }
 
 /** Handing over goods a house sent: the goods named, or a delivery said outright. */
-const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand in|hands in|hand off|turn over|drop off|drops off)\b[^.!?]*\b(?:goods|crates?|consignment|delivery|cargo|casket|strongbox|bales?|sacks?|pelts?|grain|ore|load|shipment)\b|^\s*(?:i\s+)?(?:deliver|make (?:the|my) delivery)\b/;
+const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand in|hands in|hand off|turn over|drop off|drops off|return|returns|give back|gives back|bring back|brings back|take back|takes back)\b[^.!?]*\b(?:goods|crates?|consignment|delivery|cargo|casket|strongbox|bales?|sacks?|pelts?|grain|ore|load|shipment)\b|^\s*(?:i\s+)?(?:deliver|make (?:the|my) delivery)\b/;
 
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();

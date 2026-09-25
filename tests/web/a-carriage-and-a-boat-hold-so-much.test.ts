@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { aVehicleOf, leaveItHere, whatAVehicleHolds, whatIsInTheVehicle } from '../../src/engine/world/a-vehicle';
+import { A_SPIRIT_BOAT_ANSWERS_TO, aVehicleOf, leaveItHere, whatAVehicleHolds, whatIsInTheVehicle } from '../../src/engine/world/a-vehicle';
 import { makeObject } from '../../src/engine/world/possessions';
 import { whatABodyCanCarry, whatStopsThemCarryingIt } from '../../src/engine/world/what-a-body-can-carry-and-what-a-ring-holds';
 import { whatTheirThingsTake } from '../../src/engine/world/what-somebody-is-carrying-takes';
@@ -58,6 +58,8 @@ describe('what a carriage and a spirit boat hold', () => {
             ownerId: cultivator.id, ownerName: 'Ke Yan', at: here }));
         const where = () => repos.cultivators.getById(cultivator.id)!;
         const from = where().location;
+        // At the helm, somebody at the rank it answers to.
+        repos.cultivators.update(cultivator.id, { realmOrdinal: A_SPIRIT_BOAT_ANSWERS_TO });
 
         repos.cultivators.update(cultivator.id, { spiritStones: 0 });
         const grounded = await game.act('I fly my spirit boat to Silver Island');
@@ -69,6 +71,42 @@ describe('what a carriage and a spirit boat hold', () => {
         expect(where().location).toBe('Silver Island');
         expect(flown.narration).toMatch(/\d+ spirit stones burned in its chest/);
         expect(where().spiritStones).toBeLessThan(100);
+    }, 180_000);
+
+    /** The owner: a spirit boat answers to "29", Void Tribulation. */
+    it('will not lift for somebody below the rank a spirit boat answers to', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'a-boat-that-burns', worldSeed: 'a-xianxia-run' });
+        const { cultivator } = await game.newRun('Ke Yan');
+        game.atHand!.objects.push(aVehicleOf({ id: 'boat', conveyanceId: 'conv-spirit-boat',
+            ownerId: cultivator.id, ownerName: 'Ke Yan', at: game.worldPlaceOf(cultivator) }));
+        repos.cultivators.update(cultivator.id, { spiritStones: 100 });
+        const from = repos.cultivators.getById(cultivator.id)!.location;
+
+        const asked = await game.act('I fly my spirit boat to Silver Island');
+        expect(asked.narration).toMatch(/answers only to somebody at Void Tribulation/);
+        expect(repos.cultivators.getById(cultivator.id)!.location).toBe(from);
+        expect(repos.cultivators.getById(cultivator.id)!.spiritStones).toBe(100);
+    }, 180_000);
+
+    /** Played in the test wave: "load it into my spirit boat" loaded into the carriage standing here. */
+    it('never loads into the carriage here when the boat named is moored elsewhere', async () => {
+        const { game } = await makeGameInWorld({ seed: 'a-boat-left-behind', worldSeed: 'a-xianxia-run' });
+        const { cultivator } = await game.newRun('Ke Yan');
+        const objects = game.atHand!.objects;
+        const here = game.worldPlaceOf(cultivator);
+        const away = game.atHand!.locations.find(l => l.id !== here && l.kind === 'settlement')!.id;
+        objects.push(aVehicleOf({ id: 'carriage', conveyanceId: 'conv-carriage-mortal', ownerId: cultivator.id, ownerName: 'Ke Yan', at: here }));
+        const boat = aVehicleOf({ id: 'boat', conveyanceId: 'conv-spirit-boat', ownerId: cultivator.id, ownerName: 'Ke Yan', at: away });
+        objects.push(boat);
+        leaveItHere(objects, boat, away);
+        objects.push(makeObject({ id: 'sack', name: 'a sack of millet', kind: 'other',
+            volume: 2, weight: 2, possessorId: cultivator.id, ownerId: cultivator.id }));
+
+        const out = whatTheVehicleDoes(game, cultivator, 'load', 'sack', 'my spirit boat');
+        expect(out.outcome).toBe('refused');
+        expect(whatIsInTheVehicle(objects, 'carriage')).toHaveLength(0);
+        // "the cart" still finds the carriage it means.
+        expect(whatTheVehicleDoes(game, cultivator, 'load', 'sack', 'the cart').outcome).toBe('executed');
     }, 180_000);
 
     /**

@@ -244,8 +244,27 @@ export function whatALateDeliveryCosts(goods: { wants: WhatItWants; contribution
     };
 }
 
-/** How long past due a house waits on a delivery before it writes it off. */
-export const A_HOUSE_WAITS_ON_A_LATE_DELIVERY = 30;
+/**
+ * How long past due a house waits on a delivery before it writes it off, by the size of it. The
+ * owner: it "depends on the size of the consignment". A casket is missed within a fortnight; a
+ * season's stock takes longer to move and longer to give up on.
+ */
+export const HOW_LONG_A_HOUSE_WAITS_ON_A_LATE_DELIVERY: Readonly<Record<WhatItWants, number>> = {
+    'a back': 15,
+    'a carriage': 30,
+    'a spirit boat': 60
+};
+
+/**
+ * The face a fumble takes off whoever made it, against one public win over an equal
+ * (`A_PUBLIC_WIN` in `what-a-face-is-worth.ts`).
+ */
+export const THE_FACE_A_FUMBLE_TAKES: Readonly<Record<Severity, number>> = {
+    slight: 0.25,
+    serious: 0.5,
+    grave: 1,
+    unforgivable: 2
+};
 
 /** Goods lost outright are one step worse than goods brought late. */
 const ONE_STEP_GRAVER: Readonly<Record<Severity, Severity>> = {
@@ -261,16 +280,27 @@ export interface WhatAWrittenOffDeliveryCosts extends WhatALateDeliveryCosts {
  * What a delivery never handed over costs, once the house has stopped waiting on it: the whole
  * of the pay taken back, and face by the size of the load, a step worse where the goods are gone.
  * Null while the house still waits. The owner: "maybe lose merit (if the goods are still there)?
- * DEFINITELY lose face".
+ * DEFINITELY lose face", and "if you return the written off goods, you save face" - see
+ * `handOverADelivery` in turn-engine.ts.
  */
 export function whatAWrittenOffDeliveryCosts(
     goods: { wants: WhatItWants; contribution: number },
     daysLate: number,
     stillInHand: boolean
 ): WhatAWrittenOffDeliveryCosts | null {
-    if (daysLate <= A_HOUSE_WAITS_ON_A_LATE_DELIVERY) return null;
+    if (daysLate <= HOW_LONG_A_HOUSE_WAITS_ON_A_LATE_DELIVERY[goods.wants]) return null;
     const late = whatALateDeliveryCosts(goods, daysLate)!;
     return { face: stillInHand ? late.face : ONE_STEP_GRAVER[late.face], contribution: late.contribution, lost: !stillInHand };
+}
+
+/**
+ * The house a board entry was posted by, off its id. The id is `delivery-<house>-<sister>-...`
+ * and house ids have dashes in them, so the longest house id it opens with is the one.
+ */
+export function theHouseThatSentIt(world: Pick<WorldState, 'factions'>, entryId: string): string | null {
+    return world.factions
+        .filter(faction => entryId.startsWith(`delivery-${faction.id}-`))
+        .sort((a, b) => b.id.length - a.id.length)[0]?.id ?? null;
 }
 
 /**
