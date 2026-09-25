@@ -98,7 +98,7 @@ paid for is something done, not something they are.
   posted only where the house has the need and somebody on its roll could do it. They hang
   on the mission board inside the house's walls; a rung takes its own and every rung's below.
   Outer chores are served in one span. Anything longer is a post: the holder lives at it until
-  its day and is paid then. Leaving early ends it cleanly where the house would welcome the
+  its day and is paid then. Leaving early ends it cleanly, paid for the days served, where the house would welcome the
   change - a full realm risen, a war, being sent for, merit brought in worth more than the rest
   of the term - and otherwise costs face by how much of the term was left.
 - **Both are worded as the task**: the job, for whom, where, and for how long - "Keep the

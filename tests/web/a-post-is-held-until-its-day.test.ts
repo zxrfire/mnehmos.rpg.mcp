@@ -68,10 +68,14 @@ describe('a post held until its day', () => {
     it('costs face to leave early with nothing changed, and says how much was left', async () => {
         const at = await onPost('post-abandoned');
         const before = at.face();
+        const merit = at.repos.sects.getMembership(at.id)!.contribution;
+        const stones = at.repos.cultivators.getById(at.id)!.spiritStones;
         at.nothingSentFor();
         const left = (await at.game.act('I leave my post')).narration ?? '';
         expect(left).toMatch(/The house takes it as a post abandoned: \d+ days of the term were left\./);
         expect(at.face()).toBeLessThan(before);
+        expect(at.repos.sects.getMembership(at.id)!.contribution, 'an abandoned post was paid').toBe(merit);
+        expect(at.repos.cultivators.getById(at.id)!.spiritStones, 'an abandoned post was paid').toBe(stones);
         expect(await at.sheet()).not.toMatch(/On post:/);
     }, 240_000);
 
@@ -85,15 +89,25 @@ describe('a post held until its day', () => {
         expect(at.face()).toBeLessThan(before);
     }, 240_000);
 
-    it('ends cleanly after a full realm risen, and costs nothing', async () => {
+    it('ends cleanly after a full realm risen, costs nothing, and pays for the days served', async () => {
         const at = await onPost('post-outgrown');
+        const due = Number(/It runs to day (\d+)/.exec(at.took)![1]);
+        const [, termPay, termStones] = /counts (\d+) contribution and pays (\d+) spirit stones/.exec(at.took)!.map(Number);
+        const merit = at.repos.sects.getMembership(at.id)!.contribution;
+        const stones = at.repos.cultivators.getById(at.id)!.spiritStones;
+        // A quarter of the term lived at the post, then the breakthrough.
+        const served = Math.floor(due / 4);
+        at.passTo(served);
         at.nothingSentFor();
         at.db.prepare('UPDATE cultivators SET realm_ordinal = 13 WHERE id = ?').run(at.id);
         const before = at.face();
         const left = (await at.game.act('I leave my post')).narration ?? '';
         expect(left).toContain('It ends cleanly');
         expect(left).toContain('Foundation Establishment');
+        expect(left).toContain(`pays for the ${served} days served`);
         expect(at.face()).toBe(before);
+        expect(at.repos.sects.getMembership(at.id)!.contribution - merit).toBe(Math.round(termPay! * served / due));
+        expect(at.repos.cultivators.getById(at.id)!.spiritStones - stones).toBe(Math.round(termStones! * served / due));
     }, 240_000);
 
     it('ends cleanly when the house has sent for them since', async () => {

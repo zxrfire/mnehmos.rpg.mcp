@@ -10,7 +10,7 @@
  *
  * Leaving before then, by walking away from the place or by saying so, closes the post. Whether
  * that costs anything is the house's view of the change (`whatTheHouseMakesOfAPostLeftEarly`): a
- * change it welcomes ends it cleanly, and anything else is a post abandoned, which costs face by
+ * change it welcomes ends it cleanly and pays for the days served, and anything else is a post abandoned, which costs face by
  * how much of the term was left - the same face a fumbled delivery costs.
  *
  * Read after every turn, beside the house's own postings (`holding-a-posting.ts`), because the
@@ -186,7 +186,7 @@ function thePostIsLeft(
     const due = record.dueOnDay ?? today;
     const termDays = Math.max(1, due - record.incurredOnDay);
     const daysLeft = Math.max(0, due - leftFrom);
-    const [contribution] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
+    const [contribution, stones] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
     const merit = game.repos.sects.getMembership(cultivator.id)?.contribution ?? 0;
     const then = aNumber(tagged(record, REALM));
     const pending = readPendingSummons(game.repos, cultivator.id);
@@ -206,13 +206,27 @@ function thePostIsLeft(
     const db = game.repos.db as unknown as DatabaseHandle;
     const what = `${title.charAt(0).toLowerCase()}${title.slice(1)}`;
     if (verdict.welcome) {
-        writeOneObligation(db, settleObligation(record, {
-            resolution: 'oath_released', onDay: today, byId: houseId, note: `Left on day ${today}, ${how}; the house let it go.`
-        }));
+        // PAID FOR THE DAYS SERVED. The term's pay is the monthly rate times the days, so the
+        // share of it the served days make is the same arithmetic run over fewer of them.
+        const served = Math.max(0, termDays - daysLeft);
+        const paidContribution = Math.round(contribution! * served / termDays);
+        const paidStones = Math.round(stones! * served / termDays);
+        game.repos.db.transaction(() => {
+            writeOneObligation(db, settleObligation(record, {
+                resolution: 'oath_released', onDay: today, byId: houseId,
+                note: `Left on day ${today}, ${how}; the house let it go and paid ${served} of ${termDays} days.`
+            }));
+            if (record.subjectId && paidContribution > 0) {
+                game.repos.sects.addContribution(record.subjectId, cultivator.id, paidContribution);
+            }
+            if (paidStones > 0) game.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paidStones });
+        })();
         return {
             lines: [`You are off your post (${what}) with ${daysLeft} days of it left. ${verdict.because} `
-                + 'It ends cleanly: nothing is paid for the part not served, and nothing is held against you.'],
-            structure: [`thePostIsLeft: ${record.id} released on day ${today} (${how}); welcomed.`]
+                + `It ends cleanly: ${houseName} pays for the ${served} days served, ${paidContribution} contribution `
+                + `and ${paidStones} spirit stones, and nothing is held against you.`],
+            structure: [`thePostIsLeft: ${record.id} released on day ${today} (${how}); welcomed; paid ${served}/${termDays} `
+                + `days: +${paidContribution} contribution, +${paidStones} stones.`]
         };
     }
     writeOneObligation(db, settleObligation(record, {
