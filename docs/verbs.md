@@ -298,7 +298,7 @@ Takes `target`.
 
 ### `craft`
 
-build a thing at a bench out of material a hunt brought back - a carriage or a spirit boat. "target" names what is being built; naming nothing carries on with whatever is already on the stocks, or lists the bills if there is nothing. "days" is how long they said they would spend at it. NOT refine, which is the cauldron and wants a named herb for a named pill; a bill wants a quantity at a grade and does not care which animal it came off. Saying they abandon or scrap what is on the stocks comes here too, and clears it. It spends days and it can fail, and a failure keeps the materials.
+build a thing at a bench out of material a hunt brought back - a carriage or a spirit boat. "target" names what is being built; naming nothing carries on with whatever is already on the stocks, or lists the bills if there is nothing. "days" is how long they said they would spend at it. NOT refine, which is the cauldron and wants a named herb for a named pill; a bill wants a quantity at a grade and does not care which animal it came off. Saying they abandon or scrap what is on the stocks comes here too, and clears it. It spends days and it can fail, and a failure keeps the materials. Reinforcing a door of their own with a beast part they carry is here too - "target" is the door and what it is worked with, as in "the cave door with the hide I took" - and an inn's or a house's door is not theirs to reinforce.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'craft'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 

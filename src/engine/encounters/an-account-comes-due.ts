@@ -11,6 +11,7 @@ import { ENCOUNTERS, fillSummary, type EncounterEntry } from '../../data/cultiva
 import { rankName } from '../cultivation/realms.js';
 import { forStream } from '../cultivation/rng.js';
 import { locatabilityApplies, socialReach } from './activity.js';
+import { WHAT_GOING_AWAY_LEAVES, whatTheyDoAtASealedDoor } from './at-a-sealed-door.js';
 import { resolveOccurrence } from './resolve.js';
 import type {
     AnAccountComingDue,
@@ -89,6 +90,22 @@ export function attemptAnAccount(
     let left = which * total;
     const account = accounts.find(one => (left -= one.weight) < 0) ?? accounts[accounts.length - 1];
 
+    // A SEALED DOOR. Its own stream, drawn only here, so a sitting nobody comes
+    // to draws exactly what it drew before.
+    const door = input.activity === 'sealed' && input.door ? input.door : null;
+    const atTheDoor = door === null ? null : whatTheyDoAtASealedDoor({
+        severity: account.severity,
+        strength: account.sent.strength ?? account.sent.realmOrdinal,
+        theirOrdinal: account.sent.realmOrdinal,
+        yourOrdinal: input.cultivator.realmOrdinal,
+        door,
+        push: account.push ?? 0,
+        arrivedOnDay: absoluteDay,
+        sample: forStream(input.seed, 'enc.account.door', absoluteDay, stage, input.cultivator.id).next(),
+        waitingIsForced: input.waitingIsForced === true
+    });
+    if (atTheDoor?.what === 'did_not_try') return null;
+
     const entry: EncounterEntry = {
         ...row,
         threatOrdinal: account.sent.realmOrdinal,
@@ -150,14 +167,15 @@ export function attemptAnAccount(
     // They came for this cultivator, so they looked up whatever the regard band
     // says, and there is no walking past them. What the gap does is the fight's
     // to settle: `openFight` asks `theGapDecidesItAlone` first.
-    return {
+    const summary = fillSummary(entry, values);
+    const cameForThem: EncounterOccurrence = {
         ...resolved,
         interrupts: true,
         stance: 'engaged',
         event: {
             ...resolved.event,
             interrupts: true,
-            summary: fillSummary(entry, values),
+            summary,
             data: { ...resolved.event.data, stance: 'engaged', accountHolderId: account.holderId }
         },
         confrontation: resolved.confrontation
@@ -165,4 +183,90 @@ export function attemptAnAccount(
             : null,
         account
     };
+    if (door === null || atTheDoor === null) return cameForThem;
+
+    const strength = account.sent.strength ?? account.sent.realmOrdinal;
+    if (atTheDoor.what === 'broke_in') {
+        return {
+            ...cameForThem,
+            door: {
+                what: 'broke_in',
+                doorName: door.name,
+                doorStandsAt: door.standsAt,
+                theirStrength: strength,
+                arrivedOnDay: absoluteDay,
+                waitingUntilDay: absoluteDay,
+                leftATrace: true,
+                trace: '',
+                ifMet: null
+            }
+        };
+    }
+
+    // STOPPED. Nothing reaches the sitter while they wait, and nobody's name
+    // reaches them at all unless they are met; what they come out to is settled
+    // by `whoWasAtTheDoorWhenTheyCameOut` against the day the sitting ended.
+    const trace = atTheDoor.leftATrace ? WHAT_GOING_AWAY_LEAVES[door.whose] : '';
+    return {
+        ...cameForThem,
+        interrupts: false,
+        stance: 'none',
+        event: { ...cameForThem.event, interrupts: false, summary: trace },
+        grants: [],
+        castIds: [],
+        door: {
+            what: 'stopped',
+            doorName: door.name,
+            doorStandsAt: door.standsAt,
+            theirStrength: strength,
+            arrivedOnDay: absoluteDay,
+            waitingUntilDay: atTheDoor.waitingUntilDay,
+            leftATrace: atTheDoor.leftATrace,
+            trace,
+            ifMet: { summary, grants }
+        }
+    };
+}
+
+/**
+ * Settle every door-stopped arrival in `roll` against the day the sitter came out.
+ *
+ * Still waiting then: they are at the door, and it is the confrontation the
+ * account would have been, dated that day. Gone by then: the trace, where going
+ * left one, and nothing where it did not. Arrived after: never came, and is
+ * already cut by `cutTo`.
+ */
+export function whoWasAtTheDoorWhenTheyCameOut<R extends { occurrences: EncounterOccurrence[] }>(
+    roll: R,
+    startDay: number,
+    cameOutOnDay: number
+): R {
+    const out: EncounterOccurrence[] = [];
+    for (const occurrence of roll.occurrences) {
+        const door = occurrence.door;
+        if (!door || door.what !== 'stopped') {
+            out.push(occurrence);
+            continue;
+        }
+        if (door.arrivedOnDay > cameOutOnDay) continue;
+        if (door.waitingUntilDay >= cameOutOnDay && door.ifMet) {
+            out.push({
+                ...occurrence,
+                absoluteDay: cameOutOnDay,
+                dayOffset: Math.max(0, cameOutOnDay - startDay),
+                interrupts: true,
+                stance: 'engaged',
+                grants: door.ifMet.grants,
+                event: {
+                    ...occurrence.event,
+                    interrupts: true,
+                    summary: door.ifMet.summary,
+                    dayOffset: Math.max(0, cameOutOnDay - startDay)
+                }
+            });
+            continue;
+        }
+        if (door.leftATrace) out.push(occurrence);
+    }
+    return { ...roll, occurrences: out };
 }

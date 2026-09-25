@@ -349,7 +349,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             cauldron and wants a named herb for a named pill; a bill wants a quantity at a
             grade and does not care which animal it came off. Saying they abandon or scrap
             what is on the stocks comes here too, and clears it. It spends days and it can
-            fail, and a failure keeps the materials.`
+            fail, and a failure keeps the materials. Reinforcing a door of their own with a
+            beast part they carry is here too - "target" is the door and what it is worked
+            with, as in "the cave door with the hide I took" - and an inn's or a house's
+            door is not theirs to reinforce.`
     },
     gather: {
         takes: ['target'],

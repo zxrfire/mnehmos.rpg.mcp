@@ -95,6 +95,7 @@ import {
 import { getMembersOf } from '../data/cultivation/members.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { ObligationRecord } from '../engine/social/grudges.js';
+import type { TheDoorTheySitBehind } from '../engine/encounters/at-a-sealed-door.js';
 import { othersPresent } from './hearsay.js';
 import { worldLocationFor } from './entities.js';
 import { theProvinceAround } from '../engine/world/ground-holder.js';
@@ -182,6 +183,10 @@ export interface EncounterRequest {
     roster?: readonly ContactPerson[];
     /** Holders who may come to settle an account. See `accountsComingDue`. */
     comingForYou?: readonly AnAccountComingDue[];
+    /** The door a sealed sitter shut. See `the-door-you-sit-behind.ts`. */
+    door?: TheDoorTheySitBehind | null;
+    /** An operator forcing somebody stopped at that door to wait outside it. */
+    waitingIsForced?: boolean;
 }
 
 /** Roll the window. Call this BEFORE provisioning or simulating anything. */
@@ -211,6 +216,8 @@ export function encountersFor(deps: EncounterDeps, request: EncounterRequest): E
         names: namesFor(deps, cultivator),
         arrivable: request.arrivable,
         comingForYou: request.comingForYou,
+        ...(request.door ? { door: request.door } : {}),
+        ...(request.waitingIsForced ? { waitingIsForced: true } : {}),
         membership,
         house: standing?.house ?? null,
         ...(standing === null ? {} : {

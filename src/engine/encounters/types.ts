@@ -332,6 +332,29 @@ export interface EncounterOccurrence {
     source: 'catalog' | 'digest' | 'summons' | 'contact';
     /** Set when this is somebody coming to settle an account against the cultivator. */
     account?: AnAccountComingDue | null;
+    /** Set when they came to a sealed door. See `at-a-sealed-door.ts`. */
+    door?: AtASealedDoor | null;
+}
+
+/**
+ * What happened at a sealed door. A stopped arrival is carried in the roll as a
+ * non-interrupting occurrence, and `whoWasAtTheDoorWhenTheyCameOut` settles it
+ * against the day the sitting actually ended.
+ */
+export interface AtASealedDoor {
+    what: 'broke_in' | 'stopped';
+    doorName: string;
+    doorStandsAt: number;
+    theirStrength: number;
+    arrivedOnDay: number;
+    /** The last day they are still outside. Equal to `arrivedOnDay` for somebody who went. */
+    waitingUntilDay: number;
+    /** Whether going away left anything the sitter could perceive. */
+    leftATrace: boolean;
+    /** What going away leaves, said without a name. */
+    trace: string;
+    /** What to say, and what they learn, if they are met at the door. */
+    ifMet: { summary: string; grants: KnowledgeGrant[] } | null;
 }
 
 /**
@@ -344,7 +367,15 @@ export interface AnAccountComingDue {
     holderName: string;
     /** True where the holder is a house, and `sent` is somebody on its roll. */
     holderIsAHouse: boolean;
-    sent: { id: string; name: string; realmOrdinal: number };
+    sent: {
+        id: string;
+        name: string;
+        realmOrdinal: number;
+        /** Their rung and whatever they carry that breaks things. Omitted reads as the rung. */
+        strength?: number;
+    };
+    /** How hard the one sent pushes (`howHardTheyPush`, -1..1). Omitted reads as 0. */
+    push?: number;
     /** `WHAT_A_RECORD_COUNTS_FOR` summed over this holder's open accounts. */
     weight: number;
     /** The heaviest of them. */
@@ -428,6 +459,13 @@ export interface EncounterRollInput {
     arrivable?: readonly ArrivableFact[];
     /** Open accounts whose holders may come to settle them. Omitted reads as none. */
     comingForYou?: readonly AnAccountComingDue[];
+    /**
+     * The door a `sealed` sitter shut. Omitted, somebody coming for them reaches
+     * them whatever the door is made of.
+     */
+    door?: import('./at-a-sealed-door.js').TheDoorTheySitBehind | null;
+    /** An operator forcing somebody stopped at the door to wait outside it. */
+    waitingIsForced?: boolean;
     /** Cap on how many occurrences one window may produce. */
     limit?: number;
 }

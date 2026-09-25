@@ -66,6 +66,7 @@ import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.j
 import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
 import { whatIsBeingCut } from './communication-talisman-phrasings.js';
+import { REINFORCING_A_DOOR, reinforcingYourDoor } from './seclusion-door.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
 import { BENCH_FOCUS } from './turn-constants.js';
@@ -114,6 +115,13 @@ export const craftVerbs = {
     ): Promise<Execution> {
         const today = Math.floor(run.elapsedDays);
         const said = (target ?? '').trim();
+
+        // A door worked with beast parts is its own small job, and the noun
+        // says so before either the yard or the bench is asked.
+        if (REINFORCING_A_DOOR.test(said)) {
+            this.atHand = this.atHand ?? await this.loadWorld();
+            return reinforcingYourDoor(this, run, cultivator, said);
+        }
 
         // Communication talismans are counted stock cut by the handful, not a
         // bench's one thing. See `sending-word-on-a-communication-talisman.ts`.

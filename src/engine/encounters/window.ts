@@ -123,9 +123,12 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     const occasionChance = TURN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
     checks++;
     // Somebody coming for them is not a coincidence, so they are asked first.
+    // One arrival over an account a window: somebody a sealed door stopped
+    // (`at-a-sealed-door.ts`) does not interrupt, and does not come twice.
     const owed = attemptAnAccount(input, startDay, 0, 1, 'occasion');
     if (owed) occurrences.push(owed);
-    const occasion = owed ? null : attempt(input, pool, startDay, 0, occasionChance, 'occasion');
+    let anAccountCame = owed !== null;
+    const occasion = owed?.interrupts ? null : attempt(input, pool, startDay, 0, occasionChance, 'occasion');
     if (occasion) occurrences.push(occasion);
 
     // The house asks first. Drawn before the world's own coincidences so that
@@ -158,10 +161,11 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
             if (occurrences.length >= limit) break;
             checks++;
 
-            const due = attemptAnAccount(input, day, day - startDay, grid, 'span');
+            const due = anAccountCame ? null : attemptAnAccount(input, day, day - startDay, grid, 'span');
             if (due) {
                 occurrences.push(due);
-                break;
+                anAccountCame = true;
+                if (due.interrupts) break;
             }
 
             const drawn = attempt(input, pool, day, day - startDay, spanChance, 'span');

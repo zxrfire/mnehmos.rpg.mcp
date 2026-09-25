@@ -2635,6 +2635,12 @@ sheltering.ts    what being inside something is worth, and it is not a bonus.
                  about `how-far-gone-a-formation-is.ts`, which prices somebody
                  WORKING AT a door over time; this is force put through a thing
                  now, and the two answer different acts
+door-materials.ts
+                 what the door on a sealed seclusion is made of and the rung it
+                 stands at: an inn's planks, a house room by the rank that is
+                 given it, the sitter's own slab as reinforced with beast parts
+                 (a record on the place). Somebody who came over an account
+                 breaks it by `canUnmake`, the same force gate as a shelter
 somewhere-that-is-theirs.ts
                  a residence is a place with a pack, at every height.
                  `settleAbode` built one and built it above the Lid only;

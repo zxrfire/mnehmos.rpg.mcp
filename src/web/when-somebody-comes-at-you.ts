@@ -163,6 +163,14 @@ export function theyCameAtYou(
             ? `${party.name} came to end it: the account is ${account?.carried ? 'a blood feud' : account?.severity}.`
             : `${party.name} came with an ordinary swing.`;
 
+    // AND THROUGH WHAT, where a sealed door stood between them.
+    const door = occurrence.door ?? null;
+    const throughTheDoor = door?.what === 'broke_in'
+        ? `${party.name} broke through ${door.doorName} to reach you.`
+        : door?.what === 'stopped'
+            ? `${party.name} was waiting outside ${door.doorName} when you came out.`
+            : null;
+
     if (opened.settled) {
         service.fight = null;
         const settled = service.concludeTheFight(run, cultivator, held, opened.settled);
@@ -170,6 +178,10 @@ export function theyCameAtYou(
             `${party.name} came at this cultivator and the gap settled it before anybody moved. `
             + whatTheyCameFor
         );
+        if (throughTheDoor) {
+            settled.facts.lines.unshift(throughTheDoor);
+            settled.facts.required = [throughTheDoor, ...(settled.facts.required ?? [])];
+        }
         return settled;
     }
 
@@ -182,8 +194,15 @@ export function theyCameAtYou(
         ? `${party.name} came over the account ${account.holderIsAHouse ? `${account.holderName} holds` : 'they hold'} `
           + `against you: ${account.what.trim()}`
         : null;
-    const facts = factsForToolResult(`${party.name} attacks.`, owed ? [owed, line] : [line]);
-    facts.required = owed ? [owed, line] : [line];
+    const said = [throughTheDoor, owed, line].filter((one): one is string => one !== null);
+    const facts = factsForToolResult(`${party.name} attacks.`, said);
+    facts.required = said;
+    if (door) {
+        facts.structure.push(
+            `${door.doorName} stands at ${door.doorStandsAt}; ${party.name} brings ${door.theirStrength}. `
+            + (door.what === 'broke_in' ? 'That reaches it, so it broke.' : 'That is short of it, so they waited outside.')
+        );
+    }
     facts.structure.push(
         `A fight opened with ${party.name} as aggressor and this cultivator defending, off `
         + `${occurrence.account ? `the account ${occurrence.account.holderName} holds` : `catalog row ${occurrence.id}`}. `

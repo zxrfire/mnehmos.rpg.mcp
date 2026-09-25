@@ -2875,6 +2875,14 @@ export const BUILDING_SOMETHING =
 export const BACK_TO_THE_STOCKS =
     /\b(?:finish|finishes|finishing|finished|carry on with|carrying on with|go back to|going back to|goes back to|return to|returning to|work on|working on|works on|abandon|abandons|abandoning|abandoned|scrap|scraps|scrapping|scrapped|break up|breaks up|breaking up)\b/;
 
+/**
+ * Reinforcing a door, which is `craft` with the door as its noun: "I reinforce the
+ * cave door with the Ironhide Plate". The capture is the door and whatever it is
+ * reinforced with.
+ */
+const REINFORCING_A_DOOR_SENTENCE =
+    /\b(?:reinforce|reinforces|reinforcing|strengthen|strengthens|strengthening|shore up|shores up|fortify|fortifies|fortifying|bolster|bolsters)\s+((?:[\w'-]+\s+){0,4}door\b.*?)[\s.!?]*$/i;
+
 /** What a yard makes, in the words somebody standing in one uses. */
 export const WHAT_A_YARD_MAKES =
     /\b(?:carriages?|carts?|wagons?|waggons?|coach|coaches|boats?|ships?|barges?|skiffs?|hulls?|keels?)\b/;
@@ -6469,6 +6477,11 @@ function planIntent(input: string): PlannedAction {
             )
         };
     }
+
+    // A DOOR WORKED WITH BEAST PARTS. `craft` owns it, ahead of the yard and
+    // the bench, because the door is the noun; `seclusion-door.ts` does it.
+    const reinforcing = REINFORCING_A_DOOR_SENTENCE.exec(input);
+    if (reinforcing) return { action: 'craft', target: reinforcing[1].trim() };
 
     // THE YARD
     if (WHAT_A_YARD_MAKES.test(text)

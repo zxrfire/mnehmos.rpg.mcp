@@ -130,9 +130,18 @@ That is `interruptsThrough()`, stated over columns the catalog already has, so a
 new entry inherits the behaviour without anybody deciding anything about it. It
 is also what "you surface to a world that moved" is made of.
 
-`sealed` seclusion has exposure zero and produces nothing, ever. That is the
-game's existing bargain - safety bought with every chance that would have found
-you - and this layer does not get to sell it twice.
+`sealed` seclusion lets through a small fraction of an open one (its exposure
+in `activity.ts`), because a shut door is not a ward.
+
+**Somebody coming over an account meets the door itself** (`at-a-sealed-door.ts`).
+A slight is not worth breaking a door for; anything heavier tries, and their
+strength against the door's rung (`src/engine/world/door-materials.ts`: an inn's
+planks, a house room by rank, the sitter's own door as reinforced) decides it by
+`canUnmake` - not a roll. Reaching it, the door breaks and the fight follows. Otherwise they wait
+outside or go, a draw weighted by the account and the holder's temperament; one
+still waiting when the sitting ends is at the door
+(`whoWasAtTheDoorWhenTheyCameOut`), and one who went leaves a trace without a
+name, unless they stood a whole major realm above the sitter.
 
 ## Encountering something from above
 

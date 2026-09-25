@@ -97,6 +97,9 @@ import {
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { foldTheFightIn, theyCameAtYou } from './when-somebody-comes-at-you.js';
+import { theDoorYouSitBehind } from './seclusion-door.js';
+import { whoWasAtTheDoorWhenTheyCameOut } from '../engine/encounters/an-account-comes-due.js';
+import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.js';
 import { accountsComingDue } from './who-comes-to-settle-an-account.js';
 
 /**
@@ -350,6 +353,9 @@ export const seclusionVerbs = {
         // encounter layer reads the place and the people standing in it.
         this.atHand = await this.loadWorld();
 
+        // THE DOOR THEY SHUT, which is what stops somebody who comes for them.
+        const door = sealed ? theDoorYouSitBehind(this, cultivator) : null;
+
         // BEFORE anything is spent. Provisioning is priced per day, and a
         // seclusion cut short in year eight should not have been provisioned
         // for twenty.
@@ -368,7 +374,11 @@ export const seclusionVerbs = {
                 // The row id is a randomUUID and would make the run
                 // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
                 rollIdentity: PLAYER_ROLL_IDENTITY,
-                comingForYou: accountsComingDue(this, cultivator)
+                comingForYou: accountsComingDue(this, cultivator),
+                ...(door ? {
+                    door,
+                    waitingIsForced: theRollLands('somebody_waits_at_your_door')
+                } : {})
             }
         );
         // AND THE WORLD GETS A SAY IN HOW LONG THIS RUNS.
@@ -485,8 +495,12 @@ export const seclusionVerbs = {
         if (crossings.length > 0) this.theWorldMoved();
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
 
-        // WHAT ACTUALLY HAPPENED, AGAINST WHAT WAS GOING TO
-        const happened = cutTo(enc, startDay, skip.simulatedDays);
+        // WHAT ACTUALLY HAPPENED, AGAINST WHAT WAS GOING TO - and whoever a
+        // sealed door stopped is settled against the day the sitting ended:
+        // still outside, gone with a trace, or gone without one.
+        const happened = whoWasAtTheDoorWhenTheyCameOut(
+            cutTo(enc, startDay, skip.simulatedDays), startDay, startDay + skip.simulatedDays
+        );
         this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
 
         // AFTER the skip, because a knowledge grant is a write and writes belong
@@ -621,6 +635,7 @@ export const seclusionVerbs = {
         }
 
         if (sealed) {
+            if (door) facts.lines.unshift(`The door you shut was ${door.name}.`);
             // THE PROSE YIELDS TO THE MEASUREMENT
             facts.lines.unshift(
                 'The door was sealed. Less reaches you behind it and it is not nothing: a seal '

@@ -55,6 +55,33 @@ export const FORCEABLE_DECISIONS: Readonly<Record<string, ForceableDecision>> = 
         landing: 'the crossing succeeds, and still pays the Price of Advancement',
         where: 'attemptBreakthrough in engine/cultivation/breakthrough.ts',
         reachedBy: ['breakthrough']
+    },
+    /**
+     * Whether a door stops somebody is not a roll - their strength against its
+     * rung - and stays one. What they do once stopped is.
+     */
+    somebody_waits_at_your_door: {
+        decides: 'whether somebody a sealed door stopped waits outside it rather than going',
+        landing: 'they wait outside, and are at the door when the sitting ends',
+        where: 'whatTheyDoAtASealedDoor in engine/encounters/at-a-sealed-door.ts',
+        reachedBy: ['seclude']
+    },
+    a_rite_holder_takes_everything: {
+        decides: 'whether somebody holding an art that draws on another, with you at their '
+            + 'mercy, takes everything at once rather than keeping you as a furnace',
+        landing: 'they take it all at once, and it kills you unless somebody steps in',
+        where: 'doTheyTakeItAll in engine/social-leverage/furnace-kill-or-keep.ts',
+        reachedBy: ['attack']
+    },
+    /**
+     * Only reaches somebody who is there, has a tie, and stands a realm above
+     * the one moving to kill: those are gates, and forcing does not supply them.
+     */
+    somebody_steps_in: {
+        decides: 'whether somebody at hand gets a hand in before a killing blow lands',
+        landing: 'the likeliest of them steps in, and the one they stopped holds it against them',
+        where: 'attemptRescue in engine/world/convergence.ts',
+        reachedBy: ['attack']
     }
 });
 

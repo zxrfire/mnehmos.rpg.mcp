@@ -10,6 +10,7 @@
 import type { AnAccountComingDue } from '../engine/encounters/types.js';
 import type { AHolder } from '../engine/social-leverage/being-hunted.js';
 import { WHAT_A_RECORD_COUNTS_FOR } from '../engine/social-leverage/personal-alignment.js';
+import { whatSomebodyIsLike } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { npcsInFaction, type WorldState } from '../engine/world/world-state.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
@@ -112,12 +113,14 @@ export function accountsComingDue(service: GameService, cultivator: Cultivator):
                     ? whoAHouseSends(world, house.id, cultivator.realmOrdinal, cultivator.id)
                     : null;
         if (!sent || sent.id === cultivator.id) continue;
+        const sentRow = world?.npcs.find(person => person.id === sent.id) ?? null;
 
         out.set(pursuer.holderId, {
             holderId: pursuer.holderId,
             holderName: pursuer.holderName,
             holderIsAHouse: house !== null,
-            sent,
+            sent: { ...sent, strength: whatTheyCouldBreakADoorWith(world, sent) },
+            ...(sentRow ? { push: whatSomebodyIsLike(sentRow).push } : {}),
             weight,
             severity: pursuer.severity,
             what: pursuer.what,
@@ -125,4 +128,21 @@ export function accountsComingDue(service: GameService, cultivator: Cultivator):
         });
     }
     return [...out.values()];
+}
+
+/**
+ * What somebody could put through a door: their rung, or the rung of the strongest
+ * rated thing they carry where that is higher. An art is pitched at or below the
+ * rung of whoever works it, so it adds nothing a door would feel over the rung.
+ */
+function whatTheyCouldBreakADoorWith(
+    world: WorldState | null,
+    who: { id: string; realmOrdinal: number }
+): number {
+    let best = who.realmOrdinal;
+    for (const object of world?.objects ?? []) {
+        if (object.possessorId !== who.id || object.power === null) continue;
+        if (Number.isFinite(object.power) && object.power > best) best = object.power;
+    }
+    return best;
 }
