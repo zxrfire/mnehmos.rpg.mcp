@@ -527,7 +527,7 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
             'locations, which is the only thing a finder actually sells and the only export in the world that stops existing when it is used'
         ],
         imports: [
-            'water, in strings of forty to sixty skins, which is the binding constraint on everything anybody does here',
+            'water, in strings of forty to sixty skins, carried with every ration that crosses it',
             'food, since nothing grows on sand and nothing grows at all on a show',
             'people, refused at a gate somewhere else, which is the whole of the population and everybody knows it about everybody'
         ],

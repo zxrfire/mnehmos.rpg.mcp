@@ -244,7 +244,7 @@ export const THE_DROWNED_REACH: Region = {
     ],
     imports: [
         'every grain of food beyond what a rail can dry, and it arrives salted and is eaten salted',
-        'fresh water in sealed stone jars, which is the actual binding constraint on every passage in the province and the reason the map is a list of wells',
+        'fresh water in sealed stone jars, which every hull loads with its rations, and the reason the map is a list of wells',
         'spirit stones, which here are not savings and not fuel: they are the ground, and a hull with an empty chest is standing on nothing'
     ],
     priceMultiplier: 2.2,

@@ -153,7 +153,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
         craft: 'Making nothing, and that is the whole of the port. What the Hall produces is the transaction.',
         whoTheyAre: 'Coopers, ropewalkers, a cistern crew and eleven caulkers, and every one of them is maintenance rather than manufacture. The port makes barrels, cordage and repairs because a hull that cannot be repaired at Silver Island is a hull that stops coming.',
         makes: [
-            'water casks and sealed stone jars, which are the binding constraint on every passage in the province',
+            'water casks and sealed stone jars, which every hull loads with its rations',
             'cordage, canvas and hull repair, sold at the same fortieth as everything else',
             'the transaction itself: a counter a weak seller can walk up to without being robbed, which is the actual product'
         ],
@@ -357,7 +357,7 @@ export const SEA_CARGO: readonly Cargo[] = [
         direction: 'outbound',
         carriedByFactionId: 'sect-silver-island-market',
         boughtBy: 'Every hull leaving the port, without exception, and it is the one thing on the quay the Hall sells at a margin nobody complains about, because a shipmaster arguing about the water price in front of a crew has already lost the crew.',
-        whyByWater: 'It is the constraint rather than the cargo. Water is the actual binding limit on every passage in the province and the reason the map is a list of wells rather than a list of places.'
+        whyByWater: 'Every hull loads it with its rations, and it is the reason the map is a list of wells rather than a list of places.'
     }
 ];
 
