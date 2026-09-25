@@ -121,13 +121,26 @@ import { getLocation, getNpc, type WorldState } from '../engine/world/world-stat
 import { populationWeightOf, type LocationRecord } from '../engine/world/locations.js';
 import { pathTo } from '../engine/world/architecture.js';
 import { layerOf, type LayerKey } from '../engine/world/layers.js';
-import { factsForMove, factsForRefusal, factsForTimeSkip, factsForToolResult, humanDays, placeName, shownWithNoModelAfter } from './facts.js';
+import { factsForMove, factsForRefusal, factsForTimeSkip, factsForToolResult, humanDays, placeName, sayThisFirstWhateverTheNarratorDoes, shownWithNoModelAfter } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { foldTheFightIn, theyCameAtYou } from './when-somebody-comes-at-you.js';
 import { accountsComingDue } from './who-comes-to-settle-an-account.js';
+import { chargeTheNightsInTheOpen, sayWhatTheNightsCost } from './where-the-nights-were-spent.js';
+import { whatTheRoadAte, whatWasEatenOnBoard, whetherThePackCoversTheRoad } from './what-a-journey-eats.js';
+import {
+    aSeatOnAShipOrACarriage,
+    theLineTo,
+    theServiceNamed,
+    whatRunsFromHere,
+    type AService
+} from './a-seat-on-a-ship-or-a-carriage.js';
+import { whatTheEscortMet } from '../engine/encounters/an-escort-on-the-road.js';
+import { theRestOfTheFight } from './when-somebody-comes-at-you.js';
+import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
+import { SATIETY_MAX } from '../schema/cultivation.js';
 
 /**
  * Somebody putting a party together, which the world sim writes and nothing
@@ -141,6 +154,17 @@ const MUSTERING = 'mustering';
  * dealing with whatever stopped the road does not undo the days walked.
  */
 const FLAG_ROAD_STOPPED = 'road_stopped';
+
+/** A box on wheels or a hull is a roof for the nights of a journey; a saddle, a blade and the road are not. */
+const A_ROOF_ON_THE_ROAD: ReadonlySet<string> = new Set([
+    'conv-carriage-mortal', 'conv-carriage-earth', 'conv-carriage-heaven', 'conv-spirit-boat'
+]);
+
+/** What a "carriage" or a "boat" means when it is their own, which `ride` takes before any counter. */
+const OF_THEIR_OWN: Readonly<Record<AService, ReadonlySet<string>>> = {
+    carriage: new Set(['conv-carriage-mortal', 'conv-carriage-earth', 'conv-carriage-heaven']),
+    ship: new Set(['conv-spirit-boat'])
+};
 interface StoppedRoad {
     readonly to: string;
     readonly from: string;
@@ -903,6 +927,10 @@ export const travelVerbs = {
         // still ahead.
         const lived = daysActuallySpent(enc, startDay, leg);
         const setOut = withEncounterDeltas(cultivator, enc);
+        // What is in the pack feeds them here too. Only seclusion tops the pack
+        // up from the purse; this eats what is already carried.
+        const carried = this.drawFromPack(cultivator, lived);
+        const packShort = whetherThePackCoversTheRoad(cultivator, carried, leg);
         const skip = simulateTimeSkip(setOut, lived, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
@@ -917,9 +945,7 @@ export const travelVerbs = {
                 ground: this.groundFor(cultivator)
             },
             understanding: this.understandingFor(run, cultivator),
-            // What is in the pack feeds them here too. Only seclusion tops the
-            // pack up from the purse; this eats what is already carried.
-            rations: this.drawFromPack(cultivator, lived),
+            rations: carried,
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
@@ -943,6 +969,18 @@ export const travelVerbs = {
         const onTheWay = recordEncounters(
             this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
         );
+
+        // THE ROAD'S NIGHTS AND ITS MEALS. Charged here rather than after the
+        // turn, because whoever stopped the road fights the body the nights left.
+        const nights = skip.died ? [] : Array.from({ length: skip.simulatedDays }, (_, i) => startDay + i);
+        const charged = nights.length > 0 ? chargeTheNightsInTheOpen(this, run, applied.cultivator, nights) : null;
+        const walker = this.repos.cultivators.getById(cultivator.id) ?? applied.cultivator;
+        const whatWasEaten = skip.died ? null : whatTheRoadAte(walker, carried, skip.endState.rationsRemaining);
+        const sayTheRoadsFood = (facts: Execution['facts']): void => {
+            if (packShort) facts.lines.unshift(packShort);
+            if (whatWasEaten) facts.lines.push(whatWasEaten);
+            facts.prose = [packShort, facts.prose, whatWasEaten].filter(Boolean).join('\n\n');
+        };
 
         if (stopped) {
             const walked = alreadyWalked + skip.simulatedDays;
@@ -979,10 +1017,13 @@ export const travelVerbs = {
                     summary: `The road to ${arrivedAt} was stopped on day ${walked} of `
                         + `${onTheRoad}. Location unchanged; ${remaining} day(s) of road remain.`,
                     ok: true
-                }]
+                }],
+                nights: 'charged'
             };
+            sayTheRoadsFood(halted.facts);
+            if (charged) sayWhatTheNightsCost(halted, charged);
             // AND WHOEVER STOPPED IT MAY HAVE COME AT THEM, which is a fight.
-            const cameAt = theyCameAtYou(this, applied.run, applied.cultivator, ambient, happened);
+            const cameAt = theyCameAtYou(this, applied.run, walker, ambient, happened);
             return cameAt ? foldTheFightIn(halted, cameAt) : halted;
         }
 
@@ -1004,6 +1045,7 @@ export const travelVerbs = {
         // WHAT WAS MET ON THE ROAD, on a road that was walked to its end.
         facts.lines.push(...onTheWay.lines);
         facts.structure.push(...onTheWay.structure);
+        sayTheRoadsFood(facts);
         if (alreadyWalked > 0) {
             facts.structure.push(
                 `move: resumed a stopped road; ${alreadyWalked} of ${onTheRoad} days were already walked, `
@@ -1054,7 +1096,7 @@ export const travelVerbs = {
             facts.structure.push(came.structure);
         }
 
-        return {
+        const arrived: Execution = {
             facts,
             events: skip.events,
             timeSkip: skip,
@@ -1071,8 +1113,11 @@ export const travelVerbs = {
                 ...tollCalls(applied.tollLines),
                 ...worldCalls(world)
             ],
-            perceived
+            perceived,
+            nights: 'charged'
         };
+        if (charged) sayWhatTheNightsCost(arrived, charged);
+        return arrived;
     },
 
     // ─────────────────────────────────────────────────────────────────────
@@ -1591,6 +1636,16 @@ export const travelVerbs = {
         target: string | undefined,
         wanted: string | undefined
     ): Promise<Execution> {
+        // A CARRIAGE OR A BOAT THAT IS NOT THEIRS is a seat at the counter here,
+        // where one runs. A boat of their own is a spirit boat; a boat they do
+        // not own, at a landing, is the ship.
+        const service = theServiceNamed(wanted);
+        if (service !== null
+            && !this.whatTheyCouldRide(cultivator).some(a => OF_THEIR_OWN[service].has(a.conveyance.id))
+            && whatRunsFromHere(this, cultivator, Math.floor(run.elapsedDays)).some(line => line.service === service)) {
+            return aSeatOnAShipOrACarriage(this, run, cultivator, target, 'buy', service, wanted ?? '');
+        }
+
         const going = this.whereThisJourneyGoes(cultivator, target, 'ride');
         if ('facts' in going) return going;
 
@@ -1635,6 +1690,7 @@ export const travelVerbs = {
                 run, cultivator, journey.daysOneWay, arrivedAt
             );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
+        const nights = A_ROOF_ON_THE_ROAD.has(chosen.conveyance.id) ? 'under_a_roof' as const : 'in_the_open' as const;
 
         const lines: string[] = [
             `${chosen.conveyance.name}, from ${placeName(cultivator)} to ${arrivedAt}.`,
@@ -1724,7 +1780,8 @@ export const travelVerbs = {
             ],
             // The same three facts an arrival on foot grants. See
             // `whatArrivingIntroduces`.
-            perceived
+            perceived,
+            nights
         };
     },
 
@@ -1894,19 +1951,34 @@ export const travelVerbs = {
         run: Run,
         cultivator: Cultivator,
         target: string | undefined,
-        intent: string
+        intent: string,
+        /** Which counter, where the sentence named a ship or a carriage. */
+        topic?: string
     ): Promise<Execution> {
         const here = standingOf(cultivator);
         const counter = counterPlaceNameAt(placeName(cultivator));
         const today = Math.floor(run.elapsedDays);
         const rate = localPrice(here.regionId, SPAN_CASH_PER_WALKED_DAY);
 
+        // A SHIP OR A CARRIAGE is bought at its own counter: whenever the sentence
+        // names one, and where the Span keeps no counter and a line here goes
+        // where the sentence asked. Anything else is still the Span's.
+        const service = theServiceNamed(topic);
+        const runsFromHere = counter === null ? whatRunsFromHere(this, cultivator, today) : [];
+        if (service !== null
+            || (target !== undefined && theLineTo(runsFromHere, target, null) !== null)) {
+            return aSeatOnAShipOrACarriage(this, run, cultivator, target, intent, service, topic ?? '');
+        }
+
         if (counter === null) {
             return refused('engine.boardAt', 'passage', factsForRefusal(
                 'The house keeps no counter here.',
                 'There is no board to read and nobody at a desk to read it to you. The Measured '
                 + 'Span runs from the ground it runs from, and this is not any of it - which is '
-                + 'not the house being unhelpful, it is where an inherited survey stops.',
+                + 'not the house being unhelpful, it is where an inherited survey stops.'
+                + (runsFromHere.length > 0
+                    ? ` What does run from here: ${runsFromHere.map(line => `${line.to} by ${line.service}`).join(', ')}.`
+                    : ''),
                 `No Span counter at "${placeName(cultivator)}". The house keeps `
                 + `${SPAN_ROUTES.length} route(s), from `
                 + `${[...new Set(SPAN_ROUTES.map(r => r.fromPlace))].join(', ')}. `
@@ -2094,6 +2166,177 @@ export const travelVerbs = {
             // `whatArrivingIntroduces`.
             perceived
         };
+    },
+
+    /**
+     * A paid seat or a hired carriage, ridden to its end or to where a band stopped it.
+     *
+     * The fare is paid first. The road's encounters roll as they do on foot and
+     * the escort reads them (`an-escort-on-the-road.ts`): a band that withdraws is
+     * a line, and a band big enough to take the escort on is a fight, played with
+     * its leader and the rest said (`theRestOfTheFight`). The fare includes board,
+     * so the pack is not opened, and the nights are under a roof.
+     */
+    async takeTheSeat(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        trip: {
+            service: AService;
+            to: string;
+            days: number;
+            walkingDays: number;
+            stones: number;
+            escort: number;
+            bought: string;
+        }
+    ): Promise<Execution> {
+        const paid = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -trip.stones }) ?? cultivator;
+        const from = placeName(paid);
+        const startDay = Math.floor(run.elapsedDays);
+        const ambient = this.ambientFor(paid, run);
+        const rolled = encountersFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
+            {
+                seed: run.seed,
+                startDay,
+                days: trip.days,
+                activity: 'travel',
+                cultivator: paid,
+                rollIdentity: PLAYER_ROLL_IDENTITY,
+                comingForYou: accountsComingDue(this, paid)
+            }
+        );
+        const met = whatTheEscortMet(rolled, trip.escort);
+        const attacking = met.attacking;
+        // WHO FIGHTS WHOM. The player fights the leader where the gap lets them,
+        // and the rest is fought around the vehicle; where it does not, the whole
+        // escort meets the whole band and the vehicle drives on if it held.
+        const theyFightYou = attacking !== null && attacking.confrontation?.engageable === true;
+        const vehicle = trip.service;
+        const theRest = attacking
+            ? theRestOfTheFight(this, run, attacking, trip.escort, ambient, vehicle, theyFightYou)
+            : null;
+        const stoppedBy = attacking && (theyFightYou || !theRest!.escortHeld) ? attacking : null;
+        const lived = stoppedBy
+            ? Math.max(1, Math.min(trip.days, stoppedBy.absoluteDay - startDay))
+            : trip.days;
+        const happened = cutTo(met.roll, startDay, lived);
+        const setOut = withEncounterDeltas(paid, happened);
+        const skip = simulateTimeSkip(setOut, lived, {
+            seed: run.seed,
+            rollIdentity: PLAYER_ROLL_IDENTITY,
+            locationId: from,
+            turn: run.turn,
+            startDay,
+            options: {
+                focusMultiplier: TRAVEL_FOCUS,
+                ...this.rateTermsFor(paid),
+                ground: this.groundFor(paid)
+            },
+            understanding: this.understandingFor(run, paid),
+            // The fare includes board: the pack is not opened on the way.
+            rations: 0,
+            grainAbstinence: true,
+            autoBreakthrough: false,
+            randomEvents: true,
+            spanIsASitting: false,
+            ...daoHeartConditions(this.repos.db, paid, startDay),
+            toll: tollConditionsFor(this.repos, paid)
+        });
+        const arrived = !skip.died && stoppedBy === null && skip.simulatedDays >= lived;
+        const applied = applyTimeSkip(this.repos, {
+            before: setOut, run, skip, ...(arrived ? { location: trip.to } : {})
+        });
+        const fed = skip.died
+            ? applied.cultivator
+            : this.repos.cultivators.applyDeltas(applied.cultivator.id, {
+                satiety: SATIETY_MAX - applied.cultivator.satiety,
+                starvationTurns: -applied.cultivator.starvationTurns
+            }) ?? applied.cultivator;
+        const world = await this.advanceWorld(skip.simulatedDays, fed, applied.run);
+        const onTheWay = recordEncounters(this.knowledge, fed, applied.run.elapsedDays, happened, this.repos);
+        const rationsLeft = everythingInThePouch(this.db, fed.id)
+            .find(entry => entry.kind === 'ration')?.quantity ?? 0;
+
+        const lines: string[] = [trip.bought];
+        for (const band of met.withdrew) {
+            if (band.absoluteDay > startDay + skip.simulatedDays) continue;
+            lines.push(`A band of ${band.confrontation?.count ?? 1} on the road watched the ${vehicle} and its `
+                + `guards go by on day ${Math.max(1, band.absoluteDay - startDay)}, and withdrew.`);
+        }
+        if (attacking && theRest && !skip.died) {
+            lines.push(`A band of ${attacking.confrontation?.count ?? 1} attacked the ${vehicle} on day `
+                + `${Math.max(1, Math.min(skip.simulatedDays, attacking.absoluteDay - startDay))}.`
+                + (theyFightYou ? ` Its leader came at you.` : ''),
+                ...theRest.lines);
+        }
+        const calls = [{
+            name: 'engine.takeTheSeat',
+            action: 'passage' as const,
+            summary: `${vehicle} from ${from} to ${trip.to}: ${trip.stones} stone(s), ${skip.simulatedDays} of `
+                + `${trip.days} day(s), escort ${trip.escort}, ${met.withdrew.length} band(s) withdrew`
+                + `${attacking ? `, a band of ${attacking.confrontation?.count ?? 1} attacked` : ''}.`,
+            ok: true
+        }, ...skipCalls('passage', skip, null), ...tollCalls(applied.tollLines), ...worldCalls(world)];
+
+        if (arrived) {
+            this.noteEncounter(
+                fed, run, { kind: 'place', id: trip.to, name: trip.to },
+                'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
+            );
+            noteWhoseGroundThisIs(this, fed, run, trip.to);
+            const introduced = whatArrivingIntroduces(this, fed);
+            lines.push(
+                `${howMany(skip.simulatedDays, 'day')} by ${vehicle} from ${from} to ${trip.to}, `
+                + `${howMany(trip.walkingDays, 'day')} on foot.`,
+                whatWasEatenOnBoard(fed, rationsLeft),
+                ...onTheWay.lines, ...applied.tollLines, ...world.lines
+            );
+            const came = this.theyArrivedWithYou(fed, trip.to);
+            if (came) lines.push(came.line);
+            lines.push(...introduced.lines);
+            const facts = factsForToolResult(`${trip.to}, by ${vehicle}.`, lines);
+            if (came) facts.required = [...(facts.required ?? []), came.line];
+            facts.structure.push(
+                `takeTheSeat: ${vehicle}, escort ${trip.escort}, ${met.withdrew.length} band(s) withdrew; `
+                + 'fed on board, nights under a roof.',
+                ...onTheWay.structure, ...world.structure, ...introduced.structure,
+                ...(came ? [came.structure] : [])
+            );
+            return {
+                facts, events: skip.events, timeSkip: skip, breakthrough: null, outcome: 'executed',
+                calls, perceived: introduced.perceived, nights: 'under_a_roof'
+            };
+        }
+
+        const facts = factsForTimeSkip(paid, fed, skip, ambient, 'Travel', trip.days);
+        facts.lines.unshift(...lines);
+        facts.prose = [...lines, facts.prose].join('\n\n');
+        facts.lines.push(...onTheWay.lines, ...world.lines);
+        facts.structure.push(...onTheWay.structure, ...world.structure);
+        const halted: Execution = {
+            facts, events: skip.events, timeSkip: skip, breakthrough: null, outcome: 'executed',
+            calls, nights: 'under_a_roof'
+        };
+        if (!stoppedBy || skip.died) return halted;
+
+        // A CARRIAGE STOPPED ON THE ROAD leaves the road to walk; a ship's lane is not walked.
+        const walked = Math.min(trip.walkingDays - 1,
+            Math.max(1, Math.round(skip.simulatedDays * trip.walkingDays / trip.days)));
+        if (vehicle === 'carriage' && trip.walkingDays > 1) {
+            writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
+                to: trip.to, from, road: trip.walkingDays, walked
+            } satisfies StoppedRoad));
+        }
+        sayThisFirstWhateverTheNarratorDoes(facts, `The ${vehicle} to ${trip.to} stopped on day `
+            + `${skip.simulatedDays} of ${trip.days}. You are not there`
+            + (vehicle === 'carriage' ? `; the rest of the road is ${humanDays(trip.walkingDays - walked)} on foot.` : '.'));
+        if (!theyFightYou) return halted;
+        const cameAt = theyCameAtYou(this, applied.run, fed, ambient, {
+            ...happened, occurrences: [stoppedBy], firstInterruptDay: stoppedBy.absoluteDay
+        }, true);
+        return cameAt ? foldTheFightIn(halted, cameAt) : halted;
     },
 
     /**

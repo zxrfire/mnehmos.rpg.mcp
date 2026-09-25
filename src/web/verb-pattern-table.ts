@@ -173,7 +173,8 @@ import {
     namedAfter,
     inTheCharactersThePatternsUse,
     isBareDuration,
-    outsideAnyName
+    outsideAnyName,
+    nightsAskedFor
 } from './sentence-parts.js';
 
 // The closed action set and the six lists that class it. Everything here was
@@ -365,14 +366,14 @@ import {
 } from './asking-is-not-doing.js';
 
 /**
- * The two steps at a Span counter, in the order they are tested.
+ * The steps at a counter, in the order they are tested.
  *
- * `board` is the discoverability half and is a read. `buy` moves a body across
- * a province for a fare, and it is the only one that spends anything.
+ * `board` is the discoverability half and is a read. `buy` moves a body for a
+ * fare, and `hire` takes a whole carriage at a station; both spend.
  */
-export type PassageIntent = 'buy' | 'board';
+export type PassageIntent = 'hire' | 'buy' | 'board';
 
-export const PASSAGE_INTENTS: readonly PassageIntent[] = ['buy', 'board'] as const;
+export const PASSAGE_INTENTS: readonly PassageIntent[] = ['hire', 'buy', 'board'] as const;
 
 /**
  * What a sentence about a counter means when it names no step.
@@ -932,6 +933,8 @@ export function whatATakingNames(text: string, input: string): string | null {
     // because that row runs below this one - except where the sentence says
     // whose the thing is, which is the one reading a journey never has.
     if (RIDING.test(text) && !A_TAKING_SAYS_SOMEBODY_ELSES.test(text)) return null;
+    // "I take the ship to Sweet Spring Island" is a seat, which the counter owns.
+    if (A_SHIP_OR_A_CARRIAGE_FROM_HERE.test(text)) return null;
     // Anything with a house in it. Two rows below own those and both run below this
     // one: `leadershipIntent` takes a thing off your own shelf, and the siphon
     // takes counted stock out of a treasury over months. Vetoed on the noun rather
@@ -2979,7 +2982,33 @@ export const A_COUNTER_NOT_A_MISSION_BOARD = new RegExp([
  */
 export const BOOKING_A_PLACE = 'book|books|booking|booked';
 
+/**
+ * A ship or a carriage from here, taken, hired or asked about. A ship is water:
+ * no player owns one, so taking one is always a seat. A carriage or a boat that
+ * is only taken is `ride`, which falls through to a seat when they own none.
+ */
+const A_SHIP_OR_A_CARRIAGE_FROM_HERE = new RegExp([
+    String.raw`\b(?:take|takes|taking|took|board|boards|boarding|catch|catches|catching|get on|gets on|sail|sails|sailing|go by|goes by|travel by)\s+(?:a\s+|an\s+|the\s+)?ships?\b`,
+    String.raw`\b(?:hire|hires|hiring|hired|charter|charters|chartering|chartered)\s+(?:a\s+|an\s+|the\s+)?(?:(?:drawn|shod|whole)\s+)?(?:carriage|coach|cart|wagon|boat|ship)\b`,
+    String.raw`\b(?:what|which|where|when|any|is there|are there)\b[^.?!]{0,40}\b(?:ships?|boats?|ferry|ferries|carriages?|coaches?)\b[^.?!]{0,30}\b(?:go|goes|run|runs|sail|sails|leave|leaves|depart|departs|there|here|to)\b`,
+    String.raw`\b(?:carriage station|coaching station|ticket booth)\b`
+].join('|'));
+
+/** Which of the two a counter sentence named, with a carriage's grade word. */
+const A_SHIP_OR_A_CARRIAGE_WORD =
+    /\b(ships?|boats?|ferry|ferries|(?:drawn\s+|shod\s+)?(?:carriages?|coach|coaches|carts?|wagons?))\b/;
+
+/** Taking a room, which pays for it. */
+const TAKING_A_ROOM =
+    /\b(?:take|takes|taking|took|rent|rents|renting|rented|get|gets|getting|book|books|booking|booked|hire|hires|hiring|pay for|pays for)\s+(?:a|an|the|my|one)?\s*(?:private\s+|cheap\s+|spare\s+)?(?:room|rooms|bed)\b/;
+
+/** Staying the nights at an inn, which pays for them and spends them. */
+const STAYING_AT_THE_INN =
+    /\b(?:stay|stays|staying|stayed|lodge|lodges|lodging|lodged|put up|puts up|putting up|spend|spends|spending|spent|pass|passes)\b[^.!?]{0,30}\b(?:at|in)\s+(?:the|an|this|that)\s+inn\b/;
+
 const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    // A whole carriage, ahead of a seat, because hiring one is also buying one.
+    ['hire', /\b(?:hire|hires|hiring|hired|charter|charters|chartering|chartered)\b|\b(?:a|the)\s+whole\s+(?:carriage|coach|cart)\b/],
     // Buying, first, because a sentence about buying one contains every word a
     // sentence about reading the board contains.
     ['buy', /\b(?:buy|buys|buying|bought|book|books|booking|booked|purchase|purchases|purchasing|pay for|pays for|take|takes|taking|took|get me|put me)\b/],
@@ -6423,15 +6452,29 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
-    // A COUNTER, A BOARD, AND SOMEBODY ELSE'S SPAN
-    if (A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)) {
+    // A ROOM AT THE INN. Ahead of the counter, because "book a room" is not a seat.
+    // Taking one pays; staying the nights pays what is not covered and spends them.
+    // See `a-room-at-an-inn.ts`.
+    if (STAYING_AT_THE_INN.test(text)) {
+        return { action: 'wait', days: nightsAskedFor(text) ?? 1 };
+    }
+    if (TAKING_A_ROOM.test(text)) {
+        return { action: 'buy', target: 'a room for the night' };
+    }
+
+    // A COUNTER, A BOARD, AND SOMEBODY ELSE'S SPAN - or a ship or a carriage,
+    // whose word rides on `topic` so the counter knows which.
+    if (A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)
+        || (A_SHIP_OR_A_CARRIAGE_FROM_HERE.test(text) && !BUILDING_SOMETHING.test(text))) {
         const step = (matchIntent(text, PASSAGE_INTENT_PATTERNS)
             ?? DEFAULT_PASSAGE_INTENT) as PassageIntent;
         const where = extractDestination(input);
+        const by = A_SHIP_OR_A_CARRIAGE_WORD.exec(text)?.[1];
         return {
             action: 'passage',
             intent: step,
-            ...(where ? { target: where } : {})
+            ...(where ? { target: where } : {}),
+            ...(by ? { topic: by } : {})
         };
     }
 

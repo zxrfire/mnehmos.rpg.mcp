@@ -779,7 +779,9 @@ describe('every intent behind a door is reachable from plain English too', () =>
      */
     const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
         board: ['what does the Span board say', 'what would a ticket to Iron Ridge cost'],
-        buy: ['I buy passage to Iron Ridge', 'I book a place on the next span']
+        buy: ['I buy passage to Iron Ridge', 'I book a place on the next span'],
+        // A whole carriage at a station. See `a-seat-on-a-ship-or-a-carriage.ts`.
+        hire: ['I hire a carriage to Iron Ridge', 'I charter a whole carriage to Iron Ridge']
     };
 
     for (const [intent, phrasings] of Object.entries(PASSAGE_PHRASINGS)) {
@@ -877,6 +879,7 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        'passage/hire': ['I hire a carriage to Iron Ridge', 'I hire a shod carriage to Iron Ridge'],
         // WHO HERE CARRIES SOMETHING ABOUT ME. Lands with a phrasing rather
         // than as a recorded gap, which is the only legal direction for that
         // list. The engine computed this every turn for the scene channel and

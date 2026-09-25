@@ -226,4 +226,10 @@ export interface Execution {
      * that ran in full - which is most of them.
      */
     cutShort?: SpanCutShort | null;
+    /**
+     * Where this step's nights were spent, where the verb knows better than the
+     * place does. Absent, `where-the-nights-were-spent.ts` reads it off the act
+     * and the place; `charged` means the verb already paid for them.
+     */
+    nights?: 'under_a_roof' | 'in_the_open' | 'charged';
 }

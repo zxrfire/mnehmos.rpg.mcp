@@ -801,6 +801,12 @@ export const TOPIC_ACTIONS: readonly ActionName[] = [
      */
     'ride',
     /**
+     * `passage` uses it for WHICH COUNTER: "ship" or "carriage", with a carriage's
+     * grade when the sentence names one. Absent, it is the Span's counter where
+     * there is one and whatever runs from here where there is not.
+     */
+    'passage',
+    /**
      * `oath` uses it for WHAT IS BEING SWORN, in the swearer's own words. Free
      * text, written into `terms` on the ledger row - which is the field
      * `grudges.ts` requires an oath to carry - and read by no conditional. It is

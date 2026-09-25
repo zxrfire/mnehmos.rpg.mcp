@@ -1193,6 +1193,9 @@ regard.ts        the same ladder, outside a fight: how the world answers, by how
                  far above or below the ask somebody is standing
 survival.ts      the death engine; the ONLY place death is decided
 time-skip.ts     the long-simulation primitive
+a-night-in-the-open.ts
+                 what a night outdoors costs a body below Foundation; weather
+                 alone stops at a quarter of the body, and never kills
 ```
 
 ## Regard: the ladder outside combat

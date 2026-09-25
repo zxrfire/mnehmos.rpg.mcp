@@ -71,6 +71,9 @@ suitability.ts  whether the thing you found is for YOU
 sendoff.ts      "nothing further for you here", grounded in an assessment
 arrivals.ts     the world's own unheard events, offered for arrival
 window.ts       the cadence loop. The entry point is rollEncounters()
+an-escort-on-the-road.ts
+                what a band does to an escorted ship or carriage: withdraws,
+                unless it is more than twice the escort
 ```
 
 ## Four things can happen to somebody

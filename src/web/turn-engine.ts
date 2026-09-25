@@ -375,7 +375,7 @@ import {
     type PlannedAction,
     type RecallIntent
 } from './actions.js';
-import { theSpanTheSentenceNames } from './sentence-parts.js';
+import { nightsAskedFor, theSpanTheSentenceNames } from './sentence-parts.js';
 import {
     theClauseThisTurnDidNotRun,
     sayingWhatWasNotDone,
@@ -1197,6 +1197,10 @@ import {
     theLineForCommunicationTalismans
 } from './sending-word-on-a-communication-talisman.js';
 import { stowVerbs, whatIsKeptInYourRoom, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
+import { theWeatherTakesItsShare } from './where-the-nights-were-spent.js';
+import { AT_THE_INN, takeARoom, theCountersHere, whereTheyAreLodged } from './a-room-at-an-inn.js';
+import { theCounterThisKeeperKeeps, whoKeepsTheCounter } from './who-keeps-a-counter-here.js';
+import { theBoothsHere } from './a-seat-on-a-ship-or-a-carriage.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
 // Whose the thing is, asked of the world before anything calls a taking a theft.
@@ -4006,6 +4010,11 @@ export class GameService {
         rawInput = ''
     ): Promise<Execution> {
         const done = await this.carryOut(action, run, cultivator, ambient, rawInput);
+        // The nights a span spent outdoors, for every verb that spends days.
+        theWeatherTakesItsShare(
+            this, action.action, run, cultivator, done,
+            theFightStillStands(this.fight, run.id, cultivator.id)
+        );
         // REFUSING TO CARRY IT OUT DOES NOT UNSAY IT. Here rather than in any
         // one verb because it is true of all of them: the engine declining an
         // act settles what the world DOES and settles nothing about what the
@@ -4402,7 +4411,8 @@ export class GameService {
             case 'passage':
                 return this.passage(
                     run, cultivator, action.target,
-                    action.intent ?? DEFAULT_PASSAGE_INTENT
+                    action.intent ?? DEFAULT_PASSAGE_INTENT,
+                    action.topic
                 );
 
             case 'oath':
@@ -4677,9 +4687,29 @@ export class GameService {
                     if (landed.settled === null) return landed.refusal;
                     waitingDays = landed.settled.inDays;
                 }
+                // A NIGHT AT THE INN IS PAID BEFORE IT IS SLEPT: the nights the
+                // room does not already cover are bought first, and a refusal
+                // there is the answer. See `a-room-at-an-inn.ts`.
+                let room: Execution | null = null;
+                let waiter = cultivator;
+                if ((saidUntil ?? '').trim().length === 0 && AT_THE_INN.test(rawInput)) {
+                    const lodged = whereTheyAreLodged(this, cultivator);
+                    const covered = lodged ? lodged.paidThroughDay - Math.floor(run.elapsedDays) : 0;
+                    if (covered < waitingDays) {
+                        room = takeARoom(this, run, cultivator, waitingDays, { andTheTurn: false });
+                        if (room.outcome === 'refused') return room;
+                        waiter = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+                    }
+                }
                 const waiting = await this.shortSkip(
-                    run, cultivator, ambient, WAITING_FOCUS, 'Waiting', waitingDays
+                    run, waiter, ambient, WAITING_FOCUS, 'Waiting', waitingDays
                 );
+                if (room) {
+                    waiting.facts.lines.unshift(...room.facts.lines);
+                    waiting.facts.structure.unshift(...room.facts.structure);
+                    waiting.facts.prose = `${room.facts.prose}\n\n${waiting.facts.prose}`;
+                    waiting.calls.unshift(...room.calls);
+                }
                 const noticedWaiting = this.notice(cultivator, run, 'wait');
                 if (noticedWaiting) {
                     waiting.facts.lines.push(noticedWaiting);
@@ -4895,7 +4925,7 @@ ${noticedWaiting}`;
                 return this.treat(run, cultivator, ambient);
 
             case 'buy':
-                return this.buy(run, cultivator, ambient, action.target);
+                return this.buy(run, cultivator, ambient, action.target, rawInput);
 
             case 'sell':
                 return this.sell(run, cultivator, ambient, action.target, rawInput);
@@ -12165,7 +12195,7 @@ ${opened.text}` : receipt,
  * hold, which meant making a row buyable would have thrown the figure away.
  * A price a player never sees is a famine a player never learns about.
  */
-    private whatThisCostsAndWhy(
+    whatThisCostsAndWhy(
         price: Price, cash: number, stones: number, groundHere: number
     ): string[] {
         const said = [
@@ -12191,7 +12221,8 @@ ${opened.text}` : receipt,
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
-        target: string | undefined
+        target: string | undefined,
+        rawInput = ''
     ): Promise<Execution> {
         const query = (target ?? '').trim();
 
@@ -12266,6 +12297,14 @@ ${opened.text}` : receipt,
         // what a wound costs.
         if (price.id === GameService.PRICE_COURSE_OF_CARE || price.id === GameService.PRICE_PHYSICIAN_VISIT) {
             return this.treat(run, cultivator, ambient);
+        }
+        // A bed on the board and "I take a room" are one room: `a-room-at-an-inn.ts`.
+        if (price.id === 'price-inn-night' || price.id === 'price-month-lodging') {
+            return takeARoom(
+                this, run, cultivator,
+                price.id === 'price-month-lodging' ? 30 : nightsAskedFor(rawInput) ?? 1,
+                { bed: price.id }
+            );
         }
 
         const regionId = standingOf(cultivator).regionId;
@@ -18606,6 +18645,15 @@ ${fit.line}`;
     somebodyAtHand(query: string, cultivator: Cultivator): RosterEntry | null {
         const wanted = query.trim();
         const here = this.present(cultivator);
+
+        // THE KEEPER OF A COUNTER HERE: "the innkeeper", "the ticket clerk".
+        // Read off who is standing in the place; see `who-keeps-a-counter-here.ts`.
+        const countersHere = [...theCountersHere(cultivator), ...theBoothsHere(this, cultivator)];
+        const counter = theCounterThisKeeperKeeps(wanted, countersHere);
+        if (counter) {
+            const keeper = whoKeepsTheCounter(this, cultivator, counter, countersHere);
+            return keeper ? here.find(row => row.id === keeper.id) ?? null : null;
+        }
 
         // A TARGET IS A DESCRIPTION, AND EVERY VERB THAT TAKES ONE GETS IT HERE.
         //

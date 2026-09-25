@@ -191,6 +191,16 @@ export function durationAskedFor(input: string): number | null {
 }
 
 /**
+ * Nights asked for at an inn, read as days, or null when the sentence names no span.
+ *
+ * A night is not a unit {@link parseDuration} reads, because "at night" would then
+ * be a one-day span on every verb; this read is only asked where a room is.
+ */
+export function nightsAskedFor(input: string): number | null {
+    return parseDuration(input.toLowerCase().replace(/\bnights?\b/g, 'days'));
+}
+
+/**
  * How many were asked for, or null when the sentence does not say.
  */
 export function parseCount(input: string): number | null {

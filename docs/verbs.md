@@ -89,7 +89,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`move`](#move) | `target` `intent` | time | yes | - | [5](#move) |
 | [`ride`](#ride) | `target` `topic` | time | yes | - | - |
 | [`fold`](#fold) | `target` | time | yes | - | - |
-| [`passage`](#passage) | `target` `intent` | time | yes | - | [2](#passage) |
+| [`passage`](#passage) | `target` `intent` `topic` | time | yes | - | [3](#passage) |
 | [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [5](#oath) |
 | [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
 | [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [7](#coerce) |
@@ -198,7 +198,7 @@ Intents: `travel`, `flee`, `approach`, `enter`, `follow`.
 
 ### `ride`
 
-go somewhere ON something: a mount, a drawn carriage, a spirit boat, or flight on the cultivator's own blade. "target" is the destination; "topic" names what is under them when the player said. The engine picks what actually suits the road out of what they can put under them, charges the walking days the catalog states, and says what the arrival reads as.
+go somewhere ON something: a mount, a drawn carriage, a spirit boat, or flight on the cultivator's own blade. "target" is the destination; "topic" names what is under them when the player said. The engine picks what actually suits the road out of what they can put under them, charges the walking days the catalog states, and says what the arrival reads as. A carriage or a boat they do not own is a seat bought at the counter here, where one runs.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'ride'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.ride` · the deterministic parser reaches it · spends in-world time.
 
@@ -214,13 +214,13 @@ Takes `target`.
 
 ### `passage`
 
-a Shrinking Earth Pavilion counter. "intent" is "board" to read what runs from here and what each costs, or "buy" to take a place on one; "target" is where to. Reading the board is free and is how somebody who has never left their province finds out there are others.
+a counter that sells a place on something going somewhere: a ship from a landing, a carriage from a station, or the Shrinking Earth Pavilion's span. "intent" is "board" to read what runs from here and what each costs, "buy" for a seat, or "hire" for a whole carriage; "target" is where to; "topic" is "ship" or "carriage" (with "shod" for the better carriage) when the sentence named one. A ship is on water; a "boat" the player does not own, at a landing, is the ship. "I take the ship to X", "I buy a ticket to X", "I book a carriage to X", "what ships are there". Reading the board is free. A seat is fed on board and is a roof; bandits mostly watch an escort go by.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'passage'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.passage` · the deterministic parser reaches it · spends in-world time.
 
-Takes `target`, `intent`.
+Takes `target`, `intent`, `topic`.
 
-Intents: `buy`, `board`.
+Intents: `hire`, `buy`, `board`.
 
 ### `oath`
 
@@ -342,7 +342,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'tre
 
 ### `buy`
 
-buy one line off the mortal price board by name. "target" is the thing: a pill, a physician's visit, a course of care, a ferry crossing. Use this rather than "interact" for anything with a price on it - a purchase is not an approach to a person. Food is not bought here: it is eat, or provision.
+buy one line off the mortal price board by name. "target" is the thing: a pill, a physician's visit, a course of care, a ferry crossing. Use this rather than "interact" for anything with a price on it - a purchase is not an approach to a person. Food is not bought here: it is eat, or provision. A ROOM AT THE INN is this, with "target" "a room for the night": "I take a room", "I rent a room for three nights". It pays for the nights, with a meal each, and spends none of them; while it is paid, days waited or sat in that place are under a roof. Below Foundation Establishment a night outdoors costs the body.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'buy'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.buy` · the deterministic parser reaches it.
 
@@ -462,7 +462,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `wait`
 
-let time go by doing nothing in particular. "days" (default 1); "target" names a thing the world has a date for - an intake posted here, a word falling due - and the engine spends the days between now and it. A name nothing here answers to is met with what does have a day on it, never with a day nobody asked for.
+let time go by doing nothing in particular. "days" (default 1); "target" names a thing the world has a date for - an intake posted here, a word falling due - and the engine spends the days between now and it. A name nothing here answers to is met with what does have a day on it, never with a day nobody asked for. Staying the nights AT THE INN is this, with "days" the nights: "I stay at the inn for three nights", "I sleep at the inn". The engine pays for the nights the room does not already cover, then spends them under its roof.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'wait'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 

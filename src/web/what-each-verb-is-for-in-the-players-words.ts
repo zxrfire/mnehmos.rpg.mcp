@@ -225,7 +225,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             on the cultivator's own blade. "target" is the destination; "topic" names what is
             under them when the player said. The engine picks what actually suits the road out
             of what they can put under them, charges the walking days the catalog states, and
-            says what the arrival reads as.`
+            says what the arrival reads as. A carriage or a boat they do not own is a seat
+            bought at the counter here, where one runs.`
     },
     fold: {
         takes: ['target'],
@@ -234,12 +235,17 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             see; the engine says so when they cannot.`
     },
     passage: {
-        takes: ['target', 'intent'],
+        takes: ['target', 'intent', 'topic'],
         intents: PASSAGE_INTENTS,
-        says: `a Shrinking Earth Pavilion counter. "intent" is "board" to read what runs from here and
-            what each costs, or "buy" to take a place on one; "target" is where to. Reading
-            the board is free and is how somebody who has never left their province finds out
-            there are others.`
+        says: `a counter that sells a place on something going somewhere: a ship from a landing,
+            a carriage from a station, or the Shrinking Earth Pavilion's span. "intent" is
+            "board" to read what runs from here and what each costs, "buy" for a seat, or
+            "hire" for a whole carriage; "target" is where to; "topic" is "ship" or "carriage"
+            (with "shod" for the better carriage) when the sentence named one. A ship is on
+            water; a "boat" the player does not own, at a landing, is the ship. "I take the
+            ship to X", "I buy a ticket to X", "I book a carriage to X", "what ships are there".
+            Reading the board is free. A seat is fed on board and is a roof; bandits mostly
+            watch an escort go by.`
     },
     oath: {
         takes: ['target', 'intent', 'topic'],
@@ -395,7 +401,12 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         says: `buy one line off the mortal price board by name. "target" is the thing: a pill, a
             physician's visit, a course of care, a ferry crossing. Use this rather than
             "interact" for anything with a price on it - a purchase is not an approach to a
-            person. Food is not bought here: it is eat, or provision.`
+            person. Food is not bought here: it is eat, or provision.
+
+            A ROOM AT THE INN is this, with "target" "a room for the night": "I take a room",
+            "I rent a room for three nights". It pays for the nights, with a meal each, and
+            spends none of them; while it is paid, days waited or sat in that place are under
+            a roof. Below Foundation Establishment a night outdoors costs the body.`
     },
     sell: {
         takes: ['target'],
@@ -547,7 +558,11 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         says: `let time go by doing nothing in particular. "days" (default 1); "target" names a
             thing the world has a date for - an intake posted here, a word falling due - and
             the engine spends the days between now and it. A name nothing here answers to is
-            met with what does have a day on it, never with a day nobody asked for.`
+            met with what does have a day on it, never with a day nobody asked for.
+
+            Staying the nights AT THE INN is this, with "days" the nights: "I stay at the inn
+            for three nights", "I sleep at the inn". The engine pays for the nights the room
+            does not already cover, then spends them under its roof.`
     },
     work: {
         takes: ['days', 'target'],
