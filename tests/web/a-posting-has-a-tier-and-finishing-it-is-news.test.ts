@@ -39,7 +39,10 @@ async function standingWhereThereIsABoard(seed: string) {
     await say(`ADMIN move ${seat.name}`);
     // The board is inside the walls: stand inside them, where anybody who got in reads it.
     game.repos.cultivators.standIn(game.currentRun().cultivator.id, `${seat.id}#forecourt#board`);
-    return { game, say, world: () => (game as unknown as { atHand: WorldAtHand }).atHand };
+    // News is heard from people, and the board stands in an area of its own with nobody in it.
+    const amongPeople = () => game.repos.cultivators.standIn(
+        game.currentRun().cultivator.id, `${seat.id}#forecourt#the-forecourt`);
+    return { game, say, amongPeople, world: () => (game as unknown as { atHand: WorldAtHand }).atHand };
 }
 
 describe('a posting has a tier', () => {
@@ -90,13 +93,15 @@ describe('finishing one is news', () => {
     }, 300_000);
 
     it('moves what people are repeating, which it could not before', async () => {
-        const { say } = await standingWhereThereIsABoard('tier-c');
+        const { say, amongPeople } = await standingWhereThereIsABoard('tier-d');
         const board = await say('what duties are there');
         const offered = /\n {2}([^:\n]{5,60}): /.exec(board.narration ?? '')?.[1];
         if (!offered) return;
 
+        amongPeople();
         const before = await say('what news is there');
         await say(`I put my name down for ${offered}`);
+        amongPeople();
         const after = await say('what news is there');
         expect(after.narration ?? '').not.toBe(before.narration ?? '');
     }, 300_000);
