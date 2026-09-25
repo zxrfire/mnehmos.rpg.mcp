@@ -728,6 +728,30 @@ export function whoTheActWasPutTo(
     return null;
 }
 
+/** A face as the player sees it: "a woman of about 34". */
+function aFaceAsItIsSeen(person: Pick<SomebodyInTheSquare, 'sex' | 'age'>): string {
+    return `${person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : 'somebody'}`
+        + (Number.isFinite(person.age) ? ` of about ${Math.round(person.age)}` : '');
+}
+
+/**
+ * The people a card names beside its own - who they are with, who they are tied to - said as the
+ * player sees them, where the player cannot put a name to them. Played: "Ties to others here:
+ * child of Jiang Rongru" on one card, and the innkeeper was named on the page.
+ */
+function theOthersAsTheyAreSeen(company: Company, sure: (name: string) => boolean) {
+    const asSeen = (name: string) => {
+        if (sure(name)) return name;
+        const them = company.named.find(other => other.name === name);
+        return them ? aFaceAsItIsSeen(them) : 'somebody';
+    };
+    return (person: SomebodyInTheSquare): SomebodyInTheSquare => ({
+        ...person,
+        withNames: person.withNames.map(asSeen),
+        ...(person.tiesHere ? { tiesHere: person.tiesHere.map(tie => ({ ...tie, name: asSeen(tie.name) })) } : {})
+    });
+}
+
 function aPersonsCard(
     person: SomebodyInTheSquare,
     yourOrdinal: number,
@@ -754,8 +778,7 @@ function aPersonsCard(
     // A face with no name to it is headed by how it looks, the name after it for the rulings.
     // Played: headed by the name with "the page never names them" under it, the narration
     // opened "This is Mo Anlu" for three strangers in one square.
-    const seen = `${person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : 'somebody'}`
-        + (Number.isFinite(person.age) ? ` of about ${Math.round(person.age)}` : '');
+    const seen = aFaceAsItIsSeen(person);
     const heading = nameKnown ? person.name : `${seen} (the rulings call them ${person.name}; the page does not)`;
     const lines = [`- ${heading}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
     if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
@@ -909,6 +932,7 @@ export function thePeopleHere(
     if (company.total === 0) {
         return ['THE PEOPLE HERE: nobody. The player is alone, and the turn is their act and the place.'];
     }
+    const asSeen = theOthersAsTheyAreSeen(company, name => thePlayerIsSureItIsThem(name, awareness, playerSaid));
 
     // A CONVERSATION WITH ONE PERSON is the two of them. Everybody else is handed over as background
     // and nothing more, because the model plays whoever it is handed the most about. See
@@ -920,7 +944,7 @@ export function thePeopleHere(
         return [
             'THE PEOPLE HERE',
             ...kept.map(person => aPersonsCard(
-                person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
+                asSeen(person), yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
                 alreadySaid.has(person.name), alreadyShown.has(person.name), false,
                 thePlayerIsSureItIsThem(person.name, awareness, playerSaid)
             )),
@@ -946,7 +970,7 @@ export function thePeopleHere(
         'THE PEOPLE HERE',
         ...(room ? [room] : []),
         ...carded.map(person => aPersonsCard(
-            person, yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
+            asSeen(person), yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
             alreadySaid.has(person.name), alreadyShown.has(person.name), sitsOut(person),
             thePlayerIsSureItIsThem(person.name, awareness, playerSaid)
         )),

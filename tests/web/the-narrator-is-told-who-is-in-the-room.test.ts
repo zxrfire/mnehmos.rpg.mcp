@@ -229,6 +229,13 @@ describe('the narrator is handed the people in the scene', () => {
         // put to a face. Played: "This is Mo Anlu", for three strangers, the turn after a look.
         const seen = [{ kind: 'cultivator', id: 'n1', name: 'Wei Ciyi', statement: 'Wei Ciyi is a name that got said. What it is remains unknown.', sourceKind: 'witnessed', sourceNote: 'Standing in the same place, in plain sight.' }] as never;
         expect(composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: seen })).toContain('A FACE WITH NO NAME TO IT YET');
+        // Nor on somebody else's card. Played: "Ties to others here: child of Jiang Rongru", and the
+        // innkeeper was named on the page.
+        const family = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);
+        (family.named[1] as { tiesHere?: unknown }).tiesHere = [{ kind: 'child', name: 'Wei Ciyi' }];
+        const tied = thePeopleHere(family, 0, [], null).join('\n');
+        expect(tied).toMatch(/Ties to others here: child of (?:a man|somebody) of about 40/);
+        expect(tied).not.toMatch(/child of Wei Ciyi/);
         expect(unsure).not.toContain('A name that got said');
         expect(unsure.slice(unsure.indexOf('NAMES YOU MAY USE'))).not.toMatch(/^[^\n]*\n[^\n]*Wei Ciyi/);
         expect(composeNarrationUser(FACTS, { ...SCENE, company: square, awareness: met })).not.toContain('A FACE WITH NO NAME TO IT YET');
