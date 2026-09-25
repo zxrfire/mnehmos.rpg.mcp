@@ -10,7 +10,6 @@ import {
     theBenchIsReady,
     whatWouldFill
 } from '../src/data/cultivation/what-an-artifact-is-made-of.js';
-import { whatThisHouseHolds } from '../src/engine/world/what-a-house-keeps-in-its-treasury.js';
 import { ARTIFACTS } from '../src/data/cultivation/artifacts.js';
 import { sectThreat } from '../src/data/cultivation/sects.js';
 import { refiningOrdinalFor } from '../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
@@ -42,7 +41,7 @@ async function main(): Promise<void> {
         const ceiling = acting >= refiningOrdinalFor('heaven')
             ? 'heaven' : acting >= refiningOrdinalFor('earth') ? 'earth' : 'mortal';
         ceilingCount[ceiling]++;
-        const held = whatThisHouseHolds(state.objects, house.id)
+        const held = state.objects.filter(o => o.ownerId === house.id)
             .filter(o => o.kind === 'material')
             .map(o => String(o.data.materialId));
         if (held.length > 0) anyMaterial++;
