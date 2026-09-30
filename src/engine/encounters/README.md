@@ -524,14 +524,36 @@ leaving a bad teacher a real decision rather than an ungrateful one. Whether the
 read was right is engine-only and never reaches a narrator: the player finds out
 by spending the years.
 
-No master means nobody is assessing you, so nobody tells you and you find out by
-failing. `unattachedSignFor` is the lonelier equivalent - a body well off the
-road who evidently sat in one place a long time and then stopped - granting the
-same direction through a worse channel, recorded as `inferred` rather than
-`told`. The asymmetry falls out; it is not a special case.
+The live caller is the web ceiling read. It takes the limit from the manual,
+the dao gate, and the ground, and asks a master in the same area to assess it.
+Only their advice reaches the narrator; the accuracy flag stays out.
+
+Without a master here, `unattachedSignFor` states that observed limit as an
+inference. It once invented bodies, passers-by, and worn ground, none of which
+had a world record. Those signs are removed. No destination or event is created.
 
 Both are refusable. Staying is a choice, and a player who sits in the cave until
 they die of old age has chosen a legitimate ending.
+
+### Hiring a duty out
+
+`holding-a-mission-post.ts` uses the price and responsibility reads in
+`passing-a-duty-down-to-somebody-else.ts`. A member may hold a short mission for
+subcontracting instead of spending it at once. The board remains inside the
+walls, and taking from it keeps the same membership and rung checks.
+
+Hiring is a conversation with a free person in this area, at the post. The
+member pays the contractor from their own purse, and a private oath records the
+contractor's term. The contractor stays there; the member can go elsewhere.
+Hired posts do not occupy the member's body. Each open post settles independently.
+The mission and acceptance day identify its oath, so two different missions
+accepted on one day keep separate terms.
+`a-hired-duty-is-served.ts` closes that term in the world pass and after a played
+turn. Completion pays the member the board's original reward once. A broken
+hire leaves the house's failure on its member and a private broken word with
+the contractor. The house judges unserved work on its due day; an unseen death
+does not announce the failure early. Ending the post releases the hire; the advance payment stays
+paid. Deliveries keep their existing signing and carrying path.
 
 ## What it produces, measured
 
@@ -617,4 +639,3 @@ and it never touches damage, a resolution, or a capability gap.
 - [`../../web/README.md`](../../web/README.md) - `web/encounters.ts`,
   `web/what-is-posted-on-the-wall-here.ts` and `web/what-is-live-for-you-here.ts` are how any
   of this reaches a player.
-

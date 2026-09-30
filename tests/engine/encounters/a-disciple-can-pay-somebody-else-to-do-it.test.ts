@@ -137,6 +137,6 @@ describe('a disciple can pay somebody else to do it', () => {
         const said = whoAnswersForItAfterwards('Shao Mingchen', 'The Tranquil Oasis Sect');
         expect(said).toContain('Shao Mingchen');
         expect(said).toContain('The Tranquil Oasis Sect');
-        expect(said.toLowerCase()).toContain('a stranger the house never heard of');
+        expect(said).toContain("Shao Mingchen's obligation and its terms unchanged");
     });
 });

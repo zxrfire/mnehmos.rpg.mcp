@@ -3,6 +3,7 @@
  */
 
 import { searchingMastersTakeADisciple } from './the-disciples-a-world-opens-with.js';
+import { settleHiredDuties } from './a-hired-duty-is-served.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
@@ -4287,6 +4288,7 @@ function theRegionUnder(state: WorldState, locationId: string | null): string | 
 }
 
 function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
+    settleHiredDuties(state, day);
     const standing = new Set(state.locations.map(l => l.id));
     let home = 0;
     for (let i = 0; i < state.npcs.length; i++) {
@@ -7439,5 +7441,4 @@ function isLeverageFact(state: WorldState, factId: string): boolean {
     const fact = state.history.facts.find(f => f.id === factId);
     return fact?.data?.pressure === 'leverage_applied';
 }
-
 

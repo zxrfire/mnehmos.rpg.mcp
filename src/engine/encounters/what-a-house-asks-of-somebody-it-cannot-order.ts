@@ -4,8 +4,8 @@
  * A house that wants a different answer changes one of its own numbers. There is
  * no `if (factionId === ...)` anywhere below and there must not be one.
  *
- * It does not draw - no RNG and no window; whether an approach ARRIVES is a
- * window question and the draw site is `attemptSummons` in `window.ts`. It does
+ * It does not draw - no RNG and no window. A vacant office in the live world's
+ * external-elder pass is the occasion for these terms. It does
  * not write, and it never refuses an approach because the cultivator is too
  * strong: a house approaching somebody far above it is wasting its own time, and
  * the engine's job is to say what the offer is worth.

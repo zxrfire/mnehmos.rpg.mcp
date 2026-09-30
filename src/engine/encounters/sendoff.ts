@@ -114,38 +114,23 @@ export function sendOffFor(input: {
         quality,
         verdict: 'go',
         correct: believesStalled === assessment.stalled,
-        line: lineFor(assessment, quality),
+        line: lineFor(assessment),
         refusable: true
     };
 }
 
 /**
- * The line, which says less the better the teacher is. A master who can read the
- * student exactly does not justify it; one who is guessing hedges, and the hedge
- * is the only signal the player gets about how much to trust it.
+ * The assessor's advice, without exposing the hidden accuracy of their read.
  */
-function lineFor(assessment: Assessment, quality: ReadQuality): string {
-    const who = assessment.assessorName;
-    const opening = `${who} has looked at this cultivator and says there is nothing further for them here.`;
-
-    const direction = 'No place was named and no method was suggested. ' +
-        'The instruction was to go and come back having understood something.';
-
-    if (quality === 'exact') {
-        return `${opening} They did not explain how they knew. ${direction}`;
-    }
-    if (quality === 'partial') {
-        return `${opening} They took some time over it first. ${direction}`;
-    }
-    return `${opening} They are ${Math.abs(assessment.studentOrdinal - assessment.assessorOrdinal)} rungs ` +
-        `from where the cultivator stands, and reading somebody at that distance is not something ` +
-        `anybody does reliably. ${direction}`;
+function lineFor(assessment: Assessment): string {
+    return `${assessment.assessorName} says there is nothing further for you here and asks you `
+        + 'to leave and return having understood something. No destination was given. You may stay.';
 }
 
 // NOBODY IS WATCHING
 
 /**
- * What the world offers somebody with no master.
+ * A noticed limit without somebody here to assess it. No scene is invented.
  */
 export function unattachedSignFor(input: {
     seed: string;
@@ -158,29 +143,11 @@ export function unattachedSignFor(input: {
 }): { kind: 'unattached_sign'; line: string; sourceKind: 'inferred'; refusable: true } | null {
     if (!input.stalled) return null;
 
-    const rng = forStream(input.seed, 'enc.sign', input.onDay, input.studentId);
-    const which = rng.int(0, SIGNS.length - 1);
-
     return {
         kind: 'unattached_sign',
-        line: `${SIGNS[which].replace('{place}', input.placeName)} Nobody said anything to this ` +
-            'cultivator about it, and there is nobody to ask whether it applies to them.',
+        line: `Your present practice at ${input.placeName} has reached a limit. `
+            + 'No master is assessing you here. You may stay or seek another road.',
         sourceKind: 'inferred',
         refusable: true
     };
 }
-
-/**
- * Ways the world says it without saying it.
- */
-const SIGNS: readonly string[] = [
-    'A body well off the road at {place} was somebody who sat in one place a long ' +
-        'time and then stopped, and what they were carrying is all of the same grade ' +
-        'and none of it is worn.',
-    'The ground at {place} has been worked by this cultivator for long enough that ' +
-        'the marks where they sit are cut into it, and nothing has changed in a while.',
-    'Somebody passing through {place} looked at this cultivator for slightly too long, ' +
-        'said nothing worth repeating, and went on.',
-    'A manual worked at {place} for years opens now to the same page it always ' +
-        'opened to, and the page has stopped saying anything new.'
-];

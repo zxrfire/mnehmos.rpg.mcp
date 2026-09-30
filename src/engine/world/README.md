@@ -1066,6 +1066,23 @@ consequences are in [`../../../docs/world/things/economy.md`](../../../docs/worl
 
 ## NPC records and goals
 
+A vacant office is an occasion for a house to approach a free outsider. The
+external-elder pass reads `approachesTo` after the ordinary promotion bar,
+distance, vacancy, and treasury checks. The agreed admission records the
+house's offer and interest; it never hands a stranger the head's chair.
+
+`reporting-where-a-house-should-look.ts` takes a missing person's name and a
+place the player can point to through a listener of the house in this area.
+`theHouseIsToldWhereToLook` reads that listener's trust, records the lead,
+and clears exhausted search attempts. The next search goes to that reported
+place. The report does not move the missing person or declare them found, and
+the lead is cleared when the house accounts for them again.
+
+`settleHiredDuties` closes private contractor terms before ordinary homecoming
+can credit service. The contractor receives the advance price, while the member
+keeps the board reward and the house's account. The web post reader checks the
+same terms after turns, including spans shorter than the annual world pass.
+
 NPCs are small durable records, not simulated agents. The whole required shape is eight
 fields: identity, cultivation, location, faction, goals, relationships, history (fact ids)
 and memories (memory record ids).

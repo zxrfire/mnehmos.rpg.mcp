@@ -155,7 +155,6 @@ export function whoAnswersForItAfterwards(
     holderName: string,
     houseName: string | null
 ): string {
-    return `${houseName ?? 'The house'} asked ${holderName} and has not been told otherwise. `
-        + `If it is not done, ${holderName} did not do it, on ${holderName}'s own terms for `
-        + 'walking away - and whoever was hired is a stranger the house never heard of.';
+    return `${houseName ?? 'The house'} holds ${holderName} responsible for the work. `
+        + `Hiring a contractor leaves ${holderName}'s obligation and its terms unchanged.`;
 }

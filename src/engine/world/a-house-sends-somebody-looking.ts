@@ -25,7 +25,7 @@ import {
     type NpcRecord
 } from './npc-state.js';
 import { freeToTakeWork, OUT_LOOKING_FOR } from './a-disciple-takes-work-off-the-board.js';
-import { whoTheHouseHasLostTrackOf } from './who-a-house-has-lost-track-of.js';
+import { TOLD_TO_LOOK_AT, whoTheHouseHasLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { isBelowTheLid } from './layers.js';
 import { TOO_LITTLE_TO_BE_BELIEVED } from './somebody-puts-a-name-to-it.js';
 
@@ -88,14 +88,17 @@ export function theyHaveStoppedLooking(
  */
 export function theHouseIsToldWhereToLook(
     state: WorldState,
-    input: { houseId: string; personId: string; toldById: string | null; onDay: number }
+    input: { houseId: string; personId: string; toldById: string | null; onDay: number;
+        locationId?: string; heardById?: string }
 ): boolean {
     const at = state.factions.findIndex(f => f.id === input.houseId);
     if (at < 0) return false;
     const house = state.factions[at]!;
-    if (!theyHaveStoppedLooking(house, input.personId)) return false;
+    if (!theyHaveStoppedLooking(house, input.personId)
+        && !(input.locationId && whoTheHouseHasLostTrackOf(house).some(p => p.personId === input.personId))) return false;
+    if (input.locationId && !state.locations.some(p => p.id === input.locationId)) return false;
 
-    if (input.toldById !== null && !theyWouldTakeTheirWord(state, house, input.toldById)) {
+    if (input.toldById !== null && !theyWouldTakeTheirWord(state, house, input.toldById, input.heardById)) {
         return false;
     }
 
@@ -104,7 +107,8 @@ export function theHouseIsToldWhereToLook(
         tags: house.tags.filter(
             t => t !== `${GAVE_UP_LOOKING_FOR}${input.personId}`
                 && !t.startsWith(`${LOOKED_AND_FOUND_NOTHING}${input.personId}|`)
-        )
+                && !(input.locationId && t.startsWith(`${TOLD_TO_LOOK_AT}${input.personId}|`))
+        ).concat(input.locationId ? [`${TOLD_TO_LOOK_AT}${input.personId}|${input.locationId}|${input.onDay}`] : [])
     };
     return true;
 }
@@ -119,11 +123,13 @@ export function theHouseIsToldWhereToLook(
 function theyWouldTakeTheirWord(
     state: WorldState,
     house: FactionRecord,
-    tellerId: string
+    tellerId: string,
+    heardById?: string
 ): boolean {
     let heardBy = 0;
     for (const npc of state.npcs) {
         if (npc.factionId !== house.id || npc.status !== 'alive') continue;
+        if (heardById !== undefined && npc.id !== heardById) continue;
         const tie = npc.relationships.find(r => r.targetId === tellerId);
         if (tie === undefined || tie.standing > TOO_LITTLE_TO_BE_BELIEVED) heardBy++;
     }
@@ -188,9 +194,10 @@ export function theHousesSendSomebodyLooking(state: WorldState, day: number): Wh
         // them going missing: the errand that took them is the last true thing
         // anybody has. A search reads it rather than guessing.
         const lostRow = state.npcs.find(n => n.id === after.personId) ?? null;
+        const trail = house.tags.find(tag => tag.startsWith(`${TOLD_TO_LOOK_AT}${after.personId}|`));
         state.npcs[at] = withTheErrand(
             searcher, house, after.personId, day, years,
-            lostRow?.locationId ?? null,
+            trail?.split('|')[2] || lostRow?.locationId || null,
             lostRow?.activity?.withIds ?? []
         );
         went.push({ houseId: house.id, searcherId: searcher.id, afterId: after.personId });

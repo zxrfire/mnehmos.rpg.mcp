@@ -170,8 +170,8 @@ describe('the send-off', () => {
             seed: 's', onDay: 100, studentId: 'c1', assessment: assessment(), membership: null
         })!;
         expect(sent.verdict).toBe('go');
-        expect(sent.line).toContain('nothing further for them here');
-        expect(sent.line).toContain('No place was named');
+        expect(sent.line).toContain('nothing further for you here');
+        expect(sent.line).toContain('No destination was given');
         expect(sent.refusable).toBe(true);
     });
 
@@ -227,15 +227,16 @@ describe('the send-off', () => {
 });
 
 describe('nobody watching', () => {
-    it('gives an unattached cultivator the same direction, worse', () => {
+    // The old signs invented deaths and passers-by. A hint now states the
+    // cultivation layer's supplied limit and grants no uncomputed event.
+    it('states a noticed limit without a master assessing it', () => {
         const sign = unattachedSignFor({
             seed: 's', onDay: 100, studentId: 'c1', stalled: true, placeName: 'Burnt Earth'
         })!;
         expect(sign.line).toContain('Burnt Earth');
         expect(sign.sourceKind).toBe('inferred');
         expect(sign.refusable).toBe(true);
-        // No authority, and nobody to ask a follow-up question of.
-        expect(sign.line).toContain('nobody to ask');
+        expect(sign.line).toContain('No master is assessing you here');
     });
 
     it('offers nothing when there is nothing to notice', () => {

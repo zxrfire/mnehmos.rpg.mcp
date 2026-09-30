@@ -588,7 +588,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         takes: ['intent', 'target', 'topic'],
         intents: [
             'leave', 'promote', 'stipend', 'standing', 'join', 'siphon', 'order',
-            'recruit', 'admission', 'curriculum', 'expel', 'duty', 'donate', 'guest',
+            'recruit', 'admission', 'curriculum', 'expel', 'duty', 'hire_duty', 'report_missing', 'donate', 'guest',
             // Dispatched on by the engine and undeclared until now, so the phase-1
             // glossary never told a model they existed and nothing typed reached them.
             'summons', 'refuse',
@@ -616,7 +616,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
-            to take something off the mission board, "donate" to pay money into the house's
+            to take something off the mission board (topic "hire" holds even a short chore
+            for subcontracting), "hire_duty" to hire the person in "target" to serve a standing
+            post, "report_missing" to report the missing person in "target" at the place in
+            "topic" to somebody of their house in this area, "donate" to pay money into the house's
             coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are
             holding in to their own house - "target" names it - which the house credits as
             contribution where it wants the thing and says why where it does not, "guest"

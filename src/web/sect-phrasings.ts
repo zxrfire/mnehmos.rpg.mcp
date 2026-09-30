@@ -31,7 +31,7 @@ export type SectIntent =
     /**
      * The mission board, and taking something off it.
      */
-    | 'duty'
+    | 'duty' | 'hire_duty' | 'report_missing'
     /**
      * Paying into the house's ledger instead of serving it.
      */
@@ -735,6 +735,13 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * else entirely.
  */
 export function leadershipIntent(text: string, input: string): PlannedAction | null {
+    const heldForHire = /\btake\s+(.+?)\s+(?:to hire (?:it )?out|for subcontracting)[.!?]?$/i.exec(input);
+    if (heldForHire && usedAsVerb(text, 'take')) return { action: 'sect', intent: 'duty', topic: 'hire', target: heldForHire[1]!.trim() };
+    const hire = /\bhire\s+(.+?)\s+to\s+(?:do|serve|finish|take over)\s+(?:my|the)\s+(?:duty|post|mission)[.!?]?$/i.exec(input);
+    if (hire && usedAsVerb(text, 'hire')) return { action: 'sect', intent: 'hire_duty', target: hire[1]!.trim() };
+    const reported = /\breport\s+(.+?)\s+(?:seen\s+)?at\s+(.+?)[.!?]?$/i.exec(input);
+    if (reported && usedAsVerb(text, 'report')) return { action: 'sect', intent: 'report_missing',
+        target: reported[1]!.trim(), topic: reported[2]!.trim() };
     // ── SPEAKING FOR SOMEBODY ELSE ───────────────────────────────────────
     //
     // Ahead of the verdict read. A plea is not a verdict - one is a person

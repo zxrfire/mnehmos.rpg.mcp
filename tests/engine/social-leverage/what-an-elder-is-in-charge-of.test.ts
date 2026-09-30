@@ -10,15 +10,15 @@ import { stagnationYearsForOrdinal } from '../../../src/schema/cultivation';
 import {
     READ_AS_FINISHED_AT,
     howFinishedTheyLook,
-    mayDirectAtTheSameRung,
     whatTheHouseMakesOfThem,
     whatTheyHold,
     whoAnswersAbout,
     whoIsInChargeOfWhat,
     officePressureIn,
-    turningThemOutOfTheirRoom,
     whoseCallItIs
 } from '../../../src/engine/social-leverage/what-an-elder-is-in-charge-of';
+import { SECTS } from '../../../src/data/cultivation/sects';
+import { canOrder, elderRungOf } from '../../../src/engine/cultivation/leadership';
 
 const RANKS = ['Servant', 'Outer', 'Inner', 'Core', 'Sword Elder', 'Pavilion Master'];
 const LADDER = RANKS.length;
@@ -221,26 +221,18 @@ describe('what the house makes of them', () => {
     });
 });
 
-describe('an elder directs a conclave disciple at the same rung', () => {
-    const settled = { rankIndex: 4, looksFinished: true };
-    const rising = { rankIndex: 4, looksFinished: false };
-
-    it('lets the settled one direct the rising one', () => {
-        expect(mayDirectAtTheSameRung(settled, rising)).toBe(true);
-    });
-
-    it('does not let it run the other way', () => {
-        expect(mayDirectAtTheSameRung(rising, settled)).toBe(false);
-    });
-
-    it('says nothing between two settled people, or two rising ones', () => {
-        expect(mayDirectAtTheSameRung(settled, { ...settled })).toBe(false);
-        expect(mayDirectAtTheSameRung(rising, { ...rising })).toBe(false);
-    });
-
-    it('is silent across rungs, where the ladder already answers', () => {
-        expect(mayDirectAtTheSameRung(settled, { rankIndex: 1, looksFinished: false }))
-            .toBe(false);
+describe('an elder directs a conclave disciple', () => {
+    it('because every disciple rung sits under every elder rung, so the ladder already answers', () => {
+        // A same-rung rule for a settled elder over a rising one was written
+        // and never called: no house in the catalog puts a disciple's rung at
+        // or above its elder rung, so `canOrder` covers the case it was for.
+        for (const house of SECTS) {
+            const elder = elderRungOf(house.ranks.length);
+            house.ranks.forEach((title, rung) => {
+                if (!/conclave|core disciple|inner|chosen/i.test(title)) return;
+                expect(canOrder(elder, rung), `${house.id} ${title}`).toBe(true);
+            });
+        }
     });
 });
 
@@ -340,68 +332,6 @@ describe('office scarcity is what makes anybody leave', () => {
         // count and a sentence. No rate, no threshold, nobody leaving.
         expect(Object.keys(pressure).sort())
             .toEqual(['line', 'offices', 'settled', 'waiting', 'whoIsWaiting']);
-    });
-});
-
-describe('a head turning an elder out of their room', () => {
-    it('is available rather than blocked, and priced by leadership.ts', () => {
-        const out = turningThemOutOfTheirRoom({
-            personId: 'elder-a', purpose: 'treasury',
-            theirFollowing: 20, houseSize: 60, alreadyDone: 0
-        });
-        expect(out.cost.standingCost).toBeGreaterThan(0);
-        expect(out.purpose).toBe('treasury');
-    });
-
-    it('costs more for an elder with more people behind them', () => {
-        const small = turningThemOutOfTheirRoom({
-            personId: 'a', purpose: 'treasury',
-            theirFollowing: 2, houseSize: 60, alreadyDone: 0
-        });
-        const large = turningThemOutOfTheirRoom({
-            personId: 'b', purpose: 'treasury',
-            theirFollowing: 30, houseSize: 60, alreadyDone: 0
-        });
-        expect(large.cost.standingCost).toBeGreaterThan(small.cost.standingCost);
-    });
-
-    it('compounds, so a head emptying the council pays more each time', () => {
-        const first = turningThemOutOfTheirRoom({
-            personId: 'a', purpose: 'treasury',
-            theirFollowing: 10, houseSize: 60, alreadyDone: 0
-        });
-        const third = turningThemOutOfTheirRoom({
-            personId: 'c', purpose: 'treasury',
-            theirFollowing: 10, houseSize: 60, alreadyDone: 2
-        });
-        expect(third.cost.standingCost).toBeGreaterThan(first.cost.standingCost);
-    });
-
-    it('leaves them an elder rather than nothing', () => {
-        const out = turningThemOutOfTheirRoom({
-            personId: 'elder-a', purpose: 'treasury',
-            theirFollowing: 5, houseSize: 40, alreadyDone: 0
-        });
-        // The rare, earned, strictly-worse seat, reached by being pushed.
-        expect(out.theyBecome).toBe('settled, carried for what they are');
-    });
-
-    it('names who remembers it, which is what the head keeps paying', () => {
-        const out = turningThemOutOfTheirRoom({
-            personId: 'elder-a', purpose: 'treasury',
-            theirFollowing: 5, houseSize: 40, alreadyDone: 0,
-            others: ['elder-b', 'elder-a']
-        });
-        expect(out.whoResents).toEqual(['elder-a', 'elder-b']);
-    });
-
-    it('has no cooldown and no cap - the cost is the limiter', () => {
-        const out = turningThemOutOfTheirRoom({
-            personId: 'a', purpose: 'treasury',
-            theirFollowing: 10, houseSize: 60, alreadyDone: 99
-        });
-        // Still returns a price rather than a refusal, however many times.
-        expect(out.cost.standingCost).toBeGreaterThan(0);
     });
 });
 

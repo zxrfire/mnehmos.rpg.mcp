@@ -22,6 +22,7 @@ import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { MANUAL_QUALITY_TIERS, canTellApart } from '../engine/cultivation/manual-quality.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
+import { sendOffFor, unattachedSignFor } from '../engine/encounters/sendoff.js';
 import { effectiveCapOf, writtenTo } from '../engine/cultivation/escapes.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
 import {
@@ -280,6 +281,30 @@ export const situatedReads = {
 
         const facts = factsForToolResult(read.headline, read.lines);
         facts.structure.push(...read.structure);
+        const present = new Set(this.present(cultivator).map(person => person.id));
+        const master = this.atHand?.npcs.find(npc =>
+            npc.status === 'alive' && present.has(npc.id)
+            && npc.relationships.some(tie => tie.targetId === cultivator.id && tie.kind === 'disciple'));
+        const stalled = manual.state === 'exhausted' || eligibility.reason === 'insufficient_dao'
+            || !canAdvanceHere(where.regionId, cultivator.realmOrdinal);
+        const direction = master
+            ? sendOffFor({
+                seed: run.seed, onDay: Math.floor(run.elapsedDays), studentId: cultivator.id,
+                assessment: {
+                    assessorId: master.id, assessorName: master.name,
+                    assessorOrdinal: master.cultivation.realmOrdinal,
+                    studentOrdinal: cultivator.realmOrdinal, stalled
+                },
+                membership: null
+            })
+            : unattachedSignFor({
+                seed: run.seed, onDay: Math.floor(run.elapsedDays), studentId: cultivator.id,
+                stalled, placeName: placeName(cultivator)
+            });
+        if (direction) {
+            facts.lines.push(direction.line);
+            facts.prose = `${facts.prose}\n\n${direction.line}`;
+        }
         // A hard gate is exactly the kind of fact `required` was built for: the
         // measured failure was a model receiving "without a manual there is no
         // road for the qi to take" inside a long digest and dropping it, after

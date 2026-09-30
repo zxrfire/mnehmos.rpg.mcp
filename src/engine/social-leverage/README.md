@@ -572,6 +572,18 @@ institution.
 
 ## Reading order
 
+The player's elder standing is read through `whatTheHouseMakesOfThem` and
+`officePressureIn` in the web standing verb. Player years at the rung already
+live in `Cultivator.yearsAtCurrentRealm`; NPC years derive from their last
+advancement day. This belief never bars advancement. Offices are dealt from
+the current roll and rooms. Rank orders use `canOrder`; delegated room authority
+uses `authority-for-an-order.ts`. There is no separate same-rung permission or
+room eviction mechanic: removing an elder uses the existing expulsion path.
+
+`servicesDoneForYou` supplies the forward service reader too. Only a term
+settled as `oath_fulfilled` counts as a completed service; a broken, released,
+or forgiven word does not buy an offer.
+
 ```text
 an-attempt-to-move-somebody.ts          the odds, the four outcomes, the marks
 background-as-leverage.ts               what the room weighs about the asker when
@@ -968,4 +980,3 @@ spending; `resolveAttempt` is still the only thing that moves a person.
 - [`../../web/README.md`](../../web/README.md) - where these become sentences a player can
   type: the asking verbs, `what-a-threat-promises.ts`, `going-back-and-forth-over-a-price.ts`,
   `what-asking-this-person-for-this-would-cost-them.ts`.
-

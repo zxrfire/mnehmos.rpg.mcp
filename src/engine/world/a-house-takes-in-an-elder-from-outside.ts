@@ -40,6 +40,7 @@ import { makeFact } from './history.js';
 import { isBelowTheLid } from './layers.js';
 import { isTheWorldsToMove, setLocation, theCatalogStatesTheyAreStanding, type NpcRecord } from './npc-state.js';
 import { whatAnInsiderMustStandAt } from './promotion-inside-a-house.js';
+import { approachesTo } from '../encounters/what-a-house-asks-of-somebody-it-cannot-order.js';
 import { GUEST_OF } from './the-wanderer-the-catalog-names-is-somebody.js';
 
 /**
@@ -150,6 +151,11 @@ export function theHousesTakeInEldersFromOutside(state: WorldState, day: number)
                 || (a.n.id < b.n.id ? -1 : a.n.id > b.n.id ? 1 : 0))[0]?.n;
         if (!chosen) continue;
 
+        // A vacancy is the occasion for terms, not the stranger's bare rung.
+        const approach = approachesTo(chosen.cultivation.realmOrdinal)
+            .find(offer => offer.factionId === house.id);
+        if (!approach) continue;
+
         const at = state.npcs.findIndex(n => n.id === chosen.id);
         if (at < 0) continue;
         const moved = setLocation(state.npcs[at]!, house.seatLocationId, day);
@@ -177,13 +183,14 @@ export function theHousesTakeInEldersFromOutside(state: WorldState, day: number)
             .sort((a, b) => b.factionRankIndex - a.factionRankIndex
                 || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0] ?? null;
         const title = house.ranks[rung] ?? 'elder';
+        const wanted = approach.wants.charAt(0).toLowerCase() + approach.wants.slice(1);
         appendWorldFact(state, makeFact({
             day,
             kind: 'promotion',
             scale: 'local',
             summary: `${chosen.name} was taken in from outside as ${title} of the `
                 + `${house.name.replace(/^[Tt]he\s+/, '')}, at ${rankName(chosen.cultivation.realmOrdinal)}, `
-                + `for ${price} spirit stones.`,
+                + `for ${price} spirit stones. The house asked for ${wanted}`,
             actors: [
                 { id: chosen.id, name: chosen.name, role: 'taken_in' },
                 ...(decider ? [{ id: decider.id, name: decider.name, role: 'took_them_in' }] : [])
@@ -193,7 +200,8 @@ export function theHousesTakeInEldersFromOutside(state: WorldState, day: number)
             visibility: 'faction',
             magnitude: 0.4,
             causeKnown: true,
-            data: { fromOutside: true, toRank: rung, rankCount, realmOrdinal: chosen.cultivation.realmOrdinal, price }
+            data: { fromOutside: true, toRank: rung, rankCount, realmOrdinal: chosen.cultivation.realmOrdinal, price,
+                approachKind: approach.kind, wants: approach.wants }
         }), { recur: false });
     }
     return takenIn;

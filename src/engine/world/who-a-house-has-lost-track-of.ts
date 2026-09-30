@@ -32,6 +32,8 @@ export const THE_WORLD_LOST_SIGHT_OF = 'lost-sight-of|';
 
 /** On a house: one of its own it does not know the whereabouts of. */
 export const THE_HOUSE_LOST_TRACK_OF = 'lost-track-of|';
+/** The place somebody reported for the next search, held by the house. */
+export const TOLD_TO_LOOK_AT = 'told-to-look-at|';
 
 /** The mark a world pass leaves on somebody it has lost sight of. */
 export function lostSightOnDay(onDay: number): string {
@@ -98,7 +100,8 @@ export function theHouseLosesTrackOf<H extends Pick<FactionRecord, 'tags'>>(hous
 
 /** The house, knowing again what became of somebody. */
 export function theHouseKnowsAgain<H extends Pick<FactionRecord, 'tags'>>(house: H, personId: string): H {
-    return { ...house, tags: house.tags.filter(t => fromTag(t)?.personId !== personId) };
+    return { ...house, tags: house.tags.filter(t => fromTag(t)?.personId !== personId
+        && !t.startsWith(`${TOLD_TO_LOOK_AT}${personId}|`)) };
 }
 
 /**

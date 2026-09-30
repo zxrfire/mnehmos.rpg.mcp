@@ -6,6 +6,9 @@
  * ruled it back: *"it ought to be the same bar as internal elder, just
  * external."*
  *
+ * A vacant office also gives the house an occasion to put terms to the outsider;
+ * the admission records what the house wants alongside the agreed seat.
+ *
  * See `a-house-takes-in-an-elder-from-outside.ts`.
  */
 
@@ -73,6 +76,11 @@ describe('a house takes in an elder from outside', () => {
         expect(taken.tags).toContain(`${TAKEN_IN_AS_AN_ELDER}${SECT.id}`);
         expect(state.factions[0]!.resources.spirit_stones).toBe(before - whatTakingInAnElderCosts(SECT.id, RUNG, 0)!);
         expect(state.history.facts.some(f => f.summary.includes('taken in from outside'))).toBe(true);
+        const admission = state.history.facts.find(f => f.data?.fromOutside === true)!;
+        expect(admission.data?.approachKind).toBeDefined();
+        expect(typeof admission.data?.wants).toBe('string');
+        const wanted = String(admission.data?.wants);
+        expect(admission.summary).toContain(wanted.charAt(0).toLowerCase() + wanted.slice(1));
     });
 
     it('takes nobody who stands under the elder bar', () => {

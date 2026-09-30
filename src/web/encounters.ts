@@ -1583,6 +1583,7 @@ export function acceptDuty(input: DutyLedgerInput): ObligationRecord {
         cause: duty.origin === 'summons' ? 'sect_vow' : 'service_term',
         severity: duty.refusal.severity,
         onDay: input.onDay,
+        triggeringEventId: input.entryId,
         description: `${input.what} Accepted on day ${input.onDay}.`,
         terms: `${duty.days} days. Paid on completion: ` +
             `${duty.contribution} contribution, ${duty.stones} spirit stones.`,
@@ -1616,6 +1617,7 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
         cause: duty.origin === 'summons' ? 'sect_vow' : 'service_term',
         severity: duty.refusal.severity,
         onDay: acceptedOn,
+        triggeringEventId: input.entryId,
         description: `${input.what} Accepted on day ${acceptedOn}.`,
         // AND THE TERMS, WHICH `acceptDuty` WROTE AND THIS DROPPED. A settled
         // row with `terms: null` is a row that cannot say what was agreed, and

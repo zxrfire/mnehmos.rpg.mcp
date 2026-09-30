@@ -490,6 +490,8 @@ import {
 } from './false-decree-reports.js';
 import type { ContactPerson } from '../engine/encounters/contact.js';
 import type { HousePosition } from './standing.js';
+import { elderStandingLines } from './elder-standing-lines.js';
+import { reportWhereTheHouseShouldLook } from './reporting-where-a-house-should-look.js';
 import {
     THE_HOUSE_ANSWERS,
     aTakenCopyOf,
@@ -819,6 +821,7 @@ import {
     walkOverToTheBoard
 } from './the-mission-board-inside-a-house.js';
 import {
+    hireForYourDuty,
     leaveTheMissionPost,
     settleTheMissionPostTheyHold,
     takeUpTheMissionPost,
@@ -8224,8 +8227,14 @@ ${noticed}`;
         // parsed to `unclear`, so a player could join a house and then do
         // nothing whatever about it for the rest of the run.
         switch (intent) {
+            case 'hire_duty':
+                this.atHand = this.atHand ?? await this.loadWorld();
+                return hireForYourDuty(this, run, cultivator, target);
+            case 'report_missing':
+                this.atHand = this.atHand ?? await this.loadWorld();
+                return reportWhereTheHouseShouldLook(this, run, cultivator, target, topic);
             case 'duty':
-                return this.duty(run, cultivator, ambient, target);
+                return this.duty(run, cultivator, ambient, target, topic === 'hire');
 
             // Answering the house, or not, or not yet.
             case 'summons':
@@ -8611,6 +8620,17 @@ ${noticed}`;
                         'Asked whether they could leave rather than told to. Read only: '
                         + 'sect_members untouched, no turn spent.'
                     );
+                }
+
+                // AND AT AN ELDER'S RUNG, WHAT THE HOUSE MAKES OF THEM
+                if (held) {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    const elder = this.atHand ? elderStandingLines(this.atHand, cultivator, held) : null;
+                    for (const line of elder?.lines ?? []) {
+                        read.facts.lines.push(line);
+                        read.facts.prose = `${read.facts.prose}\n\n${line}`;
+                    }
+                    read.facts.structure.push(...(elder?.structure ?? []));
                 }
 
                 // ── AND WHAT THE RECORD MAKES THEM, WHICH IS THE OTHER HALF ──
@@ -17323,7 +17343,8 @@ ${fit.line}`;
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
-        target: string | undefined
+        target: string | undefined,
+        forHire = false
     ): Promise<Execution> {
         this.atHand = this.atHand ?? await this.loadWorld();
         // THE BOARD IS INSIDE, and a stranger outside the gate is answered by the gate: that the
@@ -17332,7 +17353,7 @@ ${fit.line}`;
         const atTheGate = theGateAStrangerStandsAt(this, cultivator);
         if (atTheGate) return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
         const walked = walkOverToTheBoard(this, cultivator);
-        const done = await this.dutyWhereTheyStand(run, walked?.cultivator ?? cultivator, ambient, target);
+        const done = await this.dutyWhereTheyStand(run, walked?.cultivator ?? cultivator, ambient, target, forHire);
         if (walked) {
             shownFirstWithNoModel(done.facts, walked.line);
             done.facts.structure.push(walked.structure);
@@ -17344,7 +17365,8 @@ ${fit.line}`;
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
-        target: string | undefined
+        target: string | undefined,
+        forHire = false
     ): Promise<Execution> {
         const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
         const board = theWallWhereTheyStand(this, cultivator, sectBoardFor(deps, cultivator));
@@ -17584,7 +17606,7 @@ ${fit.line}`;
         // ends in the middle leaves a standing obligation somebody can read in
         // forty years, and `refuseDuty` is what settles it the other way.
         // ONE POST AT A TIME: somebody on post is somewhere, for years.
-        const onPost = isHeldAsAPost(chosen.entry.id) ? theMissionPostOnTheSheet(this, cultivator) : null;
+        const onPost = (isHeldAsAPost(chosen.entry.id) || forHire) ? theMissionPostOnTheSheet(this, cultivator, true) : null;
         if (onPost !== null) {
             return refused('encounters.acceptDuty', 'sect', factsForRefusal(
                 'You are on post already.',
@@ -17597,7 +17619,9 @@ ${fit.line}`;
         // `what-a-house-sends-its-sisters.ts`.
         if (isADelivery(chosen.entry.id)) return this.signForADelivery(run, cultivator, chosen, duty, sworn);
         // A MISSION ABOVE THE OUTER RUNG IS HELD, not spent at once. See `holding-a-mission-post.ts`.
-        if (isHeldAsAPost(chosen.entry.id)) return takeUpTheMissionPost(this, run, cultivator, chosen, duty, sworn);
+        if (isHeldAsAPost(chosen.entry.id) || (forHire && theMissionBehind(chosen.entry.id) !== null)) {
+            return takeUpTheMissionPost(this, run, cultivator, chosen, duty, sworn);
+        }
 
         // ── AND YOU SAID SO TO SOMEBODY ──────────────────────────────────
         //
