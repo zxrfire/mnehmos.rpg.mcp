@@ -4,7 +4,7 @@ import { foldPersonKnowledgeKeys } from './folding-a-persons-two-knowledge-keys-
 import { makeTheObligationSubjectOptional } from './optional-obligation-subject.js';
 
 /**
- * Social memory persistence: relationships, obligations, knowledge, secrets.
+ * Social memory persistence: relationships, obligations, knowledge.
  *
  * SQLite is the source of truth for everything the world remembers about
  * everybody. The runtime agent reasons FROM these rows - whether a grudge is
@@ -14,8 +14,7 @@ import { makeTheObligationSubjectOptional } from './optional-obligation-subject.
  *
  * In this subsystem that has unusually sharp teeth, because these tables
  * deliberately store things that are FALSE. A `knowledge_records` row is not a
- * fact. A `secret_holdings` row with status `falsified` is not the secret.
- * `world_facts` is the only table here that says what is true, and no
+ * fact. `world_facts` is the only table here that says what is true, and no
  * character-facing query is allowed to read it.
  *
  * Idempotent; safe on every startup. Wired into migrate() in migrations.ts by
@@ -52,11 +51,11 @@ import { makeTheObligationSubjectOptional } from './optional-obligation-subject.
  *    `claim_key` carries the topic instead, and is what the belief indexes are
  *    built on.
  *
- * 5. **Secrets extend, they do not duplicate.** The existing `secrets` table
- *    in migrations.ts owns a secret's content. `secret_holdings` adds the two
- *    things it lacks: a per-holder lifecycle richer than one `revealed`
- *    boolean, and the knowledge that a secret is held by four people, suspected
- *    by a fifth, and held in a doctored version by a sixth who paid for it.
+ * 5. **Who holds a secret is a knowledge row.** The `secrets` table in
+ *    migrations.ts owns a secret's content. A `secret_holdings` table once sat
+ *    here beside `knowledge_records` and nothing ever wrote to it; the
+ *    knowledge row already says who holds a claim, in what stance, got how and
+ *    from whom, and in what false version. See `engine/social/secrets.ts`.
  */
 export function migrateSocial(db: Database.Database): void {
     db.exec(`
@@ -349,63 +348,6 @@ export function migrateSocial(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_knowledge_revisions_holder
       ON knowledge_revisions(holder_id, claim_key, on_day);
-
-    -- ── SECRETS: PER-HOLDER LIFECYCLE ────────────────────────────────────
-    -- Extends the existing "secrets" table rather than duplicating it. See
-    -- header note 5. secret_id points at secrets(id); no content is restated.
-    --
-    -- No foreign key to secrets: that table is owned by migrations.ts and is
-    -- world-scoped, and a holding for a secret in a world that was dropped
-    -- should not take the holder's history with it.
-    CREATE TABLE IF NOT EXISTS secret_holdings (
-      id TEXT PRIMARY KEY,
-      secret_id TEXT NOT NULL,
-      holder_id TEXT NOT NULL,
-      holder_kind TEXT NOT NULL DEFAULT 'character', -- character | faction | public
-      status TEXT NOT NULL,                          -- unknown | suspected | discovered | stolen | traded | leaked | suppressed | falsified | misunderstood
-
-      -- What this holder actually has, when it is not the secret itself. The
-      -- falsified and misunderstood cases act on this string, and keeping it
-      -- apart from the real content is what lets a doctored secret be sold
-      -- onward, believed, and eventually found out.
-      held_version TEXT,
-
-      acquired_on_day INTEGER NOT NULL,
-      acquired_from_id TEXT,                         -- who they got it from
-      price TEXT,                                    -- what it cost, for a trade; prose
-      note TEXT NOT NULL DEFAULT '',
-      tags TEXT NOT NULL DEFAULT '[]',               -- JSON array
-      last_changed_on_day INTEGER NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    -- One position per (secret, holder), enforced.
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_secret_holdings_pair
-      ON secret_holdings(secret_id, holder_id);
-    -- "Who could give this away."
-    CREATE INDEX IF NOT EXISTS idx_secret_holdings_secret ON secret_holdings(secret_id);
-    -- "What does this person have to trade."
-    CREATE INDEX IF NOT EXISTS idx_secret_holdings_holder ON secret_holdings(holder_id);
-    CREATE INDEX IF NOT EXISTS idx_secret_holdings_status ON secret_holdings(status);
-
-    -- Every transition, append-only. The history is the valuable part: a
-    -- secret currently 'suppressed' that was 'leaked' for two years in between
-    -- is a very different problem from one that was never out, and only the
-    -- log can tell them apart.
-    CREATE TABLE IF NOT EXISTS secret_events (
-      id TEXT PRIMARY KEY,
-      secret_id TEXT NOT NULL,
-      holder_id TEXT NOT NULL,
-      on_day INTEGER NOT NULL,
-      from_status TEXT,                              -- NULL for the first entry
-      to_status TEXT NOT NULL,
-      actor_id TEXT,                                 -- the thief, the broker, the elder
-      note TEXT NOT NULL DEFAULT '',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_secret_events_secret ON secret_events(secret_id, on_day);
-    CREATE INDEX IF NOT EXISTS idx_secret_events_holder ON secret_events(holder_id, on_day);
   `);
 
   // A data migration rather than a shape one, and the only one in this file.

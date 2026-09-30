@@ -11,7 +11,6 @@ import { migrateSocial } from '../../../src/storage/migrations.social.js';
 import { createGrudge, inheritOnDeath } from '../../../src/engine/social/grudges.js';
 import { createRelationship } from '../../../src/engine/social/relationships.js';
 import { recordFact, recordKnowledge } from '../../../src/engine/social/knowledge.js';
-import { createHolding } from '../../../src/engine/social/secrets.js';
 import { daysForYears } from '../../../src/engine/social/common.js';
 
 describe('migrateSocial', () => {
@@ -43,9 +42,7 @@ describe('migrateSocial', () => {
                 'world_facts',
                 'world_fact_subjects',
                 'knowledge_records',
-                'knowledge_revisions',
-                'secret_holdings',
-                'secret_events'
+                'knowledge_revisions'
             ])
         );
     });
@@ -63,9 +60,7 @@ describe('migrateSocial', () => {
             'relationship_events',
             'obligations',
             'world_facts',
-            'knowledge_records',
-            'secret_holdings',
-            'secret_events'
+            'knowledge_records'
         ];
         for (const table of socialTables) {
             const columns = (
@@ -308,53 +303,6 @@ describe('migrateSocial', () => {
                 )
                 .run()
         ).not.toThrow();
-    });
-
-    it('round-trips a secret holding and enforces one position per pair', () => {
-        const holding = createHolding({
-            secretId: 'secret_1',
-            holderId: 'yun_qi',
-            status: 'falsified',
-            onDay: 100,
-            heldVersion: 'The elder kept the stones.',
-            acquiredFromId: 'a_broker',
-            price: 'Two hundred stones.'
-        });
-        const insert = db.prepare(
-            `INSERT INTO secret_holdings (
-               id, secret_id, holder_id, holder_kind, status, held_version,
-               acquired_on_day, acquired_from_id, price, note, tags, last_changed_on_day
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        );
-        const args = [
-            holding.id,
-            holding.secretId,
-            holding.holderId,
-            holding.holderKind,
-            holding.status,
-            holding.heldVersion,
-            holding.acquiredOnDay,
-            holding.acquiredFromId,
-            holding.price,
-            holding.note,
-            JSON.stringify(holding.tags),
-            holding.lastChangedOnDay
-        ] as const;
-        insert.run(...args);
-
-        const row = db
-            .prepare('SELECT * FROM secret_holdings WHERE secret_id = ? AND holder_id = ?')
-            .get('secret_1', 'yun_qi') as Record<string, unknown>;
-        expect(row.status).toBe('falsified');
-        expect(row.held_version).toBe('The elder kept the stones.');
-
-        expect(() => insert.run(...args)).toThrow();
-
-        // A secret in the database that nobody holds reaches nobody.
-        const orphan = db
-            .prepare('SELECT COUNT(*) AS n FROM secret_holdings WHERE secret_id = ?')
-            .get('secret_nobody_has') as { n: number };
-        expect(orphan.n).toBe(0);
     });
 
     it('cascades relationship events with their relationship but keeps obligations independent', () => {

@@ -258,7 +258,8 @@ be identical.** Whatever distinguishes them lives in the world and in the player
 evidence, never in what the turn says.
 
 Everything needed is already here. `interact` has a `deceive` intent. `knowledge.ts` keeps
-what somebody has heard of separate from what is true. `secrets.ts` is written and unwired.
+what somebody has heard of separate from what is true, including who holds a secret and in
+what version.
 The discovery rule already forbids the narrator naming what the player has not earned.
 What is missing is the join: **a thing that is true in the world, believed or not by the
 player, with the belief and the truth stored separately and never compared in the prose.**

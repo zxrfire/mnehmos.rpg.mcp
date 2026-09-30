@@ -26,8 +26,7 @@ The pieces the runtime agent's prompt is assembled from. A slice is composed, ne
 - [`../../../schema/README.md`](../../../schema/README.md) - `agent.ts` is the binding shape
   and `character.ts` the sheet `character_state` is built from.
 - [`../../../engine/social/README.md`](../../../engine/social/README.md) - the `secrets` slice
-  is prompt text; `social/secrets.ts` and `social/knowledge.ts` are what the world records
-  about who knows what. Handing a fact to a model does not file it.
+  is prompt text; `social/knowledge.ts` is what the world records about who knows what. Handing a fact to a model does not file it.
 - [`../../../web/prompt.ts`](../../../web/prompt.ts) - the prompts that actually run during
   play, which share no code with these slices.
 

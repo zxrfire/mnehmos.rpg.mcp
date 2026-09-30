@@ -156,7 +156,7 @@ written saying what discharged it. The schema offers no column that could be use
 forget something quietly. See [`../engine/social/README.md`](../engine/social/README.md).
 
 **The social tables deliberately store falsehoods.** A `knowledge_records` row is not a
-fact. A `secret_holdings` row with status `falsified` is not the secret. `world_facts` is
+fact, and a false version of a secret is a knowledge row held with conviction. `world_facts` is
 the only table there that says what is true, and **no character-facing query may read
 it.**
 

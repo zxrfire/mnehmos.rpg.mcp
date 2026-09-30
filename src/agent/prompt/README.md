@@ -39,5 +39,4 @@ code already owns, the code is the source and the slice reads it.
   a table: `agent.repo.ts`, `character.repo.ts`, `inventory.repo.ts`,
   `npc-memory.repo.ts`, `scene.repo.ts`.
 - [`../../engine/social/README.md`](../../engine/social/README.md) - the `secrets` slice is a
-  prompt input; `social/secrets.ts` and `social/knowledge.ts` are what the WORLD holds about
-  who knows what. Putting a fact in a prompt does not file it.
+  prompt input; `social/knowledge.ts` is what the WORLD holds about who knows what. Putting a fact in a prompt does not file it.

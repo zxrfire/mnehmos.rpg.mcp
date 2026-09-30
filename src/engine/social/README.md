@@ -318,26 +318,17 @@ prematurely, and leaves room for one to be found later.
 
 ---
 
-## Secrets: a lifecycle, and who is holding each one
+## Secrets: who holds one is a knowledge row
 
-`src/storage/repos/secret.repo.ts` and the `secrets` table already exist and are not
-duplicated here. That system owns the **content** of a secret: its name, its public and
-hidden descriptions, its world, its sensitivity, its leak patterns. `secrets.ts` in this
-directory adds the two things that system does not have.
+`src/storage/repos/secret.repo.ts` and the `secrets` table own the **content** of a
+secret: its name, its public and hidden descriptions, its sensitivity, its leak patterns.
+Its one `revealed` flag is global, and a secret in this world is held by particular people.
 
-**1. A lifecycle.** The existing model is a boolean - `revealed`, plus the condition that
-flipped it. That cannot express a secret that was *stolen* rather than discovered, *traded*
-for something, *leaked* by a third party, deliberately *suppressed* after the fact,
-*falsified* so that what circulates is wrong, or *misunderstood* by the person who now has
-it. Those are different situations with different consequences.
-
-**2. Holders.** `revealed` is a global flag: once true, it is true for everybody. A secret
-in this world is held by particular people, in particular states, acquired on particular
-dates from particular sources. Two people can hold the same secret in different states,
-and one of them can be wrong.
-
-A falsified holding is the sharpest case: what circulates is not the secret, and the
-engine knows both.
+That second half is `knowledge.ts`. A per-holder secret ledger once sat beside it in
+`secrets.ts` and nothing ever wrote to it, because a knowledge row already carries the
+holder, the stance, how it was got (`told`, `taken`, `fabricated`), whom it came from,
+and a false version held with conviction. `secrets.ts` keeps only the vocabulary for where
+a secret stands with somebody, which the catalog describes its secrets in.
 
 ---
 
@@ -352,7 +343,7 @@ knowledge.ts      objective reality kept apart from knows / believes / suspects,
 discovery.ts      the six-stage ladder of knowing, as a property of an ordinary
                   knowledge record rather than a table of its own
 travellers.ts     who came through, and which names they brought with them
-secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
+secrets.ts        the words for where a secret stands with somebody
 shame.ts          a fact about somebody that other people hold and that lowers
                   them - neither a grudge nor a secret
 how-near-you-stand-to-somebody.ts

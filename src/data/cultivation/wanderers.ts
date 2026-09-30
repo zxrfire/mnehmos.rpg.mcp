@@ -271,9 +271,9 @@ export const WandererSchema = z.object({
     }),
     inheritances: z.array(MobileInheritanceSchema),
     /**
-     * A secret with an explicit holder set, which is what the secret lifecycle in
-     * `src/engine/social/secrets.ts` is for: the inheritors and the Court members
-     * who already know are the holders, and an outsider can only be `unknown`,
+     * A secret with an explicit holder set, in the words of
+     * `src/engine/social/secrets.ts`: the inheritors and the Court members who
+     * already know are the holders, and an outsider can only be `unknown`,
      * `suspected`, `leaked` into, or `misunderstood`. Nothing new is invented here;
      * this records who holds it and what breaking it costs.
      */
