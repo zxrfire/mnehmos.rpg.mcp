@@ -61,7 +61,7 @@ import {
 } from '../engine/world/a-thing-somebody-ended-is-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
 import { npcsInFaction } from '../engine/world/world-state.js';
-import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
+import { whoHereRecognisesIt } from '../engine/world/artifact-recognition.js';
 import {
     isRuined,
     isTracked,
@@ -979,7 +979,11 @@ export const combatVerbs = {
     },
 
     /**
-     * What the person in front of them made of the thing in their hand.
+     * What the people in this area made of the thing in the player's hand.
+     *
+     * The whole area reads it, not only the one being fought: a blade drawn in
+     * front of three people is seen by three people, and whoever of them can
+     * place it knows it from then on. The area is `present`, three at most.
      */
     whatTheySawYouCarrying(
         this: GameService,
@@ -989,74 +993,99 @@ export const combatVerbs = {
     ): Execution {
         const carried = held.self.weapon;
         const them = held.theirRecord;
-        // Nobody real is looking, or there is nothing in the hand. A described
-        // opponent has no record to learn anything onto, and inventing one
-        // would be writing a fact nobody established.
-        if (!carried || !them || !this.atHand) return execution;
+        if (!carried || !this.atHand) return execution;
 
         const at = this.atHand.objects.findIndex(object => object.id === carried.id);
         if (at < 0) return execution;
         const thing = this.atHand.objects[at];
 
+        // A described opponent has no record to learn anything onto, so only
+        // people the world holds are asked.
+        const lookingOn = (id: string, factionId: string | null, realmOrdinal: number) => ({
+            id,
+            factionId,
+            realmOrdinal,
+            referenceFor: (house: string) => this.knowledge.stageOf(id, 'sect', house)
+        });
+        const room = [
+            ...(them ? [{
+                ...lookingOn(them.id, them.factionId, them.cultivation.realmOrdinal),
+                name: held.party.name,
+                facing: true,
+                known: true
+            }] : []),
+            ...this.present(cultivator)
+                .filter(row => row.alive && row.id !== them?.id)
+                .map(row => ({
+                    ...lookingOn(row.id, row.sectId, row.realmOrdinal),
+                    name: row.name,
+                    facing: false,
+                    known: this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
+                }))
+        ];
+
         // WHO IS HOLDING IT UP, not what the register says. The player's
         // holding lives in their pouch and the world row goes on saying nobody
-        // has it, which is the coherent state a stolen thing is in - so the
-        // check is told what is actually in front of the observer. Reading the
-        // row's own possessor here made a recognised theft read as somebody
-        // merely knowing the object, which is how this was found.
-        const read = whatTheyRecogniseAboutIt({ ...thing, possessorId: cultivator.id }, {
-            id: them.id,
-            factionId: them.factionId,
-            realmOrdinal: them.cultivation.realmOrdinal,
-            referenceFor: (factionId: string) => this.knowledge.stageOf(them.id, 'sect', factionId)
-        });
-        if (read.reading === 'nothing') return execution;
+        // has it, which is the coherent state a stolen thing is in.
+        const recognised = whoHereRecognisesIt({ ...thing, possessorId: cultivator.id }, room);
+        if (recognised.length === 0) return execution;
 
-        // They know now, and they go on knowing. Written before the line is
+        // They know now, and they go on knowing. Written before the lines are
         // composed, so a narration that never runs cannot lose the fact.
-        if (!knowsOwnership(thing, them.id)) {
-            this.atHand.objects[at] = revealOwnership(thing, them.id);
+        for (const { observer } of recognised) {
+            if (knowsOwnership(this.atHand.objects[at], observer.id)) continue;
+            this.atHand.objects[at] = revealOwnership(this.atHand.objects[at], observer.id);
             this.theWorldMoved();
         }
 
-        const line = read.inTheWrongHands
-            ? `${held.party.name} looks at ${thing.name} in your hand and knows what it is. `
-                + `It is ${read.ownerName || 'somebody else'}'s, and you are not them.`
-            : `${held.party.name} knows ${thing.name} on sight.`;
+        const lines: string[] = [];
+        const facing = recognised.find(row => row.observer.facing);
+        if (facing) {
+            lines.push(facing.read.inTheWrongHands
+                ? `${held.party.name} looks at ${thing.name} in your hand and knows what it is. `
+                    + `It is ${facing.read.ownerName || 'somebody else'}'s, and you are not them.`
+                : `${held.party.name} knows ${thing.name} on sight.`);
+        }
+        const watching = recognised.filter(row => !row.observer.facing);
+        if (watching.length > 0) {
+            const named = watching.filter(row => row.observer.known).map(row => row.observer.name);
+            const unnamed = watching.length - named.length;
+            const who = [
+                ...named,
+                ...(unnamed === 0 ? [] : [unnamed === 1 ? 'somebody standing by' : `${unnamed} others standing by`])
+            ];
+            const subject = who.length === 1 ? who[0] : `${who.slice(0, -1).join(', ')} and ${who[who.length - 1]}`;
+            const sentence = `${subject.charAt(0).toUpperCase()}${subject.slice(1)} `
+                + `${watching.length === 1 ? 'knows' : 'know'} ${thing.name} on sight`;
+            lines.push(watching.some(row => row.read.inTheWrongHands)
+                ? `${sentence}, and whose it is.`
+                : `${sentence}.`);
+        }
 
         // `required`, and `prose` as well as `lines`. What somebody has learned
-        // about you is not decoration - it is the whole consequence of carrying
-        // the thing, and a narrator that drops it leaves the player believing
-        // they walked in unread.
-        execution.facts.lines.push(line);
-        execution.facts.required = [...(execution.facts.required ?? []), line];
-        execution.facts.prose = [execution.facts.prose, line].join('\n');
-        // NAMES, NOT ROW IDS. This printed four database ids at a player -
-        // the object's, the reader's, the owner's and the holder's - in the
-        // channel that is shown in every mode and rewritten by nobody. Found
-        // by playing, after `no-source-in-the-players-face` was given a swing
-        // to take: the guard was right and had never been handed this path.
-        //
-        // The figures stay, because the mechanical channel is where figures
-        // belong and the two of them are a real fact about the reading - what
-        // their rung affords, and what having seen one before affords. What
-        // goes is the arithmetic said out loud at the end.
-        execution.facts.structure.push(
-            `${thing.name} read by ${them.name}: their rung affords ${read.fromRealm}, `
-            + `having seen one before affords ${read.fromReference} at stage `
-            + `${read.reference}, and what they get is ${read.reading}. Held by `
-            + `${cultivator.name}, owned by ${thing.ownerName || 'nobody'}. `
-            + (read.toldWhereItCameFrom
-                ? 'They had been told where it came from.'
-                : 'Nobody told them; this is what they can see for themselves.')
-        );
+        // about you is the whole consequence of carrying the thing.
+        execution.facts.lines.push(...lines);
+        execution.facts.required = [...(execution.facts.required ?? []), ...lines];
+        execution.facts.prose = [execution.facts.prose, ...lines].join('\n');
+        // Names, not row ids: this channel is shown in every mode.
+        for (const { observer, read } of recognised) {
+            execution.facts.structure.push(
+                `${thing.name} read by ${observer.name}: their rung affords ${read.fromRealm}, `
+                + `having seen one before affords ${read.fromReference} at stage `
+                + `${read.reference}, and what they get is ${read.reading}. Held by `
+                + `${cultivator.name}, owned by ${thing.ownerName || 'nobody'}. `
+                + (read.toldWhereItCameFrom
+                    ? 'They had been told where it came from.'
+                    : 'Nobody told them; this is what they can see for themselves.')
+            );
+        }
         execution.calls.push({
             name: 'world.revealOwnership',
             action: held.verb,
             summary:
-                `${them.name} recognised ${thing.name} (${read.reading}) and is now on its `
-                + `knownOwnershipBy. inTheWrongHands=${read.inTheWrongHands}. Ownership itself was `
-                + 'not touched: recognising a thing does not move it.',
+                `${recognised.length} in this area recognised ${thing.name} and are now on its `
+                + `knownOwnershipBy. inTheWrongHands=${recognised.some(row => row.read.inTheWrongHands)}. `
+                + 'Ownership itself was not touched: recognising a thing does not move it.',
             ok: true
         });
         return execution;
