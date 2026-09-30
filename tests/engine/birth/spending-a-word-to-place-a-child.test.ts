@@ -4,7 +4,6 @@ import {
     doorsOf,
     housesWithTwoDoors,
     howAChildAtZeroGetsIn,
-    placementsAWordWouldOpen,
     spendAWord,
     wasPlaced,
     whoCanHoldAChildAtZero
@@ -37,12 +36,6 @@ describe('the Pavilion has two doors and only one of them is the door', () => {
 
     it('is already open, so a word buys nothing there', () => {
         expect(howAChildAtZeroGetsIn(PAVILION)).toBe('walks up');
-        for (const tier of ORIGIN_TIERS) {
-            expect(
-                placementsAWordWouldOpen(tier.key, 0, HOUSES).map(h => h.id),
-                'a word never opens the Pavilion, because it needs no opening'
-            ).not.toContain(PAVILION);
-        }
         expect(spendAWord({
             askerId: 'asker', childId: 'child', houseId: PAVILION,
             askedOfId: 'friend', onDay: 1
@@ -116,26 +109,11 @@ describe('what a great name is actually worth at seven years old', () => {
         }
     });
 
-    it('with a word, reaches houses standing alone does not', () => {
-        const opened = placementsAWordWouldOpen(top.key, 0, HOUSES);
-        expect(opened.length).toBeGreaterThan(0);
-        const qualifiedIds = new Set(placementsWithinReach(top.key, 0, HOUSES).map(h => h.id));
-        for (const house of opened) {
-            expect(qualifiedIds.has(house.id), 'the two lists are disjoint').toBe(false);
-            expect(house.admissionOrdinal).toBeGreaterThan(0);
-        }
-    });
-
     it('is worth nothing at all to a family with no standing', () => {
         const farm = ORIGIN_TIERS[0];
         expect(farm.placement.reach).toBe(0);
-        expect(placementsAWordWouldOpen(farm.key, 0, HOUSES)).toEqual([]);
+        expect(placementsWithinReach(farm.key, 0, HOUSES)).toEqual([]);
         expect(farm.vouchers).toBe(0);
-    });
-
-    it('gives a family with words to spend somewhere to spend them', () => {
-        expect(top.vouchers).toBeGreaterThan(0);
-        expect(placementsAWordWouldOpen(top.key, 0, HOUSES).length).toBeGreaterThan(0);
     });
 });
 

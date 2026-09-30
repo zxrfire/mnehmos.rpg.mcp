@@ -17,7 +17,6 @@ import {
     type FavourAnswer
 } from '../../data/cultivation/a-favour-skips-the-admission-bar.js';
 import { SECTS, SECT_ADMISSION } from '../../data/cultivation/sects.js';
-import { getOrigin, type OriginTierKey, type PlacementCandidate } from '../cultivation/origin.js';
 import type { DayIndex } from '../social/common.js';
 import { createFavor, type ObligationRecord } from '../social/grudges.js';
 import type { KnowledgeInput } from '../social/knowledge.js';
@@ -145,38 +144,6 @@ export function whoCanHoldAChildAtZero(): WhoCanHoldAChildAtZero {
         }
     }
     return out;
-}
-
-// AT CHARACTER CREATION
-
-/**
- * The doors a word would open that standing alone does not.
- *
- * The counterpart to `placementsWithinReach` and deliberately DISJOINT from it:
- * that returns houses the applicant already qualifies for, this returns the ones
- * they do not. A house appears in exactly one of the two, never both, so a
- * caller can concatenate them without deduplicating.
- *
- * Three conditions: within the family's `placement.reach`; the applicant does
- * NOT already meet the house's lowest door; and the house's own stance is that
- * a word moves its bar.
- */
-export function placementsAWordWouldOpen(
-    key: OriginTierKey,
-    applicantOrdinal: number,
-    houses: readonly PlacementCandidate[]
-): PlacementCandidate[] {
-    const reach = getOrigin(key).placement.reach;
-    if (reach <= 0) return [];
-    return houses.filter(h => {
-        if (h.powerOrdinal > reach) return false;
-        const doors = doorsOf(h.id);
-        // A house the catalog does not carry is judged on the figure the
-        // caller handed us rather than being silently dropped.
-        const lowest = doors ? doors.lowestDoor : h.admissionOrdinal;
-        if (applicantOrdinal >= lowest) return false;
-        return howAChildAtZeroGetsIn(h.id) === 'needs a word';
-    });
 }
 
 // IN A LIFE: SPENDING ONE ON YOUR OWN CHILD

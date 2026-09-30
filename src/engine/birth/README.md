@@ -185,9 +185,12 @@ up. `tests/engine/birth/spending-a-word-to-place-a-child.test.ts` pins that
 directly, because it is the defect the favour exists to fix and the prose used
 to describe it as though it were the feature.
 
-`placementsAWordWouldOpen` is the counterpart and is deliberately **disjoint**
-from `placementsWithinReach`: a house appears in exactly one of the two lists,
-so the difference between them is what the word was worth.
+A word is spent in two places: at birth, as a house's `'by taking'` roll
+(`raisedInside` in `birth.ts`, which records that somebody is owed for it), and in
+a life, as `spendAWord` on the player's own child. A list of every house a
+family's word would open at creation had no caller and was deleted: every house
+takes its newcomers at the bottom rung by the same door, so the only word that
+moves anybody at creation is the family's own house.
 
 Three rules bind this file the way the six above bind `birth.ts`:
 
