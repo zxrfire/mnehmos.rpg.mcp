@@ -204,7 +204,8 @@ const DEAD = 0;
 // 52 -> 40: the social rows reach play (shame, secrets, the held body, naming a killer, the taking).
 // 40 -> 27: the ruin delve, provenance, stonework and a room reading what you carry reach play.
 // 27 -> 15: the elder's office reads, services done, a duty passed down, the send-off, a house's asks and where to look reach play.
-const TEST_ONLY = 15;
+// 15 -> 0: fact-backed memories, opportunity windows, surviving the body, a crossing remembered and acting through a proxy reach play.
+const TEST_ONLY = 0;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
