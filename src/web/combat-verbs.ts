@@ -40,7 +40,19 @@ import {
 } from '../engine/social-leverage/index.js';
 import { createObligation, severityRank } from '../engine/social/grudges.js';
 import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js';
-import { whatTheyDoAboutBeingWronged } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
+import {
+    severityOfTheWrong,
+    shapeOf,
+    whatTheyDoAboutBeingWronged
+} from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
+import {
+    type AMemoryHeld,
+    whatASoulSearchCost,
+    whatASoulSearchTakes
+} from '../engine/social/what-a-soul-search-takes.js';
+import { wouldTheySwallowIt } from '../engine/social/what-somebody-swallows-rather-than-be-read.js';
+import { swallow } from '../engine/world/where-the-pills-actually-are.js';
+import { SOUL_QUENCHING_PILL_ID } from '../data/cultivation/pills.js';
 import type { InheritanceRelation, ObligationInput } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import {
@@ -80,8 +92,10 @@ import {
     removeFromPouch
 } from '../server/consolidated/cultivation-support.js';
 import {
+    takeTheHandOff,
     whatBeingMadeIntoAThingOpens,
-    whatTheHandLeaves
+    whatTheHandLeaves,
+    whoseHandThisBodyIsUnder
 } from '../engine/social/a-body-under-somebody-elses-hand.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
@@ -1394,7 +1408,10 @@ export const combatVerbs = {
                 this.whatAYieldingHandedOver(run, cultivator, held, execution);
             }
             if (held.wanted === 'swallow') {
-                this.whatWasPutDownTheirThroat(run, cultivator, held, execution);
+                theRiteKilledThem = this.whatWasPutDownTheirThroat(run, cultivator, held, execution);
+            }
+            if (held.wanted === 'soul_search') {
+                theRiteKilledThem = this.whatASearchTookOutOfThem(run, cultivator, held, execution);
             }
             if (held.wanted === 'furnace') {
                 const rite = theFurnaceRiteOnSomebodyWhoYielded(
@@ -1433,8 +1450,7 @@ export const combatVerbs = {
         // one, so writing it first would put it in front of the row that test is
         // about and hide a real assertion behind an ordering accident.
         //
-        // A furnace rite that killed hands the result on as `finished`, so the
-        // death runs the same killing path a finishing blow does.
+        // A lethal use after submission follows the ordinary death path.
         const done = this.afterAFight(
             run, cultivator, held,
             theRiteKilledThem ? { ...(settled as object), finished: true }
@@ -1537,7 +1553,8 @@ export const combatVerbs = {
         this: GameService,
         run: Run,
         cultivator: Cultivator,
-        heldBack: HeldBack
+        heldBack: HeldBack,
+        target?: string
     ): Execution {
         if (heldBack === 'step_between_two_others') {
             const fighting = theFightStillStands(this.fight, run.id, cultivator.id)
@@ -1575,6 +1592,62 @@ export const combatVerbs = {
         }
 
         const beaten = this.whoHasYieldedToYou(cultivator);
+
+        // ── A BODY UNDER YOUR HAND IS LET GO OF, NOT SPARED ──────────────
+        //
+        // The one on their knees if they are held, else anybody here who is.
+        // Taking the hand off does not undo the hollowing, and settles nothing
+        // on the account being made into a thing opened: freeing somebody is
+        // stopping, not restitution. Nor is it a sparing - there is nobody
+        // left in them to owe the favour one writes.
+        const heldByMe = this.present(cultivator).filter(person => {
+            const row = this.atHand?.npcs.find(npc => npc.id === person.id);
+            return row !== undefined && whoseHandThisBodyIsUnder(row.tags) === cultivator.id;
+        });
+        const named = target ? this.somebodyAtHand(target, cultivator) : null;
+        const toLetGo = target
+            ? heldByMe.find(person => person.id === named?.id) ?? null
+            : beaten
+                ? heldByMe.find(person => person.id === beaten.id) ?? null
+                : heldByMe.length === 1 ? heldByMe[0]! : null;
+        if ((target && !toLetGo && named?.id !== beaten?.id)
+            || (!target && !beaten && heldByMe.length > 1)) {
+            return refused('engine.letThemGo', 'attack', factsForRefusal(
+                'No hand was taken off.',
+                target ? 'That person is not held by you or beaten in front of you.'
+                    : 'More than one body here is under your hand. Name the one you are letting go.',
+                'letThemGo: no single held or beaten body was identified. Nothing changed.'
+            ));
+        }
+        if (toLetGo) {
+            const row = this.atHand!.npcs.find(npc => npc.id === toLetGo.id)!;
+            const after = takeTheHandOff({
+                soulState: row.soulState, identityContinuity: row.identityContinuity, tags: row.tags
+            });
+            row.tags = [...after.tags];
+            this.theWorldMoved();
+            if (beaten?.id === toLetGo.id) clearFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return {
+                facts: factsForToolResult(
+                    `${toLetGo.name} is no longer under your hand.`,
+                    [`${toLetGo.name} is under nobody's hand now. What was taken out of them stays `
+                        + 'taken; nothing is standing in their place.']
+                ),
+                events: [],
+                timeSkip: null,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: [{
+                    name: 'social.takeTheHandOff',
+                    action: 'attack',
+                    summary: `${toLetGo.id} was held by ${cultivator.id} and is held by nobody now. `
+                        + 'The hollowing stands and the violated account stays open. No day passed.',
+                    ok: true
+                }]
+            };
+        }
+
         if (!beaten) {
             const fighting = theFightStillStands(this.fight, run.id, cultivator.id)
                 ? this.fight
@@ -1985,7 +2058,7 @@ export const combatVerbs = {
         cultivator: Cultivator,
         held: StandingFight,
         execution: Execution
-    ): void {
+    ): boolean {
         const onDay = Math.floor(run.elapsedDays);
         const carried = listPouch(this.db, cultivator.id).filter(row => row.kind === 'pill');
 
@@ -1997,7 +2070,7 @@ export const combatVerbs = {
             execution.facts.structure.push(
                 'coerce/swallow: no pill in the pouch. Nothing spent and nothing applied.'
             );
-            return;
+            return false;
         }
 
         // ── WHAT THE SENTENCE SAID, AND THEN WHAT THE POUCH ALLOWS ───────
@@ -2024,7 +2097,7 @@ export const combatVerbs = {
                 `coerce/swallow: "${held.named}" resolved to ${asked.id}, which is not in the `
                 + 'pouch. Nothing spent.'
             );
-            return;
+            return false;
         }
 
         if (!named) {
@@ -2038,7 +2111,7 @@ export const combatVerbs = {
                 + 'Nothing spent. The act does not choose between a healing pill and a '
                 + 'hollowing pill on the player\'s behalf.'
             );
-            return;
+            return false;
         }
 
         const pill = getPill(named.itemId);
@@ -2106,6 +2179,154 @@ export const combatVerbs = {
             summary: line,
             ok: true
         });
+        return row !== null && effect === 'end_the_soul';
+    },
+
+    /**
+     * A soul searched, once its owner has yielded - or what they swallow first.
+     *
+     * What they hold is what the world recorded them being there for: every fact
+     * they are an actor or a witness in, held at `known` because they saw it.
+     * Somebody carrying a Soul-Quenching Pill is asked first whether what the
+     * search would take is worth more than they are
+     * (`what-somebody-swallows-rather-than-be-read.ts`); the search is
+     * `whatASoulSearchTakes`, the harm `whatASoulSearchCost`, and what came across
+     * reaches the player as the people in it, filed `taken`.
+     */
+    whatASearchTookOutOfThem(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        execution: Execution
+    ): boolean {
+        const say = (line: string, structure: string, name: string, ok: boolean): void => {
+            execution.facts.lines.push(line);
+            execution.facts.prose = [execution.facts.prose, line].join('\n');
+            execution.facts.structure.push(structure);
+            execution.calls.push({ name, action: 'coerce', summary: structure, ok });
+        };
+        const world = this.atHand;
+        const row = world?.npcs.find(npc => npc.id === held.party.id) ?? null;
+        if (!world || !row) {
+            say(`${held.party.name}'s memories are unavailable. Nothing was read.`,
+            `coerce/soul_search: ${held.party.id} has no world row. Nothing read.`,
+            'social.whatASoulSearchTakes', false);
+            return false;
+        }
+        const onDay = Math.floor(run.elapsedDays);
+        const stored = this.knowledge.memoriesHeldBy(row.id);
+        const heldFacts = new Set(stored.map(memory => memory.claimKey));
+        const holds: AMemoryHeld[] = [...stored, ...world.history.facts
+            .filter(fact => fact.witnessIds.includes(row.id) || fact.actors.some(actor => actor.id === row.id))
+            .filter(fact => !heldFacts.has(`fact:${fact.id}`)).map(fact => ({
+            id: fact.id,
+            claimKey: `fact:${fact.id}`,
+            statement: fact.summary,
+            stance: 'knows' as const,
+            confidence: 1,
+            stage: 'known' as const
+        }))];
+
+        // ── WHAT THEY SWALLOW RATHER THAN BE READ ────────────────────────
+        const pills = world.objects.filter(object => object.possessorId === row.id
+            && typeof object.data.pillId === 'string' && object.data.spent !== true);
+        const counted = listPouch(this.db, row.id).filter(stack => stack.kind === 'pill');
+        const choice = wouldTheySwallowIt({
+            carrying: [...pills.map(object => object.data.pillId as string),
+                ...counted.map(stack => stack.itemId)],
+            ordinal: row.cultivation.realmOrdinal,
+            soul: row,
+            holds,
+            readerOrdinal: cultivator.realmOrdinal
+        });
+        if (choice.swallowed) {
+            const pill = pills.find(object => object.data.pillId === SOUL_QUENCHING_PILL_ID);
+            if (pill) {
+                const at = world.objects.findIndex(object => object.id === pill.id);
+                world.objects[at] = swallow(pill, row.id, Math.floor(world.currentDay));
+            } else {
+                removeFromPouch(this.db, row.id, SOUL_QUENCHING_PILL_ID, 1);
+            }
+            row.soulState = 'fading';
+            row.identityContinuity = 0;
+            this.theWorldMoved();
+            say(`${held.party.name} swallowed a Soul-Quenching Pill and died. Nothing was read.`,
+            `coerce/soul_search: ${row.id} carried a Soul-Quenching Pill and swallowed it `
+                + `(${choice.why}); the search would have taken ${choice.wouldHaveLost}. Soul `
+                + 'fading, identity 0, nothing read.',
+            'social.wouldTheySwallowIt', true);
+            return true;
+        }
+
+        const search = whatASoulSearchTakes({
+            searcherOrdinal: cultivator.realmOrdinal,
+            subjectOrdinal: row.cultivation.realmOrdinal,
+            subject: row,
+            held: holds
+        });
+        if (!search.opened) {
+            const why = search.why === 'nothing_left'
+                ? `There is nothing left in ${held.party.name} to read.`
+                : search.why === 'nothing_held'
+                    ? `No memories were taken from ${held.party.name}.`
+                    : `${held.party.name}'s soul holds against yours, and nothing opens.`;
+            say(why, `coerce/soul_search: nothing came across (${search.why}), realm gap `
+                + `${search.realmGap}, ${search.heldInAll} held.`, 'social.whatASoulSearchTakes', false);
+            return false;
+        }
+
+        const cost = whatASoulSearchCost(search, row);
+        row.soulState = cost.after;
+        let named = 0;
+        for (const took of search.took) {
+            this.knowledge.takeMemoryFrom(cultivator.id, row.id, took, onDay);
+            const fact = took.claimKey.startsWith('fact:')
+                ? world.history.facts.find(one => `fact:${one.id}` === took.claimKey)
+                : null;
+            for (const actor of fact?.actors ?? []) {
+                if (actor.id === cultivator.id || !world.npcs.some(npc => npc.id === actor.id)) continue;
+                const learned = this.knowledge.learnIfNew({
+                    holderId: cultivator.id,
+                    kind: 'cultivator',
+                    id: actor.id,
+                    name: actor.name,
+                    factId: took.id,
+                    onDay,
+                    sourceKind: 'taken',
+                    sourceNote: `Read out of ${held.party.name}.`,
+                    fromHolderId: row.id,
+                    stance: 'knows',
+                    statement: took.statement,
+                    stage: took.stage,
+                    confidence: took.confidence
+                });
+                if (learned) named++;
+            }
+        }
+        writeOneObligation(this.db as unknown as DatabaseHandle, createObligation({
+            kind: 'grudge',
+            holderId: row.id,
+            subjectId: cultivator.id,
+            cause: shapeOf('violated').cause,
+            severity: severityOfTheWrong('violated'),
+            onDay,
+            description: `${cultivator.name} searched ${held.party.name}'s soul after they yielded, `
+                + `and took ${search.took.length} memories.`,
+            participants: [],
+            tags: ['wrong:soul_searched']
+        }));
+        this.theWorldMoved();
+
+        const shown = search.took.slice(0, 5).map(took => took.statement).join(' ');
+        say(`What came out of ${held.party.name}: ${shown}`
+            + (cost.stepsDown > 0 ? ` Forcing it left their soul ${cost.after}.` : ''),
+        `coerce/soul_search: ${search.took.length} of ${search.heldInAll} taken at realm gap `
+            + `${search.realmGap}, filed as taken; ${named} name(s) newly known. Soul `
+            + `${cost.before} -> ${cost.after} (${cost.because}). ${held.party.name} holds a `
+            + `${severityOfTheWrong('violated')} grudge for it.`,
+        'social.whatASoulSearchTakes', true);
+        return false;
     },
 
     /**
@@ -2139,7 +2360,7 @@ export const combatVerbs = {
             execution.facts.structure.push(
                 `coerce: intent label "${wanted ?? 'submit'}", goal handed to the resolver `
                 + '"coerce". The resolver never reads it; a submission acts on hand_over, '
-                + 'swallow and furnace, and the rest are a label.'
+                + 'swallow, furnace and soul_search, and the rest are a label.'
             );
         }
 

@@ -101,7 +101,7 @@ export function aTakingEntersTheWorld(
     input: ATaking
 ): TheWorldNowHoldsIt {
     const loud = howLoudTakingPeopleIs(input.heads);
-    return aDeedEntersTheWorld(state, {
+    const written = aDeedEntersTheWorld(state, {
         kind: 'catastrophe',
         day: input.day,
         locationId: input.locationId ?? null,
@@ -115,9 +115,15 @@ export function aTakingEntersTheWorld(
         // What a stranger has to go on: people are not where they were. Never
         // what took them, which is the whole reason one end of this can be
         // found and the other has to be walked to.
-        unattributed: 'People are gone from where they were, and nobody who is left can say who came for them.',
+        unattributed: 'People are gone from where they were.',
         data: { heads: Math.max(0, Math.floor(input.heads)) }
     });
+    // Knowing people are missing does not identify whoever took them.
+    if (!couldBeDoneInTheDark(input.heads)) {
+        written.fact.visibility = loud.scale === 'continental' ? 'public' : 'regional';
+        written.line = 'People are missing. Nobody has put a name to the taking.';
+    }
+    return written;
 }
 
 /**

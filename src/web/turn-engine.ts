@@ -82,6 +82,9 @@ import {
 } from '../engine/world/what-it-costs-to-give-away-a-piece-of-yourself.js';
 import { howTheAskForAPieceWent } from './asking-something-that-can-refuse-for-a-piece-of-it.js';
 import { shameCausesFromTags, shameTag } from '../engine/social/shame.js';
+import { hasANameOnIt, NO_NAME_TAG } from '../engine/social/accounts-with-no-name.js';
+import { somebodyPutsANameToIt } from '../engine/world/somebody-puts-a-name-to-it.js';
+import { canSearchASoul, soulSearchOpensAt } from '../engine/social/what-a-soul-search-takes.js';
 // A beast with a core is somebody in particular, and gets a row the moment
 // somebody stands in front of it. Nothing here is beast-specific afterwards:
 // the row makes it present, and present is what every person-shaped verb reads.
@@ -4678,7 +4681,8 @@ export class GameService {
                             run, cultivator,
                             restraint === 'let_them_go'
                                 ? 'let_them_go'
-                                : 'step_between_two_others'
+                                : 'step_between_two_others',
+                            action.target
                         );
                     }
                     // AND THE SAME FAMILY FROM THE OTHER END. A surrender said
@@ -4820,6 +4824,18 @@ export class GameService {
                             why.headline, why.said, why.account
                         ));
                     }
+                }
+                // A SOUL IS SEARCHED WITH A NASCENT SOUL, and without one there
+                // is no search to fight for. Said with the rung it opens at.
+                if (action.intent === 'soul_search' && !canSearchASoul(cultivator.realmOrdinal)) {
+                    return this.freeAction(run, 'coerce', factsForRefusal(
+                        'You have nothing to search a soul with.',
+                        `A soul is read with a nascent soul, and that opens at `
+                        + `${rankName(soulSearchOpensAt())}. You stand at `
+                        + `${rankName(cultivator.realmOrdinal)}.`,
+                        `coerce/soul_search: searcher ordinal ${cultivator.realmOrdinal} is below `
+                        + `${soulSearchOpensAt()}. No fight was opened.`
+                    ));
                 }
                 // The same resolver as `attack`, at a different goal. Hands
                 // rather than words, and the aggressor wants them complying and
@@ -9142,9 +9158,60 @@ ${noticed}`;
             canPointAt: fact => couldPointAtIt(fact, cultivator.id,
                 id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)),
             heldAbout: factId => this.accountCarriedAbout(hearer.id, factId)
+                ?? this.aNamelessAccountTheWorldHolds(hearer.id, factId)
         });
 
         const calls: ToolCallRecord[] = [];
+        // ── THE ACCOUNT MAY BE THE WORLD'S ─────────────────────────────────
+        //
+        // A loss the world wrote before the player arrived sits in the world's
+        // own ledger with no name on it. Naming it there is
+        // `somebodyPutsANameToIt`: the same row takes the name, the hearer turns
+        // on the named, thinks well of whoever told them - and does not take the
+        // word of somebody they already think badly of. A second copy in the
+        // run's table would be the same death twice.
+        const theWorlds = landedOn.opens !== null && blamed !== null && this.atHand !== null
+            ? this.atHand.obligations.find(row => row.id === landedOn.opens!.id
+                && row.holderId === hearer.id) ?? null
+            : null;
+        if (theWorlds !== null && blamed !== null && this.atHand !== null) {
+            const named = somebodyPutsANameToIt(this.atHand, {
+                holderId: hearer.id,
+                subjectId: blamed.id,
+                subjectName: blamed.name,
+                toldById: cultivator.id,
+                toldByName: cultivator.name,
+                onDay: Math.floor(this.atHand.currentDay),
+                obligationId: theWorlds.id
+            });
+            if (named.named > 0) this.theWorldMoved();
+            calls.push({
+                name: 'world.somebodyPutsANameToIt',
+                action: 'tell',
+                summary: named.believed
+                    ? `${hearer.name}'s account ${theWorlds.id}, carried since world day `
+                      + `${theWorlds.incurredOnDay} with no name on it, is now against `
+                      + `${blamed.name}, told by ${cultivator.name}. Their tie to ${blamed.name} `
+                      + 'went to enemy, and to the teller to ally.'
+                    : `${hearer.name} thinks too badly of ${cultivator.name} to take a name from `
+                      + `them. Account ${theWorlds.id} still has no name on it.`,
+                ok: named.believed
+            });
+            const facts = named.believed
+                ? factsForTelling({ landedOn, hearer: hearer.name, blamed: blamed.name, claim: said })
+                : factsForRefusal(
+                    `${hearer.name} does not take it from you.`,
+                    `${hearer.name} does not believe the name you give. Their account still has `
+                    + 'no name on it.',
+                    `tell: ${hearer.id} holds world account ${theWorlds.id} with no name on it, and `
+                    + `their standing toward ${cultivator.id} is at or below the line a name is `
+                    + 'refused from. Nothing attached.'
+                );
+            const told = this.freeAction(run, 'tell', facts);
+            told.outcome = 'executed';
+            told.calls = calls;
+            return told;
+        }
         if (landedOn.opens !== null) {
             const record = createObligation(landedOn.opens);
             writeOneObligation(this.db as unknown as DatabaseHandle, record);
@@ -9269,6 +9336,20 @@ ${noticed}`;
             + "AND status = 'open' ORDER BY subject_id LIMIT 1"
         ).get(holderId, factId);
         return row ? obligationFromRow(row as ObligationRow) : null;
+    }
+
+    /**
+     * The world's own account this holder carries about this event with nobody's
+     * name on it, or null. The run's table is asked first; this is the ledger the
+     * world wrote before the run, which the run's table never held.
+     */
+    private aNamelessAccountTheWorldHolds(holderId: string, factId: string | null): ObligationRecord | null {
+        if (factId === null) return null;
+        return this.atHand?.obligations.find(row => row.holderId === holderId
+            && row.triggeringEventId === factId
+            && row.status === 'open'
+            && !hasANameOnIt(row)
+            && row.tags.includes(NO_NAME_TAG)) ?? null;
     }
 
     // what this cultivator is carrying
@@ -13592,11 +13673,9 @@ ${opened.text}` : receipt,
                 }
                 if (outcome.lot) {
                     removeFromPouch(this.db, cultivator.id, outcome.lot.itemId, outcome.lot.quantity);
-                    if (this.repos.cultivators.getById(party!.id)) {
-                        addToPouch(
-                            this.db, party!.id, outcome.lot.itemId, outcome.lot.kind, outcome.lot.quantity
-                        );
-                    }
+                    addToPouch(
+                        this.db, party!.id, outcome.lot.itemId, outcome.lot.kind, outcome.lot.quantity
+                    );
                 }
             })();
 

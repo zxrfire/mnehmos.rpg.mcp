@@ -35,6 +35,7 @@ import { makeFact } from '../engine/world/history.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { SectAlignment } from '../schema/cultivation.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
+import { aTakingEntersTheWorld } from '../engine/world/taking-people-is-not-a-quiet-thing.js';
 import {
     type IfCaught,
     ifCaughtAtSomethingTheHousePunishes
@@ -105,7 +106,7 @@ export interface FurnaceUseOutcome extends FurnaceUseResult {
 /**
  * Use a furnace technique and enter it into the world's own record.
  *
- * Mutates nothing: it appends one fact to `world.history` through the ordinary
+ * Appends the rite and any deaths' absence to `world.history` through the ordinary
  * witness pipeline and returns everything else for the caller to write -
  * `createGrudge(outcome.grudge)` onto the ledger, and, where `conceived` is
  * true, the conception to `aChildIsConceived`, which writes both parents'
@@ -158,6 +159,21 @@ export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome
             died: outcome.each.filter(row => row.died).length
         }
     }));
+
+    const dead = outcome.each.filter(row => row.died);
+    if (dead.length > 0) {
+        aTakingEntersTheWorld(input.world, {
+            heads: dead.length,
+            day: input.onDay,
+            locationId: input.locationId,
+            summary: `${input.actorName}'s forced rite killed ${dead.length} `
+                + `${dead.length === 1 ? 'person' : 'people'}.`,
+            actors: [
+                { id: input.actorId, name: input.actorName, role: 'actor' },
+                ...dead.map(row => ({ id: row.personId, name: row.name, role: 'subject' as const }))
+            ]
+        });
+    }
 
     if (input.type === 'offered') {
         return { ...outcome, groundResponse: 'nothing', groundHolder: null, factionVerdict: null };

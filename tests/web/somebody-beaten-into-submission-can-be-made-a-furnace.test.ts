@@ -158,6 +158,10 @@ describe('the rite on somebody who has yielded', () => {
         expect(death, 'no death fact for the subject').toBeDefined();
         expect(death!.actors.find(a => a.role === 'killer')?.id).toBe(at.playerId);
         expect(at.grudges().some(r => r.holder_id === at.mark.id)).toBe(true);
+        // The killing and the absence are different records: one states who
+        // died; the other is what somebody who cannot name the rite can find.
+        const hole = at.world.history.facts.find(f => f.kind === 'catastrophe' && f.data?.heads === 1);
+        expect(hole, 'the rite left no record of its missing subject').toBeDefined();
     }, 200_000);
 
     it(`refuses somebody under ${FURNACE_MIN_AGE} before any fight opens`, async () => {

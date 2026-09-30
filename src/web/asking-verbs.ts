@@ -54,6 +54,7 @@ import {
     whatItWouldTake
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import { createObligation, severityRank } from '../engine/social/grudges.js';
+import { whatAHeldBodyDoesWith } from '../engine/social/a-body-under-somebody-elses-hand.js';
 import { whatWasPutAcrossTheTable } from './going-back-and-forth-over-a-price.js';
 
 /**
@@ -1377,6 +1378,36 @@ ${unnamed}`;
             );
         }
 
+        // ── A BODY UNDER A HAND IS NOT ASKED ─────────────────────────────
+        //
+        // Somebody hollowed and held has no part left that could say no, so
+        // there is no roll and no price: under your hand it happens, and under
+        // somebody else's an instruction from you is not theirs to take - a
+        // locked door, not a refusal. What it can be told to do is go where it
+        // is sent. What they knew and would have given went with the part that
+        // could say no, which is also why a held body cannot be read.
+        const underAHand = this.atHand?.npcs.find(row => row.id === party.id) ?? null;
+        const heldBody = underAHand === null
+            ? 'their_own'
+            : whatAHeldBodyDoesWith(underAHand.tags, cultivator.id);
+        if (heldBody === 'held_by_another') {
+            return this.freeAction(run, 'request', factsForRefusal(
+                `${party.name} does not answer you.`,
+                `${party.name} is under somebody else's hand and does not follow your instructions.`,
+                `request: ${party.id} carries a held_by tag for somebody other than `
+                + `${cultivator.id}. No roll, nothing spent.`
+            ));
+        }
+        if (heldBody === 'it_happens' && kind !== 'company') {
+            return this.freeAction(run, 'request', factsForRefusal(
+                `${party.name} cannot answer that request.`,
+                `${party.name}'s soul is hollowed. They can follow your instruction to come `
+                + 'with you, but cannot provide teaching or introductions.',
+                `request: ${party.id} is held by ${cultivator.id}; a held body takes no ask of `
+                + `kind ${kind}. It goes where it is sent.`
+            ));
+        }
+
         // ── ENDING A BOND, WHICH ASKS FOR NOTHING ────────────────────────
         //
         // Before the costing and the roll, because there is nothing to price
@@ -1606,6 +1637,30 @@ ${unnamed}`;
                 : {}),
             ...(attention ? { attention, forDays: term } : {})
         });
+
+        // UNDER YOUR HAND IT HAPPENS: the same yes, with no asking in front of it.
+        if (heldBody === 'it_happens') {
+            if (weighing) {
+                return this.freeAction(run, 'request', factsForToolResult(
+                    `${party.name} goes where you send them.`,
+                    [`${party.name} is under your hand. Coming with you requires no agreement.`]
+                ));
+            }
+            const done = await this.whatTheyAgreedTo(
+                run, cultivator, party, 'company', costing, null, { forDays: term, bound }, ambient
+            );
+            const went = this.freeAction(run, 'request', factsForToolResult(
+                `${party.name} comes with you.`, done.lines
+            ));
+            went.calls = [{
+                name: 'social.whatAHeldBodyDoesWith',
+                action: 'request',
+                summary: `${party.id} is held by ${cultivator.id}: it happens. No roll, no days `
+                    + 'spent asking, no mark written.',
+                ok: true
+            }, ...done.calls];
+            return went;
+        }
 
         // THEY ASK BACK, WHICH IS NOT A REFUSAL, AND THE ANSWER HAS SOMEWHERE
         // TO LAND. The arts go onto the record of what this turn named, so an

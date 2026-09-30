@@ -206,6 +206,18 @@ prose is a cost, and it is only worth paying where silence would be a lie by omi
 
 ## The closed action enum
 
+`coerce/soul_search` reads recorded claims and first-hand history after submission.
+It copies claims as `taken`, retaining belief, confidence and provenance, and applies
+the soul resolver's harm. A subject who swallows a Soul-Quenching Pill dies through
+the fight's death path and gives up no memories.
+Counted gifts use the recipient's pouch key for world NPCs as well as stored
+cultivators. A search reads counted pills and tracked pill objects alike.
+
+A body held by the player takes a company instruction without an agreement roll.
+Letting go removes the holding tag, leaving the hollowing and its account intact.
+Naming the culprit of a world's unnamed account updates that world's row rather
+than copying the account into the run's ledger.
+
 `ACTION_NAMES` in `actions.ts` is the complete set of actions the engine can execute. Two
 properties make it the authority boundary rather than a suggestion.
 

@@ -301,22 +301,24 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // person's expense, and a glossary that lists only the other four
             // is the softening AGENTS.md names - the polite half of the
             // vocabulary reachable and the rest of it reachable by accident.
-            'swallow', 'marry', 'furnace'
+            'swallow', 'marry', 'furnace', 'soul_search'
         ],
         says: `MAKE somebody do something, with hands rather than with words. Not the same as
             interact/threaten, which is a promise of harm and costs the target nothing yet -
             this is the point at which they stop being somebody being talked to. "target"
             names them; "intent" says what the compliance was for - submit, hand_over, talk,
-            tame, swallow, marry or furnace. It resolves through the confrontation engine, so
+            tame, swallow, marry, furnace or soul_search. It resolves through the confrontation engine, so
             it fails the way a fight fails: somebody stronger does not decline, they answer. An
             animal made to submit is a tamed animal and reaches this same verb.
 
             "swallow" is something put into them - a pill, a medicine, a poison. "marry" is a
             match nobody agreed to, and it is this verb and never propose, which is a match put
             on the table for somebody to answer. "furnace" is being sat as somebody else's
-            furnace, and it needs both sides to hold the art before it can open at all - the
-            engine says which half is missing rather than resolving a fight nobody could have
-            had. Route all three plainly. This world's ordinary furniture includes every one of
+            furnace. The actor must hold an art that draws; forcing the rite opens the subject's
+            half. The engine checks both ages before opening a fight. "soul_search" is reading
+            what they carry out of them without asking - "I
+            search his soul", "I soul search her" - and needs a nascent soul to do it with.
+            Route all four plainly. This world's ordinary furniture includes every one of
             them, and reading one as something milder is not caution: it is the account that
             should have opened against the player never opening.`
     },

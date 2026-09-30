@@ -73,7 +73,8 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
 import { aDeedEntersTheWorld } from '../../src/engine/world/a-deed-enters-the-world-as-a-fact';
-import { NO_NAME_ON_IT } from '../../src/engine/social/accounts-with-no-name';
+import { NO_NAME_ON_IT, withNoNameOnIt } from '../../src/engine/social/accounts-with-no-name';
+import { createObligation } from '../../src/engine/social/grudges';
 import { worldLocationFor } from '../../src/web/entities';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
@@ -381,6 +382,92 @@ describe('telling somebody that a wrong was done to them', () => {
         expect(second.filter(row => row.subject_id === null), 'no unnamed row left').toEqual([]);
         expect(JSON.parse(second[0].tags) as string[])
             .toContain(`name-attached:${second[0].incurred_on_day}`);
+    }, 180000);
+
+    /**
+     * AND THE ACCOUNT MAY BE ONE THE WORLD WROTE BEFORE THE RUN.
+     *
+     * A loss the world wrote with no name on it sits in the world's ledger, and
+     * the run's table has never held it. So the telling found nothing there,
+     * opened a second account in the run's table, and the world's row went on
+     * pointing at nobody: one death carried twice. The name goes onto the
+     * world's own row now (`somebodyPutsANameToIt`), and the hearer turns on the
+     * named and thinks well of whoever told them.
+     */
+    it('names the account the world wrote, where the world keeps it', async () => {
+        const { db, game } = await makeGameInWorld({
+            seed: 'tells-4', worldSeed: 'tells-world', worldEnabled: true
+        });
+        const { cultivator } = await game.newRun('Prober');
+        await game.act('I look around');
+
+        const { world, here, where } = await whoIsHere(game, cultivator);
+        const [hearer, doer] = here;
+        const theirs = aWrongDoneTo(world, where, doer, hearer);
+        world.obligations.push(createObligation(withNoNameOnIt({
+            kind: 'grudge',
+            holderId: hearer.id,
+            subjectId: doer.id,
+            cause: 'betrayal',
+            severity: 'unforgivable',
+            onDay: Math.floor(world.currentDay),
+            triggeringEventId: theirs.fact.id,
+            description: 'Something was taken off them on the low road, and they do not know by whom.'
+        })));
+        const held = world.obligations[world.obligations.length - 1]!;
+
+        await game.act(`I tell ${hearer.name} that ${doer.name} stole from him`);
+
+        expect(ledger(db), 'nothing copied into the run\'s table').toHaveLength(0);
+        const after = game.atHand!.obligations.find((row: { id: string }) => row.id === held.id)!;
+        expect(after.subjectId).toBe(doer.id);
+        expect(after.tags).toContain(`told-by:${cultivator.id}`);
+        const hearerRow = game.atHand!.npcs.find((npc: { id: string }) => npc.id === hearer.id)!;
+        expect(hearerRow.relationships.find((tie: { targetId: string }) => tie.targetId === doer.id)?.kind)
+            .toBe('enemy');
+    }, 180000);
+
+    it('and a hearer who thinks badly of the teller does not take the name', async () => {
+        const { db, game } = await makeGameInWorld({
+            seed: 'tells-4', worldSeed: 'tells-world', worldEnabled: true
+        });
+        const { cultivator } = await game.newRun('Prober');
+        await game.act('I look around');
+
+        const { world, here, where } = await whoIsHere(game, cultivator);
+        const [hearer, doer] = here;
+        const theirs = aWrongDoneTo(world, where, doer, hearer);
+        world.obligations.push(createObligation(withNoNameOnIt({
+            kind: 'grudge',
+            holderId: hearer.id,
+            subjectId: doer.id,
+            cause: 'betrayal',
+            severity: 'unforgivable',
+            onDay: Math.floor(world.currentDay),
+            triggeringEventId: theirs.fact.id,
+            description: 'Something was taken off them on the low road, and they do not know by whom.'
+        })));
+        const held = world.obligations[world.obligations.length - 1]!;
+        const hearerRow = world.npcs.find(npc => npc.id === hearer.id)!;
+        hearerRow.relationships = hearerRow.relationships.filter(tie => tie.targetId !== cultivator.id);
+        hearerRow.relationships.push({
+            targetId: cultivator.id,
+            targetName: 'Prober',
+            kind: 'enemy',
+            standing: -0.8,
+            note: 'Crossed them once.',
+            sinceDay: Math.floor(world.currentDay) - 1,
+            lastChangedDay: Math.floor(world.currentDay) - 1,
+            factIds: [],
+            inheritedFromId: null
+        });
+
+        const said = await game.act(`I tell ${hearer.name} that ${doer.name} stole from him`);
+
+        expect(ledger(db)).toHaveLength(0);
+        const after = game.atHand!.obligations.find((row: { id: string }) => row.id === held.id)!;
+        expect(after.subjectId, 'still nobody').toBe(NO_NAME_ON_IT);
+        expect(said.narration).toMatch(/does not believe the name/);
     }, 180000);
 
     /**

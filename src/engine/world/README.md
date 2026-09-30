@@ -10,6 +10,11 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+[`taking-people-is-not-a-quiet-thing.ts`](taking-people-is-not-a-quiet-thing.ts)
+records the absence left by a taking. Above its quiet count, the absence circulates
+without identifying the taker. Forced furnace rites use this for their dead; the
+individual deaths still follow the caller's ordinary death path.
+
 Storage, retrieval, time, randomness and state updates. That is the whole remit. **There
 is deliberately no simulation here**: no NPC tick loop, no behaviour trees, no political
 engine, no consequence propagator. A world advances because dated consequences fall due

@@ -3842,6 +3842,26 @@ const HOW_THE_FIGHT_OPENED_TAIL =
 const SOMEBODY_WAS_MADE_TO =
     /\b(?:force|forces|forcing|forced|make|makes|making|made|compel|compels|compelling|coerce|coerces|coercing)\b|\bwhether (?:he|she|they|it) (?:wants?|likes?) (?:it|to) or not\b|\bagainst (?:his|her|their|its) will\b/i;
 
+/**
+ * A soul search, said the ways a player says it: "I soul search him", "I search
+ * his soul", "I read Wen Shu's memories". The person is read out by
+ * {@link whoseSoulIsSearched}.
+ */
+const SEARCHING_A_SOUL =
+    /\bsoul[- ]?search(?:es|ed|ing)?\b|\b(?:search|searches|searching|read|reads|reading)\s+(?:his|her|their|its|[a-z'-]+(?:\s+[a-z'-]+){0,2}'s?)\s+(?:soul|memories|mind|sea of consciousness)\b/;
+
+/** Whose soul a {@link SEARCHING_A_SOUL} sentence names, in the player's own words. */
+function whoseSoulIsSearched(input: string): string {
+    const direct = /\bsoul[- ]?search(?:es|ed|ing)?\s+(.+?)\s*[.!?]*$/i.exec(input);
+    if (direct) return direct[1]!.trim();
+    const owned = /\b(?:search|searches|searching|read|reads|reading)\s+(.+?)\s+(?:soul|memories|mind|sea of consciousness)\b/i
+        .exec(input);
+    if (!owned) return '';
+    const whose = owned[1]!.trim();
+    const pronoun: Record<string, string> = { his: 'him', her: 'her', their: 'them', its: 'it' };
+    return pronoun[whose.toLowerCase()] ?? whose.replace(/'s?$/i, '').trim();
+}
+
 const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // An animal made to submit is a tamed animal. Same act, same resolver, and
     // `BEAST_CHANGE_ORDINAL` does all the differentiating on its own - above
@@ -3849,6 +3869,9 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // "break the wolf in" is how somebody says it and "break in the wolf" is
     // not, so the object sits inside the verb. Found by the intent walk.
     ['tame', /\b(?:tame|tames|taming|break(?:s|ing)?(?:\s+\S+){0,3}\s+in\b|bring (?:it|him|her|them) to heel|subjugate)\b/],
+    // READ OUT OF THEM WITHOUT ASKING. Above `talk`, because a soul search is
+    // the one way to learn a thing that does not wait for them to say it.
+    ['soul_search', SEARCHING_A_SOUL],
     ['talk', /\b(?:beat (?:it|the truth|an answer|the location|the name) out of|wring (?:it|the truth|an answer) (?:out )?(?:of|from)|make (?:him|her|them) talk|force (?:him|her|them) to talk|torture)\b/],
     // SOMETHING GOING INTO THEM
     ['swallow', /\b(?:force|forces|forcing|make|makes|making|push|pushes|pushing|hold|holds|holding)\b[^.!?]*\b(?:swallow|swallows|swallowing|drink|drinks|drinking|eat|eats|eating|take (?:the|a|an|this|that|his|her|their|my) (?:\w+ )?(?:pill|medicine|tablet|poison|elixir|draught)|down (?:his|her|their|its) throat|past (?:his|her|their) teeth)\b|\bforce(?:s|d)? (?:the |a )?(?:pill|tablet|medicine|it) down\b/],
@@ -5294,8 +5317,11 @@ function planIntent(input: string): PlannedAction {
     // MAKING SOMEBODY DO SOMETHING, WITH HANDS
     {
         const wanted = COERCION_INTENT_PATTERNS.find(([, pattern]) => pattern.test(text));
-        if (wanted && !AIMED_AT_THE_LADDER.test(text)) {
-            const who = (extractSubject(input, COERCE_SUBJECT_VERBS) ?? '')
+        if (wanted && !AIMED_AT_THE_LADDER.test(text)
+            && (wanted[0] !== 'soul_search' || !ASKED_RATHER_THAN_DONE.test(input))) {
+            const who = (wanted[0] === 'soul_search'
+                ? whoseSoulIsSearched(input)
+                : extractSubject(input, COERCE_SUBJECT_VERBS) ?? '')
                 .replace(WHAT_THE_COMPLIANCE_WAS_FOR_TAIL, '')
                 .replace(HOW_THE_FIGHT_OPENED_TAIL, '')
                 .trim();
@@ -7861,4 +7887,3 @@ function planIntent(input: string): PlannedAction {
     // expensive. No time passes, no food is eaten, nothing dies.
     return { action: FALLBACK_ACTION };
 }
-

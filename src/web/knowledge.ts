@@ -30,6 +30,7 @@ import {
     type WhatSomebodyKnowsOfIt
 } from '../engine/world/what-one-of-the-worlds-own-people-knows.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import type { AMemoryHeld, WhatCameAcross } from '../engine/social/what-a-soul-search-takes.js';
 import { theOneIdAPersonIsKnownBy } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { localGeographyFor } from './lore.js';
 import { theOperatorReachesPast } from './operator-knowledge-reach.js';
@@ -126,6 +127,12 @@ interface RawRow {
     tags: string;
 }
 
+interface MemoryRow extends RawRow {
+    id: string;
+    fact_id: string | null;
+    confidence: number;
+}
+
 /**
  * Reader and writer for existence awareness.
  *
@@ -157,6 +164,7 @@ export class KnowledgeGate {
     private readonly awareStmt: Database.Statement;
     private readonly listStmt: Database.Statement;
     private readonly claimStmt: Database.Statement;
+    private readonly memoriesStmt: Database.Statement;
     /**
      * The world, asked for rather than held.
      *
@@ -178,7 +186,7 @@ export class KnowledgeGate {
                 acquired_on_day, confidence, tags, superseded
             ) VALUES (
                 @id, @holderId, @holderKind, @claimKey, @factId, @stance, @statement, @detail,
-                @sourceKind, @fromHolderId, NULL, @sourceNote,
+                @sourceKind, @fromHolderId, @viaRecordId, @sourceNote,
                 @acquiredOnDay, @confidence, @tags, 0
             )
         `);
@@ -208,6 +216,13 @@ export class KnowledgeGate {
             FROM knowledge_records
             WHERE holder_id = ? AND claim_key = ? AND superseded = 0
               AND stance IN ('knows', 'believes', 'suspects')
+            ORDER BY acquired_on_day ASC, id ASC
+        `);
+        this.memoriesStmt = db.prepare(`
+            SELECT id, claim_key, fact_id, stance, statement, detail, source_kind,
+                   source_note, acquired_on_day, confidence, tags
+            FROM knowledge_records
+            WHERE holder_id = ? AND superseded = 0
             ORDER BY acquired_on_day ASC, id ASC
         `);
     }
@@ -389,6 +404,44 @@ export class KnowledgeGate {
             tags: [stageTag(stage)]
         });
 
+        this.write(record);
+        return record;
+    }
+
+    /** Stored claims include beliefs and secrets, not just names somebody knows. */
+    memoriesHeldBy(holderId: string): AMemoryHeld[] {
+        return (this.memoriesStmt.all(holderId) as MemoryRow[]).map(row => ({
+            id: row.id,
+            claimKey: row.claim_key,
+            statement: row.statement,
+            stance: row.stance,
+            confidence: row.confidence,
+            stage: stageOfRaw(row)
+        }));
+    }
+
+    /** A taken belief stays a belief; the search establishes no ground truth. */
+    takeMemoryFrom(holderId: string, fromHolderId: string, took: WhatCameAcross, onDay: number): void {
+        const original = (this.memoriesStmt.all(fromHolderId) as MemoryRow[])
+            .find(row => row.id === took.id);
+        const stage = stageFromSource('taken', took.stage);
+        const detail: Record<string, string | number> = original ? JSON.parse(original.detail) : {};
+        this.write(recordKnowledge({
+            holderId,
+            claimKey: took.claimKey,
+            factId: original ? original.fact_id : took.id,
+            stance: original?.stance === 'believes' ? 'believes' : 'knows',
+            statement: took.statement,
+            detail,
+            onDay: Math.floor(onDay),
+            confidence: took.confidence,
+            source: { kind: 'taken', fromHolderId, viaRecordId: original?.id,
+                note: 'Read out of a soul.' },
+            tags: [stageTag(stage)]
+        }));
+    }
+
+    private write(record: KnowledgeRecord): void {
         this.insertStmt.run({
             id: record.id,
             holderId: record.holderId,
@@ -400,13 +453,13 @@ export class KnowledgeGate {
             factId: record.factId ?? null,
             sourceKind: record.source.kind,
             fromHolderId: record.source.fromHolderId ?? null,
+            viaRecordId: record.source.viaRecordId ?? null,
             sourceNote: record.source.note ?? '',
             acquiredOnDay: record.acquiredOnDay,
             confidence: record.confidence,
             tags: JSON.stringify(record.tags)
         });
 
-        return record;
     }
 
     /**
