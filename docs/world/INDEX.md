@@ -741,8 +741,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 131 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 211 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 89 | 435 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 115 | 130 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 89 | 437 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 115 | 129 |
 
 <!-- END GENERATED: design-constants -->
 
