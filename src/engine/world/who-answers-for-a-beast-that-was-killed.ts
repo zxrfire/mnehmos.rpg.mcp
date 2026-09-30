@@ -29,11 +29,7 @@ export type Answerability =
      * Nobody was relying on that one because there was no that one.
      */
     | 'not_an_individual'
-    /**
-     * At or above `BEAST_CHANGE_ORDINAL`. This is not a hunt and this module
-     * has no business pricing it - see
-     * {@link WHY_NOTHING_PAST_THE_CHANGE_IS_HANDLED_HERE}.
-     */
+    /** At or above `BEAST_CHANGE_ORDINAL`. This is not a hunt. */
     | 'a_person_was_killed'
     /** A tracked animal, and nobody was standing behind it. It was nobody's. */
     | 'nobody_stood_behind_it'
@@ -261,27 +257,3 @@ const LINE_FOR: Readonly<Record<Answerability, string>> = Object.freeze({
         + 'killed was a person, and it goes where a person\'s killing goes.',
     answerable: ''
 });
-
-// ─────────────────────────────────────────────────────────────────────────
-// AND THE LINE AT THE TOP, WHICH IS NOT THIS FILE'S TO PRICE
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Why {@link answerabilityOf} stops at `BEAST_CHANGE_ORDINAL` and hands the
- * question on, and what is missing behind that hand-off.
- */
-export const WHY_NOTHING_PAST_THE_CHANGE_IS_HANDLED_HERE = {
-    theRule:
-        `At and above ordinal ${BEAST_CHANGE_ORDINAL} it is not hunting. It is killing a `
-        + 'person, and the world should treat it exactly as it treats killing any other '
-        + 'person at that rung. Nothing about it should be written twice.',
-    whatIsMissing:
-        'A changed beast has no row among the people. The catalog carries six at or past '
-        + 'the change and the world seeds none of them, so a killing finds no house, no kin and no '
-        + 'roster to open an account with. The ordinary path would work; there is nobody '
-        + 'standing in it.',
-    doNotPatchItHere:
-        'A consequence table for changed beasts would make the design mean its opposite. '
-        + 'What is wanted is the roster row, after which this file has nothing to say about '
-        + 'them and correctly says nothing.'
-} as const;

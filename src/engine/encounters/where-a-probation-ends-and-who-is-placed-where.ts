@@ -17,7 +17,7 @@ import {
     rankName
 } from '../cultivation/realms.js';
 import { stagnationYearsForOrdinal } from '../../schema/cultivation.js';
-import { getSect } from '../../data/cultivation/sects.js';
+import { AZURE_INTAKE, getSect } from '../../data/cultivation/sects.js';
 import { getParentage, getSubsidiariesOf } from '../../data/cultivation/governance-and-water-rights.js';
 import {
     guestTermYears,
@@ -180,7 +180,7 @@ export function judgeProbation(facts: ProbationFacts): ProbationJudgement {
             depth,
             yearsLeftToCross: 0,
             reason:
-                `Crossed to ${rankName(FOUNDATION_ORDINAL)} in `
+                `${AZURE_INTAKE.placements[depth] ?? ''} Crossed to ${rankName(FOUNDATION_ORDINAL)} in `
                 + `${round1(facts.yearsOnTheRoll)} years on the roll, at ${round1(facts.age)}. `
                 + (ceiling === null
                     ? `${getSect(placed)?.name ?? placed} keeps no clock and does not ask.`

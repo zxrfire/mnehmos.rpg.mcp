@@ -8,7 +8,7 @@ import { VAULT_CONTENTS } from './contingencies.js';
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
 // Content-side. Nothing here is in `src/schema/cultivation.ts` yet, and two of
-// the effects cannot be expressed by anything that is - see ENGINE_GAPS.
+// effect resolution belongs to the engine, not this catalog.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const ImmortalItemEffectSchema = z.enum([
@@ -511,47 +511,6 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         recordedRefusal: null,
         savingTheSect:
             'The Myriad Course Hall has never connected the two and would regard the connection as a category error. The most a petitioner has ever received on this line is a receipt confirming that their submission was received, which is accurate and is all it says.'
-    }
-];
-
-// ─────────────────────────────────────────────────────────────────────────
-// ENGINE GAPS
-// Declared, not invented. Neither effect can be resolved by anything that
-// exists today, and this file deliberately does not attempt a mechanic.
-// ─────────────────────────────────────────────────────────────────────────
-
-export const ENGINE_GAPS: readonly {
-    effect: ImmortalItemEffect;
-    missing: string;
-    blockedBy?: string;
-    /** What the effect must do, stated precisely enough to be wired. */
-    contract: readonly string[];
-    note: string;
-}[] = [
-    {
-        effect: 'promote_realm',
-        missing: 'There is no `PillEffect` for advancing a rank. The closest is `advance_progress`, which adds cultivation progress toward the next rank and is not the same thing: progress still has to be spent through a breakthrough attempt that can fail, and the whole point of this object is that it does not.',
-        blockedBy: 'Nothing, as it turns out, and this is worth stating because it used to be the objection. `MAX_RANKS_PER_TURN = 1` in `src/schema/cultivation.ts` caps advancement at one rank per turn, and the Step grants exactly one rank - so the cap and the object agree rather than collide. What is missing is the effect, not room for it.',
-        contract: [
-            'It crosses exactly one realm boundary and delivers the recipient to the Early rung of the next realm. It never grants a within-realm rung and never grants two.',
-            'Grade caps the destination realm, not the distance: lower may deliver no higher than Deity Transformation (top crossing 24 to 25), middle no higher than Void Tribulation (28 to 29), higher no higher than Grand Ascension (36 to 37).',
-            'Ordinal 41 and above is unreachable by this or any object, for anybody, always. Hard stop, not a modifier.',
-            'Once per cultivator for life. A second Step is consumed and does nothing.',
-            'Perfection of the current realm is the clean case and is not a requirement. Taken below Perfection it still crosses, and the skipped accumulation lands as a permanently poor `foundationQuality` on the far side.'
-        ],
-        note: 'The remaining engine decision is what the Price of Advancement does about a boundary crossed without accumulation. Content has answered the social half - they stall, visibly, for the rest of a much longer life - and deliberately not the arithmetic.'
-    },
-    {
-        effect: 'change_spirit_root',
-        missing: 'There is no `PillEffect` for it and there is no field-level path to it either. `CultivatorSchema.spiritRoot` is documented as rolled once, permanent and never editable after creation, and `spirit-roots.ts` states in its header that there is no respec, no reroll and no item that changes it.',
-        blockedBy: 'The permanence is not merely a comment: cultivation rate, deviation risk, matched-technique bonus and technique availability are all derived from the root, so a change is a recalculation of a run rather than a field write.',
-        contract: [
-            'lower: five to four or three; four or three to two. Never better than two, and never a single root, by any route.',
-            'middle: five straight to one or two, decided by luck at use time and by nothing else. No input influences which.',
-            'higher: grants a single mutated root outright.',
-            'Once per cultivator for life, at every grade. A five-root taken to a three by a lower one can never be improved again by anything.'
-        ],
-        note: 'Deliberately left unresolvable. If this is ever implemented it should be an engine ceremony with its own audit record, not a mutation - and the catalog should not be the place that decided how it works.'
     }
 ];
 

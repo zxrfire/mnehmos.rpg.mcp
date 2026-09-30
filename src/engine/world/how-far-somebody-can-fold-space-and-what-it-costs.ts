@@ -225,13 +225,6 @@ export function couldFoldThere(
 export const A_SIGHTING_HAS_NO_NAME_ON_IT =
     'A sighting gives the shape and bearing of a place. It gives no name, owner or contents.';
 
-export const FOLD_TRAVEL_ENGINE_GAP = {
-    what: 'No journey in the running game is priced in walking days, so the range curve above saves nobody any time yet.',
-    whereItWouldGo: 'The move handler in src/web/game.ts, which spends SHORT_ACTION_DAYS for every journey regardless of distance, and bestForThisRoad in src/engine/world/what-a-conveyance-does-to-a-journey.ts, which ranks conveyances and does not know about folding.',
-    whatItWouldTake: 'The catalog travelDays for the chosen road in place of the flat constant, and one branch that prefers a fold when priceFold reports withinRange and fewer days.',
-    whyItIsNotDoneHere: 'Both files are owned by other agents and one of them is uncommitted. A journey seam edited from two ends at once is the failure AGENTS.md names.'
-} as const;
-
 // The curve has no exceptions. `convergence.ts` prices its escape from a
 // closing window off `foldRangeInWalkingDays` like everything else, then scales
 // it by what is left of the window - so rank buys depth and never time, and a

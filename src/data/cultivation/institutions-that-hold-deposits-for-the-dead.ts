@@ -38,12 +38,11 @@
  * claimant who is a stranger to them are precisely the case the graph fails on.
  * So the houses fall back on the only instrument that survives a death - a
  * phrase agreed in advance, held against the entry, and produced by whoever
- * turns up. See `WHY_A_PHRASE_AND_NOT_A_NAME`.
+ * turns up.
  *
  * ── What a deposit is not ────────────────────────────────────────────────
  *
- * `A_DEPOSIT_IS_NOT_A_LIFE`, stated once and enforced by the engine and by a
- * test. Objects cross. Nothing else does.
+ * Objects cross. Nothing else does.
  *
  * ── No odds in this file ─────────────────────────────────────────────────
  *
@@ -76,42 +75,11 @@ import { getSect, type SectEntry } from './sects.js';
  * plainly at the counter: the clerk does not ask who you are, because the house
  * does not care and could not check.
  */
-export const A_DEPOSIT_IS_NOT_A_LIFE = {
-    rule: 'A claim hands over objects. It hands over nothing else, under any circumstances, by any route.',
-    whatCrosses: [
-        'spirit stones, counted',
-        'pills and herbs, by catalog id and quantity'
-    ],
-    whatDoesNotCross: [
-        'realm ordinal, cultivation progress, foundation quality',
-        'insights and achievements - a comprehension is something a person did, and the person is dead',
-        'standing, rank or membership inside any house, including the one holding the deposit',
-        'knowledge records - the depositor knew where things were and the claimant does not',
-        'the depositor\'s name, which the claimant has no route to and no use for',
-        'lifespan, health, injuries healed, or anything else measured on a body'
-    ],
-    whyItMatters:
-        'Because a death that can be softened is not a death. The whole weight of this game sits on the run ending for good, and an inheritance route that returned any part of WHO somebody was would convert permadeath into a save file with an inconvenient loading screen. Objects are safe to pass because objects are what a grave passes already: every inheritance site in the catalog hands a stranger somebody else\'s possessions and hands them nothing else.',
-    theTest:
-        'Take the claim away and the claimant must price out as exactly the cultivator they were the moment before, plus a purse and a pouch. If anything else moved, the route is wrong.'
-} as const;
-
 /**
  * Why a house takes a phrase rather than a name, an heir or a token.
  *
  * Read off the Karma Palace's own stated limit rather than asserted here.
  */
-export const WHY_A_PHRASE_AND_NOT_A_NAME = {
-    theLimit:
-        'Ninefold Karma Palace settles inheritance by reading a thread across generations, and its own entry states that it has never once been able to read a thread through a grave. A dead depositor and an unrelated claimant is that case exactly.',
-    soWhatIsLeft:
-        'A form of words agreed while the depositor was alive, written against the entry, and produced at the counter by whoever turns up. It proves nothing about who the claimant is and is not supposed to: it proves that the depositor told them, which is the only fact the house is being asked to establish.',
-    andTheHouseKnowsThisIsWeak:
-        'Every one of the six says so in its own way. A phrase can be overheard, tortured out of somebody, or guessed by a persistent fraud, and the houses that keep records defend against the last of those by counting failed attempts and refusing the entry when the count runs out. The other two do not count, which is a different kind of risk and not a smaller one.',
-    whyTheHouseDoesNotHoldTheDepositorsName:
-        'Jade Register Hall would, for a fee, and that is a separate product. An escrow entry carries the phrase and the goods. Attaching the depositor to it would make the entry findable by anybody who knew who died, which is the failure the phrase exists to prevent.'
-} as const;
-
 // ─────────────────────────────────────────────────────────────────────────
 // TERMS
 // ─────────────────────────────────────────────────────────────────────────
@@ -168,7 +136,7 @@ export interface CustodyTerms {
     keepsWrittenRecord: boolean;
     /**
      * What the counter will tell a claimant who has the wrong phrase. Never any
-     * part of the phrase - see `HINTS_ARE_NOT_THE_PHRASE`.
+ * part of the phrase.
      */
     hintOnFailure: string;
     lapse: LapsePolicy;
@@ -189,20 +157,6 @@ export interface CustodyTerms {
  * themselves, and all of which a real clerk reading a real book would have in
  * front of them.
  */
-export const HINTS_ARE_NOT_THE_PHRASE = {
-    rule: 'A house may state what its book records ABOUT the entry. It may never state, spell, partially reveal, rhyme with, or narrow the phrase itself.',
-    whatABookHolds: [
-        'the day the entry was lodged, and therefore how long ago',
-        'how many words were agreed, because a clerk counts them writing it down',
-        'how many years the term was paid for, and whether it has run out',
-        'how many wrong attempts have already been heard against this entry'
-    ],
-    whyNotOneLetter:
-        'Because the phrase is the only thing in this game the player themselves has to carry across a death, and a hint that narrows it hands the carrying back to the engine. A house that will give you the first letter after four failures is a house with a four-failure password, and the player will find that out and use it.',
-    andTheHousesThatKeepNoBook:
-        'They cannot even offer the four facts above. What they say is that they do not know, which is true, and is the reason their attempt counts are generous and their entries are the ones that go missing.'
-} as const;
-
 /**
  * The six, in the order a cultivator with something to lose would consider
  * them: most expensive and most durable first.

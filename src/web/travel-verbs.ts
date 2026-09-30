@@ -936,8 +936,8 @@ export const travelVerbs = {
         // This spent `SHORT_ACTION_DAYS` for every journey to anywhere, while
         // `destinations` printed the catalog's `travelDays` beside each
         // province - so the game told a player Iron Crest was eleven days away and
-        // then took them there in one. `FOLD_TRAVEL_ENGINE_GAP` names this line
-        // as the reason a fold could not be shown to save anybody anything.
+        // then took them there in one. A fold can save time only when the
+        // engine charges the same distance it displays.
         //
         // Only where the catalog states a figure, at either of the two scales
         // it states one at - a province road, or a road between two named
@@ -1201,8 +1201,7 @@ export const travelVerbs = {
     //
     // `ride`, `fold` and `passage`, and between them they add no mechanism at
     // all. Every piece was built, argued out and left with no caller in
-    // `src/`, and two of the three modules record their own gap in their own
-    // file - `FOLD_TRAVEL_ENGINE_GAP` names this handler by name.
+    // `src/`, and none had reached the movement handler.
     //
     //   the conveyance ladder     `priceJourney`, `bestForThisRoad`,
     //                             `unsuitedFor`, `whatArrivingOnThisSays`,
@@ -1214,9 +1213,8 @@ export const travelVerbs = {
     //
     // ── AND THE ROAD IS PAID NOW, WHICH IS WHAT MAKES ANY OF IT MEAN ─────
     //
-    // `FOLD_TRAVEL_ENGINE_GAP` is explicit that a saving cannot be shown to a
-    // player without printing a number the engine does not charge. It was
-    // right: `move` spent a flat day for every journey while `destinations`
+    // A saving cannot be shown to a player without printing a number the engine
+    // charges. `move` spent a flat day for every journey while `destinations`
     // printed the catalog's `travelDays` beside each province, so the game
     // told a player Iron Crest was eleven days away and then took them there in
     // one. {@link daysOnTheRoadTo} is the single reader of that figure and

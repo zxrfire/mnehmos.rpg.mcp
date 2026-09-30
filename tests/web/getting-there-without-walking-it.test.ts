@@ -7,8 +7,8 @@
  *
  *   `how-far-somebody-can-fold-space-and-what-it-costs.ts` - the range curve
  *   off the rung, the two fixes and only two, the quadratic settling.
- *   `FOLD_TRAVEL_ENGINE_GAP` says a saving cannot be shown to a player without
- *   printing a number the engine does not charge.
+ *   A saving cannot be shown to a player without charging the displayed
+ *   distance.
  *   `buying-passage-at-a-measured-span-counter.ts` - the board, the fare, the
  *   settling a passenger pays for not understanding what moved them.
  *   `what-a-conveyance-does-to-a-journey.ts` - a mount, a drawn carriage, a

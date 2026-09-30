@@ -50,8 +50,7 @@
  * person with the right words is refused too. A fraud who guesses badly enough
  * destroys the thing for the person who could have collected it.
  *
- * See `HINTS_ARE_NOT_THE_PHRASE` in the custody catalog for what a counter may
- * say. {@link hintFor} implements it and cannot say anything else: it is handed
+ * {@link hintFor} implements the counter's limit and cannot say anything else: it is handed
  * the record and never the phrase, so there is nothing in scope for it to leak.
  */
 

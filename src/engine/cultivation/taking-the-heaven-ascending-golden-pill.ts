@@ -2,10 +2,8 @@
  * The one crossing that is given rather than made.
  *
  * `immortal-items.ts` has described The Heaven-Ascending Golden Pill in full since it was
- * written and its own `ENGINE_GAPS` entry says plainly that nothing implements
- * it: *"There is no `PillEffect` for advancing a rank. [...] What is missing is
- * the effect, not room for it."* Measured, `promote_realm` has zero consumers in
- * `src/` outside the catalog that declares it.
+ * written. It crosses a realm boundary without using the ordinary pill effect
+ * path.
  *
  * What is deliberately NOT decided here is the Price of Advancement. A crossing
  * taken this way never reaches `evaluateToll`, because it never reaches

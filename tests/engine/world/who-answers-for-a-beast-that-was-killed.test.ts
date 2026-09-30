@@ -34,7 +34,6 @@ import {
 import type { Party } from '../../../src/engine/social-leverage/what-a-deed-leaves.js';
 import {
     WHAT_A_STAGE_MEANS_ABOUT_A_KILLING,
-    WHY_NOTHING_PAST_THE_CHANGE_IS_HANDLED_HERE,
     answerabilityOf,
     shareOfWhatTheyHad,
     whatTheKillLeft,
@@ -111,10 +110,6 @@ describe('whether there is anything to answer for at all', () => {
             expect(answerabilityOf(b, DISTRICT), b.id).toBe('a_person_was_killed');
             expect(answerabilityOf(b, null), b.id).toBe('a_person_was_killed');
         }
-        // And it says why rather than pricing it, which is the finding this
-        // module reports rather than patches.
-        expect(WHY_NOTHING_PAST_THE_CHANGE_IS_HANDLED_HERE.whatIsMissing)
-            .toMatch(/no row among the people/i);
     });
 
     it('has nobody to answer to where the thing was nobody\'s', () => {

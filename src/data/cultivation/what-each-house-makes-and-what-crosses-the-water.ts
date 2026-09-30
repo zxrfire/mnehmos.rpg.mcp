@@ -52,8 +52,7 @@
  * the world founds for itself has no arts and never will. Artisans are the
  * obvious shape of an answer to that - a house that makes a thing is a house
  * that could teach making it - but the answer would live in the world engine
- * rather than here, and it is recorded in `THE_ARTS_A_NEW_HOUSE_HAS` below
- * rather than taken on.
+ * rather than here.
  */
 
 import { z } from 'zod';
@@ -483,14 +482,6 @@ export const HALFWATER_TERMS = {
  * than in a content catalog, and this file has no business reaching into how
  * a founded house is populated.
  */
-export const THE_ARTS_A_NEW_HOUSE_HAS = {
-    absence: 'A house the world founds during a run is given cultivation roads and no arts, and nothing will ever give it any.',
-    whyArtisansAreTheShapeOfTheAnswer:
-        'Every faction has makers, and `artisansOf` derives what they make from the province a house stands in - which works for a house nobody authored, because the ground is authored even where the house is not.',
-    whereItWouldGo: 'The world engine, beside `newlyEntitled`. Not here.',
-    status: 'recorded, not built'
-} as const;
-
 // ─────────────────────────────────────────────────────────────────────────
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────

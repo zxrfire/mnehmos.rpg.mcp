@@ -1553,8 +1553,7 @@ Four rules hold this together, and breaking any one of them breaks something loa
 
 - **A claim hands over objects and nothing else.** Stones and pouch stock. Never a rung,
   progress, a foundation, an insight, standing, a knowledge record or a name.
-  `A_DEPOSIT_IS_NOT_A_LIFE` states it and `applyGoods` is the single writer, so there is one
-  place to check. A death stays final.
+  `applyGoods` is the single writer, so there is one place to check. A death stays final.
 - **The phrase is never stored.** Only a digest salted with the entry id, and no function
   anywhere reverses it. The player carries the words across the death; that is the mechanic.
   `hintFor` is handed the entry's facts and not the phrase, so it has nothing in scope to

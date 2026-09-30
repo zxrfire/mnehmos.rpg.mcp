@@ -6,8 +6,7 @@
  *
  *   - no price, anywhere, in any form
  *   - the world counts are tiny, exact, and equal to the sum of the holdings
- *   - the two effects are declared as engine gaps rather than implemented in
- *     the catalog, and neither is expressible by the existing PillEffect set
+ *   - the two effects are implemented by the engine rather than the catalog
  *   - exactly one holder can be persuaded; the other two are arithmetic
  *   - a good case was refused, on the record, and it cost the refuser anyway
  *
@@ -18,7 +17,6 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { PillEffectSchema } from '../../src/schema/cultivation.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import { getApexInstitution } from '../../src/data/cultivation/hierarchy.js';
 import { PILLS } from '../../src/data/cultivation/pills.js';
@@ -29,7 +27,6 @@ import {
     IMMORTAL_HOLDINGS,
     HoldingSchema,
     RecordedRefusalSchema,
-    ENGINE_GAPS,
     getHoldingsOf,
     THE_LAST_REALM_IS_UNBUYABLE,
     THE_STEP_AND_THE_BOUNDARY,
@@ -43,7 +40,6 @@ import {
     ReceiptHistorySchema
 } from '../../src/data/cultivation/immortal-items.js';
 import { rankName, realmForOrdinal, isRealmBoundary } from '../../src/engine/cultivation/realms.js';
-import { MAX_RANKS_PER_TURN } from '../../src/schema/cultivation.js';
 import { getSectAdmission } from '../../src/data/cultivation/sects.js';
 import { AZURE_CLOUD_INTAKE } from '../../src/data/cultivation/hierarchy.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
@@ -69,7 +65,6 @@ const persuadableHolders = () => IMMORTAL_HOLDINGS.filter(h => h.releaseMode ===
 const recordedRefusals = () => IMMORTAL_HOLDINGS
     .filter(h => h.recordedRefusal !== null)
     .map(h => ({ holding: h, refusal: h.recordedRefusal! }));
-const getEngineGap = (effect: string) => ENGINE_GAPS.find(g => g.effect === effect);
 const receiptsFor = (factionId: string) => RECEIPT_HISTORIES.find(r => r.factionId === factionId);
 const spentAcrossHistories = (itemId: string) => RECEIPT_HISTORIES.filter(r => r.itemId === itemId)
     .reduce((acc, r) => addCounts(acc, {
@@ -239,44 +234,6 @@ describe('who holds them', () => {
         for (const { holding } of refusals) {
             expect(holding.releaseMode).toBe('collective_consent');
         }
-    });
-});
-
-describe('engine gaps', () => {
-    it('declares both effects as gaps rather than inventing a mechanic', () => {
-        const effects = new Set(IMMORTAL_ITEMS.map(i => i.effect));
-        for (const effect of effects) {
-            const gap = getEngineGap(effect);
-            expect(gap, `${effect} is not declared as a gap`).toBeDefined();
-            expect(gap!.missing.length).toBeGreaterThan(100);
-            // `blockedBy` is optional on the record and required here: a gap
-            // that does not say what stands in the way is half a declaration.
-            // Proven present before it is measured, rather than measured
-            // through a `?.` that would pass a missing one.
-            const blockedBy = gap!.blockedBy;
-            expect(blockedBy, `${effect} does not say what blocks it`).toBeTruthy();
-            expect(blockedBy!.length).toBeGreaterThan(80);
-            expect(gap!.note.length).toBeGreaterThan(80);
-        }
-        expect(ENGINE_GAPS.length).toBe(effects.size);
-    });
-
-    it('confirms neither effect is expressible by the current PillEffect set', () => {
-        const pillEffects = PillEffectSchema.options as readonly string[];
-        for (const item of IMMORTAL_ITEMS) {
-            expect(pillEffects.includes(item.effect),
-                `${item.effect} is now a PillEffect - the gap note needs updating`).toBe(false);
-        }
-        // The nearest existing effect is named, so the difference is on record.
-        expect(getEngineGap('promote_realm')!.missing).toMatch(/advance_progress/);
-        // And the permanence rule the root change breaks is cited, not implied.
-        expect(getEngineGap('change_spirit_root')!.missing).toMatch(/spiritRoot|permanent|never editable/i);
-    });
-
-    it('leaves the root change deliberately unresolvable', () => {
-        const gap = getEngineGap('change_spirit_root')!;
-        expect(gap.note).toMatch(/deliberately|should not be the place|ceremony/i);
-        expect(gap.blockedBy).toMatch(/cultivation rate|deviation|derived|recalculation/i);
     });
 });
 
@@ -489,31 +446,6 @@ describe('the two claims', () => {
         expect(THE_TWO_CLAIMS.theOneWhoWasRefused.theGrievance).toMatch(/can only be agreed with/i);
         expect(THE_TWO_CLAIMS.theOnesWhoDoNotAsk).toMatch(/declined to raise it/i);
         expect(THE_TWO_CLAIMS.itKeysToUnitOfValue).toMatch(/faction-character/);
-    });
-});
-
-describe('the engine contract', () => {
-    it('states what promote_realm must do, and agrees with the turn cap', () => {
-        const step = ENGINE_GAPS.find(g => g.effect === 'promote_realm')!;
-        expect(step.contract.length).toBeGreaterThanOrEqual(5);
-        const all = step.contract.join(' ');
-        expect(all).toMatch(/exactly one realm boundary/i);
-        expect(all).toMatch(/Once per cultivator for life/i);
-        expect(all).toMatch(/foundationQuality/);
-        expect(all).toMatch(/41 and above is unreachable/i);
-        // One rank granted, one rank permitted per turn.
-        expect(MAX_RANKS_PER_TURN).toBe(1);
-        expect(step.blockedBy).toMatch(/agree rather than collide/i);
-    });
-
-    it('states the root transitions precisely enough to wire', () => {
-        const root = ENGINE_GAPS.find(g => g.effect === 'change_spirit_root')!;
-        const all = root.contract.join(' ');
-        expect(all).toMatch(/never better than two/i);
-        expect(all).toMatch(/never a single root/i);
-        expect(all).toMatch(/luck at use time/i);
-        expect(all).toMatch(/single mutated root/i);
-        expect(all).toMatch(/Once per cultivator for life/i);
     });
 });
 

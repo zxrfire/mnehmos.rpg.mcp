@@ -59,7 +59,6 @@ import {
 } from '../../src/web/leaving-things-for-the-next-life';
 import {
     CUSTODY_TAKERS,
-    A_DEPOSIT_IS_NOT_A_LIFE,
     custodyTermsFor,
     feeForTerm
 } from '../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead';
@@ -189,15 +188,6 @@ describe('objects cross and nothing else does', () => {
             .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE holder_id = ?')
             .all('heir') as { item_id: string; quantity: number }[];
         expect(pouch).toEqual([{ item_id: 'pill-qi-gathering', quantity: 3 }]);
-    });
-
-    it('the catalog states the invariant and names what may not cross', () => {
-        // The rule is not enforced by discipline alone: it is written down, and
-        // everything it forbids is a real column on the cultivator row.
-        expect(A_DEPOSIT_IS_NOT_A_LIFE.whatCrosses.length).toBe(2);
-        for (const forbidden of ['realm ordinal', 'standing', 'knowledge records']) {
-            expect(A_DEPOSIT_IS_NOT_A_LIFE.whatDoesNotCross.join(' ')).toContain(forbidden);
-        }
     });
 
     it('burying takes only what the cultivator actually holds', () => {

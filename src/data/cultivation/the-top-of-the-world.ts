@@ -242,7 +242,7 @@ export const WHY_NOBODY_MOVES = {
         // hundred" about the same pairing. Re-measured: 100%, over 300 seeds
         // and again over 3,000. The head-to-head figures are the ones that
         // still reproduce, because two bodies a side resolve inside the round
-        // budget. See `MEASUREMENT_STATUS`.
+        // budget.
         'Because the war is not the last thing that happens that season. Put the two of them alone in a room on the evening of their victory and the Myriad Course Hall takes the Earth Vein Tower a hundred times in a hundred - forty-five against forty-three, with no courts left in it and nothing to hide behind. The Survey does not need to be told this. Joining the only alliance that can win means winning, and then standing in front of the one person in the world who beats it, having just spent a war proving it will do that sort of thing. The alliance fails on the arithmetic of the following morning rather than on the arithmetic of the fight.',
     andSheOnlyHasToREACHOne:
         'And that is before the Pavilion does anything deliberate. Ru Anwei cannot beat two houses - three bodies against twenty-three, and the measured result is that she never lays a hand on either head, because at that scale the people who matter are behind everybody else. What she can do is decline to fight the battle they brought and go for one man: head to head, on the objects, she takes the Earth Vein Tower\'s ninety-seven times in a hundred. So the Survey cannot be in the room. Not cannot win - cannot be present, because the whole of its position is a person who has not left a chamber in four hundred years and the one thing the Pavilion is for is making sure that if he ever does, it is the last day of it.',
@@ -263,7 +263,7 @@ export const WHY_NOBODY_MOVES = {
         // this said thirty-two and twenty-eight for a second object and five
         // per cent for a second person, and concluded "a person is worth almost
         // nothing". The first half survives and the second half does not. See
-        // `MEASUREMENT_STATUS`.
+        // the current resolver audit.
         'One more immortal object arriving from above does it, and it does it enormously. Sent a second, the Myriad Course Hall\'s move on either neighbour goes to ninety-seven and ninety-eight per cent; the Earth Vein Tower\'s on the Myriad Course Hall goes to forty-seven; the Pavilion\'s on the Myriad Course Hall goes to fifty. Every one of those is from nobody\'s plan to somebody\'s, in the time it takes to hand a person a box, and no house on the board is exempt.',
     andAPersonIsNotWorthNothingAfterAll:
         // The correction. The old sentence was the better line and it is not
@@ -342,26 +342,3 @@ export function housesThatCouldJoinAConspiracy(): { id: string; name: string; ce
         .filter(h => h.ceiling >= Math.min(...APEX_INSTITUTIONS.map(a => a.powerOrdinal)))
         .sort((a, b) => b.ceiling - a.ceiling);
 }
-
-
-
-// MEASUREMENT STATUS
-
-/**
- * What reproduces, what does not, and why.
- */
-export const MEASUREMENT_STATUS = {
-    whatWasWrong:
-        'For a period this file carried five figures off the whole-house sweep that could not be reproduced, and the cause was the instrument. `MAX_EXCHANGES` was a flat 8 - calibrated, by its own doc comment, so that a genuinely even DUEL only just runs out of exchanges - and the sweep fights whole mobilised apexes of eight, fifteen and five bodies. Eight exchanges cannot empty a side of fifteen, so every one of the six pairings returned `winningSideId: null` on all three hundred runs, in both directions. `worthIt` gates on the attacker actually winning, so a stalemate counted as a failure to take the target, and the sweep printed "nothing is worth doing" for every house in every world.',
-    howItWasFound:
-        'By removing one variable. The identical construction with the client reinforcements left out - two or three bodies a side instead of fifteen - stalemated zero times in three thousand and returned decisive figures. Side SIZE decided whether the resolver resolved, and nothing else had changed. That is the failure mode AGENTS.md names by title: a stalemate is not a loss, and scoring it as one is how "one immortal loses to ten ordinary cultivators" was once reported.',
-    andTheFix:
-        'Was in the engine and not here, which is why this file did not chase it. The round budget is now per body on the smallest side, so a fight ends when some side can be cleared, and the stalemate rate is zero at every size from one against one to fifteen against fifteen. The sweep produces real numbers for the first time and this file has been rewritten against them.',
-    whatWasRetracted:
-        'Three figures, all wrong, all replaced above. The best move on the board was written as one in a hundred and is three in a thousand. Exactly one of the three two-apex alliances was said to be able to win, and all three win a hundred times in a hundred. A second object was said to take the Earth Vein Tower to thirty-two per cent and a second person to five, from which the file concluded that a person is worth almost nothing - and that conclusion is the one real casualty, because it was one of the better arguments in the setting and it is only half true.',
-    andWhatSurvivedIntact:
-        'The argument, which is the part that matters. Nobody moves because nobody survives the morning after, and that is now emerging from the resolver rather than being asserted next to it: every attacker who wins a war and then meets the third house survives it zero times in a thousand. The head-to-head figures were never in question and still reproduce exactly - the Myriad Course Hall takes the Earth Vein Tower a hundred times in a hundred, the Pavilion takes the Earth Vein Tower ninety-seven. And the property the whole arrangement was designed around holds on measurement rather than by request: the best move available to anybody is above zero and is nobody\'s plan.',
-    theLessonWorthKeeping:
-        'Which is that the request that came out of the bad numbers was to tune the resolver until "one in a hundred" came back. That would have been tuning the fight that settles a tavern brawl to compensate for a metric that could not tell a beaten attacker from a clock running out, and it would have corrupted every other measurement in the repo to fix a sentence in this file. The instrument was wrong. The world was not.'
-} as const;
-
