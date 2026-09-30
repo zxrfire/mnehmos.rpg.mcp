@@ -7,7 +7,7 @@ import {
     BEAST_CORE_ORDINAL,
     type Beast
 } from '../../data/cultivation/beasts.js';
-import { canPointAt, type KnowingStage } from '../social/discovery.js';
+import { canPointAt, stageRank, type KnowingStage } from '../social/discovery.js';
 import type { DayIndex } from '../social/common.js';
 import type { ObligationCause } from '../social/grudges.js';
 import {
@@ -229,13 +229,23 @@ export function whatTheKillLeft(input: AKillToAnswerFor): WhatTheKillLeft {
         deed,
         leaves,
         knownTo,
+        // The furthest anybody got, said in the ladder's own words for a killing.
+        // Below `placed` that sentence is the whole answer; at or above it the
+        // transfer is priced and says the rest.
         line: knownTo.length === 0
-            ? 'Nobody can put a name to it. The thing is dead, whoever was standing behind '
-              + 'it may well know that, and there is no account open because there is nobody '
-              + 'for it to be against.'
+            ? WHAT_A_STAGE_MEANS_ABOUT_A_KILLING[furthestStage(input.stages)]
             : `${knownTo.length} ${knownTo.length === 1 ? 'party can' : 'parties can'} say `
-              + `whose doing it was. ${leaves.note}`
+              + `whose doing it was. ${WHAT_A_STAGE_MEANS_ABOUT_A_KILLING[furthestStage(input.stages)]} `
+              + leaves.note
     };
+}
+
+function furthestStage(stages: ReadonlyMap<string, KnowingStage>): KnowingStage {
+    let furthest: KnowingStage = 'unaware';
+    for (const stage of stages.values()) {
+        if (stageRank(stage) > stageRank(furthest)) furthest = stage;
+    }
+    return furthest;
 }
 
 const LINE_FOR: Readonly<Record<Answerability, string>> = Object.freeze({

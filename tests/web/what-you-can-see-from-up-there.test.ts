@@ -22,6 +22,7 @@ import {
     ABOVE_THE_WEATHER,
     HORIZON_AT_FIRST_FLIGHT,
     LEAVES_THE_GROUND,
+    UNDER_THE_WEATHER,
     horizonInDays,
     whatCanBeSeenFromUpThere,
     whichWay,
@@ -29,7 +30,7 @@ import {
     type Sighting
 } from '../../src/web/what-you-can-see-from-up-there';
 import { MAX_ORDINAL, realmForOrdinal } from '../../src/engine/cultivation/realms';
-import { makeGame } from './harness';
+import { makeGame, makeGameInWorld } from './harness';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE ANCHORS ARE THE CATALOG'S, NOT THIS MODULE'S
@@ -220,7 +221,7 @@ describe('what a look from up there comes back with', () => {
 
         expect(said).toContain('compound somebody built to be defended');
         expect(said).not.toMatch(/sect|Sect|pavilion|Pavilion|house|House/);
-        expect(said).toContain('somebody has to say out loud');
+        expect(said).toMatch(/no name, owner or contents/);
     });
 
     /** Dead ground and forbidden ground are one bald patch from a thousand feet. */
@@ -281,7 +282,29 @@ describe('played at two heights', () => {
 
         expect(said).toMatch(/things down there nobody has told you about|One thing down there/);
         expect(said).toMatch(/day[s]? of road away|inside this province/);
-        expect(said).toContain('somebody has to say out loud');
+        expect(said).toContain('no name, owner or contents');
+    }, 60_000);
+
+    /**
+     * ABOVE_THE_WEATHER was a number only this file's anchor test read, so the
+     * difference between a first flight and a sustained one reached nobody.
+     * Between the two rungs the look says the flight is low and short; from the
+     * second rung up the look reports sustained flight above cloud height.
+     */
+    it('says a first flight stays under the weather, and a sustained one does not', async () => {
+        const { game, repos } = await makeGameInWorld({
+            worldSeed: 'horizon-weather-world', seed: 'horizon-weather'
+        });
+        const created = await game.newRun('Wei Zhaoxun');
+
+        repos.cultivators.update(created.cultivator.id, { realmOrdinal: LEAVES_THE_GROUND + 1 } as never);
+        const low = (await game.act('where can I go')).narration ?? '';
+        repos.cultivators.update(created.cultivator.id, { realmOrdinal: ABOVE_THE_WEATHER } as never);
+        const high = (await game.act('where can I go')).narration ?? '';
+
+        expect(low).toContain(UNDER_THE_WEATHER);
+        expect(high).not.toContain(UNDER_THE_WEATHER);
+        expect(high).toMatch(/sustained above cloud height/);
     }, 60_000);
 
     /**

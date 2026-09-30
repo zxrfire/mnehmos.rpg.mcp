@@ -9,6 +9,7 @@
  */
 
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
+import { HOW_TO_PITCH_IT } from '../engine/social/how-an-answer-is-known.js';
 import { realmIndexOf } from '../engine/cultivation/realms.js';
 import { catalogPersonBehind } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { whyTheyLeftTheChair } from '../engine/world/a-house-changes-who-leads-it.js';
@@ -40,6 +41,9 @@ Each turn you are handed:
   clerk's notes, not prose.
 
 HOW TO PLAY A TURN
+
+HOW A CLAIM IS KNOWN
+${Object.entries(HOW_TO_PITCH_IT).map(([kind, instruction]) => `${kind}: ${instruction}`).join('\n')}
 
 When there are people here, they are alive, and the player's act lands on a room that answers.
 - If the player spoke to somebody, it is the two of them: give a line or two of scene and then PLAY

@@ -145,24 +145,6 @@ export const A_HOUSE_THAT_TAKES_ONE_SEX: Readonly<Record<string, Sex>> = Object.
 });
 
 /**
- * Why the second closed Court is not in the table above, recorded rather than
- * quietly left - the same posture as `FOLD_TRAVEL_ENGINE_GAP`.
- */
-export const A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT = {
-    what: 'A women-only Court cannot be added to the catalog today without breaking one of two standing rulings, and the choice between them is the design owner\'s.',
-    theFirstRuling:
-        '"Court" is a TIER MARKER, not a name. `cultivation-courts.test.ts` requires every body called a Court to stand at powerOrdinal 34 or above, and when that rule was written the Azure Mist Court was RAISED from 27 rather than renamed. Combined with this file\'s own ruling that a closed door has to be a Court - a gate is only interesting if what is behind it is worth wanting - a new closed house cannot be small. It has to be a genuine power.',
-    theSecondRuling:
-        'A power of that size needs a province that supports one, and the only province whose physics and politics do is the Jade Gorge: it is the one place in the world where ground alone carries somebody to the top of the ladder, and the only one with a grant book for an ungranted vein to be an exception to. But `the-map-by-bearing-and-what-crosses-the-water.test.ts` caps the centre at half the map, and the centre is sitting exactly on that cap. Measured: centre 17, everywhere else 17. An eighteenth Jade Gorge house fails it at 18 against 17.',
-    whyTheOtherProvincesDoNotWork:
-        'Each contradicts the house at its own governing fact rather than at a number. The White Stair is "two institutions and nothing else" in five places and its whole politics is a two-body quarrel. The Yellow Plain\'s thesis is that no institution holds a foot of land. The Buddha Precipice has a localCeilingOrdinal of 6 and no client sects at all. The Pearl Ocean has no vein within reach of anybody. The Burial Sands is at bearing `interior`, which the compass test excludes by construction.',
-    whatWouldUnblockIt:
-        'One sentence from the design owner, and there are three shapes it could take: move an existing body out of the Jade Gorge\'s seating and let the Court take the seat; rule that the centre cap counts something other than raw house count; or rule that this one house may be named something other than a Court, which means re-opening whether a closed door has to sit on a power.',
-    whatMustNotBeDoneInstead:
-        'Widening the compass guard. It is a structural claim about the shape of the world rather than a threshold on a noisy measurement, and AGENTS.md names the sentence that precedes this mistake: "it is only just under, and my change is obviously fine."'
-} as const;
-
-/**
  * Whom this house will admit, or null where it admits anybody.
  */
 export function whoAHouseWillTake(factionId: string): Sex | null {

@@ -56,6 +56,11 @@ import {
     standingsAreNotATotalOrder
 } from '../data/cultivation/crossings.js';
 import { nameIsUsable, whoAnswersFor } from '../data/cultivation/named-figures.js';
+import {
+    RECEIPT_HISTORIES, REGISTERS_COUNT_WHAT_THEY_CAN_SEE,
+    STOCK_VERSUS_FLOW, THE_SENDING_PYRAMID, IMMORTAL_ITEMS
+} from '../data/cultivation/immortal-items.js';
+import { idsForFaction } from '../data/cultivation/governance-and-water-rights.js';
 
 /**
  * How much of the answer somebody at this height gets.
@@ -207,6 +212,19 @@ export function whoStandsBehindThem(input: {
     lines.push(standing.whatDepletionLooksLike);
     lines.push(standing.resilience);
     lines.push(standing.behaviour);
+    lines.push(STOCK_VERSUS_FLOW.theDistinction);
+    lines.push(THE_SENDING_PYRAMID.thePyramid);
+    lines.push(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.theCaveat);
+    const houseIds = idsForFaction(input.factionId);
+    for (const receipt of RECEIPT_HISTORIES) {
+        if (!receipt.countedByTheRegisters || !houseIds.includes(receipt.factionId)) continue;
+        const item = IMMORTAL_ITEMS.find(row => row.id === receipt.itemId);
+        if (!item) continue;
+        const received = Object.values(receipt.everReceived).reduce((n, count) => n + count, 0);
+        const keptAtRecording = Object.values(receipt.stillHeld).reduce((n, count) => n + count, 0);
+        lines.push(`The receipt history for ${item.name} records ${received} received and `
+            + `${received - keptAtRecording} spent when the history was written.`);
+    }
 
     // Who answers, where anybody does: the most junior immortal the house can name.
     const answers = channel === null ? undefined : whoAnswersFor(input.factionId);

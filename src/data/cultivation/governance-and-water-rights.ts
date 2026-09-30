@@ -3287,7 +3287,7 @@ export const DEFERENCE_HOLDINGS: readonly {
     {
         factionId: 'sect-ancient-bough-grove',
         administeredCore:
-            'A valley of old trees, the mountain above it and four settlements: everything inside a day and a half of walking, which is the entire extent of what the Grove actually governs.',
+            'A valley of old trees, the mountain above it and four settlements, within a day and a half of walking.',
         deferenceZone:
             'Roughly eleven days across, in every direction, within which nobody encroaches, nobody applies for a grant, and nobody has tested the assumption in forty-one years.',
         zoneIsContested:
@@ -3312,11 +3312,11 @@ export const DEFERENCE_HOLDINGS: readonly {
  */
 export const BORDER_KINDS = {
     federated:
-        'A line on a lease. It is written down, it is arbitrable, and both parties can produce the document - which is why federated borders generate lawsuits rather than wars.',
+        'The border is written on a lease. Both parties hold the document, and a dispute can go to arbitration.',
     administered:
-        'Where the patrols stop. It is exactly as large as the administration can afford to walk, it moves when staffing moves, and the register knows precisely where it is.',
+        'The administered border is where the patrols stop. Its extent changes with the ground they patrol.',
     deference:
-        'Wherever people stop being willing to find out. Nobody can point to it on a map, everybody inside it can feel it, and it is the only border in the world that can vanish in a season without anyone crossing it.'
+        'The outer border has no surveyed line. It reaches as far as people remain unwilling to find out whether the holder will answer an encroachment.'
 } as const;
 
 /** What model each province runs on, and what that feels like from below. */

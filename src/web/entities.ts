@@ -29,6 +29,8 @@ import {
 } from '../data/cultivation/index.js';
 import { PRICES, type Price } from '../data/cultivation/mortal-world.js';
 import { getRecipesUsingHerb } from '../data/cultivation/recipes.js';
+import { EXTINCTION_NOTES, isExtinct } from '../data/cultivation/herbs.js';
+import { PLACERS } from '../data/cultivation/regions/rank-translation.js';
 import { residueFor } from '../data/cultivation/history.js';
 import {
     REGIONS,
@@ -880,16 +882,18 @@ export function resolveHerb(query: string): ResolvedEntity | null {
         id: match.id,
         name: match.name,
         facts: [
-            `${match.name}. ${match.description}`,
-            `It grows where the ${match.biome} is, and it goes for about ${match.value} spirit stones to anyone buying.`,
+            `${match.name}. ${isExtinct(match.id) ? EXTINCTION_NOTES[match.id] : match.description}`,
+            ...(!isExtinct(match.id)
+                ? [`It grows where the ${match.biome} is, and it goes for about ${match.value} spirit stones to anyone buying.`] : []),
             ...(goesInto.length > 0 ? [`Alchemists put it into the ${goesInto.join(', the ')}.`] : [])
         ],
         structure: [
             `${articleCapitalised(match.grade)} ${match.grade}-grade herb of the ${match.biome}, `
-            + `drawn at `
-            + `weight ${match.rarityWeight} against everything else that grows there. It can be `
-            + `taken from ${theRung(match.harvestOrdinal)} and is valued at `
-            + `${match.value} spirit stones.`
+            + (isExtinct(match.id)
+                ? 'absent from the growing pool. '
+                : `drawn at weight ${match.rarityWeight} against everything else that grows there. `
+                  + `It can be taken from ${theRung(match.harvestOrdinal)} and is valued at ${match.value} spirit stones. `)
+            + `It is pitched at ordinal ${match.harvestOrdinal}.`
         ]
     };
 }
@@ -1313,7 +1317,7 @@ export function resolveLocalTitle(query: string, self: Cultivator): ResolvedEnti
             facts: [
                 `${title.band.localName} is what ${region.name} calls ${title.standardName}. `
                 + title.band.subRankNote,
-                ...(misread ? [misread.insideIsNot] : [])
+                ...(misread ? [misread.insideIsNot, PLACERS.what, PLACERS.reliability] : [])
             ],
             structure: [
                 `${title.band.localName} covers ${theRung(title.fromOrdinal)} to `

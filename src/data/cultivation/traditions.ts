@@ -219,9 +219,9 @@ export const TRADITION_WAR = {
     whatTheGeographyRecords:
         'A province where the qi is in the rock instead of the air, a burn edge that is still moving at about a pace a year, and a weir works at the centre of it whose formation nodes are cut into stone rather than laid on ground.',
     lowFallAccount:
-        'That the carvers did it to themselves: a working at the weir that went wrong, or was meant to deny the province to the Drawn and succeeded far past its brief. Taught in the Jade Gorge as an object lesson in what happens when a tradition refuses arbitration.',
+        'The Jade Gorge account says a carving at the weir inverted the qi. It attributes the loss of the province to the carvers.',
     marchesAccount:
-        'That the Drawn drained the province deliberately to end the quarrel, and that the Cut Road exists because a few people learned to work what was left rather than die of it. Taught in the Buddha Precipice as the founding fact of the region.',
+        'The Buddha Precipice account says the Drawn drained the province deliberately. It says the Cut Road began among the survivors who learned to work the remaining qi in stone.',
     trueAccount:
         'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Vermilion Sigil Terrace\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
     discoverableTraces: [

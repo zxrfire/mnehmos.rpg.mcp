@@ -76,13 +76,13 @@ export const RANK_MISREADINGS: readonly {
 export const PLACERS = {
     trade: 'placer',
     what:
-        'Someone who can look at a cultivator from the other tradition and say, accurately, where inside a realm they sit. The realm is free - anyone can see that. The position inside it is the entire product.',
+        'A placer is paid to assess where a cultivator from the other tradition stands within a realm.',
     whoSellsIt:
         'Ninefold Karma Palace, as a second line of business beside ancestral certification, and about nine independents at Clear River Ferry and Iron Crest who work the border road and undercut it.',
     priceNote:
         'Ledger placement of a single foreign cultivator costs more than a month of cave rent on a decent vein, and is still cheaper than being wrong once.',
     reliability:
-        'The Karma Palace publishes its own error rate, which is roughly one in six, and it is the best figure anybody has. The independents do not publish one.'
+        'The published placement error rate is about one in six. Independent placers publish no error rate.'
 } as const;
 
 /**

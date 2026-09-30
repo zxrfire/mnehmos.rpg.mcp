@@ -11,6 +11,7 @@ including the question of what money cannot buy, which is most of what matters.
 |---|---|
 | [`economy.md`](economy.md) | stones, prices, and the two economies |
 | [`items.md`](items.md) | counted and tracked, provenance, and what holding a thing says |
+| [`beast-contracts.md`](beast-contracts.md) | mutual terms and the remaining bonded-cultivation gap |
 
 ## The design is not all in here
 
@@ -55,4 +56,3 @@ Both also reach the design prose in `src/data/cultivation/`.
 - [`../../../src/web/README.md`](../../../src/web/README.md) - how a player handles objects:
   `register-items.ts`, `handing-somebody-a-thing.ts`, `market-prices.ts`,
   `what-is-being-swapped-for-what.ts`, `object-theft.ts`.
-

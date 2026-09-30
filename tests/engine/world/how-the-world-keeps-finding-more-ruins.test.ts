@@ -7,6 +7,10 @@
  * two centuries and differ completely at five millennia, so a test that only
  * checks the short horizon would have passed against the defect this module
  * exists to fix.
+ *
+ * The former prose-export assertions now live in closed-ground.md. These
+ * tests retain the finite reserve, long horizon and ward-decay behaviours;
+ * asserting the rationale's wording added no protection to those rules.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -23,7 +27,6 @@ import {
     FINDS_BEFORE_THE_RATE_HALVES,
     FINDABLE_ONCE_INTEGRITY_FALLS_BELOW,
     PROSPECTORS_PER_PARTY,
-    RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT,
     RUNG_AT_WHICH_SOMEBODY_HAS_A_DOOR,
     applyRuinProspecting,
     decorateOnce,
@@ -40,7 +43,6 @@ import {
     whatTheDeadLeftUnder
 } from '../../../src/engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
-    INTENT_HAS_A_HALF_LIFE,
     effectiveWardOrdinal,
     oddsOfGettingThroughTheDoor,
     wardConditionOf,
@@ -76,13 +78,6 @@ function openingYears(state: WorldState, from: number): number[] {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('the reserve model', () => {
-    it('states the finite-in-principle half as loudly as the inexhaustible half', () => {
-        expect(RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT.principle).toMatch(/finite in principle/i);
-        expect(RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT.principle).toMatch(/nobody is making ruins/i);
-        expect(RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT.whatThisIsNot).toMatch(/not a spawner/i);
-        expect(RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT.theMeasurementThatMatters)
-            .toMatch(/five thousand/i);
-    });
 
     it('names the category for what it is rather than for what happened to it', () => {
         expect(WHY_CLOSED_GROUND.term).toBe('closed ground');
@@ -412,10 +407,6 @@ describe('formations weaken, and that is what moves everything', () => {
         expect(wardConditionOf(0)).toBe('a_wall');
     });
 
-    it('states that decay is what makes an inheritance converge on a ruin', () => {
-        expect(INTENT_HAS_A_HALF_LIFE.principle).toMatch(/half-life/i);
-        expect(INTENT_HAS_A_HALF_LIFE.theSortingIsTheFormation).toMatch(/cannot refuse anybody/i);
-    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────

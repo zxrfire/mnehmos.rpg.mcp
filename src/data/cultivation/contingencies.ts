@@ -35,6 +35,10 @@ import { z } from 'zod';
 
 export const VAULT_CONTENTS = {
     factionId: 'apex-earth-vein-tower',
+    medicines: {
+        'immortal-heaven-ascending-golden-pill': { higher: 1, middle: 1, lower: 1 },
+        'immortal-root-recasting-talisman': { higher: 0, middle: 1, lower: 0 }
+    },
     summary:
         'Several centuries of an apex institution keeping everything it was ever given in one building, because the building has never been entered and there has never been a reason to disperse it.',
     whatARaiderWouldActuallyTake: [

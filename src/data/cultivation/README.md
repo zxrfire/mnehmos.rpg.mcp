@@ -35,6 +35,20 @@ holds. `THE_CALENDAR_OFFSET` owns commercial, survey and inheritance offsets; th
 commercial value derives the Face Reckoning without resolving their disagreement.
 `ATTESTATION_IS_USABILITY.usable` owns which attestations address an ancestor.
 
+Facts from these catalogs enter play through situated readers. Herb inquiries
+use `EXTINCTION_NOTES` and the herb's standing; lost-formula refusals use
+`NOT_REFINABLE_NOTES`. Contract terms and tradition-war accounts are told by
+local speakers through the ordinary knowledge and willingness gates. The
+unpublished treaty is never a public answer. Foreign-title explanations use
+`PLACERS`, without changing the shared ordinal ladder.
+
+`VAULT_CONTENTS.medicines` supplies the Tower's grade counts in
+`IMMORTAL_HOLDINGS`; do not repeat those numbers in a second inventory.
+Recorded receipts remain historical evidence, not a store of current stock.
+Implementation gaps belong in the setting docs, including
+[beast contracts](../../../docs/world/things/beast-contracts.md) and
+[medicine storage](../../../docs/world/things/items.md).
+
 ---
 
 ## The catalogs
@@ -441,4 +455,3 @@ past the change, which is the whole reason beasts are hunted rather than avoided
 - [`../../../docs/world/README.md`](../../../docs/world/README.md) - the prose half of the same
   world, split by topic. The bible is canon for the narrator; these files are canon for the
   engine, and they must not disagree.
-

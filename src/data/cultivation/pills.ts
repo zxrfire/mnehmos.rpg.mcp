@@ -119,7 +119,7 @@ export const NOT_REFINABLE_BELOW_THE_LID_PILL_IDS: ReadonlySet<string> = new Set
 
 export const NOT_REFINABLE_NOTES: Readonly<Record<string, string>> = {
     'pill-immortal-longevity':
-        'The formula survives complete, is not secret, and can be read by any alchemist with the standing to be shown it. Its first ingredient stopped growing before any institution now standing was founded, and it stopped growing everywhere at once - so nobody below the Lid can make one, and nobody above it can either. What exists was made when there were flowers.'
+        'The formula survives complete. Its first ingredient, the Thousand-Autumn Chrysanthemum, no longer grows. No alchemist can refine another. Surviving pills were made before the flower disappeared.'
 } as const;
 
 /**

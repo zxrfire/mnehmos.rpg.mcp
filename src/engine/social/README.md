@@ -10,6 +10,11 @@ What the world remembers about people, and what it has wrong. Relationships, the
 obligation ledger, the epistemic layers, and secrets. Read this before changing anything
 in `src/engine/social/`.
 
+`HOW_TO_PITCH_IT` is consumed by the storyteller prompt: measured facts use
+ordinary units, observations stay within perception, testimony is attributed,
+and inferences retain their uncertainty. These instructions do not give the
+model authority to settle a claim or change a record.
+
 This layer is **storage, not simulation**. It guarantees that a grudge, a debt, a
 relationship, a false belief or a stolen secret is still on file, exact and dated, forty
 years and three generations later. The reasoning - whether the grudge is worth acting on,
@@ -459,4 +464,3 @@ model above.
 - [`../../agent/prompt/README.md`](../../agent/prompt/README.md) - the `secrets` slice hands a
   bound NPC's model private text. That is a prompt input and not a filed fact; only
   `recordKnowledge` here makes it something the world can be asked about later.
-

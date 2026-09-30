@@ -38,6 +38,17 @@ what is on the shelves, using the house's standing rather than the visitor's ran
 Unwritten Court discussions are held by people and cannot be read from the shelves. Dates come from the running
 era, with the commercial offset explicitly unverified.
 
+Catalog lore reaches narration through the verb that can establish it.
+`what-a-local-speaker-knows-of-the-mechanics.ts` supplies local tradition-war
+accounts and beast-contract terms to both polite and compelled questions;
+`asked.ts` still decides whether that speaker knows and will say them. Herb
+inspection and lost-formula refusal use the existing standing margin or a
+held knowledge record. An uninformed inspection never creates its own
+extinction knowledge. Receipt histories are attributed to their recording,
+behind the house-information gate; public border facts reveal no vault figures.
+The storyteller receives `HOW_TO_PITCH_IT` to distinguish observations,
+attributed claims and inferences. Unnamed high sightings carry geometry only.
+
 ---
 
 ## The three-phase split

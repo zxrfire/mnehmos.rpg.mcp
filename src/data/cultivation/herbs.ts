@@ -734,11 +734,11 @@ export const EXTINCT_HERB_IDS: ReadonlySet<string> = new Set([
 /** Why each one stopped, and what went with it. One entry per id above. */
 export const EXTINCTION_NOTES: Readonly<Record<string, string>> = {
     'herb-kingfisher-lacquer-fern':
-        'It grew on lake floors over live water veins, and the veins under those lakes were drawn down one after another across four centuries by people who were not thinking about a fern. Nobody recorded the last stand because nobody was watching the fern; they were watching the vein. What went with it is a class of object rather than a single item - every method for binding an element into a blade in the old catalogue specifies this lacquer as the coating, and no substitute has ever held.',
+        'It no longer grows. The water veins beneath its lake beds were drawn down. Old methods for binding an element into a blade require its lacquer; no working substitute is recorded.',
     'herb-thousand-autumn-chrysanthemum':
-        'It required an arterial vein reaching the surface and remaining there, which is a condition the world no longer produces anywhere anybody has looked. The formula that used it survives in full, is not secret, and can be read by any alchemist with the standing to be shown it, which is what makes the loss legible rather than mysterious: a house can price the pill it cannot make, to the stone.',
+        'It no longer grows. It needed an arterial vein held at the surface, and none has been found. The lifespan-pill formula survives complete, but its first ingredient is unavailable.',
     'herb-mirror-heart-lotus':
-        'Nobody knows, which is the honest entry in this table and the reason it is worth having. It stopped coming up double, then it stopped coming up, and the accounts of when disagree by two hundred years. What is not in doubt is what went with it: the only working anybody has ever had for making a second body needs the lotus and nothing else will serve, so the loss of a flower closed a whole question the prosperous age treated as settled.'
+        'It no longer grows, and the cause is unknown. The accounts of its disappearance disagree by two hundred years. The surviving method for making a second body requires this lotus and has no substitute.'
 } as const;
 
 /**

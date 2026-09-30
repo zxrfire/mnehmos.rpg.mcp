@@ -177,33 +177,21 @@ export function wardConditionOf(integrity: number): WardCondition {
     return 'a_wall';
 }
 
-/** What each band looks like from outside, in the catalog's register. */
+/**
+ * What each band looks like from outside. Read by `describeFoundGround`, so a
+ * found ruin's wards are said in these bands and at these thresholds only.
+ */
 export const WHAT_A_DOOR_LOOKS_LIKE: Readonly<Record<WardCondition, string>> = {
     as_set:
-        'The formation is lit and even and there is no gap anywhere in it. Whatever this is, it was closed recently enough that the person who closed it may still be behind it.',
+        'The formation on the door is lit and even, with no gap in it anywhere.',
     holding:
-        'Lit, and drawing, and a reader can see where the lines have gone slightly out of true. It will hold for a good deal longer than anybody standing here is going to live.',
+        'The formation on the door is lit and drawing, and its lines have gone slightly out of true.',
     thin:
-        'The lines are legible and the draw is not even. There are places a careful party could work at, and the fact that it is worth working at is why the ground around the door is trodden.',
+        'The formation on the door is legible and draws unevenly, with gaps in its lines.',
     nearly_gone:
-        'Barely answering. Somebody who knows what they are looking at can see the shape of what it used to be and can also see that it is not going to stop them.',
+        'The formation on the door barely answers. Its lines remain visible.',
     a_wall:
-        'Nothing is running. What is left is masonry and a door, which is still an obstacle, and is an obstacle of an entirely ordinary kind that anybody can price.'
+        'Nothing in the formation on the door is running. What is left is masonry and a door.'
 };
 
-/**
- * The intent axis, and the reason it is an axis rather than two categories.
- *
- * Stated here rather than in the catalog because DECAY is what moves a place
- * along it, and decay lives in this file.
- */
-export const INTENT_HAS_A_HALF_LIFE = {
-    principle:
-        'An inheritance is a ruin plus an intent, and intent has a half-life. Given enough time the two categories are the same thing, so they are one kind of place with an axis running along it rather than two tables that happen to look alike.',
-    whatWearsOut:
-        'The addressee never came. The house that was supposed to send somebody fell. The conditions were written against a world that no longer exists, and the sorting mechanism that enforced them is a live formation which is now thin. After long enough nobody alive knows the place was addressed to anybody and it is simply somewhere with things in it.',
-    theSortingIsTheFormation:
-        'This is the mechanical statement and it is what makes the convergence honest: a trial admits only the worthy because a working formation refuses everybody else. A trial whose formation is nearly gone cannot refuse anybody, so it is not sorting, so it is not a trial. A decayed inheritance is a ruin for a reason rather than by reclassification.',
-    andItIsTheBestDiscoveryInTheGame:
-        'Finding out that the ruin being looted was a message, and that the looter is not who it was for. That beat is only available because the two are one kind of place: if they were two catalogs the player would know which one they were standing in before they went in.'
-} as const;
+// Decay's intent axis is explained in docs/world/places/closed-ground.md.

@@ -149,6 +149,10 @@ import { round2, writeAdminAudit,
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getEncounter, getSect, getTechnique } from '../data/cultivation/index.js';
+import { NOT_REFINABLE_NOTES } from '../data/cultivation/pills.js';
+import { aLocalMechanicsQuestion } from './what-a-local-speaker-knows-of-the-mechanics.js';
+import { WORKING_KNOWLEDGE_MARGIN } from '../engine/cultivation/who-has-heard-of-a-thing-past-the-counter.js';
+import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import {
     IMMORTAL_ITEMS,
     ImmortalGradeSchema,
@@ -7954,7 +7958,7 @@ ${noticed}`;
         const subject = oldWorld?.subject ?? (ownFact !== null ? null : resolveAnything(
             this.repos, topic, cultivator, scope,
             whereYouStandOnYourHousesRoll(this, cultivator)
-        ));
+        ) ?? aLocalMechanicsQuestion(topic, asked, this.atHand));
 
         // ── AND IF THE ASKER DOES NOT KNOW IT, THE PERSON ASKED MIGHT ────
         //
@@ -10800,6 +10804,18 @@ ${line}`;
         }
 
         const recipe = resolveRecipe(query);
+        const lostFormula = resolvePill(query);
+        const cannotRefine = lostFormula ? NOT_REFINABLE_NOTES[lostFormula.id] : undefined;
+        if (cannotRefine) {
+            const pill = getPill(lostFormula!.id)!;
+            const knowsFormula = pillBandOrdinal(pill.grade) <= cultivator.realmOrdinal + WORKING_KNOWLEDGE_MARGIN
+                || this.knowledge.isAwareOf(cultivator.id, 'thing', pill.id);
+            return refused('engine.resolveRecipe', 'refine', factsForRefusal(
+                `${lostFormula!.name} cannot be refined.`, knowsFormula ? cannotRefine
+                    : 'You have no formula for it among the methods you have learned.',
+                `No refinement for ${lostFormula!.id}. Nothing spent; no time passed.`
+            ));
+        }
         if (!recipe) {
             const held = pouchNames(this.db, cultivator.id);
             return refused('engine.resolveRecipe', 'refine', factsForRefusal(
@@ -21389,7 +21405,7 @@ ${fit.line}`;
         // the one place the two vocabularies meet. Without the mapping, being
         // told a medicine exists by somebody who knew wrote nothing, and the
         // player woke up the next turn having never been told.
-        const kind = entity.kind === 'pill' ? 'thing' : entity.kind;
+        const kind = entity.kind === 'herb' || entity.kind === 'lore' ? 'thing' : entity.kind;
         if (kind !== 'cultivator' && kind !== 'sect' && kind !== 'place' && kind !== 'thing') {
             return false;
         }

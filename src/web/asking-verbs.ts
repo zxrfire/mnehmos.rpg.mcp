@@ -6,6 +6,7 @@ import { whatSomebodyKnowsOfTheOldWorld, oldWorldYear } from './what-somebody-kn
 
 
 import { askingYourHouseForARepairDose } from './asking-your-house-for-a-repair-dose.js';
+import { aLocalMechanicsQuestion } from './what-a-local-speaker-knows-of-the-mechanics.js';
 import { getSect } from '../data/cultivation/index.js';
 import {
     ledgerAbout,
@@ -433,7 +434,7 @@ export const askingVerbs = {
         const subject = oldWorld?.subject ?? resolveAnything(
             this.repos, topic, cultivator, scope,
             whereYouStandOnYourHousesRoll(this, cultivator)
-        );
+        ) ?? aLocalMechanicsQuestion(topic, who, this.atHand);
         // The same reading `askAround` takes, and it has to be the same one: a
         // demand for somebody's own name that was refused at limit one here
         // would be refused for a reason that does not exist, while the polite

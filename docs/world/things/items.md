@@ -2,6 +2,20 @@
 
 # Items
 
+## Immortal medicine storage gap
+<!-- tier: 3 -->
+
+The former developer export `NOT_YET_KEPT_AS_OBJECTS` recorded a storage gap.
+Opening holdings in `immortal-items.ts` are still counts. A complete implementation
+must seed individual objects with holder and provenance and switch every live
+holding read to those rows in the same change. Seeding a second store while callers
+still read the catalog leaves two sources of truth. The repair medicine seeder in
+`who-holds-the-structural-repair-medicine.ts` is the existing precedent.
+
+This is a gap, not permission for narration to move or spend an unrecorded object.
+
+<!-- tier: 2 trigger="an object changes hands, is bought, sold, copied, spent, hidden, or refused" -->
+
 Everything in the world that can be held. Manuals, pills, artifacts, materials, the
 comprehension pieces that are gone once understood.
 

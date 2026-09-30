@@ -221,18 +221,9 @@ export function couldFoldThere(
 // WHAT THIS DOES NOT REACH YET
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * Recorded rather than quietly left, the way `SEA_CROSSING_ENGINE_GAP` is.
- */
-/**
- * Why only one of the two fixes is reachable, and what the other one wants.
- */
-export const A_SIGHTING_HAS_NO_NAME_ON_IT = {
-    what: 'Nothing in the world records that somebody made out a named place from a height, so the `seen` fix has no writer and only `stood` is reachable.',
-    whereItWouldGo: 'The overlook in the destinations read in src/web/game.ts, which already computes what is visible from this rung and throws the names away on purpose.',
-    whatItWouldTake: 'A knowledge record against the place, from a source that means "I saw it myself and cannot place it exactly" - which is a source kind the discovery ladder does not have and should not be given lightly.',
-    whyItIsNotDoneHere: 'A Sighting has no name on it by design, and adding one to satisfy a fold would spend the discovery the sight horizon exists to withhold.'
-} as const;
+/** What seeing a place establishes without a source for its name. */
+export const A_SIGHTING_HAS_NO_NAME_ON_IT =
+    'A sighting gives the shape and bearing of a place. It gives no name, owner or contents.';
 
 export const FOLD_TRAVEL_ENGINE_GAP = {
     what: 'No journey in the running game is priced in walking days, so the range curve above saves nobody any time yet.',

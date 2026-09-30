@@ -50,9 +50,8 @@ import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from 
 import { refused, structureCalls } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
-
-
-
+import { HERBS, isExtinct } from '../data/cultivation/herbs.js';
+import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
 /**
  * A word that is a pointer rather than a name. See the refusal it produces.
  */
@@ -422,10 +421,14 @@ export const investigateVerb = {
         const heldBefore = subject.kind === 'cultivator'
             ? this.knowledge.stageOf(cultivator.id, 'cultivator', subject.id)
             : null;
+        const herb = subject.kind === 'herb' ? HERBS.find(row => row.id === subject.id) : undefined;
+        const canReadExtinction = herb === undefined || !isExtinct(herb.id)
+            || herb.harvestOrdinal <= cultivator.realmOrdinal + WORKING_KNOWLEDGE_MARGIN
+            || this.knowledge.isAwareOf(cultivator.id, 'thing', herb.id);
 
         // Examining a thing is a source. Record it with its provenance rather
         // than letting the knowledge exist only in the transcript.
-        const learned = this.noteEncounter(
+        const learned = canReadExtinction && this.noteEncounter(
             cultivator, run, subject, 'witnessed', `Examined at ${placeName(cultivator)}.`
         );
 
@@ -433,7 +436,9 @@ export const investigateVerb = {
         // `subject.structure` is the schema behind it - governance, ordinals,
         // grades - and goes only to the inspector below. A category handed to a
         // narrator becomes a briefing, and there is no briefing in this world.
-        const facts = factsForInvestigation(cultivator, ambient, subject.name, subject.facts);
+        const facts = factsForInvestigation(cultivator, ambient, subject.name,
+            canReadExtinction ? subject.facts
+                : ['You have no account of where this herb can still be found.']);
         facts.structure.push(...subject.structure);
 
         // ── WHAT IS STILL IN THE GROUND HERE ─────────────────────────────

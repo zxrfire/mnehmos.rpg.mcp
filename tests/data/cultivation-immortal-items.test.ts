@@ -10,6 +10,10 @@
  *     the catalog, and neither is expressible by the existing PillEffect set
  *   - exactly one holder can be persuaded; the other two are arithmetic
  *   - a good case was refused, on the record, and it cost the refuser anyway
+ *
+ * Stock and register wording was shortened for live answers. Those answers
+ * and their knowledge gate are covered by mechanics-lore-reaches-play.test.ts;
+ * this file retains the grade totals and receipt-history arithmetic.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -685,7 +689,7 @@ describe('the sending pyramid', () => {
     it('explains why old lines received more and hold less', () => {
         expect(THE_SENDING_PYRAMID.olderBenefactorsSendLowersEasily).toMatch(/trivial to send/i);
         expect(THE_SENDING_PYRAMID.andSpentThem).toMatch(/should not read as decline/i);
-        expect(THE_SENDING_PYRAMID.thePyramid).toMatch(/two higher-grade objects in the entire world/i);
+        expect(THE_SENDING_PYRAMID.thePyramid).toMatch(/Higher-grade receipts are rarer/i);
         expect(THE_SENDING_PYRAMID.theOrdinaryFactionShape).toMatch(/almost all of it spent/i);
     });
 
@@ -746,7 +750,7 @@ describe('receipt histories', () => {
             expect(held, `${r.factionId} is uncounted but holds nothing`).toBeGreaterThan(0);
             expect(getHoldingsOf(r.factionId).length).toBe(0);
         }
-        expect(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.theCaveat).toMatch(/knowledge claim rather than a census/i);
+        expect(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.theCaveat).toMatch(/objects they can trace/i);
         expect(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.soItIsAFloor).toMatch(/will not discuss its shelf/i);
     });
 

@@ -14,6 +14,10 @@
  *   - a tide has a cause, never a spawn table
  *   - a contract is mutual and expensive, and is never phrased as acquisition
  *   - no stat blocks anywhere, in this repo's specific sense
+ *
+ * The implementation checklist moved to docs/world/things/beast-contracts.md.
+ * Live knowledge of the terms is covered by mechanics-lore-reaches-play.test.ts;
+ * hearing them must not be mistaken for forming a bond.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -36,7 +40,6 @@ import {
     THE_BEAST_ROAD,
     ESTIMATING_A_BEAST,
     THE_CONTRACT,
-    CONTRACT_ENGINE_REQUIREMENTS,
     BeastSchema,
     BeastMaterialSchema,
     BeastTideSchema,
@@ -635,13 +638,6 @@ describe('a contract is rare, costly and mutual', () => {
         expect(THE_CONTRACT.howItBreaks.join(' ')).toMatch(/outgrow/i);
     });
 
-    it('says what the engine would need before it could resolve', () => {
-        expect(CONTRACT_ENGINE_REQUIREMENTS.length).toBeGreaterThanOrEqual(4);
-        const reqs = CONTRACT_ENGINE_REQUIREMENTS.join(' ');
-        expect(reqs).toMatch(/cultivation rate|draw share/i);
-        expect(reqs).toMatch(/realmOrdinal|progress/i);
-        expect(reqs).toMatch(/oath|penalty clause|witness/i);
-    });
 });
 
 describe('lookups', () => {

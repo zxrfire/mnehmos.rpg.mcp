@@ -42,6 +42,10 @@ import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { FOUND_BY_PROSPECTING_TAG } from '../engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
+    WHAT_A_DOOR_LOOKS_LIKE,
+    wardConditionOf
+} from '../engine/world/how-far-gone-a-formation-is.js';
+import {
     readAdmission,
     type AdmissionReading,
     type RuinAccess
@@ -339,16 +343,11 @@ export function describeFoundGround(ground: FoundGround): string[] {
         );
     }
 
+    // THE BANDS ARE THE FORMATION MODULE'S. This carried its own thresholds and
+    // a percentage nobody at the door can read; `wardConditionOf` already draws
+    // the lines, and a door that looks nearly gone is what can be seen.
     if (ground.wardIntegrity !== null) {
-        const percent = Math.round(ground.wardIntegrity * 100);
-        lines.push(
-            percent >= 80
-                ? `What was put up around it is still standing, at about ${percent} per cent.`
-                : percent >= 25
-                    ? `The wards are about ${percent} per cent of what they were. Time has been at them.`
-                    : `Almost nothing of the wards is left - about ${percent} per cent. Whatever `
-                      + 'kept people out is not keeping them out any more.'
-        );
+        lines.push(WHAT_A_DOOR_LOOKS_LIKE[wardConditionOf(ground.wardIntegrity)]);
     }
 
     if (ground.access) {

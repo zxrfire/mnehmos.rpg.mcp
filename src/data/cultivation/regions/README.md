@@ -7,6 +7,10 @@ prefectures and its local material live with the region rather than in a compara
 [`provinces.ts`](./provinces.ts) explains where that line falls and why the six province rows
 stayed together.
 
+Foreign-title explanations in `web/entities.ts` read `PLACERS` for the
+assessment's scope and published error rate. Translation still returns the
+shared ordinal band; a placement claim never changes somebody's rung.
+
 **Place names are not written here.** They are consts in
 [`../place-names.ts`](../place-names.ts), and a name typed twice is the defect that file
 exists to stop: a place is identified by its display string, and every lookup over it fails

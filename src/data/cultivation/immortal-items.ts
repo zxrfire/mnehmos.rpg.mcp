@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { VAULT_CONTENTS } from './contingencies.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -400,10 +401,11 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
 
     // ── the Earth Vein Tower: a line item, minuted, with a form ─────────────
     {
-        factionId: 'apex-earth-vein-tower',
+        factionId: VAULT_CONTENTS.factionId,
         itemId: 'immortal-heaven-ascending-golden-pill',
-        count: 3,
-        byGrade: { higher: 1, middle: 1, lower: 1 },
+        count: Object.values(VAULT_CONTENTS.medicines['immortal-heaven-ascending-golden-pill'])
+            .reduce<number>((n, count) => n + count, 0),
+        byGrade: VAULT_CONTENTS.medicines['immortal-heaven-ascending-golden-pill'],
         countIsKnownTo:
             'The four Surveyors, the standing stock register, and the annual minute that confirms the register. It is three, and the register states the grade of each: one higher, one middle, one lower. It has read that way for a hundred and forty years, and the higher one is the only object of its kind anybody in the world can point to.',
         releaseMode: 'collective_consent',
@@ -433,10 +435,11 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             'Saving the Survey does not buy one and no Surveyor will pretend otherwise. What it does is remove the argument the instruction rests on: if the arterial system itself was at stake and an outsider is the reason it held, then refusing them is indefensible to at least two of the four. Two is not four. It is entirely possible to save the Earth Vein Tower, be minuted for it permanently, and be refused by one Surveyor who does not give a reason, and a player standing in that outcome has been treated honestly.'
     },
     {
-        factionId: 'apex-earth-vein-tower',
+        factionId: VAULT_CONTENTS.factionId,
         itemId: 'immortal-root-recasting-talisman',
-        count: 1,
-        byGrade: { higher: 0, middle: 1, lower: 0 },
+        count: Object.values(VAULT_CONTENTS.medicines['immortal-root-recasting-talisman'])
+            .reduce<number>((n, count) => n + count, 0),
+        byGrade: VAULT_CONTENTS.medicines['immortal-root-recasting-talisman'],
         countIsKnownTo:
             'The four Surveyors and the standing stock register, where it is a single line annotated only with the grade. It is one, and it is a middle: it will clean a root rather than rewrite one, which the Survey knows and has never seen a reason to say.',
         releaseMode: 'collective_consent',
@@ -552,22 +555,7 @@ export const ENGINE_GAPS: readonly {
     }
 ];
 
-// -------------------------------------------------------------------------
-// AND WHERE THEY ARE NOT KEPT
-// A gap in the engine rather than in the setting. Stated so it does not get
-// mistaken for a decision.
-// -------------------------------------------------------------------------
-
-export const NOT_YET_KEPT_AS_OBJECTS = {
-    whatIsMissing:
-        'Every one of these is a count and not a row. `IMMORTAL_HOLDINGS` says a body holds seven of a thing, and that is the whole of what the world stores: no id, no holder chain, no provenance, and nothing anywhere calls `makeObject` for one. Seventeen objects are held that way across six holdings.',
-    whyThatIsTheWrongShape:
-        'Which inverts the rule `docs/world/things/items.md` states. The test for a row is whether the movement of this specific object is an event somebody should be able to find out about two centuries later, and these are the objects in the setting where that is most true: the supply is finite and shrinking, every one spent is one fewer forever, and the whole of what makes a holder careful is that they can name the number. A count cannot answer which one moved, who moved it, or what was given for it, and those are the only questions anybody asks about these.',
-    theWorkedPrecedentIsNextDoor:
-        '`structural-repair-medicine.ts` had exactly this shape and does not any more. `who-holds-the-structural-repair-medicine.ts` is the fix in full: the authored holdings are the opening state, the seeder reads them and puts down precisely those doses on precisely those bodies with no random placement at all, the tracked grades become `ObjectRecord` rows and the fungible ones a count in `resources`, and every question afterwards is answered off live state rather than off the catalog line. It also solves the problem that would otherwise bite here first, which is that two of the holders are bodies nobody can join and the world never makes a faction row for them.',
-    andWhyItHasNotSimplyBeenDone:
-        'Because a live layer that nothing reads would be worse than the count. `src/web/game.ts` answers every question about these off `getHoldingsOf`, straight from this file, so seeding rows beside it makes two sources of truth with the authored one still winning. The wiring is one line in `seeding.ts` next to `seedStructuralRepairMedicine`, and it is only worth adding together with the switch in the caller.'
-} as const;
+// Object-storage gap: docs/world/things/items.md.
 
 // -------------------------------------------------------------------------
 // STOCK VERSUS FLOW
@@ -576,7 +564,7 @@ export const NOT_YET_KEPT_AS_OBJECTS = {
 
 export const STOCK_VERSUS_FLOW = {
     theDistinction:
-        'There are two positions in this world and only one institution holds the second. Stock is what you have on the shelf, and stock only ever goes down. Flow is somebody sending, now, repeatedly. Every other holder in the catalog is living off stock with no expectation of resupply; the Azure Cloud Pavilion has an income.',
+        'Stock is stored medicine. Without new receipts, stock only ever goes down as doses are spent. Flow is repeated sending from above the Lid.',
     whyFlowIsSoRare:
         'Because flow needs a benefactor who both answers often and still remembers that answering matters, and that means a recent crossing with a living tie. There is one of those in the world. Every other line upward runs to somebody who crossed millennia ago, answers at intervals measured in ages, and can no longer feel what a request costs the people making it - see `THE_DECAY_OF_MEMORY` in `named-figures.ts`.',
     theTwoAxesDoNotAlign: [
@@ -617,7 +605,7 @@ export const THE_SENDING_PYRAMID = {
     andSpentThem:
         'Which is the half that matters. Their shelves are thin now not because nothing ever came, but because a great deal came and was used over two thousand years, at a rate of roughly one a century, by people who each thought they were spending it well and mostly were. A long list of receipts and a nearly empty shelf is the normal condition of an old institution, and it should not read as decline.',
     thePyramid:
-        'The distribution is a pyramid everywhere it is measured: in what gets sent, in what is held now, and in what any given faction has ever seen in its whole history. Many lower, fewer middle, and higher grade vanishingly rare outside the apexes and mostly absent inside them too. There are two higher-grade objects in the entire world.',
+        'The recorded sendings contain more lower-grade objects than middle-grade ones. Higher-grade receipts are rarer still.',
     theOrdinaryFactionShape:
         'So the ordinary faction shape is: a handful of lowers received across centuries, perhaps one middle in the whole record, no higher ever, and almost all of it spent. Anything richer than that needs a reason written down.',
     whoNeverReceivedAnything:
@@ -630,7 +618,7 @@ export const THE_SENDING_PYRAMID = {
 
 export const REGISTERS_COUNT_WHAT_THEY_CAN_SEE = {
     theCaveat:
-        '`knownCount` is a knowledge claim rather than a census. It is what the Immovable Mountain Temple survey standard and the Earth Vein Tower register can between them point at, and both are honest about the limit: thirteen Steps and four Dealings are what the world can name, not what the world contains.',
+        'The registers count objects they can trace. Private holdings outside their records are not counted.',
     soItIsAFloor:
         'The true figure is at least that and probably a little higher, and the two parties most likely to hold something uncounted are exactly the ones the registers cannot reach: an institution that will not discuss its shelf, and an institution that keeps no accounts of any kind.',
     andEverKnownIsToo:
@@ -785,4 +773,3 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
 export function getHoldingsOf(factionId: string): Holding[] {
     return IMMORTAL_HOLDINGS.filter(h => h.factionId === factionId);
 }
-

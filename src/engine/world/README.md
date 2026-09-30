@@ -15,6 +15,13 @@ records the absence left by a taking. Above its quiet count, the absence circula
 without identifying the taker. Forced furnace rites use this for their dead; the
 individual deaths still follow the caller's ordinary death path.
 
+Ward looks use `WHAT_A_DOOR_LOOKS_LIKE` at the same `wardConditionOf`
+thresholds as discovery. They describe running lines and gaps, without
+promising entry or inferring an occupant. The intent-decay and finite-reserve
+rationale lives in [closed-ground.md](../../../docs/world/places/closed-ground.md),
+while the engine retains the curves. A distant sighting establishes geometry,
+never a name, owner, contents or a named folding destination.
+
 Storage, retrieval, time, randomness and state updates. That is the whole remit. **There
 is deliberately no simulation here**: no NPC tick loop, no behaviour trees, no political
 engine, no consequence propagator. A world advances because dated consequences fall due

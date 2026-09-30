@@ -173,20 +173,13 @@ export function theyCanTell<T>(answer: AnAnswer<T | null>): answer is AnAnswer<T
  */
 export const HOW_TO_PITCH_IT: Record<HowItIsKnown, string> = {
     measured:
-        'State it flatly, in the units a person uses. No hedge - they are looking '
-        + 'straight at it and cannot be wrong about it.',
+        'State it in the units a person uses. No hedge; no engine field names.',
     perceived:
-        'State what they can tell and stop there. Gross differences are plain and fine '
-        + 'ones are not: a wall above, ground thinner than home, somebody clearly beyond '
-        + 'them. No figure they could not have arrived at by standing there.',
+        'Describe what they can perceive. Give no figure their senses cannot reach.',
     told:
-        'Attribute it. Who said so is part of the answer, and it may be wrong - so it is '
-        + 'reported as a thing somebody said rather than as a thing that is so.',
+        'Attribute it. What somebody said can be wrong; do not certify it as truth.',
     inferred:
-        'Say it as a working figure and say what it rests on. It is made of facts and it '
-        + 'is still a guess, and the player is entitled to know which.',
+        'State the inference and the facts it rests on. Keep its uncertainty.',
     unknown:
-        'Say plainly that they cannot tell, and why not. This is the answer and not a '
-        + 'failure to have one; it is also what makes finding somebody who CAN tell worth '
-        + 'the trouble.'
+        'Say they cannot tell and give the recorded reason.'
 };

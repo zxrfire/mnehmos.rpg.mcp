@@ -121,7 +121,6 @@ export {
     THE_BEAST_ROAD,
     ESTIMATING_A_BEAST,
     THE_CONTRACT,
-    CONTRACT_ENGINE_REQUIREMENTS,
     BeastSchema,
     BeastNatureSchema,
     BeastDispositionSchema,

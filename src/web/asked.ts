@@ -44,6 +44,8 @@ export function whetherTheyHoldIt(
         case 'place':
             return gate.isAwareOf(askedId, subject.kind, subject.id);
         case 'pill':
+        case 'herb':
+        case 'lore':
             return gate.isAwareOf(askedId, 'thing', subject.id);
         default:
             return false;

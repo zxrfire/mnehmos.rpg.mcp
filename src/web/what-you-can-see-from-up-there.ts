@@ -4,6 +4,7 @@
 
 import type { AmbientQi } from '../schema/cultivation.js';
 import type { Bearing } from '../data/cultivation/regions.js';
+import { A_SIGHTING_HAS_NO_NAME_ON_IT } from '../engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE SCALE
@@ -20,6 +21,15 @@ export const LEAVES_THE_GROUND = 15;
  * Ordinal at which flight is sustained and high rather than a slow cold hop.
  */
 export const ABOVE_THE_WEATHER = 22;
+
+/** What flying is like between the two, which is the part of height it costs. */
+export const UNDER_THE_WEATHER =
+    'Your flight stays below cloud height and cannot be sustained.';
+
+function howHighTheyGet(ordinal: number): string[] {
+    return ordinal < ABOVE_THE_WEATHER ? [UNDER_THE_WEATHER]
+        : ['Your flight is sustained above cloud height.'];
+}
 
 /**
  * How far the first flight sees, in the catalog's own travel days.
@@ -199,7 +209,7 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
     const structure: string[] = [
         `Horizon ${horizon.toFixed(1)} travel days at ordinal ${input.ordinal} `
         + `(floor ${LEAVES_THE_GROUND}, ${HORIZON_AT_FIRST_FLIGHT} days growing `
-        + `x${HORIZON_GROWTH_PER_RUNG} per rung). `
+        + `x${HORIZON_GROWTH_PER_RUNG} per rung, sustained from ${ABOVE_THE_WEATHER}). `
         + `${input.onTheGround.length} piece(s) of ground offered.`
     ];
 
@@ -242,6 +252,7 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
         return {
             headline: 'Nothing you have not already got a name for.',
             lines: [
+                ...howHighTheyGet(input.ordinal),
                 'You go up, and there is nothing inside the circle you can hold that you could not '
                 + 'have pointed at from the ground.',
                 'Further out the country keeps going and stops resolving. Height is what buys the '
@@ -269,9 +280,9 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
             ? 'One thing down there you have never been told about.'
             : `${seen.length} things down there nobody has told you about.`,
         lines: [
+            ...howHighTheyGet(input.ordinal),
             ...[...grouped].map(([line, count]) => count === 1 ? line : `${line} ${andAgain(count)}`),
-            'You can see them. That is the whole of what you have: what they are called, whose '
-            + 'they are and what is inside them are things somebody has to say out loud.'
+            A_SIGHTING_HAS_NO_NAME_ON_IT
         ],
         structure,
         seen: seen.length

@@ -22,6 +22,7 @@ import {
     resolveFoundGround
 } from '../../src/web/ground-the-world-found';
 import { FOUND_BY_PROSPECTING_TAG } from '../../src/engine/world/how-the-world-keeps-finding-more-ruins';
+import { WHAT_A_DOOR_LOOKS_LIKE } from '../../src/engine/world/how-far-gone-a-formation-is';
 
 /** A find, shaped exactly as the prospecting pass writes one. */
 function find(over: Record<string, unknown> = {}, data: Record<string, unknown> = {}) {
@@ -176,11 +177,20 @@ describe('the account it gives', () => {
         expect(errand).toMatch(/not the one who gains by it/);
     });
 
-    it('reports the wards as what is left of them', () => {
-        expect(describeFoundGround(foundGroundOf(find({}, { wardIntegrity: 0.95 }))).join(' '))
-            .toMatch(/still standing/);
-        expect(describeFoundGround(foundGroundOf(find({}, { wardIntegrity: 0.05 }))).join(' '))
-            .toMatch(/not keeping them out any more/);
+    /**
+     * CHANGED. This used to carry its own thresholds (80 and 25 per cent) and
+     * print the percentage, which is a column nobody at a door can read. The
+     * bands are `wardConditionOf`'s and the look is `WHAT_A_DOOR_LOOKS_LIKE`,
+     * the one place both live, so a find and any other door are said alike.
+     */
+    it('reports the wards as the door looks, in the formation module\'s bands', () => {
+        const at = (wardIntegrity: number) =>
+            describeFoundGround(foundGroundOf(find({}, { wardIntegrity }))).join(' ');
+        expect(at(0.95)).toContain(WHAT_A_DOOR_LOOKS_LIKE.as_set);
+        expect(at(0.4)).toContain(WHAT_A_DOOR_LOOKS_LIKE.thin);
+        expect(at(0.05)).toContain(WHAT_A_DOOR_LOOKS_LIKE.nearly_gone);
+        expect(at(0.01)).toContain(WHAT_A_DOOR_LOOKS_LIKE.a_wall);
+        expect(at(0.4)).not.toMatch(/per cent/);
     });
 });
 

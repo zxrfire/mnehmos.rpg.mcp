@@ -43,6 +43,9 @@ import { HALLS_DOWN } from '../engine/world/what-a-year-of-war-does-to-a-compoun
 import { territoryOfSect } from '../data/cultivation/sects.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import {
+    BORDER_KINDS, DEFERENCE_HOLDINGS, getParentage
+} from '../data/cultivation/governance-and-water-rights.js';
+import {
     howStrongThisHouseIsNow,
     type WhatAHouseCanField
 } from '../engine/world/how-strong-a-house-actually-is.js';
@@ -133,6 +136,12 @@ export function whatAHouseHasToItsName(input: {
     const stones = Number(input.house?.resources.spirit_stones ?? 0);
 
     const lines: string[] = [];
+    const deference = DEFERENCE_HOLDINGS.find(row => row.factionId === input.factionId);
+    const border = deference ? BORDER_KINDS.deference
+        : input.house?.tags.includes('administered') ? BORDER_KINDS.administered
+        : getParentage(input.factionId)?.parentFactionId ? BORDER_KINDS.federated : null;
+    if (border) lines.push(border);
+    if (deference) lines.push(`Its recorded administered core: ${deference.administeredCore}`);
 
     // ── THE GROUND, WHICH IS PUBLIC ──────────────────────────────────────
     //

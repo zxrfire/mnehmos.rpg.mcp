@@ -3728,17 +3728,17 @@ export const THE_CONTRACT = {
         'not obedience. A contract states what each side will do, and a beast that has kept terms for a century will still decline anything outside them'
     ],
     whatTheBeastWants: [
-        'ground it cannot hold alone, or passage across ground somebody else holds',
-        'not being hunted for its core by the sect whose charter covers its mountain',
-        'something it cannot do without hands: a manual read aloud, a seal examined, a message carried to somebody who will not meet it'
+        'A contract can secure ground or passage for the beast.',
+        'A contract can bind the house holding its mountain to stop hunting it for its core.',
+        'The human party can read a manual aloud, examine a seal or carry a message for the beast.'
     ],
     whatTheCultivatorGives: [
-        'a permanent share of their own draw, because the other party cultivates too and cultivates off the same air',
-        'the standing obligation, which is enforceable and which their sect will treat as a competing loyalty',
-        'a witness fee to a Dao house, since an unwitnessed contract binds nobody and the beast knows the law better than most disciples do'
+        'The cultivator grants a permanent share of their own draw; both parties cultivate from the same ground.',
+        'The cultivator takes an enforceable obligation to the beast.',
+        'The cultivator pays a witness fee to the house recording the contract.'
     ],
     witnessing:
-        'A contract of this kind is witnessed the way any other agreement is - a house of the Vermilion Sigil Terrace takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
+        'A beast contract has two parties. A witnessing house records the terms and holds the penalty clause.',
     whyItIsRare:
         'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Tribulation, which is nearly all of them - the other party has to be one of a handful of things in the world.',
     howItBreaks: [
@@ -3750,19 +3750,7 @@ export const THE_CONTRACT = {
         'A party who does not sleep, does not need feeding, cannot be audited, cannot be subpoenaed by a Dao house, and reads ground better than any surveyor. And a permanent tax on the cultivator\'s own progress for as long as it holds.'
 } as const;
 
-/**
- * What the engine would need before a contract could resolve mechanically
- * rather than being narrated. Stated here so the next implementer does not
- * have to reconstruct it from the prose.
- */
-export const CONTRACT_ENGINE_REQUIREMENTS: readonly string[] = [
-    'a cultivator-side draw share, so a bonded beast subtracts from the holder\'s cultivation rate the way an extra disciple subtracts from a valley - the arithmetic already exists in the ambient system and nothing currently spends it on a second party',
-    'a beast as a persistable actor with its own realmOrdinal and its own progress, since the whole point is that it keeps advancing while the cultivator does and can pass them',
-    'an oath record with a penalty clause and a witnessing faction, which is the Dao house contract shape rather than a new one',
-    'a termination path per break condition, with the state each leaves behind: outgrown terms, lost ground, a sect that wrote the wrong thing down',
-    'a location link, because a contracted beast is somewhere specific and travels at a stated speed rather than being carried'
-] as const;
-
+// Remaining contract mechanics: docs/world/things/beast-contracts.md.
 // ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────

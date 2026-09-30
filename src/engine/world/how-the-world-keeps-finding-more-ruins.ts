@@ -33,28 +33,7 @@ import {
 } from './what-a-ruin-has-on-its-shelves.js';
 import { getLocation, type WorldState } from './world-state.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE DOCTRINE
-// Stated once, as data, so the tests assert against the same sentences the
-// constants below were derived from.
-// ─────────────────────────────────────────────────────────────────────────
-
-export const RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT = {
-    principle:
-        'Nobody is making ruins. The Late Age made them all and it is over, so the stock is finite in principle. What is not finite in practice is what has been found, because the world has never looked at most of its own ground and never will.',
-    soTheRateIsGovernedBy:
-        'How hard and how widely people are looking. Not by a countdown to an empty list. A province with nobody in it finds nothing whatever is under it, and the same province a century later with four houses working out of it finds several a decade.',
-    theEasyGroundGoesFirst:
-        'Ground is banded by depth and effort goes to the least-worked band anybody in the province can reach. What is found early is what people trip over; what is found late is under something, is more dangerous, and is worth more.',
-    diminishingReturnsIsTheWholeShape:
-        'Each find in a band makes the next one in that band harder, on a hyperbolic decline - steep at first and then a very long flat tail. That is the shape a producing field has, and it is why the analogy is worth taking literally rather than decoratively.',
-    andCapabilityOpensGroundThatWasAlwaysThere:
-        'A band nobody in the province can survive is a band nobody is looking in. When the ladder produces somebody who can go deeper, ground that has been there the whole time becomes findable and the rate steps back up. This is not new ruins. It is deepwater, and it is the reason the curve does not go to nothing.',
-    whatThisIsNot:
-        'It is not a spawner. Nothing here creates a ruin that the prior ages did not leave: every province has a stated number in the ground, the number is fixed for the life of the world, and a province that reaches it stops producing finds permanently. The claim is that the numbers are large and the looking is slow, not that the ground is infinite.',
-    theMeasurementThatMatters:
-        'The long horizon. A countdown and a reserve are indistinguishable at year 200 and differ completely at year 5000, so any change here has to be measured at five thousand years or it has not been measured.'
-} as const;
+// Reserve and decay rationale: docs/world/places/closed-ground.md.
 
 // ─────────────────────────────────────────────────────────────────────────
 // DEPTH
