@@ -22,7 +22,6 @@ import {
     openingPosition,
     originDiscoveryContext,
     originProbability,
-    placementsWithinReach,
     provisionedYears,
     rollOrigin,
     withOriginAccess,
@@ -162,34 +161,6 @@ describe('an origin buys inputs and never rank', () => {
         for (const tier of ORIGIN_TIERS) {
             expect(tier.placement.entryRankIndex).toBe(0);
         }
-    });
-
-    it('does not waive an institution\'s own floor, including for a Dao house', () => {
-        // The Empyrean Court: Void Tribulation at the floor, and nothing else
-        // counts, which includes being somebody's child.
-        const hollowCourt = { id: 'sect-hollow-court', powerOrdinal: 44, admissionOrdinal: 29 };
-        const localSect = { id: 'sect-local', powerOrdinal: 11, admissionOrdinal: 0 };
-        const houses = [hollowCourt, localSect];
-
-        // A Dao house child at the age placement happens is at ordinal zero
-        // like everybody else, and the Court's floor is the whole of the answer.
-        const atBirth = placementsWithinReach('dao_house_bloodline', 0, houses);
-        expect(atBirth.map(h => h.id)).toEqual(['sect-local']);
-
-        // And the Court is beyond every family's reach in any case.
-        for (const key of TIER_KEYS) {
-            expect(placementsWithinReach(key, 44, houses).map(h => h.id))
-                .not.toContain('sect-hollow-court');
-        }
-    });
-
-    it('reaches nobody at all from the two tiers that are the bulk of births', () => {
-        expect(placementsWithinReach('thin_county', 30, [
-            { id: 'sect-local', powerOrdinal: 11, admissionOrdinal: 0 }
-        ])).toEqual([]);
-        expect(placementsWithinReach('market_town', 30, [
-            { id: 'sect-local', powerOrdinal: 11, admissionOrdinal: 0 }
-        ])).toEqual([]);
     });
 
     it('never protects a crossing beyond what a sect is permitted to', () => {

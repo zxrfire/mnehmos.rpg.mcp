@@ -37,9 +37,9 @@ import { resolveTechnique } from '../../src/web/entities';
 import { recordACopyHeld } from '../../src/server/consolidated/technique-manage';
 import { TECHNIQUES } from '../../src/data/cultivation';
 
-/** A book whose name is not the one a bare "manual" would otherwise reach. */
-const HELD = TECHNIQUES.find(t => /manual/i.test(t.name) && t.requiredOrdinal === 0)
-    ?? TECHNIQUES.find(t => /manual/i.test(t.name))!;
+/** The copy whose shared word previously eclipsed the named canon. */
+const HELD = TECHNIQUES.find(t => t.name === 'Lesser Qi-Gathering Manual')!;
+const AZURE_DEW = TECHNIQUES.find(t => t.name === 'Azure Dew Gathering Canon')!;
 
 describe('the manual in your hand is the manual you meant', () => {
     it('resolves a bare noun to the copy the cultivator holds', async () => {
@@ -75,6 +75,15 @@ describe('the manual in your hand is the manual you meant', () => {
         const notHeld = TECHNIQUES.find(t => t.id !== HELD.id)!;
 
         expect(resolveTechnique(repos, notHeld.name, cultivator.id)?.id).toBe(notHeld.id);
+    });
+
+    it('does not let one shared word in a held manual eclipse a named catalog art', async () => {
+        const { db, game, repos } = makeGame({ seed: 'the-manual-name-wins' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        recordACopyHeld(db, cultivator.id, HELD.id);
+
+        expect(HELD.name).toBe('Lesser Qi-Gathering Manual');
+        expect(resolveTechnique(repos, AZURE_DEW.name, cultivator.id)?.id).toBe(AZURE_DEW.id);
     });
 
     it('does not turn every bare noun into whatever is held', async () => {

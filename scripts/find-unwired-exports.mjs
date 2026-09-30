@@ -83,6 +83,47 @@ function sources(dir, out = []) {
 
 const rel = f => path.relative(ROOT, f).split(path.sep).join('/');
 
+/** Comments describe a reader; only code can be one. */
+function withoutComments(text) {
+    let out = '';
+    let quote = null;
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+        if (quote !== null) {
+            out += char;
+            if (char === '\\') {
+                out += next ?? '';
+                i++;
+            } else if (char === quote) {
+                quote = null;
+            }
+            continue;
+        }
+        if (char === "'" || char === '"' || char === '`') {
+            quote = char;
+            out += char;
+            continue;
+        }
+        if (char === '/' && next === '/') {
+            while (i < text.length && text[i] !== '\n') i++;
+            out += '\n';
+            continue;
+        }
+        if (char === '/' && next === '*') {
+            i += 2;
+            while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) {
+                if (text[i] === '\n') out += '\n';
+                i++;
+            }
+            i++;
+            continue;
+        }
+        out += char;
+    }
+    return out;
+}
+
 /** `export function foo`, `export const FOO =`, `export async function foo`. */
 const EXPORTED = /^export (?:async )?(?:function|const|class) ([A-Za-z_][A-Za-z0-9_]*)/gm;
 
@@ -168,14 +209,20 @@ function isDesignStatedAsProse(text, name) {
  *   `live`      the game reads it. Not reported.
  */
 export function findUnwired() {
-    const files = sources(SRC).map(f => ({ rel: rel(f), text: fs.readFileSync(f, 'utf8') }));
+    const files = sources(SRC).map(f => {
+        const text = fs.readFileSync(f, 'utf8');
+        return { rel: rel(f), text, code: withoutComments(text) };
+    });
     const tests = sources(path.join(ROOT, 'tests'))
-        .map(f => ({ rel: rel(f), text: fs.readFileSync(f, 'utf8') }));
+        .map(f => {
+            const text = fs.readFileSync(f, 'utf8');
+            return { rel: rel(f), text, code: withoutComments(text) };
+        });
     const rows = [];
 
     for (const file of files) {
         if (EDGE.some(re => re.test(file.rel))) continue;
-        for (const m of file.text.matchAll(EXPORTED)) {
+        for (const m of file.code.matchAll(EXPORTED)) {
             const name = m[1];
             const word = new RegExp(`\\b${name}\\b`);
 
@@ -183,7 +230,7 @@ export function findUnwired() {
             // widely than it needs to be, which is a tidiness question and not
             // this one: the thing being hunted here is design nothing anywhere
             // acts on, and a constant its own module reads is acted on.
-            const here = (file.text.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length;
+            const here = (file.code.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length;
             if (here > 1) continue;
 
             let live = 0;
@@ -204,12 +251,12 @@ export function findUnwired() {
                 // the file is read normally. A name that survives that strip is
                 // one the barrel actually does something with.
                 const text = /\/index\.ts$/.test(other.rel)
-                    ? other.text.replace(/^\s*export\s+(?:\*|\{[^}]*\})\s+from\s+[^\n]*$/gm, '')
-                    : other.text;
+                    ? other.code.replace(/^\s*export\s+(?:\*|\{[^}]*\})\s+from\s+[^\n]*$/gm, '')
+                    : other.code;
                 if (word.test(text)) live++;
             }
             if (live > 0) continue;
-            const byTest = tests.some(t => word.test(t.text));
+            const byTest = tests.some(t => word.test(t.code));
             rows.push({
                 name,
                 file: file.rel,

@@ -194,10 +194,9 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         placement: {
             // TWELVE BUYS NOTHING, AND THAT IS THE POINT. DO NOT "FIX" IT.
             //
-            // `placementsWithinReach` filters houses by `powerOrdinal <= reach`,
-            // and the weakest house in the entire catalog stands at 14. So a
-            // small cultivating family's name opens exactly as many doors as a
-            // farmer's, which is none, at every age, forever.
+            // The weakest house in the entire catalog stands at 14. This
+            // family's word therefore adds no house to the names heard at
+            // home; it opens no placement at any age.
             //
             // It looks like an off-by-one and it is a decision. A family like
             // this has a shopfront, letters, a hall copy of a manual somebody's
@@ -679,30 +678,6 @@ export function withOriginAccess(
 }
 
 // WHAT IT BUYS: PLACEMENT
-
-/** A house the family's word reaches, described without recommending it. */
-export interface PlacementCandidate {
-    /** Institution id. */
-    id: string;
-    powerOrdinal: number;
-    /** Its own admission floor, which placement does not move. */
-    admissionOrdinal: number;
-}
-
-/**
- * Which of these houses would take this person on the family's word.
- */
-export function placementsWithinReach(
-    key: OriginTierKey,
-    applicantOrdinal: number,
-    houses: readonly PlacementCandidate[]
-): PlacementCandidate[] {
-    const reach = getOrigin(key).placement.reach;
-    if (reach <= 0) return [];
-    return houses.filter(
-        h => h.powerOrdinal <= reach && applicantOrdinal >= h.admissionOrdinal
-    );
-}
 
 // WHAT IT BUYS: SURVIVABLE RISK
 //

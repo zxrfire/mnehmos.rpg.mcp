@@ -792,7 +792,7 @@ function sectFacts(
 }
 
 /**
- * WHAT THEY ARE HOLDING BEATS WHAT IS IN THE BOOK.
+ * A full catalog name beats a loose overlap with what they hold.
  */
 export function resolveTechnique(
     repos: CultivationRepos,
@@ -805,8 +805,10 @@ export function resolveTechnique(
     ]);
     const held = TECHNIQUES.filter(technique => heldIds.has(technique.id));
 
-    const match = theOneTheyHold(query, held, technique => technique.name)
-        ?? best(query, TECHNIQUES, technique => technique.name);
+    // A held manual settles a bare "manual", but its one shared word cannot
+    // take a fully named different art away from the player.
+    const match = best(query, TECHNIQUES, technique => technique.name)
+        ?? theOneTheyHold(query, held, technique => technique.name);
     if (!match) return null;
 
     const known = repos.techniques.getKnown(cultivatorId, match.id);

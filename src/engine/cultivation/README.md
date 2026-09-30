@@ -116,7 +116,7 @@ includes being somebody's child. What it buys instead:
 | Input | What it actually is |
 |---|---|
 | **Resources** | Stones, and therefore pills, and therefore a seclusion that is a plan rather than a way to starve. Priced at `PRICE_GROWTH_PER_ORDINAL`, which is set to the ladder's own 1.35 rank-cost growth on purpose: a fortune then buys a fixed number of rungs rather than a fixed fraction of the road, and it is gone by the low twenties. |
-| **Placement** | A sect that will take you at an age when it matters. `entryRankIndex` is 0 for every tier, and `placementsWithinReach` never waives an institution's own `admissionOrdinal`. |
+| **Placement** | The house a child grew up in, or the names their family can put within earshot. `entryRankIndex` is 0 for every tier; birth never waives an institution's own `admissionOrdinal`. |
 | **Access** | Which comprehensions exist for this person at all - expressed as `DiscoveryContext` rows through the `AccessSource` set in `understanding.ts`, never through a mechanism of origin's own. A thin-county birth reaches its own root and nothing else. |
 | **Standing** | Somebody's word. A capacity, spent rather than kept. |
 | **Survivable risk** | A bounded, exhaustible addition to the odds of surviving somewhere lethal. It never touches what is in the ruin. |

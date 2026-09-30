@@ -498,6 +498,10 @@ describe('what you have heard of falls out of who your family corresponded with'
         const barred = housesWithinEarshot(getOrigin('dao_house_bloodline'), world.houses)
             .filter(h => h.admissionOrdinal > 0);
         expect(barred.length).toBeGreaterThan(0);
+        const named = new Set(birth.knowledge.filter(row => row.kind === 'sect').map(row => row.id));
+        for (const house of barred) {
+            expect(named, `${house.name} was heard at home`).toContain(house.id);
+        }
         for (const row of birth.knowledge) {
             expect(row.stance).not.toBe('ignorant');
             // "at no rank in it" is the state and is allowed to be said; what

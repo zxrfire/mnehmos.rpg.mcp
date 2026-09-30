@@ -285,7 +285,9 @@ describe('CultivatorRepository', () => {
 
         const loaded = repo.getById('cult-1');
         expect(loaded).not.toBeNull();
-        expect(loaded).toEqual(created);
+        // These are part of a cultivator even before either has a non-default
+        // value: a run has not bound this body yet, and it is at no named area.
+        expect(loaded).toEqual({ ...created, runId: undefined, standingIn: null });
 
         // Spot-check the fields most likely to be lost in JSON/int coercion.
         expect(loaded!.attributes).toEqual({ might: 2, insight: 3, fortune: 1, charm: 2 });

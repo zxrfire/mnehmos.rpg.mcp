@@ -175,15 +175,12 @@ it should fail.
 
 ## The favour, and why it lives here
 
-`placementsWithinReach` in `origin.ts` applies two hard conditions: the house is
-within the family's reach, and the applicant already meets the house's own
-admission ordinal. A child has an ordinal of zero until they have cultivated, so
-at the age the top tier places its children the second condition throws away
-every house with a bar above the floor - and what survives takes anybody. The
-greatest name in the province buys a place its holder could have had by walking
-up. `tests/engine/birth/spending-a-word-to-place-a-child.test.ts` pins that
-directly, because it is the defect the favour exists to fix and the prose used
-to describe it as though it were the feature.
+Reach says whose name a child has heard, not who takes them. A child has an
+ordinal of zero until they cultivate, so using the ordinary admission check at
+the age placement happens only finds houses that would take anybody walking up.
+The favour moves a specific house's gate; it does not turn a family reach into a
+second admission system. `tests/engine/birth/spending-a-word-to-place-a-child.test.ts`
+pins that directly.
 
 A word is spent in two places: at birth, as a house's `'by taking'` roll
 (`raisedInside` in `birth.ts`, which records that somebody is owed for it), and in
@@ -271,4 +268,3 @@ rows.
   a child costs the two people who have one, and which route a match took.
 - [`../../web/README.md`](../../web/README.md) - `web/the-life-behind-the-first-turn.ts` and
   `web/who-a-life-like-this-grew-up-knowing.ts` are how a birth is told to a player.
-

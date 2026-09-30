@@ -8,14 +8,8 @@ import {
     wasPlaced,
     whoCanHoldAChildAtZero
 } from '../../../src/engine/birth/spending-a-word-to-place-a-child.js';
-import { ORIGIN_TIERS, placementsWithinReach, type PlacementCandidate } from '../../../src/engine/cultivation/origin.js';
+import { ORIGIN_TIERS } from '../../../src/engine/cultivation/origin.js';
 import { SECTS } from '../../../src/data/cultivation/sects.js';
-
-const HOUSES: PlacementCandidate[] = SECTS.map(s => ({
-    id: s.id,
-    powerOrdinal: s.powerOrdinal,
-    admissionOrdinal: s.admissionOrdinal
-}));
 
 const PAVILION = 'sect-azure-cloud-pavilion';
 
@@ -81,39 +75,6 @@ describe('a child at ordinal zero, and the tally the catalog owns', () => {
             'the Tripod Court is in COURTS, not in SECTS, so it is not in this list'
         ).toEqual(['sect-deeproot-court']);
         expect(SECTS.some(s => s.id === 'court-kiln')).toBe(false);
-    });
-});
-
-describe('what a great name is actually worth at seven years old', () => {
-    // The greatest NAME in the table, derived rather than taken off the end of
-    // it. Since the top row split into three routes the last row is a child
-    // placed at a house on somebody's word, who has no name of their own to
-    // use and no word left to spend - so "the last tier" and "the biggest
-    // name" stopped being the same row.
-    const top = ORIGIN_TIERS.reduce(
-        (a, b) => (b.placement.reach > a.placement.reach ? b : a)
-    );
-
-    it('without a word, resolves to houses that take anybody', () => {
-        // This is the defect `docs/world/houses/origin.md` used to describe as
-        // "a good allied sect at an age when it matters". Every house a Dao
-        // house's name reaches at ordinal zero admits at the floor, so the
-        // greatest name in the province buys what an afternoon's walk buys.
-        const qualified = placementsWithinReach(top.key, 0, HOUSES);
-        expect(qualified.length).toBeGreaterThan(0);
-        for (const house of qualified) {
-            expect(
-                howAChildAtZeroGetsIn(house.id),
-                `${house.id} would have taken a farmer's child that morning`
-            ).toBe('walks up');
-        }
-    });
-
-    it('is worth nothing at all to a family with no standing', () => {
-        const farm = ORIGIN_TIERS[0];
-        expect(farm.placement.reach).toBe(0);
-        expect(placementsWithinReach(farm.key, 0, HOUSES)).toEqual([]);
-        expect(farm.vouchers).toBe(0);
     });
 });
 
