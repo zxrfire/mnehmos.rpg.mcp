@@ -23,7 +23,7 @@ import {
     type ReasonNeed,
     type SendingReason
 } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
-import { getParentage, getSubsidiariesOf } from '../../data/cultivation/governance-and-water-rights.js';
+import { getSubsidiariesOf, theBodyItAnswersTo } from '../../data/cultivation/governance-and-water-rights.js';
 import { containmentHeldBy } from '../../data/cultivation/artifacts.js';
 import { regardFor, type Regard } from '../cultivation/regard.js';
 import { summonable } from '../encounters/duties.js';
@@ -153,7 +153,7 @@ export const NEED_PREDICATES: Record<ReasonNeed, (house: HouseAsItStands) => boo
     nothing: () => true,
     ground: house => house.holdsGround,
     a_subsidiary: house => getSubsidiariesOf(house.id).length > 0,
-    a_parent: house => getParentage(house.id)?.parentFactionId != null,
+    a_parent: house => theBodyItAnswersTo(house.id) !== null,
     an_ally: house => Object.values(house.standing).some(v => v >= ALLIED_STANDING),
     a_rival: house => Object.values(house.standing).some(v => v <= RIVAL_STANDING),
     a_find: house => house.hasAFind,
@@ -1684,8 +1684,11 @@ const WHO_A_NEED_IS_ABOUT:
         .filter(([, regard]) => regard >= ALLIED_STANDING)
         .map(([id]) => id),
     a_subsidiary: house => getSubsidiariesOf(house.id).map(p => p.factionId),
+    // THE BODY, NOT THE PARENTAGE ID. Nine houses hold from a court or an apex
+    // id that is no faction, and a party sent there found no seat and went
+    // somewhere else.
     a_parent: house => {
-        const parent = getParentage(house.id)?.parentFactionId ?? null;
+        const parent = theBodyItAnswersTo(house.id);
         return parent === null ? [] : [parent];
     },
     a_counterpart: house => house.sitsDownWith ?? []

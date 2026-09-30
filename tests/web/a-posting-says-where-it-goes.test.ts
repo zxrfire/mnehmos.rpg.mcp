@@ -36,7 +36,13 @@ import {
     type HouseAsItStands
 } from '../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back';
 import { getSendingReason } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
-import { getParentage, getSubsidiariesOf } from '../../src/data/cultivation/governance-and-water-rights';
+import {
+    FACTION_PARENTAGE,
+    getParentage,
+    getSubsidiariesOf,
+    theBodyItAnswersTo
+} from '../../src/data/cultivation/governance-and-water-rights';
+import { getSect } from '../../src/data/cultivation/sects';
 
 const A_HOUSE = 'sect-azure-cloud-pavilion';
 
@@ -147,5 +153,24 @@ describe('a posting says where it goes', () => {
             hasAFind: false
         });
         expect([...about]).toEqual([A_HOUSE]);
+    });
+
+    it('sends it to the house a court or an apex id stands for, never to the bare id', () => {
+        // Nine parentage rows name `court-third-sill`, `court-ninth-face` or an
+        // `apex-` id, which no faction in the world carries, so the party had no
+        // seat to go to and was sent somewhere else. Red with the raw
+        // `parentFactionId` back in `a_parent`.
+        const holders = Object.values(FACTION_PARENTAGE)
+            .filter(row => row.parentFactionId !== null && FACTION_PARENTAGE[row.parentFactionId] === undefined);
+        expect(holders.length, 'no house answers to a court or an apex id').toBeGreaterThan(0);
+
+        const answering = getSendingReason('sending-to-answer-a-call')!;
+        for (const row of holders) {
+            const about = whichHousesAReasonIsAbout(answering.needs, {
+                id: row.factionId, name: row.factionId, holdsGround: true, standing: {}, hasAFind: false
+            });
+            expect(about, row.factionId).toEqual([theBodyItAnswersTo(row.factionId)]);
+            expect(getSect(about[0]!), `${row.factionId} answers to no house`).toBeTruthy();
+        }
     });
 });
