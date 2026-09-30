@@ -2952,13 +2952,11 @@ a-house-that-ends-one-of-its-own-keeps-what-they-had.ts
                  A third party's thing moves without its title moving
 ```
 
-### A sea crossing is a different kind of link, and the engine still cannot read it
+### A sea crossing is a different kind of link
 
-`what-a-sea-crossing-costs.ts` is one half of a gap `regions.ts` recorded and this
-directory owns the other half of. `LinkKind` here is `road|path|tunnel|gate|portal|seam`
-and `seeding.ts` links **every** region connection as `'road'`, so in a seeded world an
-eleven-day cart road and a thirty-four-day open-water passage are the same object with
-different numbers on them.
+`what-a-sea-crossing-costs.ts` and `seeding.ts` give open-water connections their own
+`crossing` link kind, so a seeded world does not mistake a thirty-four-day passage for a
+cart road.
 
 The five differences that make a crossing its own kind are now mechanisms rather than
 atmosphere - a commit point past which turning back is not shorter, a season that shuts
@@ -2970,12 +2968,8 @@ rations and the commit point (`canTurnBack`, when a stop costs the crew). `move`
 with an end on open water goes to the landing instead of walking
 (`src/web/the-way-there-is-by-ship.ts`).
 
-What it would take is two lines in files that conflict badly when shared: one `crossing`
-member on `LinkKind`, and one ternary at the `linkLocations` call in `seeding.ts` that
-picks it for a connection whose kind is `sea_crossing`. `crossing` would be the only link
-whose `open` flag is set by the world rather than by a holder or a key, which is what
-`OpeningCycle` already exists to express, and `laneIsOpenInMonth` is now the function that
-would answer it. `SEA_CROSSING_ENGINE_GAP` in that module is the machine-readable record.
+`crossing` is the only link whose opening follows the world rather than a holder or a key;
+`laneIsOpenInMonth` supplies that answer.
 
 ## Related
 

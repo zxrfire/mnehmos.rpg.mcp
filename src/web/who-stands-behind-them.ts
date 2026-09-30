@@ -48,6 +48,7 @@
 import {
     ARCHIVE_AS_CLAIM,
     IMMORTAL_CHANNELS,
+    PAVILION_SURPLUS,
     type LineageStanding,
     answeringChannels,
     getLineageStanding,
@@ -212,6 +213,10 @@ export function whoStandsBehindThem(input: {
     lines.push(standing.whatDepletionLooksLike);
     lines.push(standing.resilience);
     lines.push(standing.behaviour);
+    if (input.factionId === 'sect-azure-cloud-pavilion') {
+        lines.push(PAVILION_SURPLUS.theTension);
+        lines.push(PAVILION_SURPLUS.theQuietProblem);
+    }
     lines.push(STOCK_VERSUS_FLOW.theDistinction);
     lines.push(THE_SENDING_PYRAMID.thePyramid);
     lines.push(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.theCaveat);

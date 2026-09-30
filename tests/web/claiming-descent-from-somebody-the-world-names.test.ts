@@ -22,10 +22,8 @@
  *
  * ── THE CATALOG ASKED FOR THIS IN SO MANY WORDS ──────────────────────────
  *
- * `NAMED_FIGURE_ENGINE_GAP` lists three things the engine would need, and the
- * third is this one: *a link from an offering or a claim of descent to the
- * figure it addresses, since both are currently free text and neither can be
- * wrong*.
+ * An offering or claim names its ancestor as free text, so this path cannot
+ * establish descent from the catalog alone.
  *
  * ── `nameIsUsable` IS THE GATE, AND THE FILE SAYS SO ─────────────────────
  *

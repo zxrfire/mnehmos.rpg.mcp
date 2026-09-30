@@ -23,9 +23,14 @@ import {
     WHY_THE_HEAD_IS_PINNED
 } from '../data/cultivation/the-top-of-the-world.js';
 import {
-    IDENTIFYING_A_SEAT, THE_CANDIDATE_REGISTER, THE_OPEN_AXIS, THE_PRESENT_COUNT
+    CARVING, THE_ARTS_ARE_THE_WHOLE_INVENTORY, THE_REMAINDER, THE_VACANCY, IDENTIFYING_A_SEAT, THE_CANDIDATE_REGISTER,
+    THE_OPEN_AXIS, THE_PRESENT_COUNT
 } from '../data/cultivation/false-immortals.js';
-import { ATTESTATION_IS_USABILITY } from '../data/cultivation/named-figures.js';
+import { NOTHING_AT_FORTY_SIX_IS_EVER_LEFT, THE_ROOT_CAULDRON } from '../data/cultivation/artifacts.js';
+import { ABOVE_THE_LID_TRANSMISSION } from '../data/cultivation/techniques.js';
+import { THE_THRESHING_HALL, ATTESTATION_IS_USABILITY } from '../data/cultivation/named-figures.js';
+import { TWICE_WORKED } from '../data/cultivation/traditions.js';
+import { FATE_IS_NOT_A_STAT } from '../data/cultivation/inheritance-trials.js';
 import { getPill } from '../data/cultivation/pills.js';
 import { idsForFaction } from '../data/cultivation/governance-and-water-rights.js';
 import { REALM_TIERS } from '../engine/cultivation/realms.js';
@@ -115,7 +120,38 @@ function records(peaceYear: number): RecordFact[] {
             THE_PRESENT_COUNT.knowledge.slice(0, 1), voidRealm),
         row('guest', 'the Court guest and its reserved post', /\b(?:court.*(?:guest|protector)|present count)\b/i,
             THE_PRESENT_COUNT.knowledge.slice(1), voidRealm, ['sect-hollow-court'], false),
-        row('names', 'addressing an ancestor by name', /\b(?:attestation|ceremonial names?|ancestor.*name|usable names?)\b/i, ATTESTATION_IS_USABILITY.knowledge, foundation)
+        row('names', 'addressing an ancestor by name', /\b(?:attestation|ceremonial names?|ancestor.*name|usable names?)\b/i, ATTESTATION_IS_USABILITY.knowledge, foundation),
+        row('false-immortal-remainder', 'what a False Immortal keeps after crossing',
+            /\b(?:false immortal.*(?:remainder|years|lifespan|crossing cost)|crossing.*false immortal)\b/i,
+            [THE_REMAINDER.theRungsFigure, THE_REMAINDER.whatAnIndividualKeeps,
+                THE_REMAINDER.thisIsThePriceAndNotTheTrajectory], lastRealm),
+        row('false-immortal-vacancy', 'the vacant dao protector post',
+            /\b(?:false immortal.*(?:vacancy|vacant|protector post)|vacant.*protector)\b/i,
+            [THE_VACANCY.theReason], lastRealm),
+        row('dao-carvings', 'how a dao carving survives', /\b(?:dao carvings?|carvings?.*false immortal)\b/i,
+            [CARVING.whyTheyCarve, CARVING.whyMostOfItCannotBeRead,
+                CARVING.andSomeOfItIsPerfectlyLegible], voidRealm),
+        row('above-the-lid-arts', 'arts above the Lid', /\b(?:arts? above the lid|false immortal.*(?:art|teach)|true immortal.*(?:writings?|art))\b/i,
+            [ABOVE_THE_LID_TRANSMISSION.falseImmortal.howAStudentGets,
+                THE_ARTS_ARE_THE_WHOLE_INVENTORY.heHoldsNothing,
+                ABOVE_THE_LID_TRANSMISSION.trueImmortal.howItExists,
+                ABOVE_THE_LID_TRANSMISSION.trueImmortal.readingNotShowing], lastRealm),
+        row('objects-above-the-lid', 'objects carried above the Lid', /\b(?:objects? above the lid|true immortal.*(?:object|carry)|forty[- ]six)\b/i,
+            [NOTHING_AT_FORTY_SIX_IS_EVER_LEFT.theyAreCarriedAndOnlyCarried,
+                NOTHING_AT_FORTY_SIX_IS_EVER_LEFT.theOnlyResidueIsPieces], lastRealm),
+        row('root-cauldron', 'the Root Cauldron', /\b(?:root cauldron|two halves?.*(?:cauldron|vessel)|execution.*vessel)\b/i,
+            [THE_ROOT_CAULDRON.whatIsSaidOfItAt.placed, THE_ROOT_CAULDRON.whatIsSaidOfItAt.known,
+                THE_ROOT_CAULDRON.yields], lastRealm),
+        row('threshing-hall', 'the Threshing Hall', /\b(?:threshing hall|keep the hall|four unsent recall)\b/i,
+            [THE_THRESHING_HALL.theQuestionAsked, THE_THRESHING_HALL.theAnswer,
+                THE_THRESHING_HALL.theOutcome, THE_THRESHING_HALL.theLesson], foundation,
+            [THE_THRESHING_HALL.theReconstruction.by]),
+        row('twice-worked', 'the Twice-Worked', /\b(?:twice[- ]worked|both traditions?.*(?:body|rite)|drawn.*cut.*rite)\b/i,
+            [TWICE_WORKED.howItHappens, TWICE_WORKED.whyItIsRare,
+                TWICE_WORKED.benefit], core),
+        row('fate-gates', 'fate gates', /\b(?:fate gates?|fate condition|fate trial)\b/i,
+            [FATE_IS_NOT_A_STAT.rule, FATE_IS_NOT_A_STAT.whatWorldStateMeans,
+                FATE_IS_NOT_A_STAT.andMostPeopleNeverPass], foundation)
     ];
 }
 

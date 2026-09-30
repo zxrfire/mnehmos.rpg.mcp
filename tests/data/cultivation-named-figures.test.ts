@@ -31,7 +31,6 @@ import {
     THE_THRESHING_HALL,
     HELD_QUESTIONS,
     ATTESTATION_IS_USABILITY,
-    NAMED_FIGURE_ENGINE_GAP,
     getNamedFigure,
     figuresFor,
     nameIsUsable,
@@ -283,9 +282,4 @@ describe('not instantiated', () => {
         }
     });
 
-    it('states the schema gap rather than forcing the lift', () => {
-        expect(NAMED_FIGURE_ENGINE_GAP.theShape).toMatch(/no realm ordinal/i);
-        expect(NAMED_FIGURE_ENGINE_GAP.whatTheEngineWouldNeed.length).toBeGreaterThanOrEqual(3);
-        expect(NAMED_FIGURE_ENGINE_GAP.untilThen).toMatch(/nameIsUsable/);
-    });
 });

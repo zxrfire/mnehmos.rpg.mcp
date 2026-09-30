@@ -1252,24 +1252,3 @@ export function whoAnswersFor(factionId: string): NamedFigure | undefined {
         (f.juniority ?? Number.MAX_SAFE_INTEGER) < (lowest.juniority ?? Number.MAX_SAFE_INTEGER) ? f : lowest
     );
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// ENGINE GAP
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * There is no schema for a person who exists as a name and a history and is
- * not in the world, which is why this file carries its own and stays out of
- * `members.ts`.
- */
-export const NAMED_FIGURE_ENGINE_GAP = {
-    theShape:
-        'A named figure has no realm ordinal, no rank index, no faction membership and no location, because none of those questions have answers for somebody who is dead, sealed, or through the Lid. Forcing them into the member schema would require inventing all four, and inventing a realm ordinal for a founder is exactly the kind of number that later gets treated as a fact.',
-    whatTheEngineWouldNeed: [
-        'A record type for a person referenced rather than instantiated: name, attestation, era, and a faction whose records hold them.',
-        'An attestation field on any name the engine repeats back to a player, so that a garbled or ceremonial name can be reported as the institution believes it rather than as truth.',
-        'A link from an offering or a claim of descent to the figure it addresses, since both are currently free text and neither can be wrong.'
-    ],
-    untilThen:
-        'This file is the record and the tests are the contract. Nothing here should be given a realm, a rank or a location by any consumer, and anything that needs to know whether a name is trustworthy should call `nameIsUsable` rather than reading the string.'
-} as const;

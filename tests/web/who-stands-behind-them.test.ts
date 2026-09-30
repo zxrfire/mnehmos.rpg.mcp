@@ -158,6 +158,12 @@ describe('the gate', () => {
             expect(lines, standing.factionId).not.toMatch(/Nothing is arriving|Nothing comes down/i);
         }
     });
+
+    it("makes the Pavilion's surplus part of the deep read", () => {
+        const lines = read(THE_PAVILION, 35).lines.join(' ');
+        expect(lines).toMatch(/bottleneck is people rather than medicine/i);
+        expect(lines).toMatch(/accumulating obligations/i);
+    });
 });
 
 describe('a house nobody is above', () => {

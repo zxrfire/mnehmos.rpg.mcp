@@ -229,7 +229,7 @@ export type LocationKind =
      */
     | 'vault';
 
-export type LinkKind = 'road' | 'path' | 'tunnel' | 'gate' | 'portal' | 'seam';
+export type LinkKind = 'road' | 'path' | 'tunnel' | 'gate' | 'portal' | 'seam' | 'crossing';
 
 export interface LocationLink {
     toLocationId: string;

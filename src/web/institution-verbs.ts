@@ -629,10 +629,8 @@ export const institutionVerbs = {
         // up: *an unheard name and an invented one are answered identically
         // here, by construction*.
         //
-        // The catalog states this gap itself, in `NAMED_FIGURE_ENGINE_GAP`,
-        // as the third of the three things the engine would need: *a link from
-        // an offering or a claim of descent to the figure it addresses, since
-        // both are currently free text and neither can be wrong*.
+        // An offering or claim still names its ancestor as free text, so this
+        // path cannot establish descent from the catalog alone.
         //
         // `nameIsUsable` IS THE GATE AND THE FILE SAYS SO: *anything that
         // needs to know whether a name is trustworthy should call

@@ -366,23 +366,3 @@ export function whatTheBoardDoesNotSay(running: number): string {
         + 'not on the board is not withheld and is not for sale at a better price: it is where '
         + 'the survey ends. Nobody now living has extended it, and the house says so.';
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT THIS NEEDS FROM FILES THIS MODULE DOES NOT OWN
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Recorded rather than quietly left, the way `SEA_CROSSING_ENGINE_GAP` is.
- *
- * A `RegionBranch` in `regions.ts` carries `parentSectId`, `localName` and
- * `doesHere` and nothing else, so the Fourfold Stele Terminal's far end, its
- * seventeen days and its four-days-in-nine schedule exist only as prose in a
- * description. Everything above reads structured fields that the catalog does
- * not yet have.
- */
-export const SPAN_COUNTER_CATALOG_GAP = {
-    what: 'No Span route in the catalog is machine-readable, so no board can be built for a live world yet.',
-    whereItWouldGo: 'RegionBranchSchema in src/data/cultivation/regions.ts, whose Fourfold Stele Terminal entry already states a far end, a walked distance and a schedule in prose.',
-    whatItWouldTake: 'Optional structured fields on a branch - the far place, the walked days the span replaces, and periodDays/openDays/phaseDay - plus a branch in each major city. The Fourfold Stele entry is the worked example and needs no new prose.',
-    whyItIsNotDoneHere: 'regions.ts is a shared catalog owned by somebody else, and a schema field is exactly the shared contract that conflicts badly when two agents touch it at once.'
-} as const;

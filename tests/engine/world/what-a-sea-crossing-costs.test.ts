@@ -22,6 +22,8 @@ import {
     type SeaLane
 } from '../../../src/engine/world/what-a-sea-crossing-costs.js';
 import { SEA_LANES, getSeaLane } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 
 const NOWHERE_TO_STOP: SeaLane = {
     id: 'lane-test-open',
@@ -40,6 +42,21 @@ const ROCK_IN_THE_MIDDLE: SeaLane = {
 };
 
 describe('you cannot stop where you like', () => {
+    it('seeds open water as a crossing rather than a road', async () => {
+        // A sea passage has a seasonal opening and a commit point; calling it
+        // a road in the world graph made those facts unreachable to travel.
+        const catalog = await loadCultivationCatalog();
+        const state = seedWorld({ seed: 'sea-links', catalog }).state;
+        const crossings = state.locations.flatMap(location => location.links
+            .filter(link => link.kind === 'crossing')
+            .map(link => ({ from: location.id, to: link.toLocationId })));
+        expect(crossings.length).toBeGreaterThan(0);
+        for (const link of crossings) {
+            expect(link.from).not.toBe(link.to);
+            expect(state.locations.some(location => location.id === link.to)).toBe(true);
+        }
+    }, 120_000);
+
     it('has a commit point, which a road does not', () => {
         // On a road any village is an exit. The whole difference is that a
         // crossing has a middle, and past it turning back is not shorter.

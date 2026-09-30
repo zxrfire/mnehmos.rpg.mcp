@@ -381,27 +381,3 @@ export function quotePassage(
             'The chest. A fare buys a berth, a share of the rail and the ration called at the same hour every day; it does not buy the stones anybody burns to still be at the rung they boarded at, and no hull in the province has ever included them.'
     };
 }
-
-/**
- * WHAT THIS DOES NOT DO YET, recorded rather than quietly left.
- *
- * `LinkKind` in `locations.ts` is `road|path|tunnel|gate|portal|seam` and
- * `seeding.ts` links every region connection as `'road'`, so a seeded world
- * still cannot tell a crossing from a cart track in the world graph. The play
- * layer reads the catalog instead: a journey with an end on open water goes to a
- * landing (`the-way-there-is-by-ship.ts`), and only a seat bought there
- * (`a-seat-on-a-ship-or-a-carriage.ts`) sails a lane. `regions.ts` argues that a
- * `crossing` kind would be the only link whose `open` flag is set by the world
- * rather than by a holder or a key, and `laneIsOpenInMonth` is now the
- * function that would answer it.
- *
- * The gap is two lines in a file this module does not own: one union member,
- * and one ternary at the `linkLocations` call. It is deliberately not made
- * here, and this is the record of that.
- */
-export const SEA_CROSSING_ENGINE_GAP = {
-    what: 'A sea crossing is still seeded as a road in the world graph; the play layer sends a journey over water to a landing, and only a ship seat bought there sails the lane.',
-    whereItWouldGo: 'LinkKind in src/engine/world/locations.ts, and the linkLocations call in src/engine/world/seeding.ts.',
-    whatItWouldTake: 'One union member `crossing`, and one ternary choosing it for a connection whose kind is `sea_crossing`.',
-    whyItIsNotDoneHere: 'Both are somebody else\'s file, and a link kind is a shared contract that conflicts badly when two agents touch it at once.'
-} as const;

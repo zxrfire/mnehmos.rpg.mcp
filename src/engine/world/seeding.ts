@@ -725,7 +725,7 @@ function seedRegions(
         for (const conn of region.connections) {
             const to = byRegion.get(conn.otherRegionId);
             if (!to) continue;
-            linkLocations(from, to, 'road', Math.max(1, conn.travelDays));
+            linkLocations(from, to, conn.kind === 'sea_crossing' ? 'crossing' : 'road', Math.max(1, conn.travelDays));
         }
     }
 

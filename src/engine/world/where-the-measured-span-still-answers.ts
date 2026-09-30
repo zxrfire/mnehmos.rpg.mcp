@@ -6,9 +6,8 @@
  * -------------------
  * `buying-passage-at-a-measured-span-counter.ts` prices a passage, builds a
  * board and says what an absence on that board means. It could not be reached,
- * because nothing in the world said WHERE a counter is or WHAT runs from it -
- * `SPAN_COUNTER_CATALOG_GAP` records that in the module itself. This is that
- * table.
+ * because nothing in the world said WHERE a counter is or WHAT runs from it.
+ * This table supplies those routes to the board.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * EVERY ROW IS READ OFF THE REGION CATALOG. NOTHING HERE IS INVENTED

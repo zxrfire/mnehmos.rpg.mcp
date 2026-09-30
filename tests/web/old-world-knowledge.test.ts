@@ -56,7 +56,16 @@ describe('facts about the old world', () => {
         ['false immortal dao', null, /does not cap comprehension/],
         ['false immortal protectors', null, /posts remain open/],
         ['Court guest protector', 'sect-hollow-court', /no formal appointment/],
-        ['attestation', null, /ceremony alone/]
+        ['attestation', null, /ceremony alone/],
+        ['false immortal remainder', null, /rung's figure/],
+        ['false immortal vacancy', null, /lack of False Immortals/],
+        ['dao carvings', null, /legacy is the objective/],
+        ['arts above the Lid', null, /being his student/],
+        ['objects above the Lid', null, /in a hand/],
+        ['root cauldron', null, /refining vessel/],
+        ['Threshing Hall', 'sect-lantern-hall', /Nine words/],
+        ['Twice-Worked', null, /accident of the two rites/],
+        ['fate gates', null, /world state/]
     ] as const)('answers %s from its record', (topic, house, claim) => {
         const answer = reading(topic, house);
         expect(answer.holdsIt).toBe(true);

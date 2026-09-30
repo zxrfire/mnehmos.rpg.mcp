@@ -62,7 +62,7 @@
  */
 
 import {
-    GRAVE_CONTENTS_BANDS,
+    GRAVE_CONTENTS_BANDS, WHAT_THE_LIGHTNING_TOOK,
     contentsBandFor,
     tribulationTouched,
     type Burial,
@@ -125,17 +125,9 @@ export function whatTheStoneSays(facts: HeadstoneFacts): string[] {
     // ignorant party walks straight past.
     if (facts.mannerOfDeath === 'failed_crossing') {
         // The one case with no body at all, and the shortest list in the world.
-        lines.push(
-            'Nobody survives the last crossing and nothing is left of one who tries it. There is no '
-            + 'body in there, no pouch and no arrangement: whatever is on that ground fell out of a '
-            + 'hand.'
-        );
+        lines.push(WHAT_THE_LIGHTNING_TOOK.andAFailedCrossingLeavesNoBody);
     } else if (facts.mannerOfDeath === 'heavenly_tribulation') {
-        lines.push(
-            'The tribulation takes nearly everything a cultivator is carrying. Whatever is still in '
-            + 'there is a short list, and all of it stayed on a body through the heaviest thing in '
-            + 'the world.'
-        );
+        lines.push(WHAT_THE_LIGHTNING_TOOK.rule);
     } else {
         lines.push(
             'Nothing tested what they had. They died with everything they owned on them, and it is '
