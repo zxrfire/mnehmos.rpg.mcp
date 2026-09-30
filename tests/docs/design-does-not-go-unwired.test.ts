@@ -206,7 +206,8 @@ const DEAD = 0;
 // 27 -> 15: the elder's office reads, services done, a duty passed down, the send-off, a house's asks and where to look reach play.
 // 15 -> 0: fact-backed memories, opportunity windows, surviving the body, a crossing remembered and acting through a proxy reach play.
 // 0 -> 76: the scanner stopped counting a comment that names a function as a reader of it; these were always test-only.
-const TEST_ONLY = 76;
+// 76 -> 58: group w0 wired.
+const TEST_ONLY = 58;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
