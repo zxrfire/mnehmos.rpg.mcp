@@ -277,41 +277,6 @@ function lineFor(find: Find, fit: Fit, axes: readonly FitAxis[]): string {
     }
 }
 
-/**
- * Tags that mean "there is something here somebody could be suited to". Read off
- * the catalog's own tags: a market stall and a bandit do not hold a fit; a manual
- * in a lost grade, an inheritance trial, a refining method on a wall and a body
- * that was carrying a canon do.
- */
-const FIT_BEARING_TAGS: readonly string[] = [
-    'technique',
-    'recipe',
-    'inheritance',
-    'ruin-only',
-    'pills',
-    // Route 3. `grave` is on five rows in the encounter catalog today and was
-    // simply not being read. `corpse` is on none yet - the `corpses` and
-    // `corpse_inventory` tables are storage-level and nothing in the encounter
-    // catalog is tagged for a body found in the field. Listed here so the tag
-    // works the day a row carries it, rather than being a second thing to
-    // remember; reported to the data layer rather than authored across the
-    // boundary.
-    'corpse',
-    'grave',
-    // A person, rather than a shelf. Two rows carry it, and a teacher is an
-    // access route to a method exactly as a ruin is.
-    'transmission'
-];
-
-/**
- * Whether an encounter row can hold something a person could be suited to.
- */
-export function mayHoldAFit(tags: readonly string[]): boolean {
-    const set = new Set(tags);
-    return FIT_BEARING_TAGS.some(tag => set.has(tag));
-}
-
-
 function normalise(values: readonly string[] | undefined): string[] {
     return (values ?? []).map(v => v.trim().toLowerCase()).filter(v => v.length > 0);
 }

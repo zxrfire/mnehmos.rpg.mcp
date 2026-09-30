@@ -86,20 +86,9 @@ async function main(): Promise<void> {
             }))
         });
         const below = Math.max(0, realmForOrdinal(ordinal).ordinalStart - 1);
-<<<<<<< HEAD
-        const watchedOdds = (watch: { protectors: Protector[] }) => computeBreakthroughOdds(subject, {
-            ambient: 'normal', pill: null, manualQuality: null,
-            protection: protectionBonus(watch, ordinal) / MAX_PROTECTION_BONUS,
-            protectionBy: watch.protectors.map(p => p.name)
-        });
-        const one = watchedOdds(guard(1, ordinal));
-        const three = watchedOdds(guard(3, ordinal));
-        const lower = watchedOdds(guard(1, below));
-=======
         const one = protectedOdds(subject, guard(1, ordinal), ordinal);
         const three = protectedOdds(subject, guard(3, ordinal), ordinal);
         const lower = protectedOdds(subject, guard(1, below), ordinal);
->>>>>>> bc7bc6bf (feat(unwired): wire group w1 of the rows only tests read)
         line(
             `  ${rankName(ordinal).padEnd(38)}${pct(base.finalChance).padStart(6)}` +
             `${pct(one.finalChance).padStart(11)}${pct(three.finalChance).padStart(11)}` +
@@ -109,29 +98,17 @@ async function main(): Promise<void> {
 
     line();
     line('  The breakdown, for one wall, in full:');
-<<<<<<< HEAD
-    const lastWatch = {
-=======
     const lastWall = {
         realmOrdinal: 44, spiritRoot: 'single_metal' as const,
         attributes: { might: 3, insight: 4, fortune: 2, charm: 2 }, injuries: []
     };
     const watched = protectedOdds(lastWall, {
->>>>>>> bc7bc6bf (feat(unwired): wire group w1 of the rows only tests read)
         protectors: [
             { id: 'a', name: 'Second Seat', realmOrdinal: 44, standing: 0.8 },
             { id: 'b', name: 'Third Seat', realmOrdinal: 43, standing: 0.8 },
             { id: 'c', name: 'Fourth Seat', realmOrdinal: 42, standing: 0.8 }
         ]
-    };
-    const watched = computeBreakthroughOdds({
-        realmOrdinal: 44, spiritRoot: 'single_metal',
-        attributes: { might: 3, insight: 4, fortune: 2, charm: 2 }, injuries: []
-    }, {
-        ambient: 'normal', pill: null, manualQuality: null,
-        protection: protectionBonus(lastWatch, 44) / MAX_PROTECTION_BONUS,
-        protectionBy: lastWatch.protectors.map(p => p.name)
-    });
+    }, 44);
     for (const m of watched.modifiers) {
         line(`    ${m.source.padEnd(52)} ${(m.delta >= 0 ? '+' : '') + m.delta.toFixed(4)}`);
     }
@@ -234,15 +211,7 @@ async function main(): Promise<void> {
         }
         const base = computeBreakthroughOdds(asSubject(example),
             { ambient: 'normal', pill: null, manualQuality: null });
-<<<<<<< HEAD
-        const withWatch = computeBreakthroughOdds(asSubject(example), {
-            ambient: 'normal', pill: null, manualQuality: null,
-            protection: protectionBonus(watch, example.cultivation.realmOrdinal) / MAX_PROTECTION_BONUS,
-            protectionBy: watch.protectors.map(p => p.name)
-        });
-=======
         const withWatch = protectedOdds(asSubject(example), watch, example.cultivation.realmOrdinal);
->>>>>>> bc7bc6bf (feat(unwired): wire group w1 of the rows only tests read)
         line(`    alone ${pct(base.finalChance)} -> watched ${pct(withWatch.finalChance)} ` +
             `(+${protectionBonus(watch, example.cultivation.realmOrdinal).toFixed(4)})`);
     }

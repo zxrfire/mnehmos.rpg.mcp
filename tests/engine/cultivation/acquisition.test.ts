@@ -21,8 +21,7 @@ import {
     findFromManual,
     type ManualLike
 } from '../../../src/engine/encounters/acquisition.js';
-import { assessFit, mayHoldAFit, type Seeker } from '../../../src/engine/encounters/suitability.js';
-import { ENCOUNTERS } from '../../../src/data/cultivation/encounters.js';
+import { assessFit, type Seeker } from '../../../src/engine/encounters/suitability.js';
 import { daoOf } from '../../../src/engine/cultivation/dao.js';
 import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
 import type { Insight, InsightDegree } from '../../../src/schema/cultivation.js';
@@ -232,31 +231,6 @@ describe('route 1b through the funnel - a partial set is honestly reported', () 
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-describe('E5 - mayHoldAFit reads the routes that were invisible to it', () => {
-    it('a grave and a corpse hold a fit', () => {
-        expect(mayHoldAFit(['grave'])).toBe(true);
-        expect(mayHoldAFit(['corpse'])).toBe(true);
-    });
-
-    it('a living teacher is an access route too', () => {
-        expect(mayHoldAFit(['transmission'])).toBe(true);
-    });
-
-    it('a market stall and a bandit still do not', () => {
-        expect(mayHoldAFit(['trade', 'social'])).toBe(false);
-        expect(mayHoldAFit(['hostile', 'beast'])).toBe(false);
-    });
-
-    it('the grave rows in the live catalog are now visible to it', () => {
-        // Five rows carried `grave` and none of them were being read. If this
-        // ever returns zero, either the tag was renamed or route 3 has gone
-        // invisible again.
-        const graves = ENCOUNTERS.filter(e => e.tags.includes('grave'));
-        expect(graves.length).toBeGreaterThan(0);
-        for (const row of graves) expect(mayHoldAFit(row.tags), row.id).toBe(true);
-    });
-});
-
 // ─────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────
 describe('derivation offered through the same funnel', () => {
