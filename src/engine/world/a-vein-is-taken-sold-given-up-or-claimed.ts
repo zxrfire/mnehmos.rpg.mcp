@@ -1,10 +1,10 @@
 /**
  * How a vein changes hands, other than by a rival seizing it.
  *
- * A rival seizing it is `vein_lost` in the pressure table, and it can only
- * happen between two houses that already hate each other. On its own it made
- * the veins of a world trade back and forth along one hostile edge. These are
- * the other ways, each read off something the world already holds:
+ * A rival seizing it is `vein_lost` in the pressure table, and needs a house
+ * that already hates the holder. As the only way, it traded the veins of a
+ * world back and forth along one hostile edge. These are the other ways, each
+ * read off something the world already holds:
  *
  *   taken in a war  the holder is losing a war by `A_WAR_TAKES_A_VEIN_AT`, or
  *                   lost the one settled this year, and the house it fought can
@@ -30,9 +30,9 @@ import { howThePurseIsRunning, WHAT_A_HOUSE_KEEPS_IN_HAND } from './what-a-house
 /**
  * Years of what a vein pays its buyer that it sells for.
  *
- * A vein is bought for what it will pay back, and ten years is the horizon a
- * house plans a vein on: less and every house with a surplus buys, more and a
- * short house can never find a buyer inside a century.
+ * A vein is bought for what it will pay back to the house that works it, so
+ * the price is that house's own figure (`whatAVeinPaysItsHolder`), not the
+ * seller's.
  */
 const A_VEIN_SELLS_FOR_YEARS_OF_WHAT_IT_PAYS = 10;
 
