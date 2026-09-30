@@ -26,6 +26,7 @@ import { ConsolidatedTools } from '../../src/server/consolidated/index.js';
 import { closeDb, getDb } from '../../src/storage/index.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
 import { RunRepository } from '../../src/storage/repos/run.repo.js';
+import { TechniqueRepository } from '../../src/storage/repos/technique.repo.js';
 import { SectRepository } from '../../src/storage/repos/sect.repo.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import {
@@ -1056,6 +1057,47 @@ describe('cultivation MCP tool surface', () => {
             });
             expect(practised.masteryAfter).toBeGreaterThan(practised.masteryBefore);
             expect(practised.masteryPerDay).toBeGreaterThan(0);
+        });
+
+        it('practises an art read off a page slower than one shown, by what the page lost', async () => {
+            const { learningCostMultiplier, getTechnique } =
+                await import('../../src/data/cultivation/techniques.js');
+            const gainedWhen = async (
+                provenance: 'taught_by_a_person' | 'found_in_place'
+            ): Promise<{ gained: number; learned: any; practised: any; artId: string }> => {
+                closeDb();
+                db = getDb(':memory:');
+                const created = await newRun();
+                grantPill(created.cultivator.id, GRAIN_ABSTINENCE_PILL_ID);
+                await alchemy({ action: 'consume_pill', pillId: GRAIN_ABSTINENCE_PILL_ID });
+                const available = await technique({ action: 'list_available' });
+                const art = available.compatible[0];
+                const learned = await technique({ action: 'learn', techniqueId: art.id, provenance });
+                const practised = await technique({ action: 'practise', techniqueId: art.id, days: 100 });
+                return { gained: practised.masteryGained, learned, practised, artId: art.id };
+            };
+
+            const shown = await gainedWhen('taught_by_a_person');
+            const read = await gainedWhen('found_in_place');
+            expect(shown.learned.transmission).toBe('shown');
+            expect(read.learned.transmission).toBe('read');
+            expect(read.practised.factors.transmission).toBe('read');
+            const art = getTechnique(read.artId)!;
+            expect(shown.gained / read.gained).toBeCloseTo(learningCostMultiplier(art, 'read'), 2);
+        });
+
+        it('keeps an art shown once somebody has shown it, whatever page it was first read off', async () => {
+            const created = await newRun();
+            const available = await technique({ action: 'list_available' });
+            const art = available.compatible[0];
+            await technique({ action: 'learn', techniqueId: art.id, provenance: 'found_in_place' });
+            const repo = new TechniqueRepository(db);
+            expect(repo.getKnown(created.cultivator.id, art.id)!.transmission).toBe('read');
+            // `learn` refuses an art already held, so the store is asked directly.
+            repo.learn(created.cultivator.id, art.id, 0, 'shown');
+            expect(repo.getKnown(created.cultivator.id, art.id)!.transmission).toBe('shown');
+            repo.learn(created.cultivator.id, art.id, 0, 'read');
+            expect(repo.getKnown(created.cultivator.id, art.id)!.transmission).toBe('shown');
         });
 
         it('routes a conflicting-element art through the deviation engine', async () => {

@@ -30,7 +30,9 @@ import {
     capOf,
     findTechniquesForOrdinal,
     getTechnique,
-    gradeRank
+    gradeRank,
+    learningCostMultiplier,
+    type TransmissionMode
 } from '../../data/cultivation/techniques.js';
 import {
     addToPouch,
@@ -587,6 +589,28 @@ export function whyThisArtWillNotGoIn(
     return null;
 }
 
+/**
+ * Whether this art is going in from somebody who has it or off a page.
+ *
+ * Shown: a person taught it, or the cultivator's house, or a house they sit in
+ * as a guest, teaches it. Read: they came by a copy - found, bought, inherited,
+ * taken, or the stall book in their hand. Anything else is an art so commonly
+ * held that anybody nearby can show it.
+ */
+function howThisArtGoesIn(
+    db: Database.Database,
+    cultivator: Cultivator,
+    techniqueId: string,
+    provenance: z.infer<typeof LearnSchema>['provenance']
+): TransmissionMode {
+    if (provenance === 'taught_by_a_person') return 'shown';
+    const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
+    if (house?.teaches.includes(techniqueId)) return 'shown';
+    if (aGuestIsTaughtThis(db, cultivator.id, cultivator.realmOrdinal, techniqueId)) return 'shown';
+    if (provenance !== undefined) return 'read';
+    return holdsACopyOf(db, cultivator.id, techniqueId) ? 'read' : 'shown';
+}
+
 export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<object> {
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
@@ -641,9 +665,11 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
 
     let death: { cause: string; description: string } | null = null;
 
+    const transmission = howThisArtGoesIn(repos.db, cultivator, technique.id, args.provenance);
+
     const persist = repos.db.transaction(() => {
         ensureCatalogRow(repos, technique);
-        repos.techniques.learn(cultivator.id, technique.id, 0);
+        repos.techniques.learn(cultivator.id, technique.id, 0, transmission);
 
         if (deviation?.resolution) {
             const res = deviation.resolution;
@@ -685,6 +711,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
         technique: projectTechnique(technique, cultivator.spiritRoot, {
             mastery: known?.mastery ?? 0
         }),
+        transmission: known?.transmission ?? transmission,
         elementConflict: conflicts,
         deviation: deviation
             ? {
@@ -760,12 +787,15 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
     const matched = technique.element !== null && root.elements.includes(technique.element);
     const conflicts = technique.element !== null && conflictsWithRoot(root, technique.element);
 
+    // Off a page, what failed to survive being written down is worked out alone.
+    const offThePage = learningCostMultiplier(technique, known.transmission);
     const perDay =
         MASTERY_BASE_PER_DAY *
         insightFactor(cultivator.attributes.insight) *
         gradeFactor(technique.grade) *
         practiceMatchBonus(root, matched) *
-        (conflicts ? CONFLICT_MASTERY_FACTOR : 1);
+        (conflicts ? CONFLICT_MASTERY_FACTOR : 1) /
+        offThePage;
 
     // Saturates at the supply rather than at full mastery. The days are still
     // spent, the deviation is still rolled and the years still pass - running
@@ -862,7 +892,9 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
         factors: {
             insight: round2(insightFactor(cultivator.attributes.insight)),
             grade: round2(gradeFactor(technique.grade)),
-            rootMatch: matched ? 'matched' : conflicts ? 'conflicting' : 'neutral'
+            rootMatch: matched ? 'matched' : conflicts ? 'conflicting' : 'neutral',
+            transmission: known.transmission,
+            offThePage: round2(offThePage)
         },
         deviation: {
             risk: round4(check.risk),

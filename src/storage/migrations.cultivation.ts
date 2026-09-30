@@ -271,6 +271,7 @@ export function migrateCultivation(db: Database.Database): void {
       mastery REAL NOT NULL DEFAULT 0,               -- 0..1, raised by practice
       cooldown_remaining INTEGER NOT NULL DEFAULT 0, -- turns until usable again
       last_used_turn INTEGER,
+      transmission TEXT NOT NULL DEFAULT 'shown',    -- 'shown' by somebody who has it, or 'read' off a page
       learned_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (cultivator_id, technique_id),
@@ -702,6 +703,15 @@ function addCultivationColumns(db: Database.Database): void {
     if (!injuryColumns.includes('wound_type')) {
         console.error('[Migration] Adding wound_type column to cultivator_injuries table');
         db.exec('ALTER TABLE cultivator_injuries ADD COLUMN wound_type TEXT;');
+    }
+
+    // How an art went in, which practice reads (`learningCostMultiplier`).
+    const knownColumns = (
+        db.prepare('PRAGMA table_info(cultivator_techniques)').all() as { name: string }[]
+    ).map(col => col.name);
+    if (!knownColumns.includes('transmission')) {
+        console.error('[Migration] Adding transmission column to cultivator_techniques table');
+        db.exec("ALTER TABLE cultivator_techniques ADD COLUMN transmission TEXT NOT NULL DEFAULT 'shown';");
     }
 
     const runColumns = (

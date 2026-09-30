@@ -559,6 +559,11 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
             `${art?.element ? `, and it runs on ${art.element}` : ''}. ` +
             'Holding it is not being able to use it. Practice is what closes that.'
         );
+        // Said once, where it went in, rather than on every stretch of practice.
+        if (body.transmission === 'read') {
+            lines.push('It went in off a page rather than from somebody who holds it, so practice '
+                + 'on it comes slower than it would with a teacher.');
+        }
         if (body.elementConflict === true) {
             lines.push(
                 'It fights the root rather than running with it. That is a permanent condition of '

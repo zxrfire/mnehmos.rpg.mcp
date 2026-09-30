@@ -25,8 +25,12 @@ interface KnownTechniqueRow extends TechniqueRow {
     known_mastery: number;
     cooldown_remaining: number;
     last_used_turn: number | null;
+    transmission: string;
     learned_at: string;
 }
+
+/** How an art went in: shown by somebody who has it, or read off a page. `TransmissionMode` in the catalog. */
+export type HowItWentIn = 'shown' | 'read';
 
 /**
  * A technique as *this* cultivator holds it: the catalog art, overlaid with
@@ -37,6 +41,7 @@ interface KnownTechniqueRow extends TechniqueRow {
 export interface KnownTechnique extends Technique {
     cooldownRemaining: number;
     lastUsedTurn: number | null;
+    transmission: HowItWentIn;
     learnedAt: string;
 }
 
@@ -95,10 +100,12 @@ export class TechniqueRepository {
         this.deleteStmt = db.prepare('DELETE FROM techniques WHERE id = ?');
 
         this.learnStmt = db.prepare(`
-            INSERT INTO cultivator_techniques (cultivator_id, technique_id, mastery)
-            VALUES (@cultivatorId, @techniqueId, @mastery)
+            INSERT INTO cultivator_techniques (cultivator_id, technique_id, mastery, transmission)
+            VALUES (@cultivatorId, @techniqueId, @mastery, @transmission)
             ON CONFLICT(cultivator_id, technique_id) DO UPDATE SET
                 mastery = MAX(cultivator_techniques.mastery, excluded.mastery),
+                transmission = CASE WHEN excluded.transmission = 'shown'
+                    THEN 'shown' ELSE cultivator_techniques.transmission END,
                 updated_at = datetime('now')
         `);
 
@@ -111,6 +118,7 @@ export class TechniqueRepository {
                    ct.mastery AS known_mastery,
                    ct.cooldown_remaining,
                    ct.last_used_turn,
+                   ct.transmission,
                    ct.learned_at
             FROM cultivator_techniques ct
             JOIN techniques t ON t.id = ct.technique_id
@@ -123,6 +131,7 @@ export class TechniqueRepository {
                    ct.mastery AS known_mastery,
                    ct.cooldown_remaining,
                    ct.last_used_turn,
+                   ct.transmission,
                    ct.learned_at
             FROM cultivator_techniques ct
             JOIN techniques t ON t.id = ct.technique_id
@@ -217,16 +226,23 @@ export class TechniqueRepository {
 
     /**
      * Learn an art. Re-learning never lowers mastery: a cultivator who reads
-     * the same manual twice does not forget what they already understood.
+     * the same manual twice does not forget what they already understood. Nor
+     * does it undo being shown it: once shown, it stays shown.
      */
-    learn(cultivatorId: string, techniqueId: string, mastery = 0): KnownTechnique | null {
+    learn(
+        cultivatorId: string,
+        techniqueId: string,
+        mastery = 0,
+        transmission: HowItWentIn = 'shown'
+    ): KnownTechnique | null {
         if (!this.getById(techniqueId)) return null;
 
         const teach = this.db.transaction(() => {
             this.learnStmt.run({
                 cultivatorId,
                 techniqueId,
-                mastery: clamp01(mastery)
+                mastery: clamp01(mastery),
+                transmission
             });
             this.syncKnownList(cultivatorId);
         });
@@ -335,6 +351,7 @@ function rowToKnown(row: KnownTechniqueRow): KnownTechnique {
         mastery: TechniqueSchema.shape.mastery.parse(row.known_mastery),
         cooldownRemaining: row.cooldown_remaining,
         lastUsedTurn: row.last_used_turn,
+        transmission: row.transmission === 'read' ? 'read' : 'shown',
         learnedAt: row.learned_at
     };
 }
