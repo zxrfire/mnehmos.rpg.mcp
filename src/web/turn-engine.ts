@@ -21446,7 +21446,7 @@ ${fit.line}`;
         // the one place the two vocabularies meet. Without the mapping, being
         // told a medicine exists by somebody who knew wrote nothing, and the
         // player woke up the next turn having never been told.
-        const kind = entity.kind === 'herb' || entity.kind === 'lore' ? 'thing' : entity.kind;
+        const kind = entity.kind === 'pill' || entity.kind === 'herb' || entity.kind === 'lore' ? 'thing' : entity.kind;
         if (kind !== 'cultivator' && kind !== 'sect' && kind !== 'place' && kind !== 'thing') {
             return false;
         }

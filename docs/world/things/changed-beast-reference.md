@@ -2,6 +2,8 @@
 
 # A changed beast lacks reference, not a human body
 
+<!-- no-catalog: reference is held by the ordinary knowledge records, not a species catalog -->
+
 `KnowingStage` in `src/engine/social/discovery.ts` holds reference per subject,
 with `unaware` at the bottom. A changed beast is an ordinary reader whose records
 for human life are initially absent. Exposure supplies those records; cultivation

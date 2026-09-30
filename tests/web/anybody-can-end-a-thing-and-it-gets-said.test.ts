@@ -37,7 +37,7 @@ import { makeGameInWorld } from './harness.js';
 import { aBreakingEntersTheWorld } from '../../src/engine/world/a-thing-somebody-ended-is-a-fact.js';
 import { makeObject } from '../../src/engine/world/possessions.js';
 import { isBroken } from '../../src/engine/world/object-damage.js';
-import { whatTheySay } from '../../src/engine/world/what-people-are-saying.js';
+import { DAYS_NEWS_TAKES, whatTheySay, whereThisPersonIsStanding } from '../../src/engine/world/what-people-are-saying.js';
 import { buildPlayerDigest, MARKET_MAGNITUDE } from '../../src/engine/world/digest.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
 
@@ -119,13 +119,12 @@ describe('an NPC ending a thing is the same event as a player ending one', () =>
                 && !gone.fact.witnessIds.includes(npc.id))
             .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal)[0];
 
-        const said = whatTheySay(world, {
-            id: teller.id,
-            name: teller.name,
-            realmOrdinal: teller.cultivation.realmOrdinal,
-            regionId: null,
-            factionId: teller.factionId ?? null
-        }, world.currentDay);
+        // Isolate the telling from the market's ranking of unrelated opening news.
+        world.history.facts = [gone.fact];
+        const said = whatTheySay(
+            world, whereThisPersonIsStanding(world, teller),
+            world.currentDay + DAYS_NEWS_TAKES['a region away']
+        );
 
         const about = said.filter(rumour => rumour.factId === gone.fact.id);
         expect(about.length).toBeGreaterThan(0);

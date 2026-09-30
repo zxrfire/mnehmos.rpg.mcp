@@ -5314,6 +5314,12 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // A conditional threat asks for an answer before it promises a physical act.
+    {
+        const demanded = aDemandWithAnActPromisedBehindIt(input);
+        if (demanded) return demanded;
+    }
+
     // MAKING SOMEBODY DO SOMETHING, WITH HANDS
     {
         const wanted = COERCION_INTENT_PATTERNS.find(([, pattern]) => pattern.test(text));
@@ -5686,14 +5692,6 @@ function planIntent(input: string): PlannedAction {
     {
         const between = institutionalAct(text, input);
         if (between) return between;
-    }
-
-    // A DEMAND FOR SOMETHING SOMEBODY KNOWS, WITH AN ACT PROMISED BEHIND IT.
-    // Above the asking reads, because the promise is what the ordinary readers
-    // choke on. See {@link aDemandWithAnActPromisedBehindIt}.
-    {
-        const demanded = aDemandWithAnActPromisedBehindIt(input);
-        if (demanded) return demanded;
     }
 
     // ASKING A PERSON FOR SOMETHING

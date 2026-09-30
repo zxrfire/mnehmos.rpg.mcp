@@ -1,67 +1,13 @@
 /**
- * A confrontation replays from its seed, and a killing needs somebody to have
- * meant it.
+ * The same seeded confrontation against the same state keeps its mechanics.
+ * Random row ids once changed one measured fight from 1668 HP to 2208 HP,
+ * with one injury instead of none. These paired runs compare every exchange.
+ * Whole-run reproducibility is not required by the current design.
  *
- * Two defects, both in `combat_manage`, both found while somebody was building
- * something else.
- *
- * ── ONE: THE SAME SEED PRODUCED A DIFFERENT FIGHT ────────────────────────
- *
- * The tool's own header promises that "the same call against the same state
- * returns the same fight, and a player who died can replay it", and AGENTS.md
- * makes reproducibility from the seed a rule rather than a nicety. It was not
- * true. `combat_strike`, `combat_resolve` and `combat_flee` each mixed
- * `cultivator.id` and `opponent.id` into `forStream`, and EVERY cultivator row
- * id in this engine is a `randomUUID()` - so the stream was stable inside one
- * process and meaningless outside it.
- *
- * Measured before the fix, on one seed with the world pinned so that the same
- * player met the same opponent both times: 1668 HP against 2208 HP, one
- * injury against none. That is the same class of defect `oneCrowd` in
- * `hearsay.ts` was written to fix - there the crowd's ORDER was unstated and
- * the opponent moved; here the opponent was right and the STREAM moved.
- * `resolveConfrontation` was byte-identical in both cases.
- *
- * These tests run one confrontation twice in one process against two fresh
- * databases, which is exactly the condition that used to break it: same seed,
- * same sentence, same starting state, different row ids. Every exchange is
- * compared, not just the ending, because the ending is the coarsest thing a
- * fight has and it agreed by luck often enough to hide this.
- *
- * ── TWO: THE PLAYER COULD NOT KILL ANYBODY ON RECORD ─────────────────────
- *
- * `resolve` applied the opponent's HP and their wounds and then asked
- * `evaluateDeathConditions` about the player and about nobody else. So an
- * opponent driven to nothing was AT nothing, and every system that answers a
- * killing - grudges, blood feuds, a house losing a member, the standing hit
- * for going too far in an agreed bout - was unreachable from the player's side
- * while NPCs killed each other in the simulation all day.
- *
- * The fix is deliberately not "ask the gate about both parties": an empty bar
- * reads as `combat_defeat` by default, so that would turn every spar into a
- * homicide. The resolver already knew the answer. `finishOutcome` reads the
- * aggressor's `goal` - `subdue` ends at `capture`, `humiliate` at
- * `humiliation`, `drive_off` at `withdrawal`, and only `kill` against a body
- * the tradition says is enough returns `lethal`, which is what
- * `result.finished` means. So the gate is asked exactly when the resolver says
- * a finishing happened, and the tests in the second block below are the two
- * sides of that line.
- *
- * Two things the fix does NOT do, both deliberate and both pinned below. It
- * does not touch the player's half, which still ends a run at an empty bar the
- * way it always has. And it does not reach an opponent with no cultivator row -
- * which is most of the people a played fight meets, because they live in world
- * state - so `resolve` still writes nothing at all about them. That is a
- * boundary this tool does not cross today rather than a gate it forgot to ask.
- *
- * ── AND ONE RULING THAT ARRIVES THROUGH THE SAME DOOR ────────────────────
- *
- * A realm-boundary wound locks the ability its realm exists to grant. For
- * Nascent Soul that ability is surviving the destruction of your body, so a
- * crippled nascent soul makes an ordinary killing enough - `killRequirement`
- * now reads the target's wounds, which the last test pins. The line that wires
- * it into the live path is one call in `assessPower`, and it is held out of
- * this commit because `combat.ts` is carrying another agent's unfinished work.
+ * Opponent outcomes must reach the database too. A completed killing ends the
+ * opponent; capture and humiliation leave them alive. Bodily destruction now
+ * asks the existence resolver what remains. An unprepared remnant ends the
+ * person even when the combat resolver's soul-finishing requirement is unmet.
  */
 
 import { handleCombatManage } from '../../../src/server/consolidated/combat-manage.js';
@@ -333,12 +279,11 @@ describe('the death gate is asked about the opponent too', () => {
     });
 
     /**
-     * And the tradition still overrules the intent. A Drawn cultivator above
-     * Nascent Soul is not ended by a body-directed killing; the resolver
-     * already said so with `body_destroyed`, and nothing here converts that
-     * into a death behind its back.
+     * A body-directed victory still reports an unfinished soul requirement.
+     * The existence resolver now records the person's ending and any remnant;
+     * a remnant is not the person (engine/cultivation/README.md).
      */
-    it('does not record a death where the body was destroyed and the person was not', async () => {
+    it('records the existence resolver ending when the body is destroyed', async () => {
         freshDb();
         const created = await cultivation({
             action: 'create_cultivator', name: 'Shen Yue', seed: 'remnant-seed', location: 'Burnt Earth'
@@ -361,31 +306,15 @@ describe('the death gate is asked about the opponent too', () => {
 
         expect(result.outcome).toBe('body_destroyed');
         expect(result.finished).toBe(false);
-        expect(result.opponentDied).toBe(false);
+        expect(result.opponentDied).toBe(true);
+        expect(stored(rival.cultivator.id).alive).toBe(false);
+        expect(['remnant', 'physically_dead']).toContain(stored(rival.cultivator.id).existenceState);
     });
 
     /**
-     * And the same person, carrying the wound that says otherwise.
-     *
-     * A realm-boundary wound locks the ability its realm exists to grant, and
-     * what Nascent Soul grants is surviving the loss of your own body.
-     * `wounds.ts` states it in the row - "mortal in the way that matters:
-     * destroy the body and they are gone" - and `killRequirement` is the one
-     * live door that sentence can arrive through, because `existence.ts`, which
-     * looks like the natural home for it, has no caller in `src/` at all.
-     *
-     * ── WHY THIS IS ASKED OF THE RULE AND NOT OF THE RESOLVER ────────────
-     *
-     * It should be a pair to the `body_destroyed` test above it, differing only
-     * by the wound. It is not, and the reason is contention rather than
-     * design: the wiring line - `killRequirement(tradition, ordinal,
-     * combatant.injuries)` in `assessPower` - lives in `combat.ts`, which is
-     * carrying another agent's unfinished work, so it is not in this commit.
-     * The rule is committed and pinned; when that file lands, the pair to the
-     * test above becomes writable and should be written.
-     *
-     * Both retired and current keys, because a cultivator saved under the old
-     * name is still carrying the same wound and must still be mortal.
+     * The soul-boundary wound removes the body's survival route. Both the
+     * retired and current wound keys are read by the live combat assessment;
+     * treatment restores the tradition's ordinary finishing requirement.
      */
     it('makes an ordinary killing enough for a crippled nascent soul', () => {
         const wound = (key: string) => ([{

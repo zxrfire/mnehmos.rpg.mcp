@@ -30,7 +30,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { makeGame } from './harness.js';
+import { makeGame, ScriptedProvider } from './harness.js';
 import {
     copiesHeldBy,
     recordACopyHeld,
@@ -119,11 +119,15 @@ describe('what the inventory prints, the breaking verb reaches', () => {
     });
 
     it('names the book among what could be broken when nothing was named', async () => {
-        const { game, db } = makeGame({ seed: 'one-pack-unnamed', worldEnabled: false });
+        const { game, db } = makeGame({
+            seed: 'one-pack-unnamed', worldEnabled: false,
+            provider: new ScriptedProvider({ plans: ['{"action":"destroy"}'] })
+        });
         const { cultivator } = await game.newRun('Breaker');
 
         recordACopyHeld(db, cultivator.id, A_MANUAL);
 
+        // Phase 1 reads the pronoun; the engine lists the pack when no target arrives.
         const turn = await game.act('I smash it');
         expect(turn.narration).toContain(ITS_NAME);
     });
