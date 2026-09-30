@@ -1,5 +1,5 @@
 /**
- * A sixteen-year-old has a family, and the player was the one person who did not.
+ * An eighteen-year-old has a family, and the player was the one person who did not.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * THE MEASUREMENT
@@ -77,7 +77,7 @@ function hamlet(ages: readonly number[], ordinals: readonly number[] = []): Worl
 }
 
 const player = {
-    id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0, age: 16
+    id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0, age: 18
 } as Cultivator;
 
 const here = (world: WorldState) => world.npcs.filter(npc => npc.locationId === 'home');
@@ -91,7 +91,7 @@ describe('the family a life opens with', () => {
             world, cultivator: player, candidates: here(world), seed: 's', bornToCultivators: false
         });
 
-        // Only the one old enough to have raised a sixteen-year-old. The bar is
+        // Only the one old enough to have raised an eighteen-year-old. The bar is
         // `couldParent`'s and is not restated here.
         expect(kin.map(one => one.npc.name)).toEqual(['Villager 0']);
         expect(kin[0].kind).toBe('parent');
@@ -131,11 +131,11 @@ describe('the family a life opens with', () => {
 
     /**
      * AND NOBODY IS INVENTED TO FILL IT. A hamlet of children and
-     * sixteen-year-olds has nobody who could have raised anybody, and the
+     * eighteen-year-olds has nobody who could have raised anybody, and the
      * honest answer is that this life has no family standing here.
      */
     it('is empty rather than invented when nobody could have raised them', () => {
-        const world = hamlet([16, 18, 20]);
+        const world = hamlet([18, 20, 22]);
         expect(theFamilyThisLifeOpensWith({
             world, cultivator: player, candidates: here(world), seed: 's', bornToCultivators: false
         })).toEqual([]);

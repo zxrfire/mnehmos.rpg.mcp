@@ -286,54 +286,10 @@ disposition - and the term is damped by whatever tie the subject already holds, 
 ruling is about a STRANGER. Somebody who has known you thirty years reads you the same in a
 market town and in a demonic house's forecourt.
 
-Where it comes from is `engine/world/ground-holder.ts`: the `controllingFactionId` column
-walked up the containment chain, then `PREFECTURES` in the region catalog - which carries
-`seat`, `places` and a `heldByFactionId` documented in place as *"null is a real answer...
-ground the record carries with no name against it"*, and which **nothing in `src/` had ever
-read** - then the region's own `politics`.
-
-### It binds the world and not yet the player, which is half a feature
-
-`the-world-changing-on-its-own.ts` fills `AttemptInput.where` at both of its
-`resolveAttempt` calls, so every manoeuvre any NPC runs on any other is now priced on the
-ground it happens on. **`GameService.pressSomebody` in `web/game.ts` does not**, and until it
-does this is the repo's commonest defect with the arms reversed: a rule that binds NPCs and
-not the player. The file was held by another agent when this landed. What it needs is two
-lines beside the `theirTie`/`ledger` block already there:
-
-```ts
-where: theGroundUnderYou(
-    whoHoldsTheGround(world.state.locations, effectiveLocationId(...)),
-    statusesInArea(world.state.statuses, world.state.locations, locationId, day)
-),
-```
-
-and, for the sentence rather than only the number, `theGround: ground.why` on the
-`whatTheAskCameTo` call - `saying-what-an-ask-cost-and-how-likely-it-was.ts` already names
-the term in the mechanical channel without it.
-
-### And the player is never told which ground they are standing on
-
-The other half, and the worse one, because the term is already moving the player's odds off
-a fact the game will not say. `whoHoldsTheGround` has two callers in `src/` and both are in
-the NPC simulation; the played `look` never asks it and `ask` does not route to it. Measured
-on a fresh run, which opens at Wind Turn on **The Burial Sands** - so a player stands on the
-one province in the world nobody holds, on turn one, and cannot find out:
-
-```text
-"I ask who holds this ground"   an NPC, and the resolve failed: "a sentence with a hole in it"
-"who holds this ground"         `destinations`, which answered with the realm ceiling
-"whose ground is this"          the same
-"who is in charge here"         `sect`, which answered about the PLAYER's affiliation
-"who do I complain to here"     unclear
-```
-
-[`web/ground-holder-lines.ts`](../../web/ground-holder-lines.ts) is the answer, built to the
-shape of `ground-status-lines.ts` beside it: it volunteers where nobody holds the ground and
-answers whichever of the four it is when asked, and every reading names a route out of being
-wronged rather than only carrying a lower number. **It has no caller yet** - the two it needs
-are in `game.ts` and `actions.ts`, both held elsewhere - and the hunks are with the
-coordinator.
+`engine/world/ground-holder.ts` derives the holder from the location containment chain and
+the region catalog. Played social attempts pass that ground into `resolveAttempt`, so it
+prices both NPC and player attempts. `ground-holder-lines.ts` is reached by the situated
+reads: it volunteers unheld ground and answers a direct question about a holder.
 
 ## Two people at the same rung of the same house are not the same door
 

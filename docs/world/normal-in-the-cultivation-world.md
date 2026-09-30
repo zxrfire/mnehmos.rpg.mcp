@@ -288,20 +288,20 @@ The important half is that **information is the opportunity**. Hearing it three 
 your rivals is worth more than a technique, which makes the awareness and rumour layer the
 game's real economy rather than a politeness system.
 
-### Almost all of this is already written and unreachable
+### The world pass reaches this loop
 
 | module | state |
 |---|---|
-| `engine/world/convergence.ts` | written. Its own header: *"`OpeningCycle` has been on `LocationRecord` since the location layer was written - `periodDays`, `openDays`, `phaseDay`, `isOpenOn` - and nothing in play has ever consumed it."* |
-| `engine/world/gatherings.ts` | written, unwired, and it already calls convergence |
-| `engine/world/arrivals.ts` | written, unwired |
-| `engine/world/the-world-changing-on-its-own.ts` | written, unwired |
+| `engine/world/convergence.ts` | **wired** through the yearly world pass |
+| `engine/world/gatherings.ts` | **wired**; it reads convergence |
+| `engine/world/arrivals.ts` | **wired**; pending arrivals reach turns |
+| `engine/world/the-world-changing-on-its-own.ts` | **wired** by played time advancement |
 | the rumour / hearsay pipeline | **wired** |
 | `market-prices.ts` | **wired** |
 | `fold` (`how-far-somebody-can-fold-space-and-what-it-costs.ts`) | **wired** - `foldRangeInWalkingDays`, `priceFold`, `landsShortByDays`, `settlingDaysFor` |
 
-So the tomb rush is a JOIN, not a build. It is also an entire loop rather than one
-mechanic, which makes it the largest cheap win found so far.
+The tomb rush is a live loop. Its remaining work is behaviour the current pass does not yet
+model, not reachability.
 
 ### One correction to what convergence.ts assumes
 
@@ -412,9 +412,8 @@ hands cleanly. `beasts.ts` already carries the raw material: feathers *"swept of
 floor by the sackful. Holds qi briefly and badly, which is exactly what a cheap talisman
 needs."*
 
-So the world already has the top rung and the raw material and **no rungs in between**.
-What is missing is `talismans.ts` - the ordinary ones, graded, with the immortal tier
-sitting on top of the same ladder rather than beside it.
+Ordinary graded combat and escape talismans now exist and are crafted and spent through the
+same item paths as the immortal tier.
 
 Two things that fall out and are worth keeping:
 

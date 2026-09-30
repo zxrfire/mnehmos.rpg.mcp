@@ -27,7 +27,7 @@ anywhere that stops somebody acting because of what they are.
 
 | Trope | Where it stands |
 |---|---|
-| **Furnace / cauldron** (爐鼎) - drawing another cultivator off | **Reachable now via `coerce/furnace`**, played in `tests/web/somebody-beaten-into-submission-can-be-made-a-furnace.test.ts`. "I make him my furnace" opens a fight; once they yield, `the-furnace-rite-once-somebody-has-yielded.ts` calls `useFurnaceTechnique` and writes what it returns: days of cultivation into the player through `accrueProgress`, the subject's `accumulatingSinceDay` moved forward, an unforgivable grudge, the world fact for the rumour pipeline naming who watched (a coerced use is `secret`, which alone would name nobody). A draw that kills goes through `whatTheConfrontationDidToThem` like any finishing blow. Refused before any fight: **either of them** under `FURNACE_MIN_AGE` (= `HOUSEHOLD_MIN_AGE`, 18), and a player holding no art that `runsOn: 'the_others'`. **The subject needs no art of their own**: the rite is forced, and forcing it opens the `own_lifespan` half in them at the first stage - which draws the same as holding it while no stage is stored. A willing rite (`offered`, not yet wired) still needs both halves. **A conception becomes a child the world delivers**: `aChildIsConceived` (`engine/world/a-child-an-act-conceived.ts`) tags the carrier; the demography pass writes a `birth` fact naming both parents on the due day (270 days) if the carrier lived to it, and makes the child's row through the ordinary birth loop when they turn 16 - the youngest age the world holds anybody at - raised by the carrier, with both parents' lineage edges. **Who has a claim answers through the existing ledger**: the subject holds an `enemy` tie; a house whose verdict makes it a party (righteous takes it up, neutral collects) holds an `institutional` account; whoever holds the ground holds one carrying `house_does:<answer>`. Where that house is the player's own, the row is `whatYourOwnHouseOpensAboutYou`, which the room and the fetch carry out. **What no machinery enacts yet:** a house that is not the player's own sending anybody after them (its account shows only on the sheet's `whoIsComingForYou`), and a demonic house pricing its own member (`the_member_is_priced`). |
+| **Furnace / cauldron** (爐鼎) - drawing another cultivator off | **Reachable now via `coerce/furnace`**, played in `tests/web/somebody-beaten-into-submission-can-be-made-a-furnace.test.ts`. The rite applies cultivation, injuries, grudges and witnessed world facts through the ordinary resolvers. Both people must be at least 18, and the actor needs an art that runs on another person. A willing rite (`offered`) and demonic pricing of a member (`the_member_is_priced`) remain unwired. House-held accounts reach actual pursuers through `accountsComingDue` during travel and seclusion. |
 | **Primal yin / yang** (元阴/元阳) - taking what somebody has only once | Not modelled. The shape it should take is now built once, next door: `physiques.ts` is this ruling carried out, and a one-time thing beside a person is the same shape as a permanent one. It is a PROPERTY OF A PERSON, not part of any one act: a one-time thing they either still hold or do not. It does NOT require a furnace rite - a forced marriage takes it, a willing wedding night takes it, the furnace art takes it and converts it. So it belongs beside the person and is read by whatever consumes it, never owned by the module that happens to consume it most. Making it a furnace field would be the bespoke version. |
 | **Special physique** (体质 / 灵体) - the body somebody is BORN as | `engine/cultivation/physiques.ts`. **Modelled now.** The same ruling as primal yin above, carried out: a property of a person, read by the cultivation rate, the lifespan ceiling and the furnace draw, owned by none of them, and nothing anywhere branches on which one it is. It is what gives the furnace and primal-yin paths a target with a CAUSE - a body worth crossing a province for - and what somebody carrying it knows about themselves. Reachable both ways: your own on your own sheet, somebody else's only once you have stood in front of them. |
 | **Crippling cultivation / taking a core** | Parser reaches it; `attack` and `coerce/hand_over` both route. The core is a realm boundary already. |
@@ -524,24 +524,7 @@ Two things keep it honest:
 
 ---
 
-## Taking a disciple is not modelled, and it is the largest hole on the giving side
+## Taking a disciple reaches recruitment, not personal discipleship
 
-Measured: `planDiscipleIntake` in `engine/cultivation/leadership.ts` is a SECT running an
-intake. `spending-a-word-to-place-a-child.ts` is placing a child at a house. **There is
-nothing for one person taking another as their disciple** - the master-and-disciple tie,
-which the genre treats as the strongest bond a cultivator has.
-
-So `I take him on as my disciple` reaches no verb. It used to reach `attack`, because
-`take on` is in `ATTACK_SUBJECT_VERBS` and means picking a fight; that misroute is fixed and
-what is left is an honest gap.
-
-It matters more than one sentence because of what it would carry:
-
-- It is the tie an extraction talisman travels along - you give one to **your own**, and
-  that is the whole reason the deep rooms are gated socially rather than by money.
-- It is the obligation behind "their enemies become your enemies".
-- It is what makes hiding a junior's talent, taking the blame for one, or teaching them just
-  enough to be useful into acts with a price rather than sentiments.
-
-Everything it would need exists: obligations, standing, the knowledge gate, and a favour
-ledger that already carries `shielded_crossing` and `spared` as causes.
+`I take him on as my disciple` now reaches generic house recruitment. It does not retain the
+named target or create a master-and-disciple tie, so personal discipleship remains a gap.

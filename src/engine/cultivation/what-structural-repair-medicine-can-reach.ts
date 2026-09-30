@@ -358,12 +358,9 @@ export function readRepairMedicine(medicine: StructuralRepairMedicine): RepairMe
 //
 //   IT IS A PILL, AND PILLS ARE REACHABLE. The chaos rung sits in a pouch, is
 //   refined from a recovered formula, and is swallowed through
-//   `alchemy-manage`'s resolver on its own seeded draw. `STRUCTURAL_REPAIR_
-//   MEDICINES` has no player-facing path at all - `applyStructuralRepair` has
-//   no caller outside its own tests, because those four are institutional
-//   objects that houses spend on their own people. Moving the chaos rung into
-//   that array would delete the one permanent-injury medicine a player can
-//   actually take.
+ //   `alchemy-manage`'s resolver on its own seeded draw. Houses also use
+ //   `applyStructuralRepair` for a player's requested repair dose. Moving the
+ //   chaos rung into that array would invent holdings and rates it does not have.
 //
 //   THE TWO ROWS CARRY DIFFERENT FACTS. A repair row carries `madeBelowTheLid`,
 //   a per-century refining rate, terms instead of a price, faction holdings and

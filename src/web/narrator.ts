@@ -928,7 +928,7 @@ function claimsThePlayerAdvanced(
  * cooperate. FOUND BY PLAYING BLIND, on TURN ONE of two separate runs - the
  * first thing a new player ever reads, thrown away both times:
  *
- *     You are sixteen years old and have just reached the first layer of Qi
+ *     You are eighteen years old and have just reached the first layer of Qi
  *     Condensation, though you possess no cultivation method...
  *
  * That is exactly true. The engine files `Qi Condensation Layer 1`; the prose

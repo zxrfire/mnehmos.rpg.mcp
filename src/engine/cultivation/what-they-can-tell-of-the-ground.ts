@@ -7,7 +7,7 @@
  * idea because the tag changes WHAT IS SAID and not merely how.
  *
  * `describeAmbientPerceived(ambient)` took the band and nothing else. It has no
- * idea who is standing there, so a sixteen-year-old at the first rung with no
+ * idea who is standing there, so an eighteen-year-old at the first rung with no
  * method was handed the same reading as a Nascent Soul cultivator: the band,
  * named, correctly, every time. The engine knew and therefore the player knew,
  * which is AGENTS.md's perception rule broken in the ordinary way.

@@ -291,12 +291,9 @@ export const crossingVerb = {
         // `circulating`, `retell` and `buildPlayerDigest` read. A player crossed
         // a realm and nobody ever heard.
         //
-        // How far it goes is `a-crossing-enters-the-world-as-news.ts`'s question
-        // and it answers null for a layer, which is most rungs. Guarded on the
-        // world being loaded the way every other played write in this package
-        // is: a crossing struck through the REST endpoint runs before any world
-        // load and files nothing, which is a gap in that endpoint rather than
-        // here.
+         // How far it goes is `a-crossing-enters-the-world-as-news.ts`'s question
+         // and it answers null for a layer, which is most rungs. The played route
+         // loads the world before this write.
         const filed = this.atHand && after.realmOrdinal > cultivator.realmOrdinal
             ? aCrossingEntersTheWorld(this.atHand, {
                 who: { id: cultivator.id, name: cultivator.name, role: 'crossed' },

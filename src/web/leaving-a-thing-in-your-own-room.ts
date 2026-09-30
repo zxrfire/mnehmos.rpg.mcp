@@ -19,14 +19,8 @@
  * SQLite under a key derived from the house and the person, so a decade on the
  * road and a reload both leave them exactly where they were put.
  *
- * NOT DONE, AND WRITTEN DOWN RATHER THAN LICENSED: this verb reaches the room a
- * HOUSE gives you and not the ground somebody cut for themselves.
- * `whereTheyKeepTheirThings` still hands out a holder key for a settled abode
- * and still has no sentence that reaches it, so a rogue with an abode has a
- * pack nothing can open. What stops it being three lines is the capacity: a
- * house states, per rung, what it will spend on somebody, and nobody states
- * what a cave you cut yourself holds. Answer that and this verb takes the
- * residence on the same footing.
+ * The same verb reaches an existing personal residence first, then house quarters.
+ * Establishing a residence below the Lid remains a separate missing route.
  */
 
 import type { Cultivator, Run } from '../schema/cultivation.js';

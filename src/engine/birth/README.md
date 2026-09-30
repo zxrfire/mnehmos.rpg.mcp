@@ -220,28 +220,15 @@ Nothing in `spendAWord` changed to make that work. The world layer supplies the 
 person asked and the day; this package answers whether the house's bar moves and writes the
 rows.
 
-## What is not here yet
+## What is here now, and what is not
 
-- **Age does not vary.** A run opens at 16 wherever it opens. `placement.atAge`
+- **Age does not vary.** A run opens at 18 wherever it opens. `placement.atAge`
   says a great house places its children at seven, and nothing reads it - which
   also means `spendAWord`'s extreme and intended case, the newborn, is not
   reachable from `drawBirth` yet.
-- **A player has no children.** `spendAWord` takes a `childId` and does not care
-  where it came from. For NPCs the world layer already supplies kin ties through
-  `engine/world/the-ties-an-ordinary-life-produces.ts` and now spends words with
-  them; for the player character there is no equivalent, so the family case is
-  implemented and not yet reachable from a run. That is the one thing this
-  module is waiting on.
-- **And a run cannot OPEN as a fostered child.** The world produces them - a
-  person on a house's roll who did not meet its bar and does not know whose word
-  put them there - and `drawBirth` deals no such hand, so the player cannot be
-  one. See "Opening as a fostered child" in
-  [`docs/world/houses/origin.md`](../../../docs/world/houses/origin.md), which is where that
-  goes when it is built.
-- **No relationship row is written.** The house is a knowledge row and a
-  membership, and there is still no "your father is an elder" edge anywhere -
-  which is the next thing a born member wants and the thing that would make the
-  reveal above reachable from a run rather than only from the register.
+- **Children, fostering and family ties are live.** The player can have children;
+  `drawBirth` can open a life as `fostered_on_a_word`; and the opening family uses the
+  same household relationship rows as the world.
 - **`regionOfPlace` does not resolve a seat.** It matches against
   `REGIONS[].places`, and a house's ground is built by the world seeder rather
   than listed there, so `seedStartingAwareness` contributes nothing at all for a

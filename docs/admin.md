@@ -154,13 +154,10 @@ surface.
 | The law | Where it is written | What reads it |
 |---|---|---|
 | An object above the ceiling cannot stay below the Lid | `evaluateLayerCrossing` in `engine/world/layers.ts`, refusing `above_the_object_ceiling` by name | **`immortal-world.ts` only**, for NPC descents. Nothing anywhere reads what a PLAYER carries. |
-| Breaking a thing degrades it a rung | `shatter` and `shardPower` in `engine/world/possessions.ts` | **`shatter` has no caller in `src/` at all.** There is no verb, so there is also no realm gate on breaking - the question "can a Qi Condensation cultivator break this" has no code to answer it. |
-| What the player does becomes something people say | `what-people-are-saying.ts`, reachable through `askAround` | Rumours are drawn from the world's **historical facts**, and **nothing the player does ever writes one** - `appendWorldFact` and `makeFact` have no caller outside `engine/world/`. The player is outside the historical record, so no player act can ever be gossiped about. |
+| Breaking a thing degrades it a rung | `shatter` and `shardPower` in `engine/world/possessions.ts` | **wired** through `destroy`, which resolves and persists the object's damage. |
+| What the player does becomes something people say | `what-people-are-saying.ts`, reachable through `askAround` | Played deeds write world facts through `aDeedEntersTheWorld`, which the gossip pipeline reads. |
 
-Each is the shape `AGENTS.md` records under
-[a module nothing calls is not a feature](../AGENTS.md), and the third is also
-[the world's rules must bind the player too](../AGENTS.md) - the rumour mill binds NPCs
-and cannot see the player at all.
+The ceiling rule remains NPC-only; destruction and player deeds use their played routes.
 
 A rated object in the pouch was a fourth and is not one now. `combatantFromCultivator` reads
 `carriedArtifact` into `CombatantInput.weapon`, `assessPower` prices `weapon.power` as the

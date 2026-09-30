@@ -548,7 +548,7 @@ export const CultivatorSchema = z.object({
     bleedingTurns: z.number().int().min(0).default(0),
 
     // Time and mortality.
-    age: z.number().min(0).default(16).describe('Age in years'),
+    age: z.number().min(0).default(18).describe('Age in years'),
     /** Years spent at the current realm without advancing. Fifty is fatal. */
     yearsAtCurrentRealm: z.number().min(0).default(0),
 

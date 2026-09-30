@@ -26,7 +26,7 @@
  * that only changed the phrasing would prove nothing a style guide could not.
  *
  * `describeAmbientPerceived(ambient)` took the band and nothing else. It had no
- * idea who was standing there, so a sixteen-year-old at the first rung with no
+ * idea who was standing there, so an eighteen-year-old at the first rung with no
  * method got this on dense ground:
  *
  *     The qi here is thick enough to feel on the first breath. Whatever is

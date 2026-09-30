@@ -63,6 +63,7 @@ import {
     type CultivationOptions
 } from '../../engine/cultivation/index.js';
 import { rollSex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
+import { STARTING_AGE } from '../../web/turn-constants.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import {
     advanceWorldForCultivator,
@@ -184,7 +185,7 @@ const CreateCultivatorSchema = z
         location: z.string().optional().describe('Free-text place name where the run begins'),
         seed: z.string().min(1).optional()
             .describe('Run seed. Omit to mint one. Supplying a known seed replays a known run; it does not choose talent.'),
-        age: z.number().min(0).max(200).optional().default(16),
+        age: z.number().min(0).max(200).optional().default(STARTING_AGE),
         runId: z.string().optional().describe('Attach an NPC cultivator to an existing run instead of opening one')
     })
     .passthrough()
@@ -405,7 +406,7 @@ export async function handleCreateCultivator(
             maxHp,
             qi: maxQi,
             maxQi,
-            age: args.age ?? 16,
+            age: args.age ?? STARTING_AGE,
             location: args.location ?? DEFAULT_LOCATION,
             origin: origin.key,
             sex,

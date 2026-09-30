@@ -1543,7 +1543,7 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
     return [
         '',
         'THE LIFE BEHIND THIS CULTIVATOR. This is the first turn of the run, and the only one with',
-        'sixteen years behind it. It is EXPOSITION ONLY: who the player is, the life behind them, the',
+        'eighteen years behind it. It is EXPOSITION ONLY: who the player is, the life behind them, the',
         'people in it, and where they are standing now. OPEN BY WRITING THOSE YEARS as their own story,',
         'in the active voice - she raised you, you worked the same thin field every season, you grew',
         'up hearing the name of a house nobody had seen - most of the turn, not a summary and never a',

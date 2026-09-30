@@ -23,30 +23,11 @@
  * slight writes there, weighted by who saw it, and `theSlightsBetween` reads
  * the pile back out of the rows that are already being written.
  *
- * ── WHAT ACTUALLY WRITES FACE TODAY, WHICH IS TWO THINGS ─────────────────
+ * ── WHAT WRITES FACE ──────────────────────────────────────────────────────
  *
- * MEASURED, not read off the design: on `afford-a` at a thousand years, over
- * the twelve people carrying a removal from office - seniors, long-serving, the
- * kind of people a house's opinion is made of - **the mean face was zero.** Not
- * low. Zero, for every one of them.
- *
- * The cause is that `theirFaceMoves` and `withFace` are called from exactly two
- * places: `a-challenge-is-answered-on-the-yard.ts`, and the killing pass, where
- * somebody pays for being seen to kill beneath themselves. **Face is a currency
- * only violence mints.** Nobody in this world has ever gained or lost face by
- * doing their job well or badly, and the header above this one lists roads that
- * are not wired to anything:
- *
- *   *"deeds people saw"*        no deed writes face. `aDeedEntersTheWorld` knows
- *                               its own witnesses and its weight and writes
- *                               neither into this field.
- *   *"public defeats"*          only a duel on the yard counts. Losing a war,
- *                               being driven off ground, having a house's demand
- *                               refused in front of its own people: none of it.
- *   *"being exposed"*           the expose route is the owner's stated normal way
- *                               a seat changes hands, running at 31 to 32 cases
- *                               a century, and a holder turned out of an office
- *                               in front of the room loses NO face by it.
+ * Challenges and killings move face, as do exposure, disciple breakthroughs,
+ * conclaves, public insults and completed or failed work. Each caller supplies
+ * the people who saw the event; this module only records the resulting change.
  *
  * ── THE WRITERS THIS WANTS, NAMED RATHER THAN BUILT ──────────────────────
  *

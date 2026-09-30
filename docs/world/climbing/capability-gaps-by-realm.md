@@ -133,19 +133,9 @@ grants:
   enough. This is the one realm capability the engine enforces against a living person, and it
   works precisely because `soul_persists` as a *grant* is bypassed.
 
-  **But the module that would actually resolve it is uncalled.** `existence.ts` carries the
-  whole apparatus - `PROFOUND_EXISTENCE_STATES`, `canEnterExistenceState`,
-  `resolveBodilyDestruction`, the survival roll, `identityContinuity`, the soul-state costs -
-  and `canEnterExistenceState` and `resolveBodilyDestruction` **have no caller anywhere in
-  `src/`**. Only the tests call them. What the rest of the repo imports from that file is its
-  state predicates (`hasBody`, `isGoingConcern`, `isTerminal`, taken by `survival.ts`) and its
-  separate Lid-transit half (`canExistBeyondTheLid`, `evaluateLidTransit`,
-  `resolveDescentStrikes`, taken by `game.ts` and `above.ts`).
-
-  So Nascent Soul's `survive` verdict is wrong twice over rather than once: the grants that
-  name it are unreachable, AND the machinery that would carry it out is never invoked. In the
-  live game, surviving the destruction of your body is a **sentence in a combat readout**
-  saying the body was not enough - nothing computes what happened to the soul afterwards.
+  `resolveBodilyDestruction` now resolves the outcome on both played death paths:
+  `cultivator.repo.markDead` for the player and `npc-state.markDead` for NPCs. A destroyed
+  body can therefore leave the remnant the resolver draws; it is not merely a combat line.
 - **`suppresses_lesser`, `makes_veins`, `seals_domains`, `reads_lid`, `opens_lid`** are not
   implemented at all, grants or otherwise. That part of the original count stands.
 

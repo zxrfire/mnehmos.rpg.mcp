@@ -48,8 +48,8 @@ Risk-averse, Ambitious, Loyal, Calculating, Fanatical.
 reading whether a record is finished rather than whether it was good), obligations are the
 ledger, resources are the purse and the pouch, and the situation is the turn.
 
-**What is missing is the middle**: nothing reads traits at an NPC's decision points. The
-values exist and only the dialogue channel consumes one of them.
+NPC decision paths read traits: social attempts, killings and bounty decisions all weight
+their ordinary facts through the person involved.
 
 ## The rule to hold when adding them
 

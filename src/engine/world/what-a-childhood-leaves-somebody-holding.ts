@@ -1,7 +1,7 @@
 /**
  * What a childhood leaves somebody holding, besides a household.
  *
- * A life arrived at sixteen with kin and nothing else. The opening bound
+ * A life arrives at eighteen with kin and nothing else. The opening binds
  * `parent` and `kin` and stopped there, on a ruling that a MASTER is the road
  * the game is about and should be earned in play rather than handed over - which
  * is right, and which had quietly come to mean that nobody outside the household

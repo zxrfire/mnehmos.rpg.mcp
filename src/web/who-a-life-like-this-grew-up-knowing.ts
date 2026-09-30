@@ -418,7 +418,7 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     // with; reading the roster directly is what lets it be asked at all.
     const atHome = eligible(world.npcs.filter(npc => npc.locationId === here.id));
 
-    // THE HOUSEHOLD FIRST, because a sixteen-year-old has one and until now the
+    // THE HOUSEHOLD FIRST, because an eighteen-year-old has one and until now the
     // player alone did not. Bound through `bindNewbornToHousehold`, the world's
     // own answer to who a newborn is to whom; only KIN, on the design owner's
     // ruling - a master is the road the game is about and a rival is earned.
@@ -631,7 +631,7 @@ function whoEndedThem(world: WorldState, npc: NpcRecord): AKillingBehindAFace | 
  *   left to carry. Same instrument, same 13 worlds, 1,950 births: 0 lives
  *   opened knowing about a killing, and 181 do. Every one of the 181 is
  *   something the world DID - at 25 years the wrongs it was born holding are
- *   all older than a sixteen-year-old and none of them can reach a childhood,
+ *   all older than an eighteen-year-old and none of them can reach a childhood,
  *   which is why the before figure is zero rather than the 45 the same births
  *   give at world open.
  *
@@ -639,7 +639,7 @@ function whoEndedThem(world: WorldState, npc: NpcRecord): AKillingBehindAFace | 
  *   who was already dead, so the bound is the age the run opens at. The wrongs
  *   pass dates its killings across a span wider than a childhood, so this is
  *   load-bearing rather than a formality: about half of them fall before a
- *   sixteen-year-old was born.
+ *   eighteen-year-old was born.
  *
  * ASKED FOR EVERY FACE AND NOT ONLY FOR THE STREET. It used to gate admission
  * to the street draw only, so a killed parent the household inherited said

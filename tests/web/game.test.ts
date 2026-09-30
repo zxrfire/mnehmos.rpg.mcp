@@ -94,7 +94,7 @@ describe('character creation', () => {
         // environment variable and reads like a broken install; nothing here is
         // broken.
         //
-        // The second is the sheet. The third is the sixteen years behind it,
+        // The second is the sheet. The third is the eighteen years behind it,
         // and it was two until the design owner asked for it in those words:
         // *"WHERE IS THE RECAP OF MY LIFE TO THIS POINT? HAVE THE ENGINE RETURN
         // IT FOR THE FIRST TURN."* It is filed on the engine's own channel

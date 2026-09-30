@@ -1223,7 +1223,7 @@ export function factsForLook(
      * The design owner, on the opening: *"it shouldn't give ANYONE speech at
      * the first turn, the first turn is special, it's exposition only"*. What a
      * person can be heard on is a voice, so it is not said here - the square is
-     * who is standing in it and what they are at, and the turn is the sixteen
+     * who is standing in it and what they are at, and the turn is the eighteen
      * years behind the cultivator reading it.
      */
     nobodySpeaks = false
@@ -1243,7 +1243,7 @@ export function factsForLook(
     // FOUND BY PLAYING BLIND. A new player typed `where am I?` and got nine
     // lines, of which the place was four words at the end of the first:
     //
-    //     Shen Wuyou stands at Qi Condensation Layer 1, age 16, in Emerald
+    //     Shen Wuyou stands at Qi Condensation Layer 1, age 18, in Emerald
     //     Water City.
     //     Spirit root: Mutated Ice Root. Might 3, Insight 2, Fortune 3...
     //     Unmarked, 50 of 50. Fed. 900 spirit stones in the purse.
@@ -1271,7 +1271,7 @@ export function factsForLook(
     // ── WHAT THIS PERSON CAN ACTUALLY TELL OF THE GROUND ─────────────────
     //
     // THE FIRST READ ROUTED ON HOW IT IS KNOWN. `describeAmbientPerceived` took
-    // the band and nothing else, so a sixteen-year-old at the first rung with
+    // the band and nothing else, so an eighteen-year-old at the first rung with
     // no method got the same confident reading as a Nascent Soul cultivator:
     // the engine knew the band, therefore the player did.
     //

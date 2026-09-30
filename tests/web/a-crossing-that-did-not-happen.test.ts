@@ -2,7 +2,7 @@
  * Turn one of a fresh run, and the first thing the player read was the raw
  * engine sheet with an apology under it.
  *
- * FOUND BY PLAYING BLIND. A sixteen-year-old at Qi Condensation Layer 1 typed
+ * FOUND BY PLAYING BLIND. An eighteen-year-old at Qi Condensation Layer 1 typed
  * `where am i`. The engine answered with the place, the rung, the root, the
  * purse, and:
  *
@@ -170,7 +170,7 @@ describe('a discarded narration says which words did it', () => {
  * FOUND BY PLAYING BLIND, on TURN ONE of two separate runs - the first thing a
  * new player ever reads, thrown away both times:
  *
- *     You are sixteen years old and have just reached the first layer of Qi
+ *     You are eighteen years old and have just reached the first layer of Qi
  *     Condensation, though you possess no cultivation method...
  *
  * Exactly true, and discarded as an invented breakthrough. The engine files

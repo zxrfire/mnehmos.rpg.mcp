@@ -40,11 +40,11 @@ const MIST = 'sect-azure-mist-court';
 const DEW = 'sect-azure-dew-sect';
 
 /** Somebody who walked up at the age a run opens at. */
-function walkedUpAt16(ordinal: number, yearsOnTheRoll: number) {
+function walkedUpAt18(ordinal: number, yearsOnTheRoll: number) {
     return judgeProbation({
         hostFactionId: PAVILION,
         ordinal,
-        age: 16 + yearsOnTheRoll,
+        age: 18 + yearsOnTheRoll,
         yearsOnTheRoll
     });
 }
@@ -108,7 +108,7 @@ describe('the sort agrees with the specification it was written from', () => {
         // So there is no refusal at entry anywhere in the sort - the only
         // outcomes are placement, being kept on, being turned out, and still
         // being carried, and all four happen at the far end.
-        const carried = walkedUpAt16(0, 0);
+        const carried = walkedUpAt18(0, 0);
         expect(carried.outcome).toBe('carried');
     });
 });
@@ -142,7 +142,7 @@ describe('the two spans, and where each number comes from', () => {
 
 describe('somebody who crosses', () => {
     it('is kept at the terraces when they cross inside what the house was spending', () => {
-        const j = walkedUpAt16(FOUNDATION_ORDINAL, guestTermYears(PAVILION) - 1);
+        const j = walkedUpAt18(FOUNDATION_ORDINAL, guestTermYears(PAVILION) - 1);
         expect(j.outcome).toBe('placed');
         expect(j.band).toBe('exceptional');
         expect(j.factionId).toBe(PAVILION);
@@ -150,14 +150,14 @@ describe('somebody who crosses', () => {
     });
 
     it('goes to the Mist when they cross past that and inside a career', () => {
-        const j = walkedUpAt16(FOUNDATION_ORDINAL, guestTermYears(PAVILION) + 1);
+        const j = walkedUpAt18(FOUNDATION_ORDINAL, guestTermYears(PAVILION) + 1);
         expect(j.outcome).toBe('placed');
         expect(j.band).toBe('promising');
         expect(j.factionId).toBe(MIST);
     });
 
     it('goes to the Dew when they cross past both, because the Dew keeps no clock', () => {
-        const j = walkedUpAt16(FOUNDATION_ORDINAL, stagnationYearsForOrdinal(0) + 1);
+        const j = walkedUpAt18(FOUNDATION_ORDINAL, stagnationYearsForOrdinal(0) + 1);
         expect(j.outcome).toBe('placed');
         expect(j.band).toBe('unformed');
         expect(j.factionId).toBe(DEW);
@@ -186,7 +186,7 @@ describe('somebody who crosses', () => {
 
 describe('somebody who does not cross', () => {
     it('is carried, and told how long for, while the house is still spending', () => {
-        const j = walkedUpAt16(2, 20);
+        const j = walkedUpAt18(2, 20);
         expect(j.outcome).toBe('carried');
         expect(j.yearsLeftToCross).toBeGreaterThan(0);
         // Legible from the inside rather than being a silence with a verdict
@@ -196,7 +196,7 @@ describe('somebody who does not cross', () => {
 
     it('is kept at the menial rung when they met the bar behind the door', () => {
         const bar = publishedDoorOf(PAVILION)!.membershipOrdinal;
-        const j = walkedUpAt16(bar + 2, stagnationYearsForOrdinal(0));
+        const j = walkedUpAt18(bar + 2, stagnationYearsForOrdinal(0));
         expect(j.outcome).toBe('kept');
         expect(j.factionId).toBe(PAVILION);
         expect(j.rankIndex).toBe(0);
@@ -204,7 +204,7 @@ describe('somebody who does not cross', () => {
 
     it('is turned out when they never reached it', () => {
         const bar = publishedDoorOf(PAVILION)!.membershipOrdinal;
-        const j = walkedUpAt16(bar - 1, stagnationYearsForOrdinal(0));
+        const j = walkedUpAt18(bar - 1, stagnationYearsForOrdinal(0));
         expect(j.outcome).toBe('turned_out');
         expect(j.factionId).toBeNull();
     });
@@ -238,7 +238,7 @@ describe('the servant branch is a row the catalog already contains', () => {
         const j = judgeProbation({
             hostFactionId: PAVILION,
             ordinal: yan!.realmOrdinal,
-            age: 16 + stagnationYearsForOrdinal(0),
+            age: 18 + stagnationYearsForOrdinal(0),
             yearsOnTheRoll: stagnationYearsForOrdinal(0)
         });
         expect(j.outcome).toBe('kept');

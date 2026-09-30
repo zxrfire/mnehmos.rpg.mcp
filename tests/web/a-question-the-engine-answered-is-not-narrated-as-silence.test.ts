@@ -1,7 +1,7 @@
 /**
  * Two defects found by playing the game blind, as somebody who knows nothing.
  *
- * A sixteen-year-old on turn one typed `where am I?`. The engine answered it in
+ * An eighteen-year-old on turn one typed `where am I?`. The engine answered it in
  * five ruling blocks. The prose came back:
  *
  *     You ask where you are, but the question hangs in the humid air. There is

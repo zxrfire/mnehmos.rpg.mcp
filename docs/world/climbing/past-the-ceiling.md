@@ -440,9 +440,9 @@ standing on it produces the other. It should also fail loudly for `leaning`: a l
 enough to read an immortal-grade art and not enough to extend one.
 
 **Implemented by.** `daoOf`, `daoGate`, `daoMatches`, `GRADE_REQUIREMENT`, `daoName`,
-`insightSuitability`. **The authoring half does not exist.** Nothing anywhere in the repo
-creates a technique row at runtime. This is the largest single gap in the file and it is
-itemised below.
+`insightSuitability`. The authoring half is live through `derive`: it spends lived years and
+appends a stage to the source manual. Derived progress remains on that manual; it does not mint
+a separate technique row.
 
 ---
 
@@ -602,7 +602,7 @@ machinery that exists.
 |---|---|---|---|
 | E1 | `effectiveCapOf(manual, heldVolumeIds)` | 1b | Pure. Complete set returns the manual's own `cap`; each missing volume drops it by one, via `shardPower`'s rule so there is one piece of arithmetic in the repo and not two. |
 | E2 | `canDerive(dao, manual)` returning permitted / `leaning_only` / `wrong_dao` | 7 | Shaped exactly like `daoGate` and reusing `daoMatches`. `leaning` reads an immortal art and does not extend one; only `dao` derives. |
-| E3 | A derivation result the storage layer can persist as a technique row | 7 | The one genuinely new thing in this document. Deterministic from `(runSeed, cultivatorId, sourceManualId, daoSubject)`, output `cap` one realm above the source, `provenance` a new `'derived'` value, and `element`/`subject` taken from the deriver's own road so the result is suited by construction. **The engine must produce the row; the narrator may never assert one.** |
+| E3 | Persist a derivation | 7 | **Built.** `derive` appends a stage to the source manual after its years are lived. The engine writes it; the narrator never asserts it. |
 | E4 | `assessFit` called on every manual acquisition, not only on encounter finds | 1, 1b, 2, 3 | Today `assessFit` is reachable from the encounter path only. A grave prize, a corpse's inventory and a bought volume must all produce a `Suitability` with a `line`. |
 | E5 | Fit on every acquisition route | 3 | `assessAcquisition` reads the manual regardless of encounter tags, including a grave, a corpse or a teacher. |
 | E6 | A `Find` builder from a `TechniqueEntry` | 1, 2, 3 | One function, so the three acquisition paths cannot disagree about what a manual demands. Should read D3's fields. |
@@ -615,7 +615,7 @@ machinery that exists.
 | V2 | Show the cap before the decade, not after | 3rd constraint above | The rate breakdown already carries "The manual ends at <rank>". Surface it on the manual, on `status`, and at the moment of learning. |
 | V3 | An acquisition verb that reports fit | 1, 1b, 2, 3 | "I take the manual" must return `Suitability.line` in the same response as the acquisition. A player must never be able to acquire something and find out later. |
 | V4 | Volume-aware learning | 1b | `learnTechnique` accepts a volume; the cap it contributes comes from E1. |
-| V5 | A derive verb | 7 | Gated on E2, priced in years, and refusing with `daoGate`'s own vocabulary so the two refusals read alike. |
+| V5 | A derive verb | 7 | **Built.** `derive` is gated and priced in lived years, then persists the appended stage. |
 | V6 | **Fix: a house may only teach what a house holds** | 9 | `handleCurriculum` validates that a technique id exists and nothing else, so a head can decree a ruin manual onto a shelf, contradicting `sects.ts`'s stated invariant. Check possession before adding. |
 | V7 | Corpse and grave inventories surfaced as finds | 3 | The tables and repository exist and nothing in the cultivation verb layer reads them. |
 | V8 | `DiscoveryContext.tradition` populated from real membership | 6 | The field exists, is documented, and is never supplied, so adoption into a Dao house currently grants nothing. |
@@ -1048,4 +1048,3 @@ through a specific person on a specific day, with or without an oath, and either
 event somebody can find out about later. Over centuries that is the whole explanation of why
 some roads are held by one house and others by a dozen - and the [items.md](../things/items.md) rule
 holds: how many houses teach a thing is measured off what happened, never chosen.
-

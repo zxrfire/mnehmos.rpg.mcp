@@ -222,7 +222,7 @@ export function couldHaveBeenAParentTo(
     // spouse tie and reaches this function directly, so nothing stood between a
     // household and somebody who had been dead for years.
     //
-    // Played, on `probe-w19`: a sixteen-year-old opened being told *"Ye Puxian.
+    // Played, on `probe-w19`: an eighteen-year-old opened being told *"Ye Puxian.
     // Family. Did the raising. Killed 25 years ago."* - a person who died nine
     // years before the player existed, credited with having raised them. Two of
     // four such households in a thirty-thousand-birth sweep were like that.

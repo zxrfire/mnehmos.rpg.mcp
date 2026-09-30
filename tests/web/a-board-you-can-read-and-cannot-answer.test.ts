@@ -7,7 +7,7 @@
  *
  * ── WHAT WAS PLAYED ──────────────────────────────────────────────────────
  *
- * A sixteen-year-old with twenty-three spirit stones, two open wounds and an
+ * An eighteen-year-old with twenty-three spirit stones, two open wounds and an
  * empty stomach, standing on the Azure Dew Sect grounds:
  *
  *     > i ask for a job

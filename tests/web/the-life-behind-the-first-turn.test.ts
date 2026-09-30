@@ -3,7 +3,7 @@
  *
  * FOUND BY PLAYING. A run opened with this, and this was the whole of it:
  *
- *     shen wuyou I begins at Qi Condensation Layer 1, age 16. Born in Clear
+ *     shen wuyou I begins at Qi Condensation Layer 1, age 18. Born in Clear
  *     River Ferry, a market town on thin ground. A farm in a thin county. 30
  *     spirit stones, under a year of seclusion. 3 NAMES KNOWN. Metal-Wood Dual
  *     Root; Might 3, Insight 3, Fortune 3, Charm 2.
@@ -57,7 +57,7 @@ const birth = (over: Partial<{
 }) as never;
 
 /** What the narrator is handed: everything, including what nobody will say. */
-const said = (over = {}) => theLifeBehindTheFirstTurn(birth(over), 16).forTheNarrator.join(' ');
+const said = (over = {}) => theLifeBehindTheFirstTurn(birth(over), 18).forTheNarrator.join(' ');
 
 /** A face, standing wherever the caller says. Home by default, as most are. */
 const face = (name: string, sourceNote: string, where: string | null = 'Three Walls') => ({
@@ -75,19 +75,19 @@ const kin = (name: string, tie: 'parent' | 'kin', sourceNote: string) => ({
 
 /** What the ENGINE files where the player reads it. */
 const told = (over = {}, faces: ReturnType<typeof face>[] = []) =>
-    theLifeBehindTheFirstTurn(birth(over), 16, faces).toldToThePlayer.join(' ');
+    theLifeBehindTheFirstTurn(birth(over), 18, faces).toldToThePlayer.join(' ');
 
 describe('the life behind the first turn', () => {
     it('says the years, the ground, and what they came out of', () => {
         const life = said();
-        expect(life).toMatch(/16 years old, standing in Three Walls/);
+        expect(life).toMatch(/18 years old, standing in Three Walls/);
         // The band is said in QI and against the ground that raised them,
         // never as weather. The owner: *“xianxia doesn’t talk about air”*,
         // *“say thick with qi”*, *“thicker versus the place you came from.”*
         expect(life).toMatch(/qi/i);
         expect(life).not.toMatch(/\bair\b/i);
         expect(life).toMatch(/A farm in a thin county/);
-        // Sixteen years of breathing it, so it is said as a lifetime rather
+        // Eighteen years of breathing it, so it is said as a lifetime rather
         // than as a reading somebody just took.
         // And it no longer claims they have nothing to compare it against
         // while holding both numbers.
@@ -286,7 +286,7 @@ describe('the life behind the first turn', () => {
     /**
      * THE COUNT LINE SAYS WHAT IT COUNTS. `birth.knowledge` holds places and
      * houses and never a person, so a bare "3 names" under a heading asking
-     * what sixteen years came to reads as the whole of a life - which is how
+     * what eighteen years came to reads as the whole of a life - which is how
      * an opening naming three places and three people was read as naming
      * nobody.
      */
@@ -319,7 +319,7 @@ describe('the life behind the first turn', () => {
                 id: 'sect-azure-dew', name: 'Azure Dew Sect',
                 powerOrdinal: 21, admissionOrdinal: 2, recruits: true, regionId: 'r'
             }
-        }), 16, [face('Han Ronglu', 'grew up on the same road as you.')]);
+        }), 18, [face('Han Ronglu', 'grew up on the same road as you.')]);
         expect(both.toldToThePlayer.length).toBeLessThanOrEqual(both.forTheNarrator.length);
         expect(both.toldToThePlayer.length).toBeGreaterThan(0);
     });
