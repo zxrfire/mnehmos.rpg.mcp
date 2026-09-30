@@ -62,7 +62,7 @@ import {
 import { isHalted } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { stagnationYearsForOrdinal } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
-import type { NpcRecord } from '../engine/world/npc-state.js';
+import { isActing, type NpcRecord } from '../engine/world/npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // REFERENCE
@@ -636,8 +636,8 @@ export function worldRosterRow(
         // so one column held `5` and `Chaff Hand` and meant the same thing.
         sectRank: factionRankTitle(world, npc.factionId, npc.factionRankIndex),
         age,
-        alive: npc.status === 'alive',
-        deathCause: npc.status === 'alive' ? null : npc.status,
+        alive: isActing(npc.status),
+        deathCause: isActing(npc.status) ? null : npc.status,
         // What the life walk actually left them. Zero was a placeholder that
         // had quietly become a fact about the whole world.
         spiritStones: npc.spiritStones,

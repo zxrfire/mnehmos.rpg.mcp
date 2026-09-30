@@ -50,7 +50,7 @@ import { getPill } from '../../data/cultivation/pills.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
 import type { LocationRecord } from './locations.js';
-import type { NpcRecord } from './npc-state.js';
+import { isActing, type NpcRecord } from './npc-state.js';
 import { npcsAt, type WorldState } from './world-state.js';
 import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
 
@@ -239,7 +239,7 @@ export function npcsStandingIn(
     const compound = compounds.bySeat.get(seatId)!;
     const people = new Set(state.npcs.map(n => n.id));
     return state.npcs
-        .filter(n => n.status === 'alive' && n.locationId !== null
+        .filter(n => isActing(n.status) && n.locationId !== null
             && (n.locationId === seatId || compound.inside.has(n.locationId)))
         .filter(n => whereTheyAreStanding(state, compounds, n, people) === locationId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -259,7 +259,7 @@ export function npcsWithin(
 ): NpcRecord[] {
     const compound = compounds.bySeat.get(locationId);
     return state.npcs
-        .filter(n => n.status === 'alive' && n.locationId !== null
+        .filter(n => isActing(n.status) && n.locationId !== null
             && (n.locationId === locationId || (compound?.inside.has(n.locationId) ?? false)))
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }

@@ -45,6 +45,7 @@ export const INTERACT_INTENTS = [
 
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
+    proxy: z.enum(['sword', 'clone', 'soul', 'recall', 'prepare']).optional(),
     /**
      * Duration for `cultivate`, in days.
      *
@@ -355,6 +356,8 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // came back days 3 from the model, and one night was slept.
     if (days && (name === 'sect' || name === 'request' || name === 'teach' || name === 'wait')) action.days = days;
 
+    if (parsed.data.proxy && name === 'project') action.proxy = parsed.data.proxy;
+    if (days && name === 'project') action.days = days;
     if (reason) action.reason = reason;
 
     return { ok: true, action };

@@ -254,7 +254,7 @@ export interface DestructionOutcome {
  */
 export function resolveBodilyDestruction(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'injuries'> &
-        Partial<Pick<Cultivator, 'soulState' | 'existenceState'>>,
+    Partial<Pick<Cultivator, 'soulState' | 'existenceState' | 'identityContinuity'>>,
     requirements: ExistenceRequirements,
     rng: CultivationRNG
 ): DestructionOutcome {
@@ -322,9 +322,10 @@ export function resolveBodilyDestruction(
 
     // Survived, at a cost. Nothing comes through whole.
     const soulState: SoulState = severityRoll < 0.5 ? 'damaged' : 'fragmented';
-    const continuity = route === 'remnant'
+    const survivingContinuity = route === 'remnant'
         ? makeRemnantContinuity(soulState === 'damaged' ? 0.8 : 0.55)
         : soulState === 'damaged' ? 0.8 : 0.55;
+    const continuity = Math.min(cultivator.identityContinuity ?? 1, survivingContinuity);
     const cultivationLost = soulState === 'damaged' ? 0.3 : 0.6;
 
     factors.push({

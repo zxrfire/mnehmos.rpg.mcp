@@ -10,6 +10,18 @@ supported-word table supplies the spec and the receipt names unused words. Bare
 ordinal spawns keep their existing encounter path. Stable house IDs and their word
 forms resolve through `resolveSect`, under the same knowledge gate as house names.
 
+`playing-through-a-presence.ts` routes sword flight, clones, soul projection,
+anchor preparation, possession and reconstruction from player sentences and
+validated model plans. The sheet owns the body's position; an active world
+object supplies the observed area and fighting strength. Remote conversations
+use the ordinary cards and three-person area limit. Proxy fights use ordinary
+persisted combat rounds, including fights against NPC projections. The world
+clock handles lapse, NPC revenge and reunion, and NPC body recovery. Assaults
+on the player's unattended body and hostile possession write back to the sheet.
+The player's world mirror reads existence, soul and continuity from that sheet.
+Unknown projection makers remain unnamed, and a projection's scene card does
+not show its maker's distant activity or bodily wounds.
+
 Company cards read open accounts through `whatIsSaidAbout` and place only the known
 facts in the addressed person's private mind. Sharing a square alone grants no private
 account. `readTie` excludes unaccounted-for people from available backing. Hearsay

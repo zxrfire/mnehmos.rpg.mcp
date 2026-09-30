@@ -6,6 +6,9 @@
  * Every action the engine can execute. Closed, and short on purpose.
  */
 export const ACTION_NAMES = [
+    'project',
+    'possess',
+    'reconstruct',
     // Semantic actions. The expressive surface, held open by parameters.
     'interact',
     'investigate',
@@ -506,6 +509,7 @@ export function theVerbsOwnName(text: string): ActionName | null {
  * Actions that spend in-world time, and can therefore kill.
  */
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
+    'project', 'possess', 'reconstruct',
     /**
      * A MISREAD SENTENCE MUST NOT INSULT A ROOM. Not here because it spends
      * days - it spends none - but for the reason this list exists: it is the
@@ -633,6 +637,7 @@ export const TIMED_ACTIONS: readonly ActionName[] = [
  * action fails. An unresolvable target is never narrated as though it worked.
  */
 export const TARGETED_ACTIONS: readonly ActionName[] = [
+    'project', 'possess', 'reconstruct',
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
     /**
@@ -973,6 +978,9 @@ export type HowAnActCanEndBadly =
  * How each verb can end badly, and the empty array where it cannot.
  */
 export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly HowAnActCanEndBadly[]>> = {
+    project: [],
+    possess: [],
+    reconstruct: [],
     /**
      * NOTHING GOES WRONG, because the room disliking you is the act rather
      * than a way it failed. Nobody draws on a man for being rude, no day

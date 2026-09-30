@@ -41,6 +41,9 @@ import { WHAT_EACH_VERB_IS_FOR } from '../../src/web/what-each-verb-is-for-in-th
  * worth nothing.
  */
 const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
+    project: ['I split off a clone'],
+    possess: ['I possess the man'],
+    reconstruct: ['I rebuild my body'],
     interact: [
         'I talk to the old woman',
         'I ask someone about the sects near here',

@@ -3,7 +3,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
-import { isTheSamePerson, resolveBodilyDestruction } from '../cultivation/existence.js';
+import { hasBody, isTheSamePerson, resolveBodilyDestruction, type ExistenceRequirements } from '../cultivation/existence.js';
 import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
 import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from './who-a-house-has-lost-track-of.js';
 import {
@@ -1427,16 +1427,17 @@ export function recordFact(npc: NpcRecord, factId: string, onDay: number): NpcRe
  * A completed ending is final. A destroyed body reads the existence resolver
  * first, because a remnant may remain. World passes use {@link theWorldEnds}.
  */
-export function markDead(npc: NpcRecord, onDay: number, endNote: string, bodyDestroyed = false): NpcRecord {
-    if (bodyDestroyed && npc.status === 'alive') {
+export function markDead(npc: NpcRecord, onDay: number, endNote: string, bodyDestroyed = false, requirements: ExistenceRequirements = {}): NpcRecord {
+    if (bodyDestroyed && hasBody(npc.status)) {
         const outcome = resolveBodilyDestruction({
             realmOrdinal: npc.cultivation.realmOrdinal,
             cultivationProgress: 0,
             injuries: npc.cultivation.injuries,
             soulState: npc.soulState,
+            identityContinuity: npc.identityContinuity,
             existenceState: npc.status
-        }, {}, forStream(npc.id, 'bodily-destruction', onDay));
-        if (outcome.state === 'remnant') {
+        }, requirements, forStream(npc.id, 'bodily-destruction', onDay));
+        if (outcome.state !== 'physically_dead') {
             return setExistence(npc, {
                 to: outcome.state, onDay, bodyId: null,
                 soulState: outcome.soulState,

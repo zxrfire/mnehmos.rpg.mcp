@@ -96,6 +96,8 @@
  */
 
 import type { Injury, SectAlignment } from '../../schema/cultivation.js';
+import { isTheSamePerson } from '../cultivation/existence.js';
+import { ruin } from './possessions.js';
 import type { ConfrontationOutcome } from '../cultivation/combat.js';
 import { fillConsequences, makeFact, type HistoricalFact } from './history.js';
 import { GRUDGE_STANDING } from './gatherings.js';
@@ -332,15 +334,18 @@ export function whatTheConfrontationDidToThem(
 
     if (input.lost && (input.finished || input.outcome === 'body_destroyed')) {
         dying = state.npcs[at];
-        state.npcs[at] = markDead(dying, day, `Killed by ${input.byName}.`, !input.finished);
+        const anchor = state.objects.find(o => o.possessorId === dying!.id && o.tags.includes('soul-anchor') && !o.tags.includes('ruined'));
+        state.npcs[at] = markDead(dying, day, `Killed by ${input.byName}.`, !input.finished,
+            anchor ? { soulAnchor: true, prepared: true } : {});
+        if (anchor && !input.finished) Object.assign(anchor, ruin(anchor, { onDay: day, source: 'The prepared soul anchor was spent.' }));
         if (state.npcs[at].status === 'remnant') lines.push(state.npcs[at].endNote);
         // Handed the record as it stood at death - with the account on it - so
         // the heir inherits the enmity along with everything else.
-        handoff = settleNpcDeath(state, dying, day);
-        died = true;
+        died = !isTheSamePerson({ existenceState: state.npcs[at].status, identityContinuity: state.npcs[at].identityContinuity });
+        handoff = died ? settleNpcDeath(state, dying, day) : null;
         theyLeft = whoTheyLeave({
             dead: state.npcs[at],
-            heirs: handoff.heirs,
+            heirs: handoff?.heirs ?? [],
             stillHere: id => state.npcs.some(n => n.id === id && n.status === 'alive')
         });
     }

@@ -61,6 +61,7 @@ import { createMemoryStore, type MemoryStore } from './memory.js';
 import { DEFAULT_LAYER, type AscensionRecord, type LayerKey } from './layers.js';
 import {
     isTheWorldsToMove,
+    isActing,
     somebodyTheCatalogWrote,
     type NpcRecord
 } from './npc-state.js';
@@ -484,13 +485,13 @@ export function upsertObject(state: WorldState, object: ObjectRecord): WorldStat
 
 export function npcsAt(state: Pick<WorldState, 'npcs'>, locationId: string): NpcRecord[] {
     return state.npcs
-        .filter(n => n.locationId === locationId && n.status === 'alive')
+        .filter(n => n.locationId === locationId && isActing(n.status))
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 
 export function npcsInFaction(state: WorldState, factionId: string): NpcRecord[] {
     return state.npcs
-        .filter(n => n.factionId === factionId && n.status === 'alive')
+        .filter(n => n.factionId === factionId && isActing(n.status))
         .sort((a, b) => b.factionRankIndex - a.factionRankIndex || (a.id < b.id ? -1 : 1));
 }
 

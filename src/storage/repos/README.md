@@ -9,6 +9,9 @@ holds.
 `CultivatorRepo.markDead` asks the existence engine what violent body destruction
 left before storing the ending. A remnant closes the run and survives in its world
 record; old age and starvation still store an ordinary terminal death.
+Prepared anchors are read from persisted world objects and spent in the same
+destruction transaction. A surviving soul retains the active run only when
+the existence engine also preserves the person's identity.
 
 The two rules that matter when adding one:
 

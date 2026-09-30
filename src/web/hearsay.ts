@@ -14,7 +14,9 @@ import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
-import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { npcsWhereTheyStand, whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { whereYouCanActFrom } from '../engine/world/something-acting-in-your-place.js';
+import { isActing } from '../engine/world/npc-state.js';
 import { worldLocationFor } from './entities.js';
 import {
     whatSomebodyWouldSayAboutAHouse,
@@ -220,7 +222,16 @@ export function othersPresent(
     // THE AREA OF THE PLACE THEY STAND IN, three at most. See `where-in-a-place-somebody-is-standing.ts`.
     const inWorld = npcsWhereTheyStand(world, place, cultivator.standingIn, cultivator)
         .map(npc => worldRosterRow(npc, world.currentDay, world));
-    return oneCrowd(stored, inWorld);
+    const area = whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId).id;
+    for (const npc of world.npcs) {
+        if (npc.id === cultivator.id || !isActing(npc.status) || inWorld.some(row => row.id === npc.id)) continue;
+        const presence = whereYouCanActFrom(world, npc.id);
+        if (presence?.locationId !== place.id || presence.data.standingIn !== area) continue;
+        inWorld.push(worldRosterRow({ ...npc, locationId: place.id,
+            cultivation: { ...npc.cultivation, realmOrdinal: presence.power ?? 0 },
+            tags: [...npc.tags, `present-as:${presence.data.kind}`] }, world.currentDay, world));
+    }
+    return oneCrowd(stored, inWorld).slice(0, 3);
 }
 
 /**

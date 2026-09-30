@@ -4821,6 +4821,18 @@ function whatIsSaidToTheirFace(said: string): PlannedAction | null {
 const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand in|hands in|hand off|turn over|drop off|drops off|return|returns|give back|gives back|bring back|brings back|take back|takes back)\b[^.!?]*\b(?:goods|crates?|consignment|delivery|cargo|casket|strongbox|bales?|sacks?|pelts?|grain|ore|load|shipment)\b|^\s*(?:i\s+)?(?:deliver|make (?:the|my) delivery)\b/;
 
 function planIntent(input: string): PlannedAction {
+    const remoteSword = /^(?:i\s+)?send (?:my|the) sword to (.+?)[.!]?$/i.exec(input);
+    if (remoteSword) return { action: 'project', proxy: 'sword', target: remoteSword[1] };
+    const clone = /^(?:i\s+)?split off a clone(?: (?:to|at) (.+?))?[.!]?$/i.exec(input);
+    if (clone) return { action: 'project', proxy: 'clone', ...(clone[1] ? { target: clone[1] } : {}) };
+    const soul = /^(?:my soul goes|i send (?:out )?my soul) to (.+?)[.!]?$/i.exec(input);
+    if (soul) return { action: 'project', proxy: 'soul', target: soul[1] };
+    if (/^(?:i\s+)?(?:recall|call back) (?:my )?(?:sword|clone|soul|proxy)[.!]?$/i.test(input)) return { action: 'project', proxy: 'recall' };
+    if (/^(?:i\s+)?prepare (?:my )?soul (?:anchor|for bodily destruction)[.!]?$/i.test(input)) return { action: 'project', proxy: 'prepare' };
+    const possess = /^(?:i\s+)?possess (.+?)[.!]?$/i.exec(input);
+    if (possess) return { action: 'possess', target: possess[1] };
+    const rebuild = /^(?:i\s+)?(?:reconstruct|rebuild) (?:my body|(.+?)'?s? body)[.!]?$/i.exec(input);
+    if (rebuild) return { action: 'reconstruct', ...(rebuild[1] ? { target: rebuild[1] } : {}) };
     const text = input.toLowerCase().trim();
 
     // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────

@@ -30,6 +30,9 @@
 import type { ActionName } from './actions.js';
 
 export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'unclear'>, readonly string[]>> = {
+    project: ['I send my sword to the village', 'I split off a clone', 'my soul goes to the square'],
+    possess: ['I possess the man before me'],
+    reconstruct: ['I rebuild my body'],
     interact: [
         'I speak to the woman by the well',
         'I want a word with him',

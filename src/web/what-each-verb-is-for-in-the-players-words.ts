@@ -69,7 +69,7 @@ import { PASSAGE_INTENTS } from './verb-pattern-table.js';
  * "what was put on the table" a mechanic rather than a word.
  */
 export type PlanField =
-    | 'days' | 'target' | 'intent' | 'topic' | 'rations' | 'terms' | 'opening'
+    | 'days' | 'target' | 'intent' | 'topic' | 'proxy' | 'rations' | 'terms' | 'opening'
     // How many stones a gift is. Read off the sentence and never asked of a
     // model, for the reason `rations` is not asked of one: it is a fact about
     // what was typed, and a model that supplies it is deciding how much of
@@ -87,7 +87,7 @@ export type PlanField =
  * fields a verb reads and which of those the sentence supplies; the prompt is
  * shown only these.
  */
-export const MODEL_MAY_SET = ['days', 'target', 'intent', 'topic'] as const satisfies readonly PlanField[];
+export const MODEL_MAY_SET = ['days', 'target', 'intent', 'topic', 'proxy'] as const satisfies readonly PlanField[];
 
 export interface VerbSurfaceEntry {
     /** Which fields this verb reads. */
@@ -152,6 +152,18 @@ const REQUEST_KINDS = Object.keys(EVERY_REQUEST_KIND) as readonly RequestKind[];
  * re-sort one of them.
  */
 export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry>> = {
+    project: {
+        takes: ['target', 'days', 'proxy'],
+        says: `Send a sword, clone or soul to a place. The closed proxy field names sword, clone, soul, recall or prepare.`
+    },
+    possess: {
+        takes: ['target'],
+        says: `A separated soul attempts to take a living body in its area.`
+    },
+    reconstruct: {
+        takes: ['target'],
+        says: `Rebuild your body, or help the named remnant here, with a mastered life art and heaven-grade material.`
+    },
     interact: {
         takes: ['target', 'intent', 'topic'],
         intents: [
@@ -973,6 +985,7 @@ const FIELD_IN_THE_SCHEMA: Readonly<Record<
     typeof MODEL_MAY_SET[number],
     { what: string; enumerate: boolean }
 >> = {
+    proxy: { what: 'sword | clone | soul | recall | prepare', enumerate: true },
     days: { what: 'integer', enumerate: true },
     target: {
         what: 'short string naming a real person, faction, place, art, formula or herb',

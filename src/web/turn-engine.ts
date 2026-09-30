@@ -7,6 +7,7 @@ import { needsSpawnReading, readAdminSpawnSpec } from './admin-spawn-spec.js';
 
 
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
+import { actThroughAPresence, presenceForScene, settleTheSeparatedBody } from './playing-through-a-presence.js';
 import { randomUUID } from 'crypto';
 import { getNpc } from '../engine/world/world-state.js';
 // THE WORLD INTERRUPTS. `time.ts` has known how since it was written and had no
@@ -197,7 +198,7 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { howItIsHad, transferPossession, type ObjectRecord } from '../engine/world/possessions.js';
+import { howItIsHad, transferPossession, ruin, type ObjectRecord } from '../engine/world/possessions.js';
 import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
@@ -2194,6 +2195,12 @@ export class GameService {
     theWorldMoved(): void {
         const world = this.atHand;
         if (world === null) return;
+        const spent = new Set(this.repos.cultivators.spentSoulAnchors(world.id));
+        for (const anchor of world.objects) {
+            if (spent.has(anchor.id) && !anchor.tags.includes('ruined')) {
+                Object.assign(anchor, ruin(anchor, { onDay: world.currentDay, source: 'Spent retaining the soul.' }));
+            }
+        }
         commitOneTransition({
             db: this.db,
             at: {
@@ -2855,7 +2862,7 @@ export class GameService {
                 // `names-as-they-are-spelled.ts`.
                 inTheSpellingOfTheNamesTheyKnow(trimmed, this.awarenessOf(cultivator).map(row => row.name)),
                 composeStateSummary({
-                    cultivator,
+                    cultivator: presenceForScene(this, cultivator),
                     run,
                     ambient,
                     said: trimmed,
@@ -3205,6 +3212,9 @@ export class GameService {
             });
         }
 
+        for (const line of settleTheSeparatedBody(this, Math.floor(this.atHand?.currentDay ?? 0) - (this.currentRun().run.elapsedDays - clockOnEntry))) {
+            execution.facts.lines.push(line);
+        }
         const after = this.currentRun();
 
         // AND THIS TURN BECOMES THE ONE THE NEXT ONE MAY REFER TO
@@ -3453,10 +3463,11 @@ export class GameService {
         }
         execution.facts.lines.push(...this.recognitionsThisTurn);
 
-        const company = this.company(after.cultivator);
+        const observing = presenceForScene(this, after.cultivator);
+        const company = this.company(observing);
         const scene = {
-            place: thePlaceAsTheSceneNamesIt(this, after.cultivator, placeName(after.cultivator)),
-            ambient: this.ambientFor(after.cultivator, after.run),
+            place: thePlaceAsTheSceneNamesIt(this, observing, placeName(observing)),
+            ambient: this.ambientFor(observing, after.run),
             awareness: this.awarenessOf(after.cultivator),
             hearing: execution.hearing ?? null,
             // Asking turns on what was said, so the words reach phase 3. They
@@ -3474,9 +3485,9 @@ export class GameService {
             // house's own people are read into its rooms, and a scene that names
             // only the square makes the house look empty to somebody standing
             // inside it.
-            doorsFromHere: theDoorsOffThisYard(this, after.cultivator),
+            doorsFromHere: theDoorsOffThisYard(this, observing),
             // And the rest of the place: its people are read into areas of at most three.
-            elsewhereHere: theRestOfThisPlace(this, after.cultivator),
+            elsewhereHere: theRestOfThisPlace(this, observing),
             addressing: whoTheActWasPutTo(
                 stepsOfThePlan(theTurnsPlan).map(step => step.action.target), company
             ),
@@ -3485,7 +3496,7 @@ export class GameService {
             // `theStandingStateOf`: the model told somebody carrying a manual
             // that the manual was what they lacked.
             standing: this.theStandingStateOf(after.cultivator),
-            ...this.howThisPlaceIs(after.cultivator, {
+            ...this.howThisPlaceIs(observing, {
                 somebodyDied: !after.cultivator.alive
                     || squareBefore.some(p => {
                         const status = this.atHand?.npcs.find(n => n.id === p.id)?.status;
@@ -4197,6 +4208,10 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        const through = await actThroughAPresence(this, action, run, cultivator,
+            this.ambientFor(presenceForScene(this, cultivator), run), rawInput,
+            actor => this.carryOut(action, run, actor, this.ambientFor(actor, run), rawInput));
+        if (through) return through;
         // SOMEBODY NAMED ACROSS THE SQUARE IS A WALK AWAY. See `walking-across-a-place.ts`.
         const worldDayBefore = Math.floor(this.atHand?.currentDay ?? 0);
         if (action.action === 'move') {
@@ -4373,6 +4388,10 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        if (action.action === 'project' || action.action === 'possess' || action.action === 'reconstruct') {
+            return refused('world.separatedPresence', action.action, factsForRefusal(
+                'The attempt did not proceed.', 'There is no world record for this presence.', 'No world record.'));
+        }
         // A True Immortal is not standing in the province any more.
         if (canExistBeyondTheLid(cultivator) && MORTAL_WORLD_ACTIONS.includes(action.action)) {
             return this.aboveTheLid(run, cultivator, action.action);
@@ -4552,6 +4571,11 @@ export class GameService {
         }
 
         switch (action.action) {
+            case 'project':
+            case 'possess':
+            case 'reconstruct':
+                return refused('world.separatedPresence', action.action, factsForRefusal(
+                    'The attempt did not proceed.', 'There is no world record for this presence.', 'No world record.'));
             // `durationAskedFor` is the UNCLAMPED span in the sentence.
             // `action.days` has already been through `parseDuration`, which no
             // longer clamps - the bound is the life above, and the account can
@@ -19757,6 +19781,7 @@ ${fit.line}`;
     }
 
     present(cultivator: Cultivator): RosterEntry[] {
+        cultivator = presenceForScene(this, cultivator);
         return othersPresent(this.repos, cultivator, this.atHand);
     }
 
@@ -20339,6 +20364,7 @@ ${fit.line}`;
     }
 
     company(cultivator: Cultivator): Company {
+        cultivator = presenceForScene(this, cultivator);
         const here = this.present(cultivator);
         const named: Company['named'] = [];
         const strangers: Company['strangers'] = [];
@@ -20376,9 +20402,10 @@ ${fit.line}`;
         }
 
         for (const person of here) {
+            const remote = person.tags?.find(tag => tag.startsWith('present-as:'))?.slice('present-as:'.length);
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
                 const row = byId.get(person.id) ?? null;
-                const doing = row?.activity ?? null;
+                const doing = remote ? null : row?.activity ?? null;
                 const account = whatIsSaidAbout({
                     subjectId: cultivator.id,
                     observer: {
@@ -20422,7 +20449,7 @@ ${fit.line}`;
                     whatTheyLost: this.atHand === null
                         ? null
                         : whatTheCardSaysOfALoss(this.atHand.objects, person.id, today),
-                    at: doing === null ? null : whatThatLooksLike(doing, alongside),
+                    at: remote ? `A ${remote} presence is here.` : doing === null ? null : whatThatLooksLike(doing, alongside),
                     // Whether the square would hand this person to somebody
                     // walking into it, and how sure they would be of it. Both
                     // fall out of what is already true of them - see
@@ -20448,7 +20475,7 @@ ${fit.line}`;
                     // Only from the world row: the roster row carries no wounds,
                     // so deriving it from one would make the same person read
                     // differently depending on which table the caller reached.
-                    carrying: row === null ? null : whatTheirBodyShows(row),
+                    carrying: row === null || remote ? null : whatTheirBodyShows(row),
                     // WHO ELSE STANDING HERE THEY ARE ANYTHING TO.
                     //
                     // Filled after the loop, because a tie is only worth
@@ -20499,7 +20526,7 @@ ${fit.line}`;
                 strangers.push({
                     ordinal: person.realmOrdinal,
                     sex: person.sex ?? null,
-                    at: doing === null ? null : whatThatLooksLike(doing, [])
+                    at: remote ? `A ${remote} presence is here.` : doing === null ? null : whatThatLooksLike(doing, [])
                 });
             }
         }
@@ -20709,7 +20736,9 @@ ${fit.line}`;
         // do not change anybody's house.
         if (row === null) return;
         if (row.factionId !== wasIn || row.factionRankIndex !== wasAt
-            || meritWith(row, membership?.sectId ?? null) !== wasWorth || before === null) {
+            || meritWith(row, membership?.sectId ?? null) !== wasWorth || before === null
+            || row.status !== before.status || row.soulState !== before.soulState
+            || row.identityContinuity !== before.identityContinuity || row.bodyId !== before.bodyId) {
             this.theWorldMoved();
         }
     }

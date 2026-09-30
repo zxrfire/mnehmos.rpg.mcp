@@ -39,7 +39,7 @@
 import { forStream } from '../cultivation/rng.js';
 import { isOpenWater } from '../../data/cultivation/regions.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
-import { isAwayOnSomething, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from './npc-state.js';
+import { isAwayOnSomething, isActing, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from './npc-state.js';
 import type { LocationRecord } from './locations.js';
 import type { WorldState } from './world-state.js';
 import {
@@ -332,7 +332,7 @@ export function theAreasOf(
         // its own draw points at, or the next one with room. A death leaves the count and so every
         // other draw where it was: kill the three in front of you and the room is empty, not
         // refilled from across the square.
-        const fallen = state.npcs.filter(n => n.status !== 'alive' && n.locationId === place.id
+        const fallen = state.npcs.filter(n => !isActing(n.status) && n.locationId === place.id
             && fallenKind(n) === what).length;
         const bins: NpcRecord[][] = Array.from(
             { length: Math.max(1, Math.ceil((total + fallen) / AT_MOST_IN_AN_AREA)) }, () => []);

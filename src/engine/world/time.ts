@@ -3,8 +3,10 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { advanceSeparatedPresences } from './something-acting-in-your-place.js';
 import { forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
+import { hasBody } from '../cultivation/existence.js';
 import { settleEstate, whereTheyFell } from './estate-at-death.js';
 import {
     concurrentEventsFor,
@@ -25,6 +27,7 @@ import { openingsBetween, type LocationRecord } from './locations.js';
 import { FRIENDSHIP_STANDING, GRUDGE_STANDING } from './gatherings.js';
 import {
     inheritGoals,
+    isActing,
     isTheWorldsToMove,
     legacyGoals,
     theWorldEnds,
@@ -361,14 +364,16 @@ export function advanceTime(
         const npc = state.npcs[i];
         // Only the living run out of lifespan. A missing cultivator is not
         // adjudicated by the clock, and a sealed one is not ageing.
-        if (npc.status !== 'alive') continue;
+        if (!hasBody(npc.status) || !isActing(npc.status)) continue;
         // And the player's own death is not the world clock's to declare. It
         // belongs to the survival layer, on the sheet that actually holds their
         // years; the mirror row this pass can see is a projection of that sheet
         // and killing it would append a death to the chronicle mid-run.
         if (!isTheWorldsToMove(npc)) continue;
-        if (npc.cultivation.lifespanEndsOnDay > target) continue;
-        const onDay = Math.max(fromDay, npc.cultivation.lifespanEndsOnDay);
+        const vessel = npc.bodyId ? state.npcs.find(n => n.id === npc.bodyId) : null;
+        const lifespanEnds = vessel?.cultivation.lifespanEndsOnDay ?? npc.cultivation.lifespanEndsOnDay;
+        if (lifespanEnds > target) continue;
+        const onDay = Math.max(fromDay, lifespanEnds);
         const rank = rankName(npc.cultivation.realmOrdinal);
         const dead = theWorldEnds(
             npc,
@@ -464,6 +469,7 @@ export function advanceTime(
     }
 
     state.currentDay = target;
+    advanceSeparatedPresences(state, fromDay);
     changes.push({ entity: 'world', entityId: state.id, field: 'currentDay', from: fromDay, to: target });
 
     // ── 5. What the observer missed. ─────────────────────────────────────

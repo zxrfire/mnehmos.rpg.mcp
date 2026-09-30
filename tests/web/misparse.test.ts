@@ -470,6 +470,9 @@ describe('every verb is reachable from plain English', () => {
      * deleted by an unrelated change.
      */
     const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, string> = {
+        project: 'I split off a clone',
+        possess: 'I possess the man',
+        reconstruct: 'I rebuild my body',
     // Added when combat became reachable. It had been in the engine the
     // whole time and in the parser not at all, which is how "I attack the
     // nearest cultivator" ended up meditating for a month.

@@ -315,8 +315,13 @@ Schema:
 ${composePlanSchemaFields()}
    "reason": <one short sentence>}
 
-Lanes. Pick the LANE first - what the player is doing - and then the intent inside it. You
-are not choosing between ${ACTION_NAMES.length} engine routines; the engine works out which routine a
+Lanes. Pick the LANE first - what the player is doing - and then the intent inside it.
+You may instead return action: project with proxy: sword, clone, soul, recall, or prepare.
+Sending a sword or soul takes a destination in target; splitting off a clone may name one.
+Possessing a living body returns action: possess and target: the person.
+Rebuilding a body returns action: reconstruct and target: the remnant being helped, or no target for yourself.
+These are attempts. The engine checks the realm, materials, resistance and continuity.
+For a lane, the engine works out which of ${ACTION_NAMES.length} routines a
 lane and an intent stand for. Choosing the right lane and a rough intent is worth far more
 than agonising over the label.
 ${LANE_GLOSSARY}

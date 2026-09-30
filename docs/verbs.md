@@ -74,8 +74,8 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**64 verbs.** 17 of them take nothing from the player,
-29 spend in-world time and can therefore kill, and
+**67 verbs.** 17 of them take nothing from the player,
+32 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
 A verb the deterministic parser cannot reach is playable only where a provider is
@@ -84,6 +84,9 @@ where that verb takes nothing - see `theVerbsOwnName`.
 
 | Verb | Takes | Costs | Plain English | Bare word | Intents |
 |---|---|---|---|---|---|
+| [`project`](#project) | `target` `days` `proxy` | time | yes | - | - |
+| [`possess`](#possess) | `target` | time | yes | - | - |
+| [`reconstruct`](#reconstruct) | `target` | time | yes | - | - |
 | [`interact`](#interact) | `target` `intent` `topic` | varies | yes | - | [11](#interact) |
 | [`investigate`](#investigate) | `target` | nothing | yes | yes | - |
 | [`move`](#move) | `target` `intent` | time | yes | - | [5](#move) |
@@ -167,6 +170,30 @@ staleness test that fails for everybody is one that gets ignored. A symbol is gr
 it does not move.
 
 <!-- BEGIN GENERATED: verbs -->
+
+### `project`
+
+Send a sword, clone or soul to a place. The closed proxy field names sword, clone, soul, recall or prepare.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'project'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`, `days`, `proxy`.
+
+### `possess`
+
+A separated soul attempts to take a living body in its area.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'possess'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`.
+
+### `reconstruct`
+
+Rebuild your body, or help the named remnant here, with a mastered life art and heaven-grade material.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'reconstruct'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`.
 
 ### `interact`
 

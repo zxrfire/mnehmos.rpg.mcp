@@ -957,6 +957,15 @@ the imprint persists, but is not the person. Old age and a completed soul
 finishing requirement do not use this route. Combat and existence share the
 Nascent Soul floor in `tradition.ts`, read from the realm ladder.
 
+A mastered Soul-Anchoring Invocation can prepare a persisted anchor from heaven
+material, paying the catalog qi cost. Destruction consumes it and asks this same
+resolver; it guarantees no survival. A retained soul continues only while
+`isTheSamePerson` holds. World recovery uses `canEnterExistenceState`, the vessel's
+resistance or a mastered Spring-Returning Life Art and material. Neither recovery
+route increases identity continuity; taking a weaker vessel lowers cultivation.
+Losing a recovered body cannot increase continuity either: the destruction
+resolver caps what survives at what the identity held before that destruction.
+
 Advanced cultivation must not become automatic immortality. Surviving one's own death may
 require soul strength, a compatible vessel, a specific treasure, a suitable environment,
 resources, a technique, outside assistance, luck, or - most often - having prepared in

@@ -3720,9 +3720,21 @@ points. Do not quote -2.16 as a constant.
 - [`../people/README.md`](../people/README.md) - `NpcRecord` is one of two shapes a person has.
   `Person` and `everybodyDrawingHere` are the read that covers both, and a new caller should
   usually want that rather than either table.
-- Remote swords, clones and souls have no persisted acting records or creation
-  path yet. The former proxy list and its guaranteed unattended-body death were
-  removed; ordinary interactions still require somebody present in the area.
+- `something-acting-in-your-place.ts` stores separated presences as dated objects.
+  Sword flight reads the movement art's floor; soul projection reads Nascent Soul;
+  clones read Void Tribulation's partial-presence capability. A sword uses the
+  actual held artifact. Strength and reserve derive from its maker and kind.
+  The clock lapses presences and lets revenge and reunion goals send them.
+  A sword or soul leaves the body unguarded; damage still requires a real assault.
+  A lost sword is ruined, a lost soul damages continuity, and a lost clone ends.
+  Recovery uses the same resisted attempt for NPCs and the player, within one area.
+  Living-body possession writes a priced crime through the ordinary witness,
+  kin and house account machinery. Reconstruction spends heaven material and
+  requires the catalog life art. A recovered remnant never gains continuity.
+  Physical presence reads include retained souls and people in recovered bodies.
+  Creation IDs include the world day and are checked for collisions: object
+  collection length can recur after old objects are removed. Recovered bodies
+  remain subject to lifespan, and possession reads the vessel's own deadline.
 - [`../../storage/repos/README.md`](../../storage/repos/README.md) - `world-state.repo.ts` and
   `world-snapshot.repo.ts` are what survives a restart. Most of this layer is derived per read
   on purpose - before adding a field, check it cannot be read off the world instead.

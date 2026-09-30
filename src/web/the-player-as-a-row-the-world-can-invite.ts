@@ -280,7 +280,10 @@ export function standInTheWorld(
         // it. Where the sheet says dead, whatever ended the row is left exactly
         // as whoever ended it wrote it - the status, the day and the note are
         // theirs, and a projection has no business editing an ending.
-        status: cultivator.alive ? 'alive' : base.status,
+        status: cultivator.alive ? cultivator.existenceState : base.status,
+        soulState: cultivator.soulState,
+        identityContinuity: cultivator.identityContinuity,
+        bodyId: cultivator.bodyId,
         diedOnDay: cultivator.alive ? null : base.diedOnDay,
         endNote: cultivator.alive ? '' : base.endNote,
         // The tag is what the two simulation guards read. It is never dropped,

@@ -20,7 +20,7 @@ import {
 } from '../../engine/cultivation/realms.js';
 import { physiqueOrNull } from '../../engine/cultivation/physiques.js';
 import { isTraceable } from '../../engine/cultivation/understanding.js';
-import { resolveBodilyDestruction } from '../../engine/cultivation/existence.js';
+import { resolveBodilyDestruction, isGoingConcern, isTheSamePerson } from '../../engine/cultivation/existence.js';
 import { forStream } from '../../engine/cultivation/rng.js';
 
 /**
@@ -688,36 +688,42 @@ export class CultivatorRepository {
         return valid;
     }
 
-    /**
-     * End a cultivator. Terminal and one-way: no revival, no reload. The
-     * attached run is closed in the same transaction so the ledger can never
-     * show a live run whose cultivator is a corpse.
-     */
+    /** Consumed world anchors, so an older loaded world cannot restore them. */
+    spentSoulAnchors(worldId: string): string[] {
+        return (this.db.prepare("SELECT id FROM world_objects WHERE world_id = ? AND tags LIKE '%soul-anchor%' AND tags LIKE '%ruined%'").all(worldId) as { id: string }[]).map(row => row.id);
+    }
+
+    /** Store the destruction outcome and close only the identity that ended. */
     markDead(id: string, cause: DeathCause, turn: number, description?: string, bodyDestroyed = false): Cultivator | null {
         const existing = this.getById(id);
         if (!existing) return null;
         if (!existing.alive) return existing;
 
+        const anchor = this.db.prepare("SELECT id FROM world_objects WHERE possessor_id = ? AND tags LIKE '%soul-anchor%' AND tags NOT LIKE '%ruined%' LIMIT 1").get(id) as { id: string } | undefined;
         const destruction = bodyDestroyed || cause === 'heavenly_tribulation'
-            ? resolveBodilyDestruction(existing, {}, forStream(id, 'bodily-destruction', turn))
+            ? resolveBodilyDestruction(existing, anchor ? { soulAnchor: true, prepared: true } : {}, forStream(id, 'bodily-destruction', turn))
             : null;
+        const continues = !!destruction && isGoingConcern(destruction.state)
+            && isTheSamePerson({ existenceState: destruction.state, identityContinuity: destruction.identityContinuity });
 
         const valid = CultivatorSchema.parse({
             ...existing,
-            alive: false,
+            alive: continues,
             existenceState: destruction?.state ?? 'physically_dead',
             soulState: destruction?.soulState ?? existing.soulState,
             identityContinuity: destruction?.identityContinuity ?? 0,
             bodyId: null,
             cultivationProgress: existing.cultivationProgress * (1 - (destruction?.cultivationLost ?? 0)),
-            deathCause: cause,
-            diedOnTurn: Math.max(0, Math.round(turn)),
+            hp: continues ? Math.max(1, Math.round(existing.maxHp * 0.1)) : existing.hp,
+            deathCause: continues ? null : cause,
+            diedOnTurn: continues ? null : Math.max(0, Math.round(turn)),
             updatedAt: new Date().toISOString()
         });
 
         const kill = this.db.transaction((c: Cultivator) => {
             this.updateStmt.run(this.toParams(c));
-            if (c.runId) {
+            if (anchor && destruction) this.db.prepare("UPDATE world_objects SET tags = ? WHERE id = ?").run(JSON.stringify(['soul-anchor', 'ruined']), anchor.id);
+            if (c.runId && !continues) {
                 this.db.prepare(`
                     UPDATE runs
                     SET status = 'dead',
