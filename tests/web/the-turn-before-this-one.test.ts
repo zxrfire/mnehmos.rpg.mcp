@@ -24,6 +24,8 @@
  * place prose is asserted is the legibility line, which IS the feature - a
  * resolved back-reference has to say what it resolved to - and it is asserted
  * as a required fact rather than as writing.
+ * Listing-specific questions and pointers use scripted phase-1 readings;
+ * conversational English is the model's tier, not the pattern table's contract.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -87,8 +89,13 @@ function quotedFor(narration: string | null | undefined, name: string): number {
     return Number(found[1]);
 }
 
-async function opening(seed: string) {
-    const harness = await makeGameInWorld({ worldSeed: WORLD, seed });
+async function opening(seed: string, plans?: string[]) {
+    const harness = await makeGameInWorld({
+        worldSeed: WORLD, seed,
+        ...(plans ? { narrator: new ProviderNarrator(new ScriptedProvider({ plans }), {
+            model: 'test-model', timeoutMs: 5000
+        }) } : {})
+    });
     await harness.game.newRun('Probe');
     return harness;
 }
@@ -210,13 +217,12 @@ describe('carrying on with what you were just doing', () => {
 });
 
 describe('the thing the last turn named', () => {
-    /**
-     * The deterministic tier, which is a shipping mode. No model is configured
-     * here at all, and "the cheaper one" still resolves - because the vocabulary
-     * is closed and the list is one list the engine itself printed.
-     */
-    it('resolves a pointer off the listing with no model in the room', async () => {
-        const { game } = await opening('cheaper-deterministic');
+    /** The engine binds the pointer returned by phase 1 to its own listing. */
+    it('resolves the reader\'s pointer off the listing', async () => {
+        const { game } = await opening('cheaper-deterministic', [
+            JSON.stringify({ action: 'buy' }),
+            JSON.stringify({ action: 'buy', target: 'the second one' })
+        ]);
         const board = await game.act(WHAT_IS_ON_THE_STALL);
         const before = board.state.cultivator.spiritStones;
         const cheaper = quotedFor(board.narration, THE_CHEAPER_NAME);
@@ -248,14 +254,8 @@ describe('the thing the last turn named', () => {
     it('resolves a demonstrative the reader handed straight back', async () => {
         const provider = new ScriptedProvider({
             plans: [
-                // THE SAME LISTING THE OTHER ARM READS. This scripted `market`
-                // and the deterministic tier's stall read are two different
-                // boards - one prices the provisions catalog, the other the
-                // books beside the cooking pots - so the "control arm" was
-                // comparing two squares and only agreed while one manual
-                // happened to be the cheapest thing in the province. The stall
-                // read is `buy` with no target, which is what the deterministic
-                // tier resolves that question to.
+                // Both arms read `buy` with no target: `market` would be a
+                // different board, so it cannot serve as this arm's control.
                 JSON.stringify({ action: 'buy' }),
                 JSON.stringify({ action: 'buy', target: 'that one' })
             ],
@@ -263,8 +263,8 @@ describe('the thing the last turn named', () => {
         });
         const { game } = await makeGameInWorld({
             worldSeed: WORLD,
-            // The SAME run as the deterministic case above, so the pair is a
-            // control arm: one situation, two readers, one outcome. What is on
+            // The SAME run as the pointer case above, so the pair is a
+            // control arm: one situation, two readings, one outcome. What is on
             // the board is a property of the world and the run, and a test that
             // let those differ would be comparing two squares.
             seed: 'cheaper-deterministic',
@@ -283,7 +283,7 @@ describe('the thing the last turn named', () => {
         // NO PRICE IS READ HERE, and it cannot be: the narration on this arm is
         // the scripted provider's, so the board's own words never reach it. The
         // subject of this arm is the READER, and the price is pinned by the
-        // deterministic arm above against the same world and the same run seed.
+        // pointer arm above against the same world and the same run seed.
         expect(before - bought.state.cultivator.spiritStones).toBeGreaterThan(0);
         expect(bought.narration).toContain(THE_CHEAPER_NAME);
     }, 180000);
@@ -305,7 +305,10 @@ describe('the thing the last turn named', () => {
      * one" that a stall can actually give.
      */
     it('puts the listing back when a comparative cannot settle', async () => {
-        const { game } = await opening('cheaper-tied');
+        const { game } = await opening('cheaper-tied', [
+            JSON.stringify({ action: 'buy' }),
+            JSON.stringify({ action: 'buy', target: 'the cheaper one' })
+        ]);
         const board = await game.act(WHAT_IS_ON_THE_STALL);
         const before = board.state.cultivator.spiritStones;
 

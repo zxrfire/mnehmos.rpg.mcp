@@ -7,6 +7,9 @@ Every tool the runtime agent can call, one file per tool. This is the boundary t
 through a contract in here**, and each one validates its arguments before anything touches
 the database.
 
+ADMIN field-value syntax without equals signs starts with a field immediately
+after the action. An adjective inside an item description remains sentence input.
+
 The tools are CONSOLIDATED on purpose - `batch_manage` says so in its own header, replacing
 six tools with one taking six actions. That keeps the context a model has to hold small
 enough to reason over, which is the same argument [`src/web/README.md`](../../web/README.md)

@@ -404,6 +404,11 @@ function bareFieldPairs(
     const fields = Object.keys(shape).filter(key => key !== 'action');
     if (fields.length === 0) return nothing;
 
+    // Field syntax starts after the action. In "give me a heaven grade herb",
+    // grade qualifies the herb; it is not the start of a field-value command.
+    const rest = prose.trim().replace(/^\S+\s*/, '');
+    if (!new RegExp(`^(?:${fields.join('|')})(?=\\s)`, 'i').test(rest)) return nothing;
+
     const boundary = new RegExp(`(?:^|\\s)(${fields.join('|')})(?=\\s)`, 'gi');
     const found: Array<{ field: string; from: number; at: number }> = [];
     for (let m = boundary.exec(prose); m !== null; m = boundary.exec(prose)) {

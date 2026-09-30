@@ -39,6 +39,10 @@
  * once entered. By removing `whoTookYouOn` from the join: the join test goes red.
  * And by entering anybody at the seat whatever the house's word: the first test
  * goes red, entered on nobody's word.
+ * Giving the gate watch a recruiting errand changes their computed area.
+ * The join fixture stands beside them after that change; a place alone is not a meeting.
+ * Acceptance is forced for the issuing test. Eligibility permits an application;
+ * it does not promise admission, and the house's refusal is tested separately.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -57,6 +61,8 @@ import {
     theyOweTheHouseAReport
 } from '../../src/engine/world/a-house-expects-somebody-it-took-on';
 import { isTheWorldsToMove } from '../../src/engine/world/npc-state';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { withTheAttemptLanding } from '../../src/server/consolidated/forcing-an-attempt-to-land';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from '../../src/web/walking-up-to-a-house';
 import type { FactionRecord, WorldState } from '../../src/engine/world/world-state';
 import { howManyAHouseReallyHas } from '../../src/engine/social/how-a-house-reads-a-face';
@@ -328,8 +334,14 @@ describe('your house issues you its robes and token at its seat', () => {
         };
         game.theWorldMoved();
 
-        const joined = await game.act(`I join the ${faction.name}`);
-        expect(repos.sects.getMembership(cultivator.id)?.sectId, 'the join did not take').toBe(faction.id);
+        const area = theAreasOf(game.atHand!, seat).whereIs.get(world.npcs[at]!.id);
+        expect(area, 'the recruiter has no area at the seat').toBeTruthy();
+        repos.cultivators.standIn(cultivator.id, area!);
+        expect(game.present(repos.cultivators.getById(cultivator.id)!).some(row => row.id === beside!.id),
+            'the recruiter is not beside the applicant').toBe(true);
+
+        const { result: joined } = await withTheAttemptLanding('sect', () => game.act(`I join the ${faction.name}`));
+        expect(repos.sects.getMembership(cultivator.id)?.sectId, `the join did not take: ${joined.narration}`).toBe(faction.id);
         const said = joined.narration ?? '';
         expect(said, 'who took them on was not said').toMatch(/took you on for/);
         expect(said, 'being entered was not said').toMatch(/Entered on the roll/);

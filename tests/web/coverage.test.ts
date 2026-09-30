@@ -879,6 +879,13 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        'coerce/soul_search': ['I search his soul'],
+        'sect/hire_duty': ['I hire Elder Fang to serve my post'],
+        'sect/report_missing': ['I report Elder Fang seen at Clear River Ferry'],
+        'site/delve': ['I delve into the chamber'],
+        'site/survey': ['I survey the ruin chambers'],
+        'site/wear': ['I wear the old identity'],
+        'site/leave': ['I leave the ruin'],
         'passage/hire': ['I hire a carriage to Iron Crest', 'I hire an iron-rimmed carriage to Iron Crest'],
         // WHO HERE CARRIES SOMETHING ABOUT ME. Lands with a phrasing rather
         // than as a recorded gap, which is the only legal direction for that

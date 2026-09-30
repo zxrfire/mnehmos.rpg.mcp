@@ -22,9 +22,13 @@
  * These are slow by this suite's standards - they open real weights and run
  * real inference - and that is the point. A test of this tier that mocks the
  * model is a test of the thresholds.
+ * Vectors are built from this tree in a private fixture: shared, gitignored
+ * vectors may belong to a different worktree's corpus. Real weights stay required.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe as describeWithModel, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import {
     FALLBACK_ACTION,
     TIME_CONSUMING_ACTIONS,
@@ -34,8 +38,20 @@ import {
 import {
     nearestVerbByMeaning,
     readyTheTier,
+    corpusFingerprint,
+    verbVectorPaths,
     verbForASentenceThePatternsMissed
 } from '../../src/web/reaching-a-verb-the-pattern-table-has-no-line-for.js';
+import { HOW_A_PLAYER_SAYS_EACH_VERB } from '../../src/web/how-a-player-says-each-verb.js';
+import { embed, loadTheModel, MODEL_DIRECTORY, modelsDirectory } from '../../src/web/the-sentence-model-this-repo-carries.js';
+
+const weights = join(modelsDirectory(), MODEL_DIRECTORY);
+const hasModel = existsSync(join(weights, 'model_quantized.onnx')) && existsSync(join(weights, 'vocab.txt'));
+const describe = describeWithModel.skipIf(!hasModel);
+let fixture: string | undefined;
+let directory: string;
+
+if (!hasModel) console.warn('[verb tier test] skipped: local sentence-model weights are absent.');
 
 /** The composed reader, exactly as `narrator.ts` assembles it. */
 function read(input: string) {
@@ -43,8 +59,34 @@ function read(input: string) {
 }
 
 beforeAll(async () => {
-    await readyTheTier();
+    if (!hasModel) return;
+    fixture = mkdtempSync(join(process.cwd(), '.verb-tier-test-'));
+    directory = relative(modelsDirectory(), fixture);
+    for (const file of ['model_quantized.onnx', 'vocab.txt']) {
+        copyFileSync(join(weights, file), join(fixture, file));
+    }
+    await loadTheModel(directory);
+    const rows: Array<{ action: string; count: number }> = [];
+    const vectors: Float32Array[] = [];
+    for (const [action, phrasings] of Object.entries(HOW_A_PLAYER_SAYS_EACH_VERB)) {
+        for (const phrasing of phrasings) vectors.push(await embed(phrasing));
+        rows.push({ action, count: phrasings.length });
+    }
+    const width = vectors[0]!.length;
+    const flat = new Float32Array(vectors.length * width);
+    vectors.forEach((vector, at) => flat.set(vector, at * width));
+    const paths = verbVectorPaths(directory);
+    writeFileSync(paths.vectors, Buffer.from(flat.buffer));
+    writeFileSync(paths.index, JSON.stringify({ model: MODEL_DIRECTORY, width, corpusHash: corpusFingerprint(), rows }));
+    await readyTheTier(directory);
 }, 60_000);
+
+afterAll(() => {
+    if (fixture) {
+        expect(dirname(fixture)).toBe(process.cwd());
+        rmSync(fixture, { recursive: true, force: true });
+    }
+});
 
 /**
  * Sentences a player types when they mean something, in words the table has no
@@ -220,18 +262,19 @@ describe('the same sentence, forever', () => {
 
 describe('the vectors beside the weights', () => {
     it('refuses to load against a corpus that has moved', async () => {
-        // The staleness guard, asserted by construction rather than by
-        // corrupting a committed file: the fingerprint is over the corpus, so
-        // a corpus that changed produces a different one, and the loader
-        // compares them. If this ever passes trivially the guard has been
-        // removed.
-        const { corpusFingerprint, verbVectorPaths } =
-            await import('../../src/web/reaching-a-verb-the-pattern-table-has-no-line-for.js');
-        const { readFileSync } = await import('node:fs');
-        const manifest = JSON.parse(readFileSync(verbVectorPaths().index, 'utf8')) as {
-            corpusHash: string;
-        };
+        // Change only this test's manifest, then ask a fresh loader to read it.
+        const path = verbVectorPaths(directory).index;
+        const saved = readFileSync(path, 'utf8');
+        const manifest = JSON.parse(saved) as { corpusHash: string };
         expect(manifest.corpusHash).toBe(corpusFingerprint());
+        try {
+            writeFileSync(path, JSON.stringify({ ...manifest, corpusHash: 'another-corpus' }));
+            vi.resetModules();
+            const fresh = await import('../../src/web/reaching-a-verb-the-pattern-table-has-no-line-for.js');
+            await expect(fresh.readyTheTier(directory)).rejects.toThrow('The verb corpus has changed');
+        } finally {
+            writeFileSync(path, saved);
+        }
     });
 });
 

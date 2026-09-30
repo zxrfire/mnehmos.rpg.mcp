@@ -33,6 +33,9 @@ senior-office label through `leaderTitleOfCourt`; it is an operator read.
 The rule this package enforces is in [`../../context.md`](../../context.md): the AI
 narrates, the engine decides.
 
+Sleep, including naps and dozing, uses recovery's clock. It is excluded from
+`an-act-nothing-in-the-world-answers.ts`, whose acts have no modeled consequence.
+
 `taking-the-bones.ts` harvests the grade and origin decided by
 [`bones-off-a-body.ts`](../engine/world/bones-off-a-body.ts). Every harvested bone
 has a world row alongside its pouch stack, so giving or storing it retains its

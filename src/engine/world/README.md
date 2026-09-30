@@ -10,6 +10,9 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+Manual stall stock is derived on its first read, after the catalogs finish
+loading. Importing world mechanics must not price stock through an unfinished import cycle.
+
 The clock reads due effects through `pendingEffects`; physical presence outside compounds
 uses `npcsAt`. Witness pools ask `whoCouldHaveSeenIt`, keeping reach and participant reads
 on the same geographic rule. Conversation backing asks `readTie`, so an unaccounted-for

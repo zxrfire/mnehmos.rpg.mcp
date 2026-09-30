@@ -10,7 +10,7 @@
  *
  * The split this pins, and it is the whole of the design:
  *
- *   no rule, nothing could follow   sing, pray, nap. Say it happened.
+ *   no rule, nothing could follow   sing, pray. Say it happened.
  *   no rule, the world would react  arson, vandalism, causing a scene. These
  *                                   are not free, and saying they happened
  *                                   with no consequence is worse than
@@ -23,6 +23,8 @@
  *
  * The third of those is the ruling in `asking-is-not-doing.test.ts`, and the
  * last case here is what keeps this change from eroding it.
+ * Napping and dozing now use recovery's clock; the original free-nap claim
+ * predates that rule. They must not be answered as acts with no consequence.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -36,13 +38,11 @@ import { makeGameInWorld } from './harness';
 const ANSWERED: readonly [string, string][] = [
     ['I pray', 'pray'],
     ['I sing', 'sing'],
-    ['I take a nap', 'nap'],
     ['I hum', 'hum'],
     ['I sigh', 'sigh'],
     ['I dance', 'dance'],
     ['I weep', 'weep'],
     ['I stretch', 'stretch'],
-    ['I doze off', 'doze'],
     // The near-synonym rule: without the noun forms "I sing" answers and
     // "I sing a song" refuses, and nothing tells the player which is which.
     ['I sing a song', 'sing'],
@@ -55,12 +55,12 @@ const ANSWERED: readonly [string, string][] = [
 ];
 
 /**
- * Coherent, and deliberately still refused. Every one of them either names
- * something the world holds or is aimed at somebody, so "it happened and
- * nothing came of it" would be a claim about the world rather than about the
- * speaker.
+ * These cannot be answered as free private acts: sleep has a clock, the
+ * others need a world response or are incoherent.
  */
 const LEFT_REFUSING = [
+    'I take a nap',
+    'I doze off',
     'I set fire to the inn',
     'I burn the village down',
     'I smash the stall',
@@ -85,7 +85,7 @@ describe('what a body does alone, told apart from what the world would answer', 
         }
     });
 
-    it('names nothing for an act the world would have to react to', () => {
+    it('names nothing for an act with a modeled consequence or no coherent reading', () => {
         for (const said of LEFT_REFUSING) {
             expect(anActNothingAnswers(said), said).toBeNull();
         }
@@ -140,7 +140,7 @@ describe('played, an act with no rule is answered and costs nothing', () => {
         const { game } = await makeGameInWorld({ worldSeed: 'a-song-nobody-asked-for' });
         await game.newRun('Shen Wuyou');
 
-        for (const [said, verb] of [['I sing', 'sing'], ['I pray', 'pray'], ['I take a nap', 'nap']] as const) {
+        for (const [said, verb] of [['I sing', 'sing'], ['I pray', 'pray']] as const) {
             const before = await game.state();
             const turn = await game.act(said);
             const after = await game.state();
@@ -159,6 +159,18 @@ describe('played, an act with no rule is answered and costs nothing', () => {
                 .toBe(before.cultivator!.age);
         }
     }, 300_000);
+
+    it('advances time for sleep through the existing recovery rule', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'a-nap-has-a-clock' });
+        await game.newRun('Shen Wuyou');
+        for (const said of ['I take a nap', 'I doze off']) {
+            expect(parseIntent(said).action, said).toBe('wait');
+            const before = await game.state();
+            const turn = await game.act(said);
+            expect(turn.state.run.elapsedDays, said).toBeGreaterThan(before.run!.elapsedDays);
+            expect(turn.narration, said).not.toContain('Nothing follows from it');
+        }
+    });
 
     /**
      * THE TRAP THIS IS DESIGNED AGAINST, AND IT STILL HOLDS. An arson answered

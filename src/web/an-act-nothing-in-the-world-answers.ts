@@ -4,7 +4,7 @@
  *
  * `unclear` tells the player their sentence *"does not resolve into anything
  * you could actually do standing here"*, and for a whole family that is false.
- * Singing resolves. So does praying, or napping. Having no RULE for an act is
+ * Singing resolves. So does praying. Having no RULE for an act is
  * not the same as not reading it, and both were getting the second answer.
  *
  * Measured on the 744-turn refusal probe: of what it classed as the engine
@@ -34,9 +34,9 @@
  * (aimed at somebody, and `I bow to him` is a sentence the table reads),
  * climbing and digging (they move a body through ground the world describes).
  *
- * Three of the nine are answered here - praying, singing, napping. Over the
- * same 2232-turn probe that gives 15.2% the engine could not answer, that is
- * 12.8%, with the other three verdicts unchanged to the turn.
+ * The original 2232-turn probe measured 12.8% unanswered after praying,
+ * singing and napping became readable, against 15.2% before. Sleep now uses
+ * recovery's clock, so napping and dozing no longer belong in this class.
  *
  * Nothing is recorded. `aDeedEntersTheWorld` is for acts the world notices,
  * and by construction nothing here has anybody on the other end of it - filing
@@ -78,8 +78,6 @@ const A_BODY_ACTING_ALONE: Readonly<Record<string, readonly string[]>> = {
     fidget: [],
     pace: [],
     dance: ['dance', 'jig'],
-    nap: ['nap'],
-    doze: ['doze'],
     daydream: []
 };
 

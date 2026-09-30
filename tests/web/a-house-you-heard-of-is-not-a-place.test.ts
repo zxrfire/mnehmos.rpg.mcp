@@ -22,16 +22,17 @@
  *
  * The design owner: *"this needs fixing, esp cuz if its something you know it
  * should mention. like, you've heard the abc sect is recruiting."*
+ * The catalog now includes landless advertisers. A known name keeps its
+ * recruiting paper even when there is no seat to walk to.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { SECTS } from '../../src/data/cultivation/sects.js';
+import { theHouseThisNameReaches } from '../../src/web/walking-up-to-a-house.js';
 
-const A_HOUSE_ON_THE_WALL =
-    /\b((?:[A-Z][A-Za-z-]*\s+){1,3}(?:Sect|Valley|Pavilion|Court|Order|Market|Caravan|Patrol|Wanderers|Temple))\b/;
-
-describe('a house you were told about is a place you can walk to', () => {
+describe('a house you were told about stays known when you ask the way', () => {
     it('says what it told you, instead of saying it never told you', async () => {
         const { game } = await makeGameInWorld({
             seed: 'heard-of-them', worldSeed: 'heard-of-them', worldEnabled: true
@@ -48,7 +49,7 @@ describe('a house you were told about is a place you can walk to', () => {
         // once the opening began reading the wall, because a wall already read
         // goes quiet; asking for it prints the whole wall either way.
         const posted = await game.act('what is posted here');
-        const house = A_HOUSE_ON_THE_WALL.exec(posted.narration)?.[1]?.trim();
+        const house = SECTS.find(row => posted.narration.includes(`${row.name} is holding an intake`))?.name;
         // A guard that skips the path it exists for is the defect it guards.
         expect(house, posted.narration.slice(0, 400)).toBeTruthy();
 
@@ -60,18 +61,6 @@ describe('a house you were told about is a place you can walk to', () => {
         // THE CONTRADICTION IS GONE.
         expect(said).not.toMatch(/nothing this cultivator has heard of/i);
 
-        // AND THE REFUSAL IT USED TO CHECK FOR IS GONE TOO, BECAUSE THE HOUSE
-        // IS A PLACE NOW. This file pinned "You have the name. You do not have
-        // the road." - the best answer available while a house had no ground a
-        // player could be directed to. A house's name now reaches its gate, so
-        // the honest outcome is arriving rather than a well-worded no, and
-        // asserting the refusal would be pinning the absence of the feature.
-        //
-        // What survives is the owner's actual requirement, which was never
-        // about the refusal: *"if its something you know it should mention.
-        // like, you've heard the abc sect is recruiting."* That is the last
-        // assertion in this block and it is the reason the file still exists.
-        expect(said).not.toMatch(/You do not have the road/);
         // AND THE SCENE DOES NOT EXPLAIN THE ENGINE'S OWN CATEGORIES. The
         // first cut said "a name you have been given and not a place you
         // have been given", which is the schema talking.
@@ -79,8 +68,16 @@ describe('a house you were told about is a place you can walk to', () => {
         // And it repeats what it actually told them, which is the whole point:
         // the intake is the thing they were asking about.
         expect(said).toMatch(/intake|recruit|will hear anybody/i);
-        // AND THEY WENT. The house resolves to its gate, so the road is real.
-        expect(went.state.run.elapsedDays).toBeGreaterThan(0);
+        // A house with a seat has a road. A landless advertiser still has a
+        // known name and its paper; promising arrival would invent its seat.
+        const destination = game.atHand && theHouseThisNameReaches(game.atHand, house!);
+        if (destination) {
+            expect(said).not.toMatch(/You do not have the road/);
+            expect(went.state.run.elapsedDays).toBeGreaterThan(0);
+        } else {
+            expect(said).toMatch(/You have the name/);
+            expect(went.state.run.elapsedDays).toBe(0);
+        }
     }, 300_000);
 
     /**
