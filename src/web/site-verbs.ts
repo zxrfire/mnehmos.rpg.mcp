@@ -4,6 +4,7 @@
 
 import { oldWorldArchive, keepOldWorldKnowledge, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
 import { purposeOf } from '../engine/world/architecture.js';
+import { takeGraveMedicine } from '../engine/world/immortal-medicine.js';
 import { theHeightAHouseWorksAt } from '../engine/world/where-the-pills-actually-are.js';
 import { whereCompoundsAre } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 
@@ -112,7 +113,7 @@ import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { ENTERING_DAYS, ENTERING_FOCUS, STARTING_AGE } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
-import { delveRuin } from './ruin-delving.js';
+import { delveRuin, ruinHostilityHere } from './ruin-delving.js';
 
 /**
  * The words that mean "the site in front of me" rather than naming one.
@@ -395,6 +396,7 @@ export const siteVerbs = {
             autoBreakthrough: false,
             randomEvents: true,
             ...daoHeartConditions(this.repos.db, afterGoods, Math.floor(run.elapsedDays)),
+            hostility: ruinHostilityHere(this, afterGoods),
             toll: tollConditionsFor(this.repos, afterGoods)
         });
         this.putBackWhatWasNotEaten(afterGoods, skip);
@@ -623,6 +625,7 @@ export const siteVerbs = {
             autoBreakthrough: false,
             randomEvents: true,
             ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
+            hostility: ruinHostilityHere(this, cultivator),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
@@ -1051,27 +1054,15 @@ export const siteVerbs = {
             });
         }
 
-        // The one immortal item in the whole catalog that is a grave good. It
-        // leaves the site - the row below says so - and there is nowhere on a
-        // cultivator to put it, because nothing in the storage layer models a
-        // person holding one. Reported rather than faked: an item the player is
-        // told they are carrying and that no query can find is worse than a
-        // hole that says it is a hole.
-        const items = prizeImmortalItemIds(whole);
-        for (const itemId of items) {
-            withheld.push(
-                'There is a thing here that did not come from any forge in this world. It comes away '
-                + 'with you, and there is nothing in your life that is the right shape to keep it in.'
-            );
-            calls.push({
-                name: 'engine.possessions',
-                action: 'site_prize',
-                summary:
-                    `${itemId} left ${site.id} and is recorded against the site. There is no `
-                    + 'cultivator-side possession row for an immortal item in the storage layer, so '
-                    + 'nothing was written on the cultivator. This is a gap, reported rather than faked.',
-                ok: false
-            });
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const doses = this.atHand ? takeGraveMedicine(this.atHand, whole.id, cultivator.id,
+            cultivator.name, this.atHand.currentDay) : [];
+        const items = doses.map(o => String(o.data.medicineId));
+        granted.push(...doses.map(o => o.name));
+        if (doses.length) {
+            this.theWorldMoved();
+            calls.push({ name: 'engine.possessions', action: 'site_prize',
+                summary: `${doses.length} grave doses transferred with provenance.`, ok: true });
         }
 
         const other = prizeOther(whole);

@@ -4,6 +4,8 @@
  * The tests are organised by the five rules at the top of `combat.ts`, in the
  * order they bind, because the rules are the design and everything else in the
  * module is arithmetic in service of them.
+ * Tribulation bodies now close against repeated harms. Late reinforcement is arranged
+ * after the prolonged body's fight, rather than assuming eight rounds still finish it.
  */
 
 import {
@@ -1391,7 +1393,7 @@ describe('resolveMelee', () => {
         const result = resolveMelee([
             band('assault', 43, 4),
             band('house', 43, 1, {
-                reinforcement: { holdsFor: MAX_EXCHANGES, note: 'Too late.' }
+                reinforcement: { holdsFor: 365, note: 'The relief is a year away.' }
             })
         ], meleeCtx({ rng: rng('too-late') }));
         expect(result.winningSideId).toBe('assault');

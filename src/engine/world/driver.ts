@@ -43,6 +43,7 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { advanceSummitBodies } from './summit-world.js';
 import type { HistoricalFact, Observer } from './history.js';
 import { buildPlayerDigest, type DigestOptions, type PlayerAccess, type PlayerDigest } from './digest.js';
 import { advanceImmortalLayer, type ImmortalPeril } from './immortal-world.js';
@@ -221,6 +222,9 @@ export function advanceWorldForPlay(
             onDeath: opts.onDeath
         });
         timeSlices.push(time);
+        const summitDeaths = advanceSummitBodies(state, before, time.toDay);
+        time.deathHandoffs.push(...summitDeaths);
+        for (const death of summitDeaths) opts.onDeath?.(death);
 
         const pressure = applyPressure(state, before, time.toDay, opts.pressure);
         pressureEvents.push(...pressure.events);
@@ -338,4 +342,3 @@ function absencesToAdvance(state: WorldState, opts: AdvanceForPlayOptions): Abse
     const extra = (opts.absences ?? []).filter(a => !own.includes(a));
     return own.concat(extra);
 }
-

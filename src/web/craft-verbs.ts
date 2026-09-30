@@ -72,6 +72,7 @@ import { whatIsBeingCut } from './communication-talisman-phrasings.js';
 import { REINFORCING_A_DOOR, reinforcingYourDoor } from './seclusion-door.js';
 import { MENDING_WORDS } from './mending-phrasings.js';
 import { mendingAThingYouHold } from './mending-a-thing-you-hold.js';
+import { craftElementalWork } from './summit-play.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
 import { BENCH_FOCUS } from './turn-constants.js';
@@ -104,6 +105,8 @@ export const craftVerbs = {
     ): Promise<Execution> {
         const today = Math.floor(run.elapsedDays);
         const said = (target ?? '').trim();
+        const elemental = craftElementalWork(this, run, cultivator, target);
+        if (elemental) return elemental;
 
         // A thing of theirs that has been holed, mended. The verb says so
         // before any noun is asked: see `mending-a-thing-you-hold.ts`.

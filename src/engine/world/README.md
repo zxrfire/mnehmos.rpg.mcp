@@ -25,6 +25,18 @@ after termination. Full terms are in `../../../docs/world/things/beast-contracts
 Manual stall stock is derived on its first read, after the catalogs finish
 loading. Importing world mechanics must not price stock through an unfinished import cycle.
 
+`elemental-neighbourhood.ts` reads presence suppression and matching Grand practice from
+people in one area, and makes ordinary elemental possessions. `summit-world.ts` joins NPC
+practice, imperfect elemental stays and work expiry to the running world driver. A visitor
+can affect nearby NPCs without changing the player's deliberately unplaced world row.
+Elemental admission lives in `locations.ts`; the imperfect clock lives in
+`elemental-tolerance.ts`, shared with played time skips.
+
+`immortal-medicine.ts` seeds individual opening holdings and grave doses. Petitions and
+the live register count these possessions; transfers and spending retain provenance.
+NPC prospecting reaches incidental grave prizes through the same transfer, recording the
+arrival on its own stream. The catalog remains the opening allocation and procedure text.
+
 The clock reads due effects through `pendingEffects`; physical presence outside compounds
 uses `npcsAt`. Witness pools ask `whoCouldHaveSeenIt`, keeping reach and participant reads
 on the same geographic rule. Conversation backing asks `readTie`, so an unaccounted-for

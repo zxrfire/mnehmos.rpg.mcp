@@ -3,6 +3,7 @@
  */
 
 import type { AmbientQi } from '../../schema/cultivation.js';
+import { hasTribulationBody } from '../cultivation/tribulation-defence.js';
 import { MAX_ORDINAL, clampOrdinal, rankName } from '../cultivation/realms.js';
 import { forStream } from '../cultivation/rng.js';
 import {
@@ -920,6 +921,11 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
         query.profile
     );
     const ordinal = clampOrdinal(query.realmOrdinal);
+    if (hasTribulationBody(ordinal) && location.hazards.length > 0
+        && location.hazards.every(h => /^(?:fire|heat|cold|ice|lightning|water|sea|earth)$/.test(h))) {
+        effective.survival = Math.min(effective.survival, ordinal);
+        effective.operational = Math.min(effective.operational, ordinal);
+    }
     const shortfall: Partial<Record<ThresholdTier, number>> = {};
     for (const tier of THRESHOLD_TIERS) {
         if (ordinal < effective[tier]) shortfall[tier] = effective[tier] - ordinal;

@@ -14,6 +14,7 @@
 import type { AmbientQi, Injury, Technique } from '../../schema/cultivation.js';
 import {
     MAX_EXCHANGES,
+    bodyRoundBudget,
     WITHDRAW_HP_FRACTION,
     assessGap,
     assessPower,
@@ -35,6 +36,7 @@ import {
     type RoundAct
 } from './combat.js';
 import { forStream, type CultivationRNG } from './rng.js';
+import type { Adaptation } from './tribulation-defence.js';
 
 // THE GROUND, WHICH IS WHAT "BACK OFF TO WHERE" IS ASKING ABOUT
 
@@ -75,6 +77,8 @@ export interface FightSide {
  * A fight in progress. Holds no functions, so a caller may serialise it.
  */
 export interface UnfinishedFight {
+    suppressionPulses?: Record<string, boolean>;
+    adaptations?: Record<string, Adaptation>;
     /** Stable for the life of the fight. Half of every round's stream key. */
     id: string;
     /** The run's own seed. The other half of the stream key. */
@@ -82,7 +86,7 @@ export interface UnfinishedFight {
     /** Rounds already fought. The next one is this index. */
     roundsFought: number;
 /**
- * Rounds before it is called a stalemate. `MAX_EXCHANGES`, the same budget
+ * Rounds before it is called a stalemate. The same body-derived budget
  * `resolveConfrontation` runs on: a fight carried across turns must not last
  * longer than the same fight settled in one call, or a player who is losing could
  * simply keep typing.
@@ -346,7 +350,7 @@ export function openFight(input: {
             id: input.id,
             seed: input.seed,
             roundsFought: 0,
-            roundBudget: MAX_EXCHANGES,
+            roundBudget: bodyRoundBudget(MAX_EXCHANGES, [aggressor, defender]),
             aggressor: input.aggressor,
             defender: input.defender,
             hp,
@@ -665,6 +669,8 @@ function roundCtx(
 ): Parameters<typeof resolveConfrontationRound>[4] {
     return {
         rng,
+        adaptations: fight.adaptations ??= {},
+        suppressionPulses: fight.suppressionPulses ??= {},
         ambient: ctx.ambient,
         turn: ctx.turn,
         opening: fight.roundsFought === 0,
@@ -784,7 +790,9 @@ function theRoundAsItHappened(
             ? ` ${exchange.result.weapon.objectName} broke. `
               + exchange.result.weapon.narrationHint
             : '';
-        return `${cost}${opened}${broke}`;
+        const resisted = (exchange.result.defenceFactor ?? 1) < 1
+            ? ` The tribulation body reduced the ${exchange.result.harm} harm.` : '';
+        return `${cost}${opened}${broke}${resisted}`;
     }).join(' ');
 }
 

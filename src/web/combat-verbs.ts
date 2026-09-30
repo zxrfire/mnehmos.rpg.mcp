@@ -14,6 +14,7 @@ import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { resolveTechnique } from './entities.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getPill, getSect, getTechnique } from '../data/cultivation/index.js';
+import { combatantOf } from '../engine/world/gatherings.js';
 import { requireRegion } from '../data/cultivation/regions.js';
 import { SECTS, sectThreat } from '../data/cultivation/sects.js';
 import {
@@ -336,6 +337,11 @@ export const combatVerbs = {
                 openHanded: openHandednessOf(theirRecord.id)
             }
             : undefined;
+        if (theirRecord && this.atHand) {
+            return { ...combatantOf(theirRecord, this.atHand),
+                hp: bodyStandingOn(theirRecord, this.atHand.currentDay), maxHp: maxBodyOf(theirRecord),
+                ...(bearing ? { bearing } : {}) };
+        }
         return combatantFromOpponent(
             { ...opponentSpec, ...(bearing ? { bearing } : {}) }, this.repos
         );

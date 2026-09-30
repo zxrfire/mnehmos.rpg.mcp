@@ -9,6 +9,7 @@ import { howFarFromTheSeat } from './a-communication-talisman-carries-word-home.
 import { aLongRangeCommunicationSlip, theTwinOfALongSlip } from './a-long-range-communication-slip.js';
 import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
+import { seedImmortalMedicine } from './immortal-medicine.js';
 import { bestReadable } from '../cultivation/manual-quality.js';
 import {
     MAX_ORDINAL,
@@ -469,6 +470,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // than scattered: exactly the authored holdings, on exactly those bodies,
     // and nowhere else. See `who-holds-the-structural-repair-medicine.ts`.
     state.objects.push(...seedStructuralRepairMedicine(state));
+    state.objects.push(...seedImmortalMedicine(state));
     const npcAt = new Map(state.npcs.map((n, i) => [n.id, i]));
     for (const grant of grantBooksToMembers(state)) {
         const at = npcAt.get(grant.npcId);

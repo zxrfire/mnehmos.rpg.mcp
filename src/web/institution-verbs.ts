@@ -11,7 +11,7 @@ import {
     getCourt,
     getParentage
 } from '../data/cultivation/hierarchy.js';
-import { getHoldingsOf } from '../data/cultivation/immortal-items.js';
+import { immortalHoldings } from '../engine/world/immortal-medicine.js';
 import { SECTS, getSect } from '../data/cultivation/index.js';
 import { NAMED_FIGURES, nameIsUsable } from '../data/cultivation/named-figures.js';
 import { auditAncestralClaim, getSectAncestry, sectThreat } from '../data/cultivation/sects.js';
@@ -488,7 +488,7 @@ export const institutionVerbs = {
             );
         }
 
-        const holdings = getHoldingsOf(named.id);
+        const holdings = this.atHand ? immortalHoldings(this.atHand, named.id) : [];
         const withForm = holdings.filter(h => h.theForm !== null);
         if (withForm.length === 0) {
             // Never "they hold nothing". The count is known to the people the

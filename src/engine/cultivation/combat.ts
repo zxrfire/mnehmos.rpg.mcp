@@ -13,6 +13,7 @@ import {
 } from '../../schema/cultivation.js';
 import {
     REALM_TIERS,
+    maxHpForOrdinal,
     effectivePowerMultiplier,
     rankName,
     realmForOrdinal,
@@ -56,6 +57,10 @@ import {
     type HowTheBlowWasThrown
 } from './how-a-blow-was-thrown.js';
 import type { CultivationRNG } from './rng.js';
+import { defendWithBody, harmOf, imperfectBody, maximumClosure, type Adaptation } from './tribulation-defence.js';
+import type { BaseDamageType } from '../../schema/base-schemas.js';
+import { grantsHeldWith } from '../world/capability.js';
+import { brokenStatusesOn } from './what-goes-wrong-at-a-realm-boundary.js';
 
 // TUNING
 // Every constant here is a design statement. Read the comment before changing
@@ -163,9 +168,20 @@ export const MAX_EXPERIENCE_FACTOR = 1.4;
 export const EXPERIENCE_SATURATION = 40;
 
 /**
- * Exchanges a confrontation runs before it is called a stalemate.
+ * Base exchanges before a stalemate; tribulation bodies extend this by their defence.
  */
 export const MAX_EXCHANGES = 8;
+
+/** When every body closes against harm, finishing the same work takes more rounds. */
+export function bodyRoundBudget(base: number, powers: readonly CombatantPower[]): number {
+    if (!powers.length) return base;
+    const quickest = Math.max(...powers.map(p => {
+        const harm = p.harm ?? 'bludgeoning';
+        return defendWithBody(p.ordinal, p.imperfectBody ?? false, harm,
+            { key: harm, closed: maximumClosure(p.imperfectBody ?? false), recent: [] }).factor;
+    }));
+    return Math.ceil(base / quickest);
+}
 
 /**
  * Rounds a melee runs before it is called a stalemate.
@@ -224,6 +240,13 @@ export interface PowerFactor {
 }
 
 export interface CombatantPower {
+    harm?: BaseDamageType;
+    imperfectBody?: boolean;
+    suppressesLesser?: boolean;
+    suppressionPulse?: boolean;
+    practisedHarm?: BaseDamageType | null;
+    bodyPool?: number;
+    harmPool?: number;
     ordinal: number;
     rank: string;
     realmKey: string;
@@ -695,6 +718,15 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     for (const f of factors) total *= f.factor;
 
     return {
+        harm: harmOf(combatant.technique),
+        practisedHarm: combatant.technique?.element ? harmOf(combatant.technique) : null,
+        bodyPool: maxHpForOrdinal(combatant.attributes.might, ordinal),
+        harmPool: maxHpForOrdinal(combatant.attributes.might,
+            Math.max(ordinal, combatant.weapon?.power ?? combatant.artifactOrdinal ?? ordinal)),
+        imperfectBody: imperfectBody(combatant.injuries),
+        suppressesLesser: grantsHeldWith(ordinal, brokenStatusesOn(combatant.injuries)).includes('suppresses_lesser'),
+        suppressionPulse: brokenStatusesOn(combatant.injuries).includes('failed-transformation')
+            && combatant.technique != null && combatant.qi >= combatant.technique.qiCost,
         ordinal,
         rank: rankName(ordinal),
         realmKey: tier.key,
@@ -886,6 +918,11 @@ export function canDirectAtSoul(technique: Technique | null | undefined): boolea
 // ONE EXCHANGE
 
 export interface ExchangeContext {
+    suppressionPulses?: Record<string, boolean>;
+    attackerId?: string;
+    /** Mutable fight-local slots, shared by rounds and discarded at the ending. */
+    adaptations?: Record<string, Adaptation>;
+    defenderId?: string;
     rng: CultivationRNG;
     ambient: AmbientQi;
     /** Turn number, stamped onto any injury sustained. */
@@ -915,6 +952,8 @@ export interface ExchangeContext {
 }
 
 export interface ExchangeResult {
+    defenceFactor?: number;
+    harm?: BaseDamageType;
     /** Damage actually dealt to the defender, after everything. */
     damage: number;
     /** Injury the exchange produced, or null. */
@@ -981,6 +1020,14 @@ export function resolveExchange(
         { source: `attacker:${attacker.rank}`, factor: attacker.total },
         { source: `defender:${defender.rank}`, factor: 1 / defender.total }
     ];
+    if (defender.suppressesLesser && attacker.ordinal < defender.ordinal) {
+        modifiers.push({ source: 'presence_suppression', factor: 0.65 });
+    }
+    if (attacker.suppressionPulse && attacker.ordinal > defender.ordinal
+        && !ctx.suppressionPulses?.[ctx.attackerId ?? '']) {
+        modifiers.push({ source: 'channelled_suppression', factor: 1 / 0.65 });
+        if (ctx.suppressionPulses && ctx.attackerId) ctx.suppressionPulses[ctx.attackerId] = true;
+    }
     if (attackerEdges.multiplier !== 1) {
         modifiers.push({ source: `attacker_edges:${attackerEdges.edges.join('+')}`, factor: attackerEdges.multiplier });
     }
@@ -1047,13 +1094,21 @@ export function resolveExchange(
         EXCHANGE_DAMAGE_FLOOR * (1 - impaired * 0.5) +
         EXCHANGE_DAMAGE_SPAN * roll * (1 - impaired)
     );
-    const damage = Math.max(1, Math.round(defenderMaxHp * fraction));
+    const harm = vector === 'soul' ? 'psychic' : attacker.harm ?? 'bludgeoning';
+    const own = defender.practisedHarm ?? null;
+    const slot = ctx.adaptations?.[ctx.defenderId ?? ''] ?? { key: own,
+        closed: own ? (defender.imperfectBody ? 0.2 : 0.4) : 0, recent: own ? [own, own] : [] };
+    const defence = defendWithBody(defender.ordinal, defender.imperfectBody ?? false, harm, slot);
+    if (ctx.adaptations && ctx.defenderId) ctx.adaptations[ctx.defenderId] = defence.next;
+    const poolShare = defender.ordinal >= REALM_TIERS.find(t => t.key === 'tribulation_transcendence')!.ordinalStart
+        && attacker.harmPool && defender.bodyPool ? Math.min(1, attacker.harmPool / defender.bodyPool) : 1;
+    const damage = Math.max(1, Math.round(defenderMaxHp * fraction * defence.factor * poolShare));
 
     // A wound that lands hard enough leaves something that does not heal on its
     // own. Severity climbs with how one-sided the exchange was, so being
     // outclassed is how cultivators acquire the injuries that kill them later.
     let injury: Injury | null = null;
-    const injuryThreshold = injuryChance(advantage, fraction);
+    const injuryThreshold = injuryChance(advantage, fraction * defence.factor * poolShare);
     if (ctx.rng.next() < injuryThreshold) {
         const severity = exchangeInjurySeverity(advantage, ctx.rng);
         // Poison is a property of what the attacker BROUGHT and so outranks a
@@ -1087,6 +1142,8 @@ export function resolveExchange(
 
     return {
         damage,
+        defenceFactor: defence.factor,
+        harm,
         injury,
         nullified: false,
         nullifiedReason: null,
@@ -1480,6 +1537,8 @@ export interface RoundParty {
 }
 
 export interface RoundContext {
+    suppressionPulses?: Record<string, boolean>;
+    adaptations?: Record<string, Adaptation>;
     rng: CultivationRNG;
     ambient: AmbientQi;
     /** Stamped onto any injury the round produces. */
@@ -1554,6 +1613,10 @@ export function resolveConfrontationRound(
         if (striker.act === 'guard') continue;
 
         const result = resolveExchange(striker.power, target.power, target.input.maxHp, {
+            suppressionPulses: ctx.suppressionPulses,
+            attackerId: striker.input.id,
+            adaptations: ctx.adaptations,
+            defenderId: target.input.id,
             rng: ctx.rng,
             ambient: ctx.ambient,
             turn: ctx.turn,
@@ -1698,8 +1761,13 @@ export function resolveConfrontation(
         edges: ctx.defenderEdges ?? [], vector: 'body'
     };
 
-    for (let i = 0; i < MAX_EXCHANGES; i++) {
+    const adaptations: Record<string, Adaptation> = {};
+    const suppressionPulses: Record<string, boolean> = {};
+
+    for (let i = 0; i < bodyRoundBudget(MAX_EXCHANGES, [aggressor, defender]); i++) {
         const round = resolveConfrontationRound(aggressorSide, defenderSide, hp, injuries, {
+            suppressionPulses,
+            adaptations,
             rng: ctx.rng,
             ambient: ctx.ambient,
             turn: ctx.turn,
@@ -2865,6 +2933,8 @@ function withFactor(power: CombatantPower, source: string, factor: number, note:
  * Resolve a confrontation between two or more sides.
  */
 export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): MeleeResult {
+    const adaptations: Record<string, Adaptation> = {};
+    const suppressionPulses: Record<string, boolean> = {};
     if (sides.length < 2) {
         throw new Error(`resolveMelee needs at least two sides, got ${sides.length}`);
     }
@@ -2955,7 +3025,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
     ).map(entry => byId.get(entry.id)!);
 
     // Rounds.
-    const roundBudget = meleeRoundBudget(sides);
+    const roundBudget = bodyRoundBudget(meleeRoundBudget(sides), fighters.map(f => f.power));
     for (let round = 0; round < roundBudget; round++) {
         const activeSides = new Set(living().map(f => f.sideIndex));
         if (activeSides.size < 2) break;
@@ -3068,6 +3138,10 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                 }
 
                 const result = resolveExchange(strikePower, defendPower, target.input.maxHp, {
+                    suppressionPulses,
+                    attackerId: striker.input.id,
+                    adaptations,
+                    defenderId: target.input.id,
                     rng: ctx.rng,
                     ambient: ctx.ambient,
                     turn: ctx.turn,

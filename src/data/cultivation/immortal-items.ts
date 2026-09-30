@@ -514,7 +514,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
     }
 ];
 
-// Object-storage gap: docs/world/things/items.md.
+// Opening doses become possessions in engine/world/immortal-medicine.ts.
 
 // -------------------------------------------------------------------------
 // STOCK VERSUS FLOW

@@ -836,8 +836,8 @@ hazards. Very little in the world is still *environmentally* dangerous to them.
 The last realm of this side. Everything about it points upward, and for the first time the
 Lid is a thing that can be examined rather than assumed.
 
-Possible: perceiving the seams directly; deliberately making or unmaking spiritual veins;
-sealing and unsealing domains; perceiving causal and karmic structure that the Dao houses
+Possible: perceiving the seams directly; improving matching elemental practice nearby;
+leaving lasting elemental objects on the ground; perceiving causal and karmic structure that the Dao houses
 spend millennia studying indirectly; leaving inheritances that survive ages intact.
 
 Their attention is itself a hazard. Being *noticed* by one has consequences before
@@ -846,6 +846,14 @@ anything is done to you.
 **Environmentally:** they are no longer gated by places. They gate places.
 
 ### Tribulation Transcendence - the Lid answers back
+
+`tribulation-defence.ts` supplies the shared elemental floor and one fight-local adaptation
+slot per defender. `combat.ts` applies both after the ordinary advantage calculation,
+including the rung's derived body-pool ratio. `unfinished-fight.ts` carries those slots
+across played rounds. The same body-derived round budget governs played fights and
+one-call resolutions. Imperfect bodies close less and re-aim faster; a landed blow
+always costs HP. The figures and measured calibration live in
+[`capability-gaps-by-realm.md`](../../../docs/world/climbing/capability-gaps-by-realm.md).
 
 The approach to the crossing. Every breakthrough from here draws heavenly tribulation,
 because the Lid has begun accounting for the hole they intend to make.

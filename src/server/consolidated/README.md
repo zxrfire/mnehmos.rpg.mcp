@@ -2,6 +2,10 @@
 
 # The MCP tool surface
 
+ADMIN's above-ceiling artifact receipt names the live consequence: the next played turn
+takes the object and holder through the Lid. `summit-play.ts` applies the existing crossing
+verdict to both tracked possessions and artifacts in `cultivator_pouch`.
+
 `spawn_encounter` accepts sex, age, house, rank and temperament through the shared
 spawn spec. Trait-bearing spawns use `admin-spawn-person.ts`: `createNpc`, the world's
 existing roll fields, changed-beast tags and bloodline, and `whatTheHouseGivesThem`.

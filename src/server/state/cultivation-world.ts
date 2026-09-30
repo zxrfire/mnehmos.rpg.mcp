@@ -32,6 +32,8 @@ import {
 import { createObligation } from '../../engine/social/grudges.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
+import { worldLocationFor } from '../../web/entities.js';
+import { whereInThisPlaceTheyStand } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
 
 /**
  * Living NPCs a new world keeps records for.
@@ -474,11 +476,19 @@ export async function advanceWorldForCultivator(
     catchUp(handle, run, span);
 
     const fromDay = handle.state.currentDay;
+    const place = worldLocationFor(handle.state, cultivator.location);
+    const person = handle.state.npcs.find(n => n.id === cultivator.id);
     const result = advanceWorldForPlay(handle.state, {
         days: span,
         access: accessForCultivator(cultivator),
         observer: observerFor(cultivator, handle),
         stopOnInterrupt: false,
+        pressure: place && person ? { visitingPresence: { person: { ...person, cultivation: {
+            ...person.cultivation, realmOrdinal: cultivator.realmOrdinal, spiritRoot: cultivator.spiritRoot,
+            injuries: cultivator.injuries, techniqueIds: cultivator.knownTechniques
+        } },
+            placeId: place.id, areaId: whereInThisPlaceTheyStand(handle.state, place,
+                cultivator.standingIn, cultivator.sectId ?? null).id } } : undefined,
         digest: { limit: options.limit ?? 12, factionRankIndex: rungOf(cultivator, handle.state) }
     });
 

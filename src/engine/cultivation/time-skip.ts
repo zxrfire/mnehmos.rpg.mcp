@@ -315,6 +315,8 @@ export interface TimeSkipContext {
      * What standing here does to a body that has no business being here.
      */
     hostility?: {
+        /** An imperfect body's remaining elemental tolerance on entry. */
+        safeDays?: number;
         /**
          * Fraction of max HP the place takes per day, 0..1. Zero for ground
          * they can survive; large for ground rungs above their survival bar.
@@ -978,7 +980,11 @@ export function simulateTimeSkip(
             );
         }
 
-        const chunk = nextChunk({
+        const chunk = Math.min(
+            hostility?.safeDays !== undefined
+                ? Math.max(1, hostility.safeDays - elapsed)
+                : Infinity,
+            nextChunk({
             elapsed,
             absDay,
             requestedDays,
@@ -1008,7 +1014,7 @@ export function simulateTimeSkip(
                     ? Infinity
                     : Math.floor(satiety / SATIETY_COST_PER_ACTION),
             randomEvents
-        });
+        }));
 
         // 3. Apply the chunk.
         //
@@ -1023,7 +1029,8 @@ export function simulateTimeSkip(
         // What the place itself takes. Applied on the same days everything else
         // is, before the food and bleed clocks resolve, so a chunk that ends in
         // death ends in death from the first cause that reaches zero.
-        if (hostility && hostility.dailyHpFraction > 0 && hp > 0) {
+        if (hostility && hostility.dailyHpFraction > 0 && hp > 0
+            && (hostility.safeDays === undefined || elapsed > hostility.safeDays)) {
             const taken = Math.min(
                 hp,
                 Math.max(1, Math.round(cultivator.maxHp * hostility.dailyHpFraction * chunk))

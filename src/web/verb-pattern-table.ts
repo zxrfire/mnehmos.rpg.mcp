@@ -4837,6 +4837,12 @@ function planIntent(input: string): PlannedAction {
     const agreement = cultivationAgreementSaid(input);
     if (agreement) return agreement;
     const text = input.toLowerCase().trim();
+    if (/\b(?:look at|examine|inspect|perceive|read)\s+(?:the\s+)?lid\b/.test(text)) {
+        return { action: 'look', target: 'the Lid' };
+    }
+    if (/\b(?:make|craft|create|leave)\s+(?:an?\s+|my\s+)?elemental\s+(?:work|working|creation)\b/.test(text)) {
+        return { action: 'craft', target: 'elemental work' };
+    }
 
     // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────
     //

@@ -136,8 +136,10 @@ grants:
   `resolveBodilyDestruction` now resolves the outcome on both played death paths:
   `cultivator.repo.markDead` for the player and `npc-state.markDead` for NPCs. A destroyed
   body can therefore leave the remnant the resolver draws; it is not merely a combat line.
-- **`suppresses_lesser`, `makes_veins`, `seals_domains`, `reads_lid`, `opens_lid`** are not
-  implemented at all, grants or otherwise. That part of the original count stands.
+- **`suppresses_lesser` and `reads_lid` now have played consumers.** Presence changes
+  nearby practice and combat; looking at the Lid reads the perception grant. The mistaken
+  `makes_veins` and `seals_domains` grants were replaced by elemental neighbourhoods and
+  lasting elemental works. `opens_lid` remains outside this implementation.
 
 A related and smaller miscount, same cause: the **Nascent Soul "do"** verdict below calls
 `ADDRESS_ORDINAL_FLOORS.place = 21` *"the only place on the ladder where what you can do
@@ -330,7 +332,7 @@ like.
 |---|---|---|---|
 | 1 | perceive | **built, and it arrived on its own** | *"Spiritual perception extends across a region rather than a field"* is the cultivation README's claim, and ordinal 26 is where the sight horizon first covers the widest road in the world (34 days). **Nothing was tuned to make that land here.** The curve is two anchors off the flight arts and one growth constant; the realm it saturates at is where it saturates. What is still absent is anything that perceives a PERSON at range - this channel gives geography and deliberately gives nothing else |
 | 2 | survive | **built** | `carries_own_ambient` neutralises `thin_qi`. `SATIETY_BURN_BY_REALM.deity_transformation = 0` - **starvation stops being reachable**, which is the removal of one of the five deaths and is a genuine categorical change |
-| 3 | do | **declared and inert** | `suppresses_lesser` is in `CLASS_GRANTS` and is read by nothing. Presence-as-suppression does not exist |
+| 3 | do | **built** | `suppresses_lesser` reduces lesser practice in the same area and incoming lesser attacks. A failed transformation keeps one directed, channelled pulse per fight when it can pay for its art |
 | 4 | asked of | **absent** | |
 | 5 | risk | **absent** | |
 | 6 | opportunity | **absent** | *"Standing somewhere for a long time alters the site, which is why their old dwellings are worth finding"* - described, and nothing writes it. The location layer would take it without a schema change |
@@ -552,16 +554,16 @@ finding it is hard and knowing it is worth a great deal.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
-| 1 | perceive | **declared and inert** | `reads_lid` is read by nothing |
+| 1 | perceive | **built** | `reads_lid` reaches `look`, including "look at the Lid", as perception of its seams |
 | 2 | survive | **built** | `gates_places` zeroes every location requirement except `understand`. No longer gated by places |
-| 3 | do | **misnamed, and inert** | `makes_veins` and `seals_domains` are read by nothing, and they are now also **wrong**. See the redefinition below: a Grand Ascension does not make spiritual veins. Both grant strings need renaming before anybody implements against them |
+| 3 | do | **built** | `elemental_neighbourhood` changes matching practice nearby; `lasting_elemental_work` reaches "craft an elemental work" and NPC practice. The former `makes_veins` and `seals_domains` grants were removed |
 | 4 | asked of | **absent** | |
 | 5 | risk | **absent** | *"Their attention is itself a hazard. Being noticed by one has consequences before anything is done to you."* Nothing models being noticed |
 | 6 | opportunity | **absent** | |
 
 ### What the realm confers - REDEFINED, and this supersedes the row above
 
-The design owner has restated what this realm is for, and it is not what `CLASS_GRANTS` says.
+The design owner restated what this realm is for; `CLASS_GRANTS` now follows that ruling.
 **They do not make spiritual veins.** Anything written against `makes_veins` or `seals_domains`
 is written against a capability this realm does not have.
 
@@ -623,12 +625,16 @@ way: **they cannot remain in those places indefinitely.** They can go anywhere a
 go, and they cannot stay. Their tolerance runs on a clock where a full transcendent's does not,
 and they have a weakness where a full one has none.
 
-**This is the largest single thing missing from the capability layer**, and it is worth saying
-plainly because it reframes the top of the ladder: it gives **environmental hazards a meaning at
-the top rungs that they currently do not have.** At present the hazard machinery peaks at Void
-Refinement and Body Integration and then stops mattering, and `gates_places` at Grand Ascension
-zeroes location requirements outright - which now looks like it was put one realm too low and
-one degree too absolute.
+This formerly missing body now reaches access assessment and the time engine. Pure elemental
+ground does not impose survival or operational bars on either tribulation body; keys,
+cycles, people and non-elemental hazards keep their existing rules. A whole body stays
+indefinitely. An imperfect body stores its arrival, then suffers the ground after its
+tolerance expires. Leaving resets the stay. NPCs take an open exit when exhausted; trapped
+NPCs suffer the same body cost, with death and estate settlement through the ordinary rules.
+
+The clock is `max(1, floor(ordinal / survival threshold))` days; a zero threshold counts as one.
+Beyond that span the ground costs a tenth of the body per day. A played span returns control
+at its first harmful day, rather than silently spending the rest of the requested time.
 
 #### And in a fight: the body ADAPTS to whatever you lean on most
 
@@ -812,8 +818,8 @@ Decay-then-re-aim is the choice worth defending: two independent timers would le
 closing adaptation *and* an old one at once, which is two doors by the back way and exactly the
 thing the one-slot rule exists to prevent.
 
-The actual figures are not chosen here, because they are not choosable without measurement: they
-have to be fitted to the calibration matchup below, together with the HP pool.
+The implemented figures and calibration are recorded below. They belong to the shared exchange
+resolver, including player rounds, NPC confrontations and melees.
 
 ##### What the body adapts TO, which is the one thing to get right
 
@@ -857,25 +863,21 @@ enum had already answered. It is also worth recording that the reasoning which p
 measuring `subject` and finding it too coarse and too sparse - was perfectly sound and aimed at
 the wrong target entirely.
 
-**The gap this leaves, and it is real:** the taxonomy exists but **cultivation arts are not mapped
-onto it.** `grep` finds no `damageType` on a technique or anywhere in `schema/cultivation.ts` -
-`BaseDamageTypeEnum` is retained substrate that the cultivation layer has never used. So before
-adaptation can be implemented, an incoming art has to be able to say what kind of harm it does.
-The cheapest honest route is derivation from what arts already carry rather than a new authored
-field on 138 rows:
+**The gap this originally identified was the missing mapping from cultivation arts to harm.**
+`harmOf` in `tribulation-defence.ts` now derives that mapping from existing art facts,
+rather than adding another authored field to the catalog:
 
 ```text
 element   metal wood water fire earth lightning ice   (7, on 69 arts)
-subject   alchemy weapon movement life_death body      (on 52 of the other 69)
+subjects  alchemy weapon movement life_death body      (on 52 of the other 69)
 ```
 
-Several map with no judgement at all - fire to `fire`, lightning to `lightning`, ice to `cold`,
-`subject: weapon` to the sharp types, `subject: alchemy` to `poison`. Others genuinely need a
-decision, and **that decision is content and belongs to the owner, not to whoever implements
-this**: what harm does a wood art do, or a movement art, or one of the 17 arts carrying neither
-element nor subject. Derive where it is obvious, ask where it is not, and default the remainder
-to something explicit rather than letting them all collapse into one bucket - because arts that
-share a bucket are arts the body cannot tell apart, which is the one-slot rule leaking again.
+With the owner away, the implementation uses these content decisions: fire burns, lightning
+strikes, ice and water chill, metal and weapon roads cut, wood and alchemy poison, earth and
+body roads crush, life/death roads wither, and remaining abstract workings exert force.
+An art explicitly aimed at the soul does psychic harm. Elemental harm takes precedence over
+the weapon road: a burning blade burns. These derive from `element` and `subjects`; neither
+era, domain nor an art's identity chooses an adaptation key. A bare blow crushes.
 
 **Never key adaptation on `era`, on `domain`, or on the technique id.** All three are the same
 mistake - classifying the art instead of the harm - and `era` additionally trips the guard in
@@ -952,8 +954,32 @@ of the mechanism instead of being asserted.
 | Same, but twenty reliably kill them | **Too weak** |
 | 2 whole transcendents, elemental, given long enough | Somebody dies. It has to end |
 
-Record the chosen figures here when they are picked. Nobody tuning them later can recover this
-target from the code, and without it they will be tuned against something else.
+Chosen figures in `tribulation-defence.ts`: elemental harm retains 55% before adaptation;
+one slot reads the last five landed harms. An unfamiliar harm needs two exposures. Sustained
+majority closes by 20 percentage points per hit, to 80%; a changed majority first opens the
+old closure by 20 points per hit, and a later hit can re-aim it. The expressed elemental art
+starts its existing slot at 40%. An imperfect body starts at 20%, closes by 10 points to 45%,
+and opens by 40 points when the majority changes. Every landed blow still costs at least 1 HP.
+
+The rung's existing body pool now matters against a tribulation body: a weaker body's attack
+is scaled by its pool relative to the defender's, with a rated weapon supplying its own
+harm scale. Pools remain derived from the existing realm rule. When all combatants have
+learned defences, the exchange budget grows with their retained harm; the played and one-call
+fight use the same budget. The old eight-round finish assumption no longer fits such bodies.
+
+Measured by `tests/engine/cultivation/tribulation-body.test.ts`: 32 seeds (`summit-calibration-0`
+through `-31`), twenty elemental Grand Ascension Perfection bodies against one early
+transcendent, no transcendent finished and no transcendent victory. Sixteen peer seeds
+(`body-peer-0` through `-15`) all ended with a body at zero HP. Bodily death still follows
+the existing soul and tradition rules; resistance does not grant an exemption from either.
+
+Neighbourhood practice reads the same area the conversation roster reads. The strongest
+higher presence retains `max(0.05, 0.85 ** rung gap)` of lesser practice; matching Grand
+element retains a 1.5 multiplier. These multiply rather than stacking bodies. The public
+line states slowed circulation or a matching draw, never an unseen stranger's rung gap.
+An unfulfilled Grand's matching presence lasts the first day of its current practice.
+Its made objects expire after one year; full works remain. NPC practice leaves one work
+per practice episode. These are possessions on the ground, not new qi-producing veins.
 
 ##### The imperfect version
 
@@ -1100,9 +1126,9 @@ of new machinery. Nothing here is bespoke; every item reads columns that already
 3. **A decision about `heldGrants`, before any grant work at all.** This was *"the five inert
    grants - cheapest possible win, the class arrays already carry them and the predicates are
    already the right shape"*, and that was wrong for the reason the correction above gives:
-   implementing `suppresses_lesser` or `makes_veins` would wire them to `heldGrants`, which is
-   empty for every cultivator, so the work would produce nothing observable and would look
-   finished. The cheap win is not cheap; it is unreachable.
+   asking only the old empty `heldGrants` would produce nothing observable and would look
+   finished. The summit consumers now derive earned grants through `grantsHeldWith`,
+   including the body's untreated structural breaks, for players and NPCs alike.
 
    **Now ruled on: capability is enforced.** So the order inverts. Make the actor hold what
    reaching a realm has earned it, so that a grant can be asked about at all; then add denials

@@ -1,6 +1,8 @@
 import { offeredRitesThisYear } from './willing-rites-between-world-people.js';
 import { advanceBeastContracts } from './beast-cultivation-contracts.js';
 import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js';
+import { findMedicineOnAnotherErrand } from './immortal-medicine.js';
+import { practiceAmongNeighbours, type VisitingPresence } from './summit-world.js';
 /**
  * Pressure: the world changing on its own.
  */
@@ -500,6 +502,8 @@ export const MAX_EVENTS_PER_YEAR = 3;
 export const SYMPATHY_AT_A_SCHISM = 0.25;
 
 export interface PressureOptions {
+    /** A played body is projected for this span, without moving its world row. */
+    visitingPresence?: VisitingPresence;
     /** Multiplier on the event rate. For tests and for tuning. */
     intensity?: number;
     /** Cap on events applied in one call, whatever the span. */
@@ -578,6 +582,7 @@ export function applyPressure(
         tasks.push({ key: 'prospecting', day: year * 365 + 40, run: (onDay: number) => {
             const foundRuins = applyRuinProspecting(state, year, onDay);
             for (const find of foundRuins.found) {
+                findMedicineOnAnotherErrand(state, find.regionId, year, onDay);
                 if (!WHAT_SCALE_DECIDES[find.scale].itsExistenceIsPublic) continue;
                 appendWorldFact(state, makeFact({
                     day: onDay,
@@ -1479,7 +1484,7 @@ function reviewSlot(id: string, period: number): number {
     return (h >>> 0) % period;
 }
 
-function applyAdvancement(state: WorldState, year: number, day: number): NpcRecord[] {
+function applyAdvancement(state: WorldState, year: number, day: number, visitor?: VisitingPresence): NpcRecord[] {
     const slot = ((year % ADVANCEMENT_REVIEW_YEARS) + ADVANCEMENT_REVIEW_YEARS)
         % ADVANCEMENT_REVIEW_YEARS;
     const due: number[] = [];
@@ -1574,7 +1579,8 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
 
             houseFallbackRate(rooms, provinceRate)
 
-        ) * whatTeachingLeavesOfAMastersRate(npc, byId, day);
+        ) * whatTeachingLeavesOfAMastersRate(npc, byId, day)
+            * practiceAmongNeighbours(state, npc, day, visitor);
         const age = Math.floor((day - npc.identity.bornOnDay) / 365);
 
         // THE BOOK IS THE HARDER OF THE TWO CEILINGS.

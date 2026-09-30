@@ -33,7 +33,9 @@ import {
 } from '../data/cultivation/hierarchy.js';
 import { ARTIFACTS, artifactsOwnedBy } from '../data/cultivation/artifacts.js';
 import { IMMORTAL_CHANNELS, LINEAGE_STANDINGS } from '../data/cultivation/crossings.js';
-import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-items.js';
+import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS, type Holding } from '../data/cultivation/immortal-items.js';
+import { immortalInventory } from '../engine/world/immortal-medicine.js';
+import type { WorldState } from '../engine/world/world-state.js';
 // Built and rendered in its own module, so adding the section to the sheet is
 // one call rather than an edit inside this file. See its header.
 import {
@@ -3332,7 +3334,8 @@ function buildDossiers(
     /**
      * The arts catalog, already resolved for the Arts tab.
      */
-    techniquesById: ReadonlyMap<string, RegisterTechnique>
+    techniquesById: ReadonlyMap<string, RegisterTechnique>,
+    holdings: readonly Pick<Holding, 'factionId' | 'itemId' | 'count' | 'byGrade'>[]
 ): SectDossier[] {
     const fromSects = rows.map(row => {
         const sect = getSect(row.id);
@@ -3427,7 +3430,7 @@ function buildDossiers(
             withdrawn: withdrawn
                 ? { count: withdrawn.count, occupiedBy: withdrawn.occupiedBy }
                 : null,
-            holdings: IMMORTAL_HOLDINGS
+            holdings: holdings
                 .filter(h => has(h.factionId))
                 .map(h => ({
                     item: IMMORTAL_ITEMS.find(i => i.id === h.itemId)?.name ?? h.itemId,
@@ -3622,7 +3625,7 @@ function buildDossiers(
                 depletion: channels.find(c => c.factionId === a.id)!.depletion
             },
             withdrawn: null,
-            holdings: IMMORTAL_HOLDINGS
+            holdings: holdings
                 .filter(h => h.factionId === a.id)
                 .map(h => ({
                     item: IMMORTAL_ITEMS.find(i => i.id === h.itemId)?.name ?? h.itemId,
@@ -3683,7 +3686,11 @@ function buildDossiers(
 /**
  * Assemble the whole sheet from the catalogs.
  */
-export function buildRegister(): WorldRegister {
+export function buildRegister(world?: WorldState | null): WorldRegister {
+    const holdings = world ? [...new Set([...world.factions.map(f => f.id), ...IMMORTAL_HOLDINGS.map(h => h.factionId)])]
+        .flatMap(factionId => immortalInventory(world, factionId)
+            .filter(h => h.count > 0 || IMMORTAL_HOLDINGS.some(old => old.factionId === factionId && old.itemId === h.itemId))
+            .map(h => ({ ...h, factionId }))) : IMMORTAL_HOLDINGS;
     const rows: RegisterRow[] = SECTS.map(sect => {
         const parentage = FACTION_PARENTAGE[sect.id];
         const threat = sectThreat(sect.id);
@@ -3766,7 +3773,7 @@ export function buildRegister(): WorldRegister {
     const techniquesById = new Map(techniques.map(t => [t.id, t]));
     const teaching = buildTeaching(techniquesById);
 
-    const dossiers = buildDossiers(rows, sealed, channels, techniquesById);
+    const dossiers = buildDossiers(rows, sealed, channels, techniquesById, holdings);
 
     // Second pass, and it has to be one: an artifact row says which entry on
     // this sheet its owner opens, and the entries do not exist until now.
@@ -3918,7 +3925,8 @@ export function buildRegister(): WorldRegister {
             courts: COURTS.length,
             sealed: sealed.length,
             wanderers: WANDERERS.length,
-            immortalObjects: IMMORTAL_HOLDINGS.reduce((n, h) => n + h.count, 0),
+            immortalObjects: world ? world.objects.filter(o => o.tags.includes('immortal-medicine')
+                && o.data.spent !== true && !o.tags.includes('ruined')).length : holdings.reduce((n, h) => n + h.count, 0),
             artifacts: artifacts.length,
             courtOfficers: courts.reduce((n, c) => n + c.officers.length, 0),
             techniques: techniques.length,
@@ -3941,12 +3949,16 @@ export function buildRegister(): WorldRegister {
             name: i.name,
             form: i.form,
             effect: i.effect,
-            knownCount: i.knownCount,
+            knownCount: world ? world.objects.filter(o => o.data.medicineId === i.id
+                && o.data.spent !== true && !o.tags.includes('ruined')).length : i.knownCount,
             everKnown: i.everKnown,
-            knownByGrade: { ...i.knownByGrade },
+            knownByGrade: world ? Object.fromEntries(['higher', 'middle', 'lower'].map(grade => [grade,
+                world.objects.filter(o => o.data.medicineId === i.id && o.data.grade === grade
+                    && o.data.spent !== true && !o.tags.includes('ruined')).length
+            ])) as typeof i.knownByGrade : { ...i.knownByGrade },
             grades: { higher: i.grades.higher, middle: i.grades.middle, lower: i.grades.lower }
         })),
-        holdings: IMMORTAL_HOLDINGS.map(h => ({
+        holdings: holdings.map(h => ({
             factionId: h.factionId, name: nameOf(h.factionId), itemId: h.itemId, count: h.count
         })),
         wanderers: WANDERERS.map(w => ({

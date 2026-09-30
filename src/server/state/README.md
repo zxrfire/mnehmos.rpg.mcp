@@ -2,6 +2,10 @@
 
 # Server-lifetime state
 
+`advanceWorldForCultivator` supplies the player's current body and actual area as a
+temporary visiting presence. NPC advancement can read their suppression and elemental
+neighbourhood without assigning the player a second persisted location.
+
 Two module singletons. They die on redeploy and cannot be shared across replicas. That is
 the constraint on ever running more than one of these, and it is stated here rather than in
 a plan document because it is a fact about this code and not about a migration.
@@ -31,4 +35,3 @@ without the other is pinning a coincidence.
 - [`../../web/README.md`](../../web/README.md) - `web/which-mode-this-session-is-playing-in.ts`
   is the played game's version of the same question, and a test that pins a run seed without
   pinning the world seed is pinning a coincidence.
-

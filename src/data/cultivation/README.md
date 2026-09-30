@@ -35,6 +35,9 @@ bands cannot diagnose it.
 Techniques, pills, recipes, herbs, sects and encounter tables. Read this before adding or
 editing an entry in `src/data/cultivation/`.
 
+Immortal holdings and unrecorded receipt stocks are opening allocations. The world seeds
+individual possessions from them; current holdings are counted from those rows.
+
 **Every catalog in this directory is inert data.** The engine owns all decisions; these
 modules only answer questions about what exists. Nothing here rolls, resolves, or
 succeeds. If you find yourself writing a conditional in this directory that changes an

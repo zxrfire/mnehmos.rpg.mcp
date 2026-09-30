@@ -14,6 +14,13 @@ local witness and an explicit qi share. `seclusion-verbs.ts` reduces the player'
 draw and credits only the cultivated span actually lived. Its oath, termination
 and persistent beast progress are governed by `../engine/world/beast-cultivation-contracts.ts`.
 
+`summit-play.ts` joins summit capabilities to `look`, `craft`, cultivation rates and
+time skips. Its stay flag stores an actual arrival, rather than refreshing on reads.
+The same-area roster supplies nearby presence. The turn boundary checks above-ceiling
+artifacts in both carried stores, including during a fight, before spending another act.
+Medicine prizes transfer singular objects; swallowing a golden pill spends its row
+through the existing realm-boundary resolver. The live register reads current possessions.
+
 ADMIN free-text encounter traits are read by `admin-spawn-spec.ts`, through the
 configured narrator's provider and model. Its strict JSON schema accepts requested
 facts only; the spawn handler validates the body, species, house and rung before

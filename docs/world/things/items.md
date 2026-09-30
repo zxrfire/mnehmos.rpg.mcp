@@ -2,17 +2,31 @@
 
 # Items
 
-## Immortal medicine storage gap
+## Immortal medicine is held individually
 <!-- tier: 3 -->
 
 The former developer export `NOT_YET_KEPT_AS_OBJECTS` recorded a storage gap.
-Opening holdings in `immortal-items.ts` are still counts. A complete implementation
-must seed individual objects with holder and provenance and switch every live
-holding read to those rows in the same change. Seeding a second store while callers
-still read the catalog leaves two sources of truth. The repair medicine seeder in
-`who-holds-the-structural-repair-medicine.ts` is the existing precedent.
+`immortal-medicine.ts` now seeds each opening dose as an ordinary possession with
+grade, owner, holder and provenance, including stocks the receipt histories say are
+unrecorded. Catalog counts describe the opening allocation;
+petitions and the live standing register count the unspent possessions. Golden pills
+are pills; root-recasting talismans retain their own form.
 
-This is a gap, not permission for narration to move or spend an unrecorded object.
+Taking a grave transfers its existing medicine rows. A later run cannot mint the prize
+again. Swallowing a held golden pill spends that same row through the existing boundary
+resolver. The grave's unspecified grade is lower, the commonest sent-down grade.
+
+NPC prospecting can reach an unclaimed grave incidentally while finding other ground.
+One in a hundred successful searches draws this opportunity on its own stream; the
+finder must be local and survive the grave's depth. Only graves whose gates ask for
+an incidental arrival participate. The transfer records the arrival and the finder;
+it does not turn deliberate searching into the required coincidence.
+
+An above-ceiling artifact in either the pouch or the possession table takes its played
+holder through the Lid on the next turn, including during a fight. This turn represents
+the ten to fifteen breaths allowed below. A holder below True Immortal loses body and
+soul to the far-side pressure. The object remains there, under the normal ceiling rule;
+manuals remain exempt.
 
 <!-- tier: 2 trigger="an object changes hands, is bought, sold, copied, spent, hidden, or refused" -->
 

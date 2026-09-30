@@ -33,6 +33,7 @@ import { readAdmission } from '../data/cultivation/inheritance-trials.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { manualIdOf } from '../engine/world/manuals.js';
 import { recordACopyHeld } from '../server/consolidated/technique-manage.js';
+import { elementalHostility } from './summit-play.js';
 
 const POSITION = 'ruin_chamber';
 interface ChamberPosition {
@@ -67,6 +68,8 @@ export function ruinComprehensionHere(service: GameService, me: Cultivator): str
 
 /** Closing the exit does not turn off the ground inside it. */
 export function ruinHostilityHere(service: GameService, me: Cultivator) {
+    const tolerance = elementalHostility(service, me);
+    if (tolerance) return tolerance;
     const held = position(service, me);
     const site = held && service.atHand?.locations.find(row => row.id === held.siteId);
     if (!site) return undefined;

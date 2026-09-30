@@ -1028,6 +1028,8 @@ import {
     sendAcross as worldSendAcross
 } from '../engine/world/immortal-world.js';
 import { daoOf } from '../engine/cultivation/dao.js';
+import { trackElementalStay, nearbyPracticeRate, summitObservations, enforceCarriedCeiling } from './summit-play.js';
+import { spendImmortalMedicine } from '../engine/world/immortal-medicine.js';
 import { effectiveCapOf } from '../engine/cultivation/escapes.js';
 import { stagesHeldBy, stagesOf } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
@@ -1337,7 +1339,7 @@ import { GameError } from './turn-wire-shapes.js';
 import { matchVerbs } from './match-verbs.js';
 import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
 import { siteVerbs } from './site-verbs.js';
-import { leaveRuinBeforeMoving, moveWithinRuin, reportRuinClosing, ruinComprehensionHere } from './ruin-delving.js';
+import { leaveRuinBeforeMoving, moveWithinRuin, reportRuinClosing, ruinComprehensionHere, ruinHostilityHere } from './ruin-delving.js';
 import { institutionVerbs } from './institution-verbs.js';
 import {
     ALREADY_STANDS_BETWEEN_THEM,
@@ -3003,7 +3005,9 @@ export class GameService {
         const bodyOpposite = this.theBodyOpposite(inAFight);
 
         // ── phase 2 ──
-        const execution = fightAnswer !== null
+        const forcedUp = enforceCarriedCeiling(this, run, cultivator);
+        trackElementalStay(this, cultivator, run);
+        const execution = forcedUp ?? (fightAnswer !== null
             ? await this.answerTheFight(run, cultivator, ambient, inAFight!, fightAnswer)
             : heldBack !== null
             ? this.letThemGo(run, cultivator, heldBack)
@@ -3105,7 +3109,7 @@ export class GameService {
                 // that has cost a permanent wound.
                 aFightChargesNothingFor(theTurnsPlan.action.action)
                     || aFightChargesNothingFor(parseIntent(trimmed).action)
-            );
+            ));
 
         if (carriesOn !== null && carryingOn === null) {
             execution.calls.push(theRowForNothingToCarryOnWith(before));
@@ -4214,6 +4218,9 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        const carriedUp = enforceCarriedCeiling(this, run, cultivator);
+        if (carriedUp) return carriedUp;
+        trackElementalStay(this, cultivator, run);
         const through = await actThroughAPresence(this, action, run, cultivator,
             this.ambientFor(presenceForScene(this, cultivator), run), rawInput,
             actor => this.carryOut(action, run, actor, this.ambientFor(actor, run), rawInput));
@@ -4240,6 +4247,8 @@ export class GameService {
         const crossed = crossToWhoeverTheyNamed(this, cultivator, action.target);
         const actor = crossed?.cultivator ?? cultivator;
         const done = await this.carryOut(action, run, actor, ambient, rawInput);
+        const current = this.currentRun();
+        trackElementalStay(this, current.cultivator, current.run);
         reportRuinClosing(this, worldDayBefore, done);
         if (this.atHand) {
             const after = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
@@ -5600,6 +5609,11 @@ ${noticedWaiting}`;
             }
 
             case 'look': {
+                if (/^(?:the\s+)?lid$/i.test(action.target ?? '')) {
+                    const sees = summitObservations(this, cultivator).find(s => s.includes('Lid'));
+                    return this.freeAction(run, 'look', factsForToolResult('Looking towards the Lid.',
+                        [sees ?? 'Your perception does not reach the Lid.']));
+                }
                 // Looking round on the far side of the Lid is a different read from
                 // looking round in a province, and it used to be the same one. What
                 // that produced, found by playing at 46: the ambient description of
@@ -5975,6 +5989,7 @@ ${noticed}`;
                     addHearing(looking.facts, heard);
                     looking.calls.push(hearingCall(heard));
                 }
+                for (const line of summitObservations(this, cultivator)) sayThisWhateverTheNarratorDoes(looking.facts, line);
                 return looking;
             }
         }
@@ -11076,6 +11091,7 @@ ${line}`;
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            hostility: ruinHostilityHere(this, cultivator),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
@@ -11242,6 +11258,7 @@ ${line}`;
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            hostility: ruinHostilityHere(this, cultivator),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
@@ -12946,6 +12963,7 @@ ${opened.text}` : receipt,
             // finds somebody who cannot stand up, which is the same bargain
             // closed-door seclusion makes.
             randomEvents: false,
+            hostility: ruinHostilityHere(this, paid),
             toll: tollConditionsFor(this.repos, paid)
         });
 
@@ -14971,14 +14989,18 @@ ${opened.text}` : receipt,
     ): Promise<Execution> {
         const held = listPouch(this.db, cultivator.id).filter(row => row.kind === 'pill');
 
-        // ── THE ONE KIND OF PILL THAT IS NEVER IN THE POUCH ──────────────
-        //
-        // A structural repair dose is a tracked row in `state.objects`, because
-        // there is no counted tier for a thing there are eleven of. So it is
-        // looked for before the pouch is declared empty, and a player who
-        // bartered for one is not told they are carrying nothing.
+        // Singular repair and immortal doses are possessions, read before the pouch is empty.
         this.atHand = this.atHand ?? await this.loadWorld();
         const doses = theDosesYouAreHolding(this.whatYouAreCarrying(cultivator).rows);
+        const immortal = this.whatYouAreCarrying(cultivator).rows.filter(o =>
+            o.tags.includes('immortal-medicine') && o.data.spent !== true && !o.tags.includes('ruined'));
+        const namedImmortal = immortal.find(o => (target ?? '').toLowerCase().includes(o.name.toLowerCase()))
+            ?? (held.length === 0 && doses.length === 0 && immortal.length === 1 ? immortal[0] : null);
+        if (namedImmortal) {
+            const step = theUnearnedStepIn(`${namedImmortal.data.medicineId}:${namedImmortal.data.grade}`);
+            if (step) return this.spendTheUnearnedStep(run, cultivator,
+                { itemId: namedImmortal.id, objectId: namedImmortal.id }, step);
+        }
         if (doses.length > 0) {
             const said = withoutTheOverride(target ?? '');
             const meant = whichDoseTheyNamed(doses, said)
@@ -15125,9 +15147,17 @@ ${opened.text}` : receipt,
     private spendTheUnearnedStep(
         run: Run,
         cultivator: Cultivator,
-        row: { itemId: string },
+        row: { itemId: string; objectId?: string },
         step: { id: string; name: string; grade: ImmortalGrade }
     ): Execution {
+        const spend = (): void => {
+            if (row.objectId && this.atHand) {
+                if (!spendImmortalMedicine(this.atHand, row.objectId, cultivator.id, this.atHand.currentDay)) {
+                    throw new GameError('The dose is no longer in your hands.');
+                }
+                this.theWorldMoved();
+            } else removeFromPouch(this.db, cultivator.id, row.itemId, 1);
+        };
         const alreadyTaken = readFlag(this.db, cultivator.id, FLAG_STEP_TAKEN) === '1';
         const verdict = takeTheUnearnedStep({
             fromOrdinal: cultivator.realmOrdinal,
@@ -15139,13 +15169,13 @@ ${opened.text}` : receipt,
         const consumed = verdict.taken || verdict.refusal !== 'not_at_a_boundary';
 
         if (!verdict.taken) {
-            if (consumed) removeFromPouch(this.db, cultivator.id, row.itemId, 1);
+            if (consumed) spend();
             return refused('engine.takeTheUnearnedStep', 'consume_pill', factsForRefusal(
                 `${step.name}: nothing moved.`,
                 `${verdict.line}${consumed
                     ? ' It is gone either way. There is no version of this object that can be put '
                       + 'back in the box.'
-                    : ' It is still in the pouch: you did not take it, you only considered where '
+                    : ` It is still ${row.objectId ? 'in your hands' : 'in the pouch'}: you did not take it, you only considered where `
                       + 'you were standing.'}`,
                 `takeTheUnearnedStep refused: ${verdict.refusal}. `
                 + `${step.grade} grade at ordinal ${cultivator.realmOrdinal}; ceiling `
@@ -15157,7 +15187,7 @@ ${opened.text}` : receipt,
 
         const before = cultivator;
         const after = this.db.transaction((): Cultivator => {
-            removeFromPouch(this.db, cultivator.id, row.itemId, 1);
+            spend();
             writeFlag(this.db, cultivator.id, FLAG_STEP_TAKEN, '1');
             // THE NEUTRAL DOOR, and it is the point. `advanceRealm` re-derives
             // the pools and carries the share across and does nothing else - no
@@ -17952,6 +17982,7 @@ ${fit.line}`;
      * the manual can carry them to, and who is teaching them.
      */
     rateTermsFor(cultivator: Cultivator): {
+        locationBonus: number;
         techniqueCap: number | null;
         guideOrdinal: number | null;
         guideListeners: number;
@@ -17996,6 +18027,7 @@ ${fit.line}`;
      * The two ORDINARY multipliers, which this layer was also not supplying.
      */
     private multipliersFor(cultivator: Cultivator): {
+        locationBonus: number;
         techniqueBonus: number;
         techniqueQuality: ManualQuality | null;
         techniqueSpan: ManualBand | null;
@@ -18045,7 +18077,8 @@ ${fit.line}`;
             techniqueSpan,
             sectBonus: membership
                 ? 1 + SECT_BONUS_PER_RANK * (membership.rankIndex + 1)
-                : 1
+                : 1,
+            locationBonus: nearbyPracticeRate(this, cultivator)
         };
     }
 

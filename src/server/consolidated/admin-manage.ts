@@ -1944,9 +1944,8 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
                     'Nothing rated above the ceiling can be held below the Lid. It should go up, and ' +
                     'take whoever is holding it, inside ten to fifteen breaths.',
                 whatActuallyHappens:
-                    'It stays. evaluateLayerCrossing is the rule and its only caller is the world ' +
-                    'simulation, for NPC descents - nothing reads what a PLAYER carries. This is a ' +
-                    'gap in the world, not in ADMIN, and it is reported rather than papered over.'
+                    'The next played turn takes the object and its holder through the Lid. ' +
+                    'The pressure on the far side ends a holder below True Immortal.'
             }
             : null,
         // ── WHAT IT IS WORTH, AND WHO SAYS SO ─────────────────────────────

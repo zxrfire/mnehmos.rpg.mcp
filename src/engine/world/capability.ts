@@ -117,10 +117,10 @@ export type CapabilityGrant =
     | 'immune_contamination'
     /** Grand Ascension: no longer gated by places; gates places instead. */
     | 'gates_places'
-    /** Grand Ascension: makes and unmakes spiritual veins. */
-    | 'makes_veins'
-    /** Grand Ascension: seals and unseals domains. */
-    | 'seals_domains'
+    /** Grand Ascension: matching elemental practice benefits nearby. */
+    | 'elemental_neighbourhood'
+    /** Grand Ascension: leaves elemental creations on the ground. */
+    | 'lasting_elemental_work'
     /** Grand Ascension: perceives the seams of the Lid directly. */
     | 'reads_lid'
     /** Tribulation Transcendence: opens the Lid partially, which is what a portal is. */
@@ -152,7 +152,7 @@ const CLASS_GRANTS: Record<RealmCapabilityClass, CapabilityGrant[]> = {
     deity: ['carries_own_ambient', 'suppresses_lesser'],
     void: ['no_ambient_needed', 'enters_dead_zones', 'spatial_folding', 'reads_formations'],
     body_integration: ['no_seam', 'immune_contamination'],
-    grand_ascension: ['gates_places', 'makes_veins', 'seals_domains', 'reads_lid'],
+    grand_ascension: ['gates_places', 'elemental_neighbourhood', 'lasting_elemental_work', 'reads_lid'],
     tribulation: ['opens_lid']
 };
 
@@ -223,9 +223,8 @@ export const GRANTS_DENIED_BY_BREAK: Readonly<Record<string, readonly Capability
     // "perhaps it doesn't carry its own conditions everywhere like other
     // deities do, but it has to channel it for a limited time before it burns
     // out." So the one thing a Deity is - a body that brings its conditions
-    // with it, continuously and in every direction - is exactly what this one
-    // does not have. The range, duration and coverage it keeps instead are not
-    // expressible as a boolean and are documented rather than faked.
+    // with it continuously is what this one lacks. Combat keeps one directed
+    // pulse per fight when the cultivator can pay for their art.
     'failed-transformation': ['carries_own_ambient', 'suppresses_lesser'],
 
     // "doesn't allow spatial folding ... also they still need ambient qi, but
@@ -249,8 +248,8 @@ export const GRANTS_DENIED_BY_BREAK: Readonly<Record<string, readonly Capability
 
     // NOT LISTED, and each absence is deliberate:
     //
-    // 'imperfect-tribulation-body' - what it loses is the adaptive elemental
-    //   defence, which lives in damage resolution and not in a grant. There is
+    // 'imperfect-tribulation-body' - its reduced adaptation and timed elemental
+    //   stay live in damage and time resolution, not in a grant. There is
     //   no grant here to take, and inventing one to have something to remove
     //   would be the declared-and-inert defect all over again.
     // 'broken-foundation', 'cracked-core' - both sit below Nascent Soul, where

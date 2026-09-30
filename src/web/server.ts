@@ -395,11 +395,11 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                 // the HTML is what an operator opens in a tab beside the game.
                 case '/api/admin/register':
                     game.assertAdmin('the standing register');
-                    sendJson(res, 200, buildRegister());
+                    sendJson(res, 200, buildRegister(await game.loadWorld()));
                     return;
                 case '/api/admin/register.html': {
                     game.assertAdmin('the standing register');
-                    const reg = buildRegister();
+                    const reg = buildRegister(await game.loadWorld());
                     // ?refresh=1 discards the cache first, which is the only way
                     // to rewrite prose whose underlying facts have not moved.
                     if ((req.url ?? '').includes('refresh=1')) clearProse(prosePath);
