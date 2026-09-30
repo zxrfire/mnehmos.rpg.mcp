@@ -2,6 +2,14 @@
 
 # The Web Front Door
 
+Company cards read open accounts through `whatIsSaidAbout` and place only the known
+facts in the addressed person's private mind. Sharing a square alone grants no private
+account. `readTie` excludes unaccounted-for people from available backing. Hearsay
+uses `speakableFor` with the speaker's house and preserves the metadata used to choose
+what they say. Local production reads each touching lane's `cargoOnLane`; the Register
+reads deep-road teacher capacity through `teachersAtDepth`. Wound advice uses the
+cheapest qualifying pill when it needs the medicine that reaches every rung.
+
 Questions about opportunities use `opportunity-questions.ts`: a present person
 tells schedules they can understand from the ground they stand on, their house,
 or an earlier telling.

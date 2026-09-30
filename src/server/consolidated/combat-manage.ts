@@ -1226,7 +1226,7 @@ export async function handleAdvance(
     // allowed to corrupt it.
     if (current) {
         try {
-            const runtime = getAgentRuntime() ?? buildAgentRuntime(repos.db, new ProviderFactory());
+            const runtime = getAgentRuntime(repos.db) ?? buildAgentRuntime(repos.db, new ProviderFactory());
             const agentRepo = new AgentRepository(repos.db);
             const agent = agentRepo.findByCharacterId(current.participantId);
             if (agent && agent.autoOnTurn && agent.status === 'active') {

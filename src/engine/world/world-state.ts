@@ -482,7 +482,7 @@ export function upsertObject(state: WorldState, object: ObjectRecord): WorldStat
     return { ...state, objects: replace(state.objects, o => o.id === object.id, object) };
 }
 
-export function npcsAt(state: WorldState, locationId: string): NpcRecord[] {
+export function npcsAt(state: Pick<WorldState, 'npcs'>, locationId: string): NpcRecord[] {
     return state.npcs
         .filter(n => n.locationId === locationId && n.status === 'alive')
         .sort((a, b) => (a.id < b.id ? -1 : 1));

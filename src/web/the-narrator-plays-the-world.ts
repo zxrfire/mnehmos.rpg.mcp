@@ -17,6 +17,8 @@ import { getMember } from '../data/cultivation/members.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import { getSect } from '../data/cultivation/sects.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
+import type { WorldState } from '../engine/world/world-state.js';
+import { readTie } from '../engine/world/reading-a-tie-against-the-roster.js';
 import type { SomethingTheyRemember } from '../engine/world/what-somebody-remembers.js';
 import type { Company, SomebodyInTheSquare } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
@@ -668,12 +670,15 @@ const WHO_THEY_WOULD_NAME = new Set(['parent', 'master', 'spouse']);
 export function whatTheyHaveToReachFor(
     row: NpcRecord,
     byId: ReadonlyMap<string, NpcRecord>,
-    objects: readonly { name: string; possessorId: string | null }[]
+    objects: readonly { name: string; possessorId: string | null }[],
+    world?: WorldState
 ): NonNullable<SomebodyInTheSquare['toReachFor']> {
     const standsBehind: string[] = [];
     for (const tie of row.relationships) {
         if (!WHO_THEY_WOULD_NAME.has(tie.kind)) continue;
-        const them = byId.get(tie.targetId);
+        const read = world === undefined ? null : readTie(world, tie);
+        if (read !== null && read.standing !== 'living') continue;
+        const them = read?.target ?? byId.get(tie.targetId);
         if (!them || them.status !== 'alive') continue;
         const who = tie.kind === 'parent'
             ? (them.identity.sex === 'female' ? 'mother' : 'father')
@@ -876,6 +881,7 @@ function aPersonsCard(
         if (mind.wants) lines.push(`      wants: ${mind.wants}`);
         if (mind.fears) lines.push(`      fears: ${mind.fears}`);
         if (mind.knows) lines.push(`      knows: ${mind.knows}`);
+        for (const record of mind.knowsOfPlayer ?? []) lines.push(`      knows of the player: ${record}`);
         if (mind.mayNotSay) lines.push(`      will not say: ${mind.mayNotSay}`);
         if (mind.houseGrievance) lines.push(`      their house's grievance, which they share: ${mind.houseGrievance}`);
         if (mind.houseIsWrongAbout) lines.push(`      what their house is wrong about, and they believe it: ${mind.houseIsWrongAbout}`);

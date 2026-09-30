@@ -308,9 +308,8 @@ export interface ALesson {
  * a primer takes a season. The teacher's cost is the attention itself, charged
  * on their rate while it is given.
  *
- * `canTransmit` in `../encounters/acquisition.ts` is the encounter rule and is
- * looser: a teacher who went part of the way may transmit up to where they
- * stopped. The world's own pass holds the stricter line.
+ * An art is passed whole; the retired partial-transmission rule had no place
+ * to store a partial art on the student.
  *
  * A HEAVEN BOOK READ WITH NOBODY TEACHING IT SPENDS A USE. Opening a book you
  * are tall enough for still needs no teacher. At a grade that runs out

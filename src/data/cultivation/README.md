@@ -15,6 +15,17 @@
 > auto-injected into a narration prompt. The narrator's always-loaded text is
 > [`../../../docs/world/NARRATOR-CORE.md`](../../../docs/world/NARRATOR-CORE.md).
 
+The pill catalogue validates each listed price against `PILL_VALUE_BANDS` when its live
+id lookup is built; it never clamps or reprices an entry. `findCheapestPillFor` is read
+by wound advice. Deep-road teacher capacity reaches the Register through
+`teachersAtDepth`, and local shipping knowledge reads `cargoOnLane`.
+
+False-Immortal madness bands describe attributed historical records. The retired
+age classifier advanced a stage after legacy loss without a recorded change of mind.
+A living head's fitness reads their recorded condition in
+`../../engine/world/whether-a-house-thinks-its-head-is-still-fit.ts`; historical age
+bands cannot diagnose it.
+
 Techniques, pills, recipes, herbs, sects and encounter tables. Read this before adding or
 editing an entry in `src/data/cultivation/`.
 

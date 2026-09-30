@@ -10,6 +10,16 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+The clock reads due effects through `pendingEffects`; physical presence outside compounds
+uses `npcsAt`. Witness pools ask `whoCouldHaveSeenIt`, keeping reach and participant reads
+on the same geographic rule. Conversation backing asks `readTie`, so an unaccounted-for
+relative remains alive without being offered as available support.
+
+Deaths use `settleNpcDeath` and `settleEstate`: heirs who can reach the body receive its
+personal possessions; shared lineage holdings are not the deceased's purse. The last
+surviving member's death marks the lineage extinct on that day. The retired family-pot
+transfer had applied a quarter loss and remote inheritance independently of this path.
+
 [`taking-people-is-not-a-quiet-thing.ts`](taking-people-is-not-a-quiet-thing.ts)
 records the absence left by a taking. Above its quiet count, the absence circulates
 without identifying the taker. Forced furnace rites use this for their dead; the

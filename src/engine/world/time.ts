@@ -53,6 +53,7 @@ import {
     indexById,
     cloneWorld,
     lineageOf,
+    pendingEffects,
     upsertNpc,
     type ScheduledEffect,
     type ScheduledEffectKind,
@@ -267,9 +268,7 @@ export function advanceTime(
     // A work queue rather than a snapshot: a repeating effect that fires and
     // reschedules inside the span has to be examined again, or an annual
     // recruitment would fire once across three hundred years.
-    const due = state.schedule
-        .filter(e => !e.fired && e.dueOnDay > fromDay && e.dueOnDay <= requestedTarget)
-        .sort((a, b) => a.dueOnDay - b.dueOnDay || (a.id < b.id ? -1 : 1));
+    const due = pendingEffects(state, fromDay, requestedTarget);
 
     let guard = 0;
     while (due.length > 0 && guard++ < 100_000) {
@@ -775,6 +774,10 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     };
     const heirs = lineage ? heirsOf(lineage, deceased.id, alive) : [];
     const primary = heirs[0] ?? null;
+    if (lineage && !lineage.memberIds.some(id => id !== deceased.id && alive(id))) {
+        const at = state.lineages.findIndex(line => line.id === lineage.id);
+        state.lineages[at] = { ...lineage, extinctOnDay: lineage.extinctOnDay ?? onDay };
+    }
 
     const goals = legacyGoals(deceased);
     let inherited: NpcGoal[] = [];

@@ -236,5 +236,4 @@ export const FOLD_TRAVEL_ENGINE_GAP = {
 // closing window off `foldRangeInWalkingDays` like everything else, then scales
 // it by what is left of the window - so rank buys depth and never time, and a
 // call that goes out late fails on geometry however high the person answering
-// stands. `PIERCE_REACH_DAYS` there is the floor of this curve rather than a
-// ceiling on it.
+// stands. The floor of this curve is not a ceiling on it.

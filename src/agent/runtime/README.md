@@ -4,6 +4,11 @@
 
 The loop that hears a player, calls tools, and narrates. It reasons about intent and never decides an outcome - the engine does that.
 
+`buildAgentRuntime` registers dependencies against the database handle it was given.
+`agent-manage` and the combat turn hook retrieve that handle's runtime; a provider and
+its repositories never cross into another database. `setAgentRuntime(null)` clears
+registrations.
+
 | file | what it is |
 |---|---|
 | [`circuit.ts`](./circuit.ts) | Circuit breaker helpers. |

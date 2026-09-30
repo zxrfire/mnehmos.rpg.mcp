@@ -301,9 +301,12 @@ date; a house can fall and a carving can go unread.
 
 Three stages, in `MADNESS_STAGES`. The names are what a physician of this world would enter
 in a record rather than titles - which faculty is being reported on and what state it is in.
-Years set the pace; whether the legacy still holds sets the speed - a finished axis or a
-failed legacy advances the trajectory by one band, which is
-`madnessStageAt(yearsSinceCrossing, legacy)`.
+The historical bands describe the pace of that trajectory, rather than diagnosing a
+living person from their age. The retired classifier advanced a person one whole band
+when legacy failed, without recording any change of mind. A finished axis or a failed
+legacy is still an event that can move a person; its consequences need to be recorded
+before a living person's card or fitness can assert them. The last band remains a
+reconstruction, not an observed condition.
 
 | Stage | Years since crossing | What it looks like |
 |---|---|---|

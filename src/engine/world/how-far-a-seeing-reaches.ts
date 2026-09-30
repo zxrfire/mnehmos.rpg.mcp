@@ -123,16 +123,10 @@ export function everybodyInTheArea(
     seeing: { scale: EventScale; locationId: string | null; day: number }
 ): NpcRecord[] {
     if (seeing.locationId === null) return [];
-    const reach = howFarASeeingReaches(seeing.scale);
-    const region = reach === 'the region it happened in'
-        ? regionOf(state, seeing.locationId)
-        : null;
     const here = state.npcs.filter(n => {
         if (n.status !== 'alive') return false;
         if (n.identity.bornOnDay > seeing.day) return false;
-        if (reach === 'anywhere') return n.locationId !== null;
-        if (reach === 'where it happened') return n.locationId === seeing.locationId;
-        return region !== null && regionOf(state, n.locationId) === region;
+        return whoCouldHaveSeenIt(state, { ...seeing, whoWasStandingAt: n.locationId });
     });
     here.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return here;

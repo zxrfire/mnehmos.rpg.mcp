@@ -687,6 +687,7 @@ import {
 } from './what-asking-this-person-for-this-would-cost-them.js';
 import {
     createGrudge,
+    whichWayItPoints,
     createObligation,
     settleObligation,
     type OathCause,
@@ -707,7 +708,8 @@ import {
 import { moveTheirSideOnly, openOathsHeldBy, recordABondBothWays, theMasterTheyKneltTo } from './encounters.js';
 import { whatABondOpens, whetherYouMayTake } from '../engine/social-leverage/taking-somebody-as-your-own.js';
 import { aMasterWhoValuesThemGivesAHalf } from '../engine/world/a-pair-of-communication-jade.js';
-import type { RelationshipType } from '../engine/social/relationships.js';
+import { createRelationship, type RelationshipType } from '../engine/social/relationships.js';
+import { whatIsSaidAbout } from '../engine/social/what-is-said-about-somebody.js';
 import {
     whatWalkingOutOfItCosts,
     whatWouldCloseIt
@@ -20318,6 +20320,8 @@ ${fit.line}`;
         const here = this.present(cultivator);
         const named: Company['named'] = [];
         const strangers: Company['strangers'] = [];
+        const ledger = ledgerAbout(this.db as never, cultivator.id);
+        const playerHouse = this.repos.sects.getMembership(cultivator.id)?.sectId ?? null;
 
         // WHAT EACH OF THEM IS AT, off the world row rather than the roster
         // one. A stored roster row - the player's own kind - has no activity
@@ -20353,6 +20357,21 @@ ${fit.line}`;
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
                 const row = byId.get(person.id) ?? null;
                 const doing = row?.activity ?? null;
+                const account = whatIsSaidAbout({
+                    subjectId: cultivator.id,
+                    observer: {
+                        observerId: person.id,
+                        houseId: person.sectId ?? null,
+                        placeId: row?.locationId ?? null,
+                        ties: (row?.relationships ?? []).map(tie => createRelationship({
+                            fromId: person.id, toId: tie.targetId,
+                            type: tie.kind as RelationshipType,
+                            strength: Math.abs(tie.standing), onDay: 0
+                        }))
+                    },
+                    subject: { id: cultivator.id, houseId: playerHouse, placeId: this.worldPlaceOf(cultivator) },
+                    ledger
+                });
                 // Only the people the player can already name are named
                 // back: an activity that says "mid-conversation with
                 // somebody" is the honest read of watching two strangers
@@ -20420,7 +20439,22 @@ ${fit.line}`;
                     houseName: person.sectId && this.knowledge.isAwareOf(cultivator.id, 'sect', person.sectId)
                         ? getSect(person.sectId)?.name ?? null
                         : null,
-                    ownMind: whatSomebodyHoldsPrivately(person.id, person.sectId ?? null),
+                    ownMind: {
+                        ...whatSomebodyHoldsPrivately(person.id, person.sectId ?? null),
+                        knowsOfPlayer: [...new Set(account.known.map(record => {
+                            const point = whichWayItPoints(record);
+                            const kind = record.kind.replaceAll('_', ' ');
+                            const cause = record.cause.replaceAll('_', ' ');
+                            if (point.sense === 'owes') {
+                                return point.owerId === cultivator.id
+                                    ? `You owe an open ${kind}: ${cause}.`
+                                    : `An open ${kind} is owed to you: ${cause}.`;
+                            }
+                            return point.aggrievedId === cultivator.id
+                                ? `You hold an open ${kind}: ${cause}.`
+                                : `An open ${kind} is held against you: ${cause}.`;
+                        }))]
+                    },
                     // What they remember of their house, of their own and of the player,
                     // for the card of whoever is spoken to. See `what-somebody-remembers.ts`.
                     remembers: this.atHand === null
@@ -20434,7 +20468,7 @@ ${fit.line}`;
                         ),
                     toReachFor: row === null
                         ? null
-                        : whatTheyHaveToReachFor(row, byId, this.atHand?.objects ?? []),
+                        : whatTheyHaveToReachFor(row, byId, this.atHand?.objects ?? [], this.atHand ?? undefined),
                     rankIndex: row?.factionRankIndex ?? -1
                 });
             } else {

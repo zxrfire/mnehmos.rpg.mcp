@@ -82,7 +82,7 @@
  * `cure.stones` can be handed a name it must not say.
  */
 
-import { PILLS, getPillsByEffect } from '../data/cultivation/pills.js';
+import { PILLS, findCheapestPillFor } from '../data/cultivation/pills.js';
 import { currentWoundKey, getWoundType, isPermanentWound } from '../data/cultivation/wounds.js';
 import type {
     StructuralRepairMedicine
@@ -283,7 +283,7 @@ type TheThingThatWouldDoIt =
  * particular.test.ts` is the ratchet on that.
  */
 function theOneThatReachesAnyRank(): Pill | null {
-    return getPillsByEffect('mends_what_will_not_close')[0] ?? null;
+    return findCheapestPillFor('mends_what_will_not_close', 1) ?? null;
 }
 
 /** What either road's answer is called, at what grade, and on what terms. */

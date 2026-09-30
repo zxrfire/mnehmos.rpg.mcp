@@ -188,7 +188,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         name: 'A small cultivating family',
         weight: 170_000,
         spiritStones: 900,
-        ground: 'normal',
+        ground: MAX_ORIGIN_AMBIENT,
         // A hall copy, written out by relatives who never finished it.
         roadQuality: 'crude',
         placement: {
@@ -238,7 +238,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         name: 'A retainer family, attached to a sect',
         weight: 26_000,
         spiritStones: 1_800,
-        ground: 'normal',
+        ground: MAX_ORIGIN_AMBIENT,
         // The outer library's working book, with somebody alive who read it to the end.
         roadQuality: 'sound',
         placement: {
@@ -275,7 +275,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         name: 'An established cultivating clan',
         weight: 3_600,
         spiritStones: 15_000,
-        ground: 'normal',
+        ground: MAX_ORIGIN_AMBIENT,
         // A catalogued library, and the road in it is a proper one.
         roadQuality: 'sound',
         placement: {
@@ -322,7 +322,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         name: 'A Dao house, by blood',
         weight: 240,
         spiritStones: 90_000,
-        ground: 'normal',
+        ground: MAX_ORIGIN_AMBIENT,
         // The house's own worked canon - and a demand most of its children cannot meet.
         roadQuality: 'refined',
         placement: {
@@ -363,7 +363,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             tradition: { subject: 'debt', label: "the house's own principle, practised at every hour" }
         },
         vouchers: 6,
-        expeditions: { supplied: 8, survivalMargin: 0.2 },
+        expeditions: { supplied: 8, survivalMargin: MAX_EXPEDITION_MARGIN },
         description:
             'A house is a family and this person is in it. Resources on a patriarch\'s scale, a vein under the compound, teachers assigned rather than sought, and a name that opens a door in any province anyone has heard of. It buys none of the ladder, and everyone in the house knows somebody it did not save.'
     },
@@ -378,7 +378,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         // ONLY thing on this row that transfers outright. A place cannot, a
         // rank cannot, and the shelf below is not theirs either.
         spiritStones: 35_000,
-        ground: 'normal',
+        ground: MAX_ORIGIN_AMBIENT,
         // Whatever the parent puts in their hands, which is as good as a book gets.
         roadQuality: 'refined',
         placement: {
@@ -436,7 +436,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         // The largest figure in the table, and the only axis this row leads on.
         // A word from somebody at that height moves any bar that moves at all.
         vouchers: 8,
-        expeditions: { supplied: 6, survivalMargin: 0.2 },
+        expeditions: { supplied: 6, survivalMargin: MAX_EXPEDITION_MARGIN },
         description:
             'An apex sect is joined rather than born into, so this person holds no place in it: not on the roll, not inside the arrays, and standing in front of the same disciple bar as everyone else. What the parent holds is a fortune, a hand in what the child reads, and a word that moves any door in the province, spent one door at a time.'
     },
@@ -450,7 +450,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         // A ward's allotment from the house that took them. Real money, and not
         // a family's, because there is no family.
         spiritStones: 22_000,
-        ground: 'normal',
+        ground: MAX_ORIGIN_AMBIENT,
         // The house's working book at the rank a ward holds, which is what rank
         // reaches on any shelf. The canon is further up it and they start at
         // the bottom of it like every other intake.

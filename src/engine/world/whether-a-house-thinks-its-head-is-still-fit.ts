@@ -16,14 +16,10 @@
  * outclassed, and that is what the promotion ladder is for. Folding strength in
  * here would turn every ordinary succession into a fitness question.
  *
- * NOT THE MADNESS STAGES, and that is a gap rather than a decision.
- * `madnessStageAt` needs years since a crossing and an `NpcRecord` carries no
- * crossing date - there is no field for it. The stages also run on a
- * 20,000-year band, so no ordinary house head reaches the first boundary in a
- * played world. Where a False Immortal holds a seat the right read is theirs,
- * and this one will say fit; wiring it needs a crossing day on the record first.
- *
  * ═════════════════════════════════════════════════════════════════════════
+ * Historical madness bands do not diagnose a living person by age. Fitness
+ * reads the body's recorded condition.
+ *
  * AND THE HOUSE NOTICING LATE IS DELIBERATELY NOT HERE
  * ═════════════════════════════════════════════════════════════════════════
  *

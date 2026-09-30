@@ -24,6 +24,7 @@ import {
     speakableFor
 } from '../../src/web/hearsay';
 import { KnowledgeGate } from '../../src/web/knowledge';
+import { INSIDER_ONLY_FLOOR, LORE } from '../../src/web/lore';
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support';
 import { makeGame, engineCalls, ScriptedProvider } from './harness';
@@ -97,10 +98,10 @@ describe('what a speaker would plausibly name', () => {
         for (const sect of enormous) expect(carter).toContain(sect.id);
     });
 
-    it('does not consult the player knowledge at all', () => {
-        // The speaker is not adjusting for their audience. The function takes
-        // one argument and it is the speaker's standing.
-        expect(speakableFor.length).toBe(1);
+    it('lets a house member name private house knowledge even at a low rung', () => {
+        const privateEntry = LORE.find(entry => entry.floorOrdinal === INSIDER_ONLY_FLOOR && entry.insiderFactionId !== null)!;
+        expect(speakableFor(0).some(entry => entry.id === privateEntry.id)).toBe(false);
+        expect(speakableFor(0, privateEntry.insiderFactionId)).toContainEqual(privateEntry);
     });
 });
 

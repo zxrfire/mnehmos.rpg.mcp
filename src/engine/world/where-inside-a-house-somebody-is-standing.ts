@@ -51,7 +51,7 @@ import { getTechnique } from '../../data/cultivation/techniques.js';
 import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
 import type { LocationRecord } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
-import type { WorldState } from './world-state.js';
+import { npcsAt, type WorldState } from './world-state.js';
 import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
 
 /** One compound, as much of it as a placement read needs. */
@@ -234,9 +234,7 @@ export function npcsStandingIn(
 ): NpcRecord[] {
     const seatId = compounds.seatOf.get(locationId);
     if (seatId === undefined) {
-        return state.npcs
-            .filter(n => n.locationId === locationId && n.status === 'alive')
-            .sort((a, b) => (a.id < b.id ? -1 : 1));
+        return npcsAt(state, locationId);
     }
     const compound = compounds.bySeat.get(seatId)!;
     const people = new Set(state.npcs.map(n => n.id));

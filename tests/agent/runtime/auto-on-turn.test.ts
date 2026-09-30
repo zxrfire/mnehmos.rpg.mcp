@@ -2,8 +2,8 @@
  * Integration test: combat_manage advance auto-invokes an agent
  * when the new current actor has auto_on_turn=true.
  *
- * Wires a fake provider into the agent runtime via setAgentRuntime so we can
- * verify the full path (turn advance â†’ next actor lookup â†’ invoke â†’ embedded
+ * Building the runtime registers its fake provider for the request's database.
+ * This verifies the full path (turn advance â†’ next actor lookup â†’ invoke â†’ embedded
  * agentResponse) without needing API keys.
  */
 
@@ -13,7 +13,9 @@ import { closeDb, getDb } from '../../../src/storage/index.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
 import { ProviderFactory } from '../../../src/agent/provider/factory.js';
 import { LLMProvider, ProviderCallResult, ProviderError } from '../../../src/agent/provider/types.js';
-import { buildAgentRuntime, setAgentRuntime } from '../../../src/agent/runtime/deps.js';
+import { buildAgentRuntime, getAgentRuntime, setAgentRuntime } from '../../../src/agent/runtime/deps.js';
+import Database from 'better-sqlite3';
+import { migrate } from '../../../src/storage/migrations.js';
 import { randomUUID } from 'crypto';
 
 process.env.NODE_ENV = 'test';
@@ -84,12 +86,31 @@ describe('combat_manage advance - agent auto-invoke hook', () => {
             }
         };
         factory.register('openai', fakeProvider);
-        setAgentRuntime(buildAgentRuntime(db, factory));
+        buildAgentRuntime(db, factory);
     });
 
     afterEach(() => {
         setAgentRuntime(null);
         closeDb();
+    });
+
+    it('keeps registered providers and repositories with their own database', () => {
+        const db = getDb();
+        const first = getAgentRuntime(db)!;
+        const other = new Database(':memory:');
+        try {
+            migrate(other);
+            expect(getAgentRuntime(other)).toBeNull();
+            const second = buildAgentRuntime(other, new ProviderFactory());
+            expect(getAgentRuntime(other)).toBe(second);
+            expect(getAgentRuntime(db)).toBe(first);
+            expect(second.db).toBe(other);
+            setAgentRuntime(null);
+            expect(getAgentRuntime(db)).toBeNull();
+            expect(getAgentRuntime(other)).toBeNull();
+        } finally {
+            other.close();
+        }
     });
 
     it('embeds agentResponse in advance result when current actor has auto_on_turn', async () => {
@@ -304,4 +325,3 @@ describe('combat_manage advance - agent auto-invoke hook', () => {
         expect(data.agentResponse.status).toBe('timeout');
     });
 });
-

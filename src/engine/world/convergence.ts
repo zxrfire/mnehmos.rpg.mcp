@@ -18,7 +18,6 @@ import {
 } from './capability.js';
 import {
     FOLD_GRANT,
-    FOLD_RANGE_AT_THE_FLOOR,
     foldRangeInWalkingDays
 } from './how-far-somebody-can-fold-space-and-what-it-costs.js';
 import { isBelowTheLid } from './layers.js';
@@ -100,11 +99,6 @@ export function convergenceOf(location: LocationRecord, day: number): Convergenc
 
 /** The grant that lets somebody leave late. Void Tribulation, and no lower. */
 export const PIERCE_GRANT: CapabilityGrant = FOLD_GRANT;
-
-/**
- * Days of depth a full-strength fold covers.
- */
-export const PIERCE_REACH_DAYS = FOLD_RANGE_AT_THE_FLOOR;
 
 /**
  * How far somebody could fold, from here, today.

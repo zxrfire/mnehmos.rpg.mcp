@@ -39,11 +39,11 @@
 
 import {
     HALFWATER_TERMS,
-    SEA_CARGO,
     SEA_TRADERS,
     artisansOf,
     cargoCarriedBy,
     cargoMadeBy,
+    cargoOnLane,
     getSeaLane,
     housesWithAWrittenCraft,
     lanesTouchingWater
@@ -119,7 +119,7 @@ export function whatThisGroundMakes(ground: GroundToRead): WhatThisGroundMakes {
     // is inland, which is a true and useful answer rather than an empty one.
     const mine = new Set(ground.housesHere.map(h => h.id));
     const crossings: SomethingThatCrosses[] = [];
-    for (const cargo of SEA_CARGO) {
+    for (const cargo of lanesTouchingWater().flatMap(lane => cargoOnLane(lane.laneId))) {
         const theirs = (cargo.madeByFactionId !== null && mine.has(cargo.madeByFactionId))
             || mine.has(cargo.carriedByFactionId);
         if (!theirs) continue;

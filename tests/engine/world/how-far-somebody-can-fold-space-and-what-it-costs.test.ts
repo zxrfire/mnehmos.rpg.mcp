@@ -25,7 +25,6 @@ import {
 } from '../../../src/engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
 import {
     PIERCE_GRANT,
-    PIERCE_REACH_DAYS,
     convergenceOf,
     expeditionBudget,
     pierceReach,
@@ -308,15 +307,13 @@ describe('the convergence pierce is priced on the same curve as every other fold
     } as unknown as LocationRecord);
 
     it('starts a pierce at the fold\'s reach at the floor, and calls it the floor', () => {
-        expect(PIERCE_REACH_DAYS).toBe(FOLD_RANGE_AT_THE_FLOOR);
-        expect(PIERCE_REACH_DAYS).toBe(6);
         expect(PIERCE_GRANT).toBe(FOLD_GRANT);
         // The floor of the curve, not a ceiling on it: somebody standing at the
         // rung where folding begins gets exactly this and everybody above gets
         // more.
         const convergence = convergenceOf(site(), 0);
         expect(pierceReach(convergence, { realmOrdinal: FOLD_FLOOR_ORDINAL, heldGrants: HOLDS }))
-            .toBe(PIERCE_REACH_DAYS);
+            .toBe(FOLD_RANGE_AT_THE_FLOOR);
     });
 
     it('reaches further into a closing site the higher the folder stands', () => {

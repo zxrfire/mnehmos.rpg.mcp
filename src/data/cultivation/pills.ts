@@ -763,7 +763,13 @@ export const PILLS: readonly Pill[] = [
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const PILL_BY_ID: ReadonlyMap<string, Pill> = new Map(PILLS.map(p => [p.id, p]));
+const PILL_BY_ID: ReadonlyMap<string, Pill> = new Map(PILLS.map(p => {
+    const band = PILL_VALUE_BANDS[p.grade];
+    if (p.value < band.min || p.value > band.max) {
+        throw new RangeError(`${p.id}: value ${p.value} is outside the ${p.grade} pill band.`);
+    }
+    return [p.id, p];
+}));
 
 const PILLS_BY_EFFECT: ReadonlyMap<PillEffect, readonly Pill[]> = (() => {
     const map = new Map<PillEffect, Pill[]>();

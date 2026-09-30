@@ -46,15 +46,6 @@
  * asked at all, what the ask weighs, and what it would cost them - the things
  * that have to be true before the odds are worth computing. Nothing here rolls.
  *
- * WHAT IS NOT BUILT, SAID PLAINLY RATHER THAN LEFT TO BE FOUND
- * ----------------------------------------------------------
- * {@link aNameGoesUp} writes the rows a granted nomination produces and has no
- * caller. That is a gap and not a decision: being posted is not a state a run
- * can be in - there is no Warden rank a player holds and no term to serve - so
- * there is nothing for a granted nomination to change yet. What would call it is
- * a `request` at a person inside a nominating house coming back `taken`. Routed
- * in OPEN-QUESTIONS.md against the act that would call it.
- *
  * AND NOTHING HERE IS A TABLE. Every list below is derived from the parentage
  * chain, the standing figure and the relationship layer, so a house that changes
  * patrons changes what its name reaches without this file being edited. That is
@@ -78,9 +69,6 @@ import {
 } from '../../data/cultivation/sects.js';
 import { thereIsNoDoorAt } from '../../data/cultivation/a-favour-skips-the-admission-bar.js';
 import { rankName } from '../cultivation/realms.js';
-import type { DayIndex } from '../social/common.js';
-import { createGrudge, type ObligationRecord } from '../social/grudges.js';
-import type { KnowledgeInput } from '../social/knowledge.js';
 import {
     whatTheyWillTakeFor,
     type WhatTheyWillTake
@@ -604,129 +592,3 @@ export function whatWouldPutYouThere(input: {
     return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT A NAME GOING UP LEAVES BEHIND
-// ─────────────────────────────────────────────────────────────────────────
-
-export interface ANameWentUp {
-    intoBodyId: string;
-    nominatorId: string;
-    askerId: string;
-    howFar: HowFarAName;
-    /**
-     * The price, and the whole of what makes this instrument different from a
-     * favour: it is a GRUDGE rather than a debt, it is held by somebody who was
-     * not in the room, and its subject is the nominator and not the nominee.
-     *
-     * Null where the caller named nobody who expected the seat, which is a fact
-     * about what the caller knows rather than a claim that nobody did.
-     */
-    whatItCostThem: ObligationRecord | null;
-    /** Who is told. The person asked, and the person passed over. */
-    told: KnowledgeInput[];
-}
-
-export interface ANameGoesUpInput {
-    askerId: string;
-    nominatorId: string;
-    intoBodyId: string;
-    /** The person in the nominating house who carried it. */
-    askedOfId: string;
-    onDay: DayIndex;
-    /**
-     * Somebody in the nominating house who expected the seat. The catalog's own
-     * account of these postings is that being passed over happens far more often
-     * than being chosen, and that the grievance is specific, dated and
-     * inheritable - which is exactly what an obligation row is for.
-     */
-    passedOverId?: string;
-    /** What was actually said. Narrator prose, never parsed. */
-    note?: string;
-}
-
-/**
- * The rows one nomination produces, for the ledgers that own them.
- *
- * Writes nothing. The counterpart of `spendAWord`, and the differences are the
- * design: no `createFavor`, because nothing is owed to the nominator by the
- * person whose name went up; no `client` tie, because a nomination is not
- * patronage of a person; and a `blocked_advancement` grudge whose SUBJECT is the
- * house that nominated, held by whoever was passed over.
- */
-export function aNameGoesUp(input: ANameGoesUpInput): ANameWentUp | NoNominationReaches {
-    const posting = thePostingAt(input.intoBodyId);
-    if (!posting) return 'no such body';
-
-    const howFar = howFarANameGoes(input.nominatorId, input.intoBodyId);
-    if (howFar === 'nothing to put up') return 'they have no name to put up here';
-
-    const description = input.note
-        ?? `${input.askerId} was put forward for ${posting.bodyName} by ${input.nominatorId}, `
-        + 'and the seat went to them.';
-
-    const whatItCostThem = input.passedOverId
-        ? createGrudge({
-            holderId: input.passedOverId,
-            // THE NOMINATOR, not the person who got the seat. Somebody passed
-            // over holds it against whoever chose, and the catalog says the
-            // reason plainly: there is never an explanation given to any of
-            // them, so there is nothing to hold against the appointee except
-            // that they went.
-            subjectId: input.nominatorId,
-            cause: 'blocked_advancement',
-            severity: 'serious',
-            onDay: input.onDay,
-            description,
-            participants: [input.askerId, posting.bodyId],
-            tags: ['nomination', `posting:${posting.bodyId}`],
-            terms: null,
-            dueOnDay: null
-        })
-        : null;
-
-    const told: KnowledgeInput[] = [
-        {
-            holderId: input.askedOfId,
-            holderKind: 'character',
-            claimKey: `nomination:${input.askerId}`,
-            stance: 'knows',
-            statement: description,
-            onDay: input.onDay,
-            source: { kind: 'witnessed', note: 'Carried the name.' },
-            detail: {
-                intoBodyId: posting.bodyId,
-                nominatorId: input.nominatorId,
-                howFar
-            },
-            confidence: 1,
-            tags: ['nomination']
-        }
-    ];
-    if (input.passedOverId) {
-        told.push({
-            holderId: input.passedOverId,
-            holderKind: 'character',
-            claimKey: `nomination:${input.askerId}`,
-            stance: 'knows',
-            // What a passed-over candidate in fact knows is that somebody else
-            // went, and nothing else. No explanation is ever given, which is
-            // what makes the grievance keep.
-            statement: `The seat at ${posting.bodyName} went to ${input.askerId}. No reason was `
-                + 'given, and none was going to be.',
-            onDay: input.onDay,
-            source: { kind: 'told', note: 'Heard whose name went up.' },
-            detail: { intoBodyId: posting.bodyId, nominatorId: input.nominatorId },
-            confidence: 1,
-            tags: ['nomination', 'passed_over']
-        });
-    }
-
-    return {
-        intoBodyId: posting.bodyId,
-        nominatorId: input.nominatorId,
-        askerId: input.askerId,
-        howFar,
-        whatItCostThem,
-        told
-    };
-}

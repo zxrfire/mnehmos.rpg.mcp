@@ -20,6 +20,7 @@
  *   they age and die like anybody, and their house learns it when the lamp goes
  *   out; they come back and their house learns that too
  *   the reading a player sees of a tie says unaccounted-for off the same mark
+ *   the conversation card cannot offer an unaccounted-for master as backing
  *   a save holding the old status loads as a living person the world lost sight of
  *
  * Measured on `afford-a` over five hundred years with this: 65 people lost, 26 of
@@ -39,6 +40,7 @@ import { createNpc, markMissing, theWorldLoses, type NpcRecord } from '../../../
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { advanceTime } from '../../../src/engine/world/time.js';
 import { readTie } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
+import { whatTheyHaveToReachFor } from '../../../src/web/the-narrator-plays-the-world.js';
 import { whatHousesLearnOfTheirOwn } from '../../../src/engine/world/when-somebody-does-not-come-back.js';
 import {
     isLostTrackOf,
@@ -119,6 +121,24 @@ describe('somebody the world loses is still a living person', () => {
         expect(readTie(state, tie).standing).toBe('living');
         state.factions[0] = theHouseLosesTrackOf(state.factions[0]!, 'lost-one', DAY - YEAR);
         expect(readTie(state, tie).standing).toBe('unaccounted');
+    });
+
+    // Red-checked by bypassing the roster's unaccounted-for read.
+    it('does not offer an unaccounted-for master as backing in a conversation', () => {
+        const { state, person } = aWorld();
+        const disciple = {
+            ...createNpc(state.seed, { id: 'disciple', bornOnDay: DAY - 20 * YEAR, onDay: DAY, locationId: 'seat' }),
+            relationships: [{
+                targetId: person.id, targetName: person.name, kind: 'master' as const, standing: 0.5,
+                note: '', sinceDay: 0, lastChangedDay: 0, factIds: [], inheritedFromId: null
+            }]
+        };
+        state.npcs.push(disciple);
+        const byId = new Map(state.npcs.map(n => [n.id, n]));
+        expect(whatTheyHaveToReachFor(disciple, byId, [], state).standsBehind).toHaveLength(1);
+        state.factions[0] = theHouseLosesTrackOf(state.factions[0]!, person.id, DAY);
+        expect(whatTheyHaveToReachFor(disciple, byId, [], state).standsBehind).toEqual([]);
+        expect(person.status).toBe('alive');
     });
 });
 

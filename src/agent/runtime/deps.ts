@@ -1,9 +1,8 @@
 /**
  * Agent runtime dependency registrar.
  *
- * Wired once at server startup in src/server/index.ts (mirrors setCombatPubSub).
- * Tools that need to invoke agents (agent_manage invoke, combat_manage advance
- * auto-invoke hook) read the singleton via getAgentRuntime().
+ * Runtime repositories belong to the request's database. Agent and combat tools
+ * reuse the runtime registered for that handle, never another campaign's.
  */
 
 import Database from 'better-sqlite3';
@@ -30,15 +29,16 @@ export interface AgentRuntimeDeps {
     sceneRepo: SceneRepository;
 }
 
-let defaultDeps: AgentRuntimeDeps | null = null;
+let runtimes = new WeakMap<Database.Database, AgentRuntimeDeps>();
 
-/** Null clears it. */
+/** Null clears the registrations. */
 export function setAgentRuntime(deps: AgentRuntimeDeps | null): void {
-    defaultDeps = deps;
+    if (deps === null) runtimes = new WeakMap();
+    else runtimes.set(deps.db, deps);
 }
 
-export function getAgentRuntime(): AgentRuntimeDeps | null {
-    return defaultDeps;
+export function getAgentRuntime(db: Database.Database): AgentRuntimeDeps | null {
+    return runtimes.get(db) ?? null;
 }
 
 /**
@@ -46,7 +46,7 @@ export function getAgentRuntime(): AgentRuntimeDeps | null {
  * Used by both production wiring and tests.
  */
 export function buildAgentRuntime(db: Database.Database, providerFactory: ProviderFactory): AgentRuntimeDeps {
-    return {
+    const deps: AgentRuntimeDeps = {
         db,
         providerFactory,
         agentRepo: new AgentRepository(db),
@@ -58,4 +58,6 @@ export function buildAgentRuntime(db: Database.Database, providerFactory: Provid
         encounterRepo: new EncounterRepository(db),
         sceneRepo: new SceneRepository(db)
     };
+    setAgentRuntime(deps);
+    return deps;
 }

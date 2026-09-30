@@ -24,9 +24,8 @@
  * WHAT CONSUMES A USE: one person taking the whole art off the page, and
  * nothing else. Practising an art already held takes nothing out of the book -
  * it is already in the reader. Being taught by somebody who knows it takes
- * nothing out of the book either; the master carries the method and
- * `canTransmit` in `../encounters/acquisition.ts` is the rule for that, with
- * the book not necessarily in the room. Writing out a copy comes out of a
+ * nothing out of the book either; `newlyEntitled` in `manuals.ts` reads the
+ * master's attention and ability to reproduce it. Writing out a copy comes out of a
  * master's memory - `couldWriteOutACopy` requires full mastery - which is why
  * it is not a second door into this counter.
  *

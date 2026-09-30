@@ -3,6 +3,11 @@
 The contract for this directory. Read it before editing anything here; update it
 in the same commit if you change the contract.
 
+Whole-art teaching uses `couldWriteOutACopy` in `../world/manuals.ts`, reached by
+`../../web/teaching-somebody-what-you-hold.ts`. The teacher must possess and fully master
+the art. The retired transmission helper offered partial ceilings that no stored art
+represented. Guidance remains a separate activity and multiplier.
+
 ## What this is for
 
 A catalog of 109 encounters existed, `randomEvents: true` was passed at three

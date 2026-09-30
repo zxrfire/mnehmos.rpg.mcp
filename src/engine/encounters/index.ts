@@ -135,17 +135,13 @@ export {
 
 export {
     assessAcquisition,
-    canTransmit,
     extensionOption,
     findFromManual,
     type AcquisitionInput,
     type AcquisitionRefusal,
     type AcquisitionReport,
     type AcquisitionRoute,
-    type ManualLike,
-    type TransmissionCheck,
-    type TransmissionRefusal,
-    type Transmitter
+    type ManualLike
 } from './acquisition.js';
 
 export {

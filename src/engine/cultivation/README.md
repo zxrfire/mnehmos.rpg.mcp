@@ -12,6 +12,10 @@ the price charged at every realm boundary, foundation quality, tribulation, the 
 crossing, existence states, and the five ways a run ends. Read this before changing
 anything in `src/engine/cultivation/`.
 
+Origin entries use `MAX_ORIGIN_AMBIENT` and `MAX_EXPEDITION_MARGIN` for their highest
+starting-ground and expedition advantage values. Rolling an origin reads those entries;
+the maxima do not change the values or replace the body's other limits.
+
 Everything in this directory is a **pure function of state plus a seeded stream**. No
 database access, no I/O, no MCP concerns. The runtime agent narrates what comes out of
 here and decides none of it. See [`../README.md`](../README.md) for the engine-wide

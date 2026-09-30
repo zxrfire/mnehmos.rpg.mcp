@@ -22,7 +22,7 @@
  *                       is standing in the compound, which the entry pass asks
  *
  * A recruiter who has not yet reported carries the report as something owed, on
- * their own row ({@link aRecruiterOwesTheHouseAReport}), so a slip and a walk can
+ * their own row ({@link theyOweTheHouseAReport}), so a slip and a walk can
  * never both deliver it: {@link theReportIsDelivered} clears it.
  *
  * ── ADDRESSED TO AN OFFICE NOBODY HOLDS YET ──────────────────────────────
@@ -295,34 +295,6 @@ export function whoTookThemOn(
 }
 
 /**
- * Somebody was taken on, and whoever of the house took them on now owes the
- * house a report of it. Returns the recruiter, or null where the house had
- * nobody who could have - and then nobody reports anything.
- */
-export function aRecruiterOwesTheHouseAReport(
-    state: WorldState,
-    input: {
-        houseId: string;
-        person: { id: string; name: string };
-        placeId: string | null;
-        onDay: number;
-        inReach?: (locationId: string | null) => boolean;
-        atTheHouse?: (locationId: string | null) => boolean;
-    }
-): { id: string; name: string } | null {
-    const seat = state.factions.find(f => f.id === input.houseId)?.seatLocationId ?? null;
-    const recruiter = whoTookThemOn(state.npcs, {
-        houseId: input.houseId,
-        personId: input.person.id,
-        placeId: input.placeId,
-        inReach: input.inReach,
-        atTheHouse: input.atTheHouse ?? (id => insideTheSeat(state, id, seat))
-    });
-    if (recruiter === null) return null;
-    return theyOweTheHouseAReport(state, recruiter.id, input) ? recruiter : null;
-}
-
-/**
  * This recruiter took this person on at this place. They owe the house a report
  * of it, and the person taken on knows who took them on and where, which is what
  * they say at the gate. For a caller that already knows who the recruiter was -
@@ -368,17 +340,6 @@ export function theyOweTheHouseAReport(
         };
     }
     return true;
-}
-
-/** The seat or a room inside it: room, precinct, seat. */
-function insideTheSeat(state: WorldState, locationId: string | null, seatId: string | null): boolean {
-    if (seatId === null) return false;
-    let at = locationId;
-    for (let hops = 0; hops <= 3 && at !== null; hops++) {
-        if (at === seatId) return true;
-        at = getLocation(state, at)?.parentId ?? null;
-    }
-    return false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

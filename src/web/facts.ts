@@ -1540,6 +1540,7 @@ export interface SomebodyInTheSquare {
         fears?: string;
         mayNotSay?: string;
         knows?: string;
+        knowsOfPlayer?: readonly string[];
         houseGrievance?: string;
         houseIsWrongAbout?: string;
     } | null;

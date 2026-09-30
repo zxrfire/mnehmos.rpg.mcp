@@ -1,3 +1,10 @@
+/**
+ * World behaviour, including the live death handoff. The retired family-pot
+ * settlement assigned property remotely and leaked a quarter on every death.
+ * Death now follows settleNpcDeath and settleEstate; heirs receive goals and
+ * accounts, while possessions follow whoever can reach the body.
+ * Extinction is red-checked by removing its date from the live handoff.
+ */
 import { describe, it, expect } from 'vitest';
 import { whenTheWorldLostSightOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import Database from 'better-sqlite3';
@@ -13,7 +20,7 @@ import {
     upsertNpc,
     type WorldState
 } from '../../../src/engine/world/world-state.js';
-import { advanceTime } from '../../../src/engine/world/time.js';
+import { advanceTime, settleNpcDeath } from '../../../src/engine/world/time.js';
 import { scheduleConcurrentEvent } from '../../support/a-concurrent-event.js';
 import {
     createNpc,
@@ -24,6 +31,7 @@ import {
     isUnadjudicated,
     legacyGoals,
     markMissing,
+    markDead,
     npcBrief,
     setExistence,
     setRealm,
@@ -38,7 +46,6 @@ import {
     createLineageRecord,
     generationOf,
     heirsOf,
-    settleInheritance,
     traitsFor
 } from '../../../src/engine/world/lineage.js';
 import {
@@ -931,24 +938,46 @@ describe('lineage: the edge, and what travels down it', () => {
         expect(heirsOf(l, 'npc-1', id => id !== 'npc-2')).toEqual([{ id: 'npc-d', relation: 'disciple' }]);
     });
 
-    it('moves property, enemies and obligations together', () => {
-        const out = settleInheritance(line(), 'npc-1', 100 * YEAR);
-        expect(out.heirId).toBe('npc-2');
-        expect(out.holdingsTransferred.spirit_stones).toBe(3000);
-        expect(out.lineage.holdings.spirit_stones).toBe(1000);
-        expect(out.enemiesInherited).toEqual(['fac-2']);
-        expect(out.obligationIds).toEqual(['ob-1']);
-    });
-
-    it('lets an estate go nowhere and marks the line extinct', () => {
-        const l = createLineageRecord({ id: 'lin-x', surname: 'Mo', founderId: 'npc-9', foundedOnDay: 0 });
-        const out = settleInheritance(l, 'npc-9', 100 * YEAR);
-        expect(out.heirId).toBeNull();
-        expect(out.lineage.extinctOnDay).toBe(100 * YEAR);
-    });
 });
 
 describe('death handoff: goals and heirs outlive their holder', () => {
+    it('moves the purse to an heir at the body, without dividing the family pot', () => {
+        const world = createWorld({ seed: 'estate-handoff', skipPriorAges: true });
+        const deceased = markDead({
+            ...createNpc(world.seed, { id: 'father', bornOnDay: -40 * YEAR, onDay: 0 }),
+            locationId: 'courtyard', spiritStones: 4000
+        }, YEAR, 'Died at home.');
+        const heir = {
+            ...createNpc(world.seed, { id: 'child', bornOnDay: -20 * YEAR, onDay: 0 }),
+            locationId: 'courtyard', spiritStones: 0
+        };
+        const lineage = addLineageEdge(createLineageRecord({
+            id: 'family', surname: 'Yun', founderId: deceased.id, foundedOnDay: 0
+        }), { parentId: deceased.id, childId: heir.id, relation: 'descendant', onDay: 0 });
+        world.npcs = [deceased, heir];
+        world.lineages = [{ ...lineage, holdings: { spirit_stones: 1000 } }];
+
+        const handoff = settleNpcDeath(world, deceased, YEAR);
+        expect(handoff.primaryHeirId).toBe(heir.id);
+        expect(getNpc(world, heir.id)!.spiritStones).toBe(4000);
+        expect(getNpc(world, deceased.id)!.spiritStones).toBe(0);
+        expect(world.lineages[0]!.holdings.spirit_stones).toBe(1000);
+        expect(world.lineages[0]!.extinctOnDay).toBeNull();
+    });
+
+    it('dates extinction when the last living member dies on the live death path', () => {
+        const world = createWorld({ seed: 'last-member', skipPriorAges: true });
+        const deceased = markDead(createNpc(world.seed, {
+            id: 'last', bornOnDay: -40 * YEAR, onDay: 0
+        }), YEAR, 'The last member died.');
+        world.npcs = [deceased];
+        world.lineages = [createLineageRecord({
+            id: 'family', surname: 'Mo', founderId: deceased.id, foundedOnDay: 0
+        })];
+        expect(settleNpcDeath(world, deceased, YEAR).heirs).toEqual([]);
+        expect(world.lineages[0]!.extinctOnDay).toBe(YEAR);
+    });
+
     it('passes a live goal to the primary heir with its original date', () => {
         let world = createWorld({ seed: 'death-1', skipPriorAges: true });
         let father = createNpc('death-1', { id: 'npc-1', bornOnDay: -95 * YEAR, onDay: 0 });

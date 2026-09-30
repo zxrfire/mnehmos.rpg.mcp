@@ -32,7 +32,7 @@ import {
 import { rankName } from '../engine/cultivation/realms.js';
 import { getMember } from '../data/cultivation/members.js';
 import { LIVING_TRANSMISSIONS, getTechnique } from '../data/cultivation/techniques.js';
-import { THE_DEEPEST_ROADS } from '../data/cultivation/roads-to-the-top-of-the-ladder.js';
+import { THE_DEEPEST_ROADS, teachersAtDepth } from '../data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { PLACES_THAT_TEACH_A_DAO } from '../data/cultivation/places-that-teach-a-dao.js';
 import {
     CROSS_TRADITION_ERRORS,
@@ -257,7 +257,7 @@ function daoGroundSection(): string {
 
 function deepRoadsSection(): string {
     const copies = THE_DEEPEST_ROADS.reduce((n, road) => n + road.copies, 0);
-    const teachers = THE_DEEPEST_ROADS.reduce((n, road) => n + road.teachers.length, 0);
+    const teachers = THE_DEEPEST_ROADS.reduce((n, road) => n + teachersAtDepth(road.factionId), 0);
     const rationed = THE_DEEPEST_ROADS.filter(road => road.gradedByStanding !== null);
 
     const rows = THE_DEEPEST_ROADS.map(road => `<tr>

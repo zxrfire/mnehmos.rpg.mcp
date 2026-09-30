@@ -1,6 +1,10 @@
 /**
  * Design guards for the acquisition funnel.
  *
+ * Partial transmission was removed: live teaching passes a whole art through
+ * couldWriteOutACopy. Its possession, mastery, root and interrupted-lesson
+ * coverage lives in tests/web/a-cultivator-can-be-the-one-teaching.test.ts.
+ *
  * The single property these exist to protect: a player must never acquire
  * something and find out later. Every reason a manual can fail somebody has to
  * arrive in one response, each carrying its own attributable cause.
@@ -10,11 +14,9 @@ import { describe, it, expect } from 'vitest';
 
 import {
     assessAcquisition,
-    canTransmit,
     extensionOption,
     findFromManual,
-    type ManualLike,
-    type Transmitter
+    type ManualLike
 } from '../../../src/engine/encounters/acquisition.js';
 import { mayHoldAFit, assessFit, type Seeker } from '../../../src/engine/encounters/suitability.js';
 import { daoOf } from '../../../src/engine/cultivation/dao.js';
@@ -253,75 +255,6 @@ describe('E5 - mayHoldAFit reads the routes that were invisible to it', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-describe('the living teacher', () => {
-    const master: Transmitter = {
-        id: 'elder-yun', name: 'Elder Yun', ordinal: 25, transmits: ['molten']
-    };
-    const student = { seeker: fireSeeker, dao: FIRE_DAO };
-
-    it('a teacher who does not hold it cannot give it', () => {
-        const check = canTransmit({ ...master, transmits: [] }, FIRE_MANUAL, student);
-        expect(check.permitted).toBe(false);
-        expect(check.reason).toBe('does_not_hold_it');
-    });
-
-    it('unwillingness is a social problem and is named as one', () => {
-        const check = canTransmit({ ...master, willing: false }, FIRE_MANUAL, student);
-        expect(check.reason).toBe('unwilling');
-        expect(check.detail).toContain('no amount of cultivation answers it');
-    });
-
-    it('you cannot be shown further than the teacher went', () => {
-        // The honest limit on this route, and why a house's best elder is not a
-        // substitute for the house's library.
-        const shallow: Transmitter = { ...master, ordinal: 19 };
-        const check = canTransmit(shallow, FIRE_MANUAL, student);
-        expect(check.permitted).toBe(true);
-        expect(check.cap).toBe(19);
-        expect(check.detail).toContain('the limit is the teacher, not the book');
-    });
-
-    it('a teacher at or below the student can hand over pages and show nothing', () => {
-        const peer: Transmitter = { ...master, ordinal: 17 };
-        const check = canTransmit(peer, FIRE_MANUAL, student);
-        expect(check.permitted).toBe(false);
-        expect(check.reason).toBe('went_no_further');
-        expect(check.guidance).toBe(1);
-        expect(check.detail).toContain('sends a student away');
-    });
-
-    it('reads the same suitability machinery as a shelf, and is not a discount', () => {
-        // A beloved master handing over their life's work can still be handing
-        // over something that will teach the student nothing.
-        const check = canTransmit(master, FIRE_MANUAL, { seeker: waterSeeker, dao: FIRE_DAO });
-        expect(check.permitted).toBe(true);
-        expect(check.acquisition?.usable).toBe(false);
-        expect(check.acquisition?.refusals).toContain('unsuited');
-        expect(check.detail).toContain('however long they sit');
-    });
-
-    it('is an access route AND a rate term, and reports both', () => {
-        const check = canTransmit(master, FIRE_MANUAL, student);
-        expect(check.permitted).toBe(true);
-        expect(check.cap).toBe(21);
-        expect(check.guidance).toBeGreaterThan(1);
-        expect(check.acquisition?.route).toBe('transmitted');
-    });
-
-    it('a teacher with a partial set transmits a partial set', () => {
-        // The same `shardPower` arithmetic, through a person. A master with two
-        // thirds of a canon teaches two thirds of a canon.
-        const scattered: ManualLike = {
-            id: 'canon', name: 'A Scattered Canon', requiredOrdinal: 17, cap: 21,
-            grade: 'chaos', element: 'fire', volumes: ['a', 'b', 'c']
-        };
-        const partial: Transmitter = {
-            id: 'm', name: 'A Master', ordinal: 30, transmits: ['canon'], volumesHeld: ['a', 'b']
-        };
-        expect(canTransmit(partial, scattered, student).cap).toBe(20);
-    });
-});
-
 // ─────────────────────────────────────────────────────────────────────────
 describe('derivation offered through the same funnel', () => {
     it('extension is available by DEFAULT - the allowlist was the wrong model', () => {

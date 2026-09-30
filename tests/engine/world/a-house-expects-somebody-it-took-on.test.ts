@@ -39,7 +39,7 @@ import { describe, expect, it } from 'vitest';
 import { applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 import { THE_INTERNAL_AFFAIRS_ELDER } from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import {
-    aRecruiterOwesTheHouseAReport,
+    whoTookThemOn,
     doesTheHouseExpect,
     theHouseExpects,
     theReportsTheyOwe,
@@ -115,13 +115,18 @@ const put = (state: WorldState, id: string, locationId: string) => {
     state.npcs[at] = { ...state.npcs[at]!, locationId, activity: null };
 };
 
+// Live intake selects a recruiter first, then books that person's report.
 describe('whoever took somebody on owes the house a report', () => {
     it('is whoever of the house stood where they were taken on, and the recruit knows who', () => {
         const state = build();
-        const recruiter = aRecruiterOwesTheHouseAReport(state, {
-            houseId: HOUSE, person: { id: 'recruit', name: 'recruit' }, placeId: VILLAGE, onDay: DAY
+        const recruiter = whoTookThemOn(state.npcs, {
+            houseId: HOUSE, personId: 'recruit', placeId: VILLAGE,
+            atTheHouse: id => id === SEAT
         });
         expect(recruiter?.id).toBe('posted');
+        theyOweTheHouseAReport(state, recruiter!.id, {
+            houseId: HOUSE, person: { id: 'recruit', name: 'recruit' }, placeId: VILLAGE, onDay: DAY
+        });
         expect(theReportsTheyOwe(npc(state, 'posted'))).toEqual([expect.objectContaining({
             houseId: HOUSE, personId: 'recruit', whereId: VILLAGE, whereName: 'Low Ford', takenOnDay: DAY
         })]);
@@ -135,9 +140,9 @@ describe('whoever took somebody on owes the house a report', () => {
     it('is somebody in the house\'s compound where nobody of the house stood there', () => {
         const state = build();
         put(state, 'posted', FAR);
-        const recruiter = aRecruiterOwesTheHouseAReport(state, {
-            houseId: HOUSE, person: { id: 'recruit', name: 'recruit' }, placeId: VILLAGE, onDay: DAY,
-            inReach: id => id === VILLAGE || id === SEAT
+        const recruiter = whoTookThemOn(state.npcs, {
+            houseId: HOUSE, personId: 'recruit', placeId: VILLAGE,
+            inReach: id => id === VILLAGE || id === SEAT, atTheHouse: id => id === SEAT
         });
         expect(recruiter?.id).toBe('elder');
     });
@@ -147,8 +152,8 @@ describe('whoever took somebody on owes the house a report', () => {
         state.factions[0] = { ...state.factions[0]!, seatLocationId: null };
         put(state, 'posted', FAR);
         put(state, 'elder', FAR);
-        const recruiter = aRecruiterOwesTheHouseAReport(state, {
-            houseId: HOUSE, person: { id: 'recruit', name: 'recruit' }, placeId: VILLAGE, onDay: DAY
+        const recruiter = whoTookThemOn(state.npcs, {
+            houseId: HOUSE, personId: 'recruit', placeId: VILLAGE
         });
         expect(recruiter).toBeNull();
         expect(whoTheySayTookThemOn(npc(state, 'recruit'), HOUSE)).toBeNull();

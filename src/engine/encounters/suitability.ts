@@ -299,8 +299,7 @@ const FIT_BEARING_TAGS: readonly string[] = [
     'corpse',
     'grave',
     // A person, rather than a shelf. Two rows carry it, and a teacher is an
-    // access route to a method exactly as a ruin is - see `canTransmit` in
-    // `acquisition.ts`.
+    // access route to a method exactly as a ruin is.
     'transmission'
 ];
 

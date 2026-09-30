@@ -183,21 +183,6 @@ export const MADNESS_STAGES: readonly MadnessStage[] = [
     }
 ];
 
-/**
- * Which stage a False Immortal is at, given years since their crossing and whether
- * their legacy still has somewhere to go.
- */
-export function madnessStageAt(
-    yearsSinceCrossing: number,
-    legacy: LegacyState = 'holding'
-): MadnessStage {
-    const years = Number.isFinite(yearsSinceCrossing) ? Math.max(0, Math.floor(yearsSinceCrossing)) : 0;
-    let index = MADNESS_STAGES.findIndex(s => years >= s.fromYear && years < s.toYear);
-    if (index < 0) index = MADNESS_STAGES.length - 1;
-    if (legacy !== 'holding') index = Math.min(index + 1, MADNESS_STAGES.length - 1);
-    return MADNESS_STAGES[index];
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // THE TWO EXITS
 // Why they do not remain, and why the record cannot tell the two apart.

@@ -731,7 +731,7 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
     it('a written stage is transmissible - it is not a private escape', () => {
         // "It can be passed on from master to student personally (or even
         // written down)." A stage somebody wrote is a stage like any other, so
-        // nothing special-cases it: the manual's cap moved, and `canTransmit`
+        // nothing special-cases it: the manual's cap moved, and `carriesTo`
         // carries the manual as it always did. This asserts the ABSENCE of a
         // barrier, which is the whole of what the ruling asked for.
         const result = writeNextStage(request);

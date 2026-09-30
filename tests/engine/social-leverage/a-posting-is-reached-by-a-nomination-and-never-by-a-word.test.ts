@@ -1,46 +1,18 @@
 /**
- * THE MOST PRESTIGIOUS POSTING IN THE WORLD HAD A ROAD AND NO ROAD.
+ * Posting petitions once named a nomination without explaining its road.
+ * These reads derive the nominating houses, required standing and the cost to
+ * the nominator. Measured when written: 13 of 38 houses reached a posting.
  *
- * The defect as found: `a-favour-skips-the-admission-bar.ts` answers "no bar to
- * skip, because there is no door" at both posting bodies, says in both entries
- * that the right instrument is a NOMINATION, and the Deeproot Court's entry says
- * its own names have never once been declined. `whyYouCannotBePostedThere` told
- * a player the same thing off the board. Grepping `nominat` across `src/engine`,
- * `src/web` and `src/server` returned ONE line - a comment in
- * `spending-a-word-to-place-a-child.ts` saying the right instrument was a
- * nomination and doing nothing with it. Roughly fifteen prose mentions, zero
- * machinery, and a road that named itself and led nowhere.
- *
- * WHAT THIS PINS, and none of it is a number typed in by hand:
- *
- *   - A favour and a nomination are different instruments, and the difference
- *     shows in WHO PAYS. `spendAWord` writes a `favor` held by the person asked,
- *     about the asker. `aNameGoesUp` writes a `blocked_advancement` GRUDGE held
- *     by somebody who was passed over, about the NOMINATOR. That inversion is
- *     the design, and a test that did not pin it would let somebody "simplify"
- *     the nomination into a second favour.
- *   - Who may nominate is DERIVED from the parentage chain, `Parentage.standing`
- *     and the relationship layer. Measured on the catalog as it stands: 13 of 38
- *     sects reach a posting at all; the Tripod Court's apex reads 4 sects' names
- *     plus the Court's own; the Deeproot Court's reads 8 plus its own. A per-
- *     house table would have been wrong the day one of these two bodies changed
- *     apexes, which is a thing that has already happened in this world.
- *   - THE HONEST LIMIT. The lowest rung anybody in fact stands on is 25 at the
- *     Tripod (its weakest serving Warden) and 21 at the Deeproot (its own stated
- *     figure). A player opens at Qi Condensation, so a starting cultivator is 24
- *     and 20 rungs short respectively. This is a mid-game road and the engine
- *     says so with the number rather than pretending.
- *
- * RED-CHECKED. With `howFarANameGoes` returning `'read'` unconditionally, the
- * standing case, the stranger case and the apex case all fail; with the grudge
- * in `aNameGoesUp` swapped for a `createFavor` the inversion test fails.
+ * The old aNameGoesUp test fabricated an awarded seat from a nomination. That
+ * producer was removed: a forwarded name is not an appointment. The live
+ * petition's refusal and unchanged ledgers are covered in
+ * tests/web/a-nomination-does-not-award-a-seat.test.ts.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import {
     A_NOMINATION_WEIGHS,
-    aNameGoesUp,
     howFarANameGoes,
     howFarShortOfThePosting,
     thePostingAt,
@@ -48,17 +20,11 @@ import {
     whatANominationWouldTake,
     whatThisHousesNameReaches,
     whatWouldPutYouThere,
-    whoCouldNominateInto,
-    type ANameWentUp
+    whoCouldNominateInto
 } from '../../../src/engine/social-leverage/who-can-put-your-name-up-for-a-posting';
-import { spendAWord, wasPlaced } from '../../../src/engine/birth/spending-a-word-to-place-a-child';
 import { thereIsNoDoorAt } from '../../../src/data/cultivation/a-favour-skips-the-admission-bar';
 import { SECTS } from '../../../src/data/cultivation/sects';
 import { getParentage, chainToApex } from '../../../src/data/cultivation/governance-and-water-rights';
-
-/** Whether `aNameGoesUp` came back with a nomination rather than a refusal. */
-const aNameWasPutUp = (result: ReturnType<typeof aNameGoesUp>): result is ANameWentUp =>
-    typeof result !== 'string';
 
 // The two bodies are read out of the catalog, never named here: which bodies
 // have no door is a property of the stance table, and a third one appearing is
@@ -184,58 +150,19 @@ describe('the price is different from a favour\'s, and it is paid by somebody el
         }
     });
 
-    it('leaves a grudge against the nominator, where a favour leaves a debt to the asker', () => {
-        const posting = POSTINGS[0];
-        const carrier = whoCouldNominateInto(posting.bodyId)
-            .find(c => c.howFar === 'read')!;
-
-        const went = aNameGoesUp({
-            askerId: 'npc-asker',
-            nominatorId: carrier.nominatorId,
-            intoBodyId: posting.bodyId,
-            askedOfId: 'npc-elder',
-            passedOverId: 'npc-passed-over',
-            onDay: 500
+    it('names the cost to the nominator without asserting an appointment', () => {
+        const posting = POSTINGS[0]!;
+        const carrier = whoCouldNominateInto(posting.bodyId).find(c => c.howFar === 'read')!;
+        const would = whatANominationWouldTake({
+            askerId: 'npc-asker', askerOrdinal: posting.theWorkRequires,
+            nominatorId: carrier.nominatorId, askedOfId: 'npc-elder', intoBodyId: posting.bodyId
         });
-        expect(aNameWasPutUp(went)).toBe(true);
-        if (!aNameWasPutUp(went)) return;
-
-        const cost = went.whatItCostThem!;
-        expect(cost.kind).toBe('grudge');
-        expect(cost.cause).toBe('blocked_advancement');
-        // Held by the person passed over, ABOUT THE HOUSE THAT CHOSE. Not about
-        // the person whose name went up, and the catalog says why: no
-        // explanation is ever given to anybody, so there is nothing to hold
-        // against the appointee except that they went.
-        expect(cost.holderId).toBe('npc-passed-over');
-        expect(cost.subjectId).toBe(carrier.nominatorId);
-        expect(cost.subjectId).not.toBe('npc-asker');
-
-        // The favour, for contrast, points the other way entirely: the person
-        // who was asked holds it, and the ASKER is what it is about.
-        const word = spendAWord({
-            askerId: 'npc-asker',
-            childId: 'npc-child',
-            houseId: SECTS.find(s => !thereIsNoDoorAt(s.id)
-                && whatThisHousesNameReaches(s.id).length === 0
-                && spendableAt(s.id))!.id,
-            askedOfId: 'npc-elder',
-            onDay: 500
-        });
-        expect(wasPlaced(word)).toBe(true);
-        if (!wasPlaced(word)) return;
-        expect(word.obligation.kind).toBe('favor');
-        expect(word.obligation.holderId).toBe('npc-elder');
-        expect(word.obligation.subjectId).toBe('npc-asker');
+        expect(typeof would).not.toBe('string');
+        if (typeof would === 'string') throw new Error(would);
+        expect(would.andWhatItCostsThem).toMatch(/held against the house/);
+        expect(would.andWhatItCostsThem).toMatch(/rather than against the person/);
     });
 });
-
-/** Whether a word can be spent at this house at all. Asked, never assumed. */
-function spendableAt(houseId: string): boolean {
-    return wasPlaced(spendAWord({
-        askerId: 'a', childId: 'b', houseId, askedOfId: 'c', onDay: 1
-    }));
-}
 
 describe('where no nomination reaches, and what the refusal says instead', () => {
     it('points at the other instrument when the body asked about has a door', () => {

@@ -182,8 +182,8 @@ export function hearingProse(hearing: Hearing): string {
 /**
  * Every name this speaker could drop into a sentence without thinking.
  */
-export function speakableFor(speakerOrdinal: number): SpeakableName[] {
-    return mentionableFor({ ordinal: speakerOrdinal, factionId: null }).map(toSpeakable);
+export function speakableFor(speakerOrdinal: number, factionId: string | null = null): Mentionable[] {
+    return mentionableFor({ ordinal: speakerOrdinal, factionId });
 }
 
 function toSpeakable(entry: Mentionable): SpeakableName {
@@ -649,7 +649,7 @@ export function travellerHearing(traveller: Traveller): Hearing {
 
 /** What this speaker holds, given their standing and whatever they belong to. */
 function heldBy(speaker: RosterEntry): Mentionable[] {
-    return mentionableFor({ ordinal: speaker.realmOrdinal, factionId: speaker.sectId });
+    return speakableFor(speaker.realmOrdinal, speaker.sectId);
 }
 
 /** The subset the player has no record of. Ids are unique across the table. */

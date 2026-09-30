@@ -140,7 +140,7 @@
  * second opinion if it got one.
  *
  * THE LINEAGE RECORD. Untouched, on purpose. `state.lineages` is what
- * `heirsOf` and `settleInheritance` read, and adding edges to it would change
+ * `heirsOf` reads, and adding edges to it would change
  * who inherits in every world that already exists. The relationship layer's
  * families and the lineage layer's families are two different claims today and
  * this pass improves exactly one of them. The surname chain is the one that

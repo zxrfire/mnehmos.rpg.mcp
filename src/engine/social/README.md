@@ -6,6 +6,11 @@
 > auto-injected into a narration prompt. The narrator's always-loaded text is
 > [`../../../docs/world/NARRATOR-CORE.md`](../../../docs/world/NARRATOR-CORE.md).
 
+`whatIsSaidAbout` supplies the live scene card with the open accounts a character can
+know about the player. Proximity and explicit participants decide which records reach
+them. The narrator receives the kind and cause in the addressed character's private
+card, never a character grade or a count of inaccessible records.
+
 What the world remembers about people, and what it has wrong. Relationships, the
 obligation ledger, the epistemic layers, and secrets. Read this before changing anything
 in `src/engine/social/`.

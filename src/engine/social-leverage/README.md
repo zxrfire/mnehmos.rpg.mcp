@@ -935,10 +935,15 @@ simplify away:
 | who decides | the house with the bar | the apex, about you, elsewhere |
 | who pays | the asker, in a `favor` held by the person asked | **the nominator**, in a `blocked_advancement` grudge held by somebody who was passed over |
 
-So `spendAWord` writes a debt pointing at the asker and `aNameGoesUp` writes a grudge
-pointing at the house that chose. **Nothing is owed to the nominator by the person whose
-name went up**, and a `createFavor` appearing in that producer is the mechanic being
-rewritten into a second copy of the favour.
+`spendAWord` writes a debt pointing at the asker. A posting's nomination cost is
+held against the nominating house by someone passed over, rather than owed by the
+nominee. `whatANominationWouldTake` explains that distinction in the live petition.
+
+The retired producer wrote a `blocked_advancement` grudge while asserting that the
+seat had been awarded, although it made no appointment or membership change. The
+petition currently explains the route and refuses an application; it creates no
+appointment and no fallout for one. Any appointment path must first store the
+appointment and then derive its consequences from that event.
 
 **Who may nominate is derived, never listed** - the parentage chain, `Parentage.standing`
 and the relationship layer, in that order. One of these two postings has already changed

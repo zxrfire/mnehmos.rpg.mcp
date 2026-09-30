@@ -2,6 +2,10 @@
  * Validation for the False Immortal catalog: the legacy paths, the trajectory,
  * the vacant office and the one eligible person who cannot hold it.
  *
+ * The age-based classifier was removed: these are attributed historical bands,
+ * not a clock that changes a living mind. Legacy failure no longer jumps a
+ * person exactly one stage without any state transition.
+ *
  * The load-bearing assertions, in the order they matter:
  *   - no seal anywhere in the world reaches ordinal 45, which is the fact the
  *     whole institution rests on and which nothing else in the repo pins
@@ -52,7 +56,6 @@ import {
     DEPARTURE,
     DEPARTURE_DESTINATIONS,
     RecruitmentSchema,
-    madnessStageAt,
     protectorsOf,
     servingProtectors
 } from '../../src/data/cultivation/false-immortals.js';
@@ -235,7 +238,7 @@ describe('the historical False Immortals', () => {
             const years = f.crossedYearsAgo - f.endedYearsAgo;
             expect(years, `${f.id} ended before it crossed`).toBeGreaterThan(0);
             expect(
-                madnessStageAt(years).id,
+                MADNESS_STAGES.find(s => years >= s.fromYear && years < s.toYear)?.id,
                 `${f.id} claims ${stage!.id} at ${years} years since crossing`
             ).toBe(stage!.id);
         }
@@ -359,35 +362,6 @@ describe('the madness stages', () => {
         for (const stage of MADNESS_STAGES) {
             expect(stage.theAxis.length, stage.id).toBeGreaterThan(150);
             expect(stage.whatMovesThemOn.length, stage.id).toBeGreaterThan(120);
-        }
-    });
-
-    it('advances by exactly one band when the legacy stops holding', () => {
-        // Years alone.
-        expect(madnessStageAt(0).id).toBe(MADNESS_STAGES[0].id);
-        expect(madnessStageAt(640).id).toBe(MADNESS_STAGES[0].id);
-        expect(madnessStageAt(MADNESS_STAGES[1].fromYear).id).toBe(MADNESS_STAGES[1].id);
-        // A failed or finished legacy walks the same years faster.
-        for (let i = 0; i < MADNESS_STAGES.length; i++) {
-            const year = MADNESS_STAGES[i].fromYear;
-            const expected = Math.min(i + 1, MADNESS_STAGES.length - 1);
-            expect(madnessStageAt(year, 'failed').id).toBe(MADNESS_STAGES[expected].id);
-            expect(madnessStageAt(year, 'finished').id).toBe(MADNESS_STAGES[expected].id);
-            expect(madnessStageAt(year, 'holding').id).toBe(MADNESS_STAGES[i].id);
-        }
-        // Total and clamped at both ends rather than throwing.
-        expect(madnessStageAt(-500).id).toBe(MADNESS_STAGES[0].id);
-        expect(madnessStageAt(Number.NaN).id).toBe(MADNESS_STAGES[0].id);
-        expect(madnessStageAt(FALSE_IMMORTAL_LIFESPAN_YEARS * 2).id)
-            .toBe(MADNESS_STAGES[MADNESS_STAGES.length - 1].id);
-    });
-
-    it('never goes backwards as the years increase', () => {
-        let last = -1;
-        for (let year = 0; year <= FALSE_IMMORTAL_LIFESPAN_YEARS; year += 500) {
-            const index = stageIndex(madnessStageAt(year).id);
-            expect(index, `regression at year ${year}`).toBeGreaterThanOrEqual(last);
-            last = index;
         }
     });
 
@@ -958,7 +932,7 @@ describe('the present count', () => {
 
     it('puts Lu Sheng early on the curve, with the whole of it ahead of him', () => {
         const lu = getWanderer('wanderer-lu-sheng')!;
-        const stage = madnessStageAt(lu.crossingYearsAgo);
+        const stage = MADNESS_STAGES.find(s => lu.crossingYearsAgo >= s.fromYear && lu.crossingYearsAgo < s.toYear)!;
         expect(stage.id, 'Lu Sheng should be in the first stage').toBe(MADNESS_STAGES[0].id);
         // He holds the rung's figure less his age, so the far end is on his road
         // on the arithmetic rather than by fiat.

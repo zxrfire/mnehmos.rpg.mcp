@@ -115,7 +115,7 @@ export interface WhatABoughtRungLeaves {
 /**
  * The two records a rung nobody earned leaves behind.
  *
- * Returned rather than written, like `aNameGoesUp`: the engine layer has no
+ * Returned rather than written: the engine layer has no
  * database and the caller's transaction is the only place a write belongs.
  */
 export function whatABoughtRungLeaves(input: {

@@ -66,10 +66,10 @@ function resolveAgent(repo: AgentRepository, args: { agentId?: string; character
  * any environment where the runtime hasn't been explicitly registered.
  */
 function ensureRuntime() {
-    const existing = getAgentRuntime();
+    const { db } = ensureDb();
+    const existing = getAgentRuntime(db);
     if (existing) return existing;
 
-    const { db } = ensureDb();
     // Lazy fallback factory - reads env keys only, no startup wiring required.
     const factory = new ProviderFactory();
     factory.initialize();

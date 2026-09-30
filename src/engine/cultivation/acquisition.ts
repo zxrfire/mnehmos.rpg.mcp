@@ -164,10 +164,8 @@ export {
 // same fact dormant arts and deep-foundation sects state from the other end: a
 // house holds stages somebody wrote long ago that nobody living has reached.
 //
-// Mechanically this needs nothing new. A stage somebody wrote is a stage like
-// any other, so `canTransmit` in `../encounters/acquisition.ts` already carries
-// it from master to student, and its "you cannot be shown further than the
-// teacher went" rule is exactly right for it.
+// Live transmission uses `couldWriteOutACopy` in `../world/manuals.ts`: the
+// teacher must hold the whole art before passing it on.
 
 /**
  * One stage of a manual: the unit a manual grows by, and one rung of ceiling.
