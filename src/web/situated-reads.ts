@@ -20,6 +20,7 @@ import { absenceTierOf, type AbsenceTier } from '../data/cultivation/lost-ages.j
 import { capOf, carriesTo } from '../data/cultivation/techniques.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
+import { MANUAL_QUALITY_TIERS, canTellApart } from '../engine/cultivation/manual-quality.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { effectiveCapOf, writtenTo } from '../engine/cultivation/escapes.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
@@ -50,6 +51,7 @@ import {
     AMBIENT_QI_RATE_MULTIPLIER,
     type AmbientQi,
     type Cultivator,
+    type ManualQuality,
     type Run,
     stagnationYearsForOrdinal
 } from '../schema/cultivation.js';
@@ -1630,6 +1632,22 @@ export const situatedReads = {
             }
         }
 
+        // SET BESIDE THE BOOK THEY WORK, whether they can see which is better written.
+        const beside = cultivator.knownTechniques
+            .filter(id => id !== art.id)
+            .map(id => getTechnique(id))
+            .filter((held): held is NonNullable<typeof held> =>
+                held !== undefined && held.category === catalog.category)
+            .sort((a, b) => (this.repos.techniques.getKnown(cultivator.id, b.id)?.mastery ?? 0)
+                - (this.repos.techniques.getKnown(cultivator.id, a.id)?.mastery ?? 0))[0];
+        if (beside) {
+            lines.push(canTellApart(catalog, beside, cultivator)
+                ? `Beside ${beside.name}, you can tell the two apart: ${catalog.name} is `
+                  + `${howItIsWritten(catalog.quality)}, and ${beside.name} is `
+                  + `${howItIsWritten(beside.quality)}.`
+                : `Beside ${beside.name}, you cannot tell which of the two is the better written.`);
+        }
+
         const facts = factsForToolResult(`${catalog.name}, and what stands in the way.`, lines);
         facts.structure.push(
             `${catalog.name} opens at ${theRung(catalog.requiredOrdinal)} and `
@@ -1948,3 +1966,9 @@ export const situatedReads = {
         return this.freeAction(run, 'look', facts);
     }
 };
+
+/** A book's tier as said in a sentence: "a worked canon", "the author's own hand". */
+function howItIsWritten(quality: ManualQuality | undefined): string {
+    const label = MANUAL_QUALITY_TIERS[quality ?? 'sound'].label;
+    return label.charAt(0).toLowerCase() + label.slice(1);
+}
