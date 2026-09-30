@@ -58,6 +58,8 @@ import {
 } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 
 export type EntityKind =
+    /** A surviving record disclosed by a speaker, rather than observed underfoot. */
+    | 'lore'
     | 'cultivator'
     | 'sect'
     | 'technique'
@@ -134,8 +136,9 @@ export interface ResolvedEntity {
     /**
      * What this cultivator perceives or has been told. Narratable.
      *
-     * Every one is read from state, and every one is phrased as observation.
-     * If a line here would teach the player a rule, it belongs in `structure`.
+     * Observations come from state. Lore facts are attributed records from a speaker;
+     * their existence never grants the player knowledge before that disclosure.
+     * Resolver arithmetic belongs in `structure`.
      */
     facts: string[];
     /** Categories, ladders, ordinals, grades. Inspector only, never prompted. */

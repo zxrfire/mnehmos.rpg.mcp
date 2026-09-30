@@ -66,6 +66,8 @@ export type Attestation = z.infer<typeof AttestationSchema>;
 
 /** Which of these a sect can act on, which is the question that matters. */
 export const ATTESTATION_IS_USABILITY = {
+    usable: ['secure', 'withheld'] as readonly Attestation[],
+    knowledge: ["A preserved name can address an ancestor only if it identifies that person. Ceremonial, garbled, disputed or unreadable names do not establish a usable address; a ceremony alone does not check the name."],
     thePrinciple:
         'Attestation is not scholarship. It is whether the name can be used - in an offering, in a claim of descent, in front of the person themselves if they ever wake or answer. A sect with a ceremonial name has been addressing somebody who is not there for six hundred years, and the ceremony has worked perfectly the whole time, because nothing about an offering reports back.',
     whatEachOneCosts: [
@@ -1236,7 +1238,7 @@ export function figuresFor(factionId: string): readonly NamedFigure[] {
  * and cannot spend - which is the whole of `LOST_RECORDS` reduced to a lookup.
  */
 export function nameIsUsable(figure: NamedFigure): boolean {
-    return figure.attestation === 'secure' || figure.attestation === 'withheld';
+    return ATTESTATION_IS_USABILITY.usable.includes(figure.attestation);
 }
 
 /**

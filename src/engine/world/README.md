@@ -51,6 +51,12 @@ The dead-mortal sweep retains people named by a paper still up or an intact
 bone's origin. Taking a bone spends a day; that day cannot erase the person
 whose proof the paper asks for.
 
+The opening wanderer population is checked against `THE_PRESENT_COUNT` and
+`MAX_RESIDENT_FALSE_IMMORTALS` in `seedTheWanderers`. A catalog that exceeds its opening
+record fails world creation rather than silently discarding a person. The maximum is
+the catalog's design ceiling at opening, not a physical gate that rewrites a later
+crossing outcome.
+
 ---
 
 ## Depth, not scale: one planet, understood further down

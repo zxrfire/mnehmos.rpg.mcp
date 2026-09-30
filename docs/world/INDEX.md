@@ -403,20 +403,20 @@ it describes.
 | [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) | How each faction stands with the bodies above it, below it and beside it. | 912 | - |
 | [`faction-roll.ts`](../../src/data/cultivation/faction-roll.ts) | Who is on each faction's roll, from every catalog that holds people, in one place. | 295 | - |
 | [`fallen.ts`](../../src/data/cultivation/fallen.ts) | Moved to `cultivators-the-road-finished.ts`. | 11 | - |
-| [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | False Immortals: what they do with the time, the office that used to exist, and the two ways they leave the world. | 1197 | - |
+| [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | False Immortals: what they do with the time, the office that used to exist, and the two ways they leave the world. | 1204 | - |
 | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | Governance: who holds the water, and on what terms. | 3682 | [`discovery.md`](houses/discovery.md) |
 | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | Spirit herbs - the ingredient layer under alchemy. | 909 | [`the-late-age.md`](history/the-late-age.md) |
 | [`hierarchy.ts`](../../src/data/cultivation/hierarchy.ts) | Moved to `governance-and-water-rights.ts`. | 11 | - |
-| [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1605 | - |
+| [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1614 | - |
 | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 323 | - |
 | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | Things that came down from above. | 789 | [`items.md`](things/items.md) |
 | [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 613 | - |
-| [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3018 | - |
+| [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3023 | - |
 | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | Bodies that will hold a thing for somebody who is not coming back, and the terms each of them holds it on. | 373 | - |
-| [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | The ancient tier: what a richer age made, what is left of it, and who is holding the remains. | 670 | - |
+| [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | The ancient tier: what a richer age made, what is left of it, and who is holding the remains. | 675 | - |
 | [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 4400 | - |
 | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 794 | [`normal-in-the-cultivation-world.md`](normal-in-the-cultivation-world.md) |
-| [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | The named dead, the named absent, and the named enormous. | 1274 | - |
+| [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | The named dead, the named absent, and the named enormous. | 1276 | - |
 | [`pills.ts`](../../src/data/cultivation/pills.ts) | Alchemy - the pill catalog. | 821 | - |
 | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | Place names - one source of truth for what every place is called. | 258 | [`place-names.md`](writing/place-names.md) |
 | [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) | Places that teach a dao: named ground where a road besides your own can be walked, and who is standing on the door. | 678 | [`immortals.md`](climbing/immortals.md) |
@@ -441,14 +441,14 @@ it describes.
 | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | The four roads that reach the top of the ladder, and what it actually takes to be walked up one. | 262 | - |
 | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 967 | - |
 | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | What ordinary people say about the powers above them, and where it is wrong. | 1028 | [`discovery.md`](houses/discovery.md) |
-| [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | Sealed ancestors: sealed and dormant high-realm beings, held and unheld. | 641 | - |
+| [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | Sealed ancestors: sealed and dormant high-realm beings, held and unheld. | 643 | - |
 | [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3974 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
 | [`standoff.ts`](../../src/data/cultivation/standoff.ts) | Moved to `the-top-of-the-world.ts`. Its own first line already said it: the top of the world, and whether it can be moved. | 11 | - |
 | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 436 | - |
 | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. | 3854 | [`ancient.md`](history/ancient.md) |
 | [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | The ancestors a house still names, and what is actually left of them. | 1241 | - |
 | [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) | The three floors a house admits at - guest, servant, disciple. | 184 | - |
-| [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 363 | - |
+| [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 368 | - |
 | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | Two traditions, one ladder. The world holds two genuinely different ways of cultivating, and the difference between them is the oldest quarrel in it. Both climb the SAME rungs: a fourth-realm practitioner of either is Core Formation, ordinal 17 to 20, and `realmOrdinal` means exactly what it means everywhere else. There is no second scale in this file and there must never be one. | 295 | - |
 | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | Wandering figures: people who belong to nothing and are therefore worth asking. | 799 | - |
 | [`what-a-cultivator-can-earn.ts`](../../src/data/cultivation/what-a-cultivator-can-earn.ts) | What a cultivator can be paid for, at a rung: the one reading of it. | 66 | - |
@@ -471,8 +471,8 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**273 design constants in the catalog. 22 are read by nothing at all,
-and 91 more are read only by a test.**
+**273 design constants in the catalog. 19 are read by nothing at all,
+and 64 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -481,13 +481,10 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 
 | Constant | In | Read by the game | By tests |
 |---|---|---|---|
-| `A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | - |
 | `A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT` | [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) | **nothing** | - |
-| `ABANDONED_IS_NOT_CONDEMNED` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
 | `DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | **nothing** | - |
 | `FRAGMENT_TECHNIQUE_ORIGINS` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | - |
 | `HOLLOW_COURT_COLLABORATION` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | **nothing** | - |
-| `HOW_AN_UPKEEP_IS_READ` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
 | `LOW_FALL_PREFECTURES` | [`regions/low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) | **nothing** | - |
 | `MEASUREMENT_STATUS` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | - |
 | `NOT_DERIVABLE_NOTES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | - |
@@ -503,16 +500,12 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_WIDE_FIELD` | [`regions/wide-field.ts`](../../src/data/cultivation/regions/wide-field.ts) | **nothing** | - |
 | `WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | **nothing** | - |
 | `WHY_A_PHRASE_AND_NOT_A_NAME` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | **nothing** | - |
-| `THE_THREE_WAYS_GROUND_IS_CLOSED` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 1 |
 | `ARTIFACT_MARGIN` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 2 |
-| `MODERN_AND_ANCIENT` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | 2 |
 | `NOT_REFINABLE_NOTES` | [`pills.ts`](../../src/data/cultivation/pills.ts) | **nothing** | 2 |
 | `PLACERS` | [`regions/rank-translation.ts`](../../src/data/cultivation/regions/rank-translation.ts) | **nothing** | 2 |
 | `RANK_MISREADINGS` | [`regions/rank-translation.ts`](../../src/data/cultivation/regions/rank-translation.ts) | **nothing** | 2 |
 | `WHEN_ONE_WAKES` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 2 |
-| `WHO_HOLDS_A_KEY` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 2 |
 | `A_DEPOSIT_IS_NOT_A_LIFE` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | **nothing** | 3 |
-| `ATTESTATION_IS_USABILITY` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 3 |
 | `CONTRACT_ENGINE_REQUIREMENTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | **nothing** | 3 |
 | `CULTIVATION_CONTENT_PROVENANCE` | [`index.ts`](../../src/data/cultivation/index.ts) | **nothing** | 3 |
 | `DEFERENCE_HOLDINGS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | **nothing** | 3 |
@@ -522,13 +515,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `REGISTERS_COUNT_WHAT_THEY_CAN_SEE` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 3 |
 | `THE_ARTS_ARE_THE_WHOLE_INVENTORY` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 3 |
 | `VAULT_CONTENTS` | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | **nothing** | 3 |
-| `WHAT_THE_OFFSET_HIDES` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 3 |
-| `WHY_THE_RECONCILIATION_IS_NOT_MADE` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 3 |
 | `EXTINCTION_NOTES` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | **nothing** | 4 |
 | `FATE_IS_NOT_A_STAT` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 4 |
-| `THE_BINDING_CONSTRAINT` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 4 |
-| `THE_EXTINCTION_IS_SYMMETRIC` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | 4 |
-| `THE_HOLLOW_COURT_COULD` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 4 |
 | `THE_STALL` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 4 |
 | `TITLE_TRANSLATIONS` | [`regions/rank-translation.ts`](../../src/data/cultivation/regions/rank-translation.ts) | **nothing** | 4 |
 | `UNGOVERNED_GROUND` | [`regions/the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) | **nothing** | 4 |
@@ -538,33 +526,19 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `FAVOUR_STANCES` | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | **nothing** | 5 |
 | `GRADE_BASELINE_OPACITY` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | 5 |
 | `NO_SURVIVING_COPY_NOTES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | 5 |
-| `SECT_ARCHIVE` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 5 |
-| `THE_THREE_GATES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 5 |
-| `WHY_THE_HEAD_IS_PINNED` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 5 |
-| `A_RESTING_PLACE_IS_NOT_A_GRAVE` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 6 |
 | `AGE_IS_NOT_MENACE` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 6 |
 | `HOW_THE_COURT_IS_SEEN` | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | **nothing** | 6 |
 | `THE_COURTS_BELOW` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 6 |
-| `THE_OPEN_AXIS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 6 |
 | `THE_SENDING_PYRAMID` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 6 |
-| `THE_TRADE` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | 6 |
 | `THE_TWO_EXITS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 6 |
-| `WHY_CLOSED_GROUND` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 6 |
-| `THE_FIRST_CULTIVATORS` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 7 |
-| `THE_LID` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 7 |
 | `THE_REMAINDER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 7 |
-| `THE_REVOLT` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 7 |
 | `THE_SHADOW_CONSPIRACY` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 7 |
 | `THE_WRONG_QUESTION` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 7 |
 | `TWICE_WORKED` | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | **nothing** | 7 |
 | `WHAT_SCALE_DECIDES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 7 |
-| `DEATHS_AVAILABLE` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 8 |
 | `FACTION_HISTORY` | [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) | **nothing** | 8 |
 | `FEEDER` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | **nothing** | 8 |
-| `THE_CALENDAR_OFFSET` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 8 |
-| `THE_CANDIDATE_REGISTER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 8 |
 | `WHO_HINTS_AND_WHY` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 8 |
-| `DRIVEN_GROUND_AND_THE_NODE` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 9 |
 | `THE_OFFER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 9 |
 | `THE_THRESHING_HALL` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 9 |
 | `RECEIPT_HISTORIES` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 10 |
@@ -575,21 +549,17 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_ASYMMETRY` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 11 |
 | `DORMANT_ARTS` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | **nothing** | 12 |
 | `THE_JUNIOR_ANSWERS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 12 |
-| `THE_RUIN_MEDICINE` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | 12 |
 | `HOLLOW_COURT_FOSTERAGE` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | 13 |
-| `SEALED_ANCESTOR_PATTERN` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 13 |
 | `THE_ANCESTOR_WHO_MIGHT_ANSWER` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | **nothing** | 14 |
 | `THE_BLOWN_GROUND` | [`regions/the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) | **nothing** | 14 |
 | `DEPARTURE` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 15 |
 | `LOST_RECORDS` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 15 |
-| `THE_PRESENT_COUNT` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 16 |
 | `THE_CONTRACT` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | **nothing** | 17 |
 | `WHAT_SHE_DOES_WITH_THE_TIME` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 19 |
 | `INHERITANCE_TRIALS` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 20 |
 | `THE_STEP_AND_THE_BOUNDARY` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 20 |
 | `WHAT_SERVICE_ACTUALLY_BUYS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 22 |
 | `STOCK_VERSUS_FLOW` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 23 |
-| `IDENTIFYING_A_SEAT` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 24 |
 | `THE_TWO_CLAIMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 24 |
 | `THE_LINEAGE_CLAIM` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 25 |
 | `GRAVES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 33 |
@@ -607,33 +577,56 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_BEAST_ROAD` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 1 | 9 |
 | `PILL_VALUE_BANDS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 1 | 10 |
 | `THE_VACANCY` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 1 | 12 |
+| `A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 2 | - |
+| `ABANDONED_IS_NOT_CONDEMNED` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | - |
 | `HOW_A_FORTY_FIVE_EXISTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 2 | - |
+| `HOW_AN_UPKEEP_IS_READ` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | - |
 | `SCATTERED_MANUAL_VOLUMES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 2 | - |
 | `THE_MEMENTO_AND_THE_SEARCH` | [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) | 2 | - |
+| `THE_THREE_WAYS_GROUND_IS_CLOSED` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 2 | 1 |
 | `THREE_ROADS_TO_WHAT_A_PERSON_CARRIES` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 2 | 1 |
 | `DEMONIC_STANDINGS` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | 2 | 2 |
+| `MODERN_AND_ANCIENT` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 2 |
 | `POTENCY_UNITS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 2 | 2 |
 | `SEALED_FIGURE_NAMES` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 2 | 2 |
 | `THE_APEXES_THAT_TRADE` | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | 2 | 2 |
+| `WHO_HOLDS_A_KEY` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 2 |
 | `A_NEWBORN_WITH_POTENTIAL` | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | 2 | 3 |
+| `ATTESTATION_IS_USABILITY` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 2 | 3 |
 | `CROSSING_PRACTICE` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 2 | 3 |
 | `FOUNDERS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 2 | 3 |
 | `HISTORICAL_FIGURES` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 2 | 3 |
 | `MODERN_REFINEMENT` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 2 | 3 |
 | `MORTAL_ATTITUDES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 2 | 3 |
+| `WHY_THE_RECONCILIATION_IS_NOT_MADE` | [`history.ts`](../../src/data/cultivation/history.ts) | 2 | 3 |
 | `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 2 | 4 |
+| `THE_BINDING_CONSTRAINT` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 2 | 4 |
+| `THE_EXTINCTION_IS_SYMMETRIC` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 4 |
+| `THE_HOLLOW_COURT_COULD` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 4 |
 | `CATASTROPHE_EXPOSURE` | [`catastrophe.ts`](../../src/data/cultivation/catastrophe.ts) | 2 | 5 |
 | `DEPARTURE_DESTINATIONS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 2 | 5 |
+| `SECT_ARCHIVE` | [`history.ts`](../../src/data/cultivation/history.ts) | 2 | 5 |
+| `THE_THREE_GATES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 2 | 5 |
+| `WHY_THE_HEAD_IS_PINNED` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 5 |
 | `WRONG_ACCURACIES` | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | 2 | 5 |
+| `A_RESTING_PLACE_IS_NOT_A_GRAVE` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 2 | 6 |
 | `DAO_HOUSE_DISPUTES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 2 | 6 |
+| `THE_OPEN_AXIS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 2 | 6 |
+| `THE_TRADE` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 6 |
+| `WHY_CLOSED_GROUND` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 2 | 6 |
 | `FUNERARY_PRACTICE` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 2 | 7 |
+| `THE_REVOLT` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 7 |
+| `DEATHS_AVAILABLE` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 8 |
 | `WHAT_THE_LIGHTNING_TOOK` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 2 | 8 |
 | `HIGH_REALM_PROVENANCE` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | 2 | 10 |
 | `RUIN_NAMES` | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | 2 | 10 |
 | `STOCKED_INHERITANCES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 10 |
+| `THE_RUIN_MEDICINE` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 12 |
+| `SEALED_ANCESTOR_PATTERN` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 2 | 13 |
 | `TIER_NAMES` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 2 | 13 |
 | `GRADE_QI_BANDS` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 2 | 14 |
 | `WHY_NOBODY_MOVES` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 21 |
+| `IDENTIFYING_A_SEAT` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 2 | 24 |
 | `IMMORTAL_MOTIVE` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 3 | - |
 | `WASHING_OUT` | [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) | 3 | - |
 | `ARCHIVE_AS_CLAIM` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 3 | 1 |
@@ -644,6 +637,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WHY_ACCOUNTS_DISAGREE` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 5 |
 | `CONTINGENCIES` | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | 3 | 6 |
 | `DRIVEN_PROVINCE_SCHEDULE_ORDER` | [`regions/provinces.ts`](../../src/data/cultivation/regions/provinces.ts) | 3 | 6 |
+| `THE_FIRST_CULTIVATORS` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 7 |
+| `THE_LID` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 7 |
 | `REGION_GOVERNANCE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 3 | 8 |
 | `ARTERIALS` | [`regions/arterials.ts`](../../src/data/cultivation/regions/arterials.ts) | 3 | 9 |
 | `DIRECT_RULE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 3 | 9 |
@@ -660,6 +655,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `LID_NON_POSITIONS` | [`history.ts`](../../src/data/cultivation/history.ts) | 4 | 4 |
 | `OTHERS_WHO_NOTICED` | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | 4 | 4 |
 | `UNBACKED_PLAYER_TRADE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 4 | 4 |
+| `WHAT_THE_OFFSET_HIDES` | [`history.ts`](../../src/data/cultivation/history.ts) | 4 | 4 |
 | `AUCTION_ACCESS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 4 | 5 |
 | `DEAD_SCRIPTS` | [`history.ts`](../../src/data/cultivation/history.ts) | 4 | 6 |
 | `HOUSE_ARTISANS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 4 | 6 |
@@ -668,6 +664,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `GUEST_ELDERS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 4 | 7 |
 | `OPENLY_OR_IN_SECRET` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 4 | 8 |
 | `SHARED_EVENTS` | [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) | 4 | 8 |
+| `THE_CANDIDATE_REGISTER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 4 | 8 |
+| `DRIVEN_GROUND_AND_THE_NODE` | [`history.ts`](../../src/data/cultivation/history.ts) | 4 | 9 |
 | `DEALERS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 4 | 10 |
 | `SCAR_NAMES` | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | 4 | 10 |
 | `PROVINCES` | [`regions/provinces.ts`](../../src/data/cultivation/regions/provinces.ts) | 4 | 15 |
@@ -698,15 +696,15 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `TRADITIONS` | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | 6 | 10 |
 | `BEAST_TIDES` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 6 | 11 |
 | `ORIGIN_ACCOUNTS` | [`history.ts`](../../src/data/cultivation/history.ts) | 6 | 11 |
+| `THE_CALENDAR_OFFSET` | [`history.ts`](../../src/data/cultivation/history.ts) | 6 | 11 |
 | `PREFECTURES` | [`regions/prefectures.ts`](../../src/data/cultivation/regions/prefectures.ts) | 6 | 16 |
+| `THE_PRESENT_COUNT` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 6 | 18 |
 | `ANCIENT_ARTS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 6 | 21 |
 | `RUMOURS` | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | 6 | 25 |
-| `FALSE_IMMORTALS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 6 | 36 |
 | `SENT_DOWN_UNACCOUNTED` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 7 | - |
 | `SETTLEMENTS` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 7 | 12 |
 | `LOCAL_RESIDUE` | [`history.ts`](../../src/data/cultivation/history.ts) | 7 | 13 |
 | `ROGUE_TRADES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 7 | 13 |
-| `CALENDARS` | [`history.ts`](../../src/data/cultivation/history.ts) | 7 | 14 |
 | `LOST_MATERIALS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 7 | 19 |
 | `UNOWNED_ANCESTORS` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 7 | 19 |
 | `FACTION_CHARACTER` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | 7 | 33 |
@@ -720,13 +718,15 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `HELD_INSTRUMENTS` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 8 | 24 |
 | `THE_DEEPEST_ROADS` | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | 8 | 34 |
 | `DAO_HOUSES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 8 | 36 |
+| `FALSE_IMMORTALS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 8 | 36 |
 | `DESTROYED_DAO_HOUSES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 9 | 15 |
+| `CALENDARS` | [`history.ts`](../../src/data/cultivation/history.ts) | 10 | 16 |
 | `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 20 |
 | `PLACES_THAT_TEACH_A_DAO` | [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) | 10 | 27 |
 | `WOUND_TYPES` | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | 10 | 28 |
 | `FALLEN` | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | 10 | 38 |
-| `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 11 | 20 |
 | `HOUSE_MISSIONS` | [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts) | 12 | 18 |
+| `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 12 | 20 |
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |
 | `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 13 | 7 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |

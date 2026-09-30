@@ -12,6 +12,7 @@ import {
 // THE AXIS: CATEGORICAL AGAINST ELEMENTAL
 
 export const MODERN_AND_ANCIENT = {
+    knowledge: ["Modern arts develop elemental workings. Ancient arts can alter categories such as distance, vitality or whether ground remains in the world; their upkeep asks for resources the late age cannot regularly supply."],
     modern:
         'Elemental, and it scales to the horizon. Fire, ice, wind, stone, a blade, a shield, a step - and the whole of the ladder is the same ideas taken further. Nothing about that is modest. An elemental art at the top of the ladder is one of the most frightening things in the world: weather that stops being weather, a river that is not there afterwards, ground that will not carry anything for a century, a scar a province still names three hundred years later. The elemental line is what every institution alive has spent the late age refining, and its summit is enormous.',
     ancient:
@@ -37,6 +38,7 @@ export const MODERN_AND_ANCIENT = {
  * consequences for a player who takes one up.
  */
 export const ABANDONED_IS_NOT_CONDEMNED = {
+    knowledge: ["An abandoned art was given up because of its cost. Possessing one is lawful; a condemned art is prohibited by the houses that condemn it."],
     demonic:
         'Condemned. Righteous sects execute for possession, demonic sects charge for it, and both of them are making a claim about what the art is for. The Nine-Abyss Demon Transformation, the Ten Thousand Corpse Heart and the Meridian-Devouring Art are here: each of them spends somebody else, and the world has an opinion about that which has not changed in an age.',
     abandoned:
@@ -237,6 +239,7 @@ export { ANCIENT_TECHNIQUE_IDS };
  * The requirement is legible, and that is the point.
  */
 export const HOW_AN_UPKEEP_IS_READ = {
+    knowledge: ["Ancient arts can require materials no longer obtainable on ordinary ground. Surviving stocks come from unopened ruins, inheritances, unusual ground or a patron's stores."],
     impressed:
         'From somebody who understands what the upkeep costs and can see you have been paying it. The question underneath is how somebody like you got this far up it, and it is a real question with only two answers.',
     dismissive:
@@ -395,6 +398,7 @@ export const THE_RUIN_MEDICINE = {
  * THE EXTINCTION IS SYMMETRIC, and this is the more interesting fact.
  */
 export const THE_EXTINCTION_IS_SYMMETRIC = {
+    knowledge: ["The longevity flower is extinct on both sides of the boundary. Refiners above retain the method but cannot obtain the flower; surviving pills are old stock."],
     aboveTheLid:
         'They know how. The method is intact up there and always has been - nothing was lost above, and an immortal asked about it can describe the refinement in full. What they cannot do is the same thing nobody down here can do: find the flower. It went from their side too.',
     notADependency:
@@ -409,6 +413,7 @@ export const THE_EXTINCTION_IS_SYMMETRIC = {
  * THE TRADE: material up, a finished pill back.
  */
 export const THE_TRADE = {
+    knowledge: ["A house with an answering ancestor can send a surviving flower as an offering and request a refined pill. An answer is not guaranteed; the transaction is not a regular supply."],
     whatItIs:
         'A house finds the flower in a sealed site, sends it up through whatever channel it has, and a finished pill comes back down. The method is above and the material is below, and for one transaction the two are in the same place.',
     frequency:

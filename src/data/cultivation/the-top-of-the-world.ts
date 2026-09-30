@@ -54,6 +54,7 @@ export function conspiracyArithmetic(): ConspiracyArithmetic {
  * The arrangement that makes an apex an apex, and what it costs.
  */
 export const WHY_THE_HEAD_IS_PINNED = {
+    knowledge: ["An apex's immortal object stands in its vault or inner hall. Its head remains with it; separating the holder and the object exposes both."],
     theObjectDoesNotTravel:
         'An immortal object sent down by an ascended founder is not carried about. It sits where the house put it - a datum vault, an inner hall - and everything the house is rests on it being there and being theirs. So the question of where the strongest person in the house should stand answers itself.',
     andNeitherHalfWorksAlone:
@@ -68,6 +69,7 @@ export const WHY_THE_HEAD_IS_PINNED = {
  * The deaths available to somebody at the top of an apex.
  */
 export const DEATHS_AVAILABLE = {
+    knowledge: ["An apex head can be killed. Its held artifact and the people who can reinforce it affect the fight; the head's title supplies no immunity."],
     whyNotADisaster:
         'Nothing unaimed reaches them. An apex head stands at forty-one and above, and a catastrophe is a physical event in a world they stopped being physically vulnerable to several realms ago. Every apex in the region could lose its mountains in the same decade and the region would still have three of them, standing in the open, rebuilding.',
 
@@ -166,6 +168,7 @@ export const THE_SHADOW_CONSPIRACY = {
  * Who, in the whole world, is actually holding something that counts.
  */
 export const WHO_HOLDS_A_KEY = {
+    knowledge: ["Ancestors below Tribulation Transcendence do not supply the strength needed against an armed apex head. A court can hold a sealed ancestor while remaining a client of the head it could threaten."],
     theCountAmongTheHouses:
         'Among the houses that would ever want to, there are two. The forty-four asleep under the Tripod Court and the forty-two asleep under the Frostmirror. Everything else anybody is holding - the forty, the thirty-nine, the thirty-seven, the thirty-one - sits a full realm below Tribulation Transcendence and is worth nothing at this altitude, however many of them arrive. A realm is four times over and numbers do not close it.',
     soTheDoorIsTiny:
@@ -181,6 +184,7 @@ export const WHO_HOLDS_A_KEY = {
  * count of the houses that would want to. It is not the count of who could.
  */
 export const THE_HOLLOW_COURT_COULD = {
+    knowledge: ["The Empyrean Court's Seats hold immortal weapons and work on the crossing. They do not administer the apexes' provinces."],
     whatTheyActuallyHold:
         'Four Seats, at forty-four, forty-three, forty-three and forty-two, and four immortal weapons between them. Set that beside an apex and the comparison is not close: the strongest apex head in the region stands at forty-three with one weapon, and the Empyrean Court could field two people above or level with him, each holding one of their own, without waking anything or spending anything that does not come back. Everything written above about margins and assemblies is a description of what the hierarchy can do. The Empyrean Court is not in the hierarchy.',
     andItIsNotSealedPower:
@@ -287,6 +291,7 @@ export const WHY_NOBODY_MOVES = {
  * What happens when a house's own people come up the stairs.
  */
 export const THE_REVOLT = {
+    knowledge: ["Courts and clients can reach their own apex through ordinary correspondence. Their grants and arbitration powers depend on the authority they would be ending."],
     whatItIs:
         'Not an attack. An administration declining, together and on the same morning, to keep being an administration - the courts, the client houses, the sealed ancestors those houses hold, all of it arriving at the one place where the person it belongs to cannot leave. There is no approach march, no concealment problem and no question of trust, because everybody involved has been in correspondence with everybody else for centuries and has a legitimate reason to be.',
     andTheNumbersAreNotClose:

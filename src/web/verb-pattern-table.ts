@@ -7307,6 +7307,10 @@ function planIntent(input: string): PlannedAction {
         return { action: 'look', intent: 'crowding' };
     }
 
+    if (/\b(?:read|consult|study|browse)\b.*\barchives?\b/i.test(text)) {
+        return { action: 'look', intent: 'history', target: 'archive' };
+    }
+
     // why the ground is like this
     if (!ASKED_ABOUT_THE_ASKER.test(text)
         && PLACE_HISTORY_PATTERNS.some(pattern => pattern.test(text))) {

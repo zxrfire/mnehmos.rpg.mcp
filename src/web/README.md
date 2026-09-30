@@ -28,6 +28,16 @@ house, pays through the existing bounty resolver, and closes the paper. The
 resolver reads consent from provenance; the turn-in writes any killer's grudge
 to the existing obligation ledger.
 
+World history questions use `what-somebody-knows-of-the-old-world.ts`. It selects the
+catalog's short knowledge fields and checks the speaker's standing and the house that
+holds a private record before `askedAbout` decides whether they will say it. Circulated
+records carry no private account to protect. Only disclosed lines are filed, with their
+teller, so recall reads the learned record rather than the catalog. An archive is read
+through `look/history` only while standing in its room; its house's holdings determine
+what is on the shelves, using the house's standing rather than the visitor's rank.
+Unwritten Court discussions are held by people and cannot be read from the shelves. Dates come from the running
+era, with the commercial offset explicitly unverified.
+
 ---
 
 ## The three-phase split

@@ -28,6 +28,13 @@ The content is first-party and compiled in rather than loaded from a JSON pack, 
 is no fetch, no cache and no schema-version negotiation. The TypeScript types are the
 contract and the tests are the validator.
 
+The world-lore rows carry short `knowledge` fields for live questions. These state
+recorded findings and leave catalog rationale outside narration. Private holdings stay
+private when a reader names a topic; an archive supplies only the records its house
+holds. `THE_CALENDAR_OFFSET` owns commercial, survey and inheritance offsets; the
+commercial value derives the Face Reckoning without resolving their disagreement.
+`ATTESTATION_IS_USABILITY.usable` owns which attestations address an ancestor.
+
 ---
 
 ## The catalogs

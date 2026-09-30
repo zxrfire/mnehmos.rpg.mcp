@@ -519,10 +519,11 @@ describe('the two traditions follow from the deep past', () => {
         }
     });
 
-    it('says why nobody says it out loud, from more than one side', () => {
+    // The live reader now carries the findings rather than measuring the essay's length.
+    it('keeps the unpublished identification and the two traditions distinct', () => {
         expect(WHY_THE_RECONCILIATION_IS_NOT_MADE.length).toBeGreaterThanOrEqual(3);
         for (const line of WHY_THE_RECONCILIATION_IS_NOT_MADE) {
-            expect(line.length).toBeGreaterThan(150);
+            expect(line).toMatch(/Temple|tradition|law/);
         }
     });
 
@@ -571,7 +572,8 @@ describe('calendars and eras', () => {
 
     it('makes the offset load-bearing rather than decorative', () => {
         expect(WHAT_THE_OFFSET_HIDES.length).toBeGreaterThanOrEqual(2);
-        for (const line of WHAT_THE_OFFSET_HIDES) expect(line.length).toBeGreaterThan(120);
+        expect(WHAT_THE_OFFSET_HIDES.join(' ')).toMatch(/arbitration boundaries/);
+        expect(WHAT_THE_OFFSET_HIDES.join(' ')).toMatch(/same incident/);
     });
 
     it('is reachable by id', () => {

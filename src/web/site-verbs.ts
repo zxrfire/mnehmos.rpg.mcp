@@ -2,6 +2,12 @@
  * An inheritance ground: finding it, standing outside it, going in, taking.
  */
 
+import { oldWorldArchive, keepOldWorldKnowledge, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
+import { purposeOf } from '../engine/world/architecture.js';
+import { theHeightAHouseWorksAt } from '../engine/world/where-the-pills-actually-are.js';
+import { whereCompoundsAre } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+
+
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getPill, getTechnique, PILLS, TECHNIQUES } from '../data/cultivation/index.js';
@@ -1393,7 +1399,7 @@ export const siteVerbs = {
     ): Execution {
         const asked = (target ?? '').trim();
         // "what happened to this place" names nowhere. It means underfoot.
-        const wanted = asked.length >= 2 && !HERE_ITSELF.test(asked)
+        const wanted = asked.length >= 2 && asked !== 'archive' && !HERE_ITSELF.test(asked)
             ? asked
             : (cultivator.location ?? '');
         const place = this.atHand ? worldLocationFor(this.atHand, wanted) : null;
@@ -1411,6 +1417,31 @@ export const siteVerbs = {
                 `No world location record for "${wanted || placeName(cultivator)}"` +
                 `${this.atHand ? '' : ' (world simulation is off for this run)'}.`
             ));
+        }
+
+        if (this.atHand && purposeOf(place) === 'archive'
+            && place.id === worldLocationFor(this.atHand, cultivator.location)?.id) {
+            const compounds = whereCompoundsAre(this.atHand);
+            const seat = compounds.seatOf.get(place.id);
+            const house = seat ? compounds.bySeat.get(seat) : null;
+            if (house) {
+                const holdingHouse = this.atHand.factions.find(faction => faction.id === house.houseId);
+                const records = oldWorldArchive(house.houseId, oldWorldYear(this.atHand, run.elapsedDays),
+                    holdingHouse ? theHeightAHouseWorksAt(holdingHouse) : 0);
+                keepOldWorldKnowledge(this.knowledge, cultivator, run, records,
+                    { kind: 'read', name: place.name });
+                const reading = this.freeAction(run, 'look', factsForToolResult(
+                    `${place.name}, read.`, records.flatMap(row => [...row.lines])));
+                reading.calls = [{ name: 'knowledge.archive', action: 'read',
+                    summary: `${records.length} surviving records read in ${place.id}.`, ok: true }];
+                return reading;
+            }
+        }
+
+        if (asked === 'archive') {
+            return refused('knowledge.archive', 'look', factsForRefusal(
+                'No archive within reach.', 'The records must be read in the archive.',
+                `Current room ${place.id} is not an archive.`));
         }
 
         const rows = locationHistory(place);

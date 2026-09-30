@@ -61,6 +61,8 @@ export interface AskedInput {
      * Whether the asked person holds a record of the subject themselves.
      */
     holdsIt: boolean;
+    /** A circulated record carries no private account for the speaker to protect. */
+    publicRecord?: boolean;
     /**
      * How many times the player has dealt with this person before.
      */
@@ -329,7 +331,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
     }
 
     // limit three, and the one a DEMAND can reach
-    const aFactTheyCanKeep = themselves === null || themselves.theyMayKeepIt;
+    const aFactTheyCanKeep = !input.publicRecord && (themselves === null || themselves.theyMayKeepIt);
     if (aFactTheyCanKeep && holdsPosition && goodwill < 2 && !input.compelled) {
         // Warm, useless, and not a refusal - a deflection has to be survivable
         // or the player learns to stop asking rather than learning who to ask.
@@ -403,7 +405,7 @@ function howFarTheAnswerGot(input: AskedInput): Answer {
     }
 
     // a real answer, bounded by what they know
-    const full = !holdsPosition || goodwill >= 2;
+    const full = input.publicRecord || !holdsPosition || goodwill >= 2;
     const said = full ? subject.facts : subject.facts.slice(0, 1);
 
     return {

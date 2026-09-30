@@ -16,6 +16,7 @@ import { AwarenessSchema, mayBeNamed, type Awareness } from './hierarchy.js';
 // ─────────────────────────────────────────────────────────────────────────
 
 export const THE_THREE_GATES = {
+    knowledge: ["A trial can test strength, years and talent, or a particular past event. Gates can stand in sequence; passing the first does not pass the others."],
     principle:
         'A door can ask three different questions, and they are not three settings of one dial. One asks how much you can take. One asks what you have become, which is years and a root and a foundation and cannot be borrowed on the day. One asks nothing about you at all and turns on a coincidence nobody arranged.',
     whyThree:
@@ -166,6 +167,7 @@ export type Gate = z.infer<typeof GateSchema>;
  * What the category is called, and why it is not called ruins any more.
  */
 export const WHY_CLOSED_GROUND = {
+    knowledge: ["Closed ground means a door with something behind it and nobody coming out. It includes intact inheritances, shut caves and abandoned seats."],
     term: 'closed ground',
     whyNotRuins:
         'Because two thirds of the category is not ruined. An inheritance left by somebody preparing to ascend is in perfect order and was arranged last week by the standards of the world; a cave whose owner died in it is exactly as its owner left it. Ruin describes what happened to a sect mountain and describes nothing else here.',
@@ -183,6 +185,7 @@ export const WHY_CLOSED_GROUND = {
  * A ruin is typically more epic than a cave.
  */
 export const A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE = {
+    knowledge: ["An abandoned seat has halls, wards and more than one person's history; a shut cave can be one chamber."],
     correction:
         'A cave whose owner died in it is the very smallest type. It is not what the category is mostly made of and it is not what anybody pictures. A place with scale to it - a mountain a house held for six hundred years and then left, halls, wards, a road that used to go there - is the ordinary case.',
     whyTheDistinctionIsMechanical:
@@ -297,6 +300,7 @@ export type RuinCharacter = z.infer<typeof RuinCharacterSchema>;
 export const ELDER_FLOOR_ORDINAL = 17;
 
 export const THE_THREE_WAYS_GROUND_IS_CLOSED = {
+    knowledge: ["A survival floor describes the danger inside. Some entry workings exclude a presence above their calibrated band; others require an elder to enter for a junior."],
     principle:
         'Ground is closed three ways and they are three different problems rather than three numbers on one row. A minimum makes a ruin a gamble. A cap makes it a thing you have to send somebody else into. An elder floor makes it an errand run for somebody who cannot come.',
     theMinimumIsTheOrdinaryCase:
@@ -623,6 +627,7 @@ export const GRAVE_CONTENTS_BANDS = {
  * The third category, kept out of this file on purpose.
  */
 export const A_RESTING_PLACE_IS_NOT_A_GRAVE = {
+    knowledge: ["A maintained resting chamber holds a person in suspension. A grave holds the belongings left when its occupant died. Opening a resting chamber wakes its occupant."],
     rule: 'A chamber in `sealed-ancestors.ts` holds a live person and is not in this catalog under any circumstances.',
     theThreeCategories: [
         'trial: arranged deliberately, calibrated for a claimant who was expected to arrive, and it does not adjust to the one who does.',

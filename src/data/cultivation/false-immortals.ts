@@ -22,6 +22,7 @@ import {
 // spirit root. It reads access now; the claim that still holds is the one
 // about ceilings - a manual's `cap` stops a rank, never an understanding.
 export const THE_OPEN_AXIS = {
+    knowledge: ["A False Immortal cannot attempt the crossing again. Understanding can still deepen; a manual's cultivation cap does not cap comprehension."],
     twoAxesAndOneIsShut:
         `Rank and dao are separate axes and only one of them is closed. Ordinal ${FALSE_IMMORTAL_ORDINAL} is final - the Lid has been opened against the name and will not open again - but understanding has no ceiling tied to the ladder, reads the spirit root rather than the rung, and does not care in the slightest what realm the person holding it stands at. A False Immortal cannot climb and can absolutely keep going deeper, and that asymmetry is the whole of their situation.`,
     soTheTimeGoesSomewhere:
@@ -939,6 +940,8 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
 // may give anybody a way to tell his line from the rest of them.
 
 export const THE_CANDIDATE_REGISTER = {
+    heldBy: ['apex-earth-vein-tower', 'apex-azure-cloud-pavilion', 'apex-myriad-course-hall'],
+    knowledge: ["The three apex institutions keep lists of possible returned crossers. The lists record admissions and traces; no entry establishes a returned crossing."],
     whatItIs:
         'A list of people the world has some reason to think came back from a crossing. One line each, maintained at the three apex institutions and nowhere else, and it is not a watch list: nobody on it is being looked for, nobody on it has been approached, and most of the names are of people who have been dead for thousands of years. It is a register of questions that cannot be closed, kept because an institution that notices things cannot un-notice them and has no procedure for striking a line it was never able to disprove.',
     whatIsActuallyPublic:
@@ -966,6 +969,7 @@ export const THE_CANDIDATE_REGISTER = {
 // an unknowable one.
 
 export const IDENTIFYING_A_SEAT = {
+    knowledge: ["The Court publishes no seats, promotions or deaths. Past identifications followed a witnessed signature art or a relative's account; an admissions list does not identify a seat."],
     admissionIsNotUniform:
         'Some enter well above the bar. The floor is Void Tribulation and somebody arriving several rungs over it arrives already formidable, which is a different event from somebody scraping in, and the difference is visible for the same reason the admission is. So the list has shape to it - dates, and a rough sense of how strong each of them was on the way up - and three institutions read that shape perfectly well and can do nothing with it, because it stops at exactly the point the mountain starts.',
     nobodyWorksOutASeatFromRecords:
@@ -1039,6 +1043,9 @@ export const IDENTIFYING_A_SEAT = {
 export const MAX_RESIDENT_FALSE_IMMORTALS = 3;
 
 export const THE_PRESENT_COUNT = {
+    residentsAtOpening: 1,
+    protectorsAtOpening: 0,
+    knowledge: ["No False Immortal currently serves as a house's protector. The reserved posts remain open.", "The Court's guest holds no seat and gives dao lectures when he returns. The Court has made no formal appointment."],
     servingProtectors:
         'Zero, in the sense this file counts. No sect, house, court or apex in the world has a False Immortal standing on it and none has had one for eight hundred years. Plenty of ordinary houses have a dao protector in post today and every one of those is a strong elder doing a job, which is the same phrase doing different work - see `THE_OFFICE.theWordDoesTwoJobs`. What is empty is the reserved post at the houses that will not fill it with anybody else, and that post is open rather than abolished.',
     residentFalseImmortals:

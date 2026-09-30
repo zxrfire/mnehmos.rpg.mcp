@@ -558,7 +558,8 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
 /**
  * The two traditions, reconciled against the Ten Thousand Deeds.
  */
-export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
+export const DRIVEN_GROUND_AND_THE_NODE: Claim & { knowledge: readonly string[] } = {
+    knowledge: ["The Immovable Mountain Temple reconstructs carved seams and inherited nodes as the same work at different scales; the identification has not been published."],
     statement:
         'A node of the Ten Thousand Deeds is qi driven into stone and held there. A carver\'s seam is qi driven into stone and worked out. They are very likely the same physical thing at two scales, and the Cut Road is therefore an unwitting reconstruction of one part of a Ten Thousand Deeds trade.',
     truth: 'reconstructed',
@@ -575,10 +576,9 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
 
 /** Why nobody has ever said the sentence above in a room with both traditions in it. */
 export const WHY_THE_RECONCILIATION_IS_NOT_MADE = [
-    'Immovable Mountain Temple holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing the work of the Ten Thousand Deeds is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
-    'The Drawn will not hear it, because it makes carving older and more legitimate than the Drawn Road\'s own account of itself, and the standing Jade Gorge position is that carving is quarrying with extra steps.',
-    'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Buddha Precipice account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
-    'And it would change what a vein lease is. If a node and a seam are the same thing, then a Drawn sect holding lit nodes and a carver holding a face are holding the same asset under two entirely different bodies of law, which is a question no arbitration in the world currently has a forum for.'
+    "The Immovable Mountain Temple has not published its identification of nodes with carved seams.",
+    "The Drawn tradition describes carving as quarrying; the Cut tradition describes its road as independently rebuilt without inherited manuals.",
+    "Nodes and seams are held under different bodies of law. No existing arbitration forum reconciles the two kinds of holding."
 ] as const;
 
 // WHERE CULTIVATION CAME FROM
@@ -705,7 +705,8 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
  * came from and is in worse shape. Three pieces of evidence, three
  * incompatible implications, no resolution, and the engine does not have one.
  */
-export const THE_FIRST_CULTIVATORS: Claim = {
+export const THE_FIRST_CULTIVATORS: Claim & { knowledge: readonly string[] } = {
+    knowledge: ["No surviving record names, dates or places the first cultivator. Survey signs, gate terminals and an account from above give incompatible evidence about the beginning."],
     statement:
         'Nobody can name a first cultivator, place one, or date one. What exists is three pieces of evidence, and they cannot all be about the same beginning.',
     truth: 'unresolved',
@@ -862,7 +863,8 @@ export const LID_NON_POSITIONS = [
  * it in play, and settling it here would remove the largest discoverable in
  * the world from every run at once.
  */
-export const THE_LID: Claim = {
+export const THE_LID: Claim & { knowledge: readonly string[] } = {
+    knowledge: ["Those who cross leave this world; some still answer from above. The boundary's substance, origin and holder are unknown."],
     statement:
         'There is a limit to how far the world will let a person rise, and past it is somewhere else. What it is made of, whether it is made at all, and whether anything is holding it are not known, including to the engine.',
     truth: 'unresolved',
@@ -979,6 +981,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
  * archives hold secrets.
  */
 export const SECT_ARCHIVE = {
+    knowledge: ["Sect archives keep stipend rolls, stores accounts, intake registers, boundary correspondence and medical records. Manuals are held in the treasury.", "Older papers survive through recopying; omissions and copying errors remain in the record."],
     whatIsActuallyInIt: [
         'stipend rolls, in enormous quantity, going back as far as the sect does',
         'grain and stores accounts, which are the most complete series in any archive anywhere and are what an economic historian would actually want',
@@ -1089,6 +1092,35 @@ export const CalendarSchema = z.object({
 });
 export type Calendar = z.infer<typeof CalendarSchema>;
 
+/**
+ * The offset between the two provincial counts. Three institutions compute it
+ * three ways, one of the three is used by everybody because contracts require
+ * a number, and the one that is probably right is unpublished because too much
+ * settled property depends on the one that is used.
+ */
+export const THE_CALENDAR_OFFSET: Claim & { commercialYears: number; surveyYears: number; inheritanceYears: number } = {
+    commercialYears: 28,
+    surveyYears: 31,
+    inheritanceYears: 33,
+    statement:
+        'The Lasting Peace and the Face Reckoning are twenty-eight years apart by universal commercial practice, thirty-one by the Immovable Mountain Temple\'s survey notes, and thirty-three by the Ninefold Karma Palace\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
+    truth: 'unresolved',
+    heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma', 'apex-myriad-course-hall'],
+    evidence: [
+        'twenty-eight is what every freight and border contract has used for fifteen hundred years, on no stated basis, because the first one to need a number picked one',
+        'thirty-one is the Immovable Mountain Temple\'s figure, derived from the advance of a physical edge against its own survey, and it has never pressed the point',
+        'thirty-three is the Karma Palace\'s, derived from inheritance intervals across the border where the same estate is dated twice, and it is unpublished',
+        'the two epochs are different events of different kinds, and no third event anywhere is dated in both'
+    ],
+    claimedOutcomes: [
+        'twenty-eight, and the other two are computing against a reckoning that was itself adjusted once',
+        'thirty-one, and the commercial figure is a rounding that got fixed by use',
+        'thirty-three, and every cross-border inheritance settled in the last fifteen hundred years is out by five years',
+        'the question is malformed because the Lasting Peace\'s own epoch is a compressed decade, in which case no single offset exists at all'
+    ],
+    fidelity: 'partial'
+};
+
 export const CALENDARS: readonly Calendar[] = [
     {
         id: 'calendar-great-peace',
@@ -1125,8 +1157,8 @@ export const CALENDARS: readonly Calendar[] = [
         regionId: 'region-quiet-marches',
         keptBy: ['apex-myriad-course-hall', 'sect-clearwater-ward', 'sect-six-li-patrol'],
         countsFrom:
-            'The first cut on the founding face, which is a schedule entry rather than a treaty: the Myriad Course Hall dates from work rather than from agreement, and considers this the more honest practice. The present year is 1,489.',
-        presentYear: 1_489,
+            `The first cut on the founding face, recorded in the Myriad Course Hall's schedule. The commercial count is year ${PRESENT_YEAR - THE_CALENDAR_OFFSET.commercialYears}.`,
+        presentYear: PRESENT_YEAR - THE_CALENDAR_OFFSET.commercialYears,
         isTheOriginCorrect: {
             statement:
                 'The epoch of the Face Reckoning is a dated schedule entry, which makes it the better-evidenced of the two origins and does not make it convertible to the other one.',
@@ -1202,40 +1234,17 @@ export const CALENDARS: readonly Calendar[] = [
     }
 ];
 
-/**
- * The offset between the two provincial counts. Three institutions compute it
- * three ways, one of the three is used by everybody because contracts require
- * a number, and the one that is probably right is unpublished because too much
- * settled property depends on the one that is used.
- */
-export const THE_CALENDAR_OFFSET: Claim = {
-    statement:
-        'The Lasting Peace and the Face Reckoning are twenty-eight years apart by universal commercial practice, thirty-one by the Immovable Mountain Temple\'s survey notes, and thirty-three by the Ninefold Karma Palace\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
-    truth: 'unresolved',
-    heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma', 'apex-myriad-course-hall'],
-    evidence: [
-        'twenty-eight is what every freight and border contract has used for fifteen hundred years, on no stated basis, because the first one to need a number picked one',
-        'thirty-one is the Immovable Mountain Temple\'s figure, derived from the advance of a physical edge against its own survey, and it has never pressed the point',
-        'thirty-three is the Karma Palace\'s, derived from inheritance intervals across the border where the same estate is dated twice, and it is unpublished',
-        'the two epochs are different events of different kinds, and no third event anywhere is dated in both'
-    ],
-    claimedOutcomes: [
-        'twenty-eight, and the other two are computing against a reckoning that was itself adjusted once',
-        'thirty-one, and the commercial figure is a rounding that got fixed by use',
-        'thirty-three, and every cross-border inheritance settled in the last fifteen hundred years is out by five years',
-        'the question is malformed because the Lasting Peace\'s own epoch is a compressed decade, in which case no single offset exists at all'
-    ],
-    fidelity: 'partial'
-};
+
+
 
 /**
  * Why the offset is not merely an antiquarian matter, and what it silently
  * conceals.
  */
 export const WHAT_THE_OFFSET_HIDES = [
-    'The official account of the Nine Stone Array has the Immovable Mountain Temple founded to replace it. Immovable Mountain Temple publishes its own founding at two thousand nine hundred years ago and the Girdle\'s fall is dated nine hundred years ago, so the account is off by two thousand years, on two numbers both houses publish. Nobody has ever put the two on the same page, because the dates are quoted in different reckonings in different provinces and everybody assumes the discrepancy is the offset.',
-    'Cross-border inheritance intervals are computed at twenty-eight. If the Karma Palace\'s thirty-three is right, a class of settled estates is out by five years, several of them are out across a boundary that decides which house arbitrates, and the Karma Palace has known this for at least two centuries.',
-    'A carver and a Jade Gorge cultivator describing the same border incident will file it in years that differ by an unverifiable amount, which is why the tradition war has two dates as well as two accounts and why nobody has noticed that the two dates are not the same event.'
+    "The Nine Stone Array's fall is dated nine hundred years ago, while the Immovable Mountain Temple publishes its founding two thousand nine hundred years ago. Its account says it was founded to replace the Array.",
+    "Cross-border inheritance intervals use the commercial offset. The Karma Palace's unpublished offset would move settled estates by five years, including estates across arbitration boundaries.",
+    "The two provinces file the tradition war under different dates; no shared dated event establishes that the accounts concern the same incident."
 ] as const;
 
 // THE PAST AT HOUSEHOLD SCALE

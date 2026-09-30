@@ -2,6 +2,9 @@
  * Asking somebody for something, and what saying yes would cost them.
  */
 
+import { whatSomebodyKnowsOfTheOldWorld, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
+
+
 import { askingYourHouseForARepairDose } from './asking-your-house-for-a-repair-dose.js';
 import { getSect } from '../data/cultivation/index.js';
 import {
@@ -426,7 +429,8 @@ export const askingVerbs = {
         // The unpressed reading, taken for its verdict and thrown away. Nothing
         // is written by it: `askedAbout` is pure, and the record-writing half of
         // `askAround` is not reached until the demand has actually resolved.
-        const subject = resolveAnything(
+        const oldWorld = whatSomebodyKnowsOfTheOldWorld(topic, who, oldWorldYear(this.atHand, run.elapsedDays));
+        const subject = oldWorld?.subject ?? resolveAnything(
             this.repos, topic, cultivator, scope,
             whereYouStandOnYourHousesRoll(this, cultivator)
         );
@@ -452,7 +456,8 @@ export const askingVerbs = {
                     houseName: who.sectName,
                     rankName: who.sectRank
                 }),
-            holdsIt: whetherTheyHoldIt(this.knowledge, who.id, subject),
+            holdsIt: oldWorld?.holdsIt ?? whetherTheyHoldIt(this.knowledge, who.id, subject),
+            publicRecord: oldWorld !== null && oldWorld.records.every(row => row.holders === undefined),
             priorDealings: this.dealingsWith(cultivator, who.id)
         });
 

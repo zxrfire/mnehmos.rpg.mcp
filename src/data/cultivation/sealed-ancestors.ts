@@ -64,6 +64,7 @@ import { z } from 'zod';
  * rather than about strength.
  */
 export const THE_BINDING_CONSTRAINT = {
+    knowledge: ["A terminal ancestor acts within a closing window, and an immortal descending has only breaths. Holding what they take requires people who remain after that window."],
     principle:
         'The binding constraint at every tier of this world is not power. It is who is standing there when the window shuts.',
     atEveryScale: [
@@ -596,6 +597,7 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const SEALED_ANCESTOR_PATTERN = {
+    knowledge: ["An unspent sealed ancestor deters an attack. A terminal waking spends a finite window; a published wake condition does not establish that its occupant is still alive."],
     theLaw:
         'See THE_ASYMMETRY above. The side that must convert loses and the side that must obstruct wins, so an offensive waking is pointed at an absence and a defensive one only has to be in the way. Everything below is that law with names attached.',
     coldWarLogic:

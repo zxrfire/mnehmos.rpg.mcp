@@ -32,6 +32,9 @@
  * age now and no house for her, and a row would be invented rather than read.
  */
 
+import { MAX_RESIDENT_FALSE_IMMORTALS, THE_PRESENT_COUNT, FALSE_IMMORTALS } from '../../data/cultivation/false-immortals.js';
+
+
 import { WANDERERS } from '../../data/cultivation/wanderers.js';
 import { HOLLOW_COURT_ROSTER } from '../../data/cultivation/hollow-court-roster.js';
 import { ADJACENT_REGION_ID, HOME_REGION_ID } from '../../data/cultivation/regions/region-ids.js';
@@ -88,6 +91,12 @@ export function seedTheWanderers(state: WorldState, presentDay: number): NpcReco
     // A world without the two provinces he walks - a fixture's map - is not a
     // world he is in.
     if (!walks.every(id => state.locations.some(l => l.id === id))) return made;
+    const residentCount = WANDERERS.filter(w => w.crossingOutcome === 'false_immortal').length;
+    if (residentCount !== THE_PRESENT_COUNT.residentsAtOpening
+        || residentCount > MAX_RESIDENT_FALSE_IMMORTALS
+        || FALSE_IMMORTALS.filter(f => f.servingNow).length !== THE_PRESENT_COUNT.protectorsAtOpening) {
+        throw new Error('The opening False Immortal population disagrees with its record.');
+    }
     const market = theMarketOf(state, walks[0]!);
     for (const wanderer of WANDERERS) {
         const id = worldIdForAWanderer(wanderer.id);

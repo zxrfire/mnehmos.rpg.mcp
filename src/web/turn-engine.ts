@@ -2,6 +2,9 @@
  * The game service - phase 2, and the only thing in this package that writes.
  */
 
+import { whatSomebodyKnowsOfTheOldWorld, keepOldWorldKnowledge, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
+
+
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { randomUUID } from 'crypto';
 import { getNpc } from '../engine/world/world-state.js';
@@ -7946,10 +7949,12 @@ ${noticed}`;
             ));
         }
         const ownFact = selfFactFromTopic(topic);
-        const subject = ownFact !== null ? null : resolveAnything(
+        const oldWorld = ownFact === null
+            ? whatSomebodyKnowsOfTheOldWorld(topic, asked, oldWorldYear(this.atHand, run.elapsedDays)) : null;
+        const subject = oldWorld?.subject ?? (ownFact !== null ? null : resolveAnything(
             this.repos, topic, cultivator, scope,
             whereYouStandOnYourHousesRoll(this, cultivator)
-        );
+        ));
 
         // ── AND IF THE ASKER DOES NOT KNOW IT, THE PERSON ASKED MIGHT ────
         //
@@ -8007,7 +8012,8 @@ ${noticed}`;
             subject,
             rawTopic: topic,
             aboutThemselves,
-            holdsIt: whetherTheyHoldIt(this.knowledge, asked.id, subject),
+            holdsIt: oldWorld?.holdsIt ?? whetherTheyHoldIt(this.knowledge, asked.id, subject),
+            publicRecord: oldWorld !== null && oldWorld.records.every(row => row.holders === undefined),
             priorDealings: this.dealingsWith(cultivator, asked.id),
             // What comes out when nothing about the question does. `asked.ts`
             // decides whether they get to use it.
@@ -8062,9 +8068,12 @@ ${noticed}`;
         }
 
         const learned = answer.teaches && subject
-            ? this.noteEncounter(
-                cultivator, run, subject, 'told',
-                `${asked.name} said it at ${placeName(cultivator)}.`)
+            ? oldWorld !== null
+                ? keepOldWorldKnowledge(this.knowledge, cultivator, run,
+                    oldWorld.records,
+                    { kind: 'told', name: `${asked.name} at ${placeName(cultivator)}.`, id: asked.id }, answer.lines)
+                : this.noteEncounter(cultivator, run, subject, 'told',
+                    `${asked.name} said it at ${placeName(cultivator)}.`)
             : false;
 
         // ASKING IN THE REGION GIVES IT
@@ -8104,7 +8113,7 @@ ${noticed}`;
         // way names enter a player's world. Written before the prose exists.
         // Not on a question about themselves: the answer is their own name,
         // and nobody else's is said with it.
-        const dropped = aboutThemselves !== null ? null : this.hear(
+        const dropped = aboutThemselves !== null || oldWorld !== null ? null : this.hear(
             cultivator, run, `ask:${asked.id}:${topic}`, asked.id,
             { intent: 'asked', reach: answer.reach });
 
