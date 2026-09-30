@@ -222,7 +222,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         practice: 'Physicians keep their fingernails cut to the quick and their sleeves pinned back at all times, and will treat an enemy on the floor of a fight before asking who started it.',
         grievance: 'That it was a hermitage of nine people once, holding its valley by respect and nothing else, and chose to grow - and that the Ancient Bough Grove, which refused the same choice, is spoken of the way the Hall used to be.',
-        fear: 'That the Bone Lantern Cult is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
+        fear: 'That the Wraith Dirge Cult is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
         lateness: 'Fourteen of twenty-two nodes lit; the stone irrigation channels are original and get patched with clay; and the rank of Life Elder retains a ceremonial duty at the springs that nobody can explain.',
         disagreement: 'The billing faction wants enemies treated and charged at triple. The physicians want them treated and charged the same, on the argument that a price is a diagnosis of who you think somebody is.',
         wrongAbout: 'The Hall teaches that Lu Wan wrote the restoration method. The valley ruin it came out of predates Lu Wan by six hundred years and the Hall\'s own founding record says "recovered".',
@@ -642,7 +642,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'Sets up a table with a cash box outside other sects\' admission days and pays the first month in advance to everyone they turned away.'
     },
-    'sect-bone-lantern-cult': {
+    'sect-wraith-dirge-cult': {
         knownFor: {
             outside: 'Graves. The worst company in the region, hunted on principle by one sect and over supply by another.',
             actuallyGoodAt: 'Ground-reading. They are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to.',
@@ -888,7 +888,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'The pay is the thing everybody repeats, so the promise underneath it is treated as a detail of the pay.'
         },
         practice: 'Gleaners rinse their mouths with vinegar on a fixed schedule and spit before speaking, and they will not enter a sealed door in the first hour of a shift on the grounds that nobody is careful yet.',
-        grievance: 'That the Bone Lantern Cult undercuts them across a border neither region polices, using finds the Caravan located.',
+        grievance: 'That the Wraith Dirge Cult undercuts them across a border neither region polices, using finds the Caravan located.',
         fear: 'The sealed part of their own sorting yard. Xun went in on a wager thirty years ago and the Caravan sealed it again and raised the wager, and nobody has taken it.',
         lateness: 'Three of fourteen nodes lit, all at the front of a ruin they have never fully entered; the yard is laid out inside somebody else\'s building; and the rotation they follow was justified by a note whose reasoning they have lost.',
         disagreement: 'The Sheaf Elders want to work live burn edges, which pays triple. The Sheaf Master holds the nine-year rotation, and the argument reopens every time a face runs out.',
@@ -932,7 +932,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Being taken in is free and is what everybody talks about. Staying is priced by the cup at four days\' distance from the only well, and nobody outside the shed has ever done that arithmetic before arriving.'
         },
         practice: 'A string is counted out of the shed by name and counted back in by name, aloud, at the door, and a name that does not come back stays on the board rather than being wiped. There are nine boards and the shed was rebuilt around them.',
-        grievance: 'That the Bone Lantern Cult works the ground behind its strings, waiting on the ones who did not make the return leg, and has twice been found doing it before the year was out.',
+        grievance: 'That the Wraith Dirge Cult works the ground behind its strings, waiting on the ones who did not make the return leg, and has twice been found doing it before the year was out.',
         fear: 'A season where the cover moves early and closes three shows at once. The Caravan can walk a string to a show that has shut; what they cannot do is walk three strings back on the water they left with.',
         lateness: 'It has nothing to be late about: no inheritance, no compound, no diagram, no hall. What it has instead is a shed that has been rebuilt four times around a stack of boards, which is the only continuity anybody there claims.',
         disagreement: 'Whether to sound for a second well. Two Oasis Elders are paying a Buddha Precipice carver out of their own shares without telling the Oasis Master, who holds that a fixed point on that ground is a thing the cover reaches in a decade and a debt that outlives it.',

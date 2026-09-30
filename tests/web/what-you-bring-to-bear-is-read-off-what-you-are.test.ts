@@ -194,7 +194,7 @@ describe('what is actually behind the asking', () => {
         };
 
         const righteous = await carriedBy('Azure Dew Sect');
-        const demonic = await carriedBy('Bone Lantern Cult');
+        const demonic = await carriedBy('Wraith Dirge Cult');
 
         expect(righteous).toContain('a house standing behind them');
         expect(demonic).toContain('their own name');

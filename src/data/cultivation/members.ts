@@ -1116,7 +1116,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: {
             knows: 'Provenance: what came out of a hole rather than a workshop, roughly which hole, and roughly when it was opened.',
             mayNotSay: 'Who consigned anything, ever, which is not a rule so much as the Pavilion\'s entire business model.',
-            costsThem: 'Naming a grave names the digger. Diggers have friends, several of them are in the Bone Lantern Cult, and he has to keep buying from them next season.'
+            costsThem: 'Naming a grave names the digger. Diggers have friends, several of them are in the Wraith Dirge Cult, and he has to keep buying from them next season.'
         }
     },
     {
@@ -1829,7 +1829,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Hall Master',
         realmOrdinal: 17,
         role: 'master',
-        wants: 'the supply quarrel with the Bone Lantern Cult settled by purchase rather than by killing',
+        wants: 'the supply quarrel with the Wraith Dirge Cult settled by purchase rather than by killing',
         fears: 'the town above deciding that it does know',
         detail: 'Pays the town\'s night-soil contractor four times the going rate, personally, in cash, and has done for twenty years.',
         outlier: false,
@@ -1860,11 +1860,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Bone Lantern Cult -------------------------------------------------
+    // --- Wraith Dirge Cult -------------------------------------------------
     {
         id: 'member-shao-kongzhi',
         name: 'Shao Kongzhi',
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         rankIndex: 0,
         rank: 'Grave Digger',
         realmOrdinal: 3,
@@ -1881,7 +1881,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-wu-liuyi',
         name: 'Wu Liuyi',
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         rankIndex: 1,
         rank: 'Lantern Bearer',
         realmOrdinal: 8,
@@ -1898,7 +1898,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-yu-ziyan',
         name: 'Yu Ziyan',
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         rankIndex: 2,
         rank: 'Bone Disciple',
         realmOrdinal: 12,
@@ -1918,7 +1918,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-ye-puxian',
         name: 'Ye Puxian',
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         rankIndex: 3,
         rank: 'Corpse Warden',
         realmOrdinal: 15,
@@ -2974,7 +2974,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         // the top of its rung and still is.
         realmOrdinal: 10,
         role: 'rival',
-        wants: 'the Bone Lantern Cult off the border sites for a single season',
+        wants: 'the Wraith Dirge Cult off the border sites for a single season',
         fears: 'Yu Ziyan, by name, and says the name',
         detail: 'Has been robbed twice by the Cult, and has begun going armed and going first.',
         outlier: false,
@@ -3486,7 +3486,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-the-cult-ancestor',
         name: 'The Cult Ancestor',
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         rankIndex: 6,
         rank: 'Cult Ancestor',
         realmOrdinal: 26,

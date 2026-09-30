@@ -30,6 +30,20 @@
  * honoured word (`reliably` is what is tested), and then gone from every wall.
  * A death alone does not take the paper down; being turned in does.
  *
+ * OR THE BONES (owner ruling 2026-09-29). A bone whose row says it came off the
+ * named person's body is paid on, and goes to the house; a bone off anybody else
+ * is refused. Brought by somebody other than the killer, it leaves the killer
+ * holding a `turned_in_my_kill` grudge, written at once, unless the killer let
+ * the bones go to the claimant: the last departure from the killer's hands was
+ * a gift or sale to them. A hidden killing or one with nobody named as killer
+ * opens no such account. The player taking bones off the body is played;
+ * transfers from the killer are arranged on the ordinary possession chain.
+ * A sold bone leaves the seller's world rows as well as the pouch: acquiring
+ * another of its grade cannot make the old origin usable as proof again.
+ * The played take spent a day but minted no origin row: the dead-mortal sweep
+ * removed the wanted person mid-take. A paper still up and an intact bone's
+ * origin now retain that person; the assertion reports the take and body status.
+ *
  * SOMEBODY ELSE CAN GET THERE FIRST. Somebody else who killed the person brings
  * it in on a day drawn on the notice's own stream; after that day the notice
  * is down and the player is told the second gets nothing. The arrangement asks
@@ -74,6 +88,7 @@ import {
     thePricesStanding,
     whatAHouseWouldPost,
     whenThePaperCameDown,
+    whoWasBeatenToIt,
     type AHouseAccount,
     type PersonBounty
 } from '../../src/engine/world/a-house-puts-a-price-on-somebody.js';
@@ -85,6 +100,10 @@ import { accountsComingDue } from '../../src/web/who-comes-to-settle-an-account.
 import { attemptAnAccount } from '../../src/engine/encounters/an-account-comes-due.js';
 import { activityForVerb, placeFor } from '../../src/web/encounters.js';
 import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
+import { objectForBones, theBoneThisBodyYields } from '../../src/engine/world/bones-off-a-body.js';
+import { transferPossession, type AcquisitionMode } from '../../src/engine/world/possessions.js';
+import { addToPouch, pouchQuantity } from '../../src/server/consolidated/cultivation-support.js';
+import { activeWorld } from '../../src/server/state/cultivation-world.js';
 
 const WORLD = 'a-price-on-a-head-w';
 
@@ -396,6 +415,279 @@ describe('somebody who goes after one on the player comes as an account', () => 
         expect(arrived!.event.summary).toContain(taker.name);
         expect(arrived!.grants.some((g: any) => g.kind === 'sect' && g.id === house.id)).toBe(true);
     });
+});
+
+/**
+ * A paper whose person is killed today by somebody the world moves, on a notice whose own draw
+ * does not have the killer bring it in for a month, so the player can get there first.
+ */
+function aPaperOnSomebodyKilledToday(harness: any, killedByThePlayer = false) {
+    const { world, cultivator } = harness;
+    const today = Math.floor(world.currentDay);
+    let killer: any = null;
+    const arranged = aPaperOnSomebody(harness, (would, person) => {
+        killer = world.npcs.find((n: any) => n.status === 'alive' && isTheWorldsToMove(n)
+            && n.id !== person.id && n.factionId !== would.posterFactionId);
+        const drawn = theDaySomebodyElseTurnsItIn(world.seed,
+            aNoticeId(would.posterFactionId!, person.id, would.postedOnDay), today,
+            Math.min(A_BILL_STAYS_UP_FOR_DAYS, would.lapsesOnDay - today));
+        return killer !== undefined && (drawn === null || drawn > today + 30);
+    });
+    const by = killedByThePlayer ? { id: cultivator.id, name: cultivator.name } : { id: killer.id, name: killer.name };
+    whatTheConfrontationDidToThem(world, {
+        npcId: arranged.target.id, byId: by.id, byName: by.name,
+        day: today, wounds: [], outcome: 'lethal', lost: true, finished: true
+    });
+    harness.game.theWorldMoved();
+    return { ...arranged, killer: killedByThePlayer ? null : killer };
+}
+
+/** A bone off this dead person's body, looted by `takerId`, as `taking-the-bones.ts` mints it. */
+function aBoneOff(harness: any, deadId: string, takerId: string, takerName: string) {
+    const { world } = harness;
+    const dead = world.npcs.find((n: any) => n.id === deadId);
+    const bone = theBoneThisBodyYields(dead, false);
+    const row = objectForBones({
+        id: `obj-${bone.id}-${dead.id}`, bone,
+        dead: { id: dead.id, name: dead.name, ordinal: dead.cultivation.realmOrdinal },
+        takerId, takerName, place: 'the road', onDay: Math.floor(world.currentDay)
+    });
+    world.objects.push(row);
+    return { bone, row };
+}
+
+/** Into the player's pouch through the same possession write a gift or sale uses. */
+function givenToThePlayer(harness: any, rowId: string, bone: { id: string }, how: AcquisitionMode = 'gifted') {
+    const { world, cultivator } = harness;
+    const at = world.objects.findIndex((o: any) => o.id === rowId);
+    world.objects[at] = transferPossession(world.objects[at], {
+        onDay: Math.floor(world.currentDay), toHolderId: cultivator.id, toHolderName: cultivator.name,
+        how, transfersOwnership: how !== 'stolen', source: 'Transferred by the holder'
+    });
+    addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
+    harness.game.theWorldMoved();
+}
+
+const grudgesForTheKill = (harness: any) => ledgerAbout(harness.db, harness.cultivator.id)
+    .filter(row => row.subjectId === harness.cultivator.id && row.cause === 'turned_in_my_kill');
+
+describe('bones off the body are proof', () => {
+    it('pays on the bones of the one named, the paper comes down, and the killer holds it against the one who brought them', async () => {
+        const harness = await aPlayerInTheWorld('a-price-on-the-bones');
+        const { world, cultivator } = harness;
+        harness.game.atHand = world;
+        const { house, target, paper, seat, killer } = aPaperOnSomebodyKilledToday(harness);
+
+        // PLAYED: the body lies where the player stands, and they take the bones themselves.
+        const me = harness.repos.cultivators.getById(cultivator.id);
+        const at = world.npcs.findIndex((n: any) => n.id === target.id);
+        world.npcs[at] = { ...world.npcs[at], locationId: harness.game.worldPlaceOf(me) };
+        harness.game.theWorldMoved();
+        const taken = await harness.game.act(`I take the bones of ${target.name}`);
+        // Read the committed state after the day spent taking the bones.
+        const takenWorld = (await activeWorld()).state;
+        const takeDetails = `\nBody ${target.id}: ${takenWorld.npcs.find(n => n.id === target.id)?.status ?? 'missing'}.`
+            + `\nTake: ${taken.narration}`;
+        const because = (claim: string) => `${claim}${takeDetails}`;
+        expect(takenWorld.npcs.find(n => n.id === target.id)?.status,
+            because('the wanted body survives the day spent taking its proof')).toBe('physically_dead');
+        const row = takenWorld.objects.find((o: any) => o.data?.deadId === target.id && o.possessorId === cultivator.id)!;
+        expect(row, because('the take minted a row saying whose body')).toBeDefined();
+        const boneId = String(row.data.materialId);
+        expect(pouchQuantity(harness.db, cultivator.id, boneId), because('the taken bone is in the pouch')).toBe(1);
+
+        standAt(harness, seat.name);
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const turned = (await harness.game.act(`I turn in the bounty on ${target.name}`)).narration as string;
+        expect(turned, because('the house takes the bone as proof')).toContain(`takes the bones of ${target.name}`);
+        expect(turned, because('turning in proof takes down the notice')).toContain('The notice comes down.');
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones,
+            because('the claimant is paid the purse')).toBe(stones + paper.purseStones);
+
+        // DOWN EVERYWHERE, and the killer's own day, when it comes, finds it down.
+        const settledWorld = (await activeWorld()).state;
+        expect(thePricesOn(settledWorld, house.id), because('the paper is down everywhere')).not.toContain(target.id);
+        expect(whenThePaperCameDown(settledWorld, paper, paper.lapsesOnDay - 1)?.byId,
+            because('the player brought the proof first')).toBe(cultivator.id);
+
+        // THE BONE IS THE HOUSE'S NOW.
+        expect(pouchQuantity(harness.db, cultivator.id, boneId), because('the proof leaves the pouch')).toBe(0);
+        const handed = settledWorld.objects.find((o: any) => o.id === row.id)!;
+        expect(handed.possessorId, because('the house holds the proof')).toBe(house.id);
+        expect(handed.data.deadId, because('the handed-over bone retains its origin')).toBe(target.id);
+
+        // THE KILLER DID NOT LET THEM GO, and holds it.
+        const held = grudgesForTheKill(harness);
+        expect(held.map(r => r.holderId), because('the killer holds the unconsented claim')).toEqual([killer.id]);
+        expect(turned, because('the claim names the lack of consent')).toContain('did not give you the bones');
+
+        // With the paper down, the house's bone still records whose body it came off.
+        await harness.game.act('I wait for 1 day');
+        const later = (await activeWorld()).state;
+        expect(later.objects.find(o => o.id === row.id)?.data.deadId,
+            'the sweep preserves the origin of the proof now held by the house').toBe(target.id);
+        expect(later.npcs.some(n => n.id === target.id),
+            'the bone origin still resolves after the paper comes down').toBe(true);
+    }, 300_000);
+
+    it('refuses bones off somebody else', async () => {
+        const harness = await aPlayerInTheWorld('a-price-on-the-wrong-bones');
+        const { world, cultivator } = harness;
+        const { house, target, seat, killer } = aPaperOnSomebodyKilledToday(harness);
+        const other = world.npcs.find((n: any) => n.status === 'alive' && isTheWorldsToMove(n)
+            && n.id !== target.id && n.id !== killer.id);
+        whatTheConfrontationDidToThem(world, {
+            npcId: other.id, byId: cultivator.id, byName: cultivator.name,
+            day: Math.floor(world.currentDay), wounds: [], outcome: 'lethal', lost: true, finished: true
+        });
+        const { bone } = aBoneOff(harness, other.id, cultivator.id, cultivator.name);
+        addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
+        harness.game.theWorldMoved();
+
+        standAt(harness, seat.name);
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const turned = (await harness.game.act(`I turn in the bounty on ${target.name}`)).narration as string;
+        expect(turned).toContain(`You carry no bone off ${target.name}'s body`);
+        expect(turned).toContain('The bones you carry came off other bodies.');
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stones);
+        expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(1);
+        expect(thePricesOn(world, house.id)).toContain(target.id);
+    }, 300_000);
+
+    it('cannot turn in a sold bone by acquiring another bone of the same grade', async () => {
+        const harness = await aPlayerInTheWorld('a-price-on-sold-proof');
+        const { world, cultivator } = harness;
+        const { house, target, seat, killer } = aPaperOnSomebodyKilledToday(harness);
+        const bodyAt = world.npcs.findIndex((n: any) => n.id === target.id);
+        world.npcs[bodyAt] = { ...world.npcs[bodyAt],
+            cultivation: { ...world.npcs[bodyAt].cultivation, realmOrdinal: 44 } };
+        const { bone, row } = aBoneOff(harness, target.id, cultivator.id, cultivator.name);
+        addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
+        harness.game.theWorldMoved();
+
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        await harness.game.act(`I sell the ${bone.name}`);
+        expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(0);
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBeGreaterThan(stones);
+        const sold = world.objects.find((o: any) => o.id === row.id);
+        expect(sold.possessorId).toBeNull();
+        expect(sold.provenance.at(-1)?.how).toBe('sold');
+        expect(sold.data.deadId).toBe(target.id);
+
+        const other = world.npcs.find((n: any) => n.status === 'alive' && isTheWorldsToMove(n)
+            && n.id !== killer.id && n.id !== target.id);
+        whatTheConfrontationDidToThem(world, {
+            npcId: other.id, byId: killer.id, byName: killer.name,
+            day: Math.floor(world.currentDay), wounds: [], outcome: 'lethal', lost: true, finished: true
+        });
+        const otherAt = world.npcs.findIndex((n: any) => n.id === other.id);
+        world.npcs[otherAt] = { ...world.npcs[otherAt],
+            cultivation: { ...world.npcs[otherAt].cultivation, realmOrdinal: 44 } };
+        const otherBone = aBoneOff(harness, other.id, cultivator.id, cultivator.name);
+        expect(otherBone.bone.grade).toBe(bone.grade);
+        addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
+        harness.game.theWorldMoved();
+
+        standAt(harness, seat.name);
+        const beforeClaim = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        await harness.game.act(`I turn in the bounty on ${target.name}`);
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(beforeClaim);
+        expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(1);
+        expect(thePricesOn(world, house.id)).toContain(target.id);
+        expect(grudgesForTheKill(harness)).toEqual([]);
+    }, 300_000);
+
+    it.each(['gifted', 'sold', 'bought'] as const)('earns no grudge where the killer transferred the bones as %s', async how => {
+        const harness = await aPlayerInTheWorld(`a-price-on-${how}-bones`);
+        const { world, cultivator } = harness;
+        const { house, target, paper, seat, killer } = aPaperOnSomebodyKilledToday(harness);
+        const { bone, row } = aBoneOff(harness, target.id, killer.id, killer.name);
+
+        givenToThePlayer(harness, row.id, bone, how);
+        standAt(harness, seat.name);
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const turned = (await harness.game.act(`I turn in the bounty on ${target.name}`)).narration as string;
+        expect(turned).toContain(`takes the bones of ${target.name}`);
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stones + paper.purseStones);
+        expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(0);
+        expect(world.objects.find((o: any) => o.id === row.id).possessorId).toBe(house.id);
+        expect(thePricesOn(world, house.id)).not.toContain(target.id);
+        expect(grudgesForTheKill(harness)).toEqual([]);
+        expect(turned).not.toContain('did not give you the bones');
+    }, 300_000);
+
+    it('opens the killer\'s account when the bones were stolen from them', async () => {
+        const harness = await aPlayerInTheWorld('a-price-on-stolen-bones');
+        const { cultivator } = harness;
+        const { target, seat, killer } = aPaperOnSomebodyKilledToday(harness);
+        const { bone, row } = aBoneOff(harness, target.id, killer.id, killer.name);
+        givenToThePlayer(harness, row.id, bone, 'stolen');
+
+        standAt(harness, seat.name);
+        await harness.game.act(`I turn in the bounty on ${target.name}`);
+        expect(grudgesForTheKill(harness).map(r => r.holderId)).toEqual([killer.id]);
+        expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(0);
+    }, 300_000);
+
+    it('does not treat a gift from somebody else as the killer\'s consent', async () => {
+        const harness = await aPlayerInTheWorld('a-price-on-relayed-bones');
+        const { world, cultivator } = harness;
+        const { target, paper, killer } = aPaperOnSomebodyKilledToday(harness);
+        const { row } = aBoneOff(harness, target.id, killer.id, killer.name);
+        const middle = world.npcs.find((n: any) => n.status === 'alive' && isTheWorldsToMove(n)
+            && n.id !== killer.id && n.id !== cultivator.id);
+        const passedOn = transferPossession(transferPossession(row, {
+            onDay: Math.floor(world.currentDay), toHolderId: middle.id, toHolderName: middle.name,
+            how: 'gifted', transfersOwnership: true
+        }), {
+            onDay: Math.floor(world.currentDay), toHolderId: cultivator.id, toHolderName: cultivator.name,
+            how: 'gifted', transfersOwnership: true
+        });
+        expect(whoWasBeatenToIt(world, { paper, claimantId: cultivator.id, bone: passedOn })?.killerId).toBe(killer.id);
+    }, 300_000);
+
+    it.each(['hidden', 'unknown'] as const)('pays on the bones with no killer grudge when the killing is %s', async kind => {
+        const harness = await aPlayerInTheWorld(`a-price-on-${kind}-kill`);
+        const { world, cultivator } = harness;
+        const { house, target, paper, seat } = aPaperOnSomebodyKilledToday(harness);
+        const deathAt = world.history.facts.findIndex((f: any) => f.kind === 'death'
+            && f.actors.some((a: any) => a.role === 'victim' && a.id === target.id));
+        const death = world.history.facts[deathAt];
+        world.history.facts[deathAt] = kind === 'hidden'
+            ? { ...death, visibility: 'secret' }
+            : { ...death, actors: death.actors.filter((a: any) => a.role !== 'killer'), causeKnown: false };
+        const { bone, row } = aBoneOff(harness, target.id, cultivator.id, cultivator.name);
+        addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
+        harness.game.theWorldMoved();
+
+        standAt(harness, seat.name);
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const turned = (await harness.game.act(`I turn in the bounty on ${target.name}`)).narration as string;
+        expect(turned).toContain(`takes the bones of ${target.name}`);
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stones + paper.purseStones);
+        expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(0);
+        expect(world.objects.find((o: any) => o.id === row.id).possessorId).toBe(house.id);
+        expect(thePricesOn(world, house.id)).not.toContain(target.id);
+        expect(grudgesForTheKill(harness)).toEqual([]);
+        expect(turned).not.toContain('did not give you the bones');
+    }, 300_000);
+
+    it('earns no grudge where the killer brings the bones', async () => {
+        const harness = await aPlayerInTheWorld('a-price-on-my-own-kill');
+        const { world, cultivator } = harness;
+        const { house, target, paper, seat } = aPaperOnSomebodyKilledToday(harness, true);
+        const { bone } = aBoneOff(harness, target.id, cultivator.id, cultivator.name);
+        addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
+        harness.game.theWorldMoved();
+
+        standAt(harness, seat.name);
+        const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
+        const turned = (await harness.game.act(`I turn in the bounty on ${target.name}`)).narration as string;
+        expect(turned).toContain(`takes the bones of ${target.name}`);
+        expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBe(stones + paper.purseStones);
+        expect(thePricesOn(world, house.id)).not.toContain(target.id);
+        expect(grudgesForTheKill(harness)).toEqual([]);
+    }, 300_000);
 });
 
 describe('what a house pays on', () => {

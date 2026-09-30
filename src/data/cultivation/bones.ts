@@ -2,9 +2,9 @@
  * Bones off a dead body, one row per grade: the material demonic arts are worked from.
  *
  * Owner ruling 2026-09-25: artifacts are made of beast or human parts, and demonic
- * cultivators craft from human bones. A body's grade is the dead person's rung read
- * through the one grade table (`gradeOfWhatABodyYields`), so one row per grade covers
- * every body there is. Its value is the median of what `herbs.ts` and `beasts.ts`
+ * cultivators craft from human bones. A body's grade is decided in
+ * `theBoneThisBodyYields` (`bones-off-a-body.ts`), so one row per grade covers every
+ * body there is. Its value is the median of what `herbs.ts` and `beasts.ts`
  * already price that grade at, so a bone is worth what its grade is worth and no
  * figure is typed here.
  */

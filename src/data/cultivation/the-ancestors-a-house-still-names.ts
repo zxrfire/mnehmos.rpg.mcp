@@ -1038,7 +1038,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         discoverableTraces: [],
         standingNote: 'The Hall pays well, dies young, and keeps short records. Nobody in it expects to be remembered and the arrangement is understood.'
     },
-    'sect-bone-lantern-cult': {
+    'sect-wraith-dirge-cult': {
         ancestors: [
             { name: 'The Pale Ancestor', fate: 'dead', realmOrdinal: null, yearsAgo: 700, afterCrossing: null, rememberedFor: 'Worked the third year after a war and established the rotation the Cult still follows.' }
         ],

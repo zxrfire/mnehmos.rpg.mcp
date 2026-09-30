@@ -53,12 +53,17 @@
  *
  * ── PROOF ────────────────────────────────────────────────────────────────
  *
- * The proof is the killing: the world holds a death naming whoever brings it as
+ * Two proofs. The killing: the world holds a death naming whoever brings it as
  * the killer and the named person as the victim, on or after the day the paper
- * went up. Killing them through any ordinary road writes that row; nothing else
- * does. It is the smallest proof the engine can check. A house token is no proof,
- * because it shatters with its holder (`a-house-knows-its-own-by-a-lamp-and-a-token.ts`);
- * nothing comes off a body that names it; and no record hands a living captive over.
+ * went up. Or the bones: a bone whose row says it came off the named person's
+ * body (`bones-off-a-body.ts`), which goes to the house. A house token is no
+ * proof, because it shatters with its holder (`a-house-knows-its-own-by-a-lamp-and-a-token.ts`),
+ * and no record hands a living captive over.
+ *
+ * Owner ruling 2026-09-29: bones turned in by somebody other than the killer,
+ * without the killer having let them go, leave the killer holding it against
+ * them ({@link whoWasBeatenToIt}). It is written when the bones are turned in,
+ * whether or not the killer would ever have come.
  *
  * So the race is for the killing. Somebody else who kills the named person for
  * the purse brings it in at once (`a-year-of-people-acting-on-why-they-would-kill.ts`);
@@ -76,6 +81,7 @@ import { provinceForFaction } from '../../data/cultivation/regions.js';
 import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { SEVERITY_ORDER, type ObligationCause, type ObligationRecord, type Severity } from '../social/grudges.js';
+import type { AcquisitionMode, ObjectRecord } from './possessions.js';
 import { AGAINST_THEIR_OWN } from '../social-leverage/what-a-house-does-when-it-catches-you.js';
 import { openHandednessOf } from '../social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import { whatItWasWorth } from '../social-leverage/what-a-deed-leaves.js';
@@ -304,11 +310,11 @@ export function howThisHouseHonoursItsPaper(state: WorldState, houseId: string):
     return HOW_A_HEAD_HONOURS_THE_PAPER.find(row => hand >= row.atLeast)!.honoured;
 }
 
-/** What proof the paper asks for: that whoever brings it did the killing. See the header. */
+/** What proof the paper asks for: the bones, or the killing. See the header. */
 export function whatProofThePaperAsksFor(honoured: Honoured): string {
     return honoured === 'if_witnessed'
-        ? 'proof they did the killing themselves, seen done by somebody the house trusts'
-        : 'proof they did the killing themselves';
+        ? 'the bones off the body, or proof of having done the killing, where somebody the house trusts saw it done'
+        : 'the bones off the body, or proof of having done the killing';
 }
 
 const THE_CATCH: Readonly<Record<Honoured, string>> = {
@@ -512,11 +518,7 @@ function theDayTheKillerBringsItIn(
     paper: PersonBounty,
     day: number
 ): { onDay: number; byId: string } | null {
-    // THE FACT OF THE DEATH, on the day they died: a fight they walked away from names a victim too.
-    const diedOn = state.npcs.find(n => n.id === paper.targetId)?.diedOnDay ?? null;
-    if (diedOn === null) return null;
-    const death = state.history.facts.find(f => roleIn(f, 'victim')?.id === paper.targetId
-        && roleIn(f, 'killer') !== null && Math.floor(f.day) === Math.floor(diedOn));
+    const death = theKillingOf(state, paper.targetId);
     if (!death || death.visibility === 'secret') return null;
     if (death.day < paper.postedOnDay || death.day >= paper.lapsesOnDay) return null;
     const killer = state.npcs.find(n => n.id === roleIn(death, 'killer')!.id);
@@ -610,6 +612,18 @@ export function whoTakesUpThePrice(
 // BRINGING IT IN
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The killing the world holds for somebody's death, on the day they died, or
+ * null where nobody killed them. A fight they walked away from names a victim
+ * too, so the day is what tells them apart.
+ */
+export function theKillingOf(state: WorldState, personId: string): HistoricalFact | null {
+    const diedOn = state.npcs.find(n => n.id === personId)?.diedOnDay ?? null;
+    if (diedOn === null) return null;
+    return state.history.facts.find(f => f.kind === 'death' && roleIn(f, 'victim')?.id === personId
+        && roleIn(f, 'killer') !== null && Math.floor(f.day) === Math.floor(diedOn)) ?? null;
+}
+
 /** The death the world holds naming this killer and this victim, if it holds one. */
 export function theDeathTheyAreHeldFor(
     state: WorldState,
@@ -618,6 +632,52 @@ export function theDeathTheyAreHeldFor(
 ): HistoricalFact | null {
     return state.history.facts.find(f =>
         roleIn(f, 'killer')?.id === killerId && roleIn(f, 'victim')?.id === victimId) ?? null;
+}
+
+/** The ways a thing leaves somebody's hands because they let it go. */
+const LET_GO: ReadonlySet<AcquisitionMode> = new Set<AcquisitionMode>(['gifted', 'sold', 'bought']);
+
+/**
+ * Whether the killer let these bones go: the last time they left the killer's
+ * hands, it was given or sold to this claimant. Taking them off the body or
+ * receiving them from somebody else is not the killer's consent.
+ */
+function theKillerLetThemGo(bone: Pick<ObjectRecord, 'provenance'>, killerId: string, claimantId: string): boolean {
+    const left = bone.provenance.filter(p => p.previousHolderId === killerId);
+    const last = left[left.length - 1];
+    return last !== undefined && last.holderId === claimantId && LET_GO.has(last.how);
+}
+
+export interface BeatenToIt {
+    killerId: string;
+    killerName: string;
+    severity: Severity;
+}
+
+/**
+ * Who holds it against somebody who turned in a price with the bones: the one
+ * the world holds for the killing, when that is somebody else, still living,
+ * who did not let the bones go. A hidden killing, or a death nobody is named
+ * for, has nobody to hold it. What it is worth is the purse against what the
+ * killer has, gone for good.
+ */
+export function whoWasBeatenToIt(
+    state: WorldState,
+    input: { paper: PersonBounty; claimantId: string; bone: Pick<ObjectRecord, 'provenance'> }
+): BeatenToIt | null {
+    const death = theKillingOf(state, input.paper.targetId);
+    if (!death || death.visibility === 'secret') return null;
+    const killer = roleIn(death, 'killer')!;
+    if (killer.id === input.claimantId || theKillerLetThemGo(input.bone, killer.id, input.claimantId)) return null;
+    const npc = state.npcs.find(n => n.id === killer.id);
+    if (npc && npc.status !== 'alive') return null;
+    const purse = input.paper.purseStones;
+    const held = Math.max(0, Number(npc?.spiritStones ?? 0));
+    const severity = whatItWasWorth({
+        cause: 'turned_in_my_kill', paidBy: 'subject', cost: purse / (held + purse),
+        irreversible: true, onDay: 0, description: ''
+    });
+    return { killerId: killer.id, killerName: killer.name, severity };
 }
 
 export interface APriceBroughtIn {
@@ -640,13 +700,14 @@ export function aPriceIsBroughtIn(
         paper: PersonBounty;
         claimantId: string;
         claimantName: string;
-        death: HistoricalFact;
+        /** The killing, where one is recorded. Bones prove a death without one. */
+        death: HistoricalFact | null;
         day: number;
     }
 ): APriceBroughtIn {
     const { paper } = input;
     const house = state.factions.find(f => f.id === paper.posterFactionId) as FactionRecord;
-    const seen = input.death.visibility !== 'secret';
+    const seen = input.death !== null && input.death.visibility !== 'secret';
     const rng = forStream(state.seed, 'a-price-is-paid', paper.id, input.claimantId);
     const pays = paper.honoured === 'if_witnessed'
         ? seen
@@ -674,7 +735,7 @@ export function aPriceIsBroughtIn(
         visibility: 'regional',
         magnitude: 0.35,
         data: {
-            priceFactId: paper.id, purseStones: paper.purseStones, paid: stones > 0, deathFactId: input.death.id,
+            priceFactId: paper.id, purseStones: paper.purseStones, paid: stones > 0, deathFactId: input.death?.id ?? null,
             unattributed: "Somebody went to a house's gate to be paid for a death."
         }
     }), { recur: false, bystanders: false });

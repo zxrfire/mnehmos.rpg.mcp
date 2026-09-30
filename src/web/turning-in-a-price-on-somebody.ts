@@ -8,18 +8,28 @@
  *
  * A house that does not pay leaves the player holding an account against it, because a wrong done
  * to the player is a wrong. A price on the player is read off the same walls as anybody's.
+ *
+ * Bones off the named person's body are proof too, and go to the house. Turned in by somebody
+ * other than the killer, and not let go by the killer, they leave the killer holding it against
+ * whoever brought them (`whoWasBeatenToIt`).
  */
 
 import {
     aPriceIsBroughtIn,
     everyPaperPosted,
     theDeathTheyAreHeldFor,
+    theKillingOf,
     thePaperHangsAt,
     thePapersStillUp,
     whenThePaperCameDown,
+    whoWasBeatenToIt,
     type PersonBounty
 } from '../engine/world/a-house-puts-a-price-on-somebody.js';
-import { createGrudge } from '../engine/social/grudges.js';
+import { theBonesHeldBy } from '../engine/world/bones-off-a-body.js';
+import { transferPossession, type ObjectRecord } from '../engine/world/possessions.js';
+import { theHouseTakesItIn } from '../engine/world/what-a-house-gives-merit-for.js';
+import { createGrudge, SEVERITY_IN_WORDS } from '../engine/social/grudges.js';
+import { pouchQuantity, removeFromPouch } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
@@ -27,6 +37,7 @@ import { matchScore } from './entities.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import { theGateAStrangerStandsAt } from './the-gate-speaks-for-its-house.js';
+import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 
@@ -41,6 +52,12 @@ function thePapersNamed(papers: readonly PersonBounty[], said: string): PersonBo
         .sort((a, b) => b.score - a.score);
     const best = scored[0]?.score;
     return scored.filter(row => row.score === best).map(row => row.paper);
+}
+
+/** A bone off this person's body, held in the pouch, or null. */
+function aBoneOfTheirsYouCarry(game: GameService, world: WorldState, holderId: string, deadId: string): ObjectRecord | null {
+    return theBonesHeldBy(world.objects, holderId, deadId)
+        .find(row => pouchQuantity(game.db, holderId, String(row.data.materialId)) > 0) ?? null;
 }
 
 /** One paper a house and a head: the latest it put up. */
@@ -171,7 +188,8 @@ export async function turnInAPrice(
     let pool = said.length >= 2
         ? thePapersNamed(posted, said)
         : posted.filter(p => gate !== null && p.posterFactionId === gate.factionId
-            && theDeathTheyAreHeldFor(world, cultivator.id, p.targetId) !== null);
+            && (theDeathTheyAreHeldFor(world, cultivator.id, p.targetId) !== null
+                || aBoneOfTheirsYouCarry(game, world, cultivator.id, p.targetId) !== null));
     const thisGate = pool.filter(p => gate !== null && p.posterFactionId === gate.factionId);
     if (thisGate.length > 0) pool = thisGate;
     const stillUp = pool.filter(p => p.lapsesOnDay > today && whenThePaperCameDown(world, p, today) === null);
@@ -223,20 +241,29 @@ export async function turnInAPrice(
         ));
     }
 
-    // THE PROOF: the world holds the player as the one who killed them, while the paper was up.
-    const death = theDeathTheyAreHeldFor(world, cultivator.id, paper.targetId);
-    if (!death || death.day < paper.postedOnDay) {
-        const alive = world.npcs.find(n => n.id === paper.targetId)?.status === 'alive';
+    // THE PROOF: a bone off their body, else the world holding the player as the one who killed
+    // them. Either way, a death while the paper was up.
+    const bone = aBoneOfTheirsYouCarry(game, world, cultivator.id, paper.targetId);
+    const killedThem = theDeathTheyAreHeldFor(world, cultivator.id, paper.targetId);
+    const onThePaper = world.npcs.find(n => n.id === paper.targetId);
+    const diedOn = bone ? onThePaper?.diedOnDay ?? null : killedThem?.day ?? null;
+    if (diedOn === null || diedOn < paper.postedOnDay) {
+        const otherBones = theBonesHeldBy(world.objects, cultivator.id).length > 0;
         return refused('engine.aPrice', 'sect', factsForRefusal(
             `${house.name} pays on ${paper.evidence}.`,
-            alive
-                ? `${paper.targetName} is alive, and ${house.name} pays for the killing.`
-                : death
-                    ? `${house.name}'s paper was not up when you killed ${paper.targetName}, and it pays for a killing done while it was.`
-                    : `Nobody holds you as the one who killed ${paper.targetName}, and that is the proof ${house.name} pays on.`,
-            `price turn-in: no death with killer ${cultivator.id} and victim ${paper.targetId} on or after ${paper.postedOnDay}. Nothing paid.`
+            onThePaper?.status === 'alive'
+                ? `${paper.targetName} is alive, and ${house.name} pays for the death.`
+                : diedOn !== null
+                    ? `${house.name}'s paper was not up when ${paper.targetName} died, and it pays for a death while it was.`
+                    : `You carry no bone off ${paper.targetName}'s body, and nobody holds you as the one who killed them. `
+                        + `${house.name} pays on either.${otherBones ? ' The bones you carry came off other bodies.' : ''}`,
+            `price turn-in: no bone of ${paper.targetId} held, and no death with killer ${cultivator.id}, `
+            + `on or after ${paper.postedOnDay}. Nothing paid.`
         ));
     }
+    const death = bone ? theKillingOf(world, paper.targetId) : killedThem;
+    // READ BEFORE THE BONE CHANGES HANDS: its history says whether the killer let it go.
+    const beaten = bone ? whoWasBeatenToIt(world, { paper, claimantId: cultivator.id, bone }) : null;
 
     // AT THE GATE, where a stranger stands and the house speaks to outsiders.
     if (gate?.factionId !== house.id) {
@@ -250,9 +277,25 @@ export async function turnInAPrice(
 
     const runDay = Math.floor(run.elapsedDays);
     const result = game.repos.db.transaction(() => {
+        if (bone && !removeFromPouch(game.db, cultivator.id, String(bone.data.materialId), 1)) {
+            throw new Error(`The pouch was short of ${bone.name} as it was turned in.`);
+        }
         const brought = aPriceIsBroughtIn(world, {
             paper, claimantId: cultivator.id, claimantName: cultivator.name, death, day: Math.floor(today)
         });
+        if (beaten) {
+            writeOneObligation(game.db, createGrudge({
+                holderId: beaten.killerId,
+                subjectId: cultivator.id,
+                cause: 'turned_in_my_kill',
+                severity: beaten.severity,
+                onDay: runDay,
+                description: `${cultivator.name} turned in ${house.name}'s price on ${paper.targetName} with the bones, `
+                    + `and the killing was ${beaten.killerName}'s.`,
+                triggeringEventId: brought.fact.id,
+                tags: ['bones', paper.id]
+            }));
+        }
         if (brought.stones > 0) {
             game.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: brought.stones });
         } else {
@@ -273,22 +316,48 @@ export async function turnInAPrice(
         return brought;
     })();
 
+    // THE BONE GOES TO THE HOUSE, after the commit, because the world's array does not roll back.
+    if (bone) {
+        const at = world.objects.findIndex(o => o.id === bone.id);
+        world.objects[at] = transferPossession(world.objects[at]!, {
+            onDay: Math.floor(today),
+            toHolderId: house.id,
+            toHolderName: house.name,
+            how: 'gifted',
+            transfersOwnership: true,
+            source: `Turned in at the gate on the price on ${paper.targetName}`
+        });
+        theHouseTakesItIn(world, {
+            giver: { id: cultivator.id, name: cultivator.name }, houseId: house.id, objectId: bone.id, merit: 0, onDay: Math.floor(today)
+        });
+        game.theWorldMoved();
+    }
+
+    const proof = bone ? `the bones of ${paper.targetName}` : `your proof of ${paper.targetName}'s killing`;
     const lines = result.paid
         ? [
-            `The disciple on the gate takes your proof of ${paper.targetName}'s killing for ${house.name}'s notice `
+            `The disciple on the gate takes ${proof} for ${house.name}'s notice `
             + `and pays ${result.stones} spirit stone${result.stones === 1 ? '' : 's'} out of the house's stores. `
             + 'The notice comes down.',
             ...(result.stones < paper.purseStones ? ['The house had less than the paper said, and paid what it had.'] : [])
         ]
         : [
-            `The disciple on the gate takes your proof of ${paper.targetName}'s killing for ${house.name}'s notice, `
+            `The disciple on the gate takes ${proof} for ${house.name}'s notice, `
             + 'and the house does not pay. The notice comes down.',
             `You hold it against ${house.name}.`
         ];
+    if (bone) lines.push('The bones stay with the house.');
+    if (beaten) {
+        const named = thePlayerIsSureItIsThem(beaten.killerName, game.knowledge.awareness(cultivator.id));
+        lines.push(`${named ? beaten.killerName : 'Somebody else'} killed ${paper.targetName} and did not give you the bones. `
+            + `They hold your claim against you: ${SEVERITY_IN_WORDS[beaten.severity]}.`);
+    }
     const facts = factsForToolResult(`Turned in ${house.name}'s price on ${paper.targetName}.`, lines);
     facts.required = [...lines];
-    facts.structure.push(`aPriceIsBroughtIn(${paper.id}): paid=${result.paid} stones=${result.stones}; death ${death.id}. `
-        + 'First to turn it in; the notice is down.');
+    facts.structure.push(`aPriceIsBroughtIn(${paper.id}): paid=${result.paid} stones=${result.stones}; `
+        + `death ${death?.id ?? 'none recorded'}; ${bone ? `bone ${bone.id} to ${house.id}` : 'the killing'}. `
+        + 'First to turn it in; the notice is down.'
+        + (beaten ? ` ${beaten.killerId} holds a ${beaten.severity} turned_in_my_kill grudge.` : ''));
     const execution = game.freeAction(run, 'sect', facts);
     execution.calls = [{
         name: 'world.aPriceIsBroughtIn',

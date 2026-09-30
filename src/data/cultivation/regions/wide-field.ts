@@ -95,7 +95,7 @@ export const THE_WIDE_FIELD: Region = {
         'sect-thousand-treasure-pavilion',
         'sect-lantern-hall',
         'sect-the-severed',
-        'sect-bone-lantern-cult',
+        'sect-wraith-dirge-cult',
         'house-jade-register',
         'house-flowing-light',
         'house-still-blade'
@@ -227,7 +227,7 @@ export const THE_WIDE_FIELD: Region = {
             kind: 'shared_feud',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The Bone Lantern Cult works the old grounds on both sides of the watershed and the Verdant Spring Valley has been trying to have it stopped for sixty years, in a province where nothing it says has any force at all.',
+                'The Wraith Dirge Cult works the old grounds on both sides of the watershed and the Verdant Spring Valley has been trying to have it stopped for sixty years, in a province where nothing it says has any force at all.',
             travelDays: 6
         },
         {

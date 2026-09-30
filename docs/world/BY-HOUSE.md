@@ -205,9 +205,9 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
   …and 8 more files.
 
-### Bone Lantern Cult
+### Wraith Dirge Cult
 
-`sect-bone-lantern-cult` · its entry: [`sects.ts:1749`](../../src/data/cultivation/sects.ts)
+`sect-wraith-dirge-cult` · its entry: [`sects.ts:1749`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 2
   …and 9 more files.

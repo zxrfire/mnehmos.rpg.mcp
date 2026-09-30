@@ -874,7 +874,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'The Pale Ancestor',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         whatTheyWere: 'The one Deity Transformation the cult has managed in its history, seven hundred years ago, and the whole of its prestige.',
         yearsAgo: 700,
         attestation: 'garbled',

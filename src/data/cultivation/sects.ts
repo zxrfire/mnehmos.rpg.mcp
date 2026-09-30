@@ -602,7 +602,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'spring-returning-life-art',
         specialities: ['support', 'cultivation', 'defense'],
-        rivals: ['sect-bone-lantern-cult'],
+        rivals: ['sect-wraith-dirge-cult'],
         territory: 'A terraced herb valley fed by nine warm springs, on ordinary ground with no vein worth the name - which is why the Hall lives on its physicians.',
         recruits: true,
         compound: {
@@ -1159,7 +1159,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'An auction floor with tiered seating for four hundred, of which the Pavilion fills the first two rows and rents the rest for storage.'
         },
         description:
-            'Auction floors in every city of consequence, a vault nobody has located, and a commission everybody grumbles about and nobody refuses. Its curriculum is a merchant\'s - gathering, two escapes and an elementless cut - and its actual expertise has no name it could say aloud: its appraisers can tell you which age a dug object came out of, which kind of hole, and frequently which province, and there is no better body of that skill anywhere that is not doing it illegally. It buys dug goods from anyone and asks nothing about the hole, which is why the region is armed and furnished out of its own graves and why the Verdant Spring Valley and the Bone Lantern Cult are both, in different directions, its suppliers. It bought its own ancestors at an estate sale the Ninefold Karma Palace brokered, its staff genuinely believe the lineage because the fraud is three generations old, and the one thing the best grave-readers in the region have never been asked to appraise is the provenance of the lot the house itself bought.',
+            'Auction floors in every city of consequence, a vault nobody has located, and a commission everybody grumbles about and nobody refuses. Its curriculum is a merchant\'s - gathering, two escapes and an elementless cut - and its actual expertise has no name it could say aloud: its appraisers can tell you which age a dug object came out of, which kind of hole, and frequently which province, and there is no better body of that skill anywhere that is not doing it illegally. It buys dug goods from anyone and asks nothing about the hole, which is why the region is armed and furnished out of its own graves and why the Verdant Spring Valley and the Wraith Dirge Cult are both, in different directions, its suppliers. It bought its own ancestors at an estate sale the Ninefold Karma Palace brokered, its staff genuinely believe the lineage because the fraud is three generations old, and the one thing the best grave-readers in the region have never been asked to appraise is the provenance of the lot the house itself bought.',
         ambition: {
             wants:
                 'The Stone Marrow Hall\'s rate-setting broken, by publishing its own floor prices for assayed stone and honouring them.',
@@ -1723,7 +1723,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'meridian-devouring-art',
         specialities: ['forbidden', 'attack', 'dual_cultivation'],
-        rivals: ['sect-azure-cloud-pavilion', 'sect-hollow-bell-wanderers', 'sect-bone-lantern-cult'],
+        rivals: ['sect-azure-cloud-pavilion', 'sect-hollow-bell-wanderers', 'sect-wraith-dirge-cult'],
         territory: 'A sinkhole hall under a town that officially does not know it is there.',
         recruits: true,
         compound: {
@@ -1746,8 +1746,8 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         }
     },
     {
-        id: 'sect-bone-lantern-cult',
-        name: 'Bone Lantern Cult',
+        id: 'sect-wraith-dirge-cult',
+        name: 'Wraith Dirge Cult',
         alignment: 'demonic',
         powerOrdinal: 26,
         ranks: ['Grave Digger', 'Lantern Bearer', 'Bone Disciple', 'Corpse Warden', 'Pale Elder', 'Grand Pale Elder', 'Cult Ancestor'],
@@ -2080,10 +2080,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Caravan has misremembered.',
-            blockedBy: ['sect-clearwater-ward', 'sect-bone-lantern-cult'],
+            blockedBy: ['sect-clearwater-ward', 'sect-wraith-dirge-cult'],
             wouldCost:
                 'The Sheaf Master holds the rotation and the argument reopens every time a face runs out. Working live edges would raise losses from one in nine to something nobody has costed, and the share promise is the only thing the Caravan has, so a season of unpaid families would end it.',
-            contestedWith: ['sect-bone-lantern-cult'],
+            contestedWith: ['sect-wraith-dirge-cult'],
             movedOn:
                 'The Factors have worked two live edges without an entry and paid the shares out of the general fund, which is the first time the fund has been used for anything.'
         }
@@ -2208,7 +2208,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'five-breath-circulation-scripture',
         specialities: ['defense', 'support', 'cultivation'],
-        rivals: ['sect-bone-lantern-cult'],
+        rivals: ['sect-wraith-dirge-cult'],
         territory: 'A shed and a stockyard a day past the last painted stake in the Buddha Precipice, and a route across the sand that has to be rewalked every season.',
         recruits: true,
         compound: {
@@ -2222,10 +2222,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'A second well. One dug, anywhere on the sand, of its own, so that the four-day figure stops being the thing that kills its people.',
-            blockedBy: ['sect-thousand-treasure-pavilion', 'sect-bone-lantern-cult'],
+            blockedBy: ['sect-thousand-treasure-pavilion', 'sect-wraith-dirge-cult'],
             wouldCost:
                 'Everything the shed has and probably the shed. A well is a fixed point and a fixed point on the Burial Sands is a thing the cover reaches in a decade, so the Caravan would be spending the whole of what they have on something with a shorter life than the debt - which is the province\'s own argument for why nobody holds anything here, made against the only body that has ever wanted to.',
-            contestedWith: ['sect-bone-lantern-cult'],
+            contestedWith: ['sect-wraith-dirge-cult'],
             movedOn:
                 'Two Oasis Elders have been paying a Buddha Precipice carver out of their own shares to sound for water at a point nine days out, without telling the Oasis Master, and have four soundings and no water.'
         }
@@ -3319,7 +3319,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'One killing, witnessed by a Chosen. The Hall is not particular about whom.'
     },
-    'sect-bone-lantern-cult': {
+    'sect-wraith-dirge-cult': {
         minOrdinal: 2,
         preferredRoots: ['single_earth', 'muddled_five_element'],
         requirement: 'A season spent working a battlefield without being seen by anyone who left it.'

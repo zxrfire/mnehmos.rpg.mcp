@@ -15,6 +15,9 @@
  *     beast's parts are graded by), tracked, and dearer than any earth-grade
  *     material in the catalogs. It costs a day. A second take off the same body
  *     yields nothing and costs nothing.
+ *   - From the Immortal realm (45) up the rung no longer answers; how they died
+ *     does (owner ruling 2026-09-30): chaos from a death in their tribulation,
+ *     read off the crossing's `death` fact, and immortal from any other.
  *   - A righteous house whose member stood there holds it; a demonic one does
  *     not; done out of sight, a witness below your rung does not see it
  *     (`aWitnessSeesThrough`, which is `concealmentHolds` per witness).
@@ -43,7 +46,13 @@ import { refiningOrdinalFor } from '../../src/engine/cultivation/who-can-refine-
 import { howAGradeIsStored } from '../../src/engine/world/possessions.js';
 import { markDead } from '../../src/engine/world/npc-state.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
-import { objectForBones, whoHoldsItAgainstYou } from '../../src/engine/world/bones-off-a-body.js';
+import {
+    objectForBones,
+    theyDiedInTheirTribulation,
+    whoHoldsItAgainstYou
+} from '../../src/engine/world/bones-off-a-body.js';
+import { FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
+import { recordCrossing } from '../../src/engine/world/recording-what-a-crossing-did.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
 import { whereAHouseLetsYouKeepThings } from '../../src/engine/world/the-room-a-house-gives-you.js';
 import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.js';
@@ -183,6 +192,32 @@ describe('a body at ordinal 44', () => {
         expect(again).toMatch(/taken before/);
         expect(pouchQuantity(db, at.playerId, bone.id)).toBe(1);
         expect(game.state().run.elapsedDays).toBe(daysAfter);
+    }, 300_000);
+});
+
+describe('a body from the Immortal realm up', () => {
+    it.each([
+        [FALSE_IMMORTAL_ORDINAL, true, 'chaos'],
+        [FALSE_IMMORTAL_ORDINAL, false, 'immortal'],
+        [TRUE_IMMORTAL_ORDINAL, true, 'chaos'],
+        [TRUE_IMMORTAL_ORDINAL, false, 'immortal']
+    ] as const)('harvests ordinal %s with tribulation death %s as %s', async (ordinal, tribulation, grade) => {
+        const there = await standingOverABody(`bones-at-${ordinal}-${tribulation}`, { deadOrdinal: ordinal });
+        const world = (await activeWorld()).state;
+        const body = world.npcs.find(n => n.id === there.bodyId)!;
+        if (tribulation) {
+            recordCrossing(world, body, {
+                outcome: 'death', fromOrdinal: ordinal, toOrdinal: ordinal, finalChance: 0.1,
+                tribulation: { strikes: 9, survived: false }, crossing: null, injuriesSustained: [],
+                arrivedBroken: null, brokenStatusCleared: null, immortalStatusGained: null
+            } as any, body.diedOnDay!);
+            there.harness.game.theWorldMoved();
+        }
+        expect(theyDiedInTheirTribulation(world, body)).toBe(tribulation);
+        const bone = getBone(boneItemId(grade))!;
+        const said = (await there.harness.game.act('I take the bones')).narration;
+        expect(said, `${ordinal}`).toContain(bone.name);
+        expect(pouchQuantity(there.harness.db, there.playerId, bone.id)).toBe(1);
     }, 300_000);
 });
 

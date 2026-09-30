@@ -13792,6 +13792,24 @@ ${opened.text}` : receipt,
             return updated;
         })();
 
+        // The origin row leaves with the sold stack; this counter names no buyer.
+        const objects = this.atHand?.objects ?? [];
+        let movedRows = false;
+        for (const lot of lots) {
+            for (const at of theRowsThatGoWithAStack(objects, cultivator.id, lot.itemId, lot.quantity)) {
+                objects[at] = transferPossession(objects[at]!, {
+                    onDay: Math.floor(this.atHand?.currentDay ?? run.elapsedDays),
+                    toHolderId: null,
+                    toHolderName: 'a buyer',
+                    how: 'sold',
+                    transfersOwnership: true,
+                    source: `Sold at ${placeName(cultivator)}`
+                });
+                movedRows = true;
+            }
+        }
+        if (movedRows) this.theWorldMoved();
+
         const facts = factsForToolResult(
             wholePouch ? 'The pouch, sold.' : `${lots[0].name}, sold.`,
             [

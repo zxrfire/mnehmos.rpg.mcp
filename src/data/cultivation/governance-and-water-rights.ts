@@ -2713,8 +2713,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: 'proud',
         note: 'Nobody has offered and nobody has refused. There is no vein under the shelf, so a grant over it would convey nothing, and the only thing in the yard worth having is sixty people who would have to be got through to reach it. The Third Sluice Court has carried the shelf as unheld for two centuries and has never opened a file on it.'
     },
-    'sect-bone-lantern-cult': {
-        factionId: 'sect-bone-lantern-cult',
+    'sect-wraith-dirge-cult': {
+        factionId: 'sect-wraith-dirge-cult',
         governance: 'unbacked',
         relation: 'unaffiliated',
         parentFactionId: null,

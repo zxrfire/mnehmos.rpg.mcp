@@ -2328,14 +2328,14 @@ describe('institutions acting on each other', () => {
     it('answers an unheard house and an invented one identically', async () => {
         const { game } = await standing(theSeatOf(), { seed: 'gate-a' });
         // A real house this cultivator has never been told about.
-        const unheard = await game.act('I declare war on the Bone Lantern Cult');
+        const unheard = await game.act('I declare war on the Wraith Dirge Cult');
         // A house that does not exist at all.
         const invented = await game.act('I declare war on the Emerald Nothing Sect');
 
         expect(unheard.narration).toMatch(/against nobody|not said who/i);
         expect(invented.narration).toMatch(/against nobody|not said who/i);
         // Neither may confirm anything about the name that was typed.
-        expect(unheard.narration).not.toMatch(/bone lantern/i);
+        expect(unheard.narration).not.toMatch(/wraith dirge/i);
     });
 
     /**

@@ -20,11 +20,11 @@
  *                        taught properly afterwards, which nobody credits
  *   Crimson Abyss Fortress   the member, who was not told the rate at the point of
  *                        sale and is paid a wage in advance against it
- *   Bone Lantern Cult    the dead, who cannot be asked
+ *   Wraith Dirge Cult    the dead, who cannot be asked
  *   The Still Blade Pavilion        a third party who is not present and cannot appeal
  *
  * Note what the axis is NOT. It is not cruelty, it is not power, and it is not
- * how much the province dislikes them - the Bone Lantern Cult is the most
+ * how much the province dislikes them - the Wraith Dirge Cult is the most
  * reviled and the least dangerous, and the Severed harm nobody but themselves
  * and are hated hardest by the houses with the least to fear from them.
  *
@@ -222,7 +222,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
             'A thin vein under a town nobody claims, which is the least attractive vacancy in the Jade Gorge, so the likeliest successor is nobody and the ground stays open - the exact case the Survey\'s doctrine exists to avoid and the one it is least equipped to fix, because there is nothing on that vein worth a grant to anybody. What ends immediately is the province\'s largest annual source of Foundation Establishment cultivators, and the several hundred people a year who are refused everywhere else go back to having nowhere.'
     },
     {
-        factionId: 'sect-bone-lantern-cult',
+        factionId: 'sect-wraith-dirge-cult',
         kind: 'sect',
         theLineItCrosses:
             'It uses the dead as material. Old battlefields worked in rotation in the third year after an engagement, a field wall built of fragments sorted by weight rather than by what they were, and two of its four arts are corpse work. It is the only one of the six whose cost falls on people already past objecting, which is why it is the most reviled of them and by a wide margin the least dangerous.',

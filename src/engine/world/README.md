@@ -27,6 +27,25 @@ Three rules hold across every module in this directory:
 - **Nothing reads the player.** There is no branch anywhere in this layer that scales an
   outcome to how a run is going.
 
+### Bones and a price on a person
+
+[`bones-off-a-body.ts`](bones-off-a-body.ts) decides a body's bone grade and keeps
+its origin on the material's world row at every grade. Through ordinal 44 the
+ordinary material table applies. From ordinal 45 upward, death in the person's
+own tribulation yields chaos; any other death yields immortal. The cause is read
+from the crossing's recorded death, rather than copied onto the body.
+
+[`a-house-puts-a-price-on-somebody.ts`](a-house-puts-a-price-on-somebody.ts) accepts
+the named person's bones as proof alongside a recorded killing by the claimant.
+The first turn-in closes the paper everywhere. The bones go to the posting house.
+A known, unhidden killing leaves the living killer holding a grudge against a
+different claimant unless the bone's last departure from the killer was a gift
+or sale to that claimant. Possession history supplies consent; no consent flag is
+stored. The existing payment policy and treasury determine the purse paid.
+The dead-mortal sweep retains people named by a paper still up or an intact
+bone's origin. Taking a bone spends a day; that day cannot erase the person
+whose proof the paper asks for.
+
 ---
 
 ## Depth, not scale: one planet, understood further down
@@ -3592,4 +3611,3 @@ points. Do not quote -2.16 as a constant.
 - [`../encounters/README.md`](../encounters/README.md) and
   [`../household/README.md`](../household/README.md) - the two systems that write into this
   world rather than only reading it: what a house asks of somebody, and what a match changes.
-

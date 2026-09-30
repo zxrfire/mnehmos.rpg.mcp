@@ -693,7 +693,7 @@ describe('the sending pyramid', () => {
         expect(THE_SENDING_PYRAMID.whoNeverReceivedAnything).toMatch(/A receipt requires a line/i);
         for (const id of [
             'sect-ancient-bough-grove', 'sect-six-li-patrol', 'sect-hollow-bell-wanderers',
-            'sect-bone-lantern-cult', 'sect-the-severed', 'sect-clear-river-alliance'
+            'sect-wraith-dirge-cult', 'sect-the-severed', 'sect-clear-river-alliance'
         ]) {
             expect(getSect(id), `${id} is unknown`).toBeDefined();
             expect(receiptsFor(id), `${id} should have no receipts`).toBeUndefined();

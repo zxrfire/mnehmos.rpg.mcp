@@ -33,7 +33,7 @@ import type { DoorInTheField, PostingGround } from './houses-that-have-to-advert
  *                        the people refused inside that morning
  *   Storm Tyrant Court   "collects rather than recruits"
  *   The Still Blade Pavilion        "no name given, no face seen twice"
- *   Bone Lantern Cult    "not posted anywhere. Mentioned to corpse carriers"
+ *   Wraith Dirge Cult    "not posted anywhere. Mentioned to corpse carriers"
  *                        (`rogues.ts`)
  *   Nine Abyss Flame     open about what it is, which "the province reads as
  *                        recruitment" - and still not a bill on a wall

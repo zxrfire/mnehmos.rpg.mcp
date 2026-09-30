@@ -67,7 +67,8 @@ import {
 import type { LineageRecord } from './lineage.js';
 import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
-import type { ObjectRecord } from './possessions.js';
+import { isRuined, type ObjectRecord } from './possessions.js';
+import { thePapersStillUp } from './a-house-puts-a-price-on-somebody.js';
 import type { ObligationRecord } from '../social/grudges.js';
 import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
 import type { Absence } from './when-somebody-does-not-come-back.js';
@@ -742,6 +743,13 @@ function withoutTheForgotten(
  */
 export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldForgot {
     const remembered = whoIsStillCarriedFor(state.history.facts);
+    // A notice still asks for this person's proof; a bone still names its origin.
+    for (const paper of thePapersStillUp(state, state.currentDay)) remembered.add(paper.targetId);
+    for (const object of state.objects) {
+        if (!isRuined(object) && object.kind === 'material' && typeof object.data.deadId === 'string') {
+            remembered.add(object.data.deadId);
+        }
+    }
     const gone = new Set<string>();
     for (const npc of state.npcs) {
         if (theWorldHasNoWayToSpeakOf(npc, remembered)) gone.add(npc.id);

@@ -4,20 +4,23 @@
  *
  * Beside the beast harvest (`hunting-a-spirit-beast.ts`) and the estate at death
  * (`estate-at-death.ts`). A body lies where the person fell: a dead person's world
- * row keeps its `locationId`. Its bones are graded by the dead person's rung
- * through the call a dead beast's parts are graded by (`gradeOfWhatItYielded`),
- * and they come off once.
+ * row keeps its `locationId`. Below the Immortal realm its bones are graded by
+ * the dead person's rung through the call a dead beast's parts are graded by
+ * (`gradeOfWhatItYielded`); above it, by how they died ({@link theBoneThisBodyYields}).
+ * They come off once.
  */
 
 import { boneItemId, getBone, type Bone } from '../../data/cultivation/bones.js';
 import type { SectAlignment } from '../../schema/cultivation.js';
-import { rankName } from '../cultivation/realms.js';
+import { FALSE_IMMORTAL_ORDINAL, rankName } from '../cultivation/realms.js';
 import { aWitnessSeesThrough } from '../cultivation/regard.js';
 import { severityRank, type Severity } from '../social/grudges.js';
 import { gradeOfWhatItYielded } from './hunting-a-spirit-beast.js';
 import type { NpcRecord } from './npc-state.js';
+import type { WorldState } from './world-state.js';
 import {
     howMuchAGradeIsWorthTracking,
+    isRuined,
     makeObject,
     transferPossession,
     type ObjectRecord
@@ -27,10 +30,7 @@ import {
 // THE BODY
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * On a dead person's row once the bones are gone. Stored, because a counted
- * take goes into a pouch and leaves no row that could say so.
- */
+/** The body's harvest mark remains after its bones change hands or are consumed. */
 const THE_BONES_ARE_TAKEN = 'bones-taken';
 
 /** Whether this is a body lying at this place. */
@@ -43,12 +43,48 @@ export function theBonesAreStillThere(npc: NpcRecord): boolean {
     return !npc.tags.includes(THE_BONES_ARE_TAKEN);
 }
 
-/** The bone this body yields: one, of the grade the dead person's rung gives. */
-export function theBoneThisBodyYields(npc: Pick<NpcRecord, 'cultivation'>): Bone {
-    const bone = getBone(boneItemId(gradeOfWhatItYielded(npc.cultivation.realmOrdinal)));
+/**
+ * The bone this body yields: one. Below the Immortal realm its grade is the
+ * rung's, through the one grade table. From the Immortal realm up it is how
+ * they died, owner ruling 2026-09-30: chaos from a death in their tribulation,
+ * immortal from any other. Grade and rung are separate scales, and this is the
+ * only place the rung chooses between those two.
+ */
+export function theBoneThisBodyYields(
+    npc: Pick<NpcRecord, 'cultivation'>,
+    diedInTheirTribulation: boolean
+): Bone {
+    const grade = npc.cultivation.realmOrdinal >= FALSE_IMMORTAL_ORDINAL
+        ? (diedInTheirTribulation ? 'chaos' : 'immortal')
+        : gradeOfWhatItYielded(npc.cultivation.realmOrdinal);
+    const bone = getBone(boneItemId(grade));
     // Unreachable while `bones.ts` has a row for every grade.
     if (!bone) throw new Error('No bone row for that grade.');
     return bone;
+}
+
+/**
+ * Whether the death the world recorded for them was a tribulation they called
+ * down: the crossing's `death` fact, on the day they died, with strikes on it
+ * (`recording-what-a-crossing-did.ts`).
+ */
+export function theyDiedInTheirTribulation(state: Pick<WorldState, 'history'>, npc: NpcRecord): boolean {
+    if (npc.diedOnDay === null) return false;
+    const day = Math.floor(npc.diedOnDay);
+    return state.history.facts.some(f => f.kind === 'death' && Math.floor(f.day) === day
+        && f.actors.some(a => a.id === npc.id && a.role === 'deceased')
+        && Number(f.data.tribulationStrikes ?? 0) > 0);
+}
+
+/** The bones somebody holds, off whose body: all of them, or one person's. */
+export function theBonesHeldBy(
+    objects: readonly ObjectRecord[],
+    holderId: string,
+    deadId: string | null = null
+): ObjectRecord[] {
+    return objects.filter(row => row.possessorId === holderId && row.kind === 'material'
+        && typeof row.data?.deadId === 'string' && (deadId === null || row.data.deadId === deadId)
+        && !isRuined(row));
 }
 
 /** The body, with its bones gone. */

@@ -20,6 +20,7 @@ import {
     theBoneThisBodyYields,
     theBonesAreGone,
     theBonesAreStillThere,
+    theyDiedInTheirTribulation,
     whoHoldsItAgainstYou,
     whoSawIt,
     type AWitness
@@ -106,7 +107,7 @@ export async function takingTheBones(
     // ── THE BONE ─────────────────────────────────────────────────────────
     const worldDay = Math.floor(world.currentDay);
     const runDay = Math.floor(service.repos.runs.getById(run.id)?.elapsedDays ?? run.elapsedDays);
-    const bone = theBoneThisBodyYields(still);
+    const bone = theBoneThisBodyYields(still, theyDiedInTheirTribulation(world, still));
     const dead = { id: still.id, name: still.name, ordinal: still.cultivation.realmOrdinal };
     world.npcs[at] = theBonesAreGone(still, worldDay);
     addToPouch(service.db, after.id, bone.id, 'herb', 1);

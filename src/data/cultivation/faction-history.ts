@@ -286,10 +286,10 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-undercut-border',
         yearsAgo: 40,
         provinceId: null,
-        what: 'The Bone Lantern Cult began working burn-zone finds the Bountiful Sheaf Sect had located, across a border neither region polices, and selling them cheaper.',
-        parties: ['sect-bone-lantern-cult', 'sect-fallen-grain-caravan'],
+        what: 'The Wraith Dirge Cult began working burn-zone finds the Bountiful Sheaf Sect had located, across a border neither region polices, and selling them cheaper.',
+        parties: ['sect-wraith-dirge-cult', 'sect-fallen-grain-caravan'],
         accounts: {
-            'sect-bone-lantern-cult':
+            'sect-wraith-dirge-cult':
                 'The Cult works sites nobody has been granted, which is its entire operating rule and the reason nobody with standing has ever been wronged by it. Whether a company on the other side of a line nobody patrols had walked over the same ground first is not a distinction that exists in the rotation, and the Cult has never been asked to recognise one.',
             'sect-fallen-grain-caravan':
                 'The Caravan locates. That is the skill, it is expensive, it costs about one in nine a season, and it is being sold at a discount by a body that does not pay for it. There is no forum in which a contractor can raise this, because raising it means addressing the clerk who decided, and the Caravan has never once disputed anything with the Clearwater Ward for that reason.'
@@ -742,8 +742,8 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'It believes the tithe rate is generous because it has never been raised, and no Abyss Lord in five hundred years has raised it, which by every internal measure the Hall has is exactly what generosity looks like. Measured against five centuries of Stone Marrow Hall rates, holding it flat has more than tripled it in real terms. The Hall has never held a rate against the exchange because the Hall does not read the exchange - it is paid in stones, weekly, in advance, which is the entire pitch and the reason it works.',
         sharedEvents: ['event-one-letter-for-both']
     },
-    'sect-bone-lantern-cult': {
-        factionId: 'sect-bone-lantern-cult',
+    'sect-wraith-dirge-cult': {
+        factionId: 'sect-wraith-dirge-cult',
         origin:
             'Old battlefields worked in rotation in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It holds no ground because nobody has ever granted the ground it works, which is the precise sense in which it is tolerated: not permitted, not protected, simply never the subject of a complaint anybody with standing is entitled to make.',
         whyTheGapIs:
@@ -816,7 +816,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         whatTheUnlitNodesWere:
             'All fourteen are at the front of a ruin the Caravan has never fully entered, and the three that are lit are the three within reach of the entrance. The yard is laid out inside somebody else\'s building for the same reason: the Caravan works the edges of things it does not own and has never had a season spare to go further in, which is a fact about salvage economics and not about courage.',
         whereTheWrongBeliefComesFrom:
-            'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Caravan reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Bone Lantern Cult, which neither body knows.',
+            'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Caravan reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Wraith Dirge Cult, which neither body knows.',
         sharedEvents: ['event-the-undercut-border']
     },
 

@@ -469,17 +469,17 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         insiderFactionId: 'sect-azure-cloud-pavilion'
     },
     {
-        id: 'rumour-bone-lantern-buys-bodies',
+        id: 'rumour-wraith-dirge-buys-bodies',
         saying: 'They pay for the dead. Not grandly. Steadily, and they take what nobody claims, and the carriers all know the rate.',
         saidBy: 'a corpse carrier who has taken the money',
-        aboutId: 'sect-bone-lantern-cult',
+        aboutId: 'sect-wraith-dirge-cult',
         aboutName: 'the lantern people',
         accuracy: 'true',
         underneath: 'Correct and openly enough done that the trade is watched. The cult recruits out of the corpse-carrying trade without disguising it, which is why the trade is the one mortal occupation near a sect that a magistrate keeps a list of.',
         consequence: 'Corpse carriers are treated as half-informants everywhere and are paid a little above the wage for the work in order to keep them talking to somebody else.',
         floorOrdinal: 0,
         regionId: 'region-low-fall',
-        insiderFactionId: 'sect-bone-lantern-cult'
+        insiderFactionId: 'sect-wraith-dirge-cult'
     },
     {
         id: 'rumour-gleaners-lost-a-man-on-a-bet',

@@ -322,7 +322,7 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'shared_feud',
             otherRegionId: HOME_REGION_ID,
             description:
-                'Bountiful Sheaf Sect and the Bone Lantern Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
+                'Bountiful Sheaf Sect and the Wraith Dirge Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
             travelDays: 11
         },
         {

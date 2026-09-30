@@ -136,8 +136,8 @@ const SOMEBODYS_OWN_PEOPLE = new RegExp(
 const A_WHOLE_HOUSE = new RegExp(
     // The type noun comes off the end so the catalog is asked about the NAME.
     // Eight words were written out here against the catalog's twenty-seven, so
-    // `all of the Azure Dew Sect` asked after "Azure Dew" and `all of the Bone
-    // Lantern Cult` asked after "Bone Lantern Cult" - one sentence shape,
+    // `all of the Azure Dew Sect` asked after "Azure Dew" and `all of the Wraith
+    // Dirge Cult` asked after "Wraith Dirge Cult" - one sentence shape,
     // answered two ways depending on which house it was about.
     `^${ALL_OF}\\s+(?:of\\s+)?(?:the\\s+)?(?<house>.+?)(?:\\s+(?:${A_HOUSE_TYPE_NOUN}))?$`,
     'i'
@@ -157,7 +157,7 @@ const A_LEANING_IN_THE_PLURAL = new RegExp(
     // The house words are the shared list, not a ninth copy of it. Measured:
     // `I kill all the demonic sects` reached the six demonic houses and `I kill
     // all the demonic cults` was read as ONE house named "demonic cults" and
-    // refused, with the Bone Lantern Cult, the Burnt Earth Temple and the
+    // refused, with the Wraith Dirge Cult, the Burnt Earth Temple and the
     // Crimson Abyss Fortress standing in the set it was asking for.
     `(?:\\s+(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}|cultivators?|disciples?|people|ones?))$`,
     'i'

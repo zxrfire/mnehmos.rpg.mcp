@@ -118,7 +118,7 @@ export const THE_LOW_FALL: Region = {
             parentSectId: 'sect-fallen-grain-caravan',
             localName: 'The Willow Village Factor at Clear River Ferry',
             doesHere:
-                'Sells Buddha Precipice salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Buddha Precipice has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
+                'Sells Buddha Precipice salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Buddha Precipice has no teacher for. Buys nothing and is watched by the Wraith Dirge Cult, which considers the trade its own.'
         },
         {
             parentSectId: 'sect-stone-marrow-hall',

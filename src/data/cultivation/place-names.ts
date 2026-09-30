@@ -64,8 +64,8 @@ export const PLACE = {
     // settlements" and its `places` was empty, so the one house in the province
     // that administers settlements DIRECTLY - no levy, no charter, no
     // intermediate tier - collected nothing from any of them: 175 stones a
-    // year on a seeded world, last of thirty-eight houses, below the Bone
-    // Lantern Cult.
+    // year on a seeded world, last of thirty-eight houses, below the Wraith
+    // Dirge Cult.
     //
     // They are ordinary-tier names because that is what the house is. It has
     // never registered anything, so no document anywhere ever fixed a name

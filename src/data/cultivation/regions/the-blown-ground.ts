@@ -225,8 +225,8 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'It is the largest concentration of refused cultivators in the world and the only one with no gate, no register and no competing recruiter standing next to them.'
         },
         {
-            who: 'The Bone Lantern Cult',
-            factionId: 'sect-bone-lantern-cult',
+            who: 'The Wraith Dirge Cult',
+            factionId: 'sect-wraith-dirge-cult',
             holds: 'nothing',
             doesHere:
                 'Buys what the sand gives back. The cover keeps a body and returns it a decade later with its possessions on it, so the ground is the richest supply of intact dead in the world and the only one nobody has a claim on.',

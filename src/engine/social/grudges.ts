@@ -38,6 +38,8 @@ export type GrudgeCause =
      * somebody left behind, this makes the body itself the reason anybody came.
      */
     | 'harvested'
+    /** Somebody else turned in their killing with bones they did not consent to hand over. */
+    | 'turned_in_my_kill'
     | 'other';
 
 export type FavorCause =

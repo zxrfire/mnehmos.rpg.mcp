@@ -13,6 +13,16 @@ carefully before widening anything a model is allowed to return.
 The rule this package enforces is in [`../../context.md`](../../context.md): the AI
 narrates, the engine decides.
 
+`taking-the-bones.ts` harvests the grade and origin decided by
+[`bones-off-a-body.ts`](../engine/world/bones-off-a-body.ts). Every harvested bone
+has a world row alongside its pouch stack, so giving or storing it retains its
+origin and selling it moves that row out of the seller's hands.
+`turning-in-a-price-on-somebody.ts` accepts a bone of the wanted person at
+the posting house's gate, removes one from the pouch, transfers that row to the
+house, pays through the existing bounty resolver, and closes the paper. The
+resolver reads consent from provenance; the turn-in writes any killer's grudge
+to the existing obligation ledger.
+
 ---
 
 ## The three-phase split
@@ -2614,4 +2624,3 @@ rides to the seat, which `move` already knew how to do.
   [`../agent/README.md`](../agent/README.md) is a different loop entirely.
 - [`../engine/people/README.md`](../engine/people/README.md) - `everybodyDrawingHere` is how a
   verb asks who is standing here without caring which of the two person tables they came from.
-
