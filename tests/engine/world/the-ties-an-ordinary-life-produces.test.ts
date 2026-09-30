@@ -47,12 +47,11 @@ async function worldAt120(): Promise<WorldState> {
     if (!cached) {
         // Kept and shared: see `tests/support/soaked-world.ts`.
         //
-        // The absentee below is one person, so the seed is a pin. On
-        // `absence-audit`, since veins change hands by war, sale and claim, it
-        // is an Empyrean Court elder whose ten waiting ties all outwait a
-        // century and none settle; the absence layer is not at fault. Here: 3
-        // waiting, 3 settled.
-        cached = soakedWorld('absence-audit-c', { years: 120 });
+        // The absentee below is one person, so the seed is a pin: a world change
+        // can make them somebody whose waiting ties all outlast a century, which
+        // is not the absence layer's fault. Re-pinned after veins began changing
+        // hands and a war's winner stopped taking past a ward.
+        cached = soakedWorld('absence-audit-f', { years: 120 });
     }
     return cached;
 }
