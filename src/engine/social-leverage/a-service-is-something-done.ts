@@ -194,20 +194,15 @@ export function theServiceYouGaveYourWordOn(
  * Services this person has DONE for that one and has not yet spent.
  *
  * The read the offer ladder wants: standing on the service rung means having
- * gone and done something, not having said you would.
+ * gone and done something, not having said you would. Read through
+ * `servicesDoneForYou`, so what counts as done has one answer.
  */
 export function servicesYouHaveDoneFor(
     ledger: readonly ObligationRecord[],
     doerId: string,
     forWhomId: string
 ): ObligationRecord[] {
-    return ledger.filter(row =>
-        isAService(row)
-        && row.status === 'settled'
-        && row.settlement?.resolution === 'oath_fulfilled'
-        && row.holderId === doerId
-        && row.subjectId === forWhomId
-        && whatThisServiceAlreadyBought(row) === null);
+    return servicesDoneForYou(ledger, forWhomId).filter(row => row.holderId === doerId);
 }
 
 /**
@@ -232,6 +227,9 @@ export function theServiceYouWouldSpend(
  * `AGENTS.md`: if the engine can answer "what have you done for them", it must
  * answer "what has anybody done for you". This is the half that lets a person
  * being asked see what the asker is standing on.
+ *
+ * DONE MEANS SERVED OUT. A term settled any other way - broken, released,
+ * forgiven - did nothing for anybody, and this once counted it as done.
  */
 export function servicesDoneForYou(
     ledger: readonly ObligationRecord[],
@@ -240,6 +238,7 @@ export function servicesDoneForYou(
     return ledger.filter(row =>
         isAService(row)
         && row.status === 'settled'
+        && row.settlement?.resolution === 'oath_fulfilled'
         && row.subjectId === personId
         && whatThisServiceAlreadyBought(row) === null);
 }

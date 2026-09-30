@@ -235,6 +235,15 @@ describe('a service is something done', () => {
             expect(servicesDoneForYou(ledger, 'me')).toHaveLength(0);
         });
 
+        it('counts a term broken or released as nothing done, from either end', () => {
+            // It counted every settled service, so a word broken read as a
+            // service done for the one it was broken on.
+            const ledger = (['broken', 'oath_released'] as const).map(resolution =>
+                settleObligation(wordGiven(), { resolution, onDay: 140, note: 'not served' }));
+            expect(servicesDoneForYou(ledger, 'them')).toHaveLength(0);
+            expect(servicesYouHaveDoneFor(ledger, 'me', 'them')).toHaveLength(0);
+        });
+
         it('says what somebody has given their word to do and not done', () => {
             const ledger = [wordGiven(), served(wordGiven({ forWhomId: 'another' }))];
             expect(servicesYouOwe(ledger, 'me')).toHaveLength(1);
