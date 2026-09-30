@@ -416,6 +416,8 @@ export interface LadderOddsRow {
 export interface LadderOddsReport {
     rows: LadderOddsRow[];
     sweep: SweepResult;
+    /** The dated record's rate for attempts at the final crossing. */
+    crossingsAttemptedPerMillennium: number;
     /**
      * Tiers where belief and measurement disagree by more than an order of
      * magnitude. Worth reporting, and worth an in-world explanation.
@@ -473,5 +475,10 @@ export function ladderOddsReport(
         .filter(r => r.believedShare > 0 && (r.beliefError > 10 || r.beliefError < 0.1))
         .map(r => ({ realm: r.realm, believed: r.believedShare, measured: r.measuredShare }));
 
-    return { rows, sweep, notableDisagreements };
+    return {
+        rows,
+        sweep,
+        crossingsAttemptedPerMillennium: CROSSINGS_ATTEMPTED_PER_MILLENNIUM,
+        notableDisagreements
+    };
 }

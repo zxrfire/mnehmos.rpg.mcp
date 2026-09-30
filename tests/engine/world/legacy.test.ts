@@ -22,6 +22,7 @@ import {
     BELIEVED_REACH,
     believedStatement,
     computeTheoreticalReach,
+    CROSSINGS_ATTEMPTED_PER_MILLENNIUM,
     ladderOddsReport,
     measureLadderReach
 } from '../../../src/engine/world/ladder-odds.js';
@@ -400,6 +401,7 @@ describe('ladder odds: three numbers that are allowed to disagree', () => {
         const report = ladderOddsReport('sweep-3', { sampleSize: 400, ambient: 'normal' }, state);
 
         expect(report.rows).toHaveLength(REALM_TIERS.length);
+        expect(report.crossingsAttemptedPerMillennium).toBe(CROSSINGS_ATTEMPTED_PER_MILLENNIUM);
         for (const row of report.rows) {
             expect(row.believedStatement.length).toBeGreaterThan(10);
             expect(row.theoreticalShare).toBeGreaterThanOrEqual(0);
