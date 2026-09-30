@@ -19,6 +19,7 @@ import { makeGame } from './harness';
 import { createWorld, makeFaction, type WorldState } from '../../src/engine/world/world-state';
 import { createNpc, setRealm } from '../../src/engine/world/npc-state';
 import { makeLocation } from '../../src/engine/world/locations';
+import { makeAreaStatus } from '../../src/engine/world/what-is-true-of-a-place-right-now';
 import { makeFact } from '../../src/engine/world/history';
 import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened';
 import type { Cultivator, Run } from '../../src/schema/cultivation';
@@ -208,6 +209,44 @@ describe('what the square says', () => {
             present: [carter('a', 4), carter('b', 6)]
         };
         expect(askAround(input).prose).toBe(askAround(input).prose);
+    });
+});
+
+describe('what is wrong with this ground, asked of the people on it', () => {
+    function withAStatus(causeKnownLocally: boolean): WorldState {
+        const world = worldWithSomethingWorthSaying();
+        world.statuses.push(makeAreaStatus({
+            id: 'st-blight', areaId: 'loc-here', kind: 'blight',
+            statement: 'The millet has failed across the province.',
+            cause: { what: 'The river was turned upstream for a house\'s spirit fields.', decidedById: null, factId: null },
+            signs: ['The stalks stand white in the fields.'],
+            beganOnDay: DAY - 30, reviewOnDay: DAY + 300,
+            causeKnownLocally
+        }));
+        return world;
+    }
+
+    it('hands you the cause where anybody local has it', async () => {
+        const { cultivator, run } = await player();
+        const asked = askAround({
+            cultivator: { ...cultivator, location: 'Six Li' }, run, world: withAStatus(true),
+            occasion: 'news', present: [carter('a', 4)]
+        });
+        const said = asked.lines.join(' ');
+        expect(said).toContain('The millet has failed across the province.');
+        expect(said).toContain('The river was turned upstream');
+    });
+
+    it('and only the fact of it where nobody here has worked the cause out', async () => {
+        const { cultivator, run } = await player();
+        const asked = askAround({
+            cultivator: { ...cultivator, location: 'Six Li' }, run, world: withAStatus(false),
+            occasion: 'news', present: [carter('a', 4)]
+        });
+        const said = asked.lines.join(' ');
+        expect(said).toContain('The millet has failed across the province.');
+        expect(said).not.toContain('The river was turned upstream');
+        expect(factsForNews(asked).headline).not.toBe('Nothing anybody here can tell you.');
     });
 });
 

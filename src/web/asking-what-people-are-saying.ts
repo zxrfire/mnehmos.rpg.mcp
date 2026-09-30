@@ -12,6 +12,11 @@ import {
     type Rumour,
     type TellerStanding
 } from '../engine/world/what-people-are-saying.js';
+import {
+    localCeilingFor,
+    readStatusAtStage,
+    statusesInArea
+} from '../engine/world/what-is-true-of-a-place-right-now.js';
 import { worldLocationFor } from './entities.js';
 import { theRung, type EngineFacts } from './facts.js';
 import type { Hearing, SpeakableName } from './hearsay.js';
@@ -51,6 +56,8 @@ export interface AskedAround {
      * Accounts that opened because this cultivator was told, ready to write.
      */
     opens: AccountOpenedOnBeingTold[];
+    /** What is wrong with this ground, as the people standing on it tell it. Already in `lines`. */
+    ground?: string[];
 }
 
 /** One account, with the engine's own account of why it opened. */
@@ -111,6 +118,7 @@ export function askAround(input: AskAroundInput): AskedAround {
     // there talk to.
     const askable = [...present].sort((a, b) =>
         b.realmOrdinal - a.realmOrdinal || (a.id < b.id ? -1 : 1));
+    const ground = whatIsWrongHereAsTold(world, here?.id ?? null, day, askable[0]!);
 
     const rng = forStream(run.seed, 'asking-around', Math.floor(run.elapsedDays), occasion);
     const heard: TellingHeard[] = [];
@@ -164,11 +172,13 @@ export function askAround(input: AskAroundInput): AskedAround {
     // `nobody here has heard anything worth repeating`.
     if (heard.length === 0) {
         const ambient = whatTheyBelieveHere(askable, region, rng);
-        if (ambient) return ambient;
-        return nothingInTheAir();
+        if (ambient) return withTheGround(ambient, ground);
+        return ground.length > 0
+            ? withTheGround({ heard: [], hearings: [], prose: '', lines: [], opens: [] }, ground)
+            : nothingInTheAir();
     }
 
-    return {
+    return withTheGround({
         heard,
         hearings: heard.map(toHearing),
         prose: heard.map(told => `${told.speaker} says: ${told.rumour.text}`).join(' ')
@@ -178,6 +188,38 @@ export function askAround(input: AskAroundInput): AskedAround {
         // engine has handed the player.
         lines: heard.map(told => `${told.speaker} says: ${told.rumour.text}`),
         opens: accountsOpenedBy(heard, input)
+    }, ground);
+}
+
+/**
+ * What is wrong with the ground here, from the best-placed person on it.
+ *
+ * Standing in it gives the signs (`ground-status-lines.ts`); the cause comes
+ * from somebody who has it, and `localCeilingFor` says whether anybody local
+ * does.
+ */
+function whatIsWrongHereAsTold(
+    world: WorldState,
+    hereId: string | null,
+    day: number,
+    speaker: RosterEntry
+): string[] {
+    if (hereId === null) return [];
+    return statusesInArea(world.statuses, world.locations, hereId, day).map(status => {
+        const told = readStatusAtStage(status, localCeilingFor(status), day);
+        return `${speaker.name} says: ${status.statement} `
+            + (told.knowsCause ? status.cause.what : 'Nobody here can say why.');
+    });
+}
+
+/** The ground first, because it is under everybody's feet, then what is being passed on. */
+function withTheGround(asked: AskedAround, ground: readonly string[]): AskedAround {
+    if (ground.length === 0) return asked;
+    return {
+        ...asked,
+        prose: [...ground, asked.prose].filter(part => part.length > 0).join(' '),
+        lines: [...ground, ...asked.lines],
+        ground: [...ground]
     };
 }
 
@@ -470,7 +512,9 @@ function whatTheyNowCarry(opened: readonly AccountOpenedOnBeingTold[]): string[]
 
 export function factsForNews(asked: AskedAround): EngineFacts {
     const headline = asked.heard.length === 0
-        ? 'Nothing anybody here can tell you.'
+        ? ((asked.ground?.length ?? 0) > 0
+            ? 'What is wrong with this ground, as the people on it tell it.'
+            : 'Nothing anybody here can tell you.')
         : `${asked.heard.length} thing${asked.heard.length === 1 ? '' : 's'} being said.`;
     const carried = whatTheyNowCarry(asked.opens);
     return {
