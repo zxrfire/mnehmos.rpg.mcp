@@ -38,6 +38,7 @@
  */
 
 import {
+    HALFWATER_TERMS,
     SEA_CARGO,
     SEA_TRADERS,
     artisansOf,
@@ -259,6 +260,12 @@ export function whatThisHouseMakes(factionId: string, houseName: string): string
     }
     for (const cargo of carried) {
         lines.push(`They carry it: ${cargo.what}. ${cargo.whyByWater}`);
+    }
+    // The free port lives on its terms, so asked about the port they are the answer.
+    if (factionId === HALFWATER_TERMS.portFactionId) {
+        lines.push(`What it charges: ${HALFWATER_TERMS.theRate}`);
+        lines.push(`Who keeps order on the quay: ${HALFWATER_TERMS.theWatch.strength} `
+            + HALFWATER_TERMS.theWatch.handles);
     }
     return lines;
 }

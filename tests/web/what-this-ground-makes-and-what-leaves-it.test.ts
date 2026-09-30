@@ -173,6 +173,16 @@ describe('asked about a house rather than about the ground', () => {
         expect(lines).toMatch(/on the water|carry it/i);
     });
 
+    it('answers the free port with its terms and who keeps its quay', () => {
+        const lines = whatThisHouseMakes(THE_PORT, 'Silver Island Market');
+        expect(lines.some(line => line.startsWith('What it charges:') && /fortieth/.test(line))).toBe(true);
+        expect(lines.some(line => line.startsWith('Who keeps order on the quay:')
+            && /none above Foundation Establishment/.test(line))).toBe(true);
+        // And nobody else's answer carries the port's terms.
+        expect(whatThisHouseMakes(THE_CRUCIBLE, 'Cinnabar Crucible Sect').join(' '))
+            .not.toMatch(/What it charges/);
+    });
+
     it('says plainly when nothing on the record answers', () => {
         expect(whatThisHouseMakes('sect-invented', 'Invented Hall').join(' '))
             .toMatch(/Nothing on the record/i);
