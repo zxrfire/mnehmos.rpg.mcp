@@ -714,9 +714,14 @@ the ladder is calibrated against is byte-identical with this in. `ARRIVES_BROKEN
 measured the remaining headroom at 2.7 points across eight boundaries, and a global
 attrition term would have closed the top of the ladder.
 
-**What it does not yet bind.** `an-npc-striking-at-the-next-wall.ts` takes no ledger,
-because the world simulation does not hold obligation rows in memory. Turning it on for
-the world is a pyramid measurement, not an edit.
+**NPCs read the same ledger.** The world's advancement appointment supplies its existing
+`obligations` to `strikeAtTheWall`, read for that person's id on the crossing's absolute
+day. Owing and being owed both count; resolved accounts do not. No parallel NPC ledger
+or moral judgement is added. Crossing facts record the applied strain.
+
+A crossing that takes an NPC's name records `nameTakenOnDay` on that person, persisted
+in SQLite and read by subsequent toll selection. The historical name is retained for
+existing ties and accounts; the same name cannot be taken twice.
 
 ## Tribulation
 

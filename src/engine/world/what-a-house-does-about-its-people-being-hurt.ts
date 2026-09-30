@@ -32,11 +32,10 @@
  *   time and ordinary care    a minor wound mostly closes on its own inside a
  *                             year; a serious one rarely does. Nobody has to pay
  *                             for this and nobody has to be anywhere.
- *   nothing at all            the permanent family. `isPermanentWound` already
- *                             refuses them triage, and this file never picks
- *                             them up: a severed meridian is the genre's own
- *                             fixture and the one wound that should still be
- *                             carried at five thousand years.
+ *   structural medicine       permanent breaks stay outside ordinary triage.
+ *                             A house may spend an actual repair dose on a
+ *                             qualifying member, then wait through recovery
+ *                             (`recovering-from-structural-medicine.ts`).
  *
  * ── AND WHO STAYS MAIMED ─────────────────────────────────────────────────
  *
@@ -69,6 +68,7 @@ import { forStream } from '../cultivation/rng.js';
 import { isBelowTheLid } from './layers.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
+import { beginStructuralRepairs } from './recovering-from-structural-medicine.js';
 
 /**
  * How often a minor wound closes in a year with nothing but time and whatever
@@ -130,6 +130,7 @@ function carrying(npc: NpcRecord, injuries: readonly { treated: boolean }[]): Np
  * what it could not reach is what time is left to work on.
  */
 export function woundsCloseThisYear(state: WorldState, year: number, day: number): WhatCareCameTo {
+    beginStructuralRepairs(state, day);
     const out: WhatCareCameTo = {
         seenTo: 0, closedOnTheirOwn: 0, spent: 0,
         fromTheShelf: 0, dosesFromTheShelf: 0, swallowed: 0, refined: 0, spentRefining: 0

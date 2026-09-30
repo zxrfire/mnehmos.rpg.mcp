@@ -119,11 +119,11 @@ export class WorldStateRepository {
             INSERT INTO world_runtime (
                 id, seed, current_day, version,
                 next_npc_seq, next_effect_seq, next_process_seq,
-                next_fact_seq, next_memory_seq, population_target, updated_at
+                next_fact_seq, next_memory_seq, population_target, pressure_cursor, pending_sendings, updated_at
             ) VALUES (
                 @id, @seed, @currentDay, @version,
                 @nextNpcSeq, @nextEffectSeq, @nextProcessSeq,
-                @nextFactSeq, @nextMemorySeq, @populationTarget, datetime('now')
+                @nextFactSeq, @nextMemorySeq, @populationTarget, @pressureCursor, @pendingSendings, datetime('now')
             )
             ON CONFLICT(id) DO UPDATE SET
                 seed = excluded.seed,
@@ -135,6 +135,8 @@ export class WorldStateRepository {
                 next_fact_seq = excluded.next_fact_seq,
                 next_memory_seq = excluded.next_memory_seq,
                 population_target = excluded.population_target,
+                pressure_cursor = excluded.pressure_cursor,
+                pending_sendings = excluded.pending_sendings,
                 updated_at = datetime('now')
         `);
         this.selectRuntimeStmt = db.prepare('SELECT * FROM world_runtime WHERE id = ?');
@@ -230,7 +232,7 @@ export class WorldStateRepository {
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
-                history_fact_ids, memory_ids, activity, merit, face
+                history_fact_ids, memory_ids, activity, merit, face, name_taken_on_day
             ) VALUES (
                 @id, @worldId, @name,
                 @bornOnDay, @origin, @sex, @physique, @bloodlineSpecies, @bloodlineTier,
@@ -241,7 +243,7 @@ export class WorldStateRepository {
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
-                @historyFactIds, @memoryIds, @activity, @merit, @face
+                @historyFactIds, @memoryIds, @activity, @merit, @face, @nameTakenOnDay
             )
         `);
 
@@ -600,6 +602,8 @@ export class WorldStateRepository {
             id: runtime.id,
             seed: runtime.seed,
             currentDay: runtime.current_day,
+            pressureCursor: runtime.pressure_cursor === null ? undefined : JSON.parse(runtime.pressure_cursor),
+            pendingSendings: runtime.pending_sendings === null ? undefined : JSON.parse(runtime.pending_sendings),
             locations: (this.selectLocationsStmt.all(worldId) as LocationRow[]).map(row =>
                 rowToLocation(row, (changesByLocation.get(row.id) ?? []).map(rowToLocationChange))
             ),
@@ -947,6 +951,7 @@ export class WorldStateRepository {
                 bodyId: npc.bodyId,
                 soulState: npc.soulState,
                 identityContinuity: npc.identityContinuity,
+                nameTakenOnDay: npc.nameTakenOnDay ?? null,
                 diedOnDay: npc.diedOnDay,
                 endNote: npc.endNote,
                 lastConfirmedOnDay: npc.lastConfirmedOnDay,
@@ -1262,7 +1267,9 @@ function runtimeParams(s: WorldState): Record<string, unknown> {
         nextProcessSeq: s.nextProcessSeq,
         nextFactSeq: s.history.nextFactSeq,
         nextMemorySeq: s.memories.nextSeq,
-        populationTarget: s.populationTarget
+        populationTarget: s.populationTarget,
+        pressureCursor: s.pressureCursor ? JSON.stringify(s.pressureCursor) : null,
+        pendingSendings: s.pendingSendings ? JSON.stringify(s.pendingSendings) : null
     };
 }
 
@@ -1621,6 +1628,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         bodyId: row.body_id,
         soulState: row.soul_state as NpcRecord['soulState'],
         identityContinuity: row.identity_continuity,
+        nameTakenOnDay: row.name_taken_on_day ?? undefined,
         diedOnDay: row.died_on_day,
         endNote: row.end_note,
         lastConfirmedOnDay: row.last_confirmed_on_day,
@@ -1987,6 +1995,8 @@ function assertLoadable(state: WorldState): void {
 // here rather than producing `undefined` at the boundary.
 
 interface RuntimeRow {
+    pressure_cursor: string | null;
+    pending_sendings: string | null;
     id: string;
     seed: string;
     current_day: number;
@@ -2147,6 +2157,7 @@ interface FactionRow {
 }
 
 interface NpcRow {
+    name_taken_on_day: number | null;
     id: string;
     name: string;
     born_on_day: number;

@@ -963,6 +963,14 @@ function addWorldColumns(db: Database.Database): void {
     // world stops replacing its dead, the roster empties over a few centuries,
     // and the simulation reports a collapse that is an artefact of the save.
     const runtimeColumns = columnsOf('world_runtime');
+    if (!runtimeColumns.includes('pressure_cursor')) {
+        console.error('[Migration] Adding yearly appointment cursor to world_runtime');
+        db.exec('ALTER TABLE world_runtime ADD COLUMN pressure_cursor TEXT;');
+    }
+    if (!runtimeColumns.includes('pending_sendings')) {
+        console.error('[Migration] Adding unfinished postings to world_runtime');
+        db.exec("ALTER TABLE world_runtime ADD COLUMN pending_sendings TEXT;");
+    }
 
     // The world's own counter, bumped by every committed transition, so a
     // process holding a cached WorldState can tell whether it is still the
@@ -990,6 +998,10 @@ function addWorldColumns(db: Database.Database): void {
     // default: 'thin_county' is nine births in ten and is the honest reading of
     // every row written before the axis existed.
     const npcColumns = columnsOf('world_npcs');
+    if (!npcColumns.includes('name_taken_on_day')) {
+        console.error('[Migration] Adding taken-name consequence to world_npcs');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN name_taken_on_day INTEGER;');
+    }
     if (!npcColumns.includes('origin_tier')) {
         console.error('[Migration] Adding origin_tier column to world_npcs table');
         db.exec("ALTER TABLE world_npcs ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");

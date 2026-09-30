@@ -2643,6 +2643,14 @@ draws that line - so any read that scans `state.objects` alone sees an empty wor
 them. `whatWouldItTake` asks `everyRepairHolding` as well, which is why its refusal can
 name a holder of all four grades instead of telling a player the problem is finding one.
 
+**Swallowing starts recovery, rather than repairing immediately.** Both a held dose and
+a house's grant enter `recovering-from-a-structural-repair.ts`. The dose is spent first;
+the existing convalescence clock then enacts the catalog's days, food, ageing, encounters
+and world interruptions with cultivation focus zero and no automatic breakthrough. Only
+a complete living recovery closes the wound. An interruption leaves it open and the dose
+spent, including an interrupted Core-Knitting year. NPC house care follows the same
+duration and stock rules through its existing activity record.
+
 ## The pouch is what a body carries. A room is what a rung lets you put down.
 
 `stow` is the doorway to the quarters a house gives its own, and the rule behind it is

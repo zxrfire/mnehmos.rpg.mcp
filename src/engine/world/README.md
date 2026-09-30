@@ -2705,15 +2705,26 @@ with `truth: 'unresolved'`, and nothing about it is resolved. Across nine horizo
 seed - 100, 200, 300 and 497 to 502 years - the count of facts dated past the clock went
 from one or two, worst +150 days, to zero.
 
-The year index is now `ceil(fromDay / 365)` to `ceil(toDay / 365) - 1`: a year belongs to
-the span holding its FIRST day, which partitions the year starts between adjacent spans and
-so is additive by construction. The errand's `notBefore` is the YEAR's first day rather than
-the caller's `fromDay` for the same reason - a bound that is a property of how a span was
-chopped up makes every date it touches one too.
+**Short advances keep a year's remaining appointments.** `pressureCursor` retains the
+year, sampled incident dates and completed appointment keys. The live pass runs only
+appointments whose dates have been reached, once, and SQLite keeps that cursor across
+restarts. Opening a year no longer pays its bills or performs its crossings immediately.
+Births draw on their own demography stream; each incident has its own pressure-event stream.
+The errand's `notBefore` remains the year's first day, independent of the caller's slices.
 
-The gap this leaves, written down rather than licensed: **an errand longer than one span
-is never resolved at all.** On the yearly slices `advanceWorldForPlay` runs that is the
-720-day war errand alone, and its party comes home with nothing said about what happened.
+**Long postings now settle.** The old gap let a 720-day war party return without an
+outcome. `pendingSendings` retains the posting, departing party, destination and the
+counterparties actually visited. On the due day, the live pass resolves the surviving
+party through `resolveSending` and the same settlement used for short errands, writes
+the return fact, then brings survivors home. Dead or already missing members stay losses;
+they are never restored by settlement. Neither outcomes nor news are written in advance.
+
+**Structural recovery is lived by NPCs too.** The yearly care appointment reads the same
+house eligibility and real stock used by the player's request. A spent dose starts a
+`mending` activity for the catalog's recovery days. The break remains until it finishes,
+and that span earns no cultivation progress. A fight, a new wound, displacement of the
+activity or death prevents completion; the dose stays spent. Short advances and save/reload
+retain the recovery through the ordinary activity record.
 
 **A compound is safe, and that is not what a cultivator is for.**
 `why-somebody-walks-out-of-a-compound.ts` is the other half of everybody who is on a road:

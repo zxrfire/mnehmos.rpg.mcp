@@ -13,6 +13,10 @@ Prepared anchors are read from persisted world objects and spent in the same
 destruction transaction. A surviving soul retains the active run only when
 the existence engine also preserves the person's identity.
 
+`WorldStateRepository` round-trips the runtime's appointment cursor and retained
+postings, each NPC's taken-name day, and structural convalescence in activity JSON.
+Absent optional lifecycle fields remain absent on older rows.
+
 The two rules that matter when adding one:
 
 - **A backtick inside a SQL template literal terminates the literal** and takes the whole

@@ -70,6 +70,8 @@ export const StructuralRepairMedicineSchema = z.object({
     description: z.string().min(80),
     /** What taking one is actually like, which is not pleasant for any of them. */
     takingIt: z.string().min(80),
+    /** Uninterrupted days before the rebuilt structure can bear use. */
+    recoveryDays: z.number().int().min(1),
     /**
      * What the dated record says about one working. For three of the four this
      * is a very short sentence, and the shortness is the content.
@@ -83,6 +85,7 @@ export type StructuralRepairMedicine = z.infer<typeof StructuralRepairMedicineSc
 export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = [
     {
         id: 'repair-second-pour',
+        recoveryDays: 9,
         name: 'Second Casting Pill',
         grade: 'mortal',
         mends: ['broken-foundation'],
@@ -107,6 +110,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
     },
     {
         id: 'repair-core-knitting',
+        recoveryDays: 365,
         name: 'Core-Knitting Pill',
         grade: 'earth',
         mends: ['cracked-core'],
@@ -129,6 +133,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
     },
     {
         id: 'repair-soul-seating',
+        recoveryDays: 9,
         name: 'Soul-Seating Pill',
         grade: 'heaven',
         mends: ['crippled-nascent-soul', 'failed-transformation'],
@@ -148,12 +153,13 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
         description:
             'The infant soul was born and did not take, or the form came back with body and soul lying alongside each other rather than through each other. This seats one in the other. It is the same medicine for both, which surprises people who have not been told that the two realms are the same operation done twice.',
         takingIt:
-            'The taker is not present for it. What comes back afterwards agrees, mostly, that it is the same person, and every house that has done this has at least one elder who privately does not think so and has never said it out loud to the person concerned.',
+            'The taker is not present for its nine days. What comes back afterwards agrees, mostly, that it is the same person, and every house that has done this has at least one elder who privately does not think so and has never said it out loud to the person concerned.',
         theRecord:
             'The record of one working is a single line four hundred years old. There are three other lines about one being taken, and none of those three say what happened next.'
     },
     {
         id: 'repair-unbroken-pattern',
+        recoveryDays: 1,
         name: 'Unbroken Pattern Pill',
         grade: 'immortal',
         mends: ['partial-refinement', 'failed-integration', 'unfulfilled-ascension'],
@@ -169,7 +175,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
         description:
             'A spirit sense torn in the emptiness, a seam in a body joining that did not close, an ascension where two of the four axes went up and two did not. One object answers all three, which is either a fact about the medicine or a fact about what those three injuries have in common, and nobody on this side knows which.',
         takingIt:
-            'Reported by the three people known to have taken one as brief, and none of the three has ever elaborated. The Earth Vein Tower has all three accounts in the same file and they do not agree about anything except the brevity.',
+            'Its recovery takes one day. Reported by the three people known to have taken one as brief, and none of the three has ever elaborated. The Earth Vein Tower has all three accounts in the same file and they do not agree about anything except the brevity.',
         theRecord:
             'Three are known to have been used in the whole of the dated record. One of them was for a failed body joining, and it worked. The other two entries record the object being spent and do not record an outcome.'
     }

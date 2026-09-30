@@ -1053,9 +1053,13 @@ function applyWounds(
     wounds: readonly Injury[],
     day: number
 ): void {
-    if (wounds.length === 0) return;
     const at = indexById(state.npcs, npc.id);
     if (at < 0) return;
+    if (state.npcs[at].activity?.kind === 'mending'
+        && state.npcs[at].activity?.thingId?.startsWith('repair-')) {
+        state.npcs[at] = { ...state.npcs[at], activity: null, updatedOnDay: day };
+    }
+    if (wounds.length === 0) return;
     state.npcs[at] = carryingWounds(state.npcs[at], wounds, day);
     // A maiming taken at a gathering is a day in a life. Only the permanent
     // band - everything that heals stays a field on the record, where the count

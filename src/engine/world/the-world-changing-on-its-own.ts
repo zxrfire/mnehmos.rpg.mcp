@@ -4,6 +4,7 @@ import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js
  */
 
 import { searchingMastersTakeADisciple } from './the-disciples-a-world-opens-with.js';
+import { finishStructuralRecoveries } from './recovering-from-structural-medicine.js';
 import { housesFindEmptyShelves } from './a-house-finds-an-empty-shelf.js';
 import { settleHiredDuties } from './a-hired-duty-is-served.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
@@ -476,7 +477,7 @@ export interface PressureEvent {
 
 export interface PressureResult {
     events: PressureEvent[];
-    /** Years actually stepped. Zero when no year began inside the span. */
+    /** Years whose final day was reached inside the span. */
     yearsStepped: number;
     /** People born into the world across the span. */
     born: number;
@@ -541,418 +542,332 @@ export function applyPressure(
     const maxEvents = opts.maxEvents ?? 4000;
 
     // ── WHICH YEARS THIS SPAN OWNS ───────────────────────────────────────
-    //
-    // A year belongs to the span holding its FIRST day: `fromDay <= year*365 <
-    // toDay`. Adjacent spans therefore partition the year starts between them,
-    // so every chopping of a span steps each year exactly once and in the same
-    // order - which is the whole of decomposability here.
-    //
-    // This was `yearOfDay(fromDay) + 1` to `yearOfDay(toDay)`, numbering the
-    // year ONE AHEAD of the span it was handed. Every line below dates itself
-    // at `year*365 + offset` with `offset` under 365 and `withinSpan` clamps
-    // the rest, so on the 365-day slices the driver runs, `year*365` WAS the
-    // last day of the slice and a whole year of the world landed on it. Seeds
-    // alpha, beta and gamma at 200 played years: 1.05 distinct days per year,
-    // 2852 of 2862 facts on a year boundary. A 200-year bulk span is off by
-    // one year in two hundred, which is why only the played path showed it.
-    //
-    // WHAT THIS STILL HAS NO ANSWER FOR: a year is simulated atomically, so a
-    // span shorter than one steps the whole year or none of it, and on a world
-    // whose day is off the year grid the rest of the year clamps to the span's
-    // end. Spreading one year's schedule over several calls needs a cursor
-    // this layer does not keep - the same gap `whenTheErrandHappened` writes
-    // down from its own end.
-    const firstYear = Math.ceil(fromDay / DAYS_PER_YEAR);
-    const lastYear = Math.ceil(toDay / DAYS_PER_YEAR) - 1;
+    // Each year retains its incident dates and completed appointments across saves.
+    const firstYear = Math.floor(fromDay / DAYS_PER_YEAR);
+    const lastYear = Math.floor(toDay / DAYS_PER_YEAR);
     let yearsStepped = 0;
     let born = 0;
-
-    // Worlds are persisted, so retiring a wound key in the catalog does not
-    // retire the rows already carrying it. Once per pass rather than per year:
-    // it is idempotent and it has nothing to do after the first sweep.
     repairRetiredWoundKeys(state);
+    if (toDay <= fromDay) return { events, yearsStepped, born };
 
-    for (let year = firstYear; year <= lastYear && events.length < maxEvents; year++) {
-        yearsStepped++;
-        const rng = forStream(state.seed, 'pressure', year);
-        /** The last day of the year being reported on, which is not the span's. */
+    for (let year = firstYear; year <= lastYear; year++) {
         const yearEndsOn = year * 365 + 364;
-
-        // People go out looking, and sometimes they find something the Late Age
-        // left. BEFORE the event draw, so a ruin found this year is a ruin this
-        // year's `ruin_opened` can open - discovery and opening are two stages of
-        // one thing and the ordering is what makes them separable.
-        const foundRuins = applyRuinProspecting(state, year, withinSpan(year * 365 + 40, fromDay, toDay));
-        for (const find of foundRuins.found) {
-            if (!WHAT_SCALE_DECIDES[find.scale].itsExistenceIsPublic) continue;
-            appendWorldFact(state, makeFact({
-                day: withinSpan(year * 365 + 40, fromDay, toDay),
-                kind: 'treasure_found', scale: 'regional', visibility: 'regional',
-                locationId: find.locationId,
-                summary: `${find.name} has been found in the province.`,
-                actors: [], magnitude: 0.2,
-                data: { ruinId: find.locationId, provinceId: find.regionId }
-            }));
+        let cursor = state.pressureCursor;
+        if (!cursor || cursor.year !== year) {
+            const rng = forStream(state.seed, 'pressure', year);
+            const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f)).length;
+            const rate = clamp(live * EVENTS_PER_FACTION_YEAR * intensity,
+                MIN_EVENTS_PER_YEAR * intensity, MAX_EVENTS_PER_YEAR * intensity);
+            let count = Math.floor(rate);
+            if (rng.chance(rate - count)) count++;
+            cursor = { year, completed: [], incidentDays: Array.from({ length: count },
+                () => year * 365 + rng.int(0, 364)) };
+            state.pressureCursor = cursor;
         }
-
-        const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f)).length;
-        const rate = clamp(
-            live * EVENTS_PER_FACTION_YEAR * intensity,
-            MIN_EVENTS_PER_YEAR * intensity,
-            MAX_EVENTS_PER_YEAR * intensity
-        );
-
-        // Whole events plus a fractional chance at one more. Cheap, stable, and
-        // it lets a rate below one still produce something occasionally.
-        let count = Math.floor(rate);
-        if (rng.chance(rate - count)) count++;
-
-        for (let i = 0; i < count && events.length < maxEvents; i++) {
-            // The draw is unconditional so the stream does not depend on where
-            // the span happens to end; the DATE is clamped, because a fact
-            // dated after the world's own clock is incoherent and the soak
-            // rightly refuses it.
-            const day = withinSpan(year * 365 + rng.int(0, 364), fromDay, toDay);
-            const event = fireOne(state, day, forStream(state.seed, 'pressure-event', year, i));
-            if (event) events.push(event);
+        const completed = new Set(cursor.completed);
+        const tasks: { key: string; day: number; run: (day: number) => void }[] = [];
+        for (let i = 0; i < cursor.incidentDays.length; i++) {
+            tasks.push({ key: 'incident:' + i, day: cursor.incidentDays[i]!, run: day => {
+                if (events.length >= maxEvents) return;
+                const event = fireOne(state, day, forStream(state.seed, 'pressure-event', year, i));
+                if (event) events.push(event);
+            } });
         }
+        tasks.push({ key: 'prospecting', day: year * 365 + 40, run: (onDay: number) => {
+            const foundRuins = applyRuinProspecting(state, year, onDay);
+            for (const find of foundRuins.found) {
+                if (!WHAT_SCALE_DECIDES[find.scale].itsExistenceIsPublic) continue;
+                appendWorldFact(state, makeFact({
+                    day: onDay,
+                    kind: 'treasure_found', scale: 'regional', visibility: 'regional',
+                    locationId: find.locationId,
+                    summary: `${find.name} has been found in the province.`,
+                    actors: [], magnitude: 0.2,
+                    data: { ruinId: find.locationId, provinceId: find.regionId }
+                }));
+            }
+        } });
+        tasks.push({ key: 'ground-pressure', day: year * 365 + 60, run: (onDay: number) => {
+            applyGroundPressure(state, onDay);
+        } });
+        tasks.push({ key: 'uncovering', day: year * 365 + 88, run: (onDay: number) => {
+            whatComesToLightThisYear(state, year, onDay);
+        } });
+        tasks.push({ key: 'accusations-and-killings', day: year * 365 + 90, run: (onDay: number) => {
+            const seatsWanted = seatsThePeopleHeldBackWant(state);
+            peopleBringWhatTheyKnowToTheRoom(
+                state, year, onDay, seatsWanted);
+            for (const written of peopleActOnWhyTheyWouldKill(
+                state, year, onDay, seatsWanted
+            ).written) {
+                events.push({
+                    kind: 'killing',
+                    onDay: written.fact.day,
+                    fact: written.fact,
+                    touched: { factions: [...written.fact.factionIds], locations: written.fact.locationId ? [written.fact.locationId] : [], npcs: written.npcs },
+                    deaths: written.deaths
+                });
+            }
+        } });
+        tasks.push({ key: 'bounties', day: year * 365 + 200, run: (onDay: number) => {
+            {
+                housesPutUpTheirPaper(state, accountsHousesHoldForTheirDead(state, onDay), onDay);
+            }
+        } });
+        tasks.push({ key: 'war-fights', day: year * 365 + 61, run: (onDay: number) => {
+            const war = fightTheWarsThisYear(
+                state,
+                onDay,
+                forStream(state.seed, 'war-melee', year)
+            );
+            for (const engagement of war.fought) {
+                events.push({
+                    kind: 'war_fought',
+                    onDay: engagement.fact.day,
+                    fact: engagement.fact,
+                    touched: {
+                        factions: [engagement.aId, engagement.bId],
+                        locations: engagement.fact.locationId ? [engagement.fact.locationId] : [],
+                        npcs: engagement.fact.actors.map(a => a.id)
+                    },
+                    deaths: engagement.deaths,
+                    opens: engagement.opens
+                });
+            }
+            // And what the ENDING of one did, which is where a house's things
+            // mostly go. The design owner: they are *typically left as spoils of
+            // war*, so the fighting breaks the few things somebody carried out and
+            // the settlement moves everything that stayed in the hold. One event
+            // per settlement, never per object.
+            for (const settled of war.settled) {
+                events.push({
+                    kind: 'spoils_taken',
+                    onDay: settled.fact.day,
+                    fact: settled.fact,
+                    touched: {
+                        factions: [settled.loserId, settled.winnerId],
+                        locations: settled.fact.locationId ? [settled.fact.locationId] : [],
+                        npcs: settled.moved
+                            .map(m => m.toId)
+                            .filter((id): id is string => id !== null && id !== settled.winnerId)
+                    },
+                    deaths: [],
+                    // A hold changing hands is the other thing a war leaves, and
+                    // for a long time it left nothing: measured over three worlds
+                    // at two hundred years, 193 things changed hands and not one
+                    // account of any object cause was ever opened.
+                    opens: settled.opens
+                });
+            }
+        } });
+        tasks.push({ key: 'war-vaults', day: year * 365 + 62, run: (onDay: number) => {
+            events.push(...housesOpeningTheirVaults(
+                state,
+                onDay
+            ));
+        } });
+        tasks.push({ key: 'homecomings', day: year * 365 + 62, run: (onDay: number) => {
+            bringHomeWhoeverIsDue(state, onDay);
+        } });
+        tasks.push({ key: 'search-parties', day: year * 365 + 62.5, run: (onDay: number) => {
+            theHousesSendSomebodyLooking(state, onDay);
+        } });
+        tasks.push({ key: 'postings', day: year * 365 + 64, run: (onDay: number) => {
+            applyPostings(state, year, onDay);
+        } });
+        tasks.push({ key: 'internal-affairs', day: year * 365 + 63, run: (onDay: number) => {
+            events.push(...whatInternalAffairsNotices(
+                state,
+                onDay
+            ));
+        } });
+        tasks.push({ key: 'war-settlement', day: year * 365 + 62, run: (onDay: number) => {
+            events.push(...settleWarsThatAreOver(state, onDay));
+        } });
+        tasks.push({ key: 'area-statuses', day: year * 365 + 65, run: (onDay: number) => {
+            applyAreaStatuses(state, year, onDay);
+        } });
+        tasks.push({ key: 'resettlement', day: year * 365 + 70, run: (onDay: number) => {
+            applyResettlement(state, year, onDay);
+        } });
+        tasks.push({ key: 'found-roads', day: year * 365 + 80, run: (onDay: number) => {
+            applyFoundRoads(state, year, onDay);
+        } });
+        tasks.push({ key: 'succession', day: year * 365 + 89, run: (onDay: number) => {
+            theTopOfAHouseChangesHands(state, onDay);
+        } });
+        tasks.push({ key: 'promotions', day: year * 365 + 90, run: (onDay: number) => {
+            applyPromotions(state, onDay);
+        } });
+        tasks.push({ key: 'empty-chairs', day: year * 365 + 90.5, run: (onDay: number) => {
+            coverTheEmptyChairs(state, onDay);
+        } });
+        tasks.push({ key: 'outside-elders', day: year * 365 + 91, run: (onDay: number) => {
+            theHousesTakeInEldersFromOutside(state, onDay);
+        } });
+        tasks.push({ key: 'conclaves', day: year * 365 + 92, run: (onDay: number) => {
+            for (const settled of theConclavesAreContested(
+                state, year, onDay)
+            ) {
+                if (settled.raised.length === 0) continue;
+                theHouseWasSeenToWin(state, settled.houseId, settled.entrants,
+                    onDay);
+            }
+        } });
+        tasks.push({ key: 'manual-copying', day: year * 365 + 95, run: (onDay: number) => {
+            applyManualCopying(state, year, onDay);
+        } });
+        tasks.push({ key: 'wanderers', day: year * 365 + 96, run: (onDay: number) => {
+            theWanderersGoAbout(state, year, onDay);
+        } });
+        tasks.push({ key: 'attention', day: year * 365 + 97, run: (onDay: number) => {
+            giveThisYearsAttention(state, year, onDay);
+        } });
+        tasks.push({ key: 'book-acquisition', day: year * 365 + 100, run: (onDay: number) => {
+            applyBookAcquisition(state, year, onDay);
+        } });
+        tasks.push({ key: 'road-comprehension', day: year * 365 + 110, run: (onDay: number) => {
+            applyRoadsComprehended(state, year, onDay);
+        } });
+        tasks.push({ key: 'advancement', day: year * 365 + 120, run: (onDay: number) => {
+            applyAdvancement(state, year, onDay);
+        } });
+        tasks.push({ key: 'fosterage-returns', day: year * 365 + 130, run: (onDay: number) => {
+            applyFosterageReturns(state, onDay);
+        } });
+        tasks.push({ key: 'recruitment', day: year * 365 + 150, run: (onDay: number) => {
+            applyRecruitment(state, year, onDay);
+        } });
+        tasks.push({ key: 'own-children', day: year * 365 + 150, run: (onDay: number) => {
+            theHousesTakeInTheirOwn(state, year, onDay);
+        } });
+        tasks.push({ key: 'arrivals', day: year * 365 + 151, run: (onDay: number) => {
+            enterWhoeverHasReachedTheHouse(state, onDay);
+        } });
+        tasks.push({ key: 'gatherings', day: year * 365 + 160, run: (onDay: number) => {
+            for (const held of applyGatherings(
+                state, year, onDay
+            )) {
+                events.push({
+                    kind: 'gathering',
+                    onDay: held.onDay,
+                    fact: held.fact,
+                    touched: {
+                        factions: held.factionIds,
+                        locations: held.locationId ? [held.locationId] : [],
+                        npcs: held.attendeeIds
+                    },
+                    deaths: []
+                });
+            }
+        } });
+        tasks.push({ key: 'doors', day: year * 365 + 165, run: (onDay: number) => {
+            const doorsDay = onDay;
+            const doorsYear = applyDoorsAndTheirPlaces(state, year, doorsDay);
+            for (const door of doorsYear) {
+                if (door.shut === null || door.storedFact === null) continue;
+                events.push({
+                    kind: 'zone_forbidden',
+                    onDay: door.storedFact.day,
+                    fact: door.storedFact,
+                    touched: {
+                        factions: [door.shut.patch?.controllingFactionId ?? '', ...door.shut.angered]
+                            .filter(id => id.length > 0),
+                        locations: [door.doorId],
+                        npcs: door.shut.posted.map(p => p.id)
+                    },
+                    deaths: [],
+                    opens: [...door.accounts]
+                });
+            }
+            // AND THE PEOPLE THE CONCLAVES CHOSE ACTUALLY GO. The allocation above
+            // is the whole of the decision and none of the walking; see
+            // `thePeopleAConclaveChoseWalkThrough`. Report only through today's clock.
+            thePeopleAConclaveChoseWalkThrough(
+                state, doorsYear, doorsDay, onDay);
+        } });
+        tasks.push({ key: 'ordinary-ties', day: year * 365 + 170, run: (onDay: number) => {
+            applyOrdinaryLifeTies(state, year, onDay);
+        } });
+        tasks.push({ key: 'disciples', day: year * 365 + 170, run: (onDay: number) => {
+            searchingMastersTakeADisciple(state, onDay);
+        } });
+        tasks.push({ key: 'economy', day: year * 365 + 171, run: (_onDay: number) => {
+            applyFactionEconomy(state);
+        } });
+        tasks.push({ key: 'sale-of-holdings', day: year * 365 + 172, run: (onDay: number) => {
+            applyWhatAHouseHadToSell(state, onDay);
+        } });
+        tasks.push({ key: 'vein-holders', day: year * 365 + 173, run: (onDay: number) => {
+            events.push(...applyWhoHoldsTheVeins(
+                state, onDay, howTheWarsStand(state, onDay)));
+        } });
+        tasks.push({ key: 'sendings', day: year * 365 + 175, run: (onDay: number) => {
+            applySendings(
+                state, year, onDay,
+                year * 365, onDay, actOnAnEmptyPurse);
+        } });
+        tasks.push({ key: 'word-from-away', day: year * 365 + 176, run: (onDay: number) => {
+            wordFromThePeopleAway(state, { day: onDay });
+        } });
+        tasks.push({ key: 'conveyance-building', day: year * 365 + 178, run: (onDay: number) => {
+            applyConveyanceBuilding(state, year, onDay);
+        } });
+        tasks.push({ key: 'object-repair', day: year * 365 + 178, run: (onDay: number) => {
+            housesMendWhatTheyOwn(state, onDay);
+        } });
+        tasks.push({ key: 'empty-shelves', day: year * 365 + 178, run: (onDay: number) => {
+            housesFindEmptyShelves(state, year * 365,
+                onDay);
+        } });
+        tasks.push({ key: 'rogue-movement', day: year * 365 + 178, run: (onDay: number) => {
+            peopleWithNoHouseMoveOn(state, year, onDay);
+        } });
+        tasks.push({ key: 'wound-care', day: year * 365 + 179, run: (onDay: number) => {
+            woundsCloseThisYear(state, year, onDay);
+        } });
+        tasks.push({ key: 'leaving-a-house', day: year * 365 + 179, run: (onDay: number) => {
+            applyPeopleWalkingOut(
+                state, year, onDay, peopleWalkOut);
+        } });
+        tasks.push({ key: 'demography', day: year * 365 + 180, run: (onDay: number) => {
+            born += applyDemography(state, year, onDay, forStream(state.seed, 'demography', year)).length;
+        } });
+        tasks.push({ key: 'last-crossing', day: year * 365 + 200, run: (onDay: number) => {
+            applyLastCrossing(state, year, onDay);
+        } });
+        tasks.push({ key: 'board-work', day: year * 365 + 201, run: (onDay: number) => {
+            peopleTakeWorkOffTheirHousesBoard(state, year, onDay);
+        } });
+        tasks.push({ key: 'board-turn-ins', day: year * 365 + 202, run: (onDay: number) => {
+            peopleTurnInWhatTheirHouseWants(state, onDay);
+        } });
+        tasks.push({ key: 'challenges', day: year * 365 + 203, run: (onDay: number) => {
+            theChallengesThisYear(state, year, onDay);
+        } });
+        tasks.push({ key: 'house-counting', day: year * 365 + 204, run: (_onDay: number) => {
+            theHousesAreCounted(state);
+        } });
 
-        // Windows open and shut on their own clock, not on the event budget.
-        // Deliberately outside the draw loop and outside `maxEvents`: a
-        // convergence that only happens when the year had a slot free is not a
-        // schedule, and "the world did something, and nobody did it" is the
-        // entire content of this one.
-        events.push(...applyConvergences(state, year, fromDay, toDay));
-
-        // Then the parts of a year that are arithmetic rather than incident: people
-        // advance, institutions pay their bills, and children are born. Births
-        // last, so a year's dead are counted before its replacements. The ground
-        // under everybody, worked for a year by the people standing on it. FIRST of
-        // the arithmetic passes, so what a place has left is true of it before
-        // anybody advances, is recruited or is born onto it.
-        applyGroundPressure(state, withinSpan(year * 365 + 60, fromDay, toDay));
-        // And the wars themselves, fought. A war is a group fight between the
-        // parties the two houses put in the field, and `war-melee.ts` is the whole
-        // of it: it decides nothing and only puts the two rosters in front of
-        // `resolveMelee`. On its own seeded stream so no existing draw anywhere
-        // moves.
-        // AND THE PEOPLE WITH A REASON TO KILL SOMEBODY, acting on it. Not a
-        // template drawn over the population: see
-        // `why-one-cultivator-kills-another.ts`. On its own streams.
-        // THE ROOM FIRST: somebody held back for a seat goes after the holder's
-        // record before anybody goes after their life. See
-        // `bringing-what-you-know-about-somebody-to-the-room.ts`.
-        // AND WHAT COMES OUT ABOUT AN OLD ONE. A killing somebody hid is a deed
-        // the world holds and nobody has worked out; this is the year asking
-        // whether anybody did. See `what-comes-to-light-about-a-killing.ts`.
-        whatComesToLightThisYear(state, year, withinSpan(year * 365 + 88, fromDay, toDay));
-        const seatsWanted = seatsThePeopleHeldBackWant(state);
-        peopleBringWhatTheyKnowToTheRoom(
-            state, year, withinSpan(year * 365 + 89, fromDay, toDay), seatsWanted);
-        for (const written of peopleActOnWhyTheyWouldKill(
-            state, year, withinSpan(year * 365 + 90, fromDay, toDay), seatsWanted
-        ).written) {
-            events.push({
-                kind: 'killing',
-                onDay: written.fact.day,
-                fact: written.fact,
-                touched: { factions: [...written.fact.factionIds], locations: written.fact.locationId ? [written.fact.locationId] : [], npcs: written.npcs },
-                deaths: written.deaths
+        for (const sending of state.pendingSendings ?? []) {
+            const due = sending.departsOnDay + sending.posting.days;
+            if (due >= year * 365 && due <= yearEndsOn) tasks.push({
+                key: 'sending:' + sending.posting.houseId + ':' + sending.departsOnDay,
+                day: due, run: day => resolveRetainedSendings(state, day)
             });
         }
-        // AND A HOUSE THAT LOST ONE OF ITS OWN TO SOMEBODY PUTS A PRICE ON THEM,
-        // on its walls. After the year's killings, so a death this year is one
-        // a paper can be put up over. See `a-house-puts-a-price-on-somebody.ts`.
-        {
-            const onDay = withinSpan(year * 365 + 200, fromDay, toDay);
-            housesPutUpTheirPaper(state, accountsHousesHoldForTheirDead(state, onDay), onDay);
+        tasks.sort((a, b) => a.day - b.day);
+        for (const task of tasks) {
+            if (completed.has(task.key) || task.day < fromDay || task.day > toDay) continue;
+            finishStructuralRecoveries(state, task.day);
+            task.run(task.day);
+            cursor.completed.push(task.key);
+            completed.add(task.key);
         }
-        const war = fightTheWarsThisYear(
-            state,
-            withinSpan(year * 365 + 61, fromDay, toDay),
-            forStream(state.seed, 'war-melee', year)
-        );
-        // How each war stood when the year's fighting was done, read before the
-        // ones due are taken off the books, for the veins further down the year.
-        const warsThisYear = howTheWarsStand(state, withinSpan(year * 365 + 61, fromDay, toDay));
-        for (const engagement of war.fought) {
-            events.push({
-                kind: 'war_fought',
-                onDay: engagement.fact.day,
-                fact: engagement.fact,
-                touched: {
-                    factions: [engagement.aId, engagement.bId],
-                    locations: engagement.fact.locationId ? [engagement.fact.locationId] : [],
-                    npcs: engagement.fact.actors.map(a => a.id)
-                },
-                deaths: engagement.deaths,
-                opens: engagement.opens
-            });
-        }
-        // And what the ENDING of one did, which is where a house's things
-        // mostly go. The design owner: they are *typically left as spoils of
-        // war*, so the fighting breaks the few things somebody carried out and
-        // the settlement moves everything that stayed in the hold. One event
-        // per settlement, never per object.
-        for (const settled of war.settled) {
-            events.push({
-                kind: 'spoils_taken',
-                onDay: settled.fact.day,
-                fact: settled.fact,
-                touched: {
-                    factions: [settled.loserId, settled.winnerId],
-                    locations: settled.fact.locationId ? [settled.fact.locationId] : [],
-                    npcs: settled.moved
-                        .map(m => m.toId)
-                        .filter((id): id is string => id !== null && id !== settled.winnerId)
-                },
-                deaths: [],
-                // A hold changing hands is the other thing a war leaves, and
-                // for a long time it left nothing: measured over three worlds
-                // at two hundred years, 193 things changed hands and not one
-                // account of any object cause was ever opened.
-                opens: settled.opens
-            });
-        }
-        // AND WHAT A HOUSE DID ABOUT LOSING ONE. A treasury that is only ever
-        // spent on payroll and rebuilding is a savings account; what makes it a
-        // war chest is that a house watching the thing end opens it. The
-        // decision is not the treasury's - it is the elders' and the
-        // patriarch's - and `what-a-house-opens-its-treasury-for.ts` puts it to
-        // them through the same room that decides whether one sword leaves the
-        // armoury.
-        events.push(...housesOpeningTheirVaults(
-            state,
-            withinSpan(year * 365 + 62, fromDay, toDay)
-        ));
-
-        // WHOEVER IS DUE BACK COMES BACK, and it happens BEFORE anybody is
-        // called late. A party whose term ran out three months ago and which
-        // nothing has processed yet is not overdue, it is unprocessed, and an
-        // office that cannot tell those apart raises the alarm about everybody.
-        //
-        // It also skips anybody nobody can find, which is what makes the pass
-        // below reach anybody at all. See the guard inside.
-        bringHomeWhoeverIsDue(state, withinSpan(year * 365 + 62, fromDay, toDay));
-        // AND THEN A HOUSE SENDS SOMEBODY AFTER WHOEVER IT HAS LOST. After the
-        // homecoming, because somebody who walked back in this morning is not
-        // somebody to go looking for.
-        theHousesSendSomebodyLooking(state, withinSpan(year * 365 + 62.5, fromDay, toDay));
-
-        // AND WHO THE HOUSE HAS PUT SOMEWHERE. Postings run in years and are
-        // taken by the people a house can spare - which an elder holding no
-        // room is, by design, because there are fewer rooms than elders.
-        applyPostings(state, year, withinSpan(year * 365 + 64, fromDay, toDay));
-
-        // AND THEN WHO HAS NOT COME BACK. Internal Affairs' job is personnel: they
-        // are the one who knows a week's errand has taken a month, and the one
-        // who tells everybody else something is wrong. It goes out as an
-        // ordinary fact, so it reaches people the way every other thing does.
-        events.push(...whatInternalAffairsNotices(
-            state,
-            withinSpan(year * 365 + 63, fromDay, toDay)
-        ));
-
-        // Wars that reached the day they were scheduled to end. BEFORE the
-        // statuses, so a war that ended this year is a road open this year.
-        events.push(...settleWarsThatAreOver(state, withinSpan(year * 365 + 62, fromDay, toDay)));
-        // And then what is WRONG with the places that ground is under. After
-        // the pressure, so a district worked out this year is a district its
-        // holder can close this year - the count is the cause and the closing
-        // is the consequence, and they are one year apart only if the ordering
-        // says so.
-        applyAreaStatuses(state, year, withinSpan(year * 365 + 65, fromDay, toDay));
-        applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
-        applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
-        // BEFORE THE PROMOTIONS, so a chair a retirement or a removal changes
-        // hands on is settled by the time anything reads it. A vacancy resolved
-        // later in the year would be covered first and resolved second.
-        theTopOfAHouseChangesHands(state, withinSpan(year * 365 + 89, fromDay, toDay));
-        applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
-        // And a HOUSE whose chair the year's promotions left empty is covered by
-        // one of its own elders, where the room agrees to it. Not a promotion
-        // and not a rank: see `somebody-covers-a-house-with-no-head.ts`. After
-        // the promotions, because a house that just seated a proper head has
-        // nothing to cover.
-        coverTheEmptyChairs(state, withinSpan(year * 365 + 90.5, fromDay, toDay));
-        // And an office whose chair the year's promotions left empty is filled
-        // from outside. See `a-house-takes-in-an-elder-from-outside.ts`.
-        theHousesTakeInEldersFromOutside(state, withinSpan(year * 365 + 91, fromDay, toDay));
-        // And the one rung that rotates settles itself, on the house's own
-        // cycle. See `a-conclave-seat-is-won-in-a-tournament.ts`.
-        // AND A HOUSE THAT WON ITS OWN CONTEST IS SEEN TO HAVE WON IT. The
-        // owner: *"having your sect win a tournament"* - the house, not only
-        // whoever took the seat. See `what-being-seen-to-do-well-is-worth.ts`.
-        for (const settled of theConclavesAreContested(
-            state, year, withinSpan(year * 365 + 92, fromDay, toDay))
-        ) {
-            if (settled.raised.length === 0) continue;
-            theHouseWasSeenToWin(state, settled.houseId, settled.entrants,
-                withinSpan(year * 365 + 92, fromDay, toDay));
-        }
-        // Somebody who mastered an art writes it out for the people coming up
-        // behind them. BEFORE the handout, so a copy written this year is a copy
-        // somebody can be given this year - and before advancement, so the ceiling
-        // it raises is the ceiling this year's review reads. See
-        // `applyManualCopying`: it is the only thing in the engine that puts a book
-        // back into circulation, and the only route to the top of the ladder that
-        // runs through a person rather than through luck.
-        applyManualCopying(state, year, withinSpan(year * 365 + 95, fromDay, toDay));
-        // Who teaches whom this year: masters their present disciples, and a
-        // lecture in the compound. BEFORE the handout and the review, which are
-        // the two things that read it.
-        // The catalog's wanderers first, so a lecture at the Court or a look in
-        // on one of theirs is attention this year's reads find.
-        // See `the-wanderer-the-catalog-names-is-somebody.ts`.
-        theWanderersGoAbout(state, year, withinSpan(year * 365 + 96, fromDay, toDay));
-        giveThisYearsAttention(state, year, withinSpan(year * 365 + 97, fromDay, toDay));
-        applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
-        // Ground gets dug open, a material comes out of a hole, and a house
-        // spends one of the things it can never replace on the disciple who is
-        // standing at a wall they cannot pass for want of a road. BEFORE
-        // advancement for the same reason manual copying is: a road come by
-        // this year is a road this year's crossing can stand on.
-        // See `how-a-cultivator-comes-by-a-road.ts`.
-        applyRoadsComprehended(state, year, withinSpan(year * 365 + 110, fromDay, toDay));
-        applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
-        // And the one answer a fostered person ever gets, on their own sending
-        // house's terms. AFTER advancement, so a rung reached this year is a
-        // rung the assessment reads; before recruitment, so somebody who went
-        // back is on the right roll when the year's admissions run.
-        applyFosterageReturns(state, withinSpan(year * 365 + 130, fromDay, toDay));
-        applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
-        // And a house of hundreds whose roll has thinned has one of its own come
-        // forward. See `a-house-takes-in-one-of-its-own.ts`.
-        theHousesTakeInTheirOwn(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
-        // Joined where they stood; entered on the roll, robed and a lamp lit
-        // at the house. See `a-recruit-is-given-their-lamp-at-the-house.ts`.
-        enterWhoeverHasReachedTheHouse(state, withinSpan(year * 365 + 151, fromDay, toDay));
-        // And then the people those two passes produced meet each other. After
-        // books and after recruitment, so a chosen named this year can be sent
-        // this year rather than waiting a turn of the clock; before the economy,
-        // so the house that hosted pays for it out of the same year's purse.
-        for (const held of applyGatherings(
-            state, year, withinSpan(year * 365 + 160, fromDay, toDay)
-        )) {
-            events.push({
-                kind: 'gathering',
-                onDay: held.onDay,
-                fact: held.fact,
-                touched: {
-                    factions: held.factionIds,
-                    locations: held.locationId ? [held.locationId] : [],
-                    npcs: held.attendeeIds
-                },
-                deaths: []
-            });
-        }
-        // And then the doors. Who comes to stand at one, and who among a
-        // house's own is given a place at the ones that admit a count.
-        //
-        // AFTER the gatherings, so somebody who placed at a competition this
-        // year is on the board the conclave reads when it decides who goes;
-        // before the economy, so the levy a held door takes is in the purse
-        // the same year counts.
-        const doorsDay = withinSpan(year * 365 + 165, fromDay, toDay);
-        const doorsYear = applyDoorsAndTheirPlaces(state, year, doorsDay);
-        for (const door of doorsYear) {
-            if (door.shut === null || door.storedFact === null) continue;
-            events.push({
-                kind: 'zone_forbidden',
-                onDay: door.storedFact.day,
-                fact: door.storedFact,
-                touched: {
-                    factions: [door.shut.patch?.controllingFactionId ?? '', ...door.shut.angered]
-                        .filter(id => id.length > 0),
-                    locations: [door.doorId],
-                    npcs: door.shut.posted.map(p => p.id)
-                },
-                deaths: [],
-                opens: [...door.accounts]
-            });
-        }
-        // AND THE PEOPLE THE CONCLAVES CHOSE ACTUALLY GO. The allocation above
-        // is the whole of the decision and none of the walking; see
-        // `thePeopleAConclaveChoseWalkThrough`. The year's own last day, so a
-        // party whose term outruns the span is still standing in the doorway
-        // rather than reported back after the world's clock.
-        thePeopleAConclaveChoseWalkThrough(
-            state, doorsYear, doorsDay, Math.min(yearEndsOn, toDay));
-        // And then the ties an ordinary life produces, on the same yearly line.
-        applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
-        // And a master looking for a disciple takes one standing in front of them.
-        searchingMastersTakeADisciple(state, withinSpan(year * 365 + 170, fromDay, toDay));
-        applyFactionEconomy(state);
-        // And a house that could not pay its people sells what it built, to
-        // somebody it would sit down with. AFTER the economy, so the purse it
-        // is read against is this year's, and before the sendings, so what it
-        // got for the thing is in the chest the party is sent out of.
-        applyWhatAHouseHadToSell(state, withinSpan(year * 365 + 172, fromDay, toDay));
-        // And the veins, off the same purses and the year's wars. After the
-        // craft sale, so a house that covered its wages with a hull keeps its vein.
-        events.push(...applyWhoHoldsTheVeins(
-            state, withinSpan(year * 365 + 173, fromDay, toDay), warsThisYear));
-        // And then the house spends some of what it just counted on putting
-        // people on the road. AFTER the economy, so a house buys the carriage
-        // out of the purse this year filled, and after recruitment, so
-        // somebody admitted this year can be on the party.
-        // An errand's two bounds are the YEAR reported on, never the call's
-        // span. `fromDay` was the first of them, and it made an errand's dates
-        // a property of how the caller chopped its span: one sixty-year call
-        // backdated nothing, sixty one-year calls backdated every long term.
-        // `year * 365` is inside the span by construction - see the windowing
-        // note above - so this cannot date anything before what was advanced.
-        applySendings(
-            state, year, withinSpan(year * 365 + 175, fromDay, toDay),
-            year * 365, Math.min(yearEndsOn, toDay), actOnAnEmptyPurse);
-        // And what the people away send home, after the sendings so whoever set
-        // out this year has been handed a stack. See
-        // `what-a-house-hears-from-its-people-away.ts`.
-        wordFromThePeopleAway(state, { day: withinSpan(year * 365 + 176, fromDay, toDay) });
-        // And the yard works on what the last party brought home. AFTER the
-        // sendings, so material that came back this year is material this
-        // year's work can go into - a hull is a schedule, and a house hunts
-        // for it the whole time it is building it.
-        applyConveyanceBuilding(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
-        // And a house closes the holes in what it owns, out of its own stores,
-        // after the yard so the year's haul is on the shelf. See
-        // `a-house-mends-what-it-owns.ts`.
-        housesMendWhatTheyOwn(state, withinSpan(year * 365 + 178, fromDay, toDay));
-        housesFindEmptyShelves(state, Math.max(year * 365, fromDay),
-            Math.min(yearEndsOn, toDay));
-        // And whoever is on no roll moves on, to a road, a ruin or a market.
-        // See `where-somebody-with-no-house-goes.ts`.
-        peopleWithNoHouseMoveOn(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
-        // AND WOUNDS CLOSE. A house sees to its own out of the purse, time takes
-        // the small ones for everybody, and the permanent family is never picked
-        // up at all - so who is still carrying a wound is a statement about who
-        // is standing behind them. AFTER the economy, because the stones a house
-        // spends on its people are this year's stones. See
-        // `what-a-house-does-about-its-people-being-hurt.ts`.
-        woundsCloseThisYear(state, year, withinSpan(year * 365 + 179, fromDay, toDay));
-        // AND THE PEOPLE WHO DECIDED FOR THEMSELVES. After the economy, so the
-        // stipend they did or did not get is this year's, and after the house's
-        // own sendings, so somebody the house put on the road this year is out
-        // on the house's business rather than weighing whether to leave.
-        applyPeopleWalkingOut(
-            state, year, withinSpan(year * 365 + 179, fromDay, toDay), peopleWalkOut);
-        born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
-        // The longest project in the world, on its own clock. It will almost
-        // never fire in five hundred years, and that is the point of it.
-        applyLastCrossing(state, year, withinSpan(year * 365 + 200, fromDay, toDay));
-        // And the house's own take work off its board, last, so the year's
-        // lessons and reviews found them at home and the term is paid next year
-        // before promotions. See `a-disciple-takes-work-off-the-board.ts`.
-        peopleTakeWorkOffTheirHousesBoard(state, year, withinSpan(year * 365 + 201, fromDay, toDay));
-        // And what anybody on a roll carries that their house wants, handed in.
-        // See `what-a-house-gives-merit-for.ts`.
-        peopleTurnInWhatTheirHouseWants(state, withinSpan(year * 365 + 202, fromDay, toDay));
-        // And what two of them could not carry any further gets taken to the
-        // ground in front of the house. See `a-challenge-is-answered-on-the-yard.ts`.
-        theChallengesThisYear(state, year, withinSpan(year * 365 + 203, fromDay, toDay));
-        // And every house counted, last, so the count moves by the whole year's
-        // joining, dying and leaving. See `how-many-people-a-house-has.ts`.
-        theHousesAreCounted(state);
+        events.push(...applyConvergences(state, year, fromDay + 1, toDay));
+        resolveRetainedSendings(state, Math.min(yearEndsOn, toDay));
+        finishStructuralRecoveries(state, Math.min(yearEndsOn, toDay));
+        if (fromDay < yearEndsOn && toDay >= yearEndsOn) yearsStepped++;
     }
 
     return { events, yearsStepped, born };
@@ -1568,6 +1483,8 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         // the world's chronicle that the character never made.
         if (!isTheWorldsToMove(npc)) continue;
         if (reviewSlot(npc.id, ADVANCEMENT_REVIEW_YEARS) !== slot) continue;
+        if (npc.activity?.kind === 'mending' && npc.activity.thingId?.startsWith('repair-')
+            && (npc.activity.untilDay ?? day) > day) continue;
         due.push(i);
     }
     if (due.length === 0) return [];
@@ -1728,7 +1645,10 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
             // past three domains; the ground their house lets them onto, the
             // ground their province leaves standing open, the ruin somebody dug
             // out and the material that was spent on them are the rest of it.
-            roadsInReachOf(state, npc)
+            roadsInReachOf(state, npc),
+            undefined,
+            undefined,
+            state.obligations
         );
         if (!strike) continue;
 
@@ -3054,16 +2974,8 @@ function applySendings(
      */
     yearStartsOn: number,
     /**
-     * The last day the world will have reached when this year is over.
-     *
-     * An errand whose term does not fit inside the year is a party still out
-     * rather than one that came back. This was the sending line's own day,
-     * which was that number ONLY because the clamped year index had already
-     * pushed that day to the end of the span. Un-clamping it would have
-     * shortened every errand's window from the year to the 175 days before the
-     * line runs, and taken the two longest rows of the fifteen in
-     * `SENDING_REASONS` - 180 days and 720 - out of the world's reach instead
-     * of the one the gap in `whenTheErrandHappened` is written for.
+     * The day reached by the reporting appointment. Longer errands remain
+     * on the runtime's pendingSendings until their actual return date.
      */
     yearEndsOn: number,
     actOnAnEmptyPurse: boolean
@@ -3122,7 +3034,8 @@ function applySendings(
             ordinal: npc.cultivation.realmOrdinal,
             rankIndex: npc.factionRankIndex,
             locationId: npc.locationId,
-            committedUntilDay: npc.activity && isAwayOnSomething(npc.activity.kind)
+            committedUntilDay: npc.activity && (isAwayOnSomething(npc.activity.kind)
+                || (npc.activity.kind === 'mending' && npc.activity.thingId?.startsWith('repair-')))
                 ? npc.activity.untilDay ?? null
                 : null
         };
@@ -3449,6 +3362,11 @@ function applySendings(
         if (when.stillOut) {
             sent++;
             const due = day + posting.days;
+            (state.pendingSendings ??= []).push({
+                posting, party: party.map(member => ({ ...member })), departsOnDay: day,
+                locationId: goingTo, named, reachedPastItsWeight,
+                counterparties: [...whoTheErrandWasWith(state, aboutHouses, goingTo)]
+            });
             if (goingTo !== null) {
                 for (const member of party) {
                     const index = at.get(member.id);
@@ -3527,98 +3445,154 @@ function applySendings(
             }
         }
 
-        for (const missing of sending.lost) {
-            const index = at.get(missing.id);
-            if (index === undefined) continue;
-            // They came back. The sending's own count still says how many
-            // were lost, which over-reports by one here - the alternative is
-            // re-deriving the party's losses from the rows, which is the
-            // second copy of a fact this repo is made of warnings about.
-            const gone = theWorldLoses(
-                state.npcs[index],
-                sending.returnsOnDay,
-                `Went out for ${faction.name} on ${reason.name.toLowerCase()} and did not come back.`
-            );
-            if (!gone) continue;
-            state.npcs[index] = gone;
-        }
-
-        // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
-        if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
-            creditWhatCameBack(faction, partyOrdinal(party), party.length);
-        }
-
-        // ── AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT ────
-        //
-        // RUINS YIELD MANUALS, which the setting has asserted in as many words
-        // since it was written and which no pass performed: `applyRoadsComprehended`
-        // yields dao ground and materials, the spoils pass moves what a house
-        // already held, and nothing anywhere put a book into anybody's hands out
-        // of the ground. So the road that opens at rung 37 and is taught nowhere
-        // was content the world could not reach, and the ladder stopped under it.
-        //
-        // Only the errand that is about a find, because that is the errand that
-        // gets somebody through a door. Nothing here decides how often - the
-        // frequency is how often a house has a find standing open in its own
-        // province and draws that reason, and what is behind the door is what
-        // `what-a-ruin-has-on-its-shelves.ts` says the ground was holding.
-        const carriedOut = sending.outcome === 'finished'
-            && reason.needs === 'a_find' && goingTo !== null
-            ? applyWhatThePartyCarriedOut(state, {
-                locationId: goingTo,
-                house: {
-                    id: faction.id, name: faction.name, seatLocationId: faction.seatLocationId
-                },
-                readers: party
-                    .map(member => at.get(member.id))
-                    .filter((index): index is number => index !== undefined)
-                    .map(index => state.npcs[index])
-                    .filter(row => row !== undefined && isTheWorldsToMove(row)),
-                onDay: sending.returnsOnDay
-            })
-            : [];
-
-        // AND THE GROUND CHANGES HANDS, OR IT DOES NOT. The whole of what the
-        // house went for, and the same three writes `vein_lost` makes - the
-        // place, the two holds, and what the people who lost it now carry.
-        if (named !== null) {
-            theGroundWasTakenOrItWasNot(state, {
-                faction, named, sending, day: sending.returnsOnDay,
-                rng: forStream(state.seed, 'taking-what-pays', faction.id, year)
-            });
-        }
-
-        // AND THE HOUSE LOSES WHAT IT SAID WAS AT STAKE.
-        //
-        // Skipped for the one errand that already has its own settlement: a
-        // house reaching for ground that pays is answered by
-        // `theGroundWasTakenOrItWasNot` above, which is the same stake applied
-        // by the path that knows which piece of ground and who was standing on
-        // it. Running both would charge it twice.
-        const took = named !== null || sending.outcome === 'finished'
-            ? null
-            : theHouseLostWhatItStaked(state, {
-                faction,
-                sending,
-                onDay: sending.returnsOnDay,
-                counterparties: whoTheErrandWasWith(state, aboutHouses, goingTo),
-                onTheRoll: onTheRoll.length
-            });
-
-        const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
-        if (took !== null) news.data = { ...news.data, ...took };
-        if (carriedOut.length > 0) {
-            news.data = {
-                ...news.data,
-                roadsCarriedOut: carriedOut.map(b => b.techniqueId).join(' ')
-            };
-        }
-        if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING
-            || reachedPastItsWeight || named !== null || carriedOut.length > 0) {
-            appendWorldFact(state, news);
-        }
+        settleSending(state, { faction, sending, goingTo, named,
+            counterparties: whoTheErrandWasWith(state, aboutHouses, goingTo),
+            year, reachedPastItsWeight, onTheRoll: onTheRoll.length });
     }
     return sent;
+}
+
+/** The same settlement for a posting resolved now or after several yearly slices. */
+function settleSending(state: WorldState, input: {
+    faction: FactionRecord;
+    sending: ReturnType<typeof resolveSending>;
+    goingTo: string | null;
+    named: GroundThatPays | null;
+    counterparties: readonly string[];
+    year: number;
+    reachedPastItsWeight: boolean;
+    onTheRoll: number;
+    reportReturn?: boolean;
+}): void {
+    const { faction, sending, goingTo, named, counterparties, year, reachedPastItsWeight, onTheRoll } = input;
+    const party = sending.party;
+    const reason = sending.posting.reason;
+    const at = new Map(state.npcs.map((npc, index) => [npc.id, index]));
+    for (const missing of sending.lost) {
+        const index = at.get(missing.id);
+        if (index === undefined) continue;
+        if (state.npcs[index]!.status !== 'alive' || isLostTrackOf(state, state.npcs[index]!)) continue;
+        // They came back. The sending's own count still says how many
+        // were lost, which over-reports by one here - the alternative is
+        // re-deriving the party's losses from the rows, which is the
+        // second copy of a fact this repo is made of warnings about.
+        const gone = theWorldLoses(
+            state.npcs[index],
+            sending.returnsOnDay,
+            `Went out for ${faction.name} on ${reason.name.toLowerCase()} and did not come back.`
+        );
+        if (!gone) continue;
+        state.npcs[index] = gone;
+    }
+
+    // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
+    if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
+        creditWhatCameBack(faction, partyOrdinal(party), party.length);
+    }
+
+    // ── AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT ────
+    //
+    // RUINS YIELD MANUALS, which the setting has asserted in as many words
+    // since it was written and which no pass performed: `applyRoadsComprehended`
+    // yields dao ground and materials, the spoils pass moves what a house
+    // already held, and nothing anywhere put a book into anybody's hands out
+    // of the ground. So the road that opens at rung 37 and is taught nowhere
+    // was content the world could not reach, and the ladder stopped under it.
+    //
+    // Only the errand that is about a find, because that is the errand that
+    // gets somebody through a door. Nothing here decides how often - the
+    // frequency is how often a house has a find standing open in its own
+    // province and draws that reason, and what is behind the door is what
+    // `what-a-ruin-has-on-its-shelves.ts` says the ground was holding.
+    const carriedOut = sending.outcome === 'finished'
+        && reason.needs === 'a_find' && goingTo !== null
+        ? applyWhatThePartyCarriedOut(state, {
+            locationId: goingTo,
+            house: {
+                id: faction.id, name: faction.name, seatLocationId: faction.seatLocationId
+            },
+            readers: party
+                .map(member => at.get(member.id))
+                .filter((index): index is number => index !== undefined)
+                .map(index => state.npcs[index])
+                .filter(row => row !== undefined && isTheWorldsToMove(row)),
+            onDay: sending.returnsOnDay
+        })
+        : [];
+
+    // AND THE GROUND CHANGES HANDS, OR IT DOES NOT. The whole of what the
+    // house went for, and the same three writes `vein_lost` makes - the
+    // place, the two holds, and what the people who lost it now carry.
+    if (named !== null) {
+        theGroundWasTakenOrItWasNot(state, {
+            faction, named, sending, day: sending.returnsOnDay,
+            rng: forStream(state.seed, 'taking-what-pays', faction.id, year)
+        });
+    }
+
+    // AND THE HOUSE LOSES WHAT IT SAID WAS AT STAKE.
+    //
+    // Skipped for the one errand that already has its own settlement: a
+    // house reaching for ground that pays is answered by
+    // `theGroundWasTakenOrItWasNot` above, which is the same stake applied
+    // by the path that knows which piece of ground and who was standing on
+    // it. Running both would charge it twice.
+    const took = named !== null || sending.outcome === 'finished'
+        ? null
+        : theHouseLostWhatItStaked(state, {
+            faction,
+            sending,
+            onDay: sending.returnsOnDay,
+            counterparties,
+            onTheRoll: onTheRoll
+        });
+
+    const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+    if (took !== null) news.data = { ...news.data, ...took };
+    if (carriedOut.length > 0) {
+        news.data = {
+            ...news.data,
+            roadsCarriedOut: carriedOut.map(b => b.techniqueId).join(' ')
+        };
+    }
+    if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING
+        || input.reportReturn || reachedPastItsWeight || named !== null || carriedOut.length > 0) {
+        appendWorldFact(state, news);
+    }
+}
+
+/** Finish the retained posting before its surviving party can return home. */
+function resolveRetainedSendings(state: WorldState, day: number): void {
+    const waiting = state.pendingSendings ?? [];
+    state.pendingSendings = waiting.filter(row => row.departsOnDay + row.posting.days > day);
+    for (const row of waiting) {
+        const due = row.departsOnDay + row.posting.days;
+        if (due > day) continue;
+        const faction = state.factions.find(house => house.id === row.posting.houseId);
+        if (!faction) continue;
+        const available = row.party.filter(member => {
+            const npc = state.npcs.find(npc => npc.id === member.id);
+            return npc !== undefined && npc.status === 'alive' && !isLostTrackOf(state, npc);
+        });
+        const sending = resolveSending({
+            posting: row.posting, party: available, departsOnDay: row.departsOnDay,
+            rng: forStream(state.seed, 'retained-sending', row.posting.houseId, row.departsOnDay),
+            location: row.locationId ? getLocation(state, row.locationId) : null
+        });
+        // People lost along the way remain losses in the departing party's account.
+        const alreadyLost = row.party.filter(member => !available.some(p => p.id === member.id));
+        sending.party = row.party;
+        sending.lost = [...sending.lost, ...alreadyLost];
+        if (available.length === 0) sending.outcome = 'did_not_come_back';
+        settleSending(state, {
+            faction, sending, goingTo: row.locationId, counterparties: row.counterparties,
+            named: row.named ?? null, year: Math.floor(row.departsOnDay / 365),
+            reachedPastItsWeight: row.reachedPastItsWeight ?? false,
+            reportReturn: true,
+            onTheRoll: state.npcs.filter(npc => npc.factionId === faction.id && npc.status === 'alive').length
+        });
+    }
+    bringHomeWhoeverIsDue(state, day);
 }
 
 /**
@@ -4520,6 +4494,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         // time this pass sees them there is usually nothing left to refuse.
         // The guard is kept because it is true, not because it is load-bearing.
         if (isLostTrackOf(state, npc)) continue;
+        if ((state.pendingSendings ?? []).some(row => row.party.some(member => member.id === npc.id))) continue;
 
         // A place that has since ceased to exist leaves them standing where
         // the errand took them, which is truer than teleporting them into a

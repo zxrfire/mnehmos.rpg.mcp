@@ -80,6 +80,11 @@ import {
     repairWeightInStones,
     mendsThisBreak
 } from '../cultivation/what-structural-repair-medicine-can-reach.js';
+import { getSect } from '../../data/cultivation/sects.js';
+import { elderRungOf } from '../cultivation/leadership.js';
+import { chosenOf } from '../cultivation/who-a-house-will-spend-a-repair-dose-on.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { whatAnInsiderMustStandAt } from './promotion-inside-a-house.js';
 import { APEX_INSTITUTIONS, COURTS } from '../../data/cultivation/governance-and-water-rights.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -422,4 +427,52 @@ export function markDoseSwallowed(
         data: { ...moved.data, spent: true, spentBy: onWhomId, spentOnDay: onDay, spentOn: woundKey }
     };
     return state.objects[index];
+}
+
+/**
+ * Who the asker is to their house, read off the world: blood of somebody at
+ * the elder rung or above, one of its chosen, and how long it has had them.
+ */
+export function whoTheyAreToTheHouse(
+    world: WorldState | null,
+    houseId: string,
+    asker: { id: string; realmOrdinal: number },
+    asOfDay = Math.floor(world?.currentDay ?? 0)
+): { kin: boolean; chosen: boolean; years: number; today: number } {
+    const today = asOfDay;
+    const sect = getSect(houseId);
+    if (!world || !sect) return { kin: false, chosen: false, years: 0, today };
+    const rankCount = sect.ranks.length;
+    const elderRung = elderRungOf(rankCount);
+    const roll = world.npcs.filter(n => n.status === 'alive' && n.factionId === houseId);
+
+    // BLOOD: a child or a grandchild of somebody seated at the elder rung or
+    // above, by the kinship rows the world writes (`parent`/`child`).
+    const childrenOf = (id: string): string[] =>
+        (world.npcs.find(n => n.id === id)?.relationships ?? [])
+            .filter(r => r.kind === 'child')
+            .map(r => r.targetId);
+    const kin = roll
+        .filter(n => n.factionRankIndex >= elderRung)
+        .some(senior => {
+            const children = childrenOf(senior.id);
+            return children.includes(asker.id)
+                || children.some(child => childrenOf(child).includes(asker.id));
+        });
+
+    // THE CHOSEN, off the house's own roll with the asker on it.
+    const elderFloor = whatAnInsiderMustStandAt(
+        houseId, elderRung, rankCount, sect.admissionOrdinal, sect.powerOrdinal);
+    const chosen = chosenOf(
+        [...roll.filter(n => n.id !== asker.id).map(n => ({ id: n.id, realmOrdinal: n.cultivation.realmOrdinal })), asker],
+        elderFloor
+    ).some(m => m.id === asker.id);
+
+    // THE YEARS, from the first robes the house issued them.
+    const robed = world.objects
+        .filter(o => o.ownerId === houseId && o.tags.includes('uniform') && o.data.memberId === asker.id)
+        .map(o => Number(o.data.issuedOnDay))
+        .filter(Number.isFinite);
+    const years = robed.length === 0 ? 0 : Math.max(0, (today - Math.min(...robed)) / DAYS_PER_YEAR);
+    return { kin, chosen, years, today };
 }

@@ -26,6 +26,11 @@
  * longer something the ladder sees, the dose is spent, and a dose that reaches
  * nothing is still in the hand afterwards. Nothing here pins a house, a name or
  * an id the engine chose.
+ *
+ * The audit then found the documented convalescence was skipped: swallowing
+ * repaired instantly. The same played verb now spends the catalog's days;
+ * an interruption spends the dose without completing the repair.
+ * Red-checked by preventing completion of the player's recovery.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -41,6 +46,7 @@ import {
 } from '../../src/engine/world/who-holds-the-structural-repair-medicine';
 import { brokenStatusOf } from '../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary';
 import { theThingAskedFor, thisRowIs } from '../../src/web/what-a-holder-would-take-for-it';
+import { schedule } from '../../src/engine/world/world-state';
 
 interface WorldAtHand { objects: ObjectRecord[] }
 
@@ -104,6 +110,9 @@ describe('a dose in your own hands', () => {
         );
         expect(brokenStatusOf(body().injuries)).toBe('broken-foundation');
 
+        const before = harness.game.state().run.elapsedDays;
+        const progress = body().cultivationProgress;
+
         const said = (await harness.game.act(`I swallow the ${SECOND_POUR.name}`)).narration ?? '';
         expect(said.length).toBeGreaterThan(0);
 
@@ -116,6 +125,26 @@ describe('a dose in your own hands', () => {
         // spends one on its own.
         expect(dose().data.spent).toBe(true);
         expect(dose().tags).toContain('spent');
+        expect(harness.game.state().run.elapsedDays - before).toBe(SECOND_POUR.recoveryDays);
+        expect(body().cultivationProgress).toBe(progress);
+    }, 300_000);
+
+    it('spends a core dose when the world interrupts its year of recovery, leaving the crack', async () => {
+        const medicine = getStructuralRepairMedicine('repair-core-knitting')!;
+        const { harness, dose, body } = await holdingADose('dose-interrupted', medicine,
+            { ordinal: medicine.pricedAtOrdinal, woundType: 'cracked-core' });
+        const world = harness.game.atHand;
+        Object.assign(world, schedule(world, {
+            kind: 'concurrent_event', dueOnDay: Math.floor(world.currentDay) + 3,
+            summary: 'Somebody arrives at the recovery room.',
+            actorIds: [body().id], interrupts: true
+        }).state);
+        const before = harness.game.state().run.elapsedDays;
+        const result = await harness.game.act(`I swallow the ${medicine.name}`);
+        expect(harness.game.state().run.elapsedDays - before).toBe(3);
+        expect(brokenStatusOf(body().injuries)).toBe('cracked-core');
+        expect(dose().data.spent).toBe(true);
+        expect(result.narration).toContain('repair did not finish');
     }, 300_000);
 
     /**

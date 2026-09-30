@@ -27,6 +27,10 @@ repos/                       one module per table family
 tenant-context.ts            the verified tenant a request resolves against
 ```
 
+The world runtime persists its partial-year appointment cursor and pending long
+postings as nullable JSON. NPCs persist `name_taken_on_day`; structural recovery uses
+the existing activity JSON. These are live state, with no duplicate outcome ledger.
+
 `migrations.ts` is a **shared registry that conflicts badly** when several agents edit it.
 Make the minimum one-line addition and nothing else.
 
@@ -230,4 +234,3 @@ something that opens a file.
   that file documents: one human being, two tables, two ids.
 - [`../server/consolidated/README.md`](../server/consolidated/README.md) - almost every tool
   opens with `getDb()`, so a change to the handle or to tenant scoping is felt there first.
-

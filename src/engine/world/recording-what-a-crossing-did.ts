@@ -207,6 +207,8 @@ export function recordCrossing(
             fromOrdinal: result.fromOrdinal,
             toOrdinal: result.toOrdinal,
             finalChance: Number(result.finalChance.toFixed(4)),
+            daoHeartStrain: Math.abs(result.modifiers.find(m => m.source.startsWith('dao_heart'))?.delta ?? 0),
+            tollTaken: result.toll?.takenAll.map(t => t.kind).join(' ') ?? '',
             trial: result.crossing?.trial ?? null,
             crossingOutcome: result.crossing?.outcome ?? null,
             yearsBurned: result.crossing?.yearsBurned ?? 0,

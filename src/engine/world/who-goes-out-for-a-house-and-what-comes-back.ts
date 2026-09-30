@@ -1135,15 +1135,9 @@ export interface WhenTheErrandHappened {
  * different fact rather than a worse date. {@link newsOfAPartyStillOut} is what
  * the world says about one, and nothing about the errand is resolved: no
  * outcome, nobody lost, nothing taken off the house, because none of it has
- * happened yet. `bringHomeWhoeverIsDue` ends the term off the party's own
- * activity when the day comes.
- *
- * WHAT THE WORLD STILL HAS NO ANSWER FOR: the outcome of an errand longer than
- * one span is never written at all. On the yearly slices `advanceWorldForPlay`
- * runs, that is the war errand alone - 720 days against a 365-day span, one row
- * of fifteen at weight 4 - and its party comes home with nothing said. Carrying
- * a resolved-but-unreported sending between passes needs a store this layer
- * does not have, and inventing one was not worth what it buys.
+ * happened yet. The live world retains the posting and departing party in
+ * `pendingSendings`, resolves it on its return day, then brings survivors home.
+ * This closes the documented gap where a 720-day war posting never settled.
  */
 export function whenTheErrandHappened(input: {
     /**

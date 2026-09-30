@@ -304,6 +304,11 @@ function fightOneYear(
     // played killing already writes, through the same decider.
     const opens: ObligationInput[] = [];
     for (const c of result.combatants) {
+        const at = state.npcs.findIndex(npc => npc.id === c.id);
+        const recovery = state.npcs[at]?.activity;
+        if (recovery?.kind === 'mending' && recovery.thingId?.startsWith('repair-')) {
+            state.npcs[at] = { ...state.npcs[at]!, activity: null, updatedOnDay: day };
+        }
         if (c.felledBy === null && c.injuries.length === 0) continue;
         const felledBy = c.felledBy === null ? null : byId.get(c.felledBy) ?? null;
         const mayEnd = theWorldMayEnd(byId.get(c.id) ?? { tags: [] });

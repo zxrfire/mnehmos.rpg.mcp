@@ -132,8 +132,8 @@ import {
     untreatedInjuries,
     untreatedInjuryCount
 } from '../engine/cultivation/injuries.js';
-import { getWoundType, isPermanentWound } from '../data/cultivation/wounds.js';
-import { applyStructuralRepair } from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
+import { isPermanentWound } from '../data/cultivation/wounds.js';
+import { recoveringFromAStructuralRepair } from './recovering-from-a-structural-repair.js';
 import { markDoseSwallowed } from '../engine/world/who-holds-the-structural-repair-medicine.js';
 import {
     type DoseInHand,
@@ -15076,93 +15076,13 @@ ${opened.text}` : receipt,
             ));
         }
 
-        // The engine decides which rows come off, not this layer. A wound key
-        // can sit on more than one row, so what was closed is whatever
-        // `applyStructuralRepair` no longer returns.
-        const kept = verdict.mends === null
-            ? cultivator.injuries
-            : applyStructuralRepair(
-                cultivator.injuries, medicine, verdict.woundKey, cultivator.realmOrdinal
-            );
-        const closed = cultivator.injuries.filter(
-            before => !kept.some(still => still.id === before.id)
-        );
-
-        const spentOn = verdict.mends === null
-            ? 'nothing this body was carrying'
-            : verdict.woundKey;
-
-        this.db.transaction(() => {
-            for (const injury of closed) {
-                this.repos.cultivators.treatInjury(injury.id, run.turn + 1);
-            }
-            this.repos.runs.incrementTurn(run.id, 1);
-        })();
-
-        // After the commit, and in the world rather than in SQLite: the row is
-        // kept and marked, which is the same thing `spendRepairDose` writes when
-        // a house spends one on somebody. Where a dose went is supposed to be
-        // answerable two centuries later whoever swallowed it.
         if (world) {
-            markDoseSwallowed(world, row.id, cultivator.id, cultivator.name, spentOn, today);
+            markDoseSwallowed(world, row.id, cultivator.id, cultivator.name,
+                verdict.mends === null ? 'nothing this body was carrying' : verdict.woundKey, today);
             this.theWorldMoved();
         }
-
-        const mendedName = verdict.mends === null
-            ? null
-            : getWoundType(verdict.woundKey)?.name ?? verdict.woundKey;
-
-        const lines = verdict.mends === null
-            ? [
-                `You swallow the ${medicine.name}. ${verdict.why}`,
-                'It is gone. There is no version of this that goes back in the box, and the '
-                + 'record says you spent it.'
-            ]
-            : [
-                `You swallow the ${medicine.name}. The ${mendedName?.toLowerCase()} is no longer `
-                + 'something you are carrying.',
-                'The dose is gone and the record of it is not. It says whose it was, that you '
-                + 'took it, and on what day.'
-            ];
-
-        const facts = factsForToolResult(
-            verdict.mends === null
-                ? `${medicine.name}: spent, and nothing mended.`
-                : `${medicine.name}: ${mendedName} closed.`,
-            lines
-        );
-        (facts.required ??= []).push(lines[1]);
-        facts.structure.push(
-            `${medicine.id} (${medicine.grade}, reaches to rung `
-            + `${medicine.reachesUpToOrdinal}) swallowed at ordinal `
-            + `${cultivator.realmOrdinal}. ${closed.length} injury row(s) closed through `
-            + '`applyStructuralRepair`, persisted with `treatInjury` - the wound list is read '
-            + 'through `brokenStatusesOn`, which skips treated rows, so a treated break is a '
-            + 'break the ladder no longer sees.',
-            `Dose row ${row.id} marked spent in state.objects and kept. `
-            + `${world ? 'World written.' : 'No world running, so only the run moved.'}`,
-            'NO DAYS ARE SPENT HERE. The catalog says what taking one is like - nine days on a '
-            + 'stone floor, a year in which the taker must not be surprised - and the engine has '
-            + 'no answer for convalescence yet. That is a gap somebody has written down rather '
-            + 'than a ruling that it is instant.'
-        );
-
-        return {
-            facts,
-            events: [],
-            timeSkip: null,
-            breakthrough: null,
-            outcome: 'executed',
-            calls: [{
-                name: 'engine.applyStructuralRepair',
-                action: 'consume_pill',
-                summary: verdict.mends === null
-                    ? `${medicine.name} spent on ${spentOn}. Nothing closed.`
-                    : `${medicine.name} spent: ${verdict.woundKey} closed at ordinal `
-                        + `${cultivator.realmOrdinal}.`,
-                ok: true
-            }]
-        };
+        return recoveringFromAStructuralRepair(this, run, cultivator, medicine,
+            verdict.mends === null ? null : verdict.woundKey);
     }
 
     /**

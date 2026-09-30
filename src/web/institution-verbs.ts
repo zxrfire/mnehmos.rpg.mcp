@@ -267,7 +267,7 @@ export const institutionVerbs = {
 
         // A repair dose asked of your own house is the house's standard, not a
         // form and not a grant. See `asking-your-house-for-a-repair-dose.ts`.
-        const repair = askingYourHouseForARepairDose(
+        const repair = await askingYourHouseForARepairDose(
             this, run, cultivator, target ?? 'my house', matter ?? target ?? '');
         if (repair) return repair;
 

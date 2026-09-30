@@ -11,6 +11,12 @@
 
 # Cultivation Content Catalogs
 
+Structural repair medicine states `recoveryDays`: Second Casting and Soul-Seating
+take nine days, Core-Knitting takes 365, and Unbroken Pattern takes one. The latter
+two previously unspecified spans are now explicit catalog facts, read by player
+convalescence and NPC house care. An interrupted recovery consumes the dose without
+closing the structural wound.
+
 > **Tier 3 - reference.** The authoring contract for the content beside it. Never
 > auto-injected into a narration prompt. The narrator's always-loaded text is
 > [`../../../docs/world/NARRATOR-CORE.md`](../../../docs/world/NARRATOR-CORE.md).

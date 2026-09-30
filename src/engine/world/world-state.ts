@@ -73,6 +73,8 @@ import { thePapersStillUp } from './a-house-puts-a-price-on-somebody.js';
 import type { ObligationRecord } from '../social/grudges.js';
 import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
 import type { Absence } from './when-somebody-does-not-come-back.js';
+import type { Posting, Candidate } from './who-goes-out-for-a-house-and-what-comes-back.js';
+import type { GroundThatPays } from './what-a-house-does-when-it-cannot-pay.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FACTIONS
@@ -276,6 +278,18 @@ export interface WorldState {
      * See `the-word-an-npc-gave.ts`, which is the only writer.
      */
     obligations: ObligationRecord[];
+    /** Appointments already reached and incident dates still to come this year. */
+    pressureCursor?: { year: number; completed: string[]; incidentDays: number[] };
+    /** The posting and departing party are retained until the errand is resolved. */
+    pendingSendings?: {
+        posting: Posting;
+        party: Candidate[];
+        departsOnDay: number;
+        locationId: string | null;
+        counterparties: string[];
+        named?: GroundThatPays | null;
+        reachedPastItsWeight?: boolean;
+    }[];
 
     history: HistoryLedger;
     memories: MemoryStore;
@@ -959,6 +973,8 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
 export function cloneWorld(state: WorldState): WorldState {
     return {
         ...state,
+        pressureCursor: state.pressureCursor ? structuredClone(state.pressureCursor) : undefined,
+        pendingSendings: state.pendingSendings ? structuredClone(state.pendingSendings) : undefined,
         locations: state.locations.map(l => ({
             ...l,
             thresholds: { ...l.thresholds },

@@ -277,6 +277,12 @@ export function whatTheConfrontationDidToThem(
     const facts: HistoricalFact[] = [];
     const lines: string[] = [];
 
+    const recovery = state.npcs[at].activity;
+    if (recovery?.kind === 'mending' && recovery.thingId?.startsWith('repair-')) {
+        state.npcs[at] = { ...state.npcs[at], activity: null, updatedOnDay: day };
+        lines.push('Structural recovery was interrupted. The dose is spent; the repair did not finish.');
+    }
+
     // ── THE BODY ─────────────────────────────────────────────────────────
     if (input.wounds.length > 0) {
         state.npcs[at] = carryingWounds(state.npcs[at], input.wounds, day);

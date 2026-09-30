@@ -594,6 +594,8 @@ export interface NpcRecord {
      * How much of the original person this actually is, 0..1.
      */
     identityContinuity: number;
+    /** The crossing that took this person's name, or null while it remains. */
+    nameTakenOnDay?: number | null;
     /** Absolute day of the transition out of `alive`. Not always a death. */
     diedOnDay: number | null;
     /** Factual note on how they ended. The narrator renders it; it is not lore. */
@@ -1080,6 +1082,8 @@ export function carryingWounds(
     const injuries = [...npc.cultivation.injuries, ...added];
     return {
         ...npc,
+        activity: npc.activity?.kind === 'mending' && npc.activity.thingId?.startsWith('repair-')
+            ? null : npc.activity,
         cultivation: {
             ...npc.cultivation,
             injuries,

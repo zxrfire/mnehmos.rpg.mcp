@@ -29,6 +29,8 @@ import {
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import type { TollCandidateInput } from '../cultivation/price-of-advancement.js';
+import type { ObligationRecord } from '../social/grudges.js';
+import { whatACrossingAsksOfTheDaoHeart } from '../cultivation/what-a-crossing-asks-of-the-dao-heart.js';
 import {
     roadsTaughtByPractice,
     type RoadWithinReach
@@ -368,13 +370,12 @@ export function whatACrossingCouldTakeFrom(npc: NpcRecord): TollCandidateInput[]
  * carries an `everything in takenAll was actually removed or ended` flag - and
  * this is that, for a record instead of for tables.
  *
- * A taken NAME carries `id: null` and is not a row, so there is nothing here to
- * delete for one. The world does not yet hold a taken-name flag, and inventing
- * a field for it here would be a second place that fact could live.
+ * A taken name stays on the identity record as a dated consequence.
  */
 function withoutWhatTheCrossingTook(
     npc: NpcRecord,
-    taken: readonly { kind: string; id: string | null }[]
+    taken: readonly { kind: string; id: string | null }[],
+    day: number
 ): NpcRecord {
     if (taken.length === 0) return npc;
 
@@ -384,10 +385,12 @@ function withoutWhatTheCrossingTook(
     const artsTaken = new Set(
         taken.filter(t => t.kind === 'technique' && t.id !== null).map(t => t.id as string)
     );
-    if (tiesTaken.size === 0 && artsTaken.size === 0) return npc;
+    const nameTaken = taken.some(t => t.kind === 'name');
+    if (tiesTaken.size === 0 && artsTaken.size === 0 && !nameTaken) return npc;
 
     return {
         ...npc,
+        nameTakenOnDay: nameTaken ? day : npc.nameTakenOnDay,
         // The same id `whatACrossingCouldTakeFrom` offered, so the row deleted
         // is exactly the row that was charged.
         relationships: npc.relationships.filter(
@@ -423,7 +426,8 @@ export function strikeAtTheWall(
      * The bonds and the arts are read from the record by
      * {@link whatACrossingCouldTakeFrom} and must not be repeated here.
      */
-    alsoAtStake?: readonly TollCandidateInput[]
+    alsoAtStake?: readonly TollCandidateInput[],
+    ledger: readonly ObligationRecord[] = []
 ): Strike | null {
     const ordinal = npc.cultivation.realmOrdinal;
     const required = progressRequiredForOrdinal(ordinal);
@@ -459,7 +463,10 @@ export function strikeAtTheWall(
 
     if (!canAttemptBreakthrough(subject).eligible) return null;
 
+    const daoHeart = whatACrossingAsksOfTheDaoHeart({ personId: npc.id, ledger, asOfDay: day });
     const result = attemptBreakthrough(subject, {
+        daoHeart: daoHeart.share,
+        daoHeartOpen: daoHeart.open,
         rng,
         ambient,
         turn: Math.floor(day),
@@ -480,6 +487,7 @@ export function strikeAtTheWall(
         // to take and books `nothing_left` every time, which is how the world
         // came to cross every boundary free while the player paid.
         toll: {
+            nameAlreadyTaken: npc.nameTakenOnDay != null,
             candidates: [
                 ...whatACrossingCouldTakeFrom(npc),
                 ...(alsoAtStake ?? [])
@@ -505,7 +513,7 @@ export function strikeAtTheWall(
     if (sustained.length > 0) after = carryingWounds(after, sustained, day);
 
     // What the price of advancement took, actually taken.
-    if (result.toll !== null) after = withoutWhatTheCrossingTook(after, result.toll.takenAll);
+    if (result.toll !== null) after = withoutWhatTheCrossingTook(after, result.toll.takenAll, day);
 
     // ── And what it repaired. The crucible: a boundary cleared while carrying
     // a repairable break reseats it, and the caller has to actually drop the

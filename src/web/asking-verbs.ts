@@ -1335,7 +1335,7 @@ ${unnamed}`;
         // house. The medicine is spent on a house's own by its standard and is
         // never bartered out of it; asking anybody else's house for one falls
         // through to the barter below. See `asking-your-house-for-a-repair-dose.ts`.
-        const repair = askingYourHouseForARepairDose(this, run, cultivator, query, named);
+        const repair = await askingYourHouseForARepairDose(this, run, cultivator, query, named);
         if (repair) return repair;
 
         // "MY MASTER" IS WHOEVER THEY KNELT TO, READ OFF THE TIE. Standing in
