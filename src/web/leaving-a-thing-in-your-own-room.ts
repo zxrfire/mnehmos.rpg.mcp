@@ -51,6 +51,7 @@ import type { WorldState } from '../engine/world/world-state.js';
 import { residenceOf, whereTheyKeepTheirThings } from '../engine/world/somewhere-that-is-theirs.js';
 import { gradeForOrdinal } from '../data/cultivation/techniques.js';
 import { hadAs, isWorn, type ObjectRecord } from '../engine/world/possessions.js';
+import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import {
     howManyHeld,
     together,
@@ -410,6 +411,14 @@ export const stowVerbs = {
             ));
         }
         addToPouch(this.db, to, lot.itemId, lot.kind, 1);
+        // And the row that says which one it is. See `stack-and-its-row.ts`.
+        for (const at of theRowsThatGoWithAStack(world.objects, fromHolder, lot.itemId, 1)) {
+            const row = world.objects[at]!;
+            world.objects[at] = which === 'leave'
+                ? { ...hadAs(row, 'inventory'), possessorId: quarters.holderId, locationId: quarters.locationId }
+                : hadAs({ ...row, possessorId: cultivator.id }, 'inventory');
+            this.theWorldMoved();
+        }
 
         const facts = factsForToolResult(
             which === 'leave' ? `${lot.name}: left in your room.` : `${lot.name}: taken back.`,

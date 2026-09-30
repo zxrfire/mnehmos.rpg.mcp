@@ -43,7 +43,7 @@ import {
 import { REGIONS } from '../data/cultivation/regions.js';
 import { getSect } from '../data/cultivation/sects.js';
 import { getPill } from '../data/cultivation/pills.js';
-import { getHerb } from '../data/cultivation/herbs.js';
+import { whatAnIngredientIs } from '../engine/cultivation/what-a-cauldron-will-take.js';
 import { loosePlaceKey } from './knowledge.js';
 import { matchScore, MATCH_THRESHOLD } from './entities.js';
 import { theRung, type EngineFacts } from './facts.js';
@@ -87,7 +87,7 @@ export function pouchStacks(db: Database.Database, cultivatorId: string): GoodSt
 export function nameOfStack(stack: GoodStack): string {
     const name = stack.kind === 'pill'
         ? getPill(stack.itemId)?.name ?? stack.itemId
-        : getHerb(stack.itemId)?.name ?? stack.itemId;
+        : whatAnIngredientIs(stack.itemId)?.name ?? stack.itemId;
     return stack.quantity === 1 ? name : `${name} x${stack.quantity}`;
 }
 

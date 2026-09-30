@@ -41,7 +41,7 @@ import {
 import { isBroken } from '../engine/world/object-damage.js';
 import { removeFromPouch } from '../server/consolidated/cultivation-support.js';
 import { getPill } from '../data/cultivation/pills.js';
-import { getHerb } from '../data/cultivation/herbs.js';
+import { whatAnIngredientIs } from '../engine/cultivation/what-a-cauldron-will-take.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import { matchScore } from './entities.js';
@@ -116,7 +116,8 @@ export function countedHoldings(db: Database.Database, holderId: string): Counte
             continue;
         }
         if (row.item_kind === 'herb') {
-            const herb = getHerb(row.item_id);
+            // The one resolver, so a beast's part and a bone are held too.
+            const herb = whatAnIngredientIs(row.item_id);
             if (herb) {
                 held.push({
                     itemId: row.item_id,

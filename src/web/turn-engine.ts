@@ -186,7 +186,8 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { howItIsHad, type ObjectRecord } from '../engine/world/possessions.js';
+import { howItIsHad, transferPossession, type ObjectRecord } from '../engine/world/possessions.js';
+import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
 import { inTheSpellingOfTheNamesTheyKnow } from './names-as-they-are-spelled.js';
@@ -13598,6 +13599,25 @@ ${opened.text}` : receipt,
                     }
                 }
             })();
+
+            // THE ROW THAT SAYS WHICH ONE IT IS GOES TOO, after the commit,
+            // because the world's array does not roll back. See
+            // `stack-and-its-row.ts`.
+            if (outcome.lot) {
+                const objects = this.atHand?.objects ?? [];
+                const rows = theRowsThatGoWithAStack(objects, cultivator.id, outcome.lot.itemId, outcome.lot.quantity);
+                for (const at of rows) {
+                    objects[at] = transferPossession(objects[at]!, {
+                        onDay: Math.floor(this.atHand?.currentDay ?? run.elapsedDays),
+                        toHolderId: party!.id,
+                        toHolderName: party!.name,
+                        how: 'gifted',
+                        transfersOwnership: true,
+                        source: `Given by ${cultivator.name}`
+                    });
+                }
+                if (rows.length > 0) this.theWorldMoved();
+            }
 
             if (outcome.favour) {
                 const record = createObligation(outcome.favour);

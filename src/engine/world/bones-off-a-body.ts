@@ -101,10 +101,10 @@ export function objectForBones(init: {
  * Who holds taking human bones against the one who took them, by the house
  * that learns of it.
  *
- * The default until the owner rules (2026-09-25), kept here and nowhere else: a
- * righteous witness's house holds a grudge, a neutral witness's house a lesser
- * one, a demonic house takes no offence, and the dead person's own house holds
- * it whenever anybody saw it done.
+ * The owner's ruling, kept here and nowhere else: a righteous witness's house
+ * holds a grudge, a neutral witness's house a lesser one, and a demonic house
+ * takes no offence. The dead person's own house holds it whenever anybody saw
+ * it done.
  */
 const WHO_HOLDS_TAKING_BONES_AGAINST_YOU: {
     readonly aWitnessHouse: Readonly<Record<SectAlignment, Severity | null>>;

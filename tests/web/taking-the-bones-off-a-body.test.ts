@@ -18,6 +18,10 @@
  *   - A righteous house whose member stood there holds it; a demonic one does
  *     not; done out of sight, a witness below your rung does not see it
  *     (`aWitnessSeesThrough`, which is `concealmentHolds` per witness).
+ *   - Every bone's row says whose body it came off (`data.deadId`), at every
+ *     grade, and that survives a gift, the room a house gives you, and the
+ *     world saved and read back: handed-over bones are to count as proof of a
+ *     killing (owner ruling), so the origin is load-bearing.
  *   - A demonic piece at the bench takes bone where an ordinary one takes a
  *     beast's part, and the ordinary recipe never takes bone.
  *
@@ -39,7 +43,10 @@ import { refiningOrdinalFor } from '../../src/engine/cultivation/who-can-refine-
 import { howAGradeIsStored } from '../../src/engine/world/possessions.js';
 import { markDead } from '../../src/engine/world/npc-state.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
-import { whoHoldsItAgainstYou } from '../../src/engine/world/bones-off-a-body.js';
+import { objectForBones, whoHoldsItAgainstYou } from '../../src/engine/world/bones-off-a-body.js';
+import { SECTS } from '../../src/data/cultivation/sects.js';
+import { whereAHouseLetsYouKeepThings } from '../../src/engine/world/the-room-a-house-gives-you.js';
+import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.js';
 import {
     fillsTheSlot,
     whatItIsMadeOf,
@@ -163,6 +170,10 @@ describe('a body at ordinal 44', () => {
             .find(o => o.data.materialId === bone.id && o.possessorId === at.playerId);
         expect(row, 'no row for a tracked bone').toBeDefined();
         expect(row!.data.deadId, 'the bone does not say whose body it came off').toBe(at.bodyId);
+        // And the world, saved and read back out of SQLite, still says so.
+        const handle = await activeWorld();
+        const reloaded = new WorldStateRepository(db).loadWorld(handle.id)!;
+        expect(reloaded.objects.find(o => o.id === row!.id)?.data.deadId).toBe(at.bodyId);
         const dearestEarth = Math.max(...everyIngredientThatIs({ grade: 'earth' }).map(r => r.value));
         expect(bone.value).toBeGreaterThan(dearestEarth);
 
@@ -213,6 +224,54 @@ describe('who holds it', () => {
             .toEqual([{ houseId: 'their-house', severity: 'grave', because: 'their_dead' }]);
         expect(whoHoldsItAgainstYou({ saw: [], theDeadsHouseId: 'their-house' })).toEqual([]);
     });
+});
+
+describe('whose body it came off goes with the bone', () => {
+    it('when it is given to somebody', async () => {
+        const at = await standingOverABody('bones-given', { deadOrdinal: 20, witness: 'righteous' });
+        const { game } = at.harness;
+        await game.act('I take the bones');
+        const bone = getBone(boneItemId(gradeOfWhatABodyYields(20)!))!;
+        const recipient = game.present(game.repos.cultivators.getById(at.playerId)!)[0]!;
+        await game.act(`I give the ${bone.name} to ${recipient.name}`);
+        const row = (await activeWorld()).state.objects
+            .find(o => o.data.materialId === bone.id && o.data.deadId === at.bodyId);
+        expect(row?.possessorId).toBe(recipient.id);
+        expect(row?.provenance.at(-1)?.how).toBe('gifted');
+    }, 300_000);
+
+    it('into your room and back out of it', async () => {
+        const house = SECTS.filter(sect => sect.recruits).reduce((best, sect) =>
+            sect.admissionOrdinal < best.admissionOrdinal
+            || (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
+        const harness = await makeGameInWorld({ seed: 'bones-in-the-room', worldSeed: 'bones-in-the-room-w' });
+        const { game, db } = harness;
+        const { cultivator } = await game.newRun('Bai Suyin');
+        db.prepare('UPDATE cultivators SET realm_ordinal = 12 WHERE id = ?').run(cultivator.id);
+        harness.repos.sects.addMember(house.id, cultivator.id, 1);
+        harness.repos.cultivators.update(cultivator.id, { location: 'Emerald Water City' });
+        const bone = getBone(boneItemId('mortal'))!;
+        addToPouch(db, cultivator.id, bone.id, 'herb', 1);
+        const world = (await activeWorld()).state;
+        world.objects.push(objectForBones({
+            id: 'obj-bone-in-the-room', bone, dead: { id: 'npc-somebody-dead', name: 'Somebody', ordinal: 3 },
+            takerId: cultivator.id, takerName: cultivator.name, place: 'the road', onDay: 0
+        }));
+        game.theWorldMoved();
+
+        await game.act('I go home');
+        await game.act(`I put the ${bone.name} in my room`);
+        const room = whereAHouseLetsYouKeepThings(house.id, cultivator.id);
+        expect(pouchQuantity(db, room, bone.id)).toBe(1);
+        const stored = (await activeWorld()).state.objects.find(o => o.id === 'obj-bone-in-the-room')!;
+        expect(stored.possessorId).toBe(room);
+        expect(stored.data.deadId).toBe('npc-somebody-dead');
+
+        await game.act(`I take the ${bone.name} from my room`);
+        const back = (await activeWorld()).state.objects.find(o => o.id === 'obj-bone-in-the-room')!;
+        expect(back.possessorId).toBe(cultivator.id);
+        expect(back.data.deadId).toBe('npc-somebody-dead');
+    }, 300_000);
 });
 
 describe('a demonic piece at the bench', () => {
