@@ -202,6 +202,7 @@ import {
     whetherTheyGoThisYear,
     whatLeavingTheirHouseCosts,
     whyTheyWouldLeave,
+    whoWouldGoWithThem,
     type SomewhereWorthGoing,
     type WhyTheyWentOut
 } from './why-somebody-walks-out-of-a-compound.js';
@@ -220,9 +221,10 @@ import {
 } from './a-disciple-takes-work-off-the-board.js';
 import { peopleTurnInWhatTheirHouseWants } from './what-a-house-gives-merit-for.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
-import { noteWhoIsHeldBack } from './being-held-back-in-a-house.js';
+import { howHardBeingHeldBackPresses, noteWhoIsHeldBack, whereTheyAreHeldBack } from './being-held-back-in-a-house.js';
 import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js';
-import { whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
+import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
+import { theOathOnTheWayOut } from './the-word-an-npc-gave.js';
 import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
@@ -3991,10 +3993,17 @@ function applyPeopleWalkingOut(
         return ground === null ? [] : [{ place, ground }];
     });
     const alive = new Set(state.npcs.filter(npc => npc.status === 'alive').map(npc => npc.id));
-    let out = 0;
+    const leaving: {
+        npc: NpcRecord;
+        house: FactionRecord;
+        reasons: readonly WhyTheyWentOut[];
+        to: SomewhereWorthGoing;
+    }[] = [];
+    const walkedOut = new Set<string>();
 
-    for (let at = 0; at < state.npcs.length; at++) {
-        const npc = state.npcs[at]!;
+    // Each person decides alone. Only after those decisions are made do people
+    // who chose the same road discover who else is walking it.
+    for (const npc of state.npcs) {
         if (npc.status !== 'alive' || npc.factionId === null || !isTheWorldsToMove(npc)
             || theSpeciesItIs(npc) !== null || reviewSlot(npc.id, HOW_OFTEN_SOMEBODY_WEIGHS_IT) !== slot
             || (npc.activity !== null && isAwayOnSomething(npc.activity.kind))) continue;
@@ -4022,49 +4031,93 @@ function applyPeopleWalkingOut(
                 locationId: place.id, name: place.name, survivalOrdinal: place.thresholds.survival,
                 why: `${place.name} is standing open, and holds more than they have.`
             }));
+        const beingHeldBack = howHardBeingHeldBackPresses(
+            whereTheyAreHeldBack(npc), day, lifespanForOrdinal(npc.cultivation.realmOrdinal)
+        );
         const reasons = whyTheyWouldLeave({
             ordinal: npc.cultivation.realmOrdinal,
             houseTeachingCeiling: houseTeachingCeiling(house.id),
             theHousePaidThem: howThePurseIsRunning(
                 Number(house.resources.spirit_stones ?? 0),
-                state.npcs.filter(other => other.status === 'alive' && other.factionId === house.id).length
+                state.npcs.filter(other => other.status === 'alive' && other.factionId === house.id
+                    && !walkedOut.has(other.id)).length
                     * A_STIPEND_PER_MEMBER_PER_YEAR
             ) !== 'cannot_pay',
             peopleTheyKnewWhoDidNotComeBack: npc.relationships.filter(tie => !alive.has(tie.targetId)).length,
             factionRankIndex: npc.factionRankIndex,
             spiritStones: 0,
-            aRoadAProvinceAway: roads.length > 0
+            aRoadAProvinceAway: roads.length > 0,
+            beingHeldBack
         });
         const to = whereTheyWouldGo(roads, ruins);
         if (to === null || !whetherTheyGoThisYear(
             reasons,
             forStream(state.seed, 'walk-out', npc.id, year),
-            howMuchTheirReasonsWeigh(reasons),
+            howMuchTheirReasonsWeigh(reasons, beingHeldBack),
             lifespanForOrdinal(npc.cultivation.realmOrdinal),
             whatLeavingTheirHouseCosts({
                 npc, house, lifespanYears: lifespanForOrdinal(npc.cultivation.realmOrdinal), day,
-                onTheRoll: id => alive.has(id) && state.npcs.some(other => other.id === id && other.factionId === house.id)
+                onTheRoll: id => alive.has(id) && !walkedOut.has(id)
+                    && state.npcs.some(other => other.id === id && other.factionId === house.id)
             })
         )) continue;
+        leaving.push({ npc, house, reasons, to });
+        // Later people weigh what is left after the earlier departure, as they
+        // did when this pass wrote each departure immediately.
+        walkedOut.add(npc.id);
+    }
 
-        state.npcs[at] = addGoal({
-            ...setLocation(npc, to.locationId, day),
-            factionId: null,
-            factionRankIndex: -1,
-            tags: [...npc.tags, `${WALKED_OUT}${reasons[0]}`, `${CAME_OFF_A_ROLL_AT}${npc.cultivation.realmOrdinal}`],
-            activity: {
-                kind: 'their_own_business', note: `Left the compound. ${to.why}`,
-                withIds: [], sinceDay: day, untilDay: null, returnTo: null
-            }
-        }, { kind: 'cultivation', text: to.why, priority: 0.7, obstacles: [...reasons] }, day);
-        appendWorldFact(state, makeFact({
-            day, kind: 'migration', scale: 'local',
-            summary: `${npc.name} left ${houseName(house.name)} for ${to.name}. ${reasonSaidPlainly(reasons[0])}`,
-            actors: [{ id: npc.id, name: npc.name, role: 'left' }], locationId: to.locationId,
-            factionIds: [house.id], visibility: 'faction', magnitude: 0.2,
-            data: { walkedOut: true, why: reasons.join('; '), party: 1, fellInOnTheRoad: 0, lost: 0 }
-        }));
-        out++;
+    let out = 0;
+    const gone = new Set<string>();
+    for (const first of leaving) {
+        if (gone.has(first.npc.id)) continue;
+        const others = whoWouldGoWithThem(leaving
+            .filter(other => other.npc.id !== first.npc.id && !gone.has(other.npc.id))
+            .map(other => ({
+                id: other.npc.id,
+                goingTheSameWay: other.to.locationId === first.to.locationId,
+                knownToThem: other.house.id === first.house.id
+                    || relationshipWith(first.npc, other.npc.id) !== null
+            })));
+        const companions = [...others.setOutTogether, ...others.fellInOnTheRoad]
+            .map(id => leaving.find(other => other.npc.id === id))
+            .filter((member): member is (typeof leaving)[number] => member !== undefined);
+        const party = [first, ...companions];
+        const going = new Set(party.map(member => member.npc.id));
+
+        for (const member of party) {
+            theOathOnTheWayOut(state, member.npc, member.house, day);
+            whatTheirLeavingStirs(state, member.npc, member.house, day, going);
+        }
+        for (const member of party) {
+            const at = state.npcs.findIndex(npc => npc.id === member.npc.id);
+            if (at < 0) continue;
+            const npc = state.npcs[at]!;
+            const companions = party.map(other => other.npc.id).filter(id => id !== npc.id);
+            state.npcs[at] = addGoal({
+                ...setLocation(npc, member.to.locationId, day),
+                factionId: null,
+                factionRankIndex: -1,
+                tags: [...npc.tags, `${WALKED_OUT}${member.reasons[0]}`, `${CAME_OFF_A_ROLL_AT}${npc.cultivation.realmOrdinal}`],
+                activity: {
+                    kind: 'their_own_business', note: `Left the compound. ${member.to.why}`,
+                    withIds: companions, sinceDay: day, untilDay: null, returnTo: null
+                }
+            }, { kind: 'cultivation', text: member.to.why, priority: 0.7, obstacles: [...member.reasons] }, day);
+            appendWorldFact(state, makeFact({
+                day, kind: 'migration', scale: 'local',
+                summary: `${npc.name} left ${houseName(member.house.name)} for ${member.to.name}. ${reasonSaidPlainly(member.reasons[0])}`,
+                actors: [{ id: npc.id, name: npc.name, role: 'left' }], locationId: member.to.locationId,
+                factionIds: [member.house.id], visibility: 'faction',
+                magnitude: howLoudALeavingIs(member.npc.factionRankIndex, member.house.ranks.length),
+                data: {
+                    walkedOut: true, why: member.reasons.join('; '), party: party.length,
+                    fellInOnTheRoad: others.fellInOnTheRoad.length, lost: 0
+                }
+            }));
+            gone.add(npc.id);
+            out++;
+        }
     }
     return out;
 }
