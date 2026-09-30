@@ -15,7 +15,7 @@ OPEN, so a mismatch answers with the wrong province rather than throwing.
 | file | what it is |
 |---|---|
 | [`arterials.ts`](./arterials.ts) | The four arterials: one per Surveyor, and the administrative spine under the Jade Gorge's grant book. |
-| [`drowned-reach.ts`](./drowned-reach.ts) | The Pearl Ocean: open water, no ground under it, so no vein under it, so nothing in the air. |
+| [`drowned-reach.ts`](./drowned-reach.ts) | The Pearl Ocean: granted drowned veins and thin air above ungoverned water. |
 | [`local-rank-names.ts`](./local-rank-names.ts) | How a province relabels the one shared ladder, band for band. |
 | [`low-fall.ts`](./low-fall.ts) | The Jade Gorge: the centre, the only province with a road to every other one, and the only one in the world with no ceiling on it. |
 | [`map-by-bearing.ts`](./map-by-bearing.ts) | Reading the world as five columns instead of one list: what sits at each bearing, which houses are seated there, and where the apexes actually stand. |
@@ -30,6 +30,9 @@ OPEN, so a mismatch answers with the wrong province rather than throwing.
 | [`the-map.ts`](./the-map.ts) | Regions - five of them, and the contrast between them is the content. |
 | [`white-stair.ts`](./white-stair.ts) | The White Stair: the qi is in the ice and the ice is going. |
 | [`wide-field.ts`](./wide-field.ts) | The Yellow Plain: flat, dug over, nine cities, and no high ground anybody could fortify. |
+
+Every vein opens held on an apex or court grant, including drowned and shallow veins.
+The grant covers the working ground; it does not grant a strait or a city above it.
 
 ---
 
@@ -53,4 +56,3 @@ OPEN, so a mismatch answers with the wrong province rather than throwing.
 - [`../../../engine/spatial/README.md`](../../../engine/spatial/README.md) - the pathfinder
   waiting on this graph. It is written for a tile grid and this is a place graph, which is the
   gap between them.
-

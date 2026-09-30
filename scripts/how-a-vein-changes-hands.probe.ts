@@ -9,12 +9,12 @@
  * design describes:
  *
  *   conquered   a house sends people, the sending finishes, the place passes
- *   abandoned   a house stops holding it and control goes to nobody
+ *   abandoned   a house stops holding it and control returns to the grantor
  *   the grant   a patron does not renew, and takes it back
  *
- * And the yearly pass in `a-vein-is-taken-sold-given-up-or-claimed.ts`, whose
- * rows read `conquered` (taken in a war), `other` (sold), `abandoned` (given
- * up) and `settled` (claimed); its facts carry `howAVeinChangedHands`.
+ * The yearly pass in `a-vein-is-taken-given-up-or-granted.ts` writes
+ * `conquered` (war), `abandoned` (returned) and `settled` (granted);
+ * its facts carry `howAVeinChangedHands`. Veins cannot be sold.
  *
  * `governance-and-water-rights.ts` states the principle they share: an apex's
  * power is measured *"because a grant is only worth something if the granter can

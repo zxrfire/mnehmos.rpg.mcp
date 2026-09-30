@@ -4,6 +4,8 @@
  */
 
 import { seedTheDisciplesAWorldOpensWith } from './the-disciples-a-world-opens-with.js';
+import { whoGrantsThisVein, whoseVeinsChangeHands } from './a-vein-is-taken-given-up-or-granted.js';
+import { howFarFromTheSeat } from './a-communication-talisman-carries-word-home.js';
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
 import { bestReadable } from '../cultivation/manual-quality.js';
 import {
@@ -346,6 +348,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
     const npcs = seedPopulation(
         state, opts.catalog, factions, population, presentDay, rollWorthModelling);
+    seedTheRemainingVeinGrants(state, presentDay);
     // AFTER the population, so every procedural person draws exactly what they
     // drew before this existed, and BEFORE the lineages, so the family the
     // dilution ladder is read off is on a roll like anybody else's. They are
@@ -690,7 +693,7 @@ function seedRegions(
         // The vein. It is the reason the region has politics at all, and it is
         // the thing factions take from each other.
         if (region.veinStatus) {
-            state.locations.push(makeLocation({
+            const vein = makeLocation({
                 id: `${regionLocationId(region.id)}-vein`,
                 name: `the ${withoutArticle(region.name)} vein`,
                 kind: 'vein',
@@ -709,7 +712,9 @@ function seedRegions(
                 affinities: [makeAffinity('formation', 1.3, 2, 'Somebody has worked this ground.')],
                 tags: ['vein', 'contested'],
                 data: { catalogRegionId: region.id }
-            }));
+            });
+            state.locations.push(vein);
+            linkLocations(location, vein, 'path', 1);
         }
     }
 
@@ -1223,8 +1228,7 @@ function seedFactions(
                 howWarmlyTheyStartTowardTheirParent(faction.id) ?? AT_ARMS_LENGTH;
         }
 
-        // A federated sect holds its vein from somebody. An unbacked one holds
-        // it because nobody has taken it yet. Both are recorded as control.
+        // Preserve authored holders; remaining veins are granted after the rolls exist.
         if (cf.holdsVein && region) {
             const vein = state.locations.find(l => l.id === `${region.id}-vein`);
             if (vein && !vein.controllingFactionId) {
@@ -1285,6 +1289,58 @@ function seedFactions(
 // ─────────────────────────────────────────────────────────────────────────
 // POPULATION
 // ─────────────────────────────────────────────────────────────────────────
+
+/** Every opening vein has a holder; a grantor keeps it if nobody else can work it. */
+function seedTheRemainingVeinGrants(state: WorldState, onDay: number): void {
+    const veins = state.locations.filter(l => l.kind === 'vein' && l.controllingFactionId === null);
+    if (veins.length === 0) return;
+    const howFar = howFarFromTheSeat(state.locations);
+    const houses = state.factions.map(f => ({
+        id: f.id,
+        live: f.dissolvedOnDay === null,
+        members: state.npcs.filter(n => n.status === 'alive' && n.factionId === f.id).length,
+        purse: Number(f.resources.spirit_stones ?? 0),
+        // No year's wages have fallen due on opening day.
+        payroll: 0,
+        strongest: Number(f.resources.power_ordinal ?? 0),
+        war: null
+    }));
+    for (const vein of veins) {
+        const grantor = whoGrantsThisVein(state, vein);
+        if (!grantor) throw new Error(`No apex or court can grant ${vein.id}.`);
+        const change = whoseVeinsChangeHands({
+            veins: [{ id: vein.id, worksAt: vein.thresholds.operational,
+                holderId: null, grantorId: grantor.id }],
+            houses,
+            daysFrom: (houseId, veinId) => {
+                const seat = state.factions.find(f => f.id === houseId)?.seatLocationId;
+                return seat ? howFar(seat, veinId) : null;
+            }
+        })[0];
+        const holder = change?.toId ? state.factions.find(f => f.id === change.toId) : grantor;
+        const roll = houses.find(h => h.id === holder?.id);
+        if (!holder || !roll || roll.members === 0 || roll.strongest < vein.thresholds.operational) {
+            throw new Error(`No house can work ${vein.id}.`);
+        }
+        vein.controllingFactionId = holder.id;
+        holder.controlledLocationIds.push(vein.id);
+        holder.resources.veins = Number(holder.resources.veins ?? 0) + 1;
+        appendFact(state.history, makeFact({
+            day: onDay,
+            kind: 'territory_changed',
+            scale: 'regional',
+            summary: holder.id === grantor.id
+                ? `The ${withoutArticle(grantor.name)} retained ${vein.name}.`
+                : `The ${withoutArticle(grantor.name)} granted ${vein.name} to the ${withoutArticle(holder.name)}.`,
+            locationId: vein.id,
+            factionIds: [...new Set([grantor.id, holder.id])],
+            visibility: 'public',
+            magnitude: 0.6,
+            data: { howAVeinChangedHands: 'granted', fromId: grantor.id, toId: holder.id,
+                unattributed: 'Grant papers name the holder of a vein nearby.' }
+        }));
+    }
+}
 
 /**
  * What a cultivator with these inputs would actually be, after this long.

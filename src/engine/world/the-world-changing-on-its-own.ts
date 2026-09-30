@@ -276,7 +276,7 @@ import {
     whatAHouseCanPutOut,
     areAtWarWithEachOther
 } from './war-melee.js';
-import { whoseVeinsChangeHands, type HowAVeinChangedHands } from './a-vein-is-taken-sold-given-up-or-claimed.js';
+import { whoseVeinsChangeHands, whoGrantsThisVein, type HowAVeinChangedHands } from './a-vein-is-taken-given-up-or-granted.js';
 import { howFarFromTheSeat } from './a-communication-talisman-carries-word-home.js';
 import type { ObligationInput } from '../social/grudges.js';
 import {
@@ -409,12 +409,11 @@ export type PressureKind =
      * The chosen of allied houses met, and something came of it.
      */
     | 'gathering'
-    /** A rival seized a vein. The four below are `a-vein-is-taken-sold-given-up-or-claimed.ts`. */
+    /** A rival seized a vein. The three below are the yearly grant pass. */
     | 'vein_lost'
     | 'vein_taken_in_war'
-    | 'vein_sold'
     | 'vein_given_up'
-    | 'vein_claimed'
+    | 'vein_granted'
     | 'elder_died'
     | 'killing'
     | 'ruin_opened'
@@ -2880,10 +2879,10 @@ function howTheWarsStand(state: WorldState, day: number): Map<string, WarThisYea
 }
 
 /**
- * Veins taken in a war, sold, given up and claimed, written.
+ * Veins taken in a war, returned and granted, written.
  *
  * Who and how is `whoseVeinsChangeHands`; this reads the world into it and
- * makes the writes: the place, both houses' holds, the stones of a sale, and a
+ * makes the writes: the place, both parties' holds, and a
  * public fact naming the parties.
  */
 function applyWhoHoldsTheVeins(
@@ -2893,7 +2892,6 @@ function applyWhoHoldsTheVeins(
 ): PressureEvent[] {
     const veins = state.locations.filter(l => l.kind === 'vein' && isBelowTheLid(l));
     if (veins.length === 0) return [];
-    const holderIds = new Set(veins.map(v => v.controllingFactionId));
 
     const members = new Map<string, number>();
     for (const npc of state.npcs) {
@@ -2910,12 +2908,7 @@ function applyWhoHoldsTheVeins(
             purse: Number(f.resources.spirit_stones ?? 0),
             payroll: onTheRoll * A_STIPEND_PER_MEMBER_PER_YEAR,
             strongest: Number(f.resources.power_ordinal ?? 0),
-            aVeinPaysIt: whatAVeinPaysItsHolder(
-                whatItCanPutOnTheGround(Number(f.resources.reliable_ordinal ?? 0))),
-            war: live ? warsThisYear.get(f.id) ?? null : null,
-            // Asked only of a holder, because only a holder sells.
-            onTermsWith: live && holderIds.has(f.id) ? circleCandidatesFor(state, f).map(o => o.id) : [],
-            holdsOnAGrant: f.tags.includes('federated')
+            war: live ? warsThisYear.get(f.id) ?? null : null
         };
     });
     const seats = new Map(state.factions.map(f => [f.id, f.seatLocationId] as const));
@@ -2926,16 +2919,13 @@ function applyWhoHoldsTheVeins(
             id: v.id,
             worksAt: v.thresholds.operational,
             holderId: v.controllingFactionId,
-            unheldSinceDay: v.controllingFactionId !== null ? null
-                : [...v.changes].reverse().find(c => c.patch.controllingFactionId === null)?.onDay ?? null
+            grantorId: whoGrantsThisVein(state, v)?.id ?? null
         })),
         houses,
         daysFrom: (houseId, veinId) => {
             const seat = seats.get(houseId);
             return seat ? howFar(seat, veinId) : null;
-        },
-        onDay: day,
-        daysPerYear: DAYS_PER_YEAR
+        }
     });
 
     const events: PressureEvent[] = [];
@@ -2944,27 +2934,26 @@ function applyWhoHoldsTheVeins(
         if (!vein) continue;
         const from = change.fromId === null ? null : state.factions.find(f => f.id === change.fromId) ?? null;
         const to = change.toId === null ? null : state.factions.find(f => f.id === change.toId) ?? null;
+        const previousHolder = state.factions.find(f => f.id === vein.controllingFactionId);
         const said = whatAVeinChangingHandsSays(change.how, vein.name, from, to);
 
         const changed = applyLocationChange(vein, {
             onDay: day,
             kind: change.how === 'given_up' ? 'abandoned'
                 : change.how === 'taken_in_war' ? 'conquered'
-                : change.how === 'claimed' ? 'settled' : 'other',
+                : 'settled',
             summary: said.summary,
             causeKnown: true,
             patch: { controllingFactionId: to?.id ?? null, addTags: ['changed_hands'] }
         });
         replaceLocation(state, changed.location);
-        if (from) {
-            from.controlledLocationIds = from.controlledLocationIds.filter(id => id !== vein.id);
-            from.resources.veins = Math.max(0, Number(from.resources.veins ?? 0) - 1);
-            from.resources.spirit_stones = Number(from.resources.spirit_stones ?? 0) + change.price;
+        if (previousHolder) {
+            previousHolder.controlledLocationIds = previousHolder.controlledLocationIds.filter(id => id !== vein.id);
+            previousHolder.resources.veins = Math.max(0, Number(previousHolder.resources.veins ?? 0) - 1);
         }
         if (to) {
             if (!to.controlledLocationIds.includes(vein.id)) to.controlledLocationIds.push(vein.id);
             to.resources.veins = Number(to.resources.veins ?? 0) + 1;
-            to.resources.spirit_stones = Math.max(0, Number(to.resources.spirit_stones ?? 0) - change.price);
         }
 
         const parties = [from, to].filter((f): f is FactionRecord => f !== null);
@@ -2981,15 +2970,15 @@ function applyWhoHoldsTheVeins(
             data: {
                 howAVeinChangedHands: change.how,
                 fromId: from?.id ?? null,
-                toId: to?.id ?? null,
-                price: change.price
+                toId: to?.id ?? null
             },
             unattributed: said.unattributed,
             consequences: {
                 immediate: said.summary,
                 physical: `Control of ${vein.name} moved.`,
                 beneficiaries: to ? [{ id: to.id, name: to.name, role: 'holder' }] : [],
-                losers: from ? [{ id: from.id, name: from.name, role: 'dispossessed' }] : []
+                losers: from && change.how !== 'granted'
+                    ? [{ id: from.id, name: from.name, role: 'dispossessed' }] : []
             }
         }, { factions: parties.map(f => f.id), locations: [vein.id] }));
     }
@@ -3013,26 +3002,21 @@ function whatAVeinChangingHandsSays(
                 unattributed: 'A vein nearby answers to somebody new, and there are armed people '
                     + 'on the road to it.'
             };
-        case 'sold':
-            return {
-                kind: 'vein_sold',
-                summary: `The ${fromName} sold ${vein} to the ${toName}.`,
-                unattributed: 'A vein nearby has new people on it, and they paid for it.'
-            };
         case 'given_up':
             return {
                 kind: 'vein_given_up',
-                summary: from !== null && from.dissolvedOnDay !== null
-                    ? `Nobody has held ${vein} since the ${fromName} ended.`
-                    : `The ${fromName} gave up ${vein}. Nobody works it.`,
+                summary: to === null ? `The ${fromName} gave up ${vein}. Nobody holds it.`
+                    : from !== null && from.dissolvedOnDay !== null
+                    ? `The ${fromName} ended. ${vein} returned to the ${toName}.`
+                    : `The ${fromName} returned ${vein} to the ${toName}.`,
                 unattributed: 'Nobody is working a vein nearby, and the gate on the road to it '
                     + 'stands open.'
             };
-        case 'claimed':
+        case 'granted':
             return {
-                kind: 'vein_claimed',
-                summary: `The ${toName} put its people on ${vein}, which nobody held.`,
-                unattributed: 'Somebody has put people on an empty vein nearby and shut the gate '
+                kind: 'vein_granted',
+                summary: `The ${fromName} granted ${vein} to the ${toName}.`,
+                unattributed: 'New grant papers put somebody on a vein nearby, and they shut the gate '
                     + 'on the road to it.'
             };
     }
@@ -3698,18 +3682,25 @@ function theHouseLostWhatItStaked(
     for (const id of took.groundGivenUp) {
         const place = state.locations.find(l => l.id === id);
         if (!place) continue;
+        const grantor = place.kind === 'vein' ? whoGrantsThisVein(state, place) : null;
         const changed = applyLocationChange(place, {
             onDay,
             kind: 'abandoned',
-            summary: `${place.name} stopped answering to the ${houseName(faction.name)}.`,
+            summary: grantor
+                ? `The ${houseName(faction.name)} returned ${place.name} to the ${houseName(grantor.name)}.`
+                : `${place.name} stopped answering to the ${houseName(faction.name)}.`,
             causeKnown: true,
-            patch: { controllingFactionId: null, addTags: ['changed_hands'] }
+            patch: { controllingFactionId: grantor?.id ?? null, addTags: ['changed_hands'] }
         });
         replaceLocation(state, changed.location);
         faction.controlledLocationIds =
             faction.controlledLocationIds.filter(held => held !== id);
         if (place.kind === 'vein') {
             faction.resources.veins = Math.max(0, Number(faction.resources.veins ?? 0) - 1);
+            if (grantor) {
+                if (!grantor.controlledLocationIds.includes(place.id)) grantor.controlledLocationIds.push(place.id);
+                grantor.resources.veins = Number(grantor.resources.veins ?? 0) + 1;
+            }
         }
     }
 
@@ -5949,7 +5940,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
     // ── A rival seizes a vein. The single most consequential thing that can
     //    happen to a sect, because the vein is its whole ability to produce
     //    cultivators. The other ways a vein changes hands are in
-    //    `a-vein-is-taken-sold-given-up-or-claimed.ts`. ──────────────────
+    //    `a-vein-is-taken-given-up-or-granted.ts`. ─────────────────────
     {
         kind: 'vein_lost',
         weight: 12,
@@ -5971,19 +5962,16 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
                 const power = Number(f.resources.power_ordinal ?? 0);
                 return power >= vein.thresholds.operational && power > holdsAt;
             });
-            const federatedSeizure = loser.tags.includes('federated') && rivals.length === 0;
             const winner = pick(rng, contenders);
-            if (!winner && !federatedSeizure) return null;
+            if (!winner) return null;
 
             const changed = applyLocationChange(vein, {
                 onDay: day,
                 kind: 'conquered',
-                summary: winner
-                    ? `${vein.name} passed to the ${houseName(winner.name)}.`
-                    : `${vein.name} was withdrawn from the ${houseName(loser.name)}; the grant was not renewed.`,
+                summary: `The ${houseName(winner.name)} seized ${vein.name} from the ${houseName(loser.name)}.`,
                 causeKnown: true,
                 patch: {
-                    controllingFactionId: winner ? winner.id : null,
+                    controllingFactionId: winner.id,
                     addTags: ['changed_hands']
                 }
             });
@@ -6024,7 +6012,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
                         ? [{ aId: loser.id, bId: winner.id, change: 'open hostility' }] : [],
                     opportunitiesOpened: ['Work for anyone who can survey a vein.'],
                     opportunitiesClosed: [`Admission to the ${houseName(loser.name)} on the old terms.`],
-                    rumours: ['That the grant was sold rather than lost.'],
+                    rumours: ['That the grantor approved the seizure.'],
                     tenYearsLater:
                         `The ${loser.name} produces fewer cultivators every decade, and everyone local knows it.`
                 }
@@ -6980,7 +6968,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         weight: 2,
         apply(state, day, rng) {
             const candidates = state.locations.filter(
-                l => (l.kind === 'wilds' || l.kind === 'vein') &&
+                l => l.kind === 'wilds' && !l.tags.includes('vein') &&
                     isBelowTheLid(l) && !l.tags.includes('forbidden')
             );
             const place = pick(rng, candidates);
@@ -7003,7 +6991,6 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
                 ? state.factions.find(f => f.id === place.controllingFactionId) ?? null : null;
             if (holder) {
                 holder.controlledLocationIds = holder.controlledLocationIds.filter(id => id !== place.id);
-                holder.resources.veins = Math.max(0, (holder.resources.veins ?? 0) - 1);
             }
 
             return emit(state, 'zone_forbidden', day, {

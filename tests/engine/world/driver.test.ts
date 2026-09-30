@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { applyPressure, PRESSURE_TEMPLATES } from '../../../src/engine/world/pressure.js';
 import {
@@ -11,6 +12,7 @@ import {
 } from '../../../src/engine/world/digest.js';
 import { cloneWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { makeFact, appendFact, queryFacts } from '../../../src/engine/world/history.js';
+import { makeLocation } from '../../../src/engine/world/locations.js';
 import { worldShape } from '../../support/the-shape-of-a-world.js';
 import { namesPermitted } from '../../support/the-names-a-digest-may-use.js';
 
@@ -162,20 +164,24 @@ describe('pressure: the world changes on its own', () => {
         const before = holders();
         const out = applyPressure(state, state.currentDay, state.currentDay + 120 * YEAR);
 
-        // A vein changes hands five ways: a stronger rival seizes it
-        // (`vein_lost`), or it is taken in a war, sold, given up or claimed
-        // (`a-vein-is-taken-sold-given-up-or-claimed.ts`). While the seizure
+        // The 30 September ruling removes sales: veins are taken in war,
+        // seized by rivals, returned to the grantor and granted again. While the seizure
         // was the only way, one hostile pair traded one vein back and forth
         // and every vein was back with its first holder at year 120.
-        const ways = ['vein_lost', 'vein_taken_in_war', 'vein_sold', 'vein_given_up', 'vein_claimed'];
+        const ways = ['vein_lost', 'vein_taken_in_war', 'vein_given_up', 'vein_granted'];
         const transfers = out.events.filter(e => ways.includes(e.kind));
         expect(new Set(transfers.map(e => e.kind)).size).toBeGreaterThanOrEqual(2);
         for (const transfer of transfers) {
-            expect(transfer.fact.factionIds.length).toBeGreaterThan(0);
+            expect(transfer.fact.factionIds.length).toBe(2);
             expect(transfer.fact.locationId).not.toBeNull();
         }
         const after = holders();
         expect([...before].some(([id, holder]) => after.has(id) && after.get(id) !== holder)).toBe(true);
+        for (const id of before.keys()) {
+            const ground = state.locations.find(l => l.id === id)!;
+            expect(ground.kind).toBe('vein');
+            expect(ground.tags).not.toContain('forbidden');
+        }
 
         // Every event names something it actually moved, and every fact it
         // wrote is in the ledger.
@@ -186,6 +192,26 @@ describe('pressure: the world changes on its own', () => {
                 event.touched.factions.length + event.touched.locations.length + event.touched.npcs.length;
             expect(touched).toBeGreaterThan(0);
         }
+    });
+
+    it('keeps every vein out of forbidden ground through 500 years of zone attempts', () => {
+        const state = world('drv-forbidden-veins');
+        const wilds = makeLocation({ id: 'test-wilds', name: 'a woodland', kind: 'wilds' });
+        state.locations.push(wilds);
+        const before = new Map(state.locations.filter(l => l.kind === 'vein')
+            .map(l => [l.id, l.controllingFactionId]));
+        const forbidden = PRESSURE_TEMPLATES.find(t => t.kind === 'zone_forbidden')!;
+        for (let year = 1; year <= 500; year++) {
+            forbidden.apply(state, state.currentDay + year * YEAR,
+                forStream(state.seed, 'test-zone-forbidden', year));
+        }
+        for (const [id, holder] of before) {
+            const ground = state.locations.find(l => l.id === id)!;
+            expect(ground.kind).toBe('vein');
+            expect(ground.tags).not.toContain('forbidden');
+            expect(ground.controllingFactionId).toBe(holder);
+        }
+        expect(state.locations.find(l => l.id === wilds.id)!.kind).toBe('forbidden_zone');
     });
 
     it('binds to entities that exist rather than inventing them', () => {

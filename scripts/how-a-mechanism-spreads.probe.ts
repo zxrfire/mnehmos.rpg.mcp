@@ -88,8 +88,8 @@
  *               against each other.
  *
  *               NO LONGER IN THE TREE: `vein_lost` now needs a rival stronger
- *               than the holder, and four other ways move a vein
- *               (`a-vein-is-taken-sold-given-up-or-claimed.ts`), so the pair
+ *               than the holder, and war, returns and grants also move a vein
+ *               (`a-vein-is-taken-given-up-or-granted.ts`), so the pair
  *               lock is gone. Test a change to this instrument on a known
  *               answer that still exists.
  *   SILENT      `overdue` and `technique_lost` must come back having emitted

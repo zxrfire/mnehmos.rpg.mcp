@@ -49,9 +49,9 @@ async function worldAt120(): Promise<WorldState> {
         //
         // The absentee below is one person, so the seed is a pin: a world change
         // can make them somebody whose waiting ties all outlast a century, which
-        // is not the absence layer's fault. Re-pinned after veins began changing
-        // hands and a war's winner stopped taking past a ward.
-        cached = soakedWorld('absence-audit-f', { years: 120 });
+        // is not the absence layer's fault. On absence-audit-f after the vein
+        // grant and forbidden-ground rulings, the hundred-year pass settled zero.
+        cached = soakedWorld('absence-audit-g', { years: 120 });
     }
     return cached;
 }

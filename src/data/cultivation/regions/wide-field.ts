@@ -1,6 +1,6 @@
 /**
  * The Yellow Plain: flat, dug over, nine cities, and no high ground anybody
- * could fortify. Nobody holds land here; every institution in it holds a lease.
+ * could fortify. Vein workings are granted; the city halls above them are leased.
  *
  * No prefectures: the political layer subdivides only the two provinces that
  * have something to subdivide, and this one is a lease register rather than a
@@ -31,14 +31,14 @@ export const THE_WIDE_FIELD: Region = {
     bearing: 'east',
     traditionId: 'tradition-drawn',
     summary:
-        'The eastern plain: nine walled cities on flat ground over shallow veins, two thousand years of engagements fought across it, and not one institution in it that holds a foot of land. Everything here is rented, priced and renewable, and the ground is rich because of what has died on it.',
+        'The eastern plain: nine walled cities on flat ground over granted shallow veins, two thousand years of engagements fought across it, and city halls rented from mortal landlords. The workings are held on apex grants, the rooms are rented, and the ground is rich because of what has died on it.',
     governingFact:
         'There is no high ground. The Yellow Plain is one flat alluvial plain over veins that run everywhere and deep nowhere, so nothing here can be fortified and nothing here has ever been held for long.',
     derivations: [
-        'An institution holds rooms rather than ground - a hall, a floor, a gate house, a stack room - all of it leased from a city that has outlived its last nine tenants, so the unit of value is the lease and a house that misses a renewal has nothing to fall back on',
+        'A vein grant covers the working beneath the fields, while halls, floors, gate houses and stack rooms are leased from cities that have outlived their last nine tenants; a house can lose its rooms without losing its grant',
         'The cities are mortal, ancient and enormous, and every cultivator institution inside one is the tenant of people it could kill in an afternoon; everybody has done that arithmetic, and the answer is that killing your landlord costs you the lease',
         'Ground that cannot be fortified gets fought over instead, so the East has more battlefields than the rest of the world together, and battlefield ground fruits herbs nothing else grows - which makes a killing field an asset with a harvest date',
-        'Nothing is granted and nothing is sworn, so obligation here is priced rather than witnessed, and the house that sets the price of a spirit stone is the nearest thing the province has to a government'
+        'City tenancies are priced rather than sworn, and the house that sets the price of a spirit stone sets the cost of keeping rooms above the granted workings'
     ],
     register: {
         colour: 'brown and gold: dust, wheat, brick, and roof tile that was glazed nine hundred years ago and has not been reglazed since',
@@ -78,7 +78,7 @@ export const THE_WIDE_FIELD: Region = {
             'severance arts, which work best where there is no certified ground for a cut to be traced across'
         ],
         costNote:
-            'Advancement costs rent. There is no cave on a vein to hold and no grant to apply for; there is a room over an assay hall at a rate somebody else sets, and the difference between an easterner who rises and one who does not is almost entirely whether their house made its renewal.',
+        'Advancement costs rent. The shallow veins are granted to houses that can work them; a cultivator rents a room over an assay hall at a rate somebody else sets, and the difference between an easterner who rises and one who does not is almost entirely whether their house made its renewal.',
         localRankNames: FIELD_BANDS
     },
     ambientProfile: { thin: 44, normal: 41, dense: 14, spirit_tide: 1 },
@@ -86,10 +86,10 @@ export const THE_WIDE_FIELD: Region = {
     ceilingNote:
         'Thirty-eight, and it holds a rented room. Nobody in nine cities has passed the founder of the Severed in living memory, and the reason is the ground rather than the people: the East reliably makes Core Formation in quantity and Nascent Soul rarely, and every single thing above that arrived from somewhere else and is paying rent.',
     veinStatus:
-        'Shallow and universal. There is a vein under almost every field in the Yellow Plain and not one of them is deep enough to be worth a war, which is why the province has never had a vein war and has had two thousand years of every other kind. The rich ground is battlefield ground, and it is rich for the reason everybody knows and nobody states at a market.',
+        'Shallow and universal. There is a vein under almost every field in the Yellow Plain, and every vein is held on an apex grant by a house that can work it. The working can be taken in war or returned to the grantor and granted again; it cannot be sold. The rich ground is battlefield ground, and it is rich for the reason everybody knows and nobody states at a market.',
     politics: 'single_hegemon',
     politicsNote:
-        'One holder, and what it holds is the rate. Nobody in the Yellow Plain holds ground, so nobody can be leaned on through a grant; what can be leaned on is the price of an assayed stone, and one house sets that at the head of nine veins and in the assay hall of every city. It is a hegemony that has never fought anybody: it buys the seniors of houses it wants quiet, three of them now have none, and every institution in the province quotes a figure it did not set to pay a rent it cannot refuse.',
+        'The veins are held on apex grants, while the nine cities lease their halls to the houses working them. The Stone Marrow Hall sets the rate for an assayed stone at the head of nine veins and in the assay hall of every city. Its influence comes from that price as well as the ground it works: it buys the seniors of houses it wants quiet, three of them now have none, and every institution in the province quotes a figure it did not set to pay a rent it cannot refuse.',
     factionIds: [
         'sect-stone-marrow-hall',
         'sect-thousand-treasure-pavilion',
@@ -117,11 +117,7 @@ export const THE_WIDE_FIELD: Region = {
     places: [
         {
             name: PLACE.CLOUD_GATE,
-            // "Nobody in the Yellow Plain holds ground" is the province's own
-            // sentence about itself, and this is that sentence as a field. The
-            // halls in these cities are LEASED - the Jade Register's register
-            // houses, the Lantern Hall's reading halls, the Severed's cutting
-            // houses - and a city that leases to a house is not held by one.
+            // A vein grant does not grant the city above it; its halls are leased.
             heldByFactionId: null,
             kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.',
             // FLAT GROUND, GOOD ROADS, AND A GREAT DEAL OF IT.

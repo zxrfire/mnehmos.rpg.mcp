@@ -295,6 +295,20 @@ describe('locations: origin, changes, current state', () => {
 });
 
 describe('locations: catastrophes scar the map rather than growing it', () => {
+    // The 30 September ruling makes veins and forbidden zones mutually exclusive.
+    it('refuses to seed a vein as forbidden ground or forbid an existing vein', () => {
+        expect(() => makeLocation({ id: 'vein', name: 'a vein', kind: 'vein', tags: ['forbidden'] }))
+            .toThrow('A vein cannot be forbidden ground');
+        expect(() => makeLocation({ id: 'zone', name: 'a zone', kind: 'forbidden_zone', tags: ['vein'] }))
+            .toThrow('A vein cannot be forbidden ground');
+        const vein = makeLocation({ id: 'vein', name: 'a vein', kind: 'vein', controllingFactionId: 'holder' });
+        expect(() => forbidZone(vein, { onDay: 10, summary: 'a disaster', survivalOrdinal: 30, hazards: [] }))
+            .toThrow('A vein cannot be forbidden ground');
+        expect(vein.kind).toBe('vein');
+        expect(vein.controllingFactionId).toBe('holder');
+        expect(vein.changes).toEqual([]);
+    });
+
     it('a forbidden zone is made by an event, not authored as one', () => {
         const forest = makeLocation({
             id: 'loc-forest', name: 'the Nearfurrow wood', kind: 'wilds',

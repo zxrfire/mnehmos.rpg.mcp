@@ -877,18 +877,31 @@ Change also transforms existing relationships. Two sect brothers whose sect is d
 may spend the next ten years each believing the other abandoned them - both alive, both
 advanced, both now in different factions, the old event still load-bearing.
 
-### A vein changes hands five ways
+### A vein is held on a grant
 
-A stronger rival seizes it (`vein_lost`, a pressure template). The other four are one yearly
-pass, `a-vein-is-taken-sold-given-up-or-claimed.ts`, read off the purse, the year's wars and
-who can work the ground: a house losing a war loses it to the house it fought, a short holder
-sells it to a rich house on terms with it, a broke holder that cannot work it (or has ended)
-gives it up, and a vein given up lies empty for five years before the nearest house that can
-work it claims it. Each writes a public fact naming the houses; a sale moves the price
-between the two treasuries. A grant is never sold, and a vein the catalog left unheld is not
-claimed, because nobody gave it up.
+A stronger rival seizes it (`vein_lost`, a pressure template). The other ways are one yearly
+pass, `a-vein-is-taken-given-up-or-granted.ts`: a house losing a war loses it to the house it
+fought; a broke holder that cannot work it, or a house that has ended, returns it to the
+grantor. On the next pass the grantor grants it to the nearest reachable house with people
+strong enough to work it, at peace and able to pay them. Until then the grantor holds it.
+Each change writes a public fact naming both parties. A grant names the apex or court and
+the recipient. No vein is sold and no payment accompanies a grant.
 
-Rare, by the owner's ruling that a vein changing hands is a world-shaking event. Measured
+The grantor is derived from catalog apex/court jurisdiction and the ground, independently
+of its occupier. Outside an authored jurisdiction, the nearest reachable living apex or
+court grants. Every vein is held on opening day: authored holders stay, and the same
+selection grants the remaining ground after the rolls exist. No wages are overdue on
+opening day. If nobody else can work it, the grantor retains it; a catalog with no capable
+holder or grant authority cannot seed an unheld vein.
+Grants change holdings, not travel links; a recipient cannot become the grant authority
+by gaining a shorter path to the ground.
+
+Veins and forbidden zones never intersect. `zone_forbidden` selects only wilds without a
+vein, and location creation and changes reject their intersection. A disaster can end a
+house without converting its vein to forbidden ground.
+
+Rare, by the owner's ruling that a vein changing hands is a world-shaking event. Before the
+30 September ruling removed sales and claims and protected veins from forbidden zones, measured
 29 September 2026, stepping a year at a time and reading the fact behind every change:
 
 - fixture catalog, six seeds, 120 years: 16 changes. A stronger rival 4, a house that could
@@ -900,9 +913,9 @@ Rare, by the owner's ruling that a vein changing hands is a world-shaking event.
   each seized back by the stronger old holder two years later. By year 500 every vein in
   both worlds had been made forbidden ground (`zone_forbidden`), which ends its holding.
 
-A sale needs a holder that has run short, and no holder in either catalog did inside these
-spans; `a-vein-is-taken-sold-given-up-or-claimed.test.ts` holds that one on a constructed
-case.
+Those measurements describe the previous rules. `a-vein-is-taken-given-up-or-granted.test.ts`
+now covers returns, re-grants, rival seizure and opening distribution; `driver.test.ts`
+covers live transfers over 120 years and 500 years of forbidden-zone attempts.
 
 ### Destruction opens as much as it closes
 

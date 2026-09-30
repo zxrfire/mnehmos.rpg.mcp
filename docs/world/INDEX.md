@@ -378,7 +378,7 @@ other.
 
 <!-- BEGIN GENERATED: catalog -->
 
-**75 catalog files, 14 of which name a doc.**
+**75 catalog files, 13 of which name a doc.**
 These are `.ts` files and no search of `docs/` reaches them. Where the
 "Also in" column is empty, this file is the only written record of what
 it describes.
@@ -422,7 +422,7 @@ it describes.
 | [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) | Places that teach a dao: named ground where a road besides your own can be walked, and who is standing on the door. | 678 | [`immortals.md`](climbing/immortals.md) |
 | [`recipes.ts`](../../src/data/cultivation/recipes.ts) | Alchemy recipes. One recipe per pill in `pills.ts`, keyed to ingredient ids in `herbs.ts`. | 738 | - |
 | [`regions/arterials.ts`](../../src/data/cultivation/regions/arterials.ts) | The four arterials: one per Surveyor, and the administrative spine under the Jade Gorge's grant book. | 79 | - |
-| [`regions/drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) | The Pearl Ocean: open water, no ground under it, so no vein under it, so nothing in the air. | 302 | [`qi.md`](climbing/qi.md) |
+| [`regions/drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) | The Pearl Ocean: granted drowned veins and thin air above ungoverned water. | 296 | - |
 | [`regions/local-rank-names.ts`](../../src/data/cultivation/regions/local-rank-names.ts) | How a province relabels the one shared ladder, band for band. | 45 | - |
 | [`regions/low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) | The Jade Gorge: the centre, the only province with a road to every other one, and the only one in the world with no ceiling on it. | 709 | - |
 | [`regions/map-by-bearing.ts`](../../src/data/cultivation/regions/map-by-bearing.ts) | Reading the world as five columns instead of one list: what sits at each bearing, which houses are seated there, and where the apexes actually stand. | 103 | - |
@@ -436,7 +436,7 @@ it describes.
 | [`regions/the-map.ts`](../../src/data/cultivation/regions/the-map.ts) | Regions - five of them, and the contrast between them is the content. | 335 | - |
 | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | Names for the generated half of the map: what a sealed compound and a burnt place get called, so that neither is called by its kind. | 176 | - |
 | [`regions/white-stair.ts`](../../src/data/cultivation/regions/white-stair.ts) | The White Stair: the qi is in the ice and the ice is going. | 356 | - |
-| [`regions/wide-field.ts`](../../src/data/cultivation/regions/wide-field.ts) | The Yellow Plain: flat, dug over, nine cities, and no high ground anybody could fortify. | 255 | - |
+| [`regions/wide-field.ts`](../../src/data/cultivation/regions/wide-field.ts) | The Yellow Plain: flat, dug over, nine cities, and no high ground anybody could fortify. | 251 | - |
 | [`regions.ts`](../../src/data/cultivation/regions.ts) | The map, as a barrel. Every export this file used to hold is still exported from here and nothing that imported it has changed. | 56 | - |
 | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | The four roads that reach the top of the ladder, and what it actually takes to be walked up one. | 262 | - |
 | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 967 | - |
@@ -748,8 +748,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 21 | 35 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 23 | 51 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 98 |
-| `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 96 |
-| `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 33 | 130 |
+| `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 96 |
+| `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 130 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 204 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 90 | 440 |

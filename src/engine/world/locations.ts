@@ -452,6 +452,11 @@ export interface LocationRecord {
 export function makeLocation(
     init: Partial<LocationRecord> & Pick<LocationRecord, 'id' | 'name' | 'kind'>
 ): LocationRecord {
+    const hasVein = init.kind === 'vein' || init.tags?.includes('vein');
+    const isForbidden = init.kind === 'forbidden_zone' || init.tags?.includes('forbidden');
+    if (hasVein && isForbidden) {
+        throw new Error('A vein cannot be forbidden ground.');
+    }
     const base: Omit<LocationRecord, 'origin'> = {
         layer: DEFAULT_LAYER,
         parentId: null,
@@ -518,6 +523,13 @@ export interface ChangeResult {
  * Apply a change to a place.
  */
 export function applyLocationChange(location: LocationRecord, input: ChangeInput): ChangeResult {
+    const kind = input.patch?.kind ?? location.kind;
+    const tags = new Set(location.tags.filter(t => !input.patch?.removeTags?.includes(t))
+        .concat(input.patch?.addTags ?? []));
+    const hasVein = location.kind === 'vein' || kind === 'vein' || tags.has('vein');
+    if (hasVein && (kind === 'forbidden_zone' || tags.has('forbidden'))) {
+        throw new Error('A vein cannot be forbidden ground.');
+    }
     const change: LocationChange = {
         id: `${location.id}-c${location.nextChangeSeq}`,
         onDay: input.onDay,

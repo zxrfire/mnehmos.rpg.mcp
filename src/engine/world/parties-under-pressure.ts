@@ -553,11 +553,11 @@ function stepAsWoken(
     // at 450, 1 at 500, with the roster frozen at 3,207 people of whom 3,206
     // were dead. The drift audit caught it on the first run.
     //
-    // `zone_forbidden` has always filtered to `wilds` and `vein` for exactly
-    // this reason. The same care, stated once, at the point of consumption.
+    // Veins cannot become forbidden ground; neither can an entire province.
     const seat = aggressor?.seatLocationId
         ? state.locations.find(l => l.id === aggressor.seatLocationId) ?? null : null;
-    const target = seat && seat.kind !== 'region' ? seat : null;
+    const target = seat && seat.kind !== 'region' && seat.kind !== 'vein'
+        && !seat.tags.includes('vein') ? seat : null;
 
     const considered: WeighedOption[] = [];
     const ordinal = woken.cultivation.realmOrdinal;

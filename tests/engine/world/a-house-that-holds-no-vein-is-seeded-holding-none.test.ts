@@ -34,7 +34,9 @@
  * holds what - both are authored content and a second copy of either goes
  * stale. What is pinned is that each field SEPARATES houses at all, and that a
  * house recorded as holding no vein is seeded as a house holding no vein all
- * the way down. Every assertion here was red-checked by restoring the line it
+ * the way down. The 30 September ruling now grants every remaining map vein;
+ * a new grant does not invent a vein chamber under the recipient's compound.
+ * Every assertion here was red-checked by restoring the line it
  * replaced.
  */
 
@@ -84,14 +86,19 @@ describe('a house holds a vein or it does not, and the catalog says which', () =
         expect(holders.length).toBeLessThan(catalog.factions.length);
     });
 
-    it('gives a house that holds none no vein, no chamber and no hazard on its ground', () => {
+    it('gives an authored house with no vein no chamber or formation hazard; any new vein has a grant', () => {
         const { state } = seedWorld({ seed: 'no-vein', catalog, presentYear: 1000, population: 300 });
         const without = catalog.factions.filter(f => !f.holdsVein);
         expect(without.length).toBeGreaterThan(0);
 
         for (const cf of without) {
             const faction = state.factions.find(f => f.id === cf.id)!;
-            expect(Number(faction.resources.veins ?? 0), cf.id).toBe(0);
+            const granted = state.locations.filter(l => l.kind === 'vein' && l.controllingFactionId === cf.id);
+            expect(Number(faction.resources.veins ?? 0), cf.id).toBe(granted.length);
+            for (const ground of granted) {
+                expect(state.history.facts.some(f => f.locationId === ground.id
+                    && f.data.howAVeinChangedHands === 'granted' && f.data.toId === cf.id)).toBe(true);
+            }
             expect(roomsFor(compoundInputFor(cf)), cf.id).not.toContain('vein_chamber');
 
             const seat = state.locations.find(l => l.id === faction.seatLocationId);

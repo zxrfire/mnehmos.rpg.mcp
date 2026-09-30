@@ -1,6 +1,5 @@
 /**
- * The Pearl Ocean: open water, no ground under it, so no vein under it, so
- * nothing in the air. Nobody holds it and nobody can.
+ * The Pearl Ocean: granted drowned veins and thin air above ungoverned water.
  *
  * The lowest ceiling and the lowest rate in the world against the highest
  * price multiplier. Nothing here is a maritime subsystem - the note above the
@@ -19,12 +18,7 @@ const REACH_BANDS: LocalRankBand[] = standardBandsWith(
 );
 
 // ── SOUTH: THE WATER ─────────────────────────────────────────────────
-// This is not a fifth landmass. Every fact below follows from one sentence
-// in `docs/world/climbing/qi.md` - qi pools in veins, and veins are features of the
-// LAND - taken seriously rather than waived. There is no ground under the
-// open sea, so there is no vein, so there is nothing in the air; a
-// cultivator out here is on the same footing as a cultivator anywhere the
-// ambient will not carry them, which is to say they are burning stones.
+// A drowned vein's grant does not hold a passage or put qi into the air above it.
 //
 // NOTHING HERE IS A MARITIME SUBSYSTEM. There are no ships in this file,
 // no hull rules, no weather table and no navigation. What is here is a
@@ -40,7 +34,7 @@ export const THE_DROWNED_REACH: Region = {
     bearing: 'south',
     traditionId: 'tradition-drawn',
     summary:
-        'Open water south of everything, with a drowned mountain range under it whose peaks are the islands. There is no vein within reach of anybody, so there is nothing in the air; cultivation out here is bought by the day out of a stone chest, and every institution that has ever tried to hold a strait has held it on paper.',
+        'Open water south of everything, with a drowned mountain range under it whose peaks are the islands. The drowned veins are granted to houses that can reach them, while cultivation aboard a hull is bought by the day out of a stone chest. Every institution that has tried to hold a strait has held it on paper.',
     governingFact:
         'There is no ground under you. Qi pools in veins and a vein is a feature of the land, and the land here is a hundred fathoms down, so the ambient over open water is not thin - it is absent, and it does not vary, season or run out, because there is none of it.',
     derivations: [
@@ -57,7 +51,7 @@ export const THE_DROWNED_REACH: Region = {
         food: 'fish, fish, and rice carried in sealed stone jars, with fresh water rationed by the cup and counted aloud at the same hour every day'
     },
     customs: {
-        socialPrinciple: 'None. Nothing on this water is granted, arbitrated, surveyed or certified, and the only two institutions that function here are the two whose entire doctrine was never holding anything in the first place.',
+        socialPrinciple: 'The vein grants cover drowned ground, not the water. Nobody grants or arbitrates a hull’s passage; the institutions aboard it brought their terms from ashore.',
         death: 'Over the side, weighted, with the name said once and not written down. No tablet is cut, no ground is kept and there is nothing anybody could sweep, so the Pearl Ocean is the only province in the world that keeps no record of its dead, and all four of the others regard this as barbarism and say so.',
         taboo: 'Never count the stone chest aloud. What is in it is what everybody aboard is standing on, and saying the figure where it can be heard is the moment a crew stops being a crew and becomes a number of people with an interest.',
         threatModel: 'The weather and the arithmetic, in that order and usually together. Most people who die in the South die because a passage took eleven days longer than it was provisioned for, which is not misfortune, it is a sum somebody did wrong ashore.',
@@ -95,10 +89,10 @@ export const THE_DROWNED_REACH: Region = {
     ceilingNote:
         'Three layers on the islands and nothing at all on open water, which makes it the lowest ceiling in the world by a distance. Nobody born in the Pearl Ocean has passed Qi Condensation Layer 3 without leaving or without a chest somebody else paid for, and the reason is not that the ceiling is low: it is that there is no ground underneath it.',
     veinStatus:
-        'There are veins under the Pearl Ocean and every one of them is a hundred fathoms down. What put them there is not recorded anywhere anybody has read; what is recorded is the shape, which is a mountain range with its peaks above water, so every island in the province is a vein head with the whole of its vein out of reach beneath it.',
+        'There are veins under the Pearl Ocean and every one of them is a hundred fathoms down. The apex grants their working to houses that can reach the drowned ground; every vein has a holder. What put them there is not recorded anywhere anybody has read; what is recorded is the shape, which is a mountain range with its peaks above water, so every island in the province is a vein head with the whole of its vein beneath it. Holding the drowned vein does not bring its qi into the air above the water.',
     politics: 'no_authority',
     politicsNote:
-        'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead and would be worth nothing if it held any more. That is not a gap in the province, it is the only kind of institution the province can support, and the third of them is the interesting case: the Silver Island Hall is unbacked not because nobody could take it but because everybody would lose by it, which is the only security arrangement in the world that nobody signed and nobody can withdraw from unilaterally.',
+        'The drowned veins are held on apex grants, while the water above them has no local bench or court. Four straits are claimed by parties ashore and all four claims are sentences in documents: a grant over rock beneath the water does not hold the passage above it. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead. The Silver Island Hall remains unbacked because everybody would lose by taking it, which is a security arrangement nobody signed and nobody can withdraw from unilaterally.',
     factionIds: [
         'house-shrinking-earth',
         'sect-hollow-bell-wanderers',
