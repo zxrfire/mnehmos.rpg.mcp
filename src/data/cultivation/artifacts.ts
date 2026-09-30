@@ -3,12 +3,8 @@
  */
 
 import { makeObject, type ObjectRecord } from '../../engine/world/possessions.js';
-import { NASCENT_SOUL_ORDINAL } from '../../engine/cultivation/existence.js';
 import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import type { ACountOfBodies } from '../../engine/cultivation/how-much-cultivation-a-body-carries.js';
-import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { idsForFaction } from './hierarchy.js';
-import type { Awareness } from './governance-and-water-rights.js';
 
 /**
  * Every artifact, strongest first.
@@ -166,8 +162,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         tags: ['immortal-made', 'carried', 'undeclared']
     }),
     // THE ROOT CAULDRON, IN TWO PIECES. One object, and the only reason there
-    // are two rows is that it is not in one place. See `THE_ROOT_CAULDRON`
-    // below for the recipes, the gate they read, and what the split cost.
+    // are two rows is that it is not in one place.
     makeObject({
         id: 'cauldron-the-belly',
         name: 'The Tripod Belly',
@@ -510,10 +505,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     })
 ];
 
-/** The rung the whole vessel's recipe is written at. */
-const VOID_TRIBULATION_ORDINAL =
-    REALM_TIERS.find(t => t.key === 'void_tribulation')!.ordinalStart;
-
 /**
  * The Root Cauldron: a liability, and what it costs to be tempted by it.
  *
@@ -532,18 +523,12 @@ const VOID_TRIBULATION_ORDINAL =
  * valuable one, which neither can assemble.
  *
  * THE GATE IS THE ENGINE'S OWN. `existence.ts` hangs the soul states on
- * `NASCENT_SOUL_ORDINAL`, and this reads the same band rather than adding a
- * rule. Above it `aSoulThisOldCanRefuse` is true and the vessel gets nothing,
- * so every recipe below has to be paid out of the ranks beneath it.
+ * the Nascent Soul band, and every recipe below has to be paid out of the
+ * ranks beneath it.
  */
 export const THE_ROOT_CAULDRON = {
-    /**
-     * The two recipes, as counts of bodies at a rung. `theSameCultivationIn`
-     * reads either at any other rung off the ladder's own power curve, so there
-     * is no table here of what a Qi Condensation is worth.
-     */
-    whole: { bodies: 10, ordinal: VOID_TRIBULATION_ORDINAL } as ACountOfBodies,
-    half: { bodies: 10, ordinal: NASCENT_SOUL_ORDINAL } as ACountOfBodies,
+    whole: 'Ten bodies at Void Tribulation.',
+    half: 'Ten bodies at Nascent Soul.',
     /** Eight hundred and eighty-eight years between firings. */
     restsForYears: 888,
     /**
@@ -562,7 +547,7 @@ export const THE_ROOT_CAULDRON = {
             + 'piece is four provinces away under the other power.',
         known: 'It is a refining vessel. What the execution notices name is what goes '
             + 'into it, and the sword and the shield are what comes out.'
-    } satisfies Partial<Record<Awareness, string>>,
+    },
     yields:
         'The whole vessel returns one sword and shield that are a single heaven-grade object. The belly alone returns an earth-grade blade and the lid alone an earth-grade shield. Nothing else in the world makes any of the three.',
     andTheyAreTheSameObjectEveryTime:
@@ -581,11 +566,6 @@ export const THE_ROOT_CAULDRON = {
         'Twenty-nine, and that is true of a half as well as the whole - the same rung `refiningOrdinalFor` opens heaven grade at. Counted through the catalog: thirty-two cultivators in the world stand there or above, and every one of them is the seat of a house, the head of an apex or a Seat of the Empyrean Court. So a firing is not something a garrison does. Somebody from the summit has to attend, which is why it is an occasion rather than a procedure and why it pairs with a judgement handed down in person.',
     whatItDoesToWhoeverCarriesOne:
         'Bloodlust, and it has to be held down. `WHAT_A_HALF_MAD_STRETCH_DOES` is already this mechanic - a stretch somebody was not entirely steering, resolved as deeds rather than as a status word - and the fight unpicked, the thing taken and the month of not stopping are its rows. Both apexes know what they are holding and both keep theirs.',
-    /**
-     * Every way of loading a half, none of them cheap. Derived by
-     * `theSameCultivationIn`; the figures are here because the shape of the
-     * ladder is the entry and a reader should not have to run it.
-     */
     whatAHalfCosts: [
         'ten at Nascent Soul: ten of the strongest people in a province, taken alive. Only a body that can condemn them can do it, which is why the lawful fuel is condemned high-realm cultivators and why the lawful road is also the quiet one.',
         'sixteen at Core Formation Perfection: a war against a real house, won without killing any of the sixteen.',

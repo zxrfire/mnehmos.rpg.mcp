@@ -159,8 +159,7 @@ function holderNameOf(state: WorldState, holderId: string): string {
  * of the holders never will be - see {@link holderNameOf} - and the sent-down
  * count is the figure the world is supposed to be able to state. A COUNTED
  * holding needs a `resources` bag to live in, so it is placed only where the
- * world has a faction row; {@link openingStockThisWorldCannotHold} reports the
- * ones that fell out, so nothing goes missing silently.
+ * world has a faction row.
  */
 export function seedStructuralRepairMedicine(state: WorldState): ObjectRecord[] {
     const byId = new Map(state.factions.map(f => [f.id, f]));
@@ -290,27 +289,6 @@ export function repairMedicineHeldBy(state: WorldState, factionId: string): Live
         }
     }
     return out;
-}
-
-/**
- * Counted stock belonging to a body this world has no faction row for.
- *
- * Reported rather than dropped. A count has to live in a `resources` bag and
- * two of the catalog's holders never get one, so their cheap doses exist in the
- * setting and not in the simulation. Anybody reconciling the world against the
- * catalog should read this first, because the alternative is a discrepancy that
- * looks like a bug and is a fact about which bodies the world instantiates.
- */
-export function openingStockThisWorldCannotHold(
-    state: WorldState
-): { factionId: string; medicineId: string; count: number }[] {
-    const have = new Set(state.factions.map(f => f.id));
-    return STRUCTURAL_REPAIR_HOLDINGS
-        .filter(h => {
-            const medicine = getStructuralRepairMedicine(h.medicineId);
-            return !!medicine && repairStorageModel(medicine) === 'count' && !have.has(h.factionId);
-        })
-        .map(h => ({ factionId: h.factionId, medicineId: h.medicineId, count: h.count }));
 }
 
 /** Every house in this world holding anything, in catalog order. */

@@ -43,12 +43,6 @@ export function isHeadOfHouse(rankIndex: number, rankCount: number): boolean {
 }
 
 /**
- * The old name, kept so importers migrate as they come free rather than in
- * one sweep through other agents' open files. Prefer `isHeadOfHouse`.
- */
-export const holdsTheSeat = isHeadOfHouse;
-
-/**
  * What a rung is, in one word, for the narrator.
  */
 export type AuthorityTier = 'ordered' | 'ordering' | 'elder' | 'head';

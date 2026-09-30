@@ -112,23 +112,6 @@ export function whatASealLeavesInThePool(maxQi: number): number {
 export const WHAT_A_SEAL_LEAVES_IN_THE_POOL = 0.1;
 
 /**
- * The pool this person may actually hold right now.
- *
- * Applied on the way in AND on the way out: a seal laid on somebody full has to
- * take the surplus at once, and a seal that is still on has to stop them
- * climbing back over the lid however they came by it.
- */
-export function whatThisPersonMayHold(input: {
-    maxQi: number;
-    seal: AQiSeal | null;
-    onDay: number;
-}): number {
-    return theSealStillHolds(input.seal, input.onDay)
-        ? whatASealLeavesInThePool(input.maxQi)
-        : input.maxQi;
-}
-
-/**
  * The density to hand a skip for this person, given the ground they stand on.
  *
  * The one function callers need. It reads as the sentence it is: what is under

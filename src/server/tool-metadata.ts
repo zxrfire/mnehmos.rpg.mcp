@@ -50,7 +50,3 @@ export interface ToolContract extends ToolRegistryEntry {
 export interface ToolRegistry {
   [toolName: string]: ToolRegistryEntry;
 }
-
-// Minimal schema for MCP registration - empty shape, validation happens in handler
-// The MCP SDK expects Zod schema shapes, so we export an empty object
-export const MINIMAL_SCHEMA = {};

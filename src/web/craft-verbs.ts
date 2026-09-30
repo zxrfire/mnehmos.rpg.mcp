@@ -47,7 +47,7 @@
  * is why a spirit boat is 2,400 days of work for somebody alone and why a house
  * with four qualified elders is the only body that finishes one in a lifetime -
  * and it is the catalog's arithmetic rather than a rule stated here. Hiring a
- * yard is a real and missing thing; see {@link A_YARD_IS_NOT_HIREABLE_YET}.
+ * yard is a real and missing thing.
  */
 
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
@@ -74,22 +74,6 @@ import { refused } from './tool-result-prose.js';
 import { BENCH_FOCUS } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 
-
-/**
- * Nobody can be paid to build for you, and that is an absence rather than a
- * decision.
- *
- * `what-each-house-makes-and-what-crosses-the-water.ts` says which houses hold
- * smiths and wrights and its own header says it models no production - and
- * `HOUSE_ARTISANS` has no consumer anywhere. So the shape of the missing thing
- * is a commission: a bill, somebody else's hands against it, a price and a
- * wait. Every piece of the arithmetic for it already exists - `workOn` divides
- * by hands, `successRateFor` reads the best hand, `quoteSale` prices work - and
- * what is absent is a party to put it to. Written down rather than half-built.
- */
-export const A_YARD_IS_NOT_HIREABLE_YET =
-    'You are the only pair of hands on it. There is nobody in this engine yet who takes a '
-    + 'commission and builds a thing for money.';
 
 export const craftVerbs = {
     /**

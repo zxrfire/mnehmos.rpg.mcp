@@ -536,8 +536,8 @@ const WHAT_A_HOUSE_KEEPS_SLIPS_FOR: readonly WhatIsInTheSlip[] = ['a_strike', 'a
  * The maker is the house's own best hand, which is what `acting` is - so a hill
  * sect's teleportation talismans carry a hill sect's reach, and a court's carry
  * a court's.
- * Nothing here decides who may cut one; `couldCutATalisman` does, off the same
- * table that decides it for medicine.
+ * Nothing here decides who may cut one; callers use the same material gate as
+ * medicine.
  */
 function aStockOfSlips(input: {
     houseId: string;
@@ -619,9 +619,8 @@ function aStockOfSlips(input: {
  * them: `ownerId` is whose it is, `possessorId` is who is carrying it, and
  * `locationId` is where it is when nobody is. A sword left in a furnace room is
  * an owner who has not changed, a possessor of null, and a location that is a
- * room - and no part of that needs this function's opinion. Ask
- * `whereThisThingActuallyIs` for where a thing IS; ask this only for where a
- * house files one it has never moved.
+ * room - and no part of that needs this function's opinion. This function only
+ * says where a house files one it has never moved.
  */
 export function whereInTheHouseItSits(
     kind: ObjectKind,
@@ -678,50 +677,6 @@ const HOW_MANY_KINDS_OF_EACH = 3;
 /** How deep a stack of an ordinary thing goes, off what the house is. */
 function howManyOfACommonThing(acting: number): number {
     return Math.max(5, Math.round(acting * 2));
-}
-
-/**
- * WHERE A THING ACTUALLY IS, which is not the same question as whose it is.
- *
- * The design owner: *"where an object is needs to be tracked. I should be able
- * to leave my sword in the pill refining room. Or any item, really. And it
- * still belongs to me, it's just there."*
- *
- * Three fields, three facts, and none of them implies another:
- *
- *   `ownerId`      whose it is. A sword left in somebody else's furnace room
- *                  is still yours, and this does not move when it does.
- *   `possessorId`  who is carrying it. Null is a real answer and the whole
- *                  point of this one: a thing put down is held by nobody.
- *   `locationId`   where it is when nobody is holding it. A room, and rooms
- *                  are real map locations - 706 of them in a seeded world.
- *
- * WHAT THIS RETURNS IS NEVER A GUESS. Somebody is carrying it, or it is in a
- * named place, or the world genuinely does not know where it is - which is a
- * state things get into and is the one this used to hide by falling back on
- * where the thing would have been filed.
- */
-export type WhereAThingIs =
-    | { at: 'on_somebody'; personId: string }
-    | { at: 'in_a_place'; locationId: string; room: RoomPurpose | null }
-    | { at: 'nobody_knows' };
-
-export function whereThisThingActuallyIs(
-    object: Pick<ObjectRecord, 'possessorId' | 'locationId'>,
-    /** The world's locations, for naming the room a location is. */
-    roomOf: (locationId: string) => RoomPurpose | null = () => null
-): WhereAThingIs {
-    if (object.possessorId !== null) {
-        return { at: 'on_somebody', personId: object.possessorId };
-    }
-    if (object.locationId !== null) {
-        return {
-            at: 'in_a_place',
-            locationId: object.locationId,
-            room: roomOf(object.locationId)
-        };
-    }
-    return { at: 'nobody_knows' };
 }
 
 /**

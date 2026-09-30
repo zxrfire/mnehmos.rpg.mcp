@@ -494,10 +494,6 @@ export function npcsInFaction(state: WorldState, factionId: string): NpcRecord[]
         .sort((a, b) => b.factionRankIndex - a.factionRankIndex || (a.id < b.id ? -1 : 1));
 }
 
-export function locationsControlledBy(state: WorldState, factionId: string): LocationRecord[] {
-    return state.locations.filter(l => l.controllingFactionId === factionId);
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // MUTATION
 // Every one of these is pure and reports what it changed.

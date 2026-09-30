@@ -117,16 +117,6 @@ const CONFLICT_MASTERY_FACTOR = 0.5;
 // THE COPIES SOMEBODY ACTUALLY HOLDS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Where a book lived before books were held where everything else is held.
- *
- * Kept for the migration that empties it and for nothing else. A player who
- * bought a manual could be told by the destroy verb, one turn after the
- * inventory read had listed it, that they were carrying nothing - because this
- * was a second store and no verb over held things could see into it.
- */
-export const FLAG_MANUAL_COPIES_HELD = 'manual_copies_held';
-
 /** Which manuals this holder owns a physical copy of. */
 export function copiesHeldBy(db: Database.Database, holderId: string): string[] {
     return listHeldManuals(db, holderId).map(entry => entry.itemId);

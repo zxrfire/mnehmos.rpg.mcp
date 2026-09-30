@@ -100,11 +100,6 @@ export function whoWorksIn(posts: readonly APost[], purpose: RoomPurpose): strin
     return posts.filter(post => post.purpose === purpose).map(post => post.personId);
 }
 
-/** Every room this person works in. */
-export function wherePostedTo(posts: readonly APost[], personId: string): RoomPurpose[] {
-    return posts.filter(post => post.personId === personId).map(post => post.purpose);
-}
-
 /**
  * What somebody's standing in a room lets them touch.
  *

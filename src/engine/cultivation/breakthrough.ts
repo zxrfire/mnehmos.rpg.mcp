@@ -8,7 +8,7 @@
  *  3. A REALM BOUNDARY IS A DIFFERENT KIND OF EVENT, not a harder step: 0.45x
  *     base odds, and its own failure table where the corpses come from.
  *
- * Fortune is deliberately NOT in the odds - see FORTUNE_PER_POINT. The last
+ * Fortune is deliberately NOT in the odds. The last
  * crossing, 44 -> 45, is the only attempt that resolves three ways.
  */
 
@@ -147,15 +147,6 @@ export const BREAKTHROUGH_ROOT_MOD: Record<SpiritRootGrade, number> = {
  */
 export const INSIGHT_PIVOT = 2;
 export const INSIGHT_PER_POINT = 0.04;
-
-/**
- * Fortune contributes NOTHING here, and that is a deliberate correction. Luck
- * generates opportunity, not success; its weight lives in the time-skip's event
- * generation, where it biases timing, presence and availability. The constant is
- * kept, at zero, so the intent is legible at the call site rather than being an
- * unexplained absence.
- */
-export const FORTUNE_PER_POINT = 0;
 
 /** Extra strain at a realm boundary, on top of the 0.45x already in the base. */
 export const REALM_BOUNDARY_STRAIN = -0.08;
@@ -1180,7 +1171,7 @@ export function computeBreakthroughOdds(
         delta: (cultivator.attributes.insight - INSIGHT_PIVOT) * INSIGHT_PER_POINT
     });
 
-    // No Fortune line. Luck does not buy a breakthrough; see FORTUNE_PER_POINT.
+    // No Fortune line. Luck does not buy a breakthrough.
 
     modifiers.push({
         source: `ambient_qi:${ctx.ambient}`,

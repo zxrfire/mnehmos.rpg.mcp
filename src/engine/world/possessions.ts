@@ -552,13 +552,6 @@ export function assertClaim(object: ObjectRecord, input: ClaimInput): ObjectReco
     };
 }
 
-export function withdrawClaim(object: ObjectRecord, claimId: string): ObjectRecord {
-    return {
-        ...object,
-        claims: object.claims.map(c => (c.id === claimId ? { ...c, active: false } : c))
-    };
-}
-
 export function acknowledgeClaim(
     object: ObjectRecord,
     claimId: string,

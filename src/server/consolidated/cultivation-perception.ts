@@ -12,8 +12,8 @@ import {
 } from '../../engine/cultivation/dao.js';
 import {
     MAX_DEGREE,
+    assessAccess,
     bottleneckSubstitution,
-    discoverableInsights,
     insightName,
     understandingEffects
 } from '../../engine/cultivation/understanding.js';
@@ -479,7 +479,8 @@ export async function handleUnderstanding(
         runId: run.id,
         practisingTechniqueId: args.techniqueId ?? null
     });
-    const reachable = discoverableInsights(cultivator, discovery.context);
+    const access = assessAccess(cultivator, discovery.context, run.seed);
+    const reachable = access.suited.concat(access.unsuited);
     const held = new Set(insights.map(i => `${i.domain}:${i.subject}`));
 
     const effects = understandingEffects(insights, {
@@ -556,6 +557,12 @@ export async function handleUnderstanding(
             // How readily this would come, given the road already walked. A
             // measure of what has become foreign, not of what suits them.
             readiness: round4(narrowingWeight(dao, candidate))
+        })),
+        doesNotOpen: access.unsuited.map(candidate => ({
+            domain: candidate.domain,
+            subject: candidate.subject,
+            access: candidate.access,
+            why: candidate.why
         })),
         note:
             'Comprehension needs something to comprehend from. Without access a road is not harder, ' +

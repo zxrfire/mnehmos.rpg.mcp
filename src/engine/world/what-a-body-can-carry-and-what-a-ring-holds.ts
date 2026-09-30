@@ -23,8 +23,6 @@
  * `FOLD_FLOOR_ORDINAL` are both twenty-nine. That is not a coincidence to tidy
  * away - a hand that can work material capable of holding a fold is a hand that
  * can make one, seen from the material side and the person side.
- * `THE_TWO_WALLS_AGREE` holds them together, so a repricing fails a check
- * rather than quietly falsifying this paragraph.
  *
  * WHICH IS WHY THEY ARE RARE. Not a drop rate and not a price: there are very
  * few hands in the world that can make one at all.
@@ -133,46 +131,6 @@ function WHAT_ORE_A_FOLD_NEEDS_RUNG(): number {
 export const WHAT_ORE_A_FOLD_NEEDS: TechniqueGrade = 'heaven';
 
 /**
- * That the ore wall and the folding wall are the same rung.
- *
- * Held here rather than assumed, because the argument in this file's header
- * rests on it: if a repricing ever moved them apart, the honest thing is a
- * failing check rather than a paragraph that has quietly stopped being true.
- */
-export const THE_TWO_WALLS_AGREE =
-    refiningOrdinalFor(WHAT_ORE_A_FOLD_NEEDS) === FOLD_FLOOR_ORDINAL;
-
-/**
- * WHAT A RING IS MADE OF, WHICH IS NOT WHAT IT IS CALLED.
- *
- * The design owner: *"like a mortal grade ring is obviously heaven grade (to
- * destroy), but classified as mortal grade due to their storage space."*
- *
- * So a ring is the one object in this world carrying TWO grades, and they
- * answer two different questions:
- *
- *   its CLASS      how much it holds. This is the grade on the row, the grade
- *                  a merchant quotes, and the only thing that varies between
- *                  one ring and another.
- *   its MATERIAL   what it is cut from, which is heaven-grade in the cheapest
- *                  ring ever made. This is what somebody trying to BREAK it
- *                  runs into.
- *
- * Which is why a mortal-grade ring is not a mortal-grade object. Somebody who
- * can shatter a mortal-grade sword bounces off the smallest ring in the world,
- * and the reason is not that rings are special-cased anywhere: it is that the
- * thing in their hand is heaven-grade metal with a small fold in it.
- *
- * Everything that asks how hard a thing is to destroy should read THIS and not
- * the class.
- */
-export function whatARingIsMadeOf(ringClass: TechniqueGrade): TechniqueGrade {
-    return refiningOrdinalFor(ringClass) > refiningOrdinalFor(WHAT_ORE_A_FOLD_NEEDS)
-        ? ringClass
-        : WHAT_ORE_A_FOLD_NEEDS;
-}
-
-/**
  * What a ring of this grade holds, in litres.
  *
  * ── CALIBRATED AGAINST A THING THAT ALREADY EXISTS ───────────────────────
@@ -200,7 +158,7 @@ export function whatARingIsMadeOf(ringClass: TechniqueGrade): TechniqueGrade {
  *
  * Weight is not on this table because a folded space does not have one. What is
  * inside a ring is not being carried, and that is the whole of what a ring is
- * for - see `whatSomebodyCanCarryInAll`.
+ * for.
  */
 export const WHAT_A_RING_HOLDS: Readonly<Record<TechniqueGrade, number>> = {
     // A travelling chest. Everything a person owns, and not a cart.
@@ -247,24 +205,6 @@ export function whyTheFoldWillNotHold(
 }
 
 /**
- * What somebody can carry in total, body and ring together.
- *
- * The ring's volume is ADDED and its weight is not, because what is inside a
- * fold is not on anybody's back. That asymmetry is the entire mechanical
- * consequence of owning one and it needs no other rule.
- */
-export function whatSomebodyCanCarryInAll(input: {
-    realmOrdinal: number;
-    /** The grades of every ring they are actually wearing. Usually none or one. */
-    rings: readonly TechniqueGrade[];
-}): HowMuchRoomItTakes {
-    const body = whatABodyCanCarry(input.realmOrdinal);
-    let volume = body.volume;
-    for (const grade of input.rings) volume += WHAT_A_RING_HOLDS[grade];
-    return { volume, weight: body.weight };
-}
-
-/**
  * Whether a load fits, and which limit stopped it.
  *
  * Two answers rather than a boolean, because *"it will not fit"* and *"you
@@ -291,8 +231,8 @@ export function whatStopsThemCarryingIt(
  *
  * ── WHY IT IS THE FOLD ───────────────────────────────────────────────────
  *
- * Every ring in the world is cut from heaven-grade ore - see
- * `whatARingIsMadeOf` - so the material is a CONSTANT across the whole range
+ * Every ring in the world is cut from heaven-grade ore, so the material is a
+ * constant across the whole range
  * and cannot be what separates a small ring from a large one. The only thing
  * that varies is how much space is folded in. Price is the fold, and the fold
  * is the quantity.

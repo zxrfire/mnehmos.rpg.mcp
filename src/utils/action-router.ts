@@ -243,37 +243,6 @@ export function createActionSchemaDocumentation<TActions extends string>(
  *     get: async (args) => { ... },
  * });
  */
-export function createDiscriminatedRouter<TSchema extends z.ZodSchema>(
-    schema: TSchema,
-    handlers: Record<string, ActionHandler>
-): (args: unknown) => Promise<McpResponse> {
-    return async function route(args: unknown): Promise<McpResponse> {
-        // Parse and validate
-        const parseResult = schema.safeParse(args);
-
-        if (!parseResult.success) {
-            return formatValidationError('unknown', parseResult.error);
-        }
-
-        const parsed = parseResult.data as { action: string };
-        const handler = handlers[parsed.action];
-
-        if (!handler) {
-            return formatMcpError(`No handler for action: ${parsed.action}`, {});
-        }
-
-        try {
-            const result = await handler(parsed);
-            return formatMcpSuccess(result, { matched: parsed.action, exact: true, similarity: 1 });
-        } catch (error) {
-            return formatMcpError(
-                error instanceof Error ? error.message : String(error),
-                { action: parsed.action }
-            );
-        }
-    };
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // RESPONSE FORMATTERS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -415,4 +384,3 @@ function fieldNamesOf(schema?: z.ZodType<any>): string[] {
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE HELPERS FOR CONSOLIDATED TOOL SCHEMAS
 // ═══════════════════════════════════════════════════════════════════════════
-

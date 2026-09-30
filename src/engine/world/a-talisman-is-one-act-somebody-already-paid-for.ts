@@ -38,10 +38,7 @@
  * `a-communication-talisman-carries-word-home.ts`.
  */
 
-import {
-    canRefineGrade,
-    madeBelowTheLid
-} from '../cultivation/who-can-refine-a-grade-of-medicine.js';
+import { madeBelowTheLid } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { FOLD_FLOOR_ORDINAL, foldRangeInWalkingDays } from './how-far-somebody-can-fold-space-and-what-it-costs.js';
 import {
     howMuchAGradeIsWorthTracking,
@@ -81,17 +78,6 @@ export function whatItLetsYouDo(what: WhatIsInTheSlip): string {
     return what === 'a_strike'
         ? 'One strike lands at the strength that was folded in, whoever is holding it.'
         : 'One fold, once, by somebody who could not otherwise fold at all.';
-}
-
-/**
- * Whether this hand can cut a talisman of this grade.
- *
- * The medicine gate, unchanged. A hand that cannot work heaven-grade materials
- * into a pill cannot work them into paper either; the material is what refuses,
- * not the craft.
- */
-export function couldCutATalisman(grade: TechniqueGrade, crafterOrdinal: number): boolean {
-    return canRefineGrade(grade, crafterOrdinal);
 }
 
 /**
@@ -146,8 +132,8 @@ export interface CuttingATalisman {
 /**
  * Cut one.
  *
- * Refuses nothing: whether this hand may is `couldCutATalisman`, and a caller
- * that seeds a heaven-grade slip into a ruin has no crafter to check.
+ * Does not decide whether a hand may cut one: callers that know the crafter
+ * apply the ordinary material gate, while seeded slips have no crafter to check.
  */
 export function cutATalisman(input: CuttingATalisman): ObjectRecord {
     const power = whatWasFoldedIn(input.crafterOrdinal);

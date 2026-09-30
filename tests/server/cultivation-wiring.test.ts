@@ -266,6 +266,7 @@ describe('the wiring', () => {
             for (const candidate of view.withinReach) {
                 expect(candidate.access.kind).toBe('own_root');
             }
+            expect(view.doesNotOpen).toEqual(expect.any(Array));
         });
 
         it('widens the set when the ground underfoot has something to teach', async () => {

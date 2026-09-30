@@ -44,8 +44,7 @@
  *                              every year. Summed together, a house that sold
  *                              everything it owns would read at its strongest.
  *   issued is not held         a thing already in somebody's hands is
- *                              committed. `whereThisThingActuallyIs` draws
- *                              that line and MATERIEL counts only what the
+ *                              committed. MATERIEL counts only what the
  *                              house can still choose who to give.
  *   a one-off is not a flow    a sealed ancestor is a warhead: enormous, once,
  *                              and gone - `sealedCeilingOrdinal` zeroes

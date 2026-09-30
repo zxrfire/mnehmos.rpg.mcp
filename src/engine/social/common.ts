@@ -7,11 +7,9 @@
  * - Nothing ranks people by cultivation: no realm ordinal, no power comparison,
  *   no strength import - which is what lets a master surpassed by his own
  *   disciple stay the most important person in that disciple's life.
- * - Randomness is engine-owned. {@link socialRoll} is seeded and reproducible.
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
-import { forStream, type CultivationRNG, type StreamPart } from '../cultivation/rng.js';
 
 export { DAYS_PER_YEAR };
 
@@ -24,20 +22,6 @@ export type DayIndex = number;
 
 export function daysForYears(years: number): number {
     return Math.round(years * DAYS_PER_YEAR);
-}
-
-/**
- * A seeded roll for the rare social question that is genuinely chance - whether
- * a passer-by overheard, which of two couriers arrived first. Exists so no
- * caller is tempted to let the narrating model decide a random outcome; same
- * seed and coordinates replay a saved world exactly.
- */
-export function socialRoll(
-    runSeed: string,
-    stream: string,
-    ...coords: StreamPart[]
-): CultivationRNG {
-    return forStream(runSeed, `social.${stream}`, ...coords);
 }
 
 export function clamp01(n: number): number {

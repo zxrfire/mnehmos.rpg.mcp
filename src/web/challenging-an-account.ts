@@ -34,7 +34,6 @@
  * oversight. What a look reaches is a GAP between two people and never an
  * ordinal - `describeStanding` is the whole of it - so a claimed realm is
  * catchable only where somebody else's account contradicts it. See
- * {@link A_RUNG_SHOWS_AS_A_GAP}.
  */
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
@@ -57,19 +56,6 @@ import {
     type AnAccountContradicted,
     type AnAccountHeld
 } from './two-accounts-of-one-person.js';
-
-/**
- * Why a claimed realm is not catchable on sight.
- *
- * `resolveCultivator` reports a person as "reads as somebody a little above
- * you" and never as an ordinal, on purpose: a cultivator perceives a gap. So
- * there is no reading anywhere in this engine that would let a player say "you
- * are not at Core Formation" off what is in front of them, and the only route
- * to a false rung is a second account of the same person.
- */
-export const A_RUNG_SHOWS_AS_A_GAP =
-    'Nothing in this engine lets a look settle what rung somebody stands at. A claimed realm '
-    + 'is caught by somebody else\'s account of them and by nothing else.';
 
 export const challengeVerb = {
     /**
@@ -248,7 +234,7 @@ export const challengeVerb = {
         const seen: AnAccountHeld = {
             holderId: cultivator.id,
             holderName: null,
-            // The rung is deliberately absent: see `A_RUNG_SHOWS_AS_A_GAP`.
+            // A rung is not visible on its own.
             account: { name: them.name, house: them.sectName, rung: null },
             statement: `${them.name} is wearing the marks of the ${them.sectName}.`,
             onDay: challenged.onDay,

@@ -20,7 +20,7 @@
  * ── WHAT WAS ACTUALLY MISSING, AND IT WAS NOT THE THIRD ROUTE ────────────
  *
  * `possessions.ts` has carried the whole claim layer since it was written -
- * `assertClaim`, `withdrawClaim`, `acknowledgeClaim`, a `ClaimBasis` with
+ * `assertClaim`, `acknowledgeClaim`, a `ClaimBasis` with
  * `conquest` on it, `strength` and `acknowledgedByIds` as SEPARATE fields
  * because "a weak claim loudly asserted and a strong claim nobody has heard"
  * are both real - and **nothing in `src/` called any of it.** Ownership moved
@@ -55,8 +55,8 @@
  * Ownership by this route is true while it is true. The claim row is what
  * survives - with its basis, its date and the list of who accepted it - so when
  * the holder falls, dies or is finally challenged, the question can be raised
- * again off a record rather than off nothing. `withdrawClaim` is how it ends,
- * and old claims resurfacing is what `possessions.ts` says claims are for.
+ * again off a record rather than off nothing. Old claims resurfacing is what
+ * `possessions.ts` says claims are for.
  *
  * ── WHAT IS NOT HERE ─────────────────────────────────────────────────────
  *

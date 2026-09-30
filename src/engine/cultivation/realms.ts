@@ -584,16 +584,6 @@ export function progressRequiredForOrdinal(ordinal: number): number | null {
 }
 
 /**
- * The same figure with the "not in this currency" case collapsed to zero, for
- * the callers that only ever ask about cultivators who are still climbing and
- * would otherwise all repeat the same null check. Never use it to decide
- * whether an attempt is legal - use `canAttemptBreakthrough`.
- */
-export function progressRequiredOrZero(ordinal: number): number {
-    return progressRequiredForOrdinal(ordinal) ?? 0;
-}
-
-/**
  * Base probability of surviving a breakthrough attempt from this ordinal,
  * before spirit root, attributes, ambient qi, injuries and pills apply.
  */

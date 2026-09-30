@@ -57,7 +57,7 @@ const OUTSIDER: Array<[string, string]> = [
     ['I chat with him', 'interact'],
     ['I make small talk', 'interact'],
     ['I haggle with the merchant', 'interact'],
-    // Nobody can be taken on in this engine yet - `A_YARD_IS_NOT_HIREABLE_YET`
+    // Nobody can be taken on in this engine yet.
     // is the same gap said out loud in `craft-verbs.ts`. `buy` is the nearest
     // reading it has, and it is recorded here rather than left to be discovered
     // again the next time somebody types it.
