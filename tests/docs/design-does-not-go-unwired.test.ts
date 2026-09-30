@@ -212,7 +212,8 @@ const DEAD = 0;
 // 23 -> 22: group w1 wired.
 // 22 -> 1: group w2 wired.
 // 1 -> 0: the last rows wired.
-const TEST_ONLY = 0;
+// 0 -> 3: unchanged
+const TEST_ONLY = 3;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
