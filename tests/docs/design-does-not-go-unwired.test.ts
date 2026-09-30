@@ -209,7 +209,8 @@ const DEAD = 0;
 // 76 -> 58: group w0 wired.
 // 58 -> 42: group w3 wired.
 // 42 -> 23: group w1 wired.
-const TEST_ONLY = 23;
+// 23 -> 22: group w1 wired.
+const TEST_ONLY = 22;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
