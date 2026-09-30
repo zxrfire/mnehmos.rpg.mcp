@@ -51,6 +51,7 @@ import { daysByConveyance } from '../engine/world/what-a-conveyance-does-to-a-jo
 import {
     laneIsOpenInMonth,
     provisionForLane,
+    quotePassage,
     resolveCrossing,
     type SeaLane
 } from '../engine/world/what-a-sea-crossing-costs.js';
@@ -149,10 +150,12 @@ function whenTheLaneRuns(lane: SeaLane, today: number): number | null {
 /** A seat's fare in cash, for this service and road, at the rate where they stand. */
 function theSeatFare(regionId: string, service: AService, walkingDays: number, lane: SeaLane | null): number {
     if (service === 'ship') {
+        if (!lane) throw new Error('A ship fare requires its sea lane.');
         const row = getPrice(lane && lane.intermediateLandfallDays.length === 0
             ? 'price-deck-passage-open-water'
             : 'price-sea-passage')!;
-        return localPrice(regionId, row.cash) * (lane?.expectedDays ?? walkingDays);
+        return quotePassage(lane, 1,
+            localPrice(regionId, row.cash)).fareCash;
     }
     const perHundredLi = localPrice(regionId, getPrice('price-caravan-passage')!.cash);
     return Math.round(perHundredLi * LI_WALKED_IN_A_DAY / 100) * walkingDays;

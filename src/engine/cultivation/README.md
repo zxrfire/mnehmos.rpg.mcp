@@ -24,6 +24,11 @@ authority rule this is an expression of.
 
 Balance constants live in `src/schema/cultivation.ts` and nowhere else. Import them.
 
+Ambient weather draws from the site's density through `rollAmbientAtDensity`;
+`typicalAmbientFor` supplies the ordinary band recorded for newly found ground.
+Protection is booked inside `computeBreakthroughOdds`, after pills and before
+its final clamp. There is no separate operation that rewrites completed odds.
+
 ---
 
 ## Realm is social reality, not a stat

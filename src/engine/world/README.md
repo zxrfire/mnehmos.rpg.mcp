@@ -25,6 +25,11 @@ records the absence left by a taking. Above its quiet count, the absence circula
 without identifying the taker. Forced furnace rites use this for their dead; the
 individual deaths still follow the caller's ordinary death path.
 
+The estate's condition draw reads `howAPlaceMarksWhatComesOffABody` at death.
+A work is drawn once, and its parts keep the resulting condition. Harvesting
+reads `coreOf`: a core requires a dead body through the ordinary harvest gate.
+Communication jade uses the ordinary craft commission price.
+
 Ward looks use `WHAT_A_DOOR_LOOKS_LIKE` at the same `wardConditionOf`
 thresholds as discovery. They describe running lines and gaps, without
 promising entry or inferring an occupant. The intent-decay and finite-reserve

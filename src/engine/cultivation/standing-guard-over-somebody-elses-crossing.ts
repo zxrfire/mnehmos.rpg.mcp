@@ -17,8 +17,7 @@ import {
     REALM_TIERS,
     triggersHeavenlyTribulation
 } from './realms.js';
-import type { BreakthroughModifier, BreakthroughOdds } from './breakthrough.js';
-import { MAX_PROTECTION_BONUS, MIN_BREAKTHROUGH_CHANCE, maxChanceFor } from './breakthrough.js';
+import { MAX_PROTECTION_BONUS } from './breakthrough.js';
 import { createInjury } from './injuries.js';
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import type { CultivationRNG } from './rng.js';
@@ -180,44 +179,6 @@ export function protectionBonus(watch: Watch, subjectOrdinal: number): number {
     const weight = watchWeight(watch, subjectOrdinal);
     if (weight <= 0) return 0;
     return MAX_PROTECTION_BONUS * (weight / (weight + PROTECTION_HALF_AT));
-}
-
-/**
- * The watch as a line in the odds ledger, or null where it buys nothing.
- */
-export function protectionModifier(watch: Watch, subjectOrdinal: number): BreakthroughModifier | null {
-    const delta = protectionBonus(watch, subjectOrdinal);
-    if (delta <= 0) return null;
-    const who = watch.protectors
-        .filter(p => protectorWeight(p.realmOrdinal, subjectOrdinal) > 0)
-        .map(p => p.name);
-    return { source: `dao_protection:${who.join(', ')}`, delta };
-}
-
-/**
- * Fold a watch into an already-computed set of odds.
- */
-export function foldProtectionIntoOdds(
-    odds: BreakthroughOdds,
-    watch: Watch,
-    subjectOrdinal: number
-): BreakthroughOdds {
-    const line = protectionModifier(watch, subjectOrdinal);
-    if (!line) return odds;
-
-    const modifiers = odds.modifiers.concat(line);
-    const raw = odds.finalChance + line.delta;
-    const clamped = Math.max(
-        MIN_BREAKTHROUGH_CHANCE,
-        Math.min(maxChanceFor(subjectOrdinal), raw)
-    );
-    if (clamped !== raw) {
-        modifiers.push({
-            source: clamped > raw ? 'clamp:floor' : 'clamp:ceiling',
-            delta: clamped - raw
-        });
-    }
-    return { ...odds, finalChance: clamped, modifiers };
 }
 
 // WHAT IT COSTS THE PERSON STANDING THERE

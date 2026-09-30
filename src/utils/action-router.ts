@@ -16,6 +16,7 @@
 
 import { z } from 'zod';
 import {
+    CRUD_ALIASES,
     matchAction,
     isGuidingError,
     formatGuidingError,
@@ -132,7 +133,11 @@ export function createActionRouter<TActions extends string>(
     const { actions, definitions, threshold = 0.6 } = config;
 
     // Build alias map from definitions if not provided
-    const aliasMap: Record<string, TActions> = config.aliases ?? {};
+    const aliasMap: Record<string, TActions> = {};
+    for (const [alias, action] of Object.entries(CRUD_ALIASES)) {
+        if (actions.includes(action as TActions)) aliasMap[alias] = action as TActions;
+    }
+    Object.assign(aliasMap, config.aliases);
     if (!config.aliases) {
         for (const [action, def] of Object.entries(definitions) as Array<[TActions, ActionDefinition]>) {
             if (def.aliases) {

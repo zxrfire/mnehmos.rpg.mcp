@@ -41,6 +41,9 @@ An entry that `interrupts` therefore produces **no automatic deltas at all**.
 Bandits on the road do not silently take spirit stones; they are standing there,
 and the turn is what happens next.
 
+Manual acquisition always reads `assessAcquisition`, whichever route carried
+it. Encounter tags do not decide whether a manual receives a fit assessment.
+
 ## Nothing here is bespoke
 
 There is no set piece and no branch on any particular row. An encounter is a

@@ -151,9 +151,9 @@ export function whoTakesAReportAt(input: {
     posts: readonly APost[];
 }): { personId: string; remit: Remit } | null {
     const holder = whoAnswersAbout(input.portfolios, input.purpose);
-    if (holder !== null) return { personId: holder, remit: 'decides_about_the_room' };
+    if (holder !== null) return { personId: holder, remit: remitOf({ ...input, personId: holder }) };
     const posted = whoWorksIn(input.posts, input.purpose)[0];
     return posted === undefined
         ? null
-        : { personId: posted, remit: 'handles_what_passes_through' };
+        : { personId: posted, remit: remitOf({ ...input, personId: posted }) };
 }

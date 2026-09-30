@@ -46,7 +46,6 @@ import {
 import {
     getSect,
     SECTS,
-    delegatedFromSect,
     territoryOfSect
 } from '../../src/data/cultivation/sects.js';
 import {
@@ -367,7 +366,7 @@ describe('provinces, arterials and prefectures', () => {
     it('resolves a sect to its ground, and says plainly when nobody granted it', () => {
         expect(prefectureOfSect('sect-nine-peaks-ascetic-order')?.id).toBe('prefecture-nine-peaks');
         expect(provinceOfSect('sect-nine-peaks-ascetic-order')?.id).toBe(LOW_FALL_PROVINCE_ID);
-        expect(delegatedFromSect('sect-nine-peaks-ascetic-order')).toBe('court-third-sill');
+        expect(delegatedFrom('sect-nine-peaks-ascetic-order')).toBe('court-third-sill');
 
         // The five with an empty answer, and five completely different reasons
         // for it. This is the field that makes them comparable at all.
@@ -378,7 +377,7 @@ describe('provinces, arterials and prefectures', () => {
             'sect-clear-river-alliance',
             'sect-six-li-patrol'
         ]) {
-            expect(delegatedFromSect(id), `${id} was granted its ground by somebody`).toBeNull();
+            expect(delegatedFrom(id), `${id} was granted its ground by somebody`).toBeNull();
         }
 
         const territory = territoryOfSect('sect-verdant-spring-valley');

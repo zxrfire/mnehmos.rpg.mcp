@@ -56,5 +56,5 @@ Both also reach the design prose in `src/data/cultivation/`.
   `places.ts`, `what-can-be-reached-from-here.ts`, `where-this-cultivator-could-go.ts`,
   `what-you-can-tell-about-the-ground.ts`.
 - [`../../../src/engine/spatial/README.md`](../../../src/engine/spatial/README.md) - the
-  pathfinder kept for folding space, and the gap between its tile grid and this place graph.
+  pathfinder used by walking journeys and folding-space range checks over named places.
 

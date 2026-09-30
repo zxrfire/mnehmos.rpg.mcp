@@ -1,4 +1,7 @@
 /**
+ * Apex seats now come from the region seating lists. The deleted second
+ * seating table could disagree with the map the game actually opens.
+ *
  * The map has a compass on it, the south has ships in the middle of it, and
  * every cargo has somebody who made it.
  *
@@ -24,7 +27,6 @@ import {
     EAST_REGION_ID,
     NORTH_REGION_ID,
     SOUTH_REGION_ID,
-    apexSeats,
     getRegion,
     type Bearing
 } from '../../src/data/cultivation/regions.js';
@@ -110,12 +112,15 @@ describe('the map has a compass on it', () => {
     });
 
     it('does not pretend the three apexes divide the compass between them', () => {
-        const seats = apexSeats();
+        const seats = APEX_INSTITUTIONS.map(apex => {
+            const region = getRegionForFaction(apex.factionId!);
+            expect(region, `${apex.id} has no seat`).toBeDefined();
+            return { apexId: apex.id, bearing: region!.bearing, seatedIn: region!.id };
+        });
         expect(seats.length).toBe(APEX_INSTITUTIONS.length);
         for (const s of seats) {
             expect(APEX_INSTITUTIONS.some(a => a.id === s.apexId), s.apexId).toBe(true);
             expect(COMPASS).toContain(s.bearing);
-            expect(s.why.length, `${s.apexId} does not say why`).toBeGreaterThan(60);
             if (s.seatedIn !== null) {
                 expect(getRegion(s.seatedIn), `${s.apexId} sits nowhere`).toBeDefined();
                 expect(getRegion(s.seatedIn)!.bearing).toBe(s.bearing);

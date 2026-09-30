@@ -190,7 +190,7 @@ export const AmbientQiSchema = z.enum([
      * a secret realm.
      *
      * NOT REACHABLE BY TRAVEL. Weight 0 and deliberately absent from
-     * AMBIENT_QI_ORDER, so `rollAmbientQi` can never return it however long a
+     * AMBIENT_QI_ORDER, so `rollAmbientAtDensity` can never return it however long a
      * cultivator wanders. It exists only where a caller declares a site sealed -
      * see `ambientForLocationOnDay`.
      */

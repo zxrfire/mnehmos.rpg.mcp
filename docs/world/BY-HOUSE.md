@@ -119,7 +119,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 2
   …and 14 more files.
 
-**Constants most about it:** `AUCTION_VENUES`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `FEEDER`, `OTHERS_WHO_NOTICED`, and 4 more
+**Constants most about it:** `AUCTION_VENUES`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `OTHERS_WHO_NOTICED`, and 4 more
 
 ### Cinnabar Crucible Sect
 

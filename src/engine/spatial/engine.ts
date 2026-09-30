@@ -55,6 +55,38 @@ export interface PathfindingOptions {
 }
 
 export class SpatialEngine {
+    /** Cheapest route through named places. Closed links are omitted by the caller. */
+    findGraphPath(
+        start: string,
+        goal: string,
+        neighbours: (id: string) => Iterable<{ id: string; cost: number }>
+    ): { cost: number; path: string[] } | null {
+        const frontier = new MinHeap<string>(id => id);
+        const best = new Map<string, number>([[start, 0]]);
+        const previous = new Map<string, string>();
+        frontier.insert(start, 0);
+        while (!frontier.isEmpty()) {
+            const at = frontier.extractMin()!;
+            const cost = best.get(at)!;
+            if (at === goal) {
+                const path = [at];
+                for (let step = previous.get(at); step !== undefined; step = previous.get(step)) {
+                    path.unshift(step);
+                }
+                return { cost, path };
+            }
+            for (const next of neighbours(at)) {
+                if (!Number.isFinite(next.cost) || next.cost < 0) continue;
+                const through = cost + next.cost;
+                if (through >= (best.get(next.id) ?? Infinity)) continue;
+                best.set(next.id, through);
+                previous.set(next.id, at);
+                frontier.insert(next.id, through);
+            }
+        }
+        return null;
+    }
+
     // AoE shape cache for common radii
     private circleCache: Map<string, Point[]> = new Map();
     private readonly MAX_CACHED_RADIUS = 10;

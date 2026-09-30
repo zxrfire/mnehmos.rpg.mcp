@@ -1,3 +1,4 @@
+/** Shared CRUD aliases reach real handlers only when the tool exposes that action. */
 import { z } from 'zod';
 import {
     createActionRouter,
@@ -48,6 +49,14 @@ describe('action-router utilities', () => {
         const router = createActionRouter({
             actions: ACTIONS,
             definitions
+        });
+
+        it('uses shared aliases that an action definition did not repeat', async () => {
+            const fetched = JSON.parse((await router({ action: 'fetch', id: 'one' })).content[0].text);
+            expect(fetched.id).toBe('one');
+            expect(fetched.name).toBe('Test Entity');
+            const missing = JSON.parse((await router({ action: 'browse' })).content[0].text);
+            expect(missing.error).toBe('invalid_action');
         });
 
         describe('exact action matching', () => {

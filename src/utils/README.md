@@ -4,6 +4,11 @@
 
 Generic helpers. If something here starts knowing about cultivation, it belongs in `src/engine/`.
 
+`createActionRouter` reads shared CRUD aliases only for actions its tool exposes;
+explicit tool aliases take precedence. `matchAction` resolves before each
+handler's schema runs. Played entity lookup lives in `web/entities.ts`, where
+presence and knowledge bound the candidate set.
+
 | file | what it is |
 |---|---|
 | [`a-count-agrees-with-what-it-counts.ts`](./a-count-agrees-with-what-it-counts.ts) | A count and the noun behind it, agreeing, where the noun arrived at runtime from a catalog or a house's own rank list. `3 core disciple` was the defect. Knows that the head of `Keeper of Scrolls` is in front of the preposition, that a Witness is one person, and that a house whose rank is `Chosen` does not have three Chosens. |

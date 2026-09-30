@@ -2,65 +2,17 @@
 
 # Spatial
 
-A* with line of sight, and the min-heap that makes the first cheap.
+`SpatialEngine` paths both tile grids and named places. `findGraphPath` uses
+the shared min-heap to find the cheapest route over caller-supplied edges.
+Nonnegative finite costs are traversable; an omitted edge is closed.
 
-Retained from the D&D substrate, where it pathed a battle grid, and **kept for
-folding space**. The design owner: *"void refinement cultivators can do it"*.
+`regions/the-map.ts` calls it for place and province roads. Those reads reach
+walking journeys, paid travel, and folding-space range checks through
+`GameService.daysOnTheRoadTo`. Road costs remain the catalog's walking days;
+folding changes how the journey is made, not the distance it covers.
 
-`fold` is already a verb and
-`engine/world/how-far-somebody-can-fold-space-and-what-it-costs.ts` already
-prices one, but what it prices is a jump between two named places with nothing
-saying which places a fold can reach THROUGH. That is a cheapest-path question
-over a graph with costed edges and closed nodes, which is what `engine.ts` is.
+The retained grid methods supply tile distance, line of sight and area shapes.
+They share the class and heap but do not invent coordinates for named places.
 
-**And be honest about the gap before reaching for it.** What is here is GRID A*:
-it takes `Point` and `TerrainCostMap` and thinks in tiles, and this world is a
-region graph with roads between named places. The algorithm transfers and the
-data model does not. Adapting it means swapping the coordinate pair for a place
-id and the terrain map for road costs; `heap.ts` transfers untouched, because a
-priority queue does not care what it is ordering.
-
-It was deleted once on the grounds that nothing reaches it, and put back within
-the hour on the grounds above. If you are looking at it again and wondering: it
-is waiting for the fold path, not for a grid.
-
-Retained from the D&D substrate, where it pathed a battle grid, and **kept for
-folding space**. The design owner: *"void refinement cultivators can do it"*.
-
-That is the reading that makes this worth having. `fold` is already a verb, and
-`engine/world/how-far-somebody-can-fold-space-and-what-it-costs.ts` already
-prices one - but what it prices is a jump between two places, with nothing that
-says which places a fold can REACH THROUGH. A cultivator folding across a
-province is solving exactly the problem in `engine.ts`: cheapest path over a
-graph whose edges have costs, with some nodes closed to them. The grid it was
-written for is gone; the algorithm is the same algorithm.
-
-Nothing in `src/web/` reaches it yet, and its four test files are the only
-callers. It was deleted once in this repo's history for that reason and put back
-within the hour, on the grounds above - so if you are looking at it again and
-wondering, the answer is that it is waiting for the fold path and not for a
-grid.
-
-| file | what it is |
-|---|---|
-| [`engine.ts`](./engine.ts) | - |
-| [`heap.ts`](./heap.ts) | Min-heap implementation for efficient priority queue operations in A* pathfinding. |
-
----
-
-## Where else to look
-
-- [`../world/how-far-somebody-can-fold-space-and-what-it-costs.ts`](../world/how-far-somebody-can-fold-space-and-what-it-costs.ts) -
-  the fold as it exists today: a price on a jump between two named places, with nothing saying
-  which places a fold can reach THROUGH. That gap is what this directory is being kept for.
-- [`../../data/cultivation/regions/README.md`](../../data/cultivation/regions/README.md) - the
-  graph the grid would have to become: provinces, prefectures, arterials and the roads between
-  named places. `the-map.ts` and `map-by-bearing.ts` are the shape of the real data.
-- [`../../server/handlers/README.md`](../../server/handlers/README.md) - the OTHER spatial
-  model, and the live one: `RoomNode`, `Exit` and `NodeNetwork`, served through
-  `consolidated/spatial-manage.ts`. It does not call anything in this directory.
-- [`../../schema/README.md`](../../schema/README.md) - `spatial.ts` holds the room and exit
-  shapes; `Point` and `TerrainCostMap` here are local types with no schema behind them.
-- [`../../storage/repos/README.md`](../../storage/repos/README.md) - `spatial.repo.ts` is where
-  the room graph is persisted. Nothing persists a path.
-
+- [`../../data/cultivation/regions/the-map.ts`](../../data/cultivation/regions/the-map.ts) supplies the live place and province graph.
+- [`../world/how-far-somebody-can-fold-space-and-what-it-costs.ts`](../world/how-far-somebody-can-fold-space-and-what-it-costs.ts) prices the fold from walking days.

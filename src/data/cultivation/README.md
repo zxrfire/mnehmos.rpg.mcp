@@ -39,6 +39,10 @@ The content is first-party and compiled in rather than loaded from a JSON pack, 
 is no fetch, no cache and no schema-version negotiation. The TypeScript types are the
 contract and the tests are the validator.
 
+Grantor reads use `regions/delegatedFrom`; sects do not wrap it. Apex seats
+are derived from the region seating lists. Upward selection runs in
+`engine/world/gatherings.ts`; the old fixed provincial feeder quota is removed.
+
 The world-lore rows carry short `knowledge` fields for live questions. These state
 recorded findings and leave catalog rationale outside narration. Private holdings stay
 private when a reader names a topic; an archive supplies only the records its house

@@ -707,8 +707,9 @@ So the reading is a kind and a severity and nothing else. It does not read a cau
 switch is the bug*), and there is nowhere in the signature to put a faction, a rung, a realm
 or a technique - the same shape `how-freely-somebody-parts-with-what-they-have.ts` uses to
 keep an alignment out of a disposition, and the reason **practising a house's art makes you
-nothing**. `unauthorisedPractice` and `ifCaughtPractising` remain what they say they are:
-questions about permission, checked and unchanged.
+nothing**. `unauthorisedPractice` remains a question about permission. The response to
+a caught violation is `ifCaughtAtSomethingTheHousePunishes`, shared by every
+kind of violation.
 
 Four rules, and each of them was a decision:
 
@@ -958,7 +959,7 @@ spending; `resolveAttempt` is still the only thing that moves a person.
 - [`../social/README.md`](../social/README.md) - the storage layer this writes into
 - [`../birth/spending-a-word-to-place-a-child.ts`](../birth/spending-a-word-to-place-a-child.ts) - the favour half, and the comment that named this road for years without building it
 - [`../cultivation/regard.ts`](../cultivation/regard.ts) - where the standing term comes from
-- [`../world/manuals.ts`](../world/manuals.ts) - `ifCaughtPractising`, the pattern the alignment split copies
+- [`../world/manuals.ts`](../world/manuals.ts) - `unauthorisedPractice`, the ownership question before the shared alignment response
 
 ---
 

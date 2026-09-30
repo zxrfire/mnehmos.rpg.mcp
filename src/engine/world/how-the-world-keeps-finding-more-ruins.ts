@@ -13,6 +13,7 @@ import {
     type RuinScale
 } from '../../data/cultivation/inheritance-trials.js';
 import { SCHEDULE_READ_ORDINAL } from './convergence.js';
+import { typicalAmbientFor } from '../cultivation/ambient.js';
 import { wardConditionOf, wardIntegrityOf } from './how-far-gone-a-formation-is.js';
 import { scheduleForAnAncientSite } from './how-long-a-door-stays-shut.js';
 import { isBelowTheLid } from './layers.js';
@@ -25,7 +26,7 @@ import {
     type OpeningCycle
 } from './locations.js';
 import type { ObjectRecord } from './possessions.js';
-import { clampQiDensity } from './qi-scale.js';
+import { qiFraction, clampQiDensity } from './qi-scale.js';
 import {
     shelveWhatItWasHolding,
     theBooksBehindTheirDoor,
@@ -896,7 +897,7 @@ export function applyRuinProspecting(
             description:
                 `${name}. Nobody put this here recently: it has been under this province since the ` +
                 `Late Age and what changed is that somebody found it.`,
-            ambient: density >= 80 ? 'dense' : region.ambient,
+            ambient: typicalAmbientFor(qiFraction(density)),
             qiDensity: density,
             thresholds: makeThresholds(
                 Math.max(0, floor - 4),

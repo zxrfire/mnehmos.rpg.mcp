@@ -58,5 +58,4 @@ The grant covers the working ground; it does not grant a strait or a city above 
   `web/places.ts`, `web/what-can-be-reached-from-here.ts`,
   `web/where-this-cultivator-could-go.ts`, `web/what-you-can-tell-about-the-ground.ts`.
 - [`../../../engine/spatial/README.md`](../../../engine/spatial/README.md) - the pathfinder
-  waiting on this graph. It is written for a tile grid and this is a place graph, which is the
-  gap between them.
+  used by place and province journeys through `findGraphPath`, with costs from the roads.

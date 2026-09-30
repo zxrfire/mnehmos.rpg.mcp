@@ -3013,52 +3013,6 @@ FACTION_PARENTAGE['sect-lantern-hall'] = FACTION_PARENTAGE['house-lantern-hall-p
 delete FACTION_PARENTAGE['house-lantern-hall-placeholder'];
 
 // ─────────────────────────────────────────────────────────────────────────
-// THE FEEDER
-// The legitimate route out of a small sect, and the reason competitions
-// matter to everyone except the people running them.
-// ─────────────────────────────────────────────────────────────────────────
-
-export const FEEDER = {
-    name: 'the calling',
-    cadence: 'Once every twelve years, in step with the grant cycle, because it is part of it.',
-    intakeSize: 9,
-    intakeNote:
-        'Nine from the whole province, against a cohort of perhaps four thousand disciples of the right age across twenty-six institutions.',
-    selectionRoutes: [
-        {
-            route: 'inter-sect competition',
-            how: 'The Azure Cloud tournament and three smaller ones are watched by people nobody introduces. Placing is not the criterion; being interesting is, and the criterion is not published.',
-            share: 4
-        },
-        {
-            route: 'an elder\'s recommendation',
-            how: 'A sect elder who has themselves been called may recommend one disciple per cycle, and spends their own standing doing it. Most never use it.',
-            share: 3
-        },
-        {
-            route: 'the disciple quota',
-            how: 'Grant terms oblige some sects to send one or two upward per cycle regardless of quality, which is how a mediocre disciple from a well-taxed sect displaces a prodigy from a poor one.',
-            share: 1
-        },
-        {
-            route: 'purchase',
-            how: 'The Thousand Relic Pavilion has bought two seats in four hundred years, at prices it has never disclosed, for candidates it has never explained.',
-            share: 1
-        }
-    ],
-    /**
-     * The exposure event. A competition is the first place a mis-sorted
-     * cultivator sees their own Dao practised properly by somebody else, which
-     * is worth more to them than winning and is invisible to everyone else in
-     * the hall.
-     */
-    exposureNote:
-        'For the people at the top a competition is recruitment. For a disciple whose comprehension has never fitted what their sect teaches, it is the first time they have watched their own Dao done correctly by a stranger from four valleys away - and that is a larger event in their life than the result, though nobody watching will register it.',
-    whatHappensToTheRest:
-        'Nothing. Four thousand disciples continue at the sects that raised them, and the nine are not mentioned again by name at the outer gate, because the sect does not enjoy the reminder that its best go somewhere else.'
-} as const;
-
-// ─────────────────────────────────────────────────────────────────────────
 // ARRIVAL
 // Encoded so a tool cannot accidentally carry standing across, and stated
 // without softening anywhere. True of every house, not only the apexes: the

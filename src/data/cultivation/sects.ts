@@ -3918,7 +3918,7 @@ export function formationIntegrity(sectId: string): number {
 // exactly the failure one statement of a rule exists to prevent.
 // A sect's ground is stated once, in the file that owns ground.
 //
-// `delegatedFromSect` returning null is a real answer and the most interesting
+// `delegatedFrom` returning null is a real answer and the most interesting
 // one in the catalog: it is what the Azure Cloud Pavilion, the Empyrean Court,
 // the Ancient Bough Grove, the Clear River Alliance and the Six Li Patrol have in
 // common, and it is the only thing they have in common. An apex that answers
@@ -3926,14 +3926,6 @@ export function formationIntegrity(sectId: string): number {
 // nobody authorised and six people repainting stakes are five completely
 // different reasons for the same empty field.
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Whose gift a sect's ground is in - a court, an apex, or another sect where
- * the holding is at one remove. Null where nothing granted it.
- */
-export function delegatedFromSect(sectId: string): string | null {
-    return delegatedFrom(sectId);
-}
 
 /**
  * Everything a sect's ground amounts to in one object, including whether the

@@ -43,27 +43,10 @@
  * THIS IS NOT A SECOND OPINION ABOUT A DOOR
  * ═════════════════════════════════════════════════════════════════════════
  *
- * `how-far-gone-a-formation-is.ts` already owns *the odds a claimant at this
- * rung gets through this door*, and calls itself THE ONE NUMBER for it. It is
- * not this, and the two must not be collapsed:
+ * Formation decay supplies an old ward's remaining rung through
+ * `effectiveWardOrdinal`. Force through the ward reads `canUnmake` at that
+ * rung; seasonal access remains the location schedule's question.
  *
- *   THAT ONE      somebody WORKING AT a door: a prospector at a sealed ruin, an
- *                 intruder at a closed-door seclusion. Time, tools, patience and
- *                 a formation that has been decaying for centuries. It is a
- *                 logistic on the gap and *being well under it is small but
- *                 never nil*, because somebody weak occasionally gets into
- *                 something old and that case is where half the interesting
- *                 things in this world come from.
- *
- *   THIS ONE      FORCE PUT THROUGH a rated thing, now. No time, no tools, no
- *                 decay clock. It is `canUnmake` and it is absolute.
- *
- * The difference is real rather than a seam: you can pick a lock you could
- * never punch through, and the reason a besieging army does not simply walk in
- * is not the reason a lone prospector fails. If a caller wants the patient
- * version, it wants that module and not this one. Neither reads the other.
- *
- * ═════════════════════════════════════════════════════════════════════════
  * THE DEGRADATION IS FREE, AND THAT IS THE POINT OF WRITING `power` DOWN
  * ═════════════════════════════════════════════════════════════════════════
  *

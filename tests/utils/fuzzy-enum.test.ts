@@ -1,12 +1,17 @@
+/**
+ * Action matching runs before handler validation in `createActionRouter`.
+ * The duplicate schema transform and unscoped entity resolver were removed;
+ * played entity lookup remains bounded by presence and knowledge, covered in
+ * `a-name-is-misspelt-in-one-word.test.ts` and
+ * `a-two-letter-fragment-is-not-a-name.test.ts`.
+ */
 import {
     levenshtein,
     similarity,
     normalizeInput,
     matchAction,
     isGuidingError,
-    resolveIdentifier,
-    CRUD_ALIASES,
-    createFuzzyActionSchema
+    CRUD_ALIASES
 } from '../../src/utils/fuzzy-enum.js';
 
 describe('fuzzy-enum utilities', () => {
@@ -204,60 +209,6 @@ describe('fuzzy-enum utilities', () => {
         });
     });
 
-    describe('resolveIdentifier', () => {
-        const entities = [
-            { id: 'uuid-1', name: 'Valeros' },
-            { id: 'uuid-2', name: 'Seelah' },
-            { id: 'uuid-3', name: 'Ezren' }
-        ];
-
-        const findById = (id: string) => entities.find(e => e.id === id) ?? null;
-        const findByName = (name: string) => entities.find(e => e.name === name) ?? null;
-        const listAll = () => entities;
-
-        it('should find by exact UUID', () => {
-            const result = resolveIdentifier('uuid-1', findById, findByName, listAll);
-            expect(isGuidingError(result)).toBe(false);
-            if (!isGuidingError(result)) {
-                expect(result.name).toBe('Valeros');
-            }
-        });
-
-        it('should find by exact name', () => {
-            const result = resolveIdentifier('Valeros', findById, findByName, listAll);
-            expect(isGuidingError(result)).toBe(false);
-            if (!isGuidingError(result)) {
-                expect(result.id).toBe('uuid-1');
-            }
-        });
-
-        it('should find by case-insensitive name', () => {
-            const result = resolveIdentifier('valeros', findById, findByName, listAll);
-            expect(isGuidingError(result)).toBe(false);
-            if (!isGuidingError(result)) {
-                expect(result.name).toBe('Valeros');
-            }
-        });
-
-        it('should find by fuzzy name match', () => {
-            const result = resolveIdentifier('Valero', findById, findByName, listAll);
-            // High similarity, should match
-            expect(isGuidingError(result)).toBe(false);
-            if (!isGuidingError(result)) {
-                expect(result.name).toBe('Valeros');
-            }
-        });
-
-        it('should return guiding error for unknown identifier', () => {
-            const result = resolveIdentifier('Unknown', findById, findByName, listAll);
-            expect(isGuidingError(result)).toBe(true);
-            if (isGuidingError(result)) {
-                expect(result.error).toBe('invalid_identifier');
-                expect(result.suggestions).toHaveLength(3);
-            }
-        });
-    });
-
     describe('CRUD_ALIASES', () => {
         it('should have aliases for all CRUD operations', () => {
             expect(CRUD_ALIASES['new']).toBe('create');
@@ -268,26 +219,4 @@ describe('fuzzy-enum utilities', () => {
         });
     });
 
-    describe('createFuzzyActionSchema', () => {
-        const actions = ['create', 'get', 'update', 'delete'] as const;
-        const aliases = { 'new': 'create' as const };
-        const schema = createFuzzyActionSchema(actions, aliases);
-
-        it('should parse exact action', () => {
-            expect(schema.parse('create')).toBe('create');
-            expect(schema.parse('get')).toBe('get');
-        });
-
-        it('should parse alias', () => {
-            expect(schema.parse('new')).toBe('create');
-        });
-
-        it('should parse fuzzy match', () => {
-            expect(schema.parse('creat')).toBe('create');
-        });
-
-        it('should throw on invalid action', () => {
-            expect(() => schema.parse('xyz')).toThrow();
-        });
-    });
 });

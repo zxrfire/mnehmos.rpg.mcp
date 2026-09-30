@@ -1,70 +1,9 @@
 /**
- * How far gone a formation is, and therefore how hard the door still is.
+ * Formation decay supplies the rung that a ward still answers at.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * ONE NUMBER, READ FROM TWO DIRECTIONS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * This module exists because two subsystems need the same answer and must not
- * each invent one:
- *
- *   A PROSPECTOR asking whether they can get into a sealed place they have
- *   found, which is the whole of what a delve costs before anything inside it
- *   is considered.
- *
- *   SOMEBODY ARRIVING AT A CLOSED-DOOR SECLUSION, which is the same question
- *   from the far side. A sealed door is not a ward. From outside, a live
- *   cultivator's sealed cave and a dead one's sealed cave are the same object:
- *   a door somebody put a formation on and did not open again. The prospector
- *   cannot tell which they are looking at, and the only way to find out is to
- *   open it.
- *
- * So THE ODDS OF GETTING INTO A SEALED CAVE AND THE ODDS OF GETTING INTO AN OLD
- * RUIN ARE THE SAME NUMBER. {@link oddsOfGettingThroughTheDoor} is that number.
- * Anything that wants a second one is wrong.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * DECAY IS THE CLOCK THAT DRIVES THE WHOLE CATEGORY
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Formations weaken. That single fact is what makes closed ground one system
- * rather than three:
- *
- *   IT IS WHY THE RESERVE ARRIVES ON A SCHEDULE. The wards on a dead
- *   cultivator's cave hold, and then they do not. The door stops being a door
- *   some decades after the person behind it stopped being alive, and that is
- *   when the place becomes findable - which is why new ground turns up steadily
- *   instead of all at once when somebody dies.
- *
- *   IT IS WHY AN INHERITANCE BECOMES A RUIN. An inheritance's trial IS a live
- *   formation. As it weakens the sorting fails, and a trial that was built to
- *   admit only the worthy stops being able to refuse anybody. A decayed
- *   inheritance is a ruin precisely because its formations no longer enforce
- *   the intent. That is convergence with a cause rather than two tables that
- *   happen to look alike.
- *
- *   IT IS WHY THE DIFFICULTY CURVE IS HONEST. A recently sealed place is nearly
- *   impossible and holds everything. An ancient one is enterable by ordinary
- *   people and has been picked over by them. Dangerous-and-empty and
- *   intact-and-lethal are both real, both reachable, and both interesting, and
- *   neither of them had to be authored.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHAT DECIDES HOW LONG IT HOLDS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Two things and no others: WHO SET IT and HOW LONG AGO. There is no faction
- * branch, no importance term and no site-specific constant - a patriarch's seal
- * and a bandit's are the same function of the same two numbers, and what is
- * different about the patriarch is the ordinal. That is the same rule
- * `AGENTS.md` states about combat and for the same reason.
- *
- * The half-life rises steeply with the setter's rung because that is what the
- * ladder means: each realm is roughly four times the last, so a seal set four
- * realms up outlasts one below it by a great deal rather than by a little. It
- * is stated as a half-life rather than an expiry because a formation does not
- * fail on a date - it gets thinner, and somebody gets through it earlier than
- * anybody expected.
+ * Entry windows are read by `isOpenOn`; force against a closed door is
+ * decided by `canUnmake`. Decay supplies the remaining rung, not a second
+ * chance to bypass either gate. The half-life grows with the setter's rung.
  */
 
 import { MAX_ORDINAL } from '../cultivation/realms.js';
@@ -130,35 +69,6 @@ export function effectiveWardOrdinal(
     const integrity = wardIntegrityOf(input);
     return Math.max(0, Math.round(input.setByOrdinal * integrity));
 }
-
-/**
- * The odds a claimant at this rung gets through this door.
- *
- * THE ONE NUMBER. A prospector at a sealed ruin and an intruder at a closed-door
- * seclusion both read this, with the same arguments, and get the same answer -
- * which is the point, because from outside the two places are the same object.
- *
- * Shaped so that meeting the effective ward is most of the way there and
- * exceeding it comfortably is nearly certain, while being well under it is
- * small but never nil: somebody weak gets into something old occasionally, and
- * that occasional case is where half the interesting things in this world come
- * from.
- */
-export function oddsOfGettingThroughTheDoor(
-    input: { setByOrdinal: number; yearsSince: number; claimantOrdinal: number }
-): number {
-    const ward = effectiveWardOrdinal(input);
-    const gap = input.claimantOrdinal - ward;
-    // A logistic on the gap in rungs. Four rungs either side of the ward covers
-    // most of the range, which is about one realm and is the unit the rest of
-    // the engine reasons in.
-    const odds = 1 / (1 + Math.exp(-gap / 3));
-    return Number(Math.min(0.99, Math.max(0.01, odds)).toFixed(4));
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// HOW FAR GONE, IN WORDS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Bands a narrator can say out loud, and the only place the thresholds live.

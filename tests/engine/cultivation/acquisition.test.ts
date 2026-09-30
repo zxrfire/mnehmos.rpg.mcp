@@ -1,4 +1,7 @@
 /**
+ * Fit is assessed on every acquisition, including graves and transmission.
+ * Encounter tags classify possible finds; they never gate acquisition assessment.
+ *
  * Design guards for the acquisition funnel.
  *
  * Partial transmission was removed: live teaching passes a whole art through
@@ -18,9 +21,9 @@ import {
     findFromManual,
     type ManualLike
 } from '../../../src/engine/encounters/acquisition.js';
-import { mayHoldAFit, assessFit, type Seeker } from '../../../src/engine/encounters/suitability.js';
-import { daoOf } from '../../../src/engine/cultivation/dao.js';
+import { assessFit, mayHoldAFit, type Seeker } from '../../../src/engine/encounters/suitability.js';
 import { ENCOUNTERS } from '../../../src/data/cultivation/encounters.js';
+import { daoOf } from '../../../src/engine/cultivation/dao.js';
 import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
 import type { Insight, InsightDegree } from '../../../src/schema/cultivation.js';
 

@@ -28,14 +28,14 @@
  *                 halves are collected then: a pair that answers to nothing is
  *                 not a thing the world keeps a row for
  *   what it is worth  the maker's time and materials, as any commission
- *                 ({@link whatAPairOfJadeIsWorth})
+ *                 (`commissioning-a-craft.ts`)
  */
 
 import { THE_PAIRED_COMMUNICATION_JADE } from '../../data/cultivation/communication-talismans.js';
 import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { isElderRank } from '../cultivation/leadership.js';
 import { theInternalAffairsElderIn } from './a-house-expects-somebody-it-took-on.js';
-import { daysAtTheWork, whatACommissionComesTo } from '../social-leverage/commissioning-a-craft.js';
+import { daysAtTheWork } from '../social-leverage/commissioning-a-craft.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import type { NpcRecord } from './npc-state.js';
 import { howMuchAGradeIsWorthTracking, makeObject, type ObjectRecord } from './possessions.js';
@@ -310,11 +310,6 @@ export function theirJadeBreaks(objects: ObjectRecord[], personId: string, _onDa
         collected++;
     }
     return collected;
-}
-
-/** What a pair is worth, in stone-equivalent: its maker's time and the materials. */
-export function whatAPairOfJadeIsWorth(makerOrdinal: number): number | null {
-    return whatACommissionComesTo(THE_PAIRED_COMMUNICATION_JADE.grade, false, makerOrdinal);
 }
 
 /** Whether a master would give this disciple a half: a hand for the grade, and a disciple they value. */

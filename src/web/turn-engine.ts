@@ -1229,6 +1229,7 @@ import { whyTheFurnaceRiteIsRefused } from './the-furnace-rite-once-somebody-has
 // 护法 - standing over somebody else's crossing. The giving half of the verb
 // surface, and the whole of `standing-guard-over-somebody-elses-crossing.ts`,
 // which had no caller anywhere in `src/`.
+import { OATH_INTENTS, type OathIntent } from './verb-pattern-table.js';
 import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 // The other half of being taught, which nothing in the engine could do.
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
@@ -5951,6 +5952,7 @@ ${noticed}`;
         topic: string | undefined,
         rawInput: string
     ): Execution {
+        intent = OATH_INTENTS.includes(intent as OathIntent) ? intent : DEFAULT_OATH_INTENT;
         const today = Math.floor(run.elapsedDays);
         const carried = openOathsHeldBy(this.repos, cultivator.id);
         // AND THE WORLD'S OWN PEOPLE HAVE NAMES TOO.

@@ -1,4 +1,7 @@
 /**
+ * The unused logistic entry roll is removed. Door decay remains covered here;
+ * seasonal entry and forced entry are covered by their live gate tests.
+ *
  * Closed ground: whether the world keeps finding it, and whether what it finds
  * is more than one thing.
  *
@@ -44,7 +47,6 @@ import {
 } from '../../../src/engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
     effectiveWardOrdinal,
-    oddsOfGettingThroughTheDoor,
     wardConditionOf,
     wardHalfLifeYears,
     wardIntegrityOf
@@ -384,21 +386,6 @@ describe('formations weaken, and that is what moves everything', () => {
         expect(old).toBeLessThan(fresh);
     });
 
-    it('gives the same odds to a prospector and to somebody arriving at a seclusion', () => {
-        // One number read from two directions. Same arguments, same answer.
-        const args = { setByOrdinal: 24, yearsSince: 300, claimantOrdinal: 20 };
-        expect(oddsOfGettingThroughTheDoor(args)).toBe(oddsOfGettingThroughTheDoor(args));
-        // Monotone in the claimant, and never certain either way.
-        const weak = oddsOfGettingThroughTheDoor({ ...args, claimantOrdinal: 4 });
-        const strong = oddsOfGettingThroughTheDoor({ ...args, claimantOrdinal: 40 });
-        expect(weak).toBeLessThan(strong);
-        expect(weak).toBeGreaterThan(0);
-        expect(strong).toBeLessThan(1);
-        // And an ancient door is easier than a fresh one set by the same person.
-        expect(oddsOfGettingThroughTheDoor({ setByOrdinal: 24, yearsSince: 5000, claimantOrdinal: 15 }))
-            .toBeGreaterThan(oddsOfGettingThroughTheDoor({ setByOrdinal: 24, yearsSince: 1, claimantOrdinal: 15 }));
-    });
-
     it('bands the condition so a reader can say it out loud', () => {
         expect(wardConditionOf(1)).toBe('as_set');
         expect(wardConditionOf(0.6)).toBe('holding');
@@ -544,13 +531,7 @@ describe('from outside, a live cultivator behind a door and a dead one look the 
         if (empty) expect(isSomebodyStillAliveInThere(state, empty).occupied).toBe(false);
     });
 
-    it('gives a prospector no way to tell from the odds alone', () => {
-        // The odds function takes no argument that says whether anybody is home,
-        // which is the structural guarantee: it cannot leak what it never sees.
-        const a = oddsOfGettingThroughTheDoor({ setByOrdinal: 20, yearsSince: 200, claimantOrdinal: 18 });
-        const b = oddsOfGettingThroughTheDoor({ setByOrdinal: 20, yearsSince: 200, claimantOrdinal: 18 });
-        expect(a).toBe(b);
-    });
+
 });
 
 // ─────────────────────────────────────────────────────────────────────────

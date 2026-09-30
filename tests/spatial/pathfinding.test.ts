@@ -1,7 +1,41 @@
+/**
+ * Named-place journeys use the spatial engine's graph search. Unequal legs
+ * must cost their sum, and a cheaper route discovered later must replace the
+ * first one. Closed links cannot make an otherwise unreachable place reachable.
+ */
 import { SpatialEngine, Point } from '../../src/engine/spatial/engine';
 
 describe('SpatialEngine - Pathfinding', () => {
     const engine = new SpatialEngine();
+
+    describe('named places', () => {
+        const roads = new Map([
+            ['home', [{ id: 'ridge', cost: 9 }, { id: 'river', cost: 2 }]],
+            ['river', [{ id: 'ridge', cost: 1 }]],
+            ['ridge', [{ id: 'gate', cost: 4 }]]
+        ]);
+        const neighbours = (id: string) => roads.get(id) ?? [];
+
+        it('takes the cheaper chain and sums its unequal legs', () => {
+            expect(engine.findGraphPath('home', 'gate', neighbours)).toEqual({
+                cost: 7, path: ['home', 'river', 'ridge', 'gate']
+            });
+        });
+
+        it('returns no route where the open roads do not join the places', () => {
+            expect(engine.findGraphPath('home', 'island', neighbours)).toBeNull();
+            expect(engine.findGraphPath('home', 'island', () => [
+                { id: 'island', cost: Infinity }
+            ])).toBeNull();
+        });
+
+        it('keeps containment free without looping over a cycle', () => {
+            expect(engine.findGraphPath('room', 'town', id => id === 'room'
+                ? [{ id: 'hall', cost: 0 }]
+                : [{ id: 'room', cost: 0 }, { id: 'town', cost: 2 }]
+            )?.cost).toBe(2);
+        });
+    });
 
     const createObstacles = (points: Point[]): Set<string> => {
         return new Set(points.map(p => `${p.x},${p.y}`));

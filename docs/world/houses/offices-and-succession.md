@@ -97,7 +97,7 @@ inhibitions about who they are willing to hurt.
 demonic - **because you did it to one of their own.** Demonic is a position about who a house
 is willing to hurt *outside* itself. It has never meant a house is lawless *inside* itself: a
 member who kills another member has attacked the body they belong to, and every house alive
-punishes that. `ifCaughtPractising`'s alignment switch is the shape - a demonic house
+punishes that. `ifCaughtAtSomethingTheHousePunishes`'s alignment switch is the shape - a demonic house
 returning `killed` where a righteous one returns `questioned` is that switch answering the
 same question about a different house, and the demonic answer is the harsher one.
 

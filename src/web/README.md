@@ -23,6 +23,10 @@ Where the authority rule stops being a design principle and becomes a set of typ
 signatures. Read this before changing anything in `src/web/` - and read it especially
 carefully before widening anything a model is allowed to return.
 
+Ship ticket fares read `quotePassage` at the local daily rate. Oath execution
+validates the intent against `OATH_INTENTS`. The court register derives its
+senior-office label through `leaderTitleOfCourt`; it is an operator read.
+
 The rule this package enforces is in [`../../context.md`](../../context.md): the AI
 narrates, the engine decides.
 

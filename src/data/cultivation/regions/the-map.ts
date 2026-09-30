@@ -2,6 +2,7 @@
  * Regions - five of them, and the contrast between them is the content.
  */
 
+import { SpatialEngine } from '../../../engine/spatial/engine.js';
 import type { AmbientQi } from '../../../schema/cultivation.js';
 import type { HerbBiome } from '../herbs.js';
 import type {
@@ -49,6 +50,7 @@ interface RegionIndices {
     placeRoadsFrom: ReadonlyMap<string, ReadonlyMap<string, RegionPlaceConnection>>;
 }
 
+const spatial = new SpatialEngine();
 let INDICES: RegionIndices | null = null;
 
 function indices(): RegionIndices {
@@ -146,22 +148,9 @@ export function placeRoadDays(
     const roads = indices().placeRoadsFrom;
     if (!roads.has(from) || !roads.has(to)) return null;
 
-    const best = new Map<string, number>([[from, 0]]);
-    const settled = new Set<string>();
-    for (;;) {
-        let at: string | null = null;
-        let cost = Infinity;
-        for (const [place, days] of best) {
-            if (!settled.has(place) && days < cost) { at = place; cost = days; }
-        }
-        if (at === null) return null;
-        if (at === to) return cost;
-        settled.add(at);
-        for (const [next, road] of roads.get(at) ?? []) {
-            const through = cost + road.travelDays;
-            if (through < (best.get(next) ?? Infinity)) best.set(next, through);
-        }
-    }
+    return spatial.findGraphPath(from, to, id =>
+        [...(roads.get(id) ?? [])].map(([next, road]) => ({ id: next, cost: road.travelDays }))
+    )?.cost ?? null;
 }
 
 /**
@@ -196,31 +185,10 @@ export function theRoadBetweenProvinces(
             join(link.otherRegionId, region.id, link.travelDays);
         }
     }
-    const best = new Map<string, number>([[fromRegionId, 0]]);
-    const cameFrom = new Map<string, string>();
-    const settled = new Set<string>();
-    for (;;) {
-        let at: string | null = null;
-        let cost = Infinity;
-        for (const [region, days] of best) {
-            if (!settled.has(region) && days < cost) { at = region; cost = days; }
-        }
-        if (at === null) return null;
-        if (at === toRegionId) {
-            const through: string[] = [];
-            for (let step = cameFrom.get(at); step !== undefined && step !== fromRegionId; step = cameFrom.get(step)) {
-                through.unshift(step);
-            }
-            return { days: cost, through };
-        }
-        settled.add(at);
-        for (const [next, days] of roads.get(at) ?? []) {
-            if (cost + days < (best.get(next) ?? Infinity)) {
-                best.set(next, cost + days);
-                cameFrom.set(next, at);
-            }
-        }
-    }
+    const route = spatial.findGraphPath(fromRegionId, toRegionId, id =>
+        [...(roads.get(id) ?? [])].map(([next, cost]) => ({ id: next, cost }))
+    );
+    return route ? { days: route.cost, through: route.path.slice(1, -1) } : null;
 }
 
 /**

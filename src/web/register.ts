@@ -20,6 +20,7 @@ import {
 import {
     APEX_INSTITUTIONS,
     leaderTitleOf,
+    leaderTitleOfCourt,
     secondTitleOf,
     strongestOfficerOf,
     idsForFaction,
@@ -394,6 +395,7 @@ export interface RegisterNoPlace {
 
 export interface RegisterCourt {
     id: string;
+    leaderTitle: string;
     name: string;
     apexId: string;
     apexName: string;
@@ -1577,6 +1579,7 @@ function buildCourts(): RegisterCourt[] {
         return {
             id: court.id,
             name: court.name,
+            leaderTitle: leaderTitleOfCourt(court),
             apexId: court.apexId,
             apexName: getApexInstitution(court.apexId)?.name ?? court.apexId,
             ordinal: court.powerOrdinal,
@@ -6864,6 +6867,7 @@ function courtPanel(court: RegisterCourt, selfAnchor: string, panelId?: string):
     ${metaRow([
         ['posted by', court.apexName],
         ['grants in', court.grantsInRegionId.replace(/^region-/, '').replace(/-/g, ' ')],
+        ['senior office', court.leaderTitle],
         ['offices', String(court.officers.length)],
         // Deliberately not the house's name here. Where a court is also a
         // sect, this panel sits inside a card already headed with that name,

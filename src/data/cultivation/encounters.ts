@@ -583,7 +583,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         // actually hand a method over. A row that concerns a grave without holding
         // anything - enforcers arriving over a robbed one, somebody offering terms
         // outside one - carries the first and not the second, which is what keeps
-        // `mayHoldAFit` honest about the difference.
+        // acquisition reporting honest about the difference.
         tags: ['loot', 'safe', 'foreshadowing', 'corpse', 'technique']
     },
     {
@@ -1492,7 +1492,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         // THE CORPSE ROW, and it is the cheapest high-value row in the catalog:
-        // `mayHoldAFit` has read the `corpse` tag since it was written and no entry
+        // Acquisition assesses a manual from a corpse, and no encounter entry
         // anywhere carried one, so route 3 - what a dead cultivator was practising
         // is still on them - was unreachable.
         id: 'enc-what-they-were-practising',

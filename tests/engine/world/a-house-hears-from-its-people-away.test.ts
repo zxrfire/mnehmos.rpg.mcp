@@ -1,4 +1,7 @@
 /**
+ * Jade value uses the ordinary commission quote, covered by
+ * `commissioning-a-craft.test.ts`; the jade-specific price wrapper is removed.
+ *
  * A house hears from its people away on communication talismans.
  *
  * The design owner: *"you can imagine people out on a sect have communication
@@ -97,11 +100,9 @@ import {
     mastersGiveJadeToDisciplesTheyValue,
     sendWordOnJade,
     theJadeBetween,
-    whatAPairOfJadeIsWorth
 } from '../../../src/engine/world/a-pair-of-communication-jade.js';
 import { settleNpcDeath } from '../../../src/engine/world/time.js';
 import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import { whatACommissionComesTo } from '../../../src/engine/social-leverage/commissioning-a-craft.js';
 import { handBackWhatTheyNoLongerBelongTo } from '../../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
@@ -815,8 +816,5 @@ describe('a paired communication jade', () => {
         expect(between('second-elder', 'elder'), 'one pair an elder').toBe(1);
     });
 
-    it('is worth what its maker\'s time and materials come to', () => {
-        const ordinal = refiningOrdinalFor('earth');
-        expect(whatAPairOfJadeIsWorth(ordinal)).toBe(whatACommissionComesTo('earth', false, ordinal));
-    });
+
 });

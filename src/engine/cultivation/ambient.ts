@@ -3,7 +3,6 @@
  */
 
 import {
-    AMBIENT_QI_WEIGHTS,
     AMBIENT_QI_BREAKTHROUGH_MOD,
     AMBIENT_QI_RATE_MULTIPLIER,
     type AmbientQi
@@ -19,12 +18,6 @@ export const AMBIENT_QI_ORDER: readonly AmbientQi[] = [
     'thin', 'normal', 'spirit_tide', 'dense'
 ] as const;
 
-/** Sum of the ambient weights. 100 by construction, computed so it stays true. */
-export const AMBIENT_WEIGHT_TOTAL = AMBIENT_QI_ORDER.reduce(
-    (sum, key) => sum + AMBIENT_QI_WEIGHTS[key],
-    0
-);
-
 /** Cultivation-rate multiplier for these conditions. */
 export function ambientRateMultiplier(ambient: AmbientQi): number {
     return AMBIENT_QI_RATE_MULTIPLIER[ambient];
@@ -39,23 +32,6 @@ export function ambientBreakthroughMod(ambient: AmbientQi): number {
 // ROLLING
 
 /**
- * Draw an ambient band from a uniform [0,1) sample.
- *
- * Takes the sample rather than an RNG, matching `rollSpiritRoot`: the caller
- * owns seeding, always.
- */
-export function rollAmbientQi(sample: number): AmbientQi {
-    const clamped = Math.max(0, Math.min(0.999999999, sample));
-    let cursor = clamped * AMBIENT_WEIGHT_TOTAL;
-    for (const key of AMBIENT_QI_ORDER) {
-        cursor -= AMBIENT_QI_WEIGHTS[key];
-        if (cursor < 0) return key;
-    }
-    // Float drift at the very top of the range; the last band is correct.
-    return AMBIENT_QI_ORDER[AMBIENT_QI_ORDER.length - 1];
-}
-
-/**
  * The ambient qi at a location on a given day.
  */
 // GEOLOGY, AND THE WEATHER ON TOP OF IT
@@ -64,7 +40,7 @@ export function rollAmbientQi(sample: number): AmbientQi {
 // month-to-month variation is weather; the baseline is geology, and geology
 // does not wander.
 //
-// This was wrong for a while and the bug is worth recording. `rollAmbientQi`
+// The former global roll
 // sampled one global distribution for every location, using the place only as
 // a seed input, so a drawn-down province came up `dense` roughly one month in
 // twenty and a rich vein came up `thin` half the time. Standing in Burnt Earth
@@ -83,38 +59,6 @@ export function rollAmbientQi(sample: number): AmbientQi {
 // property of the ground under your feet - so they carry the same small weight
 // everywhere.
 //
-// The half of that fix which is still not wired
-//
-// Measured in a live run, and recorded here because the code above reads as
-// though the problem is solved and from inside the module it is:
-//
-// NOTHING IN THIS REPOSITORY EVER PASSES `SiteConditions.density`.
-//
-// Not `src/web/game.ts` (`ambientFor`, and all six of its `simulateTimeSkip`
-// call sites), not `cultivation-manage.ts`, not `cultivation-support.ts`. Every
-// one of them omits it, so every one of them takes `impliedDensityFor` - which
-// guesses from the place's NAME, and guesses poor on purpose. Over the whole
-// implied curve, 64% of places come out typically thin, 25% normal, 11% dense.
-//
-// The consequence, watched happening: a cultivator standing on a location the
-// world layer holds at `env_spiritual_density = 1.0`, unsealed - the richest
-// drawable ground in the world, where `ambientWeightsForDensity(1)` puts 98.4%
-// of its weight on `dense` - was told the qi was thin, six months running. None
-// of that 1.0 was in the arguments. The same omission also means the pocket flag is
-// never passed, so `sealed_vein` is unreachable in play.
-//
-// This is not a regression in the roll. The roll is correct and `geology.test.ts`
-// proves it. It is that the world layer knows the density, the engine accepts
-// the density, and no line of code joins them: `resolvePlace` in
-// `src/web/entities.ts` still says in as many words that "places are free text
-// in this engine; nothing about them is simulated", and carries a TODO(world)
-// to resolve against real `world_locations`. Until that TODO is done, the fix
-// recorded above is inert wherever it matters, and the largest multiplier in
-// the game - up to 6x on progress rate - is decided by a hash of a place name.
-//
-// `tests/engine/cultivation/ground-in-the-skip.test.ts` holds the engine half
-// of this down and states the caller half it cannot reach.
-
 /**
  * Where each band sits on the 0..1 density axis.
  */
@@ -178,7 +122,7 @@ export function ambientWeightsForDensity(density: number): Record<string, number
  * Draw a band for a location of this density from a uniform [0,1) sample.
  *
  * Walks AMBIENT_QI_ORDER, so it can no more produce a `sealed_vein` than
- * `rollAmbientQi` can.
+ * any open-ground roll can.
  */
 export function rollAmbientAtDensity(sample: number, density: number): AmbientQi {
     const clamped = Math.max(0, Math.min(0.999999999, sample));

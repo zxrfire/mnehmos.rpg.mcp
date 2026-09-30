@@ -254,8 +254,11 @@ tell which they are looking at, and the only way to find out is to open it.
 So **sealing makes you look like treasure**, and closed-door seclusion is not free. One
 person's ruin delve is another person's very bad afternoon.
 
-The odds of getting into a sealed cave and the odds of getting into an old ruin are **the
-same number**: `oddsOfGettingThroughTheDoor`. Anything that wants a second one is wrong.
+The former logistic door-odds helper had no live caller. It has been removed:
+seasonal entry uses `isOpenOn`, force through a rated door uses `canUnmake`,
+and formation decay supplies its remaining rung through `effectiveWardOrdinal`.
+A second probability would contradict those gates. A patient lock-working
+attempt remains a gap; it is not licensed to bypass a seasonal formation.
 `isSomebodyStillAliveInThere` answers the occupancy question and is **engine-only** - it
 must never reach a prospector's view, because the whole point is that it cannot be known
 from outside.

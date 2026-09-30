@@ -15,18 +15,16 @@ import {
 import {
     AMBIENT_QI_ORDER,
     AMBIENT_REFRESH_DAYS,
-    AMBIENT_WEIGHT_TOTAL,
     ambientBlockStart,
     ambientBreakthroughMod,
     ambientForBlock,
     ambientForLocationOnDay,
     ambientRateMultiplier,
-    rollAmbientQi
 } from '../../../src/engine/cultivation/ambient.js';
 
 describe('ambient qi tables', () => {
     it('sums the declared weights to 100', () => {
-        expect(AMBIENT_WEIGHT_TOTAL).toBe(100);
+        expect(AMBIENT_QI_ORDER.reduce((sum, key) => sum + AMBIENT_QI_WEIGHTS[key], 0)).toBe(100);
         // Every ROLLABLE band is in the order, and the order is the only thing
         // the roll walks. `sealed_vein` is deliberately absent: it carries
         // weight 0 and exists only where a caller declares a sealed site, so
@@ -53,38 +51,6 @@ describe('ambient qi tables', () => {
         expect(ambientBreakthroughMod('thin')).toBeLessThan(0);
         expect(ambientBreakthroughMod('normal')).toBe(0);
         expect(ambientBreakthroughMod('spirit_tide')).toBeGreaterThan(0);
-    });
-});
-
-describe('rollAmbientQi', () => {
-    it('maps the cumulative weight bands exactly', () => {
-        // thin 0-50, normal 50-85, spirit_tide 85-95, dense 95-100.
-        expect(rollAmbientQi(0)).toBe('thin');
-        expect(rollAmbientQi(0.4999)).toBe('thin');
-        expect(rollAmbientQi(0.5)).toBe('normal');
-        expect(rollAmbientQi(0.8499)).toBe('normal');
-        expect(rollAmbientQi(0.85)).toBe('spirit_tide');
-        expect(rollAmbientQi(0.9499)).toBe('spirit_tide');
-        expect(rollAmbientQi(0.95)).toBe('dense');
-        expect(rollAmbientQi(0.999999999)).toBe('dense');
-    });
-
-    it('clamps out-of-range samples instead of returning undefined', () => {
-        expect(rollAmbientQi(-1)).toBe('thin');
-        expect(rollAmbientQi(2)).toBe('dense');
-    });
-
-    it('reproduces the declared distribution over a uniform sweep', () => {
-        const counts: Record<AmbientQi, number> = {
-            // `sealed_vein` is the fifth band and was missing here, so a sweep
-            // that ever rolled one would have tallied into an absent key.
-            thin: 0, normal: 0, dense: 0, spirit_tide: 0, sealed_vein: 0
-        };
-        const N = 100_000;
-        for (let i = 0; i < N; i++) counts[rollAmbientQi(i / N)]++;
-        for (const band of AMBIENT_QI_ORDER) {
-            expect(counts[band] / N).toBeCloseTo(AMBIENT_QI_WEIGHTS[band] / AMBIENT_WEIGHT_TOTAL, 3);
-        }
     });
 });
 

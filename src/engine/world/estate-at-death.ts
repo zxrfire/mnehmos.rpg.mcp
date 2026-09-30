@@ -465,7 +465,8 @@ export function settleEstate(input: EstateInput): EstateAtDeath {
  * does not move any of it.
  */
 function whatThePlaceLeft(input: EstateInput): MarkAtDeath[] {
-    const danger = input.fell?.danger ?? 0;
+    const marks = howAPlaceMarksWhatComesOffABody(input.fell?.danger ?? 0);
+    const danger = marks.damaged + marks.ruined;
     const unmarked = (): MarkAtDeath[] =>
         input.tracked.map(t => ({ itemId: t.itemId, condition: 'unchanged', theWork: null }));
 

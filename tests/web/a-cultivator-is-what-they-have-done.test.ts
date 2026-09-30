@@ -23,16 +23,17 @@
  * ordinary `interact` path wrote.
  */
 
+// Load the played entry point before reading the catalogs it initializes.
+import { makeGameInWorld } from './harness';
 import { SECTS } from '../../src/data/cultivation/sects';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques';
-import { ifCaughtPractising, whoseArt } from '../../src/engine/world/manuals';
+import { whoseArt } from '../../src/engine/world/manuals';
 import { whatFollowsFromTheBout } from '../../src/engine/social-leverage/going-further-than-an-agreed-bout-allowed';
 import { activeWorld } from '../../src/server/state/cultivation-world';
 import type { AHolder } from '../../src/engine/social-leverage/being-hunted';
 import { whatTheirRecordMakesThem } from '../../src/engine/social-leverage/personal-alignment';
 import { obligationFromRow } from '../../src/storage/repos/obligation.repo';
 import { whatTheWorldHoldsAbout } from '../../src/web/personal-record';
-import { makeGameInWorld } from './harness';
 import type { GameService } from '../../src/web/game';
 import { worldLocationFor } from '../../src/web/entities';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
@@ -338,16 +339,16 @@ describe('practising an art makes you nothing', () => {
     /**
      * The owner's explicit example. Holding a house's road is a question about
      * PERMISSION - `unauthorisedPractice` names who would want a word, and
-     * `ifCaughtPractising` says what they do - and it is not a question about
+     * The house alignment decides what they do - and it is not a question about
      * character. Nothing in either direction moves the reading.
      */
     it('leaves the reading exactly where it was, either way', async () => {
         // An art a house can actually call its own, rather than one so widely
         // held that nobody could claim it. `noHouseCanCallItTheirs` is the
-        // question and `ifCaughtPractising` is where it is asked.
+        // question and the ownership read is where it is asked.
         const anArtWithAnOwner = TECHNIQUES.find(t => {
             const owners = whoseArt(t.id);
-            return owners.length > 0 && ifCaughtPractising(t.id, owners[0]!) !== 'nothing';
+            return owners.length > 0;
         });
         expect(anArtWithAnOwner, 'no house in the catalog can claim an art').toBeDefined();
         const owners = whoseArt(anArtWithAnOwner!.id);

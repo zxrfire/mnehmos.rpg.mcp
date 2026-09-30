@@ -50,7 +50,7 @@
  *
  * Nothing here branches on a house's name and nothing may. What comes back is
  * a faction id and the alignment on that faction's catalog row, off the same
- * field `willTheHouseBackThis` and `ifCaughtPractising` read - so a house added
+ * field `willTheHouseBackThis` and the house punishment switch read - so a house added
  * tomorrow gets whatever behaviour is built on this for free.
  *
  * Pure. Records in, a reading out. No I/O, no RNG, no mutation.

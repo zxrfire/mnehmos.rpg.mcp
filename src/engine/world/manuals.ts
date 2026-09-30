@@ -9,11 +9,6 @@ import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
 import { getTechnique, stopsSomewhere, TECHNIQUES } from '../../data/cultivation/techniques.js';
-import {
-    ifCaughtAtSomethingTheHousePunishes,
-    type IfCaught
-} from '../social-leverage/what-a-house-does-when-it-catches-you.js';
-import type { SectAlignment } from '../../schema/cultivation.js';
 import { SECTS } from '../../data/cultivation/sects.js';
 import type { SpiritRootKey } from '../../schema/cultivation.js';
 import {
@@ -838,39 +833,6 @@ export function unauthorisedPractice(
     if (owners.length === 0) return null;
     // Somebody carrying the tag of a house that teaches it has an answer ready.
     return owners;
-}
-
-/**
- * What happens when they catch you practising it.
- */
-/**
- * Retained here because this is where every caller imports it from, and moved
- * because the switch behind it turned out not to be about manuals at all.
- */
-export type { IfCaught };
-
-/**
- * What a house does about somebody practising an art off its shelf.
- */
-export function ifCaughtPractising(
-    techniqueId: string,
-    ownerFactionId: string | null
-): IfCaught {
-    // The property question, not the market one. See `isCommonlyHeld`.
-    const theirs = !noHouseCanCallItTheirs(techniqueId) && Boolean(ownerFactionId);
-    const owner = ownerFactionId
-        ? (SECTS as readonly { id: string; alignment?: string }[])
-            .find(s => s.id === ownerFactionId)
-        : undefined;
-    return ifCaughtAtSomethingTheHousePunishes({
-        theirsToPunish: theirs,
-        // A house the catalog does not carry is not a house that punishes, and
-        // an alignment it does not declare reads as the ordinary case, exactly
-        // as the `default` arm did before this moved.
-        alignment: theirs
-            ? ((owner?.alignment as SectAlignment | undefined) ?? 'neutral')
-            : null
-    });
 }
 
 /**

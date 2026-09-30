@@ -21,7 +21,7 @@ import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { computeBreakthroughOdds } from '../src/engine/cultivation/breakthrough.js';
 import { rankName, realmForOrdinal } from '../src/engine/cultivation/realms.js';
 import {
-    foldProtectionIntoOdds,
+    MAX_PROTECTION_BONUS,
     protectionBonus,
     protectorWeight,
     standingGuardCost,
@@ -74,9 +74,14 @@ async function main(): Promise<void> {
             }))
         });
         const below = Math.max(0, realmForOrdinal(ordinal).ordinalStart - 1);
-        const one = foldProtectionIntoOdds(base, guard(1, ordinal), ordinal);
-        const three = foldProtectionIntoOdds(base, guard(3, ordinal), ordinal);
-        const lower = foldProtectionIntoOdds(base, guard(1, below), ordinal);
+        const watchedOdds = (watch: { protectors: Protector[] }) => computeBreakthroughOdds(subject, {
+            ambient: 'normal', pill: null, manualQuality: null,
+            protection: protectionBonus(watch, ordinal) / MAX_PROTECTION_BONUS,
+            protectionBy: watch.protectors.map(p => p.name)
+        });
+        const one = watchedOdds(guard(1, ordinal));
+        const three = watchedOdds(guard(3, ordinal));
+        const lower = watchedOdds(guard(1, below));
         line(
             `  ${rankName(ordinal).padEnd(38)}${pct(base.finalChance).padStart(6)}` +
             `${pct(one.finalChance).padStart(11)}${pct(three.finalChance).padStart(11)}` +
@@ -86,20 +91,21 @@ async function main(): Promise<void> {
 
     line();
     line('  The breakdown, for one wall, in full:');
-    const at44 = computeBreakthroughOdds(
-        {
-            realmOrdinal: 44, spiritRoot: 'single_metal',
-            attributes: { might: 3, insight: 4, fortune: 2, charm: 2 }, injuries: []
-        },
-        { ambient: 'normal', pill: null, manualQuality: null }
-    );
-    const watched = foldProtectionIntoOdds(at44, {
+    const lastWatch = {
         protectors: [
             { id: 'a', name: 'Second Seat', realmOrdinal: 44, standing: 0.8 },
             { id: 'b', name: 'Third Seat', realmOrdinal: 43, standing: 0.8 },
             { id: 'c', name: 'Fourth Seat', realmOrdinal: 42, standing: 0.8 }
         ]
-    }, 44);
+    };
+    const watched = computeBreakthroughOdds({
+        realmOrdinal: 44, spiritRoot: 'single_metal',
+        attributes: { might: 3, insight: 4, fortune: 2, charm: 2 }, injuries: []
+    }, {
+        ambient: 'normal', pill: null, manualQuality: null,
+        protection: protectionBonus(lastWatch, 44) / MAX_PROTECTION_BONUS,
+        protectionBy: lastWatch.protectors.map(p => p.name)
+    });
     for (const m of watched.modifiers) {
         line(`    ${m.source.padEnd(52)} ${(m.delta >= 0 ? '+' : '') + m.delta.toFixed(4)}`);
     }
@@ -202,7 +208,11 @@ async function main(): Promise<void> {
         }
         const base = computeBreakthroughOdds(asSubject(example),
             { ambient: 'normal', pill: null, manualQuality: null });
-        const withWatch = foldProtectionIntoOdds(base, watch, example.cultivation.realmOrdinal);
+        const withWatch = computeBreakthroughOdds(asSubject(example), {
+            ambient: 'normal', pill: null, manualQuality: null,
+            protection: protectionBonus(watch, example.cultivation.realmOrdinal) / MAX_PROTECTION_BONUS,
+            protectionBy: watch.protectors.map(p => p.name)
+        });
         line(`    alone ${pct(base.finalChance)} -> watched ${pct(withWatch.finalChance)} ` +
             `(+${protectionBonus(watch, example.cultivation.realmOrdinal).toFixed(4)})`);
     }

@@ -10,7 +10,6 @@
 import { describe, expect, it } from 'vitest';
 import {
     assessFit,
-    mayHoldAFit,
     pillPotencyFor,
     readQualityFor,
     PILL_GRADE_FACTOR,
@@ -21,10 +20,6 @@ import {
     type Find,
     type Seeker
 } from '../../../src/engine/encounters/index.js';
-import { getEncounter } from '../../../src/data/cultivation/encounters.js';
-
-const requireEncounter = (id: string) => getEncounter(id)!;
-
 const fireRoot: Seeker = { ordinal: 12, elements: ['fire'], rootGrade: 'single', insights: { sword: 2 } };
 
 const fireManual: Find = {
@@ -124,19 +119,6 @@ describe('fit', () => {
             .toBe('outgrown');
     });
 });
-
-describe('which rows can hold a fit', () => {
-    it('reads the catalog tags rather than a list', () => {
-        expect(mayHoldAFit(requireEncounter('enc-manual-in-a-lost-grade').tags)).toBe(true);
-        expect(mayHoldAFit(requireEncounter('enc-recovered-recipe-fragment').tags)).toBe(true);
-        expect(mayHoldAFit(requireEncounter('enc-inheritance-trial-dead-sect').tags)).toBe(true);
-        // A bandit is not holding your destiny.
-        expect(mayHoldAFit(requireEncounter('enc-roadside-bandits').tags)).toBe(false);
-        expect(mayHoldAFit(requireEncounter('enc-market-day').tags)).toBe(false);
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
 
 function assessment(over: Partial<Assessment> = {}): Assessment {
     return {

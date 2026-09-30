@@ -1,4 +1,7 @@
 /**
+ * The fixed feeder intake was removed in favour of real tournament selection
+ * (`gatherings.test.ts`); arrival is asserted against the live entry door.
+ *
  * Governance validation: the pyramid, the four models, the feeder, arrival at
  * the bottom, and the guest-elder relationship.
  *
@@ -45,7 +48,6 @@ import {
     ParentageSchema,
     GUEST_ELDERS,
     GuestElderSchema,
-    FEEDER,
     ARRIVAL_RULES,
     DIRECT_RULE,
     AZURE_CLOUD_INTAKE,
@@ -373,21 +375,6 @@ describe('above the map', () => {
 });
 
 describe('the feeder and arrival', () => {
-    it('selects a very few upward, by several routes', () => {
-        expect(FEEDER.intakeSize).toBeLessThanOrEqual(12);
-        expect(FEEDER.selectionRoutes.length).toBeGreaterThanOrEqual(3);
-        const total = FEEDER.selectionRoutes.reduce((sum, r) => sum + r.share, 0);
-        expect(total, 'the routes should account for the whole intake').toBe(FEEDER.intakeSize);
-        const routes = FEEDER.selectionRoutes.map(r => r.route);
-        expect(routes.some(r => /competition/i.test(r))).toBe(true);
-        expect(routes.some(r => /recommend/i.test(r))).toBe(true);
-        expect(routes.some(r => /purchase/i.test(r))).toBe(true);
-        // The exposure event: a competition is where a mis-sorted cultivator
-        // first sees their own Dao practised properly.
-        expect(FEEDER.exposureNote.length).toBeGreaterThan(150);
-        expect(FEEDER.whatHappensToTheRest.length).toBeGreaterThan(80);
-    });
-
     it('carries nothing across, and the data cannot be made to', () => {
         expect(ARRIVAL_RULES.carriesOver).toEqual([]);
         expect(ARRIVAL_RULES.entryRankIndex).toBe(0);

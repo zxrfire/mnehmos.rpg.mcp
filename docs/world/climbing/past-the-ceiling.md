@@ -604,7 +604,7 @@ machinery that exists.
 | E2 | `canDerive(dao, manual)` returning permitted / `leaning_only` / `wrong_dao` | 7 | Shaped exactly like `daoGate` and reusing `daoMatches`. `leaning` reads an immortal art and does not extend one; only `dao` derives. |
 | E3 | A derivation result the storage layer can persist as a technique row | 7 | The one genuinely new thing in this document. Deterministic from `(runSeed, cultivatorId, sourceManualId, daoSubject)`, output `cap` one realm above the source, `provenance` a new `'derived'` value, and `element`/`subject` taken from the deriver's own road so the result is suited by construction. **The engine must produce the row; the narrator may never assert one.** |
 | E4 | `assessFit` called on every manual acquisition, not only on encounter finds | 1, 1b, 2, 3 | Today `assessFit` is reachable from the encounter path only. A grave prize, a corpse's inventory and a bought volume must all produce a `Suitability` with a `line`. |
-| E5 | `mayHoldAFit` extended to grave and corpse tags | 3 | It reads `technique`, `recipe`, `inheritance`, `ruin-only`, `pills`. A body carrying a canon holds a fit and is not currently tagged as such. |
+| E5 | Fit on every acquisition route | 3 | `assessAcquisition` reads the manual regardless of encounter tags, including a grave, a corpse or a teacher. |
 | E6 | A `Find` builder from a `TechniqueEntry` | 1, 2, 3 | One function, so the three acquisition paths cannot disagree about what a manual demands. Should read D3's fields. |
 
 ### Verb layer - `src/web/**` and `src/server/consolidated/**`

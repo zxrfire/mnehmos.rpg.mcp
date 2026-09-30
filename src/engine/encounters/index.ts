@@ -120,7 +120,6 @@ export {
 
 export {
     assessFit,
-    mayHoldAFit,
     pillPotencyFor,
     PILL_GRADE_FACTOR,
     PILL_HALVING_RUNGS,

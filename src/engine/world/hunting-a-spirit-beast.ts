@@ -8,6 +8,7 @@ import {
     BEAST_CORE_ORDINAL,
     anythingAtThisRungSpeaks,
     materialsOf,
+    coreOf,
     type Beast,
     type BeastAbility,
     type BeastMaterial
@@ -497,8 +498,9 @@ export function whatComesOffTheBody(input: {
     const taken: TakenMaterial[] = [];
     const leftBehind: LeftBehindMaterial[] = [];
 
+    const core = coreOf(input.beast.id);
     for (const material of materialsOf(input.beast.id)) {
-        if (material.taking === 'kill' && !input.killed) {
+        if ((material.id === core?.id || material.taking === 'kill') && !input.killed) {
             leftBehind.push({ material, because: 'no_body', needs: material.harvestOrdinal });
             continue;
         }

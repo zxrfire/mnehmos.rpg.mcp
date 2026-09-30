@@ -48,6 +48,13 @@ the single most consequential thing that can happen to a promising cultivator - 
 why inter-sect competitions matter enormously to everyone except the people at the top,
 for whom they are recruitment.
 
+The live selection is `gatherings.ts`: the winning disciple goes upward when
+the receiving house is stronger and the home house answers to it. The former
+nine-person provincial intake and its fixed route shares were a second policy
+beside that selection and have been removed. Recommendation, grant quotas and
+purchase remain possible arrangements between people; they do not share a
+province-wide intake pool.
+
 The detail that makes this land, and it must not be softened:
 
 > **You arrive at the higher sect at the bottom.**

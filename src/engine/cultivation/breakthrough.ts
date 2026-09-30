@@ -1290,12 +1290,6 @@ export function computeBreakthroughOdds(
     // failure-cost half; this is the same fact reaching the ODDS, which is the
     // half that had no reader at all.
     //
-    // `foldProtectionIntoOdds` was written to do this from outside and is
-    // unreachable in practice: every real crossing goes through
-    // `attemptBreakthrough`, which computes its own odds internally and never
-    // hands them out to be folded. That function's own docstring called this
-    // the better version and left it to whoever owned this file next.
-    //
     // Booked LAST, after the pill, for the reason the fold gives: nothing
     // earlier may be rewritten, because the pill term multiplies a mid-list
     // clamp that has to keep meaning what it meant. Absent or zero books no
