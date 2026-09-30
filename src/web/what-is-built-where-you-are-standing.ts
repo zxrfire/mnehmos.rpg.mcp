@@ -101,6 +101,8 @@ export function whatIsBuiltWhereYouAreStanding(input: BuiltHereInput): BuiltHere
  * it, and standing in the yard is not that.
  */
 function theStonework(here: LocationRecord): string[] {
+    // A ruin's stamp has weathered, and `ruin-stonework.ts` reads what is left.
+    if (here.kind === 'ruin') return [];
     const style = houseStyleFromTags(here);
     if (style === null) return [];
     // The ward taken off the copy, and only for this call. `describeRoom`'s

@@ -5,7 +5,9 @@
 
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
-import { lifespanForOrdinal, rankName, realmIndexOf } from '../cultivation/realms.js';
+import { rankName, realmIndexOf } from '../cultivation/realms.js';
+import { lifespanCeilingFor } from '../cultivation/survival.js';
+import type { Cultivator } from '../../schema/cultivation.js';
 import {
     assessCapability,
     isGrantAvailableAt,
@@ -247,6 +249,7 @@ export function resolveOverstay(
     location: LocationRecord,
     closedOnDay: number,
     actor: { realmOrdinal: number; bornOnDay: number }
+        & Partial<Pick<Cultivator, 'physique' | 'immortalStatus'>>
 ): Overstay {
     const cycle = location.cycle;
     if (!cycle) {
@@ -261,7 +264,7 @@ export function resolveOverstay(
     const reopens = nextOpeningDay(location, closedOnDay + 1);
     const yearsShutIn = Math.round(((reopens ?? closedOnDay + cycle.periodDays) - closedOnDay) / DAYS_PER_YEAR);
     const ageYears = (closedOnDay - actor.bornOnDay) / DAYS_PER_YEAR;
-    const yearsRemaining = Math.max(0, Math.round(lifespanForOrdinal(actor.realmOrdinal) - ageYears));
+    const yearsRemaining = Math.max(0, Math.round(lifespanCeilingFor(actor) - ageYears));
 
     const survives = yearsRemaining > yearsShutIn;
     return {

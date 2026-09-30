@@ -41,6 +41,9 @@ import {
     worldLocationFor
 } from './entities.js';
 import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
+import { whatTheStoneworkOfARuinSays } from './ruin-stonework.js';
+import { ruinChamberHere } from './ruin-delving.js';
+import { theRuinThisPlaceIs } from './walking-up-to-a-door-that-closes.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
@@ -113,6 +116,20 @@ function whatHasBeenBuiltHere(
     const asked = query.trim();
     const aboutBuildings = WHAT_SOMEBODY_BUILT.test(asked);
     if (!aboutBuildings && !THE_GROUND_ITSELF.test(asked)) return null;
+
+    // A RUIN IS READ BY WHAT IS LEFT OF HOW IT WAS BUILT, against the houses
+    // this reader knows. Asked first: the compound read below would describe
+    // the style as the house stamped it, ornament and all.
+    const ruin = aboutBuildings && game.atHand
+        ? theRuinThisPlaceIs(game.atHand, cultivator.location)
+        : null;
+    const stonework = ruin && game.atHand
+        ? whatTheStoneworkOfARuinSays(game.atHand, ruin, house =>
+            game.knowledge.isAwareOf(cultivator.id, 'sect', house))
+        : null;
+    if (ruin && stonework) {
+        return { kind: 'place', id: ruin.name, name: ruin.name, facts: stonework.lines, structure: [stonework.structure] };
+    }
 
     const built = theBuiltGroundUnder(game, cultivator);
     if (built !== null) {
@@ -189,7 +206,12 @@ export const investigateVerb = {
         // verbs that take a scope to find somebody to swear an oath to or a
         // house to petition have no business resolving a sword. An absent list
         // is how `resolveObject` is told nobody asked.
-        const scope = { ...this.scopeFor(cultivator), objects: this.atHand?.objects ?? [] };
+        const chamber = ruinChamberHere(this, cultivator);
+        const hereId = this.atHand ? worldLocationFor(this.atHand, cultivator.location)?.id : undefined;
+        const scope = { ...this.scopeFor(cultivator), objects: (this.atHand?.objects ?? []).filter(row =>
+            row.data.chamberId == null || row.possessorId === cultivator.id
+                || row.data.chamberId === chamber
+                    && (row.locationId === hereId || row.locationId === cultivator.location)) };
         // Ruins are load-bearing: origin.md closes on them being the one door
         // in this world that opens on nerve rather than standing, and the only
         // route a poor cultivator has. "The ruins" is how a player refers to

@@ -9,11 +9,18 @@
  *   - something sealed opens on its own schedule with nobody's intent
  *   - the two ruin axes stay independent of each other
  *   - a map records rooms and never the edges
+ *
+ * Toll and paper-claim tests moved to the live public-ground rule in
+ * a-house-that-shuts-a-public-ruin.test.ts and ruin-gatekeepers.test.ts.
+ * Live delving also checks bodily lifespan, blocked passages, and the actual
+ * day a formation round leaves a chamber; a wait must clear what it names.
+ * Immortal overstay uses the shared lifespan calculation, whose unbounded
+ * span is represented by a finite stand-in rather than JavaScript Infinity.
  */
 
 import { describe, it, expect } from 'vitest';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
-import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
+import { MAX_ORDINAL, TRUE_IMMORTAL_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
     makeLocation,
     makeThresholds,
@@ -26,7 +33,6 @@ import { createLedger } from '../../../src/engine/world/history.js';
 import { runCascade } from '../../../src/engine/world/cascade.js';
 import {
     ageOf,
-    accessTermsFor,
     firstChamberTells,
     identifyBuilder,
     knownAxes,
@@ -312,6 +318,20 @@ describe('convergence - the world doing something rather than doing it to you', 
         const budget = expeditionBudget(walkable, 10, { realmOrdinal: 4 });
         expect(budget.wings.every(w => w.reachable)).toBe(true);
         expect(budget.unreachableWings).toHaveLength(0);
+    });
+
+    it('overstay uses the body rather than only its rung', () => {
+        const ordinary = resolveOverstay(pavilion, 40, { realmOrdinal: 40, bornOnDay: 0 });
+        const yin = resolveOverstay(pavilion, 40, {
+            realmOrdinal: 40, bornOnDay: 0, physique: 'profound_yin'
+        });
+        expect(yin.yearsRemaining).toBeLessThan(ordinary.yearsRemaining);
+        const immortal = resolveOverstay(pavilion, 40, {
+            realmOrdinal: TRUE_IMMORTAL_ORDINAL, bornOnDay: 0, immortalStatus: 'true_immortal'
+        });
+        expect(immortal.yearsRemaining).toBeGreaterThan(ordinary.yearsRemaining);
+        expect(immortal.yearsRemaining).toBeGreaterThan(immortal.yearsShutIn);
+        expect(immortal.outcome).toBe('shut_in');
     });
 });
 
@@ -655,33 +675,6 @@ describe('ruins - knowledge follows engagement rather than altitude', () => {
     });
 });
 
-describe('ruins - who controls the door', () => {
-    const site = ruinAt('loc-held', {
-        discovered: true, controllingFactionId: 'f-holder',
-        thresholds: makeThresholds(0, 0, 0, 20)
-    });
-
-    it('an unclaimed site charges nothing, and that is information', () => {
-        const terms = accessTermsFor(site, null);
-        expect(terms.control).toBe('unclaimed');
-        expect(terms.price).toBe('open');
-        expect(terms.ifIgnored).toContain('worth knowing');
-    });
-
-    it('a house that takes applicants sells access; one that does not reserves it', () => {
-        expect(accessTermsFor(site, { id: 'f-holder', recruits: true, reach: 8 }).price).toBe('fee');
-        expect(accessTermsFor(site, { id: 'f-holder', recruits: false, reach: 8 }).price)
-            .toBe('disciples_only');
-    });
-
-    it('a paper claim bills what it cannot stop, and asks for an errand instead', () => {
-        const terms = accessTermsFor(site, { id: 'f-holder', recruits: true, reach: 1 });
-        expect(terms.control).toBe('held_on_paper');
-        expect(terms.price).toBe('task');
-        expect(terms.enforceable).toBe(false);
-    });
-});
-
 // ═════════════════════════════════════════════════════════════════════════
 // 4. MECHANICS THAT CHANGE THE TERMS RATHER THAN THE DAMAGE
 // ═════════════════════════════════════════════════════════════════════════
@@ -728,6 +721,16 @@ describe('ruin mechanics - a map records rooms and never the edges', () => {
         expect(result.days).toBeGreaterThan(0);
         expect(result.wasted).toBeGreaterThanOrEqual(0);
     });
+
+    it('a blocked passage stays uncrossed even with a complete map', () => {
+        const chambers = trueTopology(site);
+        const target = chambers.at(-1)!.id;
+        const result = navigate(site, { fromChamberId: chambers[0].id, toChamberId: target,
+            map: completeMap(site, 'notes'), mayEnter: id => id !== target
+        }, forStream('nav', 'closed-door'));
+        expect(result.reached).toBe(false);
+        expect(result.route).not.toContain(target);
+    });
 });
 
 describe('ruin mechanics - the other three', () => {
@@ -762,6 +765,14 @@ describe('ruin mechanics - the other three', () => {
         const later = routineAt(ancient, 1_000 + 200);
         expect(later.find(r => r.occupied)!.chamberId)
             .not.toBe(a.find(r => r.occupied)!.chamberId);
+    });
+
+    it('waiting to the stated clearance actually clears the occupied room', () => {
+        const occupied = routineAt(ancient, 1_001).find(row => row.occupied)!;
+        expect(routineAt(ancient, occupied.clearOnDay)
+            .find(row => row.chamberId === occupied.chamberId)!.occupied).toBe(false);
+        const only = withWings(ancient, [wingsOf(ancient)[0]]);
+        expect(routineAt(only, 1_001)[0].clearOnDay).toBe(Infinity);
     });
 
     it('the place gets the count right, and only counts what happened', () => {

@@ -2919,14 +2919,24 @@ asset's own ordinal. The exposure that follows is *derived*: `couldDieToADisaste
 asked of each person actually standing there, so `catastrophe.ts`'s three tiers reproduce
 themselves without the table being read.
 
-**`provenance.ts` - four axes that must stay independent.** `identifyBuilder` never reads
+**`provenance.ts` - independent readings of what survives.** `identifyBuilder` never reads
 wing state and `wingsOf` never reads provenance. If those cross, the axes have collapsed.
 Everything lives on `location.data` as flat scalars plus one JSON string, so no
 `LocationRecord` field, migration or repo changed, and a site seeded before the module
 existed reads as anonymous and untouched - the honest default.
 
-**`convergence.ts` - the consequence half of `OpeningCycle`.** That field has been on the
-record since the location layer was written and nothing in play consumed it. The escape
+`accessTermsFor` was superseded by public ground and removed. Control is read by
+`ruin-gatekeepers.ts` and `a-house-that-shuts-a-public-ruin.ts`; it is not a toll catalog.
+Work records carry the worker's id (or an attributed name where no id was supplied), so
+`knownAxes` does not infer engagement from prose. The live chamber caller is
+[`../../web/ruin-delving.ts`](../../web/ruin-delving.ts). The chamber stored on books and
+goods is their interior position; ordinary `locationId` continues to identify the site.
+Formation rounds clear a room at the end of its current slot, not one full slot after
+every inspection. A one-room round stays there. Overstay reads the body's lifespan,
+including physique and immortality; death still happens on the ordinary elapsed clock.
+
+**`convergence.ts` - the consequence half of `OpeningCycle`.** The live chamber executor
+reports a closing window and keeps the body inside while the ordinary clock advances. The escape
 from a closing window is `spatial_folding`, an existing Void Tribulation grant, and its two
 properties do all the work: it is too high for anybody who explores ruins, and it **wanes**
 with the window, so it fails when it would matter most. Note which property that is - the

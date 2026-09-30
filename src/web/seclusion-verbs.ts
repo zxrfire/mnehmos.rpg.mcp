@@ -96,6 +96,7 @@ import {
 } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { ruinHostilityHere } from './ruin-delving.js';
 import { foldTheFightIn, theyCameAtYou } from './when-somebody-comes-at-you.js';
 import { theDoorYouSitBehind } from './seclusion-door.js';
 import { whoWasAtTheDoorWhenTheyCameOut } from '../engine/encounters/an-account-comes-due.js';
@@ -428,6 +429,7 @@ export const seclusionVerbs = {
                     : {})
             },
             understanding: this.understandingFor(run, provisioned),
+            hostility: ruinHostilityHere(this, provisioned),
             techniqueElement: null,
             rations: provisioning.rations,
             grainAbstinence: false,
@@ -1073,6 +1075,7 @@ export const seclusionVerbs = {
                 ground: this.groundFor(before)
             },
             understanding: this.understandingFor(run, before),
+            hostility: ruinHostilityHere(this, before),
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
             rations: this.drawFromPack(cultivator, lived),

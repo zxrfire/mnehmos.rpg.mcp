@@ -1314,6 +1314,7 @@ import { GameError } from './turn-wire-shapes.js';
 import { matchVerbs } from './match-verbs.js';
 import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
 import { siteVerbs } from './site-verbs.js';
+import { leaveRuinBeforeMoving, moveWithinRuin, reportRuinClosing, ruinComprehensionHere } from './ruin-delving.js';
 import { institutionVerbs } from './institution-verbs.js';
 import {
     ALREADY_STANDS_BETWEEN_THEM,
@@ -4181,9 +4182,28 @@ export class GameService {
         rawInput = ''
     ): Promise<Execution> {
         // SOMEBODY NAMED ACROSS THE SQUARE IS A WALK AWAY. See `walking-across-a-place.ts`.
+        const worldDayBefore = Math.floor(this.atHand?.currentDay ?? 0);
+        if (action.action === 'move') {
+            const chamber = await moveWithinRuin(this, run, cultivator, ambient, action.target);
+            if (chamber) {
+                reportRuinClosing(this, worldDayBefore, chamber);
+                return chamber;
+            }
+            const leaving = await leaveRuinBeforeMoving(this, run, cultivator, ambient);
+            if (leaving) {
+                reportRuinClosing(this, worldDayBefore, leaving.done);
+                if (leaving.done.outcome === 'refused' || leaving.done.cutShort || !this.currentRun().cultivator.alive
+                    || !leaving.left) return leaving.done;
+                const now = this.currentRun();
+                const moved = await this.execute(action, now.run, now.cultivator,
+                    this.ambientFor(now.cultivator, now.run), rawInput);
+                return foldTheCallsIntoOneTurn([leaving.done, moved], moved.facts.headline);
+            }
+        }
         const crossed = crossToWhoeverTheyNamed(this, cultivator, action.target);
         const actor = crossed?.cultivator ?? cultivator;
         const done = await this.carryOut(action, run, actor, ambient, rawInput);
+        reportRuinClosing(this, worldDayBefore, done);
         if (crossed) {
             done.facts.lines.unshift(crossed.line);
             done.facts.structure.push(crossed.structure);
@@ -18893,6 +18913,8 @@ ${fit.line}`;
             runId: run.id,
             practisingTechniqueId
         }).context;
+
+        context.locationTags = [...(context.locationTags ?? []), ...ruinComprehensionHere(this, cultivator)];
 
         // AND WHAT THEY ARE CARRYING
         const world = this.atHand;

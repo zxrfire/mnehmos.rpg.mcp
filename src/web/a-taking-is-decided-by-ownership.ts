@@ -80,6 +80,8 @@ import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { GameService } from './turn-engine.js';
+import { ruinChamberHere } from './ruin-delving.js';
+import { worldLocationFor } from './entities.js';
 
 /** Who the world says holds it. */
 export interface Holder {
@@ -264,15 +266,19 @@ export function whoseThingIsThis(evidence: TakingEvidence): WhoseThing {
  */
 export function whatIsStandingFreeAt(
     world: WorldState | null,
-    here: string | null
+    here: string | null,
+    chamberId: string | null = null
 ): ObjectRecord[] {
     if (!world || here === null) return [];
+    const placeId = world.locations ? worldLocationFor(world, here)?.id : undefined;
     return world.objects.filter(object =>
         isTracked(object)
         && !isRuined(object)
         && object.possessorId === null
         && object.ownerId === null
-        && (object.locationId === here || object.data?.mooredAt === here)
+        && (object.data.chamberId == null || object.data.chamberId === chamberId)
+        && (object.locationId === here || object.data?.mooredAt === here
+            || placeId !== undefined && (object.locationId === placeId || object.data?.mooredAt === placeId))
     );
 }
 
@@ -335,7 +341,7 @@ export const takingVerbs = {
             said: withoutThePossessive(said),
             yours: whatIsWithinReachOf(this.atHand, cultivator.id, here),
             theirs: whatEverybodyHereHasWithinReach(this.atHand, here, others),
-            free: whatIsStandingFreeAt(this.atHand, here),
+            free: whatIsStandingFreeAt(this.atHand, here, ruinChamberHere(this, cultivator)),
             saysItIs: whoTheSentenceSaysItIs(sentence.trim().length > 0 ? sentence : said)
         });
     },
@@ -444,7 +450,7 @@ function whatIsHere(service: GameService, cultivator: Cultivator): string[] {
             names.push(`${row.object.name} (${person.name}'s)`);
         }
     }
-    for (const row of whatIsStandingFreeAt(service.atHand, here)) names.push(row.name);
+    for (const row of whatIsStandingFreeAt(service.atHand, here, ruinChamberHere(service, cultivator))) names.push(row.name);
     return names.slice(0, 6);
 }
 

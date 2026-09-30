@@ -360,7 +360,7 @@ const FACET_DECAY: readonly (readonly string[])[] = [
 /**
  * What can still be read off a building of this age.
  *
- * `new` loses the ornament, `old` loses the finish as well, `ancient` is down
+ * `new` loses the ornament, `old` loses upkeep as well, `ancient` is down
  * to the plan and the stone. Ages are the ones `provenance.ts` already uses.
  */
 export function survivingTags(
@@ -458,6 +458,38 @@ export function attributionField(
     if (matches.length === 0) return { best: 0, field: 0 };
     const best = matches[0].score;
     return { best, field: matches.filter(m => m.score >= best - 1e-9).length };
+}
+
+/**
+ * What a weathered building still shows, off the facets `survivingTags` left.
+ *
+ * Upkeep is never said: nothing in a ruin is maintained, so that facet is a
+ * record of the house and not of the stone. Ornament is gone from every ruin.
+ */
+export function whatIsLeftToSeeOf(surviving: readonly string[]): string[] {
+    const facet = (prefix: string): string | null =>
+        surviving.find(t => t.startsWith(prefix))?.slice(prefix.length) ?? null;
+    const words = (value: string): string => value.replace(/_/g, ' ');
+    const out: string[] = [];
+
+    const idiom = facet('idiom:') as Idiom | null;
+    if (idiom !== null && IDIOMS.includes(idiom)) out.push(`${IDIOM_SHAPE[idiom]}.`);
+    const material = facet('material:');
+    const trim = facet('trim:');
+    if (material !== null) {
+        out.push(trim === null
+            ? `It is ${words(material)}.`
+            : `It is ${words(material)}, finished in ${words(trim)}.`);
+    }
+    const element = facet('element:');
+    if (element !== null) out.push(`All of it is ${element}.`);
+    const scale = facet('scale:');
+    if (scale === 'oversized') out.push('It was built larger than the people who used it.');
+    if (scale === 'monumental') out.push('It was built far larger than anybody who used it.');
+    const precision = facet('precision:');
+    if (precision === 'exact') out.push('The joints are cut exact.');
+    if (precision === 'rough') out.push('The joints are rough.');
+    return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1640,22 +1672,24 @@ export function describeRoom(
     return { onEntry: onEntry.slice(0, 4), onInspect };
 }
 
+/** The plan of each idiom, as somebody standing in it sees it. */
+const IDIOM_SHAPE: Record<Idiom, string> = {
+    terraced: 'Cut into the slope, one court standing above the next',
+    walled_court: 'A court inside a court inside a court',
+    carved: 'Cut into the rock and going inward rather than up',
+    timber_hall: 'One long roof on posts, and very little wall',
+    tower: 'Vertical, and the stair is the whole of the plan',
+    cloister: 'A covered ring around one open court',
+    stilted: 'Raised on posts over standing water',
+    buried: 'Below the ground line entirely, and lit from shafts'
+};
+
 function materialLine(style: HouseStyle, rng: CultivationRNG): string {
-    const shape: Record<Idiom, string> = {
-        terraced: 'Cut into the slope, one court standing above the next',
-        walled_court: 'A court inside a court inside a court',
-        carved: 'Cut into the rock and going inward rather than up',
-        timber_hall: 'One long roof on posts, and very little wall',
-        tower: 'Vertical, and the stair is the whole of the plan',
-        cloister: 'A covered ring around one open court',
-        stilted: 'Raised on posts over standing water',
-        buried: 'Below the ground line entirely, and lit from shafts'
-    };
     const finish = rng.pick([
         'the joints tight', 'the joints opened by frost', 'the surface worn smooth',
         'the edges still sharp', 'the facing patched in a different stone'
     ]);
-    return `${shape[style.idiom]}, in ${style.materials[0]} with ${style.materials[1]}, ${finish}`;
+    return `${IDIOM_SHAPE[style.idiom]}, in ${style.materials[0]} with ${style.materials[1]}, ${finish}`;
 }
 
 function purposeLine(purpose: RoomPurpose, capacity: number): string {

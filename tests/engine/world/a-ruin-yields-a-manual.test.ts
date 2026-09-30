@@ -35,6 +35,9 @@
  * to different conclusions about the same hole. And what comes out is an OBJECT
  * on a house's shelf as well as a road on somebody's sheet, because a single
  * copy in a single pair of hands is the defect rather than the repair.
+ * Live delving now reads each object's chamber as well as its site. Seeded
+ * shelves and stores must stand in an existing chamber, rather than outside
+ * every door where an ordinary pickup would reach them.
  *
  * Every assertion below was red-checked against the behaviour it covers.
  */
@@ -44,6 +47,7 @@ import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { makeLocation, makeThresholds } from '../../../src/engine/world/locations.js';
+import { wingsOf } from '../../../src/engine/world/provenance.js';
 import type { NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { isRuined } from '../../../src/engine/world/possessions.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
@@ -65,6 +69,7 @@ import {
     shelveWhatItWasHolding,
     theBooksBehindTheirDoor,
     theBooksLeftIn,
+    theGoodsLeftIn,
     theRoadsThatWouldLeaveTheWorldWith,
     whatWasOnTheShelvesOf,
     whoOfThemCouldOpenIt
@@ -258,6 +263,19 @@ describe('what comes out of the hole', () => {
     }
 
     const HOUSE = { id: 'house-probe', name: 'The Probe Hall', seatLocationId: null };
+
+    it('puts seeded shelves and stores in actual chambers of their site', () => {
+        const door = ground('loc-interior-stock', 40);
+        const books = theBooksLeftIn({ location: door, character: 'archive', onDay: 0 });
+        const goods = theGoodsLeftIn({ location: door, character: 'workshop', onDay: 0 });
+        expect(books.length).toBeGreaterThan(0);
+        expect(goods.length).toBeGreaterThan(0);
+        const chambers = wingsOf(door).map(wing => wing.id);
+        for (const object of [...books, ...goods]) {
+            expect(object.locationId).toBe(door.id);
+            expect(chambers).toContain(object.data.chamberId);
+        }
+    });
 
     // Who reads a book a house's party carries out, and whether the house gets
     // it, is the finder's decision now: `a-finder-reads-what-they-found-or-turns-it-in.test.ts`.

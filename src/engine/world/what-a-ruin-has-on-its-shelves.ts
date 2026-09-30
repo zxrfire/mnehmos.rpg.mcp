@@ -67,6 +67,7 @@ import {
     type Manual
 } from './manuals.js';
 import type { LocationRecord } from './locations.js';
+import { wingsOf } from './provenance.js';
 import type { NpcRecord } from './npc-state.js';
 import { howMuchAGradeIsWorthTracking, isRuined, makeObject, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
@@ -234,7 +235,11 @@ function bookInTheGround(input: {
             techniqueId: input.manual.id,
             cap: input.manual.cap,
             copies: 1,
-            leftInTheGroundOnDay: input.onDay
+            leftInTheGroundOnDay: input.onDay,
+            ...(input.location.kind === 'ruin' ? {
+                chamberId: (wingsOf(input.location).find(wing => wing.name.includes('archive'))
+                    ?? wingsOf(input.location).at(-1)!).id
+            } : {})
         }
     });
 }
@@ -372,7 +377,11 @@ export function theGoodsLeftIn(input: {
         power: null,
         locationId: place,
         tags: [row.kind, ...row.extraTags, `grade:${grade}`, LEFT_WITH_THE_PLACE, `ruin:${place}`],
-        data: { ...row.data, grade, quantity: 1, leftInTheGroundOnDay: input.onDay }
+        data: { ...row.data, grade, quantity: 1, leftInTheGroundOnDay: input.onDay,
+            ...(input.location.kind === 'ruin' ? {
+                chamberId: (wingsOf(input.location).find(wing => wing.name.includes('refining'))
+                    ?? wingsOf(input.location)[0]).id
+            } : {}) }
     });
 
     for (const kind of kinds) {

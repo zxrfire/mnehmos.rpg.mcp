@@ -494,13 +494,13 @@ Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `
 
 ### `site`
 
-an inheritance ground: a trial somebody built to be inherited from, or a grave that was arranged for nobody. "target" names it; "intent" is one of approach (get to it, or ask what there is), outside (read it from the threshold without going in), enter (go in - this SPENDS DAYS and can kill), take (carry out what is behind the door). Choose "outside" when the player is looking rather than going, and "enter" only when they plainly said so.
+an inheritance ground: a trial somebody built to be inherited from, or a grave that was arranged for nobody. "target" names it; "intent" is one of approach (get to it, or ask what there is), outside (read it from the threshold without going in), enter (go in - this SPENDS DAYS and can kill), take (carry out what is behind the door). Choose "outside" when the player is looking rather than going, and "enter" only when they plainly said so. At a world ruin, delve walks toward a chamber named by target (or further in), survey reads the current chamber and the player's room notes, wear inhabits an identity preserved by an old formation, and leave walks back out. These use the same clock as every other act.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'site'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.site` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`.
 
-Intents: `approach`, `outside`, `enter`, `take`.
+Intents: `approach`, `outside`, `enter`, `take`, `delve`, `survey`, `wear`, `leave`.
 
 ### `legacy`
 

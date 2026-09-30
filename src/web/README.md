@@ -668,7 +668,7 @@ rather than what came of it.** `sect` uses it to pick between joining, leaving, 
 the standing, an order to the rung below, a siphon of the reserves, and the four powers a
 seat holds - recruit, admission, curriculum, expel. `look` uses it to pick between the room,
 the faces in it, and what was done to the ground here. `site` uses it to pick between the
-four steps of taking an inheritance - approach, outside, enter, take. `recall` uses it to
+steps of taking an inheritance and walking a ruin; see `site-phrasings.ts`. `recall` uses it to
 pick between the two things a cultivator carries - what they have HEARD, and what they have
 UNDERSTOOD. `petition` picks which form is being filed, `posture` which stance a house is
 taking, `seal` whether the thing under the mountain is being read or spent, and `offer`
@@ -686,6 +686,25 @@ one answering `{"action":"posture"}` gets the standing between two houses rather
 That is `DEFAULT_SITE_INTENT`, `DEFAULT_POSTURE_INTENT`, `DEFAULT_SEAL_INTENT`,
 `DEFAULT_OFFER_INTENT` and `DEFAULT_PETITION_INTENT`, each matched against its own closed
 set, and `tests/web/misparse.test.ts` asserts that every one of them is a read.
+
+### A world ruin has chambers
+
+`ruin-delving.ts` connects `site` to the ruin and provenance mechanics. Entry requires
+standing at the location; chamber movement uses the seeded topology, and ordinary movement
+first walks back out. The sheet stores only a chamber id, its site id and the entry day.
+Room notes come from witnessed knowledge and `knownAxes` over the site's work records;
+they never contain edges. Books and goods store their chamber in the ordinary object row,
+read by both taking paths. Depletion does not mint stock.
+
+The delve spends the ordinary short skip, with the same food, interruptions, ground
+damage and world advancement. Sunless interiors burn qi for light. A formation's round
+blocks an occupied chamber, and wearing an old identity spends continuity and persists
+suited comprehension through the ordinary understanding ledger. It grants no objects.
+Every action through the turn executor checks whether a window closed during its span;
+the exit remains unavailable until the schedule opens it. Waiting and cultivation still
+use the body's ordinary death rules. `a-ruin-has-chambers-and-a-closing-door.test.ts`
+pins these paths. `ruin-stonework.ts` reads weathered building facets against known houses,
+with no new names supplied by an ambiguous attribution.
 
 ### The standing gate, and why it is a file
 

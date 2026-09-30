@@ -153,7 +153,11 @@ export interface NavigationResult {
  */
 export function navigate(
     location: LocationRecord,
-    input: { fromChamberId: string; toChamberId: string; map: SiteMap },
+    input: {
+        fromChamberId: string; toChamberId: string; map: SiteMap;
+        /** Doors and ongoing rounds are facts the expedition supplies. */
+        mayEnter?: (chamberId: string, elapsedDays: number) => boolean;
+    },
     rng: CultivationRNG
 ): NavigationResult {
     const chambers = trueTopology(location);
@@ -175,7 +179,9 @@ export function navigate(
     // five-century soak does not.
     const cap = chambers.length * 8;
     for (let step = 0; step < cap && cursor.id !== target.id; step++) {
-        const exits = cursor.exits.map(id => byId.get(id)).filter((c): c is Chamber => c != null);
+        const exits = cursor.exits.map(id => byId.get(id)).filter((c): c is Chamber => c != null)
+            .filter(c => input.mayEnter?.(c.id,
+                days + Math.max(1, Math.abs(c.depthDays - cursor.depthDays))) ?? true);
         if (exits.length === 0) break;
 
         // Prefer a door that leads somewhere the map says is worth arriving at,
@@ -408,7 +414,8 @@ export function routineAt(location: LocationRecord, day: number): Routine[] {
         doing: i === slot ? `the round is being kept in ${w.name}` : `${w.name} is empty`,
         occupied: i === slot,
         clearOnDay: i === slot
-            ? day + Math.ceil(ROUTINE_PERIOD_DAYS / wings.length)
+            ? wings.length === 1 ? Infinity
+                : day - phase + Math.ceil((slot + 1) * ROUTINE_PERIOD_DAYS / wings.length)
             : day
     }));
 }

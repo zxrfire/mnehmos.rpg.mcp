@@ -47,17 +47,19 @@ import { usedAsVerb, namedAfter, outsideAnyName
 // happened here" means the ground underfoot. Those resolve against a row in
 // `game.ts`, not against a guess here.
 
-/** The four steps of taking an inheritance, in the order they happen. */
-export type SiteIntent = 'approach' | 'outside' | 'enter' | 'take';
+/** Inheritance steps and the actions inside a world ruin. */
+export type SiteIntent = 'approach' | 'outside' | 'enter' | 'take' | 'delve' | 'survey' | 'wear' | 'leave';
 
 /**
  * The closed set, and the one that must fall through to the cheapest.
  *
- * `enter` is the only member that spends anything, so a model-planned `site`
+ * Unrecognised labels never spend anything, so a model-planned `site`
  * carrying an intent nothing here recognises resolves to the LISTING and never
  * to the door. See `GameService.site`.
  */
-export const SITE_INTENTS: readonly SiteIntent[] = ['approach', 'outside', 'enter', 'take'] as const;
+export const SITE_INTENTS: readonly SiteIntent[] = [
+    'approach', 'outside', 'enter', 'take', 'delve', 'survey', 'wear', 'leave'
+] as const;
 
 /** What an unrecognised site intent means. The read that costs nothing. */
 export const DEFAULT_SITE_INTENT: SiteIntent = 'approach';
@@ -244,7 +246,7 @@ export function siteNamed(text: string): string | undefined {
 }
 
 /**
- * One of the four steps of taking an inheritance, or null.
+ * An inheritance step or a chamber action, or null.
  *
  * Order is specificity-first and it matters at every step. "I go inside the
  * grave" contains an approach verb and an entering one and is a sentence about
@@ -256,6 +258,19 @@ export function siteNamed(text: string): string | undefined {
 
 export function siteStep(text: string, input: string): PlannedAction | null {
     if (WEIGHING_RATHER_THAN_GOING.test(text)) return null;
+
+    if (/\b(?:i )?(?:delve|go deeper)(?: into| in)?\b/.test(text)) {
+        return { action: 'site', intent: 'delve', target: namedAfter(input, 'delve into|delve|go deeper into|go deeper') };
+    }
+    if (/\b(?:i )?(?:leave|exit) (?:the |this )?ruins?\b/.test(text)) {
+        return { action: 'site', intent: 'leave' };
+    }
+    if (/\b(?:i )?wear (?:the |an? )?(?:old identity|ruin identity|preserved body)\b/.test(text)) {
+        return { action: 'site', intent: 'wear' };
+    }
+    if (/\b(?:inspect|survey|read|look at) (?:the |my )?(?:ruin chambers|chamber|ruin map)\b/.test(text)) {
+        return { action: 'site', intent: 'survey' };
+    }
 
     const named = siteNamed(text);
     // A PAPER POSTED BY A GATE IS THE PAPER, NOT THE GATE. Played: "I read the

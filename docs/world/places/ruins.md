@@ -1,4 +1,4 @@
-<!-- tier: 2 trigger="the player is near, entering, researching, buying access to, or asking about a ruin, a sealed site, an old compound or a convergence" -->
+<!-- tier: 2 trigger="the player is near, entering, researching or asking about a ruin, a sealed site, an old compound or a convergence" -->
 
 # Ruins
 
@@ -30,7 +30,7 @@ a column the engine already reads.
 | &nbsp;&nbsp;[The schedule is its own kind of knowledge](#the-schedule-is-its-own-kind-of-knowledge) | the timing of an opening is being sold, guarded, or guessed at |
 | [Loot is a record, not a table](#loot-is-a-record-not-a-table) | the player is searching a site, or wondering why the entrance is bare |
 | [Not every ruin is ancient, and the world makes more of them](#not-every-ruin-is-ancient-and-the-world-makes-more-of-them) | a recent disaster has left a site, or a ruin's age is in question |
-| [Access: disciples only, a fee, or a task](#access-disciples-only-a-fee-or-a-task) | a house controls the way in, and the player must pay, join, or serve to enter |
+| [Access: public ground and a house that shuts it](#access-public-ground-and-a-house-that-shuts-it) | a house holds the entrance |
 | [A stripped ruin is empty of things and full of understanding](#a-stripped-ruin-is-empty-of-things-and-full-of-understanding) | the player enters a site everybody agrees is finished |
 | [Mechanics that change the terms](#mechanics-that-change-the-terms) | the player is inside a site that does not behave like an ordinary place |
 | [The variety test](#the-variety-test) | **Tier 3** - never injected |
@@ -49,7 +49,7 @@ combination is a different game.
 | **Provenance** | How much is knowable about **who left it**? | `provenance.ts` - `documented` / `attributed` / `rumoured` / `anonymous` |
 | **Depletion** | How much has already been **gone through**? | `provenance.ts` - per wing: `untouched` / `probed` / `picked_over` / `stripped` |
 | **Age** | How long ago did it **stop being lived in**? | `provenance.ts` - `new` / `old` / `ancient`, derived from its own change history |
-| **Control** | Who holds the door **now**? | `provenance.ts` - `unclaimed` / `held_on_paper` / `held_on_the_ground` |
+| **Control** | Who holds the door **now**? | `ruin-gatekeepers.ts` and `a-house-that-shuts-a-public-ruin.ts` |
 
 **They are independent and the code keeps them so.** A site whose builder is named in
 somebody's records, picked over twice, with one sealed wing nobody has opened, inside a
@@ -235,31 +235,18 @@ secludes for a century comes out to find somewhere that did not exist when they 
 
 ---
 
-## Access: disciples only, a fee, or a task
+## Access: public ground and a house that shuts it
 
-<!-- tier: 2 trigger="a house controls the way in, and the player must pay, join, or serve to enter" -->
+<!-- tier: 2 trigger="a house holds a ruin's entrance" -->
 
-A known site on a predictable cycle inside somebody's territory is an **asset**, and a
-house that can reach it decides who goes in.
+Ruins are public ground by agreement. A house holding one has closed ground others
+could have delved. The entry rule lives in
+[`ruin-gatekeepers.ts`](../../../src/engine/world/ruin-gatekeepers.ts), and the accounts
+that holding it opens live in
+[`a-house-that-shuts-a-public-ruin.ts`](../../../src/engine/world/a-house-that-shuts-a-public-ruin.ts).
 
-- **Disciples only** is the strongest concrete argument for joining a house this game has.
-  Not a rate multiplier - access to somewhere nobody else may go.
-- **A fee**, priced against what a cultivator at the bottom actually earns, and the first
-  thing worth spending stones on that is not consumed.
-- **A task**, which is the interesting one: it does not close when you come out. A house
-  that sends you in on their errand has an interest in what you find. It also means
-  somebody with no standing and no money can still get through the door, which keeps the
-  whole system from being a pure wealth gate. Model it as a duty, never as a new
-  mechanism.
-
-**Charging is not controlling.** `regions.ts` separates what a house holds `onPaper` from
-what it holds `onTheGround`. A ruin in a basin somebody holds on paper only is the
-best case in the set: they will bill you and they cannot stop you. Going in anyway is a
-whole style of play, and it composes with the clock - because the holder knows the
-schedule too.
-
-**An unclaimed ruin is precious**, and the reason nobody is charging you is itself
-information.
+The former fee, task and paper-claim rules were superseded by this ruling. A regional
+claim does not create a second system of ruin entry prices.
 
 ---
 

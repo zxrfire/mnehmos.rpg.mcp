@@ -476,7 +476,7 @@ export function overallDepletion(wings: readonly RuinWing[]): Depletion {
  */
 export function workWing(
     location: LocationRecord,
-    input: { wingId: string; onDay: number; byName?: string | null; unsealed?: boolean }
+    input: { wingId: string; onDay: number; byName?: string | null; byId?: string; unsealed?: boolean }
 ): ChangeResult | null {
     const wings = wingsOf(location);
     const at = wings.findIndex(w => w.id === input.wingId);
@@ -506,7 +506,11 @@ export function workWing(
         witnessed: input.byName != null,
         fidelity: input.byName ? 'full' : 'partial',
         patch: {
-            data: { wings: JSON.stringify(updated), depletion: overallDepletion(updated) }
+            data: {
+                wings: JSON.stringify(updated), depletion: overallDepletion(updated),
+                workedById: input.byId ?? null,
+                workedByName: input.byName ?? null
+            }
         }
     });
 }
@@ -715,7 +719,10 @@ export function knownAxes(
 ): SiteKnowledge {
     let engagements = 0;
     for (const change of location.changes) {
-        if (change.summary.includes(knower.name)) engagements++;
+        const worker = change.patch.data?.workedById;
+        if (worker != null ? worker === knower.id : change.patch.data?.workedByName === knower.name) {
+            engagements++;
+        }
     }
     const enough = engagements >= ENGAGEMENTS_FOR_A_PICTURE;
     const some = engagements > 0;
@@ -735,85 +742,6 @@ export function knownAxes(
             : enough
                 ? 'Where the value actually is, what is already gone, and when it is next open.'
                 : 'What the first chamber looked like, stated as though it were the place.'
-    };
-}
-
-// AXIS FOUR: WHO CONTROLS THE DOOR NOW
-
-export type SiteControl =
-    /** Nobody's, because nobody knows. */
-    | 'unclaimed'
-    /** Claimed, and the claim is a piece of paper. */
-    | 'held_on_paper'
-    /** Claimed, and somebody is standing at the entrance. */
-    | 'held_on_the_ground';
-
-export type EntryPrice = 'open' | 'disciples_only' | 'fee' | 'task';
-
-export interface AccessTerms {
-    control: SiteControl;
-    holderId: string | null;
-    price: EntryPrice;
-    /** Stones asked, when the price is a fee. Zero otherwise. */
-    feeStones: number;
-    /**
-     * Whether the holder could actually stop somebody who ignored the terms.
-     * False on a paper claim, which is the case worth playing.
-     */
-    enforceable: boolean;
-    /** What refusing the terms and going in anyway makes true. */
-    ifIgnored: string;
-}
-
-/** A day's earnings at the bottom, near enough, and the unit a toll is set in. */
-export const RUIN_TOLL_PER_DANGER_ORDINAL = 40;
-
-/**
- * Who holds this door and what they want for it.
- */
-export function accessTermsFor(
-    location: LocationRecord,
-    holder: {
-        id: string;
-        recruits: boolean;
-        /** Members it can actually put at the door. */
-        reach: number;
-    } | null
-): AccessTerms {
-    if (!location.discovered || !holder || location.controllingFactionId !== holder.id) {
-        return {
-            control: 'unclaimed',
-            holderId: null,
-            price: 'open',
-            feeStones: 0,
-            enforceable: false,
-            ifIgnored: 'Nobody is charging, nobody is watching, and the reason for that '
-                + 'is worth knowing before you go in.'
-        };
-    }
-
-    const onTheGround = holder.reach >= 3;
-    const fee = Math.max(
-        RUIN_TOLL_PER_DANGER_ORDINAL,
-        location.thresholds.mastery * RUIN_TOLL_PER_DANGER_ORDINAL
-    );
-
-    // A house with people to spare reserves it; one with people but not many
-    // sells; one that cannot man the entrance asks for the errand instead.
-    const price: EntryPrice = !onTheGround
-        ? 'task'
-        : holder.recruits ? 'fee' : 'disciples_only';
-
-    return {
-        control: onTheGround ? 'held_on_the_ground' : 'held_on_paper',
-        holderId: holder.id,
-        price,
-        feeStones: price === 'fee' ? fee : 0,
-        enforceable: onTheGround,
-        ifIgnored: onTheGround
-            ? 'Somebody is at the entrance and will be there when you come out.'
-            : 'The claim is a piece of paper. They will bill you and they cannot '
-                + 'stop you, and both of those facts have consequences later.'
     };
 }
 

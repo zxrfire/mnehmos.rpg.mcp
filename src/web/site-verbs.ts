@@ -104,6 +104,7 @@ import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { ENTERING_DAYS, ENTERING_FOCUS, STARTING_AGE } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { delveRuin } from './ruin-delving.js';
 
 /**
  * The words that mean "the site in front of me" rather than naming one.
@@ -421,6 +422,12 @@ export const siteVerbs = {
         const step: SiteIntent = SITE_INTENTS.includes(intent as SiteIntent)
             ? intent as SiteIntent
             : DEFAULT_SITE_INTENT;
+
+        const ruin = await delveRuin(this, run, cultivator, ambient, target, step);
+        if (ruin) return ruin;
+        if (step === 'delve' || step === 'survey' || step === 'wear' || step === 'leave') {
+            return this.noSiteAtHand('site', target);
+        }
 
         const meant = this.siteMeant(run, cultivator, target);
         const site = meant.site;
