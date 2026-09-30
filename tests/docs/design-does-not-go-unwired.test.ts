@@ -205,7 +205,8 @@ const DEAD = 0;
 // 40 -> 27: the ruin delve, provenance, stonework and a room reading what you carry reach play.
 // 27 -> 15: the elder's office reads, services done, a duty passed down, the send-off, a house's asks and where to look reach play.
 // 15 -> 0: fact-backed memories, opportunity windows, surviving the body, a crossing remembered and acting through a proxy reach play.
-const TEST_ONLY = 0;
+// 0 -> 76: the scanner stopped counting a comment that names a function as a reader of it; these were always test-only.
+const TEST_ONLY = 76;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
