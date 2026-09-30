@@ -62,6 +62,7 @@
  */
 
 import { lifespanForOrdinal, realmForOrdinal } from '../cultivation/realms.js';
+import type { ShameCause } from '../social/shame.js';
 
 /**
  * How much of a rung's years have to be behind somebody before the road is
@@ -115,7 +116,45 @@ export interface SomebodyWithSomethingOnTheirMind {
      * reads as a debt.
      */
     carriesForSomebodyElse: { noun: string; from: 'a house' | 'a person' } | null;
+    /** The shames on their tags, `shameCausesFromTags`. Absent reads as none. */
+    shames?: readonly ShameCause[];
 }
+
+/**
+ * What each shame is, as the person carrying it is heard on it.
+ *
+ * A child placed outside the household is null: it is kept among the people who
+ * arranged it (`a-child-their-own-house-will-not-keep.ts`), so it is not a thing
+ * a square overhears. `other` carries no deed to say.
+ */
+const WHAT_THEY_ARE_HEARD_ON_FOR: Readonly<Record<ShameCause, WhatIsOnTheirMind | null>> = {
+    birth_outside_the_household: null,
+    washed_out_of_a_placement: {
+        state: 'placed above what they could do, and kept on as staff after',
+        plainly: 'were placed above what they could do and kept on as staff after it'
+    },
+    expelled: {
+        state: 'put out of a house, by that house, in front of it',
+        plainly: 'were put out of a house in front of it'
+    },
+    broke_an_oath: {
+        state: 'an oath sworn and not kept',
+        plainly: 'swore something and did not do it'
+    },
+    fled_a_fight: {
+        state: 'ran from a fight, and was seen to',
+        plainly: 'ran from a fight and were seen to'
+    },
+    gave_up_part_of_themselves: {
+        state: 'a piece of their own body given up in front of people, because somebody asked',
+        plainly: 'gave up a piece of their own body in front of people because somebody asked'
+    },
+    known_for_a_grave_deed: {
+        state: 'something grave they did, known to the people near them',
+        plainly: 'did something grave that the people near them know about'
+    },
+    other: null
+};
 
 /**
  * The lowest rung of a house, in the words houses actually use for it.
@@ -231,6 +270,16 @@ export function whatTheyWouldBeHeardOnAbout(
                 state: `${noun} in their hands, lent by somebody above them, owed back to them`,
                 plainly: `carry ${noun} somebody above them lent out of their own hands`
             };
+    }
+
+    // ── SOMETHING THEY DID IN FRONT OF PEOPLE ────────────────────────────
+    //
+    // A shame is out among the people who saw it, and the person carrying it
+    // knows that better than anybody: it is theirs to be heard on, never a
+    // stranger's to see. Third, because it is rare and has a deed in it.
+    for (const cause of person.shames ?? []) {
+        const said = WHAT_THEY_ARE_HEARD_ON_FOR[cause];
+        if (said) return said;
     }
 
     // ── AHEAD OF IT ──────────────────────────────────────────────────────

@@ -136,7 +136,6 @@ export function whatIsSaidAbout(input: {
     const knownShames: ShameRecord[] = [];
     for (const shame of input.shames ?? []) {
         if (shame.subjectId !== input.subjectId) continue;
-        if (shame.status !== 'carried') continue;
         if (input.asOfDay !== undefined && shame.incurredOnDay > input.asOfDay) continue;
         if (shame.common || closeEnoughToKnow({
             proximity: proximity.nearness,

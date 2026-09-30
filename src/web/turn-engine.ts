@@ -81,7 +81,7 @@ import {
     whatItCouldPartWith
 } from '../engine/world/what-it-costs-to-give-away-a-piece-of-yourself.js';
 import { howTheAskForAPieceWent } from './asking-something-that-can-refuse-for-a-piece-of-it.js';
-import { shameTag } from '../engine/social/shame.js';
+import { shameCausesFromTags, shameTag } from '../engine/social/shame.js';
 // A beast with a core is somebody in particular, and gets a row the moment
 // somebody stands in front of it. Nothing here is beast-specific afterwards:
 // the row makes it present, and present is what every person-shaped verb reads.
@@ -20149,6 +20149,7 @@ ${fit.line}`;
             age: person.age,
             rank: person.sectRank ?? null,
             chosen: row.tags.includes('chosen'),
+            shames: shameCausesFromTags(row.tags),
             carriesForSomebodyElse: whatTheyCarryForSomebodyElse(
                 this.atHand?.objects ?? [], person.id, houseIds
             )

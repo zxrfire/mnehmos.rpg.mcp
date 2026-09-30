@@ -36,15 +36,6 @@ export type ShameCause =
     | 'known_for_a_grave_deed'
     | 'other';
 
-export type ShameStatus = 'carried' | 'lifted';
-
-/** The only way out. Written when something actually happened, never on a timer. */
-export interface ShameLifted {
-    how: 'acknowledged' | 'made_good' | 'outlived_the_people_who_knew' | 'proven_false';
-    onDay: DayIndex;
-    note: string;
-}
-
 export interface ShameRecord {
     id: string;
     /** Whose it is. Not necessarily whose fault it is. */
@@ -66,8 +57,6 @@ export interface ShameRecord {
      * are not the same fact.
      */
     common: boolean;
-    status: ShameStatus;
-    lifted: ShameLifted | null;
     recordedOnDay: DayIndex;
 }
 
@@ -98,31 +87,15 @@ export function createShame(input: ShameInput): ShameRecord {
         description: input.description,
         heldBy: [...new Set(input.heldBy ?? [])].sort(),
         common: input.common ?? false,
-        status: 'carried',
-        lifted: null,
         recordedOnDay: input.onDay
     };
 }
 
-/** Somebody else finds out. The record does not change; the list does. */
-export function nowKnownTo(record: ShameRecord, holderIds: readonly string[]): ShameRecord {
-    return { ...record, heldBy: [...new Set([...record.heldBy, ...holderIds])].sort() };
-}
-
-/** It stops costing anything, and the reason is written down. */
-export function liftShame(record: ShameRecord, lifted: ShameLifted): ShameRecord {
-    return { ...record, status: 'lifted', lifted };
-}
-
-/** True when this person's own record is being kept from them. */
-export function isConcealedFrom(record: ShameRecord, personId: string): boolean {
-    return !record.common && !record.heldBy.includes(personId);
-}
-
-// The world layer holds NPCs and not ledgers - there is no obligation table in
-// `WorldState` - so a shame produced by a world pass travels on the person, the
-// way `discovery.ts` puts a knowing stage on a tag: one prefixed string,
-// encoded and decoded here so no caller ever parses it.
+// The world keeps no shame ledger, so a shame produced by a world pass travels
+// on the person, the way `discovery.ts` puts a knowing stage on a tag: one
+// prefixed string, encoded and decoded here so no caller ever parses it. Who
+// knows it is not on the tag; `what-somebody-here-is-chewing-on.ts` is where
+// the person carrying it is heard on it.
 
 export const SHAME_TAG_PREFIX = 'shame:';
 
@@ -153,8 +126,4 @@ export function shameCausesFromTags(tags: readonly string[]): ShameCause[] {
         if (CAUSES.includes(value) && !out.includes(value)) out.push(value);
     }
     return out;
-}
-
-export function isCarryingShame(tags: readonly string[]): boolean {
-    return shameCausesFromTags(tags).length > 0;
 }

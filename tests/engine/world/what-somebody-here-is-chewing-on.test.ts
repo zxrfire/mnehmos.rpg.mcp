@@ -88,6 +88,26 @@ describe('what somebody standing here would be heard on', () => {
     });
 
     /**
+     * A SHAME IS THEIRS TO BE HEARD ON. It was written onto people's tags by the
+     * fostering pass and by giving away a piece of yourself, and nothing read it:
+     * a man who ran from a fight in front of the hall read like anybody else.
+     * The person carrying it knows it, so it goes in the channel where they can
+     * be heard on it, and never in what a stranger sees.
+     */
+    it('reads a shame done in front of people, and keeps a concealed one quiet', () => {
+        expect(plainly({ ...ORDINARY, shames: ['fled_a_fight'] }))
+            .toMatch(/ran from a fight and were seen to/);
+        expect(plainly({ ...ORDINARY, shames: ['gave_up_part_of_themselves'] }))
+            .toMatch(/piece of their own body/);
+        // Kept among the people who arranged it, so a square does not hear it.
+        expect(plainly({ ...ORDINARY, shames: ['birth_outside_the_household'] })).toBeNull();
+        // Behind the road running out, which is the one that gets worse on its own.
+        expect(plainly({
+            ...ORDINARY, age: yearsAt(5, THE_ROAD_IS_RUNNING_OUT + 0.05), shames: ['expelled']
+        })).toMatch(/same wall/);
+    });
+
+    /**
      * EVERY CLAUSE IS WRITTEN TO FOLLOW `they`, AND FIVE OF THE SIX WERE NOT.
      *
      * FOUND BY PLAYING. The only renderer of this column composes `What Gu Kelu
@@ -114,7 +134,10 @@ describe('what somebody standing here would be heard on', () => {
                 age: yearsAt(A_RUNG_WORTH_BEING_YOUNG_AT, AHEAD_OF_THE_ROAD - 0.02)
             }),
             plainly({ ...ORDINARY, chosen: true }),
-            plainly({ ...ORDINARY, rank: 'Outer Disciple' })
+            plainly({ ...ORDINARY, rank: 'Outer Disciple' }),
+            ...(['washed_out_of_a_placement', 'expelled', 'broke_an_oath', 'fled_a_fight',
+                'gave_up_part_of_themselves'] as const)
+                .map(cause => plainly({ ...ORDINARY, shames: [cause] }))
         ];
         expect(clauses.filter(clause => clause !== null)).toHaveLength(clauses.length);
 
