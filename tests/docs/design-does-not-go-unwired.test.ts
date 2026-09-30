@@ -202,7 +202,8 @@ const DEAD = 0;
 // superseded: placementsAWordWouldOpen, bestShelterAmong, whatABreachedVaultTakesWithIt
 // (the war settlement now asks the seat's ward through whatIsBehindIt).
 // 52 -> 40: the social rows reach play (shame, secrets, the held body, naming a killer, the taking).
-const TEST_ONLY = 40;
+// 40 -> 27: the ruin delve, provenance, stonework and a room reading what you carry reach play.
+const TEST_ONLY = 27;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

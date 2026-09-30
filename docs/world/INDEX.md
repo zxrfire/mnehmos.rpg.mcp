@@ -130,10 +130,10 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | a great house's heir is failing, or the player resents somebody's birth | [`houses/origin.md`](houses/origin.md#the-children-of-great-houses-mostly-fail-anyway) | The children of great houses mostly fail anyway (tier 2) |
 | a house asserts a shelved book works when nobody there can open it | [`climbing/techniques.md`](climbing/techniques.md#they-know-it-works) | "They know it works" (tier 2) |
 | a house claims an ancestor who crossed the Lid | [`houses/ancestors.md`](houses/ancestors.md#immortal-lineages) | Immortal lineages (tier 2) |
-| a house controls the way in, and the player must pay, join, or serve to enter | [`places/ruins.md`](places/ruins.md#access-disciples-only-a-fee-or-a-task) | Access: disciples only, a fee, or a task (tier 2) |
 | a house finds a lost material and considers sending it up an answering channel | [`history/ancient.md`](history/ancient.md#the-trade-material-up-a-pill-back) | The trade: material up, a pill back (tier 2) |
 | a house gives its Protector an instruction, or expects one to act on its behalf | [`climbing/immortals.md`](climbing/immortals.md#it-obliges-nothing) | It obliges nothing (tier 2) |
 | a house holds a manual it cannot supply, or the player is offered a book with no stock behind it | [`history/ancient.md`](history/ancient.md#the-library-that-holds-the-book-and-none-of-the-material) | The library that holds the book and none of the material (tier 2) |
+| a house holds a ruin's entrance | [`places/ruins.md`](places/ruins.md#access-public-ground-and-a-house-that-shuts-it) | Access: public ground and a house that shuts it (tier 2) |
 | a house holds something nobody in it can use, and somebody asks why they do not sell it | [`things/items.md`](things/items.md#why-a-holder-keeps-what-they-cannot-use) | Why a holder keeps what they cannot use (tier 2) |
 | a house holds territory with nothing beneath it | [`houses/patronage.md`](houses/patronage.md#direct-rule-a-backer-with-no-subsidiaries) | Direct rule: a backer with no subsidiaries (tier 2) |
 | a house is looking for a Protector, or a Protector's loyalty to the house is in question | [`climbing/immortals.md`](climbing/immortals.md#typically-they-are-your-own) | Typically they are your own (tier 2) |
@@ -328,7 +328,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | the player is looking for a way around a house's specialisation | [`houses/dao-houses.md`](houses/dao-houses.md#blind-spots-and-counters-are-mandatory) | Blind spots and counters are mandatory (tier 2) |
 | the player is looking for, buying, or has found a later volume of a manual they hold | [`climbing/past-the-ceiling.md`](climbing/past-the-ceiling.md#1-the-later-volume) | 1. The later volume (tier 2) |
 | the player is looting a body, entering a sealed site, or considering grave-reading as a profession | [`things/economy.md`](things/economy.md#graves-and-grave-readers) | Graves and grave-readers (tier 2) |
-| the player is near, entering, researching, buying access to, or asking about a ruin, a sealed site, an old compound or a convergence | [`places/ruins.md`](places/ruins.md#top-of-file) | (top of file) (tier 2) |
+| the player is near, entering, researching or asking about a ruin, a sealed site, an old compound or a convergence | [`places/ruins.md`](places/ruins.md#top-of-file) | (top of file) (tier 2) |
 | the player is priced out of something, or asks why anybody bothers digging | [`things/economy.md`](things/economy.md#scarcity-is-the-engine) | Scarcity is the engine (tier 2) |
 | the player is reading a wall, a board or a public notice in a settlement | [`houses/discovery.md`](houses/discovery.md#an-intake-is-one-kind-of-notice-and-it-is-the-smallest) | An intake is one kind of notice, and it is the smallest (tier 2) |
 | the player is searching a site, or wondering why the entrance is bare | [`places/ruins.md`](places/ruins.md#loot-is-a-record-not-a-table) | Loot is a record, not a table (tier 2) |
