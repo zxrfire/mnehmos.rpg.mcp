@@ -1,3 +1,5 @@
+import { raiseFormation, whatAnArtCanRaiseTo } from '../engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
+import { getTechnique } from '../data/cultivation/techniques.js';
 /**
  * The `craft` verb: a player at a bench, and what comes off it.
  *
@@ -113,6 +115,51 @@ export const craftVerbs = {
         if (REINFORCING_A_DOOR.test(said)) {
             this.atHand = this.atHand ?? await this.loadWorld();
             return reinforcingYourDoor(this, run, cultivator, said);
+        }
+
+        if (/\bformation\b/i.test(said)) {
+            this.atHand = this.atHand ?? await this.loadWorld();
+            const here = this.worldPlaceOf(cultivator);
+            const known = this.repos.techniques.listKnown(cultivator.id)
+                .map(k => ({ known: k, art: getTechnique(k.id) }))
+                .filter(k => k.art && whatAnArtCanRaiseTo(k.art) !== null);
+            const named = known.filter(k => said.toLowerCase().includes(k.art!.name.toLowerCase()));
+            const generic = /^(?:offensive\s+|defensive\s+)?formation$/i.test(said);
+            const choice = named.length === 1 ? named[0] : generic && known.length === 1 ? known[0] : undefined;
+            if (!choice?.art || !here || !this.atHand) {
+                return refused('engine.raiseFormation', 'craft', factsForRefusal(
+                    'No formation was raised.', 'Name a formation art you know and stand on the ground where it is to remain.'
+                ));
+            }
+            if (cultivator.realmOrdinal < choice.art.requiredOrdinal) {
+                return refused('engine.raiseFormation', 'craft', factsForRefusal(
+                    'No formation was raised.', `${choice.art.name} opens at ${choice.art.requiredOrdinal}; you stand at ${cultivator.realmOrdinal}.`
+                ));
+            }
+            if (cultivator.qi < choice.art.qiCost) {
+                return refused('engine.raiseFormation', 'craft', factsForRefusal(
+                    'No formation was raised.', `${choice.art.name} needs ${choice.art.qiCost} qi; you have ${cultivator.qi}.`
+                ));
+            }
+            const raised = raiseFormation({
+                id: `formation:${cultivator.id}:${choice.art.id}:${here}`,
+                name: `${choice.art.name} formation`, art: choice.art,
+                builderOrdinal: cultivator.realmOrdinal, mastery: choice.known.mastery,
+                builderId: cultivator.id, builderName: cultivator.name,
+                ownerId: cultivator.id, ownerName: cultivator.name,
+                locationId: here, stance: /\boffensive\b/i.test(said) ? 'offensive' : 'defensive', onDay: today
+            });
+            if (!raised.row) return refused('engine.raiseFormation', 'craft',
+                factsForRefusal('No formation was raised.', raised.account));
+            this.repos.cultivators.applyDeltas(cultivator.id, { qi: -choice.art.qiCost });
+            const existing = this.atHand.objects.findIndex(o => o.id === raised.row!.id);
+            if (existing < 0) this.atHand.objects.push(raised.row);
+            else this.atHand.objects[existing] = raised.row;
+            this.theWorldMoved();
+            return this.freeAction(run, 'craft', factsForToolResult('The formation is raised.', [
+                `${choice.art.name}; standing power ${raised.row.power}; qi spent ${choice.art.qiCost}.`,
+                'It remains on this ground.'
+            ]));
         }
 
         // Communication talismans are counted stock cut by the handful, not a

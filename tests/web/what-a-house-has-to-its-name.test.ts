@@ -273,6 +273,14 @@ describe('whether a house is still making the people it once made', () => {
     });
     const CONDITION = /still making people|living on its inheritance|is spent/;
 
+    // Counted stock and the protector office share the existing internal-wealth reach.
+    it('keeps conveyances and the office behind the house-knowledge gate', () => {
+        expect(read(40).lines.join(' ')).toContain('Its conveyances:');
+        expect(read(40).lines.join(' ')).toContain('protector office');
+        expect(read(0).lines.join(' ')).not.toContain('Its conveyances:');
+        expect(read(0).lines.join(' ')).not.toContain('protector office');
+    });
+
     it('says it to somebody who deals with houses at that level', () => {
         const high = read(40);
         expect(high.lines.join(' ')).toMatch(CONDITION);

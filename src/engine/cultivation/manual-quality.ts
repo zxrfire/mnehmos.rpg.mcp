@@ -105,16 +105,6 @@ export function manualQualityRank(quality: ManualQuality): number {
     return MANUAL_QUALITY_ORDER.indexOf(quality);
 }
 
-/**
- * What a copy made by somebody who never mastered the art comes out as. One step
- * down and no further than `corrupt`, and not authored per manual: it is the
- * copying rule in `world/manuals.ts` meeting the quality axis.
- */
-export function degradedCopy(quality: ManualQuality): ManualQuality {
-    const i = manualQualityRank(quality);
-    return MANUAL_QUALITY_ORDER[Math.max(0, i - 1)];
-}
-
 // WHAT THE READER BRINGS
 //
 // Measured in insight degrees, the ladder `understanding.ts` already uses, so

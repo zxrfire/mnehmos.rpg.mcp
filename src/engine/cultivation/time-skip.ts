@@ -1,3 +1,4 @@
+import { applyCrossingConsequence } from './what-goes-wrong-at-a-realm-boundary.js';
 /**
  * The long-simulation primitive.
  *
@@ -388,6 +389,9 @@ export function simulateTimeSkip(
 
     // Working state. A shallow copy; the input is never touched.
     const startAge = cultivator.age;
+    let burnedYears = 0;
+    let soulState = cultivator.soulState;
+    let identityContinuity = cultivator.identityContinuity;
     const startYearsAtRealm = cultivator.yearsAtCurrentRealm;
 
     let ordinal = cultivator.realmOrdinal;
@@ -525,7 +529,7 @@ export function simulateTimeSkip(
     // see: `Math.ceil` on the day count can land a few nanoseconds short of the
     // threshold, and rounding to the nearest microsecond snaps that back onto
     // the documented number so death fires exactly ON it.
-    const rawAge = (): number => startAge + elapsed / DAYS_PER_YEAR;
+    const rawAge = (): number => startAge + burnedYears + elapsed / DAYS_PER_YEAR;
     const rawYearsAtRealm = (): number => realmClockBase + daysSinceAdvance / DAYS_PER_YEAR;
     const currentAge = (): number => roundYears(rawAge());
     const currentYearsAtRealm = (): number => roundYears(rawYearsAtRealm());
@@ -566,6 +570,7 @@ export function simulateTimeSkip(
         starvationTurns,
         bleedingTurns,
         age: currentAge(),
+        soulState, identityContinuity,
         yearsAtCurrentRealm: currentYearsAtRealm(),
         alive: true as const
     });
@@ -778,6 +783,15 @@ export function simulateTimeSkip(
                 if (result.injuriesSustained.length > 0) {
                     injuries = [...injuries, ...result.injuriesSustained];
                     sustained.push(...result.injuriesSustained);
+                }
+
+                if (result.crossing) {
+                    const changed = applyCrossingConsequence({ soulState, identityContinuity, age: burnedYears }, result.crossing);
+                    burnedYears = changed.age;
+                    soulState = changed.soulState;
+                    identityContinuity = changed.identityContinuity;
+                    if (result.crossing.foundationQuality) foundation = result.crossing.foundationQuality;
+                    if (checkDeath()) break;
                 }
 
                 if (result.outcome === 'success') {
@@ -1622,6 +1636,7 @@ export function simulateTimeSkip(
         injuriesSustained: sustained,
         tolls,
         endState: {
+            soulState, identityContinuity,
             starvationTurns,
             bleedingTurns,
             yearsAtCurrentRealm: currentYearsAtRealm(),

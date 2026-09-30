@@ -1,3 +1,4 @@
+import { immortalStock, FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS } from '../../../scripts/immortal-stock.js';
 /**
  * The top of the ladder, recalibrated - and the arithmetic that says the world
  * should contain what it contains.
@@ -58,8 +59,6 @@ import { SPIRIT_ROOTS, WEIGHT_TOTAL } from '../../../src/engine/cultivation/spir
 import {
     CULTIVATOR_POPULATION,
     BELIEVED_REACH,
-    FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS,
-    immortalStock,
     measureLadderReach
 } from '../../../src/engine/world/ladder-odds.js';
 import { stagnationYearsForOrdinal, type Injury, type Insight } from '../../../src/schema/cultivation.js';
@@ -519,6 +518,7 @@ function makeScars(n: number): Injury[] {
 // WHAT THE WORLD SHOULD CONTAIN
 // ─────────────────────────────────────────────────────────────────────────
 
+// Calibration over measured crossings, not a world mechanic.
 describe('False Immortals are a residence count', () => {
     it('keeps one to three of them standing about, at the measured landing split', () => {
         const stock = immortalStock({

@@ -6668,6 +6668,9 @@ function planIntent(input: string): PlannedAction {
     const reinforcing = REINFORCING_A_DOOR_SENTENCE.exec(input);
     if (reinforcing) return { action: 'craft', target: reinforcing[1].trim() };
 
+    const formation = /\b(?:raise|lay|build|make|craft|set up)\s+(?:an?\s+|my\s+)?((?:offensive\s+|defensive\s+)?formation\b[^.!?]*)/.exec(text);
+    if (formation) return { action: 'craft', target: formation[1].trim() };
+
     // THE YARD
     if (WHAT_A_YARD_MAKES.test(text)
         && (BUILDING_SOMETHING.test(text) || BACK_TO_THE_STOCKS.test(text))) {

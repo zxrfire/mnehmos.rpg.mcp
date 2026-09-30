@@ -89,3 +89,5 @@ the cultivator repository. A completed soul finishing requirement remains final.
   against, which is what makes this a boundary rather than a pass-through.
 - [`../handlers/README.md`](../handlers/README.md) - `spatial-manage.ts` re-exports from there
   rather than implementing. It is the only tool that still does.
+
+`persistCrossingConsequence` writes boundary soul damage, continuity loss, foundation damage, and spent years inside the resolving transaction. It checks the resulting body for death. Both MCP and web attempts use it; time skips carry absolute soul fields through their common persistence path.

@@ -770,7 +770,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'swallow-skimming-step': 'crude',
     'green-mercy-mending-palm': 'crude',
     // Copied from a fragment by somebody who could not use it and sold to
-    // somebody who could. `degradedCopy` written out as a row.
+    // somebody who could. An incomplete surviving manual, not a copy made by an unmastered reader.
     'drumming-thunder-clap': 'corrupt',
     // The half that is drawn from. It spends the body it is cultivated in and
     // returns the holder nothing, and nobody has ever begun it willingly.

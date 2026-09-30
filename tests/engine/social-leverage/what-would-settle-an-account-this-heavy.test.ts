@@ -2,7 +2,9 @@
  * What closes an account, and what walking out of the closing costs.
  *
  * The guard that matters most is the negative one: a binding must be ONE
- * discharge among several, not the answer to every heavy record, or a rule has
+ * discharge among several. Agreement records terms, not whether the people chose
+ * them or how they feel. The old helper asserted coercion even for an accepted proposal.
+ * The answer to every heavy record would be a rule
  * been written that applies to exactly one situation.
  */
 
@@ -87,7 +89,7 @@ describe('the bargain', () => {
         expect(bargain.binding.cause).toBe('marriage_pact');
         expect(bargain.settled.resolution).toBe('renounced');
         // The relationship is the point, and the record says what it is like.
-        expect(bargain.tie).toMatch(/did not choose/);
+        expect(bargain.tie).toContain('settlement of this account');
     });
 });
 

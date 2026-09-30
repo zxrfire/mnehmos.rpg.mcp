@@ -66,6 +66,19 @@ A one-room cave is looted by a wandering rogue in an afternoon. An empty seat is
 expedition, an argument between houses about who owns it, and a thing provinces remember
 the year of.
 
+A chamber is one door and one room behind it. A wandering rogue does it in an afternoon
+and nobody hears about it. Holding it would cost a house more than it contains.
+
+A building can be a store, a reading room, or a working floor. One party, one trip. The
+local villages usually know it is there and have not thought it worth anything.
+
+A compound has walls, several buildings, and a layout somebody planned. A house can put a
+claim on it and post people; the claim is worth arguing about.
+
+A mountain seat has halls, wards, a road that used to go there, and more than one person's
+worth of history. Opening one is an expedition and an argument between houses about who
+owns it. The province remembers the year.
+
 ---
 
 ## Where closed ground comes from

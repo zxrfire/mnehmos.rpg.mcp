@@ -932,6 +932,7 @@ export function applyRuinProspecting(
             tags: ['ruin', 'late_age', FOUND_BY_PROSPECTING_TAG, `ruin-character:${character}`],
             data: {
                 ruinCharacter: character,
+                ruinScale: SCALE_BY_BAND[Math.min(band, SCALE_BY_BAND.length - 1)],
                 admits: access.admits,
                 floorOrdinal: floor,
                 ceilingOrdinal: access.admits === 'nobody_above_the_line' ? access.ceilingOrdinal : null,

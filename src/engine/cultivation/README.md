@@ -1137,7 +1137,7 @@ Immortals at a perfectly ordinary rate; **residence** is production times how lo
 stay, and they stay on the order of five centuries out of three hundred millennia. Lu Sheng
 is not the only one the world ever made. He is the one who is still here, which is the most
 interesting fact about him and the reason he is worth writing down. The arithmetic is
-`immortalStock` in [`../world/ladder-odds.ts`](../world/ladder-odds.ts), and the setting
+the calibration `immortalStock` in [`../../../scripts/immortal-stock.ts`](../../../scripts/immortal-stock.ts), and the setting
 side of it is [`../../../docs/world/climbing/immortals.md`](../../../docs/world/climbing/immortals.md).
 
 ### Failure, and the near-miss beside it
@@ -1300,3 +1300,5 @@ was met, and hands the resulting state to `survival.ts`.
   are here and `web/`.
 - [`../../../docs/world/climbing/README.md`](../../../docs/world/climbing/README.md) - the prose the
   ladder is supposed to feel like, and the design rationale behind the rungs.
+
+Boundary trial damage is applied by `applyCrossingConsequence` in direct player attempts, seclusion, and NPC attempts. Soul state only worsens, continuity multiplies, and spent lifespan is charged rather than narrated. Seclusion returns the soul fields in its end state for the shared persistence path. Unmastered copying is refused by the existing mastery gate; it does not create a degraded manual.

@@ -267,12 +267,14 @@ export interface Secondment {
  */
 export function whoCountsTowardThisHouse(
     factionId: string,
-    secondments: readonly Secondment[] = []
+    secondments: readonly Secondment[] = [],
+    /** The living roll, where the caller has a world. The catalog only opens a world. */
+    livingRoll?: readonly { id: string; realmOrdinal: number }[]
 ): CountedBody[] {
     const ids = new Set(idsForFaction(factionId));
     const counted = new Map<string, CountedBody>();
 
-    for (const entry of rollOf(factionId)) {
+    for (const entry of livingRoll ?? rollOf(factionId)) {
         counted.set(entry.id, { id: entry.id, realmOrdinal: entry.realmOrdinal, weight: 1 });
     }
 

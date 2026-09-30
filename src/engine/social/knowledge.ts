@@ -254,6 +254,7 @@ export function reviseKnowledge(
     const accepted = input.to !== undefined;
     const revised = input.to
         ? recordKnowledge({
+              id: stableId('know', previous.id, input.onDay, input.cause),
               holderId: previous.holderId,
               holderKind: previous.holderKind,
               claimKey: previous.claimKey,

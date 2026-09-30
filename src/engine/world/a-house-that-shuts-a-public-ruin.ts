@@ -1,3 +1,4 @@
+import { WHAT_SCALE_DECIDES, RuinScaleSchema } from '../../data/cultivation/inheritance-trials.js';
 /**
  * A house comes to hold a ruin, and every house that would have delved it
  * opens an account against it.
@@ -76,8 +77,10 @@ export interface WhatItTakesToHoldIt {
  */
 export function whatItTakesToHold(ruin: LocationRecord): WhatItTakesToHoldIt {
     const opening = SENDING_REASONS.find(r => r.needs === 'a_find');
+    const scale = RuinScaleSchema.safeParse(ruin.data.ruinScale);
     return {
-        hands: opening?.hands ?? 1,
+        hands: (opening?.hands ?? 1) * (scale.success
+            ? WHAT_SCALE_DECIDES[scale.data].partiesItTakes : 1),
         // Living there and being the bar are two bars and the party needs both.
         atOrdinal: Math.max(ruin.thresholds.entry, ruin.thresholds.survival)
     };
@@ -86,6 +89,8 @@ export function whatItTakesToHold(ruin: LocationRecord): WhatItTakesToHoldIt {
 export type WhyItCannotBeShut =
     /** Not a ruin, or already shut. You cannot monopolise a closed door. */
     | 'nothing_here_is_open'
+    /** A chamber or single building has no compound ground to hold. */
+    | 'too_small_to_hold'
     /** Somebody is already holding it, and that somebody may be you. */
     | 'somebody_already_holds_it'
     /** The house is seated somewhere else. You cannot watch a province away. */
@@ -204,6 +209,10 @@ export function shutAPublicRuin(input: {
             `${ruin.name} is not open ground anybody is walking into. `
             + 'A door already shut is nobody\'s to shut.'
         );
+    }
+    const scale = RuinScaleSchema.safeParse(ruin.data.ruinScale);
+    if (scale.success && !WHAT_SCALE_DECIDES[scale.data].aHouseCanClaimIt) {
+        return refuse('too_small_to_hold', `${ruin.name} has no compound or larger ground for a house to hold.`);
     }
     if (ruin.controllingFactionId !== null) {
         return refuse(

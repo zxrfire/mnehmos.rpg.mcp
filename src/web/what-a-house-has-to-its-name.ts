@@ -50,6 +50,8 @@ import {
     type WhatAHouseCanField
 } from '../engine/world/how-strong-a-house-actually-is.js';
 import type { FactionRecord, WorldState } from '../engine/world/world-state.js';
+import { describeCountedHoldings } from '../data/cultivation/what-a-house-moves-its-people-on.js';
+import { theChairsOfTheWorld } from '../engine/world/who-stands-over-a-house.js';
 
 /** One thing a house is sitting on. */
 export interface AThingAHouseHolds {
@@ -195,6 +197,15 @@ export function whatAHouseHasToItsName(input: {
     lines.push(things.length === 0
         ? 'There is nothing on its shelves that anybody would come for.'
         : `On its shelves: ${things.map(saidPlainly).join(', ')}.`);
+    if (input.house) lines.push(`Its conveyances: ${describeCountedHoldings(input.house.resources)}`);
+    const chair = input.world
+        ? theChairsOfTheWorld(input.world).find(row => row.factionId === input.factionId)
+        : undefined;
+    if (chair) lines.push(chair.heldBy === null
+        ? chair.bar === 'reserved'
+            ? 'Its protector office is vacant; the house reserves it for a False Immortal.'
+            : 'Its protector office is vacant; nobody has cleared its bar and secured the elders\' agreement.'
+        : 'Its protector office is occupied.');
 
     // ── AND WHETHER IT IS STILL MAKING PEOPLE, TO SOMEBODY WHO DEALS AT ITS LEVEL
     //

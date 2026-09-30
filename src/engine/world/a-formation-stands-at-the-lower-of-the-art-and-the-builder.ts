@@ -2,7 +2,7 @@
  * A formation is a made thing that stands where it was made.
  */
 
-import { makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
+import { makeObject, queryObjects, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 import { isOnRoad } from '../../schema/cultivation.js';
 
@@ -297,7 +297,7 @@ export function formationsStandingAt(
     objects: readonly ObjectRecord[],
     locationId: string
 ): ObjectRecord[] {
-    return objects.filter(o => isFormation(o) && o.locationId === locationId);
+    return queryObjects(objects, { kinds: ['formation'], locationId });
 }
 
 /**

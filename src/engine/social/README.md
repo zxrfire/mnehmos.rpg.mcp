@@ -469,3 +469,5 @@ model above.
 - [`../../agent/prompt/README.md`](../../agent/prompt/README.md) - the `secrets` slice hands a
   bound NPC's model private text. That is a prompt input and not a filed fact; only
   `recordKnowledge` here makes it something the world can be asked about later.
+
+`KnowledgeGate` revises an identical account when a closer source advances its stage. SQLite retains the superseded account and revision link; incompatible statements remain separate. Soul searches read a transient `KnowledgeLedger` projected from current SQLite rows, with no second persistent store. Provenance reads include superseded accounts.

@@ -207,3 +207,27 @@ describe('the ladder maps onto the stance vocabulary rather than replacing it', 
         expect(highestStage('named', 'placed')).toBe('placed');
     });
 });
+
+/** A closer encounter supersedes the same account, preserving its source in history. */
+describe('the live knowledge ledger revises without erasing', () => {
+    it('revises on the same day without an id collision and preserves incompatible accounts', () => {
+        closeDb();
+        const db = getDb(':memory:');
+        const gate = new KnowledgeGate(db);
+        const common = { holderId: 'learner', kind: 'place' as const, id: 'courtyard',
+            name: 'Courtyard', onDay: 1 };
+        const old = gate.learn({ ...common, sourceKind: 'overheard', stage: 'whisper' });
+        const newer = gate.learn({ ...common, sourceKind: 'witnessed', stage: 'encountered' });
+        expect(newer.id).not.toBe(old.id);
+        expect(gate.memoriesHeldBy('learner')).toHaveLength(1);
+        expect(gate.provenanceOf('learner', 'place', 'courtyard')).toHaveLength(2);
+        expect(gate.stageOf('learner', 'place', 'courtyard')).toBe('encountered');
+        expect(db.prepare('SELECT superseded FROM knowledge_records WHERE id = ?').get(old.id))
+            .toEqual({ superseded: 1 });
+        expect(db.prepare('SELECT previous_record_id, revised_record_id FROM knowledge_revisions').get())
+            .toEqual({ previous_record_id: old.id, revised_record_id: newer.id });
+        gate.learn({ ...common, sourceKind: 'told', statement: 'The courtyard was destroyed.' });
+        expect(gate.memoriesHeldBy('learner')).toHaveLength(2);
+        closeDb();
+    });
+});

@@ -135,7 +135,15 @@ describe('the bar to copy a road is the last rung the road carries anybody to', 
 // 3. NO UNDERSTANDING, NO MANUAL
 // ─────────────────────────────────────────────────────────────────────────
 
+/** The obsolete degraded-copy helper minted manuals from incomplete understanding.
+ * The live copying gate refuses every partly mastered art, irrespective of its grade.
+ */
 describe('a copy is not a transcription', () => {
+    it('cannot produce a degraded manual from any partly mastered art', () => {
+        for (const road of ROADS) {
+            expect(couldWriteOutACopy({ realmOrdinal: DEEPEST_CAP, masteryOfIt: 0.99 }, road.id), road.id).toBe(false);
+        }
+    });
     it('somebody who has not finished a stall primer cannot write one out', () => {
         const primer = ROADS.find(t => Number(t.cap) <= COMMON_MANUAL_CAP);
         expect(primer, 'the catalog carries no book a stall would stock').toBeTruthy();

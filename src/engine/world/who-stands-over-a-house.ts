@@ -10,8 +10,8 @@
  * WHAT WAS MISSING, measured: three of thirty-eight houses declared the office
  * at all, all of them filled, none reserved - so the case the doc calls
  * universal could not be represented, and thirty-five houses read as having no
- * office rather than an empty one. `pairProtectors` calls itself the writer in
- * its own banner and has never had a caller. Neither has `protectorsOf`.
+ * office rather than an empty one. Catalog pairing was superseded by the live
+ * bar and elder agreement read here.
  *
  * ONE RULE AND ONLY THE BAR MOVES. The design owner: *"just treat empty
  * protector offices as an open office that nobody meets the criteria ... same
@@ -109,8 +109,7 @@ export function whoStandsOverThisHouse(
      * measured, one rogue standing over the Verdant Spring Valley, the Clear
      * River Alliance, the Burnt Earth Temple and the Azure Dew Sect. A
      * protector stands for a house when something comes for it and cannot be in
-     * four compounds, which is why `pairProtectors` matched each thing to at
-     * most one house. See `theChairsOfTheWorld`, which threads this.
+     * four compounds. `theChairsOfTheWorld` seats each person at most once.
      */
     taken: ReadonlySet<string> = new Set()
 ): TheChairOverAHouse {
@@ -146,10 +145,7 @@ export function whoStandsOverThisHouse(
  * exists.
  */
 export function theChairsOfTheWorld(state: WorldState): TheChairOverAHouse[] {
-    // STRONGEST HOUSE FIRST, which is the order `pairProtectors` already used
-    // and for its reason: the house with the most to offer had the first call
-    // on whoever was available. Ties run to the id so two identical houses
-    // resolve the same way in every world.
+    // The strongest house has first call; ids break ties without reading input order.
     const houses = state.factions
         .filter(house => house.dissolvedOnDay === null)
         .sort((a, b) => (Number(b.resources.power_ordinal ?? 0) - Number(a.resources.power_ordinal ?? 0))

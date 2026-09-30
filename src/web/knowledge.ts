@@ -6,6 +6,8 @@ import type Database from 'better-sqlite3';
 import { isTheWorldsToMove } from '../engine/world/npc-state.js';
 import {
     recordKnowledge,
+    reviseKnowledge,
+    KnowledgeLedger,
     type KnowledgeRecord,
     type KnownEntityKind,
     type SourceKind,
@@ -131,6 +133,8 @@ interface MemoryRow extends RawRow {
     id: string;
     fact_id: string | null;
     confidence: number;
+    source_from_holder_id: string | null;
+    source_via_record_id: string | null;
 }
 
 /**
@@ -165,6 +169,7 @@ export class KnowledgeGate {
     private readonly listStmt: Database.Statement;
     private readonly claimStmt: Database.Statement;
     private readonly memoriesStmt: Database.Statement;
+    private readonly provenanceStmt: Database.Statement;
     /**
      * The world, asked for rather than held.
      *
@@ -177,7 +182,7 @@ export class KnowledgeGate {
     private theWorldItReads: WorldState | null = null;
     private readingTheWorld: WhatSomebodyKnowsOfIt | null = null;
 
-    constructor(db: Database.Database, worldAtHand?: () => WorldState | null) {
+    constructor(private readonly db: Database.Database, worldAtHand?: () => WorldState | null) {
         this.worldAtHand = worldAtHand;
         this.insertStmt = db.prepare(`
             INSERT OR IGNORE INTO knowledge_records (
@@ -218,9 +223,15 @@ export class KnowledgeGate {
               AND stance IN ('knows', 'believes', 'suspects')
             ORDER BY acquired_on_day ASC, id ASC
         `);
+        this.provenanceStmt = db.prepare(`
+            SELECT claim_key, stance, statement, detail, source_kind, source_note,
+                   acquired_on_day, tags FROM knowledge_records
+            WHERE holder_id = ? AND claim_key = ?
+            ORDER BY acquired_on_day ASC, id ASC
+        `);
         this.memoriesStmt = db.prepare(`
             SELECT id, claim_key, fact_id, stance, statement, detail, source_kind,
-                   source_note, acquired_on_day, confidence, tags
+                   source_note, source_from_holder_id, source_via_record_id, acquired_on_day, confidence, tags
             FROM knowledge_records
             WHERE holder_id = ? AND superseded = 0
             ORDER BY acquired_on_day ASC, id ASC
@@ -320,13 +331,14 @@ export class KnowledgeGate {
     }
 
     /**
-     * Every live row this holder has about one entity, oldest first.
+     * Every account this holder has had about one entity, oldest first.
      *
      * The provenance chain a player pays to have untangled: two names for one
      * thing, from two sources, one of which was making it up.
      */
     provenanceOf(holderId: string, kind: KnownEntityKind, id: string): AwarenessRow[] {
-        return this.rowsFor(holderId, kind, id).map(row => toAwarenessRow(row, kind, id));
+        return (this.provenanceStmt.all(holderId, existenceClaimKey(kind, id)) as RawRow[])
+            .map(row => toAwarenessRow(row, kind, id));
     }
 
     /**
@@ -370,7 +382,7 @@ export class KnowledgeGate {
     learn(input: AwarenessInput): KnowledgeRecord {
         const stage = stageWanted(input);
         const stance = input.stance ?? stanceForStage(stage);
-        const record = recordKnowledge({
+        let record = recordKnowledge({
             holderId: input.holderId,
             claimKey: existenceClaimKey(input.kind, input.id),
             // ── AND THE LEDGER ROW IT CAME OFF, WHERE THERE IS ONE ──────
@@ -404,19 +416,40 @@ export class KnowledgeGate {
             tags: [stageTag(stage)]
         });
 
-        this.write(record);
+        // Seeing the same thing more closely replaces that account; contradictory accounts remain.
+        const previous = (this.memoriesStmt.all(input.holderId) as MemoryRow[])
+            .find(row => row.claim_key === record.claimKey && row.statement === record.statement
+                && stageRank(stageOfRaw(row)) < stageRank(stage));
+        this.db.transaction(() => {
+            if (previous) {
+                const changed = reviseKnowledge(memoryRecord(previous, input.holderId), {
+                    onDay: record.acquiredOnDay, cause: `Learned at ${stage}.`,
+                    to: { ...record, source: { ...record.source, viaRecordId: previous.id } }
+                });
+                record = changed.revised!;
+                this.db.prepare('UPDATE knowledge_records SET superseded = 1 WHERE id = ?').run(previous.id);
+                const revision = changed.revision;
+                this.db.prepare(`INSERT INTO knowledge_revisions
+                    (id, holder_id, claim_key, on_day, previous_record_id, revised_record_id, cause, accepted)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(revision.id, revision.holderId,
+                    revision.claimKey, revision.onDay, revision.previousRecordId,
+                    revision.revisedRecordId, revision.cause, 1);
+            }
+            this.write(record);
+        })();
         return record;
     }
 
     /** Stored claims include beliefs and secrets, not just names somebody knows. */
     memoriesHeldBy(holderId: string): AMemoryHeld[] {
-        return (this.memoriesStmt.all(holderId) as MemoryRow[]).map(row => ({
-            id: row.id,
-            claimKey: row.claim_key,
-            statement: row.statement,
-            stance: row.stance,
-            confidence: row.confidence,
-            stage: stageOfRaw(row)
+        // A read projection only: SQLite remains the sole store.
+        const ledger = new KnowledgeLedger();
+        for (const row of this.memoriesStmt.all(holderId) as MemoryRow[]) {
+            ledger.addRecord(memoryRecord(row, holderId));
+        }
+        return ledger.heldBy(holderId).map(row => ({
+            id: row.id, claimKey: row.claimKey, statement: row.statement,
+            stance: row.stance, confidence: row.confidence, stage: stageOfRecord(row)
         }));
     }
 
@@ -632,4 +665,18 @@ function toAwarenessRow(row: RawRow, kind: KnownEntityKind, id: string): Awarene
         acquiredOnDay: row.acquired_on_day,
         stage: stageOfRaw(row)
     };
+}
+
+function memoryRecord(row: MemoryRow, holderId: string): KnowledgeRecord {
+    return recordKnowledge({
+        id: row.id, holderId, claimKey: row.claim_key, factId: row.fact_id,
+        stance: row.stance as Stance, statement: row.statement,
+        detail: readBlob(row.detail, {}), source: { kind: row.source_kind as SourceKind, note: row.source_note,
+            fromHolderId: row.source_from_holder_id ?? undefined, viaRecordId: row.source_via_record_id ?? undefined },
+        onDay: row.acquired_on_day, confidence: row.confidence, tags: readBlob(row.tags, [])
+    });
+}
+
+function readBlob<T>(blob: string, fallback: T): T {
+    try { return JSON.parse(blob) ?? fallback; } catch { return fallback; }
 }

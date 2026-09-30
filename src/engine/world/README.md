@@ -3708,3 +3708,5 @@ points. Do not quote -2.16 as a constant.
 - [`../encounters/README.md`](../encounters/README.md) and
   [`../household/README.md`](../household/README.md) - the two systems that write into this
   world rather than only reading it: what a house asks of somebody, and what a match changes.
+
+Ruin scale reads `WHAT_SCALE_DECIDES`: it multiplies the parties needed to hold ground, excludes chambers and single buildings from house claims, and lets public discoveries enter regional news. Generated ruins retain their scale on the location row. Protector appointments are derived from living candidates and elder agreement, never catalog beast pairing; the house holdings read exposes office occupancy without naming unknown occupants.

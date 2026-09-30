@@ -14,7 +14,7 @@ import type { GameService } from './turn-engine.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import { factsForToolResult, placeName } from './facts.js';
 import { loosePlaceKey } from './knowledge.js';
-import { placeRoadDays, REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
+import { placeRoadBetween, placeRoadDays, REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import {
@@ -207,10 +207,12 @@ export function theWayTo(
         const standing = standingOf(cultivator);
         const here = standing.regionId;
         const inside = placeRoadDays(standing.placeName ?? cultivator.location, place.name);
+        const direct = placeRoadBetween(standing.placeName ?? cultivator.location, place.name);
         lines.push(house
             ? `${who} gives the way to ${called}: its gate is at ${place.name}, `
                 + `${howFar(here, provinceOf(game, place.id), false, inside)}.`
             : `${who} gives the way to ${name}: ${howFar(here, provinceOf(game, place.id), place.kind === 'region', inside)}.`);
+        if (direct) lines.push(`${who} describes the way: ${direct.description}`);
         if (house && game.noteEncounter(cultivator, run,
             { kind: 'sect', id: house.factionId, name: house.factionName }, 'told',
             `${asked.name} gave the way to it at ${placeName(cultivator)}.`)) {

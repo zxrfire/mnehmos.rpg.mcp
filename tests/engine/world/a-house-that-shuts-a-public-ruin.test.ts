@@ -263,3 +263,24 @@ describe('a house that shuts a public ruin', () => {
         expect(JSON.stringify(b.ruin)).toBe(before);
     });
 });
+
+/** Scale is ground and manpower, not merely a label on an inheritance. */
+describe('the scale of the ground a house holds', () => {
+    it('cannot station a house on a lone chamber, even with enough people', () => {
+        const b = board();
+        b.ruin = { ...b.ruin, data: { ...b.ruin.data, ruinScale: 'one_room' } };
+        expect(shut(b).refusedBecause).toBe('too_small_to_hold');
+    });
+    it('needs more parties to hold a mountain than a compound', () => {
+        const b = board();
+        const compound = { ...b.ruin, data: { ...b.ruin.data, ruinScale: 'a_compound' } };
+        const mountain = { ...b.ruin, data: { ...b.ruin.data, ruinScale: 'a_mountain' } };
+        const takes = whatItTakesToHold(compound);
+        const house = { ...b.shutter, roster: rollOf(takes.hands, takes.atOrdinal) };
+        expect(shut(b, { ruin: compound, house }).shut).toBe(true);
+        const refused = shut(b, { ruin: mountain, house });
+        expect(refused.shut).toBe(false);
+        expect(refused.takes.hands).toBeGreaterThan(takes.hands);
+        expect(refused.reason).toContain(String(refused.takes.hands));
+    });
+});

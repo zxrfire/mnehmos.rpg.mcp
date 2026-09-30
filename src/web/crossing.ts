@@ -44,6 +44,7 @@ import {
     clearFlag,
     daoHeartFor,
     persistFoundation,
+    persistCrossingConsequence,
     persistToll,
     readJsonFlag,
     tollConditionsFor
@@ -247,6 +248,8 @@ export const crossingVerb = {
             // was unreachable by one missing assignment, which is why it took
             // playing at 46 with an admin-set status to notice anything else
             // was wrong up there.
+            updated = persistCrossingConsequence(this.repos, cultivator.id, result.crossing, run.turn + 1) ?? updated;
+
             if (result.immortalStatusGained) {
                 updated = this.repos.cultivators.update(cultivator.id, {
                     immortalStatus: result.immortalStatusGained
@@ -310,7 +313,7 @@ export const crossingVerb = {
         // Which of the five a crossing can be, named off what it produced.
         const kind = getCrossingResult(classifyCrossingResult({
             succeeded: result.outcome === 'success',
-            survived: result.outcome !== 'death',
+            survived: after.alive,
             brokenStatus: result.arrivedBroken,
             injuriesSustained: result.injuriesSustained
         }));
@@ -402,17 +405,18 @@ export const crossingVerb = {
             });
         }
         calls.push(...tollCalls(tollLines));
-        if (result.outcome === 'death') {
+        if (!after.alive) {
             calls.push({
                 name: 'cultivator.markDead',
                 action: 'death',
-                summary: `Run closed: ${result.tribulation ? 'heavenly_tribulation' : 'failed_breakthrough'}. Permadeath - no reload.`,
+                summary: `Run closed: ${after.deathCause}. Permadeath - no reload.`,
                 ok: true
             });
         }
 
         const facts = factsForBreakthrough(cultivator, after, result, ambient, paidWithTheBody);
         facts.lines.push(...tollLines);
+        if (!after.alive && result.outcome !== 'death') facts.lines.push(`The burned lifespan exhausted your remaining years. ${after.deathCause}.`);
         if (result.bodyCost > 0) {
             facts.structure.push(
                 `Body cost: ${(result.bodyCost * 100).toFixed(0)}% of the pool - `

@@ -1,3 +1,4 @@
+import { persistCrossingConsequence } from './cultivation-support.js';
 /**
  * Consolidated Cultivation Tool - `cultivation_manage`
  */
@@ -1004,6 +1005,8 @@ export async function handleBreakthrough(
             persistImmortalStatus(repos, cultivator.id, result.immortalStatusGained);
         }
 
+        persistCrossingConsequence(repos, cultivator.id, result.crossing, nextTurn);
+
         if (pending) clearFlag(repos.db, cultivator.id, FLAG_PENDING_PILL);
 
         repos.runs.incrementTurn(run.id, 1);
@@ -1073,8 +1076,8 @@ export async function handleBreakthrough(
         immortalStatusGained: result.immortalStatusGained,
         injuriesSustained: result.injuriesSustained.map(summariseInjury),
         progressConsumed: round2(result.progressConsumed),
-        died,
-        deathCause,
+        died: !after.alive,
+        deathCause: after.deathCause,
         narrationHint: result.narrationHint,
         cultivator: describeCultivator(repos, after, runAfter),
         run: {

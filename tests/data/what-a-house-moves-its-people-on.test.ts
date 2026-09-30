@@ -150,7 +150,7 @@ describe('what a house has of the counted ones', () => {
     });
 
     it('is answerable, which is the whole reason a count is worth storing', () => {
-        expect(describeCountedHoldings({})).toContain('on foot');
+        expect(describeCountedHoldings({})).toContain('No carriages or mounts');
         const held = adjustCountedHolding(
             adjustCountedHolding({}, 'conv-carriage-earth', 4),
             'conv-mount-mortal',

@@ -1,3 +1,4 @@
+import type { BreakthroughResult } from '../../schema/cultivation.js';
 /**
  * What a crossing does to somebody when it goes wrong.
  */
@@ -273,13 +274,13 @@ export interface RuinableSelf {
  */
 export function applyCrossingConsequence(
     self: RuinableSelf,
-    consequence: CrossingConsequence
+    consequence: CrossingConsequence | NonNullable<BreakthroughResult['crossing']>
 ): RuinableSelf {
     return {
         soulState: consequence.soulStateFloor
             ? worseSoulState(self.soulState, consequence.soulStateFloor)
             : self.soulState,
-        identityContinuity: consequence.identityContinuityFactor
+        identityContinuity: consequence.identityContinuityFactor != null
             ? Math.max(0, Math.min(1, self.identityContinuity * consequence.identityContinuityFactor))
             : self.identityContinuity,
         // Years are spent, not set. Additive for the same reason the other two

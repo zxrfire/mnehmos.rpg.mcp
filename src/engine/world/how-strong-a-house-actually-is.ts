@@ -77,6 +77,7 @@ import {
 } from '../cultivation/combat.js';
 import type { WorldState, FactionRecord } from './world-state.js';
 import { whatTheTownsBringIn } from './locations.js';
+import { whoCountsTowardThisHouse } from '../../data/cultivation/faction-roll.js';
 
 /**
  * ── WHAT THE FIRST CUT GOT WRONG, AND IT WAS THE WHOLE AGGREGATION ───────
@@ -439,12 +440,10 @@ export function howStrongThisHouseIsNow(
         peakOrdinal: 0, yearsSinceLastPeak: 0
     }
 ): WhatAHouseCanField {
-    const rollOrdinals: number[] = [];
-    for (const npc of state.npcs) {
-        if (npc.status === 'alive' && npc.factionId === faction.id) {
-            rollOrdinals.push(npc.cultivation.realmOrdinal);
-        }
-    }
+    const rollOrdinals = whoCountsTowardThisHouse(faction.id, [], state.npcs
+        .filter(npc => npc.status === 'alive' && npc.factionId === faction.id)
+        .map(npc => ({ id: npc.id, realmOrdinal: npc.cultivation.realmOrdinal })))
+        .map(person => person.realmOrdinal);
 
     const seat = faction.seatLocationId
         ? state.locations.find(l => l.id === faction.seatLocationId)

@@ -302,7 +302,7 @@ export const THE_OFFER = {
 } as const;
 
 // DEPARTURE The mechanism the world arithmetic assumes and nothing in the data
-// performed. `immortalStock` in `engine/world/ladder-odds.ts` multiplies production
+// performed. `immortalStock` in `scripts/immortal-stock.ts` multiplies production
 // by mean residence and gets one to three standing; this is what the residence
 // figure is actually made of.
 

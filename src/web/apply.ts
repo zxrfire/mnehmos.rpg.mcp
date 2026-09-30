@@ -224,6 +224,8 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
             yearsAtCurrentRealm: end.yearsAtCurrentRealm - mid.yearsAtCurrentRealm
         });
 
+        repos.cultivators.update(before.id, { soulState: end.soulState, identityContinuity: end.identityContinuity });
+
         if (input.location !== undefined && input.location !== before.location) {
             repos.cultivators.update(before.id, { location: input.location });
         }

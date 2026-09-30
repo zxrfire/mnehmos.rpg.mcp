@@ -12,7 +12,6 @@ import {
     MANUAL_QUALITY_ORDER,
     MANUAL_QUALITY_TIERS,
     canTellApart,
-    degradedCopy,
     manualQualityRank,
     readManual,
     readerComprehension
@@ -190,15 +189,6 @@ describe('the crossing', () => {
         // The ledger must still sum exactly to the final chance.
         expect(odds.modifiers.reduce((s, m) => s + m.delta, 0))
             .toBeCloseTo(odds.finalChance, 10);
-    });
-});
-
-describe('a copy made by somebody who never mastered it', () => {
-    it('comes out one step down, and no further than a damaged text', () => {
-        expect(degradedCopy('pristine')).toBe('refined');
-        expect(degradedCopy('sound')).toBe('crude');
-        expect(degradedCopy('crude')).toBe('corrupt');
-        expect(degradedCopy('corrupt')).toBe('corrupt');
     });
 });
 

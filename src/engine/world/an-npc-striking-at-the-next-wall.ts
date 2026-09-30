@@ -33,7 +33,7 @@ import {
     roadsTaughtByPractice,
     type RoadWithinReach
 } from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
-import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
+import { clearBrokenStatus, applyCrossingConsequence } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { theSealStillHolds } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import {
@@ -501,6 +501,14 @@ export function strikeAtTheWall(
     }
 
     let after = npc;
+    if (result.crossing) {
+        const changed = applyCrossingConsequence({ soulState: npc.soulState,
+            identityContinuity: npc.identityContinuity, age: 0 }, result.crossing);
+        after = { ...after, soulState: changed.soulState, identityContinuity: changed.identityContinuity,
+            cultivation: { ...after.cultivation, lifespanEndsOnDay:
+                Math.round(after.cultivation.lifespanEndsOnDay - changed.age * DAYS_PER_YEAR) } };
+        if (after.cultivation.lifespanEndsOnDay <= day) return { npc: after, result, died: true };
+    }
 
     const sustained: Injury[] = result.injuriesSustained;
     if (sustained.length > 0) after = carryingWounds(after, sustained, day);
@@ -561,18 +569,6 @@ export function strikeAtTheWall(
     };
     // The years the trial itself burned off the span, where it burned any.
     if (result.crossing) {
-        if (result.crossing.yearsBurned > 0) {
-            after = {
-                ...after,
-                cultivation: {
-                    ...after.cultivation,
-                    lifespanEndsOnDay: Math.round(
-                        after.cultivation.lifespanEndsOnDay
-                        - result.crossing.yearsBurned * DAYS_PER_YEAR
-                    )
-                }
-            };
-        }
         if (result.crossing.foundationQuality) {
             after = {
                 ...after,

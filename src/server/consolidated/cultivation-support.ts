@@ -1,3 +1,6 @@
+import { applyCrossingConsequence } from '../../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
+import { evaluateDeathConditions, describeDeath } from '../../engine/cultivation/survival.js';
+import type { BreakthroughResult } from '../../schema/cultivation.js';
 /**
  * Shared plumbing for the cultivation MCP tool surface.
  */
@@ -735,6 +738,8 @@ export interface SkipEndState {
     age: number;
     yearsAtCurrentRealm: number;
     realmOrdinal: number;
+    soulState: Cultivator['soulState'];
+    identityContinuity: number;
 }
 
 export function skipEndState(before: Cultivator, result: TimeSkipResult): SkipEndState {
@@ -747,6 +752,8 @@ export function skipEndState(before: Cultivator, result: TimeSkipResult): SkipEn
         spiritStones: Math.max(0, Math.round(before.spiritStones + d.spiritStones)),
         cultivationProgress: Math.max(0, before.cultivationProgress + d.cultivationProgress),
         age: Math.max(0, before.age + d.age),
+        soulState: result.endState.soulState ?? before.soulState,
+        identityContinuity: result.endState.identityContinuity ?? before.identityContinuity,
         realmOrdinal: before.realmOrdinal + d.realmOrdinal,
         // Absolute, from the engine. Not derived, not inferred.
         starvationTurns: Math.max(0, Math.round(result.endState.starvationTurns)),
@@ -1870,4 +1877,20 @@ export function totalDays(input: DurationInput): number {
 
 function safeNonNegative(n: number | undefined): number {
     return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** Persist the boundary trial's damage in the transaction that resolves it. */
+export function persistCrossingConsequence(repos: CultivationRepos, id: string,
+    crossing: BreakthroughResult['crossing'], turn: number): Cultivator | null {
+    const before = repos.cultivators.getById(id);
+    if (!before || !crossing) return before;
+    const changed = applyCrossingConsequence(before, crossing);
+    const after = repos.cultivators.update(id, {
+        ...changed, ...(crossing.foundationQuality ? { foundationQuality: crossing.foundationQuality } : {})
+    });
+    if (after?.alive) {
+        const cause = evaluateDeathConditions(after);
+        if (cause) return repos.cultivators.markDead(id, cause, turn, describeDeath(cause, after));
+    }
+    return after;
 }

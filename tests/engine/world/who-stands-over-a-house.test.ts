@@ -1,5 +1,8 @@
 /**
  * The protector's chair is an office with a bar, and most of them are empty.
+ * This replaces catalog beast pairing: living eligibility and elder agreement
+ * decide the office. No protector serves two houses, and input order cannot
+ * alter which house gets the first call.
  *
  * The design is `docs/world/houses/offices-and-succession.md`, "The Protector",
  * and `THE_OFFICE` in `false-immortals.ts`. What is pinned here is that the
@@ -110,4 +113,16 @@ describe('the chair over a house', () => {
         expect(ordinary.length - filled, 'every ordinary chair fills, so the bar decides nothing')
             .toBeGreaterThan(0);
     }, 120_000);
+});
+
+describe('one living protector cannot be dealt to two houses', () => {
+    it('keeps the same appointments when the input rows are reversed', async () => {
+        const state = await world(SEEDS[0]!);
+        const before = theChairsOfTheWorld(state);
+        const reversed = theChairsOfTheWorld({ ...state,
+            factions: [...state.factions].reverse(), npcs: [...state.npcs].reverse() });
+        expect(reversed).toEqual(before);
+        const held = before.flatMap(chair => chair.heldBy === null ? [] : [chair.heldBy]);
+        expect(new Set(held).size).toBe(held.length);
+    }, 120000);
 });

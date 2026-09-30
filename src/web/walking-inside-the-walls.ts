@@ -36,6 +36,7 @@ import {
     pathTo,
     purposeOf,
     reachThrough,
+    roomsVisibleTo,
     roomStageFor
 } from '../engine/world/architecture.js';
 import type { LocationRecord } from '../engine/world/locations.js';
@@ -203,7 +204,7 @@ export function theDoorsOffThisYard(
             onDay: Math.floor(world.currentDay)
         });
         const invited = called?.dwelling.id === room.id;
-        if (!invited && !isAtLeast(roomStageFor(room, viewer), 'placed')) continue;
+        if (!invited && roomsVisibleTo([room], viewer).length === 0) continue;
         doors.push(aRoomsOwnName(room));
     }
     doors.sort();

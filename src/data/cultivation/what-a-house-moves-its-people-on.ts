@@ -282,7 +282,7 @@ export function describeCountedHoldings(
         .map(c => ({ c, n: countedHolding(resources, c.id) }))
         .filter(x => x.n > 0);
     if (held.length === 0) {
-        return 'Nothing in the yard. Whatever this house sends anywhere, it sends on foot.';
+        return 'No carriages or mounts in the yard.';
     }
     return held
         // The catalog names carry their own article - "An iron-rimmed carriage" - and

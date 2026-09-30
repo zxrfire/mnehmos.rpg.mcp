@@ -63,3 +63,5 @@ should: see [the declaration-list note](../../docs/comment-cleanup-rules.md).
   `NpcRecord` there are the two tables one person can be in; `Person` is the read that covers
   both.
 
+
+Time-skip end states optionally carry absolute `soulState` and `identityContinuity`. The simulation supplies them; older callers omitting them retain the persisted values.

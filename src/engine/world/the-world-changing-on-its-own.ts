@@ -1,3 +1,4 @@
+import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js';
 /**
  * Pressure: the world changing on its own.
  */
@@ -580,7 +581,18 @@ export function applyPressure(
         // left. BEFORE the event draw, so a ruin found this year is a ruin this
         // year's `ruin_opened` can open - discovery and opening are two stages of
         // one thing and the ordering is what makes them separable.
-        applyRuinProspecting(state, year, withinSpan(year * 365 + 40, fromDay, toDay));
+        const foundRuins = applyRuinProspecting(state, year, withinSpan(year * 365 + 40, fromDay, toDay));
+        for (const find of foundRuins.found) {
+            if (!WHAT_SCALE_DECIDES[find.scale].itsExistenceIsPublic) continue;
+            appendWorldFact(state, makeFact({
+                day: withinSpan(year * 365 + 40, fromDay, toDay),
+                kind: 'treasure_found', scale: 'regional', visibility: 'regional',
+                locationId: find.locationId,
+                summary: `${find.name} has been found in the province.`,
+                actors: [], magnitude: 0.2,
+                data: { ruinId: find.locationId, provinceId: find.regionId }
+            }));
+        }
 
         const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f)).length;
         const rate = clamp(

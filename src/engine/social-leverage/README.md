@@ -985,3 +985,5 @@ spending; `resolveAttempt` is still the only thing that moves a person.
 - [`../../web/README.md`](../../web/README.md) - where these become sentences a player can
   type: the asking verbs, `what-a-threat-promises.ts`, `going-back-and-forth-over-a-price.ts`,
   `what-asking-this-person-for-this-would-cost-them.ts`.
+
+A binding settlement preserves the account's severity and links the oath to the closed account. Its facts state the agreement, without asserting coercion or satisfaction. The live match action invokes it for an explicitly offered settlement after acceptance; leaving can reopen the linked account.

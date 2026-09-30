@@ -216,36 +216,31 @@ export type RuinOrigin = z.infer<typeof RuinOriginSchema>;
 export const RuinScaleSchema = z.enum(['one_room', 'a_building', 'a_compound', 'a_mountain']);
 export type RuinScale = z.infer<typeof RuinScaleSchema>;
 
-/** What each scale means for who can take it and whether anybody knows it is there. */
+/** Scale rules. Descriptions live in docs/world/places/closed-ground.md. */
 export const WHAT_SCALE_DECIDES: Readonly<Record<RuinScale, {
     partiesItTakes: number;
     aHouseCanClaimIt: boolean;
     itsExistenceIsPublic: boolean;
-    note: string;
 }>> = {
     one_room: {
         partiesItTakes: 1,
         aHouseCanClaimIt: false,
-        itsExistenceIsPublic: false,
-        note: 'One door and one room behind it. A wandering rogue does it in an afternoon and nobody hears about it, and there is nothing here for a house to hold because holding it would cost more than it contains.'
+        itsExistenceIsPublic: false
     },
     a_building: {
         partiesItTakes: 1,
         aHouseCanClaimIt: false,
-        itsExistenceIsPublic: false,
-        note: 'A store, a reading room, a working floor. One party, one trip, and the local villages usually know it is there and have not thought it worth anything.'
+        itsExistenceIsPublic: false
     },
     a_compound: {
         partiesItTakes: 3,
         aHouseCanClaimIt: true,
-        itsExistenceIsPublic: true,
-        note: 'Walls, several buildings and a layout somebody planned. Big enough that a house can put a claim on it and post people, and big enough that the claim is worth arguing about.'
+        itsExistenceIsPublic: true
     },
     a_mountain: {
         partiesItTakes: 8,
         aHouseCanClaimIt: true,
-        itsExistenceIsPublic: true,
-        note: 'A seat. Halls, wards, a road that used to go there and more than one person\'s worth of history in it. Opening one is an expedition, an argument between houses about who owns it, and a thing the province remembers the year of.'
+        itsExistenceIsPublic: true
     }
 };
 

@@ -331,4 +331,3 @@ export const REGIONS: readonly Region[] = (() => {
     });
     return [...spine, THE_BLOWN_GROUND_AS_REGION];
 })();
-

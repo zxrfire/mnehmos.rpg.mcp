@@ -466,3 +466,5 @@ past the change, which is the whole reason beasts are hunted rather than avoided
 - [`../../../docs/world/README.md`](../../../docs/world/README.md) - the prose half of the same
   world, split by topic. The bible is canon for the narrator; these files are canon for the
   engine, and they must not disagree.
+
+The scale table is read by house claims and discovery news, not merely by lore tests. Counted conveyance descriptions report the yard's carriages and mounts; their absence says nothing about tracked hulls. House strength supplies the living roll to `whoCountsTowardThisHouse`, rather than reviving the opening catalog roll.

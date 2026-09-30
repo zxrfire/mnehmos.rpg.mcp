@@ -2688,3 +2688,5 @@ rides to the seat, which `move` already knew how to do.
   [`../agent/README.md`](../agent/README.md) is a different loop entirely.
 - [`../engine/people/README.md`](../engine/people/README.md) - `everybodyDrawingHere` is how a
   verb asks who is standing here without caring which of the two person tables they came from.
+
+Formation construction is a `craft` action: name a known formation art. Its own qi cost is charged only when a stationary object is raised. Repeating the same art on the same ground replaces the builder's previous formation. House wards continue to use their separate construction rule. An explicitly offered match settling a grave personal account writes a binding only after the existing acceptance and house checks succeed; leaving reads the original account from the oath's link.

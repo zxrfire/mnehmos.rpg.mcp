@@ -1763,6 +1763,8 @@ export const TimeSkipResultSchema = z.object({
      * meaningless and cannot be inverted.
      */
     endState: z.object({
+        soulState: SoulStateSchema.optional(),
+        identityContinuity: z.number().min(0).max(1).optional(),
         /** Consecutive turns at zero satiety as the skip ended. */
         starvationTurns: z.number().int().min(0).default(0),
         /** Consecutive turns at the lethal untreated count as the skip ended. */

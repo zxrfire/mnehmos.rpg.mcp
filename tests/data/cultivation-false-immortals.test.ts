@@ -22,7 +22,7 @@ import {
     FALSE_IMMORTAL_LIFESPAN_YEARS,
     FALSE_IMMORTAL_ORDINAL
 } from '../../src/engine/cultivation/realms.js';
-import { FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS } from '../../src/engine/world/ladder-odds.js';
+import { FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS } from '../../scripts/immortal-stock.js';
 import {
     DESTROYED_DAO_HOUSES,
     getSect,

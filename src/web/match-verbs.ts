@@ -1,3 +1,4 @@
+import { settleItWithABinding, whatWouldCloseIt } from '../engine/social-leverage/what-would-settle-an-account-this-heavy.js';
 /**
  * A match, a refusal, and a child - what each does to two houses.
  */
@@ -45,6 +46,7 @@ import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.
 import {
     type DatabaseHandle,
     openLedgerBetween,
+    openOathsHeldBy,
     recordTheTieAnAttemptLeft,
     theChildrenTheyRaised,
     tieFrom
@@ -479,7 +481,9 @@ export const matchVerbs = {
             run, cultivator, ambient, TRAVEL_FOCUS, `Putting a match to ${party.name}`, result.days
         );
         const left = this.recordWhatTheAskLeft(run, cultivator, party, result, 'propose', true);
-        const took = result.outcome === 'taken' || result.outcome === 'turned';
+        const took = (result.outcome === 'taken' || result.outcome === 'turned')
+            && this.repos.cultivators.getById(cultivator.id)?.alive === true
+            && (spent.timeSkip?.simulatedDays ?? result.days) >= result.days;
 
         const lines = [
             `${intent === 'accept' ? 'You agree to it' : 'You put it to them'} and set down `
@@ -492,14 +496,30 @@ export const matchVerbs = {
         const calls: ToolCallRecord[] = [];
 
         if (took) {
+            const closing = /\b(?:settle|close|end)\b[^.!?]*\b(?:account|feud|grudge)\b/i.test(rawInput)
+                && theirFaction && membership
+                ? openLedgerBetween(this.repos, cultivator.id, party.id).find(row =>
+                    row.holderId === party.id && row.subjectId === cultivator.id
+                    && (row.kind === 'grudge' || row.kind === 'blood_feud')
+                    && whatWouldCloseIt(row, { holderIsAHouse: false, subjectIsAHouse: false,
+                        principalIsStillHere: true, couldBeBound: true }).includes('renounced'))
+                : undefined;
+            if (closing && theirFaction) {
+                const bargain = settleItWithABinding({ record: closing, boundId: cultivator.id,
+                    boundName: cultivator.name, toId: party.id, toName: party.name,
+                    owedToHouseId: theirFaction, onDay: Math.floor(run.elapsedDays) });
+                this.db.transaction(() => {
+                    writeOneObligation(this.db as unknown as DatabaseHandle,
+                        settleObligation(closing, bargain.settled));
+                    writeOneObligation(this.db as unknown as DatabaseHandle, createObligation(bargain.binding));
+                })();
+                lines.push(bargain.note);
+            }
             const changed = whatAMatchChanges({
                 one: mine,
                 other: theirs,
                 onDay: Math.floor(run.elapsedDays),
-                // Nobody is bound. A match two people agreed to gives no house
-                // anything to collect, and `whatWalkingOutOfItCosts` names that
-                // as the common case. A house EXTRACTING one writes the oath,
-                // and that path is the world's rather than the player's.
+                // Ordinary agreement carries no oath. A settlement above writes its own binding.
                 bound: null,
                 note: `Agreed at ${placeName(cultivator)} for `
                     + `${answer.price.theBestPutDown ?? 'terms neither of them wrote down'}.`
@@ -677,9 +697,9 @@ export const matchVerbs = {
 
         // ── ARE THEY IN ONE? THE LEDGER ANSWERS, NOT THE SENTENCE ────────
         const binding = party
-            ? openLedgerBetween(this.repos, cultivator.id, party.id)
-                .find(r => r.kind === 'oath' && r.cause === 'marriage_pact'
-                    && r.holderId === cultivator.id)
+            ? openOathsHeldBy(this.repos, cultivator.id)
+                .find(r => r.cause === 'marriage_pact'
+                    && (r.subjectId === party.id || r.participants.includes(party.id)))
             : undefined;
 
         if (binding) {
@@ -687,6 +707,8 @@ export const matchVerbs = {
                 || id.startsWith('court-') || id.startsWith('clan-'));
             const cost = whatLeavingAMatchCosts({
                 binding,
+                closed: ledgerAbout(this.db as unknown as ObligationDb, party!.id)
+                    .find(row => binding.tags.includes(`closed:${row.id}`)) ?? null,
                 leaverId: cultivator.id,
                 leaverName: cultivator.name,
                 rollsTheyWereOn: rolls,

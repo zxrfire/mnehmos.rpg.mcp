@@ -102,8 +102,7 @@ export interface TheBargain {
     /**
      * What the two of them now are to each other, in plain words.
      *
-     * Deliberately not warm and deliberately not hostile: the tie is unchosen and
-     * unequal, and both of those are worse than dislike.
+     * The relationship the agreement records; its participants supply their own feelings.
      */
     tie: string;
     /** One factual line for the mechanical channel. */
@@ -128,7 +127,7 @@ export function settleItWithABinding(input: {
     const terms =
         `Settled the account ${input.record.holderId} held, on day ${input.record.incurredOnDay}, `
         + `at ${input.record.severity}. ${input.boundName} is bound to ${input.toName}. `
-        + 'Neither of them asked for it and both houses have agreed it stands.';
+        + `The oath is owed to ${input.owedToHouseId}.`;
 
     return {
         settled: {
@@ -136,7 +135,7 @@ export function settleItWithABinding(input: {
             onDay: input.onDay,
             byId: input.owedToHouseId,
             note:
-                `Closed by arrangement rather than by anything being put right. ${input.boundName} `
+                `Closed by arrangement. ${input.boundName} `
                 + `is bound to ${input.toName}, and the two houses have written it down as the `
                 + 'end of it.'
         },
@@ -151,8 +150,7 @@ export function settleItWithABinding(input: {
             severity: input.record.severity,
             onDay: input.onDay,
             description:
-                `${input.boundName} is bound to ${input.toName}. It closed something, and it was `
-                + 'not either of their idea.',
+                `${input.boundName} is bound to ${input.toName} to settle this account.`,
             terms,
             dueOnDay: null,
             // A nameless account has no subject to name here. `subject_id` is
@@ -164,14 +162,8 @@ export function settleItWithABinding(input: {
             tags: ['binding', 'settlement', `closed:${input.record.id}`],
             triggeringEventId: input.record.triggeringEventId
         },
-        tie:
-            'Bound to somebody they did not choose, by an agreement between two houses that was '
-            + 'about something else entirely. It is permanent, it is not equal, and both of them '
-            + 'know exactly what it is for.',
-        note:
-            `The account is closed and neither party is satisfied. What is running now is an oath `
-            + `at ${input.record.severity}, held by ${input.boundName}, and the houses will read `
-            + 'it as kept for exactly as long as it is kept.'
+        tie: `${input.boundName} and ${input.toName} are bound by the settlement of this account.`,
+        note: `The account is closed. An oath at ${input.record.severity} is owed by ${input.boundName} to ${input.owedToHouseId}.`
     };
 }
 

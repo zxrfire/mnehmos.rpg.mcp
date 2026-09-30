@@ -137,6 +137,7 @@ export const NO_VERB_CARRIES_THESE: readonly string[] = Object.freeze([
 export function routesOutOfAGap(options: readonly string[]): RouteOutOfAGap[] {
     const routes: RouteOutOfAGap[] = [];
     for (const option of options) {
+        if (NO_VERB_CARRIES_THESE.some(start => option.startsWith(start))) continue;
         const carried = CARRIED_BY.find(row => option.startsWith(row.starts));
         if (carried) routes.push({ option, say: carried.say, because: carried.because });
     }
