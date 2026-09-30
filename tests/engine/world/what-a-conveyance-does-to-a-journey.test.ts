@@ -62,7 +62,7 @@ import { OBJECT_CEILING_BELOW_THE_LID } from '../../../src/engine/cultivation/re
 import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { TECHNIQUES, getTechnique } from '../../../src/data/cultivation/techniques.js';
 import { isOnRoad, primaryRoadOf } from '../../../src/schema/cultivation.js';
-import { techniqueEffectiveness } from '../../../src/engine/cultivation/understanding.js';
+import { daoOf, wieldingWeight } from '../../../src/engine/cultivation/dao.js';
 
 const SWORD_ARTS = TECHNIQUES
     .filter(t => isOnRoad(t, 'sword'))
@@ -272,9 +272,8 @@ describe('soaring on one\'s own blade', () => {
      * sword tomb and from an origin's outer library, and `SUBJECT_DOMAINS`
      * maps `sword` to the weapon domain. `SUBJECT_BY_CATEGORY` defaults every
      * attack art to the subject `'weapon'`, which is a DOMAIN name and matches
-     * no insight in the world - so `techniqueMultiplier`, which matches an
-     * insight to an art on `insight.subject === technique.subject`, gave a
-     * cultivator who understood the sword nothing at all on the sword arts.
+     * no insight in the world. The check now uses the live dao wielding read,
+     * which sharpens the art from a leaning on its own road.
      *
      * If somebody later renames the insight subject, this goes red and the two
      * halves get renamed together instead of drifting apart in silence.
@@ -286,21 +285,18 @@ describe('soaring on one\'s own blade', () => {
                 id: 'insight-sword-tomb',
                 domain: 'weapon' as const,
                 subject: 'sword',
-                degree: 2,
+                degree: 3 as const,
                 provenance: 'site' as const
             }]
         };
         const flight = getTechnique('gale-riding-sword-flight')!;
-        const art = { element: flight.element, subjects: flight.subjects, mastery: 1 };
-        const withIt = techniqueEffectiveness(understandsTheSword as never, art);
-        const without = techniqueEffectiveness(
-            { spiritRoot: 'single_metal', insights: [] } as never,
-            art
-        );
+        const art = { element: flight.element, grade: flight.grade, subjects: flight.subjects, mastery: 1 };
+        const withIt = wieldingWeight(daoOf(understandsTheSword.insights as never), art);
+        const without = wieldingWeight(daoOf([]), art);
         expect(
-            withIt.fromUnderstanding,
+            withIt,
             'understanding the sword still buys nothing on a sword art'
-        ).toBeGreaterThan(without.fromUnderstanding);
+        ).toBeGreaterThan(without);
     });
 
     it('is closed to somebody who has never been shown it', () => {

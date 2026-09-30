@@ -5,6 +5,8 @@
  * Knowledge still belongs to people: naming an ancient herb does not teach
  * its history, pressure does not teach a speaker, and a regional account does
  * not disclose the unpublished treaty. Historical receipts are not live stock.
+ * Local survey names require local standing; price comparisons describe
+ * quoted gross earnings rather than money left after living costs.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGame, makeGameInWorld, ScriptedProvider } from './harness';
@@ -18,6 +20,10 @@ import { getLineageStanding } from '../../src/data/cultivation/crossings';
 import { DEFERENCE_HOLDINGS } from '../../src/data/cultivation/governance-and-water-rights';
 import { whoStandsBehindThem } from '../../src/web/who-stands-behind-them';
 import { whatAHouseHasToItsName } from '../../src/web/what-a-house-has-to-its-name';
+import { PRICES } from '../../src/data/cultivation/mortal-world';
+import { aPaidTerm } from '../../src/data/cultivation/what-a-cultivator-can-earn';
+import { arterialsOf, provinceForRegion } from '../../src/data/cultivation/regions/provinces';
+import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms';
 
 describe('information from the running verbs', () => {
     it('does not learn an extinction by looking, but can read it at its standing', async () => {
@@ -89,6 +95,22 @@ describe('information from the running verbs', () => {
         const terms = ask('beast contract', BEAST_CHANGE_ORDINAL);
         expect(terms).toContain('two parties');
         expect(terms).toContain('witness');
+        const price = PRICES.find(row => row.id === 'price-clear-meridian-pill')!;
+        const term = aPaidTerm('contract-beast-culler')!;
+        const quotation = game.askAround(run, listener, { ...speaker, realmOrdinal: term.minOrdinal },
+            `afford ${price.name} on ${term.name} earnings`, scope);
+        const earnings = quotation.facts.lines.join(' ');
+        expect(earnings).toContain(`${Number((price.cash / term.cashPerMonth).toFixed(1))} months`);
+        expect(earnings).toContain('before food and lodging');
+        expect(quotation.facts.structure.join(' ')).toContain('Known by being told:');
+        const ground = game.atHand!.locations.find(row => row.kind === 'region'
+            && row.data.catalogRegionId === 'region-low-fall')!;
+        const artery = arterialsOf(provinceForRegion('region-low-fall')!.id)[0];
+        expect(ask('arterials', 0, ground.name)).not.toContain(artery.name);
+        expect(ask('arterials', FOUNDATION_ORDINAL, ground.name)).toContain(artery.name);
+        const distant = game.atHand!.locations.find(row => row.kind === 'region'
+            && row.data.catalogRegionId === 'region-quiet-marches')!;
+        expect(ask('arterials', FOUNDATION_ORDINAL, distant.name)).not.toContain(artery.name);
         // Hearing terms changes knowledge, never a cultivation relationship.
         expect(repos.cultivators.getById(listener.id)!.realmOrdinal).toBe(listener.realmOrdinal);
     }, 180_000);

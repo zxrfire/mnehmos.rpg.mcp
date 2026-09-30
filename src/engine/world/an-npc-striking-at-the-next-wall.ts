@@ -86,15 +86,6 @@ export function guidanceFor(
     return best;
 }
 
-/** The rung of whoever is giving them attention, for callers that price it alone. */
-export function guideOrdinalFor(
-    npc: NpcRecord,
-    livingById: ReadonlyMap<string, NpcRecord>,
-    day?: number
-): number | null {
-    return guidanceFor(npc, livingById, day)?.ordinal ?? null;
-}
-
 /**
  * What giving attention takes out of the teacher's own year.
  *

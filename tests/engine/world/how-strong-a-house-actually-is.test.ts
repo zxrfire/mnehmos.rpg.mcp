@@ -62,6 +62,9 @@ import {
     WHAT_A_SECONDED_PERSON_IS_WORTH_AT_HOME
 } from '../../../src/data/cultivation/faction-roll.js';
 import { whatItsHoldingsBringIn } from '../../support/what-a-house-takes-off-its-holdings.js';
+import { createNpc } from '../../../src/engine/world/npc-state.js';
+import { makeLocation } from '../../../src/engine/world/locations.js';
+import { makeFaction } from '../../../src/engine/world/world-state.js';
 
 const catalog = await loadCultivationCatalog();
 const { state } = seedWorld({ seed: 'rating-probe', catalog, presentYear: 1000, population: 300 });
@@ -90,6 +93,26 @@ function fromCatalog(id: string): WhatAHouseHasToField {
 }
 
 describe('how strong a house actually is', () => {
+    // Temporary service is read from the person's activity, never stored on two rolls.
+    it('fields the person at their posting and restores the sending house when the term ends', () => {
+        const home = makeFaction({ id: 'sending-house', name: 'Sending house' });
+        const host = makeFaction({ id: 'receiving-house', name: 'Receiving house' });
+        const town = makeLocation({ id: 'posting-town', name: 'Posting town', kind: 'settlement',
+            controllingFactionId: host.id });
+        const person = createNpc('secondment-rating', { id: 'the-person', onDay: 0,
+            bornOnDay: -20 * 365, cultivation: { realmOrdinal: 20 }, factionId: home.id, locationId: town.id });
+        const actual = { npcs: [person], locations: [town], objects: [], currentDay: 0 };
+        const beforeHome = howStrongThisHouseIsNow(actual, home).rungsItCouldField;
+        const beforeHost = howStrongThisHouseIsNow(actual, host).rungsItCouldField;
+        person.activity = { kind: 'stationed', note: 'Standing the watch.', withIds: [],
+            sinceDay: 0, untilDay: 365 };
+        expect(howStrongThisHouseIsNow(actual, home).rungsItCouldField).toBeLessThan(beforeHome);
+        expect(howStrongThisHouseIsNow(actual, host).rungsItCouldField).toBeGreaterThan(beforeHost);
+        expect(person.factionId).toBe(home.id);
+        actual.currentDay = 365;
+        expect(howStrongThisHouseIsNow(actual, home).rungsItCouldField).toBe(beforeHome);
+        expect(howStrongThisHouseIsNow(actual, host).rungsItCouldField).toBe(beforeHost);
+    });
     it('lets no crowd substitute for height', () => {
         // THE DEFECT THIS REPLACED. There was a curve here - a rung worth the
         // square root of two, log-summed over the roll - and on it twenty Core

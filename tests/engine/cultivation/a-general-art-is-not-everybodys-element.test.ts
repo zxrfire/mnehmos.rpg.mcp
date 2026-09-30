@@ -48,9 +48,8 @@
  * term going inert.
  *
  * RED-CHECKED, one site at a time: relaxing `matched` in `assessPower` to admit
- * a null element fails 4 of the 5 below; relaxing `fromRoot` in
- * `techniqueEffectiveness` the same way fails the catalog sweep, which is the
- * only one that reads it. Both at once fails all 5.
+ * a null element fails the combat checks. The catalog sweep now uses that
+ * live resolver too; the unused second technique-bonus system was removed.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -59,7 +58,6 @@ import {
     assessPower,
     type CombatantInput
 } from '../../../src/engine/cultivation/combat.js';
-import { techniqueEffectiveness } from '../../../src/engine/cultivation/understanding.js';
 import { SPIRIT_ROOTS } from '../../../src/engine/cultivation/spirit-roots.js';
 import { WIELDING_FACTOR } from '../../../src/engine/cultivation/dao.js';
 import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
@@ -166,8 +164,9 @@ describe('an art in no element is worth the same to every root', () => {
         expect(elementless.length).toBeGreaterThan(TECHNIQUES.length / 3);
         for (const t of elementless) {
             for (const r of SPIRIT_ROOTS) {
-                const fit = techniqueEffectiveness({ spiritRoot: r.key }, t);
-                expect(fit.fromRoot).toBe(1);
+                const ownRoot = techniqueFactor(combatant({ spiritRoot: r.key, technique: t }));
+                const muddled = techniqueFactor(combatant({ spiritRoot: 'muddled_five_element', technique: t }));
+                expect(ownRoot).toBeCloseTo(muddled, 10);
             }
         }
     });

@@ -243,7 +243,7 @@ export function daoGate(dao: DaoAssessment, technique: GatedTechnique): DaoGateR
  * admits every root. This is that sentence on the road axis.
  *
  * On both axes admission is where it stops. An elementless art takes no root
- * bonus in `assessPower` or in `techniqueEffectiveness`, for the reason
+ * bonus in `assessPower`, for the reason
  * {@link wieldingWeight} gives below, and 73 of 157 catalog rows are elementless
  * so the difference is most of the catalog rather than a corner of it.
  */

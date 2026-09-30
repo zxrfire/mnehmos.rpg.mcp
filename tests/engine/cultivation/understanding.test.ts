@@ -41,7 +41,6 @@ import {
     isTraceable,
     meditativeStateChance,
     recordAchievement,
-    techniqueEffectiveness,
     understandingEffects,
     visionChance
 } from '../../../src/engine/cultivation/understanding.js';
@@ -56,6 +55,7 @@ import {
 import { progressRequiredForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
 import { makeCultivator } from './fixtures.js';
+import { daoOf, wieldingWeight } from '../../../src/engine/cultivation/dao.js';
 
 /** Access every test candidate is reachable through. Required, by design. */
 const TEST_ACCESS = { kind: 'teacher' as const, label: 'a willing teacher' };
@@ -345,15 +345,9 @@ describe('effects are relevant or they are nothing', () => {
             spiritRoot: 'single_fire',
             insights: [anInsight('weapon', 'sword', 5)]
         });
-        const art = { element: 'fire' as const, subjects: ['sword'], mastery: 1 };
-        const studentPower = techniqueEffectiveness(student, art);
-        const masterPower = techniqueEffectiveness(master, art);
-
-        expect(masterPower.multiplier).toBeGreaterThan(studentPower.multiplier);
-        // Same root, so the root term is identical: the difference is entirely
-        // comprehension.
-        expect(masterPower.fromRoot).toBe(studentPower.fromRoot);
-        expect(masterPower.fromUnderstanding).toBeGreaterThan(studentPower.fromUnderstanding);
+        const art = { element: 'fire' as const, grade: 'mortal' as const, subjects: ['sword'], mastery: 1 };
+        expect(wieldingWeight(daoOf(master.insights), art))
+            .toBeGreaterThan(wieldingWeight(daoOf(student.insights), art));
     });
 });
 

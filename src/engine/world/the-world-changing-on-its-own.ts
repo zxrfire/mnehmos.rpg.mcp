@@ -4,6 +4,7 @@ import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js
  */
 
 import { searchingMastersTakeADisciple } from './the-disciples-a-world-opens-with.js';
+import { housesFindEmptyShelves } from './a-house-finds-an-empty-shelf.js';
 import { settleHiredDuties } from './a-hired-duty-is-served.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
@@ -917,6 +918,8 @@ export function applyPressure(
         // after the yard so the year's haul is on the shelf. See
         // `a-house-mends-what-it-owns.ts`.
         housesMendWhatTheyOwn(state, withinSpan(year * 365 + 178, fromDay, toDay));
+        housesFindEmptyShelves(state, Math.max(year * 365, fromDay),
+            Math.min(yearEndsOn, toDay));
         // And whoever is on no roll moves on, to a road, a ruin or a market.
         // See `where-somebody-with-no-house-goes.ts`.
         peopleWithNoHouseMoveOn(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
@@ -7643,4 +7646,3 @@ function isLeverageFact(state: WorldState, factId: string): boolean {
     const fact = state.history.facts.find(f => f.id === factId);
     return fact?.data?.pressure === 'leverage_applied';
 }
-

@@ -1235,6 +1235,7 @@ import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
 import {
     attentionVerbs,
+    TEACH_INTENTS,
     whoTheyAreTeaching
 } from './a-teacher-giving-you-their-attention.js';
 // The route `acquisition` has always offered and nothing could walk.
@@ -5373,10 +5374,10 @@ ${noticedWaiting}`;
                 // THE ROOM RATHER THAN ONE PERSON. Sitting in on whoever is
                 // already teaching here, or standing at the front of it - both
                 // the same `teaching` row. See `a-teacher-giving-you-their-attention.ts`.
-                if (action.intent === 'listen') {
+                if (action.intent === TEACH_INTENTS[0]) {
                     return this.sitInOn(run, cultivator, ambient, action.target, action.days, rawInput);
                 }
-                if (action.intent === 'lecture') {
+                if (action.intent === TEACH_INTENTS[1]) {
                     return this.giveATalk(run, cultivator, ambient, action.days);
                 }
                 // The same verb read from the other end. Who is being taught is
@@ -7959,10 +7960,12 @@ ${noticed}`;
         const ownFact = selfFactFromTopic(topic);
         const oldWorld = ownFact === null
             ? whatSomebodyKnowsOfTheOldWorld(topic, asked, oldWorldYear(this.atHand, run.elapsedDays)) : null;
-        const subject = oldWorld?.subject ?? (ownFact !== null ? null : resolveAnything(
+        const subject = oldWorld?.subject ?? (ownFact !== null ? null : aLocalMechanicsQuestion(
+            topic, asked, this.atHand
+        ) ?? resolveAnything(
             this.repos, topic, cultivator, scope,
             whereYouStandOnYourHousesRoll(this, cultivator)
-        ) ?? aLocalMechanicsQuestion(topic, asked, this.atHand));
+        ));
 
         // ── AND IF THE ASKER DOES NOT KNOW IT, THE PERSON ASKED MIGHT ────
         //
@@ -15459,6 +15462,7 @@ ${opened.text}` : receipt,
             known?: boolean;
             carriesToOrdinal?: number | null;
             carriesToRank?: string | null;
+            wideSpan?: boolean;
         };
         const body = listed as {
             compatible?: Listed[];
@@ -15477,6 +15481,7 @@ ${opened.text}` : receipt,
             const they = howManyOfThem === 1 ? 'It carries' : 'They carry';
             return row.carriesToRank
                 ? `${they} a cultivator as far as ${row.carriesToRank} and no further.`
+                    + (row.wideSpan ? ' The teaching reaches beyond the realm where it begins.' : '')
                 : `${they} a cultivator the whole way.`;
         };
 

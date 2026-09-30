@@ -41,7 +41,6 @@ import { LEGACY_INTENTS } from '../../src/web/leaving-things-for-the-next-life.j
 import { TEACH_INTENTS } from '../../src/web/a-teacher-giving-you-their-attention.js';
 import {
     WHAT_EACH_VERB_IS_FOR,
-    composeActionGlossary,
     composePlanSchemaFields,
     verbsTaking
 } from '../../src/web/what-each-verb-is-for-in-the-players-words.js';
@@ -139,20 +138,11 @@ describe('the intent sub-lists', () => {
 });
 
 /**
- * The prompt and the document are one source, rendered twice.
- *
- * This is the drift the module header of `prompt.ts` describes from the last
- * time: a hand-maintained copy beside the thing it copied. The glossary had
- * fallen twelve verbs behind the enum before it was composed rather than
- * written, and nothing failed while it had.
+ * The old glossary drifted twelve verbs behind the enum. Phase 1 now reads
+ * THE_LANES; the live prompt must still expose the action set and plan fields.
+ * The superseded standalone verb-glossary renderer has been removed.
  */
-describe('the phase-1 glossary', () => {
-    it('describes every verb in the closed set', () => {
-        const glossary = composeActionGlossary();
-        const missing = ACTION_NAMES.filter(verb => !new RegExp(`^${verb}\\s`, 'm').test(glossary));
-        expect(missing, `verbs the classifier is never told about: ${missing.join(' ')}`).toEqual([]);
-    });
-
+describe('the phase-1 prompt', () => {
     it('reaches the prompt the classifier is actually sent', () => {
         for (const verb of ACTION_NAMES) {
             expect(INTENT_SYSTEM_PROMPT, `${verb} is not in the phase-1 prompt`).toContain(verb);
@@ -170,6 +160,6 @@ describe('the phase-1 glossary', () => {
     });
 
     it('quotes no unresolved balance number', () => {
-        expect(composeActionGlossary()).not.toMatch(/\$\{/);
+        expect(INTENT_SYSTEM_PROMPT).not.toMatch(/\$\{/);
     });
 });

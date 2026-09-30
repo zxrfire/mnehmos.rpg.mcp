@@ -517,7 +517,8 @@ export function resolveFact(
     factId: string,
     answer: string,
     truth: Exclude<FactTruth, 'unresolved'> = 'reconstructed',
-    causeFactIds: readonly string[] = []
+    causeFactIds: readonly string[] = [],
+    fidelity: RecordFidelity = 'partial'
 ): HistoricalFact | null {
     const fact = ledger.facts.find(f => f.id === factId);
     if (!fact) return null;
@@ -525,7 +526,7 @@ export function resolveFact(
     fact.summary = answer;
     fact.causeKnown = true;
     for (const id of causeFactIds) if (!fact.causes.includes(id)) fact.causes.push(id);
-    if (FIDELITY_ORDER[fact.fidelity] < FIDELITY_ORDER.partial) fact.fidelity = 'partial';
+    if (FIDELITY_ORDER[fact.fidelity] < FIDELITY_ORDER[fidelity]) fact.fidelity = fidelity;
     return fact;
 }
 
@@ -545,6 +546,9 @@ export function explainFact(
 ): HistoricalFact | null {
     const fact = ledger.facts.find(f => f.id === factId);
     if (!fact) return null;
+    if (fact.truth !== 'unresolved') {
+        return resolveFact(ledger, factId, fact.summary, fact.truth, causeFactIds, fidelity);
+    }
     for (const id of causeFactIds) {
         if (!fact.causes.includes(id)) fact.causes.push(id);
     }

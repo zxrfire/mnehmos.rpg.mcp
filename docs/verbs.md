@@ -20,11 +20,11 @@ somebody may be pointed at, so this is that account, joined to the code that imp
 it: what each verb is, what it takes, where it is declared, where it resolves, and whether
 plain English reaches it without a model running.
 
-**The narrator is not shown this page.** It is shown a compact glossary composed from the
-same source - [`what-each-verb-is-for-in-the-players-words.ts`](../src/web/what-each-verb-is-for-in-the-players-words.ts),
-which is a `Record<ActionName, …>` and therefore fails to compile until a new verb has been
-described. `prompt.ts` composes the phase-1 glossary from it and this document is generated
-from it, so the two are renderings of one source rather than two wordings of one list.
+**The narrator is not shown this page.** Phase 1 classifies through `THE_LANES`.
+This reference is generated from
+[`what-each-verb-is-for-in-the-players-words.ts`](../src/web/what-each-verb-is-for-in-the-players-words.ts),
+a `Record<ActionName, …>` that requires a description for every verb. The prompt
+still reads its plan-field descriptions from that source.
 
 That is the [`NARRATOR-CORE.md`](world/NARRATOR-CORE.md) precedent with the direction
 reversed, and deliberately. Tier 1 is prose a person wrote, so the file is the source and
@@ -124,8 +124,8 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`wait`](#wait) | `days` `target` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
-| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [25](#sect) |
-| [`site`](#site) | `target` `intent` | time | yes | - | [4](#site) |
+| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [27](#sect) |
+| [`site`](#site) | `target` `intent` | time | yes | - | [8](#site) |
 | [`legacy`](#legacy) | `intent` `target` `days` | time | yes | - | [5](#legacy) |
 | [`petition`](#petition) | `target` `intent` `topic` | nothing | yes | yes | [3](#petition) |
 | [`posture`](#posture) | `target` `intent` | varies | yes | - | [5](#posture) |
@@ -484,13 +484,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `sect`
 
-anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are holding in to their own house - "target" names it - which the house credits as contribution where it wants the thing and says why where it does not, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no - which also answers people already working ground the player has walked onto, and hands off to the confrontation - and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. "expel" is a house putting somebody off its roll - said as doing it or as having it done, which are the same act - and what the power actually reaches is an ELDER's dismissal, at the top of the ladder: the answer names who holds it where the player does not, and says that nobody puts an ordinary member off a roll by saying so. Three more belong to somebody who holds a room. "authority" READS which rooms of the house are the player's to speak for, and it is free - it is the sentence before the one that claims, because an order given in the house's name is only a decision if they could have found out whether it was true. "decree" gives that same order in the house's name rather than in their own, and somebody may be watching who knows what the player actually runs. "take" is putting a hand on a thing the house owns - "target" names it - which is not stow, where the room is the player's own and nothing is being taken from anybody. "bounty" is a price a house has put on somebody's head, and it is any house's, not only the player's own: "target" names the person on the paper. Nobody takes one up: with no topic the answer is what the paper pays on and where it is turned in, and nothing changes; "topic" "claim" turns the proof in at the house's gate, where the first to bring it is paid. With nobody named it reads the prices up where the player is standing. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
+anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board (topic "hire" holds even a short chore for subcontracting), "hire_duty" to hire the person in "target" to serve a standing post, "report_missing" to report the missing person in "target" at the place in "topic" to somebody of their house in this area, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are holding in to their own house - "target" names it - which the house credits as contribution where it wants the thing and says why where it does not, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no - which also answers people already working ground the player has walked onto, and hands off to the confrontation - and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. "expel" is a house putting somebody off its roll - said as doing it or as having it done, which are the same act - and what the power actually reaches is an ELDER's dismissal, at the top of the ladder: the answer names who holds it where the player does not, and says that nobody puts an ordinary member off a roll by saying so. Three more belong to somebody who holds a room. "authority" READS which rooms of the house are the player's to speak for, and it is free - it is the sentence before the one that claims, because an order given in the house's name is only a decision if they could have found out whether it was true. "decree" gives that same order in the house's name rather than in their own, and somebody may be watching who knows what the player actually runs. "take" is putting a hand on a thing the house owns - "target" names it - which is not stow, where the room is the player's own and nothing is being taken from anybody. "bounty" is a price a house has put on somebody's head, and it is any house's, not only the player's own: "target" names the person on the paper. Nobody takes one up: with no topic the answer is what the paper pays on and where it is turned in, and nothing changes; "topic" "claim" turns the proof in at the house's gate, where the first to bring it is paid. With nobody named it reads the prices up where the player is standing. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'sect'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.sect` · the deterministic parser reaches it.
 
 Takes `intent`, `target`, `topic`.
 
-Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`, `take`, `authority`, `decree`, `hand_in`, `bounty`.
+Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `hire_duty`, `report_missing`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`, `take`, `authority`, `decree`, `hand_in`, `bounty`.
 
 ### `site`
 

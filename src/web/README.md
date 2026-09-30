@@ -261,9 +261,15 @@ properties make it the authority boundary rather than a suggestion.
 
 **The enumerated form of it is [`docs/verbs.md`](../../docs/verbs.md)** - every verb, what a
 player is asking for when they say it, what it takes, its intents, and where it resolves -
-generated from `what-each-verb-is-for-in-the-players-words.ts`, which is also what the
-phase-1 glossary is composed from. This section is the argument for the shape; that document
+generated from `what-each-verb-is-for-in-the-players-words.ts`. Phase 1 classifies through
+`THE_LANES`; it no longer reads a glossary of every verb. This section is the argument for the shape; that document
 is the shape. Neither restates the other.
+
+Questions about earnings and local arterials reach
+`aLocalMechanicsQuestion` before generic item lookup. A named public work rate
+and price produce a quoted gross-work comparison; its certainty is limited by
+the quotations. Local survey names require standing on that province's ground
+and the existing working-knowledge margin. Private mission pay is excluded.
 
 **1. The enum is closed.** `action` is a Zod enum over `ACTION_NAMES`. A model that
 answers `"ascend"`, `"gain_spirit_stones"` or `"set_realm"` fails validation, and a failed

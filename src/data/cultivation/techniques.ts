@@ -594,10 +594,8 @@ export function addressOf(
 }
 
 /**
- * Whether an art's declared address is legal for its rung. Asserted by the
- * catalog suite rather than by a Zod refinement, for the same reason the grade
- * bands are: it is a statement about content, and content is where a violation
- * should be reported.
+ * Whether an art's declared address is legal for its rung. The factory rejects
+ * a catalog row that asks more of its address than its rung can hold.
  */
 export function addressIsLegal(
     t: Pick<Technique, 'reach' | 'addresses' | 'requiredOrdinal'>
@@ -988,6 +986,11 @@ function art(
             runsOn?: TechniqueFuel;
         }
 ): TechniqueEntry {
+    if (!addressIsLegal(t)) throw new Error(`${t.id}: address exceeds its rung`);
+    const qiBand = GRADE_QI_BANDS[t.grade];
+    if (t.qiCost < qiBand.min || t.qiCost > qiBand.max) {
+        throw new Error(`${t.id}: qi cost is outside its grade`);
+    }
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
         ? 'grave'
         : RUIN_ONLY_TECHNIQUE_IDS.has(t.id)
@@ -3850,4 +3853,3 @@ export function carriesTo(memberOrdinal: number, techniqueId: string): number | 
 export function transmissionsBy(memberId: string): readonly LivingTransmission[] {
     return LIVING_TRANSMISSIONS.filter(t => t.memberId === memberId);
 }
-

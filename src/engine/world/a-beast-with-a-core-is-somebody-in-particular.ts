@@ -126,9 +126,9 @@ export function theOnesInParticularAt(
     const out: TheOneOnThisGround[] = [];
     for (const npc of npcs) {
         if (npc.status !== 'alive' || npc.locationId !== locationId) continue;
-        const species = theSpeciesItIs(npc);
-        if (species === null) continue;
-        out.push({ npc, species, asItStands: asItStandsNow(species, npc.cultivation.realmOrdinal) });
+        const now = whatItIsNow(npc);
+        if (now === null) continue;
+        out.push({ npc, species: now.species, asItStands: now.asItStands });
     }
     return out;
 }
@@ -323,6 +323,8 @@ export function itHasCrossed(npc: Pick<NpcRecord, 'cultivation'>): boolean {
  */
 export interface WhatItIsNow {
     species: Beast;
+    /** The species read at this individual's current rung. */
+    asItStands: Beast;
     ordinal: number;
     /** `counted`, `tracked` or `person`, read off THIS one's rung. */
     band: ReturnType<typeof bandOf>;
@@ -345,6 +347,7 @@ export function whatItIsNow(npc: NpcRecord): WhatItIsNow | null {
     const asItStands = asItStandsNow(species, ordinal);
     return {
         species,
+        asItStands,
         ordinal,
         band: bandOf(asItStands),
         crossed: itHasCrossed(npc),

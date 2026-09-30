@@ -18,7 +18,7 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../tests/support/advance-world-years.js';
 import { reachableCeilingFor, BOOKLESS_CEILING } from '../src/engine/world/manuals.js';
-import { guideOrdinalFor, readyToStrike } from '../src/engine/world/an-npc-striking-at-the-next-wall.js';
+import { guidanceFor, readyToStrike } from '../src/engine/world/an-npc-striking-at-the-next-wall.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 import type { AmbientQi } from '../src/schema/cultivation.js';
@@ -59,7 +59,7 @@ function audit(state: WorldState) {
         const ceiling = Math.min(regionCeiling, manualCeiling);
         row.book += manualCeiling;
 
-        const guide = guideOrdinalFor(npc, byId);
+        const guide = guidanceFor(npc, byId)?.ordinal ?? null;
         if (guide !== null && guide > ord) row.guided++;
 
         if (ceiling <= ord) {

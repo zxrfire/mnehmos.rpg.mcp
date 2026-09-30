@@ -13,6 +13,11 @@ enough to reason over, which is the same argument [`src/web/README.md`](../../we
 makes for the closed action enum. Adding a tool is therefore a deliberate act: prefer an
 action on an existing one.
 
+`cultivation_manage.status` includes the roll-free `lastCrossing` assessment
+at the final mortal rung, including the pill already swallowed. The four
+possible endings are priced by the same mechanics the attempt uses. Technique
+listings identify manuals that reach beyond their starting realm's geometry.
+
 Two things that surprise people:
 
 - **`cultivation-support.ts` is not a tool.** It is the repository bundle everything here

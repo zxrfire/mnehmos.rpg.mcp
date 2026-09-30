@@ -78,6 +78,7 @@ import {
 import type { WorldState, FactionRecord } from './world-state.js';
 import { whatTheTownsBringIn } from './locations.js';
 import { whoCountsTowardThisHouse } from '../../data/cultivation/faction-roll.js';
+import { secondmentsFor } from './who-goes-to-a-door-and-who-is-passed-over.js';
 
 /**
  * ── WHAT THE FIRST CUT GOT WRONG, AND IT WAS THE WHOLE AGGREGATION ───────
@@ -158,6 +159,8 @@ export const WHAT_EACH_COMPONENT_IS_WORTH = {
 export interface WhatAHouseHasToField {
     /** Every rung standing on the roll today. The one indispensable input. */
     rollOrdinals: readonly number[];
+    /** Actual shares at a posting; omitted when the whole roll is at home. */
+    rollBodies?: readonly { realmOrdinal: number; weight: number }[];
     /** The one-off it can field once and never again. Zero once spent. */
     sealedCeilingOrdinal: number;
     /** How much of its inherited compound still runs, 0..1. */
@@ -301,7 +304,9 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 
  * What a house could actually put in a room, as an index and its parts.
  */
 export function howStrongAHouseActuallyIs(has: WhatAHouseHasToField): WhatAHouseCanField {
-    const rungsItCouldField = theRungsItCouldField(has.rollOrdinals);
+    const bodies = has.rollBodies ?? has.rollOrdinals.map(realmOrdinal => ({ realmOrdinal, weight: 1 }));
+    const rungsItCouldField = has.rollBodies
+        ? theRungsTheseBodiesCouldField(bodies) : theRungsItCouldField(has.rollOrdinals);
     const ranks = clamp01(rungsItCouldField / MAX_ORDINAL);
 
     // ── EVERY OTHER COMPONENT IS A DELTA IN RUNGS, AND TWO CUTS WERE NOT ──
@@ -326,7 +331,9 @@ export function howStrongAHouseActuallyIs(has: WhatAHouseHasToField): WhatAHouse
     const issuable = [...(has.unissuedArtifactPowers ?? [])]
         .sort((a, b) => b - a)
         .slice(0, has.rollOrdinals.length);
-    const withKit = theRungsItCouldField([...has.rollOrdinals, ...issuable]);
+    const withKit = theRungsTheseBodiesCouldField([
+        ...bodies, ...issuable.map(realmOrdinal => ({ realmOrdinal, weight: 1 }))
+    ]);
     const materiel = clamp01((withKit - rungsItCouldField) / MAX_ORDINAL);
 
     // A house nobody has costed reads at the middle rather than at zero. Not
@@ -364,7 +371,7 @@ export function howStrongAHouseActuallyIs(has: WhatAHouseHasToField): WhatAHouse
     // sealed ancestor one realm above the house is enormous; one at the rung
     // the house already fields adds a body and is worth about what a body is.
     const woken = has.sealedCeilingOrdinal > 0
-        ? theRungsItCouldField([...has.rollOrdinals, has.sealedCeilingOrdinal])
+        ? theRungsTheseBodiesCouldField([...bodies, { realmOrdinal: has.sealedCeilingOrdinal, weight: 1 }])
         : rungsItCouldField;
     const oneOffs = clamp01((woken - rungsItCouldField) / MAX_ORDINAL);
 
@@ -434,16 +441,29 @@ export function howStrongAHouseActuallyIs(has: WhatAHouseHasToField): WhatAHouse
  * still correct about everything a century can change.
  */
 export function howStrongThisHouseIsNow(
-    state: Pick<WorldState, 'npcs' | 'locations' | 'objects'>,
+    state: Pick<WorldState, 'npcs' | 'locations' | 'objects'> & Partial<Pick<WorldState, 'currentDay'>>,
     faction: FactionRecord,
     decline: { peakOrdinal: number; yearsSinceLastPeak: number } = {
         peakOrdinal: 0, yearsSinceLastPeak: 0
     }
 ): WhatAHouseCanField {
-    const rollOrdinals = whoCountsTowardThisHouse(faction.id, [], state.npcs
+    const hosts = new Map(state.locations.map(row => [row.id, row.controllingFactionId]));
+    const postings = state.npcs.flatMap(npc => {
+        const doing = npc.activity;
+        if (npc.status !== 'alive' || !npc.factionId || doing?.kind !== 'stationed') return [];
+        if (doing.untilDay !== null && doing.untilDay !== undefined
+            && doing.untilDay <= (state.currentDay ?? 0)) return [];
+        const host = npc.locationId === null ? null : hosts.get(npc.locationId);
+        if (!host || host === npc.factionId) return [];
+        return secondmentsFor({
+            postingFactionId: host,
+            sending: [{ factionId: npc.factionId, people: [npc] }]
+        });
+    });
+    const rollBodies = whoCountsTowardThisHouse(faction.id, postings, state.npcs
         .filter(npc => npc.status === 'alive' && npc.factionId === faction.id)
-        .map(npc => ({ id: npc.id, realmOrdinal: npc.cultivation.realmOrdinal })))
-        .map(person => person.realmOrdinal);
+        .map(npc => ({ id: npc.id, realmOrdinal: npc.cultivation.realmOrdinal })));
+    const rollOrdinals = rollBodies.map(person => person.realmOrdinal);
 
     const seat = faction.seatLocationId
         ? state.locations.find(l => l.id === faction.seatLocationId)
@@ -471,6 +491,7 @@ export function howStrongThisHouseIsNow(
 
     return howStrongAHouseActuallyIs({
         rollOrdinals,
+        rollBodies,
         sealedCeilingOrdinal: Number(faction.resources.sealed_ceiling_ordinal ?? 0),
         formationIntegrity: total > 0 ? lit / total : 1,
         reliableOrdinal: Number(faction.resources.reliable_ordinal ?? 0),

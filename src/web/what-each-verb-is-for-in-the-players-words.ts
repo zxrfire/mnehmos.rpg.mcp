@@ -13,9 +13,8 @@
  * This file is the one place that account is written. Two things read it and
  * neither paraphrases it:
  *
- *   `prompt.ts`      composes the phase-1 glossary out of it, through
- *                    {@link composeActionGlossary}. There is no second wording
- *                    of a verb in the prompt.
+ *   `prompt.ts`      reads the plan fields from it. Phase 1 reads THE_LANES;
+ *                    the verb glossary was superseded by lane classification.
  *   `docs/verbs.md`  is generated from it by
  *                    `scripts/build-the-verb-surface.mjs`, which joins it to
  *                    the code: where each verb is declared, where it resolves,
@@ -51,13 +50,11 @@
  *   - Say what it COSTS when the cost is what decides between two verbs: days
  *     spent, stones spent, and whether it can be unsaid.
  *
- * Wrapping and indentation are not yours to choose - both consumers re-wrap -
- * so write plain sentences and let {@link composeActionGlossary} lay them out.
+ * Write plain sentences; the document generator handles wrapping.
  */
 
 import {
     ACTION_NAMES,
-    MAX_CULTIVATION_DAYS,
     type ActionName
 } from './actions.js';
 import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
@@ -946,34 +943,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
 // RENDERING
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Column the description starts in, wide enough for `train_technique`. */
-const NAME_COLUMN = 17;
-
-/** Where the description wraps. `NAME_COLUMN` plus this is the line length. */
 const PROSE_WIDTH = 78;
-
-/** One paragraph, however the source happened to be indented. */
-function oneParagraph(text: string): string {
-    return text.replace(/\s+/g, ' ').trim();
-}
-
-/**
- * The values a `says` string may interpolate.
- *
- * Balance numbers are imported and never retyped, here as everywhere. The
- * document generator resolves the same placeholders out of `actions.ts`, which
- * is why they are written as literal `${…}` in the source rather than as real
- * template substitutions: one spelling, read two ways.
- */
-const NUMBERS: Readonly<Record<string, number>> = {
-    MAX_CULTIVATION_DAYS
-};
-
-/** Substitute the balance numbers a description quotes. */
-function withNumbers(text: string): string {
-    return text.replace(/\$\{([A-Z][A-Z0-9_]*)\}/g, (whole, name: string) =>
-        name in NUMBERS ? String(NUMBERS[name]) : whole);
-}
 
 function wrap(text: string, width: number): string[] {
     const lines: string[] = [];
@@ -985,25 +955,6 @@ function wrap(text: string, width: number): string[] {
     }
     if (line.length > 0) lines.push(line);
     return lines;
-}
-
-/**
- * The phase-1 glossary, laid out as a two-column table.
- *
- * Composed rather than written out, so the classifier is told about every
- * member of the closed set. The hand-maintained version it replaces had fallen
- * twelve verbs behind the enum - the model was being handed the whole list of
- * names to choose from and the meaning of only some of them - and nothing
- * failed for as long as that was true.
- */
-export function composeActionGlossary(): string {
-    const out: string[] = [];
-    for (const verb of ACTION_NAMES) {
-        const body = wrap(withNumbers(oneParagraph(WHAT_EACH_VERB_IS_FOR[verb].says)), PROSE_WIDTH);
-        out.push(`${verb.padEnd(NAME_COLUMN)}${body[0] ?? ''}`);
-        for (const line of body.slice(1)) out.push(`${' '.repeat(NAME_COLUMN)}${line}`);
-    }
-    return out.join('\n');
 }
 
 /** Every verb that reads this field, in enum order. */

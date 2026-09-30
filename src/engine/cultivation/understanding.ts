@@ -11,8 +11,7 @@ import {
     type InsightDegree,
     type InsightDomain,
     type InsightProvenance,
-    type VisionSeed,
-    isOnRoad
+    type VisionSeed
 } from '../../schema/cultivation.js';
 import { getSpiritRoot, type SpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
@@ -135,11 +134,6 @@ export const BREAKTHROUGH_PER_DEGREE = 0.015;
 /** Ceiling on the total breakthrough bonus from understanding. */
 export const MAX_BREAKTHROUGH_BONUS = 0.12;
 
-/** Technique-effectiveness bonus per degree of a matching insight. */
-export const TECHNIQUE_PER_DEGREE = 0.08;
-/** Ceiling on technique effectiveness from understanding. */
-export const MAX_TECHNIQUE_BONUS = 1.0;
-
 /**
  * Fraction of a bottleneck's requirement that one degree of path-relevant
  * understanding can stand in for.
@@ -218,44 +212,6 @@ export function understandingEffects(
 export function practiceMatchBonus(root: SpiritRoot, matched: boolean): number {
     if (!matched) return 1;
     return 1 + (root.matchedTechniqueBonus - 1) / 2;
-}
-
-/**
- * How effective a technique is, combining spirit-root affinity with actual
- * comprehension of what the technique is about.
- */
-export function techniqueEffectiveness(
-    cultivator: Pick<Cultivator, 'spiritRoot'> & { insights?: readonly Insight[] },
-    technique: { element?: Element | null; subjects?: readonly string[] | null; mastery?: number }
-): { multiplier: number; fromRoot: number; fromUnderstanding: number } {
-    const root = getSpiritRoot(cultivator.spiritRoot);
-    const element = technique.element ?? null;
-    // A null element is not a match. An art written in no element gives a
-    // root's purity nothing to be pure at, and admitting every root is not the
-    // same fact as suiting one. See the banner at the same predicate in
-    // `combat.ts` and `asksNothingOfTheRoad` in `dao.ts`.
-    const fromRoot =
-        element !== null && root.elements.includes(element) ? root.matchedTechniqueBonus : 1;
-
-    let understanding = 0;
-    for (const insight of cultivator.insights ?? []) {
-        const matchesElement = insight.domain === 'element' && insight.subject === element;
-        // Any road the art is on. An insight into formations helps with a
-        // sword-and-formation art exactly as sword insight does; picking one
-        // would be deciding which half of the art the reader is holding.
-        const matchesSubject =
-            insight.subject !== null && isOnRoad(technique, insight.subject);
-        if (!matchesElement && !matchesSubject) continue;
-        understanding += insight.degree * TECHNIQUE_PER_DEGREE;
-    }
-    const fromUnderstanding = 1 + Math.min(understanding, MAX_TECHNIQUE_BONUS);
-
-    const mastery = clamp01(technique.mastery ?? 1);
-    return {
-        multiplier: fromRoot * fromUnderstanding * (0.5 + 0.5 * mastery),
-        fromRoot,
-        fromUnderstanding
-    };
 }
 
 // SUBSTITUTION AT A BOTTLENECK

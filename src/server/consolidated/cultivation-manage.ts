@@ -4,6 +4,8 @@ import { persistCrossingConsequence } from './cultivation-support.js';
  */
 
 import { z } from 'zod';
+import { assessLastCrossing } from '../../engine/cultivation/breakthrough.js';
+import { isLastCrossing } from '../../engine/cultivation/realms.js';
 import { applyTimeSkip } from '../../web/apply.js';
 import { randomUUID } from 'crypto';
 import {
@@ -1146,6 +1148,15 @@ export async function handleStatus(args: z.infer<typeof StatusSchema>): Promise<
             : null,
         nextIsRealmBoundary: odds.isBoundary,
         breakthroughChanceNow: round4(odds.finalChance),
+        lastCrossing: isLastCrossing(cultivator.realmOrdinal)
+            ? assessLastCrossing(cultivator, ambient, {
+                pill: pending ? {
+                    name: pending.name, potency: pending.potency,
+                    ...(pending.grade ? { grade: pending.grade } : {}),
+                    priorPillsTaken: pending.priorPillsTaken ?? 0
+                } : null
+            })
+            : null,
         tribulationAhead: triggersHeavenlyTribulation(cultivator.realmOrdinal)
             ? {
                 strikes: tribulationStrikeCount(cultivator.realmOrdinal),

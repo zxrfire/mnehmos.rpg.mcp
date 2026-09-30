@@ -5,14 +5,12 @@
 import { forStream } from '../cultivation/rng.js';
 import { isTheSamePerson, resolveBodilyDestruction } from '../cultivation/existence.js';
 import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
-import { whoTheyAreNow } from './reading-a-tie-against-the-roster.js';
 import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from './who-a-house-has-lost-track-of.js';
 import {
     carriedAcross,
     clampOrdinal,
     lifespanForOrdinal,
-    maxHpForOrdinal,
-    rankName
+    maxHpForOrdinal
 } from '../cultivation/realms.js';
 import {
     rollAttributes,
@@ -1636,94 +1634,6 @@ export function inheritGoals(
 
 export function ageInYears(npc: NpcRecord, onDay: number): number {
     return Math.floor((onDay - npc.identity.bornOnDay) / DAYS_PER_YEAR);
-}
-
-export interface NpcBrief {
-    id: string;
-    name: string;
-    rank: string;
-    ageYears: number;
-    locationId: string | null;
-    factionId: string | null;
-    status: ExistenceState;
-    /** What they are currently trying to do, highest priority first. */
-    goals: {
-        text: string;
-        kind: GoalKind;
-        priority: number;
-        progress: string;
-        obstacles: string[];
-        deadlineInDays: number | null;
-        status: GoalStatus;
-        yearsOpen: number;
-        generation: number;
-    }[];
-    /**
-     * Ties that matter, strongest feeling first.
-     */
-    relationships: {
-        name: string;
-        whoTheyAreNow?: string;
-        kind: RelationshipKind;
-        standing: number;
-        note: string;
-    }[];
-    /** Ids of the most recent facts about them. The trajectory, compactly. */
-    recentFactIds: string[];
-    memoryIds: string[];
-    /** Days since this record was last confirmed. Stale records are a fact. */
-    staleDays: number;
-}
-
-/**
- * The compact bundle the LLM is handed to reason about this person.
- */
-export function npcBrief(
-    npc: NpcRecord,
-    onDay: number,
-    recentFacts = 6,
-    relationshipLimit = 8,
-    roster: readonly NpcRecord[] = []
-): NpcBrief {
-    const byId = new Map(roster.map(n => [n.id, n]));
-    return {
-        id: npc.id,
-        name: npc.name,
-        rank: rankName(npc.cultivation.realmOrdinal),
-        ageYears: ageInYears(npc, onDay),
-        locationId: npc.locationId,
-        factionId: npc.factionId,
-        status: npc.status,
-        goals: activeGoals(npc).map(g => ({
-            text: g.text,
-            kind: g.kind,
-            priority: g.priority,
-            progress: g.progress,
-            obstacles: g.obstacles.slice(),
-            deadlineInDays: g.deadlineOnDay === null ? null : g.deadlineOnDay - onDay,
-            status: g.status,
-            yearsOpen: Math.floor((onDay - g.openedOnDay) / DAYS_PER_YEAR),
-            generation: g.generation
-        })),
-        relationships: npc.relationships
-            .slice()
-            .sort((a, b) =>
-                Math.abs(b.standing) - Math.abs(a.standing) || (a.targetId < b.targetId ? -1 : 1)
-            )
-            .slice(0, relationshipLimit)
-            .map(r => ({
-                name: r.targetName,
-                ...(roster.length > 0
-                    ? { whoTheyAreNow: whoTheyAreNow(byId.get(r.targetId) ?? null, r.targetName).description }
-                    : {}),
-                kind: r.kind,
-                standing: r.standing,
-                note: r.note
-            })),
-        recentFactIds: npc.historyFactIds.slice(-recentFacts),
-        memoryIds: npc.memoryIds,
-        staleDays: Math.max(0, onDay - npc.lastConfirmedOnDay)
-    };
 }
 
 function clamp01(n: number): number {

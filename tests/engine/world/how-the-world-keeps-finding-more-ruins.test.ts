@@ -22,6 +22,7 @@ import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { applyPressure } from '../../../src/engine/world/pressure.js';
 import { markDead } from '../../../src/engine/world/npc-state.js';
+import { makeLocation } from '../../../src/engine/world/locations.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import {
     CHARACTERS_BY_BAND,
@@ -514,6 +515,29 @@ describe('the near end of the stock refills, and the deep past does not', () => 
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('from outside, a live cultivator behind a door and a dead one look the same', () => {
+    // A ruined tag records the compound's condition, not the aliveness of its residents.
+    it('does not find an inhabited ruined seat as an empty compound', () => {
+        const state = world('inhabited-seat');
+        const region = state.locations.find(row => row.kind === 'region')!;
+        const looker = state.npcs.find(npc => npc.status === 'alive'
+            && npc.cultivation.realmOrdinal >= RUNG_AT_WHICH_SOMEBODY_HAS_A_DOOR)!;
+        const looking = Math.ceil(PROSPECTORS_PER_PARTY / EASY_FIND_ODDS_PER_PARTY_YEAR) + 1;
+        state.npcs = Array.from({ length: looking }, (_, n) => ({ ...looker,
+            id: `seat-looker-${n}`, locationId: region.id }));
+        state.locations = [region];
+        const seat = makeLocation({ id: 'inhabited-seat', name: 'The damaged compound',
+            kind: 'sect_seat', parentId: region.id, discovered: false,
+            tags: ['ruined'], data: { occupantId: state.npcs[0].id } });
+        state.locations.push(seat);
+        state.npcs[0] = { ...state.npcs[0], locationId: seat.id };
+        expect(prospectFor(state, region).oddsThisYear).toBe(1);
+        const year = Math.floor(state.currentDay / YEAR);
+        expect(applyRuinProspecting(state, year, state.currentDay).found.length).toBeGreaterThan(0);
+        expect(state.locations.find(row => row.id === seat.id)!.discovered).toBe(false);
+        state.npcs[0] = markDead(state.npcs[0], state.currentDay, 'Died at home.');
+        expect(applyRuinProspecting(state, year + 1, state.currentDay + YEAR).found.length).toBeGreaterThan(0);
+        expect(state.locations.find(row => row.id === seat.id)!.discovered).toBe(true);
+    });
     it('answers whether somebody is still alive in there, off state', () => {
         const state = world('occupied');
         const region = state.locations.find(l => l.kind === 'region')!;

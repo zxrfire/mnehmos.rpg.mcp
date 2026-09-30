@@ -744,7 +744,7 @@ export const EXTINCTION_NOTES: Readonly<Record<string, string>> = {
 /**
  * Everything still growing. This is the pool the world draws from.
  *
- * The filter lives on `findHerbsForOrdinal`, which is the single funnel every
+ * `findHerbsForOrdinal` reads this pool and is the single funnel every
  * forage path runs through, so no caller has to remember: `rollHerb`,
  * `findOfferedHerbs` and `forage` all inherit it. `HERBS` itself keeps the
  * extinct rows, because a recipe naming one must still resolve and a register
@@ -792,8 +792,11 @@ export function getHerbsByBiome(biome: HerbBiome): readonly Herb[] {
  */
 export function findHerbsForOrdinal(ordinal: number, biome?: WhatIsUnderfoot): Herb[] {
     const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
-    const pool = herbsOn(biome);
-    return pool.filter(h => h.harvestOrdinal <= cap && !EXTINCT_HERB_IDS.has(h.id));
+    const grounds = biome === undefined ? null : new Set(typeof biome === 'string' ? [biome] : biome);
+    const onThisGround = grounds === null || grounds.size === 0 ? null
+        : new Set([...grounds].flatMap(ground => getHerbsByBiome(ground).map(h => h.id)));
+    return FORAGEABLE_HERBS.filter(h => h.harvestOrdinal <= cap
+        && (onThisGround === null || onThisGround.has(h.id)));
 }
 
 /**
@@ -806,15 +809,6 @@ export function findHerbsForOrdinal(ordinal: number, biome?: WhatIsUnderfoot): H
  * Nothing said still means the whole map.
  */
 export type WhatIsUnderfoot = HerbBiome | readonly HerbBiome[] | undefined;
-
-/** The herbs of these grounds, deduplicated, in catalog order. */
-function herbsOn(where: WhatIsUnderfoot): readonly Herb[] {
-    if (where === undefined) return HERBS;
-    if (typeof where === 'string') return getHerbsByBiome(where);
-    if (where.length === 0) return HERBS;
-    const wanted = new Set<string>(where);
-    return HERBS.filter(h => wanted.has(h.biome));
-}
 
 /**
  * Everything the world would actually put in front of this asker.

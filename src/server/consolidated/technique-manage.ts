@@ -28,6 +28,7 @@ import {
 import {
     TECHNIQUES,
     capOf,
+    isWideSpan,
     findTechniquesForOrdinal,
     getTechnique,
     gradeRank,
@@ -291,6 +292,7 @@ function projectTechnique(
         matchedBonus: matched ? root.matchedTechniqueBonus : 1,
         // WHERE THE MANUAL STOPS
         carriesToOrdinal: capFor(technique),
+        wideSpan: isWideSpan(technique),
         carriesToRank: capFor(technique) === null
             ? null
             : rankName(capFor(technique) as number),

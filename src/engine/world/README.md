@@ -332,6 +332,16 @@ out, both read off `yearsToWriteOutACopy`.
 
 ## How many people a house has
 
+Temporary postings are read from each living person's `stationed` activity and
+the place's controlling house by `howStrongThisHouseIsNow`. The person stays
+on the sending roll; the existing secondment shares price what each house can
+field until the term ends. These shares are derived on every read.
+
+The yearly pass also calls `housesFindEmptyShelves`: readers can discover a
+stolen library book is missing. The fact stays within the house and identifies
+the book, without inferring a thief from its provenance. Loans and returned
+books do not enter that discovery path.
+
 **The rule lives in `src/engine/world/a-house-and-who-is-in-it.md`.** It is not restated here, because it has been restated four times
 already and the copies drifted.
 

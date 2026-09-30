@@ -1109,6 +1109,7 @@ function findFallenSeatUnder(state: WorldState, regionId: string): LocationRecor
         if (location.tags.includes(INNER_ROOM_TAG)) continue;
         if (location.id.endsWith('-vault')) continue;
         if (regionIdOf(state, location.parentId ?? location.id) !== regionId) continue;
+        if (isSomebodyStillAliveInThere(state, location).occupied) continue;
         return location;
     }
     return null;
@@ -1285,4 +1286,3 @@ export function foundUnder(region: LocationRecord): number {
     }
     return total;
 }
-

@@ -693,11 +693,10 @@ export interface BreakthroughContext {
 
 /**
  * The rung a cultivator stands on for the first crossing the dao gate asks of.
- * Documentation rather than a switch: `daoRequirementCurve` derives the same
- * boundary from the realm index and does not read this, and a test asserts the
- * two agree at every ordinal. The switch is `DAO_GATE_ENFORCED`.
+ * The first boundary the requirement curve charges. The switch is
+ * `DAO_GATE_ENFORCED`.
  */
-export const DAO_GATE_FROM_ORDINAL = 20;
+export const DAO_GATE_FROM_ORDINAL = REALM_TIERS.find(t => t.key === 'core_formation')!.ordinalEnd;
 
 /**
  * WHETHER THE CURVE IS CHARGED. Held off until the world could supply the roads:
@@ -744,7 +743,7 @@ export const ROADS_BESIDES_YOUR_OWN: readonly InsightDomain[] = InsightDomainSch
 export function roadsWalked(insights: readonly Insight[] | undefined): number {
     const domains = new Set<InsightDomain>();
     for (const insight of insights ?? []) {
-        if (insight.domain !== SELF_TAUGHT_DOMAIN) domains.add(insight.domain);
+        if (ROADS_BESIDES_YOUR_OWN.includes(insight.domain)) domains.add(insight.domain);
     }
     return domains.size;
 }
@@ -800,6 +799,7 @@ export function roadsWalkedIncludingExposure(
  * Derived from the realm index rather than tabulated, so it follows the ladder.
  */
 export function daoRequirementCurve(ordinal: number): number {
+    if (ordinal < DAO_GATE_FROM_ORDINAL) return 0;
     if (!isRealmBoundary(ordinal) && !isLastCrossing(ordinal)) return 0;
     const realmIndex = REALM_TIERS.indexOf(realmForOrdinal(ordinal));
     if (realmIndex < 0) return 0;
@@ -896,7 +896,7 @@ export function canAttemptBreakthrough(
               );
     const available = cultivator.cultivationProgress + substitution.substituted;
     const daoRequired = daoRequirementFor(cultivator.realmOrdinal);
-    const daoHeld = roadsWalked(comprehension);
+    const daoHeld = roadsWalkedIncludingExposure(cultivator);
     const base = {
         progressRequired: required,
         progressAvailable: available,

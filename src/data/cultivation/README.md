@@ -68,6 +68,11 @@ Implementation gaps belong in the setting docs, including
 
 ## The catalogs
 
+The technique factory rejects rows whose address exceeds their rung or whose
+qi cost falls outside their grade band. Forage reads `FORAGEABLE_HERBS` before
+applying ground and standing limits; extinct rows remain available to recipes
+and historical inquiries.
+
 | File | Holds | The invariant that matters |
 |---|---|---|
 | `techniques.ts` | The art library | Grade maps onto disjoint, ordered ordinal bands; qi costs are banded the same way |

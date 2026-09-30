@@ -34,7 +34,6 @@ import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import {
     guidanceFor,
-    guideOrdinalFor,
     readyToStrike,
     strikeAtTheWall,
     TEACHING_TAKES_THIS_MUCH_OF_A_TEACHERS_YEAR,
@@ -284,21 +283,21 @@ describe('who is teaching you is read off the world, not invented', () => {
     });
 
     it('pays nothing for a tie whose master is not giving the attention', () => {
-        expect(guideOrdinalFor(student, new Map([[master.id, master]]))).toBeNull();
+        expect(guidanceFor(student, new Map([[master.id, master]]))).toBeNull();
     });
 
     it('pays the teacher who is teaching them, where they stand', () => {
         const byId = new Map([[master.id, teaching(['s'])]]);
-        expect(guideOrdinalFor(student, byId)).toBe(25);
+        expect(guidanceFor(student, byId)).toEqual({ ordinal: 25, listeners: 1 });
 
         const elsewhere = new Map([[master.id, { ...teaching(['s']), locationId: 'a-town' }]]);
-        expect(guideOrdinalFor(student, elsewhere), 'a master in another place').toBeNull();
+        expect(guidanceFor(student, elsewhere), 'a master in another place').toBeNull();
 
         const dead = new Map([[master.id, { ...teaching(['s']), status: 'physically_dead' as const }]]);
-        expect(guideOrdinalFor(student, dead), 'a master who has died').toBeNull();
+        expect(guidanceFor(student, dead), 'a master who has died').toBeNull();
 
         const over = new Map([[master.id, teaching(['s'], 100)]]);
-        expect(guideOrdinalFor(student, over, 200), 'attention whose term has run').toBeNull();
+        expect(guidanceFor(student, over, 200), 'attention whose term has run').toBeNull();
     });
 
     it('thins with the set, and costs the teacher the same whatever its size', () => {

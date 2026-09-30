@@ -384,6 +384,21 @@ describe('cultivation MCP tool surface', () => {
 
     // ─────────────────────────────────────────────────────────────────────
     describe('breakthrough', () => {
+        // The last crossing has four endings; status must price all four before an attempt.
+        it('assesses the last crossing without changing the cultivator', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+            await admin({ action: 'set_realm', ordinal: 44 });
+            const repo = new CultivatorRepository(db);
+            const before = repo.getById(created.cultivator.id)!;
+            const status = await cultivation({ action: 'status' });
+            expect(status.lastCrossing.strikes).toBeGreaterThan(0);
+            expect(status.lastCrossing.trueImmortalChance + status.lastCrossing.falseImmortalChance
+                + status.lastCrossing.deathChance + status.lastCrossing.strandedChance).toBeCloseTo(1, 12);
+            expect(repo.getById(before.id)).toEqual(before);
+            await admin({ action: 'set_realm', ordinal: 43 });
+            expect((await cultivation({ action: 'status' })).lastCrossing).toBeNull();
+        });
         /** Cultivate until the next rank is legally attemptable. */
         async function makeEligible(cultivatorId: string) {
             grantPill(cultivatorId, GRAIN_ABSTINENCE_PILL_ID);

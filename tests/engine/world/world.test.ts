@@ -32,7 +32,6 @@ import {
     legacyGoals,
     markMissing,
     markDead,
-    npcBrief,
     setExistence,
     setRealm,
     relationshipWith,
@@ -811,11 +810,11 @@ describe('npc records: durable, not simulated', () => {
             targetId: 'fac-1'
         }, 10 * YEAR);
 
-        const brief = npcBrief(npc, 310 * YEAR);
-        expect(brief.goals[0].progress).toContain('identified');
-        expect(brief.goals[0].obstacles).toEqual(['Insufficient strength.']);
-        expect(brief.goals[0].deadlineInDays).toBeNull();
-        expect(brief.goals[0].yearsOpen).toBe(300);   // three hundred years, still live
+        const goal = activeGoals(npc)[0]!;
+        expect(goal.progress).toContain('identified');
+        expect(goal.obstacles).toEqual(['Insufficient strength.']);
+        expect(goal.deadlineOnDay).toBeNull();
+        expect((310 * YEAR - goal.openedOnDay) / YEAR).toBe(300);
     });
 
     it('updates progress and obstacles without losing the opening date', () => {
