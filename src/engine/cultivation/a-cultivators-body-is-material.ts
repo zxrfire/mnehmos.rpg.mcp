@@ -10,8 +10,8 @@
  * and there must not be one: what this produces instead is rightly suspected and
  * unprovable, wrongly suspected, and unsuspected.
  *
- * A GAP, NOT A RULING: nothing in play takes material off a dead cultivator
- * yet. The one caller is the beast harvest, which asks this for a dead beast.
+ * Both harvests read it through `gradeOfWhatItYielded`: a dead beast's parts,
+ * and a dead cultivator's bones (`bones-off-a-body.ts`).
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';

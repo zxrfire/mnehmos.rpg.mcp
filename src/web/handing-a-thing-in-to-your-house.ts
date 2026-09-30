@@ -28,7 +28,7 @@ import type Database from 'better-sqlite3';
 
 import { getPill } from '../data/cultivation/pills.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
-import { whatAnIngredientIs } from '../engine/cultivation/what-a-cauldron-will-take.js';
+import { whatAnIngredientIs, type WhereAMaterialComesFrom } from '../engine/cultivation/what-a-cauldron-will-take.js';
 import {
     howMuchAGradeIsWorthTracking,
     isRuined,
@@ -59,8 +59,8 @@ const CLOSE_ENOUGH = 60;
 export interface AThingToHandIn {
     name: string;
     kind: 'manual' | 'material' | 'pill';
-    /** Where it came off a beast or out of the ground, for the category words. */
-    from: 'a_beast' | 'a_growing_thing' | null;
+    /** Where it came from - a beast, the ground, a body - for the category words. */
+    from: WhereAMaterialComesFrom | null;
     /** The world's row for it, where the world tracks this one. */
     tracked: ObjectRecord | null;
     /** The pouch stack it comes off, where it is counted there. */
@@ -68,6 +68,13 @@ export interface AThingToHandIn {
     /** The row as a want reads it. The tracked row itself, or one made for the stack. */
     row: ObjectRecord;
 }
+
+/** The tag a material's row carries for where it came from. */
+const MATERIAL_TAG: Readonly<Record<WhereAMaterialComesFrom, string>> = {
+    a_growing_thing: 'herb',
+    a_beast: 'beast_material',
+    a_person: 'human_bone'
+};
 
 /** A row for one of a pouch stack, owned by whoever is holding it. */
 function aRowForOneOf(
@@ -122,7 +129,7 @@ function aRowForOneOf(
             row: makeObject({
                 ...base, id, name: what.name, kind: 'material',
                 significance: howMuchAGradeIsWorthTracking(what.grade),
-                tags: ['material', what.from === 'a_beast' ? 'beast_material' : 'herb', `grade:${what.grade}`],
+                tags: ['material', MATERIAL_TAG[what.from], `grade:${what.grade}`],
                 data: { materialId: what.id, grade: what.grade, value: what.value, quantity: 1 }
             })
         };
@@ -177,7 +184,7 @@ const CATEGORY_WORDS: ReadonlyArray<[RegExp, (t: AThingToHandIn) => boolean]> = 
     [/^(?:manual|book|scripture|scroll|volume|text|copy)s?$/, t => t.kind === 'manual'],
     [/^(?:pill|dose|elixir|pellet|medicine)s?$/, t => t.kind === 'pill'],
     [/^(?:herb|plant|root|grass|flower|leaf|leaves|fruit)s?$/, t => t.from === 'a_growing_thing'],
-    [/^(?:core|material|hide|pelt|bone|horn|fang|claw|scale|feather|carcass|beast part)s?$/, t => t.from === 'a_beast'],
+    [/^(?:core|material|hide|pelt|bone|horn|fang|claw|scale|feather|carcass|beast part)s?$/, t => t.from === 'a_beast' || t.from === 'a_person'],
     [/^(?:thing|things|it|item|items|find|loot|that|this)$/, () => true]
 ];
 

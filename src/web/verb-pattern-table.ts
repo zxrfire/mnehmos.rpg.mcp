@@ -139,6 +139,7 @@ import {
     respellForTheVerbTable
 } from './repairing-a-misspelt-word-before-the-verb-table-sees-it.js';
 import { whatIsBeingMended } from './mending-phrasings.js';
+import { NAMES_A_BODY, takesTheBones } from './bones-phrasings.js';
 
 // The day counts each verb spends. Re-exported so the module namespace this
 // file self-imports - and therefore the spelling repair's vocabulary - is
@@ -2946,14 +2947,15 @@ export const WHAT_IS_BEING_BUILT =
  *
  * The capture carries the grade and the kind because
  * `whatTheyWereAskedToMake` reads both off it, so a phrase trimmed to the bare
- * noun would send every ask to mortal grade.
+ * noun would send every ask to mortal grade. `bone` and `demonic` are kept for
+ * the same reason: they choose the demonic recipe.
  *
  * The verb has to sit immediately before the phrase, which is the guard that
  * keeps this off sentences about a talisman that are not about making one -
  * burning one, selling one, being handed one.
  */
 export const WHAT_IS_BEING_MADE_AT_A_BENCH =
-    /\b(?:make|makes|making|made|craft|crafts|crafting|crafted|cut|cuts|cutting|forge|forges|forging|forged|inscribe|inscribes|inscribing|inscribed|scribe|scribes|work|works|working)\s+(?:me\s+|myself\s+|us\s+|up\s+|on\s+)?(?:a\s+|an\s+|the\s+|some\s+|my\s+)?((?:mortal-?\s?grade\s+|earth-?\s?grade\s+|heaven-?\s?grade\s+|immortal-?\s?grade\s+|earthly\s+|heavenly\s+|escape\s+|way-?out\s+|strike\s+|storage\s+)*(?:talismans?|slips?|charms?|seals?|artifacts?|swords?|blades?|sabres?|sabers?|spears?|daggers?|bells?|mirrors?|cauldrons?|furnaces?|banners?|rings?))\b/i;
+    /\b(?:make|makes|making|made|craft|crafts|crafting|crafted|cut|cuts|cutting|forge|forges|forging|forged|inscribe|inscribes|inscribing|inscribed|scribe|scribes|work|works|working)\s+(?:me\s+|myself\s+|us\s+|up\s+|on\s+)?(?:a\s+|an\s+|the\s+|some\s+|my\s+)?((?:mortal-?\s?grade\s+|earth-?\s?grade\s+|heaven-?\s?grade\s+|immortal-?\s?grade\s+|earthly\s+|heavenly\s+|escape\s+|way-?out\s+|strike\s+|storage\s+|bone\s+|demonic\s+)*(?:talismans?|slips?|charms?|seals?|artifacts?|swords?|blades?|sabres?|sabers?|spears?|daggers?|bells?|mirrors?|cauldrons?|furnaces?|banners?|rings?))\b/i;
 
 /**
  * Putting the work to SOMEBODY ELSE, which is a commission and not a bench.
@@ -4844,6 +4846,15 @@ function planIntent(input: string): PlannedAction {
     if (!dutyNamed(text)) {
         const price = aPriceOnSomebody(input);
         if (price) return price;
+    }
+
+    // ── THE BONES OFF A BODY ─────────────────────────────────────────────
+    //
+    // `gather`'s harvest of a body. Ahead of every taking verb, because "strip
+    // the body of its bones" is otherwise a search of its pockets.
+    if (takesTheBones(text)) {
+        const named = extractSubject(input, /take|takes|taking|took|strip|strips|stripping|stripped|harvest|harvests|harvesting|harvested|collect|collects|collecting|gather|gathers|gathering|cut|cuts|cutting|carve|carves|carving|pull|pulls|pulling|remove|removes|removing|salvage|salvages|salvaging|butcher|butchers|butchering|butchered/);
+        return { action: 'gather', target: named && NAMES_A_BODY.test(named) ? named : 'the bones' };
     }
 
     // ── A BOW IS AIMED AT SOMEBODY ───────────────────────────────────────

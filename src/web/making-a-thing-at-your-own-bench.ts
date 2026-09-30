@@ -66,7 +66,7 @@ import type Database from 'better-sqlite3';
 import { whetherTheirHandsCanDoIt } from '../engine/social-leverage/commissioning-a-craft.js';
 import type { WhatYouAskedThemToMake } from '../engine/social-leverage/index.js';
 import { whatWasFoldedIn } from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
-import { isAWorkedGrade } from '../data/cultivation/what-an-artifact-is-made-of.js';
+import { isAWorkedGrade, whatItIsMadeOf } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import { transferPossession, type ObjectRecord } from '../engine/world/possessions.js';
 import {
     mintAMadeThing,
@@ -246,7 +246,9 @@ export function planTheMaking(input: PlanTheMaking): MakingPlan {
         structure: [
             `craft at a bench: ${ask.grade} grade, ${ask.slip ?? 'a made thing'}, at ordinal `
             + `${cultivator.realmOrdinal}. Bench held ${bench.length} piece(s)`
-            + (isAWorkedGrade(ask.grade) ? ' and the recipe is whole.' : '; the grade asks for no recipe.'),
+            + (isAWorkedGrade(ask.grade)
+                ? ` and the ${ask.demonic === true ? 'demonic ' : ''}recipe is whole.`
+                : '; the grade asks for no recipe.'),
             odds.rolled
                 ? `theOddsTheWorkHolds: ${Math.round(odds.chance * 1000) / 10}% (the yard's base `
                   + `${Math.round(odds.base * 1000) / 10}%, furnace +${Math.round(odds.fromTheVessel * 1000) / 10}`
@@ -306,7 +308,8 @@ export function landTheMaking(input: LandTheMaking): MadeAtTheBench {
         grade: ask.grade,
         bench: plan.bench!,
         onDay: today,
-        intoWhat: theThing(ask.named)
+        intoWhat: theThing(ask.named),
+        recipe: whatItIsMadeOf(ask.grade, ask.demonic === true)
     });
 
     if (paid === null) {

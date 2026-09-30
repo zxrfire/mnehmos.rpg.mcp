@@ -94,6 +94,9 @@ export function asksForAPairOfJade(named: string): boolean {
 /** Whether the words name a grade at all, rather than leaving it to what the thing is. */
 const A_GRADE_WORD = /\b(?:immortal|heaven(?:ly)?|earth(?:ly)?|mortal)\b/i;
 
+/** A worked thing asked for as demonic art, or out of bone. */
+const A_DEMONIC_PIECE = /\b(?:bones?|demonic)\b/i;
+
 export function whatTheyWereAskedToMake(named: string): WhatYouAskedThemToMake {
     // A JADE IS THE GRADE THE CATALOG MAKES IT AT, where nobody said another.
     const grade = asksForAPairOfJade(named) && !A_GRADE_WORD.test(named)
@@ -109,6 +112,7 @@ export function whatTheyWereAskedToMake(named: string): WhatYouAskedThemToMake {
         named: named.slice(0, 80),
         grade,
         ...(slip === null ? {} : { slip }),
-        ...(slip === null && A_RING.test(named) ? { aRing: true } : {})
+        ...(slip === null && A_RING.test(named) ? { aRing: true } : {}),
+        ...(slip === null && !A_RING.test(named) && A_DEMONIC_PIECE.test(named) ? { demonic: true } : {})
     };
 }

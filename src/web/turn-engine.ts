@@ -49,6 +49,9 @@ import {
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
 import { BEASTS, getBeastMaterial, type Beast } from '../data/cultivation/beasts.js';
+import { getBone } from '../data/cultivation/bones.js';
+import { NAMES_A_BODY } from './bones-phrasings.js';
+import { takingTheBones } from './taking-the-bones.js';
 import {
     whatIsOnThisGround,
     whatComesOffTheBody,
@@ -4861,6 +4864,10 @@ export class GameService {
                 return this.refine(run, cultivator, action.target);
 
             case 'gather':
+                // A body's harvest rather than the ground's. See `taking-the-bones.ts`.
+                if (NAMES_A_BODY.test(action.target ?? '')) {
+                    return takingTheBones(this, run, cultivator, ambient, action.target ?? '', rawInput);
+                }
                 return this.gather(run, cultivator, ambient, action.target);
 
             case 'hunt':
@@ -18836,6 +18843,18 @@ ${fit.line}`;
                     name: material.name,
                     item: material,
                     listStones: material.value,
+                    quantity: entry.quantity,
+                    kind: 'herb'
+                };
+            }
+            // And bone off a body, at what its grade is worth (`bones.ts`).
+            const bone = getBone(entry.itemId);
+            if (bone) {
+                return {
+                    itemId: bone.id,
+                    name: bone.name,
+                    item: bone,
+                    listStones: bone.value,
                     quantity: entry.quantity,
                     kind: 'herb'
                 };

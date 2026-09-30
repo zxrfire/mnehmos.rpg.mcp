@@ -123,6 +123,23 @@ export const WHAT_AN_ARTIFACT_IS_MADE_OF: Readonly<Record<AWorkedGrade, Recipe>>
     heaven: [A_HEART, A_BODY, A_TEMPER]
 };
 
+/** Bone of a grade off a dead person, for the substance of a demonic piece. */
+function aBoneOf(grade: AWorkedGrade): ASlot {
+    return { what: `${grade}-grade bone off a dead body, for the substance of it`, grade, from: 'a_person' };
+}
+
+/**
+ * Demonic art: the same recipes with bone standing in the first slot.
+ *
+ * Owner ruling 2026-09-25: demonic cultivators craft from human bones. Chosen by
+ * the ask (`WhatYouAskedThemToMake.demonic`), never forced, so nobody else's
+ * recipe runs through a body.
+ */
+const WHAT_DEMONIC_ART_IS_MADE_OF: Readonly<Record<AWorkedGrade, Recipe>> = {
+    earth: [aBoneOf('earth'), A_TEMPER, A_CARRIER],
+    heaven: [aBoneOf('heaven'), A_BODY, A_TEMPER]
+};
+
 /** Whether a grade is one anything is worked out of materials for. */
 export function isAWorkedGrade(grade: TechniqueGrade): grade is AWorkedGrade {
     return grade === 'earth' || grade === 'heaven';
@@ -131,8 +148,9 @@ export function isAWorkedGrade(grade: TechniqueGrade): grade is AWorkedGrade {
 /**
  * What this grade is made of, or null where the question does not arise.
  */
-export function whatItIsMadeOf(grade: TechniqueGrade): Recipe | null {
-    return isAWorkedGrade(grade) ? WHAT_AN_ARTIFACT_IS_MADE_OF[grade] : null;
+export function whatItIsMadeOf(grade: TechniqueGrade, demonic = false): Recipe | null {
+    if (!isAWorkedGrade(grade)) return null;
+    return (demonic ? WHAT_DEMONIC_ART_IS_MADE_OF : WHAT_AN_ARTIFACT_IS_MADE_OF)[grade];
 }
 
 /**
@@ -174,7 +192,9 @@ export function fillsTheSlot(slot: ASlot, materialId: string): boolean {
     const row = whatAnIngredientIs(materialId);
     if (row === null) return false;
     if (row.grade !== slot.grade) return false;
-    return slot.from === null || row.from === slot.from;
+    // A slot with no source is grown or taken off a beast; bone fills only a
+    // slot that names a person.
+    return slot.from === null ? row.from !== 'a_person' : row.from === slot.from;
 }
 
 export interface ASlotNobodyFilled {
@@ -243,9 +263,10 @@ function howTheBenchReadsAgainst(
 /** Which slots the haul does not reach. */
 export function whatTheBenchIsShortOf(
     grade: TechniqueGrade,
-    materialsToHand: readonly string[]
+    materialsToHand: readonly string[],
+    demonic = false
 ): readonly ASlotNobodyFilled[] {
-    return howTheBenchReadsAgainst(whatItIsMadeOf(grade), materialsToHand).short;
+    return howTheBenchReadsAgainst(whatItIsMadeOf(grade, demonic), materialsToHand).short;
 }
 
 /**
@@ -300,9 +321,10 @@ export function whyTheBenchIsShort(
      * the engine talking about the player in the third person, which is exactly
      * the seam this repo keeps finding.
      */
-    whoseHands = 'Their hands'
+    whoseHands = 'Their hands',
+    demonic = false
 ): string | null {
-    const short = whatTheBenchIsShortOf(grade, materialsToHand);
+    const short = whatTheBenchIsShortOf(grade, materialsToHand, demonic);
     if (short.length === 0) return null;
     const lines = short.map(missing => {
         const named = missing.wouldHaveDone.slice(0, HOW_MANY_SUBSTITUTES_A_REFUSAL_NAMES);
@@ -316,5 +338,5 @@ export function whyTheBenchIsShort(
         return `${what}: nothing here is one. ${substitutes} would each do.${route}`;
     });
     return `${whoseHands} can work ${grade} grade and the bench is short by `
-        + `${short.length} of ${whatItIsMadeOf(grade)?.length ?? 0}. ${lines.join(' ')}`;
+        + `${short.length} of ${whatItIsMadeOf(grade, demonic)?.length ?? 0}. ${lines.join(' ')}`;
 }

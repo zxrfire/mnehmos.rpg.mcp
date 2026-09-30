@@ -51,7 +51,10 @@ import {
     whatWouldFill,
     whyTheBenchIsShort
 } from '../../src/data/cultivation/what-an-artifact-is-made-of.js';
-import { everyIngredientThatIs } from '../../src/engine/cultivation/what-a-cauldron-will-take.js';
+import {
+    everyIngredientThatIs,
+    type WhereAMaterialComesFrom
+} from '../../src/engine/cultivation/what-a-cauldron-will-take.js';
 import { whetherTheirHandsCanDoIt } from '../../src/engine/social-leverage/commissioning-a-craft.js';
 import { whatOfThisAHouseKeeps } from '../../src/engine/world/what-a-house-keeps-in-its-treasury.js';
 import {
@@ -210,7 +213,7 @@ describe('and somebody in the world holds the stuff', () => {
      * heaven grade at all, and there are 22 heaven-grade material rows in the
      * whole world against 220 earth and 151 mortal.
      */
-    const reachable = (grade: 'mortal' | 'earth' | 'heaven', from?: 'a_beast' | 'a_growing_thing') =>
+    const reachable = (grade: 'mortal' | 'earth' | 'heaven', from?: WhereAMaterialComesFrom) =>
         everyIngredientThatIs({ grade, ...(from === undefined ? {} : { from }), withinReachOf: 40 });
 
     it('keeps one row of a tracked grade and a shelf of a counted one', () => {

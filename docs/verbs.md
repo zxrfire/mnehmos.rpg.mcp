@@ -306,7 +306,7 @@ Takes `target`, `days`.
 
 ### `gather`
 
-forage for herbs and materials. "target" may name what is wanted.
+forage for herbs and materials. "target" may name what is wanted. Taking the bones off a dead person's body is here too - "take the bones", "strip the bones from the body", "harvest the corpse" - and "target" then names the bones or the body, with the dead person's name where the player gave one. A beast's parts are hunt.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'gather'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.gather` · the deterministic parser reaches it · spends in-world time.
 

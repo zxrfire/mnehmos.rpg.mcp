@@ -33,17 +33,23 @@
 
 import { HERBS, getHerb } from '../../data/cultivation/herbs.js';
 import { BEAST_MATERIALS, getBeastMaterial } from '../../data/cultivation/beasts.js';
+import { BONES, getBone } from '../../data/cultivation/bones.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 
 /**
- * Where a material comes from, which is the one thing the two tables do not
- * agree about.
+ * Where a material comes from, which is the one thing the tables do not agree
+ * about.
  */
 export type WhereAMaterialComesFrom =
     /** It grew. Somebody picked it. */
     | 'a_growing_thing'
     /** It was taken off a spirit beast, which had to stop being one first. */
-    | 'a_beast';
+    | 'a_beast'
+    /**
+     * Bone off a dead person (`bones.ts`). Only a recipe that names this source
+     * takes it: `everyIngredientThatIs` and a slot with no source leave it out.
+     */
+    | 'a_person';
 
 /**
  * A material, as alchemy needs it, whichever table it lives in.
@@ -93,6 +99,18 @@ export function whatAnIngredientIs(itemId: string): WhatTheCauldronIsBeingHanded
             from: 'a_beast'
         };
     }
+    const bone = getBone(itemId);
+    if (bone !== undefined) {
+        return {
+            id: bone.id,
+            name: bone.name,
+            grade: bone.grade,
+            value: bone.value,
+            // Taking bone off the dead cannot hurt the one taking it.
+            harvestOrdinal: 0,
+            from: 'a_person'
+        };
+    }
     return null;
 }
 
@@ -106,9 +124,14 @@ export function whatAnIngredientIs(itemId: string): WhatTheCauldronIsBeingHanded
  * will object.
  */
 export function howYouWouldComeByIt(material: WhatTheCauldronIsBeingHanded): string {
-    return material.from === 'a_beast'
-        ? `${material.name} comes off a spirit beast, and the beast has to be dealt with first`
-        : `${material.name} grows, and somebody has to be standing where it grows`;
+    switch (material.from) {
+        case 'a_beast':
+            return `${material.name} comes off a spirit beast, and the beast has to be dealt with first`;
+        case 'a_person':
+            return `${material.name} is taken off the body of somebody dead, where they fell`;
+        case 'a_growing_thing':
+            return `${material.name} grows, and somebody has to be standing where it grows`;
+    }
 }
 
 /**
@@ -137,9 +160,14 @@ export function everyIngredientThatIs(filter: {
         const row = whatAnIngredientIs(material.id);
         if (row !== null) rows.push(row);
     }
+    for (const bone of BONES) {
+        const row = whatAnIngredientIs(bone.id);
+        if (row !== null) rows.push(row);
+    }
     return rows
         .filter(row => filter.grade === undefined || row.grade === filter.grade)
-        .filter(row => filter.from === undefined || row.from === filter.from)
+        // A person's bone is reached only by asking for it by source.
+        .filter(row => filter.from === undefined ? row.from !== 'a_person' : row.from === filter.from)
         .filter(row =>
             filter.withinReachOf === undefined || row.harvestOrdinal <= filter.withinReachOf)
         .sort((a, b) => a.value - b.value || (a.id < b.id ? -1 : 1));

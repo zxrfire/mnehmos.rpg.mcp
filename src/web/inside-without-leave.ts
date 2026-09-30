@@ -19,7 +19,7 @@
  */
 
 import { getSect } from '../data/cultivation/sects.js';
-import { concealmentHolds } from '../engine/cultivation/regard.js';
+import { aWitnessSeesThrough } from '../engine/cultivation/regard.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { createObligation } from '../engine/social/grudges.js';
 import { whatATrespassCosts } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
@@ -98,11 +98,7 @@ function theyHaveLeave(game: GameService, cultivator: Cultivator, houseId: strin
 export function theOneWhoSeesThem(yourOrdinal: number, witnesses: readonly NpcRecord[]): NpcRecord | null {
     return [...witnesses]
         .sort((a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal || (a.id < b.id ? -1 : 1))
-        .find(npc => !concealmentHolds(yourOrdinal, {
-            concealed: true,
-            presentedAs: Math.max(0, Math.min(npc.cultivation.realmOrdinal, yourOrdinal - 1)),
-            witnessOrdinal: npc.cultivation.realmOrdinal
-        })) ?? null;
+        .find(npc => aWitnessSeesThrough(yourOrdinal, npc.cultivation.realmOrdinal)) ?? null;
 }
 
 /** A line in both channels the player reads. */

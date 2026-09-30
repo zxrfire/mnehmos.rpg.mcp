@@ -60,6 +60,18 @@ export function concealmentHolds(actualOrdinal: number, approach?: Approach): bo
 }
 
 /**
+ * Whether a witness sees somebody at `actualOrdinal` who is keeping out of sight:
+ * the concealment is read against this one witness, passing for their rung or less.
+ */
+export function aWitnessSeesThrough(actualOrdinal: number, witnessOrdinal: number): boolean {
+    return !concealmentHolds(actualOrdinal, {
+        concealed: true,
+        presentedAs: Math.max(0, Math.min(witnessOrdinal, actualOrdinal - 1)),
+        witnessOrdinal
+    });
+}
+
+/**
  * The rung the room believes it is dealing with. Equal to the real one unless
  * a concealment was declared and held.
  */

@@ -108,6 +108,8 @@ export interface WhatYouAskedThemToMake {
      * why `couldFoldARing` answers it and `canRefineGrade` cannot.
      */
     aRing?: boolean;
+    /** Demonic art, worked from bone: `whatItIsMadeOf` reads its recipe. */
+    demonic?: boolean;
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -205,13 +207,14 @@ export function whetherTheirHandsCanDoIt(
     // reason `couldFoldARing` answers it and `canRefineGrade` cannot, and the
     // same reason `whatACommissionComesTo` prices it as a fold.
     if (materialsToHand !== undefined && !ask.aRing) {
-        const short = whatTheBenchIsShortOf(ask.grade, materialsToHand);
+        const demonic = ask.demonic === true;
+        const short = whatTheBenchIsShortOf(ask.grade, materialsToHand, demonic);
         if (short.length > 0) {
             return {
                 theyCan: false,
                 insteadTheyCouldMake,
                 why: whyTheBenchIsShort(
-                    ask.grade, materialsToHand, yours ? 'Your hands' : 'Their hands'
+                    ask.grade, materialsToHand, yours ? 'Your hands' : 'Their hands', demonic
                 ),
                 theBenchIsShortOf: short
             };

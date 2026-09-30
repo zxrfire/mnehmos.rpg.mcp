@@ -35,7 +35,7 @@
  * owes the thing.
  */
 
-import { isAWorkedGrade } from '../data/cultivation/what-an-artifact-is-made-of.js';
+import { isAWorkedGrade, whatItIsMadeOf } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import {
     daysAtTheWork,
@@ -171,7 +171,8 @@ export function placeTheCommission(input: {
         ];
         const took = takeWhatTheRecipeNames({
             db: game.db, objects: world.objects, grade: ask.grade, bench, onDay: today,
-            intoWhat: `the ${ask.named} ${maker.name} is making`
+            intoWhat: `the ${ask.named} ${maker.name} is making`,
+            recipe: whatItIsMadeOf(ask.grade, ask.demonic === true)
         });
         if (took === null) {
             return {
