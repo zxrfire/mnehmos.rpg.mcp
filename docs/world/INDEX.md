@@ -406,7 +406,7 @@ it describes.
 | [`fallen.ts`](../../src/data/cultivation/fallen.ts) | Moved to `cultivators-the-road-finished.ts`. | 11 | - |
 | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | False Immortals: what they do with the time, the office that used to exist, and the two ways they leave the world. | 1189 | - |
 | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | Governance: who holds the water, and on what terms. | 3636 | [`discovery.md`](houses/discovery.md) |
-| [`herbs.ts`](../../src/data/cultivation/herbs.ts) | Spirit herbs - the ingredient layer under alchemy. | 909 | [`the-late-age.md`](history/the-late-age.md) |
+| [`herbs.ts`](../../src/data/cultivation/herbs.ts) | Spirit herbs - the ingredient layer under alchemy. | 903 | [`the-late-age.md`](history/the-late-age.md) |
 | [`hierarchy.ts`](../../src/data/cultivation/hierarchy.ts) | Moved to `governance-and-water-rights.ts`. | 11 | - |
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1614 | - |
 | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 323 | - |
@@ -446,7 +446,7 @@ it describes.
 | [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3966 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
 | [`standoff.ts`](../../src/data/cultivation/standoff.ts) | Moved to `the-top-of-the-world.ts`. Its own first line already said it: the top of the world, and whether it can be moved. | 11 | - |
 | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 436 | - |
-| [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. | 3854 | [`ancient.md`](history/ancient.md) |
+| [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. | 3856 | [`ancient.md`](history/ancient.md) |
 | [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | The ancestors a house still names, and what is actually left of them. | 1241 | - |
 | [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) | The three floors a house admits at - guest, servant, disciple. | 166 | - |
 | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 345 | - |
@@ -736,12 +736,12 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 21 | 35 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 22 | 25 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 23 | 36 |
-| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 23 | 51 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 98 |
+| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 25 | 53 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 96 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 131 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 208 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 211 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 89 | 435 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 116 | 130 |
 
