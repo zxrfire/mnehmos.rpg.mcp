@@ -21,6 +21,7 @@ import {
 import { whatAChangeOfHandsLeaves } from './what-a-change-of-hands-leaves.js';
 import type { ObligationInput } from '../social/grudges.js';
 import { whatIsBehindIt, type WhatIsBehindIt } from './sheltering.js';
+import { whatAHouseIsMadeOf } from './what-a-house-is-made-of-and-what-brings-it-down.js';
 import { ROGUE_HOUSE_FELL, releaseTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
@@ -150,18 +151,39 @@ export function carriedOff(
 }
 
 // ═════════════════════════════════════════════════════════════════════════
-// LOST WITH THE VAULT
+// BEHIND THE WARD
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
- * What a breached hold takes down with it.
+ * The loser's hold split into what the winner can get at and what its ward keeps.
+ *
+ * The hold sits behind the seat's ward, and the ward is read the way a year of
+ * war reads it (`whatAHouseIsMadeOf`), against the reach that year uses. A
+ * winner who could not get into the compound in the field does not walk off
+ * with what is inside it at the peace.
  */
-export function whatABreachedVaultTakesWithIt(
-    vault: ThingUnderForce,
-    force: Pick<ForceApplied, 'ordinal' | 'byName'>,
-    inside: readonly ObjectRecord[]
+function whatTheWardKeeps(
+    state: WorldState,
+    loserId: string,
+    winner: FactionRecord,
+    hold: readonly ObjectRecord[],
+    onDay: number
 ): WhatIsBehindIt<ObjectRecord> {
-    return whatIsBehindIt(vault, force, inside);
+    const seatId = state.factions.find(f => f.id === loserId)?.seatLocationId ?? null;
+    const seat = whatAHouseIsMadeOf(state.objects, seatId, onDay);
+    const ward: ThingUnderForce = {
+        id: seatId ?? loserId,
+        name: seat.formationName ?? 'the hold',
+        power: seat.formationStandsAt,
+        significance: 'significant',
+        tags: [],
+        data: {}
+    };
+    const force: Pick<ForceApplied, 'ordinal' | 'byName'> = {
+        ordinal: Number(winner.resources.power_ordinal ?? 0),
+        byName: winner.name
+    };
+    return whatIsBehindIt(ward, force, hold);
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -185,8 +207,8 @@ export function settleTheSpoils(
     input: SpoilsInput,
     rng: CultivationRNG
 ): ThingChangedHands[] {
-    const hold = whatIsLeftInTheHold(state, input.loser.id);
-    if (hold.length === 0) return [];
+    const everything = whatIsLeftInTheHold(state, input.loser.id);
+    if (everything.length === 0) return [];
 
     const scattering = !input.loser.holdsTogether;
     const survivors = scattering ? livingMembersOf(state, input.loser.id) : [];
@@ -194,6 +216,10 @@ export function settleTheSpoils(
     // back to capture rather than to nothing, because the things are still
     // there and somebody won.
     const canScatter = scattering && survivors.length > 0;
+    // Its own members are already inside the ward, so only capture asks it.
+    const hold = canScatter
+        ? everything
+        : whatTheWardKeeps(state, input.loser.id, input.winner, everything, input.onDay).reached;
 
     const out: ThingChangedHands[] = [];
     for (const object of hold) {

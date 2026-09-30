@@ -10,7 +10,6 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    bestShelterAmong,
     whatGettingPastItTakes,
     whatIsBehindIt
 } from '../../../src/engine/world/sheltering.js';
@@ -149,27 +148,12 @@ describe('the openings, all four of them', () => {
     });
 });
 
-describe('shelters do not stack', () => {
-    it('the best one is what has to be got past, and it is the highest rung', () => {
-        const best = bestShelterAmong([
-            hull(12, { id: 'wall', name: 'a wall' }),
-            hull(29, { id: 'formation', name: 'a formation' }),
-            hull(20, { id: 'hall', name: 'a hall' })
-        ]);
-        expect(best?.id).toBe('formation');
-    });
-
-    it('a used-up thing is not among them, and nor is an unrated one', () => {
-        expect(bestShelterAmong([
-            hull(40, { id: 'gone', name: 'a gone thing', tags: ['ruined'] }),
-            hull(null, { id: 'plain', name: 'a plain door' })
-        ])).toBeNull();
-    });
-
-    it('a broken one is, at the rung worth half of what it was made at', () => {
-        // 38 at half is worth rung 36, which still stands over a whole 30.
+// Shelters do not stack: the seat reads its best ward in `whatAHouseIsMadeOf`,
+// and `what-a-house-is-made-of.test.ts` pins that.
+describe('a broken shelter', () => {
+    it('stands at the rung worth half of what it was made at', () => {
+        // 38 at half is worth rung 36.
         const broken = hull(38, { id: 'broken', name: 'a broken hull', tags: ['broken'] });
-        expect(bestShelterAmong([hull(30), broken])?.id).toBe('broken');
         expect(whatGettingPastItTakes(broken, at(35)).reachesThem).toBe(false);
         expect(whatGettingPastItTakes(broken, at(36)).reachesThem).toBe(true);
     });

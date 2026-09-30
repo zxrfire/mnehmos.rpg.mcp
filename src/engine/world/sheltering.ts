@@ -276,25 +276,3 @@ export function whatIsBehindIt<T>(
         ? { reading, reached: [...behind], kept: [] }
         : { reading, reached: [], kept: [...behind] };
 }
-
-/**
- * The best thing standing between them and it, or null for nothing at all.
- *
- * Highest rung wins and they do not stack, which is the same ruling
- * `bestObjectHeldBy` makes about weapons and for the same reason: summing two
- * would invent a rule. A compound behind a formation behind a wall is sheltered
- * at whichever of the three stands highest, and getting past that one is
- * getting in.
- */
-export function bestShelterAmong(
-    shelters: readonly ThingUnderForce[]
-): ThingUnderForce | null {
-    let best: ThingUnderForce | null = null;
-    for (const s of shelters) {
-        if (s.tags.includes('ruined')) continue;
-        const rung = theRungItShelters(s);
-        if (rung <= 0) continue;
-        if (best === null || rung > theRungItShelters(best)) best = s;
-    }
-    return best;
-}

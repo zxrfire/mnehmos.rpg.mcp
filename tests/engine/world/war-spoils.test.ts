@@ -14,11 +14,11 @@ import {
     holdsTogetherAsFarAsAnybodyKnows,
     settleTheSpoils,
     takenAsSpoils,
-    whatABreachedVaultTakesWithIt,
     whatIsLeftInTheHold
 } from '../../../src/engine/world/war-spoils.js';
 import { isRuined, makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
 import { isBroken } from '../../../src/engine/world/object-damage.js';
+import { raiseFormation } from '../../../src/engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 // A world small enough to reason about: two houses, one hold, some people.
@@ -188,29 +188,53 @@ describe('or the losing side grabs their vault and runs', () => {
     });
 });
 
-describe('what is in a vault is behind the vault', () => {
-    it('a force that cannot get through the vault reaches nothing in it', () => {
+describe('what is in the hold is behind the seat\'s ward', () => {
+    /** A ward over the loser's seat, laid at rung 29 on the day of the settlement. */
+    function wardedAt29(state: WorldState): void {
+        const raised = raiseFormation({
+            id: 'ward-tripod', name: 'the Tripod lock',
+            art: { id: 'art-warding', name: 'The Nine Locks', subjects: ['formation'], requiredOrdinal: 10, cap: 29 },
+            builderId: 'npc-l1', builderName: 'Tripod Elder', builderOrdinal: 29, mastery: 1,
+            stance: 'defensive', locationId: 'loc-kiln', onDay: 500,
+            ownerId: 'loser', ownerName: 'Tripod Clan'
+        });
+        state.objects.push(raised.row!);
+    }
+
+    it('a winner who cannot get past the ward takes nothing out of the hold', () => {
         const state = twoHouses();
-        const vault = {
-            id: 'v', name: 'the Tripod hold', power: 29,
-            significance: 'significant' as const, tags: [], data: {}
-        };
-        const inside = whatIsLeftInTheHold(state, 'loser');
-        const out = whatABreachedVaultTakesWithIt(vault, { ordinal: 22, byName: 'a raid' }, inside);
-        expect(out.reached).toHaveLength(0);
-        expect(out.kept).toHaveLength(2);
+        wardedAt29(state);
+        state.factions[1].resources = { power_ordinal: 22 };
+        const moved = settleTheSpoils(state, {
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
+            winner: state.factions[1], war: 'a war', onDay: 500
+        }, rng());
+        expect(moved).toHaveLength(0);
+        expect(whatIsLeftInTheHold(state, 'loser').map(o => o.id)).toEqual(['obj-relic', 'obj-cinder']);
     });
 
-    it('and a breached one exposes everything that was in it', () => {
+    it('and one who reaches it takes everything that was in it', () => {
         const state = twoHouses();
-        const vault = {
-            id: 'v', name: 'the Tripod hold', power: 29,
-            significance: 'significant' as const, tags: [], data: {}
-        };
-        const inside = whatIsLeftInTheHold(state, 'loser');
-        const out = whatABreachedVaultTakesWithIt(vault, { ordinal: 34, byName: 'a raid' }, inside);
-        expect(out.reached).toHaveLength(2);
-        expect(out.kept).toHaveLength(0);
+        wardedAt29(state);
+        state.factions[1].resources = { power_ordinal: 34 };
+        const moved = settleTheSpoils(state, {
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: true },
+            winner: state.factions[1], war: 'a war', onDay: 500
+        }, rng());
+        expect(moved.map(m => m.objectId).sort()).toEqual(['obj-cinder', 'obj-relic']);
+        expect(moved.every(m => m.fate === 'taken')).toBe(true);
+    });
+
+    it('does not keep the house\'s own people from walking out with it', () => {
+        const state = twoHouses();
+        wardedAt29(state);
+        state.factions[1].resources = { power_ordinal: 22 };
+        const moved = settleTheSpoils(state, {
+            loser: { id: 'loser', name: 'Tripod Clan', holdsTogether: false },
+            winner: state.factions[1], war: 'a war', onDay: 500
+        }, rng());
+        expect(moved).toHaveLength(2);
+        expect(moved.every(m => m.fate === 'carried off')).toBe(true);
     });
 });
 

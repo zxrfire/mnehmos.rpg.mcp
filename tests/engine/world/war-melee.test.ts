@@ -32,6 +32,7 @@ import {
 } from '../../../src/engine/world/war-melee.js';
 import { isRuined, makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
 import { whatThePlaceDidToIt } from '../../../src/engine/world/estate-at-death.js';
+import { whatAHouseIsMadeOf } from '../../../src/engine/world/what-a-house-is-made-of-and-what-brings-it-down.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 /**
@@ -340,6 +341,10 @@ describe('the settlement', () => {
             significance: 'significant', power: 20,
             ownerId: a, ownerName: 'the house', possessorId: a
         }));
+        // The hold is behind a's ward, so a winner has to reach past it. Seeded
+        // here, b does not; see the next test for what that leaves.
+        const winner = state.factions.find(f => f.id === b)!;
+        winner.resources = { ...winner.resources, power_ordinal: 60 };
 
         const did = fightTheWarsThisYear(state, 400, forStream('settle', 'war-melee', 2));
         expect(did.settled).toHaveLength(1);
@@ -349,6 +354,27 @@ describe('the settlement', () => {
         // what the inputs implied.
         expect(did.settled[0].scattered)
             .toBe(did.settled[0].moved.some(m => m.fate === 'carried off'));
+    });
+
+    it('a winner who cannot get past the loser\'s ward takes nothing out of its hold', async () => {
+        const { state, a, b } = await twoHousesAtWar('settle', { dueOnDay: 100 });
+        const broughtA = whatAHouseCanPutOut(state, a).summed;
+        const row = state.schedule.find(e => e.id === 'e-test-war')!;
+        row.data = { ...row.data, musteredA: broughtA * 4 };
+        state.objects.push(makeObject({
+            id: 'obj-a-hold', name: 'the house blade', kind: 'artifact',
+            significance: 'significant', power: 20,
+            ownerId: a, ownerName: 'the house', possessorId: a
+        }));
+        const loser = state.factions.find(f => f.id === a)!;
+        const ward = whatAHouseIsMadeOf(state.objects, loser.seatLocationId, 400).formationStandsAt;
+        expect(ward, 'the seeded seat carries a ward').not.toBeNull();
+        const winner = state.factions.find(f => f.id === b)!;
+        winner.resources = { ...winner.resources, power_ordinal: ward! - 1 };
+
+        const did = fightTheWarsThisYear(state, 400, forStream('settle', 'war-melee', 2));
+        expect(did.settled).toHaveLength(0);
+        expect(state.objects.find(o => o.id === 'obj-a-hold')!.possessorId).toBe(a);
     });
 
     it('a house whose war took everybody it was led by breaks up, and its things go out in arms', async () => {
