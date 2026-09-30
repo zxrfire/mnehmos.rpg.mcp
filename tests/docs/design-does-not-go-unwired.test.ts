@@ -207,7 +207,8 @@ const DEAD = 0;
 // 15 -> 0: fact-backed memories, opportunity windows, surviving the body, a crossing remembered and acting through a proxy reach play.
 // 0 -> 76: the scanner stopped counting a comment that names a function as a reader of it; these were always test-only.
 // 76 -> 58: group w0 wired.
-const TEST_ONLY = 58;
+// 58 -> 42: group w3 wired.
+const TEST_ONLY = 42;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
