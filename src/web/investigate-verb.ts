@@ -21,7 +21,16 @@
 import {
     whatALookAtSomebodyReaches
 } from '../engine/social/what-a-look-at-somebody-reaches.js';
-import { howTheGroundReads } from '../engine/world/what-a-place-still-has-in-the-ground.js';
+import {
+    howTheGroundReads,
+    peopleThisGroundCanCarry,
+    whoWorksEachBand
+} from '../engine/world/what-a-place-still-has-in-the-ground.js';
+import { gradeForOrdinal } from '../data/cultivation/techniques.js';
+import { isBelowTheLid } from '../engine/world/layers.js';
+import type { LocationRecord } from '../engine/world/locations.js';
+import type { WorldState } from '../engine/world/world-state.js';
+import { READS_A_VEIN } from './what-you-can-tell-about-the-ground.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
     MATCH_THRESHOLD,
@@ -418,6 +427,11 @@ export const investigateVerb = {
                 const said = howTheGroundReads(row, day);
                 facts.lines.push(said);
                 facts.prose = `${facts.prose}\n\n${said}`;
+                const carried = howManyThisGroundCarries(this.atHand, row, cultivator.realmOrdinal);
+                if (carried) {
+                    facts.lines.push(carried);
+                    facts.prose = `${facts.prose} ${carried}`;
+                }
 
                 // ── AND WHETHER ANYTHING IS WRONG WITH IT ────────────────
                 //
@@ -526,3 +540,29 @@ export const investigateVerb = {
         return execution;
     }
 };
+
+/**
+ * How many people the ground in this reader's own band carries, and how many work it.
+ *
+ * A surveyor's figure, so it has the vein's gate (`READS_A_VEIN`); below it the
+ * reader has only whether the ground is thinning. Nobody works outside their own
+ * band, so the reader's band is the one said.
+ */
+export function howManyThisGroundCarries(
+    world: WorldState,
+    place: LocationRecord,
+    readerOrdinal: number
+): string | null {
+    if (readerOrdinal < READS_A_VEIN) return null;
+    const grade = gradeForOrdinal(readerOrdinal);
+    const carries = Math.floor(peopleThisGroundCanCarry(place, grade));
+    const working = whoWorksEachBand(world.npcs
+        .filter(npc => npc.status === 'alive' && npc.locationId === place.id && isBelowTheLid(npc))
+        .map(npc => npc.cultivation.realmOrdinal)).get(grade) ?? 0;
+    const work = working === 1 ? '1 person works it' : `${working} people work it`;
+    return carries < 1
+        ? `The ${grade}-grade ground around ${place.name} does not grow back fast enough for even `
+          + `one person working it, and ${work}.`
+        : `The ${grade}-grade ground around ${place.name} grows back for about ${carries} `
+          + `${carries === 1 ? 'person' : 'people'} working it, and ${work}.`;
+}
