@@ -1,3 +1,4 @@
+import { marriageAfterSubmission } from './a-marriage-after-submission.js';
 /**
  * Hitting somebody, and everything the world does about it afterwards.
  */
@@ -1490,6 +1491,10 @@ export const combatVerbs = {
         // AFTER the aftermath, which writes the loser's tie for a submission;
         // the rite's own tie has to land over it, not under it.
         if (theRiteIsAnswered) theyAnswerForTheRite(this, cultivator, theRiteIsAnswered, done);
+        if (held.verb === 'coerce' && held.wanted === 'marry' && result.outcome === 'submission'
+            && result.winnerId !== held.opponent.id) {
+            marriageAfterSubmission(this, run, cultivator, held.party.id, done);
+        }
         return done;
     },
 

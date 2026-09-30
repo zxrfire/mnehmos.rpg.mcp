@@ -245,7 +245,7 @@ export function theFurnaceRiteOnSomebodyWhoYielded(
     const movedTo = Math.min(worldDay, since + row.daysGivenUp);
     const drained = Math.max(0, movedTo - since);
     world.npcs[at] = {
-        ...npc,
+        ...world.npcs[at]!,
         cultivation: { ...npc.cultivation, accumulatingSinceDay: movedTo },
         updatedOnDay: worldDay
     };
@@ -425,6 +425,16 @@ export function theyAnswerForTheRite(
     }
 
     // ── THEIR HOUSE ─────────────────────────────────────────────────────
+    if (house && verdict?.response === 'the_member_is_priced' && world && at >= 0 && !answering.died) {
+        const member = world.npcs[at]!;
+        const rank = Math.max(0, member.factionRankIndex - 1);
+        world.npcs[at] = { ...member, factionRankIndex: rank, updatedOnDay: answering.worldDay };
+        service.repos.sects.setRank(house.id, subject.id, rank);
+        say(execution, member.factionRankIndex > 0
+            ? `${house.name} lowers ${subject.name}'s standing on its roll. It opens no account against you.`
+            : `${subject.name} is already at the bottom of ${house.name}'s roll. The house opens no account against you.`);
+        service.theWorldMoved();
+    }
     if (house && verdict?.houseIsAParty) {
         const severity = severityWithHouse(answering.severity, verdict.severityFloor);
         const record = house.id === own

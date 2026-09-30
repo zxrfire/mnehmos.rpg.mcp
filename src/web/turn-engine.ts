@@ -1,3 +1,7 @@
+import { reviewPlayerBeastContract } from '../engine/world/beast-cultivation-contracts.js';
+import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
+import { aWillingFurnaceRite } from './a-willing-furnace-rite.js';
+import { aBeastCultivationAgreement } from './agreeing-to-share-cultivation-with-a-beast.js';
 /**
  * The game service - phase 2, and the only thing in this package that writes.
  */
@@ -4237,6 +4241,11 @@ export class GameService {
         const actor = crossed?.cultivator ?? cultivator;
         const done = await this.carryOut(action, run, actor, ambient, rawInput);
         reportRuinClosing(this, worldDayBefore, done);
+        if (this.atHand) {
+            const after = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            if (reviewPlayerBeastContract(this.atHand, after.id, this.worldPlaceOf(after), after.realmOrdinal,
+                Math.floor(this.atHand.currentDay))) this.theWorldMoved();
+        }
         if (crossed) {
             done.facts.lines.unshift(crossed.line);
             done.facts.structure.push(crossed.structure);
@@ -4570,6 +4579,19 @@ export class GameService {
             const untilPort = /\b(?:arriv\w*|land\w*|port|dock\w*|ashore|reach\w*|get there|put in)\b/i.test(rawInput);
             return aShipSailsOn(this, run, cultivator, aboard,
                 untilPort ? null : action.days ?? SHORT_ACTION_DAYS, 'waiting');
+        }
+
+        if (this.atHand && reviewPlayerBeastContract(this.atHand, cultivator.id,
+            this.worldPlaceOf(cultivator), cultivator.realmOrdinal, Math.floor(this.atHand.currentDay))) {
+            this.theWorldMoved();
+        }
+        action = cultivationAgreementSaid(rawInput) ?? action;
+        if (action.action === 'cultivate' && (action.intent === 'offered' || action.intent === 'offered_self')) {
+            return aWillingFurnaceRite(this, run, cultivator, action.target ?? '', action.intent === 'offered_self');
+        }
+        if (action.action === 'oath' && (action.intent === 'beast_contract' || action.intent === 'end_beast_contract')) {
+            return aBeastCultivationAgreement(this, run, cultivator, action.target ?? '',
+                Number(action.topic ?? 25) / 100, action.intent === 'end_beast_contract');
         }
 
         switch (action.action) {

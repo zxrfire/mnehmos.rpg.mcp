@@ -248,7 +248,7 @@ export function theFurnaceRiteWorkedOnYou(
     const since = npc.cultivation.accumulatingSinceDay || npc.cultivation.lastAdvancedOnDay;
     const movedTo = Math.round(since - outcome.daysStolen);
     world.npcs[at] = {
-        ...npc,
+        ...world.npcs[at]!,
         cultivation: { ...npc.cultivation, accumulatingSinceDay: movedTo },
         updatedOnDay: worldDay
     };
@@ -272,6 +272,12 @@ export function theFurnaceRiteWorkedOnYou(
             participants: [npc.id, cultivator.id],
             tags: ['furnace', 'coerced', 'institutional']
         }));
+    }
+    if (myHouse && position && outcome.factionVerdict?.response === 'the_member_is_priced' && !row.died) {
+        service.repos.sects.setRank(myHouse.id, cultivator.id, Math.max(0, position.rankIndex - 1));
+        say(execution, position.rankIndex > 0
+            ? `${myHouse.name} lowers your standing on its roll. It opens no account against ${npc.name}.`
+            : `You are already at the bottom of ${myHouse.name}'s roll. The house opens no account against ${npc.name}.`);
     }
     if (!row.died) {
         recordTheTieAnAttemptLeft(service.repos, cultivator.id, npc.id, runDay, {

@@ -140,6 +140,11 @@ and parsing every location in the region. The **origin** is denormalised onto th
 row rather than stored as change index 0, because replaying to a past state needs the
 origin every time and the changes only sometimes.
 
+**A beast's contracted progress belongs on its person.**
+`world_npcs.bonded_cultivation_days` is a real-valued accumulation, defaulting to
+zero on a fresh world. Its oath uses the existing world obligation table; no
+parallel agreement table is maintained.
+
 **Deterministic ids, not UUIDs, for seeded content.** Facts are sequential text (`f7`),
 and so are memories (`m7`), scheduled effects (`e7`) and location changes (`loc-x-c7`).
 Seeding several prior ages writes thousands of rows, and the whole layer has to be

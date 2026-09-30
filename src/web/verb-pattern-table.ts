@@ -1,3 +1,4 @@
+import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
 /**
  * The pattern table: which verb a sentence reaches, with no model running.
  *
@@ -4833,6 +4834,8 @@ function planIntent(input: string): PlannedAction {
     if (possess) return { action: 'possess', target: possess[1] };
     const rebuild = /^(?:i\s+)?(?:reconstruct|rebuild) (?:my body|(.+?)'?s? body)[.!]?$/i.exec(input);
     if (rebuild) return { action: 'reconstruct', ...(rebuild[1] ? { target: rebuild[1] } : {}) };
+    const agreement = cultivationAgreementSaid(input);
+    if (agreement) return agreement;
     const text = input.toLowerCase().trim();
 
     // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────

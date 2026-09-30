@@ -1,3 +1,4 @@
+import { beastQiShare, shareBeastCultivation } from '../engine/world/beast-cultivation-contracts.js';
 /**
  * Sitting down for a long time, and everything that can interrupt it.
  */
@@ -425,8 +426,9 @@ export const seclusionVerbs = {
                 // company out of it, and dividing by what was asked for would
                 // pay a bonus for years nobody sat.
                 ...(options.daoPartner && lived > 0
-                    ? { sharedPracticeBonus: 1 + options.daoPartner.bonusDays / lived }
-                    : {})
+                    ? { sharedPracticeBonus: (1 + options.daoPartner.bonusDays / lived)
+                        * (1 - (this.atHand ? beastQiShare(this.atHand, cultivator.id) : 0)) }
+                    : { sharedPracticeBonus: 1 - (this.atHand ? beastQiShare(this.atHand, cultivator.id) : 0) })
             },
             understanding: this.understandingFor(run, provisioned),
             hostility: ruinHostilityHere(this, provisioned),
@@ -478,6 +480,10 @@ export const seclusionVerbs = {
         });
 
         const applied = applyTimeSkip(this.repos, { before: provisioned, run, skip });
+        if (this.atHand) {
+            shareBeastCultivation(this.atHand, cultivator.id, wall.multiplier > 0 ? skip.simulatedDays : 0);
+            this.theWorldMoved();
+        }
         // Held before the advance, because a crossing inside the stretch happened
         // on the day it happened and not on the day the sitting ended.
         const worldDayAtStart = Math.floor(this.atHand?.currentDay ?? 0);

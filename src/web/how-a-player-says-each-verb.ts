@@ -148,6 +148,8 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
     // witnesses it, or the breaking of one, because those are the only
     // sentences that should.
     oath: [
+        'I make a beast cultivation contract with them sharing 25% of my qi',
+        'I end my beast cultivation contract with them',
         'I swear a dao oath to them',
         'I swear a dao oath before the Vermilion Sigil Terrace',
         'what oaths am I carrying',
@@ -213,6 +215,8 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I tell him he is a disgrace to his house',
     ],
     cultivate: [
+        'I ask them to willingly be my furnace',
+        'I offer myself as a cultivation furnace to them',
         'I sit down and cultivate',
         'I circulate my qi for a while',
         'I spend some months breathing and refining',

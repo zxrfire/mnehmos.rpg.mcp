@@ -79,3 +79,8 @@ The two rules that matter when adding one:
   `agent.repo.ts`, `character.repo.ts`, `inventory.repo.ts`, `npc-memory.repo.ts` and
   `scene.repo.ts` are read once per slice, every invoke. A slow query there is paid on every
   model call.
+
+World NPC `bonded_cultivation_days` stores cultivation received through beast
+agreements as a real number. `world-state.repo.ts` round-trips it with the
+person; the oath and its terms remain in world obligations. Primal essence
+uses the person's existing persistent tags and has no second store.

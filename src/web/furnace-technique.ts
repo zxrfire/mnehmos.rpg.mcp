@@ -27,6 +27,7 @@ import {
     useAFurnaceTechnique
 } from '../engine/social-leverage/an-art-that-needs-two-people.js';
 import type { Sex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
+import { consumePrimalEssence, primalEssenceOf } from '../engine/world/primal-essence.js';
 import {
     BYSTANDERS_AT_MOST,
     appendWorldFact
@@ -118,13 +119,22 @@ export interface FurnaceUseOutcome extends FurnaceUseResult {
 export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome {
     const outcome = useAFurnaceTechnique({
         actor: { personId: input.actorId, name: input.actorName, sex: input.actorSex },
-        subjects: input.subjects,
+        subjects: input.subjects.map(subject => {
+            const person = input.world.npcs.find(row => row.id === subject.personId);
+            return { ...subject, drawnOff: (subject.drawnOff ?? 1)
+                * (person && primalEssenceOf(person) !== null ? 2 : 1) };
+        }),
         onDay: input.onDay,
         type: input.type
     });
 
     if (!outcome.happened) {
         return { ...outcome, groundResponse: 'nothing', groundHolder: null, factionVerdict: null };
+    }
+
+    consumePrimalEssence(input.world, input.actorId, input.onDay);
+    for (const subject of outcome.each.filter(row => row.eligible)) {
+        consumePrimalEssence(input.world, subject.personId, input.onDay);
     }
 
     const watched = (input.watchedBy ?? []).slice(0, BYSTANDERS_AT_MOST);

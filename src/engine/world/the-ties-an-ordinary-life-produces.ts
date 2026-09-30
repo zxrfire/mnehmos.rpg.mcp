@@ -3,6 +3,7 @@
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { consumePrimalEssence } from './primal-essence.js';
 import { DAYS_PER_YEAR, GUIDANCE_FULL_GAP } from '../cultivation/cultivation.js';
 import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import { isBelowTheLid } from './layers.js';
@@ -534,6 +535,8 @@ export function bindHousehold(
 ): void {
     bind(state, at, one.id, other, 'spouse', SPOUSE_STANDING, 'Their household.', began);
     bind(state, at, other.id, one, 'spouse', SPOUSE_STANDING, 'Their household.', began);
+    consumePrimalEssence(state, one.id, began);
+    consumePrimalEssence(state, other.id, began);
 }
 
 /**

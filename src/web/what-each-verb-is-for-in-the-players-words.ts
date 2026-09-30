@@ -259,8 +259,11 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     oath: {
         takes: ['target', 'intent', 'topic'],
-        intents: ['read', 'swear', 'break', 'release', 'serve'],
+        intents: ['read', 'swear', 'break', 'release', 'serve', 'beast_contract', 'end_beast_contract'],
         says: `a word given, carried, served out or not kept, and a claim held or given up.
+            A beast cultivation contract uses intent "beast_contract", target the beast,
+            and topic the percentage of qi shared (default "25"). "end_beast_contract"
+            ends that agreement early and opens its broken-oath account.
             "intent" is "swear", "read", "break", "release" or "serve"; "target" is who it is
             given to, let off or done for; "topic" is what is being sworn or undertaken, in the
             player's own words. Breaking one is permanent and opens an account naming them, so
@@ -332,8 +335,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             should have opened against the player never opening.`
     },
     cultivate: {
-        takes: ['days'],
-        says: `sit and gather qi. "days" (1-\${MAX_CULTIVATION_DAYS}); "ten years" is 3650,
+        takes: ['days', 'target', 'intent'],
+        intents: ['offered', 'offered_self'],
+        says: `sit and gather qi. A target ordinarily names a dao partner.
+            "offered" asks the target to willingly supply a furnace rite;
+            "offered_self" offers the player's own spending half to the target's taking art.
+            Both halves and adults are required. The engine decides the NPC's consent.
+            "days" (1-\${MAX_CULTIVATION_DAYS}); "ten years" is 3650,
             default 30.`
     },
     seclude: {

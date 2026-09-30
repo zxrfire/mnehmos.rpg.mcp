@@ -10,6 +10,18 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+`primal-essence.ts` owns the once-only personal property consumed by household
+binding and furnace rites. An intact subject doubles the first furnace draw;
+marriage consumes it without a cultivation bonus. `willing-rites-between-world-people.ts`
+reaches offered rites in the yearly pass for adults holding both halves.
+
+`beast-cultivation-contracts.ts` holds witnessed agreements in `obligations`.
+The yearly pass forms and ends NPC agreements, transfers the agreed cultivation
+share, and releases an agreement when its ground or major-realm terms expire.
+The player's cultivation path uses the same transfer. Received days are stored
+once on the beast and added to the ordinary beast climb; they remain earned
+after termination. Full terms are in `../../../docs/world/things/beast-contracts.md`.
+
 Manual stall stock is derived on its first read, after the catalogs finish
 loading. Importing world mechanics must not price stock through an unfinished import cycle.
 

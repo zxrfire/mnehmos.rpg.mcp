@@ -1,3 +1,5 @@
+import { offeredRitesThisYear } from './willing-rites-between-world-people.js';
+import { advanceBeastContracts } from './beast-cultivation-contracts.js';
 import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js';
 /**
  * Pressure: the world changing on its own.
@@ -393,9 +395,9 @@ import {
     type WorldState
 } from './world-state.js';
 
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SHAPE
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PressureKind =
     /**
@@ -522,9 +524,9 @@ export interface PressureOptions {
     peopleWalkOutOnTheirOwnAccount?: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // THE PASS
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Advance the world's own affairs across a span.
@@ -541,7 +543,7 @@ export function applyPressure(
     const peopleWalkOut = opts.peopleWalkOutOnTheirOwnAccount ?? true;
     const maxEvents = opts.maxEvents ?? 4000;
 
-    // ── WHICH YEARS THIS SPAN OWNS ───────────────────────────────────────
+    // â”€â”€ WHICH YEARS THIS SPAN OWNS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Each year retains its incident dates and completed appointments across saves.
     const firstYear = Math.floor(fromDay / DAYS_PER_YEAR);
     const lastYear = Math.floor(toDay / DAYS_PER_YEAR);
@@ -729,6 +731,12 @@ export function applyPressure(
         tasks.push({ key: 'road-comprehension', day: year * 365 + 110, run: (onDay: number) => {
             applyRoadsComprehended(state, year, onDay);
         } });
+        tasks.push({ key: 'offered-rites', day: year * 365 + 118, run: (onDay: number) => {
+            offeredRitesThisYear(state, onDay);
+        } });
+        tasks.push({ key: 'beast-contracts', day: year * 365 + 119, run: (onDay: number) => {
+            advanceBeastContracts(state, onDay);
+        } });
         tasks.push({ key: 'advancement', day: year * 365 + 120, run: (onDay: number) => {
             applyAdvancement(state, year, onDay);
         } });
@@ -868,6 +876,7 @@ export function applyPressure(
         resolveRetainedSendings(state, Math.min(yearEndsOn, toDay));
         finishStructuralRecoveries(state, Math.min(yearEndsOn, toDay));
         if (fromDay < yearEndsOn && toDay >= yearEndsOn) yearsStepped++;
+
     }
 
     return { events, yearsStepped, born };
@@ -1162,9 +1171,9 @@ function applyDemography(
     return born;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // FOSTERING
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * How often a birth is one the household will not own.
@@ -1520,7 +1529,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
     for (const at of due) {
         const npc = state.npcs[at];
 
-        // ── A BEAST CLIMBS BY SITTING, AND THAT IS CHEAPER THAN THIS PASS ──
+        // â”€â”€ A BEAST CLIMBS BY SITTING, AND THAT IS CHEAPER THAN THIS PASS â”€â”€
         //
         // Taken before anything below it, because everything below it is the
         // human road and a beast is on none of it: no book, no teacher, no
@@ -1724,7 +1733,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  * Returns null for anybody who is not one of these, which is how the caller
  * tells a beast row from a person without asking twice.
  *
- * ── THE CLIMB IS READ, THE CROSSING IS AN EVENT ─────────────────────────
+ * â”€â”€ THE CLIMB IS READ, THE CROSSING IS AN EVENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  *
  * The rung is a function of the species, the ground and the world's age, so
  * nothing accumulates and a row revisited after eight hundred years is what
@@ -1747,7 +1756,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  * the design owner ruled the lid is the one every NPC has: it fights, and it
  * dies, and what follows from a death is what follows from anybody's.
  *
- * ── ON THE REVIEW THAT ALREADY WALKS THIS ROW, NOT ON THE EVENT TABLE ───
+ * â”€â”€ ON THE REVIEW THAT ALREADY WALKS THIS ROW, NOT ON THE EVENT TABLE â”€â”€â”€
  *
  * The first cut was a `Template` with a weight. It was wrong for a measured
  * reason rather than a stylistic one: rows exist only where somebody has
@@ -1761,7 +1770,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  * So it lives here, inside the branch `applyAdvancement` already takes for
  * these rows, and it costs nothing at all when there are none.
  *
- * ── AND WHO WINS IS PRICED WHERE EVERY OTHER GAP IS ─────────────────────
+ * â”€â”€ AND WHO WINS IS PRICED WHERE EVERY OTHER GAP IS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  *
  * `regardFor` and the two chances a house's sending reads off it. One uniform
  * draw nests the outcomes, because `lostChance` is the square of
@@ -1955,7 +1964,7 @@ function aBeastGoesOnSitting(state: WorldState, at: number, day: number): boolea
         worldSeed: state.seed,
         onAVein: here ? here.qiDensity >= 60 : false,
         bornOnDay: npc.identity.bornOnDay,
-        day,
+        day: day + (npc.cultivation.bondedCultivationDays ?? 0),
         standingAt: was
     });
     if (now <= was) return false;
@@ -2158,7 +2167,7 @@ function applyAreaStatuses(state: WorldState, year: number, day: number): AreaSt
         if (overrun) endedToday.set(key, day);
     }
 
-    // ── AND WHAT HAS JUST BECOME TRUE ──
+    // â”€â”€ AND WHAT HAS JUST BECOME TRUE â”€â”€
     for (const [key, candidate] of proposed) {
         const lastEnded = endedToday.get(key);
         if (lastEnded !== undefined && day - lastEnded < candidate.quietForDaysAfter) continue;
@@ -3103,7 +3112,7 @@ function applySendings(
 
         if (!rng.chance(SENDINGS_PER_HOUSE_YEAR)) continue;
 
-        // ── WHAT THE PURSE SAYS, WHICH IS A REASON THIS HOUSE HAS ────────
+        // â”€â”€ WHAT THE PURSE SAYS, WHICH IS A REASON THIS HOUSE HAS â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // The yearly economy has already run and has already clamped this
         // house's purse at whatever it could pay, so both terms are this year's.
@@ -3161,7 +3170,7 @@ function applySendings(
         // story.
         const middle = [...spare.free].sort((a, b) => a.ordinal - b.ordinal)[Math.floor(spare.free.length / 2)]?.ordinal ?? 0;
 
-        // ── WHERE THEY GO, AND IT IS DECIDED BEFORE THE POSTING IS WRITTEN ───
+        // â”€â”€ WHERE THEY GO, AND IT IS DECIDED BEFORE THE POSTING IS WRITTEN â”€â”€â”€
         //
         // The party stands there until the term is up. Before this a sending was
         // resolved without anybody moving: measured, 74 of 76 NPCs who survived
@@ -3256,7 +3265,7 @@ function applySendings(
                     state.locations.find(l => l.id === named.locationId)?.thresholds.mastery ?? 0
                 ),
             locationId: goingTo ?? faction.seatLocationId,
-            // ── WHAT THEY WENT ON, AND WHAT THE CHEST WILL COVER ─────────
+            // â”€â”€ WHAT THEY WENT ON, AND WHAT THE CHEST WILL COVER â”€â”€â”€â”€â”€â”€â”€â”€â”€
             //
             // Not "the best thing in the yard" any more, which was a grade
             // order read off a list and knew nothing about the road or the
@@ -3340,7 +3349,7 @@ function applySendings(
             reachedPastItsWeight = true;
         }
 
-        // ── WHEN THE ERRAND HAPPENED ─────────────────────────────────────
+        // â”€â”€ WHEN THE ERRAND HAPPENED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // This pass reports on a year, and an errand whose term fits inside it
         // is one that happened during it. Before this the party left on the day
@@ -3490,7 +3499,7 @@ function settleSending(state: WorldState, input: {
         creditWhatCameBack(state, faction, partyOrdinal(party), party.length, sending.returnsOnDay);
     }
 
-    // ── AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT ────
+    // â”€â”€ AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT â”€â”€â”€â”€
     //
     // RUINS YIELD MANUALS, which the setting has asserted in as many words
     // since it was written and which no pass performed: `applyRoadsComprehended`
@@ -4861,7 +4870,7 @@ function applyFactionEconomy(state: WorldState): void {
         }
         const members = roll.length;
         const veins = faction.resources.veins ?? 0;
-        // ── WHAT A HOUSE WITH NO VEIN LIVES ON ──────────────────────────
+        // â”€â”€ WHAT A HOUSE WITH NO VEIN LIVES ON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // The vein term was the only one that varied, and it did not: every
         // faction was seeded with one vein and a `production` of 0.5, so the
@@ -4876,7 +4885,7 @@ function applyFactionEconomy(state: WorldState): void {
         // same rung the ground term scales by. Nothing states what a house
         // sells; what it can put in front of somebody is stated.
         const share = whatItCanPutOnTheGround(Number(faction.resources.reliable_ordinal ?? 0));
-        // ── AND WHAT IT TAKES AT A GATE ─────────────────────────────────
+        // â”€â”€ AND WHAT IT TAKES AT A GATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // The third term, and for most of this catalog it is the only one that
         // is not zero. A fee at a gate, a toll at a ford, a cut of what crosses
@@ -4888,7 +4897,7 @@ function applyFactionEconomy(state: WorldState): void {
         // Deliberately NOT scaled by `share`, unlike the two terms beside it.
         // What passes a gate is what passes a gate.
         const levy = Number(faction.resources.levy_per_year ?? 0);
-        // ── AND WHAT IT TAKES OFF THE TOWNS IT GOVERNS ──────────────────
+        // â”€â”€ AND WHAT IT TAKES OFF THE TOWNS IT GOVERNS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // The fourth term, and the one the levy work left behind: a house that
         // administers a city took from it exactly what a house that
@@ -4909,9 +4918,9 @@ function applyFactionEconomy(state: WorldState): void {
         faction.resources.spirit_stones = Math.max(0, Math.round(before + income - upkeep));
         faction.resources.members = members;
 
-        // ═══════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // AND SOMEBODY RECEIVES THE PAYROLL
-        // ═══════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //
         // This charged `members * 45` a year and credited NOBODY, so the wages
         // of every house in the world left it. `NpcRecord.spiritStones` was
@@ -4980,9 +4989,9 @@ export interface Template {
     apply(state: WorldState, day: number, rng: CultivationRNG): PressureEvent | null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // HELPERS
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function liveFactions(state: WorldState): FactionRecord[] {
     return state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f));
@@ -5098,7 +5107,7 @@ function applyLastCrossing(
 /**
  * The people a conclave chose walk through the door it chose them for.
  *
- * ── WHAT WAS DECIDED AND THEN DROPPED ────────────────────────────────────
+ * â”€â”€ WHAT WAS DECIDED AND THEN DROPPED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  *
  * `applyDoorsAndTheirPlaces` runs the whole allocation: the holder deals the
  * places it has, each house that got any ranks its own people for them,
@@ -5112,7 +5121,7 @@ function applyLastCrossing(
  * nobody was at risk, nothing came out, and the place at the door that the
  * grudge is ABOUT was worth nothing to the person who won it.
  *
- * ── AND THE PARTY IS THE CONCLAVE'S, NOT THE ROSTER'S ────────────────────
+ * â”€â”€ AND THE PARTY IS THE CONCLAVE'S, NOT THE ROSTER'S â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  *
  * `whoTheHouseCanSend` is not asked here and that is the whole point. It takes
  * the strongest names off the roll, which is the right answer for an errand the
@@ -5779,11 +5788,11 @@ function clamp(n: number, lo: number, hi: number): number {
     return Math.max(lo, Math.min(hi, n));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // THE TABLE
 // Weights are relative. Ordinary institutional churn is common; a faction
 // ending is rare; a region turning forbidden is rarer still.
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Exported for a test that has to fire one on a world it arranged, or read the
@@ -5943,10 +5952,10 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── A rival seizes a vein. The single most consequential thing that can
+    // â”€â”€ A rival seizes a vein. The single most consequential thing that can
     //    happen to a sect, because the vein is its whole ability to produce
     //    cultivators. The other ways a vein changes hands are in
-    //    `a-vein-is-taken-given-up-or-granted.ts`. ─────────────────────
+    //    `a-vein-is-taken-given-up-or-granted.ts`. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'vein_lost',
         weight: 12,
@@ -6029,7 +6038,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── Somebody who mattered locally is gone. ───────────────────────────
+    // â”€â”€ Somebody who mattered locally is gone. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'elder_died',
         weight: 16,
@@ -6142,7 +6151,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
     // people with a reason act on it in their own pass. See
     // `why-one-cultivator-kills-another.ts`.
 
-    // ── Someone else got there first. ────────────────────────────────────
+    // â”€â”€ Someone else got there first. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'ruin_opened',
         weight: 8,
@@ -6257,7 +6266,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
                 });
             }
 
-            // ── AND RUINS YIELD MANUALS ──────────────────────────────────
+            // â”€â”€ AND RUINS YIELD MANUALS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             //
             // Every other branch used to hand the opener `recovered-${ruin.id}`
             // - an id in no catalog, which `getTechnique` returns undefined for,
@@ -6347,7 +6356,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── A window closed with somebody else standing in it. ───────────────
+    // â”€â”€ A window closed with somebody else standing in it. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'opportunity_taken',
         weight: 9,
@@ -6386,8 +6395,8 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── A border moves, which mostly means a market town changes who it
-    //    pays. ─────────────────────────────────────────────────────────────
+    // â”€â”€ A border moves, which mostly means a market town changes who it
+    //    pays. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'border_moved',
         weight: 7,
@@ -6453,7 +6462,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── Somebody found out how far the zone actually runs. ───────────────
+    // â”€â”€ Somebody found out how far the zone actually runs. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'deference_tested',
         weight: 6,
@@ -6504,7 +6513,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── An institution stops existing. ───────────────────────────────────
+    // â”€â”€ An institution stops existing. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'faction_fell',
         weight: 3,
@@ -6611,7 +6620,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── A splinter. Institutions do not only die; they divide. ───────────
+    // â”€â”€ A splinter. Institutions do not only die; they divide. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'faction_founded',
         weight: 3,
@@ -6713,7 +6722,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── The last person who could do a thing is gone. ────────────────────
+    // â”€â”€ The last person who could do a thing is gone. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     //
     // WHY THE POOL IS THE RULE RATHER THAN A TEST AFTER IT. This drew a holder
     // from everybody carrying any art at all, then threw the draw away unless
@@ -6831,7 +6840,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── Prices move, which is how most people experience politics. ───────
+    // â”€â”€ Prices move, which is how most people experience politics. â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'market_shifted',
         weight: 10,
@@ -6881,8 +6890,8 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── A war opens now and settles later. The world generating its own
-    //    future, which is what a schedule is for. ────────────────────────
+    // â”€â”€ A war opens now and settles later. The world generating its own
+    //    future, which is what a schedule is for. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'war_opened',
         weight: 5,
@@ -6904,7 +6913,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
                 kind: 'war_resolves',
                 dueOnDay: day + resolvesIn,
                 summary: `The war between the ${houseName(a.name)} and the ${houseName(b.name)} came to an end.`,
-                // ── A WAR IS FOUGHT OVER GROUND, AND THIS WAS NULL ───────
+                // â”€â”€ A WAR IS FOUGHT OVER GROUND, AND THIS WAS NULL â”€â”€â”€â”€â”€â”€â”€
                 //
                 // `advanceTime` fires this effect and writes the fact for it at
                 // the effect's own location, and `InterruptPolicy.locationIds`
@@ -6964,7 +6973,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── Ground stops being usable. Rare, permanent, and it makes geography.
+    // â”€â”€ Ground stops being usable. Rare, permanent, and it makes geography.
     {
         kind: 'zone_forbidden',
         weight: 2,
@@ -7023,7 +7032,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── Something comes off the ground and into a town. ─────────────────
+    // â”€â”€ Something comes off the ground and into a town. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'beast_came_down',
         weight: 10,
@@ -7140,7 +7149,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── People leave. ───────────────────────────────────────────────────
+    // â”€â”€ People leave. â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         kind: 'migration',
         weight: 8,
@@ -7180,7 +7189,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         }
     },
 
-    // ── Somebody is simply not there any more, and nothing is resolved.
+    // â”€â”€ Somebody is simply not there any more, and nothing is resolved.
     {
         kind: 'disappearance',
         weight: 6,

@@ -1,4 +1,5 @@
 import { settleItWithABinding, whatWouldCloseIt } from '../engine/social-leverage/what-would-settle-an-account-this-heavy.js';
+import { bindHousehold } from '../engine/world/the-ties-an-ordinary-life-produces.js';
 /**
  * A match, a refusal, and a child - what each does to two houses.
  */
@@ -554,6 +555,15 @@ export const matchVerbs = {
                 `It stands. ${party.name} and ${cultivator.name} are a household, and everybody `
                 + 'who deals with either of them now reads that.'
             );
+            if (this.atHand) {
+                const one = this.atHand.npcs.find(row => row.id === cultivator.id);
+                const other = this.atHand.npcs.find(row => row.id === party.id);
+                if (one && other) {
+                    bindHousehold(this.atHand, new Map(this.atHand.npcs.map((row, index) => [row.id, index])),
+                        one, other, Math.floor(this.atHand.currentDay));
+                    this.theWorldMoved();
+                }
+            }
             if (changed.rolls.length > 0) {
                 lines.push(
                     'And a roll moves: ' + changed.rolls

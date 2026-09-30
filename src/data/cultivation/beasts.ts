@@ -3712,17 +3712,15 @@ export const BEAST_TIDES: readonly BeastTide[] = [
 /**
  * What a contract with a beast actually is.
  *
- * Only something past the change can enter one, which puts a floor of Core
- * Formation under the other party and means the cultivator is very rarely the
- * senior partner. The beast is not being recruited. It is agreeing to
+ * Only a beast past the change can enter one. The beast is agreeing to
  * something, for reasons of its own, at a price it named.
  *
  * The cost is the interesting half and it comes straight out of `qi.md`: a
  * bonded beast is a second draw on whatever ground the cultivator holds. Two
  * parties cultivating off one vein progress more slowly than one, and the
  * contract does not exempt anybody from that arithmetic. A cultivator with a
- * contract is measurably slower than the same cultivator without one, forever,
- * and takes it anyway because of what the other party can do.
+ * contract is measurably slower while the terms hold, and takes it anyway
+ * because of what the other party can do.
  */
 export const THE_CONTRACT = {
     whatItIsNot: [
@@ -3736,24 +3734,24 @@ export const THE_CONTRACT = {
         'The human party can read a manual aloud, examine a seal or carry a message for the beast.'
     ],
     whatTheCultivatorGives: [
-        'The cultivator grants a permanent share of their own draw; both parties cultivate from the same ground.',
+        'The cultivator grants an agreed share of their own draw on stated ground until either party outgrows the agreed realm.',
         'The cultivator takes an enforceable obligation to the beast.',
-        'The cultivator pays a witness fee to the house recording the contract.'
+        'A third person present witnesses the cultivation oath.'
     ],
     witnessing:
-        'A beast contract has two parties. A witnessing house records the terms and holds the penalty clause.',
+        'A cultivation contract has two parties and a local witness. Leaving early opens a serious broken-oath account held by the other party.',
     whyItIsRare:
         'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Tribulation, which is nearly all of them - the other party has to be one of a handful of things in the world.',
     howItBreaks: [
-        'the beast keeps cultivating and outgrows the terms, which it will, because it never stops',
+        'either party enters a major realm above the higher party\'s realm at signing',
         'the cultivator loses the ground the contract was about, at which point there is nothing to share and nothing to hold',
-        'a sect treats the beast as an asset rather than a party, once, in writing'
+        'either party ends the agreement before its terms expire'
     ],
     whatItIsWorth:
         'A party who does not sleep, does not need feeding, cannot be audited, cannot be subpoenaed by a Dao house, and reads ground better than any surveyor. And a permanent tax on the cultivator\'s own progress for as long as it holds.'
 } as const;
 
-// Remaining contract mechanics: docs/world/things/beast-contracts.md.
+// Cultivation terms and live mechanics: docs/world/things/beast-contracts.md.
 // ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────

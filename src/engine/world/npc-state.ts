@@ -497,6 +497,8 @@ export interface NpcCultivation {
      * Absolute day their current stock of progress started building.
      */
     accumulatingSinceDay: number;
+    /** Extra cultivation received through a witnessed beast agreement. */
+    bondedCultivationDays?: number;
 }
 
 /** Service a house counts, held against the one house that counts it. */

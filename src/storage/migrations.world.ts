@@ -334,6 +334,7 @@ export function migrateWorld(db: Database.Database): void {
       lifespan_ends_on_day INTEGER NOT NULL,         -- a stored date, so time advance is one pass
       last_advanced_on_day INTEGER NOT NULL DEFAULT 0,   -- the settling clock
       accumulating_since_day INTEGER NOT NULL DEFAULT 0, -- the progress clock; 0 reads as the above
+      bonded_cultivation_days REAL NOT NULL DEFAULT 0, -- qi received through beast agreements
       -- What is standing in the body, and the day it was last true. The MAXIMUM
       -- is not stored: maxHpForOrdinal derives it from might and the rung, so a
       -- cached one could disagree with the ordinal on this row. -1 means the

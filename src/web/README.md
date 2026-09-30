@@ -2,6 +2,18 @@
 
 # The Web Front Door
 
+Willing furnace requests use `a-willing-furnace-rite.ts`: both adult arts and
+NPC consent are required, in either direction. Forced marriage after submission
+writes the household through the same world binding as an accepted match.
+Successful rites and marriages consume the person's primal essence record.
+A demonic house lowers a surviving furnace victim by one rank, including the
+player as victim, instead of opening an institutional revenge account.
+
+Beast agreements use `agreeing-to-share-cultivation-with-a-beast.ts`, with a
+local witness and an explicit qi share. `seclusion-verbs.ts` reduces the player's
+draw and credits only the cultivated span actually lived. Its oath, termination
+and persistent beast progress are governed by `../engine/world/beast-cultivation-contracts.ts`.
+
 ADMIN free-text encounter traits are read by `admin-spawn-spec.ts`, through the
 configured narrator's provider and model. Its strict JSON schema accepts requested
 facts only; the spawn handler validates the body, species, house and rung before
