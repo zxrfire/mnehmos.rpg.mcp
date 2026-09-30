@@ -197,7 +197,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | an NPC the player knows ascends, or an immortal descends into the player's world | [`climbing/immortals.md`](climbing/immortals.md#characters-cross-the-boundary) | Characters cross the boundary (tier 2) |
 | an NPC's goal, deadline, or obstacle is in play, or somebody dies with an unfinished aim | [`houses/people.md`](houses/people.md#goals-persist-and-outlive-their-holder) | Goals persist, and outlive their holder (tier 2) |
 | an NPC's motives, allegiance, or willingness to do something ugly is in question | [`houses/people.md`](houses/people.md#morality-is-contextual) | Morality is contextual (tier 2) |
-| an object changes hands, is bought, sold, copied, spent, hidden, or refused | [`things/items.md`](things/items.md#immortal-medicine-storage-gap) | Immortal medicine storage gap (tier 2) |
+| an object changes hands, is bought, sold, copied, spent, hidden, or refused | [`things/items.md`](things/items.md#immortal-medicine-is-held-individually) | Immortal medicine is held individually (tier 2) |
 | an object changes hands, is bought, sold, copied, spent, hidden, or refused; or somebody asks what a thing is worth or how many exist | [`things/items.md`](things/items.md#top-of-file) | (top of file) (tier 2) |
 | an object is created, stored, or transferred, and the question is how many there are | [`things/items.md`](things/items.md#does-it-have-a-history) | Does it have a history (tier 2) |
 | an object is singular, and the question is whether it deserves its own row | [`things/items.md`](things/items.md#one-thing-with-a-history) | One thing with a history (tier 2) |
@@ -379,7 +379,7 @@ other.
 
 <!-- BEGIN GENERATED: catalog -->
 
-**76 catalog files, 13 of which name a doc.**
+**76 catalog files, 12 of which name a doc.**
 These are `.ts` files and no search of `docs/` reaches them. Where the
 "Also in" column is empty, this file is the only written record of what
 it describes.
@@ -410,7 +410,7 @@ it describes.
 | [`hierarchy.ts`](../../src/data/cultivation/hierarchy.ts) | Moved to `governance-and-water-rights.ts`. | 11 | - |
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1614 | - |
 | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 323 | - |
-| [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | Things that came down from above. | 735 | [`items.md`](things/items.md) |
+| [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | Things that came down from above. | 735 | - |
 | [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 612 | - |
 | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3018 | [`closed-ground.md`](places/closed-ground.md) |
 | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | Bodies that will hold a thing for somebody who is not coming back, and the terms each of them holds it on. | 327 | - |
@@ -589,7 +589,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DEATHS_AVAILABLE` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | 2 | 8 |
 | `RUIN_NAMES` | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | 2 | 10 |
 | `STOCKED_INHERITANCES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 10 |
-| `RECEIPT_HISTORIES` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 2 | 12 |
 | `THE_RUIN_MEDICINE` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 2 | 12 |
 | `SEALED_ANCESTOR_PATTERN` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 2 | 13 |
 | `TIER_NAMES` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 2 | 13 |
@@ -656,6 +655,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SCAR_NAMES` | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | 4 | 10 |
 | `HIGH_REALM_PROVENANCE` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | 4 | 12 |
 | `WHAT_GIVES_A_CHANGED_BEAST_AWAY` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 4 | 12 |
+| `RECEIPT_HISTORIES` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 4 | 14 |
 | `TRADITION_WAR` | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | 4 | 14 |
 | `PROVINCES` | [`regions/provinces.ts`](../../src/data/cultivation/regions/provinces.ts) | 4 | 15 |
 | `THE_CONTRACT` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 4 | 17 |
@@ -674,7 +674,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WHAT_SCALE_DECIDES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 5 | 7 |
 | `HELD_QUESTIONS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 5 | 8 |
 | `HALFWATER_TERMS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 5 | 11 |
-| `IMMORTAL_HOLDINGS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 5 | 11 |
 | `LID_THEORIES` | [`history.ts`](../../src/data/cultivation/history.ts) | 5 | 13 |
 | `ARCHIVE_COPIES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 5 | 14 |
 | `WHAT_AN_ARTIFACT_IS_MADE_OF` | [`what-an-artifact-is-made-of.ts`](../../src/data/cultivation/what-an-artifact-is-made-of.ts) | 5 | 22 |
@@ -687,6 +686,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_THRESHING_HALL` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 6 | 9 |
 | `TRADITIONS` | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | 6 | 10 |
 | `BEAST_TIDES` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 6 | 11 |
+| `IMMORTAL_HOLDINGS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 6 | 11 |
 | `ORIGIN_ACCOUNTS` | [`history.ts`](../../src/data/cultivation/history.ts) | 6 | 11 |
 | `THE_CALENDAR_OFFSET` | [`history.ts`](../../src/data/cultivation/history.ts) | 6 | 11 |
 | `PREFECTURES` | [`regions/prefectures.ts`](../../src/data/cultivation/regions/prefectures.ts) | 6 | 16 |
@@ -723,27 +723,27 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 13 | 7 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 13 | 10 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
-| `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 49 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 15 | 2 |
 | `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 18 |
 | `AGES` | [`history.ts`](../../src/data/cultivation/history.ts) | 15 | 60 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 15 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 16 | 23 |
+| `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 16 | 53 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 35 |
 | `BEAST_MATERIALS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 18 | 23 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 18 | 47 |
 | `THE_COMMUNICATION_TALISMAN` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 19 | 4 |
 | `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 20 | 35 |
-| `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 45 |
+| `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 48 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 126 |
-| `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 22 | 25 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 23 | 38 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 98 |
+| `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 25 | 25 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 25 | 53 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 96 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 131 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 213 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 219 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 96 | 439 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 114 | 135 |
 
