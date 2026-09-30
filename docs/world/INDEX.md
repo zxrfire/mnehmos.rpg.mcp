@@ -472,7 +472,7 @@ it describes.
 <!-- BEGIN GENERATED: design-constants -->
 
 **273 design constants in the catalog. 22 are read by nothing at all,
-and 92 more are read only by a test.**
+and 91 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -567,7 +567,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DRIVEN_GROUND_AND_THE_NODE` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 9 |
 | `THE_OFFER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 9 |
 | `THE_THRESHING_HALL` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 9 |
-| `HALFWATER_TERMS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | **nothing** | 10 |
 | `RECEIPT_HISTORIES` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 10 |
 | `SEALING_LAW` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 10 |
 | `THE_DECAY_OF_MEMORY` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 10 |
@@ -685,6 +684,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `IMMORTAL_ANCESTORS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 5 | 6 |
 | `UNBACKED` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 5 | 6 |
 | `HELD_QUESTIONS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | 5 | 8 |
+| `HALFWATER_TERMS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 5 | 11 |
 | `IMMORTAL_HOLDINGS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 5 | 11 |
 | `LID_THEORIES` | [`history.ts`](../../src/data/cultivation/history.ts) | 5 | 13 |
 | `ARCHIVE_COPIES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 5 | 14 |
@@ -751,7 +751,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 96 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 33 | 130 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 201 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 204 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 90 | 438 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 116 | 130 |
 

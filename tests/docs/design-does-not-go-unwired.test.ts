@@ -196,7 +196,12 @@ const DEAD = 0;
 // booking moved to tests/support; the pressure-table and tie wrappers went
 // where the tests read the table. Counting names a move surfaced, the rest are
 // named with their reason in the commit that lowered this.
-const TEST_ONLY = 60;
+// 60 -> 52: the data and place reads. Wired: learningCostMultiplier (practice off a page),
+// canTellApart (asking about a book), localCeilingFor (asking around), HALFWATER_TERMS
+// (asking about the port), peopleThisGroundCanCarry (investigating a place). Deleted as
+// superseded: placementsAWordWouldOpen, bestShelterAmong, whatABreachedVaultTakesWithIt
+// (the war settlement now asks the seat's ward through whatIsBehindIt).
+const TEST_ONLY = 52;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
