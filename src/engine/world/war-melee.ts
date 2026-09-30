@@ -73,6 +73,8 @@ export interface HowAHouseIsFaring {
     againstId: string;
     againstName: string;
     openedOnDay: number;
+    /** The day the war is booked to be settled. */
+    endsOnDay: number;
     /**
      * Everybody alive under the banner, priced and added up, on the day the war
      * opened. Null for a war opened before anything measured one.
@@ -138,6 +140,7 @@ function faringFor(state: WorldState, war: LiveWar): { a: HowAHouseIsFaring; b: 
         againstId: other.id,
         againstName: other.name,
         openedOnDay: war.openedOnDay,
+        endsOnDay: war.dueOnDay,
         mustered,
         muster,
         spent,

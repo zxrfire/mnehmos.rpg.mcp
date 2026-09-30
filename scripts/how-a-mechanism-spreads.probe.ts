@@ -86,6 +86,12 @@
  *               enough to contest, and the pass runs on that pair for ever. Say
  *               which catalog any figure came from, or the two will be argued
  *               against each other.
+ *
+ *               NO LONGER IN THE TREE: `vein_lost` now needs a rival stronger
+ *               than the holder, and four other ways move a vein
+ *               (`a-vein-is-taken-sold-given-up-or-claimed.ts`), so the pair
+ *               lock is gone. Test a change to this instrument on a known
+ *               answer that still exists.
  *   SILENT      `overdue` and `technique_lost` must come back having emitted
  *               nothing. Measured over 1,000 years across two seeds by the
  *               event-kind walk.

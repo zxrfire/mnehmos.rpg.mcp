@@ -12,6 +12,10 @@
  *   abandoned   a house stops holding it and control goes to nobody
  *   the grant   a patron does not renew, and takes it back
  *
+ * And the yearly pass in `a-vein-is-taken-sold-given-up-or-claimed.ts`, whose
+ * rows read `conquered` (taken in a war), `other` (sold), `abandoned` (given
+ * up) and `settled` (claimed); its facts carry `howAVeinChangedHands`.
+ *
  * `governance-and-water-rights.ts` states the principle they share: an apex's
  * power is measured *"because a grant is only worth something if the granter can
  * take it back: authority over a vein has to be enforceable, or it is a letter."*

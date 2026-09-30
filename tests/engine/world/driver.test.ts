@@ -156,67 +156,26 @@ describe('pressure: the world changes on its own', () => {
 
     it('writes real state, not just a line of prose', () => {
         const state = world('drv-state');
-        const veinsBefore = state.locations
+        const holders = (): Map<string, string | null> => new Map(state.locations
             .filter(l => l.kind === 'vein')
-            .map(l => `${l.id}:${l.controllingFactionId}`)
-            .join('|');
+            .map(l => [l.id, l.controllingFactionId]));
+        const before = holders();
         const out = applyPressure(state, state.currentDay, state.currentDay + 120 * YEAR);
 
-        const veinEvents = out.events.filter(e => e.kind === 'vein_lost');
-        expect(veinEvents.length).toBeGreaterThan(0);
-        const veinsAfter = state.locations
-            .filter(l => l.kind === 'vein')
-            .map(l => `${l.id}:${l.controllingFactionId}`)
-            .join('|');
-        // ── LEFT RED ON PURPOSE. THE TEST IS IMPRECISE AND THE WORLD IS
-        //    WRONG, AND FIXING THE TEST FIRST WOULD BURY THE WORLD ─────────
-        //
-        // This compares ENDPOINTS, so an even number of swaps reads as nothing
-        // having happened. That is a real weakness and it is not why this is
-        // red. Measured 23 September, stepping the same span one year at a time
-        // and logging every `vein_lost` with the controller either side of it:
-        //
-        //     120 events in 120 years. 120 of them moved a vein. 0 were no-ops.
-        //     ALL 120 were the same vein, loc-region-low-fall-vein, alternating
-        //     sect-azure-cloud -> sect-crimson-abyss -> sect-azure-cloud, every
-        //     year, without a single year off.
-        //     The other two veins never changed hands at all.
-        //     Net after 120 years: every vein exactly where it started.
-        //
-        // So the most consequential thing that can happen to a sect happens
-        // annually to one vein between one pair of houses, forever, while the
-        // rest of the world's veins are inert. `rivalsOf` requires standing at
-        // or below -0.3, so only a pair that already hate each other can ever
-        // transact - and every transfer calls `adjustStandingBetween(loser,
-        // winner, -0.3)`, which deepens exactly the hostility that selected
-        // them. The mechanism feeds itself.
-        //
-        // That is the never-fires class inverted: not a pass that never runs,
-        // but one that runs on a single edge every time and on nothing else.
-        //
-        // The assertion stays as it is until that is ruled on, because a
-        // per-event comparison would go green tomorrow and take the finding
-        // with it. See the plan, "Left red and named".
-        //
-        // ── AND THE MEASUREMENT HAS MOVED, WHICH IS WHY IT IS RECORDED
-        //    BESIDE THE OLD ONE RATHER THAN OVER IT ────────────────────────
-        //
-        // Re-measured on the same seed and the same span, after the seeding
-        // pass stopped standing people up past the end of their own spans:
-        //
-        //     7 events in 120 years, not 120.
-        //     Across TWO veins - low-fall four times, scarwater three - not one.
-        //     The third still never changes hands.
-        //     Net after 120 years: still every vein where it started, because
-        //     four swaps and a three-cycle both come home.
-        //
-        // So the annual lock between one pair is gone and the endpoint
-        // comparison is still even, which is the test's own imprecision rather
-        // than the world's. The rest of the finding stands: a vein moves only
-        // between houses that already hate each other, every transfer deepens
-        // exactly that hostility, and one of the three is inert. Whoever rules
-        // on it should rule on these numbers.
-        expect(veinsAfter).not.toBe(veinsBefore);
+        // A vein changes hands five ways: a stronger rival seizes it
+        // (`vein_lost`), or it is taken in a war, sold, given up or claimed
+        // (`a-vein-is-taken-sold-given-up-or-claimed.ts`). While the seizure
+        // was the only way, one hostile pair traded one vein back and forth
+        // and every vein was back with its first holder at year 120.
+        const ways = ['vein_lost', 'vein_taken_in_war', 'vein_sold', 'vein_given_up', 'vein_claimed'];
+        const transfers = out.events.filter(e => ways.includes(e.kind));
+        expect(new Set(transfers.map(e => e.kind)).size).toBeGreaterThanOrEqual(2);
+        for (const transfer of transfers) {
+            expect(transfer.fact.factionIds.length).toBeGreaterThan(0);
+            expect(transfer.fact.locationId).not.toBeNull();
+        }
+        const after = holders();
+        expect([...before].some(([id, holder]) => after.has(id) && after.get(id) !== holder)).toBe(true);
 
         // Every event names something it actually moved, and every fact it
         // wrote is in the ledger.

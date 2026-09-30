@@ -877,6 +877,33 @@ Change also transforms existing relationships. Two sect brothers whose sect is d
 may spend the next ten years each believing the other abandoned them - both alive, both
 advanced, both now in different factions, the old event still load-bearing.
 
+### A vein changes hands five ways
+
+A stronger rival seizes it (`vein_lost`, a pressure template). The other four are one yearly
+pass, `a-vein-is-taken-sold-given-up-or-claimed.ts`, read off the purse, the year's wars and
+who can work the ground: a house losing a war loses it to the house it fought, a short holder
+sells it to a rich house on terms with it, a broke holder that cannot work it (or has ended)
+gives it up, and a vein given up lies empty for five years before the nearest house that can
+work it claims it. Each writes a public fact naming the houses; a sale moves the price
+between the two treasuries. A grant is never sold, and a vein the catalog left unheld is not
+claimed, because nobody gave it up.
+
+Rare, by the owner's ruling that a vein changing hands is a world-shaking event. Measured
+29 September 2026, stepping a year at a time and reading the fact behind every change:
+
+- fixture catalog, six seeds, 120 years: 16 changes. A stronger rival 4, a house that could
+  not pay walking onto the ground 4, given up 4, claimed 3, taken in a war 1, sold 0. 8 of
+  18 veins end with somebody other than their first holder. Before this pass, 21 of 22
+  changes were the rival seizure, on one or two hostile pairs.
+- shipped catalog, three seeds, 120 years: none. Its holders are the richest and strongest
+  houses in their provinces and never run short. Two seeds, 500 years: two taken in wars,
+  each seized back by the stronger old holder two years later. By year 500 every vein in
+  both worlds had been made forbidden ground (`zone_forbidden`), which ends its holding.
+
+A sale needs a holder that has run short, and no holder in either catalog did inside these
+spans; `a-vein-is-taken-sold-given-up-or-claimed.test.ts` holds that one on a constructed
+case.
+
 ### Destruction opens as much as it closes
 
 A destroyed place becomes ruins, a forbidden zone, a treasure site, a pilgrimage site, an
