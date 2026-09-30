@@ -3,7 +3,8 @@
  *
  * `admin-surface.test.ts` covers the grammar and the routing - that the prefix
  * matches, that a value runs to the next key, that a model never reads the
- * line. What nothing covered was the other end: that a typed
+ * line for explicit arranging actions. Free-text spawn traits now have a bounded
+ * provider reader, covered by `admin-spawn-traits.test.ts`. What nothing covered was the other end: that a typed
  * `ADMIN <action> ...` reaches `admin_manage` and that the world afterwards is
  * actually different in the way the receipt says it is.
  *

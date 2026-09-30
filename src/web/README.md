@@ -2,6 +2,14 @@
 
 # The Web Front Door
 
+ADMIN free-text encounter traits are read by `admin-spawn-spec.ts`, through the
+configured narrator's provider and model. Its strict JSON schema accepts requested
+facts only; the spawn handler validates the body, species, house and rung before
+writing an ordinary world NPC. Without a model, or after a malformed reply, the
+supported-word table supplies the spec and the receipt names unused words. Bare
+ordinal spawns keep their existing encounter path. Stable house IDs and their word
+forms resolve through `resolveSect`, under the same knowledge gate as house names.
+
 Company cards read open accounts through `whatIsSaidAbout` and place only the known
 facts in the addressed person's private mind. Sharing a square alone grants no private
 account. `readTie` excludes unaccounted-for people from available backing. Hearsay

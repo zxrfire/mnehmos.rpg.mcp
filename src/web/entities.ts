@@ -687,6 +687,11 @@ export function resolveSect(
     const heard = (id: string): boolean =>
         !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
 
+    // Stable catalog keys remain usable after a house is renamed, including their word form.
+    const keyed = SECTS.find(sect => heard(sect.id) && (sect.id === query.trim().toLowerCase()
+        || sect.id.replace(/^(?:sect|house|apex)-/, '').replace(/-/g, ' ') === query.trim().toLowerCase()));
+    if (keyed) query = keyed.name;
+
     // "my sect"
     if (memberOf && MY_OWN_HOUSE.test(query.trim())) {
         const own = repos.sects.getById(memberOf);

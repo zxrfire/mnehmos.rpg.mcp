@@ -548,7 +548,7 @@ not.
 |---|---|
 | spawn an NPC / a cultivator / a person at *rung* | `spawn_encounter ordinal=<rung>` |
 | put a Tribulation Transcender in front of me | `spawn_encounter ordinal=41` |
-| spawn a Core Formation girl | `spawn_encounter ordinal=17 name=A Core Formation girl` |
+| spawn a Core Formation girl | ordinary world NPC at ordinal 17, female |
 | I run into a 45 weapon / give me a 45 sword | `grant_item kind=artifact ordinal=45` |
 | give me *the Standing Edge* | `grant_item name=The Standing Edge` |
 | I am ordinal 44 / put me at Core Formation / I AM TT | `set_realm ordinal=<rung>` |
@@ -590,12 +590,34 @@ while the accumulator is empty.
 
 ### What a person is described as
 
-`spawn a Core Formation girl` is unambiguous about three things and the engine has a field
-for two of them: **there is no sex on `Cultivator` or `NpcCultivation`, anywhere.** So the
-description goes into the **name**, which is free text the action already takes, and nothing
-else about the person differs - the spirit root and the attributes are rolled from the run
-seed either way. That is the agency rule applied to a word: the wording changes what was
-intended and what the world calls her, and changes nothing about what the engine then does.
+The earlier reader put `girl` and every remaining trait into a name. That was a gap:
+NPC identity now has sex and bloodline, and the world owns house membership. Free-text
+traits use those fields through the ordinary NPC generator instead of labelling a
+cultivator row. Bare `spawn an encounter ordinal 29` retains the existing encounter.
+
+```
+ADMIN: spawn an encounter of an ordinal 29 girl transformed from a fox
+ADMIN: spawn an encounter of a male hollow court outer disciple
+```
+
+With a configured model, the same provider and model as the narrator read a strict
+JSON spawn spec. Without one, supported words supply ordinal, sex, age, name, house,
+rung, beast origin and temperament; unused words are printed in the receipt. Explicit
+field pairs override the reading. A house resolves through the existing house resolver,
+including its stable catalog key: `hollow court` names today's Empyrean Court.
+
+An omitted ordinal comes from the species or is drawn from the house rung's existing
+realm band. Without either, it is refused. An omitted age is 20; an omitted house rung
+is its entry rung. Talent and unspecified sex and name are generated normally. A
+changed beast requires the change ordinal and carries its ordinary beast tag, final
+bloodline and goal. A member receives robes, token and lamp through the house's normal
+issuance gates. The NPC stands with the player for the encounter, then the world advances it.
+
+Supported temperaments are generous, stingy, reticent, expressive, proud and unassuming.
+They select an identity whose existing derived trait meets the request; no personality
+field or special behaviour is stored. Unknown houses, absent rungs, unknown species,
+invalid ordinals and ages beyond the body's lifespan create nothing. The receipt can
+name the NPC for the operator; ordinary play still requires an introduction.
 
 ---
 
@@ -749,10 +771,9 @@ ADMIN spawn_encounter name=Void-Tempering Tortoise in Human Form ordinal=29
 
 which stands up a real, nameable, attackable person at Void Tribulation under that name.
 
-What is **not** reachable is bespoke mechanics. `spawn_encounter` builds a CULTIVATOR: hp, qi
-and attributes come from the rung and a rolled spirit root, and the ladder is walked with
-`advanceRealm` like anybody. The name is free text; the creature is not. Anything that wants
-its own statline is a data change in `src/data/cultivation`, not an admin argument.
+Free-text encounter traits now reach the supported NPC fields described above. Arbitrary
+statlines remain unavailable: a new beast kind requires catalog data, and a new mechanic
+requires engine code. A name or a model response supplies neither.
 
 ---
 

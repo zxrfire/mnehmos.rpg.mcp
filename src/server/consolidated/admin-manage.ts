@@ -3,6 +3,8 @@
  */
 
 import { z } from 'zod';
+import { AdminSpawnSpecSchema } from '../../web/admin-spawn-spec.js';
+import { spawnPersonFromSpec } from './admin-spawn-person.js';
 import { createHash } from 'crypto';
 
 
@@ -284,15 +286,13 @@ export async function handleHelp(args: z.infer<typeof HelpSchema>): Promise<obje
                 wouldHaveCreated: args.collided ?? [],
                 ...whatAdminCanDo(),
                 arrangeInstead: [
-                    'ADMIN spawn_encounter ordinal=<rung> name=<what they are> - stands a new person ' +
-                    'up with the description in the name, which is the field that is free text.',
+                    'ADMIN spawn_encounter ordinal <rung> <traits> - stands a new person up ' +
+                    'with supported sex, age, house, rung, beast origin and temperament.',
                     'ADMIN roster - what is actually standing in the world right now, with ids.'
                 ],
                 hint:
-                    'This is a real gap rather than a phrasing problem, and it is worth reporting as ' +
-                    'one: what a spawned person IS - a bloodline, an art, a house, a want - is not ' +
-                    'something spawn_encounter can be told, and there is no verb for editing one ' +
-                    'afterwards. See docs/admin.md.'
+                    'Supported traits can be requested when creating a new person. Editing somebody ' +
+                    'already present remains unavailable. See docs/admin.md.'
             }
         );
     }
@@ -548,7 +548,7 @@ export async function handleForce(args: z.infer<typeof ForceSchema>): Promise<ob
  * Parse an ADMIN command line into an action and its arguments.
  */
 export function parseAdminCommand(request: string): ParsedAdminCommand {
-    const line = request.trim();
+    const line = request.trim().replace(/^spawn\s+(?:(?:an?|the)\s+)?encounter\b/i, 'spawn_encounter');
     const args: Record<string, unknown> = {};
 
     ADMIN_ARG_KEY.lastIndex = 0;
@@ -716,6 +716,8 @@ const RosterSchema = z.object({
 });
 
 const SpawnEncounterSchema = z.object({
+    ...AdminSpawnSpecSchema.shape,
+    worldPerson: z.boolean().optional(),
     action: z.literal('spawn_encounter'),
     // OPTIONAL ONLY BECAUSE `species` CAN ANSWER IT. Nothing else may default
     // it: a rung is what an encounter IS, and a surface that guesses one has
@@ -1273,6 +1275,10 @@ export async function handleSpawnEncounter(
     if (isGuidingErrorBody(resolved)) return resolved;
 
     const { run, cultivator } = resolved;
+
+    if (args.worldPerson || ['sex', 'age', 'house', 'rank', 'temperament'].some(k => k in args)) {
+        return spawnPersonFromSpec(repos, run, cultivator, args);
+    }
 
     // ── A SPECIES, WHERE ONE WAS NAMED ────────────────────────────────────
     const species = args.species === undefined ? null : theSpeciesTheyMeant(args.species);
@@ -2935,6 +2941,7 @@ deterministic mutation and returns what the engine actually did.
 - spawn_site       reveals a real catalogued site by ordinal or by name; awareness gate only
 - spawn_encounter  a REAL persisted NPC cultivator with engine-rolled talent at any ordinal
                    species=<fox|ape|seam> stands up a beast past the change, as a person
+                   sex, age, house, rank and temperament create an ordinary world NPC
 - grant_item       catalog pills, herbs and ARTIFACTS into the real pouch. A rated object can be
                    asked for by rung - 'ordinal=45 kind=artifact' - or by its catalog name
 - set_ambient      relocates to a place the engine genuinely derives that band for, this block only
@@ -2969,6 +2976,10 @@ balance statistics.
 Actions: ${ACTIONS.join(', ')}`,
     actionSchemas: router.actionSchemas,
     inputSchema: z.object({
+        sex: AdminSpawnSpecSchema.shape.sex,
+        house: AdminSpawnSpecSchema.shape.house,
+        rank: AdminSpawnSpecSchema.shape.rank,
+        temperament: AdminSpawnSpecSchema.shape.temperament,
         action: z.string().describe(`Action: ${ACTIONS.join(', ')}`),
         cultivatorId: z.string().optional(),
         runId: z.string().optional(),
@@ -3232,6 +3243,12 @@ export async function handleAdminManage(
                 'Rank': data.opponent?.realm?.name ?? data.opponent?.rank,
                 'Standing at': data.location,
                 'Disposition': data.disposition,
+                'Sex': data.sex,
+                'Age': data.age,
+                'House': data.house,
+                'Rung': data.rung,
+                'Beast origin': data.species,
+                'Temperament': data.temperament,
                 'How they compare': data.gateLifted?.howTheyCompare,
                 'Power ratio': data.gateLifted?.powerRatio
             }));
@@ -3240,6 +3257,9 @@ export async function handleAdminManage(
                 for (const line of data.sayThis) out.push(`    ${line}`);
             }
             out.push(String(data.gateLifted?.note ?? ''));
+            if (Array.isArray(data.unusedWords) && data.unusedWords.length > 0) {
+                out.push(`Words not used: ${data.unusedWords.join(' ')}.`);
+            }
             // ── WHAT A THING THAT TOOK A SHAPE BROUGHT WITH IT ────────────
             //
             // Printed as two separate blocks because they are two independent

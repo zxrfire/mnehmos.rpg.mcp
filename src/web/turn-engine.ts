@@ -3,6 +3,7 @@
  */
 
 import { whatSomebodyKnowsOfTheOldWorld, keepOldWorldKnowledge, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
+import { needsSpawnReading, readAdminSpawnSpec } from './admin-spawn-spec.js';
 
 
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
@@ -12293,18 +12294,32 @@ ${line}`;
             );
         }
 
+        let spawnArgs = parsed.args;
+        if (parsed.action === 'spawn_encounter' && needsSpawnReading(request, parsed.args)) {
+            const spec = this.narrator.readAdminSpawn
+                ? await this.narrator.readAdminSpawn(request)
+                : await readAdminSpawnSpec(request);
+            // Explicit pairs win. The old sentence remainder was a label, not a requested name.
+            const firstPair = /\b[A-Za-z_][A-Za-z0-9_]*=/.exec(request);
+            spawnArgs = {
+                ...spec,
+                ...(firstPair ? parseAdminCommand(`spawn_encounter ${request.slice(firstPair.index)}`).args : {}),
+                worldPerson: true
+            };
+        }
         const args: Record<string, unknown> = {
             cultivatorId: cultivator.id,
             runId: run.id,
             // The operator's own ids win over anything typed, and `action` is
             // last so a `action=` in the arguments cannot redirect the call.
-            ...parsed.args,
+            ...spawnArgs,
             action: parsed.action
         };
 
         const response = await handleAdminManage(args);
         const text = response.content?.[0]?.text ?? 'The admin surface returned nothing.';
         const after = this.currentRun();
+        if (response.changed) this.atHand = await this.loadWorld();
 
         // AND THEN THE WORLD IS LOOKED AT
         let estate: EstateOutcome | null = null;

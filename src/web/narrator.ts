@@ -4,6 +4,7 @@
 
 import type { AmbientQi } from '../schema/cultivation.js';
 import type { LLMProvider } from '../agent/provider/types.js';
+import { readAdminSpawnSpec, type AdminSpawnSpec } from './admin-spawn-spec.js';
 import {
     FALLBACK_ACTION,
     TIME_CONSUMING_ACTIONS,
@@ -622,6 +623,7 @@ export interface Narrator {
     readonly kind: 'provider' | 'deterministic';
     /** Provider name for diagnostics only. Never branched on. */
     readonly providerName: string | null;
+    readAdminSpawn?(input: string): Promise<AdminSpawnSpec>;
     /**
      * Phase 1. One verb, or several in the order the player said them.
      */
@@ -1355,6 +1357,12 @@ export class ProviderNarrator implements Narrator {
     /** The abort signal for one call, or none when the operator asked to wait indefinitely. */
     private budget(): AbortSignal | undefined {
         return this.timeoutMs > 0 ? AbortSignal.timeout(this.timeoutMs) : undefined;
+    }
+
+    readAdminSpawn(input: string): Promise<AdminSpawnSpec> {
+        return readAdminSpawnSpec(input, {
+            provider: this.provider, model: this.options.model, signal: this.budget()
+        });
     }
 
     /**
