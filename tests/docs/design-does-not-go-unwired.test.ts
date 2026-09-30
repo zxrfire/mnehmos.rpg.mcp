@@ -201,7 +201,8 @@ const DEAD = 0;
 // (asking about the port), peopleThisGroundCanCarry (investigating a place). Deleted as
 // superseded: placementsAWordWouldOpen, bestShelterAmong, whatABreachedVaultTakesWithIt
 // (the war settlement now asks the seat's ward through whatIsBehindIt).
-const TEST_ONLY = 52;
+// 52 -> 40: the social rows reach play (shame, secrets, the held body, naming a killer, the taking).
+const TEST_ONLY = 40;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
