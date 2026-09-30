@@ -203,7 +203,8 @@ const DEAD = 0;
 // (the war settlement now asks the seat's ward through whatIsBehindIt).
 // 52 -> 40: the social rows reach play (shame, secrets, the held body, naming a killer, the taking).
 // 40 -> 27: the ruin delve, provenance, stonework and a room reading what you carry reach play.
-const TEST_ONLY = 27;
+// 27 -> 15: the elder's office reads, services done, a duty passed down, the send-off, a house's asks and where to look reach play.
+const TEST_ONLY = 15;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
