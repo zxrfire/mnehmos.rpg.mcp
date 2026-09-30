@@ -16,7 +16,6 @@ export interface APostLeftEarly {
     /** `realmIndexOf` when the post was taken, and now. */
     realmWhenTaken: { index: number; name: string };
     realmNow: { index: number; name: string };
-    /** The house is at war (`at_war` on its record). */
     houseAtWar: boolean;
     /** The house has sent for them since: a summons of its own waiting, or a posting put to them. */
     sentForByTheHouse: boolean;
