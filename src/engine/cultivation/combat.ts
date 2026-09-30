@@ -3347,7 +3347,7 @@ function assemble(
     };
 }
 
-const OUTCOME_FOR_FATE: Readonly<Record<CombatantFate, ConfrontationOutcome>> = {
+export const OUTCOME_FOR_FATE: Readonly<Record<CombatantFate, ConfrontationOutcome>> = {
     standing: 'stalemate',
     bystander: 'no_contest',
     withdrew: 'withdrawal',

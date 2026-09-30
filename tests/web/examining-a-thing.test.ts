@@ -19,10 +19,13 @@
  * grading does the work a gate would have done badly: the player never receives
  * the catalog entry, only the reading their own rung and reference support.
  * These cases are the same sentence typed by four different people.
+ * An outsider may already know another house. The no-reference case selects
+ * an owning house the opening knowledge actually leaves unknown.
  */
 
 import { describe, it, expect } from 'vitest';
 import { aRecruiterOfTheHouseIsHere, makeGameInWorld, type Harness } from './harness.js';
+import { parseIntent } from '../../src/web/actions.js';
 
 async function aReaderAt(seed: string, ordinal: number, house?: string): Promise<Harness> {
     const harness = await makeGameInWorld({ seed, worldSeed: 'examining-a-thing', adminMode: true });
@@ -81,19 +84,25 @@ describe('examining a thing', () => {
         });
     }, 60_000);
 
-    it('gives the same person nothing about another house\'s thing', async () => {
+    it('gives the same person nothing about a thing whose house they do not know', async () => {
         await withAdmin(async () => {
-            // Same reader, same rung, same turn's worth of standing. What
-            // changed is whose thing it is, and that is the whole of the
-            // difference - which is what makes recognition uneven rather than
-            // a second power score.
             const { game } = await aReaderAt(
                 'examine-outsider', 30, 'the Azure Cloud Pavilion'
             );
-            const said = await game.act('I examine the Ice Jade Plate');
+            const self = game.state().cultivator!;
+            const thing = game.atHand!.objects.find(object => object.kind === 'artifact'
+                && object.significance !== 'mundane'
+                && object.ownerId !== null && object.ownerId !== self.sectId
+                && object.power !== null && object.power < self.realmOrdinal
+                && !object.knownOwnershipBy.includes(self.id)
+                && !object.knownOwnershipBy.includes(self.sectId!)
+                && parseIntent(`I examine ${object.name}`).action === 'investigate'
+                && game.knowledge.stageOf(self.id, 'sect', object.ownerId) === 'unaware');
+            expect(thing, 'no artifact belongs to a house this reader does not know').toBeDefined();
+            const said = await game.act(`I examine ${thing!.name}`);
 
-            expect(said.narration).toContain('Something you cannot place');
-            expect(said.narration).not.toMatch(/Frostmirror/i);
+            expect(said.narration, `examining ${thing!.name}`).toContain('Something you cannot place');
+            expect(said.narration).not.toContain(thing!.ownerName);
         });
     }, 60_000);
 

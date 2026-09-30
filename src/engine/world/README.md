@@ -1376,6 +1376,10 @@ to end - so the caller has to say what happens instead before it can write anyth
 That is the whole guard: the world ends people through one seam rather than at the dozen
 sites that currently want to.
 
+War casualties read each participant's fate through `OUTCOME_FOR_FATE` in the
+combat resolver. Both finishing and body destruction consult the ending seam;
+the war record names only the deaths actually applied to the roster.
+
 Two rows it refuses, and they are one rule from two directions. **The player**, whose death
 belongs to the survival layer and to the sheet holding their years. **Somebody a catalog
 STATES is standing** - `theCatalogStatesTheyAreStanding`, declared as a field on the catalog

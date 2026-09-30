@@ -10,6 +10,9 @@ what they say. Local production reads each touching lane's `cargoOnLane`; the Re
 reads deep-road teacher capacity through `teachersAtDepth`. Wound advice uses the
 cheapest qualifying pill when it needs the medicine that reaches every rung.
 
+The Register's material section includes `BONES`, with their catalog grades,
+values and tracked body provenance alongside herbs and beast materials.
+
 Questions about opportunities use `opportunity-questions.ts`: a present person
 tells schedules they can understand from the ground they stand on, their house,
 or an earlier telling.

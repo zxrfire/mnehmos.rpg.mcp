@@ -4,6 +4,7 @@
 
 import { whoBurnedATeleportationTalisman } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 import {
+    OUTCOME_FOR_FATE,
     resolveMelee,
     sideStrength,
     assessPower,
@@ -305,32 +306,19 @@ function fightOneYear(
     for (const c of result.combatants) {
         if (c.felledBy === null && c.injuries.length === 0) continue;
         const felledBy = c.felledBy === null ? null : byId.get(c.felledBy) ?? null;
+        const mayEnd = theWorldMayEnd(byId.get(c.id) ?? { tags: [] });
         const did = whatTheConfrontationDidToThem(state, {
             npcId: c.id,
             byId: felledBy?.id ?? c.sideId,
             byName: felledBy?.name ?? theOtherSide(war, c.sideId).name,
             day,
             wounds: c.injuries,
-            outcome: result.outcome,
+            outcome: !mayEnd && (c.fate === 'finished' || c.fate === 'body_destroyed')
+                ? 'withdrawal' : OUTCOME_FOR_FATE[c.fate],
             lost: c.felledBy !== null,
-            // THE ONE PLACE THE SEAM IS A FLAG RATHER THAN A CALL.
-            //
-            // `whatTheConfrontationDidToThem` is reached from BOTH sides of the
-            // player line - `combat-verbs.ts` when somebody plays a fight, and
-            // this pass when two houses fight without anybody present - so the
-            // guard cannot go inside it without making a stated row invulnerable
-            // to a player. It goes on the world's own caller instead, and it
-            // rides in on `finished`, which is the field that decides the death:
-            // they were still felled, they still take the wounds, and the war
-            // still costs their house the person for the year. What the world
-            // may not do is finish them, which is the ordinary outcome for most
-            // of the beaten anyway - see `willWithdraw` above.
-            //
-            // Found by a fixture rather than by reading: 250 people over 60
-            // years put a stated-standing row in a war and it came out "Killed
-            // by Luo Zhaowu", through a file the ratchet had exempted as
-            // the player's door. It is both.
-            finished: c.finished && theWorldMayEnd(byId.get(c.id) ?? { tags: [] }),
+            // The shared applier also serves player combat. Guard the world's
+            // endings here, including body destruction, while retaining wounds.
+            finished: c.finished && mayEnd,
             // A war is the absence of an arrangement, not a declaration of
             // hostility. Nobody promised anybody anything, so it is `open` and
             // priced by the same table a brawl in a square is.
@@ -367,12 +355,13 @@ function fightOneYear(
     }));
 
     // ── THE RECORD, COMPOSED FROM THE RESULT ─────────────────────────────
+    const ended = new Set(deaths.map(death => death.deceasedId));
     const fell = result.combatants
-        .filter(c => (c.fate === 'finished' || c.fate === 'body_destroyed')
-            && !walkedOut.has(c.id))
+        .filter(c => ended.has(c.id) && !walkedOut.has(c.id))
         .map(c => c.name);
     const brokeOff = result.combatants
-        .filter(c => c.fate === 'withdrew' || c.fate === 'crippled' || walkedOut.has(c.id))
+        .filter(c => c.fate === 'withdrew' || c.fate === 'crippled' || walkedOut.has(c.id)
+            || ((c.fate === 'finished' || c.fate === 'body_destroyed') && !ended.has(c.id)))
         .map(c => c.name);
     const winner = result.winningSideId === null
         ? null
@@ -388,7 +377,8 @@ function fightOneYear(
         actors: result.combatants.map(c => ({
             id: c.id,
             name: c.name,
-            role: c.fate
+            role: (c.fate === 'finished' || c.fate === 'body_destroyed') && !ended.has(c.id)
+                ? 'withdrew' : c.fate
         })),
         locationId: (winner ?? war.a).seatLocationId ?? null,
         factionIds: [war.a.id, war.b.id],

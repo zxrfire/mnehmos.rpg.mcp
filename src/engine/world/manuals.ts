@@ -451,9 +451,9 @@ export function handOnWhatTheyAreEntitledTo(state: WorldState, at: number, day: 
         if (!forStream(state.seed, 'a-lesson', npc.id, day).chance(Math.min(1, 1 / span))) return false;
     }
     state.npcs[at] = {
-        ...npc,
+        ...state.npcs[at],
         cultivation: {
-            ...npc.cultivation,
+            ...state.npcs[at].cultivation,
             techniqueIds: [...npc.cultivation.techniqueIds, lesson.techniqueId]
         },
         updatedOnDay: day

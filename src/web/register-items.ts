@@ -5,6 +5,7 @@
 import type { ObjectKind, ObjectSignificance } from '../engine/world/possessions.js';
 import { PILLS, POTENCY_UNITS, NOT_REFINABLE_BELOW_THE_LID_PILL_IDS } from '../data/cultivation/pills.js';
 import { HERBS } from '../data/cultivation/herbs.js';
+import { BONES } from '../data/cultivation/bones.js';
 import { RECIPES } from '../data/cultivation/recipes.js';
 import { ARTIFACTS } from '../data/cultivation/artifacts.js';
 import { IMMORTAL_ITEMS, THE_LAST_REALM_IS_UNBUYABLE } from '../data/cultivation/immortal-items.js';
@@ -123,6 +124,7 @@ export type ItemGroup =
     | 'repair medicine'
     | 'spirit herbs'
     | 'beast materials'
+    | 'human bones'
     | 'comprehension materials';
 
 /**
@@ -253,8 +255,8 @@ const KINDS: Record<ObjectKind, KindFacts> = {
         // kill something for. A cauldron takes both through one resolver and
         // does not ask which table a row came out of.
         source: 'data/cultivation/herbs.ts, the material table in beasts.ts, lost-ages.ts, '
-            + 'and engine/world/single-use-dao-comprehension-materials.ts',
-        catalogued: () => HERBS.length + BEAST_MATERIALS.length + MATERIAL_BANDS.length,
+            + 'bones.ts and engine/world/single-use-dao-comprehension-materials.ts',
+        catalogued: () => HERBS.length + BEAST_MATERIALS.length + BONES.length + MATERIAL_BANDS.length,
         keptAs: ['counted', 'tracked'],
         gradeAxis: 'the five grades for a herb or a beast material; the rung it carries to for a comprehension piece',
         ratedInPower: false,
@@ -523,6 +525,25 @@ function beastMaterialRows(): RegisterItemRow[] {
     });
 }
 
+/** A body's bones keep their origin at every grade. */
+function boneRows(): RegisterItemRow[] {
+    return BONES.map(bone => ({
+        kind: 'material',
+        group: 'human bones',
+        id: bone.id,
+        name: bone.name,
+        grade: GRADE_WORD(bone.grade),
+        pitchedAt: null,
+        pitchNote: '',
+        significance: howMuchAGradeIsWorthTracking(bone.grade),
+        keptAs: 'tracked',
+        price: bone.value,
+        priceNote: '',
+        provenance: 'taken from a dead body; the record keeps whose body it was',
+        detail: 'crafting material for demonic arts'
+    }));
+}
+
 /**
  * The two objects that came down, on the same columns as the pills.
  */
@@ -613,6 +634,7 @@ export function buildItemsRegister(): RegisterItems {
         ...repairRows(),
         ...herbRows(),
         ...beastMaterialRows(),
+        ...boneRows(),
         ...materialRows()
     ];
     const kinds: RegisterItemKind[] = KIND_ORDER.map(kind => {
@@ -1122,6 +1144,7 @@ export function renderItemsSection(): string {
   <p class="note"><strong>The other half of the ingredient layer has to be killed first.</strong> A beast material carries the same columns a herb carries - the five grades, a value in stones, a draw weight, and a rung below which getting it is not survivable - and one resolver hands both to a cauldron without asking which table the row came out of. What differs is not the arithmetic, it is that somebody has to be standing where a herb grows and somebody has to deal with the animal.</p>
   <p class="note"><strong>A core is the one row that is not a part of an animal.</strong> It is condensed cultivation, which is why nothing below ordinal ${BEAST_CORE_ORDINAL} has one and why the cheapest core in the world is ${LOWEST_CORE_GRADE} grade. ${rowsOf('beast materials').filter(x => x.detail.startsWith('a core')).length} of the ${rowsOf('beast materials').length} rows below are cores. What a species is, and what has to be done to reach one, is under the table.</p>
   ${itemTable(`Beast materials - ${rowsOf('beast materials').length}, off ${new Set(BEAST_MATERIALS.map(m => m.sourceBeastId)).size} of the ${BEASTS.length} species`, rowsOf('beast materials'))}
+  ${itemTable(`Human bones - ${rowsOf('human bones').length} grades, taken from dead bodies`, rowsOf('human bones'))}
   <p class="note"><strong>A pill is only ever as obtainable as its rarest ingredient</strong>, which is where the real cost of the alchemy system lives. ${RECIPES.length} recipes turn the herbs above into the pills above; ${RECIPES.filter(x => x.provenance === 'recovered').length} of them exist only because somebody opened something that was sealed, and no recipe may name a herb this catalog does not hold.</p>
   <p class="note">Nothing on this side is rated above ${OBJECT_CEILING_BELOW_THE_LID} whatever kind it is, because an object rated at a rung lets whoever holds it strike at that rung. A manual is paper and is under no such rule, which is the one exception and the reason the arts have a sheet of their own. ${STRUCTURAL_REPAIR_HOLDINGS.length} opening holdings of repair medicine are recorded against named houses; who is holding what is on the Items tab, and what each house holds altogether is the Holdings tab.</p>
 </section>

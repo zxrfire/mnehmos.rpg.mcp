@@ -173,6 +173,7 @@ describe('a world must never contain', () => {
     });
 
     it('a fact about somebody that cannot be reached from them', () => {
+        // Granting a manual read must retain the backlink written with the grant.
         // ACTORS, not witnesses. `historyFactIds` is the trajectory - what
         // happened to this person - and `witnessIds` is who was standing there.
         // Linking both put every bystander's record on every fact they were
@@ -184,7 +185,7 @@ describe('a world must never contain', () => {
             for (const actor of fact.actors) {
                 const npc = state.npcs.find(n => n.id === actor.id);
                 if (npc && !npc.historyFactIds.includes(fact.id)) {
-                    unreachable.push(`${fact.id} names ${npc.name}, who does not carry it`);
+                    unreachable.push(`${fact.id} names ${npc.name}, who does not carry it: ${fact.summary}`);
                 }
             }
         }

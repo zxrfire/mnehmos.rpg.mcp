@@ -259,6 +259,7 @@ describe('the wall, which refuses differently from everything else', () => {
     });
 
     it('leaves nobody the catalog states is standing dead at a wall', () => {
+        // Wars share the ending seam: body destruction must consult it too.
         const ended = arms.withClaim.npcs
             .filter(n => arms.watched.has(n.id) && n.status !== 'alive');
         expect(ended.map(n => `${n.name}: ${n.endNote}`)).toEqual([]);

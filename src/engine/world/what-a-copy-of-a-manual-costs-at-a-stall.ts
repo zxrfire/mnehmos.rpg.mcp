@@ -240,25 +240,29 @@ export function whatACopyIsSoldFor(techniqueId: string): number | null {
  * gives for it: no parallel catalogs for important things.
  */
 export function manualsAStallCarries(): Array<Manual & { cash: number }> {
-    return STALL_STOCK;
+    return STALL_STOCK ??= buildStallStock();
 }
 
 /**
- * Built once at module load. The catalog does not change inside a process, and
- * `housesTeaching` walks every house's shelf for every question it is asked.
+ * The manual and crossing modules import each other. Read their catalogs only
+ * after module initialisation, then keep the derived stock for this process.
  */
-const STALL_STOCK: Array<Manual & { cash: number }> = TECHNIQUES
-    .filter(row => stopsSomewhere(row))
-    .map((row: CatalogRow) => {
-        const cash = stallPriceCash(row.id);
-        return cash === null ? null : {
-            id: row.id,
-            name: row.name,
-            cap: Number(row.cap),
-            requiredOrdinal: row.requiredOrdinal,
-            element: (row.element ?? null) as string | null,
-            cash
-        };
-    })
-    .filter((row): row is Manual & { cash: number } => row !== null)
-    .sort((a, b) => a.cash - b.cash || a.id.localeCompare(b.id));
+let STALL_STOCK: Array<Manual & { cash: number }> | null = null;
+
+function buildStallStock(): Array<Manual & { cash: number }> {
+    return TECHNIQUES
+        .filter(row => stopsSomewhere(row))
+        .map((row: CatalogRow) => {
+            const cash = stallPriceCash(row.id);
+            return cash === null ? null : {
+                id: row.id,
+                name: row.name,
+                cap: Number(row.cap),
+                requiredOrdinal: row.requiredOrdinal,
+                element: (row.element ?? null) as string | null,
+                cash
+            };
+        })
+        .filter((row): row is Manual & { cash: number } => row !== null)
+        .sort((a, b) => a.cash - b.cash || a.id.localeCompare(b.id));
+}

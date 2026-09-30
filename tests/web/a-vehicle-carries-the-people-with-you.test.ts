@@ -3,11 +3,14 @@
  * people", "remember to test parties too". Two people on the road with the player ride their
  * carriage with them and arrive where they arrive; a mount that seats two makes more than one
  * trip of three.
+ * Ground vehicles are arranged on a road within one province; a sea route
+ * correctly takes them to a landing rather than to the requested destination.
  */
 import { describe, expect, it } from 'vitest';
 
 import { A_SPIRIT_BOAT_ANSWERS_TO, aVehicleOf } from '../../src/engine/world/a-vehicle';
 import { makeGameInWorld } from './harness';
+import { theWayThereIsByShip } from '../../src/web/the-way-there-is-by-ship.js';
 
 function placeRow(game: any, location: string | null) {
     const here = (location ?? '').trim().toLowerCase();
@@ -21,8 +24,12 @@ function twoOnTheRoadWithThem(game: any, born: any) {
     for (const npc of world.npcs) {
         if (npc.status === 'alive' && npc.locationId !== null) heads.set(npc.locationId, (heads.get(npc.locationId) ?? 0) + 1);
     }
+    const start = game.repos.cultivators.getById(born.id);
     const square = world.locations
         .filter((row: any) => row.kind === 'settlement' && (heads.get(row.id) ?? 0) >= 2)
+        .filter((row: any) => world.locations.some((to: any) => to.kind === 'settlement'
+            && to.id !== row.id && to.parentId === row.parentId
+            && theWayThereIsByShip(game, { ...start, location: row.name }, to.name, game.theDayAPartyIsOn()) === null))
         .sort((a: any, b: any) => (a.id < b.id ? -1 : 1))[0];
     expect(square, 'nowhere holds two people').toBeDefined();
     game.repos.cultivators.update(born.id, { location: square.name });
@@ -31,7 +38,9 @@ function twoOnTheRoadWithThem(game: any, born: any) {
     game.putThemOnTheRoadWithYou(cultivator, party.map((npc: any) => ({ id: npc.id, name: npc.name })),
         { note: 'Out on the road together.', forDays: 400 });
     const going = world.locations
-        .filter((row: any) => row.kind === 'settlement' && row.id !== square.id)
+        .filter((row: any) => row.kind === 'settlement' && row.id !== square.id
+            && row.parentId === square.parentId
+            && theWayThereIsByShip(game, cultivator, row.name, game.theDayAPartyIsOn()) === null)
         .map((row: any) => row.name)[0];
     return { cultivator, party, square, going };
 }
