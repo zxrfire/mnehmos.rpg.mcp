@@ -405,7 +405,7 @@ it describes.
 | [`faction-roll.ts`](../../src/data/cultivation/faction-roll.ts) | Who is on each faction's roll, from every catalog that holds people, in one place. | 297 | - |
 | [`fallen.ts`](../../src/data/cultivation/fallen.ts) | Moved to `cultivators-the-road-finished.ts`. | 11 | - |
 | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | False Immortals: what they do with the time, the office that used to exist, and the two ways they leave the world. | 1189 | - |
-| [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | Governance: who holds the water, and on what terms. | 3682 | [`discovery.md`](houses/discovery.md) |
+| [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | Governance: who holds the water, and on what terms. | 3636 | [`discovery.md`](houses/discovery.md) |
 | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | Spirit herbs - the ingredient layer under alchemy. | 909 | [`the-late-age.md`](history/the-late-age.md) |
 | [`hierarchy.ts`](../../src/data/cultivation/hierarchy.ts) | Moved to `governance-and-water-rights.ts`. | 11 | - |
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1614 | - |
@@ -426,7 +426,7 @@ it describes.
 | [`regions/drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) | The Pearl Ocean: granted drowned veins and thin air above ungoverned water. | 296 | - |
 | [`regions/local-rank-names.ts`](../../src/data/cultivation/regions/local-rank-names.ts) | How a province relabels the one shared ladder, band for band. | 45 | - |
 | [`regions/low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) | The Jade Gorge: the centre, the only province with a road to every other one, and the only one in the world with no ceiling on it. | 709 | - |
-| [`regions/map-by-bearing.ts`](../../src/data/cultivation/regions/map-by-bearing.ts) | Reading the world as five columns instead of one list: what sits at each bearing, which houses are seated there, and where the apexes actually stand. | 103 | - |
+| [`regions/map-by-bearing.ts`](../../src/data/cultivation/regions/map-by-bearing.ts) | Reading the world as five columns instead of one list: what sits at each bearing, which houses are seated there, and where the apexes actually stand. | 49 | - |
 | [`regions/prefectures.ts`](../../src/data/cultivation/regions/prefectures.ts) | What a prefecture is, and every prefecture in the world assembled from the two provinces that have any. | 82 | - |
 | [`regions/provinces.ts`](../../src/data/cultivation/regions/provinces.ts) | The provinces as a political layer - who holds from whom, and where - plus every lookup over that layer and the prefectures and arterials beneath it. | 332 | [`making-places-different.md`](places/making-places-different.md) |
 | [`regions/quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) | The Buddha Precipice: driven stone cut with tools, the last of the five driven provinces, and the one people leave. | 477 | - |
@@ -434,7 +434,7 @@ it describes.
 | [`regions/region-ids.ts`](../../src/data/cultivation/regions/region-ids.ts) | The stable ids of every province and of the ground between them. | 29 | - |
 | [`regions/region-schema.ts`](../../src/data/cultivation/regions/region-schema.ts) | The Region contract: every Zod shape a province row is built out of. | 395 | - |
 | [`regions/the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) | The Burial Sands: a rich vein under loose cover that moves, in the wedge the four arms leave between them, held by nobody because nothing here lasts long enough to be granted. | 563 | - |
-| [`regions/the-map.ts`](../../src/data/cultivation/regions/the-map.ts) | Regions - five of them, and the contrast between them is the content. | 334 | - |
+| [`regions/the-map.ts`](../../src/data/cultivation/regions/the-map.ts) | Regions - five of them, and the contrast between them is the content. | 302 | - |
 | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | Names for the generated half of the map: what a sealed compound and a burnt place get called, so that neither is called by its kind. | 176 | - |
 | [`regions/white-stair.ts`](../../src/data/cultivation/regions/white-stair.ts) | The White Stair: the qi is in the ice and the ice is going. | 356 | - |
 | [`regions/wide-field.ts`](../../src/data/cultivation/regions/wide-field.ts) | The Yellow Plain: flat, dug over, nine cities, and no high ground anybody could fortify. | 251 | - |
@@ -443,7 +443,7 @@ it describes.
 | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 967 | - |
 | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | What ordinary people say about the powers above them, and where it is wrong. | 1028 | [`discovery.md`](houses/discovery.md) |
 | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | Sealed ancestors: sealed and dormant high-realm beings, held and unheld. | 643 | - |
-| [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3974 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
+| [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3966 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
 | [`standoff.ts`](../../src/data/cultivation/standoff.ts) | Moved to `the-top-of-the-world.ts`. Its own first line already said it: the top of the world, and whether it can be moved. | 11 | - |
 | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 436 | - |
 | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. | 3854 | [`ancient.md`](history/ancient.md) |
@@ -472,8 +472,8 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**263 design constants in the catalog. 13 are read by nothing at all,
-and 44 more are read only by a test.**
+**262 design constants in the catalog. 13 are read by nothing at all,
+and 43 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -722,9 +722,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 13 | 10 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 49 |
+| `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 15 | 2 |
 | `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 18 |
 | `AGES` | [`history.ts`](../../src/data/cultivation/history.ts) | 15 | 60 |
-| `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 16 | 2 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 15 |
 | `BEAST_MATERIALS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 16 | 23 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 16 | 25 |
@@ -739,10 +739,10 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 23 | 51 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 98 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 96 |
-| `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 130 |
+| `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 131 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 208 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 90 | 435 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 89 | 435 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 116 | 130 |
 
 <!-- END GENERATED: design-constants -->

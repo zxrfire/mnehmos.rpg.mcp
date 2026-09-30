@@ -208,7 +208,8 @@ const DEAD = 0;
 // 0 -> 76: the scanner stopped counting a comment that names a function as a reader of it; these were always test-only.
 // 76 -> 58: group w0 wired.
 // 58 -> 42: group w3 wired.
-const TEST_ONLY = 42;
+// 42 -> 23: group w1 wired.
+const TEST_ONLY = 23;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{
