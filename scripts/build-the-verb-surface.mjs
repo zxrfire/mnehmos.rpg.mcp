@@ -19,11 +19,8 @@
  *   verb-pattern-table.ts and its siblings          the parser's routes
  *   game.ts                                         where each verb resolves
  *
- * The first of those is also what `prompt.ts` composes the phase-1 glossary
- * from, so the document and the prompt are two renderings of one source rather
- * than two wordings of one list. That distinction is the whole point: this
- * module's own header records what happened the last time the narrator's
- * constitution was paraphrased into a prompt string.
+ * Phase 1 now reads THE_LANES. This remains the generated verb reference;
+ * the plan-field descriptions in the prompt still read the same source.
  *
  *     node scripts/build-the-verb-surface.mjs           # rewrite
  *     node scripts/build-the-verb-surface.mjs --check   # exit 1 if stale
