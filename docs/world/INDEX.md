@@ -388,7 +388,7 @@ it describes.
 |---|---|---|---|
 | [`a-family-that-came-down-from-a-changed-beast.ts`](../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.ts) | THE ONE FAMILY IN THE WORLD THAT CAME DOWN FROM SOMETHING THAT CHANGED. | 242 | - |
 | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | What a favour is for: it skips the admission ordinal. | 319 | - |
-| [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | The artifact catalog. | 654 | - |
+| [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | The artifact catalog. | 634 | - |
 | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | Spirit beasts - the part of the world that is dangerous and is not a person. | 3802 | [`trust.md`](houses/trust.md) [`beast-contracts.md`](things/beast-contracts.md) |
 | [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) | Three institutions with no place for their own members' children. | 204 | - |
 | [`bones.ts`](../../src/data/cultivation/bones.ts) | Bones off a dead body, one row per grade: the material demonic arts are worked from. | 59 | - |
@@ -632,6 +632,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WHY_ACCOUNTS_DISAGREE` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 5 |
 | `CONTINGENCIES` | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | 3 | 6 |
 | `DRIVEN_PROVINCE_SCHEDULE_ORDER` | [`regions/provinces.ts`](../../src/data/cultivation/regions/provinces.ts) | 3 | 6 |
+| `HOUSE_ARTISANS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 3 | 6 |
 | `THE_FIRST_CULTIVATORS` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 7 |
 | `THE_LID` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 7 |
 | `REGION_GOVERNANCE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 3 | 8 |
@@ -654,7 +655,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `AUCTION_ACCESS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 4 | 5 |
 | `BORDER_KINDS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 4 | 5 |
 | `DEAD_SCRIPTS` | [`history.ts`](../../src/data/cultivation/history.ts) | 4 | 6 |
-| `HOUSE_ARTISANS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 4 | 6 |
 | `SEA_TRADERS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 4 | 6 |
 | `WHAT_FALLS_ON_THOSE_BELOW` | [`catastrophe.ts`](../../src/data/cultivation/catastrophe.ts) | 4 | 6 |
 | `GUEST_ELDERS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 4 | 7 |
@@ -727,9 +727,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 12 | 20 |
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |
 | `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 13 | 7 |
+| `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 13 | 10 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 49 |
-| `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 14 | 10 |
 | `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 18 |
 | `AGES` | [`history.ts`](../../src/data/cultivation/history.ts) | 15 | 60 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 16 | 2 |
