@@ -21,14 +21,15 @@
  * back is the resolver's own account of what the gap in standing was worth,
  * which is the term the concealment moves and the only one it should.
  *
- * ADMIN arranges the rungs and puts a person there. Every outcome came out of
- * the ordinary verbs.
+ * ADMIN arranges the rungs and puts a person there. A scripted model addresses
+ * the threat to that person; the engine decides every outcome. The former bare
+ * demand now asks the room, so it did not exercise concealment against one reader.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
-import { engineCalls, makeGameInWorld } from './harness';
+import { engineCalls, makeGameInWorld, ScriptedProvider } from './harness';
 import type { ActResult } from '../../src/web/turn-wire-shapes';
 import {
     theFragmentIsOnlyTheDeclaration,
@@ -54,7 +55,8 @@ async function saidTo(options: {
     said: string;
 }) {
     const { game } = await makeGameInWorld({
-        seed: 'what-they-can-place', worldSeed: options.worldSeed, adminMode: true
+        seed: 'what-they-can-place', worldSeed: options.worldSeed, adminMode: true,
+        provider: readingTheThreat(options.theirName)
     });
     await game.newRun('Asker');
     await game.act('I look around');
@@ -63,9 +65,16 @@ async function saidTo(options: {
     return game.act(options.said);
 }
 
-const THE_DEMAND = 'tell me where the elder is or I will soul search you';
+function readingTheThreat(name: string) {
+    return new ScriptedProvider({ plans: [
+        '{"action":"look"}',
+        JSON.stringify({ action: 'interact', intent: 'threaten', target: name })
+    ] });
+}
+
+const THE_DEMAND = 'I threaten Wen Shuyi';
 const THE_SAME_DEMAND_CONCEALED =
-    'hiding my cultivation, tell me where the elder is or I will soul search you';
+    `hiding my cultivation, ${THE_DEMAND}`;
 
 describe('what the person in front of you can place about you', () => {
     beforeEach(() => { process.env.ADMIN_MODE = 'true'; });
@@ -74,7 +83,7 @@ describe('what the person in front of you can place about you', () => {
     /**
      * THE HIDDEN EXPERT, PLAYED.
      *
-     * A False Immortal leaning on somebody twenty-four rungs below them, and
+     * A cultivator leaning on somebody twenty-four rungs below them, and
      * the same one having put their weight away first. Before this the two
      * sentences were the same sentence: the derivation read the rung the asker
      * HAS, and the mechanical channel said "and they can see it" about a thing
@@ -126,7 +135,8 @@ describe('what the person in front of you can place about you', () => {
      */
     it('is worth nothing to somebody who already has an account with you', async () => {
         const { game } = await makeGameInWorld({
-            seed: 'what-they-can-place', worldSeed: 'a-nondescript-robe', adminMode: true
+            seed: 'what-they-can-place', worldSeed: 'a-nondescript-robe', adminMode: true,
+            provider: readingTheThreat('Wen Shuyi')
         });
         await game.newRun('Asker');
         await game.act('I look around');

@@ -136,14 +136,20 @@ describe('who a house would put on a wall outside', () => {
         expect(looking[0]!.unseenForDays).toBe(WHEN_SILENCE_BECOMES_A_CAPTIVE + 30);
     });
 
-    /**
-     * A DEATH IS NOT A SEARCH. The house already knows; there is nothing to ask
-     * a stranger for. Posting the dead would make the channel a funeral notice
-     * board and would quietly delete the distinction the lamp exists to draw.
-     */
-    it('never puts a death on it', () => {
+    /** A lamp records death, not where the remains are. An unseen death still needs a search. */
+    it('asks for the remains of somebody dead and long unseen', () => {
         const readings = whatTheHallSays({
             roll: [member({ holderIsAlive: false, daysSinceAnybodySawThem: 900 })]
+        });
+        expect(theOnesNobodyCanFind(readings)).toEqual([{
+            memberId: 'member-1', memberName: 'Yan Shuling',
+            unseenForDays: 900, wants: 'what is left of them'
+        }]);
+    });
+
+    it('does not search for somebody whose death was in sight of the house', () => {
+        const readings = whatTheHallSays({
+            roll: [member({ holderIsAlive: false, daysSinceAnybodySawThem: 0 })]
         });
         expect(theOnesNobodyCanFind(readings)).toEqual([]);
     });

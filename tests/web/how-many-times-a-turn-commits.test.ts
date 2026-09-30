@@ -1,17 +1,19 @@
 /**
  * How many times one turn reaches durability.
  *
- * The refactor's own target is one turn, one commit. Nothing has ever measured
- * it, so nobody could say whether a change moved the number - and the obvious
- * proxy, counting `db.transaction(` call sites, moves the WRONG WAY when the
- * work is going well.
+ * The original refactor sought one turn, one commit. The current runner commits
+ * each synchronous transition atomically; a turn can contain several. Counting
+ * `db.transaction(` call sites cannot measure what the player actually did.
  *
  * This counts what actually happens: outermost transactions, plus every write
  * statement that ran with no transaction open, which is an autocommit and
  * therefore a commit of its own.
  *
- * It is a RATCHET, not a target. The numbers here are what a plain turn costs
- * today; lower them when you join writes together, and never raise them.
+ * It is a RATCHET, not a target. A plain inventory read costs one commit.
+ * Looking at a new square also learns claims, each an atomic transition under
+ * `transition-runner.ts`; those commits are bounded by the claims learned.
+ * The old look fixture counted discovery as a plain read and failed at four
+ * commits: three newly learned claims and the play log, not repeated writes.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -74,9 +76,9 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
  * commit points minimum, 10-20 typical, and unbounded in the number of
  * encounters - plus an unknown number of bare autocommitting statements.
  *
- * Measured now: a plain turn is ONE transaction and ZERO autocommits, and a
- * turn that spends a year is five and zero. One turn, one commit, which was the
- * target.
+ * Measured with an inventory read: ONE transaction and ZERO autocommits. A
+ * turn that spends a year is five and zero. The discovery bound above accounts
+ * for learning new claims without raising either fixed high-water mark.
  *
  * Zero autocommits is the stronger half: it says every write in a turn is
  * inside some transaction, so there is no statement that can land alone.
@@ -97,7 +99,7 @@ describe('what one turn costs to make durable', () => {
             // Spy AFTER the run exists, so world seeding is not counted: the
             // claim is about a turn, not about building a world.
             const spy = spyOn(harness.db);
-            await harness.game.act('look');
+            await harness.game.act('what am I carrying');
 
             expect(
                 spy.commits,
@@ -111,6 +113,20 @@ describe('what one turn costs to make durable', () => {
                 + 'own commit and its own tear point.'
             ).toBeLessThanOrEqual(A_PLAIN_TURN.autocommits);
         });
+    });
+
+    it('bounds discovery commits by the knowledge actually learned', async () => {
+        await harness.game.newRun('Shen Ke');
+        const countClaims = () => Number((harness.db.prepare(
+            'SELECT COUNT(*) AS n FROM knowledge_records'
+        ).get() as { n: number }).n);
+        const before = countClaims();
+        const spy = spyOn(harness.db);
+        await harness.game.act('look');
+        const learned = countClaims() - before;
+        expect(learned, 'the fixture must discover something').toBeGreaterThan(0);
+        expect(spy.commits).toBeLessThanOrEqual(learned + A_PLAIN_TURN.commits);
+        expect(spy.autocommits).toBe(A_PLAIN_TURN.autocommits);
     });
 
     it('and a turn that spends a year does not cost unboundedly more', async () => {
