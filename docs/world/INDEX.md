@@ -445,7 +445,7 @@ it describes.
 | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | Sealed ancestors: sealed and dormant high-realm beings, held and unheld. | 643 | - |
 | [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3951 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
 | [`standoff.ts`](../../src/data/cultivation/standoff.ts) | Moved to `the-top-of-the-world.ts`. Its own first line already said it: the top of the world, and whether it can be moved. | 11 | - |
-| [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 436 | - |
+| [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 442 | - |
 | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. | 3856 | [`ancient.md`](history/ancient.md) |
 | [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | The ancestors a house still names, and what is actually left of them. | 1241 | - |
 | [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) | The three floors a house admits at - guest, servant, disciple. | 166 | - |
@@ -729,10 +729,10 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 16 | 23 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 35 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 18 | 47 |
+| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 20 | 35 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 45 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 120 |
 | `THE_COMMUNICATION_TALISMAN` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 21 | 4 |
-| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 21 | 35 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 22 | 25 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 23 | 36 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 98 |
@@ -740,7 +740,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 96 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 131 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 43 | 66 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 211 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 213 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 94 | 439 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 115 | 129 |
 
