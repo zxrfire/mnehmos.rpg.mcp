@@ -613,7 +613,8 @@ describe('resolveConfrontation', () => {
         expect(ending('everything')).toBe('lethal');
     });
 
-    it('destroys the body of a high Drawn cultivator without ending them', () => {
+    /** Body destruction does not assert survival; the existence resolver determines what persists. */
+    it('distinguishes bodily destruction from a completed soul finishing requirement', () => {
         const result = resolveConfrontation(
             combatant({ id: 'a', realmOrdinal: MAX_ORDINAL - 2 }),
             combatant({
@@ -628,7 +629,7 @@ describe('resolveConfrontation', () => {
         expect(result.finished).toBe(false);
         expect(result.remnant).toBe('soul');
         expect(result.killRequirement.bodyIsEnough).toBe(false);
-        expect(result.narrationHint).toContain('soul left intact');
+        expect(result.narrationHint).toContain('without a soul-directed finishing blow');
     });
 
     it('destroys the body of a carver without ending them either, for a different reason', () => {

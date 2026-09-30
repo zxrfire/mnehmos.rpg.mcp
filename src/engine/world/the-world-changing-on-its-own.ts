@@ -112,7 +112,7 @@ import {
     whatADeathIsWorth,
     whatTheyHeldUp
 } from './what-a-death-at-this-height-is-worth.js';
-import { claimOpportunity, nextWindow, years } from './opportunities.js';
+import { claimOpportunity, queryOpportunities, years } from './opportunities.js';
 import {
     activeGoals,
     addGoal,
@@ -6346,11 +6346,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
         kind: 'opportunity_taken',
         weight: 9,
         apply(state, day, rng) {
-            const open = state.opportunities.filter(o => {
-                if (o.claimed && o.recurrenceDays === null) return false;
-                const w = nextWindow(o, day - 30);
-                return w != null && w.opensOnDay <= day && w.closesOnDay > day;
-            });
+            const open = queryOpportunities(state.opportunities, { openOnDay: day });
             const opp = pick(rng, open);
             if (!opp) return null;
             const taker = pick(rng, theWorldsPeople(state).filter(

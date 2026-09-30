@@ -1099,6 +1099,7 @@ import {
 } from './prompt.js';
 import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import { whatSomebodyRemembers } from '../engine/world/what-somebody-remembers.js';
+import { opportunitiesTheyCanTell } from './opportunity-questions.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -7922,6 +7923,13 @@ ${noticed}`;
         // Except two questions that name no thing: which houses they know,
         // answered out of what THEY can place, and a question about themselves,
         // which is theirs to answer and is never looked up or guessed at.
+        if (this.atHand && /\b(?:opportunities|ripening|openings)\b/i.test(topic)) {
+            const lines = opportunitiesTheyCanTell(this.atHand, asked.id, cultivator.id);
+            if (lines.length > 0) this.theWorldMoved();
+            return this.freeAction(run, 'interact', factsForToolResult(
+                'The schedules they know.', lines.length > 0 ? lines : ['They know of no coming opening.']
+            ));
+        }
         if (!compelled && asksWhichHousesTheyKnow(topic)) {
             return this.theHousesTheyCouldName(run, cultivator, asked);
         }

@@ -6,6 +6,10 @@ One class per table, each owning the SQL for it. Nothing above this layer writes
 nothing here decides anything: a repository stores what it is given and returns what it
 holds.
 
+`CultivatorRepo.markDead` asks the existence engine what violent body destruction
+left before storing the ending. A remnant closes the run and survives in its world
+record; old age and starvation still store an ordinary terminal death.
+
 The two rules that matter when adding one:
 
 - **A backtick inside a SQL template literal terminates the literal** and takes the whole
@@ -68,4 +72,3 @@ The two rules that matter when adding one:
   `agent.repo.ts`, `character.repo.ts`, `inventory.repo.ts`, `npc-memory.repo.ts` and
   `scene.repo.ts` are read once per slice, every invoke. A slow query there is paid on every
   model call.
-

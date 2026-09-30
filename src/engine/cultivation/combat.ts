@@ -1288,7 +1288,7 @@ export interface ConfrontationResult {
     finished: boolean;
     /** What finishing this person would have taken, whether or not it happened. */
     killRequirement: KillRequirement;
-    /** Set when the body went and the person did not: 'soul' or 'seam'. */
+    /** What may persist after bodily destruction: 'soul' or 'seam'. */
     remnant: 'soul' | 'seam' | null;
     /**
      * Objects that broke in the fight, in the order they broke. Each is still
@@ -2090,9 +2090,7 @@ function describeOutcome(
             return `The finishing requirement was met in full. ${requirement.note}`;
         case 'body_destroyed':
             return remnant === 'soul'
-                ? 'The body is gone and the person is not. The soul left intact and can persist for months, ' +
-                  'shortening every day it stays out. Anyone who walks away believing this was a killing is wrong, ' +
-                  'and will find out.'
+                ? 'The body was destroyed without a soul-directed finishing blow.'
                 : 'The body is gone and the seam is not. A large enough seam-bearing piece regrows over years into ' +
                   'somebody who remembers the argument, which is why the Buddha Precipice distinguishes a funeral from a scattering.';
         case 'withdrawal':
@@ -2165,9 +2163,7 @@ function describeOneSided(
             return `They were finished where they stood, and nothing about it was uncertain. ${requirement.note}`;
         case 'body_destroyed':
             return remnant === 'soul'
-                ? 'The body was taken apart without a contest, and the person was not. The soul left intact and ' +
-                  'can persist for months, shortening every day it stays out - so the party who walked away ' +
-                  'certain of what they had done is the one who will be surprised.'
+                ? 'The body was destroyed without a soul-directed finishing blow.'
                 : 'The body was taken apart without a contest, and the seam was not. A large enough seam-bearing ' +
                   'piece regrows over years into somebody who remembers exactly who did this and how easy they ' +
                   'found it.';

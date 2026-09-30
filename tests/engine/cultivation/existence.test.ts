@@ -17,6 +17,7 @@ import {
 } from '../../../src/schema/cultivation.js';
 import {
     NASCENT_SOUL_ORDINAL,
+    MAX_REMNANT_CONTINUITY,
     PROFOUND_EXISTENCE_STATES,
     canAct,
     canEnterExistenceState,
@@ -185,10 +186,20 @@ describe('surviving your own death', () => {
         }
     });
 
-    it('is death above it too when nothing was arranged', () => {
+    it('can leave an imprint above Nascent Soul without preserving the person', () => {
+        let remnants = 0;
+        let deaths = 0;
         for (let i = 0; i < 100; i++) {
-            expect(destroy(30, {}, `bare-${i}`).state).toBe('physically_dead');
+            const result = destroy(30, {}, `bare-${i}`);
+            expect(['physically_dead', 'remnant']).toContain(result.state);
+            expect(isTheSamePerson({ existenceState: result.state, identityContinuity: result.identityContinuity })).toBe(false);
+            if (result.state === 'remnant') {
+                remnants++;
+                expect(result.identityContinuity).toBeLessThanOrEqual(MAX_REMNANT_CONTINUITY);
+            } else deaths++;
         }
+        expect(remnants).toBeGreaterThan(0);
+        expect(deaths).toBeGreaterThan(remnants);
     });
 
     it('is never automatic, even fully prepared', () => {

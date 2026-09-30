@@ -507,6 +507,11 @@ each class makes possible lives in
 
 ## Opportunities have windows, and close
 
+`queryOpportunities` supplies the world's claims and conversation schedules.
+A recurring window already claimed is closed until its next opening. A person's
+conversation card also reads their held Lid channel and a crossing they witnessed
+or can hear about from somebody who witnessed it. Age alone is not witnessing.
+
 Every opportunity carries a temporal window, and the world does not hold it open:
 
 ```text
@@ -2847,7 +2852,7 @@ a-catalog-person-and-their-world-row.ts
                  both; this owns the mapping in both directions so the two
                  cannot drift. The reverse is a catalog LOOKUP and never a
                  prefix strip - `npc-95` is a procedural NPC
-memory.ts        durable memories, search, and the LLM-driven compression write path
+memory.ts        durable memories and search; rare event memories are append-only
 what-somebody-remembers.ts
                  what one person remembers, read and never stored: their own
                  memory rows, their house's losses (lived if they were on the
@@ -3674,6 +3679,9 @@ points. Do not quote -2.16 as a constant.
 - [`../people/README.md`](../people/README.md) - `NpcRecord` is one of two shapes a person has.
   `Person` and `everybodyDrawingHere` are the read that covers both, and a new caller should
   usually want that rather than either table.
+- Remote swords, clones and souls have no persisted acting records or creation
+  path yet. The former proxy list and its guaranteed unattended-body death were
+  removed; ordinary interactions still require somebody present in the area.
 - [`../../storage/repos/README.md`](../../storage/repos/README.md) - `world-state.repo.ts` and
   `world-snapshot.repo.ts` are what survives a restart. Most of this layer is derived per read
   on purpose - before adding a field, check it cannot be read off the world instead.

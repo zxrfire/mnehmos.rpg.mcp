@@ -22,6 +22,7 @@ import { TechniqueRepository } from '../../../src/storage/repos/technique.repo.j
 import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
 import { REAL_OPTIONS } from '../../../src/engine/cultivation/combat.js';
 import { REALM_TIERS } from '../../../src/engine/cultivation/realms.js';
+import { makeCultivator } from '../../engine/cultivation/fixtures.js';
 
 const ctx = { sessionId: 'combat-test' };
 
@@ -368,6 +369,28 @@ describe('combat_manage', () => {
             expect(result.outcome).toBe('body_destroyed');
             expect(result.remnant).toBe('seam');
             expect(result.killRequirement.soulAttackWorks).toBe(false);
+        });
+
+        /** A body's destruction must reach an opponent's stored existence, even when finished is false. */
+        it('records what remains of a real opponent after their body is destroyed', async () => {
+            const created = await newCultivator('Attacker');
+            setRank(db, created.cultivator.id, 40);
+            const repo = new CultivatorRepository(db);
+            const victim = repo.create(makeCultivator({
+                id: 'victim-on-record', name: 'Elder Rong', kind: 'npc',
+                realmOrdinal: realmStart('nascent_soul'), traditionId: 'tradition-drawn'
+            }));
+            const result = await combat({
+                action: 'resolve', cultivatorId: created.cultivator.id,
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
+                opponent: { cultivatorId: victim.id }
+            });
+            expect(result.outcome).toBe('body_destroyed');
+            expect(result.finished).toBe(false);
+            const after = repo.getById(victim.id)!;
+            expect(['remnant', 'physically_dead']).toContain(after.existenceState);
+            expect(after.alive).toBe(false);
+            expect(result.opponentDied).toBe(true);
         });
 
         /**

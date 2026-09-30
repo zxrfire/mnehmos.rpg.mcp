@@ -807,8 +807,7 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
         .map(m => ({
             ...m,
             actorIds: m.actorIds.filter(kept),
-            sourceFactIds: m.sourceFactIds.filter(stillOnRecord),
-            compressedFromIds: m.compressedFromIds.filter(id => !forgottenMemories.has(id))
+            sourceFactIds: m.sourceFactIds.filter(stillOnRecord)
         }));
 
     state.npcs = state.npcs
@@ -1078,8 +1077,7 @@ export function cloneWorld(state: WorldState): WorldState {
                 actorIds: m.actorIds.slice(),
                 factionIds: m.factionIds.slice(),
                 tags: m.tags.slice(),
-                sourceFactIds: m.sourceFactIds.slice(),
-                compressedFromIds: m.compressedFromIds.slice()
+                sourceFactIds: m.sourceFactIds.slice()
             })),
             nextSeq: state.memories.nextSeq
         }

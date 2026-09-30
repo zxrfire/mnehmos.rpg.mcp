@@ -317,12 +317,8 @@ export function whatTheConfrontationDidToThem(
 
     // ── THE DEATH ────────────────────────────────────────────────────────
     //
-    // No second gate. `finished` against the loser is the resolver's statement
-    // that the finishing requirement was met by somebody who went there to meet
-    // it, and asking a further question about the body is the drift the engine
-    // exists to prevent. What the world adds is only that the answer lands on a
-    // person the world holds, with the heirs and inherited business that follow
-    // from one of its own dying.
+    // A completed finishing requirement is final. Bodily destruction asks what
+    // survived before the estate and inherited business are settled.
     let handoff: DeathHandoff | null = null;
     let died = false;
     // Who is left holding it, read at the one moment the answer is right. See
@@ -334,9 +330,10 @@ export function whatTheConfrontationDidToThem(
     // has been priced rather than inside the branch that kills them.
     let dying: NpcRecord | null = null;
 
-    if (input.lost && input.finished) {
+    if (input.lost && (input.finished || input.outcome === 'body_destroyed')) {
         dying = state.npcs[at];
-        state.npcs[at] = markDead(dying, day, `Killed by ${input.byName}.`);
+        state.npcs[at] = markDead(dying, day, `Killed by ${input.byName}.`, !input.finished);
+        if (state.npcs[at].status === 'remnant') lines.push(state.npcs[at].endNote);
         // Handed the record as it stood at death - with the account on it - so
         // the heir inherits the enmity along with everything else.
         handoff = settleNpcDeath(state, dying, day);

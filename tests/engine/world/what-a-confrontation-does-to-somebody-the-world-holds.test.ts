@@ -8,8 +8,8 @@
  *   - a permanent wound gets its day in the ledger; an ordinary one does not
  *   - no hit points are invented anywhere on the record
  *   - losing opens a rival; being finished or maimed opens an enemy
- *   - `finished` against the loser is the whole death gate, and a bout that
- *     empties somebody without meaning to leaves them alive
+ *   - a completed finishing requirement is final; bodily destruction resolves
+ *     what remains, while an ordinary beating leaves the person alive
  *   - a death goes through the world's own settlement: heirs, inherited goals,
  *     and an account the heir now holds against the killer
  *   - somebody the world does not hold, or no longer holds acting, is untouched

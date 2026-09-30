@@ -35,11 +35,6 @@ import type Database from 'better-sqlite3';
  * 3. BELIEF IS NOT HERE. These tables hold ground truth and the surviving record.
  *    What anybody knows, believes or suspects lives in the social layer's
  *    knowledge tables and references `world_chronicle.id`.
- *
- * 4. MEMORY COMPRESSION IS LOSSY BY DESIGN AND AUDITED ANYWAY.
- *    `world_memories.compressed_from` keeps the ids a compressed record absorbed.
- *    Protected kinds are enforced in the engine rather than by a CHECK here,
- *    because the kind list is content and would need migrating as it grew.
  */
 export function migrateWorld(db: Database.Database): void {
     db.exec(`
@@ -478,10 +473,6 @@ export function migrateWorld(db: Database.Database): void {
       salience REAL NOT NULL DEFAULT 0.5,
       tags TEXT NOT NULL DEFAULT '[]',               -- JSON
       source_fact_ids TEXT NOT NULL DEFAULT '[]',    -- JSON; may be empty
-      -- Kept even though the absorbed rows are gone, so a compression pass can
-      -- be inspected afterwards. See header note 5.
-      compressed_from TEXT NOT NULL DEFAULT '[]',    -- JSON
-      compressed INTEGER NOT NULL DEFAULT 0,
       created_on_day INTEGER NOT NULL DEFAULT 0,
       updated_on_day INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, id),

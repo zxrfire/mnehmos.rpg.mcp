@@ -784,16 +784,17 @@ export function settleAFight(input: {
                 }
 
                 // THE OTHER HALF OF THE DEATH GATE
-                if (result.finished && result.loserId === opponent.id) {
+                if ((result.finished || result.outcome === 'body_destroyed') && result.loserId === opponent.id) {
                     const beaten = repos.cultivators.getById(opponentRow.id)!;
-                    const theirCause = evaluateDeathConditions(beaten);
+                    const theirCause = result.outcome === 'body_destroyed' ? 'combat_defeat' : evaluateDeathConditions(beaten);
                     if (theirCause) {
                         opponentDeath = {
                             cause: theirCause,
                             description: describeDeath(theirCause, beaten)
                         };
                         repos.cultivators.markDead(
-                            opponentRow.id, theirCause, nextTurn, opponentDeath.description
+                            opponentRow.id, theirCause, nextTurn, opponentDeath.description,
+                            result.outcome === 'body_destroyed'
                         );
                     }
                 }
@@ -885,10 +886,13 @@ export function settleAFight(input: {
         const after = repos.cultivators.getById(cultivator.id)!;
         // Somebody who was attacked did not force anything, so the barely-standing
         // clause does not apply to them; an empty bar still kills.
-        const cause = evaluateDeathConditions(after, { forcingCombat: input.playerIsAggressor !== false });
+        const cause = result.outcome === 'body_destroyed' && result.loserId === cultivator.id
+            ? 'combat_defeat'
+            : evaluateDeathConditions(after, { forcingCombat: input.playerIsAggressor !== false });
         if (cause) {
             death = { cause, description: describeDeath(cause, after) };
-            repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description);
+            repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description,
+                result.outcome === 'body_destroyed' && result.loserId === cultivator.id);
         }
     });
     persist();
@@ -965,9 +969,8 @@ export function settleAFight(input: {
         note:
             'Death is decided by the survival layer, not by this tool. `finished` says the finishing ' +
             'requirement was met; `died` says the engine recorded the player\'s death and ' +
-            '`opponentDied` the opponent\'s. An opponent dies only where the goal was `kill` and ' +
-            'the tradition allows a body to be enough; a bout that empties somebody\'s bar without ' +
-            'meaning to leaves them beaten. An opponent with no cultivator row is not written to ' +
+            '`opponentDied` the opponent\'s. Bodily destruction also resolves what remains through ' +
+            'the existence engine. An opponent with no cultivator row is not written to ' +
             'at all - see the note on the persistence block.'
     };
 }

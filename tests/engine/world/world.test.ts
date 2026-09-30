@@ -55,16 +55,11 @@ import {
     years
 } from '../../../src/engine/world/opportunities.js';
 import {
-    applyCompression,
     createMemoryStore,
-    memoryCount,
-    ownersNeedingCompression,
-    planCompression,
     recallAbout,
     rememberFact,
     searchMemories,
-    storeMemory,
-    unsupportedMemories
+    storeMemory
 } from '../../../src/engine/world/memory.js';
 import {
     assertClaim,
@@ -692,6 +687,14 @@ describe('opportunities: windows that close', () => {
         expect(unknownMisses[0].unknown).toBe(true);
     });
 
+    /** A recurring harvest can be taken once per opening, not once per query. */
+    it('keeps a claimed recurring opening closed until its next cycle', () => {
+        const taken = claimOpportunity(realm, 'pc', realm.opensOnDay + 1).opportunity;
+        expect(claimOpportunity(taken, 'rival', realm.opensOnDay + 2).ok).toBe(false);
+        expect(nextWindow(taken, realm.opensOnDay + 2)?.opensOnDay).toBe(realm.opensOnDay + years(80));
+        expect(claimOpportunity(taken, 'rival', realm.opensOnDay + years(80)).ok).toBe(true);
+    });
+
     it('represents somebody else having taken it', () => {
         const taken = claimOpportunity(revealTo(fruit, 'pc'), 'rival-sect', 103).opportunity;
         const misses = missedWindowsFor(taken, 0, 500, 'pc');
@@ -718,7 +721,7 @@ describe('opportunities: windows that close', () => {
 // MEMORY
 // ─────────────────────────────────────────────────────────────────────────
 
-describe('memory: storage, retrieval and compression', () => {
+describe('memory: storage and retrieval', () => {
     function store() {
         const s = createMemoryStore();
         storeMemory(s, { ownerId: 'npc-1', kind: 'betrayal', summary: 'Bai Shuqing opened the gate.', onDay: 100, actorIds: ['npc-2'], tags: ['sect'] });
@@ -735,7 +738,7 @@ describe('memory: storage, retrieval and compression', () => {
     it('assigns sequential ids and searches by owner, kind, actor, tag and text', () => {
         const s = store();
         expect(s.records[0].id).toBe('m1');
-        expect(memoryCount(s, 'npc-1')).toBe(52);
+        expect(searchMemories(s, { ownerId: 'npc-1' })).toHaveLength(52);
         expect(searchMemories(s, { ownerId: 'npc-1', kinds: ['betrayal'] })).toHaveLength(1);
         expect(searchMemories(s, { actorIds: ['npc-2'] })).toHaveLength(1);
         expect(searchMemories(s, { tags: ['daily'] })).toHaveLength(50);
@@ -753,83 +756,16 @@ describe('memory: storage, retrieval and compression', () => {
             .toEqual(['betrayal', 'debt']);
     });
 
-    it('never offers a protected memory as a compression candidate', () => {
-        const s = store();
-        const plan = planCompression(s, 'npc-1', { onDay: 2000 });
-        expect(plan.needed).toBe(true);
-        expect(plan.candidates.every(c => c.kind === 'routine' || c.kind === 'observation')).toBe(true);
-        expect(plan.retained.some(r => r.kind === 'betrayal')).toBe(true);
-        expect(plan.retained.some(r => r.kind === 'debt')).toBe(true);
-        expect(plan.targetCount).toBeLessThanOrEqual(10);
-    });
-
-    it('collapses many records into a few and keeps the earliest date', () => {
-        const s = store();
-        const plan = planCompression(s, 'npc-1', { onDay: 2000 });
-        const half = plan.candidates.slice(0, 25).map(c => c.id);
-        const rest = plan.candidates.slice(25).map(c => c.id);
-
-        const result = applyCompression(s, plan, [
-            { kind: 'observation', summary: 'Twenty-five unremarkable years at the outer courtyard.', compressedFromIds: half },
-            { kind: 'observation', summary: 'The rest of it, equally unremarkable.', compressedFromIds: rest }
-        ], 2000);
-
-        expect(result.addedIds).toHaveLength(2);
-        expect(result.removedIds).toHaveLength(50);
-        expect(result.keptUnabsorbedIds).toHaveLength(0);
-        expect(memoryCount(s, 'npc-1')).toBe(4);
-        const compressed = searchMemories(s, { ownerId: 'npc-1', kinds: ['observation'] });
-        expect(compressed[0].compressed).toBe(true);
-        expect(compressed.every(c => c.onDay >= 300 && c.onDay < 400)).toBe(true);
-        // The load-bearing memories are still there.
-        expect(searchMemories(s, { ownerId: 'npc-1', kinds: ['betrayal', 'debt'] })).toHaveLength(2);
-    });
-
-    it('rejects a compressed record citing anything outside the plan', () => {
-        const s = store();
-        const plan = planCompression(s, 'npc-1', { onDay: 2000 });
-        const before = memoryCount(s, 'npc-1');
-        const result = applyCompression(s, plan, [
-            { kind: 'observation', summary: 'Includes the betrayal, quietly.', compressedFromIds: ['m1', plan.candidates[0].id] },
-            { kind: 'observation', summary: 'Cites nothing.', compressedFromIds: [] }
-        ], 2000);
-        expect(result.addedIds).toHaveLength(0);
-        expect(result.rejected).toHaveLength(2);
-        expect(memoryCount(s, 'npc-1')).toBe(before);
-    });
-
-    it('keeps a candidate the summariser left out rather than deleting by omission', () => {
-        const s = store();
-        const plan = planCompression(s, 'npc-1', { onDay: 2000 });
-        const some = plan.candidates.slice(0, 5).map(c => c.id);
-        const result = applyCompression(s, plan, [
-            { kind: 'observation', summary: 'Five dull seasons.', compressedFromIds: some }
-        ], 2000);
-        expect(result.keptUnabsorbedIds).toHaveLength(plan.candidates.length - 5);
-        for (const id of result.keptUnabsorbedIds) {
-            expect(s.records.some(r => r.id === id)).toBe(true);
-        }
-    });
-
-    it('finds memories the world record no longer supports', () => {
-        let world = createWorld({ seed: 'mem-1', skipPriorAges: true });
+    it('remembers a fact in the owner\'s own words and cites it', () => {
+        const world = createWorld({ seed: 'mem-1', skipPriorAges: true });
         const fact = appendFact(world.history, makeFact({
             day: 100, kind: 'catastrophe', summary: 'The mountain at Stillshelf came down.'
         }));
         const s = createMemoryStore();
-        rememberFact(s, 'pc', fact, { summary: 'There used to be a mountain here.' });
-        expect(unsupportedMemories(s, world.history, 'pc')).toHaveLength(0);
-
-        // Centuries pass and the record is gone. The memory is not.
-        world.history.facts[0].fidelity = 'lost';
-        const orphaned = unsupportedMemories(s, world.history, 'pc');
-        expect(orphaned).toHaveLength(1);
-        expect(orphaned[0].summary).toContain('used to be a mountain');
-    });
-
-    it('lists owners over the threshold', () => {
-        const s = store();
-        expect(ownersNeedingCompression(s).map(o => o.ownerId)).toEqual(['npc-1']);
+        const m = rememberFact(s, 'pc', fact, { summary: 'There used to be a mountain here.' });
+        expect(m.summary).toBe('There used to be a mountain here.');
+        expect(m.onDay).toBe(100);
+        expect(m.sourceFactIds).toEqual([fact.id]);
     });
 });
 
@@ -1133,4 +1069,3 @@ describe('possession is not ownership', () => {
         expect(describeObject(stolenSword, 900)).toContain('taken from Yun Cishan');
     });
 });
-

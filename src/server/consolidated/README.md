@@ -66,6 +66,9 @@ Two things that surprise people:
 
 ## Where else to look
 
+`combat-manage.ts` passes bodily destruction to the existence resolver through
+the cultivator repository. A completed soul finishing requirement remains final.
+
 - [`../../engine/cultivation/README.md`](../../engine/cultivation/README.md) and
   [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the two heaviest
   dependencies of this directory. A tool computes nothing of its own: it validates, calls, and
@@ -86,4 +89,3 @@ Two things that surprise people:
   against, which is what makes this a boundary rather than a pass-through.
 - [`../handlers/README.md`](../handlers/README.md) - `spatial-manage.ts` re-exports from there
   rather than implementing. It is the only tool that still does.
-

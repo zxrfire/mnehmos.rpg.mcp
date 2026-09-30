@@ -55,7 +55,7 @@ import {
 } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { theFoundersOf } from './a-recruit-is-given-their-lamp-at-the-house.js';
-import { storeMemory } from './memory.js';
+import { rememberFact } from './memory.js';
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
 import { indexById, type WorldState } from './world-state.js';
 
@@ -175,7 +175,10 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
     // The tracked goods are different and are deliberately left possessed by
     // the deceased: a grave good's possessor IS the body, and its `locationId`
     // is the grave, which is what makes the grave searchable at all.
-    state.npcs[at] = { ...markDead(deceased, onDay, input.causeNote), spiritStones: 0 };
+    state.npcs[at] = {
+        ...(deceased.status === 'remnant' ? deceased : markDead(deceased, onDay, input.causeNote)),
+        spiritStones: 0
+    };
 
     // ── The grave ────────────────────────────────────────────────────────
     let grave: LocationRecord | null = null;
@@ -275,7 +278,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
     }
 
     // ── The record ───────────────────────────────────────────────────────
-    facts.push(appendWorldFact(state, makeFact({
+    const death = appendWorldFact(state, makeFact({
         day: onDay,
         kind: 'death',
         scale: deceased.cultivation.realmOrdinal >= 17 ? 'regional' : 'local',
@@ -290,7 +293,8 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
             unattributed: 'Somebody was buried up the valley and the marker has no name on it yet.',
             peakOrdinal: deceased.cultivation.realmOrdinal
         }
-    })));
+    }));
+    facts.push(death);
 
     // ── The sect remembers what it spent ─────────────────────────────────
     if (deceased.factionId) {
@@ -338,14 +342,10 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
                         : 'Remembers the name, barely.'
                 }, onDay);
                 andTheOtherEnd(state.npcs, survivor, { targetId: deceased.id, kind: 'acquaintance', standing: 0 }, onDay);
-                storeMemory(state.memories, {
-                    ownerId: survivor.id,
+                // A witness's memory cites the death it records.
+                rememberFact(state.memories, survivor.id, death, {
                     kind: 'loss',
                     summary: `${deceased.name} died. ${input.causeNote}`,
-                    onDay,
-                    actorIds: [deceased.id],
-                    locationId: grave?.id ?? deceased.locationId,
-                    factionIds: [faction.id],
                     salience: notable ? 0.7 : 0.35
                 });
                 rememberedBy.push(survivor.id);
@@ -534,4 +534,3 @@ export function lastFinishedRun(state: WorldState): WorldRun | null {
     const finished = worldRuns(state).filter(r => r.outcome !== 'active');
     return finished.length > 0 ? finished[finished.length - 1] : null;
 }
-

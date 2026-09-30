@@ -68,6 +68,7 @@ import {
     type TrackedThing
 } from '../engine/world/estate-at-death.js';
 import { enshrineRun } from '../engine/world/legacy.js';
+import { setExistence } from '../engine/world/npc-state.js';
 import { getNpc, getObject, upsertNpc, upsertObject, type WorldState } from '../engine/world/world-state.js';
 import type { ObjectRecord } from '../engine/world/possessions.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
@@ -302,6 +303,15 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
     let graveLocationId: string | null = null;
     const factIds: string[] = [];
     if (world && getNpc(world, cultivator.id)) {
+        const person = getNpc(world, cultivator.id)!;
+        Object.assign(world, upsertNpc(world, setExistence(person, {
+            to: cultivator.existenceState,
+            onDay: worldDay ?? 0,
+            soulState: cultivator.soulState,
+            identityContinuity: cultivator.identityContinuity,
+            note: deps.causeNote,
+            bodyId: cultivator.bodyId
+        })));
         const enshrined = enshrineRun(world, {
             npcId: cultivator.id,
             onDay: worldDay ?? 0,

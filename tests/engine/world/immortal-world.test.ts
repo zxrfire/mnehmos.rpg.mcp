@@ -1,3 +1,8 @@
+/**
+ * Crossing and channel facts remain local evidence. A recorded reply says when
+ * an answer arrived, not that its sender is still answering now. Conversation
+ * cards now read this evidence, so a silence must never become a remote death.
+ */
 import { describe, it, expect } from 'vitest';
 import Database from 'better-sqlite3';
 import { fixtureCatalog } from './fixtures.js';
@@ -888,13 +893,14 @@ describe('the only reliable channel between the two sides', () => {
         });
         const answered = readChannel(state, 'obj-channel')!;
         expect(answered.lastAnsweredOnDay).toBe(state.currentDay);
-        expect(answered.statement).toContain('picking up');
+        expect(answered.statement).toContain('An answer arrived');
 
         const later = readChannel(state, 'obj-channel', state.currentDay + 400 * YEAR)!;
         expect(later.silentYears).toBeGreaterThan(300);
         // Four things, and it distinguishes none of them.
         expect(later.consistentWith).toHaveLength(4);
         expect(later.consistentWith.join(' ')).toMatch(/stopped working/);
+        expect(later.statement).toContain('The silence does not establish what happened on the far side.');
     });
 });
 

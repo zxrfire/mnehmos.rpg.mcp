@@ -36,6 +36,7 @@
  */
 
 import { yearOfDay } from './history.js';
+import { isTheSamePerson } from '../cultivation/existence.js';
 import type { NpcRecord, NpcRelationship } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { whenTheyWereLastAccountedFor } from './who-a-house-has-lost-track-of.js';
@@ -128,6 +129,9 @@ export function whoTheyAreNow(
 
     if (BODILESS.has(target.status)) {
         const year = target.diedOnDay === null ? null : yearOfDay(target.diedOnDay);
+        if (!isTheSamePerson({ existenceState: target.status, identityContinuity: target.identityContinuity })) {
+            return { standing: 'bodiless', year, description: `${name}, an imprint of the person who ended` };
+        }
         return {
             standing: 'bodiless', year,
             description: year === null
@@ -144,4 +148,3 @@ export function readTie(state: WorldState, tie: NpcRelationship): ResolvedTie {
     const lostTrackOn = target === null ? null : whenTheyWereLastAccountedFor(state, target);
     return { tie, target, ...whoTheyAreNow(target, tie.targetName, lostTrackOn) };
 }
-

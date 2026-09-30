@@ -271,11 +271,11 @@ export class WorldStateRepository {
             INSERT OR REPLACE INTO world_memories (
                 id, world_id, owner_id, kind, summary, detail, on_day,
                 actor_ids, location_id, faction_ids, salience, tags,
-                source_fact_ids, compressed_from, compressed, created_on_day, updated_on_day
+                source_fact_ids, created_on_day, updated_on_day
             ) VALUES (
                 @id, @worldId, @ownerId, @kind, @summary, @detail, @onDay,
                 @actorIds, @locationId, @factionIds, @salience, @tags,
-                @sourceFactIds, @compressedFrom, @compressed, @createdOnDay, @updatedOnDay
+                @sourceFactIds, @createdOnDay, @updatedOnDay
             )
         `);
 
@@ -804,8 +804,6 @@ export class WorldStateRepository {
                 salience: memory.salience,
                 tags: JSON.stringify(memory.tags),
                 sourceFactIds: JSON.stringify(memory.sourceFactIds),
-                compressedFrom: JSON.stringify(memory.compressedFromIds),
-                compressed: memory.compressed ? 1 : 0,
                 createdOnDay: memory.createdOnDay,
                 updatedOnDay: memory.updatedOnDay
             });
@@ -1685,8 +1683,6 @@ function rowToMemory(row: MemoryRow): MemoryRecord {
         salience: row.salience,
         tags: parseArray(row.tags),
         sourceFactIds: parseArray(row.source_fact_ids),
-        compressedFromIds: parseArray(row.compressed_from),
-        compressed: row.compressed === 1,
         createdOnDay: row.created_on_day,
         updatedOnDay: row.updated_on_day
     };
@@ -2268,8 +2264,6 @@ interface MemoryRow {
     salience: number;
     tags: string;
     source_fact_ids: string;
-    compressed_from: string;
-    compressed: number;
     created_on_day: number;
     updated_on_day: number;
 }

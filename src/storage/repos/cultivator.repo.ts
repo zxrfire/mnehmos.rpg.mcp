@@ -20,6 +20,8 @@ import {
 } from '../../engine/cultivation/realms.js';
 import { physiqueOrNull } from '../../engine/cultivation/physiques.js';
 import { isTraceable } from '../../engine/cultivation/understanding.js';
+import { resolveBodilyDestruction } from '../../engine/cultivation/existence.js';
+import { forStream } from '../../engine/cultivation/rng.js';
 
 /**
  * Row shape of `cultivators`. Declared explicitly rather than inferred so a
@@ -691,38 +693,23 @@ export class CultivatorRepository {
      * attached run is closed in the same transaction so the ledger can never
      * show a live run whose cultivator is a corpse.
      */
-    markDead(id: string, cause: DeathCause, turn: number, description?: string): Cultivator | null {
+    markDead(id: string, cause: DeathCause, turn: number, description?: string, bodyDestroyed = false): Cultivator | null {
         const existing = this.getById(id);
         if (!existing) return null;
         if (!existing.alive) return existing;
 
+        const destruction = bodyDestroyed || cause === 'heavenly_tribulation'
+            ? resolveBodilyDestruction(existing, {}, forStream(id, 'bodily-destruction', turn))
+            : null;
+
         const valid = CultivatorSchema.parse({
             ...existing,
             alive: false,
-            // ── AND THE FIELD THAT IS ACTUALLY AUTHORITATIVE ─────────────
-            //
-            // FOUND BY PLAYING BLIND, into a death. The run came back
-            // `status: dead`, `deathCause: obviously_fatal_choice`,
-            // `alive: false` - and `existenceState: 'alive'`.
-            //
-            // `CultivatorSchema` says which of those two to believe, in as many
-            // words: *`existenceState` is AUTHORITATIVE: when the two could
-            // disagree, trust the state and recompute this from
-            // `isGoingConcern()`.* This function is the only thing in the game
-            // that ends a cultivator and it moved the convenience boolean and
-            // left the authoritative field saying they were alive - so anybody
-            // following the schema's own instruction read a living cultivator
-            // off a corpse.
-            //
-            // `physically_dead` for every cause on the enum, and that is not a
-            // simplification: all nine are the body going. The states where
-            // something survives it - `soul_preserved`, `remnant`,
-            // `possessing` - are not deaths this function is told about, they
-            // are transitions somebody else performs, and nothing in play
-            // produces one yet. A path that does will set the state itself
-            // rather than routing a preservation through a method named
-            // `markDead`.
-            existenceState: 'physically_dead',
+            existenceState: destruction?.state ?? 'physically_dead',
+            soulState: destruction?.soulState ?? existing.soulState,
+            identityContinuity: destruction?.identityContinuity ?? 0,
+            bodyId: null,
+            cultivationProgress: existing.cultivationProgress * (1 - (destruction?.cultivationLost ?? 0)),
             deathCause: cause,
             diedOnTurn: Math.max(0, Math.round(turn)),
             updatedAt: new Date().toISOString()
@@ -743,7 +730,9 @@ export class CultivatorRepository {
                     id: c.runId,
                     endedAt: c.updatedAt,
                     deathCause: cause,
-                    deathDescription: description ?? null,
+                    deathDescription: destruction?.state === 'remnant'
+                        ? `${description ?? 'The body was destroyed.'} ${destruction.narrationHint}`
+                        : description ?? null,
                     turn: c.diedOnTurn
                 });
             }

@@ -2,6 +2,11 @@
 
 # The Web Front Door
 
+Questions about opportunities use `opportunity-questions.ts`: a present person
+tells schedules they can understand from the ground they stand on, their house,
+or an earlier telling.
+Only the schedules actually told are revealed to the listener.
+
 > **Tier 3 - reference.** The contract of the code beside it. Never auto-injected into a
 > narration prompt. The narrator's always-loaded text is
 > [`../../docs/world/NARRATOR-CORE.md`](../../docs/world/NARRATOR-CORE.md).

@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { MAX_ORDINAL, realmForOrdinal } from './realms.js';
+import { MAX_ORDINAL, REALM_TIERS } from './realms.js';
 import { currentWoundKey } from '../../data/cultivation/wounds.js';
 import type { Injury } from '../../schema/cultivation.js';
 
@@ -22,7 +22,7 @@ export const DEFAULT_TRADITION: TraditionId = 'tradition-drawn';
  * First ordinal at which a Drawn cultivator's soul persists without the body.
  * Nascent Soul, and not a coincidence - it is the realm named for it.
  */
-export const SOUL_PERSISTS_FROM_ORDINAL = realmForOrdinal(21).ordinalStart;
+export const SOUL_PERSISTS_FROM_ORDINAL = REALM_TIERS.find(t => t.key === 'nascent_soul')!.ordinalStart;
 
 /**
  * The mechanical half of each tradition's answer to being killed. Everything

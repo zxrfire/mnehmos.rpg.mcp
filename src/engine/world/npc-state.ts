@@ -3,6 +3,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { isTheSamePerson, resolveBodilyDestruction } from '../cultivation/existence.js';
 import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
 import { whoTheyAreNow } from './reading-a-tie-against-the-roster.js';
 import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from './who-a-house-has-lost-track-of.js';
@@ -1425,11 +1426,27 @@ export function recordFact(npc: NpcRecord, factId: string, onDay: number): NpcRe
 /**
  * The body is gone.
  *
- * The primitive, and it asks no questions: somebody did this, or something
- * resolved that way, and the record is where it comes to rest. A pass of the
- * WORLD'S OWN does not call it directly - see {@link theWorldEnds}.
+ * A completed ending is final. A destroyed body reads the existence resolver
+ * first, because a remnant may remain. World passes use {@link theWorldEnds}.
  */
-export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRecord {
+export function markDead(npc: NpcRecord, onDay: number, endNote: string, bodyDestroyed = false): NpcRecord {
+    if (bodyDestroyed && npc.status === 'alive') {
+        const outcome = resolveBodilyDestruction({
+            realmOrdinal: npc.cultivation.realmOrdinal,
+            cultivationProgress: 0,
+            injuries: npc.cultivation.injuries,
+            soulState: npc.soulState,
+            existenceState: npc.status
+        }, {}, forStream(npc.id, 'bodily-destruction', onDay));
+        if (outcome.state === 'remnant') {
+            return setExistence(npc, {
+                to: outcome.state, onDay, bodyId: null,
+                soulState: outcome.soulState,
+                identityContinuity: outcome.identityContinuity,
+                note: `${endNote} ${outcome.narrationHint}`
+            });
+        }
+    }
     return {
         ...ruinSoul(npc, 'fading'),
         status: 'physically_dead',
@@ -1535,6 +1552,10 @@ export interface ExistenceTransition {
  */
 export function setExistence(npc: NpcRecord, t: ExistenceTransition): NpcRecord {
     const leavingLife = npc.status === 'alive' && t.to !== 'alive';
+    const samePerson = isTheSamePerson({
+        existenceState: t.to,
+        identityContinuity: t.identityContinuity ?? npc.identityContinuity
+    });
     return {
         ...reconcileSoulAndSelf({
             ...npc,
@@ -1544,6 +1565,10 @@ export function setExistence(npc: NpcRecord, t: ExistenceTransition): NpcRecord 
                 : npc.identityContinuity
         }),
         status: t.to,
+        goals: samePerson ? npc.goals : npc.goals.map(goal =>
+            goal.status === 'active' || goal.status === 'blocked'
+                ? { ...goal, status: 'impossible' as GoalStatus, closedOnDay: t.onDay }
+                : goal),
         bodyId: t.bodyId !== undefined ? t.bodyId : npc.bodyId,
         diedOnDay: leavingLife && npc.diedOnDay === null ? t.onDay : npc.diedOnDay,
         endNote: t.note ?? npc.endNote,

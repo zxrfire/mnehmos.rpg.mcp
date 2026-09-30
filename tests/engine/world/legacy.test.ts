@@ -147,11 +147,14 @@ describe('legacy: the world outlives the run', () => {
         });
 
         expect(out.rememberedBy.length).toBeGreaterThan(0);
+        const death = out.facts.find(f => f.kind === 'death')!;
         for (const id of out.rememberedBy) {
             const survivor = state.npcs.find(n => n.id === id)!;
             expect(survivor.relationships.some(r => r.targetId === npc.id)).toBe(true);
-            expect(searchMemories(state.memories, { ownerId: id, actorIds: [npc.id] }).length)
-                .toBeGreaterThan(0);
+            const carried = searchMemories(state.memories, { ownerId: id, actorIds: [npc.id] });
+            expect(carried.length).toBeGreaterThan(0);
+            // The memory cites the row it remembers.
+            expect(carried.every(m => m.sourceFactIds.includes(death.id))).toBe(true);
         }
         // Foundation Establishment or better gets a name in the hall.
         const faction = state.factions.find(f => f.id === npc.factionId)!;

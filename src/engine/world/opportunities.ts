@@ -1,42 +1,4 @@
-/**
- * Opportunity windows.
- *
- * Every opportunity in this world carries a temporal window, and the world does
- * not hold it open:
- *
- *   a spirit fruit ripens         12 days
- *   a secret realm opens          every 80 years
- *   an ancient cultivator wakes   once in 300 years
- *   sect recruitment              annually
- *   a war escalates               over 4 years
- *
- * The point of storing this rather than improvising it is that the player can
- * then MISS THINGS - permanently, including things they never heard about.
- * Missing a realm that opens once a century by four months is a legitimate and
- * desirable outcome, and it is only possible if the window was on the books
- * before anyone knew whether the player would be there.
- *
- * ── What this module is not ──────────────────────────────────────────────
- *
- * It is storage and arithmetic. It does not decide that an opportunity should
- * exist, does not decide who takes one, and does not simulate a race for it.
- * The LLM decides those and calls {@link claimOpportunity}. What is here is the
- * schedule, the closed-form window maths, the claim write path, and the query
- * `advanceTime` uses to report windows that opened and shut with nobody there.
- *
- * ── Someone else took it ─────────────────────────────────────────────────
- *
- * `claimedById` is a plain string. A window closing unclaimed and a window
- * closing because a rival got there first are different world states with
- * different consequences, and both are representable without any simulation:
- * the narrator decides a rival took it, records the claim, and the fruit is
- * gone for everybody thereafter.
- *
- * All arithmetic is closed-form on (opensOnDay, durationDays, recurrenceDays),
- * so asking whether a three-hundred-year cycle is open in year 9,000 costs the
- * same as asking about tomorrow.
- */
-
+/** Opportunity schedules and claims. The engine chooses claimants; the narrator reads results. */
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { makeRequirements, type CapabilityRequirements } from './capability.js';
 
@@ -179,6 +141,8 @@ export function windowContaining(
     const offset = elapsed - index * opp.recurrenceDays;
     if (offset >= opp.durationDays) return null;
     const opens = opp.opensOnDay + index * opp.recurrenceDays;
+    if (!includeClaimed && opp.claimed && opp.claimedOnDay !== null
+        && opp.claimedOnDay >= opens && opp.claimedOnDay < opens + opp.durationDays) return null;
     return { opensOnDay: opens, closesOnDay: opens + opp.durationDays, index };
 }
 
@@ -254,7 +218,7 @@ export interface ClaimResult {
 /**
  * Somebody took it.
  *
- * The engine does not decide who; the narrator does, and this records it. A
+ * The world resolver chooses the claimant; this records the claim. A
  * claim outside an open window is refused, because "I got there four days
  * late" has to mean something.
  */

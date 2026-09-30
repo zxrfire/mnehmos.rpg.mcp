@@ -169,7 +169,7 @@ export function enrichedDensity(ownDensity: number, yearsSinceCrossing: number):
 //
 // Three states, no fourth, and no partial credit:
 //
-//   SAW IT      alive when it happened. The long-lived, at the top. Firsthand,
+//   SAW IT      witnessed it and was alive then. Age alone establishes nothing.
 //               and `stageCeilingFor('witnessed')` is what that reaches.
 //   WAS TOLD    standing close enough to one of those to have been told - an
 //               apex's disciples, a house's inner people. They know the
@@ -196,8 +196,9 @@ export function enrichedDensity(ownDensity: number, yearsSinceCrossing: number):
 export interface WhatTheyBringToATide {
     /** Their age in years. Compared against how long ago the crossing was. */
     ageYears: number;
+    witnessed: boolean;
     /**
-     * Somebody in reach who was alive for it and would say so - an elder of
+     * Somebody in reach who witnessed it and would say so - an elder of
      * their house, a master, anybody they stand close enough to.
      *
      * A caller answers this off the roster it already has. It is deliberately
@@ -219,7 +220,7 @@ export function whoCouldRememberACrossing(
     yearsSinceCrossing: number,
     who: WhatTheyBringToATide
 ): KnowingStage {
-    if (who.ageYears >= yearsSinceCrossing) return stageCeilingFor('witnessed');
+    if (who.witnessed && who.ageYears >= yearsSinceCrossing) return stageCeilingFor('witnessed');
     if (who.hasSomebodyWhoSawIt) return stageCeilingFor('told');
     // Not "half remembers". They have never seen one, and the ground changing
     // is the whole of the evidence they ever had to reason from.

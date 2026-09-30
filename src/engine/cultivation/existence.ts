@@ -9,7 +9,8 @@ import {
     type Injury,
     type SoulState
 } from '../../schema/cultivation.js';
-import { REALM_TIERS, rankName } from './realms.js';
+import { rankName } from './realms.js';
+import { SOUL_PERSISTS_FROM_ORDINAL } from './tradition.js';
 import { aggregateInjuryPenalties, createInjury } from './injuries.js';
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 // Upward in the dependency order and deliberately so: there is one answer in
@@ -32,7 +33,7 @@ import type { CultivationRNG } from './rng.js';
  * soul that can survive the destruction of the body. Everything in this file
  * is gated on it.
  */
-export const NASCENT_SOUL_ORDINAL = REALM_TIERS.find(t => t.key === 'nascent_soul')!.ordinalStart;
+export const NASCENT_SOUL_ORDINAL = SOUL_PERSISTS_FROM_ORDINAL;
 
 /**
  * States that only become reachable at Nascent Soul and above, and even then
@@ -286,17 +287,16 @@ export function resolveBodilyDestruction(
 
     // Which route out was actually prepared? Preference order is the order of
     // how much of the person each one preserves.
-    const route: ExistenceState | null = requirements.vesselId
+    const route: ExistenceState = requirements.vesselId
         ? 'possessing'
         : requirements.soulAnchor || requirements.technique
             ? 'soul_preserved'
-            : null;
+            : 'remnant';
 
-    if (route === null) {
-        return dead('Nothing had been arranged. The soul had nowhere to go and dispersed.');
-    }
-
-    const legality = canEnterExistenceState(cultivator, route, requirements);
+    // An accidental residue is not a deliberately prepared imprint.
+    const legality = route === 'remnant'
+        ? { legal: true, detail: '' }
+        : canEnterExistenceState(cultivator, route, requirements);
     if (!legality.legal) return dead(legality.detail);
 
     // The roll. Preparation moves it a long way; nothing removes it.
@@ -322,7 +322,9 @@ export function resolveBodilyDestruction(
 
     // Survived, at a cost. Nothing comes through whole.
     const soulState: SoulState = severityRoll < 0.5 ? 'damaged' : 'fragmented';
-    const continuity = soulState === 'damaged' ? 0.8 : 0.55;
+    const continuity = route === 'remnant'
+        ? makeRemnantContinuity(soulState === 'damaged' ? 0.8 : 0.55)
+        : soulState === 'damaged' ? 0.8 : 0.55;
     const cultivationLost = soulState === 'damaged' ? 0.3 : 0.6;
 
     factors.push({
@@ -338,7 +340,9 @@ export function resolveBodilyDestruction(
         bodyId: route === 'possessing' ? requirements.vesselId ?? null : null,
         factors,
         narrationHint:
-            route === 'possessing'
+            route === 'remnant'
+                ? `The body was destroyed. A ${soulState} remnant remains; the person ended.`
+                : route === 'possessing'
                 ? `The body was destroyed. The soul reached the prepared vessel and took it, ${soulState}, ` +
                   `with ${Math.round(cultivationLost * 100)}% of the cultivation left behind.`
                 : `The body was destroyed. The soul persists without one, ${soulState}, ` +

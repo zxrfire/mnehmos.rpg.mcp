@@ -44,8 +44,9 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { whoCouldRememberACrossing } from './crossing-enrichment.js';
 import type { HistoricalActor, HistoricalFact } from './history.js';
-import { LID_CHANNEL_TAG } from './immortal-world.js';
+import { LID_CHANNEL_TAG, readChannel } from './immortal-world.js';
 import { theDayTheWorldOpened } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { recallAbout, searchMemories, type MemoryKind, type MemoryRecord } from './memory.js';
 import type { NpcRecord, RelationshipKind } from './npc-state.js';
@@ -129,6 +130,45 @@ export function whatSomebodyRemembers(
 
     const found: Ranked[] = [];
     const aboutSomebodyAlready = new Set<string>();
+
+    const ground = state.locations.find(l => l.id === person.locationId);
+    if (ground && typeof ground.data.crossingYear === 'number') {
+        const change = ground.changes.find(c => c.kind === 'enriched' && c.causeFactId !== null);
+        const crossing = state.history.facts.find(f => f.id === change?.causeFactId);
+        const witnessed = (npc: NpcRecord) => crossing !== undefined && wasThere(npc, crossing);
+        const hasTeller = state.npcs.some(other => other.status === 'alive' && witnessed(other)
+            && ((house && other.factionId === house.id && worthRecordingRank(person.factionRankIndex, house.ranks.length))
+                || person.relationships.some(tie => tie.targetId === other.id
+                    && ['master', 'teacher', 'kin', 'spouse', 'ally'].includes(tie.kind))));
+        const yearsAgo = Math.max(0, today / DAYS_PER_YEAR - ground.data.crossingYear);
+        const stage = whoCouldRememberACrossing(yearsAgo, {
+            ageYears: (today - person.identity.bornOnDay) / DAYS_PER_YEAR,
+            witnessed: witnessed(person), hasSomebodyWhoSawIt: hasTeller
+        });
+        if (stage !== 'whisper') found.push({
+            thing: {
+                what: 'The qi here rose after a completed final crossing and has been declining since',
+                how: witnessed(person) ? 'lived' : 'told', toldBy: witnessed(person) ? null : 'somebody who was there',
+                beforeTheyJoined: false, yearsAgo: Math.floor(yearsAgo), itWasTheir: null,
+                withThePlayer: false, keptToThemselves: false, named: []
+            },
+            day: ground.data.crossingYear * DAYS_PER_YEAR, carried: true
+        });
+    }
+
+    for (const object of state.objects) {
+        if (!object.tags.includes(LID_CHANNEL_TAG) || object.possessorId !== person.id) continue;
+        const reading = readChannel(state, object.id);
+        if (!reading) continue;
+        found.push({
+            thing: {
+                what: reading.statement, how: 'lived', toldBy: null, beforeTheyJoined: false,
+                yearsAgo: reading.silentYears === null ? 0 : Math.floor(reading.silentYears),
+                itWasTheir: null, withThePlayer: false, keptToThemselves: true, named: []
+            },
+            day: reading.lastAnsweredOnDay ?? today, carried: false
+        });
+    }
 
     // ── WHAT THEY CARRY ──────────────────────────────────────────────────
     // What they carry about the person in front of them first: `recallAbout`

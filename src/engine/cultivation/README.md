@@ -941,6 +941,13 @@ specialisation, preparation and circumstance.
 
 ### Survival is conditional, never automatic
 
+Violent bodily destruction reads `resolveBodilyDestruction` in the played death
+write and the world's confrontation write. From Nascent Soul, an unprepared
+destruction may leave a remnant. It closes the run and passes the estate on:
+the imprint persists, but is not the person. Old age and a completed soul
+finishing requirement do not use this route. Combat and existence share the
+Nascent Soul floor in `tradition.ts`, read from the realm ladder.
+
 Advanced cultivation must not become automatic immortality. Surviving one's own death may
 require soul strength, a compatible vessel, a specific treasure, a suitable environment,
 resources, a technique, outside assistance, luck, or - most often - having prepared in
@@ -1289,4 +1296,3 @@ was met, and hands the resulting state to `survival.ts`.
   are here and `web/`.
 - [`../../../docs/world/climbing/README.md`](../../../docs/world/climbing/README.md) - the prose the
   ladder is supposed to feel like, and the design rationale behind the rungs.
-

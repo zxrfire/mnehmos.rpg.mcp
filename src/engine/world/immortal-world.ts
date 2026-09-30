@@ -38,7 +38,7 @@ import {
     type LocationRecord
 } from './locations.js';
 import { addLineageEdge, ancestorsOf, createLineageRecord } from './lineage.js';
-import { storeMemory } from './memory.js';
+import { rememberFact, storeMemory } from './memory.js';
 import { theFoundersOf } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import {
     addGoal,
@@ -1119,16 +1119,10 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
             .filter(n => n.factionId === faction.id && n.status === 'alive' && n.id !== npc.id
                 && founders.has(n.id));
         for (const witness of witnesses) {
-            storeMemory(state.memories, {
-                ownerId: witness.id,
+            rememberFact(state.memories, witness.id, belowFact, {
                 kind: 'rumour',
                 summary: `${npc.name} went for the last crossing. Nobody knows what happened after that.`,
-                onDay,
-                actorIds: [npc.id],
-                factionIds: [faction.id],
-                locationId: fromLocationId,
-                salience: 0.75,
-                sourceFactIds: [belowFact.id]
+                salience: 0.75
             });
         }
     }
@@ -1519,18 +1513,6 @@ export function sendAcross(state: WorldState, input: SendAcrossInput): SendAcros
         base.objectId = moved.id;
     }
 
-    // The recipient knows. Nobody else does, and the channel answering is the
-    // only evidence in existence that somebody on the far side is picking up.
-    storeMemory(state.memories, {
-        ownerId: to.id,
-        kind: 'promise',
-        summary: input.message ?? `Something came through ${channel.name}.`,
-        onDay: input.onDay,
-        actorIds: [from.id],
-        salience: 0.9,
-        tags: [LID_CHANNEL_TAG, direction]
-    });
-
     const fact = appendWorldFact(state, makeFact({
         day: input.onDay,
         kind: 'opportunity',
@@ -1545,6 +1527,19 @@ export function sendAcross(state: WorldState, input: SendAcrossInput): SendAcros
         magnitude: 0.5,
         data: { channelObjectId: channel.id, direction, subject: input.subject }
     }));
+
+    // The recipient knows. Nobody else does, and the channel answering is the
+    // only evidence in existence that somebody on the far side is picking up.
+    storeMemory(state.memories, {
+        ownerId: to.id,
+        kind: 'promise',
+        summary: input.message ?? `Something came through ${channel.name}.`,
+        onDay: input.onDay,
+        actorIds: [from.id],
+        salience: 0.9,
+        tags: [LID_CHANNEL_TAG, direction],
+        sourceFactIds: [fact.id]
+    });
 
     const answered = { ...channel, data: { ...channel.data, lastAnsweredOnDay: input.onDay } };
     Object.assign(state, upsertObject(state, answered));
@@ -1577,7 +1572,7 @@ export function readChannel(
     onDay = state.currentDay
 ): ChannelReading | null {
     const channel = state.objects.find(o => o.id === channelObjectId) ?? null;
-    if (!channel) return null;
+    if (!channel || !channel.tags.includes(LID_CHANNEL_TAG)) return null;
     const last = typeof channel.data.lastAnsweredOnDay === 'number'
         ? channel.data.lastAnsweredOnDay
         : null;
@@ -1597,9 +1592,9 @@ export function readChannel(
         statement: last === null
             ? 'It has never answered. That establishes nothing about anybody.'
             : silentYears! < 1
-                ? 'It answered. Somebody up there is picking up, and that is the whole of what is known.'
-                : `Quiet for ${Math.round(silentYears!)} years, which is equally consistent with four ` +
-                  'different things and distinguishes none of them.'
+                ? 'An answer arrived within the last year.'
+                : `The last answer arrived ${Math.round(silentYears!)} years ago. ` +
+                  'The silence does not establish what happened on the far side.'
     };
 }
 
