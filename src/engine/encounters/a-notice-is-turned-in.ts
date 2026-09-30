@@ -15,8 +15,9 @@
  */
 
 import { BEAST_MATERIALS } from '../../data/cultivation/beasts.js';
+import { BONES } from '../../data/cultivation/bones.js';
 import { HERBS } from '../../data/cultivation/herbs.js';
-import type { TechniqueGrade } from '../../schema/cultivation.js';
+import type { SectAlignment, TechniqueGrade } from '../../schema/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
 
 /** How many a notice of each tier asks for, and the purse it pays for them. Fixed per tier. */
@@ -46,9 +47,11 @@ const TIERS_ASKED_AT_ONCE = 2;
  * What a house wants brought this window: one notice for each of the top tiers it can use, each
  * naming one herb or beast part. What a house can use is what its strongest can harvest; a house
  * of pills wants herbs, a house of forges and fists wants beast parts, and the rest want either.
+ * A demonic house also asks for the bone at each of those tiers; its alignment is the catalog fact
+ * that says it works human bone.
  */
 export function whatAHouseWantsBrought(
-    house: { id: string; powerOrdinal: number; specialities: readonly string[] },
+    house: { id: string; powerOrdinal: number; specialities: readonly string[]; alignment?: SectAlignment },
     window: number
 ): WhatIsBrought[] {
     const craft = new Set(house.specialities.map(word => word.toLowerCase()));
@@ -59,11 +62,16 @@ export function whatAHouseWantsBrought(
         ...(beasts || !herbs ? BEAST_MATERIALS.map(row => ({ id: row.id, name: row.name, grade: row.grade, harvest: row.harvestOrdinal })) : [])
     ].filter(row => row.harvest <= house.powerOrdinal);
     const usable = TIERS.filter(tier => pool.some(row => row.grade === tier)).slice(-TIERS_ASKED_AT_ONCE);
-    return usable.map(tier => {
+    const ordinary = usable.map(tier => {
         const choices = pool.filter(row => row.grade === tier).sort((a, b) => (a.id < b.id ? -1 : 1));
         const picked = choices[forStream(house.id, 'what-a-house-wants-brought', tier, window).int(0, choices.length - 1)]!;
         return { id: picked.id, name: picked.name, grade: tier, ...A_NOTICE_OF_EACH_TIER[tier] };
     });
+    const bones = house.alignment === 'demonic'
+        ? BONES.filter(bone => usable.includes(bone.grade))
+            .map(bone => ({ ...bone, ...A_NOTICE_OF_EACH_TIER[bone.grade] }))
+        : [];
+    return [...ordinary, ...bones];
 }
 
 /** A notice, told apart from the same ask put up again in a later window. */

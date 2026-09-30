@@ -5,10 +5,15 @@
  * The owner: "first person to turn it in gets it, and they retract the notice. if you're second,
  * tough luck", and "a notice is per herb and for a speciifc count, if they want a second herb its
  * a new notice. each notice is of a diff grade with a diff reward (fixed, but fixed per tier)".
+ *
+ * Demonic houses work human bone. These cases keep that ask on the existing notice path: the
+ * alignment field adds bone at a usable grade, while the paper, payment and retraction stay the
+ * same facts as every other material notice.
  */
 import { describe, expect, it } from 'vitest';
 
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
+import { getSect } from '../../src/data/cultivation/sects';
 import {
     A_NOTICE_OF_EACH_TIER,
     aNoticeId,
@@ -19,6 +24,7 @@ import {
 import { A_BILL_STAYS_UP_FOR_DAYS } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples';
 import { addToPouch, listPouch } from '../../src/server/consolidated/cultivation-support.js';
 import { housesWithSomethingToSay } from '../../src/web/what-is-posted-on-the-wall-here';
+import { noticesOnTheWall } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples';
 import { makeGameInWorld } from './harness';
 
 /**
@@ -50,6 +56,34 @@ async function atAGateWithANotice(seed: string, beaten: boolean) {
     return null;
 }
 
+/** A live demonic gate whose current paper includes a bone notice nobody else has claimed. */
+async function atADemonicGateWithABoneNotice(seed: string) {
+    const { game, repos, db } = await makeGameInWorld({ seed, worldSeed: 'a-xianxia-run' });
+    const { cultivator } = await game.newRun('Ke Yan');
+    const run = game.currentRun().run;
+    const today = Math.floor(run.elapsedDays);
+    const window = Math.floor(today / A_BILL_STAYS_UP_FOR_DAYS);
+    const world = game.atHand!;
+    for (const speaking of housesWithSomethingToSay(new Map(), today)) {
+        if (getSect(speaking.id)?.alignment !== 'demonic') continue;
+        const seated = world.factions.find(row => row.id === speaking.id && row.seatLocationId);
+        const item = speaking.asks.flatMap(ask => ask.kind === 'work' && ask.item?.id.startsWith('material-bone-')
+            ? [ask.item] : [])[0];
+        if (!seated || !item) continue;
+        const status = hasItComeDown({
+            runSeed: run.seed, noticeId: aNoticeId(speaking.id, item.id, window), today,
+            windowStartDay: window * A_BILL_STAYS_UP_FOR_DAYS, windowDays: A_BILL_STAYS_UP_FOR_DAYS, turnedIn: new Set()
+        });
+        if (status.down) continue;
+        const seat = world.locations.find(row => row.id === seated.seatLocationId)!;
+        seated.resources.spirit_stones = item.purse;
+        game.theWorldMoved();
+        repos.cultivators.update(cultivator.id, { location: seat.name, spiritStones: 10 });
+        return { game, repos, db, id: cultivator.id, house: speaking, item };
+    }
+    return null;
+}
+
 describe('a notice is first come, first paid', () => {
     it('names one thing and how many, fixed per tier, and never the opening party', () => {
         const asks = whatAHouseWantsBrought({ id: 'a-house', powerOrdinal: 30, specialities: ['alchemy'] }, 0);
@@ -63,6 +97,52 @@ describe('a notice is first come, first paid', () => {
         expect(housesWithSomethingToSay().flatMap(house => house.asks)
             .some(ask => ask.kind === 'work' && ask.what === opening.what)).toBe(false);
     });
+
+    it('puts a demonic house\'s bone notice on a wall', () => {
+        const demonic = housesWithSomethingToSay().find(house => getSect(house.id)?.alignment === 'demonic')!;
+        const boneAsks = demonic.asks.filter(ask => ask.kind === 'work' && ask.item?.id.startsWith('material-bone-'));
+        const reading = noticesOnTheWall({
+            field: [], placeName: 'A City', ground: 'city', placeProvinceId: null, onDay: 0, seed: 'bone-paper',
+            speaking: [{
+                ...demonic, asks: boneAsks
+            }]
+        });
+        expect(boneAsks.length).toBeGreaterThan(0);
+        expect(reading.some(notice => notice.item?.id.startsWith('material-bone-'))).toBe(true);
+    });
+
+    it('never gives righteous or neutral houses a bone notice', () => {
+        for (const alignment of ['righteous', 'neutral'] as const) {
+            const house = housesWithSomethingToSay().find(row => getSect(row.id)?.alignment === alignment)!;
+            expect(house.asks.some(ask => ask.kind === 'work' && ask.item?.id.startsWith('material-bone-'))).toBe(false);
+        }
+    });
+
+    it('pays the fixed tier purse for enough bone and takes that notice down', async () => {
+        const at = await atADemonicGateWithABoneNotice('bone-notice-paid');
+        expect(at, 'no demonic house with an open bone notice').not.toBeNull();
+        addToPouch(at!.db, at!.id, at!.item.id, 'herb', at!.item.count);
+
+        const before = at!.repos.cultivators.getById(at!.id)!.spiritStones;
+        const turned = await at!.game.act(`I turn in the ${at!.item.name}`);
+        expect(turned.narration).toContain('The notice comes down.');
+        expect(at!.repos.cultivators.getById(at!.id)!.spiritStones).toBe(before + at!.item.purse);
+        expect(listPouch(at!.db, at!.id).find(row => row.itemId === at!.item.id)).toBeUndefined();
+
+        const again = await at!.game.act(`I turn in the ${at!.item.name}`);
+        expect(again.narration).not.toContain('The notice comes down.');
+    }, 240_000);
+
+    it('refuses a bone at the wrong grade and leaves it in the pouch', async () => {
+        const at = await atADemonicGateWithABoneNotice('bone-notice-wrong-grade');
+        expect(at, 'no demonic house with an open bone notice').not.toBeNull();
+        const wrong = at!.item.grade === 'mortal' ? 'material-bone-earth' : 'material-bone-mortal';
+        addToPouch(at!.db, at!.id, wrong, 'herb', at!.item.count);
+
+        const turned = await at!.game.act(`I turn in the ${at!.item.name}`);
+        expect(turned.narration).toContain(`asks for ${at!.item.count} ${at!.item.name}, and you carry 0`);
+        expect(listPouch(at!.db, at!.id).find(row => row.itemId === wrong)?.quantity).toBe(at!.item.count);
+    }, 240_000);
 
     it('draws who got there first on the notice own stream, the same every time', () => {
         const id = aNoticeId('a-house', 'an-item', 3);

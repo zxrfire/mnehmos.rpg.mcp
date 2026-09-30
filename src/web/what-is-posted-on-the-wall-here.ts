@@ -28,7 +28,6 @@ import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { whoTheHouseHasLostTrackOf } from '../engine/world/who-a-house-has-lost-track-of.js';
 import { SECTS } from '../data/cultivation/sects.js';
-import { demonicStandingOf } from '../data/cultivation/demonic-sects-and-what-they-are-willing-to-do.js';
 import { provinceForFaction } from '../data/cultivation/regions.js';
 // Moved to the engine, because the world's own intake reads the same walls a
 // player does. Re-exported so every caller that read them here still does.
@@ -174,7 +173,10 @@ export function housesWithSomethingToSay(
             id: sect.id,
             name: sect.name,
             provinceId: provinceForFaction(sect.id)?.id ?? null,
-            postsInPublic: demonicStandingOf(sect.id) === undefined,
+            // A public intake is a different question: `openDoorsInTheWorld` still reads each
+            // demonic house's stated route in. A material notice costs the house no advance
+            // property, and a demonic house posts one when it needs human bone.
+            postsInPublic: true,
             asks
         };
     });
